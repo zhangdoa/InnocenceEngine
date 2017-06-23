@@ -1,6 +1,31 @@
 #include "Shader.h"
+#include "GameObject.h"
 
+std::vector<std::string> Shader::split(const std::string& data, char marker)
+{
+	std::vector<std::string> elems;
 
+	const char* cstr = data.c_str();
+	unsigned int strLength = (unsigned int)data.length();
+	unsigned int start = 0;
+	unsigned int end = 0;
+
+	while (end <= strLength)
+	{
+		while (end <= strLength)
+		{
+			if (cstr[end] == marker)
+				break;
+			end++;
+		}
+
+		elems.push_back(data.substr(start, end - start));
+		start = end + 1;
+		end = start;
+	}
+
+	return elems;
+}
 
 Shader::Shader()
 {
@@ -81,30 +106,45 @@ void Shader::addProgram(std::string text, int type)
 		std::cout << "Shader creation failed: memory location invaild when adding shader" << std::endl;
 	}
 
-	//glShaderSource(shader, text.size(), text.data());
+	const char*c_str;
+	glShaderSource(shader, text.size(), &(c_str = text.c_str()), NULL);
 	glCompileShader(shader);
+	glAttachShader(_program, shader);
 }
 
 void Shader::setUniformi(std::string uniformName, int value)
 {
+	glUniform1i(_uniforms.find(uniformName)->second, value);
 }
 
 void Shader::setUniformf(std::string uniformName, float value)
 {
+	glUniform1f(_uniforms.find(uniformName)->second, value);
 }
 
-void Shader::setUniform(std::string uniformName, Vec3f value)
+void Shader::setUniform(std::string uniformName, Vec3f* value)
 {
+	glUniform3f(_uniforms.find(uniformName)->second, value->getX(), value->getY(), value->getZ());
 }
 
-void Shader::setUniform(std::string uniformName, Mat4f value)
+void Shader::setUniform(std::string uniformName, Mat4f* value)
 {
+	std::vector<float> buffer(4 * 4);
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			buffer.push_back(value->getElem(i, j));
+		}
+	}
+	std::reverse(buffer.begin(), buffer.end());
+	glUniformMatrix4fv(_uniforms.find(uniformName)->second, 1, true, buffer.data());
 }
 
 std::string Shader::loadShader(const std::string & fileName)
 {
 	std::ifstream file;
-	file.open(("./res/shaders/" + fileName).c_str());
+	file.open(("C:/Users/zhanghang.SNAIL/Documents/Visual Studio 2015/Projects/InnocenceEngine-C-/res/shaders/" + fileName).c_str());
 
 	std::string output;
 	std::string line;
@@ -121,7 +161,7 @@ std::string Shader::loadShader(const std::string & fileName)
 			}
 			else
 			{
-				std::string includeFileName = Util::split(line, ' ')[1];
+				std::string includeFileName = Shader::split(line, ' ')[1];
 				includeFileName = includeFileName.substr(1, includeFileName.length() - 2);
 
 				std::string toAppend = loadShader(includeFileName);
@@ -135,4 +175,33 @@ std::string Shader::loadShader(const std::string & fileName)
 	}
 
 	return output;
+}
+
+ForwardAmbientShaderWrapper::ForwardAmbientShaderWrapper()
+{
+	addVertexShaderFromFile("forward-ambient-vertex.sf");
+	addFragmentShaderFromFile("forward-ambient-fragment.sf");
+
+	setAttribLocation("position", 0);
+	setAttribLocation("texCoord", 1);
+
+	compileShader();
+
+	addUniform("MVP");
+	addUniform("ambientIntensity");
+}
+
+
+ForwardAmbientShaderWrapper::~ForwardAmbientShaderWrapper()
+{
+}
+
+
+void ForwardAmbientShaderWrapper::updateUniforms(GameObject* gameObject, Material * material)
+{
+	Mat4f worldMatrix = gameObject->getTransform()->getTransformation();
+	Mat4f projectedMatrix = gameObject->getRenderingEngine()->getMainCamera()->getViewProjection() * (worldMatrix);
+	//material->getTexture("diffuse").bind();
+	setUniform("MVP", &projectedMatrix);
+	setUniform("ambientIntensity", gameObject->getRenderingEngine()->getAmbientLight());
 }

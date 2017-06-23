@@ -10,14 +10,14 @@ public:
 	~Window();
 
 	int init();
-	void update();
+	void render();
 	void shutdown();
 	bool isRunning;
 
 	GLFWwindow* getWindow();
 
 private:
-	GLFWwindow* window;
+	GLFWwindow* _window;
 
 	
 

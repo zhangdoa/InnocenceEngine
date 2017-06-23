@@ -6,6 +6,9 @@ class TestGame : public Game
 public:
 	TestGame();
 	~TestGame();
-	//StaticMeshComponent* testMesh;
+	void init();
+private:
+	StaticMeshComponent* testMeshComponent;
+	GameObject* testMeshObject;
 };
 

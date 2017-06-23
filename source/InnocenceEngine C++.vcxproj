@@ -62,8 +62,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\zhanghang.SNAIL\Documents\Visual Studio 2015\Projects\InnocenceEngine C++\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\zhanghang.SNAIL\Documents\Visual Studio 2015\Projects\InnocenceEngine C++\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\zhanghang.SNAIL\Documents\Visual Studio 2015\Projects\InnocenceEngine-C-\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\zhanghang.SNAIL\Documents\Visual Studio 2015\Projects\InnocenceEngine-C-\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
@@ -76,26 +76,18 @@
     <ClCompile Include="CameraComponent.cpp" />
     <ClCompile Include="CoreEngine.cpp" />
     <ClCompile Include="Game.cpp" />
-    <ClCompile Include="GameComponent.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Mat4f.cpp" />
-    <ClCompile Include="Material.cpp" />
-    <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="Quaternion.cpp" />
+    <ClCompile Include="FragmentPrime.cpp" />
+    <ClCompile Include="Math.cpp" />
+    <ClCompile Include="GeometryPrime.cpp" />
     <ClCompile Include="RenderingEngine.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="StaticMeshComponent.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="TestGame.cpp" />
-    <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="Time.cpp" />
-    <ClCompile Include="Transform.cpp" />
     <ClCompile Include="Util.cpp" />
-    <ClCompile Include="Vec2f.cpp" />
-    <ClCompile Include="Vec3f.cpp" />
-    <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -104,26 +96,18 @@
     <ClInclude Include="CameraComponent.h" />
     <ClInclude Include="CoreEngine.h" />
     <ClInclude Include="Game.h" />
-    <ClInclude Include="GameComponent.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Input.h" />
-    <ClInclude Include="Mat4f.h" />
-    <ClInclude Include="Material.h" />
-    <ClInclude Include="Mesh.h" />
-    <ClInclude Include="Quaternion.h" />
+    <ClInclude Include="FragmentPrime.h" />
+    <ClInclude Include="Math.h" />
+    <ClInclude Include="GeometryPrime.h" />
     <ClInclude Include="RenderingEngine.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="StaticMeshComponent.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TestGame.h" />
-    <ClInclude Include="Texture.h" />
-    <ClInclude Include="Time.h" />
-    <ClInclude Include="Transform.h" />
     <ClInclude Include="Util.h" />
-    <ClInclude Include="Vec2f.h" />
-    <ClInclude Include="Vec3f.h" />
-    <ClInclude Include="Vertex.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>

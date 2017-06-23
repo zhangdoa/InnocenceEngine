@@ -1,6 +1,4 @@
-#include "Texture.h"
-
-
+#include "FragmentPrime.h"
 
 Texture::Texture()
 {
@@ -27,4 +25,14 @@ void Texture::bind()
 int Texture::loadTexture(std::string fileName)
 {
 	return 0;
+}
+
+
+Material::Material()
+{
+}
+
+
+Material::~Material()
+{
 }

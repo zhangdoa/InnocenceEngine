@@ -26,14 +26,14 @@ int Window::init()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL 
 
-																   // Open a window and create its OpenGL context
-	window = glfwCreateWindow(1024, 768, "Test", NULL, NULL);
-	if (window == NULL) {
+																   // Open a _window and create its OpenGL context
+	_window = glfwCreateWindow(1024, 768, "Test", NULL, NULL);
+	if (_window == NULL) {
 		fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
 		glfwTerminate();
 		return -1;
 	}
-	glfwMakeContextCurrent(window); // Initialize GLEW
+	glfwMakeContextCurrent(_window); // Initialize GLEW
 	glewExperimental = true; // Needed in core profile
 	if (glewInit() != GLEW_OK) {
 		fprintf(stderr, "Failed to initialize GLEW\n");
@@ -48,12 +48,13 @@ int Window::init()
 
 }
 
-void Window::update()
+void Window::render()
 {
+	fprintf(stdout, "Window is rendering.\n");
 	if (isRunning)
 	{
-		if (window!=NULL && glfwWindowShouldClose(window) == 0) {
-			glfwSwapBuffers(window);
+		if (_window!=NULL && glfwWindowShouldClose(_window) == 0) {
+			glfwSwapBuffers(_window);
 			glfwPollEvents();
 		}
 		else { 			
@@ -64,15 +65,15 @@ void Window::update()
 }
 
 void Window::shutdown() { 
-	if (window)
+	if (_window)
 	{
-		glfwDestroyWindow(window);
-		window = NULL;
+		glfwDestroyWindow(_window);
+		_window = NULL;
 		fprintf(stdout, "Window has been destroyed.");
 	}
 }
 
 GLFWwindow* Window::getWindow()
 {
-	return window;
+	return _window;
 }

@@ -1,14 +1,17 @@
 #pragma once
-#include "GameComponent.h"
-#include "Mesh.h"
+#include "GameObject.h"
+#include "GeometryPrime.h"
+#include "FragmentPrime.h"
+
 class StaticMeshComponent: public GameComponent
 {
 public:
 	StaticMeshComponent();
 	~StaticMeshComponent();
 	void init();
-	void render(Shader* shader, RenderingEngine* renderingEngine) override;
+	void render(Shader* shader) override;
 private:
 	Mesh* _mesh;
+	Material* _material;
 };
 
