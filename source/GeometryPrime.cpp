@@ -1,6 +1,57 @@
-#include "Mesh.h"
+#include "GeometryPrime.h"
+
+Vertex::Vertex()
+{
+	_pos = Vec3f(0.0f, 0.0f, 0.0f);
+	_texCoord = Vec2f(0.0f, 0.0f);
+	_normal = Vec3f(0.0f, 0.0f, 0.0f);
+}
+
+Vertex::Vertex(Vec3f pos)
+{
+	_pos = pos;
+	_texCoord = Vec2f(0.0f, 0.0f);
+	_normal = Vec3f(0.0f, 0.0f, 0.0f);
+}
+
+Vertex::Vertex(Vec3f pos, Vec2f texCoord)
+{
+	_pos = pos;
+	_texCoord = texCoord;
+	_normal = Vec3f(0.0f, 0.0f, 0.0f);
+}
+
+Vertex::Vertex(Vec3f pos, Vec2f texCoord, Vec3f normal)
+{
+	_pos = pos;
+	_texCoord = texCoord;
+	_normal = normal;
+}
 
 
+Vertex::~Vertex()
+{
+}
+
+Vec3f* Vertex::getPos()
+{
+	return &_pos;
+}
+
+Vec2f* Vertex::getTexCoord()
+{
+	return &_texCoord;
+}
+
+Vec3f* Vertex::getNormal()
+{
+	return &_normal;
+}
+
+void Vertex::setNormal(const Vec3f& normal)
+{
+	this->_normal = normal;
+}
 
 Mesh::Mesh()
 {
@@ -58,9 +109,8 @@ void Mesh::draw()
 void Mesh::initMeshData()
 {
 	_size = 0;
-	GLuint VertexArrayID;
-	glGenVertexArrays(1, &VertexArrayID);
-	glBindVertexArray(VertexArrayID);
+	_vbo = 1;
+	_ibo = 1;
 	glGenBuffers(1, &_vbo);
 	glGenBuffers(1, &_ibo);
 
@@ -108,14 +158,14 @@ void Mesh::calcNormals(std::vector<Vertex*>& vertices, std::vector<unsigned int>
 		int i1 = indices[i + 1];
 		int i2 = indices[i + 2];
 
-		Vec3f v1 = *vertices[i1]->getPos() - *vertices[i0]->getPos();
-		Vec3f v2 = *vertices[i2]->getPos() - *vertices[i0]->getPos();
+		Vec3f v1 = vertices[i1]->getPos()->operator-(vertices[i0]->getPos());
+		Vec3f v2 = vertices[i2]->getPos()->operator-(vertices[i0]->getPos());
 
-		Vec3f normal = v1.cross(v2).normalized();
+		Vec3f normal = v1.cross(&v2).normalized();
 
-		vertices[i0]->setNormal(*vertices[i0]->getNormal() + normal);
-		vertices[i1]->setNormal(*vertices[i0]->getNormal() + normal);
-		vertices[i2]->setNormal(*vertices[i0]->getNormal() + normal);
+		vertices[i0]->setNormal(vertices[i0]->getNormal()->operator+(&normal));
+		vertices[i1]->setNormal(vertices[i0]->getNormal()->operator+(&normal));
+		vertices[i2]->setNormal(vertices[i0]->getNormal()->operator+(&normal));
 
 	}
 	for (int i = 0; i < vertices.size(); i++)

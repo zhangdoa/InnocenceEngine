@@ -21,11 +21,6 @@ BaseLightComponent::~BaseLightComponent()
 {
 }
 
-void BaseLightComponent::addToRenderingEngine(RenderingEngine* renderingEngine)
-{
-	renderingEngine->addLight(this);
-}
-
 Vec3f* BaseLightComponent::getColor()
 {
 	return &_color;
@@ -53,4 +48,9 @@ Shader* BaseLightComponent::getShader()
 void BaseLightComponent::setShader(const Shader & shader)
 {
 	_shader = shader;
+}
+
+void BaseLightComponent::addToRenderingEngine(RenderingEngine * renderingEngine)
+{
+	renderingEngine->addLight(this);
 }

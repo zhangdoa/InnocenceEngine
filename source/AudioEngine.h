@@ -8,8 +8,8 @@ public:
 	~AudioEngine();
 
 	void init();
-	void shutdown();
 	void update();
+	void shutdown();
 	bool isRunning;
 
 	ALuint playSound(const char* fileName);

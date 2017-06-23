@@ -16,21 +16,6 @@ std::vector<int> Util::createIntBuffer(int size)
 	return std::vector<int>(size);
 }
 
-
-std::vector<float> Util::createFlippedBuffer(const Mat4f& value)
-{
-	std::vector<float> buffer(4 * 4);
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			buffer.push_back(value.getElem(i, j));
-		}
-	}
-	std::reverse(buffer.begin(), buffer.end());
-	return buffer;
-}
-
 std::vector<std::string> Util::removeEmptyStrings(const std::vector<std::string>& data)
 {
 	std::vector<std::string> res;

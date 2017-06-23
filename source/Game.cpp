@@ -4,7 +4,6 @@
 
 Game::Game()
 {
-	init();
 }
 
 
@@ -16,6 +15,7 @@ Game::~Game()
 void Game::init()
 {
 	_root = new GameObject();
+	fprintf(stdout, "Game has been initialized.\n");
 }
 
 void Game::input(float delta)
@@ -23,8 +23,15 @@ void Game::input(float delta)
 	_root->input(delta);
 }
 
+void Game::update(float delta)
+{
+	_root->update(delta);
+	//fprintf(stdout, "Game is updating.\n");
+}
+
 void Game::render(RenderingEngine * renderingEngine)
 {
+	fprintf(stdout, "Game is rendering.\n");
 	renderingEngine->render(_root);
 }
 
