@@ -17,8 +17,9 @@ void StaticMeshComponent::init()
 	_mesh = new Mesh();
 }
 
-void StaticMeshComponent::render(Shader * shader, RenderingEngine * renderingEngine)
+void StaticMeshComponent::render(Shader * shader)
 {
 	shader->bind();
+	shader->updateUniforms(getParent(), _material);
 	_mesh->draw();
 }

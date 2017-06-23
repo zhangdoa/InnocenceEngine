@@ -1,13 +1,13 @@
 #pragma once
 #include "stdafx.h"
-#include "Util.h"
-#include "Vec3f.h"
-#include "Mat4f.h"
-#include "Transform.h" 
+#include "FragmentPrime.h"
+#include "RenderingEngine.h"
 
+class GameObject; 
 class Shader
 {
 public:
+	static std::vector<std::string> split(const std::string & data, char marker);
 	Shader();
 	~Shader();
 	void bind();
@@ -23,11 +23,20 @@ public:
 	void addProgram(std::string text, int type);
 	void setUniformi(std::string uniformName, int value);
 	void setUniformf(std::string uniformName, float value);
-	void setUniform(std::string uniformName, Vec3f value);
-	void setUniform(std::string uniformName, Mat4f value);
+	void setUniform(std::string uniformName, Vec3f* value);
+	void setUniform(std::string uniformName, Mat4f* value);
+	virtual void updateUniforms(GameObject* gameObject, Material* material) {};
 private:
 	int _program;
 	std::map<std::string, int> _uniforms;
 	static std::string loadShader(const std::string& fileName);
+};
 
+class ForwardAmbientShaderWrapper : public Shader
+{
+public:
+	ForwardAmbientShaderWrapper();
+	~ForwardAmbientShaderWrapper();
+
+	void updateUniforms(GameObject* gameObject, Material* material) override;
 };

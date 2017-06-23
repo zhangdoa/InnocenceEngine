@@ -8,6 +8,7 @@ public:
 	~Game();
 	void init();
 	void input(float delta);
+	void update(float delta);
 	void render(RenderingEngine* renderingEngine);
 	void shutdown();
 	void addObject(GameObject* object);

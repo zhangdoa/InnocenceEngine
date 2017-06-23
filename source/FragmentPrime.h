@@ -1,5 +1,6 @@
 #pragma once
 #include "stdafx.h"
+
 class Texture
 {
 public:
@@ -14,5 +15,12 @@ private:
 	int id;
 	static int loadTexture(std::string fileName);
 
+};
+
+class Material
+{
+public:
+	Material();
+	~Material();
 };
 

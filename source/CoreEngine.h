@@ -4,8 +4,20 @@
 #include "Input.h"
 #include "RenderingEngine.h"
 #include "AudioEngine.h"
-#include "Time.h"
 #include "Game.h"
+
+class Time {
+public:
+
+	Time();
+	~Time();
+
+	const double getTime();
+	const double getDelta();
+
+private:
+	double delta;
+};
 
 class CoreEngine
 {
@@ -17,10 +29,7 @@ public:
 	void shutdown();
 	bool isRunning;
 
-
 private:
-
-	
 	double frameTime = 0;
 	const int frameRate = 60;
 
@@ -30,7 +39,4 @@ private:
 	AudioEngine* _audioEngine;
 	Time* _time;
 	Game* _game;
-	
-
-
 };
