@@ -7,6 +7,7 @@ BaseLightComponent::BaseLightComponent()
 	this->_color = Vec3f(0.0f, 0.0f, 0.0f);
 	this->_intensity = 1.0f;
 	this->_shader = Shader();
+	getParent()->getRenderingEngine()->addLight(this);
 }
 
 
@@ -15,15 +16,16 @@ BaseLightComponent::BaseLightComponent(const Vec3f& color, float intensity)
 	this->_color = color;
 	this->_intensity = intensity;
 	this->_shader = Shader();
+	getParent()->getRenderingEngine()->addLight(this);
 }
 
 BaseLightComponent::~BaseLightComponent()
 {
 }
 
-Vec3f* BaseLightComponent::getColor()
+const Vec3f& BaseLightComponent::getColor()
 {
-	return &_color;
+	return _color;
 }
 
 void BaseLightComponent::setColor(const Vec3f & color)
@@ -48,9 +50,4 @@ Shader* BaseLightComponent::getShader()
 void BaseLightComponent::setShader(const Shader & shader)
 {
 	_shader = shader;
-}
-
-void BaseLightComponent::addToRenderingEngine(RenderingEngine * renderingEngine)
-{
-	renderingEngine->addLight(this);
 }

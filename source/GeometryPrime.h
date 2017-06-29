@@ -13,9 +13,9 @@ public:
 
 	static const int SIZE = 8;
 
-	Vec3f* getPos();
-	Vec2f* getTexCoord();
-	Vec3f* getNormal();
+	const Vec3f& getPos();
+	const Vec2f& getTexCoord();
+	const Vec3f& getNormal();
 	void setNormal(const Vec3f& normal);
 
 private:

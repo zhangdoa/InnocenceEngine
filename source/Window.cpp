@@ -50,7 +50,7 @@ int Window::init()
 
 void Window::render()
 {
-	fprintf(stdout, "Window is rendering.\n");
+	//fprintf(stdout, "Window is rendering.\n");
 	if (isRunning)
 	{
 		if (_window!=NULL && glfwWindowShouldClose(_window) == 0) {
