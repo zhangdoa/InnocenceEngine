@@ -22,9 +22,9 @@ private:
 class CoreEngine
 {
 public:
-	CoreEngine(Game* game);
+	CoreEngine();
 	~CoreEngine();
-	void init(Game* game);
+	void init();
 	void update();
 	void shutdown();
 	bool isRunning;

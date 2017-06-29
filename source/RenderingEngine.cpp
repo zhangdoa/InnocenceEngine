@@ -1,39 +1,38 @@
 #include "RenderingEngine.h"
 #include "GameObject.h"
+#include "CameraComponent.h"
 #include "BaseLightComponent.h"
 
 Camera::Camera()
 {
+	_projection.initPerspective(90, 16.0f / 9.0f, 0.1f, 1000.0f);
 }
+
+Camera::Camera(float fov, float aspectRatio, float zNear, float zFar)
+{
+	_projection.initPerspective(fov, aspectRatio, zNear, zFar);
+}
+
 
 Camera::~Camera()
 {
 }
 
-void Camera::setProjection(Mat4f * projection)
-{
-	_projection = projection;
-}
-
-void Camera::setTransform(Transform* transform)
-{
-	_transform = transform;
-}
-
 Mat4f Camera::getViewProjection()
 {
-	Mat4f cameraRotation = _transform->getTransformedRot().conjugate().toRotationMatrix();
-	Vec3f cameraPos = _transform->getTransformedPos() * -1.0f;
+	GameObject* cameraObject = new GameObject();
+	Mat4f cameraRotation = cameraObject->getParent()->caclTransformedRot().conjugate().toRotationMatrix();
+	Vec3f cameraPos = cameraObject->getParent()->caclTransformedPos() * -1.0f;
 	Mat4f cameraTranslation;
 	cameraTranslation.initTranslation(cameraPos.getX(), cameraPos.getY(),
 		cameraPos.getZ());
-	return _projection->operator*(cameraRotation) * cameraTranslation;
+	return _projection * cameraRotation * cameraTranslation;
 }
+
 
 RenderingEngine::RenderingEngine()
 {
 	init();
-
 }
 
 
@@ -45,14 +44,15 @@ RenderingEngine::~RenderingEngine()
 void RenderingEngine::init() {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-	glFrontFace(GL_CW);
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_DEPTH_CLAMP);
-	glEnable(GL_TEXTURE_2D);
+	//glFrontFace(GL_CW);
+	//glCullFace(GL_BACK);
+	//glEnable(GL_CULL_FACE);
+	//glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_CLAMP);
+	//glEnable(GL_TEXTURE_2D);
 
-	fprintf(stdout, "Rendering Engine has been initialized.\n");
+	//std::cout << "Rendering Engine has been initialized." << std::endl;
+	_ambientLight = Vec3f(0.5f, 0.3f, 0.1f);
 	
 }
 
@@ -61,19 +61,18 @@ void RenderingEngine::update()
 }
 
 void RenderingEngine::render(GameObject* object) {
-	fprintf(stdout, "Rendering Engine starts rendering.\n");
+	//std::cout << "Rendering Engine is rendering." << std::endl;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	_lights.clear();
 
-	Shader* forwardAmbient = new ForwardAmbientShaderWrapper();
-	object->render(forwardAmbient);
+	object->render(&basicShader);
 	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glDepthMask(false);
 	glDepthFunc(GL_EQUAL);
-	fprintf(stdout, "GL blend finished.\n");
+
 	for (BaseLightComponent* light : _lights) {
 
 		object->render(light->getShader());
@@ -95,17 +94,19 @@ void RenderingEngine::addLight(BaseLightComponent* activeLight)
 	_lights.push_back(activeLight);
 }
 
-Camera * RenderingEngine::getMainCamera()
+CameraComponent* RenderingEngine::getMainCamera()
 {
-		return _mainCamera;
+	return _mainCamera;
 }
 
-void RenderingEngine::setMainCamera(Camera * mainCamera)
+void RenderingEngine::setMainCamera(CameraComponent * camera)
 {
-	_mainCamera = mainCamera;
+	_mainCamera = camera;
+
 }
 
-Vec3f * RenderingEngine::getAmbientLight()
+const Vec3f& RenderingEngine::getAmbientLight()
 {
-	return &_ambientLight;
+	return _ambientLight;
 }
+
