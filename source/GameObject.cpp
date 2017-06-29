@@ -2,14 +2,9 @@
 
 Transform::Transform()
 {
-	if (_parent != nullptr) {
-		_parentMat = new Mat4f();
-		_parentMat->initIdentity();
-		_pos = new Vec3f(0.0f, 0.0f, 0.0f);
-		_rot = new Quaternion(0.0f, 0.0f, 0.0f, 0.0f);
-		_scale = new Vec3f(1.0f, 1.0f, 1.0f);
-	}
-	
+	_pos = Vec3f(0.0f, 0.0f, 0.0f);
+	_rot = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
+	_scale = Vec3f(1.0f, 1.0f, 1.0f);
 }
 
 
@@ -27,74 +22,65 @@ void Transform::update()
 	}
 	else
 	{
-		_oldPos = &_pos->operator+(1.0f);
-		_oldRot = &_rot->operator*(0.5f);
-		_oldScale = &_scale->operator+(1.0f);
+		_oldPos = _pos + (1.0f);
+		_oldRot = _rot *(0.5f);
+		_oldScale = _scale + (1.0f);
 	}
-}
-
-void Transform::setParent(Transform * parentTransform)
-{
-	_parent = parentTransform;
 }
 
 void Transform::rotate(Vec3f axis, float angle)
 {
-	_rot = &Quaternion(axis, angle).operator*(&_rot->normalized());
+	_rot = Quaternion(axis, angle) * (_rot.normalized());
 }
 
-bool Transform::hasChanged()
+const Vec3f & Transform::getPos()
 {
-	if (&_pos != &_oldPos || &_rot != &_oldRot || &_scale != &_oldScale)
-	{
-		return true;
-	}
-
-	if (_parent != nullptr && _parent->hasChanged())
-	{
-		return true;
-	}
-	return false;
+	return _pos;
 }
 
-Mat4f Transform::getTransformation()
+const Quaternion & Transform::getRot()
 {
-	Mat4f translationMatrix;
-	translationMatrix.initTranslation(_pos->getX(), _pos->getY(), _pos->getZ());
-	Mat4f rotaionMartix = _rot->toRotationMatrix();
-	Mat4f scaleMartix;
-	scaleMartix.initScale(_scale->getX(), _scale->getY(), _scale->getZ());
-
-	return getParentMatrix()* translationMatrix * rotaionMartix * scaleMartix;
+	return _rot;
 }
 
-Mat4f Transform::getParentMatrix()
+const Vec3f & Transform::getScale()
 {
-	if (_parent != nullptr && _parent->hasChanged())
-	{
-		_parentMat = &_parent->getTransformation();
-		
-	}
-	return *_parentMat;
-	
+	return _scale;
 }
 
-Vec3f Transform::getTransformedPos()
+void Transform::setPos(const Vec3f & pos)
 {
-	return getParentMatrix().transform(*_pos);
+	_pos = pos;
 }
 
-Quaternion Transform::getTransformedRot()
+void Transform::setRot(const Quaternion & rot)
 {
-	Quaternion parentRotation = Quaternion(0, 0, 0, 1);
-	if (_parent != nullptr)
-		parentRotation = _parent->getTransformedRot();
+	_rot = rot;
+}
 
-	return parentRotation * _rot;
+void Transform::setScale(const Vec3f & scale)
+{
+	_scale = scale;
+}
+
+const Vec3f & Transform::getOldPos()
+{
+	return _oldPos;
+}
+
+const Quaternion & Transform::getOldRot()
+{
+	return _oldRot;
+}
+
+const Vec3f & Transform::getOldScale()
+{
+	return _oldScale;
 }
 
 GameComponent::GameComponent()
 {
+	_name = "defaultRootComponent";
 }
 
 GameComponent::~GameComponent()
@@ -113,6 +99,16 @@ void GameComponent::setParent(GameObject* parent)
 	_parent = parent;
 }
 
+const std::string & GameComponent::getName()
+{
+	return _name;
+}
+
+void GameComponent::setName(const std::string & name)
+{
+	_name = name;
+}
+
 Transform* GameComponent::getTransform()
 {
 	return _parent->getTransform();
@@ -129,24 +125,35 @@ void GameComponent::update(float delta)
 
 GameObject::GameObject()
 {
-	_transform = new Transform();
+	_parent = nullptr;
+	_name = "defaultRootObject";
 }
 
 
 GameObject::~GameObject()
 {
+	_parent = nullptr;
+	delete _parent;
 	_children.clear();
 	delete &_children;
 	_components.clear();
 	delete &_components;
-	_transform = nullptr;
-	delete _transform;
+}
+
+const std::string & GameObject::getName()
+{
+	return _name;
+}
+
+void GameObject::setName(const std::string & name)
+{
+	_name = name;
 }
 
 void GameObject::addChind(GameObject* child)
 {
 	_children.push_back(child);
-	child->getTransform()->setParent(_transform);
+	child->setParent(this);
 }
 
 void GameObject::addComponent(GameComponent* component)
@@ -157,7 +164,7 @@ void GameObject::addComponent(GameComponent* component)
 
 void GameObject::input(float delta)
 {
-	_transform->update();
+	_transform.update();
 
 	for (auto component : _components)
 		component->input(delta);
@@ -168,7 +175,7 @@ void GameObject::input(float delta)
 
 void GameObject::update(float delta)
 {
-	//fprintf(stdout, "Game Object is updating.\n");
+	//std::cout << _name +  " is updating." << std::endl;
 	for (auto component : _components)
 		component->update(delta);
 
@@ -176,23 +183,109 @@ void GameObject::update(float delta)
 		child->update(delta);
 }
 
-void GameObject::render(Shader * shader)
+void GameObject::render(Shader* shader)
 {
-	for (auto component : _components)
-		component->render(shader);
+	//std::cout << _name +  " is rendering." << std::endl;
+	for (int i = 0; i < _components.size(); i++)
+	{
+		_components[i]->render(shader);
 
-	for (auto child : _children)
-		child->render(shader);
+	}
+	for (int i = 0; i < _children.size(); i++)
+	{
+		_children[i]->render(shader);
+		
+	}
+}
+
+GameObject * GameObject::getParent()
+{
+	return _parent;
+}
+
+void GameObject::setParent(GameObject * parent)
+{
+	_parent = parent;
 }
 
 
 Transform* GameObject::getTransform()
 {
-	return _transform;
+	return &_transform;
 }
 
 RenderingEngine * GameObject::getRenderingEngine()
 {
 	return _renderingEngine;
+}
+
+void GameObject::setRenderingEngine(RenderingEngine* renderingEngine)
+{
+	_renderingEngine = renderingEngine;
+	for (int i = 0; i < _children.size(); i++)
+	{
+		_children[i]->setRenderingEngine(renderingEngine);
+	}
+}
+
+bool GameObject::hasTransformChanged()
+{
+	if (_transform.getPos() != _transform.getOldPos() || _transform.getRot() != _transform.getOldRot() || _transform.getScale() != _transform.getOldScale())
+	{
+		return true;
+	}
+
+	if (_parent != nullptr)
+	{
+		if (_parent->hasTransformChanged())
+		{
+			return true;
+		}	
+	}
+	return false;
+}
+
+Mat4f GameObject::caclTransformation()
+{
+	Mat4f translationMatrix;
+	translationMatrix.initTranslation(_transform.getPos().getX(), _transform.getPos().getY(), _transform.getPos().getZ());
+
+	Quaternion _tempRot = _transform.getRot();
+	Mat4f rotaionMartix = _tempRot.toRotationMatrix();
+
+	Mat4f scaleMartix;
+	scaleMartix.initScale(_transform.getScale().getX(), _transform.getScale().getY(), _transform.getScale().getZ());
+
+	Mat4f _parentMatrix;
+	_parentMatrix.initIdentity();
+	if (_parent != nullptr && _parent->hasTransformChanged())
+	{
+		_parentMatrix = _parent->caclTransformation();
+	}
+
+	return _parentMatrix * translationMatrix * rotaionMartix * scaleMartix;
+}
+
+Vec3f GameObject::caclTransformedPos()
+{
+	Mat4f _parentMatrix;
+	_parentMatrix.initIdentity();
+	if (_parent != nullptr && _parent->hasTransformChanged())
+	{
+		_parentMatrix = _parent->caclTransformation();
+	}
+
+	return _parentMatrix.transform(_transform.getPos());
+}
+
+Quaternion GameObject::caclTransformedRot()
+{
+	Quaternion _parentRotation = Quaternion(0, 0, 0, 1);
+
+	if (_parent != nullptr)
+
+		_parentRotation = _parent->caclTransformedRot();
+
+	return _parentRotation * _transform.getRot();
 }
 

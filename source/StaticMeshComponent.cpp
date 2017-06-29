@@ -19,6 +19,7 @@ void StaticMeshComponent::init()
 
 void StaticMeshComponent::render(Shader * shader)
 {
+	//std::cout << getName() + " is rendering with " + shader->getName() << std::endl;
 	shader->bind();
 	shader->updateUniforms(getParent(), _material);
 	_mesh->draw();

@@ -29,16 +29,22 @@ std::vector<std::string> Shader::split(const std::string& data, char marker)
 
 Shader::Shader()
 {
-	_program = glCreateProgram();
-	if (_program == 0)
-	{
-		std::cout << "Shader creation failed: memory location invaild" << std::endl;
-	}
+	init();
 }
 
 
 Shader::~Shader()
 {
+}
+
+void Shader::init()
+{
+	_name = "defalutShader";
+	_program = glCreateProgram();
+	if (_program == 0)
+	{
+		std::cout << "Shader creation failed: memory location invaild" << std::endl;
+	}
 }
 
 void Shader::bind()
@@ -58,34 +64,22 @@ void Shader::addUniform(std::string uniform)
 }
 
 
-void Shader::addVertexShaderFromFile(std::string text)
-{
-	addProgram(loadShader(text), GL_VERTEX_SHADER);
-}
-
-void Shader::addGeometryShaderFromFile(std::string text)
-{
-	addProgram(loadShader(text), GL_GEOMETRY_SHADER);
-}
-
-void Shader::addFragmentShaderFromFile(std::string text)
-{
-	addProgram(loadShader(text), GL_FRAGMENT_SHADER);
-}
-
 void Shader::addVertexShader(std::string text)
 {
-	addProgram(text, GL_VERTEX_SHADER);
+	addProgram(loadShader(text), GL_VERTEX_SHADER);
+	std::cout << "Vertex shader " + text + " has been loaded." << std::endl;
 }
 
 void Shader::addGeometryShader(std::string text)
 {
-	addProgram(text, GL_GEOMETRY_SHADER);
+	addProgram(loadShader(text), GL_GEOMETRY_SHADER);
+	std::cout << "Geometry shader " + text + " has been loaded." << std::endl;
 }
 
 void Shader::addFragmentShader(std::string text)
 {
-	addProgram(text, GL_FRAGMENT_SHADER);
+	addProgram(loadShader(text), GL_FRAGMENT_SHADER);
+	std::cout << "Fragment shader " + text + " has been loaded." << std::endl;
 }
 
 void Shader::setAttribLocation(std::string attributeName, int location)
@@ -93,23 +87,37 @@ void Shader::setAttribLocation(std::string attributeName, int location)
 	glBindAttribLocation(_program, location, attributeName.data());
 }
 
-void Shader::compileShader()
-{
-	glLinkProgram(_program);
-	glValidateProgram(_program);
-}
-
 void Shader::addProgram(std::string text, int type)
 {
+	
 	int shader = glCreateShader(type);
 	if (shader == 0) {
 		std::cout << "Shader creation failed: memory location invaild when adding shader" << std::endl;
 	}
 
-	const char*c_str;
-	glShaderSource(shader, text.size(), &(c_str = text.c_str()), NULL);
-	glCompileShader(shader);
+	char const * sourcePointer = text.c_str();
+	//std::cout << sourcePointer << std::endl;
+	glShaderSource(shader, 1, &sourcePointer, NULL);
+
+	GLint Result = GL_FALSE;
+	int InfoLogLength;
+
+	glGetShaderiv(_program, GL_COMPILE_STATUS, &Result);
+	glGetShaderiv(_program, GL_INFO_LOG_LENGTH, &InfoLogLength);
+
+	if (InfoLogLength > 0) {
+		std::vector<char> ShaderErrorMessage(InfoLogLength + 1);
+		glGetShaderInfoLog(_program, InfoLogLength, NULL, &ShaderErrorMessage[0]);
+		printf("%s\n", &ShaderErrorMessage[0]);
+	}
+
 	glAttachShader(_program, shader);
+	glLinkProgram(_program);
+
+	//glValidateProgram(_program);
+
+	glDetachShader(_program, shader);
+	glDeleteShader(shader);
 }
 
 void Shader::setUniformi(std::string uniformName, int value)
@@ -122,23 +130,37 @@ void Shader::setUniformf(std::string uniformName, float value)
 	glUniform1f(_uniforms.find(uniformName)->second, value);
 }
 
-void Shader::setUniform(std::string uniformName, Vec3f* value)
+void Shader::setUniform(std::string uniformName, const Vec3f& value)
 {
-	glUniform3f(_uniforms.find(uniformName)->second, value->getX(), value->getY(), value->getZ());
+	glUniform3f(_uniforms.find(uniformName)->second, value.getX(), value.getY(), value.getZ());
 }
 
-void Shader::setUniform(std::string uniformName, Mat4f* value)
+void Shader::setUniform(std::string uniformName, const Mat4f& value)
 {
 	std::vector<float> buffer(4 * 4);
 	for (int i = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			buffer.push_back(value->getElem(i, j));
+			buffer.push_back(value.getElem(i, j));
 		}
 	}
 	std::reverse(buffer.begin(), buffer.end());
 	glUniformMatrix4fv(_uniforms.find(uniformName)->second, 1, true, buffer.data());
+}
+
+void Shader::updateUniforms(GameObject * gameObject, Material * material)
+{
+}
+
+const std::string & Shader::getName()
+{
+	return _name;
+}
+
+void Shader::setName(const std::string & name)
+{
+	_name = name;
 }
 
 std::string Shader::loadShader(const std::string & fileName)
@@ -179,13 +201,13 @@ std::string Shader::loadShader(const std::string & fileName)
 
 ForwardAmbientShaderWrapper::ForwardAmbientShaderWrapper()
 {
-	addVertexShaderFromFile("forward-ambient-vertex.sf");
-	addFragmentShaderFromFile("forward-ambient-fragment.sf");
+	init();
+	setName("ForwardAmbientShaderWrapper");
+	addVertexShader("forward-ambient-vertex.sf");
+	addFragmentShader("forward-ambient-fragment.sf");
 
 	setAttribLocation("position", 0);
 	setAttribLocation("texCoord", 1);
-
-	compileShader();
 
 	addUniform("MVP");
 	addUniform("ambientIntensity");
@@ -199,9 +221,32 @@ ForwardAmbientShaderWrapper::~ForwardAmbientShaderWrapper()
 
 void ForwardAmbientShaderWrapper::updateUniforms(GameObject* gameObject, Material * material)
 {
-	Mat4f worldMatrix = gameObject->getTransform()->getTransformation();
-	Mat4f projectedMatrix = gameObject->getRenderingEngine()->getMainCamera()->getViewProjection() * (worldMatrix);
+	//fprintf(stdout, "child updateUniforms.\n");
+	Mat4f worldMatrix = gameObject->caclTransformation();
+	//Mat4f projectedMatrix = gameObject->getRenderingEngine()->getMainCamera()->getViewProjection() * (worldMatrix);
 	//material->getTexture("diffuse").bind();
-	setUniform("MVP", &projectedMatrix);
+	//setUniform("MVP", projectedMatrix);
 	setUniform("ambientIntensity", gameObject->getRenderingEngine()->getAmbientLight());
+}
+
+BasicShaderWrapper::BasicShaderWrapper()
+{
+	init();
+	setName("BasicShaderWrapper");
+	addVertexShader("basicVertex.sf");
+	addFragmentShader("basicFragment.sf");
+
+	//setAttribLocation("position", 0);
+}
+
+BasicShaderWrapper::~BasicShaderWrapper()
+{
+}
+
+void BasicShaderWrapper::updateUniforms(GameObject * gameObject, Material * material)
+{
+	Mat4f worldMatrix = gameObject->caclTransformation();
+	//Mat4f projectedMatrix = gameObject->getRenderingEngine()->getMainCamera()->getViewProjection() * (worldMatrix);
+	//setUniform("transform", projectedMatrix);
+	//setUniform("color", gameObject->getRenderingEngine()->getAmbientLight());
 }

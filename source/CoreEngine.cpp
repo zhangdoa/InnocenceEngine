@@ -20,9 +20,9 @@ const double Time::getDelta()
 
 }
 
-CoreEngine::CoreEngine(Game* game)
+CoreEngine::CoreEngine()
 {
-	init(game);
+	init();
 }
 
 
@@ -31,7 +31,7 @@ CoreEngine::~CoreEngine()
 	shutdown();
 }
 
-void CoreEngine::init(Game* game)
+void CoreEngine::init()
 {
 	isRunning = true;
 	frameTime = 1.0f / frameRate;
@@ -42,7 +42,9 @@ void CoreEngine::init(Game* game)
 	_input->setWindow(_window);
 	_renderingEngine = new RenderingEngine();
 	_audioEngine = new AudioEngine();
-	_game = game;
+	_game = new Game();
+	_game->setRenderingEngine(_renderingEngine);
+	_renderingEngine->setMainCamera(_game->getCameraComponent());
 
 
 	fprintf(stdout, "Core Engine has been initialized.\n");
@@ -58,7 +60,6 @@ void CoreEngine::update()
 	double unprocessedTime = 0;
 	double passedTime = 0;
 
-	fprintf(stdout, "Core Engine starts updating.\n");
 	while (isRunning) {
 
 		passedTime = _time->getDelta();
@@ -74,9 +75,9 @@ void CoreEngine::update()
 			_input->update();
 			_game->update(frameTime);
 
-			fprintf(stdout, "Core Engine is rendering.\n");
+			//fprintf(stdout, "Core Engine is rendering.\n");
 			_window->render();
-			_game->render(_renderingEngine);
+			_game->render();
 			_audioEngine->update();
 			frames++;
 
@@ -85,7 +86,7 @@ void CoreEngine::update()
 				frameConter = 0;
 			}
 		}
-		fprintf(stdout, "Core Engine is sleeping.\n");
+		//fprintf(stdout, "Core Engine is sleeping.\n");
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 

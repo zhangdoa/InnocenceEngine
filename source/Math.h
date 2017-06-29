@@ -53,23 +53,24 @@ public:
 	float getY() const;
 	float getZ() const;
 
-	Vec3f operator+(Vec3f* r);
-	Vec3f operator+(float r);
-	Vec3f operator-(Vec3f* r);
-	Vec3f operator-(float r);
-	Vec3f operator*(Vec3f* r);
-	Vec3f operator*(float r);
-	Vec3f operator/(Vec3f*r);
-	Vec3f operator/(float r);
+	Vec3f operator+(const Vec3f& r) const;
+	Vec3f operator+(float r) const;
+	Vec3f operator-(const Vec3f& r) const;
+	Vec3f operator-(float r) const;
+	Vec3f operator*(const Vec3f& r) const;
+	Vec3f operator*(float r) const;
+	Vec3f operator/(const Vec3f& r) const;
+	Vec3f operator/(float r) const;
+	bool operator!=(const Vec3f& r) const;
 
 
-	float max();
-	float length();
-	float dot(Vec3f* r);
-	Vec3f cross(Vec3f* r);
-	Vec3f normalized();
-	Vec3f rotate(float angle);
-	Vec3f lerp(Vec3f* dest, float lerpFactor);
+	float max() const;
+	float length() const;
+	float dot(const Vec3f& r) const;
+	Vec3f cross(const Vec3f& r) const;
+	Vec3f normalized() const;
+	Vec3f rotate(float angle) const;
+	Vec3f lerp(const Vec3f& dest, float lerpFactor) const;
 
 
 private:
@@ -110,13 +111,19 @@ public:
 	Quaternion(Vec3f axis, float angle);
 	~Quaternion();
 
+	float getX() const;
+	float getY() const;
+	float getZ() const;
+	float getW() const;
+
 	float length();
 	Quaternion normalized();
 	Quaternion conjugate();
-	Quaternion operator* (Quaternion* r);
-	Quaternion operator* (Vec3f* r);
+	Quaternion operator* (const Quaternion& r);
+	Quaternion operator* (const Vec3f& r);
 	Quaternion operator* (float r);
-	Mat4f toRotationMatrix() const;
+	bool operator!=(const Quaternion& r) const;
+	Mat4f toRotationMatrix();
 
 private:
 	float _x;
