@@ -1,5 +1,5 @@
+#include "stdafx.h"
 #include "Math.h"
-
 
 
 Math::Math()
@@ -322,9 +322,9 @@ void Mat4f::initRotation(float x, float y, float z)
 	Mat4f ry;
 	Mat4f rz;
 
-	x = x * PI / 180;
-	y = y * PI / 180;
-	z = z * PI / 180;
+	x = x * PI / 180.0f;
+	y = y * PI / 180.0f;
+	z = z * PI / 180.0f;
 
 	// set identity matrices
 	for (int i = 0; i <= 3; i++) {
@@ -565,4 +565,82 @@ Mat4f Quaternion::toRotationMatrix()
 	Mat4f rotationMatrix;
 	rotationMatrix.initRotation(forward, up, right);
 	return rotationMatrix;
+}
+
+Transform::Transform()
+{
+	_pos = Vec3f(0.0f, 0.0f, 0.0f);
+	_rot = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
+	_scale = Vec3f(1.0f, 1.0f, 1.0f);
+}
+
+
+Transform::~Transform()
+{
+}
+
+void Transform::update()
+{
+	if (&_oldPos != nullptr)
+	{
+		_oldPos = _pos;
+		_oldRot = _rot;
+		_oldScale = _scale;
+	}
+	else
+	{
+		_oldPos = _pos + (1.0f);
+		_oldRot = _rot *(0.5f);
+		_oldScale = _scale + (1.0f);
+	}
+}
+
+void Transform::rotate(Vec3f axis, float angle)
+{
+	_rot = Quaternion(axis, angle) * (_rot.normalized());
+}
+
+const Vec3f & Transform::getPos()
+{
+	return _pos;
+}
+
+const Quaternion & Transform::getRot()
+{
+	return _rot;
+}
+
+const Vec3f & Transform::getScale()
+{
+	return _scale;
+}
+
+void Transform::setPos(const Vec3f & pos)
+{
+	_pos = pos;
+}
+
+void Transform::setRot(const Quaternion & rot)
+{
+	_rot = rot;
+}
+
+void Transform::setScale(const Vec3f & scale)
+{
+	_scale = scale;
+}
+
+const Vec3f & Transform::getOldPos()
+{
+	return _oldPos;
+}
+
+const Quaternion & Transform::getOldRot()
+{
+	return _oldRot;
+}
+
+const Vec3f & Transform::getOldScale()
+{
+	return _oldScale;
 }
