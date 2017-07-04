@@ -142,7 +142,7 @@ void Mesh::draw()
 	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ibo);
 	//glDrawElements(GL_TRIANGLES, _size, GL_UNSIGNED_INT, 0);
 
-	glDisableVertexAttribArray(0);
+	//glDisableVertexAttribArray(0);
 	//glDisableVertexAttribArray(1);
 	//glDisableVertexAttribArray(2);
 

@@ -15,7 +15,6 @@ void CoreManager::init()
 {
 	m_childManager.emplace_back(&m_timeManager);
 	m_childManager.emplace_back(&m_uiManager); 
-	m_childManager.emplace_back(&m_renderingManager);
 
 	for (size_t i = 0; i < m_childManager.size(); i++)
 	{
