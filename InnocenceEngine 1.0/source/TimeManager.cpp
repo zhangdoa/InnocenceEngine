@@ -18,16 +18,18 @@ const double TimeManager::getDeltaTime()
 
 void TimeManager::init()
 {
+	setStatus(INITIALIZIED);
 	printLog("TimeManager has been initialized.");
 }
 
 void TimeManager::update()
 {
-	m_startTime = clock::now();
-	m_deltaTime = (clock::now() - m_startTime).count() / 1000.0;
+	m_startTime = std::chrono::high_resolution_clock::now();
+	m_deltaTime = (std::chrono::high_resolution_clock::now() - m_startTime).count() / 1000.0;
 }
 
 void TimeManager::shutdown()
 {
+	setStatus(UNINITIALIZIED);
 	printLog("TimeManager has been shutdown.");
 }

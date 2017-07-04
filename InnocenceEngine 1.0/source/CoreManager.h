@@ -4,6 +4,7 @@
 #include "TimeManager.h"
 #include "GraphicManager.h"
 
+
 class CoreManager : public IEventManager
 {
 public:
@@ -18,7 +19,8 @@ private:
 	std::vector<std::auto_ptr<IEventManager>> m_childManager;
 
 	TimeManager m_timeManager;
-	GraphicManager m_uiManager;
+	GraphicManager m_graphicManager;
+
 
 	const double m_frameTime = (1.0 / 60.0) * 1000.0;
 	double m_unprocessedTime;

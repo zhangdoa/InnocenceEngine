@@ -15,11 +15,11 @@ public:
 	};
 
 	void addShader(shaderType shaderType, std::string fileLocation, int shaderProgram);
-	void addProgram(shaderType shaderType, std::string fileContent, int shaderProgram);
 	void bind(int shaderProgram);
 
 private:
 	std::string loadShader(const std::string& fileName);
+	void addProgram(shaderType shaderType, std::string fileContent, int shaderProgram);
 	std::vector<std::string> split(const std::string & data, char marker);
 };
 
@@ -33,11 +33,13 @@ public:
 
 private:
 	int m_program;
-	GLuint VertexArrayID;
-	GLuint vertexbuffer;
-	unsigned int VBO, VAO;
-	Shader vertexShader;
-	Shader fragmentShader;
+	GLuint m_vertexArrayID;
+	GLuint m_vertexBuffer;
+	unsigned int m_VAO;
+	unsigned int m_VBO;
+	Shader m_vertexShader;
+	Shader m_fragmentShader;
+
 	void init() override;
 	void update() override;
 	void shutdown() override;

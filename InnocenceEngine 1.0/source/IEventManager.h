@@ -11,23 +11,23 @@ public:
 
 	enum execMessage
 	{
+		DEFAULT,
 		INIT,
 		UPDATE,
-		SHUTDOWN,
-		DEFAULT
+		SHUTDOWN	
 	};
 
 	enum managerStatus
 	{
 		STANDBY,
-		RUNNING,
+		INITIALIZIED,
 		UNINITIALIZIED,
 		ERROR
 	};
 
 
 	void exec(execMessage execMessage);
-	int getStatus();
+	const int getStatus() const;
 
 protected:
 	void setStatus(managerStatus managerStatus);

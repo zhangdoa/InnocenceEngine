@@ -25,7 +25,6 @@
 #include "glm/glm.hpp"
 #include "AL/alut.h"
 
-#define PI 3.14159265
 
 
 

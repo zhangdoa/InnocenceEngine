@@ -16,15 +16,15 @@ void IEventManager::exec(execMessage execMessage)
 {
 	switch (execMessage)
 	{
-	case INIT: init(); m_managerStatus = RUNNING;  break;
-	case UPDATE: update(); m_managerStatus = RUNNING; break;
+	case INIT: init(); m_managerStatus = INITIALIZIED;  break;
+	case UPDATE: update(); break;
 	case SHUTDOWN: shutdown(); m_managerStatus = UNINITIALIZIED; break;
 	default: printLog("Unknown error!"); m_managerStatus = ERROR;
 		break;
 	}
 }
 
-int IEventManager::getStatus()
+const int IEventManager::getStatus() const
 {
 	return m_managerStatus;
 }

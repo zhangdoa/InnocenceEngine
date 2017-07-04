@@ -10,7 +10,10 @@ int main()
 {
 	CoreManager* _coreManager = new CoreManager();
 	_coreManager->exec(IEventManager::INIT);
-	_coreManager->exec(IEventManager::UPDATE);
+	while (_coreManager->getStatus() == IEventManager::INITIALIZIED)
+	{
+		_coreManager->exec(IEventManager::UPDATE);
+	}
 	_coreManager->exec(IEventManager::SHUTDOWN);
 	return EXIT_SUCCESS;
 }

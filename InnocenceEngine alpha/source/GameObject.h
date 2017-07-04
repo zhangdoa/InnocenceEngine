@@ -4,37 +4,6 @@
 #include "Shader.h"
 #include "RenderingEngine.h"
 
-class Transform
-{
-public:
-	Transform();
-	~Transform();
-	void update();
-	void rotate(Vec3f axis, float angle);
-
-	const Vec3f& getPos();
-	const Quaternion& getRot();
-	const Vec3f& getScale();
-
-	void setPos(const Vec3f& pos);
-	void setRot(const Quaternion& rot);
-	void setScale(const Vec3f& scale);
-
-	const Vec3f& getOldPos();
-	const Quaternion& getOldRot();
-	const Vec3f& getOldScale();
-
-private:
-
-	Vec3f _pos;
-	Quaternion _rot;
-	Vec3f _scale;
-
-	Vec3f _oldPos;
-	Quaternion _oldRot;
-	Vec3f _oldScale;
-};
-
 class GameComponent
 {
 public:
