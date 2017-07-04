@@ -2,10 +2,16 @@
 //
 
 #include "stdafx.h"
+#include "IEventManager.h"
+#include "CoreManager.h"
 
 
 int main()
 {
-    return 0;
+	CoreManager* _coreManager = new CoreManager();
+	_coreManager->exec(IEventManager::INIT);
+	_coreManager->exec(IEventManager::UPDATE);
+	_coreManager->exec(IEventManager::SHUTDOWN);
+	return EXIT_SUCCESS;
 }
 

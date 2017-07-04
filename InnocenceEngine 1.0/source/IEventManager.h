@@ -3,27 +3,43 @@
 #ifndef I_EVENT_MANAGER_H_
 #define I_EVENT_MANAGER_H_
 
-#define _EXEC_RESULT_ SUCCESS;
-#define _EXEC_RESULT_ 02;
-
 class IEventManager
 {
 public:
 	IEventManager();
-	~IEventManager();
+	virtual ~IEventManager();
 
-	enum eventMessage
+	enum execMessage
 	{
 		INIT,
 		UPDATE,
 		SHUTDOWN,
+		DEFAULT
+	};
+
+	enum managerStatus
+	{
+		STANDBY,
+		RUNNING,
+		UNINITIALIZIED,
 		ERROR
 	};
 
-	virtual void exec(eventMessage eventMessage) = 0;
+
+	void exec(execMessage execMessage);
+	int getStatus();
+
+protected:
+	void setStatus(managerStatus managerStatus);
+	void printLog(std::string logMessage);
 
 private:
-	virtual void reportError() = 0;
+	managerStatus m_managerStatus = UNINITIALIZIED;
+
+	virtual void init() = 0;
+	virtual void update() = 0;
+	virtual void shutdown() = 0;
+
 };
 
 #endif // !I_EVENT_MANAGER_H

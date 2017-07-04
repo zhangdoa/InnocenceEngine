@@ -17,8 +17,8 @@ const double Time::getDelta()
 	static clock::time_point start = clock::now();
 	duration elapsed = clock::now() - start;
 
-		delta = elapsed.count();
-		return delta;
+	delta = elapsed.count();
+	return delta;
 
 }
 
@@ -57,8 +57,6 @@ void CoreEngine::init()
 
 void CoreEngine::update()
 {
-	int frames = 0;
-	double frameConter = 0;
 	double unprocessedTime = 0;
 	double passedTime = 0;
 
@@ -66,8 +64,7 @@ void CoreEngine::update()
 
 		passedTime = _time->getDelta();
 		unprocessedTime += passedTime;
-		frameConter += passedTime;
-
+		std::cout << passedTime << std::endl;
 		while (unprocessedTime > frameTime)
 		{
 			//fprintf(stdout, "Core Engine is updating.\n");
@@ -81,12 +78,7 @@ void CoreEngine::update()
 			_window->render();
 			_game->render();
 			_audioEngine->update();
-			frames++;
 
-			if (frameConter >= 1.0) {
-				frames = 0;
-				frameConter = 0;
-			}
 		}
 		//fprintf(stdout, "Core Engine is sleeping.\n");
 		std::this_thread::sleep_for(std::chrono::seconds(1));
