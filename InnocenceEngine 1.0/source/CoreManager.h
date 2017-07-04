@@ -2,8 +2,7 @@
 #include "IEventManager.h"
 
 #include "TimeManager.h"
-#include "UIManager.h"
-#include "RenderingManager.h"
+#include "GraphicManager.h"
 
 class CoreManager : public IEventManager
 {
@@ -19,8 +18,7 @@ private:
 	std::vector<std::auto_ptr<IEventManager>> m_childManager;
 
 	TimeManager m_timeManager;
-	UIManager m_uiManager;
-	RenderingManager m_renderingManager;
+	GraphicManager m_uiManager;
 
 	const double m_frameTime = (1.0 / 60.0) * 1000.0;
 	double m_unprocessedTime;

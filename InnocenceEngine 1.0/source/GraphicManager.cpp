@@ -1,17 +1,17 @@
 #include "stdafx.h"
-#include "UIManager.h"
+#include "GraphicManager.h"
 
 
-UIManager::UIManager()
+GraphicManager::GraphicManager()
 {
 }
 
 
-UIManager::~UIManager()
+GraphicManager::~GraphicManager()
 {
 }
 
-GLFWwindow * UIManager::getWindow()
+GLFWwindow * GraphicManager::getWindow()
 {
 	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0) {
 		return m_window;
@@ -22,7 +22,7 @@ GLFWwindow * UIManager::getWindow()
 	}
 }
 
-void UIManager::init()
+void GraphicManager::init()
 {
 	if (!glfwInit())
 	{
@@ -47,13 +47,15 @@ void UIManager::init()
 		printLog("Failed to initialize GLEW.");
 	}
 
-	printLog("UIManager has been initialized.");
+	m_renderingManager.exec(INIT);
+	printLog("GraphicManager has been initialized.");
 }
 
-void UIManager::update()
+void GraphicManager::update()
 {
 	//fprintf(stdout, "Window is rendering.\n");
 		if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0) {
+			m_renderingManager.exec(UPDATE);
 			glfwSwapBuffers(m_window);
 			glfwPollEvents();
 		}
@@ -63,11 +65,13 @@ void UIManager::update()
 		}
 }
 
-void UIManager::shutdown()
+void GraphicManager::shutdown()
 {
 	if (m_window)
 	{
+		m_renderingManager.exec(SHUTDOWN);
 		glfwDestroyWindow(m_window);
+		glfwTerminate();
 		printLog("UIManager has been shutdown.");
 	}
 }
