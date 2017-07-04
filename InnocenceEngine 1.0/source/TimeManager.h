@@ -1,5 +1,6 @@
 #pragma once
 #include "IEventManager.h"
+
 class TimeManager : public IEventManager
 {
 public:
@@ -7,17 +8,16 @@ public:
 	~TimeManager();
 
 	typedef std::chrono::high_resolution_clock clock;
-	typedef std::chrono::duration<float, std::milli> duration;
 
-	void exec(eventMessage eventMessage) override;
+	const double getDeltaTime();
 	
 private:
+	void init() override;
+	void update() override;
+	void shutdown() override;
 
-	void init();
-	void update();
-	void shutdown();
-	void reportError() override;
+	clock::time_point m_startTime;
+	double m_deltaTime;
 
-	double _delta;
 };
 
