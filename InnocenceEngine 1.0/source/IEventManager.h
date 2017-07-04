@@ -31,7 +31,7 @@ public:
 
 protected:
 	void setStatus(managerStatus managerStatus);
-	void printLog(std::string logMessage);
+	static void printLog(std::string logMessage);
 
 private:
 	managerStatus m_managerStatus = UNINITIALIZIED;

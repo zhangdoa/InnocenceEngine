@@ -33,10 +33,10 @@
     <ClInclude Include="CoreManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UIManager.h">
+    <ClInclude Include="GraphicManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RenderingManager.h">
+    <ClInclude Include="GLRenderingManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -56,10 +56,10 @@
     <ClCompile Include="CoreManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UIManager.cpp">
+    <ClCompile Include="GraphicManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RenderingManager.cpp">
+    <ClCompile Include="GLRenderingManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

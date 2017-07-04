@@ -1,11 +1,12 @@
 #pragma once
 #include "IEventManager.h"
+#include "GLRenderingManager.h"
 
-class UIManager : public IEventManager
+class GraphicManager : public IEventManager
 {
 public:
-	UIManager();
-	~UIManager();
+	GraphicManager();
+	~GraphicManager();
 	GLFWwindow* getWindow();
 
 private:
@@ -14,5 +15,6 @@ private:
 	void shutdown() override;
 
 	GLFWwindow* m_window;
+	GLRenderingManager m_renderingManager;
 };
 
