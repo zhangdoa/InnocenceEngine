@@ -11,30 +11,23 @@ TimeManager::~TimeManager()
 {
 }
 
-void TimeManager::exec(eventMessage eventMessage)
+const double TimeManager::getDeltaTime()
 {
-	switch (eventMessage)
-	{
-	case INIT: init(); break;
-	case UPDATE : update(); break;
-	case SHUTDOWN: shutdown(); break;
-	default: reportError();
-		break;
-	}
+	return m_deltaTime;
 }
 
 void TimeManager::init()
 {
+	printLog("TimeManager has been initialized.");
 }
 
 void TimeManager::update()
 {
+	m_startTime = clock::now();
+	m_deltaTime = (clock::now() - m_startTime).count() / 1000.0;
 }
 
 void TimeManager::shutdown()
 {
-}
-
-void TimeManager::reportError()
-{
+	printLog("TimeManager has been shutdown.");
 }
