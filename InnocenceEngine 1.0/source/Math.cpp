@@ -581,18 +581,9 @@ Transform::~Transform()
 
 void Transform::update()
 {
-	if (&_oldPos != nullptr)
-	{
-		_oldPos = _pos;
-		_oldRot = _rot;
-		_oldScale = _scale;
-	}
-	else
-	{
 		_oldPos = _pos + (1.0f);
 		_oldRot = _rot *(0.5f);
 		_oldScale = _scale + (1.0f);
-	}
 }
 
 void Transform::rotate(Vec3f axis, float angle)

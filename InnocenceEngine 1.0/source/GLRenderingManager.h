@@ -33,10 +33,7 @@ public:
 
 private:
 	int m_program;
-	GLuint m_vertexArrayID;
-	GLuint m_vertexBuffer;
-	unsigned int m_VAO;
-	unsigned int m_VBO;
+
 	GLShader m_vertexShader;
 	GLShader m_fragmentShader;
 

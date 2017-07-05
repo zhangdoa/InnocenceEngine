@@ -158,59 +158,20 @@ void GLRenderingManager::init()
 	// fragment shader
 	m_fragmentShader.addShader(GLShader::FRAGMENT, "basicFragment.sf", m_program);
 
-	glGenVertexArrays(1, &m_vertexArrayID);
-	glBindVertexArray(m_vertexArrayID);
-
-	// An array of 3 vectors which represents 3 vertices
-	GLfloat g_vertex_buffer_data[] = {
-		-1.0f, -1.0f, 0.0f,
-		1.0f, -1.0f, 0.0f,
-		0.0f,  1.0f, 0.0f,
-	};
-
-	glGenVertexArrays(1, &m_VAO);
-	glGenBuffers(1, &m_VBO);
-	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(m_VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	// note that this is allowed, the call to glVertexAttribPointer registered m_VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// You can unbind the m_VAO afterwards so other m_VAO calls won't accidentally modify this m_VAO, but this rarely happens. Modifying other
-	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-	glBindVertexArray(0);
-
 	this->setStatus(INITIALIZIED);
 	printLog("GLRenderingManager has been initialized.");
 }
 
 void GLRenderingManager::update()
 {
-	// render
-	// ------
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	m_vertexShader.bind(m_program);
 	m_fragmentShader.bind(m_program);
-	// draw our first triangle
-
-	glBindVertexArray(m_VAO); // seeing as we only have a single m_VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 void GLRenderingManager::shutdown()
 {
-	// optional: de-allocate all resources once they've outlived their purpose:
-	// ------------------------------------------------------------------------
-	glDeleteVertexArrays(1, &m_VAO);
-	glDeleteBuffers(1, &m_VBO);
-
 	this->setStatus(UNINITIALIZIED);
 	printLog("GLRenderingManager has been shutdown.");
 }
