@@ -51,46 +51,49 @@ bool IGameEntity::hasTransformChanged()
 
 Mat4f IGameEntity::caclTransformation()
 {
-	Mat4f translationMatrix;
-	translationMatrix.initTranslation(m_transform.getPos().getX(), m_transform.getPos().getY(), m_transform.getPos().getZ());
+	Mat4f l_translationMatrix;
+	l_translationMatrix.initTranslation(m_transform.getPos().getX(), m_transform.getPos().getY(), m_transform.getPos().getZ());
 
-	Quaternion _tempRot = m_transform.getRot();
-	Mat4f rotaionMartix = _tempRot.toRotationMatrix();
+	Quaternion l_rotationQuaternion = m_transform.getRot();
+	Mat4f l_rotaionMartix = l_rotationQuaternion.toRotationMatrix();
 
-	Mat4f scaleMartix;
-	scaleMartix.initScale(m_transform.getScale().getX(), m_transform.getScale().getY(), m_transform.getScale().getZ());
+	Mat4f l_scaleMartix;
+	l_scaleMartix.initScale(m_transform.getScale().getX(), m_transform.getScale().getY(), m_transform.getScale().getZ());
 
-	Mat4f m_parentMatrix;
-	m_parentMatrix.initIdentity();
+	Mat4f l_parentMatrix;
+	l_parentMatrix.initIdentity();
+
 	if (getParentEntity() != nullptr && getParentEntity()->hasTransformChanged())
 	{
-		m_parentMatrix = getParentEntity()->caclTransformation();
+		l_parentMatrix = getParentEntity()->caclTransformation();
 	}
 
-	return m_parentMatrix * translationMatrix * rotaionMartix * scaleMartix;
+	return l_parentMatrix * l_translationMatrix * l_rotaionMartix * l_scaleMartix;
 }
 
 Vec3f IGameEntity::caclTransformedPos()
 {
-	Mat4f m_parentMatrix;
-	m_parentMatrix.initIdentity();
+	Mat4f l_parentMatrix;
+	l_parentMatrix.initIdentity();
+
 	if (getParentEntity() != nullptr && getParentEntity()->hasTransformChanged())
 	{
-		m_parentMatrix = getParentEntity()->caclTransformation();
+		l_parentMatrix = getParentEntity()->caclTransformation();
 	}
 
-	return m_parentMatrix.transform(m_transform.getPos());
+	return l_parentMatrix.transform(m_transform.getPos());
 }
 
 Quaternion IGameEntity::caclTransformedRot()
 {
-	Quaternion m_parentRotation = Quaternion(0, 0, 0, 1);
+	Quaternion l_parentRotation = Quaternion(0, 0, 0, 1);
 
 	if (getParentEntity() != nullptr)
+	{
+		l_parentRotation = getParentEntity()->caclTransformedRot();
+	}
 
-		m_parentRotation = getParentEntity()->caclTransformedRot();
-
-	return m_parentRotation * m_transform.getRot();
+	return l_parentRotation * m_transform.getRot();
 }
 
 
