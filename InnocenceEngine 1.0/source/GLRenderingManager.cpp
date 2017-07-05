@@ -18,7 +18,7 @@ void GLShader::addShader(shaderType shaderType, std::string shaderFileName,int s
 	case VERTEX: addProgram(VERTEX, loadShader(shaderFileName), shaderProgram);  break;
 	case GEOMETRY: addProgram(GEOMETRY, loadShader(shaderFileName), shaderProgram); break;
 	case FRAGMENT: addProgram(FRAGMENT, loadShader(shaderFileName), shaderProgram); break;
-	default: IEventManager::printLog("Unknown shader type, cannot add shader!");
+	default: LogManager::LogManager::printLog("Unknown shader type, cannot add shader!");
 		break;
 	}
 }
@@ -32,13 +32,13 @@ void GLShader::addProgram(shaderType shaderType, std::string shaderFileContent, 
 	case VERTEX: l_glShaderType = GL_VERTEX_SHADER;  break;
 	case GEOMETRY: l_glShaderType = GL_GEOMETRY_SHADER;  break;
 	case FRAGMENT: l_glShaderType = GL_FRAGMENT_SHADER;  break;
-	default: IEventManager::printLog("Unknown shader type, cannot add program!");
+	default: LogManager::LogManager::printLog("Unknown shader type, cannot add program!");
 		break;
 	}
 
 	int l_shader = glCreateShader(l_glShaderType);
 	if (l_shader == 0) {
-		IEventManager::printLog("Shader creation failed: memory location invaild when adding shader");
+		LogManager::LogManager::printLog("Shader creation failed: memory location invaild when adding shader");
 	}
 
 	char const * sourcePointer = shaderFileContent.c_str();
@@ -53,7 +53,7 @@ void GLShader::addProgram(shaderType shaderType, std::string shaderFileContent, 
 	if (InfoLogLength > 0) {
 		std::vector<char> ShaderErrorMessage(InfoLogLength + 1);
 		glGetShaderInfoLog(shaderProgram, InfoLogLength, NULL, &ShaderErrorMessage[0]);
-		IEventManager::printLog(&ShaderErrorMessage[0]);
+		LogManager::LogManager::printLog(&ShaderErrorMessage[0]);
 	}
 
 	glAttachShader(shaderProgram, l_shader);
@@ -100,7 +100,7 @@ std::string GLShader::loadShader(const std::string & shaderFileName)
 	}
 	else
 	{
-		IEventManager::printLog("Unable to load shader: ");
+		LogManager::LogManager::printLog("Unable to load shader: ");
 	}
 
 	return output;
@@ -150,7 +150,7 @@ void GLRenderingManager::init()
 	if (m_program == 0)
 	{
 		this->setStatus(ERROR);
-		printLog("Shader creation failed: memory location invaild");
+		LogManager::LogManager::printLog("Shader creation failed: memory location invaild");
 	}
 
 	// vertex shader
@@ -159,7 +159,7 @@ void GLRenderingManager::init()
 	m_fragmentShader.addShader(GLShader::FRAGMENT, "basicFragment.sf", m_program);
 
 	this->setStatus(INITIALIZIED);
-	printLog("GLRenderingManager has been initialized.");
+	LogManager::LogManager::printLog("GLRenderingManager has been initialized.");
 }
 
 void GLRenderingManager::update()
@@ -173,5 +173,5 @@ void GLRenderingManager::update()
 void GLRenderingManager::shutdown()
 {
 	this->setStatus(UNINITIALIZIED);
-	printLog("GLRenderingManager has been shutdown.");
+	LogManager::LogManager::printLog("GLRenderingManager has been shutdown.");
 }

@@ -14,14 +14,20 @@ IGameEntity::~IGameEntity()
 void IGameEntity::addChildEntity(IGameEntity* childEntity)
 {
 	m_childGameEntity.emplace_back(childEntity);
+	childEntity->setParentEntity(this);
 }
 
-IGameEntity * IGameEntity::getParentEntity()
+std::vector<IGameEntity*>& IGameEntity::getChildrenEntity()
+{
+	return m_childGameEntity;
+}
+
+IGameEntity* IGameEntity::getParentEntity()
 {
 	return m_parentEntity;
 }
 
-void IGameEntity::setParentEntity(IGameEntity * parentEntity)
+void IGameEntity::setParentEntity(IGameEntity* parentEntity)
 {
 	m_parentEntity = parentEntity;
 }
@@ -104,4 +110,33 @@ Actor::Actor()
 
 Actor::~Actor()
 {
+}
+
+void Actor::init()
+{
+	for (size_t i = 0; i < getChildrenEntity().size(); i++)
+	{
+		getChildrenEntity()[i]->exec(INIT);
+	}
+	this->setStatus(INITIALIZIED);
+}
+
+void Actor::update()
+{
+	if (getChildrenEntity().size() != 0)
+	{
+		for (size_t i = 0; i < getChildrenEntity().size(); i++)
+		{
+			getChildrenEntity()[i]->exec(UPDATE);
+		}
+	}
+}
+
+void Actor::shutdown()
+{
+	for (size_t i = 0; i < getChildrenEntity().size(); i++)
+	{
+		getChildrenEntity()[i]->exec(SHUTDOWN);
+	}
+	this->setStatus(UNINITIALIZIED);
 }

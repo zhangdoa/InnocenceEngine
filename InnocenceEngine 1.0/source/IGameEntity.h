@@ -1,5 +1,6 @@
 #pragma once
 #include "IBaseObject.h"
+#include "LogManager.h"
 #include "Math.h"
 
 class IGameEntity : public IBaseObject
@@ -7,9 +8,9 @@ class IGameEntity : public IBaseObject
 public:
 	IGameEntity();
 	virtual ~IGameEntity();
-	
-	void addChildEntity(IGameEntity* childEntity);
 
+	void addChildEntity(IGameEntity* childEntity);
+	std::vector<IGameEntity*>& getChildrenEntity();
 	IGameEntity* getParentEntity();
 	void setParentEntity(IGameEntity* parentEntity);
 
@@ -20,7 +21,7 @@ public:
 	Quaternion caclTransformedRot();
 
 private:
-	std::vector<std::auto_ptr<IGameEntity>> m_childGameEntity;
+	std::vector<IGameEntity*> m_childGameEntity;
 	IGameEntity* m_parentEntity;
 
 	Transform m_transform;
@@ -32,5 +33,9 @@ class Actor : public IGameEntity
 public:
 	Actor();
 	~Actor();
+private:
+	void init() override;
+	void update() override;
+	void shutdown() override;
 };
 
