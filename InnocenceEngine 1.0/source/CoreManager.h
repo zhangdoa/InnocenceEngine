@@ -19,6 +19,6 @@ private:
 	std::vector<std::auto_ptr<IEventManager>> m_childEventManager;
 
 	TimeManager m_timeManager;
-	GraphicManager m_graphicManager;
+	nmsp_GraphicManager::GraphicManager m_graphicManager;
 };
 
