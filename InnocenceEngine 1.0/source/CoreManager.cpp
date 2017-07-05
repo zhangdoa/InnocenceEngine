@@ -13,12 +13,12 @@ CoreManager::~CoreManager()
 
 void CoreManager::init()
 {
-	m_childManager.emplace_back(&m_timeManager);
-	m_childManager.emplace_back(&m_graphicManager); 
+	m_childEventManager.emplace_back(&m_timeManager);
+	m_childEventManager.emplace_back(&m_graphicManager); 
 
-	for (size_t i = 0; i < m_childManager.size(); i++)
+	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
-		m_childManager[i].get()->exec(INIT);
+		m_childEventManager[i].get()->exec(INIT);
 	}
 
 	this->setStatus(INITIALIZIED);
@@ -29,17 +29,12 @@ void CoreManager::update()
 {
 	if(m_graphicManager.getStatus() == INITIALIZIED)
 	{
-		m_unprocessedTime = 0.0;
-		m_unprocessedTime += m_timeManager.getDeltaTime();
-
-		if (m_unprocessedTime > m_frameTime)
+		m_timeManager.exec(UPDATE);
+		
+		if (m_timeManager.getStatus() == INITIALIZIED)
 		{
-			m_unprocessedTime -= m_frameTime;	
+			m_graphicManager.exec(UPDATE);
 		}
-		for (size_t i = 0; i < m_childManager.size(); i++)
-		{
-			m_childManager[i].get()->exec(UPDATE);
-		}	
 	}
 	else 
 	{
@@ -50,9 +45,9 @@ void CoreManager::update()
 
 void CoreManager::shutdown()
 {
-	for (size_t i = 0; i < m_childManager.size(); i++)
+	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
-		m_childManager[m_childManager.size() - 1 - i].get()->exec(SHUTDOWN);
+		m_childEventManager[m_childEventManager.size() - 1 - i].get()->exec(SHUTDOWN);
 	}
 	printLog("CoreManager has been shutdown.");
 	std::this_thread::sleep_for(std::chrono::seconds(5));

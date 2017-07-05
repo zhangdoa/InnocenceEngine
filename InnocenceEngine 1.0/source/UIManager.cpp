@@ -11,17 +11,6 @@ UIManager::~UIManager()
 {
 }
 
-GLFWwindow * UIManager::getWindow()
-{
-	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0) {
-		return m_window;
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
 void UIManager::init()
 {
 	if (glfwInit() != GL_TRUE)

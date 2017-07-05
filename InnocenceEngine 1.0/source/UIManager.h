@@ -6,8 +6,6 @@ public:
 	UIManager();
 	~UIManager();
 
-	GLFWwindow* getWindow();
-
 private:
 	void init() override;
 	void update() override;

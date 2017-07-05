@@ -2,16 +2,16 @@
 #include "GLRenderingManager.h"
 
 
-Shader::Shader()
+GLShader::GLShader()
 {
 }
 
 
-Shader::~Shader()
+GLShader::~GLShader()
 {
 }
 
-void Shader::addShader(shaderType shaderType, std::string shaderFileName,int shaderProgram)
+void GLShader::addShader(shaderType shaderType, std::string shaderFileName,int shaderProgram)
 {
 	switch (shaderType)
 	{
@@ -23,7 +23,7 @@ void Shader::addShader(shaderType shaderType, std::string shaderFileName,int sha
 	}
 }
 
-void Shader::addProgram(shaderType shaderType, std::string shaderFileContent, int shaderProgram)
+void GLShader::addProgram(shaderType shaderType, std::string shaderFileContent, int shaderProgram)
 {
 	int l_glShaderType = 0;
 
@@ -65,12 +65,12 @@ void Shader::addProgram(shaderType shaderType, std::string shaderFileContent, in
 	glDeleteShader(l_shader);
 }
 
-void Shader::bind(int shaderProgram)
+void GLShader::bind(int shaderProgram)
 {
 	glUseProgram(shaderProgram);
 }
 
-std::string Shader::loadShader(const std::string & shaderFileName)
+std::string GLShader::loadShader(const std::string & shaderFileName)
 {
 	std::ifstream file;
 	file.open(("../res/shaders/" + shaderFileName).c_str());
@@ -90,7 +90,7 @@ std::string Shader::loadShader(const std::string & shaderFileName)
 			}
 			else
 			{
-				std::string includeFileName = Shader::split(line, ' ')[1];
+				std::string includeFileName = GLShader::split(line, ' ')[1];
 				includeFileName = includeFileName.substr(1, includeFileName.length() - 2);
 
 				std::string toAppend = loadShader(includeFileName);
@@ -107,7 +107,7 @@ std::string Shader::loadShader(const std::string & shaderFileName)
 }
 
 
-std::vector<std::string> Shader::split(const std::string& data, char marker)
+std::vector<std::string> GLShader::split(const std::string& data, char marker)
 {
 	std::vector<std::string> elems;
 
@@ -154,9 +154,9 @@ void GLRenderingManager::init()
 	}
 
 	// vertex shader
-	m_vertexShader.addShader(Shader::VERTEX, "basicVertex.sf", m_program);
+	m_vertexShader.addShader(GLShader::VERTEX, "basicVertex.sf", m_program);
 	// fragment shader
-	m_fragmentShader.addShader(Shader::FRAGMENT, "basicFragment.sf", m_program);
+	m_fragmentShader.addShader(GLShader::FRAGMENT, "basicFragment.sf", m_program);
 
 	glGenVertexArrays(1, &m_vertexArrayID);
 	glBindVertexArray(m_vertexArrayID);
@@ -187,7 +187,7 @@ void GLRenderingManager::init()
 	glBindVertexArray(0);
 
 	this->setStatus(INITIALIZIED);
-	printLog("RenderingManager has been initialized.");
+	printLog("GLRenderingManager has been initialized.");
 }
 
 void GLRenderingManager::update()
@@ -212,5 +212,5 @@ void GLRenderingManager::shutdown()
 	glDeleteBuffers(1, &m_VBO);
 
 	this->setStatus(UNINITIALIZIED);
-	printLog("RenderingManager has been shutdown.");
+	printLog("GLRenderingManager has been shutdown.");
 }
