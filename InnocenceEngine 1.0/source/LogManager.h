@@ -1,19 +1,14 @@
 #pragma once
 #include "IEventManager.h"
-#include "LogManager.h"
-
-
-class UIManager : public IEventManager
+class LogManager : public IEventManager
 {
 public:
-	UIManager();
-	~UIManager();
-
+	LogManager();
+	~LogManager();
+	static void LogManager::printLog(std::string logMessage);
 private:
 	void init() override;
 	void update() override;
 	void shutdown() override;
-
-	GLFWwindow* m_window;
 };
 

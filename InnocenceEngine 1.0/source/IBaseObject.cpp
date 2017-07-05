@@ -18,8 +18,7 @@ void IBaseObject::exec(execMessage execMessage)
 	case INIT: init(); m_ObjectStatus = INITIALIZIED;  break;
 	case UPDATE: update(); break;
 	case SHUTDOWN: shutdown(); m_ObjectStatus = UNINITIALIZIED; break;
-	default: printLog("Unknown error!"); m_ObjectStatus = ERROR;
-		break;
+	default: m_ObjectStatus = ERROR; break;
 	}
 }
 
@@ -31,9 +30,4 @@ const int IBaseObject::getStatus() const
 void IBaseObject::setStatus(managerStatus ObjectStatus)
 {
 	m_ObjectStatus = ObjectStatus;
-}
-
-void IBaseObject::printLog(std::string logMessage)
-{
-	std::cout << logMessage << std::endl;
 }
