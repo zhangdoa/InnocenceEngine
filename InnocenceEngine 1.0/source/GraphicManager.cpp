@@ -42,7 +42,7 @@ void Vertex::setNormal(const Vec3f & normal)
 	m_normal = normal;
 }
 
-void Vertex::addVertexData(Vec3f pos, Vec2f texCoord, Vec3f normal)
+void Vertex::addVertexData(const Vec3f & pos, const Vec2f & texCoord, const Vec3f & normal)
 {
 	m_pos = pos;
 	m_texCoord = texCoord;
@@ -60,9 +60,6 @@ Mesh::~Mesh()
 
 void Mesh::init()
 {
-
-	addMeshData(m_vertices, m_intices, false);
-
 	glGenVertexArrays(1, &m_vertexArrayID);
 	glBindVertexArray(m_vertexArrayID);
 
@@ -125,13 +122,13 @@ void Mesh::addMeshData(std::vector<Vertex*>& vertices, std::vector<unsigned int>
 			vertices[i]->setNormal(vertices[i]->getNormal().normalized());
 		}
 	}
-	std::vector<GLfloat> verticesBuffer(vertices.size() * 3);
+	std::vector<float> verticesBuffer(vertices.size() * 3);
 
-	for (size_t i = 0; i < vertices.size(); i++) {
-		verticesBuffer[3 * i] = vertices[i]->getPos().getX();
+	for (size_t i = 0; i < vertices.size(); i++) 
+	{
+		verticesBuffer[3 * i + 0] = vertices[i]->getPos().getX();
 		verticesBuffer[3 * i + 1] = vertices[i]->getPos().getY();
 		verticesBuffer[3 * i + 2] = vertices[i]->getPos().getZ();
-
 		//verticesBuffer[8 * i + 3] = vertices[i]->getTexCoord().getX();
 		//verticesBuffer[8 * i + 4] = vertices[i]->getTexCoord().getY();
 		//verticesBuffer[8 * i + 5] = vertices[i]->getNormal().getX();
@@ -142,7 +139,7 @@ void Mesh::addMeshData(std::vector<Vertex*>& vertices, std::vector<unsigned int>
 	//std::vector<unsigned int> indicesBuffer = indices;
 	//std::reverse(indicesBuffer.begin(), indicesBuffer.end());
 
-	glBufferData(GL_ARRAY_BUFFER, verticesBuffer.size() * 4, &verticesBuffer, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, verticesBuffer.size() * 4, &verticesBuffer[0], GL_STATIC_DRAW);
 	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBO);
 	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer.size(), indicesBuffer.data(), GL_STATIC_DRAW);
 }
@@ -153,13 +150,15 @@ void Mesh::addTestTriangle()
 	l_vertex1.addVertexData(Vec3f(-1.0f, -1.0f, 0.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	Vertex l_vertex2;
-	l_vertex1.addVertexData(Vec3f(1.0f, -1.0f, 0.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_vertex2.addVertexData(Vec3f(1.0f, -1.0f, 0.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	Vertex l_vertex3;
-	l_vertex1.addVertexData(Vec3f(0.0f, 1.0f, 0.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_vertex3.addVertexData(Vec3f(0.0f, 1.0f, 0.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	m_vertices = { &l_vertex1, &l_vertex2, &l_vertex3 };
 	m_intices = { 1, 2, 3 };
+
+	addMeshData(m_vertices, m_intices, false);
 }
 
 GraphicManager::GraphicManager()

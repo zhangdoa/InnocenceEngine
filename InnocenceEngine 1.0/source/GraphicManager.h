@@ -20,7 +20,7 @@ namespace nmsp_GraphicManager
 		void setTexCoord(const Vec2f& texCoord);
 		void setNormal(const Vec3f& normal);
 
-		void addVertexData(Vec3f pos, Vec2f texCoord, Vec3f normal);
+		void addVertexData(const Vec3f & pos, const Vec2f & texCoord, const Vec3f & normal);
 	private:
 		Vec3f m_pos;
 		Vec2f m_texCoord;
