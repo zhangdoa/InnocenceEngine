@@ -16,7 +16,7 @@ void UIManager::init()
 	if (glfwInit() != GL_TRUE)
 	{
 		this->setStatus(ERROR);
-		printLog("Failed to initialize GLFW.");
+		LogManager::printLog("Failed to initialize GLFW.");
 	}
 
 	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
@@ -29,17 +29,17 @@ void UIManager::init()
 	m_window = glfwCreateWindow(1024, 768, "Test", NULL, NULL);
 	if (m_window == nullptr) {
 		this->setStatus(ERROR);
-		printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
+		LogManager::printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
 		glfwTerminate();
 	}
 	glfwMakeContextCurrent(m_window); // Initialize GLEW
 	glewExperimental = true; // Needed in core profile
 	if (glewInit() != GLEW_OK) {
 		this->setStatus(ERROR);
-		printLog("Failed to initialize GLEW.");
+		LogManager::printLog("Failed to initialize GLEW.");
 	}
 	this->setStatus(INITIALIZIED);
-	printLog("UIManager has been initialized.");
+	LogManager::printLog("UIManager has been initialized.");
 }
 
 void UIManager::update()
@@ -51,7 +51,7 @@ void UIManager::update()
 	else
 	{
 		this->setStatus(STANDBY);
-		printLog("UIManager is stand-by.");
+		LogManager::printLog("UIManager is stand-by.");
 	}
 }
 
@@ -62,6 +62,6 @@ void UIManager::shutdown()
 		glfwDestroyWindow(m_window);
 		glfwTerminate();
 		this->setStatus(UNINITIALIZIED);
-		printLog("UIManager has been shutdown.");
+		LogManager::printLog("UIManager has been shutdown.");
 	}
 }

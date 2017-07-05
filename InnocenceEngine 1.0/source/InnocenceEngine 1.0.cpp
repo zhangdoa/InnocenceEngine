@@ -2,19 +2,24 @@
 //
 
 #include "stdafx.h"
-#include "IEventManager.h"
+#include "IBaseObject.h"
 #include "CoreManager.h"
+#include "InnocenceGarden.h"
 
 
 int main()
 {
-	CoreManager* _coreManager = new CoreManager();
-	_coreManager->exec(IEventManager::INIT);
-	while (_coreManager->getStatus() == IEventManager::INITIALIZIED)
+	CoreManager* m_coreManager = new CoreManager();
+	InnocenceGarden* m_innocenceGarden = new InnocenceGarden();
+
+	m_coreManager->setGameData(m_innocenceGarden);
+
+	m_coreManager->exec(IBaseObject::INIT);
+	while (m_coreManager->getStatus() == IBaseObject::INITIALIZIED)
 	{
-		_coreManager->exec(IEventManager::UPDATE);
+		m_coreManager->exec(IBaseObject::UPDATE);
 	}
-	_coreManager->exec(IEventManager::SHUTDOWN);
+	m_coreManager->exec(IBaseObject::SHUTDOWN);
 	return EXIT_SUCCESS;
 }
 

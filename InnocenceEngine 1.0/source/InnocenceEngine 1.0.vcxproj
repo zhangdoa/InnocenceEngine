@@ -156,9 +156,13 @@
     <ClInclude Include="CoreManager.h" />
     <ClInclude Include="GLRenderingManager.h" />
     <ClInclude Include="IBaseObject.h" />
+    <ClInclude Include="IGameData.h" />
     <ClInclude Include="IGameEntity.h" />
+    <ClInclude Include="InnocenceGarden.h" />
+    <ClInclude Include="LogManager.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="SceneGraphManager.h" />
+    <ClInclude Include="StaticMeshComponent.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TimeManager.h" />
@@ -169,11 +173,15 @@
     <ClCompile Include="..\source\IEventManager.cpp" />
     <ClCompile Include="CoreManager.cpp" />
     <ClCompile Include="IBaseObject.cpp" />
+    <ClCompile Include="IGameData.cpp" />
     <ClCompile Include="IGameEntity.cpp" />
     <ClCompile Include="InnocenceEngine 1.0.cpp" />
     <ClCompile Include="GLRenderingManager.cpp" />
+    <ClCompile Include="InnocenceGarden.cpp" />
+    <ClCompile Include="LogManager.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="SceneGraphManager.cpp" />
+    <ClCompile Include="StaticMeshComponent.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

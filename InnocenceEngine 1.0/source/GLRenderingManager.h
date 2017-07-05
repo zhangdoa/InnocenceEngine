@@ -1,5 +1,7 @@
 #pragma once
 #include "IEventManager.h"
+#include "LogManager.h"
+
 
 class GLShader
 {
