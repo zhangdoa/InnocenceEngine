@@ -1,11 +1,11 @@
 #pragma once
 #include "IEventManager.h"
 
-class Shader
+class GLShader
 {
 public:
-	Shader();
-	~Shader();
+	GLShader();
+	~GLShader();
 
 	enum shaderType
 	{
@@ -25,7 +25,7 @@ private:
 
 class GLRenderingManager : public IEventManager
 {
-	friend Shader;
+	friend GLShader;
 
 public:
 	GLRenderingManager();
@@ -37,8 +37,8 @@ private:
 	GLuint m_vertexBuffer;
 	unsigned int m_VAO;
 	unsigned int m_VBO;
-	Shader m_vertexShader;
-	Shader m_fragmentShader;
+	GLShader m_vertexShader;
+	GLShader m_fragmentShader;
 
 	void init() override;
 	void update() override;
