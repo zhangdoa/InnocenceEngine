@@ -10,9 +10,9 @@ GraphicManager::~GraphicManager()
 {
 }
 
-void GraphicManager::setCameraProjectionMatrix(Mat4f * cameraProjectionMatrix)
+void GraphicManager::renderEntity(IGameEntity * gameEntity)
 {
-	m_renderingManager.setcameraProjectionMatrix(cameraProjectionMatrix);
+	m_renderingManager.renderEntity(gameEntity);
 }
 
 void GraphicManager::setCameraViewProjectionMatrix(const Mat4f & cameraViewProjectionMatrix)

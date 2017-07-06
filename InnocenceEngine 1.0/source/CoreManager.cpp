@@ -46,15 +46,6 @@ void CoreManager::init()
 		LogManager::printLog(e.what());
 	}
 
-	try {
-		m_graphicManager.setCameraProjectionMatrix(m_gameData->getCameraComponent()->getProjectionMatrix());
-		m_graphicManager.setCameraViewProjectionMatrix(m_gameData->getCameraComponent()->getViewProjectionMatrix());
-	}
-	catch (std::exception& e) {
-		LogManager::printLog("Cannot get camera infomation!");
-		LogManager::printLog(e.what());
-	}
-
 	this->setStatus(INITIALIZIED);
 	LogManager::printLog("CoreManager has been initialized.");
 }
@@ -77,6 +68,13 @@ void CoreManager::update()
 
 			if (m_inputManager.getStatus() == INITIALIZIED)
 			{
+				try {
+					m_graphicManager.setCameraViewProjectionMatrix(m_gameData->getCameraComponent()->getViewProjectionMatrix());
+				}
+				catch (std::exception& e) {
+					LogManager::printLog("Cannot get camera infomation!");
+					LogManager::printLog(e.what());
+				}
 				m_graphicManager.exec(UPDATE);
 				m_gameData->exec(UPDATE);
 				m_sceneGraphManager.exec(UPDATE);
