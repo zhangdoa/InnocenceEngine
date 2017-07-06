@@ -63,8 +63,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\zhanghang.SNAIL\Documents\Visual Studio 2015\Projects\InnocenceEngine-C-\InnocenceEngine alpha\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\zhanghang.SNAIL\Documents\Visual Studio 2015\Projects\InnocenceEngine-C-\InnocenceEngine alpha\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)lib;$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
