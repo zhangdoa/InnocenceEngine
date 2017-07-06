@@ -2,10 +2,10 @@
 
 layout (location = 0) in vec3 position;
 
-uniform mat4 MVP;
-uniform mat4 projection;
+uniform mat4 VP;
+uniform mat4 M;
 
 void main()
 {
-	gl_Position = MVP * vec4(position, 1.0f) ;
+	gl_Position = M * VP * vec4(position, 1.0f);
 }

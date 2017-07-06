@@ -72,9 +72,9 @@ public:
 			mat.getElem(0,0), mat.getElem(0,1), mat.getElem(0,2), mat.getElem(0,3),
 			mat.getElem(1,0), mat.getElem(1,1), mat.getElem(1,2), mat.getElem(1,3),
 			mat.getElem(2,0), mat.getElem(2,1), mat.getElem(2,2), mat.getElem(2,3),
-			mat.getElem(3,0), mat.getElem(3,1), mat.getElem(3,2), mat.getElem(3,3), };
+			mat.getElem(3,0), mat.getElem(3,1), mat.getElem(3,2), mat.getElem(3,3) };
+		std::cout<<glGetUniformLocation(m_program, uniformName.c_str())<<std::endl;
 		glUniformMatrix4fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, GL_FALSE, &bufferUniformValue[0][0]);
-
 	}
 
 	void updateUniform(const std::string &uniformName, const glm::mat4& mat) const
@@ -97,7 +97,7 @@ private:
 
 	std::vector<std::string> split(const std::string& data, char marker);
 
-	int m_program;
+	unsigned int m_program;
 	std::map<std::string, int> m_uniforms;
 };
 

@@ -14,11 +14,6 @@ void CameraData::addCameraData(float fov, float aspectRatio, float zNear, float 
 	m_projectionMatrix.initPerspective(fov, aspectRatio, zNear, zFar);
 }
 
-Mat4f * CameraData::getProjectionMatrix()
-{
-	return &m_projectionMatrix;
-}
-
 Mat4f CameraData::getViewProjectionMatrix(IGameEntity* parent)
 {
 	Mat4f l_cameraRotationMatrix = parent->caclTransformedRot().conjugate().toRotationMatrix();
@@ -38,11 +33,6 @@ CameraComponent::CameraComponent()
 
 CameraComponent::~CameraComponent()
 {
-}
-
-Mat4f * CameraComponent::getProjectionMatrix()
-{
-	return m_cameraData.getProjectionMatrix();
 }
 
 Mat4f CameraComponent::getViewProjectionMatrix()
