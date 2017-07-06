@@ -1,5 +1,6 @@
 #pragma once
 #include "Math.h"
+#include "IGameEntity.h"
 #include "IEventManager.h"
 #include "LogManager.h"
 #include "GLRenderingManager.h"
@@ -11,7 +12,8 @@ class GraphicManager : public IEventManager
 public:
 	GraphicManager();
 	~GraphicManager();
-	void setCameraProjectionMatrix(Mat4f* cameraProjectionMatrix);
+
+	void renderEntity(IGameEntity* gameEntity);
 	void setCameraViewProjectionMatrix(const Mat4f& cameraViewProjectionMatrix);
 private:
 	void init() override;

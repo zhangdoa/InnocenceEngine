@@ -11,19 +11,26 @@ GLShader::~GLShader()
 {
 }
 
-void GLShader::addShader(shaderType shaderType, const std::string& shaderFileName,int shaderProgram)
+void GLShader::addShader(shaderType shaderType, const std::string& shaderFileName, int program)
 {
-	switch (shaderType)
-	{
-	case VERTEX: addProgram(VERTEX, loadShader(shaderFileName), shaderProgram);  break;
-	case GEOMETRY: addProgram(GEOMETRY, loadShader(shaderFileName), shaderProgram); break;
-	case FRAGMENT: addProgram(FRAGMENT, loadShader(shaderFileName), shaderProgram); break;
-	default: LogManager::LogManager::printLog("Unknown shader type, cannot add shader!");
-		break;
-	}
+	attachShader(shaderType, loadShader(shaderFileName), program);
 }
 
-void GLShader::addProgram(shaderType shaderType, const std::string& shaderFileContent, int shaderProgram)
+void GLShader::bindShader(int program)
+{
+	glUseProgram(program);
+}
+
+void GLShader::addUniform(std::string uniform, int program)
+{
+	if (glGetUniformLocation(program, uniform.c_str()) == 0xFFFFFFFF)
+	{
+		LogManager::printLog("Error : Uniform lost: " + uniform);
+	}
+	m_uniforms.emplace(std::pair<std::string, int>(uniform.c_str(), glGetUniformLocation(program, uniform.c_str())));
+}
+
+inline void GLShader::attachShader(shaderType shaderType, const std::string& shaderFileContent, int shaderProgram)
 {
 	int l_glShaderType = 0;
 
@@ -32,42 +39,54 @@ void GLShader::addProgram(shaderType shaderType, const std::string& shaderFileCo
 	case VERTEX: l_glShaderType = GL_VERTEX_SHADER;  break;
 	case GEOMETRY: l_glShaderType = GL_GEOMETRY_SHADER;  break;
 	case FRAGMENT: l_glShaderType = GL_FRAGMENT_SHADER;  break;
-	default: LogManager::LogManager::printLog("Unknown shader type, cannot add program!");
+	default: LogManager::printLog("Unknown shader type, cannot add program!");
 		break;
 	}
 
 	int l_shader = glCreateShader(l_glShaderType);
+
 	if (l_shader == 0) {
-		LogManager::LogManager::printLog("Shader creation failed: memory location invaild when adding shader");
+		LogManager::printLog("Shader creation failed: memory location invaild when adding shader!");
 	}
 
 	char const * sourcePointer = shaderFileContent.c_str();
 	glShaderSource(l_shader, 1, &sourcePointer, NULL);
 
 	GLint Result = GL_FALSE;
-	int InfoLogLength;
+	int l_infoLogLength;
 
 	glGetShaderiv(shaderProgram, GL_COMPILE_STATUS, &Result);
-	glGetShaderiv(shaderProgram, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	glGetShaderiv(shaderProgram, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
-	if (InfoLogLength > 0) {
-		std::vector<char> ShaderErrorMessage(InfoLogLength + 1);
-		glGetShaderInfoLog(shaderProgram, InfoLogLength, NULL, &ShaderErrorMessage[0]);
-		LogManager::LogManager::printLog(&ShaderErrorMessage[0]);
+	if (l_infoLogLength > 0) {
+		std::vector<char> ShaderErrorMessage(l_infoLogLength + 1);
+		glGetShaderInfoLog(shaderProgram, l_infoLogLength, NULL, &ShaderErrorMessage[0]);
+		LogManager::printLog(&ShaderErrorMessage[0]);
 	}
 
 	glAttachShader(shaderProgram, l_shader);
+
+	compileShader(shaderProgram);
+	//setAttributeLocation(shaderProgram, 0, "position");
+	detachShader(shaderProgram, l_shader);
+}
+
+inline void GLShader::compileShader(int shaderProgram)
+{
 	glLinkProgram(shaderProgram);
 
 	glValidateProgram(shaderProgram);
-
-	glDetachShader(shaderProgram, l_shader);
-	glDeleteShader(l_shader);
 }
 
-void GLShader::bind(int shaderProgram)
+inline void GLShader::setAttributeLocation(int shaderProgram, int arrtributeLocation, const std::string & arrtributeName)
 {
-	glUseProgram(shaderProgram);
+	glBindAttribLocation(shaderProgram, arrtributeLocation, arrtributeName.c_str());
+}
+
+inline void GLShader::detachShader(int shaderProgram, int shader)
+{
+	glDetachShader(shaderProgram, shader);
+	glDeleteShader(shader);
 }
 
 std::string GLShader::loadShader(const std::string & shaderFileName)
@@ -106,7 +125,6 @@ std::string GLShader::loadShader(const std::string & shaderFileName)
 	return output;
 }
 
-
 std::vector<std::string> GLShader::split(const std::string& data, char marker)
 {
 	std::vector<std::string> elems;
@@ -133,6 +151,24 @@ std::vector<std::string> GLShader::split(const std::string& data, char marker)
 	return elems;
 }
 
+BasicGLShader::BasicGLShader()
+{
+}
+
+BasicGLShader::~BasicGLShader()
+{
+}
+
+void BasicGLShader::init(int program)
+{
+	addShader(GLShader::VERTEX, "basicVertex.sf", program);
+	addUniform("MVP", program);
+	addShader(GLShader::FRAGMENT, "basicFragment.sf", program);
+}
+
+void BasicGLShader::update()
+{
+}
 
 GLRenderingManager::GLRenderingManager()
 {
@@ -143,31 +179,26 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
-void GLRenderingManager::setcameraProjectionMatrix(Mat4f * cameraProjectionMatrix)
+
+void GLRenderingManager::renderEntity(IGameEntity * gameEntity)
 {
-	m_cameraProjectionMatrix = cameraProjectionMatrix;
+
 }
 
 void GLRenderingManager::setCameraViewProjectionMatrix(const Mat4f & cameraViewProjectionMatrix)
 {
-	m_cameraViewProjectionMatrix = cameraViewProjectionMatrix;
+	m_MVPMatrix = cameraViewProjectionMatrix;
 }
 
 void GLRenderingManager::init()
 {
-	// shader program
+
 	m_program = glCreateProgram();
 	if (m_program == 0)
 	{
-		this->setStatus(ERROR);
 		LogManager::LogManager::printLog("Shader creation failed: memory location invaild");
 	}
-
-	// vertex shader
-	m_vertexShader.addShader(GLShader::VERTEX, "basicVertex.sf", m_program);
-	// fragment shader
-	m_fragmentShader.addShader(GLShader::FRAGMENT, "basicFragment.sf", m_program);
-
+	m_basicGLShader.init(m_program);
 	this->setStatus(INITIALIZIED);
 	LogManager::LogManager::printLog("GLRenderingManager has been initialized.");
 }
@@ -176,10 +207,8 @@ void GLRenderingManager::update()
 {
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	m_vertexShader.bind(m_program);
-	m_fragmentShader.bind(m_program);
-	m_vertexShader.addUniform(m_program, "projection", *m_cameraProjectionMatrix);
-	m_vertexShader.addUniform(m_program, "view", m_cameraViewProjectionMatrix);
+	m_basicGLShader.bindShader(m_program);
+	//m_vertexShader.updateUniform(m_program, "MVP", m_MVPMatrix);
 }
 
 void GLRenderingManager::shutdown()
@@ -187,3 +216,4 @@ void GLRenderingManager::shutdown()
 	this->setStatus(UNINITIALIZIED);
 	LogManager::printLog("GLRenderingManager has been shutdown.");
 }
+
