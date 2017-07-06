@@ -164,6 +164,10 @@ StaticMeshComponent::~StaticMeshComponent()
 {
 }
 
+void StaticMeshComponent::render()
+{
+}
+
 void StaticMeshComponent::init()
 {
 	m_meshData.init();

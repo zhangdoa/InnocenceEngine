@@ -16,6 +16,11 @@ CameraComponent * InnocenceGarden::getCameraComponent()
 	return &testCamera;
 }
 
+IVisibleGameEntity * InnocenceGarden::getTest()
+{
+	return &testTriangle;
+}
+
 void InnocenceGarden::init()
 {
 	testCamera.exec(INIT);

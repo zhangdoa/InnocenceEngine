@@ -52,13 +52,13 @@ void CoreManager::init()
 
 void CoreManager::update()
 {
-	// time manager should update without any limit.
+	// time manager should update without any limitation.
 	m_timeManager.exec(UPDATE);
 
-	// when time manager's status was INITIALIZED, that means we can update the other manager, a frame counter occured.
+	// when time manager's status was INITIALIZED, that means we can update other managers, a frame counter occurred.
 	if (m_timeManager.getStatus() == INITIALIZIED)
 	{
-		// window manager updates first, due to I use GLFW lib to manage the windows event currently.
+		// window manager updates first, because I use GLFW lib to manage the windows event currently.
 		m_windowManager.exec(UPDATE);
 
 		if (m_windowManager.getStatus() == INITIALIZIED)
@@ -75,8 +75,10 @@ void CoreManager::update()
 					LogManager::printLog("Cannot get camera infomation!");
 					LogManager::printLog(e.what());
 				}
-				m_graphicManager.exec(UPDATE);
 				m_gameData->exec(UPDATE);
+				m_graphicManager.render(m_gameData->getTest());
+				m_graphicManager.exec(UPDATE);
+			
 				m_sceneGraphManager.exec(UPDATE);
 			}
 			else

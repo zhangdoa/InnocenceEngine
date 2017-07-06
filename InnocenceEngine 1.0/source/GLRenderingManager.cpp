@@ -11,26 +11,26 @@ GLShader::~GLShader()
 {
 }
 
-void GLShader::addShader(shaderType shaderType, const std::string& shaderFileName, int program)
+void GLShader::addShader(shaderType shaderType, const std::string& shaderFileName)
 {
-	attachShader(shaderType, loadShader(shaderFileName), program);
+	attachShader(shaderType, loadShader(shaderFileName), m_program);
 }
 
-void GLShader::bindShader(int program)
+void GLShader::bindShader()
 {
-	glUseProgram(program);
+	glUseProgram(m_program);
 }
 
-void GLShader::addUniform(std::string uniform, int program)
+void GLShader::addUniform(std::string uniform)
 {
-	if (glGetUniformLocation(program, uniform.c_str()) == 0xFFFFFFFF)
+	if (glGetUniformLocation(m_program, uniform.c_str()) == 0xFFFFFFFF)
 	{
 		LogManager::printLog("Error : Uniform lost: " + uniform);
 	}
-	m_uniforms.emplace(std::pair<std::string, int>(uniform.c_str(), glGetUniformLocation(program, uniform.c_str())));
+	m_uniforms.emplace(std::pair<std::string, int>(uniform.c_str(), glGetUniformLocation(m_program, uniform.c_str())));
 }
 
-inline void GLShader::attachShader(shaderType shaderType, const std::string& shaderFileContent, int shaderProgram)
+inline void GLShader::attachShader(shaderType shaderType, const std::string& shaderFileContent, int m_program)
 {
 	int l_glShaderType = 0;
 
@@ -55,38 +55,46 @@ inline void GLShader::attachShader(shaderType shaderType, const std::string& sha
 	GLint Result = GL_FALSE;
 	int l_infoLogLength;
 
-	glGetShaderiv(shaderProgram, GL_COMPILE_STATUS, &Result);
-	glGetShaderiv(shaderProgram, GL_INFO_LOG_LENGTH, &l_infoLogLength);
+	glGetShaderiv(m_program, GL_COMPILE_STATUS, &Result);
+	glGetShaderiv(m_program, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 	if (l_infoLogLength > 0) {
 		std::vector<char> ShaderErrorMessage(l_infoLogLength + 1);
-		glGetShaderInfoLog(shaderProgram, l_infoLogLength, NULL, &ShaderErrorMessage[0]);
+		glGetShaderInfoLog(m_program, l_infoLogLength, NULL, &ShaderErrorMessage[0]);
 		LogManager::printLog(&ShaderErrorMessage[0]);
 	}
 
-	glAttachShader(shaderProgram, l_shader);
+	glAttachShader(m_program, l_shader);
 
-	compileShader(shaderProgram);
-	//setAttributeLocation(shaderProgram, 0, "position");
-	detachShader(shaderProgram, l_shader);
+	compileShader();
+	if (l_glShaderType == GL_VERTEX_SHADER)
+	{
+		setAttributeLocation(0, "position");
+	}
+	detachShader(l_shader);
 }
 
-inline void GLShader::compileShader(int shaderProgram)
+inline void GLShader::compileShader()
 {
-	glLinkProgram(shaderProgram);
+	glLinkProgram(m_program);
 
-	glValidateProgram(shaderProgram);
+	glValidateProgram(m_program);
 }
 
-inline void GLShader::setAttributeLocation(int shaderProgram, int arrtributeLocation, const std::string & arrtributeName)
+inline void GLShader::setAttributeLocation(int arrtributeLocation, const std::string & arrtributeName)
 {
-	glBindAttribLocation(shaderProgram, arrtributeLocation, arrtributeName.c_str());
+	glBindAttribLocation(m_program, arrtributeLocation, arrtributeName.c_str());
 }
 
-inline void GLShader::detachShader(int shaderProgram, int shader)
+inline void GLShader::detachShader(int shader)
 {
-	glDetachShader(shaderProgram, shader);
+	glDetachShader(m_program, shader);
 	glDeleteShader(shader);
+}
+
+void GLShader::initProgram()
+{
+	m_program = glCreateProgram();
 }
 
 std::string GLShader::loadShader(const std::string & shaderFileName)
@@ -159,11 +167,12 @@ BasicGLShader::~BasicGLShader()
 {
 }
 
-void BasicGLShader::init(int program)
+void BasicGLShader::init()
 {
-	addShader(GLShader::VERTEX, "basicVertex.sf", program);
-	addUniform("MVP", program);
-	addShader(GLShader::FRAGMENT, "basicFragment.sf", program);
+	initProgram();
+	addShader(GLShader::VERTEX, "basicVertex.sf");
+	addUniform("MVP");
+	addShader(GLShader::FRAGMENT, "basicFragment.sf");
 }
 
 void BasicGLShader::update()
@@ -179,26 +188,21 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
-
-void GLRenderingManager::renderEntity(IGameEntity * gameEntity)
+void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity)
 {
-
+	m_basicGLShader.bindShader();
+	m_basicGLShader.updateUniform("MVP", m_cameraViewProjectionMatrix * visibleGameEntity->caclTransformation());
 }
 
 void GLRenderingManager::setCameraViewProjectionMatrix(const Mat4f & cameraViewProjectionMatrix)
 {
-	m_MVPMatrix = cameraViewProjectionMatrix;
+	m_cameraViewProjectionMatrix = cameraViewProjectionMatrix;
 }
 
 void GLRenderingManager::init()
 {
-
-	m_program = glCreateProgram();
-	if (m_program == 0)
-	{
-		LogManager::LogManager::printLog("Shader creation failed: memory location invaild");
-	}
-	m_basicGLShader.init(m_program);
+	m_basicGLShader.init();
+	m_basicGLShader.addUniform("MVP");
 	this->setStatus(INITIALIZIED);
 	LogManager::LogManager::printLog("GLRenderingManager has been initialized.");
 }
@@ -207,8 +211,6 @@ void GLRenderingManager::update()
 {
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	m_basicGLShader.bindShader(m_program);
-	//m_vertexShader.updateUniform(m_program, "MVP", m_MVPMatrix);
 }
 
 void GLRenderingManager::shutdown()
