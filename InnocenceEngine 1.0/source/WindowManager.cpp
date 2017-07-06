@@ -1,17 +1,22 @@
 #include "stdafx.h"
-#include "UIManager.h"
+#include "WindowManager.h"
 
 
-UIManager::UIManager()
+WindowManager::WindowManager()
 {
 }
 
 
-UIManager::~UIManager()
+WindowManager::~WindowManager()
 {
 }
 
-void UIManager::init()
+GLFWwindow * WindowManager::getWindow()
+{
+	return m_window;
+}
+
+void WindowManager::init()
 {
 	if (glfwInit() != GL_TRUE)
 	{
@@ -42,7 +47,7 @@ void UIManager::init()
 	LogManager::printLog("UIManager has been initialized.");
 }
 
-void UIManager::update()
+void WindowManager::update()
 {
 	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0) {
 		glfwSwapBuffers(m_window);
@@ -55,7 +60,7 @@ void UIManager::update()
 	}
 }
 
-void UIManager::shutdown()
+void WindowManager::shutdown()
 {
 	if (m_window != nullptr)
 	{
