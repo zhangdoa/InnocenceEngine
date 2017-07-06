@@ -153,12 +153,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\source\IEventManager.h" />
+    <ClInclude Include="CameraComponent.h" />
     <ClInclude Include="CoreManager.h" />
     <ClInclude Include="GLRenderingManager.h" />
     <ClInclude Include="IBaseObject.h" />
     <ClInclude Include="IGameData.h" />
     <ClInclude Include="IGameEntity.h" />
     <ClInclude Include="InnocenceGarden.h" />
+    <ClInclude Include="InputManager.h" />
     <ClInclude Include="LogManager.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="SceneGraphManager.h" />
@@ -167,10 +169,11 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TimeManager.h" />
     <ClInclude Include="GraphicManager.h" />
-    <ClInclude Include="UIManager.h" />
+    <ClInclude Include="WindowManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\IEventManager.cpp" />
+    <ClCompile Include="CameraComponent.cpp" />
     <ClCompile Include="CoreManager.cpp" />
     <ClCompile Include="IBaseObject.cpp" />
     <ClCompile Include="IGameData.cpp" />
@@ -178,6 +181,7 @@
     <ClCompile Include="InnocenceEngine 1.0.cpp" />
     <ClCompile Include="GLRenderingManager.cpp" />
     <ClCompile Include="InnocenceGarden.cpp" />
+    <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="LogManager.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="SceneGraphManager.cpp" />
@@ -190,7 +194,7 @@
     </ClCompile>
     <ClCompile Include="TimeManager.cpp" />
     <ClCompile Include="GraphicManager.cpp" />
-    <ClCompile Include="UIManager.cpp" />
+    <ClCompile Include="WindowManager.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

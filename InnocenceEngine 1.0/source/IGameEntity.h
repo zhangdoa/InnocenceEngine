@@ -1,7 +1,11 @@
 #pragma once
+
 #include "IBaseObject.h"
 #include "LogManager.h"
 #include "Math.h"
+
+#ifndef _I_GAME_ENTITY_H_
+#define _I_GAME_ENTITY_H_
 
 class IGameEntity : public IBaseObject
 {
@@ -27,6 +31,8 @@ private:
 	Transform m_transform;
 
 };
+
+#endif // !_I_GAME_ENTITY_H_
 
 class Actor : public IGameEntity
 {
