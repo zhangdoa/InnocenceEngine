@@ -1,6 +1,6 @@
 #pragma once
 #include "Math.h"
-#include "IGameEntity.h"
+#include "IVisibleGameEntity.h"
 #include "IEventManager.h"
 #include "LogManager.h"
 #include "GLRenderingManager.h"
@@ -13,7 +13,7 @@ public:
 	GraphicManager();
 	~GraphicManager();
 
-	void renderEntity(IGameEntity* gameEntity);
+	void render(IVisibleGameEntity* visibleGameEntity);
 	void setCameraViewProjectionMatrix(const Mat4f& cameraViewProjectionMatrix);
 private:
 	void init() override;

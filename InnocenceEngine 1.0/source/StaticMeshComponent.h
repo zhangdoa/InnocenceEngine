@@ -1,5 +1,6 @@
 #pragma once
-#include "IGameEntity.h"
+#include "IVisibleGameEntity.h"
+#include "GLRenderingManager.h"
 
 class VertexData
 {
@@ -46,12 +47,12 @@ private:
 
 };
 
-class StaticMeshComponent : public IGameEntity
+class StaticMeshComponent : public IVisibleGameEntity
 {
 public:
 	StaticMeshComponent();
 	~StaticMeshComponent();
-
+	void render() override;
 private:
 	MeshData m_meshData;
 	void init() override;

@@ -9,7 +9,7 @@ public:
 	~InnocenceGarden();
 
 	CameraComponent* getCameraComponent() override;
-
+	IVisibleGameEntity* getTest() override;
 private:
 	void init() override;
 	void update() override;

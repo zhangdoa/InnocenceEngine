@@ -161,6 +161,7 @@
     <ClInclude Include="IGameEntity.h" />
     <ClInclude Include="InnocenceGarden.h" />
     <ClInclude Include="InputManager.h" />
+    <ClInclude Include="IVisibleGameEntity.h" />
     <ClInclude Include="LogManager.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="SceneGraphManager.h" />
@@ -182,6 +183,7 @@
     <ClCompile Include="GLRenderingManager.cpp" />
     <ClCompile Include="InnocenceGarden.cpp" />
     <ClCompile Include="InputManager.cpp" />
+    <ClCompile Include="IVisibleGameEntity.cpp" />
     <ClCompile Include="LogManager.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="SceneGraphManager.cpp" />
