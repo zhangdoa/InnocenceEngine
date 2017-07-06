@@ -360,6 +360,23 @@ void Mat4f::initRotation(Vec3f forward, Vec3f up)
 
 void Mat4f::initRotation(Vec3f forward, Vec3f up, Vec3f right)
 {
+	m[0][0] = right.getX();
+	m[0][1] = right.getY();
+	m[0][2] = right.getZ();
+	m[0][3] = 0;
+	m[1][0] = up.getX();
+	m[1][1] = up.getY();
+	m[1][2] = up.getZ();
+	m[1][3] = 0;
+	m[2][0] = forward.getX();
+	m[2][1] = forward.getY();
+	m[2][2] = forward.getZ();
+	m[2][3] = 0;
+	m[3][0] = 0;
+	m[3][1] = 0;
+	m[3][2] = 0;
+	m[3][3] = 1;
+
 }
 
 void Mat4f::initScale(float x, float y, float z)

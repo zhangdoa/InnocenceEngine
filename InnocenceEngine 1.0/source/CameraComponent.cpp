@@ -22,10 +22,13 @@ Mat4f * CameraData::getProjectionMatrix()
 Mat4f CameraData::getViewProjectionMatrix(IGameEntity* parent)
 {
 	Mat4f l_cameraRotationMatrix = parent->caclTransformedRot().conjugate().toRotationMatrix();
+
 	Vec3f l_cameraPosition = parent->caclTransformedPos() * -1.0f;
+
 	Mat4f l_cameraTranslationMatrix;
 	l_cameraTranslationMatrix.initTranslation(l_cameraPosition.getX(), l_cameraPosition.getY(),
 		l_cameraPosition.getZ());
+
 	return m_projectionMatrix * l_cameraRotationMatrix * l_cameraTranslationMatrix;
 }
 
@@ -54,6 +57,7 @@ void CameraComponent::init()
 
 void CameraComponent::update()
 {
+	this->getTransform()->setPos(this->getTransform()->getPos() + Vec3f(1.0f, 1.0f, 0.0f));
 }
 
 void CameraComponent::shutdown()

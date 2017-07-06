@@ -61,22 +61,14 @@ void MeshData::init()
 	glGenVertexArrays(1, &m_vertexArrayID);
 	glBindVertexArray(m_vertexArrayID);
 
-	// An array of 3 vectors which represents 3 vertices
-	/*GLfloat g_VertexData_buffer_data[] = {
-	-1.0f, -1.0f, 0.0f,
-	1.0f, -1.0f, 0.0f,
-	0.0f,  1.0f, 0.0f,
-	};*/
-
 	glGenVertexArrays(1, &m_VAO);
 	glGenBuffers(1, &m_VBO);
-	// bind the VertexDataData Array Object first, then bind and set VertexData buffer(s), and then configure VertexData attributes(s).
+	// bindShader the VertexDataData Array Object first, then bindShader and set VertexData buffer(s), and then configure VertexData attributes(s).
 	glBindVertexArray(m_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
 
 	addTestTriangle();
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(g_VertexData_buffer_data), g_VertexData_buffer_data, GL_STATIC_DRAW);
-
+	
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
@@ -145,13 +137,16 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 void MeshData::addTestTriangle()
 {
 	VertexData l_VertexData1;
-	l_VertexData1.addVertexData(Vec3f(-1.0f, -1.0f, 0.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData1.addVertexData(Vec3f(-1.0f, -1.0f, 1.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData2;
-	l_VertexData2.addVertexData(Vec3f(1.0f, -1.0f, 0.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData2.addVertexData(Vec3f(1.0f, -1.0f, 0.5f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData3;
 	l_VertexData3.addVertexData(Vec3f(0.0f, 1.0f, 0.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+
+	VertexData l_VertexData4;
+	l_VertexData4.addVertexData(Vec3f(0.0f, 1.0f, 0.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	m_vertices = { &l_VertexData1, &l_VertexData2, &l_VertexData3 };
 	m_intices = { 1, 2, 3 };
