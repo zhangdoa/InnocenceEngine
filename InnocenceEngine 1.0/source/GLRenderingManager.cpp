@@ -23,11 +23,12 @@ void GLShader::bindShader()
 
 void GLShader::addUniform(std::string uniform)
 {
-	if (glGetUniformLocation(m_program, uniform.c_str()) == 0xFFFFFFFF)
+	int uniformLocation = glGetUniformLocation(m_program, uniform.c_str());
+	if (uniformLocation == 0xFFFFFFFF)
 	{
 		LogManager::printLog("Error : Uniform lost: " + uniform);
 	}
-	m_uniforms.emplace(std::pair<std::string, int>(uniform.c_str(), glGetUniformLocation(m_program, uniform.c_str())));
+	m_uniforms.emplace(std::pair<std::string, int>(uniform.c_str(), uniformLocation));
 }
 
 inline void GLShader::attachShader(shaderType shaderType, const std::string& shaderFileContent, int m_program)
@@ -70,6 +71,7 @@ inline void GLShader::attachShader(shaderType shaderType, const std::string& sha
 	if (l_glShaderType == GL_VERTEX_SHADER)
 	{
 		setAttributeLocation(0, "position");
+		//addUniform("MVP");
 	}
 	detachShader(l_shader);
 }
@@ -171,7 +173,6 @@ void BasicGLShader::init()
 {
 	initProgram();
 	addShader(GLShader::VERTEX, "basicVertex.sf");
-	addUniform("MVP");
 	addShader(GLShader::FRAGMENT, "basicFragment.sf");
 }
 
@@ -191,7 +192,8 @@ GLRenderingManager::~GLRenderingManager()
 void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity)
 {
 	m_basicGLShader.bindShader();
-	m_basicGLShader.updateUniform("MVP", m_cameraViewProjectionMatrix * visibleGameEntity->caclTransformation());
+	m_basicGLShader.updateUniform("VP", m_cameraViewProjectionMatrix);
+	m_basicGLShader.updateUniform("M", visibleGameEntity->caclTransformation());
 }
 
 void GLRenderingManager::setCameraViewProjectionMatrix(const Mat4f & cameraViewProjectionMatrix)
@@ -202,7 +204,7 @@ void GLRenderingManager::setCameraViewProjectionMatrix(const Mat4f & cameraViewP
 void GLRenderingManager::init()
 {
 	m_basicGLShader.init();
-	m_basicGLShader.addUniform("MVP");
+	//m_basicGLShader.addUniform("MVP");
 	this->setStatus(INITIALIZIED);
 	LogManager::LogManager::printLog("GLRenderingManager has been initialized.");
 }

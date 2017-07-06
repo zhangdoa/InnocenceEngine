@@ -10,7 +10,7 @@ public:
 	const Vec3f yAxis = Vec3f(0.0f, 1.0f, 0.0f);
 
 	void addCameraData(float fov, float aspectRatio, float zNear, float zFar);
-	Mat4f* getProjectionMatrix();
+
 	Mat4f getViewProjectionMatrix(IGameEntity* parent);
 
 private:
@@ -23,7 +23,6 @@ public:
 	CameraComponent();
 	~CameraComponent();
 
-	Mat4f* getProjectionMatrix();
 	Mat4f getViewProjectionMatrix();
 
 private:

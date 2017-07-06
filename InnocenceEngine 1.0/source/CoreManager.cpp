@@ -75,10 +75,11 @@ void CoreManager::update()
 					LogManager::printLog("Cannot get camera infomation!");
 					LogManager::printLog(e.what());
 				}
-				m_gameData->exec(UPDATE);
-				m_graphicManager.render(m_gameData->getTest());
+
 				m_graphicManager.exec(UPDATE);
-			
+				m_graphicManager.render(m_gameData->getTest());
+
+				m_gameData->exec(UPDATE);
 				m_sceneGraphManager.exec(UPDATE);
 			}
 			else
