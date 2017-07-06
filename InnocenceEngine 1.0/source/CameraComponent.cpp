@@ -57,7 +57,7 @@ void CameraComponent::init()
 
 void CameraComponent::update()
 {
-	this->getTransform()->setPos(this->getTransform()->getPos() + Vec3f(1.0f, 1.0f, 0.0f));
+	//this->getTransform()->setPos(this->getTransform()->getPos() + Vec3f(1.0f, 1.0f, 0.0f));
 }
 
 void CameraComponent::shutdown()
