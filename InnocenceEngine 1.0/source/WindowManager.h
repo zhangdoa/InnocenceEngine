@@ -2,12 +2,12 @@
 #include "IEventManager.h"
 #include "LogManager.h"
 
-
-class UIManager : public IEventManager
+class WindowManager : public IEventManager
 {
 public:
-	UIManager();
-	~UIManager();
+	WindowManager();
+	~WindowManager();
+	GLFWwindow* getWindow();
 
 private:
 	void init() override;

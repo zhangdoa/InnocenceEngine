@@ -1,11 +1,13 @@
 #pragma once
+
 #include "IEventManager.h"
 #include "LogManager.h"
 #include "TimeManager.h"
+#include "WindowManager.h"
+#include "InputManager.h"
 #include "GraphicManager.h"
 #include "SceneGraphManager.h"
 #include "IGameData.h"
-
 
 class CoreManager : public IEventManager
 {
@@ -23,6 +25,8 @@ private:
 	std::vector<std::auto_ptr<IEventManager>> m_childEventManager;
 
 	TimeManager m_timeManager;
+	WindowManager m_windowManager;
+	InputManager m_inputManager;
 	GraphicManager m_graphicManager;
 	SceneGraphManager m_sceneGraphManager;
 	IGameData* m_gameData;

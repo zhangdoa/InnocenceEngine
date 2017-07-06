@@ -11,7 +11,7 @@ GLShader::~GLShader()
 {
 }
 
-void GLShader::addShader(shaderType shaderType, std::string shaderFileName,int shaderProgram)
+void GLShader::addShader(shaderType shaderType, const std::string& shaderFileName,int shaderProgram)
 {
 	switch (shaderType)
 	{
@@ -23,7 +23,7 @@ void GLShader::addShader(shaderType shaderType, std::string shaderFileName,int s
 	}
 }
 
-void GLShader::addProgram(shaderType shaderType, std::string shaderFileContent, int shaderProgram)
+void GLShader::addProgram(shaderType shaderType, const std::string& shaderFileContent, int shaderProgram)
 {
 	int l_glShaderType = 0;
 
@@ -143,6 +143,16 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
+void GLRenderingManager::setcameraProjectionMatrix(Mat4f * cameraProjectionMatrix)
+{
+	m_cameraProjectionMatrix = cameraProjectionMatrix;
+}
+
+void GLRenderingManager::setCameraViewProjectionMatrix(const Mat4f & cameraViewProjectionMatrix)
+{
+	m_cameraViewProjectionMatrix = cameraViewProjectionMatrix;
+}
+
 void GLRenderingManager::init()
 {
 	// shader program
@@ -168,10 +178,12 @@ void GLRenderingManager::update()
 	glClear(GL_COLOR_BUFFER_BIT);
 	m_vertexShader.bind(m_program);
 	m_fragmentShader.bind(m_program);
+	m_vertexShader.addUniform(m_program, "projection", *m_cameraProjectionMatrix);
+	m_vertexShader.addUniform(m_program, "view", m_cameraViewProjectionMatrix);
 }
 
 void GLRenderingManager::shutdown()
 {
 	this->setStatus(UNINITIALIZIED);
-	LogManager::LogManager::printLog("GLRenderingManager has been shutdown.");
+	LogManager::printLog("GLRenderingManager has been shutdown.");
 }
