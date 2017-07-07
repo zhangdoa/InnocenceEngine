@@ -204,7 +204,8 @@ void GLRenderingManager::setCameraViewProjectionMatrix(const Mat4f & cameraViewP
 void GLRenderingManager::init()
 {
 	m_basicGLShader.init();
-	//m_basicGLShader.addUniform("MVP");
+	m_basicGLShader.addUniform("VP");
+	m_basicGLShader.addUniform("M");
 	this->setStatus(INITIALIZIED);
 	LogManager::LogManager::printLog("GLRenderingManager has been initialized.");
 }

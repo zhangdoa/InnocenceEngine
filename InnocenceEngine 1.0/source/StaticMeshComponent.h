@@ -47,14 +47,38 @@ private:
 
 };
 
+
+class TextureData
+{
+public:
+	TextureData();
+	~TextureData();
+
+	void init();
+	void update();
+	void shutdown();
+
+
+	void addTextureData(int textureWidth, int textureHeight, unsigned char * textureData);
+private:
+	GLuint m_textureID;
+
+
+};
+
 class StaticMeshComponent : public IVisibleGameEntity
 {
 public:
 	StaticMeshComponent();
 	~StaticMeshComponent();
+
+	void loadMesh(const std::string& meshFileName);
+	void loadTexture(const std::string& textureFileName);
+
 	void render() override;
 private:
 	MeshData m_meshData;
+	TextureData m_textureData;
 	void init() override;
 	void update() override;
 	void shutdown() override;
