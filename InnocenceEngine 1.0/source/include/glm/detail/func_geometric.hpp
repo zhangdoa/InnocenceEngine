@@ -46,17 +46,17 @@ namespace glm
 	/// @addtogroup core_func_geometric
 	/// @{
 
-	/// Returns the length of x, i.e., sqrt(x * x).
+	/// Returns the getLength of x, i.e., sqrt(x * x).
 	/// 
 	/// @tparam genType Floating-point vector types.
 	/// 
-	/// @see <a href="http://www.opengl.org/sdk/docs/manglsl/xhtml/length.xml">GLSL length man page</a>
+	/// @see <a href="http://www.opengl.org/sdk/docs/manglsl/xhtml/getLength.xml">GLSL getLength man page</a>
 	/// @see <a href="http://www.opengl.org/registry/doc/GLSLangSpec.4.20.8.pdf">GLSL 4.20.8 specification, section 8.5 Geometric Functions</a>
 	template <typename T, precision P, template <typename, precision> class vecType>
 	GLM_FUNC_DECL T length(
 		vecType<T, P> const & x);
 
-	/// Returns the distance betwwen p0 and p1, i.e., length(p0 - p1).
+	/// Returns the distance betwwen p0 and p1, i.e., getLength(p0 - p1).
 	///
 	/// @tparam genType Floating-point vector types.
 	/// 
@@ -89,8 +89,8 @@ namespace glm
 		tvec3<T, P> const & x,
 		tvec3<T, P> const & y);
 
-	/// Returns a vector in the same direction as x but with length of 1.
-	/// According to issue 10 GLSL 1.10 specification, if length(x) == 0 then result is undefined and generate an error.
+	/// Returns a vector in the same direction as x but with getLength of 1.
+	/// According to issue 10 GLSL 1.10 specification, if getLength(x) == 0 then result is undefined and generate an error.
 	/// 
 	/// @see <a href="http://www.opengl.org/sdk/docs/manglsl/xhtml/normalize.xml">GLSL normalize man page</a>
 	/// @see <a href="http://www.opengl.org/registry/doc/GLSLangSpec.4.20.8.pdf">GLSL 4.20.8 specification, section 8.5 Geometric Functions</a>

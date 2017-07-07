@@ -107,7 +107,7 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 			Vec3f v1 = vertices[i1]->getPos() - vertices[i0]->getPos();
 			Vec3f v2 = vertices[i2]->getPos() - vertices[i0]->getPos();
 
-			Vec3f normal = v1.cross(v2).normalized();
+			Vec3f normal = v1.cross(v2).getNormalizedVec3f();
 
 			vertices[i0]->setNormal(vertices[i0]->getNormal() + (normal));
 			vertices[i1]->setNormal(vertices[i0]->getNormal() + (normal));
@@ -116,7 +116,7 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 		}
 		for (size_t i = 0; i < vertices.size(); i++)
 		{
-			vertices[i]->setNormal(vertices[i]->getNormal().normalized());
+			vertices[i]->setNormal(vertices[i]->getNormal().getNormalizedVec3f());
 		}
 	}
 	std::vector<float> verticesBuffer(vertices.size() * 8);

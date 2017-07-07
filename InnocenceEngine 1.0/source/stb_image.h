@@ -1931,7 +1931,7 @@ static int stbi__jpeg_decode_block(stbi__jpeg *j, short data[64], stbi__huffman 
 		r = fac[c];
 		if (r) { // fast-AC path
 			k += (r >> 4) & 15; // run
-			s = r & 15; // combined length
+			s = r & 15; // combined getLength
 			j->code_buffer <<= s;
 			j->code_bits -= s;
 			// decode into unzigzag'd location
@@ -2008,7 +2008,7 @@ static int stbi__jpeg_decode_block_prog_ac(stbi__jpeg *j, short data[64], stbi__
 			r = fac[c];
 			if (r) { // fast-AC path
 				k += (r >> 4) & 15; // run
-				s = r & 15; // combined length
+				s = r & 15; // combined getLength
 				j->code_buffer <<= s;
 				j->code_bits -= s;
 				zig = stbi__jpeg_dezigzag[k++];
@@ -5010,11 +5010,11 @@ static int stbi__high_bit(unsigned int z)
 
 static int stbi__bitcount(unsigned int a)
 {
-	a = (a & 0x55555555) + ((a >> 1) & 0x55555555); // max 2
-	a = (a & 0x33333333) + ((a >> 2) & 0x33333333); // max 4
-	a = (a + (a >> 4)) & 0x0f0f0f0f; // max 8 per 4, now 8 bits
-	a = (a + (a >> 8)); // max 16 per 8 bits
-	a = (a + (a >> 16)); // max 32 per 8 bits
+	a = (a & 0x55555555) + ((a >> 1) & 0x55555555); // getMaxElem 2
+	a = (a & 0x33333333) + ((a >> 2) & 0x33333333); // getMaxElem 4
+	a = (a + (a >> 4)) & 0x0f0f0f0f; // getMaxElem 8 per 4, now 8 bits
+	a = (a + (a >> 8)); // getMaxElem 16 per 8 bits
+	a = (a + (a >> 16)); // getMaxElem 32 per 8 bits
 	return a & 0xff;
 }
 
@@ -5071,7 +5071,7 @@ static void *stbi__bmp_parse_header(stbi__context *s, stbi__bmp_data *info)
 		stbi__get32le(s); // discard hres
 		stbi__get32le(s); // discard vres
 		stbi__get32le(s); // discard colorsused
-		stbi__get32le(s); // discard max important
+		stbi__get32le(s); // discard getMaxElem important
 		if (hsz == 40 || hsz == 56) {
 			if (hsz == 56) {
 				stbi__get32le(s);
@@ -6642,7 +6642,7 @@ static float *stbi__hdr_load(stbi__context *s, int *x, int *y, int *comp, int re
 			c2 = stbi__get8(s);
 			len = stbi__get8(s);
 			if (c1 != 2 || c2 != 2 || (len & 0x80)) {
-				// not run-length encoded, so we have to actually use THIS data as a decoded
+				// not run-getLength encoded, so we have to actually use THIS data as a decoded
 				// pixel (note this can't be a valid pixel--one of RGB must be >= 128)
 				stbi_uc rgbe[4];
 				rgbe[0] = (stbi_uc)c1;
@@ -6973,7 +6973,7 @@ static int      stbi__pnm_info(stbi__context *s, int *x, int *y, int *comp)
 	*y = stbi__pnm_getinteger(s, &c); // read height
 	stbi__pnm_skip_whitespace(s, &c);
 
-	maxv = stbi__pnm_getinteger(s, &c);  // read max value
+	maxv = stbi__pnm_getinteger(s, &c);  // read getMaxElem value
 
 	if (maxv > 255)
 		return stbi__err("max value > 255", "PPM image not 8-bit");

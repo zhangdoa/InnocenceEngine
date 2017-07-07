@@ -183,7 +183,7 @@ namespace glm
 	/// 
 	/// @tparam genType Floating-point or integer; scalar or vector types.
 	/// 
-	/// @see <a href="http://www.opengl.org/sdk/docs/manglsl/xhtml/max.xml">GLSL max man page</a>
+	/// @see <a href="http://www.opengl.org/sdk/docs/manglsl/xhtml/getMaxElem.xml">GLSL getMaxElem man page</a>
 	/// @see <a href="http://www.opengl.org/registry/doc/GLSLangSpec.4.20.8.pdf">GLSL 4.20.8 specification, section 8.3 Common Functions</a>
 	template <typename genType>
 	GLM_FUNC_DECL genType max(genType x, genType y);
@@ -194,7 +194,7 @@ namespace glm
 	template <typename T, precision P, template <typename, precision> class vecType>
 	GLM_FUNC_DECL vecType<T, P> max(vecType<T, P> const & x, vecType<T, P> const & y);
 
-	/// Returns min(max(x, minVal), maxVal) for each component in x 
+	/// Returns min(getMaxElem(x, minVal), maxVal) for each component in x 
 	/// using the floating-point values minVal and maxVal.
 	///
 	/// @tparam genType Floating-point or integer; scalar or vector types.
@@ -235,7 +235,7 @@ namespace glm
 	/// @param[in]  a Interpolant.
 	/// 
 	/// @tparam	genTypeT Floating point scalar or vector.
-	/// @tparam genTypeU Floating point or boolean scalar or vector. It can't be a vector if it is the length of genTypeT.
+	/// @tparam genTypeU Floating point or boolean scalar or vector. It can't be a vector if it is the getLength of genTypeT.
 	/// 
 	/// @code
 	/// #include <glm/glm.hpp>
