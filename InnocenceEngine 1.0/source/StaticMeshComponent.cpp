@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#define STB_IMAGE_IMPLEMENTATION    
+#include "stb_image.h"
 #include "StaticMeshComponent.h"
 
 VertexData::VertexData()
@@ -155,6 +157,42 @@ void MeshData::addTestTriangle()
 }
 
 
+TextureData::TextureData()
+{
+}
+
+TextureData::~TextureData()
+{
+}
+
+void TextureData::init()
+{
+	glGenTextures(1, &m_textureID);
+	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+void TextureData::update()
+{
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m_textureID);
+}
+
+void TextureData::shutdown()
+{
+}
+
+void TextureData::addTextureData(int textureWidth, int textureHeight, unsigned char * textureData)
+{
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
+	glGenerateMipmap(GL_TEXTURE_2D);
+}
+
 StaticMeshComponent::StaticMeshComponent()
 {
 }
@@ -164,6 +202,27 @@ StaticMeshComponent::~StaticMeshComponent()
 {
 }
 
+void StaticMeshComponent::loadMesh(const std::string & meshFileName)
+{
+}
+
+void StaticMeshComponent::loadTexture(const std::string & textureFileName)
+{
+	// load image, create texture and generate mipmaps
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char *data = stbi_load(("../res/textures" + textureFileName).c_str(), &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		m_textureData.addTextureData(width, height, data);
+	}
+	else
+	{
+		std::cout << "Failed to load texture: " + textureFileName<< std::endl;
+	}
+	stbi_image_free(data);
+}
+
 void StaticMeshComponent::render()
 {
 }
@@ -171,14 +230,18 @@ void StaticMeshComponent::render()
 void StaticMeshComponent::init()
 {
 	m_meshData.init();
+	m_textureData.init();
+	loadTexture("test.png");
 }
 
 void StaticMeshComponent::update()
 {
 	m_meshData.update();
+	m_textureData.update();
 }
 
 void StaticMeshComponent::shutdown()
 {
 	m_meshData.shutdown();
+	m_textureData.shutdown();
 }
