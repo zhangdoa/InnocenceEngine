@@ -25,12 +25,27 @@ void InnocenceGarden::init()
 {
 	testCamera.exec(INIT);
 	testTriangle.exec(INIT);
-	testCamera.getTransform()->setPos(Vec3f(1.0f, 3.0f, 2.0f));
-	testTriangle.getTransform()->setPos(Vec3f(0.0f, -4.0f, 5.0f));
+	testCamera.getTransform()->setPos(Vec3f(0.0f, 1.0f, -5.0f));
 }
 
 void InnocenceGarden::update()
 {
+	if (getInputManager()->getKey(GLFW_KEY_W))
+	{
+		testCamera.move(CameraComponent::FORWARD);
+	}
+	if (getInputManager()->getKey(GLFW_KEY_S))
+	{
+		testCamera.move(CameraComponent::BACKWARD);
+	}
+	if (getInputManager()->getKey(GLFW_KEY_A))
+	{
+		testCamera.move(CameraComponent::LEFT);
+	}
+	if (getInputManager()->getKey(GLFW_KEY_D))
+	{
+		testCamera.move(CameraComponent::RIGHT);
+	}
 	testCamera.exec(UPDATE);
 	testTriangle.exec(UPDATE);
 }

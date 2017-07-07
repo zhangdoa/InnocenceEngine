@@ -82,7 +82,7 @@ namespace detail
 	};
 }//namespace detail
 
-	// length
+	// getLength
 	template <typename genType>
 	GLM_FUNC_QUALIFIER genType length(genType x)
 	{

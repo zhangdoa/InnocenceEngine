@@ -39,6 +39,7 @@ void CoreManager::init()
 	}
 
 	try {
+		m_gameData->setInputManager(&m_inputManager);
 		m_gameData->exec(INIT);
 	}
 	catch (std::exception& e) {
@@ -75,7 +76,6 @@ void CoreManager::update()
 					LogManager::printLog("Cannot get camera infomation!");
 					LogManager::printLog(e.what());
 				}
-
 				m_graphicManager.exec(UPDATE);
 				m_graphicManager.render(m_gameData->getTest());
 

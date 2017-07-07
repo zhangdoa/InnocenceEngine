@@ -400,7 +400,7 @@ namespace detail
 	//// min(x,y)
 	//r = y + ((x - y) & ((x - y) >> (sizeof(int) *
 	//CHAR_BIT - 1)));
-	//// max(x,y)
+	//// getMaxElem(x,y)
 	//r = x - ((x - y) & ((x - y) >> (sizeof(int) *
 	//CHAR_BIT - 1)));
 
@@ -425,7 +425,7 @@ namespace detail
 		return detail::functor2<T, P, vecType>::call(min, a, b);
 	}
 
-	// max
+	// getMaxElem
 	template <typename genType>
 	GLM_FUNC_QUALIFIER genType max(genType x, genType y)
 	{

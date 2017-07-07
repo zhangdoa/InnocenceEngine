@@ -38,48 +38,60 @@ float Vec2f::getY() const
 	return _y;
 }
 
-Vec2f Vec2f::operator+(const Vec2f& r)
+Vec2f Vec2f::operator+(const Vec2f& r) const
 {
 	return Vec2f(_x + r._x, _y + r._y);
 }
 
-Vec2f Vec2f::operator+(float r)
+Vec2f Vec2f::operator+(float r) const
 {
 	return Vec2f(_x + r, _y + r);
 }
 
-Vec2f Vec2f::operator-(const Vec2f& r)
+Vec2f Vec2f::operator-(const Vec2f& r) const
 {
 	return Vec2f(_x - r._x, _y - r._y);
 }
 
-Vec2f Vec2f::operator-(float r)
+Vec2f Vec2f::operator-(float r) const
 {
 	return Vec2f(_x - r, _y - r);
 }
 
-Vec2f Vec2f::operator*(const Vec2f& r)
+Vec2f Vec2f::operator*(const Vec2f& r) const
 {
 	return Vec2f(_x * r._x, _y * r._y);
 }
 
-Vec2f Vec2f::operator*(float r)
+Vec2f Vec2f::operator*(float r) const
 {
 	return Vec2f(_x * r, _y * r);
 }
 
-Vec2f Vec2f::operator/(const Vec2f& r)
+Vec2f Vec2f::operator/(const Vec2f& r) const
 {
 	return Vec2f(_x / r._x, _y / r._y);
 }
 
-Vec2f Vec2f::operator/(float r)
+Vec2f Vec2f::operator/(float r) const
 {
 	return Vec2f(_x / r, _y / r);
 }
 
+bool Vec2f::operator!=(const Vec2f & r) const
+{
+	if (_x != r._x || _y != r._y)
+	{
+		return true;
+	}
+	else 
+	{
+		return false;
+	}
+}
 
-float Vec2f::max()
+
+float Vec2f::getMaxElem() const
 {
 	if (_x >= _y)
 	{
@@ -88,32 +100,43 @@ float Vec2f::max()
 	else { return _y; }
 }
 
-float Vec2f::length()
+float Vec2f::getLength() const
 {
 	return sqrtf(_x * _x + _y * _y);
 }
 
-float Vec2f::dot(const Vec2f& r)
+float Vec2f::dot(const Vec2f& r) const
 {
 	return _x * r._x + _y * r._y;
 }
 
-float Vec2f::cross(const Vec2f& r)
+float Vec2f::cross(const Vec2f& r) const
 {
 	return _x * r._y - _y * r._x;
 }
 
-Vec2f Vec2f::normalized()
+void Vec2f::normalize()
 {
-	return Vec2f(_x / length(), _y / length());
+	_x = _x / getLength();
+	_y = _y / getLength();
 }
 
-Vec2f Vec2f::rotate(float angle)
+Vec2f Vec2f::getNormalizedVec2f() const
+{
+	return Vec2f(_x / getLength(), _y / getLength());
+}
+
+void Vec2f::rotate(float angle)
+{
+
+}
+
+Vec2f Vec2f::getRotatedVec2f(float angle) const
 {
 	return Vec2f();
 }
 
-Vec2f Vec2f::lerp(const Vec2f& dest, float lerpFactor)
+Vec2f Vec2f::lerp(const Vec2f& dest, float lerpFactor) const
 {
 	return Vec2f();
 }
@@ -156,7 +179,7 @@ float Vec3f::getZ() const
 
 Vec3f Vec3f::operator+(const Vec3f& r) const
 {
-	return Vec3f(_x + r.getX(), _y + r.getY(), _z + r.getZ());
+	return Vec3f(_x + r._x, _y + r._y, _z + r._z);
 }
 
 Vec3f Vec3f::operator+(float r) const
@@ -166,7 +189,7 @@ Vec3f Vec3f::operator+(float r) const
 
 Vec3f Vec3f::operator-(const Vec3f& r) const
 {
-	return Vec3f(_x - r.getX(), _y - r.getY(), _z - r.getZ());
+	return Vec3f(_x - r._x, _y - r._y, _z - r._z);
 }
 
 Vec3f Vec3f::operator-(float r) const
@@ -176,7 +199,7 @@ Vec3f Vec3f::operator-(float r) const
 
 Vec3f Vec3f::operator*(const Vec3f& r) const
 {
-	return Vec3f(_x * r.getX(), _y * r.getY(), _z * r.getZ());
+	return Vec3f(_x * r._x, _y * r._y, _z * r._z);
 }
 
 Vec3f Vec3f::operator*(float r) const
@@ -186,7 +209,7 @@ Vec3f Vec3f::operator*(float r) const
 
 Vec3f Vec3f::operator/(const Vec3f& r) const
 {
-	return Vec3f(_x / r.getX(), _y / r.getY(), _z / r.getZ());
+	return Vec3f(_x / r._x, _y / r._y, _z / r._z);
 }
 
 Vec3f Vec3f::operator/(float r) const
@@ -196,7 +219,7 @@ Vec3f Vec3f::operator/(float r) const
 
 bool Vec3f::operator!=(const Vec3f & r) const
 {
-	if (_x != r.getX() || _y != r.getY() || _z != r.getZ())
+	if (_x != r._x || _y != r._y || _z != r._z)
 	{
 		return true;
 	}
@@ -205,7 +228,7 @@ bool Vec3f::operator!=(const Vec3f & r) const
 	}
 }
 
-float Vec3f::max() const
+float Vec3f::getMaxElem() const
 {
 	if (_x >= _y && _x >= _z)
 	{
@@ -218,29 +241,52 @@ float Vec3f::max() const
 	return _z;
 }
 
-float Vec3f::length() const
+float Vec3f::getLength() const
 {
 	return sqrtf(_x * _x + _y * _y + _z * _z);
 }
 
 float Vec3f::dot(const Vec3f& r) const
 {
-	return _x * r.getX() + _y * r.getY() + _z * r.getZ();
+	return _x * r._x + _y * r._y + _z * r._z;
 }
 
 Vec3f Vec3f::cross(const Vec3f& r) const
 {
-	return Vec3f(_y * r.getZ() - _z * r.getY(), _z * r.getX() - _x * r.getZ(), _x * r.getY() - _y * r.getX());
+	return Vec3f(_y * r._z - _z * r._y, _z * r._x - _x * r._z, _x * r._y - _y * r._x);
 }
 
-Vec3f Vec3f::normalized() const
+void Vec3f::normalize()
 {
-	return Vec3f(_x / length(), _y / length(), _z / length());
+	_x = _x / getLength();
+	_y = _y / getLength();
+	_z = _z / getLength();
 }
 
-Vec3f Vec3f::rotate(float angle) const
+Vec3f Vec3f::getNormalizedVec3f() const
+{
+	return Vec3f(_x / getLength(), _y / getLength(), _z / getLength());
+}
+
+void Vec3f::rotate(const Vec3f& axis, float angle)
+{
+
+}
+
+void Vec3f::rotate(const Vec4f& rotation)
+{
+
+}
+
+Vec3f Vec3f::getRotatedVec3f(const Vec3f& axis, float angle) const
 {
 	return Vec3f();
+}
+
+Vec3f Vec3f::getRotatedVec3f(const Vec4f & rotation) const
+{
+	Vec4f w = rotation * (*this) *(rotation.getConjugatedVec4f());
+	return Vec3f(w.getX(), w.getY(), w.getZ());
 }
 
 Vec3f Vec3f::lerp(const Vec3f& dest, float lerpFactor) const
@@ -470,7 +516,7 @@ void Mat4f::setAllElem(float r[4][4])
 	}
 }
 
-Quaternion::Quaternion()
+Vec4f::Vec4f()
 {
 	_x = 0.0f;
 	_y = 0.0f;
@@ -478,7 +524,7 @@ Quaternion::Quaternion()
 	_w = 0.0f;
 }
 
-Quaternion::Quaternion(float x, float y, float z, float w)
+Vec4f::Vec4f(float x, float y, float z, float w)
 {
 	_x = x;
 	_y = y;
@@ -487,7 +533,7 @@ Quaternion::Quaternion(float x, float y, float z, float w)
 
 }
 
-Quaternion::Quaternion(Vec3f axis, float angle)
+Vec4f::Vec4f(const Vec3f& axis, float angle)
 {
 	float sinHalfAngle = sinf(angle / 2);
 	float cosHalfAngle = cosf(angle / 2);
@@ -499,71 +545,57 @@ Quaternion::Quaternion(Vec3f axis, float angle)
 
 }
 
-Quaternion::~Quaternion()
+Vec4f::~Vec4f()
 {
 }
 
-float Quaternion::getX() const
+float Vec4f::getX() const
 {
 	return _x;
 }
 
-float Quaternion::getY() const
+float Vec4f::getY() const
 {
 	return _y;
 }
 
-float Quaternion::getZ() const
+float Vec4f::getZ() const
 {
 	return _z;
 }
 
-float Quaternion::getW() const
+float Vec4f::getW() const
 {
 	return _w;
 }
 
-float Quaternion::length()
-{
-	return sqrtf(_x * _x + _y * _y + _z * _z + _w * _w);
-}
 
-Quaternion Quaternion::normalized()
-{
-	return Quaternion();
-}
-
-Quaternion Quaternion::conjugate()
-{
-	return Quaternion(-_x, -_y, -_z, -_w);
-}
-
-Quaternion Quaternion::operator*(const Quaternion& r)
+Vec4f Vec4f::operator*(const Vec4f& r) const
 {
 	float w_ = _w * r.getW() - _x * r.getX() - _y * r.getY() - _z * r.getZ();
 	float x_ = _x * r.getW() + _w * r.getX() + _y * r.getZ() - _z * r.getY();
 	float y_ = _y * r.getW() + _w * r.getY() + _z * r.getX() - _x * r.getZ();
 	float z_ = _z * r.getW() + _w * r.getZ() + _x * r.getY() - _y * r.getX();
 
-	return Quaternion(x_, y_, z_, w_);
+	return Vec4f(x_, y_, z_, w_);
 }
 
-Quaternion Quaternion::operator*(const Vec3f& r)
+Vec4f Vec4f::operator*(const Vec3f& r) const
 {
 	float w_ = -_x * r.getX() - _y * r.getY() - _z * r.getZ();
 	float x_ = _w * r.getX() + _y * r.getZ() - _z * r.getY();
 	float y_ = _w * r.getY() + _z * r.getX() - _x * r.getZ();
 	float z_ = _w * r.getZ() + _x * r.getY() - _y * r.getX();
 
-	return Quaternion(x_, y_, z_, w_);
+	return Vec4f(x_, y_, z_, w_);
 }
 
-Quaternion Quaternion::operator*(float r)
+Vec4f Vec4f::operator*(float r) const
 {
-	return Quaternion(_x * r, _y * r, _z * r, _w * r);
+	return Vec4f(_x * r, _y * r, _z * r, _w * r);
 }
 
-bool Quaternion::operator!=(const Quaternion & r) const
+bool Vec4f::operator!=(const Vec4f & r) const
 {
 	if (_x != r.getX() || _y != r.getY() || _z != r.getZ() || _w != r.getW())
 	{
@@ -574,7 +606,74 @@ bool Quaternion::operator!=(const Quaternion & r) const
 	}
 }
 
-Mat4f Quaternion::toRotationMatrix()
+
+float Vec4f::getMaxElem() const
+{
+	return 0.0f;
+}
+
+float Vec4f::getLength() const
+{
+	return sqrtf(_x * _x + _y * _y + _z * _z + _w * _w);
+}
+
+float Vec4f::dot(const Vec4f & r) const
+{
+	return 0.0f;
+}
+
+Vec4f Vec4f::cross(const Vec4f & r) const
+{
+	return Vec4f();
+}
+
+void Vec4f::normalize()
+{
+	_x = _x / getLength();
+	_y = _y / getLength();
+	_z = _z / getLength();
+	_w = _w / getLength();
+}
+
+Vec4f Vec4f::getNormalizedVec4f() const
+{
+	return Vec4f(_x / getLength(), _y / getLength(), _z / getLength(), _w / getLength());
+}
+
+void Vec4f::rotate(float angle)
+{
+}
+
+Vec4f Vec4f::getRotatedVec4f(float angle) const
+{
+	return Vec4f();
+}
+
+Vec4f Vec4f::getRotatedVec4f(const Vec4f & rotation) const
+{
+	return Vec4f();
+}
+
+Vec4f Vec4f::lerp(const Vec4f & dest, float lerpFactor) const
+{
+	return Vec4f();
+}
+
+void Vec4f::conjugate()
+{
+
+	_x = -_x;
+	_y = -_y;
+	_z = -_z;
+	_w = -_w;
+}
+
+Vec4f Vec4f::getConjugatedVec4f() const
+{
+	return Vec4f(-_x, -_y, -_z, -_w);
+}
+
+Mat4f Vec4f::toRotationMatrix() const
 {
 	Vec3f forward = Vec3f(2.0f * (_x * _z - _w * _y), 2.0f * (_y * _z + _w * _x), 1.0f - 2.0f * (_x * _x + _y * _y));
 	Vec3f up = Vec3f(2.0f * (_x * _y + _w * _z), 1.0f - 2.0f * (_x * _x + _z * _z), 2.0f * (_y * _z - _w * _x));
@@ -584,13 +683,43 @@ Mat4f Quaternion::toRotationMatrix()
 	return rotationMatrix;
 }
 
+Vec3f Vec4f::getForward() const
+{
+	return Vec3f(0, 0, 1).getRotatedVec3f(*this);
+}
+
+Vec3f Vec4f::getBackward() const
+{
+	return Vec3f(0, 0, -1).getRotatedVec3f(*this);
+}
+
+Vec3f Vec4f::getUp() const
+{
+	return Vec3f(0, 1, 0).getRotatedVec3f(*this);
+}
+
+Vec3f Vec4f::getDown() const
+{
+	return Vec3f(0, -1, 0).getRotatedVec3f(*this);
+}
+
+Vec3f Vec4f::getRight() const
+{
+	return Vec3f(1, 0, 0).getRotatedVec3f(*this);
+}
+
+Vec3f Vec4f::getLeft() const
+{
+	return Vec3f(-1, 0, 0).getRotatedVec3f(*this);
+}
+
+
 Transform::Transform()
 {
 	_pos = Vec3f(0.0f, 0.0f, 0.0f);
-	_rot = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
+	_rot = Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
 	_scale = Vec3f(1.0f, 1.0f, 1.0f);
 }
-
 
 Transform::~Transform()
 {
@@ -605,7 +734,7 @@ void Transform::update()
 
 void Transform::rotate(Vec3f axis, float angle)
 {
-	_rot = Quaternion(axis, angle) * (_rot.normalized());
+	_rot = Vec4f(axis, angle) * (_rot.getNormalizedVec4f());
 }
 
 const Vec3f & Transform::getPos()
@@ -613,7 +742,7 @@ const Vec3f & Transform::getPos()
 	return _pos;
 }
 
-const Quaternion & Transform::getRot()
+const Vec4f & Transform::getRot()
 {
 	return _rot;
 }
@@ -628,7 +757,7 @@ void Transform::setPos(const Vec3f & pos)
 	_pos = pos;
 }
 
-void Transform::setRot(const Quaternion & rot)
+void Transform::setRot(const Vec4f & rot)
 {
 	_rot = rot;
 }
@@ -643,7 +772,7 @@ const Vec3f & Transform::getOldPos()
 	return _oldPos;
 }
 
-const Quaternion & Transform::getOldRot()
+const Vec4f & Transform::getOldRot()
 {
 	return _oldRot;
 }
