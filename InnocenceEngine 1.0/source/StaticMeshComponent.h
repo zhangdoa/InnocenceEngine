@@ -37,9 +37,8 @@ public:
 	void addTestTriangle();
 
 private:
-	GLuint m_vertexArrayID;
-	GLuint m_VBO;
 	GLuint m_VAO;
+	GLuint m_VBO;
 	GLuint m_IBO;
 
 	std::vector<VertexData*> m_vertices;

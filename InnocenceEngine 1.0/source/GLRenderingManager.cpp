@@ -26,7 +26,7 @@ void GLShader::addUniform(std::string uniform)
 	int uniformLocation = glGetUniformLocation(m_program, uniform.c_str());
 	if (uniformLocation == 0xFFFFFFFF)
 	{
-		LogManager::printLog("Error : Uniform lost: " + uniform);
+		LogManager::printLog("Error: Uniform lost: " + uniform);
 	}
 	m_uniforms.emplace(std::pair<std::string, int>(uniform.c_str(), uniformLocation));
 }
@@ -68,12 +68,20 @@ inline void GLShader::attachShader(shaderType shaderType, const std::string& sha
 	glAttachShader(m_program, l_shader);
 
 	compileShader();
+	GLint success;
+	GLchar infoLog[1024];
+	glGetShaderiv(l_shader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(l_shader, 1024, NULL, infoLog);
+		std::cout << "Shader compile error: " << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+	}
 	if (l_glShaderType == GL_VERTEX_SHADER)
 	{
-		setAttributeLocation(0, "position");
-		//addUniform("MVP");
+		setAttributeLocation(0, "in_Position");
+		setAttributeLocation(1, "in_TexCoord");
+		setAttributeLocation(2, "in_Normal");
 	}
-	detachShader(l_shader);
 }
 
 inline void GLShader::compileShader()
@@ -86,6 +94,10 @@ inline void GLShader::compileShader()
 inline void GLShader::setAttributeLocation(int arrtributeLocation, const std::string & arrtributeName)
 {
 	glBindAttribLocation(m_program, arrtributeLocation, arrtributeName.c_str());
+	if (glGetAttribLocation(m_program, arrtributeName.c_str()) == 0xFFFFFFFF)
+	{
+		LogManager::printLog("Error: Attribute lost: " + arrtributeName);
+	}
 }
 
 inline void GLShader::detachShader(int shader)
@@ -103,34 +115,12 @@ std::string GLShader::loadShader(const std::string & shaderFileName)
 {
 	std::ifstream file;
 	file.open(("../res/shaders/" + shaderFileName).c_str());
-
+	std::stringstream shaderStream;
 	std::string output;
-	std::string line;
 
-	if (file.is_open())
-	{
-		while (file.good())
-		{
-			getline(file, line);
-
-			if (line.find("#include") == std::string::npos)
-			{
-				output.append(line + "\n");
-			}
-			else
-			{
-				std::string includeFileName = GLShader::split(line, ' ')[1];
-				includeFileName = includeFileName.substr(1, includeFileName.length() - 2);
-
-				std::string toAppend = loadShader(includeFileName);
-				output.append(toAppend + "\n");
-			}
-		}
-	}
-	else
-	{
-		LogManager::LogManager::printLog("Unable to load shader: ");
-	}
+	shaderStream << file.rdbuf();
+	output = shaderStream.str();
+	file.close();
 
 	return output;
 }
@@ -192,8 +182,10 @@ GLRenderingManager::~GLRenderingManager()
 void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity)
 {
 	m_basicGLShader.bindShader();
-	m_basicGLShader.updateUniform("VP", m_cameraViewProjectionMatrix);
-	m_basicGLShader.updateUniform("M", visibleGameEntity->caclTransformation());
+	m_basicGLShader.addUniform("uni_MVP");
+	m_basicGLShader.addUniform("uni_Texture");
+	m_basicGLShader.updateUniform("uni_MVP", m_cameraViewProjectionMatrix * visibleGameEntity->caclTransformation());
+	m_basicGLShader.updateUniform("uni_Texture", 0);
 }
 
 void GLRenderingManager::setCameraViewProjectionMatrix(const Mat4f & cameraViewProjectionMatrix)
@@ -204,8 +196,6 @@ void GLRenderingManager::setCameraViewProjectionMatrix(const Mat4f & cameraViewP
 void GLRenderingManager::init()
 {
 	m_basicGLShader.init();
-	m_basicGLShader.addUniform("VP");
-	m_basicGLShader.addUniform("M");
 	this->setStatus(INITIALIZIED);
 	LogManager::LogManager::printLog("GLRenderingManager has been initialized.");
 }
