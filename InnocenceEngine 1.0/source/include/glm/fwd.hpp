@@ -43,17 +43,17 @@ namespace glm
 {
 	template <typename T, precision P> struct tquat;
 
-	/// Quaternion of low single-precision floating-point numbers.
+	/// Vec4f of low single-precision floating-point numbers.
 	///
 	/// @see gtc_quaternion
 	typedef tquat<float, lowp>		lowp_quat;
 
-	/// Quaternion of medium single-precision floating-point numbers.
+	/// Vec4f of medium single-precision floating-point numbers.
 	///
 	/// @see gtc_quaternion
 	typedef tquat<float, mediump>	mediump_quat;
 
-	/// Quaternion of high single-precision floating-point numbers.
+	/// Vec4f of high single-precision floating-point numbers.
 	///
 	/// @see gtc_quaternion
 	typedef tquat<float, highp>		highp_quat;
@@ -65,42 +65,42 @@ namespace glm
 #elif(!defined(GLM_PRECISION_HIGHP_FLOAT) && !defined(GLM_PRECISION_MEDIUMP_FLOAT) && defined(GLM_PRECISION_LOWP_FLOAT))
 	typedef lowp_quat			quat;
 #elif(!defined(GLM_PRECISION_HIGHP_FLOAT) && !defined(GLM_PRECISION_MEDIUMP_FLOAT) && !defined(GLM_PRECISION_LOWP_FLOAT))
-	/// Quaternion of default single-precision floating-point numbers.
+	/// Vec4f of default single-precision floating-point numbers.
 	typedef highp_quat			quat;
 #endif
 
-	/// Quaternion of low single-precision floating-point numbers.
+	/// Vec4f of low single-precision floating-point numbers.
 	///
 	/// @see gtc_quaternion
 	typedef lowp_quat			lowp_fquat;
 
-	/// Quaternion of medium single-precision floating-point numbers.
+	/// Vec4f of medium single-precision floating-point numbers.
 	///
 	/// @see gtc_quaternion
 	typedef mediump_quat		mediump_fquat;
 
-	/// Quaternion of high single-precision floating-point numbers.
+	/// Vec4f of high single-precision floating-point numbers.
 	///
 	/// @see gtc_quaternion
 	typedef highp_quat			highp_fquat;
 
-	/// Quaternion of default single-precision floating-point numbers.
+	/// Vec4f of default single-precision floating-point numbers.
 	///
 	/// @see gtc_quaternion
 	typedef quat				fquat;
 
 
-	/// Quaternion of low double-precision floating-point numbers.
+	/// Vec4f of low double-precision floating-point numbers.
 	///
 	/// @see gtc_quaternion
 	typedef tquat<double, lowp>		lowp_dquat;
 	
-	/// Quaternion of medium double-precision floating-point numbers.
+	/// Vec4f of medium double-precision floating-point numbers.
 	///
 	/// @see gtc_quaternion
 	typedef tquat<double, mediump>	mediump_dquat;
 	
-	/// Quaternion of high double-precision floating-point numbers.
+	/// Vec4f of high double-precision floating-point numbers.
 	///
 	/// @see gtc_quaternion
 	typedef tquat<double, highp>	highp_dquat;
@@ -112,7 +112,7 @@ namespace glm
 #elif(!defined(GLM_PRECISION_HIGHP_DOUBLE) && !defined(GLM_PRECISION_MEDIUMP_DOUBLE) && defined(GLM_PRECISION_LOWP_DOUBLE))
 	typedef lowp_dquat			dquat;
 #elif(!defined(GLM_PRECISION_HIGHP_DOUBLE) && !defined(GLM_PRECISION_MEDIUMP_DOUBLE) && !defined(GLM_PRECISION_LOWP_DOUBLE))
-	/// Quaternion of default double-precision floating-point numbers.
+	/// Vec4f of default double-precision floating-point numbers.
 	///
 	/// @see gtc_quaternion
 	typedef highp_dquat			dquat;
@@ -2251,7 +2251,7 @@ namespace glm
 	typedef highp_f64mat4x4 highp_f64mat4;
 
 	//////////////////////////
-	// Quaternion types
+	// Vec4f types
 
 	/// Low single-precision floating-point quaternion.
 	/// @see gtc_type_precision

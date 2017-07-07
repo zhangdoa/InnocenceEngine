@@ -19,29 +19,33 @@ public:
 	float getX() const;
 	float getY() const;
 
-	Vec2f operator+(const Vec2f& r);
-	Vec2f operator+(float r);
-	Vec2f operator-(const Vec2f& r);
-	Vec2f operator-(float r);
-	Vec2f operator*(const Vec2f& r);
-	Vec2f operator*(float r);
-	Vec2f operator/(const Vec2f& r);
-	Vec2f operator/(float r);
+	Vec2f operator+(const Vec2f& r) const;
+	Vec2f operator+(float r) const;
+	Vec2f operator-(const Vec2f& r) const;
+	Vec2f operator-(float r) const;
+	Vec2f operator*(const Vec2f& r) const;
+	Vec2f operator*(float r) const;
+	Vec2f operator/(const Vec2f& r) const;
+	Vec2f operator/(float r) const;
+	bool operator!=(const Vec2f& r) const;
 
-
-	float max();
-	float length();
-	float dot(const Vec2f& r);
-	float cross(const Vec2f& r);
-	Vec2f normalized();
-	Vec2f rotate(float angle);
-	Vec2f lerp(const Vec2f& dest, float lerpFactor);
+	float getMaxElem() const;
+	float getLength() const;
+	float dot(const Vec2f& r) const;
+	float cross(const Vec2f& r) const;
+	void normalize();
+	Vec2f getNormalizedVec2f() const;
+	void rotate(float angle);
+	Vec2f getRotatedVec2f(float angle) const;
+	Vec2f lerp(const Vec2f& dest, float lerpFactor) const;
 
 
 private:
 	float _x;
 	float _y;
 };
+
+class Vec4f;
 
 class Vec3f
 {
@@ -64,21 +68,24 @@ public:
 	Vec3f operator/(float r) const;
 	bool operator!=(const Vec3f& r) const;
 
-
-	float max() const;
-	float length() const;
+	float getMaxElem() const;
+	float getLength() const;
 	float dot(const Vec3f& r) const;
 	Vec3f cross(const Vec3f& r) const;
-	Vec3f normalized() const;
-	Vec3f rotate(float angle) const;
+	void normalize();
+	Vec3f getNormalizedVec3f() const;
+	void rotate(const Vec3f& axis, float angle);
+	void rotate(const Vec4f& rotation);
+	Vec3f getRotatedVec3f(const Vec3f& axis, float angle) const;
+	Vec3f getRotatedVec3f(const Vec4f& rotation) const;
 	Vec3f lerp(const Vec3f& dest, float lerpFactor) const;
-
 
 private:
 	float _x;
 	float _y;
 	float _z;
 };
+
 
 class Mat4f
 {
@@ -104,27 +111,47 @@ private:
 
 };
 
-class Quaternion
+class Vec4f
 {
 public:
-	Quaternion();
-	Quaternion(float x, float y, float z, float w);
-	Quaternion(Vec3f axis, float angle);
-	~Quaternion();
+	Vec4f();
+	Vec4f(float x, float y, float z, float w);
+	Vec4f(const Vec3f& axis, float angle);
+	~Vec4f();
 
 	float getX() const;
 	float getY() const;
 	float getZ() const;
 	float getW() const;
 
-	float length();
-	Quaternion normalized();
-	Quaternion conjugate();
-	Quaternion operator* (const Quaternion& r);
-	Quaternion operator* (const Vec3f& r);
-	Quaternion operator* (float r);
-	bool operator!=(const Quaternion& r) const;
-	Mat4f toRotationMatrix();
+
+	Vec4f operator* (const Vec4f& r) const;
+	Vec4f operator* (const Vec3f& r) const;
+	Vec4f operator* (float r) const;
+	bool operator!=(const Vec4f& r) const;
+
+
+
+	float getMaxElem() const;
+	float getLength() const;
+	float dot(const Vec4f& r) const;
+	Vec4f cross(const Vec4f& r) const;
+	void normalize();
+	Vec4f getNormalizedVec4f() const;
+	void rotate(float angle);
+	Vec4f getRotatedVec4f(float angle) const;
+	Vec4f getRotatedVec4f(const Vec4f& rotation) const;
+	Vec4f lerp(const Vec4f& dest, float lerpFactor) const;
+	void conjugate();
+	Vec4f getConjugatedVec4f() const;
+	Mat4f toRotationMatrix() const;
+
+	Vec3f getForward() const;
+	Vec3f getBackward() const;
+	Vec3f getUp() const;
+	Vec3f getDown() const;
+	Vec3f getRight() const;
+	Vec3f getLeft() const;
 
 private:
 	float _x;
@@ -132,6 +159,7 @@ private:
 	float _z;
 	float _w;
 };
+
 
 class Transform
 {
@@ -143,25 +171,25 @@ public:
 	void rotate(Vec3f axis, float angle);
 
 	const Vec3f& getPos();
-	const Quaternion& getRot();
+	const Vec4f& getRot();
 	const Vec3f& getScale();
 
 	void setPos(const Vec3f& pos);
-	void setRot(const Quaternion& rot);
+	void setRot(const Vec4f& rot);
 	void setScale(const Vec3f& scale);
 
 	const Vec3f& getOldPos();
-	const Quaternion& getOldRot();
+	const Vec4f& getOldRot();
 	const Vec3f& getOldScale();
 
 private:
 
 	Vec3f _pos;
-	Quaternion _rot;
+	Vec4f _rot;
 	Vec3f _scale;
 
 	Vec3f _oldPos;
-	Quaternion _oldRot;
+	Vec4f _oldRot;
 	Vec3f _oldScale;
 };
 

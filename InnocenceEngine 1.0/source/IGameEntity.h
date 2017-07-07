@@ -22,7 +22,7 @@ public:
 	bool hasTransformChanged();
 	Mat4f caclTransformation();
 	Vec3f caclTransformedPos();
-	Quaternion caclTransformedRot();
+	Vec4f caclTransformedRot();
 
 private:
 	std::vector<IGameEntity*> m_childGameEntity;

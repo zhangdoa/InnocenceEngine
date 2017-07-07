@@ -60,7 +60,7 @@ Mat4f IGameEntity::caclTransformation()
 	Mat4f l_translationMatrix;
 	l_translationMatrix.initTranslation(m_transform.getPos().getX(), m_transform.getPos().getY(), m_transform.getPos().getZ());
 
-	Quaternion l_rotationQuaternion = m_transform.getRot();
+	Vec4f l_rotationQuaternion = m_transform.getRot();
 	Mat4f l_rotaionMartix = l_rotationQuaternion.toRotationMatrix();
 
 	Mat4f l_scaleMartix;
@@ -90,9 +90,9 @@ Vec3f IGameEntity::caclTransformedPos()
 	return l_parentMatrix.transform(m_transform.getPos());
 }
 
-Quaternion IGameEntity::caclTransformedRot()
+Vec4f IGameEntity::caclTransformedRot()
 {
-	Quaternion l_parentRotation = Quaternion(0, 0, 0, 1);
+	Vec4f l_parentRotation = Vec4f(0, 0, 0, 1);
 
 	if (getParentEntity() != nullptr)
 	{
