@@ -84,7 +84,7 @@ bool Vec2f::operator!=(const Vec2f & r) const
 	{
 		return true;
 	}
-	else 
+	else
 	{
 		return false;
 	}
@@ -297,22 +297,6 @@ Vec3f Vec3f::lerp(const Vec3f& dest, float lerpFactor) const
 
 Mat4f::Mat4f()
 {
-	m[0][0] = 0.0f;
-	m[0][1] = 0.0f;
-	m[0][2] = 0.0f;
-	m[0][3] = 0.0f;
-	m[1][0] = 0.0f;
-	m[1][1] = 0.0f;
-	m[1][2] = 0.0f;
-	m[1][3] = 0.0f;
-	m[2][0] = 0.0f;
-	m[2][1] = 0.0f;
-	m[2][2] = 0.0f;
-	m[2][3] = 0.0f;
-	m[3][0] = 0.0f;
-	m[3][1] = 0.0f;
-	m[3][2] = 0.0f;
-	m[3][3] = 0.0f;
 }
 
 
@@ -727,9 +711,13 @@ Transform::~Transform()
 
 void Transform::update()
 {
-		_oldPos = _pos + (1.0f);
-		_oldRot = _rot *(0.5f);
-		_oldScale = _scale + (1.0f);
+
+	_oldPos = _pos;
+	_oldRot = _rot;
+	_oldScale = _scale;
+	/*_oldPos = _pos + (1.0f);
+	_oldRot = _rot *(0.5f);
+	_oldScale = _scale + (1.0f);*/
 }
 
 void Transform::rotate(Vec3f axis, float angle)
