@@ -16,7 +16,7 @@ public:
 	}
 
 private:
-	Actor m_rootActor;
+	BaseActor m_rootActor;
 
 	void init() override;
 	void update() override;

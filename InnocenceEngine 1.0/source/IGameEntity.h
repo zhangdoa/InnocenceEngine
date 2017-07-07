@@ -7,16 +7,20 @@
 #ifndef _I_GAME_ENTITY_H_
 #define _I_GAME_ENTITY_H_
 
-class IGameEntity : public IBaseObject
+class BaseComponent;
+class BaseActor : public IBaseObject
 {
 public:
-	IGameEntity();
-	virtual ~IGameEntity();
+	BaseActor();
+	virtual ~BaseActor();
 
-	void addChildEntity(IGameEntity* childEntity);
-	std::vector<IGameEntity*>& getChildrenEntity();
-	IGameEntity* getParentEntity();
-	void setParentEntity(IGameEntity* parentEntity);
+	void addChildActor(BaseActor* childActor);
+	std::vector<BaseActor*>& getChildrenActors();
+	BaseActor* getParentActor();
+	void setParentActor(BaseActor* parentActor);
+
+	void addChildComponent(BaseComponent* childComponent);
+	std::vector<BaseComponent*>& getChildrenComponents();
 
 	Transform* getTransform();
 	bool hasTransformChanged();
@@ -25,23 +29,29 @@ public:
 	Vec4f caclTransformedRot();
 
 private:
-	std::vector<IGameEntity*> m_childGameEntity;
-	IGameEntity* m_parentEntity;
-
+	std::vector<BaseActor*> m_childActor;
+	BaseActor* m_parentActor;
+	std::vector<BaseComponent*> m_childComponent;
 	Transform m_transform;
 
-};
-
-#endif // !_I_GAME_ENTITY_H_
-
-class Actor : public IGameEntity
-{
-public:
-	Actor();
-	~Actor();
-private:
 	void init() override;
 	void update() override;
 	void shutdown() override;
+
 };
+
+class BaseComponent : public IBaseObject
+{
+public:
+	BaseComponent();
+	virtual ~BaseComponent();
+
+	BaseActor* getParentActor();
+	void setParentActor(BaseActor* parentActor);
+	Transform* getTransform();
+private:
+	BaseActor* m_parentActor;
+};
+#endif // !_I_GAME_ENTITY_H_
+
 

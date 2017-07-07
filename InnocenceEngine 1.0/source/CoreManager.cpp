@@ -71,7 +71,7 @@ void CoreManager::update()
 				GraphicManager::getInstance().render(m_gameData->getTest());
 
 				m_gameData->exec(UPDATE);
-				SceneGraphManager::getInstance().exec(UPDATE);
+				//SceneGraphManager::getInstance().exec(UPDATE);
 			}
 			else
 			{

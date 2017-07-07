@@ -1,7 +1,7 @@
 #pragma once
 #include "IGameEntity.h"
 
-class IVisibleGameEntity : public IGameEntity
+class IVisibleGameEntity : public BaseComponent
 {
 public:
 	IVisibleGameEntity();
