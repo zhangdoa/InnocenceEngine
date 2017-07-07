@@ -16,6 +16,11 @@ GLFWwindow * WindowManager::getWindow()
 	return m_window;
 }
 
+Vec2f WindowManager::getScreenCenterPosition()
+{
+	return Vec2f(SCR_WIDTH / 2.0f, SCR_HEIGHT / 2.0f);
+}
+
 void WindowManager::init()
 {
 	if (glfwInit() != GL_TRUE)
@@ -31,7 +36,7 @@ void WindowManager::init()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL 
 
 																   // Open a window and create its OpenGL context
-	m_window = glfwCreateWindow(1024, 768, "Test", NULL, NULL);
+	m_window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Test", NULL, NULL);
 	if (m_window == nullptr) {
 		this->setStatus(ERROR);
 		LogManager::printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");

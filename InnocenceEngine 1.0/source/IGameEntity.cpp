@@ -60,8 +60,7 @@ Mat4f IGameEntity::caclTransformation()
 	Mat4f l_translationMatrix;
 	l_translationMatrix.initTranslation(m_transform.getPos().getX(), m_transform.getPos().getY(), m_transform.getPos().getZ());
 
-	Vec4f l_rotationQuaternion = m_transform.getRot();
-	Mat4f l_rotaionMartix = l_rotationQuaternion.toRotationMatrix();
+	Mat4f l_rotaionMartix = m_transform.getRot().toRotationMatrix();
 
 	Mat4f l_scaleMartix;
 	l_scaleMartix.initScale(m_transform.getScale().getX(), m_transform.getScale().getY(), m_transform.getScale().getZ());

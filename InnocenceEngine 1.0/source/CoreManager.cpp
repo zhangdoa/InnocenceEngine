@@ -19,11 +19,11 @@ void CoreManager::setGameData(IGameData * gameData)
 void CoreManager::init()
 {
 	// emplace_back in a static order.
-	m_childEventManager.emplace_back(&m_timeManager);
-	m_childEventManager.emplace_back(&m_windowManager);
-	m_childEventManager.emplace_back(&m_inputManager);
-	m_childEventManager.emplace_back(&m_graphicManager);
-	m_childEventManager.emplace_back(&m_sceneGraphManager);
+	m_childEventManager.emplace_back(&TimeManager::getInstance());
+	m_childEventManager.emplace_back(&WindowManager::getInstance());
+	m_childEventManager.emplace_back(&InputManager::getInstance());
+	m_childEventManager.emplace_back(&GraphicManager::getInstance());
+	m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
 
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
@@ -31,15 +31,6 @@ void CoreManager::init()
 	}
 
 	try {
-		m_inputManager.setWindow(m_windowManager.getWindow());
-	}
-	catch (std::exception& e) {
-		LogManager::printLog("Set window instance for InputManager failed!");
-		LogManager::printLog(e.what());
-	}
-
-	try {
-		m_gameData->setInputManager(&m_inputManager);
 		m_gameData->exec(INIT);
 	}
 	catch (std::exception& e) {
@@ -54,33 +45,33 @@ void CoreManager::init()
 void CoreManager::update()
 {
 	// time manager should update without any limitation.
-	m_timeManager.exec(UPDATE);
+	TimeManager::getInstance().exec(UPDATE);
 
 	// when time manager's status was INITIALIZED, that means we can update other managers, a frame counter occurred.
-	if (m_timeManager.getStatus() == INITIALIZIED)
+	if (TimeManager::getInstance().getStatus() == INITIALIZIED)
 	{
 		// window manager updates first, because I use GLFW lib to manage the windows event currently.
-		m_windowManager.exec(UPDATE);
+		WindowManager::getInstance().exec(UPDATE);
 
-		if (m_windowManager.getStatus() == INITIALIZIED)
+		if (WindowManager::getInstance().getStatus() == INITIALIZIED)
 		{
 			// input manager decides the game& engine behivour next steps which was based on user's input.
-			m_inputManager.exec(UPDATE);
+			InputManager::getInstance().exec(UPDATE);
 
-			if (m_inputManager.getStatus() == INITIALIZIED)
+			if (InputManager::getInstance().getStatus() == INITIALIZIED)
 			{
 				try {
-					m_graphicManager.setCameraViewProjectionMatrix(m_gameData->getCameraComponent()->getViewProjectionMatrix());
+					GraphicManager::getInstance().setCameraViewProjectionMatrix(m_gameData->getCameraComponent()->getViewProjectionMatrix());
 				}
 				catch (std::exception& e) {
 					LogManager::printLog("Cannot get camera infomation!");
 					LogManager::printLog(e.what());
 				}
-				m_graphicManager.exec(UPDATE);
-				m_graphicManager.render(m_gameData->getTest());
+				GraphicManager::getInstance().exec(UPDATE);
+				GraphicManager::getInstance().render(m_gameData->getTest());
 
 				m_gameData->exec(UPDATE);
-				m_sceneGraphManager.exec(UPDATE);
+				SceneGraphManager::getInstance().exec(UPDATE);
 			}
 			else
 			{

@@ -245,6 +245,7 @@ void StaticMeshComponent::init()
 
 void StaticMeshComponent::update()
 {
+	getTransform()->update();
 	m_textureData.update();
 	m_meshData.update();
 }
