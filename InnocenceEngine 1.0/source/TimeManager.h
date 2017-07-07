@@ -8,7 +8,13 @@ class TimeManager : public IEventManager
 public:
 	TimeManager();
 	~TimeManager();
-	
+
+	static TimeManager& getInstance()
+	{
+		static TimeManager instance;
+		return instance;
+	}
+
 	const __time64_t getGameStartTime();
 	const double getDeltaTime();
 	static std::string getCurrentTimeInLocal();

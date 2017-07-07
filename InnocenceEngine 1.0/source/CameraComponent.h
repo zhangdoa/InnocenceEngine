@@ -7,7 +7,7 @@ public:
 	CameraData();
 	~CameraData();
 
-	const Vec3f yAxis = Vec3f(0.0f, 1.0f, 0.0f);
+	Vec3f yAxis = Vec3f(0.0f, 1.0f, 0.0f);
 
 	void addCameraData(float fov, float aspectRatio, float zNear, float zFar);
 
@@ -24,8 +24,10 @@ public:
 	~CameraComponent();
 
 	enum moveDirection {FORWARD, BACKWARD, LEFT, RIGHT};
+
 	Mat4f getViewProjectionMatrix();
 	void move(moveDirection moveDirection);
+	Vec3f* getYAxis();
 private:
 	CameraData m_cameraData;
 	void init() override;

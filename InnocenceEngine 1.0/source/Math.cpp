@@ -285,7 +285,7 @@ Vec3f Vec3f::getRotatedVec3f(const Vec3f& axis, float angle) const
 
 Vec3f Vec3f::getRotatedVec3f(const Vec4f & rotation) const
 {
-	Vec4f w = rotation * (*this) *(rotation.getConjugatedVec4f());
+	Vec4f w = (rotation * (*this)) *(rotation.getConjugatedVec4f());
 	return Vec3f(w.getX(), w.getY(), w.getZ());
 }
 
@@ -734,7 +734,7 @@ void Transform::update()
 
 void Transform::rotate(Vec3f axis, float angle)
 {
-	_rot = Vec4f(axis, angle) * (_rot.getNormalizedVec4f());
+	_rot = (Vec4f(axis, angle) * _rot).getNormalizedVec4f();
 }
 
 const Vec3f & Transform::getPos()

@@ -13,6 +13,12 @@ public:
 	GraphicManager();
 	~GraphicManager();
 
+	static GraphicManager& getInstance()
+	{
+		static GraphicManager instance;
+		return instance;
+	}
+
 	void render(IVisibleGameEntity* visibleGameEntity);
 	void setCameraViewProjectionMatrix(const Mat4f& cameraViewProjectionMatrix);
 private:
