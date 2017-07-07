@@ -148,21 +148,21 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 void MeshData::addTestTriangle()
 {
 	VertexData l_VertexData1;
-	l_VertexData1.addVertexData(Vec3f(0.5f, 0.5f, 0.0f), Vec2f(1.0f, 1.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData1.addVertexData(Vec3f(-10.0f, 0.0f,-10.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData2;
-	l_VertexData2.addVertexData(Vec3f(0.5f, -0.5f, 0.0f), Vec2f(1.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData2.addVertexData(Vec3f(-10.0f, 0.0f, 30.0f), Vec2f(0.0f, 1.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData3;
-	l_VertexData3.addVertexData(Vec3f(-0.5f, -0.5f, 0.0f), Vec2f(0.0, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData3.addVertexData(Vec3f(30.0f, 0.0f, -10.0f), Vec2f(1.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData4;
-	l_VertexData4.addVertexData(Vec3f(-0.5f, 0.5f, 0.0f), Vec2f(0.0, 1.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData4.addVertexData(Vec3f(30.0f, 0.0f, 30.0f), Vec2f(1.0f, 1.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	m_vertices = { &l_VertexData1, &l_VertexData2, &l_VertexData3, &l_VertexData4 };
-	m_intices = { 0, 1, 3, 1, 2 ,3};
+	m_intices = { 0, 1, 2, 2, 1 ,3};
 
-	addMeshData(m_vertices, m_intices, false);
+	addMeshData(m_vertices, m_intices, true);
 }
 
 

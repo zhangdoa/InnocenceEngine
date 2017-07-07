@@ -1,5 +1,6 @@
 #pragma once
 #include "IGameData.h"
+#include "IGameEntity.h"
 #include "CameraComponent.h"
 #include "StaticMeshComponent.h"
 class InnocenceGarden :	public IGameData
@@ -15,7 +16,10 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	CameraComponent testCamera;
-	StaticMeshComponent testTriangle;
+	BaseActor testRootActor;
+	BaseActor testCameraActor;
+	BaseActor testTriangleActor;
+	CameraComponent testCameraComponent;
+	StaticMeshComponent testTriangleComponent;
 };
 

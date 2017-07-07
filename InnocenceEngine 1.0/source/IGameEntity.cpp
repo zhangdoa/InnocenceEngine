@@ -2,52 +2,63 @@
 #include "IGameEntity.h"
 
 
-IGameEntity::IGameEntity()
+BaseActor::BaseActor()
 {
 }
 
 
-IGameEntity::~IGameEntity()
+BaseActor::~BaseActor()
 {
 }
 
-void IGameEntity::addChildEntity(IGameEntity* childEntity)
+void BaseActor::addChildActor(BaseActor* childActor)
 {
-	m_childGameEntity.emplace_back(childEntity);
-	childEntity->setParentEntity(this);
+	m_childActor.emplace_back(childActor);
+	childActor->setParentActor(this);
 }
 
-std::vector<IGameEntity*>& IGameEntity::getChildrenEntity()
+std::vector<BaseActor*>& BaseActor::getChildrenActors()
 {
-	return m_childGameEntity;
+	return m_childActor;
 }
 
-IGameEntity* IGameEntity::getParentEntity()
+BaseActor* BaseActor::getParentActor()
 {
-	return m_parentEntity;
+	return m_parentActor;
 }
 
-void IGameEntity::setParentEntity(IGameEntity* parentEntity)
+void BaseActor::setParentActor(BaseActor* parentActor)
 {
-	m_parentEntity = parentEntity;
+	m_parentActor = parentActor;
 }
 
-Transform* IGameEntity::getTransform()
+void BaseActor::addChildComponent(BaseComponent * childComponent)
+{
+	m_childComponent.emplace_back(childComponent);
+	childComponent->setParentActor(this);
+}
+
+std::vector<BaseComponent*>& BaseActor::getChildrenComponents()
+{
+	return m_childComponent;
+}
+
+Transform* BaseActor::getTransform()
 {
 	return &m_transform;
 }
 
 
-bool IGameEntity::hasTransformChanged()
+bool BaseActor::hasTransformChanged()
 {
 	if (m_transform.getPos() != m_transform.getOldPos() || m_transform.getRot() != m_transform.getOldRot() || m_transform.getScale() != m_transform.getOldScale())
 	{
 		return true;
 	}
 
-	if (getParentEntity() != nullptr)
+	if (getParentActor() != nullptr)
 	{
-		if (getParentEntity()->hasTransformChanged())
+		if (getParentActor()->hasTransformChanged())
 		{
 			return true;
 		}
@@ -55,7 +66,7 @@ bool IGameEntity::hasTransformChanged()
 	return false;
 }
 
-Mat4f IGameEntity::caclTransformation()
+Mat4f BaseActor::caclTransformation()
 {
 	Mat4f l_translationMatrix;
 	l_translationMatrix.initTranslation(m_transform.getPos().getX(), m_transform.getPos().getY(), m_transform.getPos().getZ());
@@ -68,74 +79,103 @@ Mat4f IGameEntity::caclTransformation()
 	Mat4f l_parentMatrix;
 	l_parentMatrix.initIdentity();
 
-	if (getParentEntity() != nullptr && getParentEntity()->hasTransformChanged())
+	if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
 	{
-		l_parentMatrix = getParentEntity()->caclTransformation();
+		l_parentMatrix = getParentActor()->caclTransformation();
 	}
 
 	return l_parentMatrix * l_translationMatrix * l_rotaionMartix * l_scaleMartix;
 }
 
-Vec3f IGameEntity::caclTransformedPos()
+Vec3f BaseActor::caclTransformedPos()
 {
 	Mat4f l_parentMatrix;
 	l_parentMatrix.initIdentity();
 
-	if (getParentEntity() != nullptr && getParentEntity()->hasTransformChanged())
+	if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
 	{
-		l_parentMatrix = getParentEntity()->caclTransformation();
+		l_parentMatrix = getParentActor()->caclTransformation();
 	}
 
 	return l_parentMatrix.transform(m_transform.getPos());
 }
 
-Vec4f IGameEntity::caclTransformedRot()
+Vec4f BaseActor::caclTransformedRot()
 {
 	Vec4f l_parentRotation = Vec4f(0, 0, 0, 1);
 
-	if (getParentEntity() != nullptr)
+	if (getParentActor() != nullptr)
 	{
-		l_parentRotation = getParentEntity()->caclTransformedRot();
+		l_parentRotation = getParentActor()->caclTransformedRot();
 	}
 
 	return l_parentRotation * m_transform.getRot();
 }
 
 
-Actor::Actor()
+void BaseActor::init()
 {
-}
-
-
-Actor::~Actor()
-{
-}
-
-void Actor::init()
-{
-	for (size_t i = 0; i < getChildrenEntity().size(); i++)
+	for (size_t i = 0; i < m_childActor.size(); i++)
 	{
-		getChildrenEntity()[i]->exec(INIT);
+		m_childActor[i]->exec(INIT);
+	}
+	for (size_t i = 0; i < m_childComponent.size(); i++)
+	{
+		m_childComponent[i]->exec(INIT);
 	}
 	this->setStatus(INITIALIZIED);
 }
 
-void Actor::update()
+void BaseActor::update()
 {
-	if (getChildrenEntity().size() != 0)
+	if (m_childActor.size() != 0)
 	{
-		for (size_t i = 0; i < getChildrenEntity().size(); i++)
+		for (size_t i = 0; i < getChildrenActors().size(); i++)
 		{
-			getChildrenEntity()[i]->exec(UPDATE);
+			m_childActor[i]->exec(UPDATE);
+		}
+	}
+	if (m_childComponent.size() != 0)
+	{
+		for (size_t i = 0; i < m_childComponent.size(); i++)
+		{
+			m_childComponent[i]->exec(UPDATE);
 		}
 	}
 }
 
-void Actor::shutdown()
+void BaseActor::shutdown()
 {
-	for (size_t i = 0; i < getChildrenEntity().size(); i++)
+	for (size_t i = 0; i < getChildrenActors().size(); i++)
 	{
-		getChildrenEntity()[i]->exec(SHUTDOWN);
+		getChildrenActors()[i]->exec(SHUTDOWN);
+	}
+	for (size_t i = 0; i < m_childComponent.size(); i++)
+	{
+		m_childComponent[i]->exec(SHUTDOWN);
 	}
 	this->setStatus(UNINITIALIZIED);
+}
+
+BaseComponent::BaseComponent()
+{
+}
+
+BaseComponent::~BaseComponent()
+{
+}
+
+BaseActor * BaseComponent::getParentActor()
+{
+	return m_parentActor;
+}
+
+void BaseComponent::setParentActor(BaseActor * parentActor)
+{
+	m_parentActor = parentActor;
+}
+
+Transform * BaseComponent::getTransform()
+{
+	return m_parentActor->getTransform();
 }
