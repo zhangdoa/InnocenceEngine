@@ -17,7 +17,7 @@ public:
 		SHUTDOWN
 	};
 
-	enum managerStatus
+	enum objectStatus
 	{
 		STANDBY,
 		INITIALIZIED,
@@ -30,10 +30,10 @@ public:
 	const int getStatus() const;
 
 protected:
-	void setStatus(managerStatus managerStatus);
+	void setStatus(objectStatus objectStatus);
 
 private:
-	managerStatus m_ObjectStatus = UNINITIALIZIED;
+	objectStatus m_ObjectStatus = UNINITIALIZIED;
 
 	virtual void init() = 0;
 	virtual void update() = 0;

@@ -9,6 +9,12 @@ public:
 	SceneGraphManager();
 	~SceneGraphManager();
 
+	static SceneGraphManager& getInstance()
+	{
+		static SceneGraphManager instance;
+		return instance;
+	}
+
 private:
 	Actor m_rootActor;
 

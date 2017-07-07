@@ -117,6 +117,12 @@ public:
 	GLRenderingManager();
 	~GLRenderingManager();
 
+	static GLRenderingManager& getInstance()
+	{
+		static GLRenderingManager instance;
+		return instance;
+	}
+
 	void render(IVisibleGameEntity* visibleGameEntity);
 	void setCameraViewProjectionMatrix(const Mat4f& cameraViewProjectionMatrix);
 private:

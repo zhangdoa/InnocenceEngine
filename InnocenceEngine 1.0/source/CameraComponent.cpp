@@ -45,11 +45,16 @@ void CameraComponent::move(moveDirection moveDirection)
 	switch (moveDirection)
 	{
 	case FORWARD:  this->getTransform()->setPos(this->getTransform()->getPos() + this->getTransform()->getRot().getForward() * 0.03f);  break;
-	case BACKWARD:  this->getTransform()->setPos(this->getTransform()->getPos() + this->getTransform()->getRot().getBackward() * 0.03f);  break;
-	case LEFT:   this->getTransform()->setPos(this->getTransform()->getPos() + this->getTransform()->getRot().getLeft() * 0.03f);  break;
+	case BACKWARD:  this->getTransform()->setPos(this->getTransform()->getPos() + this->getTransform()->getRot().getForward() * -0.03f);  break;
+	case LEFT:   this->getTransform()->setPos(this->getTransform()->getPos() + this->getTransform()->getRot().getRight() * -0.03f);  break;
 	case RIGHT:   this->getTransform()->setPos(this->getTransform()->getPos() + this->getTransform()->getRot().getRight() * 0.03f);  break;
 	}
 
+}
+
+Vec3f * CameraComponent::getYAxis()
+{
+	return &m_cameraData.yAxis;
 }
 
 void CameraComponent::init()
@@ -59,6 +64,7 @@ void CameraComponent::init()
 
 void CameraComponent::update()
 {
+	getTransform()->update();
 }
 
 void CameraComponent::shutdown()

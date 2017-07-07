@@ -27,7 +27,7 @@ const int IBaseObject::getStatus() const
 	return m_ObjectStatus;
 }
 
-void IBaseObject::setStatus(managerStatus ObjectStatus)
+void IBaseObject::setStatus(objectStatus ObjectStatus)
 {
 	m_ObjectStatus = ObjectStatus;
 }
