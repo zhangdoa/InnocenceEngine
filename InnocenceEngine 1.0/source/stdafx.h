@@ -12,6 +12,8 @@
 #include <tchar.h>
 #include <cmath>
 #include <chrono>
+#include <ctime>
+#include <iomanip>
 #include <fstream>
 #include <istream>
 #include <sstream>

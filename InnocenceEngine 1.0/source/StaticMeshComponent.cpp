@@ -60,34 +60,39 @@ MeshData::~MeshData()
 
 void MeshData::init()
 {
-	glGenVertexArrays(1, &m_vertexArrayID);
-	glBindVertexArray(m_vertexArrayID);
-
 	glGenVertexArrays(1, &m_VAO);
 	glGenBuffers(1, &m_VBO);
-	// bindShader the VertexDataData Array Object first, then bindShader and set VertexData buffer(s), and then configure VertexData attributes(s).
-	glBindVertexArray(m_VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+	glGenBuffers(1, &m_IBO);
 
 	addTestTriangle();
-	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	// texture attribute
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	// normal coord attribute
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//glBindVertexArray(0);
 }
 
 void MeshData::update()
 {
 	glBindVertexArray(m_VAO);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 void MeshData::shutdown()
 {
 	glDeleteVertexArrays(1, &m_VAO);
 	glDeleteBuffers(1, &m_VBO);
+	glDeleteBuffers(1, &m_IBO);
 }
 
 
@@ -114,44 +119,48 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 			vertices[i]->setNormal(vertices[i]->getNormal().normalized());
 		}
 	}
-	std::vector<float> verticesBuffer(vertices.size() * 3);
+	std::vector<float> verticesBuffer(vertices.size() * 8);
 
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		verticesBuffer[3 * i + 0] = vertices[i]->getPos().getX();
-		verticesBuffer[3 * i + 1] = vertices[i]->getPos().getY();
-		verticesBuffer[3 * i + 2] = vertices[i]->getPos().getZ();
-		//verticesBuffer[8 * i + 3] = vertices[i]->getTexCoord().getX();
-		//verticesBuffer[8 * i + 4] = vertices[i]->getTexCoord().getY();
-		//verticesBuffer[8 * i + 5] = vertices[i]->getNormal().getX();
-		//verticesBuffer[8 * i + 6] = vertices[i]->getNormal().getY();
-		//verticesBuffer[8 * i + 7] = vertices[i]->getNormal().getZ();
+		verticesBuffer[8 * i + 0] = vertices[i]->getPos().getX();
+		verticesBuffer[8 * i + 1] = vertices[i]->getPos().getY();
+		verticesBuffer[8 * i + 2] = vertices[i]->getPos().getZ();
+		verticesBuffer[8 * i + 3] = vertices[i]->getTexCoord().getX();
+		verticesBuffer[8 * i + 4] = vertices[i]->getTexCoord().getY();
+		verticesBuffer[8 * i + 5] = vertices[i]->getNormal().getX();
+		verticesBuffer[8 * i + 6] = vertices[i]->getNormal().getY();
+		verticesBuffer[8 * i + 7] = vertices[i]->getNormal().getZ();
 	}
 
-	//std::vector<unsigned int> indicesBuffer = indices;
-	//std::reverse(indicesBuffer.begin(), indicesBuffer.end());
+	std::vector<unsigned int> indicesBuffer = indices;
+	std::reverse(indicesBuffer.begin(), indicesBuffer.end());
 
+	glBindVertexArray(m_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
 	glBufferData(GL_ARRAY_BUFFER, verticesBuffer.size() * 4, &verticesBuffer[0], GL_STATIC_DRAW);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer.size(), indicesBuffer.data(), GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer.size() * 4, &indicesBuffer[0], GL_STATIC_DRAW);
 }
 
 void MeshData::addTestTriangle()
 {
 	VertexData l_VertexData1;
-	l_VertexData1.addVertexData(Vec3f(-1.0f, -1.0f, 1.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData1.addVertexData(Vec3f(0.5f, 0.5f, 0.0f), Vec2f(1.0f, 1.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData2;
-	l_VertexData2.addVertexData(Vec3f(1.0f, -1.0f, 0.5f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData2.addVertexData(Vec3f(0.5f, -0.5f, 0.0f), Vec2f(1.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData3;
-	l_VertexData3.addVertexData(Vec3f(0.0f, 1.0f, 0.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData3.addVertexData(Vec3f(-0.5f, -0.5f, 0.0f), Vec2f(0.0, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData4;
-	l_VertexData4.addVertexData(Vec3f(0.0f, 1.0f, 0.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData4.addVertexData(Vec3f(-0.5f, 0.5f, 0.0f), Vec2f(0.0, 1.0f), Vec3f(0.0f, 0.0f, 0.0f));
 
-	m_vertices = { &l_VertexData1, &l_VertexData2, &l_VertexData3 };
-	m_intices = { 1, 2, 3 };
+	m_vertices = { &l_VertexData1, &l_VertexData2, &l_VertexData3, &l_VertexData4 };
+	m_intices = { 0, 1, 3, 1, 2 ,3};
 
 	addMeshData(m_vertices, m_intices, false);
 }
@@ -211,14 +220,14 @@ void StaticMeshComponent::loadTexture(const std::string & textureFileName)
 	// load image, create texture and generate mipmaps
 	int width, height, nrChannels;
 	stbi_set_flip_vertically_on_load(true);
-	unsigned char *data = stbi_load(("../res/textures" + textureFileName).c_str(), &width, &height, &nrChannels, 0);
+	unsigned char *data = stbi_load(("../res/textures/" + textureFileName).c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
 		m_textureData.addTextureData(width, height, data);
 	}
 	else
 	{
-		std::cout << "Failed to load texture: " + textureFileName<< std::endl;
+		LogManager::printLog("Error: Failed to load texture: " + textureFileName);
 	}
 	stbi_image_free(data);
 }
@@ -229,19 +238,19 @@ void StaticMeshComponent::render()
 
 void StaticMeshComponent::init()
 {
-	m_meshData.init();
 	m_textureData.init();
 	loadTexture("test.png");
+	m_meshData.init();
 }
 
 void StaticMeshComponent::update()
 {
-	m_meshData.update();
 	m_textureData.update();
+	m_meshData.update();
 }
 
 void StaticMeshComponent::shutdown()
 {
-	m_meshData.shutdown();
 	m_textureData.shutdown();
+	m_meshData.shutdown();
 }

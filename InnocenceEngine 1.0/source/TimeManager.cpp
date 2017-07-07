@@ -42,7 +42,7 @@ void TimeManager::shutdown()
 	LogManager::printLog("TimeManager has been shutdown.");
 }
 
-const double TimeManager::getGameStartTime()
+const __time64_t TimeManager::getGameStartTime()
 {
 	return m_gameStartTime;
 }
@@ -50,4 +50,17 @@ const double TimeManager::getGameStartTime()
 const double TimeManager::getDeltaTime()
 {
 	return m_deltaTime;
+}
+
+std::string TimeManager::getCurrentTimeInLocal()
+{
+
+		//auto now = std::chrono::system_clock::now();
+		//auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
+		//std::stringstream ss;
+		//struct tm buf;
+		//ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
+		//return ss.str();
+	return "CurrentTime";
 }
