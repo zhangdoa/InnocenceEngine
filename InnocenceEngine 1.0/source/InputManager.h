@@ -1,5 +1,5 @@
 #pragma once
-#include "Math.h"
+
 #include "IEventManager.h"
 #include "LogManager.h"
 #include "WindowManager.h"
@@ -18,8 +18,8 @@ public:
 
 	int getKey(int keyCode);
 	int getMouse(int mouseButton);
-	Vec2f getMousePosition();
-	void setMousePosition(const Vec2f& mousePosition);
+	glm::vec2 getMousePosition();
+	void setMousePosition(const glm::vec2& mousePosition);
 
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void mousePositionCallback(GLFWwindow* window, double mouseXPos, double mouseYPos);

@@ -11,10 +11,10 @@ public:
 
 	void addCameraData(float fov, float aspectRatio, float zNear, float zFar);
 
-	Mat4f getViewProjectionMatrix(BaseComponent* parent);
+	glm::mat4 getViewProjectionMatrix(BaseComponent* parent);
 
 private:
-	Mat4f m_projectionMatrix;
+	glm::mat4 m_projectionMatrix;
 };
 
 class CameraComponent : public BaseComponent
@@ -25,7 +25,7 @@ public:
 
 	enum moveDirection {FORWARD, BACKWARD, LEFT, RIGHT};
 
-	Mat4f getViewProjectionMatrix();
+	glm::mat4 getViewProjectionMatrix();
 	void move(moveDirection moveDirection);
 
 private:
