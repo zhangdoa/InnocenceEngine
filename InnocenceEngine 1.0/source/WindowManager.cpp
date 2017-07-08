@@ -16,9 +16,9 @@ GLFWwindow * WindowManager::getWindow()
 	return m_window;
 }
 
-Vec2f WindowManager::getScreenCenterPosition()
+glm::vec2 WindowManager::getScreenCenterPosition()
 {
-	return Vec2f(SCR_WIDTH / 2.0f, SCR_HEIGHT / 2.0f);
+	return glm::vec2(SCR_WIDTH / 2.0f, SCR_HEIGHT / 2.0f);
 }
 
 void WindowManager::init()

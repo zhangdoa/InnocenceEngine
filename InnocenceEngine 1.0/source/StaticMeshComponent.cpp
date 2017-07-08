@@ -12,37 +12,37 @@ VertexData::~VertexData()
 {
 }
 
-const Vec3f& VertexData::getPos()
+const glm::vec3& VertexData::getPos()
 {
 	return m_pos;
 }
 
-const Vec2f& VertexData::getTexCoord()
+const glm::vec2& VertexData::getTexCoord()
 {
 	return m_texCoord;
 }
 
-const Vec3f& VertexData::getNormal()
+const glm::vec3& VertexData::getNormal()
 {
 	return m_normal;
 }
 
-void VertexData::setPos(const Vec3f & pos)
+void VertexData::setPos(const glm::vec3 & pos)
 {
 	m_pos = pos;
 }
 
-void VertexData::setTexCoord(const Vec2f& texCoord)
+void VertexData::setTexCoord(const glm::vec2& texCoord)
 {
 	m_texCoord = texCoord;
 }
 
-void VertexData::setNormal(const Vec3f & normal)
+void VertexData::setNormal(const glm::vec3 & normal)
 {
 	m_normal = normal;
 }
 
-void VertexData::addVertexData(const Vec3f & pos, const Vec2f & texCoord, const Vec3f & normal)
+void VertexData::addVertexData(const glm::vec3 & pos, const glm::vec2 & texCoord, const glm::vec3 & normal)
 {
 	m_pos = pos;
 	m_texCoord = texCoord;
@@ -104,10 +104,10 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 			int i1 = indices[i + 1];
 			int i2 = indices[i + 2];
 
-			Vec3f v1 = vertices[i1]->getPos() - vertices[i0]->getPos();
-			Vec3f v2 = vertices[i2]->getPos() - vertices[i0]->getPos();
+			glm::vec3 v1 = vertices[i1]->getPos() - vertices[i0]->getPos();
+			glm::vec3 v2 = vertices[i2]->getPos() - vertices[i0]->getPos();
 
-			Vec3f normal = v1.cross(v2).getNormalizedVec3f();
+			glm::vec3 normal = glm::normalize(glm::cross(v1, v2));
 
 			vertices[i0]->setNormal(vertices[i0]->getNormal() + (normal));
 			vertices[i1]->setNormal(vertices[i0]->getNormal() + (normal));
@@ -116,21 +116,21 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 		}
 		for (size_t i = 0; i < vertices.size(); i++)
 		{
-			vertices[i]->setNormal(vertices[i]->getNormal().getNormalizedVec3f());
+			vertices[i]->setNormal(glm::normalize(vertices[i]->getNormal()));
 		}
 	}
 	std::vector<float> verticesBuffer(vertices.size() * 8);
 
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		verticesBuffer[8 * i + 0] = vertices[i]->getPos().getX();
-		verticesBuffer[8 * i + 1] = vertices[i]->getPos().getY();
-		verticesBuffer[8 * i + 2] = vertices[i]->getPos().getZ();
-		verticesBuffer[8 * i + 3] = vertices[i]->getTexCoord().getX();
-		verticesBuffer[8 * i + 4] = vertices[i]->getTexCoord().getY();
-		verticesBuffer[8 * i + 5] = vertices[i]->getNormal().getX();
-		verticesBuffer[8 * i + 6] = vertices[i]->getNormal().getY();
-		verticesBuffer[8 * i + 7] = vertices[i]->getNormal().getZ();
+		verticesBuffer[8 * i + 0] = vertices[i]->getPos().x;
+		verticesBuffer[8 * i + 1] = vertices[i]->getPos().y;
+		verticesBuffer[8 * i + 2] = vertices[i]->getPos().z;
+		verticesBuffer[8 * i + 3] = vertices[i]->getTexCoord().x;
+		verticesBuffer[8 * i + 4] = vertices[i]->getTexCoord().y;
+		verticesBuffer[8 * i + 5] = vertices[i]->getNormal().x;
+		verticesBuffer[8 * i + 6] = vertices[i]->getNormal().y;
+		verticesBuffer[8 * i + 7] = vertices[i]->getNormal().z;
 	}
 
 	std::vector<unsigned int> indicesBuffer = indices;
@@ -148,16 +148,16 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 void MeshData::addTestTriangle()
 {
 	VertexData l_VertexData1;
-	l_VertexData1.addVertexData(Vec3f(-10.0f, 0.0f,-10.0f), Vec2f(0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData1.addVertexData(glm::vec3(-10.0f, 0.0f,-10.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData2;
-	l_VertexData2.addVertexData(Vec3f(-10.0f, 0.0f, 30.0f), Vec2f(0.0f, 1.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData2.addVertexData(glm::vec3(-10.0f, 0.0f, 30.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData3;
-	l_VertexData3.addVertexData(Vec3f(30.0f, 0.0f, -10.0f), Vec2f(1.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData3.addVertexData(glm::vec3(30.0f, 0.0f, -10.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData4;
-	l_VertexData4.addVertexData(Vec3f(30.0f, 0.0f, 30.0f), Vec2f(1.0f, 1.0f), Vec3f(0.0f, 0.0f, 0.0f));
+	l_VertexData4.addVertexData(glm::vec3(30.0f, 0.0f, 30.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 	m_vertices = { &l_VertexData1, &l_VertexData2, &l_VertexData3, &l_VertexData4 };
 	m_intices = { 0, 1, 2, 2, 1 ,3};

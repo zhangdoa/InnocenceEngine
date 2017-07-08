@@ -21,15 +21,15 @@ int InputManager::getMouse(int mouseButton)
 	return glfwGetMouseButton(WindowManager::getInstance().getWindow(), mouseButton);
 }
 
-Vec2f InputManager::getMousePosition()
+glm::vec2 InputManager::getMousePosition()
 {
-	return Vec2f(m_mouseLastX, m_mouseLastY);
+	return glm::vec2(m_mouseLastX, m_mouseLastY);
 }
 
-void InputManager::setMousePosition(const Vec2f & mousePosition)
+void InputManager::setMousePosition(const glm::vec2 & mousePosition)
 {
-	m_mouseLastX = mousePosition.getX();
-	m_mouseLastY = mousePosition.getY();
+	m_mouseLastX = mousePosition.x;
+	m_mouseLastY = mousePosition.y;
 }
 
 void InputManager::framebufferSizeCallback(GLFWwindow * window, int width, int height)

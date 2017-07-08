@@ -182,12 +182,13 @@ GLRenderingManager::~GLRenderingManager()
 void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity)
 {
 	m_basicGLShader.bindShader();
-	//LogManager::printLog(m_cameraViewProjectionMatrix * visibleGameEntity->getParentActor()->caclTransformation());
-	m_basicGLShader.updateUniform("uni_MVP", m_cameraViewProjectionMatrix * visibleGameEntity->getParentActor()->caclTransformation());
+	glm::mat4 mvp = visibleGameEntity->getParentActor()->caclTransformation() * m_cameraViewProjectionMatrix;
+	LogManager::printLog(mvp);
+	m_basicGLShader.updateUniform("uni_MVP", mvp);
 	m_basicGLShader.updateUniform("uni_Texture", 0);
 }
 
-void GLRenderingManager::setCameraViewProjectionMatrix(const Mat4f & cameraViewProjectionMatrix)
+void GLRenderingManager::setCameraViewProjectionMatrix(const glm::mat4 & cameraViewProjectionMatrix)
 {
 	m_cameraViewProjectionMatrix = cameraViewProjectionMatrix;
 }

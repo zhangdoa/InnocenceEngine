@@ -12,60 +12,65 @@ LogManager::~LogManager()
 {
 }
 
+void LogManager::printLog(float logMessage)
+{
+	std::cout << "[" << TimeManager::getCurrentTimeInLocal() << "]" << logMessage << std::endl;
+}
+
 void LogManager::printLog(std::string logMessage)
 {
 	std::cout << "[" << TimeManager::getCurrentTimeInLocal()  << "]" << logMessage << std::endl;
 }
 
-void LogManager::printLog(const Vec2f & logMessage)
+void LogManager::printLog(const glm::vec2 & logMessage)
 {
 	std::cout
 		<< "[" 
 		<< TimeManager::getCurrentTimeInLocal() 
 		<< "]"
-		<<"Vec2f(x: "
-		<< logMessage.getX()
+		<<"glm::vec2(x: "
+		<< logMessage.x
 		<<", y: "
-		<< logMessage.getY()
+		<< logMessage.y
 		<<")"
 		<< std::endl;
 }
 
-void LogManager::printLog(const Vec3f & logMessage)
+void LogManager::printLog(const glm::vec3 & logMessage)
 {
 	std::cout
 		<< "["
 		<< TimeManager::getCurrentTimeInLocal()
 		<< "]"
-		<< "Vec2f(x: "
-		<< logMessage.getX()
+		<< "glm::vec3(x: "
+		<< logMessage.x
 		<< ", y: "
-		<< logMessage.getY()
+		<< logMessage.y
 		<< ", z: "
-		<< logMessage.getZ()
+		<< logMessage.z
 		<< ")"
 		<< std::endl;
 }
 
-void LogManager::printLog(const Vec4f & logMessage)
+void LogManager::printLog(const glm::quat & logMessage)
 {
 	std::cout
 		<< "["
 		<< TimeManager::getCurrentTimeInLocal()
 		<< "]"
-		<< "Vec2f(x: "
-		<< logMessage.getX()
+		<< "glm::quat(x: "
+		<< logMessage.x
 		<< ", y: "
-		<< logMessage.getY()
+		<< logMessage.y
 		<< ", z: "
-		<< logMessage.getZ()
+		<< logMessage.z
 		<< ", w: "
-		<< logMessage.getW()
+		<< logMessage.w
 		<< ")"
 		<< std::endl;
 }
 
-void LogManager::printLog(const Mat4f & logMessage)
+void LogManager::printLog(const glm::mat4 & logMessage)
 {
 	std::cout
 		<< "["
@@ -73,43 +78,43 @@ void LogManager::printLog(const Mat4f & logMessage)
 		<< "]"
 		<< std::endl
 		<< "|"
-		<< logMessage.getElem(0, 0)
-		<< ", "
-		<< logMessage.getElem(0, 1)
-		<< ", "
-		<< logMessage.getElem(0, 2)
-		<< ", "
-		<< logMessage.getElem(0, 3)
+		<< logMessage[0][0]
+		<< "]["
+		<< logMessage[0][1]
+		<< "]["
+		<< logMessage[0][2]
+		<< "]["
+		<< logMessage[0][3]
 		<< "|"
 		<< std::endl
 		<< "|"
-		<< logMessage.getElem(1, 0)
-		<< ", "
-		<< logMessage.getElem(1, 1)
-		<< ", "
-		<< logMessage.getElem(1, 2)
-		<< ", "
-		<< logMessage.getElem(1, 3)
+		<< logMessage[1][0]
+		<< "]["
+		<< logMessage[1][1]
+		<< "]["
+		<< logMessage[1][2]
+		<< "]["
+		<< logMessage[1][3]
 		<< "|"
 		<< std::endl
 		<< "|"
-		<< logMessage.getElem(2, 0)
-		<< ", "
-		<< logMessage.getElem(2, 1)
-		<< ", "
-		<< logMessage.getElem(2, 2)
-		<< ", "
-		<< logMessage.getElem(2, 3)
+		<< logMessage[2][0]
+		<< "]["
+		<< logMessage[2][1]
+		<< "]["
+		<< logMessage[2][2]
+		<< "]["
+		<< logMessage[2][3]
 		<< "|"
 		<< std::endl
 		<< "|"
-		<< logMessage.getElem(3, 0)
-		<< ", "
-		<< logMessage.getElem(3, 1)
-		<< ", "
-		<< logMessage.getElem(3, 2)
-		<< ", "
-		<< logMessage.getElem(3, 3)
+		<< logMessage[3][0]
+		<< "]["
+		<< logMessage[3][1]
+		<< "]["
+		<< logMessage[3][2]
+		<< "]["
+		<< logMessage[3][3]
 		<< "|"
 		<< std::endl;
 }

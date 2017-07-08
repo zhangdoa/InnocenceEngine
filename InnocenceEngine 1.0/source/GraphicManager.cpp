@@ -15,7 +15,7 @@ void GraphicManager::render(IVisibleGameEntity * visibleGameEntity)
 	m_renderingManager.render(visibleGameEntity);
 }
 
-void GraphicManager::setCameraViewProjectionMatrix(const Mat4f & cameraViewProjectionMatrix)
+void GraphicManager::setCameraViewProjectionMatrix(const glm::mat4& cameraViewProjectionMatrix)
 {
 	m_renderingManager.setCameraViewProjectionMatrix(cameraViewProjectionMatrix);
 }
