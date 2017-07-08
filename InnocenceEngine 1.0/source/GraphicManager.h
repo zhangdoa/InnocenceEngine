@@ -1,5 +1,4 @@
 #pragma once
-#include "Math.h"
 #include "IVisibleGameEntity.h"
 #include "IEventManager.h"
 #include "LogManager.h"
@@ -20,7 +19,7 @@ public:
 	}
 
 	void render(IVisibleGameEntity* visibleGameEntity);
-	void setCameraViewProjectionMatrix(const Mat4f& cameraViewProjectionMatrix);
+	void setCameraViewProjectionMatrix(const glm::mat4& cameraViewProjectionMatrix);
 private:
 	void init() override;
 	void update() override;

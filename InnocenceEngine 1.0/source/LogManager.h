@@ -12,12 +12,12 @@ public:
 		static LogManager instance;
 		return instance;
 	}
-
+	static void LogManager::printLog(float logMessage);
 	static void LogManager::printLog(std::string logMessage);
-	static void LogManager::printLog(const Vec2f& logMessage);
-	static void LogManager::printLog(const Vec3f& logMessage);
-	static void LogManager::printLog(const Vec4f& logMessage);
-	static void LogManager::printLog(const Mat4f& logMessage);
+	static void LogManager::printLog(const glm::vec2& logMessage);
+	static void LogManager::printLog(const glm::vec3& logMessage);
+	static void LogManager::printLog(const glm::quat& logMessage);
+	static void LogManager::printLog(const glm::mat4& logMessage);
 private:
 	void init() override;
 	void update() override;

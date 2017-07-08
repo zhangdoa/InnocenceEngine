@@ -8,19 +8,19 @@ public:
 	VertexData();
 	~VertexData();
 
-	const Vec3f& getPos();
-	const Vec2f& getTexCoord();
-	const Vec3f& getNormal();
+	const glm::vec3& getPos();
+	const glm::vec2& getTexCoord();
+	const glm::vec3& getNormal();
 
-	void setPos(const Vec3f& pos);
-	void setTexCoord(const Vec2f& texCoord);
-	void setNormal(const Vec3f& normal);
+	void setPos(const glm::vec3& pos);
+	void setTexCoord(const glm::vec2& texCoord);
+	void setNormal(const glm::vec3& normal);
 
-	void addVertexData(const Vec3f & pos, const Vec2f & texCoord, const Vec3f & normal);
+	void addVertexData(const glm::vec3 & pos, const glm::vec2 & texCoord, const glm::vec3 & normal);
 private:
-	Vec3f m_pos;
-	Vec2f m_texCoord;
-	Vec3f m_normal;
+	glm::vec3 m_pos;
+	glm::vec2 m_texCoord;
+	glm::vec3 m_normal;
 };
 
 class MeshData

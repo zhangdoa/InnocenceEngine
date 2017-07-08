@@ -1,5 +1,4 @@
 #pragma once
-#include "Math.h"
 #include "IEventManager.h"
 #include "LogManager.h"
 
@@ -16,7 +15,7 @@ public:
 	}
 
 	GLFWwindow* getWindow();
-	Vec2f getScreenCenterPosition();
+	glm::vec2 getScreenCenterPosition();
 
 private:
 	const unsigned int SCR_WIDTH = 1024;

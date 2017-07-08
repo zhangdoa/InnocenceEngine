@@ -1,5 +1,4 @@
 #pragma once
-#include "Math.h"
 #include "IEventManager.h"
 #include "LogManager.h"
 #include "IVisibleGameEntity.h"
@@ -39,9 +38,9 @@ public:
 		glUniform1f(glGetUniformLocation(m_program, uniformName.c_str()), uniformValue);
 	}
 
-	void updateUniform(const std::string &uniformName, const Vec2f &uniformValue) const
+	void updateUniform(const std::string &uniformName, const glm::vec2 &uniformValue) const
 	{
-		float bufferUniformValue[] = { uniformValue.getX(), uniformValue.getY() };
+		float bufferUniformValue[] = { uniformValue.x, uniformValue.y };
 		glUniform2fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &bufferUniformValue[0]);
 	}
 
@@ -50,9 +49,9 @@ public:
 		glUniform2f(glGetUniformLocation(m_program, uniformName.c_str()), x, y);
 	}
 
-	void updateUniform(const std::string &uniformName, const Vec3f& uniformValue) const
+	void updateUniform(const std::string &uniformName, const glm::vec3& uniformValue) const
 	{
-		float bufferUniformValue[] = { uniformValue.getX(), uniformValue.getY(), uniformValue.getZ() };
+		float bufferUniformValue[] = { uniformValue.x, uniformValue.y, uniformValue.z };
 		glUniform3fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &bufferUniformValue[0]);
 	}
 
@@ -64,16 +63,6 @@ public:
 	void updateUniform(const std::string &uniformName, float x, float y, float z, float w)
 	{
 		glUniform4f(glGetUniformLocation(m_program, uniformName.c_str()), x, y, z, w);
-	}
-
-	void updateUniform(const std::string &uniformName, const Mat4f& mat) const
-	{
-		glm::mat4 bufferUniformValue = {
-			mat.getElem(0,0), mat.getElem(0,1), mat.getElem(0,2), mat.getElem(0,3),
-			mat.getElem(1,0), mat.getElem(1,1), mat.getElem(1,2), mat.getElem(1,3),
-			mat.getElem(2,0), mat.getElem(2,1), mat.getElem(2,2), mat.getElem(2,3),
-			mat.getElem(3,0), mat.getElem(3,1), mat.getElem(3,2), mat.getElem(3,3) };
-		glUniformMatrix4fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, GL_FALSE, &bufferUniformValue[0][0]);
 	}
 
 	void updateUniform(const std::string &uniformName, const glm::mat4& mat) const
@@ -124,13 +113,13 @@ public:
 	}
 
 	void render(IVisibleGameEntity* visibleGameEntity);
-	void setCameraViewProjectionMatrix(const Mat4f& cameraViewProjectionMatrix);
+	void setCameraViewProjectionMatrix(const glm::mat4& cameraViewProjectionMatrix);
 private:
 
 	void init() override;
 	void update() override;
 	void shutdown() override;
 
-	Mat4f m_cameraViewProjectionMatrix;
+	glm::mat4 m_cameraViewProjectionMatrix;
 	BasicGLShader m_basicGLShader;
 };
