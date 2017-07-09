@@ -67,19 +67,19 @@ void MeshData::init()
 	addTestTriangle();
 
 	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	// texture attribute
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
-	// normal coord attribute
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
-	glEnableVertexAttribArray(2);
+	//// normal coord attribute
+	//glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+	//glEnableVertexAttribArray(2);
 
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 void MeshData::update()
@@ -119,50 +119,47 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 			vertices[i]->setNormal(glm::normalize(vertices[i]->getNormal()));
 		}
 	}
-	std::vector<float> verticesBuffer(vertices.size() * 8);
+	std::vector<float> verticesBuffer(vertices.size() * 5);
 
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		verticesBuffer[8 * i + 0] = vertices[i]->getPos().x;
-		verticesBuffer[8 * i + 1] = vertices[i]->getPos().y;
-		verticesBuffer[8 * i + 2] = vertices[i]->getPos().z;
-		verticesBuffer[8 * i + 3] = vertices[i]->getTexCoord().x;
-		verticesBuffer[8 * i + 4] = vertices[i]->getTexCoord().y;
-		verticesBuffer[8 * i + 5] = vertices[i]->getNormal().x;
+		verticesBuffer[5 * i + 0] = vertices[i]->getPos().x;
+		verticesBuffer[5 * i + 1] = vertices[i]->getPos().y;
+		verticesBuffer[5 * i + 2] = vertices[i]->getPos().z;
+		verticesBuffer[5 * i + 3] = vertices[i]->getTexCoord().x;
+		verticesBuffer[5 * i + 4] = vertices[i]->getTexCoord().y;
+		/*verticesBuffer[8 * i + 5] = vertices[i]->getNormal().x;
 		verticesBuffer[8 * i + 6] = vertices[i]->getNormal().y;
-		verticesBuffer[8 * i + 7] = vertices[i]->getNormal().z;
+		verticesBuffer[8 * i + 7] = vertices[i]->getNormal().z;*/
 	}
-
-	std::vector<unsigned int> indicesBuffer = indices;
-	std::reverse(indicesBuffer.begin(), indicesBuffer.end());
 
 	glBindVertexArray(m_VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glBufferData(GL_ARRAY_BUFFER, verticesBuffer.size() * 4, &verticesBuffer[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, verticesBuffer.size() * sizeof(float), &verticesBuffer[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer.size() * 4, &indicesBuffer[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(float), &indices[0], GL_STATIC_DRAW);
 }
 
 void MeshData::addTestTriangle()
 {
 	VertexData l_VertexData1;
-	l_VertexData1.addVertexData(glm::vec3(-10.0f, 0.0f,-10.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	l_VertexData1.addVertexData(glm::vec3(0.5f, 0.5f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData2;
-	l_VertexData2.addVertexData(glm::vec3(-10.0f, 0.0f, 30.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	l_VertexData2.addVertexData(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData3;
-	l_VertexData3.addVertexData(glm::vec3(30.0f, 0.0f, -10.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	l_VertexData3.addVertexData(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 	VertexData l_VertexData4;
-	l_VertexData4.addVertexData(glm::vec3(30.0f, 0.0f, 30.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	l_VertexData4.addVertexData(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 	m_vertices = { &l_VertexData1, &l_VertexData2, &l_VertexData3, &l_VertexData4 };
-	m_intices = { 0, 1, 2, 2, 1 ,3};
+	m_intices = { 0, 1, 3, 1, 2 ,3};
 
-	addMeshData(m_vertices, m_intices, true);
+	addMeshData(m_vertices, m_intices, false);
 }
 
 
@@ -179,8 +176,8 @@ void TextureData::init()
 	glGenTextures(1, &m_textureID);
 	glBindTexture(GL_TEXTURE_2D, m_textureID);
 	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	// set texture filtering parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -239,7 +236,7 @@ void StaticMeshComponent::render()
 void StaticMeshComponent::init()
 {
 	m_textureData.init();
-	loadTexture("test.png");
+	loadTexture("psyduck.jpg");
 	m_meshData.init();
 }
 
