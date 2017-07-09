@@ -23,7 +23,7 @@ void CoreManager::init()
 	m_childEventManager.emplace_back(&WindowManager::getInstance());
 	m_childEventManager.emplace_back(&InputManager::getInstance());
 	m_childEventManager.emplace_back(&GraphicManager::getInstance());
-	m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
+	//m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
 
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
@@ -61,7 +61,7 @@ void CoreManager::update()
 			if (InputManager::getInstance().getStatus() == INITIALIZIED)
 			{
 				try {
-					GraphicManager::getInstance().setCameraViewProjectionMatrix(m_gameData->getCameraComponent()->getViewProjectionMatrix());
+					//GraphicManager::getInstance().setCameraViewProjectionMatrix(m_gameData->getCameraComponent()->getViewProjectionMatrix());
 				}
 				catch (std::exception& e) {
 					LogManager::printLog("Cannot get camera infomation!");
@@ -69,8 +69,10 @@ void CoreManager::update()
 				}
 				GraphicManager::getInstance().exec(UPDATE);
 				GraphicManager::getInstance().render(m_gameData->getTest());
-
-				m_gameData->exec(UPDATE);
+				//m_gameData->getTest()->getTransform()->setPos(glm::vec3(m_gameData->getTest()->getTransform()->getPos().x + glm::sin(TimeManager::getInstance().getDeltaTime()), m_gameData->getTest()->getTransform()->getPos().y, m_gameData->getTest()->getTransform()->getPos().z));
+				m_gameData->getTest()->getTransform()->rotate(glm::vec3(0.0f, 0.0f, 1.0f), 0.3 * glm::sin(TimeManager::getInstance().getDeltaTime()));
+				m_gameData->getTest()->getTransform()->setScale(glm::vec3(0.5f, 0.5f, 1.0f));
+				m_gameData->getTest()->exec(UPDATE);
 				//SceneGraphManager::getInstance().exec(UPDATE);
 			}
 			else

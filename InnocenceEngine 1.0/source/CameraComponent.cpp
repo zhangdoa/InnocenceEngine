@@ -57,7 +57,7 @@ glm::mat4 CameraData::getViewProjectionMatrix(BaseComponent* parent)
 	l_cameraTranslationMatrix[3][2] = 0.0f;
 	l_cameraTranslationMatrix[3][3] = 1.0f;
 
-	return m_projectionMatrix * l_cameraRotationMatrix * l_cameraTranslationMatrix;
+	return m_projectionMatrix  * l_cameraTranslationMatrix;//* l_cameraRotationMatrix * ;
 }
 
 CameraComponent::CameraComponent()
@@ -99,11 +99,11 @@ void CameraComponent::update()
 		glm::vec2 deltaPos = InputManager::getInstance().getMousePosition() - WindowManager::getInstance().getScreenCenterPosition();
 		if (deltaPos.x != 0)
 		{
-			getTransform()->rotate(this->getTransform()->getUp(), ((deltaPos.x * 0.01f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(this->getTransform()->getUp(), ((deltaPos.x * 0.0001f) / 180.0f)* glm::pi<float>());
 		}
 		if (deltaPos.y != 0)
 		{
-			getTransform()->rotate(this->getTransform()->getRight(), ((-deltaPos.y * 0.01f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(this->getTransform()->getRight(), ((-deltaPos.y * 0.0001f) / 180.0f)* glm::pi<float>());
 		}
 		if (deltaPos.x != 0 || deltaPos.y != 0)
 		{

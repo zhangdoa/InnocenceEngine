@@ -80,7 +80,7 @@ inline void GLShader::attachShader(shaderType shaderType, const std::string& sha
 	{
 		setAttributeLocation(0, "in_Position");
 		setAttributeLocation(1, "in_TexCoord");
-		setAttributeLocation(2, "in_Normal");
+		//setAttributeLocation(2, "in_Normal");
 	}
 }
 
@@ -182,10 +182,13 @@ GLRenderingManager::~GLRenderingManager()
 void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity)
 {
 	m_basicGLShader.bindShader();
-	glm::mat4 mvp = visibleGameEntity->getParentActor()->caclTransformation() * m_cameraViewProjectionMatrix;
-	LogManager::printLog(mvp);
+	//glm::mat4 mvp = m_cameraViewProjectionMatrix * visibleGameEntity->getParentActor()->caclTransformation();
+	glm::mat4 mvp = visibleGameEntity->getParentActor()->caclTransformation();
+
+	//glm::mat4 mvp;
+	//mvp = glm::translate(mvp, glm::vec3(1.0f, -0.5f, 0.0f));
+	//mvp = glm::rotate(mvp, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
 	m_basicGLShader.updateUniform("uni_MVP", mvp);
-	m_basicGLShader.updateUniform("uni_Texture", 0);
 }
 
 void GLRenderingManager::setCameraViewProjectionMatrix(const glm::mat4 & cameraViewProjectionMatrix)
@@ -196,13 +199,14 @@ void GLRenderingManager::setCameraViewProjectionMatrix(const glm::mat4 & cameraV
 void GLRenderingManager::init()
 {
 	m_basicGLShader.init();
+	m_basicGLShader.updateUniform("uni_Texture", 0);
 	this->setStatus(INITIALIZIED);
 	LogManager::LogManager::printLog("GLRenderingManager has been initialized.");
 }
 
 void GLRenderingManager::update()
 {
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClearColor(0.1f, 0.2f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
