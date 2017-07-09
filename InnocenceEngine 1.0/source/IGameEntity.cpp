@@ -244,47 +244,15 @@ bool BaseActor::hasTransformChanged()
 glm::mat4 BaseActor::caclTransformation()
 {
 	glm::mat4 l_translationMatrix;
-
-	l_translationMatrix[0][0] = 1.0f;
-	l_translationMatrix[0][1] = 0.0f;
-	l_translationMatrix[0][2] = 0.0f;
-	l_translationMatrix[0][3] = m_transform.getPos().x;
-	l_translationMatrix[1][0] = 0.0f;
-	l_translationMatrix[1][1] = 1.0f;
-	l_translationMatrix[1][2] = 0.0f;
-	l_translationMatrix[1][3] = m_transform.getPos().y;
-	l_translationMatrix[2][0] = 0.0f;
-	l_translationMatrix[2][1] = 0.0f;
-	l_translationMatrix[2][2] = 1.0f;
-	l_translationMatrix[2][3] = m_transform.getPos().z;
-	l_translationMatrix[3][0] = 0.0f;
-	l_translationMatrix[3][1] = 0.0f;
-	l_translationMatrix[3][2] = 0.0f;
-	l_translationMatrix[3][3] = 1.0f;
+	l_translationMatrix = glm::translate(l_translationMatrix, m_transform.getPos());
 
 	glm::mat4 l_rotaionMartix = m_transform.QuatToRotationMatrix(m_transform.getRot());
 
-	glm::mat4 l_scaleMartix;
-
-	l_scaleMartix[0][0] = m_transform.getScale().x;
-	l_scaleMartix[0][1] = 0.0f;
-	l_scaleMartix[0][2] = 0.0f;
-	l_scaleMartix[0][3] = 0.0f;
-	l_scaleMartix[1][0] = 0.0f;
-	l_scaleMartix[1][1] = m_transform.getScale().y;
-	l_scaleMartix[1][2] = 0.0f;
-	l_scaleMartix[1][3] = 0.0f;
-	l_scaleMartix[2][0] = 0.0f;
-	l_scaleMartix[2][1] = 0.0f;
-	l_scaleMartix[2][2] = m_transform.getScale().z;
-	l_scaleMartix[2][3] = 0.0f;
-	l_scaleMartix[3][0] = 0.0f;
-	l_scaleMartix[3][1] = 0.0f;
-	l_scaleMartix[3][2] = 0.0f;
-	l_scaleMartix[3][3] = 1.0f;
+	glm::mat4 l_scaleMatrix;
+	l_scaleMatrix = glm::scale(l_scaleMatrix, m_transform.getScale());
 
 	glm::mat4 l_parentMatrix;
-
+	
 	l_parentMatrix[0][0] = 1.0f;
 	l_parentMatrix[0][1] = 0.0f;
 	l_parentMatrix[0][2] = 0.0f;
@@ -302,12 +270,12 @@ glm::mat4 BaseActor::caclTransformation()
 	l_parentMatrix[3][2] = 0.0f;
 	l_parentMatrix[3][3] = 1.0f;
 
-	if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
-	{
-		l_parentMatrix = getParentActor()->caclTransformation();
-	}
+	//if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
+	//{
+	//	l_parentMatrix = getParentActor()->caclTransformation();
+	//}
 
-	return l_scaleMartix * l_rotaionMartix * l_translationMatrix * l_parentMatrix;
+	return l_translationMatrix * l_rotaionMartix * l_scaleMatrix;
 }
 
 glm::vec3 BaseActor::caclTransformedPos()
