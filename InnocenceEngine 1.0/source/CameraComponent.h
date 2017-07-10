@@ -11,7 +11,7 @@ public:
 
 	void addCameraData(float fov, float aspectRatio, float zNear, float zFar);
 
-	glm::mat4 getViewProjectionMatrix(BaseComponent* parent);
+	glm::mat4 getViewProjectionMatrix(BaseComponent* parent) const;
 
 private:
 	glm::mat4 m_projectionMatrix;
