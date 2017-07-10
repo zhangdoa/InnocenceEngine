@@ -11,17 +11,17 @@ InputManager::~InputManager()
 {
 }
 
-int InputManager::getKey(int keyCode)
+int InputManager::getKey(int keyCode) const
 {
 	return glfwGetKey(WindowManager::getInstance().getWindow(), keyCode);
 }
 
-int InputManager::getMouse(int mouseButton)
+int InputManager::getMouse(int mouseButton) const
 {
 	return glfwGetMouseButton(WindowManager::getInstance().getWindow(), mouseButton);
 }
 
-glm::vec2 InputManager::getMousePosition()
+glm::vec2 InputManager::getMousePosition() const
 {
 	return glm::vec2(m_mouseLastX, m_mouseLastY);
 }
