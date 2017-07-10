@@ -15,7 +15,7 @@ void SceneGraphManager::init()
 {
 	m_rootActor.exec(INIT);
 	this->setStatus(INITIALIZIED);
-	LogManager::printLog("SceneGraphManager has been initialized.");
+	LogManager::getInstance().printLog("SceneGraphManager has been initialized.");
 }
 
 void SceneGraphManager::update()
@@ -27,12 +27,12 @@ void SceneGraphManager::update()
 	else
 	{
 		this->setStatus(STANDBY);
-		LogManager::printLog("SceneGraphManager is stand-by.");
+		LogManager::getInstance().printLog("SceneGraphManager is stand-by.");
 	}
 }
 
 void SceneGraphManager::shutdown()
 {
 	m_rootActor.exec(SHUTDOWN);
-	LogManager::printLog("SceneGraphManager has been shutdown.");
+	LogManager::getInstance().printLog("SceneGraphManager has been shutdown.");
 }

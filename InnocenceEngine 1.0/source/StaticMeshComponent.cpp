@@ -64,17 +64,17 @@ void MeshData::init()
 	glGenBuffers(1, &m_VBO);
 	glGenBuffers(1, &m_IBO);
 
-	addTestTriangle();
+	addTestCube();
 
-	// position attribute
+	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	// texture attribute
+	// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
-	//// normal coord attribute
+	//// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
 	//glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
 	//glEnableVertexAttribArray(2);
 
@@ -85,7 +85,7 @@ void MeshData::init()
 void MeshData::update()
 {
 	glBindVertexArray(m_VAO);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, m_intices.size(), GL_UNSIGNED_INT, 0);
 }
 
 void MeshData::shutdown()
@@ -142,23 +142,143 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(float), &indices[0], GL_STATIC_DRAW);
 }
 
-void MeshData::addTestTriangle()
+void MeshData::addTestCube()
 {
-	VertexData l_VertexData1;
-	l_VertexData1.addVertexData(glm::vec3(0.5f, 0.5f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	//// vertex 1
+	//VertexData l_VertexData1_1;
+	//l_VertexData1_1.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	VertexData l_VertexData2;
-	l_VertexData2.addVertexData(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	//VertexData l_VertexData1_2;
+	//l_VertexData1_2.addVertexData(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	VertexData l_VertexData3;
-	l_VertexData3.addVertexData(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	//VertexData l_VertexData1_3;
+	//l_VertexData1_3.addVertexData(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	VertexData l_VertexData4;
-	l_VertexData4.addVertexData(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	//VertexData l_VertexData1_4;
+	//l_VertexData1_4.addVertexData(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	m_vertices = { &l_VertexData1, &l_VertexData2, &l_VertexData3, &l_VertexData4 };
-	m_intices = { 0, 1, 3, 1, 2 ,3};
+	//VertexData l_VertexData1_5;
+	//l_VertexData1_5.addVertexData(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
+	//VertexData l_VertexData1_6;
+	//l_VertexData1_6.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//// vertex 2
+	//VertexData l_VertexData2_1;
+	//l_VertexData2_1.addVertexData(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData2_2;
+	//l_VertexData2_2.addVertexData(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData2_3;
+	//l_VertexData2_3.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData2_4;
+	//l_VertexData2_4.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData2_5;
+	//l_VertexData2_5.addVertexData(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData2_6;
+	//l_VertexData2_6.addVertexData(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	//
+	//// vertex 3
+	//VertexData l_VertexData3_1;
+	//l_VertexData3_1.addVertexData(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData3_2;
+	//l_VertexData3_2.addVertexData(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData3_3;
+	//l_VertexData3_3.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData3_4;
+	//l_VertexData3_4.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData3_5;
+	//l_VertexData3_5.addVertexData(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData3_6;
+	//l_VertexData3_6.addVertexData(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//// vertex 4
+	//VertexData l_VertexData4_1;
+	//l_VertexData4_1.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData4_2;
+	//l_VertexData4_2.addVertexData(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData4_3;
+	//l_VertexData4_3.addVertexData(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData4_4;
+	//l_VertexData4_4.addVertexData(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData4_5;
+	//l_VertexData4_5.addVertexData(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData4_6;
+	//l_VertexData4_6.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//// vertex 5
+	//VertexData l_VertexData5_1;
+	//l_VertexData5_1.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData5_2;
+	//l_VertexData5_2.addVertexData(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData5_3;
+	//l_VertexData5_3.addVertexData(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData5_4;
+	//l_VertexData5_4.addVertexData(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData5_5;
+	//l_VertexData5_5.addVertexData(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData5_6;
+	//l_VertexData5_6.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//// vertex 6
+	//VertexData l_VertexData6_1;
+	//l_VertexData6_1.addVertexData(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData6_2;
+	//l_VertexData6_2.addVertexData(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData6_3;
+	//l_VertexData6_3.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData6_4;
+	//l_VertexData6_4.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData6_5;
+	//l_VertexData6_5.addVertexData(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	//VertexData l_VertexData6_6;
+	//l_VertexData6_6.addVertexData(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	//
+	//m_vertices = { &l_VertexData1_1, &l_VertexData1_2, &l_VertexData1_3, &l_VertexData1_4, &l_VertexData1_5, &l_VertexData1_6,
+	//	&l_VertexData2_1, &l_VertexData2_2, &l_VertexData2_3, &l_VertexData2_4, &l_VertexData2_5, &l_VertexData2_6, 
+	//	&l_VertexData3_1, &l_VertexData3_2, &l_VertexData3_3, &l_VertexData3_4, &l_VertexData3_5, &l_VertexData3_6, 
+	//	&l_VertexData4_1, &l_VertexData4_2, &l_VertexData4_3, &l_VertexData4_4, &l_VertexData4_5, &l_VertexData4_6, 
+	//	&l_VertexData5_1, &l_VertexData5_2, &l_VertexData5_3, &l_VertexData5_4, &l_VertexData5_5, &l_VertexData5_6, 
+	//	&l_VertexData6_1, &l_VertexData6_2, &l_VertexData6_3, &l_VertexData6_4, &l_VertexData6_5, &l_VertexData6_6, };
+	//m_intices = {0, 1, 2, 3, 4, 5 };
+
+	VertexData l_VertexData1_1;
+	l_VertexData1_1.addVertexData(glm::vec3(0.5f, 0.5f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	VertexData l_VertexData1_2;
+	l_VertexData1_2.addVertexData(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	VertexData l_VertexData1_3;
+	l_VertexData1_3.addVertexData(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	VertexData l_VertexData1_4;
+	l_VertexData1_4.addVertexData(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	m_vertices = { &l_VertexData1_1, &l_VertexData1_2, &l_VertexData1_3, &l_VertexData1_4 };
+	m_intices = { 0, 1, 3, 1, 2, 3 };
 	addMeshData(m_vertices, m_intices, false);
 }
 
@@ -224,7 +344,7 @@ void StaticMeshComponent::loadTexture(const std::string & textureFileName) const
 	}
 	else
 	{
-		LogManager::printLog("Error: Failed to load texture: " + textureFileName);
+		LogManager::getInstance().printLog("Error: Failed to load texture: " + textureFileName);
 	}
 	stbi_image_free(data);
 }
