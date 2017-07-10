@@ -34,7 +34,7 @@ public:
 	void shutdown();
 
 	void addMeshData(std::vector<VertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
-	void addTestTriangle();
+	void addTestCube();
 
 private:
 	GLuint m_VAO;

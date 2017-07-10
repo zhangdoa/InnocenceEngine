@@ -34,9 +34,8 @@ private:
 	const int NUM_MOUSEBUTTONS = 5;
 	std::vector<int>m_lastKeys;
 	std::vector<int>m_lastMouse;
-	float m_mouseLastX;
-	float m_mouseLastY;
-	bool isMouseInputFirstTime = true;
+	double m_mouseLastX;
+	double m_mouseLastY;
 
 	void init() override;
 	void update() override;

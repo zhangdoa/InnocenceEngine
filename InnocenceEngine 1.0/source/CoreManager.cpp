@@ -25,6 +25,8 @@ void CoreManager::init()
 	m_childEventManager.emplace_back(&GraphicManager::getInstance());
 	//m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
 
+	WindowManager::getInstance().setWindowName(m_gameData->getGameName());
+
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		m_childEventManager[i].get()->exec(INIT);
@@ -34,12 +36,12 @@ void CoreManager::init()
 		m_gameData->exec(INIT);
 	}
 	catch (std::exception& e) {
-		LogManager::printLog("No game added!");
-		LogManager::printLog(e.what());
+		LogManager::getInstance().printLog("No game added!");
+		LogManager::getInstance().printLog(e.what());
 	}
 
 	this->setStatus(INITIALIZIED);
-	LogManager::printLog("CoreManager has been initialized.");
+	LogManager::getInstance().printLog("CoreManager has been initialized.");
 }
 
 void CoreManager::update()
@@ -64,8 +66,8 @@ void CoreManager::update()
 					GraphicManager::getInstance().setCameraViewProjectionMatrix(m_gameData->getCameraComponent()->getViewProjectionMatrix());
 				}
 				catch (std::exception& e) {
-					LogManager::printLog("Cannot get camera infomation!");
-					LogManager::printLog(e.what());
+					LogManager::getInstance().printLog("Cannot get camera infomation!");
+					LogManager::getInstance().printLog(e.what());
 				}
 				GraphicManager::getInstance().exec(UPDATE);
 				GraphicManager::getInstance().render(m_gameData->getTest());
@@ -75,13 +77,13 @@ void CoreManager::update()
 			else
 			{
 				this->setStatus(STANDBY);
-				LogManager::printLog("CoreManager is stand-by.");
+				LogManager::getInstance().printLog("CoreManager is stand-by.");
 			}
 		}
 		else
 		{
 			this->setStatus(STANDBY);
-			LogManager::printLog("CoreManager is stand-by.");
+			LogManager::getInstance().printLog("CoreManager is stand-by.");
 		}
 	}
 }
@@ -95,6 +97,6 @@ void CoreManager::shutdown()
 		m_childEventManager[m_childEventManager.size() - 1 - i].get()->exec(SHUTDOWN);
 	}
 	this->setStatus(UNINITIALIZIED);
-	LogManager::printLog("CoreManager has been shutdown.");
+	LogManager::getInstance().printLog("CoreManager has been shutdown.");
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 }

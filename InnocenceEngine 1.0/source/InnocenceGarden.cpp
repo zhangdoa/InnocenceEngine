@@ -11,6 +11,11 @@ InnocenceGarden::~InnocenceGarden()
 {
 }
 
+const std::string & InnocenceGarden::getGameName()
+{
+	return m_gameName;
+}
+
 CameraComponent * InnocenceGarden::getCameraComponent()
 {
 	return &testCameraComponent;
@@ -28,8 +33,9 @@ void InnocenceGarden::init()
 	testCameraActor.addChildComponent(&testCameraComponent);
 	testTriangleActor.addChildComponent(&testTriangleComponent);
 	testRootActor.exec(INIT);
-	testTriangleActor.getTransform()->setPos(glm::vec3(0.0f, 0.5f, 0.0f));
-	//testCameraActor.getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 180);
+	testTriangleActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -5.0f));
+	testTriangleActor.getTransform()->rotate(glm::vec3(1.0f, 0.0f, 0.0f), 45);
+	//testCameraActor.getTransform()->rotate(glm::vec3(1.0f, 0.0f, 0.0f), -45);
 	
 }
 

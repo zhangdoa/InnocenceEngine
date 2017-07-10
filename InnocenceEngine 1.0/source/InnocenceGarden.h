@@ -9,6 +9,7 @@ public:
 	InnocenceGarden();
 	~InnocenceGarden();
 
+	const std::string& getGameName() override;
 	CameraComponent* getCameraComponent() override;
 	IVisibleGameEntity* getTest() override;
 private:
@@ -16,6 +17,7 @@ private:
 	void update() override;
 	void shutdown() override;
 
+	const std::string m_gameName = "Innocence Garden";
 	BaseActor testRootActor;
 	BaseActor testCameraActor;
 	BaseActor testTriangleActor;
