@@ -15,8 +15,8 @@ public:
 		return instance;
 	}
 
-	const __time64_t getGameStartTime();
-	const double getDeltaTime();
+	const __time64_t getGameStartTime() const;
+	const double getDeltaTime() const;
 	static std::string getCurrentTimeInLocal();
 private:
 	void init() override;
