@@ -26,7 +26,7 @@ void GLShader::addUniform(std::string uniform) const
 	int uniformLocation = glGetUniformLocation(m_program, uniform.c_str());
 	if (uniformLocation == 0xFFFFFFFF)
 	{
-		LogManager::printLog("Error: Uniform lost: " + uniform);
+		LogManager::getInstance().printLog("Error: Uniform lost: " + uniform);
 	}
 	//m_uniforms.emplace(std::pair<std::string, int>(uniform.c_str(), uniformLocation));
 }
@@ -40,14 +40,14 @@ inline void GLShader::attachShader(shaderType shaderType, const std::string& sha
 	case VERTEX: l_glShaderType = GL_VERTEX_SHADER;  break;
 	case GEOMETRY: l_glShaderType = GL_GEOMETRY_SHADER;  break;
 	case FRAGMENT: l_glShaderType = GL_FRAGMENT_SHADER;  break;
-	default: LogManager::printLog("Unknown shader type, cannot add program!");
+	default: LogManager::getInstance().printLog("Unknown shader type, cannot add program!");
 		break;
 	}
 
 	int l_shader = glCreateShader(l_glShaderType);
 
 	if (l_shader == 0) {
-		LogManager::printLog("Shader creation failed: memory location invaild when adding shader!");
+		LogManager::getInstance().printLog("Shader creation failed: memory location invaild when adding shader!");
 	}
 
 	char const * sourcePointer = shaderFileContent.c_str();
@@ -62,7 +62,7 @@ inline void GLShader::attachShader(shaderType shaderType, const std::string& sha
 	if (l_infoLogLength > 0) {
 		std::vector<char> ShaderErrorMessage(l_infoLogLength + 1);
 		glGetShaderInfoLog(m_program, l_infoLogLength, NULL, &ShaderErrorMessage[0]);
-		LogManager::printLog(&ShaderErrorMessage[0]);
+		LogManager::getInstance().printLog(&ShaderErrorMessage[0]);
 	}
 
 	glAttachShader(m_program, l_shader);
@@ -96,7 +96,7 @@ inline void GLShader::setAttributeLocation(int arrtributeLocation, const std::st
 	glBindAttribLocation(m_program, arrtributeLocation, arrtributeName.c_str());
 	if (glGetAttribLocation(m_program, arrtributeName.c_str()) == 0xFFFFFFFF)
 	{
-		LogManager::printLog("Error: Attribute lost: " + arrtributeName);
+		LogManager::getInstance().printLog("Error: Attribute lost: " + arrtributeName);
 	}
 }
 
@@ -193,21 +193,28 @@ void GLRenderingManager::setCameraViewProjectionMatrix(const glm::mat4 & cameraV
 
 void GLRenderingManager::init()
 {
+	glFrontFace(GL_CW);
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_CLAMP);
+	glEnable(GL_TEXTURE_2D);
+
 	m_basicGLShader.init();
 	m_basicGLShader.updateUniform("uni_Texture", 0);
 	this->setStatus(INITIALIZIED);
-	LogManager::printLog("GLRenderingManager has been initialized.");
+	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
 }
 
 void GLRenderingManager::update()
 {
-	glClearColor(0.1f, 0.2f, 0.5f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void GLRenderingManager::shutdown()
 {
 	this->setStatus(UNINITIALIZIED);
-	LogManager::printLog("GLRenderingManager has been shutdown.");
+	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
 }
 

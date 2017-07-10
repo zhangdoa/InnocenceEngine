@@ -16,10 +16,12 @@ public:
 
 	GLFWwindow* getWindow() const;
 	glm::vec2 getScreenCenterPosition() const;
+	void setWindowName(const std::string& windowName);
 
 private:
 	const unsigned int SCR_WIDTH = 1024;
 	const unsigned int SCR_HEIGHT = 768;
+	std::string m_windowName;
 	void init() override;
 	void update() override;
 	void shutdown() override;

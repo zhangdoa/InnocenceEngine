@@ -67,8 +67,9 @@ void CameraComponent::move(moveDirection moveDirection)
 {
 	switch (moveDirection)
 	{
-	case FORWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::FORWARD) * 0.03f); break;
-	case BACKWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::BACKWARD) *  0.03f);  break;
+		// opengl use right-hand-coordinate, so go foward means get into the negative z-axis
+	case FORWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::BACKWARD) * 0.03f); break;
+	case BACKWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::FORWARD) *  0.03f);  break;
 	case LEFT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::LEFT) *  0.03f);  break;
 	case RIGHT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::RIGHT) *  0.03f);  break;
 	}
@@ -83,7 +84,7 @@ void CameraComponent::init()
 void CameraComponent::update()
 {
 	getTransform()->update();
-
+	
 	if (InputManager::getInstance().getMouse(GLFW_MOUSE_BUTTON_RIGHT))
 	{
 		glm::vec2 deltaPos = InputManager::getInstance().getMousePosition() - WindowManager::getInstance().getScreenCenterPosition();

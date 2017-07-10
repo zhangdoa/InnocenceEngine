@@ -24,7 +24,7 @@ void GraphicManager::init()
 {
 	m_renderingManager.exec(INIT);
 	this->setStatus(INITIALIZIED);
-	LogManager::printLog("GraphicManager has been initialized.");
+	LogManager::getInstance().printLog("GraphicManager has been initialized.");
 }
 
 void GraphicManager::update()
@@ -36,5 +36,5 @@ void GraphicManager::shutdown()
 {
 	m_renderingManager.exec(SHUTDOWN);
 	this->setStatus(UNINITIALIZIED);
-	LogManager::printLog("GraphicManager has been shutdown.");
+	LogManager::getInstance().printLog("GraphicManager has been shutdown.");
 }
