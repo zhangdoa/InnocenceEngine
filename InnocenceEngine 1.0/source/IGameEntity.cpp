@@ -3,12 +3,12 @@
 
 Transform::Transform()
 {
-	m_pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	m_rot = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-	m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
-	m_oldPos = m_pos + (1.0f);
-	m_oldRot = m_rot *(0.5f);
-	m_oldScale = m_scale + (1.0f);
+	_pos = glm::vec3(0.0f, 0.0f, 0.0f);
+	_rot = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	_scale = glm::vec3(1.0f, 1.0f, 1.0f);
+	_oldPos = _pos + (1.0f);
+	_oldRot = _rot *(0.5f);
+	_oldScale = _scale + (1.0f);
 }
 
 Transform::~Transform()
@@ -17,110 +17,140 @@ Transform::~Transform()
 
 void Transform::update()
 {
-	m_oldPos = m_pos;
-	m_oldRot = m_rot;
-	m_oldScale = m_scale;
+	_oldPos = _pos;
+	_oldRot = _rot;
+	_oldScale = _scale;
 }
 
-void Transform::rotate(const glm::vec3& axis, float angle)
+void Transform::rotate(glm::vec3 axis, float angle)
 {
 	float sinHalfAngle = sinf(angle / 2);
 	float cosHalfAngle = cosf(angle / 2);
-
 	glm::quat rotateFactor;
-
-	rotateFactor.w = cosHalfAngle;
 	rotateFactor.x = axis.x * sinHalfAngle;
 	rotateFactor.y = axis.y * sinHalfAngle;
 	rotateFactor.z = axis.z * sinHalfAngle;
-
-	m_rot = (glm::normalize(rotateFactor * m_rot));
+	rotateFactor.w = cosHalfAngle;
+	_rot = (glm::normalize(rotateFactor * _rot));
 }
 
-const glm::vec3 & Transform::getPos() const
+const glm::vec3 & Transform::getPos()
 {
-	return m_pos;
+	return _pos;
 }
 
-const glm::quat & Transform::getRot() const
+const glm::quat & Transform::getRot()
 {
-	return m_rot;
+	return _rot;
 }
 
-const glm::vec3 & Transform::getScale() const
+const glm::vec3 & Transform::getScale()
 {
-	return m_scale;
+	return _scale;
 }
 
 void Transform::setPos(const glm::vec3 & pos)
 {
-	m_pos = pos;
+	_pos = pos;
 }
 
 void Transform::setRot(const glm::quat & rot)
 {
-	m_rot = rot;
+	_rot = rot;
 }
 
 void Transform::setScale(const glm::vec3 & scale)
 {
-	m_scale = scale;
+	_scale = scale;
 }
 
-const glm::vec3 & Transform::getOldPos() const
+const glm::vec3 & Transform::getOldPos()
 {
-	return m_oldPos;
+	return _oldPos;
 }
 
-const glm::quat & Transform::getOldRot() const
+const glm::quat & Transform::getOldRot()
 {
-	return m_oldRot;
+	return _oldRot;
 }
 
-const glm::vec3 & Transform::getOldScale() const
+const glm::vec3 & Transform::getOldScale()
 {
-	return m_oldScale;
+	return _oldScale;
 }
 
-glm::vec3 Transform::getDirection(direction direction) const
+glm::vec3 Transform::getForward() const
 {
-	glm::vec3 l_directionVec3;
-
-	switch (direction)
-	{
-	case FORWARD: l_directionVec3 = glm::vec3(0.0f, 0.0f, 1.0f); break;
-	case BACKWARD:l_directionVec3 = glm::vec3(0.0f, 0.0f, -1.0f); break;
-	case UP:l_directionVec3 = glm::vec3(0.0f, 1.0f, 0.0f); break;
-	case DOWN:l_directionVec3 = glm::vec3(0.0f, -1.0f, 0.0f); break;
-	case RIGHT:l_directionVec3 = glm::vec3(1.0f, 0.0f, 0.0f); break;
-	case LEFT:l_directionVec3 = glm::vec3(-1.0f, 0.0f, 0.0f); break;
-	}
-
-	// get conjugate quaternion
-	glm::quat l_conjugateQuat;
-
-	l_conjugateQuat.w = m_rot.w;
-	l_conjugateQuat.x = -m_rot.x;
-	l_conjugateQuat.y = -m_rot.y;
-	l_conjugateQuat.z = -m_rot.z;
-
-	// get rotated quaternion
-	glm::quat l_rotatedRot;
-
-	l_rotatedRot.w = -m_rot.x * l_directionVec3.x - m_rot.y * l_directionVec3.y - m_rot.z * l_directionVec3.z;
-	l_rotatedRot.x = m_rot.w * l_directionVec3.x + m_rot.y * l_directionVec3.z - m_rot.z * l_directionVec3.y;
-	l_rotatedRot.y = m_rot.w * l_directionVec3.y + m_rot.z * l_directionVec3.x - m_rot.x * l_directionVec3.z;
-	l_rotatedRot.z = m_rot.w * l_directionVec3.z + m_rot.x * l_directionVec3.y - m_rot.y * l_directionVec3.x;
-
-	// multiply rotated quaternion by the conjugate quaternion
-	l_rotatedRot.w = l_rotatedRot.w * l_conjugateQuat.w - l_rotatedRot.x * l_conjugateQuat.x - l_rotatedRot.y * l_conjugateQuat.y - l_rotatedRot.z * l_conjugateQuat.z;
-	l_rotatedRot.x = l_rotatedRot.x * l_conjugateQuat.w + l_rotatedRot.w * l_conjugateQuat.x + l_rotatedRot.y * l_conjugateQuat.z - l_rotatedRot.z * l_conjugateQuat.y;
-	l_rotatedRot.y = l_rotatedRot.y * l_conjugateQuat.w + l_rotatedRot.w * l_conjugateQuat.y + l_rotatedRot.z * l_conjugateQuat.x - l_rotatedRot.x * l_conjugateQuat.z;
-	l_rotatedRot.z = l_rotatedRot.z * l_conjugateQuat.w + l_rotatedRot.w * l_conjugateQuat.z + l_rotatedRot.x * l_conjugateQuat.y - l_rotatedRot.y * l_conjugateQuat.x;
-
-	// TODO: fix mathmetic error
-	return glm::normalize(glm::vec3(l_rotatedRot.x, l_rotatedRot.y, l_rotatedRot.z));
+	glm::quat t;
+	glm::vec3 r = glm::vec3(0, 0, 1);
+	t.w = -_rot.x * r.x - _rot.y * r.y - _rot.z * r.z;
+	t.x = _rot.w * r.x + _rot.y * r.z - _rot.z * r.y;
+	t.y = _rot.w * r.y + _rot.z * r.x - _rot.x * r.z;
+	t.z = _rot.w * r.z + _rot.x * r.y - _rot.y * r.x;
+	t = _rot * t * -1.0f;
+	return 	glm::vec3(t.x, t.y, t.z);
 }
+
+glm::vec3 Transform::getBackward() const
+{
+	glm::quat t;
+	glm::vec3 r = glm::vec3(0, 0, -1);
+	t.w = -_rot.x * r.x - _rot.y * r.y - _rot.z * r.z;
+	t.x = _rot.w * r.x + _rot.y * r.z - _rot.z * r.y;
+	t.y = _rot.w * r.y + _rot.z * r.x - _rot.x * r.z;
+	t.z = _rot.w * r.z + _rot.x * r.y - _rot.y * r.x;
+	t = _rot * t * -1.0f;
+	return 	glm::vec3(t.x, t.y, t.z);
+}
+
+glm::vec3 Transform::getUp() const
+{
+	glm::quat t;
+	glm::vec3 r = glm::vec3(0, 1, 0);
+	t.w = -_rot.x * r.x - _rot.y * r.y - _rot.z * r.z;
+	t.x = _rot.w * r.x + _rot.y * r.z - _rot.z * r.y;
+	t.y = _rot.w * r.y + _rot.z * r.x - _rot.x * r.z;
+	t.z = _rot.w * r.z + _rot.x * r.y - _rot.y * r.x;
+	t = _rot * t * -1.0f;
+	return 	glm::vec3(t.x, t.y, t.z);
+}
+
+glm::vec3 Transform::getDown() const
+{
+	glm::quat t;
+	glm::vec3 r = glm::vec3(0, -1, 0);
+	t.w = -_rot.x * r.x - _rot.y * r.y - _rot.z * r.z;
+	t.x = _rot.w * r.x + _rot.y * r.z - _rot.z * r.y;
+	t.y = _rot.w * r.y + _rot.z * r.x - _rot.x * r.z;
+	t.z = _rot.w * r.z + _rot.x * r.y - _rot.y * r.x;
+	t = _rot * t * -1.0f;
+	return 	glm::vec3(t.x, t.y, t.z);
+}
+
+glm::vec3 Transform::getRight() const
+{ 
+	glm::quat t;
+	glm::vec3 r = glm::vec3(1, 0, 0);
+	t.w = -_rot.x * r.x - _rot.y * r.y - _rot.z * r.z;
+	t.x = _rot.w * r.x + _rot.y * r.z - _rot.z * r.y;
+	t.y = _rot.w * r.y + _rot.z * r.x - _rot.x * r.z;
+	t.z = _rot.w * r.z + _rot.x * r.y - _rot.y * r.x;
+	t = _rot * t * -1.0f;
+	return 	glm::vec3(t.x, t.y, t.z);
+}
+
+glm::vec3 Transform::getLeft() const
+{
+	glm::quat t;
+	glm::vec3 r = glm::vec3(-1, 0, 0);
+	t.w = -_rot.x * r.x - _rot.y * r.y - _rot.z * r.z;
+	t.x = _rot.w * r.x + _rot.y * r.z - _rot.z * r.y;
+	t.y = _rot.w * r.y + _rot.z * r.x - _rot.x * r.z;
+	t.z = _rot.w * r.z + _rot.x * r.y - _rot.y * r.x;
+	t = _rot * t * -1.0f;
+	return 	glm::vec3(t.x, t.y, t.z);
+}
+
 glm::mat4 Transform::QuatToRotationMatrix(const glm::quat & quat) const
 {
 	glm::vec3 forward = glm::vec3(2.0f * (quat.x * quat.z - quat.w * quat.y), 2.0f * (quat.y * quat.z + quat.w * quat.x), 1.0f - 2.0f * (quat.x * quat.x + quat.y * quat.y));
@@ -162,14 +192,14 @@ void BaseActor::addChildActor(BaseActor* childActor)
 	childActor->setParentActor(this);
 }
 
-const std::vector<BaseActor*>& BaseActor::getChildrenActors() const
+std::vector<BaseActor*>& BaseActor::getChildrenActors()
 {
 	return m_childActor;
 }
 
-const BaseActor& BaseActor::getParentActor() const
+BaseActor* BaseActor::getParentActor()
 {
-	return *m_parentActor;
+	return m_parentActor;
 }
 
 void BaseActor::setParentActor(BaseActor* parentActor)
@@ -183,7 +213,7 @@ void BaseActor::addChildComponent(BaseComponent * childComponent)
 	childComponent->setParentActor(this);
 }
 
-const std::vector<BaseComponent*>& BaseActor::getChildrenComponents() const
+std::vector<BaseComponent*>& BaseActor::getChildrenComponents()
 {
 	return m_childComponent;
 }
@@ -194,16 +224,16 @@ Transform* BaseActor::getTransform()
 }
 
 
-bool BaseActor::hasTransformChanged() const
+bool BaseActor::hasTransformChanged()
 {
 	if (m_transform.getPos() != m_transform.getOldPos() || m_transform.getRot() != m_transform.getOldRot() || m_transform.getScale() != m_transform.getOldScale())
 	{
 		return true;
 	}
 
-	if (&getParentActor() != nullptr)
+	if (getParentActor() != nullptr)
 	{
-		if (getParentActor().hasTransformChanged())
+		if (getParentActor()->hasTransformChanged())
 		{
 			return true;
 		}
@@ -211,7 +241,7 @@ bool BaseActor::hasTransformChanged() const
 	return false;
 }
 
-glm::mat4 BaseActor::caclTransformation() const
+glm::mat4 BaseActor::caclTransformation()
 {
 	glm::mat4 l_translationMatrix;
 	l_translationMatrix = glm::translate(l_translationMatrix, m_transform.getPos());
@@ -240,15 +270,15 @@ glm::mat4 BaseActor::caclTransformation() const
 	l_parentMatrix[3][2] = 0.0f;
 	l_parentMatrix[3][3] = 1.0f;
 
-	if (&getParentActor() != nullptr && getParentActor().hasTransformChanged())
-	{
-		l_parentMatrix = getParentActor().caclTransformation();
-	}
+	//if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
+	//{
+	//	l_parentMatrix = getParentActor()->caclTransformation();
+	//}
 
-	return l_parentMatrix * l_translationMatrix * l_rotaionMartix * l_scaleMatrix;
+	return l_translationMatrix * l_rotaionMartix * l_scaleMatrix;
 }
 
-glm::vec3 BaseActor::caclTransformedPos() const
+glm::vec3 BaseActor::caclTransformedPos()
 {
 	glm::mat4 l_parentMatrix;
 
@@ -269,9 +299,9 @@ glm::vec3 BaseActor::caclTransformedPos() const
 	l_parentMatrix[3][2] = 0.0f;
 	l_parentMatrix[3][3] = 1.0f;
 
-	if (&getParentActor() != nullptr && getParentActor().hasTransformChanged())
+	if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
 	{
-		l_parentMatrix = getParentActor().caclTransformation();
+		l_parentMatrix = getParentActor()->caclTransformation();
 	}
 
 	return glm::vec3(l_parentMatrix[0][0] * m_transform.getPos().x + l_parentMatrix[0][1] * m_transform.getPos().y + l_parentMatrix[0][2] * m_transform.getPos().z + l_parentMatrix[0][3],
@@ -279,16 +309,16 @@ glm::vec3 BaseActor::caclTransformedPos() const
 		l_parentMatrix[2][0] * m_transform.getPos().x + l_parentMatrix[2][1] * m_transform.getPos().y + l_parentMatrix[2][2] * m_transform.getPos().z + l_parentMatrix[2][3]);
 }
 
-glm::quat BaseActor::caclTransformedRot() const
+glm::quat BaseActor::caclTransformedRot()
 {
 	glm::quat l_parentRotation = glm::quat(1, 0, 0, 0);
 
-	if (&getParentActor() != nullptr)
+	if (getParentActor() != nullptr)
 	{
-		l_parentRotation = getParentActor().caclTransformedRot();
+		l_parentRotation = getParentActor()->caclTransformedRot();
 	}
 
-	return l_parentRotation * m_transform.getRot();
+	return m_transform.getRot() * l_parentRotation;
 }
 
 
@@ -344,9 +374,9 @@ BaseComponent::~BaseComponent()
 {
 }
 
-const BaseActor& BaseComponent::getParentActor() const
+BaseActor * BaseComponent::getParentActor()
 {
-	return *m_parentActor;
+	return m_parentActor;
 }
 
 void BaseComponent::setParentActor(BaseActor * parentActor)
@@ -354,7 +384,7 @@ void BaseComponent::setParentActor(BaseActor * parentActor)
 	m_parentActor = parentActor;
 }
 
-Transform* BaseComponent::getTransform()
+Transform * BaseComponent::getTransform()
 {
 	return m_parentActor->getTransform();
 }

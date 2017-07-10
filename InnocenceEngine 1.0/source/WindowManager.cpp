@@ -11,12 +11,12 @@ WindowManager::~WindowManager()
 {
 }
 
-GLFWwindow * WindowManager::getWindow() const
+GLFWwindow * WindowManager::getWindow()
 {
 	return m_window;
 }
 
-glm::vec2 WindowManager::getScreenCenterPosition() const
+glm::vec2 WindowManager::getScreenCenterPosition()
 {
 	return glm::vec2(SCR_WIDTH / 2.0f, SCR_HEIGHT / 2.0f);
 }

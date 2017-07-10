@@ -14,8 +14,8 @@ public:
 		return instance;
 	}
 
-	GLFWwindow* getWindow() const;
-	glm::vec2 getScreenCenterPosition() const;
+	GLFWwindow* getWindow();
+	glm::vec2 getScreenCenterPosition();
 
 private:
 	const unsigned int SCR_WIDTH = 1024;

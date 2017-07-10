@@ -569,9 +569,9 @@ Mat4f Quaternion::toRotationMatrix()
 
 Transform::Transform()
 {
-	m_pos = Vec3f(0.0f, 0.0f, 0.0f);
-	m_rot = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
-	m_scale = Vec3f(1.0f, 1.0f, 1.0f);
+	_pos = Vec3f(0.0f, 0.0f, 0.0f);
+	_rot = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
+	_scale = Vec3f(1.0f, 1.0f, 1.0f);
 }
 
 
@@ -581,66 +581,66 @@ Transform::~Transform()
 
 void Transform::update()
 {
-	if (&m_oldPos != nullptr)
+	if (&_oldPos != nullptr)
 	{
-		m_oldPos = m_pos;
-		m_oldRot = m_rot;
-		m_oldScale = m_scale;
+		_oldPos = _pos;
+		_oldRot = _rot;
+		_oldScale = _scale;
 	}
 	else
 	{
-		m_oldPos = m_pos + (1.0f);
-		m_oldRot = m_rot *(0.5f);
-		m_oldScale = m_scale + (1.0f);
+		_oldPos = _pos + (1.0f);
+		_oldRot = _rot *(0.5f);
+		_oldScale = _scale + (1.0f);
 	}
 }
 
 void Transform::rotate(Vec3f axis, float angle)
 {
-	m_rot = Quaternion(axis, angle) * (m_rot.normalized());
+	_rot = Quaternion(axis, angle) * (_rot.normalized());
 }
 
 const Vec3f & Transform::getPos()
 {
-	return m_pos;
+	return _pos;
 }
 
 const Quaternion & Transform::getRot()
 {
-	return m_rot;
+	return _rot;
 }
 
 const Vec3f & Transform::getScale()
 {
-	return m_scale;
+	return _scale;
 }
 
 void Transform::setPos(const Vec3f & pos)
 {
-	m_pos = pos;
+	_pos = pos;
 }
 
 void Transform::setRot(const Quaternion & rot)
 {
-	m_rot = rot;
+	_rot = rot;
 }
 
 void Transform::setScale(const Vec3f & scale)
 {
-	m_scale = scale;
+	_scale = scale;
 }
 
 const Vec3f & Transform::getOldPos()
 {
-	return m_oldPos;
+	return _oldPos;
 }
 
 const Quaternion & Transform::getOldRot()
 {
-	return m_oldRot;
+	return _oldRot;
 }
 
 const Vec3f & Transform::getOldScale()
 {
-	return m_oldScale;
+	return _oldScale;
 }

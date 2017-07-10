@@ -16,9 +16,9 @@ public:
 		return instance;
 	}
 
-	int getKey(int keyCode) const;
-	int getMouse(int mouseButton) const;
-	glm::vec2 getMousePosition() const;
+	int getKey(int keyCode);
+	int getMouse(int mouseButton);
+	glm::vec2 getMousePosition();
 	void setMousePosition(const glm::vec2& mousePosition);
 
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);

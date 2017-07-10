@@ -12,34 +12,39 @@ public:
 	Transform();
 	~Transform();
 
-	enum direction {FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT};
 	void update();
-	void rotate(const glm::vec3& axis, float angle);
-	
-	const glm::vec3& getPos() const;
-	const glm::quat& getRot() const;
-	const glm::vec3& getScale() const;
+	void rotate(glm::vec3 axis, float angle);
+
+	const glm::vec3& getPos();
+	const glm::quat& getRot();
+	const glm::vec3& getScale();
 
 	void setPos(const glm::vec3& pos);
 	void setRot(const glm::quat& rot);
 	void setScale(const glm::vec3& scale);
 
-	const glm::vec3& getOldPos() const;
-	const glm::quat& getOldRot() const;
-	const glm::vec3& getOldScale() const;
-	
-	glm::vec3 getDirection(direction direction) const;
+	const glm::vec3& getOldPos();
+	const glm::quat& getOldRot();
+	const glm::vec3& getOldScale();
+
+	glm::vec3 getForward() const;
+	glm::vec3 getBackward() const;
+	glm::vec3 getUp() const;
+	glm::vec3 getDown() const;
+	glm::vec3 getRight() const;
+	glm::vec3 getLeft() const;
+
 	glm::mat4 QuatToRotationMatrix(const glm::quat& quat) const;
 
 private:
 
-	glm::vec3 m_pos;
-	glm::quat m_rot;
-	glm::vec3 m_scale;
+	glm::vec3 _pos;
+	glm::quat _rot;
+	glm::vec3 _scale;
 
-	glm::vec3 m_oldPos;
-	glm::quat m_oldRot;
-	glm::vec3 m_oldScale;
+	glm::vec3 _oldPos;
+	glm::quat _oldRot;
+	glm::vec3 _oldScale;
 };
 
 class BaseComponent;
@@ -50,18 +55,18 @@ public:
 	virtual ~BaseActor();
 
 	void addChildActor(BaseActor* childActor);
-	const std::vector<BaseActor*>& getChildrenActors() const;
-	const BaseActor& getParentActor() const;
+	std::vector<BaseActor*>& getChildrenActors();
+	BaseActor* getParentActor();
 	void setParentActor(BaseActor* parentActor);
 
 	void addChildComponent(BaseComponent* childComponent);
-	const std::vector<BaseComponent*>& getChildrenComponents() const;
+	std::vector<BaseComponent*>& getChildrenComponents();
 
 	Transform* getTransform();
-	bool hasTransformChanged() const;
-	glm::mat4 caclTransformation() const;
-	glm::vec3 caclTransformedPos() const;
-	glm::quat caclTransformedRot() const;
+	bool hasTransformChanged();
+	glm::mat4 caclTransformation();
+	glm::vec3 caclTransformedPos();
+	glm::quat caclTransformedRot();
 
 private:
 	std::vector<BaseActor*> m_childActor;
@@ -81,9 +86,9 @@ public:
 	BaseComponent();
 	virtual ~BaseComponent();
 
-	const BaseActor& getParentActor() const;
+	BaseActor* getParentActor();
 	void setParentActor(BaseActor* parentActor);
-	Transform*getTransform();
+	Transform* getTransform();
 private:
 	BaseActor* m_parentActor;
 };

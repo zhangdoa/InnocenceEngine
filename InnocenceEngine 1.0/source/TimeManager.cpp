@@ -42,12 +42,12 @@ void TimeManager::shutdown()
 	LogManager::printLog("TimeManager has been shutdown.");
 }
 
-const __time64_t TimeManager::getGameStartTime() const
+const __time64_t TimeManager::getGameStartTime()
 {
 	return m_gameStartTime;
 }
 
-const double TimeManager::getDeltaTime() const
+const double TimeManager::getDeltaTime()
 {
 	return m_deltaTime;
 }
