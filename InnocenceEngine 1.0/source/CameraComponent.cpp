@@ -28,20 +28,26 @@ void CameraData::addCameraData(float fov, float aspectRatio, float zNear, float 
 	m_projectionMatrix[2][3] = 2 * zFar * zNear / zRange;
 	m_projectionMatrix[3][0] = 0.0f;
 	m_projectionMatrix[3][1] = 0.0f;
-	m_projectionMatrix[3][2] = 0.0f;
+	m_projectionMatrix[3][2] = 1.0f;
 	m_projectionMatrix[3][3] = 0.0f;
 }
 
 glm::mat4 CameraData::getViewProjectionMatrix(BaseComponent* parent) const
 {
-
+	// get camera's translation matrix, reverse direction to "look into"  the screen
 	glm::mat4 l_cameraTranslationMatrix;
-	glm::translate(l_cameraTranslationMatrix, parent->getParentActor().caclTransformedPos() * -1.0f);
+	l_cameraTranslationMatrix = glm::translate(l_cameraTranslationMatrix, parent->getParentActor().caclTransformedPos() * -1.0f);
 
-	glm::mat4 l_cameraRotationMatrix = parent->getTransform()->QuatToRotationMatrix(parent->getParentActor().caclTransformedRot() * -1.0f);
+	// quaternion rotation
+	glm::quat conjugateRotQuat;
+	conjugateRotQuat.w = parent->getParentActor().caclTransformedRot().w;
+	conjugateRotQuat.x = -parent->getParentActor().caclTransformedRot().x;
+	conjugateRotQuat.y = -parent->getParentActor().caclTransformedRot().y;
+	conjugateRotQuat.z = -parent->getParentActor().caclTransformedRot().z;
 
-	//return m_projectionMatrix  * l_cameraTranslationMatrix * l_cameraRotationMatrix;
-	return m_projectionMatrix  * l_cameraTranslationMatrix;
+	glm::mat4 l_cameraRotationMatrix = parent->getTransform()->QuatToRotationMatrix(conjugateRotQuat);
+
+	return m_projectionMatrix  * l_cameraRotationMatrix * l_cameraTranslationMatrix;
 }
 
 CameraComponent::CameraComponent()
@@ -77,17 +83,17 @@ void CameraComponent::init()
 void CameraComponent::update()
 {
 	getTransform()->update();
-	LogManager::printLog(getTransform()->getDirection(Transform::FORWARD));
+
 	if (InputManager::getInstance().getMouse(GLFW_MOUSE_BUTTON_RIGHT))
 	{
 		glm::vec2 deltaPos = InputManager::getInstance().getMousePosition() - WindowManager::getInstance().getScreenCenterPosition();
 		if (deltaPos.x != 0)
 		{
-			getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), ((deltaPos.x * 0.01f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), ((deltaPos.x * 0.1f) / 180.0f)* glm::pi<float>());
 		}
 		if (deltaPos.y != 0)
 		{
-			getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((-deltaPos.y * 0.01f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((-deltaPos.y * 0.1f) / 180.0f)* glm::pi<float>());
 		}
 		if (deltaPos.x != 0 || deltaPos.y != 0)
 		{
