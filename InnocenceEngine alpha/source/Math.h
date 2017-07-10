@@ -155,13 +155,13 @@ public:
 
 private:
 
-	Vec3f _pos;
-	Quaternion _rot;
-	Vec3f _scale;
+	Vec3f m_pos;
+	Quaternion m_rot;
+	Vec3f m_scale;
 
-	Vec3f _oldPos;
-	Quaternion _oldRot;
-	Vec3f _oldScale;
+	Vec3f m_oldPos;
+	Quaternion m_oldRot;
+	Vec3f m_oldScale;
 };
 
 

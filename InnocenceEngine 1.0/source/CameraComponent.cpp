@@ -32,32 +32,16 @@ void CameraData::addCameraData(float fov, float aspectRatio, float zNear, float 
 	m_projectionMatrix[3][3] = 0.0f;
 }
 
-glm::mat4 CameraData::getViewProjectionMatrix(BaseComponent* parent)
+glm::mat4 CameraData::getViewProjectionMatrix(BaseComponent* parent) const
 {
-	glm::mat4 l_cameraRotationMatrix = parent->getTransform()->QuatToRotationMatrix(parent->getParentActor()->caclTransformedRot() * -1.0f);
-
-	glm::vec3 l_cameraPosition = parent->getParentActor()->caclTransformedPos() * -1.0f;
 
 	glm::mat4 l_cameraTranslationMatrix;
+	glm::translate(l_cameraTranslationMatrix, parent->getParentActor().caclTransformedPos() * -1.0f);
 
-	l_cameraTranslationMatrix[0][0] = 1.0f;
-	l_cameraTranslationMatrix[0][1] = 0.0f;
-	l_cameraTranslationMatrix[0][2] = 0.0f;
-	l_cameraTranslationMatrix[0][3] = l_cameraPosition.x;
-	l_cameraTranslationMatrix[1][0] = 0.0f;
-	l_cameraTranslationMatrix[1][1] = 1.0f;
-	l_cameraTranslationMatrix[1][2] = 0.0f;
-	l_cameraTranslationMatrix[1][3] = l_cameraPosition.y;
-	l_cameraTranslationMatrix[2][0] = 0.0f;
-	l_cameraTranslationMatrix[2][1] = 0.0f;
-	l_cameraTranslationMatrix[2][2] = 1.0f;
-	l_cameraTranslationMatrix[2][3] = l_cameraPosition.z;
-	l_cameraTranslationMatrix[3][0] = 0.0f;
-	l_cameraTranslationMatrix[3][1] = 0.0f;
-	l_cameraTranslationMatrix[3][2] = 0.0f;
-	l_cameraTranslationMatrix[3][3] = 1.0f;
+	glm::mat4 l_cameraRotationMatrix = parent->getTransform()->QuatToRotationMatrix(parent->getParentActor().caclTransformedRot() * -1.0f);
 
-	return m_projectionMatrix  * l_cameraTranslationMatrix;//* l_cameraRotationMatrix * ;
+	//return m_projectionMatrix  * l_cameraTranslationMatrix * l_cameraRotationMatrix;
+	return m_projectionMatrix  * l_cameraTranslationMatrix;
 }
 
 CameraComponent::CameraComponent()
@@ -77,10 +61,10 @@ void CameraComponent::move(moveDirection moveDirection)
 {
 	switch (moveDirection)
 	{
-	case FORWARD:  this->getTransform()->setPos(this->getTransform()->getPos() + this->getTransform()->getForward() * 3.0f); break;
-	case BACKWARD:  this->getTransform()->setPos(this->getTransform()->getPos() + this->getTransform()->getBackward() * 3.0f);  break;
-	case LEFT:   this->getTransform()->setPos(this->getTransform()->getPos() + this->getTransform()->getLeft() * 3.0f);  break;
-	case RIGHT:   this->getTransform()->setPos(this->getTransform()->getPos() + this->getTransform()->getRight() * 3.0f);  break;
+	case FORWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::FORWARD) * 0.03f); break;
+	case BACKWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::BACKWARD) *  0.03f);  break;
+	case LEFT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::LEFT) *  0.03f);  break;
+	case RIGHT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::RIGHT) *  0.03f);  break;
 	}
 
 }
@@ -93,17 +77,17 @@ void CameraComponent::init()
 void CameraComponent::update()
 {
 	getTransform()->update();
-
+	LogManager::printLog(getTransform()->getDirection(Transform::FORWARD));
 	if (InputManager::getInstance().getMouse(GLFW_MOUSE_BUTTON_RIGHT))
 	{
 		glm::vec2 deltaPos = InputManager::getInstance().getMousePosition() - WindowManager::getInstance().getScreenCenterPosition();
 		if (deltaPos.x != 0)
 		{
-			getTransform()->rotate(this->getTransform()->getUp(), ((deltaPos.x * 0.0001f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), ((deltaPos.x * 0.01f) / 180.0f)* glm::pi<float>());
 		}
 		if (deltaPos.y != 0)
 		{
-			getTransform()->rotate(this->getTransform()->getRight(), ((-deltaPos.y * 0.0001f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((-deltaPos.y * 0.01f) / 180.0f)* glm::pi<float>());
 		}
 		if (deltaPos.x != 0 || deltaPos.y != 0)
 		{

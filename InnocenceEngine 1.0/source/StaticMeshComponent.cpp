@@ -12,17 +12,17 @@ VertexData::~VertexData()
 {
 }
 
-const glm::vec3& VertexData::getPos()
+const glm::vec3& VertexData::getPos() const
 {
 	return m_pos;
 }
 
-const glm::vec2& VertexData::getTexCoord()
+const glm::vec2& VertexData::getTexCoord() const
 {
 	return m_texCoord;
 }
 
-const glm::vec3& VertexData::getNormal()
+const glm::vec3& VertexData::getNormal() const
 {
 	return m_normal;
 }
@@ -96,7 +96,7 @@ void MeshData::shutdown()
 }
 
 
-void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals)
+void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const
 {
 	if (calcNormals) {
 		for (size_t i = 0; i < vertices.size(); i += 3) {
@@ -193,7 +193,7 @@ void TextureData::shutdown()
 {
 }
 
-void TextureData::addTextureData(int textureWidth, int textureHeight, unsigned char * textureData)
+void TextureData::addTextureData(int textureWidth, int textureHeight, unsigned char * textureData) const
 {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -208,11 +208,11 @@ StaticMeshComponent::~StaticMeshComponent()
 {
 }
 
-void StaticMeshComponent::loadMesh(const std::string & meshFileName)
+void StaticMeshComponent::loadMesh(const std::string & meshFileName) const
 {
 }
 
-void StaticMeshComponent::loadTexture(const std::string & textureFileName)
+void StaticMeshComponent::loadTexture(const std::string & textureFileName) const
 {
 	// load image, create texture and generate mipmaps
 	int width, height, nrChannels;
@@ -236,7 +236,7 @@ void StaticMeshComponent::render()
 void StaticMeshComponent::init()
 {
 	m_textureData.init();
-	loadTexture("psyduck.jpg");
+	loadTexture("container.jpg");
 	m_meshData.init();
 }
 
