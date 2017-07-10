@@ -24,17 +24,27 @@ void Transform::update()
 
 void Transform::rotate(const glm::vec3& axis, float angle)
 {
-	float sinHalfAngle = sinf(angle / 2);
-	float cosHalfAngle = cosf(angle / 2);
+	// build a quaternion to represent the rotation axis and angle
+	glm::quat l_rotateQuat;
 
-	glm::quat rotateFactor;
+	float sinHalfAngle = sinf((angle * glm::pi<float>() / 180.0f) / 2);
+	float cosHalfAngle = cosf((angle * glm::pi<float>() / 180.0f) / 2);
 
-	rotateFactor.w = cosHalfAngle;
-	rotateFactor.x = axis.x * sinHalfAngle;
-	rotateFactor.y = axis.y * sinHalfAngle;
-	rotateFactor.z = axis.z * sinHalfAngle;
+	l_rotateQuat.w = cosHalfAngle;
+	l_rotateQuat.x = axis.x * sinHalfAngle;
+	l_rotateQuat.y = axis.y * sinHalfAngle;
+	l_rotateQuat.z = axis.z * sinHalfAngle;
 
-	m_rot = (glm::normalize(rotateFactor * m_rot));
+	// multiply l_rotateQuat with entity's original rotation 
+	l_rotateQuat.w = l_rotateQuat.w * m_rot.w - l_rotateQuat.x * m_rot.x - l_rotateQuat.y * m_rot.y - l_rotateQuat.z * m_rot.z;
+	l_rotateQuat.x = l_rotateQuat.x * m_rot.w + l_rotateQuat.w * m_rot.x + l_rotateQuat.y * m_rot.z - l_rotateQuat.z * m_rot.y;
+	l_rotateQuat.y = l_rotateQuat.y * m_rot.w + l_rotateQuat.w * m_rot.y + l_rotateQuat.z * m_rot.x - l_rotateQuat.x * m_rot.z;
+	l_rotateQuat.z = l_rotateQuat.z * m_rot.w + l_rotateQuat.w * m_rot.z + l_rotateQuat.x * m_rot.y - l_rotateQuat.y * m_rot.x;
+
+	// normalized the rotation
+	auto l_quatLength = sqrtf(l_rotateQuat.x * l_rotateQuat.x + l_rotateQuat.y * l_rotateQuat.y + l_rotateQuat.z * l_rotateQuat.z + l_rotateQuat.w * l_rotateQuat.w);
+	m_rot = l_rotateQuat / l_quatLength;
+
 }
 
 const glm::vec3 & Transform::getPos() const
@@ -118,7 +128,6 @@ glm::vec3 Transform::getDirection(direction direction) const
 	l_rotatedRot.y = l_rotatedRot.y * l_conjugateQuat.w + l_rotatedRot.w * l_conjugateQuat.y + l_rotatedRot.z * l_conjugateQuat.x - l_rotatedRot.x * l_conjugateQuat.z;
 	l_rotatedRot.z = l_rotatedRot.z * l_conjugateQuat.w + l_rotatedRot.w * l_conjugateQuat.z + l_rotatedRot.x * l_conjugateQuat.y - l_rotatedRot.y * l_conjugateQuat.x;
 
-	// TODO: fix mathmetic error
 	return glm::normalize(glm::vec3(l_rotatedRot.x, l_rotatedRot.y, l_rotatedRot.z));
 }
 glm::mat4 Transform::QuatToRotationMatrix(const glm::quat & quat) const
@@ -126,7 +135,9 @@ glm::mat4 Transform::QuatToRotationMatrix(const glm::quat & quat) const
 	glm::vec3 forward = glm::vec3(2.0f * (quat.x * quat.z - quat.w * quat.y), 2.0f * (quat.y * quat.z + quat.w * quat.x), 1.0f - 2.0f * (quat.x * quat.x + quat.y * quat.y));
 	glm::vec3 up = glm::vec3(2.0f * (quat.x * quat.y + quat.w * quat.z), 1.0f - 2.0f * (quat.x * quat.x + quat.z * quat.z), 2.0f * (quat.y * quat.z - quat.w * quat.x));
 	glm::vec3 right = glm::vec3(1.0f - 2.0f * (quat.y * quat.y + quat.z * quat.z), 2.0f * (quat.x * quat.y - quat.w * quat.z), 2.0f * (quat.x * quat.z + quat.w * quat.y));
+	
 	glm::mat4 rotationMatrix;
+	
 	rotationMatrix[0][0] = right.x;
 	rotationMatrix[0][1] = right.y;
 	rotationMatrix[0][2] = right.z;
@@ -307,6 +318,7 @@ void BaseActor::init()
 
 void BaseActor::update()
 {
+	m_transform.update();
 	if (m_childActor.size() != 0)
 	{
 		for (size_t i = 0; i < getChildrenActors().size(); i++)
