@@ -28,13 +28,13 @@ void InnocenceGarden::init()
 	testCameraActor.addChildComponent(&testCameraComponent);
 	testTriangleActor.addChildComponent(&testTriangleComponent);
 	testRootActor.exec(INIT);
+	testTriangleActor.getTransform()->setPos(glm::vec3(0.0f, 0.5f, 0.0f));
+	testCameraActor.getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 45);
 }
 
 void InnocenceGarden::update()
 {
-	testRootActor.exec(UPDATE);
-	//LogManager::printLog(testTriangleActor.getTransform()->getPos());
-	//testTriangleActor.getTransform()->setPos(testTriangleActor.getTransform()->getPos() + glm::vec3(1.0f, 0.0f, 0.0f));
+	testRootActor.exec(UPDATE);	
 }
 
 void InnocenceGarden::shutdown()

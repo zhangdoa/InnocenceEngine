@@ -8,9 +8,9 @@ public:
 	VertexData();
 	~VertexData();
 
-	const glm::vec3& getPos();
-	const glm::vec2& getTexCoord();
-	const glm::vec3& getNormal();
+	const glm::vec3& getPos() const;
+	const glm::vec2& getTexCoord() const;
+	const glm::vec3& getNormal() const;
 
 	void setPos(const glm::vec3& pos);
 	void setTexCoord(const glm::vec2& texCoord);
@@ -33,7 +33,7 @@ public:
 	void update();
 	void shutdown();
 
-	void addMeshData(std::vector<VertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals);
+	void addMeshData(std::vector<VertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
 	void addTestTriangle();
 
 private:
@@ -58,7 +58,7 @@ public:
 	void shutdown();
 
 
-	void addTextureData(int textureWidth, int textureHeight, unsigned char * textureData);
+	void addTextureData(int textureWidth, int textureHeight, unsigned char * textureData) const;
 private:
 	GLuint m_textureID;
 
@@ -71,8 +71,8 @@ public:
 	StaticMeshComponent();
 	~StaticMeshComponent();
 
-	void loadMesh(const std::string& meshFileName);
-	void loadTexture(const std::string& textureFileName);
+	void loadMesh(const std::string& meshFileName) const;
+	void loadTexture(const std::string& textureFileName) const;
 
 	void render() override;
 private:

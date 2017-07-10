@@ -10,7 +10,7 @@ GraphicManager::~GraphicManager()
 {
 }
 
-void GraphicManager::render(IVisibleGameEntity * visibleGameEntity)
+void GraphicManager::render(IVisibleGameEntity * visibleGameEntity) const
 {
 	m_renderingManager.render(visibleGameEntity);
 }

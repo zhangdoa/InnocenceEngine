@@ -18,7 +18,7 @@ public:
 		return instance;
 	}
 
-	void render(IVisibleGameEntity* visibleGameEntity);
+	void render(IVisibleGameEntity* visibleGameEntity) const;
 	void setCameraViewProjectionMatrix(const glm::mat4& cameraViewProjectionMatrix);
 private:
 	void init() override;
