@@ -7,7 +7,6 @@
 class InputManager : public IEventManager
 {
 public:
-	InputManager();
 	~InputManager();
 
 	static InputManager& getInstance()
@@ -30,14 +29,16 @@ public:
 	void scrollCallbackImpl(GLFWwindow* window, double xoffset, double yoffset);
 
 private:
+	InputManager();
+
+	void init() override;
+	void update() override;
+	void shutdown() override;
+
 	const int NUM_KEYCODES = 256;
 	const int NUM_MOUSEBUTTONS = 5;
 	std::vector<int>m_lastKeys;
 	std::vector<int>m_lastMouse;
 	double m_mouseLastX;
 	double m_mouseLastY;
-
-	void init() override;
-	void update() override;
-	void shutdown() override;
 };

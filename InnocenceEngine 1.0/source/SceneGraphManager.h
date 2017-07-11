@@ -6,7 +6,6 @@
 class SceneGraphManager : public IEventManager
 {
 public:
-	SceneGraphManager();
 	~SceneGraphManager();
 
 	static SceneGraphManager& getInstance()
@@ -16,11 +15,12 @@ public:
 	}
 
 private:
-	BaseActor m_rootActor;
+	SceneGraphManager();
 
 	void init() override;
 	void update() override;
 	void shutdown() override;
 
+	BaseActor m_rootActor;
 };
 

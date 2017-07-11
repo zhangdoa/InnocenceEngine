@@ -5,7 +5,6 @@
 class WindowManager : public IEventManager
 {
 public:
-	WindowManager();
 	~WindowManager();
 
 	static WindowManager& getInstance()
@@ -19,13 +18,15 @@ public:
 	void setWindowName(const std::string& windowName);
 
 private:
-	const unsigned int SCR_WIDTH = 1024;
-	const unsigned int SCR_HEIGHT = 768;
+	WindowManager();
+
 	std::string m_windowName;
 	void init() override;
 	void update() override;
 	void shutdown() override;
 
+	const unsigned int SCR_WIDTH = 1024;
+	const unsigned int SCR_HEIGHT = 768;
 	GLFWwindow* m_window;
 };
 

@@ -9,7 +9,6 @@
 class GraphicManager : public IEventManager
 {
 public:
-	GraphicManager();
 	~GraphicManager();
 
 	static GraphicManager& getInstance()
@@ -20,7 +19,10 @@ public:
 
 	void render(IVisibleGameEntity* visibleGameEntity) const;
 	void setCameraViewProjectionMatrix(const glm::mat4& cameraViewProjectionMatrix);
+
 private:
+	GraphicManager();
+
 	void init() override;
 	void update() override;
 	void shutdown() override;

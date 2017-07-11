@@ -125,7 +125,7 @@ std::string GLShader::loadShader(const std::string & shaderFileName) const
 	return output;
 }
 
-std::vector<std::string> GLShader::split(const std::string& data, char marker)
+std::vector<std::string> GLShader::split(const std::string& data, char marker) const
 {
 	std::vector<std::string> elems;
 
@@ -222,7 +222,7 @@ void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity) const
 	}
 }
 
-glm::mat4& GLRenderingManager::getCameraViewProjectionMatrix()
+const glm::mat4& GLRenderingManager::getCameraViewProjectionMatrix() const
 {
 
 	return m_cameraViewProjectionMatrix;
