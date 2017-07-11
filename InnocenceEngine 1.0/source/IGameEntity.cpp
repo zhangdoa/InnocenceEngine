@@ -44,7 +44,6 @@ void Transform::rotate(const glm::vec3& axis, float angle)
 	// normalized the rotation
 	auto l_quatLength = sqrtf(l_rotateQuat.x * l_rotateQuat.x + l_rotateQuat.y * l_rotateQuat.y + l_rotateQuat.z * l_rotateQuat.z + l_rotateQuat.w * l_rotateQuat.w);
 	m_rot = l_rotateQuat / l_quatLength;
-
 }
 
 const glm::vec3 & Transform::getPos() const
@@ -128,7 +127,7 @@ glm::vec3 Transform::getDirection(direction direction) const
 	l_rotatedRot.y = l_rotatedRot.y * l_conjugateQuat.w + l_rotatedRot.w * l_conjugateQuat.y + l_rotatedRot.z * l_conjugateQuat.x - l_rotatedRot.x * l_conjugateQuat.z;
 	l_rotatedRot.z = l_rotatedRot.z * l_conjugateQuat.w + l_rotatedRot.w * l_conjugateQuat.z + l_rotatedRot.x * l_conjugateQuat.y - l_rotatedRot.y * l_conjugateQuat.x;
 
-	return glm::normalize(glm::vec3(l_rotatedRot.x, l_rotatedRot.y, l_rotatedRot.z));
+	return glm::vec3(l_rotatedRot.x, l_rotatedRot.y, l_rotatedRot.z);
 }
 glm::mat4 Transform::QuatToRotationMatrix(const glm::quat & quat) const
 {

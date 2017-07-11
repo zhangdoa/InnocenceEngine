@@ -243,9 +243,7 @@ void GLRenderingManager::init()
 	glEnable(GL_DEPTH_CLAMP);
 	glEnable(GL_TEXTURE_2D);
 
-	//m_GLShader.emplace_back(&BasicGLShader::getInstance());
 	m_GLShader.emplace_back(&ForwardAmbientShader::getInstance());
-
 
 	for (size_t i = 0; i < m_GLShader.size(); i++)
 	{
@@ -264,6 +262,10 @@ void GLRenderingManager::update()
 
 void GLRenderingManager::shutdown()
 {
+	for (size_t i = 0; i < m_GLShader.size(); i++)
+	{
+		m_GLShader[i].release();
+	}
 	this->setStatus(UNINITIALIZIED);
 	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
 }

@@ -65,9 +65,10 @@ glm::mat4 CameraComponent::getViewProjectionMatrix()
 
 void CameraComponent::move(moveDirection moveDirection)
 {
+	// TODO: it should move along the direction of camera rather than the static six axis
 	switch (moveDirection)
 	{
-		// opengl use right-hand-coordinate, so go foward means get into the negative z-axis
+	// opengl use right-hand-coordinate, so go foward means get into the negative z-axis
 	case FORWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::BACKWARD) * 0.03f); break;
 	case BACKWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::FORWARD) *  0.03f);  break;
 	case LEFT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::LEFT) *  0.03f);  break;
@@ -84,17 +85,18 @@ void CameraComponent::init()
 void CameraComponent::update()
 {
 	getTransform()->update();
-	
+
 	if (InputManager::getInstance().getMouse(GLFW_MOUSE_BUTTON_RIGHT))
 	{
+		// TODO: if move mouse with small scale it would cause reverse movement
 		glm::vec2 deltaPos = InputManager::getInstance().getMousePosition() - WindowManager::getInstance().getScreenCenterPosition();
 		if (deltaPos.x != 0)
 		{
-			getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), ((deltaPos.x * 0.1f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), ((deltaPos.x * 0.05f) / 180.0f)* glm::pi<float>());
 		}
 		if (deltaPos.y != 0)
 		{
-			getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((-deltaPos.y * 0.1f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((-deltaPos.y * 0.05f) / 180.0f)* glm::pi<float>());
 		}
 		if (deltaPos.x != 0 || deltaPos.y != 0)
 		{

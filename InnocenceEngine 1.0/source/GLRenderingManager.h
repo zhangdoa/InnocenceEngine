@@ -7,7 +7,13 @@
 class GLShader
 {
 public:
-	~GLShader();
+	virtual ~GLShader();
+
+	virtual void init() = 0;
+	virtual void update(IVisibleGameEntity *visibleGameEntity) = 0;
+
+protected:
+	GLShader();
 
 	enum shaderType
 	{
@@ -17,9 +23,9 @@ public:
 	};
 
 	inline void addShader(shaderType shaderType, const std::string& fileLocation) const;
-
 	inline void bindShader() const;
 
+	inline void initProgram();
 	inline void addUniform(std::string uniform) const;
 
 	inline void updateUniform(const std::string &uniformName, bool uniformValue) const
@@ -69,13 +75,6 @@ public:
 		glUniformMatrix4fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}
 
-	virtual void init() = 0;
-	virtual void update(IVisibleGameEntity *visibleGameEntity) = 0;
-
-protected:
-	GLShader();
-	inline void initProgram();
-
 private:
 	inline std::string loadShader(const std::string& shaderFileName) const;
 
@@ -87,7 +86,7 @@ private:
 	inline std::vector<std::string> split(const std::string& data, char marker) const;
 
 	unsigned int m_program;
-	std::map<std::string, int> m_uniforms;
+	//std::map<std::string, int> m_uniforms;
 };
 
 class BasicGLShader : public GLShader
@@ -132,8 +131,6 @@ private:
 
 class GLRenderingManager : public IEventManager
 {
-	friend GLShader;
-
 public:
 	~GLRenderingManager();
 
