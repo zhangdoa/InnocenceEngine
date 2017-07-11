@@ -39,6 +39,9 @@ private:
 	const int NUM_MOUSEBUTTONS = 5;
 	std::vector<int>m_lastKeys;
 	std::vector<int>m_lastMouse;
+
+	double m_mouseXOffset;
+	double m_mouseYOffset;
 	double m_mouseLastX;
 	double m_mouseLastY;
 };
