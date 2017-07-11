@@ -20,6 +20,8 @@ int main()
 		m_coreManager->exec(IBaseObject::UPDATE);
 	}
 	m_coreManager->exec(IBaseObject::SHUTDOWN);
+	delete m_innocenceGarden;
+	delete m_coreManager;
 	return EXIT_SUCCESS;
 }
 
