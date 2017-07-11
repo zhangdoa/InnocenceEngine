@@ -23,13 +23,13 @@ int InputManager::getMouse(int mouseButton) const
 
 glm::vec2 InputManager::getMousePosition() const
 {
-	return glm::vec2(m_mouseLastX, m_mouseLastY);
+	return glm::vec2(m_mouseXOffset, m_mouseYOffset);
 }
 
 void InputManager::setMousePosition(const glm::vec2 & mousePosition)
 {
-	m_mouseLastX = mousePosition.x;
-	m_mouseLastY = mousePosition.y;
+	m_mouseXOffset = mousePosition.x;
+	m_mouseYOffset = mousePosition.y;
 }
 
 void InputManager::framebufferSizeCallback(GLFWwindow * window, int width, int height)
@@ -53,6 +53,9 @@ void InputManager::framebufferSizeCallbackImpl(GLFWwindow * window, int width, i
 
 void InputManager::mousePositionCallbackImpl(GLFWwindow * window, double mouseXPos, double mouseYPos)
 {
+	m_mouseXOffset = mouseXPos - m_mouseLastX;
+	m_mouseYOffset = m_mouseLastY - mouseYPos;
+
 	m_mouseLastX = mouseXPos;
 	m_mouseLastY = mouseYPos;
 }
