@@ -12,29 +12,29 @@ GraphicManager::~GraphicManager()
 
 void GraphicManager::render(IVisibleGameEntity * visibleGameEntity) const
 {
-	m_renderingManager.render(visibleGameEntity);
+	GLRenderingManager::getInstance().render(visibleGameEntity);
 }
 
 void GraphicManager::setCameraViewProjectionMatrix(const glm::mat4& cameraViewProjectionMatrix)
 {
-	m_renderingManager.setCameraViewProjectionMatrix(cameraViewProjectionMatrix);
+	GLRenderingManager::getInstance().setCameraViewProjectionMatrix(cameraViewProjectionMatrix);
 }
 
 void GraphicManager::init()
 {
-	m_renderingManager.exec(INIT);
+	GLRenderingManager::getInstance().exec(INIT);
 	this->setStatus(INITIALIZIED);
 	LogManager::getInstance().printLog("GraphicManager has been initialized.");
 }
 
 void GraphicManager::update()
 {
-	m_renderingManager.exec(UPDATE);
+	GLRenderingManager::getInstance().exec(UPDATE);
 }
 
 void GraphicManager::shutdown()
 {
-	m_renderingManager.exec(SHUTDOWN);
+	GLRenderingManager::getInstance().exec(SHUTDOWN);
 	this->setStatus(UNINITIALIZIED);
 	LogManager::getInstance().printLog("GraphicManager has been shutdown.");
 }

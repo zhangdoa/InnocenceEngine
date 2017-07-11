@@ -162,12 +162,47 @@ BasicGLShader::~BasicGLShader()
 void BasicGLShader::init()
 {
 	initProgram();
-	addShader(GLShader::VERTEX, "basicVertex.sf");
-	addShader(GLShader::FRAGMENT, "basicFragment.sf");
+	addShader(GLShader::VERTEX, "GL3.3/basicVertex.sf");
+	addShader(GLShader::FRAGMENT, "GL3.3/basicFragment.sf");
+	updateUniform("uni_Texture", 0);
 }
 
-void BasicGLShader::update()
+void BasicGLShader::update(IVisibleGameEntity *visibleGameEntity)
 {
+	bindShader();
+	glm::mat4 mvp = GLRenderingManager::getInstance().getCameraViewProjectionMatrix() * visibleGameEntity->getParentActor().caclTransformation();
+	updateUniform("uni_MVP", mvp);
+}
+
+
+ForwardAmbientShader::ForwardAmbientShader()
+{
+}
+
+ForwardAmbientShader::~ForwardAmbientShader()
+{
+}
+
+void ForwardAmbientShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/forwardAmbientVertex.sf");
+	addShader(GLShader::FRAGMENT, "GL3.3/forwardAmbientFragment.sf");
+	updateUniform("uni_Texture", 0);
+	m_ambientIntensity = 1.0f;
+}
+
+void ForwardAmbientShader::update(IVisibleGameEntity *visibleGameEntity)
+{
+	bindShader();
+	glm::mat4 mvp = GLRenderingManager::getInstance().getCameraViewProjectionMatrix() * visibleGameEntity->getParentActor().caclTransformation();
+	updateUniform("uni_MVP", mvp);
+	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
+}
+
+void ForwardAmbientShader::setAmbientIntensity(float ambientIntensity)
+{
+	m_ambientIntensity = ambientIntensity;
 }
 
 GLRenderingManager::GLRenderingManager()
@@ -181,13 +216,21 @@ GLRenderingManager::~GLRenderingManager()
 
 void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity) const
 {
-	m_basicGLShader.bindShader();
-	glm::mat4 mvp = m_cameraViewProjectionMatrix * visibleGameEntity->getParentActor().caclTransformation();
-	m_basicGLShader.updateUniform("uni_MVP", mvp);
+	for (size_t i = 0; i < m_GLShader.size(); i++)
+	{
+		m_GLShader[i]->update(visibleGameEntity);
+	}
+}
+
+glm::mat4& GLRenderingManager::getCameraViewProjectionMatrix()
+{
+
+	return m_cameraViewProjectionMatrix;
 }
 
 void GLRenderingManager::setCameraViewProjectionMatrix(const glm::mat4 & cameraViewProjectionMatrix)
 {
+
 	m_cameraViewProjectionMatrix = cameraViewProjectionMatrix;
 }
 
@@ -200,8 +243,15 @@ void GLRenderingManager::init()
 	glEnable(GL_DEPTH_CLAMP);
 	glEnable(GL_TEXTURE_2D);
 
-	m_basicGLShader.init();
-	m_basicGLShader.updateUniform("uni_Texture", 0);
+	//m_GLShader.emplace_back(&BasicGLShader::getInstance());
+	m_GLShader.emplace_back(&ForwardAmbientShader::getInstance());
+
+
+	for (size_t i = 0; i < m_GLShader.size(); i++)
+	{
+		m_GLShader[i]->init();
+	}
+
 	this->setStatus(INITIALIZIED);
 	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
 }
