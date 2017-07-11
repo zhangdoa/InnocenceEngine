@@ -6,7 +6,6 @@
 class TimeManager : public IEventManager
 {
 public:
-	TimeManager();
 	~TimeManager();
 
 	static TimeManager& getInstance()
@@ -18,7 +17,10 @@ public:
 	const __time64_t getGameStartTime() const;
 	const double getDeltaTime() const;
 	static std::string getCurrentTimeInLocal();
+
 private:
+	TimeManager();
+
 	void init() override;
 	void update() override;
 	void shutdown() override;
@@ -28,6 +30,5 @@ private:
 	std::chrono::high_resolution_clock::time_point m_updateStartTime;
 	double m_deltaTime;
 	double m_unprocessedTime;
-
 };
 
