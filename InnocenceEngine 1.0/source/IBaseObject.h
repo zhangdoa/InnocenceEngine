@@ -38,7 +38,6 @@ private:
 	virtual void init() = 0;
 	virtual void update() = 0;
 	virtual void shutdown() = 0;
-
 };
 
 #endif // !_I_BASE_OBJECT_H_
