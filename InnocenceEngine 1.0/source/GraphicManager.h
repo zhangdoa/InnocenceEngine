@@ -24,7 +24,5 @@ private:
 	void init() override;
 	void update() override;
 	void shutdown() override;
-
-	GLRenderingManager m_renderingManager;
 };
 
