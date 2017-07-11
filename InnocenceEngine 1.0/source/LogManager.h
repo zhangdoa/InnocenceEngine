@@ -4,7 +4,6 @@
 class LogManager : public IEventManager
 {
 public:
-	LogManager();
 	~LogManager();
 
 	static LogManager& getInstance()
@@ -18,7 +17,10 @@ public:
 	void printLog(const glm::vec3& logMessage);
 	void printLog(const glm::quat& logMessage);
 	void printLog(const glm::mat4& logMessage);
+
 private:
+	LogManager();
+
 	void init() override;
 	void update() override;
 	void shutdown() override;
