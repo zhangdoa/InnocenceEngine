@@ -85,22 +85,22 @@ void CameraComponent::init()
 void CameraComponent::update()
 {
 	getTransform()->update();
-
+	LogManager::getInstance().printLog(InputManager::getInstance().getMousePosition());
 	if (InputManager::getInstance().getMouse(GLFW_MOUSE_BUTTON_RIGHT))
 	{
-		// TODO: if move mouse with small scale it would cause reverse movement
-		glm::vec2 deltaPos = InputManager::getInstance().getMousePosition() - WindowManager::getInstance().getScreenCenterPosition();
-		if (deltaPos.x != 0)
+		// TODO: ALMOSTFIXED: if move mouse with small scale it would cause reverse movement
+
+		if (InputManager::getInstance().getMousePosition().x != 0)
 		{
-			getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), ((deltaPos.x * 0.05f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), ((InputManager::getInstance().getMousePosition().x * 0.2f) / 180.0f)* glm::pi<float>());
 		}
-		if (deltaPos.y != 0)
+		if (InputManager::getInstance().getMousePosition().y != 0)
 		{
-			getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((-deltaPos.y * 0.05f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((-InputManager::getInstance().getMousePosition().y * 0.2f) / 180.0f)* glm::pi<float>());
 		}
-		if (deltaPos.x != 0 || deltaPos.y != 0)
+		if (InputManager::getInstance().getMousePosition().x != 0 || InputManager::getInstance().getMousePosition().y != 0)
 		{
-			InputManager::getInstance().setMousePosition(WindowManager::getInstance().getScreenCenterPosition());
+			InputManager::getInstance().setMousePosition(glm::vec2(0.0f, 0.0f));
 		}
 
 		if (InputManager::getInstance().getKey(GLFW_KEY_W))

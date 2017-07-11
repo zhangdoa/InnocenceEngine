@@ -40,7 +40,7 @@ void WindowManager::init()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL 
 
-																   // Open a window and create its OpenGL context
+	// Open a window and create its OpenGL context
 	m_window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, m_windowName.c_str(), NULL, NULL);
 	if (m_window == nullptr) {
 		this->setStatus(ERROR);
