@@ -66,7 +66,7 @@ void CoreManager::update()
 					GraphicManager::getInstance().setCameraViewProjectionMatrix(m_gameData->getCameraComponent()->getViewProjectionMatrix());
 				}
 				catch (std::exception& e) {
-					LogManager::getInstance().printLog("Cannot get camera infomation!");
+					LogManager::getInstance().printLog("Cannot get camera information!");
 					LogManager::getInstance().printLog(e.what());
 				}
 				GraphicManager::getInstance().exec(UPDATE);

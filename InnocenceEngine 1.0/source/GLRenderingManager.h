@@ -71,7 +71,7 @@ public:
 	}
 
 	virtual void init() = 0;
-	virtual void update() = 0;
+	virtual void update(IVisibleGameEntity *visibleGameEntity) = 0;
 
 protected:
 	void initProgram();
@@ -94,8 +94,34 @@ class BasicGLShader : public GLShader
 
 public: BasicGLShader();
 		~BasicGLShader();
+
+		static BasicGLShader& getInstance()
+		{
+			static BasicGLShader instance;
+			return instance;
+		}
+
 		void init() override;
-		void update() override;
+		void update(IVisibleGameEntity *visibleGameEntity) override;
+};
+
+class ForwardAmbientShader : public GLShader
+{
+
+public: ForwardAmbientShader();
+		~ForwardAmbientShader();
+
+		static ForwardAmbientShader& getInstance()
+		{
+			static ForwardAmbientShader instance;
+			return instance;
+		}
+
+		void init() override;
+		void update(IVisibleGameEntity *visibleGameEntity) override;
+		void setAmbientIntensity(float ambientIntensity);
+private:
+	float m_ambientIntensity;
 };
 
 class GLRenderingManager : public IEventManager
@@ -113,6 +139,8 @@ public:
 	}
 
 	void render(IVisibleGameEntity* visibleGameEntity) const;
+
+	glm::mat4& getCameraViewProjectionMatrix();
 	void setCameraViewProjectionMatrix(const glm::mat4& cameraViewProjectionMatrix);
 private:
 
@@ -121,5 +149,5 @@ private:
 	void shutdown() override;
 
 	glm::mat4 m_cameraViewProjectionMatrix;
-	BasicGLShader m_basicGLShader;
+	std::vector<std::auto_ptr<GLShader>> m_GLShader;
 };
