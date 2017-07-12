@@ -25,25 +25,26 @@ void Transform::update()
 void Transform::rotate(const glm::vec3& axis, float angle)
 {
 	// build a quaternion to represent the rotation axis and angle
-	glm::quat l_rotateQuat;
+	glm::quat l_hiddenRotatedQuat;
 
 	float sinHalfAngle = sinf((angle * glm::pi<float>() / 180.0f) / 2);
 	float cosHalfAngle = cosf((angle * glm::pi<float>() / 180.0f) / 2);
 
-	l_rotateQuat.w = cosHalfAngle;
-	l_rotateQuat.x = axis.x * sinHalfAngle;
-	l_rotateQuat.y = axis.y * sinHalfAngle;
-	l_rotateQuat.z = axis.z * sinHalfAngle;
+	l_hiddenRotatedQuat.w = cosHalfAngle;
+	l_hiddenRotatedQuat.x = axis.x * sinHalfAngle;
+	l_hiddenRotatedQuat.y = axis.y * sinHalfAngle;
+	l_hiddenRotatedQuat.z = axis.z * sinHalfAngle;
 
-	// multiply l_rotateQuat with entity's original rotation 
-	l_rotateQuat.w = l_rotateQuat.w * m_rot.w - l_rotateQuat.x * m_rot.x - l_rotateQuat.y * m_rot.y - l_rotateQuat.z * m_rot.z;
-	l_rotateQuat.x = l_rotateQuat.x * m_rot.w + l_rotateQuat.w * m_rot.x + l_rotateQuat.y * m_rot.z - l_rotateQuat.z * m_rot.y;
-	l_rotateQuat.y = l_rotateQuat.y * m_rot.w + l_rotateQuat.w * m_rot.y + l_rotateQuat.z * m_rot.x - l_rotateQuat.x * m_rot.z;
-	l_rotateQuat.z = l_rotateQuat.z * m_rot.w + l_rotateQuat.w * m_rot.z + l_rotateQuat.x * m_rot.y - l_rotateQuat.y * m_rot.x;
+	// get final rotation
+	glm::quat l_finalRotatedQuat;
+	l_finalRotatedQuat.w = l_hiddenRotatedQuat.w * m_rot.w - l_hiddenRotatedQuat.x * m_rot.x - l_hiddenRotatedQuat.y * m_rot.y - l_hiddenRotatedQuat.z * m_rot.z;
+	l_finalRotatedQuat.x = l_hiddenRotatedQuat.x * m_rot.w + l_hiddenRotatedQuat.w * m_rot.x + l_hiddenRotatedQuat.y * m_rot.z - l_hiddenRotatedQuat.z * m_rot.y;
+	l_finalRotatedQuat.y = l_hiddenRotatedQuat.y * m_rot.w + l_hiddenRotatedQuat.w * m_rot.y + l_hiddenRotatedQuat.z * m_rot.x - l_hiddenRotatedQuat.x * m_rot.z;
+	l_finalRotatedQuat.z = l_hiddenRotatedQuat.z * m_rot.w + l_hiddenRotatedQuat.w * m_rot.z + l_hiddenRotatedQuat.x * m_rot.y - l_hiddenRotatedQuat.y * m_rot.x;
 
 	// normalized the rotation
-	auto l_quatLength = sqrtf(l_rotateQuat.x * l_rotateQuat.x + l_rotateQuat.y * l_rotateQuat.y + l_rotateQuat.z * l_rotateQuat.z + l_rotateQuat.w * l_rotateQuat.w);
-	m_rot = l_rotateQuat / l_quatLength;
+	auto l_quatLength = sqrtf(l_finalRotatedQuat.x * l_finalRotatedQuat.x + l_finalRotatedQuat.y * l_finalRotatedQuat.y + l_finalRotatedQuat.z * l_finalRotatedQuat.z + l_finalRotatedQuat.w * l_finalRotatedQuat.w);
+	m_rot = l_finalRotatedQuat / l_quatLength;
 }
 
 const glm::vec3 & Transform::getPos() const
@@ -114,47 +115,21 @@ glm::vec3 Transform::getDirection(direction direction) const
 	l_conjugateQuat.z = -m_rot.z;
 
 	// get rotated quaternion
-	glm::quat l_rotatedRot;
+	glm::quat l_hiddenRotatedQuat;
 
-	l_rotatedRot.w = -m_rot.x * l_directionVec3.x - m_rot.y * l_directionVec3.y - m_rot.z * l_directionVec3.z;
-	l_rotatedRot.x = m_rot.w * l_directionVec3.x + m_rot.y * l_directionVec3.z - m_rot.z * l_directionVec3.y;
-	l_rotatedRot.y = m_rot.w * l_directionVec3.y + m_rot.z * l_directionVec3.x - m_rot.x * l_directionVec3.z;
-	l_rotatedRot.z = m_rot.w * l_directionVec3.z + m_rot.x * l_directionVec3.y - m_rot.y * l_directionVec3.x;
+	l_hiddenRotatedQuat.w = -m_rot.x * l_directionVec3.x - m_rot.y * l_directionVec3.y - m_rot.z * l_directionVec3.z;
+	l_hiddenRotatedQuat.x = m_rot.w * l_directionVec3.x + m_rot.y * l_directionVec3.z - m_rot.z * l_directionVec3.y;
+	l_hiddenRotatedQuat.y = m_rot.w * l_directionVec3.y + m_rot.z * l_directionVec3.x - m_rot.x * l_directionVec3.z;
+	l_hiddenRotatedQuat.z = m_rot.w * l_directionVec3.z + m_rot.x * l_directionVec3.y - m_rot.y * l_directionVec3.x;
 
 	// multiply rotated quaternion by the conjugate quaternion
-	l_rotatedRot.w = l_rotatedRot.w * l_conjugateQuat.w - l_rotatedRot.x * l_conjugateQuat.x - l_rotatedRot.y * l_conjugateQuat.y - l_rotatedRot.z * l_conjugateQuat.z;
-	l_rotatedRot.x = l_rotatedRot.x * l_conjugateQuat.w + l_rotatedRot.w * l_conjugateQuat.x + l_rotatedRot.y * l_conjugateQuat.z - l_rotatedRot.z * l_conjugateQuat.y;
-	l_rotatedRot.y = l_rotatedRot.y * l_conjugateQuat.w + l_rotatedRot.w * l_conjugateQuat.y + l_rotatedRot.z * l_conjugateQuat.x - l_rotatedRot.x * l_conjugateQuat.z;
-	l_rotatedRot.z = l_rotatedRot.z * l_conjugateQuat.w + l_rotatedRot.w * l_conjugateQuat.z + l_rotatedRot.x * l_conjugateQuat.y - l_rotatedRot.y * l_conjugateQuat.x;
+	glm::quat l_finalRotatedQuat;
+	l_finalRotatedQuat.w = l_hiddenRotatedQuat.w * l_conjugateQuat.w - l_hiddenRotatedQuat.x * l_conjugateQuat.x - l_hiddenRotatedQuat.y * l_conjugateQuat.y - l_hiddenRotatedQuat.z * l_conjugateQuat.z;
+	l_finalRotatedQuat.x = l_hiddenRotatedQuat.x * l_conjugateQuat.w + l_hiddenRotatedQuat.w * l_conjugateQuat.x + l_hiddenRotatedQuat.y * l_conjugateQuat.z - l_hiddenRotatedQuat.z * l_conjugateQuat.y;
+	l_finalRotatedQuat.y = l_hiddenRotatedQuat.y * l_conjugateQuat.w + l_hiddenRotatedQuat.w * l_conjugateQuat.y + l_hiddenRotatedQuat.z * l_conjugateQuat.x - l_hiddenRotatedQuat.x * l_conjugateQuat.z;
+	l_finalRotatedQuat.z = l_hiddenRotatedQuat.z * l_conjugateQuat.w + l_hiddenRotatedQuat.w * l_conjugateQuat.z + l_hiddenRotatedQuat.x * l_conjugateQuat.y - l_hiddenRotatedQuat.y * l_conjugateQuat.x;
 
-	return glm::vec3(l_rotatedRot.x, l_rotatedRot.y, l_rotatedRot.z);
-}
-glm::mat4 Transform::QuatToRotationMatrix(const glm::quat & quat) const
-{
-	glm::vec3 forward = glm::vec3(2.0f * (quat.x * quat.z - quat.w * quat.y), 2.0f * (quat.y * quat.z + quat.w * quat.x), 1.0f - 2.0f * (quat.x * quat.x + quat.y * quat.y));
-	glm::vec3 up = glm::vec3(2.0f * (quat.x * quat.y + quat.w * quat.z), 1.0f - 2.0f * (quat.x * quat.x + quat.z * quat.z), 2.0f * (quat.y * quat.z - quat.w * quat.x));
-	glm::vec3 right = glm::vec3(1.0f - 2.0f * (quat.y * quat.y + quat.z * quat.z), 2.0f * (quat.x * quat.y - quat.w * quat.z), 2.0f * (quat.x * quat.z + quat.w * quat.y));
-	
-	glm::mat4 rotationMatrix;
-	
-	rotationMatrix[0][0] = right.x;
-	rotationMatrix[0][1] = right.y;
-	rotationMatrix[0][2] = right.z;
-	rotationMatrix[0][3] = 0;
-	rotationMatrix[1][0] = up.x;
-	rotationMatrix[1][1] = up.y;
-	rotationMatrix[1][2] = up.z;
-	rotationMatrix[1][3] = 0;
-	rotationMatrix[2][0] = forward.x;
-	rotationMatrix[2][1] = forward.y;
-	rotationMatrix[2][2] = forward.z;
-	rotationMatrix[2][3] = 0;
-	rotationMatrix[3][0] = 0;
-	rotationMatrix[3][1] = 0;
-	rotationMatrix[3][2] = 0;
-	rotationMatrix[3][3] = 1;
-	
-	return rotationMatrix;
+	return glm::vec3(l_finalRotatedQuat.x, l_finalRotatedQuat.y, l_finalRotatedQuat.z);
 }
 
 BaseActor::BaseActor()
@@ -225,8 +200,7 @@ glm::mat4 BaseActor::caclTransformation() const
 {
 	glm::mat4 l_translationMatrix;
 	l_translationMatrix = glm::translate(l_translationMatrix, m_transform.getPos());
-
-	glm::mat4 l_rotaionMartix = m_transform.QuatToRotationMatrix(m_transform.getRot());
+	glm::mat4 l_rotaionMartix = glm::toMat4(m_transform.getRot());
 
 	glm::mat4 l_scaleMatrix;
 	l_scaleMatrix = glm::scale(l_scaleMatrix, m_transform.getScale());
@@ -234,20 +208,8 @@ glm::mat4 BaseActor::caclTransformation() const
 	glm::mat4 l_parentMatrix;
 	
 	l_parentMatrix[0][0] = 1.0f;
-	l_parentMatrix[0][1] = 0.0f;
-	l_parentMatrix[0][2] = 0.0f;
-	l_parentMatrix[0][3] = 0.0f;
-	l_parentMatrix[1][0] = 0.0f;
 	l_parentMatrix[1][1] = 1.0f;
-	l_parentMatrix[1][2] = 0.0f;
-	l_parentMatrix[1][3] = 0.0f;
-	l_parentMatrix[2][0] = 0.0f;
-	l_parentMatrix[2][1] = 0.0f;
 	l_parentMatrix[2][2] = 1.0f;
-	l_parentMatrix[2][3] = 0.0f;
-	l_parentMatrix[3][0] = 0.0f;
-	l_parentMatrix[3][1] = 0.0f;
-	l_parentMatrix[3][2] = 0.0f;
 	l_parentMatrix[3][3] = 1.0f;
 
 	if (&getParentActor() != nullptr && getParentActor().hasTransformChanged())
@@ -263,20 +225,8 @@ glm::vec3 BaseActor::caclTransformedPos() const
 	glm::mat4 l_parentMatrix;
 
 	l_parentMatrix[0][0] = 1.0f;
-	l_parentMatrix[0][1] = 0.0f;
-	l_parentMatrix[0][2] = 0.0f;
-	l_parentMatrix[0][3] = 0.0f;
-	l_parentMatrix[1][0] = 0.0f;
 	l_parentMatrix[1][1] = 1.0f;
-	l_parentMatrix[1][2] = 0.0f;
-	l_parentMatrix[1][3] = 0.0f;
-	l_parentMatrix[2][0] = 0.0f;
-	l_parentMatrix[2][1] = 0.0f;
 	l_parentMatrix[2][2] = 1.0f;
-	l_parentMatrix[2][3] = 0.0f;
-	l_parentMatrix[3][0] = 0.0f;
-	l_parentMatrix[3][1] = 0.0f;
-	l_parentMatrix[3][2] = 0.0f;
 	l_parentMatrix[3][3] = 1.0f;
 
 	if (&getParentActor() != nullptr && getParentActor().hasTransformChanged())
@@ -284,9 +234,9 @@ glm::vec3 BaseActor::caclTransformedPos() const
 		l_parentMatrix = getParentActor().caclTransformation();
 	}
 
-	return glm::vec3(l_parentMatrix[0][0] * m_transform.getPos().x + l_parentMatrix[0][1] * m_transform.getPos().y + l_parentMatrix[0][2] * m_transform.getPos().z + l_parentMatrix[0][3],
-		l_parentMatrix[1][0] * m_transform.getPos().x + l_parentMatrix[1][1] * m_transform.getPos().y + l_parentMatrix[1][2] * m_transform.getPos().z + l_parentMatrix[1][3],
-		l_parentMatrix[2][0] * m_transform.getPos().x + l_parentMatrix[2][1] * m_transform.getPos().y + l_parentMatrix[2][2] * m_transform.getPos().z + l_parentMatrix[2][3]);
+	return glm::vec3(l_parentMatrix[0][0] * m_transform.getPos().x + l_parentMatrix[1][0] * m_transform.getPos().y + l_parentMatrix[2][0] * m_transform.getPos().z + l_parentMatrix[3][0],
+		l_parentMatrix[0][1] * m_transform.getPos().x + l_parentMatrix[1][1] * m_transform.getPos().y + l_parentMatrix[2][1] * m_transform.getPos().z + l_parentMatrix[3][1],
+		l_parentMatrix[0][2] * m_transform.getPos().x + l_parentMatrix[1][2] * m_transform.getPos().y + l_parentMatrix[2][2] * m_transform.getPos().z + l_parentMatrix[3][2]);
 }
 
 glm::quat BaseActor::caclTransformedRot() const

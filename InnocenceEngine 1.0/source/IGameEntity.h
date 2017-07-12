@@ -29,7 +29,6 @@ public:
 	const glm::vec3& getOldScale() const;
 	
 	glm::vec3 getDirection(direction direction) const;
-	glm::mat4 QuatToRotationMatrix(const glm::quat& quat) const;
 
 private:
 
