@@ -158,6 +158,7 @@
     <ClInclude Include="CameraComponent.h" />
     <ClInclude Include="CoreManager.h" />
     <ClInclude Include="GLRenderingManager.h" />
+    <ClInclude Include="GUIManager.h" />
     <ClInclude Include="IBaseObject.h" />
     <ClInclude Include="IGameData.h" />
     <ClInclude Include="IGameEntity.h" />
@@ -166,6 +167,8 @@
     <ClInclude Include="IVisibleGameEntity.h" />
     <ClInclude Include="LogManager.h" />
     <ClInclude Include="Math.h" />
+    <ClInclude Include="nuklear.h" />
+    <ClInclude Include="nuklear_glfw_gl3.h" />
     <ClInclude Include="SceneGraphManager.h" />
     <ClInclude Include="StaticMeshComponent.h" />
     <ClInclude Include="stb_image.h" />
@@ -179,6 +182,7 @@
     <ClCompile Include="..\source\IEventManager.cpp" />
     <ClCompile Include="CameraComponent.cpp" />
     <ClCompile Include="CoreManager.cpp" />
+    <ClCompile Include="GUIManager.cpp" />
     <ClCompile Include="IBaseObject.cpp" />
     <ClCompile Include="IGameData.cpp" />
     <ClCompile Include="IGameEntity.cpp" />
