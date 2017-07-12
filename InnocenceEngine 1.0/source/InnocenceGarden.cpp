@@ -33,16 +33,14 @@ void InnocenceGarden::init()
 	testCameraActor.addChildComponent(&testCameraComponent);
 	testTriangleActor.addChildComponent(&testTriangleComponent);
 	testRootActor.exec(INIT);
-	testTriangleActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -20.0f));
-	//testTriangleActor.getTransform()->rotate(glm::vec3(1.0f, 0.0f, 0.0f), 45);
-	//testCameraActor.getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 30);
-	//testCameraComponent.move(CameraComponent::FORWARD);
+	testTriangleActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -5.0f));
 }
 
 void InnocenceGarden::update()
 {
-	//LogManager::getInstance().printLog(testCameraActor.getTransform()->getDirection(Transform::FORWARD));
-	//LogManager::getInstance().printLog(testCameraActor.getTransform()->QuatToRotationMatrix(testCameraActor.getTransform()->getRot()));
+	testTriangleActor.getTransform()->rotate(glm::vec3(-1.0f, 0.0f, 0.0f), 1.0);
+	testTriangleActor.getTransform()->rotate(glm::vec3(0.0f, -1.0f, 0.0f), 0.5);
+	testTriangleActor.getTransform()->rotate(glm::vec3(0.0f, 0.0f, -1.0f), 0.25);
 	testRootActor.exec(UPDATE);	
 }
 

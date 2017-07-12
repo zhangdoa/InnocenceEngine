@@ -24,7 +24,7 @@ private:
 	
 	std::vector<std::auto_ptr<IEventManager>> m_childEventManager;
 
-	//TimeManager m_timeManager;
+	//TimeManager* m_timeManager;
 	//WindowManager m_windowManager;
 	//InputManager m_inputManager;
 	//GraphicManager m_graphicManager;

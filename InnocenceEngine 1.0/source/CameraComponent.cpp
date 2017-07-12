@@ -11,29 +11,11 @@ CameraData::~CameraData()
 
 void CameraData::addCameraData(float fov, float aspectRatio, float zNear, float zFar)
 {
-	float tanHalfFOV = tanf(fov / 2);
-	float zRange = zNear - zFar;
-
-	m_projectionMatrix[0][0] = 1.0f / (tanHalfFOV * aspectRatio);
-	m_projectionMatrix[0][1] = 0.0f;
-	m_projectionMatrix[0][2] = 0.0f;
-	m_projectionMatrix[0][3] = 0.0f;
-	m_projectionMatrix[1][0] = 0.0f;
-	m_projectionMatrix[1][1] = 1.0f / tanHalfFOV;
-	m_projectionMatrix[1][2] = 0.0f;
-	m_projectionMatrix[1][3] = 0.0f;
-	m_projectionMatrix[2][0] = 0.0f;
-	m_projectionMatrix[2][1] = 0.0f;
-	m_projectionMatrix[2][2] = (-zNear - zFar) / zRange;
-	m_projectionMatrix[2][3] = 2 * zFar * zNear / zRange;
-	m_projectionMatrix[3][0] = 0.0f;
-	m_projectionMatrix[3][1] = 0.0f;
-	m_projectionMatrix[3][2] = 1.0f;
-	m_projectionMatrix[3][3] = 0.0f;
+	m_projectionMatrix = glm::perspective(fov, aspectRatio, zNear, zFar);
 }
 
 glm::mat4 CameraData::getViewProjectionMatrix(BaseComponent* parent) const
-{
+{	
 	// get camera's translation matrix, reverse direction to "look into"  the screen
 	glm::mat4 l_cameraTranslationMatrix;
 	l_cameraTranslationMatrix = glm::translate(l_cameraTranslationMatrix, parent->getParentActor().caclTransformedPos() * -1.0f);
@@ -45,7 +27,7 @@ glm::mat4 CameraData::getViewProjectionMatrix(BaseComponent* parent) const
 	conjugateRotQuat.y = -parent->getParentActor().caclTransformedRot().y;
 	conjugateRotQuat.z = -parent->getParentActor().caclTransformedRot().z;
 
-	glm::mat4 l_cameraRotationMatrix = parent->getTransform()->QuatToRotationMatrix(conjugateRotQuat);
+	glm::mat4 l_cameraRotationMatrix = glm::toMat4(conjugateRotQuat);
 
 	return m_projectionMatrix  * l_cameraRotationMatrix * l_cameraTranslationMatrix;
 }
@@ -69,10 +51,10 @@ void CameraComponent::move(moveDirection moveDirection)
 	switch (moveDirection)
 	{
 	// opengl use right-hand-coordinate, so go foward means get into the negative z-axis
-	case FORWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::BACKWARD) * 0.03f); break;
-	case BACKWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::FORWARD) *  0.03f);  break;
-	case LEFT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::LEFT) *  0.03f);  break;
-	case RIGHT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::RIGHT) *  0.03f);  break;
+	case FORWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::BACKWARD) * 0.05f); break;
+	case BACKWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::FORWARD) *  0.05f);  break;
+	case LEFT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::LEFT) *  0.05f);  break;
+	case RIGHT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::RIGHT) *  0.05f);  break;
 	}
 
 }
@@ -85,18 +67,16 @@ void CameraComponent::init()
 void CameraComponent::update()
 {
 	getTransform()->update();
-	LogManager::getInstance().printLog(InputManager::getInstance().getMousePosition());
+
 	if (InputManager::getInstance().getMouse(GLFW_MOUSE_BUTTON_RIGHT))
 	{
-		// TODO: ALMOSTFIXED: if move mouse with small scale it would cause reverse movement
-
 		if (InputManager::getInstance().getMousePosition().x != 0)
 		{
-			getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), ((InputManager::getInstance().getMousePosition().x * 0.2f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), ((-InputManager::getInstance().getMousePosition().x * 1.5f) / 180.0f)* glm::pi<float>());
 		}
 		if (InputManager::getInstance().getMousePosition().y != 0)
 		{
-			getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((-InputManager::getInstance().getMousePosition().y * 0.2f) / 180.0f)* glm::pi<float>());
+			getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((InputManager::getInstance().getMousePosition().y * 1.5f) / 180.0f)* glm::pi<float>());
 		}
 		if (InputManager::getInstance().getMousePosition().x != 0 || InputManager::getInstance().getMousePosition().y != 0)
 		{

@@ -1,5 +1,6 @@
 #pragma once
 #include "IEventManager.h"
+#include "GUIManager.h"
 #include "LogManager.h"
 
 class WindowManager : public IEventManager

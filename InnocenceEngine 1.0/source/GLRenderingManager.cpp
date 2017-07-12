@@ -198,6 +198,7 @@ void ForwardAmbientShader::update(IVisibleGameEntity *visibleGameEntity)
 	glm::mat4 mvp = GLRenderingManager::getInstance().getCameraViewProjectionMatrix() * visibleGameEntity->getParentActor().caclTransformation();
 	updateUniform("uni_MVP", mvp);
 	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
+	updateUniform("uni_color", GUIManager::getInstance().getColor());
 }
 
 void ForwardAmbientShader::setAmbientIntensity(float ambientIntensity)

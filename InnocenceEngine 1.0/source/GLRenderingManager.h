@@ -1,5 +1,6 @@
 #pragma once
 #include "IEventManager.h"
+#include "GUIManager.h"
 #include "LogManager.h"
 #include "IVisibleGameEntity.h"
 #include "CameraComponent.h"
@@ -45,8 +46,7 @@ protected:
 
 	inline void updateUniform(const std::string &uniformName, const glm::vec2 &uniformValue) const
 	{
-		float bufferUniformValue[] = { uniformValue.x, uniformValue.y };
-		glUniform2fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &bufferUniformValue[0]);
+		glUniform2fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &uniformValue[0]);
 	}
 
 	inline void updateUniform(const std::string &uniformName, float x, float y) const
@@ -56,8 +56,7 @@ protected:
 
 	inline void updateUniform(const std::string &uniformName, const glm::vec3& uniformValue) const
 	{
-		float bufferUniformValue[] = { uniformValue.x, uniformValue.y, uniformValue.z };
-		glUniform3fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &bufferUniformValue[0]);
+		glUniform3fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &uniformValue[0]);
 	}
 
 	inline void updateUniform(const std::string &uniformName, float x, float y, float z) const

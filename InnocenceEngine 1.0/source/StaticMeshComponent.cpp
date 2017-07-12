@@ -144,141 +144,37 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 
 void MeshData::addTestCube()
 {
-	//// vertex 1
-	//VertexData l_VertexData1_1;
-	//l_VertexData1_1.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	VertexData l_VertexData_1;
+	l_VertexData_1.addVertexData(glm::vec3(0.5f, 0.5f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	//VertexData l_VertexData1_2;
-	//l_VertexData1_2.addVertexData(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	VertexData l_VertexData_2;
+	l_VertexData_2.addVertexData(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	//VertexData l_VertexData1_3;
-	//l_VertexData1_3.addVertexData(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	VertexData l_VertexData_3;
+	l_VertexData_3.addVertexData(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	//VertexData l_VertexData1_4;
-	//l_VertexData1_4.addVertexData(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	VertexData l_VertexData_4;
+	l_VertexData_4.addVertexData(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	//VertexData l_VertexData1_5;
-	//l_VertexData1_5.addVertexData(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	VertexData l_VertexData_5;
+	l_VertexData_5.addVertexData(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	//VertexData l_VertexData1_6;
-	//l_VertexData1_6.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	VertexData l_VertexData_6;
+	l_VertexData_6.addVertexData(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	//// vertex 2
-	//VertexData l_VertexData2_1;
-	//l_VertexData2_1.addVertexData(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	VertexData l_VertexData_7;
+	l_VertexData_7.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	//VertexData l_VertexData2_2;
-	//l_VertexData2_2.addVertexData(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	VertexData l_VertexData_8;
+	l_VertexData_8.addVertexData(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-	//VertexData l_VertexData2_3;
-	//l_VertexData2_3.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData2_4;
-	//l_VertexData2_4.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData2_5;
-	//l_VertexData2_5.addVertexData(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData2_6;
-	//l_VertexData2_6.addVertexData(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	//
-	//// vertex 3
-	//VertexData l_VertexData3_1;
-	//l_VertexData3_1.addVertexData(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData3_2;
-	//l_VertexData3_2.addVertexData(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData3_3;
-	//l_VertexData3_3.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData3_4;
-	//l_VertexData3_4.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData3_5;
-	//l_VertexData3_5.addVertexData(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData3_6;
-	//l_VertexData3_6.addVertexData(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//// vertex 4
-	//VertexData l_VertexData4_1;
-	//l_VertexData4_1.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData4_2;
-	//l_VertexData4_2.addVertexData(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData4_3;
-	//l_VertexData4_3.addVertexData(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData4_4;
-	//l_VertexData4_4.addVertexData(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData4_5;
-	//l_VertexData4_5.addVertexData(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData4_6;
-	//l_VertexData4_6.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//// vertex 5
-	//VertexData l_VertexData5_1;
-	//l_VertexData5_1.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData5_2;
-	//l_VertexData5_2.addVertexData(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData5_3;
-	//l_VertexData5_3.addVertexData(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData5_4;
-	//l_VertexData5_4.addVertexData(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData5_5;
-	//l_VertexData5_5.addVertexData(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData5_6;
-	//l_VertexData5_6.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//// vertex 6
-	//VertexData l_VertexData6_1;
-	//l_VertexData6_1.addVertexData(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData6_2;
-	//l_VertexData6_2.addVertexData(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData6_3;
-	//l_VertexData6_3.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData6_4;
-	//l_VertexData6_4.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData6_5;
-	//l_VertexData6_5.addVertexData(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	//VertexData l_VertexData6_6;
-	//l_VertexData6_6.addVertexData(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	//
-	//m_vertices = { &l_VertexData1_1, &l_VertexData1_2, &l_VertexData1_3, &l_VertexData1_4, &l_VertexData1_5, &l_VertexData1_6,
-	//	&l_VertexData2_1, &l_VertexData2_2, &l_VertexData2_3, &l_VertexData2_4, &l_VertexData2_5, &l_VertexData2_6, 
-	//	&l_VertexData3_1, &l_VertexData3_2, &l_VertexData3_3, &l_VertexData3_4, &l_VertexData3_5, &l_VertexData3_6, 
-	//	&l_VertexData4_1, &l_VertexData4_2, &l_VertexData4_3, &l_VertexData4_4, &l_VertexData4_5, &l_VertexData4_6, 
-	//	&l_VertexData5_1, &l_VertexData5_2, &l_VertexData5_3, &l_VertexData5_4, &l_VertexData5_5, &l_VertexData5_6, 
-	//	&l_VertexData6_1, &l_VertexData6_2, &l_VertexData6_3, &l_VertexData6_4, &l_VertexData6_5, &l_VertexData6_6, };
-	//m_intices = {0, 1, 2, 3, 4, 5 };
-
-	VertexData l_VertexData1_1;
-	l_VertexData1_1.addVertexData(glm::vec3(0.5f, 0.5f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	VertexData l_VertexData1_2;
-	l_VertexData1_2.addVertexData(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	VertexData l_VertexData1_3;
-	l_VertexData1_3.addVertexData(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-	VertexData l_VertexData1_4;
-	l_VertexData1_4.addVertexData(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	m_vertices = { &l_VertexData1_1, &l_VertexData1_2, &l_VertexData1_3, &l_VertexData1_4 };
-	m_intices = { 0, 1, 3, 1, 2, 3 };
+	m_vertices = { &l_VertexData_1, &l_VertexData_2, &l_VertexData_3, &l_VertexData_4, &l_VertexData_5, &l_VertexData_6, &l_VertexData_7, &l_VertexData_8 };
+	m_intices = { 0, 1, 3, 1, 2, 3,
+		4, 5, 0, 5, 1, 0,
+		7, 6, 4, 6, 5, 4,
+		3, 2, 7, 2, 6 ,7,
+		4, 0, 7, 0, 3, 7,
+		1, 5, 2, 5, 6, 2 };
 	addMeshData(m_vertices, m_intices, false);
 }
 
