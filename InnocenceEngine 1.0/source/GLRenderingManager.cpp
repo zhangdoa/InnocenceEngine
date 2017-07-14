@@ -170,7 +170,7 @@ void BasicGLShader::init()
 void BasicGLShader::update(IVisibleGameEntity *visibleGameEntity)
 {
 	bindShader();
-	glm::mat4 mvp = GLRenderingManager::getInstance().getCameraViewProjectionMatrix() * visibleGameEntity->getParentActor().caclTransformation();
+	glm::mat4 mvp = GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix() * visibleGameEntity->getParentActor().caclTransformation();
 	updateUniform("uni_MVP", mvp);
 }
 
@@ -195,7 +195,7 @@ void ForwardAmbientShader::init()
 void ForwardAmbientShader::update(IVisibleGameEntity *visibleGameEntity)
 {
 	bindShader();
-	glm::mat4 mvp = GLRenderingManager::getInstance().getCameraViewProjectionMatrix() * visibleGameEntity->getParentActor().caclTransformation();
+	glm::mat4 mvp = GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix() * visibleGameEntity->getParentActor().caclTransformation();
 	updateUniform("uni_MVP", mvp);
 	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
 	updateUniform("uni_color", GUIManager::getInstance().getColor());
@@ -223,27 +223,19 @@ void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity) const
 	}
 }
 
-const glm::mat4& GLRenderingManager::getCameraViewProjectionMatrix() const
+CameraComponent * GLRenderingManager::getCamera() const
 {
-
-	return m_cameraViewProjectionMatrix;
+	return m_cameraComponent;
 }
 
-void GLRenderingManager::setCameraViewProjectionMatrix(const glm::mat4 & cameraViewProjectionMatrix)
+void GLRenderingManager::setCamera(CameraComponent* cameraComponent)
 {
 
-	m_cameraViewProjectionMatrix = cameraViewProjectionMatrix;
+	m_cameraComponent = cameraComponent;
 }
 
 void GLRenderingManager::init()
 {
-	glFrontFace(GL_CW);
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_DEPTH_CLAMP);
-	glEnable(GL_TEXTURE_2D);
-
 	m_GLShader.emplace_back(&ForwardAmbientShader::getInstance());
 
 	for (size_t i = 0; i < m_GLShader.size(); i++)
@@ -259,6 +251,12 @@ void GLRenderingManager::update()
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glFrontFace(GL_CW);
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_CLAMP);
+	glEnable(GL_TEXTURE_2D);
 }
 
 void GLRenderingManager::shutdown()
