@@ -7,6 +7,8 @@ public:
 	IVisibleGameEntity();
 	virtual ~IVisibleGameEntity();
 
+	enum visibleGameEntityType { STATIC_MESH, SKYBOX};
+
 	virtual void render() = 0;
 };
 

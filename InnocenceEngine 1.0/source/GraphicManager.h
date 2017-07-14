@@ -18,7 +18,7 @@ public:
 	}
 
 	void render(IVisibleGameEntity* visibleGameEntity) const;
-	void setCameraViewProjectionMatrix(const glm::mat4& cameraViewProjectionMatrix);
+	void setCamera(CameraComponent* cameraComponent);
 
 private:
 	GraphicManager();
