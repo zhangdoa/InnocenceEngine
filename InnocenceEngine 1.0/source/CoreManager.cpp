@@ -63,14 +63,15 @@ void CoreManager::update()
 			if (InputManager::getInstance().getStatus() == INITIALIZIED)
 			{
 				try {
-					GraphicManager::getInstance().setCameraViewProjectionMatrix(m_gameData->getCameraComponent()->getViewProjectionMatrix());
+					GraphicManager::getInstance().setCamera(m_gameData->getCameraComponent());
 				}
 				catch (std::exception& e) {
 					LogManager::getInstance().printLog("Cannot get camera information!");
 					LogManager::getInstance().printLog(e.what());
 				}
-				GraphicManager::getInstance().exec(UPDATE);
 				GraphicManager::getInstance().render(m_gameData->getTest());
+				GraphicManager::getInstance().render(m_gameData->getSkybox());
+				GraphicManager::getInstance().exec(UPDATE);
 				m_gameData->exec(UPDATE);
 				//SceneGraphManager::getInstance().exec(UPDATE);
 			}

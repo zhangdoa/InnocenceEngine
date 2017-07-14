@@ -141,8 +141,8 @@ public:
 
 	void render(IVisibleGameEntity* visibleGameEntity) const;
 
-	const glm::mat4& getCameraViewProjectionMatrix() const;
-	void setCameraViewProjectionMatrix(const glm::mat4& cameraViewProjectionMatrix);
+	CameraComponent* getCamera() const;
+	void setCamera(CameraComponent* cameraComponent);
 
 private:
 	GLRenderingManager();
@@ -150,6 +150,6 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	glm::mat4 m_cameraViewProjectionMatrix;
+	CameraComponent* m_cameraComponent;
 	std::vector<std::auto_ptr<GLShader>> m_GLShader;
 };

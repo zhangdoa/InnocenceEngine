@@ -12,6 +12,9 @@ public:
 	void addCameraData(float fov, float aspectRatio, float zNear, float zFar);
 
 	glm::mat4 getViewProjectionMatrix(BaseComponent* parent) const;
+	glm::mat4 getTranslatonMatrix(BaseComponent* parent) const;
+	glm::mat4 getRotationMatrix(BaseComponent* parent) const;
+	glm::mat4 getProjectionMatrix() const;
 
 private:
 	glm::mat4 m_projectionMatrix;
@@ -26,6 +29,10 @@ public:
 	enum moveDirection {FORWARD, BACKWARD, LEFT, RIGHT};
 
 	glm::mat4 getViewProjectionMatrix();
+	glm::mat4 getTranslatonMatrix();
+	glm::mat4 getRotationMatrix();
+	glm::mat4 getProjectionMatrix();
+
 	void move(moveDirection moveDirection);
 
 private:

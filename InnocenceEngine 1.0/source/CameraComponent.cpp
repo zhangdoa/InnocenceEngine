@@ -16,10 +16,19 @@ void CameraData::addCameraData(float fov, float aspectRatio, float zNear, float 
 
 glm::mat4 CameraData::getViewProjectionMatrix(BaseComponent* parent) const
 {	
+	return m_projectionMatrix  * getRotationMatrix(parent) * getTranslatonMatrix(parent);
+}
+
+glm::mat4 CameraData::getTranslatonMatrix(BaseComponent * parent) const
+{
 	// get camera's translation matrix, reverse direction to "look into"  the screen
 	glm::mat4 l_cameraTranslationMatrix;
 	l_cameraTranslationMatrix = glm::translate(l_cameraTranslationMatrix, parent->getParentActor().caclTransformedPos() * -1.0f);
+	return l_cameraTranslationMatrix;
+}
 
+glm::mat4 CameraData::getRotationMatrix(BaseComponent * parent) const
+{
 	// quaternion rotation
 	glm::quat conjugateRotQuat;
 	conjugateRotQuat.w = parent->getParentActor().caclTransformedRot().w;
@@ -29,7 +38,12 @@ glm::mat4 CameraData::getViewProjectionMatrix(BaseComponent* parent) const
 
 	glm::mat4 l_cameraRotationMatrix = glm::toMat4(conjugateRotQuat);
 
-	return m_projectionMatrix  * l_cameraRotationMatrix * l_cameraTranslationMatrix;
+	return l_cameraRotationMatrix;
+}
+
+glm::mat4 CameraData::getProjectionMatrix() const
+{
+	return m_projectionMatrix;
 }
 
 CameraComponent::CameraComponent()
@@ -43,6 +57,21 @@ CameraComponent::~CameraComponent()
 glm::mat4 CameraComponent::getViewProjectionMatrix()
 {
 	return m_cameraData.getViewProjectionMatrix(this);
+}
+
+glm::mat4 CameraComponent::getTranslatonMatrix()
+{
+	return m_cameraData.getTranslatonMatrix(this);
+}
+
+glm::mat4 CameraComponent::getRotationMatrix()
+{
+	return m_cameraData.getRotationMatrix(this);
+}
+
+glm::mat4 CameraComponent::getProjectionMatrix()
+{
+	return m_cameraData.getProjectionMatrix();
 }
 
 void CameraComponent::move(moveDirection moveDirection)

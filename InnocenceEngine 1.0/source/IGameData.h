@@ -16,6 +16,7 @@ public:
 	virtual const std::string& getGameName() = 0;
 	virtual CameraComponent* getCameraComponent() = 0;
 	virtual IVisibleGameEntity* getTest() = 0;
+	virtual IVisibleGameEntity* getSkybox() = 0;
 };
 
 #endif // !_I_GAME_DATA_H_
