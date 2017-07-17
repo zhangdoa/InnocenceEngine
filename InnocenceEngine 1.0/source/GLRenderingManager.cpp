@@ -217,10 +217,20 @@ GLRenderingManager::~GLRenderingManager()
 
 void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity) const
 {
-	for (size_t i = 0; i < m_GLShader.size(); i++)
+	switch (visibleGameEntity->getVisibleGameEntityType())
 	{
-		m_GLShader[i]->update(visibleGameEntity);
+	case IVisibleGameEntity::INVISIBLE: break;
+	case IVisibleGameEntity::STATIC_MESH:
+		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
+		{
+			m_staticMeshGLShader[i]->update(visibleGameEntity);
+		}
+		break;
+	case IVisibleGameEntity::SKYBOX:
+		//m_skyboxGLShader->update(visibleGameEntity);
+		break;
 	}
+	
 }
 
 CameraComponent * GLRenderingManager::getCamera() const
@@ -236,13 +246,13 @@ void GLRenderingManager::setCamera(CameraComponent* cameraComponent)
 
 void GLRenderingManager::init()
 {
-	m_GLShader.emplace_back(&ForwardAmbientShader::getInstance());
+	m_staticMeshGLShader.emplace_back(&ForwardAmbientShader::getInstance());
 
-	for (size_t i = 0; i < m_GLShader.size(); i++)
+	for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
 	{
-		m_GLShader[i]->init();
+		m_staticMeshGLShader[i]->init();
 	}
-
+	// TODO: init cubemap shader;
 	this->setStatus(INITIALIZIED);
 	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
 }
@@ -261,9 +271,9 @@ void GLRenderingManager::update()
 
 void GLRenderingManager::shutdown()
 {
-	for (size_t i = 0; i < m_GLShader.size(); i++)
+	for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
 	{
-		m_GLShader[i].release();
+		m_staticMeshGLShader[i].release();
 	}
 	this->setStatus(UNINITIALIZIED);
 	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");

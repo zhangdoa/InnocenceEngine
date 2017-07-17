@@ -151,5 +151,6 @@ private:
 	void shutdown() override;
 
 	CameraComponent* m_cameraComponent;
-	std::vector<std::auto_ptr<GLShader>> m_GLShader;
+	std::vector<std::auto_ptr<GLShader>> m_staticMeshGLShader;
+	std::auto_ptr<GLShader> m_skyboxGLShader;
 };

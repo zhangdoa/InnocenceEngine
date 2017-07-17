@@ -11,12 +11,9 @@ SkyboxComponent::~SkyboxComponent()
 {
 }
 
-void SkyboxComponent::render()
-{
-}
-
 void SkyboxComponent::init()
 {
+	setVisibleGameEntityType(SKYBOX);
 	m_meshData.init();
 	m_cubemapData.init();
 	m_cubemapData.loadCubemap(std::vector<std::string> {"skybox/right.tga",

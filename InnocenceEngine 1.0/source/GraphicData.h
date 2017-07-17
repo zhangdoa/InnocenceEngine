@@ -77,5 +77,5 @@ public:
 	void loadCubemap(const std::vector<std::string>& faceImagePath) const;
 	void addCubemapData(size_t faceCount, int cubemapTextureWidth, int cubemapTextureHeight, unsigned char * cubemapTextureData) const;
 private:
-	unsigned int m_cubemapTextureID;
+	GLuint m_cubemapTextureID;
 };

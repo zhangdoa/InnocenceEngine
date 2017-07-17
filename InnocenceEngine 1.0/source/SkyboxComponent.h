@@ -9,7 +9,6 @@ public:
 	SkyboxComponent();
 	~SkyboxComponent();
 
-	void render() override;
 private:
 	MeshData m_meshData;
 	CubemapData m_cubemapData;
