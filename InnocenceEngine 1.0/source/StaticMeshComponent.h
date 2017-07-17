@@ -11,7 +11,6 @@ public:
 	void loadMesh(const std::string& meshFileName) const;
 	void loadTexture(const std::string& textureFileName) const;
 
-	void render() override;
 private:
 	MeshData m_meshData;
 	TextureData m_textureData;
