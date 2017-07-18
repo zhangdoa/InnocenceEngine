@@ -206,6 +206,31 @@ void ForwardAmbientShader::setAmbientIntensity(float ambientIntensity)
 	m_ambientIntensity = ambientIntensity;
 }
 
+
+SkyboxShader::SkyboxShader()
+{
+}
+
+SkyboxShader::~SkyboxShader()
+{
+}
+
+void SkyboxShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/skyboxVertex.sf");
+	addShader(GLShader::FRAGMENT, "GL3.3/skyboxAmbientFragment.sf");
+	updateUniform("uni_skybox", 0);
+}
+
+void SkyboxShader::update(IVisibleGameEntity * visibleGameEntity)
+{
+	bindShader();
+	glm::mat4 vp = GLRenderingManager::getInstance().getCamera()->getProjectionMatrix() * GLRenderingManager::getInstance().getCamera()->getRotationMatrix();
+	updateUniform("uni_VP", vp);
+}
+
+
 GLRenderingManager::GLRenderingManager()
 {
 }
@@ -227,7 +252,7 @@ void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity) const
 		}
 		break;
 	case IVisibleGameEntity::SKYBOX:
-		//m_skyboxGLShader->update(visibleGameEntity);
+		SkyboxShader::getInstance().update(visibleGameEntity);
 		break;
 	}
 	
@@ -252,7 +277,9 @@ void GLRenderingManager::init()
 	{
 		m_staticMeshGLShader[i]->init();
 	}
-	// TODO: init cubemap shader;
+
+	SkyboxShader::getInstance().init();
+
 	this->setStatus(INITIALIZIED);
 	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
 }
@@ -278,4 +305,3 @@ void GLRenderingManager::shutdown()
 	this->setStatus(UNINITIALIZIED);
 	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
 }
-

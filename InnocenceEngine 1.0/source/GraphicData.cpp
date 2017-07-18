@@ -58,25 +58,34 @@ MeshData::~MeshData()
 {
 }
 
-void MeshData::init()
+void MeshData::init(bool attributePosition, bool attributeTextureCoord, bool attributeNormal)
 {
 	glGenVertexArrays(1, &m_VAO);
 	glGenBuffers(1, &m_VBO);
 	glGenBuffers(1, &m_IBO);
+	unsigned int l_attributeLength = 3 * attributePosition + 2 * attributeTextureCoord + 3 * attributeNormal;
 
-	addTestCube();
+	// TODO: more generic mesh init or add additional meshData class for skybox
+	if (attributePosition)
+	{
+		// position attribute, 1st attribution with 3 * sizeof(float) bits of data
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, l_attributeLength * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+	}
 
-	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
+	if (attributeTextureCoord)
+	{
+		// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, l_attributeLength * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+	}
 
-	// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
-	glEnableVertexAttribArray(2);
+	if (attributeNormal)
+	{
+		// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, l_attributeLength * sizeof(float), (void*)(5 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);

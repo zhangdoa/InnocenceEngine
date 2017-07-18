@@ -1,0 +1,13 @@
+#version 330 core
+
+layout (location = 0) in vec3 in_Position;
+
+out vec3 texCoord0;
+
+uniform mat4 uni_VP;
+
+void main()
+{
+    texCoord0 = position;
+    gl_Position = uni_VP * vec4(position, 1.0);	
+}
