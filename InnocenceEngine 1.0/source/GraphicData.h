@@ -28,7 +28,7 @@ public:
 	MeshData();
 	~MeshData();
 
-	void init();
+	void init(bool attributePosition, bool attributeTextureCoord, bool attributeNormal);
 	void update();
 	void shutdown();
 

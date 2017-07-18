@@ -128,6 +128,25 @@ private:
 	float m_ambientIntensity;
 };
 
+class SkyboxShader : public GLShader
+{
+
+public:
+	~SkyboxShader();
+
+	static SkyboxShader& getInstance()
+	{
+		static SkyboxShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void update(IVisibleGameEntity *visibleGameEntity) override;
+
+private:
+	SkyboxShader();
+};
+
 class GLRenderingManager : public IEventManager
 {
 public:
@@ -152,5 +171,4 @@ private:
 
 	CameraComponent* m_cameraComponent;
 	std::vector<std::auto_ptr<GLShader>> m_staticMeshGLShader;
-	std::auto_ptr<GLShader> m_skyboxGLShader;
 };
