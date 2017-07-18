@@ -24,7 +24,8 @@ void StaticMeshComponent::init()
 	setVisibleGameEntityType(STATIC_MESH);
 	m_textureData.init();
 	loadTexture("container.jpg");
-	m_meshData.init();
+	m_meshData.init(true, true, true);
+	m_meshData.addTestCube();
 }
 
 void StaticMeshComponent::update()
