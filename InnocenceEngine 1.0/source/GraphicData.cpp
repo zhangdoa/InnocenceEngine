@@ -3,102 +3,115 @@
 #include "stb_image.h"
 #include "GraphicData.h"
 
-VertexData::VertexData()
+StaticMeshVertexData::StaticMeshVertexData()
 {
 }
 
 
-VertexData::~VertexData()
+StaticMeshVertexData::~StaticMeshVertexData()
 {
 }
 
-const glm::vec3& VertexData::getPos() const
+const glm::vec3& StaticMeshVertexData::getPos() const
 {
 	return m_pos;
 }
 
-const glm::vec2& VertexData::getTexCoord() const
+const glm::vec2& StaticMeshVertexData::getTexCoord() const
 {
 	return m_texCoord;
 }
 
-const glm::vec3& VertexData::getNormal() const
+const glm::vec3& StaticMeshVertexData::getNormal() const
 {
 	return m_normal;
 }
 
-void VertexData::setPos(const glm::vec3 & pos)
+void StaticMeshVertexData::setPos(const glm::vec3 & pos)
 {
 	m_pos = pos;
 }
 
-void VertexData::setTexCoord(const glm::vec2& texCoord)
+void StaticMeshVertexData::setTexCoord(const glm::vec2& texCoord)
 {
 	m_texCoord = texCoord;
 }
 
-void VertexData::setNormal(const glm::vec3 & normal)
+void StaticMeshVertexData::setNormal(const glm::vec3 & normal)
 {
 	m_normal = normal;
 }
 
-void VertexData::addVertexData(const glm::vec3 & pos, const glm::vec2 & texCoord, const glm::vec3 & normal)
+void StaticMeshVertexData::addVertexData(const glm::vec3 & pos, const glm::vec2 & texCoord, const glm::vec3 & normal)
 {
 	m_pos = pos;
 	m_texCoord = texCoord;
 	m_normal = normal;
 }
 
-MeshData::MeshData()
+SkyboxVertexData::SkyboxVertexData()
+{
+}
+
+SkyboxVertexData::~SkyboxVertexData()
+{
+}
+
+const glm::vec3 & SkyboxVertexData::getPos() const
+{
+	return m_pos;
+}
+
+void SkyboxVertexData::setPos(const glm::vec3 & pos)
+{
+	m_pos = pos;
+}
+
+void SkyboxVertexData::addVertexData(const glm::vec3 & pos)
+{
+	m_pos = pos;
+}
+
+StaticMeshData::StaticMeshData()
 {
 }
 
 
-MeshData::~MeshData()
+StaticMeshData::~StaticMeshData()
 {
 }
 
-void MeshData::init(bool attributePosition, bool attributeTextureCoord, bool attributeNormal)
+void StaticMeshData::init()
 {
 	glGenVertexArrays(1, &m_VAO);
 	glGenBuffers(1, &m_VBO);
 	glGenBuffers(1, &m_IBO);
-	unsigned int l_attributeLength = 3 * attributePosition + 2 * attributeTextureCoord + 3 * attributeNormal;
 
-	// TODO: more generic mesh init or add additional meshData class for skybox
-	if (attributePosition)
-	{
-		// position attribute, 1st attribution with 3 * sizeof(float) bits of data
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, l_attributeLength * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
-	}
+	addTestCube();
+	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
 
-	if (attributeTextureCoord)
-	{
-		// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, l_attributeLength * sizeof(float), (void*)(3 * sizeof(float)));
-		glEnableVertexAttribArray(1);
-	}
 
-	if (attributeNormal)
-	{
-		// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, l_attributeLength * sizeof(float), (void*)(5 * sizeof(float)));
-		glEnableVertexAttribArray(2);
-	}
+	// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
 
-void MeshData::update()
+void StaticMeshData::update()
 {
 	glBindVertexArray(m_VAO);
 	glDrawElements(GL_TRIANGLES, m_intices.size(), GL_UNSIGNED_INT, 0);
-	glDepthFunc(GL_LESS);
 }
 
-void MeshData::shutdown()
+void StaticMeshData::shutdown()
 {
 	glDeleteVertexArrays(1, &m_VAO);
 	glDeleteBuffers(1, &m_VBO);
@@ -106,7 +119,7 @@ void MeshData::shutdown()
 }
 
 
-void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const
+void StaticMeshData::addMeshData(std::vector<StaticMeshVertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const
 {
 	if (calcNormals) {
 		for (size_t i = 0; i < vertices.size(); i += 3) {
@@ -152,30 +165,30 @@ void MeshData::addMeshData(std::vector<VertexData*>& vertices, std::vector<unsig
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(float), &indices[0], GL_STATIC_DRAW);
 }
 
-void MeshData::addTestCube()
+void StaticMeshData::addTestCube()
 {
-	VertexData l_VertexData_1;
+	StaticMeshVertexData l_VertexData_1;
 	l_VertexData_1.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	VertexData l_VertexData_2;
+	StaticMeshVertexData l_VertexData_2;
 	l_VertexData_2.addVertexData(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	VertexData l_VertexData_3;
+	StaticMeshVertexData l_VertexData_3;
 	l_VertexData_3.addVertexData(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	VertexData l_VertexData_4;
+	StaticMeshVertexData l_VertexData_4;
 	l_VertexData_4.addVertexData(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	VertexData l_VertexData_5;
+	StaticMeshVertexData l_VertexData_5;
 	l_VertexData_5.addVertexData(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 
-	VertexData l_VertexData_6;
+	StaticMeshVertexData l_VertexData_6;
 	l_VertexData_6.addVertexData(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 
-	VertexData l_VertexData_7;
+	StaticMeshVertexData l_VertexData_7;
 	l_VertexData_7.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 
-	VertexData l_VertexData_8;
+	StaticMeshVertexData l_VertexData_8;
 	l_VertexData_8.addVertexData(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 
 	m_vertices = { &l_VertexData_1, &l_VertexData_2, &l_VertexData_3, &l_VertexData_4, &l_VertexData_5, &l_VertexData_6, &l_VertexData_7, &l_VertexData_8 };
@@ -188,6 +201,105 @@ void MeshData::addTestCube()
 	addMeshData(m_vertices, m_intices, false);
 }
 
+SkyboxMeshData::SkyboxMeshData()
+{
+}
+
+SkyboxMeshData::~SkyboxMeshData()
+{
+}
+
+void SkyboxMeshData::init()
+{
+	glGenVertexArrays(1, &m_VAO);
+	glGenBuffers(1, &m_VBO);
+
+	float skyboxVertices[] = {
+		// positions          
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		1.0f,  1.0f, -1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		1.0f, -1.0f,  1.0f
+	};
+
+	glBindVertexArray(m_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+}
+
+void SkyboxMeshData::update()
+{
+	glBindVertexArray(m_VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+}
+
+void SkyboxMeshData::shutdown()
+{
+}
+
+void SkyboxMeshData::addMeshData(std::vector<StaticMeshVertexData*>& vertices) const
+{
+	std::vector<float> verticesBuffer(vertices.size() * 3);
+
+	for (size_t i = 0; i < vertices.size(); i++)
+	{
+		verticesBuffer[3 * i + 0] = vertices[i]->getPos().x;
+		verticesBuffer[3 * i + 1] = vertices[i]->getPos().y;
+		verticesBuffer[3 * i + 2] = vertices[i]->getPos().z;
+	}
+
+	glBindVertexArray(m_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+	glBufferData(GL_ARRAY_BUFFER, verticesBuffer.size() * sizeof(float), &verticesBuffer[0], GL_STATIC_DRAW);
+}
+
+void SkyboxMeshData::addTestSkybox()
+{
+
+}
 
 TextureData::TextureData()
 {
@@ -211,7 +323,6 @@ void TextureData::init()
 
 void TextureData::update()
 {
-	glDepthFunc(GL_LEQUAL);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_textureID);
 }
@@ -255,11 +366,6 @@ void CubemapData::init()
 {
 	glGenTextures(1, &m_cubemapTextureID);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemapTextureID);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 }
 
 void CubemapData::update()
@@ -272,7 +378,7 @@ void CubemapData::shutdown()
 {
 }
 
-void CubemapData::addCubemapData(size_t faceCount, int cubemapTextureWidth, int cubemapTextureHeight, unsigned char * cubemapTextureData) const
+void CubemapData::addCubemapData(unsigned int faceCount, int cubemapTextureWidth, int cubemapTextureHeight, unsigned char * cubemapTextureData) const
 {
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + faceCount,
 		0, GL_RGB, cubemapTextureWidth, cubemapTextureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, cubemapTextureData);
@@ -281,7 +387,7 @@ void CubemapData::addCubemapData(size_t faceCount, int cubemapTextureWidth, int 
 void CubemapData::loadCubemap(const std::vector<std::string> & faceImagePath) const
 {
 	int width, height, nrChannels;
-	for (size_t i = 0; i < faceImagePath.size(); i++)
+	for (unsigned int i = 0; i < faceImagePath.size(); i++)
 	{
 		unsigned char *data = stbi_load( ("../res/textures/" + faceImagePath[i]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
@@ -294,4 +400,10 @@ void CubemapData::loadCubemap(const std::vector<std::string> & faceImagePath) co
 		}
 		stbi_image_free(data);
 	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 }
+

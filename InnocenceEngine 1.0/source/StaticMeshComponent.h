@@ -8,11 +8,13 @@ public:
 	StaticMeshComponent();
 	~StaticMeshComponent();
 
+	void render() override;
+
 	void loadMesh(const std::string& meshFileName) const;
 	void loadTexture(const std::string& textureFileName) const;
 
 private:
-	MeshData m_meshData;
+	StaticMeshData m_meshData;
 	TextureData m_textureData;
 
 	void init() override;

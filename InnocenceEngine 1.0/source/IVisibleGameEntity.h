@@ -9,6 +9,8 @@ public:
 
 	enum visibleGameEntityType { INVISIBLE, STATIC_MESH, SKYBOX };
 
+	virtual void render() = 0;
+
 	const int getVisibleGameEntityType() const;
 	void setVisibleGameEntityType(visibleGameEntityType visibleGameEntityType);
 

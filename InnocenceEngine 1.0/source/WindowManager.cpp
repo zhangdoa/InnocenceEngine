@@ -53,7 +53,7 @@ void WindowManager::init()
 		this->setStatus(ERROR);
 		LogManager::getInstance().printLog("Failed to initialize GLEW.");
 	}
-	GUIManager::getInstance().exec(INIT);
+	//GUIManager::getInstance().exec(INIT);
 	this->setStatus(INITIALIZIED);
 	LogManager::getInstance().printLog("WindowManager has been initialized.");
 }
@@ -62,7 +62,7 @@ void WindowManager::update()
 {
 	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0) {
 		glfwPollEvents();
-		GUIManager::getInstance().exec(UPDATE);
+		//GUIManager::getInstance().exec(UPDATE);
 		glfwSwapBuffers(m_window);
 	}
 	else
@@ -78,7 +78,7 @@ void WindowManager::shutdown()
 	{
 		glfwDestroyWindow(m_window);
 		glfwTerminate();
-		GUIManager::getInstance().exec(SHUTDOWN);
+		//GUIManager::getInstance().exec(SHUTDOWN);
 		this->setStatus(UNINITIALIZIED);
 		LogManager::getInstance().printLog("WindowManager has been shutdown.");
 	}
