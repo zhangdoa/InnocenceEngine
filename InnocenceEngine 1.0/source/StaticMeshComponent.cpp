@@ -10,6 +10,12 @@ StaticMeshComponent::~StaticMeshComponent()
 {
 }
 
+void StaticMeshComponent::render()
+{
+	m_meshData.update();
+	m_textureData.update();
+}
+
 void StaticMeshComponent::loadMesh(const std::string & meshFileName) const
 {
 }
@@ -24,15 +30,13 @@ void StaticMeshComponent::init()
 	setVisibleGameEntityType(STATIC_MESH);
 	m_textureData.init();
 	loadTexture("container.jpg");
-	m_meshData.init(true, true, true);
+	m_meshData.init();
 	m_meshData.addTestCube();
 }
 
 void StaticMeshComponent::update()
 {
 	getTransform()->update();
-	m_textureData.update();
-	m_meshData.update();
 }
 
 void StaticMeshComponent::shutdown()

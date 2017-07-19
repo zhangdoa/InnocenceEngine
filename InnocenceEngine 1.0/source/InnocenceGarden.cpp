@@ -34,11 +34,11 @@ IVisibleGameEntity * InnocenceGarden::getTest()
 void InnocenceGarden::init()
 {
 	testRootActor.addChildActor(&testCameraActor);
-	testRootActor.addChildActor(&testSkyboxActor);
+	//testRootActor.addChildActor(&testSkyboxActor);
 	testRootActor.addChildActor(&testTriangleActor);
 
 	testCameraActor.addChildComponent(&testCameraComponent);
-	testTriangleActor.addChildComponent(&testSkyboxComponent);
+	//testSkyboxActor.addChildComponent(&testSkyboxComponent);
 	testTriangleActor.addChildComponent(&testTriangleComponent);
 	testRootActor.exec(INIT);
 	testTriangleActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -5.0f));

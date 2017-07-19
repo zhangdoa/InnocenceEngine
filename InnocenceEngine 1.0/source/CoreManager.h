@@ -22,7 +22,7 @@ private:
 	void update() override;
 	void shutdown() override;
 	
-	std::vector<std::auto_ptr<IEventManager>> m_childEventManager;
+	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 
 	//TimeManager* m_timeManager;
 	//WindowManager m_windowManager;

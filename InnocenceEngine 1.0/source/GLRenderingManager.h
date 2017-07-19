@@ -24,6 +24,7 @@ protected:
 	};
 
 	inline void addShader(shaderType shaderType, const std::string& fileLocation) const;
+	inline void setAttributeLocation(int arrtributeLocation, const std::string& arrtributeName) const;
 	inline void bindShader() const;
 
 	inline void initProgram();
@@ -79,7 +80,6 @@ private:
 
 	inline void attachShader(shaderType shaderType, const std::string& fileContent, int m_program) const;
 	inline void compileShader() const;
-	inline void setAttributeLocation(int arrtributeLocation, const std::string& arrtributeName) const;
 	inline void detachShader(int shader) const;
 
 	inline std::vector<std::string> split(const std::string& data, char marker) const;
@@ -170,5 +170,5 @@ private:
 	void shutdown() override;
 
 	CameraComponent* m_cameraComponent;
-	std::vector<std::auto_ptr<GLShader>> m_staticMeshGLShader;
+	std::vector<std::unique_ptr<GLShader>> m_staticMeshGLShader;
 };
