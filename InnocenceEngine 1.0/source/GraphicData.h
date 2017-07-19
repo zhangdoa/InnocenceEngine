@@ -1,11 +1,11 @@
 #pragma once
 #include "LogManager.h"
 
-class VertexData
+class StaticMeshVertexData
 {
 public:
-	VertexData();
-	~VertexData();
+	StaticMeshVertexData();
+	~StaticMeshVertexData();
 
 	const glm::vec3& getPos() const;
 	const glm::vec2& getTexCoord() const;
@@ -16,23 +16,40 @@ public:
 	void setNormal(const glm::vec3& normal);
 
 	void addVertexData(const glm::vec3 & pos, const glm::vec2 & texCoord, const glm::vec3 & normal);
+
 private:
 	glm::vec3 m_pos;
 	glm::vec2 m_texCoord;
 	glm::vec3 m_normal;
 };
 
-class MeshData
+class SkyboxVertexData
 {
 public:
-	MeshData();
-	~MeshData();
+	SkyboxVertexData();
+	~SkyboxVertexData();
 
-	void init(bool attributePosition, bool attributeTextureCoord, bool attributeNormal);
+	const glm::vec3& getPos() const;
+
+	void setPos(const glm::vec3& pos);
+
+	void addVertexData(const glm::vec3 & pos);
+
+private:
+	glm::vec3 m_pos;
+};
+
+class StaticMeshData
+{
+public:
+	StaticMeshData();
+	~StaticMeshData();
+
+	void init();
 	void update();
 	void shutdown();
 
-	void addMeshData(std::vector<VertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
+	void addMeshData(std::vector<StaticMeshVertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
 	void addTestCube();
 
 private:
@@ -40,11 +57,30 @@ private:
 	GLuint m_VBO;
 	GLuint m_IBO;
 
-	std::vector<VertexData*> m_vertices;
+	std::vector<StaticMeshVertexData*> m_vertices;
 	std::vector<unsigned int> m_intices;
-
 };
 
+class SkyboxMeshData
+{
+public:
+	SkyboxMeshData();
+	~SkyboxMeshData();
+
+	void init();
+	void update();
+	void shutdown();
+
+	void addMeshData(std::vector<StaticMeshVertexData*>& vertices) const;
+	void addTestSkybox();
+
+private:
+	GLuint m_VAO;
+	GLuint m_VBO;
+
+	std::vector<SkyboxVertexData*> m_vertices;
+
+};
 
 class TextureData
 {
@@ -75,7 +111,7 @@ public:
 	void shutdown();
 
 	void loadCubemap(const std::vector<std::string>& faceImagePath) const;
-	void addCubemapData(size_t faceCount, int cubemapTextureWidth, int cubemapTextureHeight, unsigned char * cubemapTextureData) const;
+	void addCubemapData(unsigned int faceCount, int cubemapTextureWidth, int cubemapTextureHeight, unsigned char * cubemapTextureData) const;
 private:
 	GLuint m_cubemapTextureID;
 };

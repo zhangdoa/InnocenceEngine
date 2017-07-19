@@ -52,16 +52,18 @@ void CoreManager::update()
 	// when time manager's status was INITIALIZED, that means we can update other managers, a frame counter occurred.
 	if (TimeManager::getInstance().getStatus() == INITIALIZIED)
 	{
-		// window manager updates first, because I use GLFW lib to manage the windows event currently.
-		WindowManager::getInstance().exec(UPDATE);
 
 		if (WindowManager::getInstance().getStatus() == INITIALIZIED)
 		{
-			// input manager decides the game& engine behivour next steps which was based on user's input.
+			// input manager decides the game& engine behivour which was based on user's input.
 			InputManager::getInstance().exec(UPDATE);
 
 			if (InputManager::getInstance().getStatus() == INITIALIZIED)
 			{
+				// game data update
+				m_gameData->exec(UPDATE);
+
+				// update camera info for rendering pipeline
 				try {
 					GraphicManager::getInstance().setCamera(m_gameData->getCameraComponent());
 				}
@@ -69,11 +71,18 @@ void CoreManager::update()
 					LogManager::getInstance().printLog("Cannot get camera information!");
 					LogManager::getInstance().printLog(e.what());
 				}
+
+				// update global rendering status
+				GraphicManager::getInstance().exec(UPDATE);
+
+				// rendering pipeline starts to work
 				GraphicManager::getInstance().render(m_gameData->getTest());
 				GraphicManager::getInstance().render(m_gameData->getSkybox());
-				GraphicManager::getInstance().exec(UPDATE);
-				m_gameData->exec(UPDATE);
+
 				//SceneGraphManager::getInstance().exec(UPDATE);
+
+				// window manager updates last
+				WindowManager::getInstance().exec(UPDATE);
 			}
 			else
 			{

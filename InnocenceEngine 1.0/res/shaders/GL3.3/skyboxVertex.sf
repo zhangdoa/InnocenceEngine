@@ -8,6 +8,8 @@ uniform mat4 uni_VP;
 
 void main()
 {
-    texCoord0 = position;
-    gl_Position = uni_VP * vec4(position, 1.0);	
+    texCoord0 = in_Position;
+    //vec4 pos = uni_VP * vec4(in_Position, 1.0);	
+    //gl_Position = pos.xyww;
+    gl_Position = vec4(in_Position, 1.0);
 }
