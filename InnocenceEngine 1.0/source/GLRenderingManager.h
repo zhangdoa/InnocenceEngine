@@ -82,8 +82,6 @@ private:
 	inline void compileShader() const;
 	inline void detachShader(int shader) const;
 
-	inline std::vector<std::string> split(const std::string& data, char marker) const;
-
 	unsigned int m_program;
 	//std::map<std::string, int> m_uniforms;
 };
@@ -159,6 +157,7 @@ public:
 	}
 
 	void render(IVisibleGameEntity* visibleGameEntity) const;
+	void finishRender() const;
 
 	CameraComponent* getCamera() const;
 	void setCamera(CameraComponent* cameraComponent);
