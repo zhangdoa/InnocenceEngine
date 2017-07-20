@@ -16,6 +16,15 @@ void GLShader::addShader(shaderType shaderType, const std::string& shaderFileNam
 	attachShader(shaderType, loadShader(shaderFileName), m_program);
 }
 
+inline void GLShader::setAttributeLocation(int arrtributeLocation, const std::string & arrtributeName) const
+{
+	glBindAttribLocation(m_program, arrtributeLocation, arrtributeName.c_str());
+	if (glGetAttribLocation(m_program, arrtributeName.c_str()) == 0xFFFFFFFF)
+	{
+		LogManager::getInstance().printLog("Error: Attribute lost: " + arrtributeName);
+	}
+}
+
 void GLShader::bindShader() const
 {
 	glUseProgram(m_program);
@@ -76,6 +85,7 @@ inline void GLShader::attachShader(shaderType shaderType, const std::string& sha
 		glGetShaderInfoLog(l_shader, 1024, NULL, infoLog);
 		std::cout << "Shader compile error: " << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
 	}
+	detachShader(l_shader);
 }
 
 inline void GLShader::compileShader() const
@@ -85,18 +95,9 @@ inline void GLShader::compileShader() const
 	glValidateProgram(m_program);
 }
 
-inline void GLShader::setAttributeLocation(int arrtributeLocation, const std::string & arrtributeName) const
-{
-	glBindAttribLocation(m_program, arrtributeLocation, arrtributeName.c_str());
-	if (glGetAttribLocation(m_program, arrtributeName.c_str()) == 0xFFFFFFFF)
-	{
-		LogManager::getInstance().printLog("Error: Attribute lost: " + arrtributeName);
-	}
-}
-
 inline void GLShader::detachShader(int shader) const
 {
-	glDetachShader(m_program, shader);
+	//glDetachShader(m_program, shader);
 	glDeleteShader(shader);
 }
 
@@ -219,7 +220,7 @@ void SkyboxShader::init()
 	initProgram();
 	addShader(GLShader::VERTEX, "GL3.3/skyboxVertex.sf");
 	setAttributeLocation(0, "in_Position");
-	addShader(GLShader::FRAGMENT, "GL3.3/skyboxAmbientFragment.sf");
+	addShader(GLShader::FRAGMENT, "GL3.3/skyboxFragment.sf");
 	updateUniform("uni_skybox", 0);
 }
 
@@ -227,7 +228,11 @@ void SkyboxShader::update(IVisibleGameEntity * visibleGameEntity)
 {
 	bindShader();
 	//glm::mat4 vp = GLRenderingManager::getInstance().getCamera()->getProjectionMatrix() * GLRenderingManager::getInstance().getCamera()->getRotationMatrix();
-	//updateUniform("uni_VP", vp);
+	glm::mat4 projection = GLRenderingManager::getInstance().getCamera()->getProjectionMatrix();
+	// TODO: fix "looking outside" problem
+	glm::mat4 view = glm::mat4(glm::mat3(glm::lookAt(GLRenderingManager::getInstance().getCamera()->getTransform()->getPos(), GLRenderingManager::getInstance().getCamera()->getTransform()->getPos() + GLRenderingManager::getInstance().getCamera()->getTransform()->getDirection(Transform::BACKWARD), GLRenderingManager::getInstance().getCamera()->getTransform()->getDirection(Transform::UP))));
+	updateUniform("uni_Projection", projection);
+	updateUniform("uni_View", view);
 }
 
 
@@ -253,13 +258,13 @@ void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity) const
 		}
 		break;
 	case IVisibleGameEntity::SKYBOX:
+		glDepthFunc(GL_LEQUAL);
 		SkyboxShader::getInstance().update(visibleGameEntity);
 		break;
 	}
 
 	// update visibleGameEntity's mesh& texture
 	visibleGameEntity->render();
-	//glDepthFunc(GL_LESS);
 }
 
 CameraComponent * GLRenderingManager::getCamera() const
@@ -294,7 +299,6 @@ void GLRenderingManager::update()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LEQUAL);
 	glFrontFace(GL_CW);
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
