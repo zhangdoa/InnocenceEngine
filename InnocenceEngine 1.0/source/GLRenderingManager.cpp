@@ -93,6 +93,7 @@ inline void GLShader::compileShader() const
 	glLinkProgram(m_program);
 
 	glValidateProgram(m_program);
+	LogManager::getInstance().printLog("Shader compiled.");
 }
 
 inline void GLShader::detachShader(int shader) const
@@ -227,11 +228,14 @@ void SkyboxShader::init()
 void SkyboxShader::update(IVisibleGameEntity * visibleGameEntity)
 {
 	bindShader();
-	//glm::mat4 vp = GLRenderingManager::getInstance().getCamera()->getProjectionMatrix() * GLRenderingManager::getInstance().getCamera()->getRotationMatrix();
-	glm::mat4 projection = GLRenderingManager::getInstance().getCamera()->getProjectionMatrix();
+
 	// TODO: fix "looking outside" problem
-	glm::mat4 view = glm::mat4(glm::mat3(glm::lookAt(GLRenderingManager::getInstance().getCamera()->getTransform()->getPos(), GLRenderingManager::getInstance().getCamera()->getTransform()->getPos() + GLRenderingManager::getInstance().getCamera()->getTransform()->getDirection(Transform::BACKWARD), GLRenderingManager::getInstance().getCamera()->getTransform()->getDirection(Transform::UP))));
-	updateUniform("uni_Projection", projection);
+	//glm::mat4 projection = GLRenderingManager::getInstance().getCamera()->getProjectionMatrix();
+	//glm::mat4 view =  GLRenderingManager::getInstance().getCamera()->getRotationMatrix();
+	glm::mat4 view = glm::mat4(glm::mat3(GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix()));
+	//glm::mat4 view = glm::mat4(glm::mat3(glm::lookAt(GLRenderingManager::getInstance().getCamera()->getTransform()->getPos(), GLRenderingManager::getInstance().getCamera()->getTransform()->getPos() + GLRenderingManager::getInstance().getCamera()->getTransform()->getDirection(Transform::FORWARD), GLRenderingManager::getInstance().getCamera()->getTransform()->getDirection(Transform::UP))));
+
+	//updateUniform("uni_Projection", projection);
 	updateUniform("uni_View", view);
 }
 
