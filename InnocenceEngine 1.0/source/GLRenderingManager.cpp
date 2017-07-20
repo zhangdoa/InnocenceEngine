@@ -121,31 +121,6 @@ std::string GLShader::loadShader(const std::string & shaderFileName) const
 	return output;
 }
 
-std::vector<std::string> GLShader::split(const std::string& data, char marker) const
-{
-	std::vector<std::string> elems;
-
-	const char* cstr = data.c_str();
-	unsigned int strLength = (unsigned int)data.length();
-	unsigned int start = 0;
-	unsigned int end = 0;
-
-	while (end <= strLength)
-	{
-		while (end <= strLength)
-		{
-			if (cstr[end] == marker)
-				break;
-			end++;
-		}
-
-		elems.push_back(data.substr(start, end - start));
-		start = end + 1;
-		end = start;
-	}
-
-	return elems;
-}
 
 BasicGLShader::BasicGLShader()
 {
@@ -269,6 +244,11 @@ void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity) const
 
 	// update visibleGameEntity's mesh& texture
 	visibleGameEntity->render();
+}
+
+void GLRenderingManager::finishRender() const
+{
+	glDepthFunc(GL_LESS);
 }
 
 CameraComponent * GLRenderingManager::getCamera() const
