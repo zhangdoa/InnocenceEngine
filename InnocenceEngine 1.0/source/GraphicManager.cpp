@@ -15,6 +15,11 @@ void GraphicManager::render(IVisibleGameEntity * visibleGameEntity) const
 	GLRenderingManager::getInstance().render(visibleGameEntity);
 }
 
+void GraphicManager::finishRender() const
+{
+	GLRenderingManager::getInstance().finishRender();
+}
+
 void GraphicManager::setCamera(CameraComponent* cameraComponent)
 {
 	GLRenderingManager::getInstance().setCamera(cameraComponent);

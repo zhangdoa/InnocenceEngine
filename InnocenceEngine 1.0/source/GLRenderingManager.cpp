@@ -119,32 +119,6 @@ std::string GLShader::loadShader(const std::string & shaderFileName) const
 	return output;
 }
 
-std::vector<std::string> GLShader::split(const std::string& data, char marker) const
-{
-	std::vector<std::string> elems;
-
-	const char* cstr = data.c_str();
-	unsigned int strLength = (unsigned int)data.length();
-	unsigned int start = 0;
-	unsigned int end = 0;
-
-	while (end <= strLength)
-	{
-		while (end <= strLength)
-		{
-			if (cstr[end] == marker)
-				break;
-			end++;
-		}
-
-		elems.push_back(data.substr(start, end - start));
-		start = end + 1;
-		end = start;
-	}
-
-	return elems;
-}
-
 BasicGLShader::BasicGLShader()
 {
 }
@@ -226,8 +200,8 @@ void SkyboxShader::init()
 void SkyboxShader::update(IVisibleGameEntity * visibleGameEntity)
 {
 	bindShader();
-	//glm::mat4 vp = GLRenderingManager::getInstance().getCamera()->getProjectionMatrix() * GLRenderingManager::getInstance().getCamera()->getRotationMatrix();
-	//updateUniform("uni_VP", vp);
+	glm::mat4 vp = GLRenderingManager::getInstance().getCamera()->getProjectionMatrix() * GLRenderingManager::getInstance().getCamera()->getRotationMatrix();
+	updateUniform("uni_VP", vp);
 }
 
 
@@ -259,7 +233,11 @@ void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity) const
 
 	// update visibleGameEntity's mesh& texture
 	visibleGameEntity->render();
-	//glDepthFunc(GL_LESS);
+}
+
+void GLRenderingManager::finishRender() const
+{
+	glDepthFunc(GL_LESS);
 }
 
 CameraComponent * GLRenderingManager::getCamera() const
@@ -294,7 +272,7 @@ void GLRenderingManager::update()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LEQUAL);
+	glDepthFunc(GL_LEQUAL);
 	glFrontFace(GL_CW);
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
