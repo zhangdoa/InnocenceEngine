@@ -13,10 +13,7 @@ class IGameData : public IBaseObject
 public:
 	IGameData();
 	virtual ~IGameData();
-	virtual const std::string& getGameName() = 0;
-	virtual CameraComponent* getCameraComponent() = 0;
-	virtual IVisibleGameEntity* getTest() = 0;
-	virtual IVisibleGameEntity* getSkybox() = 0;
+	const std::string getGameName();
 };
 
 #endif // !_I_GAME_DATA_H_
