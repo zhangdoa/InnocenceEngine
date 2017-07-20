@@ -18,6 +18,7 @@ public:
 	}
 
 	void render(IVisibleGameEntity* visibleGameEntity) const;
+	void finishRender() const;
 	void setCamera(CameraComponent* cameraComponent);
 
 private:

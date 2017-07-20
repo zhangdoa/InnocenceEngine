@@ -137,10 +137,17 @@ void StaticMeshData::addMeshData(std::vector<StaticMeshVertexData*>& vertices, s
 			vertices[i2]->setNormal(vertices[i0]->getNormal() + (normal));
 
 		}
-		for (size_t i = 0; i < vertices.size(); i++)
+
+		// try some syntax candy
+		std::for_each(vertices.begin(), vertices.end(), [](StaticMeshVertexData* val)
 		{
-			vertices[i]->setNormal(glm::normalize(vertices[i]->getNormal()));
-		}
+			val->setNormal(glm::normalize(val->getNormal()));;
+		});
+
+		//for (size_t i = 0; i < vertices.size(); i++)
+		//{
+		//	vertices[i]->setNormal(glm::normalize(vertices[i]->getNormal()));
+		//}
 	}
 	std::vector<float> verticesBuffer(vertices.size() * 8);
 
@@ -277,6 +284,8 @@ void SkyboxMeshData::update()
 
 void SkyboxMeshData::shutdown()
 {
+	glDeleteVertexArrays(1, &m_VAO);
+	glDeleteBuffers(1, &m_VBO);
 }
 
 void SkyboxMeshData::addMeshData(std::vector<StaticMeshVertexData*>& vertices) const

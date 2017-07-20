@@ -78,7 +78,7 @@ void CoreManager::update()
 				// rendering pipeline starts to work
 				GraphicManager::getInstance().render(m_gameData->getTest());
 				GraphicManager::getInstance().render(m_gameData->getSkybox());
-
+				GraphicManager::getInstance().finishRender();
 				//SceneGraphManager::getInstance().exec(UPDATE);
 
 				// window manager updates last
