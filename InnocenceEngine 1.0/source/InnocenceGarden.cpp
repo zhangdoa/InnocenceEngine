@@ -11,11 +11,6 @@ InnocenceGarden::~InnocenceGarden()
 {
 }
 
-const std::string & InnocenceGarden::getGameName()
-{
-	return m_gameName;
-}
-
 CameraComponent * InnocenceGarden::getCameraComponent()
 {
 	return &testCameraComponent;
@@ -26,7 +21,7 @@ IVisibleGameEntity * InnocenceGarden::getSkybox()
 	return &testSkyboxComponent;
 }
 
-IVisibleGameEntity * InnocenceGarden::getTest()
+IVisibleGameEntity * InnocenceGarden::getTestCube()
 {
 	return &testTriangleComponent;
 }
@@ -40,7 +35,9 @@ void InnocenceGarden::init()
 	testCameraActor.addChildComponent(&testCameraComponent);
 	testSkyboxActor.addChildComponent(&testSkyboxComponent);
 	testTriangleActor.addChildComponent(&testTriangleComponent);
+
 	testRootActor.exec(INIT);
+
 	testTriangleActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -5.0f));
 }
 
@@ -49,6 +46,7 @@ void InnocenceGarden::update()
 	testTriangleActor.getTransform()->rotate(glm::vec3(-1.0f, 0.0f, 0.0f), 1.0);
 	testTriangleActor.getTransform()->rotate(glm::vec3(0.0f, -1.0f, 0.0f), 0.5);
 	testTriangleActor.getTransform()->rotate(glm::vec3(0.0f, 0.0f, -1.0f), 0.25);
+
 	testRootActor.exec(UPDATE);	
 }
 
