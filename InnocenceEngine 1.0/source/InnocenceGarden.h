@@ -10,10 +10,9 @@ public:
 	InnocenceGarden();
 	~InnocenceGarden();
 
-	const std::string& getGameName() override;
-	CameraComponent* getCameraComponent() override;
-	IVisibleGameEntity* getSkybox() override;
-	IVisibleGameEntity* getTest() override;
+	CameraComponent* getCameraComponent();
+	IVisibleGameEntity* getSkybox();
+	IVisibleGameEntity* getTestCube();
 
 private:
 	void init() override;

@@ -63,21 +63,24 @@ void CoreManager::update()
 				// game data update
 				m_gameData->exec(UPDATE);
 
+				// update global rendering status
+				GraphicManager::getInstance().exec(UPDATE);
+
 				// update camera info for rendering pipeline
 				try {
-					GraphicManager::getInstance().setCamera(m_gameData->getCameraComponent());
+					InnocenceGarden* m_gameDataSpecific = dynamic_cast<InnocenceGarden*>(m_gameData);
+					GraphicManager::getInstance().setCamera(m_gameDataSpecific->getCameraComponent());
+
+					// rendering pipeline starts to work
+					GraphicManager::getInstance().render(m_gameDataSpecific->getTestCube());
+					GraphicManager::getInstance().render(m_gameDataSpecific->getSkybox());
+	
+					glDepthFunc(GL_LESS);
 				}
 				catch (std::exception& e) {
 					LogManager::getInstance().printLog("Cannot get camera information!");
 					LogManager::getInstance().printLog(e.what());
 				}
-
-				// update global rendering status
-				GraphicManager::getInstance().exec(UPDATE);
-
-				// rendering pipeline starts to work
-				GraphicManager::getInstance().render(m_gameData->getTest());
-				GraphicManager::getInstance().render(m_gameData->getSkybox());
 
 				//SceneGraphManager::getInstance().exec(UPDATE);
 
