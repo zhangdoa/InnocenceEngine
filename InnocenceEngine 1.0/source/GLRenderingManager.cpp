@@ -121,7 +121,6 @@ std::string GLShader::loadShader(const std::string & shaderFileName) const
 	return output;
 }
 
-
 BasicGLShader::BasicGLShader()
 {
 }
@@ -144,7 +143,9 @@ void BasicGLShader::init()
 void BasicGLShader::update(IVisibleGameEntity *visibleGameEntity)
 {
 	bindShader();
-	glm::mat4 mvp = GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix() * visibleGameEntity->getParentActor().caclTransformation();
+	glm::mat4 mvp;
+	GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix(mvp);
+	mvp = mvp * visibleGameEntity->getParentActor().caclTransformation();
 	updateUniform("uni_MVP", mvp);
 }
 
@@ -171,7 +172,9 @@ void ForwardAmbientShader::init()
 void ForwardAmbientShader::update(IVisibleGameEntity *visibleGameEntity)
 {
 	bindShader();
-	glm::mat4 mvp = GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix() * visibleGameEntity->getParentActor().caclTransformation();
+	glm::mat4 mvp;
+	GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix(mvp);
+	mvp = mvp * visibleGameEntity->getParentActor().caclTransformation();
 	updateUniform("uni_MVP", mvp);
 	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
 	updateUniform("uni_color", glm::vec3(1.0f, 1.0f, 1.0f));
@@ -207,7 +210,9 @@ void SkyboxShader::update(IVisibleGameEntity * visibleGameEntity)
 	// TODO: fix "looking outside" problem
 	//glm::mat4 projection = GLRenderingManager::getInstance().getCamera()->getProjectionMatrix();
 	//glm::mat4 view =  GLRenderingManager::getInstance().getCamera()->getRotationMatrix();
-	glm::mat4 view = glm::mat4(glm::mat3(GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix()));
+	glm::mat4 view;
+	GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix(view);
+	view = glm::mat4(glm::mat3(view));
 	//glm::mat4 view = glm::mat4(glm::mat3(glm::lookAt(GLRenderingManager::getInstance().getCamera()->getTransform()->getPos(), GLRenderingManager::getInstance().getCamera()->getTransform()->getPos() + GLRenderingManager::getInstance().getCamera()->getTransform()->getDirection(Transform::FORWARD), GLRenderingManager::getInstance().getCamera()->getTransform()->getDirection(Transform::UP))));
 
 	//updateUniform("uni_Projection", projection);
