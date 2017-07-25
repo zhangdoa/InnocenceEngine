@@ -175,6 +175,7 @@ void ForwardAmbientShader::update(IVisibleGameEntity *visibleGameEntity)
 	glm::mat4 mvp;
 	GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix(mvp);
 	mvp = mvp * visibleGameEntity->getParentActor().caclTransformation();
+
 	updateUniform("uni_MVP", mvp);
 	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
 	updateUniform("uni_color", glm::vec3(1.0f, 1.0f, 1.0f));
@@ -207,15 +208,17 @@ void SkyboxShader::update(IVisibleGameEntity * visibleGameEntity)
 {
 	bindShader();
 
-	// TODO: fix "looking outside" problem
-	//glm::mat4 projection = GLRenderingManager::getInstance().getCamera()->getProjectionMatrix();
-	//glm::mat4 view =  GLRenderingManager::getInstance().getCamera()->getRotationMatrix();
-	glm::mat4 view;
-	GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix(view);
-	view = glm::mat4(glm::mat3(view));
-	//glm::mat4 view = glm::mat4(glm::mat3(glm::lookAt(GLRenderingManager::getInstance().getCamera()->getTransform()->getPos(), GLRenderingManager::getInstance().getCamera()->getTransform()->getPos() + GLRenderingManager::getInstance().getCamera()->getTransform()->getDirection(Transform::FORWARD), GLRenderingManager::getInstance().getCamera()->getTransform()->getDirection(Transform::UP))));
+	// TODO: fix "looking outside" problem// almost there
+	glm::mat4 projection;
+	GLRenderingManager::getInstance().getCamera()->getProjectionMatrix(projection);
 
-	//updateUniform("uni_Projection", projection);
+	glm::mat4 view;
+	GLRenderingManager::getInstance().getCamera()->getRotationMatrix(view);
+
+	projection = projection * -1.0f;
+
+	updateUniform("uni_Projection", projection);
+
 	updateUniform("uni_View", view);
 }
 

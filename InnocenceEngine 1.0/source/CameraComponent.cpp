@@ -24,7 +24,7 @@ void CameraData::getViewProjectionMatrix(const BaseComponent& parent, glm::mat4 
 
 	getTranslatonMatrix(parent, l_TranslationMatrix);
 
-	outViewProjectionMatrix = m_projectionMatrix * l_RotationMatrix * l_RotationMatrix;
+	outViewProjectionMatrix = m_projectionMatrix * l_RotationMatrix * l_TranslationMatrix;
 }
 
 void CameraData::getTranslatonMatrix(const BaseComponent& parent, glm::mat4 & outTranslationMatrix) const

@@ -1,6 +1,13 @@
 #pragma once
 #include "LogManager.h"
 
+union VertexData
+{
+	glm::vec3 m_pos;
+	glm::vec2 m_texCoord;
+	glm::vec3 m_normal;
+};
+
 class StaticMeshVertexData
 {
 public:
