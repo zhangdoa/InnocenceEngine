@@ -14,36 +14,40 @@ void CameraData::addCameraData(float fov, float aspectRatio, float zNear, float 
 	m_projectionMatrix = glm::perspective(fov, aspectRatio, zNear, zFar);
 }
 
-glm::mat4 CameraData::getViewProjectionMatrix(BaseComponent* parent) const
-{	
-	return m_projectionMatrix  * getRotationMatrix(parent) * getTranslatonMatrix(parent);
+void CameraData::getViewProjectionMatrix(const BaseComponent& parent, glm::mat4 & outViewProjectionMatrix) const
+{
+	glm::mat4 l_RotationMatrix;
+
+	glm::mat4 l_TranslationMatrix;
+
+	getRotationMatrix(parent, l_RotationMatrix);
+
+	getTranslatonMatrix(parent, l_TranslationMatrix);
+
+	outViewProjectionMatrix = m_projectionMatrix * l_RotationMatrix * l_RotationMatrix;
 }
 
-glm::mat4 CameraData::getTranslatonMatrix(BaseComponent * parent) const
+void CameraData::getTranslatonMatrix(const BaseComponent& parent, glm::mat4 & outTranslationMatrix) const
 {
 	// get camera's translation matrix, reverse direction to "look into"  the screen
-	glm::mat4 l_cameraTranslationMatrix;
-	l_cameraTranslationMatrix = glm::translate(l_cameraTranslationMatrix, parent->getParentActor().caclTransformedPos() * -1.0f);
-	return l_cameraTranslationMatrix;
+	outTranslationMatrix = glm::translate(outTranslationMatrix, parent.getParentActor().caclTransformedPos() * -1.0f);
 }
 
-glm::mat4 CameraData::getRotationMatrix(BaseComponent * parent) const
+void CameraData::getRotationMatrix(const BaseComponent& parent, glm::mat4 & outRotationMatrix) const
 {
 	// quaternion rotation
 	glm::quat conjugateRotQuat;
-	conjugateRotQuat.w = parent->getParentActor().caclTransformedRot().w;
-	conjugateRotQuat.x = -parent->getParentActor().caclTransformedRot().x;
-	conjugateRotQuat.y = -parent->getParentActor().caclTransformedRot().y;
-	conjugateRotQuat.z = -parent->getParentActor().caclTransformedRot().z;
+	conjugateRotQuat.w = parent.getParentActor().caclTransformedRot().w;
+	conjugateRotQuat.x = -parent.getParentActor().caclTransformedRot().x;
+	conjugateRotQuat.y = -parent.getParentActor().caclTransformedRot().y;
+	conjugateRotQuat.z = -parent.getParentActor().caclTransformedRot().z;
 
-	glm::mat4 l_cameraRotationMatrix = glm::toMat4(conjugateRotQuat);
-
-	return l_cameraRotationMatrix;
+	outRotationMatrix = glm::toMat4(conjugateRotQuat);
 }
 
-glm::mat4 CameraData::getProjectionMatrix() const
+void CameraData::getProjectionMatrix(glm::mat4 & outProjectionMatrix) const
 {
-	return m_projectionMatrix;
+	outProjectionMatrix = m_projectionMatrix;
 }
 
 CameraComponent::CameraComponent()
@@ -54,24 +58,24 @@ CameraComponent::~CameraComponent()
 {
 }
 
-glm::mat4 CameraComponent::getViewProjectionMatrix()
+void CameraComponent::getViewProjectionMatrix(glm::mat4 & outViewProjectionMatrix) const
 {
-	return m_cameraData.getViewProjectionMatrix(this);
+	m_cameraData.getViewProjectionMatrix(*this, outViewProjectionMatrix);
 }
 
-glm::mat4 CameraComponent::getTranslatonMatrix()
+void CameraComponent::getTranslatonMatrix(glm::mat4 & outTranslationMatrix) const
 {
-	return m_cameraData.getTranslatonMatrix(this);
+	m_cameraData.getTranslatonMatrix(*this, outTranslationMatrix);
 }
 
-glm::mat4 CameraComponent::getRotationMatrix()
+void CameraComponent::getRotationMatrix(glm::mat4 & outRotationMatrix) const
 {
-	return m_cameraData.getRotationMatrix(this);
+	m_cameraData.getRotationMatrix(*this, outRotationMatrix);
 }
 
-glm::mat4 CameraComponent::getProjectionMatrix()
+void CameraComponent::getProjectionMatrix(glm::mat4 & outProjectionMatrix) const
 {
-	return m_cameraData.getProjectionMatrix();
+	m_cameraData.getProjectionMatrix(outProjectionMatrix);
 }
 
 void CameraComponent::move(moveDirection moveDirection)
@@ -79,7 +83,7 @@ void CameraComponent::move(moveDirection moveDirection)
 	// TODO: it should move along the direction of camera rather than the static six axis
 	switch (moveDirection)
 	{
-	// opengl use right-hand-coordinate, so go foward means get into the negative z-axis
+		// opengl use right-hand-coordinate, so go foward means get into the negative z-axis
 	case FORWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::BACKWARD) * 0.05f); break;
 	case BACKWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::FORWARD) *  0.05f);  break;
 	case LEFT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::LEFT) *  0.05f);  break;
