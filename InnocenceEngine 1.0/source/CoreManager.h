@@ -25,11 +25,6 @@ private:
 	
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 
-	//TimeManager* m_timeManager;
-	//WindowManager m_windowManager;
-	//InputManager m_inputManager;
-	//GraphicManager m_graphicManager;
-	//SceneGraphManager m_sceneGraphManager;
 	IGameData* m_gameData;
 };
 

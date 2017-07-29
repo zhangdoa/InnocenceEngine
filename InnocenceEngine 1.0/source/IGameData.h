@@ -13,7 +13,7 @@ class IGameData : public IBaseObject
 public:
 	IGameData();
 	virtual ~IGameData();
-	const std::string getGameName();
+	void getGameName(std::string& gameName) const;
 };
 
 #endif // !_I_GAME_DATA_H_

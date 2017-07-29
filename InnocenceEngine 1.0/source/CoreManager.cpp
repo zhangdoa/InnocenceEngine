@@ -25,7 +25,10 @@ void CoreManager::init()
 	m_childEventManager.emplace_back(&GraphicManager::getInstance());
 	//m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
 
-	WindowManager::getInstance().setWindowName(m_gameData->getGameName());
+	std::string l_gameName;
+	m_gameData->getGameName(l_gameName);
+
+	WindowManager::getInstance().setWindowName(l_gameName);
 
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
