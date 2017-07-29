@@ -11,19 +11,20 @@ InputManager::~InputManager()
 {
 }
 
-int InputManager::getKey(int keyCode) const
+void InputManager::getKey(int keyCode, int& result) const
 {
-	return glfwGetKey(WindowManager::getInstance().getWindow(), keyCode);
+	result = glfwGetKey(WindowManager::getInstance().getWindow(), keyCode);
 }
 
-int InputManager::getMouse(int mouseButton) const
+void InputManager::getMouse(int mouseButton, int& result) const
 {
-	return glfwGetMouseButton(WindowManager::getInstance().getWindow(), mouseButton);
+	result = glfwGetMouseButton(WindowManager::getInstance().getWindow(), mouseButton);
 }
 
-glm::vec2 InputManager::getMousePosition() const
+void InputManager::getMousePosition(glm::vec2& mousePosition) const
 {
-	return glm::vec2(m_mouseXOffset, m_mouseYOffset);
+	mousePosition.x = m_mouseXOffset;
+	mousePosition.y = m_mouseYOffset;
 }
 
 void InputManager::setMousePosition(const glm::vec2 & mousePosition)
@@ -80,22 +81,27 @@ void InputManager::update()
 {
 	if (WindowManager::getInstance().getWindow() != nullptr)
 	{
-		m_lastKeys.clear();
-		for (int i = 0; i < NUM_KEYCODES; i++)
-		{
-			m_lastKeys.emplace_back(getKey(i));
-		}
+		//m_lastKeys.clear();
+		//for (int i = 0; i < NUM_KEYCODES; i++)
+		//{
+		//	m_lastKeys.emplace_back(getKey(i));
+		//}
 
-		m_lastMouse.clear();
-		for (int i = 0; i < NUM_KEYCODES; i++)
-		{
-			m_lastMouse.emplace_back(getMouse(i));
-		}
+		//m_lastMouse.clear();
+		//for (int i = 0; i < NUM_KEYCODES; i++)
+		//{
+		//	m_lastMouse.emplace_back(getMouse(i));
+		//}
 		if (glfwGetMouseButton(WindowManager::getInstance().getWindow(), GLFW_MOUSE_BUTTON_RIGHT))
 		{
 			glfwSetInputMode(WindowManager::getInstance().getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		}
-		if (getKey(GLFW_KEY_ESCAPE))
+
+		int l_escapeResult = 0;
+
+		getKey(GLFW_KEY_ESCAPE, l_escapeResult);
+
+		if (l_escapeResult)
 		{
 			if (glfwGetInputMode(WindowManager::getInstance().getWindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
 			{

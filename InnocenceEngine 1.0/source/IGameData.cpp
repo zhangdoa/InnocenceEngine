@@ -11,8 +11,7 @@ IGameData::~IGameData()
 {
 }
 
-const std::string IGameData::getGameName()
+void IGameData::getGameName(std::string & gameName) const
 {
-	std::string l_gameName = typeid(*this).name();
-	return l_gameName;
+	gameName = typeid(*this).name();
 }
