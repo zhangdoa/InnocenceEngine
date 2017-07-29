@@ -40,4 +40,11 @@ private:
 	void init() override;
 	void update() override;
 	void shutdown() override;
+
+	int l_mouseRightResult = 0;
+	glm::vec2 l_mousePosition;
+	int l_keyWResult = 0;
+	int l_keySResult = 0;
+	int l_keyAResult = 0;
+	int l_keyDResult = 0;
 };
