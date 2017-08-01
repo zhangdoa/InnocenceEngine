@@ -215,11 +215,10 @@ void SkyboxShader::update(IVisibleGameEntity * visibleGameEntity)
 	glm::mat4 view;
 	GLRenderingManager::getInstance().getCamera()->getRotationMatrix(view);
 
-	projection = projection * -1.0f;
+	glm::mat4 VP;
+	VP = projection * view *  -1.0f;
 
-	updateUniform("uni_Projection", projection);
-
-	updateUniform("uni_View", view);
+	updateUniform("uni_VP", VP);
 }
 
 

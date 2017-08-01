@@ -5,7 +5,7 @@
 #include "TimeManager.h"
 #include "WindowManager.h"
 #include "InputManager.h"
-#include "GraphicManager.h"
+#include "RenderingManager.h"
 #include "SceneGraphManager.h"
 #include "IGameData.h"
 #include "InnocenceGarden.h"
