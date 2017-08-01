@@ -22,7 +22,7 @@ void CoreManager::init()
 	m_childEventManager.emplace_back(&TimeManager::getInstance());
 	m_childEventManager.emplace_back(&WindowManager::getInstance());
 	m_childEventManager.emplace_back(&InputManager::getInstance());
-	m_childEventManager.emplace_back(&GraphicManager::getInstance());
+	m_childEventManager.emplace_back(&RenderingManager::getInstance());
 	//m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
 
 	std::string l_gameName;
@@ -67,18 +67,18 @@ void CoreManager::update()
 				m_gameData->exec(UPDATE);
 				
 				// update global rendering status
-				GraphicManager::getInstance().exec(UPDATE);
+				RenderingManager::getInstance().exec(UPDATE);
 
 				try {
 					// update camera info for rendering pipeline
 					InnocenceGarden* m_gameDataSpecific = dynamic_cast<InnocenceGarden*>(m_gameData);
-					GraphicManager::getInstance().setCamera(m_gameDataSpecific->getCameraComponent());
+					RenderingManager::getInstance().setCamera(m_gameDataSpecific->getCameraComponent());
 
 					// rendering pipeline starts to work
-					GraphicManager::getInstance().render(m_gameDataSpecific->getTestCube());
-					GraphicManager::getInstance().render(m_gameDataSpecific->getSkybox());
+					RenderingManager::getInstance().render(m_gameDataSpecific->getTestCube());
+					RenderingManager::getInstance().render(m_gameDataSpecific->getSkybox());
 
-					GraphicManager::getInstance().finishRender();
+					RenderingManager::getInstance().finishRender();
 				}
 				catch (std::exception& e) {
 					LogManager::getInstance().printLog("Cannot get camera information!");

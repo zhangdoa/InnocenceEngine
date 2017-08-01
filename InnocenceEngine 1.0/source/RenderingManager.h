@@ -6,14 +6,14 @@
 #include "CameraComponent.h"
 
 
-class GraphicManager : public IEventManager
+class RenderingManager : public IEventManager
 {
 public:
-	~GraphicManager();
+	~RenderingManager();
 
-	static GraphicManager& getInstance()
+	static RenderingManager& getInstance()
 	{
-		static GraphicManager instance;
+		static RenderingManager instance;
 		return instance;
 	}
 
@@ -22,7 +22,7 @@ public:
 	void setCamera(CameraComponent* cameraComponent);
 
 private:
-	GraphicManager();
+	RenderingManager();
 
 	void init() override;
 	void update() override;

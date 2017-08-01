@@ -33,9 +33,6 @@
     <ClInclude Include="CoreManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GraphicManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GLRenderingManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -93,6 +90,18 @@
     <ClInclude Include="GraphicData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AssetManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GLGraphicData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderingManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -108,9 +117,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CoreManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GraphicManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GLRenderingManager.cpp">
@@ -161,5 +167,19 @@
     <ClCompile Include="GraphicData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AssetManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GLGraphicData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderingManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="InnocenceEngine 1.0.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
