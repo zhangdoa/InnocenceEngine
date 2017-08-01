@@ -1,76 +1,5 @@
 #include "stdafx.h"
-#define STB_IMAGE_IMPLEMENTATION    
-#include "stb_image.h"
 #include "GraphicData.h"
-
-StaticMeshVertexData::StaticMeshVertexData()
-{
-}
-
-
-StaticMeshVertexData::~StaticMeshVertexData()
-{
-}
-
-const glm::vec3& StaticMeshVertexData::getPos() const
-{
-	return m_pos;
-}
-
-const glm::vec2& StaticMeshVertexData::getTexCoord() const
-{
-	return m_texCoord;
-}
-
-const glm::vec3& StaticMeshVertexData::getNormal() const
-{
-	return m_normal;
-}
-
-void StaticMeshVertexData::setPos(const glm::vec3 & pos)
-{
-	m_pos = pos;
-}
-
-void StaticMeshVertexData::setTexCoord(const glm::vec2& texCoord)
-{
-	m_texCoord = texCoord;
-}
-
-void StaticMeshVertexData::setNormal(const glm::vec3 & normal)
-{
-	m_normal = normal;
-}
-
-void StaticMeshVertexData::addVertexData(const glm::vec3 & pos, const glm::vec2 & texCoord, const glm::vec3 & normal)
-{
-	m_pos = pos;
-	m_texCoord = texCoord;
-	m_normal = normal;
-}
-
-SkyboxVertexData::SkyboxVertexData()
-{
-}
-
-SkyboxVertexData::~SkyboxVertexData()
-{
-}
-
-const glm::vec3 & SkyboxVertexData::getPos() const
-{
-	return m_pos;
-}
-
-void SkyboxVertexData::setPos(const glm::vec3 & pos)
-{
-	m_pos = pos;
-}
-
-void SkyboxVertexData::addVertexData(const glm::vec3 & pos)
-{
-	m_pos = pos;
-}
 
 StaticMeshData::StaticMeshData()
 {
@@ -83,132 +12,17 @@ StaticMeshData::~StaticMeshData()
 
 void StaticMeshData::init()
 {
-	glGenVertexArrays(1, &m_VAO);
-	glGenBuffers(1, &m_VBO);
-	glGenBuffers(1, &m_IBO);
-
-	addTestCube();
-	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	
-
-
-	// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	
-
-	// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
-	
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	m_GLMeshData.init();
 }
 
 void StaticMeshData::update()
 {
-	glBindVertexArray(m_VAO);
-	glDrawElements(GL_TRIANGLES, m_intices.size(), GL_UNSIGNED_INT, 0);
+	m_GLMeshData.update();
 }
 
 void StaticMeshData::shutdown()
 {
-	glDeleteVertexArrays(1, &m_VAO);
-	glDeleteBuffers(1, &m_VBO);
-	glDeleteBuffers(1, &m_IBO);
-}
-
-
-void StaticMeshData::addMeshData(std::vector<StaticMeshVertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const
-{
-	if (calcNormals) {
-		for (size_t i = 0; i < vertices.size(); i += 3) {
-			int i0 = indices[i];
-			int i1 = indices[i + 1];
-			int i2 = indices[i + 2];
-
-			glm::vec3 v1 = vertices[i1]->getPos() - vertices[i0]->getPos();
-			glm::vec3 v2 = vertices[i2]->getPos() - vertices[i0]->getPos();
-
-			glm::vec3 normal = glm::normalize(glm::cross(v1, v2));
-
-			vertices[i0]->setNormal(vertices[i0]->getNormal() + (normal));
-			vertices[i1]->setNormal(vertices[i0]->getNormal() + (normal));
-			vertices[i2]->setNormal(vertices[i0]->getNormal() + (normal));
-
-		}
-
-		// try some syntax candy
-		std::for_each(vertices.begin(), vertices.end(), [](StaticMeshVertexData* val)
-		{
-			val->setNormal(glm::normalize(val->getNormal()));;
-		});
-
-		//for (size_t i = 0; i < vertices.size(); i++)
-		//{
-		//	vertices[i]->setNormal(glm::normalize(vertices[i]->getNormal()));
-		//}
-	}
-	std::vector<float> verticesBuffer(vertices.size() * 8);
-
-	for (size_t i = 0; i < vertices.size(); i++)
-	{
-		verticesBuffer[8 * i + 0] = vertices[i]->getPos().x;
-		verticesBuffer[8 * i + 1] = vertices[i]->getPos().y;
-		verticesBuffer[8 * i + 2] = vertices[i]->getPos().z;
-		verticesBuffer[8 * i + 3] = vertices[i]->getTexCoord().x;
-		verticesBuffer[8 * i + 4] = vertices[i]->getTexCoord().y;
-		verticesBuffer[8 * i + 5] = vertices[i]->getNormal().x;
-		verticesBuffer[8 * i + 6] = vertices[i]->getNormal().y;
-		verticesBuffer[8 * i + 7] = vertices[i]->getNormal().z;
-	}
-
-	glBindVertexArray(m_VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glBufferData(GL_ARRAY_BUFFER, verticesBuffer.size() * sizeof(float), &verticesBuffer[0], GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(float), &indices[0], GL_STATIC_DRAW);
-}
-
-void StaticMeshData::addTestCube()
-{
-	StaticMeshVertexData l_VertexData_1;
-	l_VertexData_1.addVertexData(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-	StaticMeshVertexData l_VertexData_2;
-	l_VertexData_2.addVertexData(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-	StaticMeshVertexData l_VertexData_3;
-	l_VertexData_3.addVertexData(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-	StaticMeshVertexData l_VertexData_4;
-	l_VertexData_4.addVertexData(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-	StaticMeshVertexData l_VertexData_5;
-	l_VertexData_5.addVertexData(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-
-	StaticMeshVertexData l_VertexData_6;
-	l_VertexData_6.addVertexData(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-
-	StaticMeshVertexData l_VertexData_7;
-	l_VertexData_7.addVertexData(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-
-	StaticMeshVertexData l_VertexData_8;
-	l_VertexData_8.addVertexData(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-
-	m_vertices = { &l_VertexData_1, &l_VertexData_2, &l_VertexData_3, &l_VertexData_4, &l_VertexData_5, &l_VertexData_6, &l_VertexData_7, &l_VertexData_8 };
-	m_intices = { 0, 1, 3, 1, 2, 3,
-		4, 5, 0, 5, 1, 0,
-		7, 6, 4, 6, 5, 4,
-		3, 2, 7, 2, 6 ,7,
-		4, 0, 7, 0, 3, 7,
-		1, 5, 2, 5, 6, 2 };
-	addMeshData(m_vertices, m_intices, false);
+	m_GLMeshData.shutdown();
 }
 
 SkyboxMeshData::SkyboxMeshData()
@@ -291,15 +105,15 @@ void SkyboxMeshData::shutdown()
 	glDeleteBuffers(1, &m_VBO);
 }
 
-void SkyboxMeshData::addMeshData(std::vector<StaticMeshVertexData*>& vertices) const
+void SkyboxMeshData::addMeshData(std::vector<VertexData*>& vertices) const
 {
 	std::vector<float> verticesBuffer(vertices.size() * 3);
 
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		verticesBuffer[3 * i + 0] = vertices[i]->getPos().x;
-		verticesBuffer[3 * i + 1] = vertices[i]->getPos().y;
-		verticesBuffer[3 * i + 2] = vertices[i]->getPos().z;
+		verticesBuffer[3 * i + 0] = vertices[i]->m_pos.x;
+		verticesBuffer[3 * i + 1] = vertices[i]->m_pos.y;
+		verticesBuffer[3 * i + 2] = vertices[i]->m_pos.z;
 	}
 
 	glBindVertexArray(m_VAO);
@@ -323,47 +137,22 @@ TextureData::~TextureData()
 
 void TextureData::init()
 {
-	glGenTextures(1, &m_textureID);
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	m_GLTextureData.init();
 }
 
 void TextureData::update()
 {
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	m_GLTextureData.update();
 }
 
 void TextureData::shutdown()
 {
+	m_GLTextureData.shutdown();
 }
 
-void TextureData::loadTexture(const std::string & textureFileName) const
+void TextureData::loadTexture(const std::string & filePath) const
 {
-	// load image, create texture and generate mipmaps
-	int width, height, nrChannels;
-	stbi_set_flip_vertically_on_load(true);
-	unsigned char *data = stbi_load(("../res/textures/" + textureFileName).c_str(), &width, &height, &nrChannels, 0);
-	if (data)
-	{
-		addTextureData(width, height, data);
-	}
-	else
-	{
-		LogManager::getInstance().printLog("Error: Failed to load texture: " + textureFileName);
-	}
-	stbi_image_free(data);
-}
-
-void TextureData::addTextureData(int textureWidth, int textureHeight, unsigned char * textureData) const
-{
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
-	glGenerateMipmap(GL_TEXTURE_2D);
+	m_GLTextureData.loadTexture(filePath);
 }
 
 CubemapData::CubemapData()
@@ -376,50 +165,22 @@ CubemapData::~CubemapData()
 
 void CubemapData::init()
 {
-	glGenTextures(1, &m_cubemapTextureID);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemapTextureID);
-
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+	m_GLCubemapData.init();
 }
 
 void CubemapData::update()
 {
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemapTextureID);
+	m_GLCubemapData.update();
 }
 
 void CubemapData::shutdown()
 {
+	m_GLCubemapData.shutdown();
 }
 
-void CubemapData::addCubemapData(unsigned int faceCount, int cubemapTextureWidth, int cubemapTextureHeight, unsigned char * cubemapTextureData) const
-{
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + faceCount,
-		0, GL_RGB, cubemapTextureWidth, cubemapTextureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, cubemapTextureData);
-}
 
-void CubemapData::loadCubemap(const std::vector<std::string> & faceImagePath) const
+void CubemapData::loadCubemap(const std::vector<std::string> & filePath) const
 {
-	int width, height, nrChannels;
-	for (unsigned int i = 0; i < faceImagePath.size(); i++)
-	{
-		unsigned char *data = stbi_load( ("../res/textures/" + faceImagePath[i]).c_str(), &width, &height, &nrChannels, 0);
-		if (data)
-		{
-			addCubemapData(i, width, height, data);
-		}
-		else
-		{
-			LogManager::getInstance().printLog("Cubemap texture failed to load at path: " + ("../res/textures/" + faceImagePath[i]));
-		}
-		stbi_image_free(data);
-	}
+	m_GLCubemapData.loadCubemap(filePath);
 }
 

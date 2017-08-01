@@ -4,12 +4,11 @@ layout (location = 0) in vec3 in_Position;
 
 out vec3 texCoord0;
 
-uniform mat4 uni_Projection;
-uniform mat4 uni_View;
+uniform mat4 uni_VP;
 
 void main()
 {
     texCoord0 = in_Position * -1.0;
-    vec4 pos = uni_Projection * uni_View * vec4(in_Position, 1.0);	
+    vec4 pos = uni_VP * vec4(in_Position, 1.0);	
     gl_Position = pos.xyww;
 }

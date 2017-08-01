@@ -31,7 +31,6 @@ void StaticMeshComponent::init()
 	m_textureData.init();
 	loadTexture("container.jpg");
 	m_meshData.init();
-	m_meshData.addTestCube();
 }
 
 void StaticMeshComponent::update()
