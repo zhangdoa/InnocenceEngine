@@ -169,7 +169,6 @@
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="IVisibleGameEntity.h" />
     <ClInclude Include="LogManager.h" />
-    <ClInclude Include="Math.h" />
     <ClInclude Include="nuklear.h" />
     <ClInclude Include="nuklear_glfw_gl3.h" />
     <ClInclude Include="resource.h" />
@@ -200,7 +199,6 @@
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="IVisibleGameEntity.cpp" />
     <ClCompile Include="LogManager.cpp" />
-    <ClCompile Include="Math.cpp" />
     <ClCompile Include="SceneGraphManager.cpp" />
     <ClCompile Include="SkyboxComponent.cpp" />
     <ClCompile Include="StaticMeshComponent.cpp" />
