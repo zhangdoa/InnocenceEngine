@@ -97,7 +97,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>alut.lib;OpenAL32.lib;glfw3dll.lib;glew32.lib;glew32s.lib;opengl32.lib;assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>alut.lib;OpenAL32.lib;glfw3dll.lib;glew32.lib;glew32s.lib;opengl32.lib;assimp-vc140-mt.lib;tinyxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
@@ -177,6 +177,7 @@
     <ClCompile Include="code\game\InnocenceGarden.cpp" />
     <ClCompile Include="code\main\InnocenceEngine 1.0.cpp" />
     <ClCompile Include="code\main\stdafx.cpp" />
+    <ClCompile Include="code\core\data\GameMapData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
@@ -206,6 +207,7 @@
     <ClInclude Include="code\main\resource.h" />
     <ClInclude Include="code\main\stdafx.h" />
     <ClInclude Include="code\main\targetver.h" />
+    <ClInclude Include="code\core\data\GameMapData.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
