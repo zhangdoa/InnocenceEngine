@@ -1,7 +1,7 @@
 #pragma once
-#include "IEventManager.h"
-#include "LogManager.h"
-#include "IGameEntity.h"
+#include "../manager/IEventManager.h"
+#include "../manager/LogManager.h"
+#include "../interface/IGameEntity.h"
 
 class SceneGraphManager : public IEventManager
 {

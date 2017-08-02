@@ -1,8 +1,8 @@
 #pragma once
 
 #include "IBaseObject.h"
-#include "InputManager.h"
-#include "CameraComponent.h"
+#include "../manager/InputManager.h"
+#include "../component/CameraComponent.h"
 #include "IVisibleGameEntity.h"
 
 #ifndef _I_GAME_DATA_H_

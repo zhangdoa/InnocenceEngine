@@ -1,6 +1,6 @@
 #pragma once
-#include "GraphicData.h"
-#include "IVisibleGameEntity.h"
+#include "../data/GraphicData.h"
+#include "../interface/IVisibleGameEntity.h"
 
 class StaticMeshComponent : public IVisibleGameEntity
 {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IBaseObject.h"
-#include "LogManager.h"
+#include "../manager/LogManager.h"
 
 #ifndef _I_GAME_ENTITY_H_
 #define _I_GAME_ENTITY_H_

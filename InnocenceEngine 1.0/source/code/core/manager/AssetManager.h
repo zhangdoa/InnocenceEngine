@@ -5,7 +5,7 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
-#include "GraphicData.h"
+#include "../data/GraphicData.h"
 
 class AssetManager : public IEventManager
 {

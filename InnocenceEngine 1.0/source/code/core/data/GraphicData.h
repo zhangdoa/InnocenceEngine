@@ -1,6 +1,6 @@
 #pragma once
-#include "LogManager.h"
-#include "GLGraphicData.h"
+#include "../manager/LogManager.h"
+#include "../platform-dependency/GL/GLGraphicData.h"
 
 class StaticMeshData
 {

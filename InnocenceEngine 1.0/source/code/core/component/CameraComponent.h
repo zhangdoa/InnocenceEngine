@@ -1,7 +1,7 @@
 #pragma once
-#include "IGameEntity.h"
-#include "InputManager.h"
-#include "WindowManager.h"
+#include "../interface/IGameEntity.h"
+#include "../manager/InputManager.h"
+#include "../manager/WindowManager.h"
 
 class CameraData
 {
