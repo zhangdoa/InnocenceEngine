@@ -213,7 +213,7 @@ void GLCubemapData::loadCubemap(const std::vector<std::string> & faceImagePath) 
 		}
 		else
 		{
-			LogManager::getInstance().printLog("Cubemap texture failed to load at path: " + ("../res/textures/" + faceImagePath[i]));
+			LogManager::getInstance().printLog("Error: Failed to load cubemap texture: " + ("../res/textures/" + faceImagePath[i]));
 		}
 		stbi_image_free(data);
 	}
