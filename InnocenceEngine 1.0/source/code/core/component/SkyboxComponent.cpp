@@ -21,6 +21,7 @@ void SkyboxComponent::init()
 {
 	setVisibleGameEntityType(SKYBOX);
 	m_meshData.init();
+	m_meshData.addTestSkybox();
 	m_cubemapData.init();
 	m_cubemapData.loadCubemap(std::vector<std::string> {"skybox/right.jpg",
 		"skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg" });

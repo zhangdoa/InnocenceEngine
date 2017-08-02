@@ -32,8 +32,3 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "AL/alut.h"
 
-
-
-
-
-// TODO: reference additional headers your program requires here

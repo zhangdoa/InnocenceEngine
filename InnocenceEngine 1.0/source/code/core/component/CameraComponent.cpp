@@ -80,7 +80,6 @@ void CameraComponent::getProjectionMatrix(glm::mat4 & outProjectionMatrix) const
 
 void CameraComponent::move(moveDirection moveDirection)
 {
-	// TODO: it should move along the direction of camera rather than the static six axis
 	switch (moveDirection)
 	{
 		// opengl use right-hand-coordinate, so go foward means get into the negative z-axis
