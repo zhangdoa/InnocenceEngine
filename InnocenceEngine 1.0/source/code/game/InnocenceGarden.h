@@ -19,7 +19,6 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	const std::string m_gameName = "Innocence Garden";
 	BaseActor testRootActor;
 
 	BaseActor testCameraActor;
