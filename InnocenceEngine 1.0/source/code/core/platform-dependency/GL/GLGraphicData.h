@@ -8,14 +8,6 @@ struct VertexData
 	glm::vec3 m_normal;
 };
 
-class GLGraphicData
-{
-public:
-	GLGraphicData();
-	~GLGraphicData();
-};
-
-
 class GLMeshData
 {
 public:
@@ -23,11 +15,11 @@ public:
 	~GLMeshData();
 
 	void init();
-	void update();
+	void update(std::vector<unsigned int>& indices);
 	void shutdown();
 
 	void addGLMeshData(std::vector<VertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
-	void addTestCube();
+
 private:
 	GLuint m_VAO;
 	GLuint m_VBO;

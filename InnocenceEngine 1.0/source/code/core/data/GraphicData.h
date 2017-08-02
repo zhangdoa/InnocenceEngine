@@ -11,30 +11,14 @@ public:
 	void init();
 	void update();
 	void shutdown();
+
+	void addTestCube();
+	void addTestSkybox();
+
 private:
 	GLMeshData m_GLMeshData;
 	std::vector<VertexData*> m_vertices;
 	std::vector<unsigned int> m_intices;
-};
-
-class SkyboxMeshData
-{
-public:
-	SkyboxMeshData();
-	~SkyboxMeshData();
-
-	void init();
-	void update();
-	void shutdown();
-
-	void addMeshData(std::vector<VertexData*>& vertices) const;
-	void addTestSkybox();
-
-private:
-	GLuint m_VAO;
-	GLuint m_VBO;
-
-	std::vector<VertexData*> m_vertices;
 };
 
 class TextureData

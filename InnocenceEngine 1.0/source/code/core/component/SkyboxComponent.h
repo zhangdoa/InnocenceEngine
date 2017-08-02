@@ -12,7 +12,7 @@ public:
 	void render() override;
 
 private:
-	SkyboxMeshData m_meshData;
+	StaticMeshData m_meshData;
 	CubemapData m_cubemapData;
 
 	void init() override;
