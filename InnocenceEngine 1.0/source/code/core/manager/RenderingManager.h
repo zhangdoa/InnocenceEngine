@@ -1,9 +1,9 @@
 #pragma once
-#include "IVisibleGameEntity.h"
-#include "IEventManager.h"
-#include "LogManager.h"
-#include "GLRenderingManager.h"
-#include "CameraComponent.h"
+#include "../interface/IVisibleGameEntity.h"
+#include "../manager/IEventManager.h"
+#include "../manager/LogManager.h"
+#include "../platform-dependency/GL/GLRenderingManager.h"
+#include "../component/CameraComponent.h"
 
 
 class RenderingManager : public IEventManager

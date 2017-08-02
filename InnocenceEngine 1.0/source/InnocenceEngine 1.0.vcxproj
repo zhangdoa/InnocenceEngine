@@ -85,7 +85,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -151,69 +151,61 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\source\IEventManager.h" />
-    <ClInclude Include="AssetManager.h" />
-    <ClInclude Include="CameraComponent.h" />
-    <ClInclude Include="CoreManager.h" />
-    <ClInclude Include="GLGraphicData.h" />
-    <ClInclude Include="GLRenderingManager.h" />
-    <ClInclude Include="GraphicData.h" />
-    <ClInclude Include="GUIManager.h" />
-    <ClInclude Include="IBaseObject.h" />
-    <ClInclude Include="IGameData.h" />
-    <ClInclude Include="IGameEntity.h" />
-    <ClInclude Include="InnocenceGarden.h" />
-    <ClInclude Include="InputManager.h" />
-    <ClInclude Include="IVisibleGameEntity.h" />
-    <ClInclude Include="LogManager.h" />
-    <ClInclude Include="nuklear.h" />
-    <ClInclude Include="nuklear_glfw_gl3.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="SceneGraphManager.h" />
-    <ClInclude Include="SkyboxComponent.h" />
-    <ClInclude Include="StaticMeshComponent.h" />
-    <ClInclude Include="stb_image.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
-    <ClInclude Include="TimeManager.h" />
-    <ClInclude Include="RenderingManager.h" />
-    <ClInclude Include="WindowManager.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\source\IEventManager.cpp" />
-    <ClCompile Include="AssetManager.cpp" />
-    <ClCompile Include="CameraComponent.cpp" />
-    <ClCompile Include="CoreManager.cpp" />
-    <ClCompile Include="GLGraphicData.cpp" />
-    <ClCompile Include="GraphicData.cpp" />
-    <ClCompile Include="GUIManager.cpp" />
-    <ClCompile Include="IBaseObject.cpp" />
-    <ClCompile Include="IGameData.cpp" />
-    <ClCompile Include="IGameEntity.cpp" />
-    <ClCompile Include="InnocenceEngine 1.0.cpp" />
-    <ClCompile Include="GLRenderingManager.cpp" />
-    <ClCompile Include="InnocenceGarden.cpp" />
-    <ClCompile Include="InputManager.cpp" />
-    <ClCompile Include="IVisibleGameEntity.cpp" />
-    <ClCompile Include="LogManager.cpp" />
-    <ClCompile Include="SceneGraphManager.cpp" />
-    <ClCompile Include="SkyboxComponent.cpp" />
-    <ClCompile Include="StaticMeshComponent.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="TimeManager.cpp" />
-    <ClCompile Include="RenderingManager.cpp" />
-    <ClCompile Include="WindowManager.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="InnocenceEngine 1.0.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="code\core\component\CameraComponent.cpp" />
+    <ClCompile Include="code\core\component\SkyboxComponent.cpp" />
+    <ClCompile Include="code\core\component\StaticMeshComponent.cpp" />
+    <ClCompile Include="code\core\data\GraphicData.cpp" />
+    <ClCompile Include="code\core\interface\IBaseObject.cpp" />
+    <ClCompile Include="code\core\interface\IGameData.cpp" />
+    <ClCompile Include="code\core\interface\IGameEntity.cpp" />
+    <ClCompile Include="code\core\interface\IVisibleGameEntity.cpp" />
+    <ClCompile Include="code\core\manager\AssetManager.cpp" />
+    <ClCompile Include="code\core\manager\CoreManager.cpp" />
+    <ClCompile Include="code\core\manager\GUIManager.cpp" />
+    <ClCompile Include="code\core\manager\IEventManager.cpp" />
+    <ClCompile Include="code\core\manager\InputManager.cpp" />
+    <ClCompile Include="code\core\manager\LogManager.cpp" />
+    <ClCompile Include="code\core\manager\RenderingManager.cpp" />
+    <ClCompile Include="code\core\manager\SceneGraphManager.cpp" />
+    <ClCompile Include="code\core\manager\TimeManager.cpp" />
+    <ClCompile Include="code\core\manager\WindowManager.cpp" />
+    <ClCompile Include="code\core\platform-dependency\GL\GLGraphicData.cpp" />
+    <ClCompile Include="code\core\platform-dependency\GL\GLRenderingManager.cpp" />
+    <ClCompile Include="code\game\InnocenceGarden.cpp" />
+    <ClCompile Include="code\main\InnocenceEngine 1.0.cpp" />
+    <ClCompile Include="code\main\stdafx.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="code\core\component\CameraComponent.h" />
+    <ClInclude Include="code\core\component\SkyboxComponent.h" />
+    <ClInclude Include="code\core\component\StaticMeshComponent.h" />
+    <ClInclude Include="code\core\data\GraphicData.h" />
+    <ClInclude Include="code\core\interface\IBaseObject.h" />
+    <ClInclude Include="code\core\interface\IGameData.h" />
+    <ClInclude Include="code\core\interface\IGameEntity.h" />
+    <ClInclude Include="code\core\interface\IVisibleGameEntity.h" />
+    <ClInclude Include="code\core\manager\AssetManager.h" />
+    <ClInclude Include="code\core\manager\CoreManager.h" />
+    <ClInclude Include="code\core\manager\GUIManager.h" />
+    <ClInclude Include="code\core\manager\IEventManager.h" />
+    <ClInclude Include="code\core\manager\InputManager.h" />
+    <ClInclude Include="code\core\manager\LogManager.h" />
+    <ClInclude Include="code\core\manager\RenderingManager.h" />
+    <ClInclude Include="code\core\manager\SceneGraphManager.h" />
+    <ClInclude Include="code\core\manager\TimeManager.h" />
+    <ClInclude Include="code\core\manager\WindowManager.h" />
+    <ClInclude Include="code\core\platform-dependency\GL\GLGraphicData.h" />
+    <ClInclude Include="code\core\platform-dependency\GL\GLRenderingManager.h" />
+    <ClInclude Include="code\core\third-party\nuklear.h" />
+    <ClInclude Include="code\core\third-party\nuklear_glfw_gl3.h" />
+    <ClInclude Include="code\core\third-party\stb_image.h" />
+    <ClInclude Include="code\game\InnocenceGarden.h" />
+    <ClInclude Include="code\main\resource.h" />
+    <ClInclude Include="code\main\stdafx.h" />
+    <ClInclude Include="code\main\targetver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

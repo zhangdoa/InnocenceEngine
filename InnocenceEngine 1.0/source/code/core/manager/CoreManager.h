@@ -7,8 +7,8 @@
 #include "InputManager.h"
 #include "RenderingManager.h"
 #include "SceneGraphManager.h"
-#include "IGameData.h"
-#include "InnocenceGarden.h"
+#include "../interface/IGameData.h"
+#include "../../game/InnocenceGarden.h"
 
 class CoreManager : public IEventManager
 {

@@ -1,6 +1,6 @@
-#include "stdafx.h"
+#include "../../../main/stdafx.h"
 #define STB_IMAGE_IMPLEMENTATION    
-#include "stb_image.h"
+#include "../../third-party/stb_image.h"
 #include "GLGraphicData.h"
 
 

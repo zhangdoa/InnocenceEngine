@@ -1,5 +1,5 @@
 #pragma once
-#include "LogManager.h"
+#include "../../manager/LogManager.h"
 
 struct VertexData
 {
