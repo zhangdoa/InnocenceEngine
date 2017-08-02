@@ -28,9 +28,10 @@ void StaticMeshComponent::loadTexture(const std::string & textureFileName) const
 void StaticMeshComponent::init()
 {
 	setVisibleGameEntityType(STATIC_MESH);
+	m_meshData.init();
+	m_meshData.addTestCube();
 	m_textureData.init();
 	loadTexture("container.jpg");
-	m_meshData.init();
 }
 
 void StaticMeshComponent::update()
