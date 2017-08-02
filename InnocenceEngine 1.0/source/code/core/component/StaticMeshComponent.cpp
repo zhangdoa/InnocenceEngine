@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "../../main/stdafx.h"
 #include "StaticMeshComponent.h"
 
 StaticMeshComponent::StaticMeshComponent()

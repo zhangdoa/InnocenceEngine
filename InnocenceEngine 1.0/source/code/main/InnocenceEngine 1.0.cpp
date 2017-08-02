@@ -2,9 +2,9 @@
 //
 
 #include "stdafx.h"
-#include "IBaseObject.h"
-#include "CoreManager.h"
-#include "InnocenceGarden.h"
+#include "../core/interface/IBaseObject.h"
+#include "../core/manager/CoreManager.h"
+#include "../game/InnocenceGarden.h"
 
 
 int main()

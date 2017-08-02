@@ -1,6 +1,6 @@
 #pragma once
-#include "Math.h"
 #include "IEventManager.h"
+
 class LogManager : public IEventManager
 {
 public:

@@ -1,9 +1,9 @@
 #pragma once
-#include "IGameData.h"
-#include "IGameEntity.h"
-#include "CameraComponent.h"
-#include "SkyboxComponent.h"
-#include "StaticMeshComponent.h"
+#include "../core/interface/IGameData.h"
+#include "../core/interface/IGameEntity.h"
+#include "../core/component/CameraComponent.h"
+#include "../core/component/SkyboxComponent.h"
+#include "../core/component/StaticMeshComponent.h"
 class InnocenceGarden :	public IGameData
 {
 public:

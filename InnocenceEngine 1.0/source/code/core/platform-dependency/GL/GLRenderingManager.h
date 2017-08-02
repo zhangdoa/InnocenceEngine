@@ -1,9 +1,9 @@
 #pragma once
-#include "IEventManager.h"
-#include "GUIManager.h"
-#include "LogManager.h"
-#include "IVisibleGameEntity.h"
-#include "CameraComponent.h"
+#include "../../manager/IEventManager.h"
+#include "../../manager/GUIManager.h"
+#include "../../manager/LogManager.h"
+#include "../../interface/IVisibleGameEntity.h"
+#include "../../component/CameraComponent.h"
 
 class GLShader
 {
