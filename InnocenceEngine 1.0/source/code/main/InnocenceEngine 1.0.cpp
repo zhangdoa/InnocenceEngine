@@ -14,12 +14,12 @@ int main()
 
 	m_coreManager->setGameData(m_innocenceGarden);
 
-	m_coreManager->exec(IBaseObject::INIT);
-	while (m_coreManager->getStatus() == IBaseObject::INITIALIZIED)
+	m_coreManager->exec(execMessage::INIT);
+	while (m_coreManager->getStatus() == objectStatus::INITIALIZIED)
 	{
-		m_coreManager->exec(IBaseObject::UPDATE);
+		m_coreManager->exec(execMessage::UPDATE);
 	}
-	m_coreManager->exec(IBaseObject::SHUTDOWN);
+	m_coreManager->exec(execMessage::SHUTDOWN);
 	delete m_innocenceGarden;
 	delete m_coreManager;
 	

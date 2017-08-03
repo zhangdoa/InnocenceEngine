@@ -32,42 +32,42 @@ void CoreManager::init()
 
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
-		m_childEventManager[i].get()->exec(INIT);
+		m_childEventManager[i].get()->exec(execMessage::INIT);
 	}
 
 	try {
-		m_gameData->exec(INIT);
+		m_gameData->exec(execMessage::INIT);
 	}
 	catch (std::exception& e) {
 		LogManager::getInstance().printLog("No game added!");
 		LogManager::getInstance().printLog(e.what());
 	}
 
-	this->setStatus(INITIALIZIED);
-	LogManager::getInstance().printLog("CoreManager has been initialized.");
+	this->setStatus(objectStatus::INITIALIZIED);
+	LogManager::getInstance().printLog("CoreManager has been execMessage::INITialized.");
 }
 
 void CoreManager::update()
 {
 	// time manager should update without any limitation.
-	TimeManager::getInstance().exec(UPDATE);
+	TimeManager::getInstance().exec(execMessage::UPDATE);
 
-	// when time manager's status was INITIALIZED, that means we can update other managers, a frame counter occurred.
-	if (TimeManager::getInstance().getStatus() == INITIALIZIED)
+	// when time manager's status was execMessage::INITIALIZED, that means we can update other managers, a frame counter occurred.
+	if (TimeManager::getInstance().getStatus() == objectStatus::INITIALIZIED)
 	{
 
-		if (WindowManager::getInstance().getStatus() == INITIALIZIED)
+		if (WindowManager::getInstance().getStatus() == objectStatus::INITIALIZIED)
 		{
 			// input manager decides the game& engine behivour which was based on user's input.
-			InputManager::getInstance().exec(UPDATE);
+			InputManager::getInstance().exec(execMessage::UPDATE);
 
-			if (InputManager::getInstance().getStatus() == INITIALIZIED)
+			if (InputManager::getInstance().getStatus() == objectStatus::INITIALIZIED)
 			{
 				// game data update
-				m_gameData->exec(UPDATE);
+				m_gameData->exec(execMessage::UPDATE);
 				
 				// update global rendering status
-				RenderingManager::getInstance().exec(UPDATE);
+				RenderingManager::getInstance().exec(execMessage::UPDATE);
 
 				try {
 					// update camera info for rendering pipeline
@@ -87,20 +87,20 @@ void CoreManager::update()
 
 
 
-				//SceneGraphManager::getInstance().exec(UPDATE);
+				//SceneGraphManager::getInstance().exec(execMessage::UPDATE);
 
 				// window manager updates last
-				WindowManager::getInstance().exec(UPDATE);
+				WindowManager::getInstance().exec(execMessage::UPDATE);
 			}
 			else
 			{
-				this->setStatus(STANDBY);
+				this->setStatus(objectStatus::STANDBY);
 				LogManager::getInstance().printLog("CoreManager is stand-by.");
 			}
 		}
 		else
 		{
-			this->setStatus(STANDBY);
+			this->setStatus(objectStatus::STANDBY);
 			LogManager::getInstance().printLog("CoreManager is stand-by.");
 		}
 	}
@@ -108,18 +108,18 @@ void CoreManager::update()
 
 void CoreManager::shutdown()
 {
-	m_gameData->exec(SHUTDOWN);
+	m_gameData->exec(execMessage::SHUTDOWN);
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		// reverse 'destructor'
-		m_childEventManager[m_childEventManager.size() - 1 - i].get()->exec(SHUTDOWN);
+		m_childEventManager[m_childEventManager.size() - 1 - i].get()->exec(execMessage::SHUTDOWN);
 	}
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		// reverse 'destructor'
 		m_childEventManager[m_childEventManager.size() - 1 - i].release();
 	}
-	this->setStatus(UNINITIALIZIED);
+	this->setStatus(objectStatus::INITIALIZIED);
 	LogManager::getInstance().printLog("CoreManager has been shutdown.");
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 }

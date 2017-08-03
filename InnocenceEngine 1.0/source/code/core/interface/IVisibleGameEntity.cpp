@@ -11,7 +11,7 @@ IVisibleGameEntity::~IVisibleGameEntity()
 {
 }
 
-const int IVisibleGameEntity::getVisibleGameEntityType() const
+const visibleGameEntityType& IVisibleGameEntity::getVisibleGameEntityType() const
 {
 	return m_visibleGameEntityType;
 }

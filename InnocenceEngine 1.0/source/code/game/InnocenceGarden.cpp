@@ -35,8 +35,7 @@ void InnocenceGarden::init()
 	testCameraActor.addChildComponent(&testCameraComponent);
 	testSkyboxActor.addChildComponent(&testSkyboxComponent);
 	testTriangleActor.addChildComponent(&testTriangleComponent);
-
-	testRootActor.exec(INIT);
+	testRootActor.exec(execMessage::INIT);
 
 	testTriangleActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -5.0f));
 }
@@ -47,10 +46,10 @@ void InnocenceGarden::update()
 	testTriangleActor.getTransform()->rotate(glm::vec3(0.0f, -1.0f, 0.0f), 0.5);
 	testTriangleActor.getTransform()->rotate(glm::vec3(0.0f, 0.0f, -1.0f), 0.25);
 
-	testRootActor.exec(UPDATE);	
+	testRootActor.exec(execMessage::UPDATE);
 }
 
 void InnocenceGarden::shutdown()
 {	
-	testRootActor.exec(SHUTDOWN);
+	testRootActor.exec(execMessage::SHUTDOWN);
 }

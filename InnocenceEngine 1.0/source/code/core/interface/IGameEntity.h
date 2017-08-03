@@ -12,10 +12,10 @@ public:
 	Transform();
 	~Transform();
 
-	enum direction {FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT};
+	enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
 	void update();
 	void rotate(const glm::vec3& axis, float angle);
-	
+
 	const glm::vec3& getPos() const;
 	const glm::quat& getRot() const;
 	const glm::vec3& getScale() const;
@@ -27,7 +27,7 @@ public:
 	const glm::vec3& getOldPos() const;
 	const glm::quat& getOldRot() const;
 	const glm::vec3& getOldScale() const;
-	
+
 	glm::vec3 getDirection(direction direction) const;
 
 private:
@@ -87,5 +87,3 @@ private:
 	BaseActor* m_parentActor;
 };
 #endif // !_I_GAME_ENTITY_H_
-
-

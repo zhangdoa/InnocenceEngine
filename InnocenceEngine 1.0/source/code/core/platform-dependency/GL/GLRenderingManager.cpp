@@ -140,7 +140,7 @@ void BasicGLShader::init()
 	updateUniform("uni_Texture", 0);
 }
 
-void BasicGLShader::update(IVisibleGameEntity *visibleGameEntity)
+void BasicGLShader::update(IVisibleGameEntity* visibleGameEntity)
 {
 	bindShader();
 	glm::mat4 mvp;
@@ -169,7 +169,7 @@ void ForwardAmbientShader::init()
 	m_ambientIntensity = 1.0f;
 }
 
-void ForwardAmbientShader::update(IVisibleGameEntity *visibleGameEntity)
+void ForwardAmbientShader::update(IVisibleGameEntity* visibleGameEntity)
 {
 	bindShader();
 	glm::mat4 mvp;
@@ -204,7 +204,7 @@ void SkyboxShader::init()
 	updateUniform("uni_skybox", 0);
 }
 
-void SkyboxShader::update(IVisibleGameEntity * visibleGameEntity)
+void SkyboxShader::update(IVisibleGameEntity* visibleGameEntity)
 {
 	bindShader();
 
@@ -231,19 +231,19 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
-void GLRenderingManager::render(IVisibleGameEntity * visibleGameEntity) const
+void GLRenderingManager::render(IVisibleGameEntity* visibleGameEntity) const
 {
 	// update shader
 	switch (visibleGameEntity->getVisibleGameEntityType())
 	{
-	case IVisibleGameEntity::INVISIBLE: break;
-	case IVisibleGameEntity::STATIC_MESH:
+	case visibleGameEntityType::INVISIBLE: break;
+	case visibleGameEntityType::STATIC_MESH:
 		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
 		{
 			m_staticMeshGLShader[i]->update(visibleGameEntity);
 		}
 		break;
-	case IVisibleGameEntity::SKYBOX:
+	case visibleGameEntityType::SKYBOX:
 		glDepthFunc(GL_LEQUAL);
 		SkyboxShader::getInstance().update(visibleGameEntity);
 		break;
@@ -281,7 +281,7 @@ void GLRenderingManager::init()
 
 	SkyboxShader::getInstance().init();
 
-	this->setStatus(INITIALIZIED);
+	this->setStatus(objectStatus::INITIALIZIED);
 	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
 }
 
@@ -303,6 +303,6 @@ void GLRenderingManager::shutdown()
 	{
 		m_staticMeshGLShader[i].release();
 	}
-	this->setStatus(UNINITIALIZIED);
+	this->setStatus(objectStatus::UNINITIALIZIED);
 	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
 }

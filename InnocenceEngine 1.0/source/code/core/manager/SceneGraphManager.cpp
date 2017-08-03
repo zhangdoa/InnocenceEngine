@@ -13,26 +13,26 @@ SceneGraphManager::~SceneGraphManager()
 
 void SceneGraphManager::init()
 {
-	m_rootActor.exec(INIT);
-	this->setStatus(INITIALIZIED);
+	m_rootActor.exec(execMessage::INIT);
+	this->setStatus(objectStatus::INITIALIZIED);
 	LogManager::getInstance().printLog("SceneGraphManager has been initialized.");
 }
 
 void SceneGraphManager::update()
 {
-	if (m_rootActor.getStatus() == INITIALIZIED)
+	if (m_rootActor.getStatus() == objectStatus::INITIALIZIED)
 	{
-		m_rootActor.exec(UPDATE);
+		m_rootActor.exec(execMessage::UPDATE);
 	}
 	else
 	{
-		this->setStatus(STANDBY);
+		this->setStatus(objectStatus::STANDBY);
 		LogManager::getInstance().printLog("SceneGraphManager is stand-by.");
 	}
 }
 
 void SceneGraphManager::shutdown()
 {
-	m_rootActor.exec(SHUTDOWN);
+	m_rootActor.exec(execMessage::SHUTDOWN);
 	LogManager::getInstance().printLog("SceneGraphManager has been shutdown.");
 }
