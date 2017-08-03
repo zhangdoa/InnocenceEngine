@@ -256,13 +256,13 @@ void BaseActor::init()
 {
 	for (size_t i = 0; i < m_childActor.size(); i++)
 	{
-		m_childActor[i]->exec(INIT);
+		m_childActor[i]->exec(execMessage::INIT);
 	}
 	for (size_t i = 0; i < m_childComponent.size(); i++)
 	{
-		m_childComponent[i]->exec(INIT);
+		m_childComponent[i]->exec(execMessage::INIT);
 	}
-	this->setStatus(INITIALIZIED);
+	this->setStatus(objectStatus::INITIALIZIED);
 }
 
 void BaseActor::update()
@@ -272,14 +272,14 @@ void BaseActor::update()
 	{
 		for (size_t i = 0; i < getChildrenActors().size(); i++)
 		{
-			m_childActor[i]->exec(UPDATE);
+			m_childActor[i]->exec(execMessage::UPDATE);
 		}
 	}
 	if (m_childComponent.size() != 0)
 	{
 		for (size_t i = 0; i < m_childComponent.size(); i++)
 		{
-			m_childComponent[i]->exec(UPDATE);
+			m_childComponent[i]->exec(execMessage::UPDATE);
 		}
 	}
 }
@@ -288,13 +288,13 @@ void BaseActor::shutdown()
 {
 	for (size_t i = 0; i < getChildrenActors().size(); i++)
 	{
-		getChildrenActors()[i]->exec(SHUTDOWN);
+		getChildrenActors()[i]->exec(execMessage::SHUTDOWN);
 	}
 	for (size_t i = 0; i < m_childComponent.size(); i++)
 	{
-		m_childComponent[i]->exec(SHUTDOWN);
+		m_childComponent[i]->exec(execMessage::SHUTDOWN);
 	}
-	this->setStatus(UNINITIALIZIED);
+	this->setStatus(objectStatus::UNINITIALIZIED);
 }
 
 BaseComponent::BaseComponent()

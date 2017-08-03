@@ -30,7 +30,7 @@ void WindowManager::init()
 {
 	if (glfwInit() != GL_TRUE)
 	{
-		this->setStatus(ERROR);
+		this->setStatus(objectStatus::ERROR);
 		LogManager::getInstance().printLog("Failed to initialize GLFW.");
 	}
 
@@ -43,18 +43,18 @@ void WindowManager::init()
 	// Open a window and create its OpenGL context
 	m_window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, m_windowName.c_str(), NULL, NULL);
 	if (m_window == nullptr) {
-		this->setStatus(ERROR);
+		this->setStatus(objectStatus::ERROR);
 		LogManager::getInstance().printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
 		glfwTerminate();
 	}
 	glfwMakeContextCurrent(m_window); // Initialize GLEW
 	glewExperimental = true; // Needed in core profile
 	if (glewInit() != GLEW_OK) {
-		this->setStatus(ERROR);
+		this->setStatus(objectStatus::ERROR);
 		LogManager::getInstance().printLog("Failed to initialize GLEW.");
 	}
 	//GUIManager::getInstance().exec(INIT);
-	this->setStatus(INITIALIZIED);
+	this->setStatus(objectStatus::INITIALIZIED);
 	LogManager::getInstance().printLog("WindowManager has been initialized.");
 }
 
@@ -67,7 +67,7 @@ void WindowManager::update()
 	}
 	else
 	{
-		this->setStatus(STANDBY);
+		this->setStatus(objectStatus::STANDBY);
 		LogManager::getInstance().printLog("WindowManager is stand-by.");
 	}
 }
@@ -79,7 +79,7 @@ void WindowManager::shutdown()
 		glfwDestroyWindow(m_window);
 		glfwTerminate();
 		//GUIManager::getInstance().exec(SHUTDOWN);
-		this->setStatus(UNINITIALIZIED);
+		this->setStatus(objectStatus::UNINITIALIZIED);
 		LogManager::getInstance().printLog("WindowManager has been shutdown.");
 	}
 }

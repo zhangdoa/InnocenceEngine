@@ -11,7 +11,7 @@ public:
 	virtual ~GLShader();
 
 	virtual void init() = 0;
-	virtual void update(IVisibleGameEntity *visibleGameEntity) = 0;
+	virtual void update(IVisibleGameEntity* visibleGameEntity) = 0;
 
 protected:
 	GLShader();
@@ -99,7 +99,7 @@ public:
 	}
 
 	void init() override;
-	void update(IVisibleGameEntity *visibleGameEntity) override;
+	void update(IVisibleGameEntity* visibleGameEntity) override;
 
 private:
 	BasicGLShader();
@@ -118,7 +118,7 @@ public:
 	}
 
 	void init() override;
-	void update(IVisibleGameEntity *visibleGameEntity) override;
+	void update(IVisibleGameEntity* visibleGameEntity) override;
 	void setAmbientIntensity(float ambientIntensity);
 
 private:
@@ -139,7 +139,7 @@ public:
 	}
 
 	void init() override;
-	void update(IVisibleGameEntity *visibleGameEntity) override;
+	void update(IVisibleGameEntity* visibleGameEntity) override;
 
 private:
 	SkyboxShader();

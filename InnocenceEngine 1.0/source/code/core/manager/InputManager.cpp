@@ -73,7 +73,7 @@ void InputManager::init()
 	glfwSetCursorPosCallback(WindowManager::getInstance().getWindow(), &mousePositionCallback);
 	glfwSetScrollCallback(WindowManager::getInstance().getWindow(), &scrollCallback);
 	glfwSetInputMode(WindowManager::getInstance().getWindow(), GLFW_STICKY_KEYS, GL_TRUE);
-	this->setStatus(INITIALIZIED);
+	this->setStatus(objectStatus::INITIALIZIED);
 	LogManager::getInstance().printLog("InputManager has been initialized.");
 }
 
@@ -111,7 +111,7 @@ void InputManager::update()
 	}
 	else
 	{
-		this->setStatus(STANDBY);
+		this->setStatus(objectStatus::STANDBY);
 		LogManager::getInstance().printLog("InputManager is stand-by.");
 	}
 }
@@ -119,6 +119,6 @@ void InputManager::update()
 void InputManager::shutdown()
 {
 	glfwSetInputMode(WindowManager::getInstance().getWindow(), GLFW_STICKY_KEYS, GL_FALSE);
-	this->setStatus(UNINITIALIZIED);
+	this->setStatus(objectStatus::UNINITIALIZIED);
 	LogManager::getInstance().printLog("InputManager has been shutdown.");
 }

@@ -1,20 +1,20 @@
 #pragma once
 #include "IGameEntity.h"
 
+enum class visibleGameEntityType { INVISIBLE, STATIC_MESH, SKYBOX };
+
 class IVisibleGameEntity : public BaseComponent
 {
 public:
 	IVisibleGameEntity();
 	virtual ~IVisibleGameEntity();
 
-	enum visibleGameEntityType { INVISIBLE, STATIC_MESH, SKYBOX };
-
 	virtual void render() = 0;
 
-	const int getVisibleGameEntityType() const;
+	const visibleGameEntityType& getVisibleGameEntityType() const;
 	void setVisibleGameEntityType(visibleGameEntityType visibleGameEntityType);
 
 private:
-	visibleGameEntityType m_visibleGameEntityType = INVISIBLE;
+	visibleGameEntityType m_visibleGameEntityType = visibleGameEntityType::INVISIBLE;
 };
 

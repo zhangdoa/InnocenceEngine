@@ -27,19 +27,19 @@ void RenderingManager::setCamera(CameraComponent* cameraComponent)
 
 void RenderingManager::init()
 {
-	GLRenderingManager::getInstance().exec(INIT);
-	this->setStatus(INITIALIZIED);
+	GLRenderingManager::getInstance().exec(execMessage::INIT);
+	this->setStatus(objectStatus::INITIALIZIED);
 	LogManager::getInstance().printLog("RenderingManager has been initialized.");
 }
 
 void RenderingManager::update()
 {
-	GLRenderingManager::getInstance().exec(UPDATE);
+	GLRenderingManager::getInstance().exec(execMessage::UPDATE);
 }
 
 void RenderingManager::shutdown()
 {
-	GLRenderingManager::getInstance().exec(SHUTDOWN);
-	this->setStatus(UNINITIALIZIED);
+	GLRenderingManager::getInstance().exec(execMessage::SHUTDOWN);
+	this->setStatus(objectStatus::UNINITIALIZIED);
 	LogManager::getInstance().printLog("RenderingManager has been shutdown.");
 }
