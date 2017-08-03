@@ -15,14 +15,14 @@ void IBaseObject::exec(execMessage execMessage)
 {
 	switch (execMessage)
 	{
-	case INIT: init(); m_ObjectStatus = INITIALIZIED;  break;
-	case UPDATE: update(); break;
-	case SHUTDOWN: shutdown(); m_ObjectStatus = UNINITIALIZIED; break;
-	default: m_ObjectStatus = ERROR; break;
+	case  execMessage::INIT: init(); m_ObjectStatus = objectStatus::INITIALIZIED;  break;
+	case  execMessage::UPDATE: update(); break;
+	case  execMessage::SHUTDOWN: shutdown(); m_ObjectStatus = objectStatus::UNINITIALIZIED; break;
+	default: m_ObjectStatus = objectStatus::ERROR; break;
 	}
 }
 
-const int IBaseObject::getStatus() const
+const objectStatus& IBaseObject::getStatus() const
 {
 	return m_ObjectStatus;
 }
