@@ -164,10 +164,11 @@ public:
 
 private:
 	GLRenderingManager();
-	void init() override;
-	void update() override;
-	void shutdown() override;
 
 	CameraComponent* m_cameraComponent;
 	std::vector<std::unique_ptr<GLShader>> m_staticMeshGLShader;
+
+	void init() override;
+	void update() override;
+	void shutdown() override;
 };

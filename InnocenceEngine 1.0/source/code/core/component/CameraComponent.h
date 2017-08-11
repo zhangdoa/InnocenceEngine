@@ -36,6 +36,7 @@ public:
 	void move(moveDirection moveDirection);
 
 private:
+	//TODO: extract CameraData class to CameraComponent class
 	CameraData m_cameraData;
 	void init() override;
 	void update() override;
