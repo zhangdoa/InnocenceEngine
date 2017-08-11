@@ -44,7 +44,7 @@ void CoreManager::init()
 	}
 
 	this->setStatus(objectStatus::INITIALIZIED);
-	LogManager::getInstance().printLog("CoreManager has been execMessage::INITialized.");
+	LogManager::getInstance().printLog("CoreManager has been initialized.");
 }
 
 void CoreManager::update()

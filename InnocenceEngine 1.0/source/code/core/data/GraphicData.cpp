@@ -67,7 +67,7 @@ void StaticMeshData::addTestCube()
 	l_VertexData_8.m_texCoord = glm::vec2(0.0f, 1.0f);
 	l_VertexData_8.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
 
-	m_vertices = { &l_VertexData_1, &l_VertexData_2, &l_VertexData_3, &l_VertexData_4, &l_VertexData_5, &l_VertexData_6, &l_VertexData_7, &l_VertexData_8 };
+	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
 	m_intices = { 0, 1, 3, 1, 2, 3,
 		4, 5, 0, 5, 1, 0,
@@ -105,7 +105,7 @@ void StaticMeshData::addTestSkybox()
 	VertexData l_VertexData_8;
 	l_VertexData_8.m_pos = glm::vec3(-1.0f, 1.0f, -1.0f);
 
-	m_vertices = { &l_VertexData_1, &l_VertexData_2, &l_VertexData_3, &l_VertexData_4, &l_VertexData_5, &l_VertexData_6, &l_VertexData_7, &l_VertexData_8 };
+	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
 	m_intices = { 0, 1, 3, 1, 2, 3,
 		4, 5, 0, 5, 1, 0,
