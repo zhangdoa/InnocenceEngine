@@ -17,7 +17,7 @@ public:
 
 private:
 	GLMeshData m_GLMeshData;
-	std::vector<VertexData*> m_vertices;
+	std::vector<VertexData> m_vertices;
 	std::vector<unsigned int> m_intices;
 };
 

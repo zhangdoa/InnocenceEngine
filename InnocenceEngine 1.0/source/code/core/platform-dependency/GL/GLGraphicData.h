@@ -18,15 +18,12 @@ public:
 	void update(std::vector<unsigned int>& indices);
 	void shutdown();
 
-	void addGLMeshData(std::vector<VertexData*>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
+	void addGLMeshData(std::vector<VertexData>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
 
 private:
 	GLuint m_VAO;
 	GLuint m_VBO;
 	GLuint m_IBO;
-
-	std::vector<VertexData*> m_vertices;
-	std::vector<unsigned int> m_intices;
 
 	void generateData();
 	void attributeArray() const;
