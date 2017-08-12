@@ -7,15 +7,8 @@
 #define NK_IMPLEMENTATION
 #define NK_GLFW_GL3_IMPLEMENTATION
 
-#include "../third-party/nuklear.h"
-#include "../third-party/nuklear_glfw_gl3.h"
+
 #include "GUIManager.h"
-
-
-glm::vec3 GUIManager::getColor() const
-{
-	return glm::vec3(background->r / 256.0, background->g / 256.0, background->b / 256.0);
-}
 
 GUIManager::GUIManager()
 {
@@ -36,7 +29,7 @@ void GUIManager::init()
 	/*struct nk_font *tiny = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyTiny.ttf", 10, 0);*/
 	/*struct nk_font *cousine = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Cousine-Regular.ttf", 13, 0);*/
 	nk_glfw3_font_stash_end();
-	background = &nk_rgb(28, 48, 62);
+	background = nk_rgb(28, 48, 62);
 }
 
 void GUIManager::update()
@@ -63,35 +56,33 @@ void GUIManager::update()
 		nk_layout_row_static(ctx, 30, 100, 1);
 		if (nk_button_label(ctx, "Set Color"))
 		{
-			LogManager::getInstance().printLog(glm::vec3(background->r, background->g, background->b));
-			background->r = r;
-			background->g = g;
-			background->b = b;
+			background.r = r;
+			background.g = g;
+			background.b = b;
 		}
 
 
-		//nk_layout_row_dynamic(ctx, 20, 1);
-		//nk_label(ctx, "background:", NK_TEXT_LEFT);
+		nk_layout_row_dynamic(ctx, 20, 1);
+		nk_label(ctx, "background:", NK_TEXT_LEFT);
 
-		//nk_layout_row_dynamic(ctx, 25, 1);
-		//if (nk_combo_begin_color(ctx, *background, nk_vec2(nk_widget_width(ctx), 400))) {
-		//	nk_layout_row_dynamic(ctx, 120, 1);
-		//	nk_color canvasBackground = *background;
-		//	canvasBackground = nk_color_picker(ctx, canvasBackground, NK_RGBA);
-		//	nk_layout_row_dynamic(ctx, 25, 1);
-		//	background->r = (nk_byte)nk_propertyi(ctx, "#R:", 0, canvasBackground.r, 255, 1, 1);
-		//	background->g = (nk_byte)nk_propertyi(ctx, "#G:", 0, canvasBackground.g, 255, 1, 1);
-		//	background->b = (nk_byte)nk_propertyi(ctx, "#B:", 0, canvasBackground.b, 255, 1, 1);
-		//	background->a = (nk_byte)nk_propertyi(ctx, "#A:", 0, canvasBackground.a, 255, 1, 1);
-		//	nk_combo_end(ctx);
-		//}
+		nk_layout_row_dynamic(ctx, 25, 1);
+		if (nk_combo_begin_color(ctx, background, nk_vec2(nk_widget_width(ctx), 400))) {
+			nk_layout_row_dynamic(ctx, 120, 1);
+			nk_color canvasBackground = background;
+			canvasBackground = nk_color_picker(ctx, canvasBackground, NK_RGBA);
+			nk_layout_row_dynamic(ctx, 25, 1);
+			background.r = (nk_byte)nk_propertyi(ctx, "#R:", 0, canvasBackground.r, 255, 1, 1);
+			background.g = (nk_byte)nk_propertyi(ctx, "#G:", 0, canvasBackground.g, 255, 1, 1);
+			background.b = (nk_byte)nk_propertyi(ctx, "#B:", 0, canvasBackground.b, 255, 1, 1);
+			background.a = (nk_byte)nk_propertyi(ctx, "#A:", 0, canvasBackground.a, 255, 1, 1);
+			nk_combo_end(ctx);
+		}
 	}
 	nk_end(ctx);
 
 	float bg[4];
-	nk_color_fv(bg, *background);
+	nk_color_fv(bg, background);
 	nk_glfw3_render(NK_ANTI_ALIASING_ON, 512 * 1024, 128 * 1024);
-
 }
 
 void GUIManager::shutdown()

@@ -23,6 +23,7 @@ void CoreManager::init()
 	m_childEventManager.emplace_back(&WindowManager::getInstance());
 	m_childEventManager.emplace_back(&InputManager::getInstance());
 	m_childEventManager.emplace_back(&RenderingManager::getInstance());
+	m_childEventManager.emplace_back(&GUIManager::getInstance());
 	//m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
 
 	std::string l_gameName;
@@ -65,10 +66,8 @@ void CoreManager::update()
 			{
 				// game data update
 				m_gameData->exec(execMessage::UPDATE);
-				
 				// update global rendering status
 				RenderingManager::getInstance().exec(execMessage::UPDATE);
-
 				try {
 					// update camera info for rendering pipeline
 					InnocenceGarden* m_gameDataSpecific = dynamic_cast<InnocenceGarden*>(m_gameData);
@@ -84,11 +83,8 @@ void CoreManager::update()
 					LogManager::getInstance().printLog("Cannot get camera information!");
 					LogManager::getInstance().printLog(e.what());
 				}
-
-
-
 				//SceneGraphManager::getInstance().exec(execMessage::UPDATE);
-
+				//GUIManager::getInstance().exec(execMessage::UPDATE);
 				// window manager updates last
 				WindowManager::getInstance().exec(execMessage::UPDATE);
 			}
