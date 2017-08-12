@@ -1,5 +1,6 @@
 #pragma once
 #include "../../manager/IEventManager.h"
+#include "../../manager/AssetManager.h"
 #include "../../manager/GUIManager.h"
 #include "../../manager/LogManager.h"
 #include "../../interface/IVisibleGameEntity.h"
@@ -76,8 +77,6 @@ protected:
 	}
 
 private:
-	inline std::string loadShader(const std::string& shaderFileName) const;
-
 	inline void attachShader(shaderType shaderType, const std::string& fileContent, int m_program) const;
 	inline void compileShader() const;
 	inline void detachShader(int shader) const;

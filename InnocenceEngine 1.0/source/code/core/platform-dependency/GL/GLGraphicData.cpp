@@ -67,16 +67,16 @@ void GLMeshData::addGLMeshData(std::vector<VertexData>& vertices, std::vector<un
 
 			glm::vec3 normal = glm::normalize(glm::cross(v1, v2));
 
-			vertices[i0].m_normal = vertices[i0].m_normal + (normal);
-			vertices[i1].m_normal = vertices[i0].m_normal + (normal);
-			vertices[i2].m_normal = vertices[i0].m_normal + (normal);
+			vertices[i0].m_normal = vertices[i0].m_normal + normal;
+			vertices[i1].m_normal = vertices[i0].m_normal + normal;
+			vertices[i2].m_normal = vertices[i0].m_normal + normal;
 
 		}
 
 		// try some syntax candy
-		std::for_each(vertices.begin(), vertices.end(), [](VertexData* val)
+		std::for_each(vertices.begin(), vertices.end(), [](VertexData val)
 		{
-			val->m_normal = glm::normalize(val->m_normal);
+			val.m_normal = glm::normalize(val.m_normal);
 		});
 
 		//for (size_t i = 0; i < vertices.size(); i++)

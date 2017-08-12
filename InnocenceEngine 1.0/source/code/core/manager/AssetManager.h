@@ -18,8 +18,8 @@ public:
 		return instance;
 	}
 
-	static void loadMesh(const std::string& filePath, const std::vector<StaticMeshData>& meshData);
-	static void loadTexture(const std::string& filePath, const std::vector<TextureData>& textureData);
+	std::string loadShader(const std::string& shaderFileName) const;
+	void loadModel(const std::string& filePath) const;
 private:
 	AssetManager();
 
@@ -27,7 +27,8 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	void processAssimpMesh(aiMesh *mesh, const aiScene* scene, const StaticMeshData* meshData);
+	void processAssimpNode(aiNode *node, const aiScene *scene) const;
+	void processAssimpMesh(aiMesh *mesh, const aiScene* scene) const;
 
 };
 

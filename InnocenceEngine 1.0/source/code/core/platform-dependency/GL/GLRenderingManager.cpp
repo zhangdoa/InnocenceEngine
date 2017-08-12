@@ -13,7 +13,7 @@ GLShader::~GLShader()
 
 void GLShader::addShader(shaderType shaderType, const std::string& shaderFileName) const
 {
-	attachShader(shaderType, loadShader(shaderFileName), m_program);
+	attachShader(shaderType, AssetManager::getInstance().loadShader(shaderFileName), m_program);
 }
 
 inline void GLShader::setAttributeLocation(int arrtributeLocation, const std::string & arrtributeName) const
@@ -105,20 +105,6 @@ inline void GLShader::detachShader(int shader) const
 void GLShader::initProgram()
 {
 	m_program = glCreateProgram();
-}
-
-std::string GLShader::loadShader(const std::string & shaderFileName) const
-{
-	std::ifstream file;
-	file.open(("../res/shaders/" + shaderFileName).c_str());
-	std::stringstream shaderStream;
-	std::string output;
-
-	shaderStream << file.rdbuf();
-	output = shaderStream.str();
-	file.close();
-
-	return output;
 }
 
 BasicGLShader::BasicGLShader()
