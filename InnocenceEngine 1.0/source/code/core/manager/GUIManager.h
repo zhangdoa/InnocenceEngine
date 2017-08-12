@@ -1,6 +1,8 @@
 #pragma once
 #include "IEventManager.h"
 #include "WindowManager.h"
+#include "../third-party/nuklear.h"
+#include "../third-party/nuklear_glfw_gl3.h"
 
 class GUIManager : public IEventManager
 {
@@ -14,10 +16,8 @@ public:
 	}
 
 	struct nk_context* ctx;
-	struct nk_color* background;
+	struct nk_color background;
 	struct nk_font_atlas* atlas;
-
-	glm::vec3 getColor() const;
 
 private:
 	GUIManager();
