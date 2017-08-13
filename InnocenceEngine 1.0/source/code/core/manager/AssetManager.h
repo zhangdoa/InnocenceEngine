@@ -1,11 +1,10 @@
 #pragma once
 #include "IEventManager.h"
+#include "../manager/LogManager.h"
 
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
-
-#include "../data/GraphicData.h"
 
 class AssetManager : public IEventManager
 {
@@ -27,8 +26,8 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	void processAssimpNode(aiNode *node, const aiScene *scene) const;
-	void processAssimpMesh(aiMesh *mesh, const aiScene* scene) const;
+	void processAssimpNode(aiNode *node, const aiScene *scene, const std::string& filePath) const;
+	void processAssimpMesh(aiMesh *mesh, const aiScene* scene, const std::string& filePath) const;
 
 };
 

@@ -25,6 +25,84 @@ void StaticMeshData::shutdown()
 	m_GLMeshData.shutdown();
 }
 
+void StaticMeshData::loadData(const std::string & meshFileName)
+{
+	bool isProcessingVerticesData;
+	std::ifstream meshFile;
+	meshFile.open(("../res/models/" + meshFileName).c_str());
+
+	std::string line;
+
+	if (meshFile.is_open())
+	{
+		while (meshFile.good() && meshFile.is_open())
+		{
+			getline(meshFile, line);
+			if (line.find("#INNO_MESH_EOF#") == std::string::npos)
+			{
+				if (line.find("#INNO_MESH_VERTICES#") != std::string::npos)
+				{
+					isProcessingVerticesData = true;
+					getline(meshFile, line);
+				}
+				if (line.find("#INNO_MESH_INDICES#") != std::string::npos)
+				{
+					isProcessingVerticesData = false;
+					getline(meshFile, line);
+				}
+				// process vertices data
+				if (isProcessingVerticesData)
+				{
+					// check delimer per-parse and add them to a string array
+					std::vector<std::string> meshDataLineArray;
+					std::string delimer = " ";
+					std::size_t start = 0;
+					std::size_t end = 0;
+
+					while ((end = line.find(delimer, start)) != std::string::npos)
+					{
+						meshDataLineArray.push_back(line.substr(start, end - start));
+						start = end + 1;
+					}
+
+					//add vertex data from previous processed string array
+					VertexData vertexData;
+
+					for (auto i = 0; i < meshDataLineArray.size(); i += meshDataLineArray.size())
+					{
+						vertexData.m_pos.x = std::stof(meshDataLineArray[i]);
+						vertexData.m_pos.y = std::stof(meshDataLineArray[i + 1]);
+						vertexData.m_pos.z = std::stof(meshDataLineArray[i + 2]);
+						vertexData.m_texCoord.x = std::stof(meshDataLineArray[i + 3]);
+						vertexData.m_texCoord.y = std::stof(meshDataLineArray[i + 4]);
+						vertexData.m_normal.x = std::stof(meshDataLineArray[i + 5]);
+						vertexData.m_normal.y = std::stof(meshDataLineArray[i + 6]);
+						vertexData.m_normal.z = std::stof(meshDataLineArray[i + 7]);
+					}
+
+					m_vertices.emplace_back(vertexData);
+				}
+				else
+				{
+					unsigned int index;
+					index = std::stoi(line);
+					m_intices.emplace_back(index);
+				}
+			}
+			else
+			{
+				meshFile.close();
+			}
+		}
+		LogManager::getInstance().printLog("Mesh loaded.");
+	}
+	else
+	{
+		LogManager::getInstance().printLog("Error: StaticMeshData: Cannot open mesh file!");
+	}
+	m_GLMeshData.addGLMeshData(m_vertices, m_intices, false);
+}
+
 void StaticMeshData::addTestCube()
 {
 	VertexData l_VertexData_1;
