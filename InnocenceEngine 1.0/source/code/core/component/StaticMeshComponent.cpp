@@ -16,8 +16,9 @@ void StaticMeshComponent::render()
 	m_textureData.update();
 }
 
-void StaticMeshComponent::loadMesh(const std::string & meshFileName) const
+void StaticMeshComponent::loadMesh(const std::string & meshFileName)
 {
+	m_meshData.loadData(meshFileName);
 }
 
 void StaticMeshComponent::loadTexture(const std::string & textureFileName) const
@@ -27,11 +28,16 @@ void StaticMeshComponent::loadTexture(const std::string & textureFileName) const
 
 void StaticMeshComponent::init()
 {
+	AssetManager::getInstance().loadModel("nanosuit/nanosuit.obj");
 	setVisibleGameEntityType(visibleGameEntityType::STATIC_MESH);
 	m_meshData.init();
-	m_meshData.addTestCube();
+	//TODO: generic mesh loading implementation
+	loadMesh("test.inno_mesh");
 	m_textureData.init();
-	loadTexture("container.jpg");
+	loadTexture("nanosuit/body_dif.png");
+	
+
+	
 }
 
 void StaticMeshComponent::update()

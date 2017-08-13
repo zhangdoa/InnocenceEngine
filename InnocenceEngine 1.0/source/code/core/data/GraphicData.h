@@ -11,6 +11,7 @@ public:
 	void init();
 	void update();
 	void shutdown();
+	void loadData(const std::string & meshFileName);
 
 	void addTestCube();
 	void addTestSkybox();

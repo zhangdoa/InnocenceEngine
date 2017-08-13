@@ -1,7 +1,7 @@
 #pragma once
 #include "../data/GraphicData.h"
 #include "../interface/IVisibleGameEntity.h"
-
+#include "../manager/AssetManager.h"
 class StaticMeshComponent : public IVisibleGameEntity
 {
 public:
@@ -10,7 +10,7 @@ public:
 
 	void render() override;
 
-	void loadMesh(const std::string& meshFileName) const;
+	void loadMesh(const std::string& meshFileName);
 	void loadTexture(const std::string& textureFileName) const;
 
 private:

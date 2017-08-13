@@ -40,7 +40,7 @@ void AssetManager::loadModel(const std::string& filePath) const
 {
 	// read file via ASSIMP
 	Assimp::Importer l_assImporter;
-	const aiScene* l_assScene = l_assImporter.ReadFile(filePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	const aiScene* l_assScene = l_assImporter.ReadFile("../res/models/" + filePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 	// check for errors
 	if (!l_assScene || l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 	{
@@ -51,10 +51,10 @@ void AssetManager::loadModel(const std::string& filePath) const
 	//directory = filePath.substr(0, filePath.find_last_of('/'));
 
 	// process ASSIMP's root node recursively
-	processAssimpNode(l_assScene->mRootNode, l_assScene);
+	processAssimpNode(l_assScene->mRootNode, l_assScene, filePath);
 }
 
-void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene) const
+void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, const std::string& filePath) const
 {
 	// process each mesh located at the current node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
@@ -62,75 +62,84 @@ void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene) const
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		processAssimpMesh(mesh, scene);
+		//TODO: there should be lots of seperate mesh file 
+		processAssimpMesh(mesh, scene, (filePath + std::to_string(i)));
 	}
 	// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
 	for (unsigned int i = 0; i < node->mNumChildren; i++)
 	{
-		processAssimpNode(node->mChildren[i], scene);
+		processAssimpNode(node->mChildren[i], scene, filePath);
 	}
 }
 
-void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene) const
+void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, const std::string& filePath) const
 {
-	// Walk through each of the mesh's vertices
-	std::vector<VertexData> vertices;
+	std::ofstream file("../res/models/" + filePath + ".inno_mesh");
 
-	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+	if (file.is_open())
 	{
-		VertexData vertex;
-
-		// positions
-		vertex.m_pos.x = mesh->mVertices[i].x;
-		vertex.m_pos.y = mesh->mVertices[i].y;
-		vertex.m_pos.z = mesh->mVertices[i].z;
-
-		// normals
-		vertex.m_normal.x = mesh->mNormals[i].x;
-		vertex.m_normal.y = mesh->mNormals[i].y;
-		vertex.m_normal.z = mesh->mNormals[i].z;
-
-		// texture coordinates
-		if (mesh->mTextureCoords[0])
+		// Walk through each of the mesh's vertices
+		file << "#INNO_MESH_VERTICES#" << std::endl;
+		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 		{
-			// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
-			// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-			vertex.m_texCoord.x = mesh->mTextureCoords[0][i].x;
-			vertex.m_texCoord.y = mesh->mTextureCoords[0][i].y;
+			// positions
+			file << mesh->mVertices[i].x << " ";
+			file << mesh->mVertices[i].y << " ";
+			file << mesh->mVertices[i].z << " ";
+
+			// texture coordinates
+			if (mesh->mTextureCoords[0])
+			{
+				// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
+				// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
+				file << mesh->mTextureCoords[0][i].x << " ";
+				file << mesh->mTextureCoords[0][i].y << " ";
+			}
+			else
+			{
+				file << 0.0f << " ";
+				file << 0.0f << " ";
+			}
+
+			// normals
+			file << mesh->mNormals[i].x << " ";
+			file << mesh->mNormals[i].y << " ";
+			file << mesh->mNormals[i].z << " " << std::endl;
+
+			//// tangent
+			//vector.x = mesh->mTangents[i].x;
+			//vector.y = mesh->mTangents[i].y;
+			//vector.z = mesh->mTangents[i].z;
+			//vertex.Tangent = vector;
+
+			//// bitangent
+			//vector.x = mesh->mBitangents[i].x;
+			//vector.y = mesh->mBitangents[i].y;
+			//vector.z = mesh->mBitangents[i].z;
+			//vertex.Bitangent = vector;
 		}
-		else
+
+		// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+		file << "#INNO_MESH_INDICES#" << std::endl;
+		for (unsigned int i = 0; i < mesh->mNumFaces; i++)
 		{
-		vertex.m_texCoord.x = 0.0f;
-		vertex.m_texCoord.y = 0.0f;
+			aiFace face = mesh->mFaces[i];
+			// retrieve all indices of the face and store them in the indices vector
+			for (unsigned int j = 0; j < face.mNumIndices; j++)
+			{
+				file << face.mIndices[j] << std::endl;
+			}
 		}
+		file << "#INNO_MESH_EOF#";
 
-		//// tangent
-		//vector.x = mesh->mTangents[i].x;
-		//vector.y = mesh->mTangents[i].y;
-		//vector.z = mesh->mTangents[i].z;
-		//vertex.Tangent = vector;
+		file.flush();
 
-		//// bitangent
-		//vector.x = mesh->mBitangents[i].x;
-		//vector.y = mesh->mBitangents[i].y;
-		//vector.z = mesh->mBitangents[i].z;
-		//vertex.Bitangent = vector;
+		file.close();
 
-		vertices.emplace_back(vertex);
+		LogManager::getInstance().printLog("Model imported.");
 	}
-
-	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-	std::vector<unsigned int> indices;
-
-	for (unsigned int i = 0; i < mesh->mNumFaces; i++)
+	else 
 	{
-		aiFace face = mesh->mFaces[i];
-		// retrieve all indices of the face and store them in the indices vector
-		for (unsigned int j = 0; j < face.mNumIndices; j++)
-		{
-			indices.emplace_back(face.mIndices[j]);
-		}
+		LogManager::getInstance().printLog("Error: Cannot inport model!");
 	}
-
-
 }
