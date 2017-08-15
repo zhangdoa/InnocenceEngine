@@ -36,51 +36,49 @@ std::string AssetManager::loadShader(const std::string & shaderFileName) const
 	return output;
 }
 
-void AssetManager::loadModel(const std::string& filePath) const
+void AssetManager::loadModel(const std::string& fileName) const
 {
 	// read file via ASSIMP
 	Assimp::Importer l_assImporter;
-	const aiScene* l_assScene = l_assImporter.ReadFile("../res/models/" + filePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	const aiScene* l_assScene = l_assImporter.ReadFile("../res/models/" + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 	// check for errors
 	if (!l_assScene || l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 	{
 		LogManager::getInstance().printLog("ERROR::ASSIMP:: " + std::string{ l_assImporter.GetErrorString() });
 		return;
 	}
-	// retrieve the directory path of the filepath
-	//directory = filePath.substr(0, filePath.find_last_of('/'));
-
 	// process ASSIMP's root node recursively
-	processAssimpNode(l_assScene->mRootNode, l_assScene, filePath);
+	processAssimpNode(l_assScene->mRootNode, l_assScene, fileName.substr(0, fileName.find(".")) + "_r");
+	// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
+	for (auto i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
+	{
+		processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, fileName.substr(0, fileName.find(".")) + "_c" + std::to_string(i));
+	}
+	LogManager::getInstance().printLog("Model imported.");
 }
 
-void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, const std::string& filePath) const
+void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, const std::string& fileName) const
 {
 	// process each mesh located at the current node
-	for (unsigned int i = 0; i < node->mNumMeshes; i++)
+	for (auto i = 0; i < node->mNumMeshes; i++)
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 		//TODO: there should be lots of seperate mesh file 
-		processAssimpMesh(mesh, scene, (filePath + std::to_string(i)));
-	}
-	// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
-	for (unsigned int i = 0; i < node->mNumChildren; i++)
-	{
-		processAssimpNode(node->mChildren[i], scene, filePath);
+		processAssimpMesh(mesh, scene, fileName + "_m" + std::to_string(i));
 	}
 }
 
-void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, const std::string& filePath) const
+void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, const std::string& fileName) const
 {
-	std::ofstream file("../res/models/" + filePath + ".inno_mesh");
+	std::ofstream file("../res/models/" + fileName + ".innoMesh");
 
 	if (file.is_open())
 	{
 		// Walk through each of the mesh's vertices
 		file << "#INNO_MESH_VERTICES#" << std::endl;
-		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+		for (auto i = 0; i < mesh->mNumVertices; i++)
 		{
 			// positions
 			file << mesh->mVertices[i].x << " ";
@@ -102,10 +100,19 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, const 
 			}
 
 			// normals
-			file << mesh->mNormals[i].x << " ";
-			file << mesh->mNormals[i].y << " ";
-			file << mesh->mNormals[i].z << " " << std::endl;
-
+			if (mesh->mNormals)
+			{
+				file << mesh->mNormals[i].x << " ";
+				file << mesh->mNormals[i].y << " ";
+				file << mesh->mNormals[i].z << " " << std::endl;
+			}
+			else 
+			{
+				file << 0.0f << " ";
+				file << 0.0f << " ";
+				file << 0.0f << " " << std::endl;
+			}
+			
 			//// tangent
 			//vector.x = mesh->mTangents[i].x;
 			//vector.y = mesh->mTangents[i].y;
@@ -121,11 +128,11 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, const 
 
 		// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
 		file << "#INNO_MESH_INDICES#" << std::endl;
-		for (unsigned int i = 0; i < mesh->mNumFaces; i++)
+		for (auto i = 0; i < mesh->mNumFaces; i++)
 		{
 			aiFace face = mesh->mFaces[i];
 			// retrieve all indices of the face and store them in the indices vector
-			for (unsigned int j = 0; j < face.mNumIndices; j++)
+			for (auto j = 0; j < face.mNumIndices; j++)
 			{
 				file << face.mIndices[j] << std::endl;
 			}
@@ -136,7 +143,7 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, const 
 
 		file.close();
 
-		LogManager::getInstance().printLog("Model imported.");
+		LogManager::getInstance().printLog("innoMesh created.");
 	}
 	else 
 	{

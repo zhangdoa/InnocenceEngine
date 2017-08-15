@@ -42,6 +42,7 @@ private:
 	void update() override;
 	void shutdown() override;
 
+	float moveSpeed = 0.05f;
 	int l_mouseRightResult = 0;
 	glm::vec2 l_mousePosition;
 	int l_keyWResult = 0;
