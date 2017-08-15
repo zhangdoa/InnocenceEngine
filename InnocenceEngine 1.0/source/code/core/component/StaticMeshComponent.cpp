@@ -28,16 +28,9 @@ void StaticMeshComponent::loadTexture(const std::string & textureFileName) const
 
 void StaticMeshComponent::init()
 {
-	AssetManager::getInstance().loadModel("nanosuit/nanosuit.obj");
 	setVisibleGameEntityType(visibleGameEntityType::STATIC_MESH);
 	m_meshData.init();
-	//TODO: generic mesh loading implementation
-	loadMesh("test.inno_mesh");
 	m_textureData.init();
-	loadTexture("nanosuit/body_dif.png");
-	
-
-	
 }
 
 void StaticMeshComponent::update()

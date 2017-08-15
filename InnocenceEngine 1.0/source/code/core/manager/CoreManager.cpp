@@ -75,7 +75,7 @@ void CoreManager::update()
 					RenderingManager::getInstance().setCamera(m_gameDataSpecific->getCameraComponent());
 
 					// rendering pipeline starts to work
-					RenderingManager::getInstance().render(m_gameDataSpecific->getTestCube());
+					RenderingManager::getInstance().render(m_gameDataSpecific->getTestStaticMeshComponent());
 					RenderingManager::getInstance().render(m_gameDataSpecific->getSkybox());
 
 					RenderingManager::getInstance().finishRender();

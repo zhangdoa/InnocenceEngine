@@ -18,7 +18,7 @@ public:
 	}
 
 	std::string loadShader(const std::string& shaderFileName) const;
-	void loadModel(const std::string& filePath) const;
+	void loadModel(const std::string& fileName) const;
 private:
 	AssetManager();
 
@@ -26,8 +26,8 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	void processAssimpNode(aiNode *node, const aiScene *scene, const std::string& filePath) const;
-	void processAssimpMesh(aiMesh *mesh, const aiScene* scene, const std::string& filePath) const;
+	void processAssimpNode(aiNode *node, const aiScene *scene, const std::string& fileName) const;
+	void processAssimpMesh(aiMesh *mesh, const aiScene* scene, const std::string& fileName) const;
 
 };
 
