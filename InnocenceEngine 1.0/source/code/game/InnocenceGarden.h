@@ -12,7 +12,7 @@ public:
 
 	CameraComponent* getCameraComponent();
 	IVisibleGameEntity* getSkybox();
-	IVisibleGameEntity* getTestCube();
+	IVisibleGameEntity* getTestStaticMeshComponent();
 
 private:
 	void init() override;
@@ -23,10 +23,10 @@ private:
 
 	BaseActor testCameraActor;
 	BaseActor testSkyboxActor;
-	BaseActor testTriangleActor;
+	BaseActor testStaticMeshActor;
 
 	CameraComponent testCameraComponent;
 	SkyboxComponent testSkyboxComponent;
-	StaticMeshComponent testTriangleComponent;
+	StaticMeshComponent testStaticMeshComponent;
 };
 
