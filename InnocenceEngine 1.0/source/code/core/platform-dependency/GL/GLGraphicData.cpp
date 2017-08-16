@@ -73,30 +73,25 @@ void GLMeshData::addGLMeshData(std::vector<VertexData>& vertices, std::vector<un
 
 		}
 
-		// try some syntax candy
 		std::for_each(vertices.begin(), vertices.end(), [](VertexData val)
 		{
 			val.m_normal = glm::normalize(val.m_normal);
 		});
-
-		//for (size_t i = 0; i < vertices.size(); i++)
-		//{
-		//	vertices[i]->setNormal(glm::normalize(vertices[i]->m_normal));
-		//}
 	}
-	std::vector<float> verticesBuffer(vertices.size() * 8);
 
-	for (size_t i = 0; i < vertices.size(); i++)
+	std::vector<float> verticesBuffer;
+
+	std::for_each(vertices.begin(), vertices.end(), [&](VertexData val)
 	{
-		verticesBuffer[8 * i + 0] = vertices[i].m_pos.x;
-		verticesBuffer[8 * i + 1] = vertices[i].m_pos.y;
-		verticesBuffer[8 * i + 2] = vertices[i].m_pos.z;
-		verticesBuffer[8 * i + 3] = vertices[i].m_texCoord.x;
-		verticesBuffer[8 * i + 4] = vertices[i].m_texCoord.y;
-		verticesBuffer[8 * i + 5] = vertices[i].m_normal.x;
-		verticesBuffer[8 * i + 6] = vertices[i].m_normal.y;
-		verticesBuffer[8 * i + 7] = vertices[i].m_normal.z;
-	}
+		verticesBuffer.emplace_back(val.m_pos.x);
+		verticesBuffer.emplace_back(val.m_pos.y);
+		verticesBuffer.emplace_back(val.m_pos.z);
+		verticesBuffer.emplace_back(val.m_texCoord.x);
+		verticesBuffer.emplace_back(val.m_texCoord.y);
+		verticesBuffer.emplace_back(val.m_normal.x);
+		verticesBuffer.emplace_back(val.m_normal.y);
+		verticesBuffer.emplace_back(val.m_normal.z);
+	});
 
 	glBindVertexArray(m_VAO);
 

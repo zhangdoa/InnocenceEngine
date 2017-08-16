@@ -38,7 +38,7 @@ void InnocenceGarden::init()
 	testStaticMeshActor.addChildComponent(&testStaticMeshComponent);
 	testRootActor.exec(execMessage::INIT);
 	testStaticMeshComponent.loadMesh("nanosuit/nanosuit_c11_m0.innoMesh");
-	testStaticMeshComponent.loadTexture("test.png");
+	testStaticMeshComponent.loadTexture("nanosuit/body_dif.png");
 
 	testStaticMeshActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -5.0f));
 }
