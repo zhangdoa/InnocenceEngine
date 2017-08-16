@@ -1,55 +1,6 @@
 #include "../../main/stdafx.h"
 #include "CameraComponent.h"
 
-CameraData::CameraData()
-{
-}
-
-CameraData::~CameraData()
-{
-}
-
-void CameraData::addCameraData(float fov, float aspectRatio, float zNear, float zFar)
-{
-	m_projectionMatrix = glm::perspective(fov, aspectRatio, zNear, zFar);
-}
-
-void CameraData::getViewProjectionMatrix(const BaseComponent& parent, glm::mat4 & outViewProjectionMatrix) const
-{
-	glm::mat4 l_RotationMatrix;
-
-	glm::mat4 l_TranslationMatrix;
-
-	getRotationMatrix(parent, l_RotationMatrix);
-
-	getTranslatonMatrix(parent, l_TranslationMatrix);
-
-	outViewProjectionMatrix = m_projectionMatrix * l_RotationMatrix * l_TranslationMatrix;
-}
-
-void CameraData::getTranslatonMatrix(const BaseComponent& parent, glm::mat4 & outTranslationMatrix) const
-{
-	// get camera's translation matrix, reverse direction to "look into"  the screen
-	outTranslationMatrix = glm::translate(outTranslationMatrix, parent.getParentActor().caclTransformedPos() * -1.0f);
-}
-
-void CameraData::getRotationMatrix(const BaseComponent& parent, glm::mat4 & outRotationMatrix) const
-{
-	// quaternion rotation
-	glm::quat conjugateRotQuat;
-	conjugateRotQuat.w = parent.getParentActor().caclTransformedRot().w;
-	conjugateRotQuat.x = -parent.getParentActor().caclTransformedRot().x;
-	conjugateRotQuat.y = -parent.getParentActor().caclTransformedRot().y;
-	conjugateRotQuat.z = -parent.getParentActor().caclTransformedRot().z;
-
-	outRotationMatrix = glm::toMat4(conjugateRotQuat);
-}
-
-void CameraData::getProjectionMatrix(glm::mat4 & outProjectionMatrix) const
-{
-	outProjectionMatrix = m_projectionMatrix;
-}
-
 CameraComponent::CameraComponent()
 {
 }
@@ -60,22 +11,37 @@ CameraComponent::~CameraComponent()
 
 void CameraComponent::getViewProjectionMatrix(glm::mat4 & outViewProjectionMatrix) const
 {
-	m_cameraData.getViewProjectionMatrix(*this, outViewProjectionMatrix);
+	glm::mat4 l_RotationMatrix;
+
+	glm::mat4 l_TranslationMatrix;
+
+	getRotationMatrix(l_RotationMatrix);
+
+	getTranslatonMatrix(l_TranslationMatrix);
+
+	outViewProjectionMatrix = m_projectionMatrix * l_RotationMatrix * l_TranslationMatrix;
 }
 
 void CameraComponent::getTranslatonMatrix(glm::mat4 & outTranslationMatrix) const
 {
-	m_cameraData.getTranslatonMatrix(*this, outTranslationMatrix);
+	outTranslationMatrix = glm::translate(outTranslationMatrix, getParentActor().caclTransformedPos() * -1.0f);
 }
 
 void CameraComponent::getRotationMatrix(glm::mat4 & outRotationMatrix) const
 {
-	m_cameraData.getRotationMatrix(*this, outRotationMatrix);
+	// quaternion rotation
+	glm::quat conjugateRotQuat;
+	conjugateRotQuat.w = getParentActor().caclTransformedRot().w;
+	conjugateRotQuat.x = -getParentActor().caclTransformedRot().x;
+	conjugateRotQuat.y = -getParentActor().caclTransformedRot().y;
+	conjugateRotQuat.z = -getParentActor().caclTransformedRot().z;
+
+	outRotationMatrix = glm::toMat4(conjugateRotQuat);
 }
 
 void CameraComponent::getProjectionMatrix(glm::mat4 & outProjectionMatrix) const
 {
-	m_cameraData.getProjectionMatrix(outProjectionMatrix);
+	outProjectionMatrix = m_projectionMatrix;
 }
 
 void CameraComponent::move(moveDirection moveDirection)
@@ -93,9 +59,7 @@ void CameraComponent::move(moveDirection moveDirection)
 
 void CameraComponent::init()
 {
-	m_cameraData.addCameraData((70.0f / 180.0f) * glm::pi<float>(), (4.0f / 3.0f), 0.1f, 1000000.0f);
-
-
+	m_projectionMatrix = glm::perspective((70.0f / 180.0f) * glm::pi<float>(), (4.0f / 3.0f), 0.1f, 1000000.0f);
 }
 
 void CameraComponent::update()
