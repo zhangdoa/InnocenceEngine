@@ -129,10 +129,16 @@ void BasicGLShader::init()
 void BasicGLShader::update(IVisibleGameEntity* visibleGameEntity)
 {
 	bindShader();
-	glm::mat4 mvp;
-	GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix(mvp);
-	mvp = mvp * visibleGameEntity->getParentActor().caclTransformation();
-	updateUniform("uni_MVP", mvp);
+
+	glm::mat4 m, t, v, p;
+	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
+	GLRenderingManager::getInstance().getCameraViewMatrix(v);
+	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
+	m = visibleGameEntity->getParentActor().caclTransformation();
+
+	updateUniform("uni_MVP", p * v * t * m);
+
+	updateUniform("uni_MVP", p * v * m);
 }
 
 
@@ -158,11 +164,14 @@ void ForwardAmbientShader::init()
 void ForwardAmbientShader::update(IVisibleGameEntity* visibleGameEntity)
 {
 	bindShader();
-	glm::mat4 mvp;
-	GLRenderingManager::getInstance().getCamera()->getViewProjectionMatrix(mvp);
-	mvp = mvp * visibleGameEntity->getParentActor().caclTransformation();
 
-	updateUniform("uni_MVP", mvp);
+	glm::mat4 m, t, v, p;
+	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
+	GLRenderingManager::getInstance().getCameraViewMatrix(v);
+	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
+	m = visibleGameEntity->getParentActor().caclTransformation();
+
+	updateUniform("uni_MVP", p * v * t * m);
 	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
 	updateUniform("uni_color", glm::vec3(1.0f, 1.0f, 1.0f));
 }
@@ -195,16 +204,11 @@ void SkyboxShader::update(IVisibleGameEntity* visibleGameEntity)
 	bindShader();
 
 	// TODO: fix "looking outside" problem// almost there
-	glm::mat4 projection;
-	GLRenderingManager::getInstance().getCamera()->getProjectionMatrix(projection);
+	glm::mat4 v, p;
+	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
+	GLRenderingManager::getInstance().getCameraViewMatrix(v);
 
-	glm::mat4 view;
-	GLRenderingManager::getInstance().getCamera()->getRotationMatrix(view);
-
-	glm::mat4 VP;
-	VP = projection * view *  -1.0f;
-
-	updateUniform("uni_VP", VP);
+	updateUniform("uni_VP", p * v * -1.0f);
 }
 
 
@@ -244,15 +248,35 @@ void GLRenderingManager::finishRender() const
 	glDepthFunc(GL_LESS);
 }
 
-CameraComponent * GLRenderingManager::getCamera() const
+void GLRenderingManager::getCameraTranslationMatrix(glm::mat4 & t) const
 {
-	return m_cameraComponent;
+	t = cameraTranslationMatrix;
 }
 
-void GLRenderingManager::setCamera(CameraComponent* cameraComponent)
+void GLRenderingManager::setCameraTranslationMatrix(const glm::mat4 & t)
 {
+	cameraTranslationMatrix = t;
+}
 
-	m_cameraComponent = cameraComponent;
+
+void GLRenderingManager::getCameraViewMatrix(glm::mat4 & v) const
+{
+	v = cameraViewMatrix;
+}
+
+void GLRenderingManager::setCameraViewMatrix(const glm::mat4 & v)
+{
+	cameraViewMatrix = v;
+}
+
+void GLRenderingManager::getCameraProjectionMatrix(glm::mat4 & p) const
+{
+	p = cameraProjectionMatrix;
+}
+
+void GLRenderingManager::setCameraProjectionMatrix(const glm::mat4 & p)
+{
+	cameraProjectionMatrix = p;
 }
 
 void GLRenderingManager::init()

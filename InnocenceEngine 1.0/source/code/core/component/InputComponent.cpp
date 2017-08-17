@@ -17,11 +17,11 @@ void InputComponent::init()
 
 void InputComponent::update()
 {
-	InputManager::getInstance().getMouse(GLFW_MOUSE_BUTTON_RIGHT, l_mouseRightResult);
+	CoreManager::getInstance().getInputManager().getMouse(GLFW_MOUSE_BUTTON_RIGHT, l_mouseRightResult);
 
 	if (l_mouseRightResult)
 	{
-		InputManager::getInstance().getMousePosition(l_mousePosition);
+		CoreManager::getInstance().getInputManager().getMousePosition(l_mousePosition);
 
 		if (l_mousePosition.x != 0)
 		{
@@ -33,15 +33,15 @@ void InputComponent::update()
 		}
 		if (l_mousePosition.x != 0 || l_mousePosition.y != 0)
 		{
-			InputManager::getInstance().setMousePosition(glm::vec2(0.0f, 0.0f));
+			CoreManager::getInstance().getInputManager().setMousePosition(glm::vec2(0.0f, 0.0f));
 		}
-		InputManager::getInstance().getKey(GLFW_KEY_W, l_keyWResult);
+		CoreManager::getInstance().getInputManager().getKey(GLFW_KEY_W, l_keyWResult);
 
-		InputManager::getInstance().getKey(GLFW_KEY_S, l_keySResult);
+		CoreManager::getInstance().getInputManager().getKey(GLFW_KEY_S, l_keySResult);
 
-		InputManager::getInstance().getKey(GLFW_KEY_A, l_keyAResult);
+		CoreManager::getInstance().getInputManager().getKey(GLFW_KEY_A, l_keyAResult);
 
-		InputManager::getInstance().getKey(GLFW_KEY_D, l_keyDResult);
+		CoreManager::getInstance().getInputManager().getKey(GLFW_KEY_D, l_keyDResult);
 	}
 }
 

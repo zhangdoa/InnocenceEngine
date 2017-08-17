@@ -13,5 +13,5 @@ IGameData::~IGameData()
 
 void IGameData::getGameName(std::string & gameName) const
 {
-	gameName = typeid(*this).name();
+	gameName = std::string{ typeid(*this).name() }.substr(std::string{ typeid(*this).name() }.find("class"), std::string::npos);
 }

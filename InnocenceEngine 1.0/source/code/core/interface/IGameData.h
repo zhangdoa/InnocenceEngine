@@ -1,9 +1,6 @@
 #pragma once
 
 #include "IBaseObject.h"
-#include "../manager/InputManager.h"
-#include "../component/CameraComponent.h"
-#include "IVisibleGameEntity.h"
 
 #ifndef _I_GAME_DATA_H_
 #define _I_GAME_DATA_H_
