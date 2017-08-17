@@ -16,6 +16,31 @@ void CoreManager::setGameData(IGameData * gameData)
 	m_gameData = gameData;
 }
 
+TimeManager & CoreManager::getTimeManager() const
+{
+	return TimeManager::getInstance();
+}
+
+WindowManager & CoreManager::getWindowManager() const
+{
+	return WindowManager::getInstance();
+}
+
+InputManager & CoreManager::getInputManager() const
+{
+	return InputManager::getInstance();
+}
+
+RenderingManager & CoreManager::getRenderingManager() const
+{
+	return RenderingManager::getInstance();
+}
+
+LogManager & CoreManager::getLogManager() const
+{
+	return LogManager::getInstance();
+}
+
 void CoreManager::init()
 {
 	// emplace_back in a static order.
@@ -65,10 +90,12 @@ void CoreManager::update()
 
 			if (InputManager::getInstance().getStatus() == objectStatus::INITIALIZIED)
 			{
+				RenderingManager::getInstance().exec(execMessage::UPDATE);
+
 				// game data update
 				m_gameData->exec(execMessage::UPDATE);
 				// update global rendering status
-				RenderingManager::getInstance().exec(execMessage::UPDATE);
+				
 				//TODO: invoke finishRender() at the end of multi-thread rendering pipeline
 				RenderingManager::getInstance().finishRender();
 

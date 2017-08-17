@@ -4,7 +4,6 @@
 #include "../../manager/GUIManager.h"
 #include "../../manager/LogManager.h"
 #include "../../interface/IVisibleGameEntity.h"
-#include "../../component/CameraComponent.h"
 
 class GLShader
 {
@@ -158,14 +157,20 @@ public:
 	void render(IVisibleGameEntity* visibleGameEntity) const;
 	void finishRender() const;
 
-	CameraComponent* getCamera() const;
-	void setCamera(CameraComponent* cameraComponent);
+	void getCameraTranslationMatrix(glm::mat4& t) const;
+	void setCameraTranslationMatrix(const glm::mat4& t);
+	void getCameraViewMatrix(glm::mat4& v) const;
+	void setCameraViewMatrix(const glm::mat4& v);
+	void getCameraProjectionMatrix(glm::mat4& p) const;
+	void setCameraProjectionMatrix(const glm::mat4& p);
 
 private:
 	GLRenderingManager();
 
-	CameraComponent* m_cameraComponent;
 	std::vector<std::unique_ptr<GLShader>> m_staticMeshGLShader;
+	glm::mat4 cameraTranslationMatrix = glm::mat4();
+	glm::mat4 cameraViewMatrix = glm::mat4();
+	glm::mat4 cameraProjectionMatrix = glm::mat4();
 
 	void init() override;
 	void update() override;

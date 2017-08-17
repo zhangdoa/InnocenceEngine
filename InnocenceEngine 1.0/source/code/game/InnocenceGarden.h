@@ -12,9 +12,6 @@ public:
 	InnocenceGarden();
 	~InnocenceGarden();
 
-	IVisibleGameEntity* getSkybox();
-	IVisibleGameEntity* getTestStaticMeshComponent();
-
 private:
 	void init() override;
 	void update() override;

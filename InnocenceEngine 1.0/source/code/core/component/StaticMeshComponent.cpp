@@ -36,7 +36,7 @@ void StaticMeshComponent::init()
 void StaticMeshComponent::update()
 {
 	getTransform()->update();
-	RenderingManager::getInstance().render(this);
+	CoreManager::getInstance().getRenderingManager().render(this);
 }
 
 void StaticMeshComponent::shutdown()

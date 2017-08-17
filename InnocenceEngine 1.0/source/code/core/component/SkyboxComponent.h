@@ -1,7 +1,7 @@
 #pragma once
 #include "../data/GraphicData.h"
 #include "../interface/IVisibleGameEntity.h"
-
+#include "../manager/CoreManager.h"
 
 class SkyboxComponent : public IVisibleGameEntity
 {

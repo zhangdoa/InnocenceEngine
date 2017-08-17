@@ -1,7 +1,8 @@
 #pragma once
 #include "../data/GraphicData.h"
 #include "../interface/IVisibleGameEntity.h"
-#include "../manager/AssetManager.h"
+#include "../manager/CoreManager.h"
+
 class StaticMeshComponent : public IVisibleGameEntity
 {
 public:
