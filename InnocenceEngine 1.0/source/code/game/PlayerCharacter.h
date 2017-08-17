@@ -12,9 +12,5 @@ public:
 private:	
 	InputComponent inputComponent;
 	CameraComponent cameraComponent;
-	
-	void init() override;
-	void update() override;
-	void shutdown() override;
 };
 

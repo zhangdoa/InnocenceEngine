@@ -9,25 +9,12 @@ CameraComponent::~CameraComponent()
 {
 }
 
-void CameraComponent::getViewProjectionMatrix(glm::mat4 & outViewProjectionMatrix) const
+glm::mat4 CameraComponent::getTranslatonMatrix() const
 {
-	glm::mat4 l_RotationMatrix;
-
-	glm::mat4 l_TranslationMatrix;
-
-	getRotationMatrix(l_RotationMatrix);
-
-	getTranslatonMatrix(l_TranslationMatrix);
-
-	outViewProjectionMatrix = m_projectionMatrix * l_RotationMatrix * l_TranslationMatrix;
+	return glm::translate(glm::mat4(), getParentActor().caclTransformedPos() * -1.0f);
 }
 
-void CameraComponent::getTranslatonMatrix(glm::mat4 & outTranslationMatrix) const
-{
-	outTranslationMatrix = glm::translate(outTranslationMatrix, getParentActor().caclTransformedPos() * -1.0f);
-}
-
-void CameraComponent::getRotationMatrix(glm::mat4 & outRotationMatrix) const
+glm::mat4 CameraComponent::getRotationMatrix() const
 {
 	// quaternion rotation
 	glm::quat conjugateRotQuat;
@@ -36,12 +23,12 @@ void CameraComponent::getRotationMatrix(glm::mat4 & outRotationMatrix) const
 	conjugateRotQuat.y = -getParentActor().caclTransformedRot().y;
 	conjugateRotQuat.z = -getParentActor().caclTransformedRot().z;
 
-	outRotationMatrix = glm::toMat4(conjugateRotQuat);
+	return glm::toMat4(conjugateRotQuat);
 }
 
-void CameraComponent::getProjectionMatrix(glm::mat4 & outProjectionMatrix) const
+glm::mat4 CameraComponent::getProjectionMatrix() const
 {
-	outProjectionMatrix = m_projectionMatrix;
+	return m_projectionMatrix;
 }
 
 void CameraComponent::move(moveDirection moveDirection)
@@ -60,13 +47,14 @@ void CameraComponent::move(moveDirection moveDirection)
 void CameraComponent::init()
 {
 	m_projectionMatrix = glm::perspective((70.0f / 180.0f) * glm::pi<float>(), (4.0f / 3.0f), 0.1f, 1000000.0f);
-	//TODO: multi camera
-	RenderingManager::getInstance().setCamera(this);
 }
 
 void CameraComponent::update()
 {
 	getTransform()->update();
+	CoreManager::getInstance().getRenderingManager().setCameraProjectionMatrix(getProjectionMatrix());
+	CoreManager::getInstance().getRenderingManager().setCameraTranslationMatrix(getTranslatonMatrix());
+	CoreManager::getInstance().getRenderingManager().setCameraViewMatrix(getRotationMatrix());
 }
 
 void CameraComponent::shutdown()

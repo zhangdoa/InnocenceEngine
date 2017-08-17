@@ -1,6 +1,6 @@
 #pragma once
 #include "../interface/IGameEntity.h"
-#include "../manager/InputManager.h"
+#include "../manager/CoreManager.h"
 
 class InputComponent : public BaseComponent
 {

@@ -6,19 +6,8 @@ InnocenceGarden::InnocenceGarden()
 {
 }
 
-
 InnocenceGarden::~InnocenceGarden()
 {
-}
-
-IVisibleGameEntity * InnocenceGarden::getSkybox()
-{
-	return &testSkyboxComponent;
-}
-
-IVisibleGameEntity * InnocenceGarden::getTestStaticMeshComponent()
-{
-	return &testStaticMeshComponent;
 }
 
 void InnocenceGarden::init()

@@ -1,7 +1,6 @@
 #pragma once
 #include "../interface/IGameEntity.h"
-#include "../manager/WindowManager.h"
-#include "../manager/RenderingManager.h"
+#include "../manager/CoreManager.h"
 
 class CameraComponent : public BaseComponent
 {
@@ -11,10 +10,9 @@ public:
 
 	enum moveDirection { FORWARD, BACKWARD, LEFT, RIGHT };
 
-	void getViewProjectionMatrix(glm::mat4& outViewProjectionMatrix) const;
-	void getTranslatonMatrix(glm::mat4& outTranslationMatrix) const;
-	void getRotationMatrix(glm::mat4& outRotationMatrix) const;
-	void getProjectionMatrix(glm::mat4& outProjectionMatrix) const;
+	glm::mat4 getTranslatonMatrix() const;
+	glm::mat4 getRotationMatrix() const;
+	glm::mat4 getProjectionMatrix() const;
 
 	void move(moveDirection moveDirection);
 
