@@ -30,6 +30,7 @@ void SkyboxComponent::init()
 void SkyboxComponent::update()
 {
 	getTransform()->update();
+	RenderingManager::getInstance().render(this);
 }
 
 void SkyboxComponent::shutdown()

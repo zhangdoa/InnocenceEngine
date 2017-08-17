@@ -69,21 +69,9 @@ void CoreManager::update()
 				m_gameData->exec(execMessage::UPDATE);
 				// update global rendering status
 				RenderingManager::getInstance().exec(execMessage::UPDATE);
-				try {
-					// update camera info for rendering pipeline
-					InnocenceGarden* m_gameDataSpecific = dynamic_cast<InnocenceGarden*>(m_gameData);
-					RenderingManager::getInstance().setCamera(m_gameDataSpecific->getCameraComponent());
+				//TODO: invoke finishRender() at the end of multi-thread rendering pipeline
+				RenderingManager::getInstance().finishRender();
 
-					// rendering pipeline starts to work
-					RenderingManager::getInstance().render(m_gameDataSpecific->getTestStaticMeshComponent());
-					RenderingManager::getInstance().render(m_gameDataSpecific->getSkybox());
-
-					RenderingManager::getInstance().finishRender();
-				}
-				catch (std::exception& e) {
-					LogManager::getInstance().printLog("Cannot get camera information!");
-					LogManager::getInstance().printLog(e.what());
-				}
 				//SceneGraphManager::getInstance().exec(execMessage::UPDATE);
 				//GUIManager::getInstance().exec(execMessage::UPDATE);
 				// window manager updates last

@@ -178,6 +178,8 @@
     <ClCompile Include="code\main\InnocenceEngine 1.0.cpp" />
     <ClCompile Include="code\main\stdafx.cpp" />
     <ClCompile Include="code\core\data\GameMapData.cpp" />
+    <ClCompile Include="code\core\component\InputComponent.cpp" />
+    <ClCompile Include="code\game\PlayerCharacter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
@@ -208,6 +210,8 @@
     <ClInclude Include="code\main\stdafx.h" />
     <ClInclude Include="code\main\targetver.h" />
     <ClInclude Include="code\core\data\GameMapData.h" />
+    <ClInclude Include="code\core\component\InputComponent.h" />
+    <ClInclude Include="code\game\PlayerCharacter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
