@@ -11,11 +11,6 @@ InnocenceGarden::~InnocenceGarden()
 {
 }
 
-CameraComponent * InnocenceGarden::getCameraComponent()
-{
-	return &testCameraComponent;
-}
-
 IVisibleGameEntity * InnocenceGarden::getSkybox()
 {
 	return &testSkyboxComponent;
@@ -29,14 +24,13 @@ IVisibleGameEntity * InnocenceGarden::getTestStaticMeshComponent()
 void InnocenceGarden::init()
 {	
 	//AssetManager::getInstance().loadModel("nanosuit/nanosuit.blend");
-	testRootActor.addChildActor(&testCameraActor);
-	testRootActor.addChildActor(&testSkyboxActor);
-	testRootActor.addChildActor(&testStaticMeshActor);
+	rootActor.addChildActor(&playCharacter);
+	rootActor.addChildActor(&skyboxActor);
+	rootActor.addChildActor(&testStaticMeshActor);
 
-	testCameraActor.addChildComponent(&testCameraComponent);
-	testSkyboxActor.addChildComponent(&testSkyboxComponent);
+	skyboxActor.addChildComponent(&testSkyboxComponent);
 	testStaticMeshActor.addChildComponent(&testStaticMeshComponent);
-	testRootActor.exec(execMessage::INIT);
+	rootActor.exec(execMessage::INIT);
 	testStaticMeshComponent.loadMesh("nanosuit/nanosuit_c11_m0.innoMesh");
 	testStaticMeshComponent.loadTexture("nanosuit/body_dif.png");
 
@@ -49,10 +43,10 @@ void InnocenceGarden::update()
 	//testTriangleActor.getTransform()->rotate(glm::vec3(0.0f, -1.0f, 0.0f), 0.5);
 	//testTriangleActor.getTransform()->rotate(glm::vec3(0.0f, 0.0f, -1.0f), 0.25);
 
-	testRootActor.exec(execMessage::UPDATE);
+	rootActor.exec(execMessage::UPDATE);
 }
 
 void InnocenceGarden::shutdown()
 {	
-	testRootActor.exec(execMessage::SHUTDOWN);
+	rootActor.exec(execMessage::SHUTDOWN);
 }
