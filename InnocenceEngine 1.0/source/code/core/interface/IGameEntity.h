@@ -71,7 +71,6 @@ private:
 	void init() override;
 	void update() override;
 	void shutdown() override;
-
 };
 
 class BaseComponent : public IBaseObject

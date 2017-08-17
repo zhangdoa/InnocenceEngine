@@ -60,57 +60,13 @@ void CameraComponent::move(moveDirection moveDirection)
 void CameraComponent::init()
 {
 	m_projectionMatrix = glm::perspective((70.0f / 180.0f) * glm::pi<float>(), (4.0f / 3.0f), 0.1f, 1000000.0f);
+	//TODO: multi camera
+	RenderingManager::getInstance().setCamera(this);
 }
 
 void CameraComponent::update()
 {
 	getTransform()->update();
-
-	InputManager::getInstance().getMouse(GLFW_MOUSE_BUTTON_RIGHT, l_mouseRightResult);
-
-	if (l_mouseRightResult)
-	{
-		InputManager::getInstance().getMousePosition(l_mousePosition);
-
-		if (l_mousePosition.x != 0)
-		{
-			getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), ((-l_mousePosition.x * 1.5f) / 180.0f)* glm::pi<float>());
-		}
-		if (l_mousePosition.y != 0)
-		{
-			getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((l_mousePosition.y * 1.5f) / 180.0f)* glm::pi<float>());
-		}
-		if (l_mousePosition.x != 0 || l_mousePosition.y != 0)
-		{
-			InputManager::getInstance().setMousePosition(glm::vec2(0.0f, 0.0f));
-		}
-
-
-		InputManager::getInstance().getKey(GLFW_KEY_W, l_keyWResult);
-
-		InputManager::getInstance().getKey(GLFW_KEY_S, l_keySResult);
-
-		InputManager::getInstance().getKey(GLFW_KEY_A, l_keyAResult);
-
-		InputManager::getInstance().getKey(GLFW_KEY_D, l_keyDResult);
-
-		if (l_keyWResult)
-		{
-			move(CameraComponent::FORWARD);
-		}
-		if (l_keySResult)
-		{
-			move(CameraComponent::BACKWARD);
-		}
-		if (l_keyAResult)
-		{
-			move(CameraComponent::LEFT);
-		}
-		if (l_keyDResult)
-		{
-			move(CameraComponent::RIGHT);
-		}
-	}
 }
 
 void CameraComponent::shutdown()
