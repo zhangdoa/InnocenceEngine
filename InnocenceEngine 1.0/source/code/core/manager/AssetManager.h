@@ -26,8 +26,8 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	void processAssimpNode(aiNode *node, const aiScene *scene, const std::string& fileName) const;
-	void processAssimpMesh(aiMesh *mesh, const aiScene* scene, const std::string& fileName) const;
+	void processAssimpNode(aiNode* node, const aiScene* scene, std::ofstream& file) const;
+	void processAssimpMesh(aiMesh* mesh, const aiScene* scene, std::ofstream& file) const;
 
 };
 

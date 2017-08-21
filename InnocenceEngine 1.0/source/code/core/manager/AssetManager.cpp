@@ -47,17 +47,19 @@ void AssetManager::loadModel(const std::string& fileName) const
 		LogManager::getInstance().printLog("ERROR::ASSIMP:: " + std::string{ l_assImporter.GetErrorString() });
 		return;
 	}
+	std::ofstream file("../res/models/" + fileName.substr(0, fileName.find(".")) + ".innoMesh");
 	// process ASSIMP's root node recursively
-	processAssimpNode(l_assScene->mRootNode, l_assScene, fileName.substr(0, fileName.find(".")) + "_r");
+	processAssimpNode(l_assScene->mRootNode, l_assScene, file);
 	// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
 	for (auto i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
 	{
-		processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, fileName.substr(0, fileName.find(".")) + "_c" + std::to_string(i));
+		processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, file);
 	}
 	LogManager::getInstance().printLog("Model imported.");
+	file.close();
 }
 
-void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, const std::string& fileName) const
+void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, std::ofstream& file) const
 {
 	// process each mesh located at the current node
 	for (auto i = 0; i < node->mNumMeshes; i++)
@@ -66,18 +68,16 @@ void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, const
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 		//TODO: there should be lots of seperate mesh file 
-		processAssimpMesh(mesh, scene, fileName + "_m" + std::to_string(i));
+		processAssimpMesh(mesh, scene, file);
 	}
 }
 
-void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, const std::string& fileName) const
+void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, std::ofstream& file) const
 {
-	std::ofstream file("../res/models/" + fileName + ".innoMesh");
-
 	if (file.is_open())
 	{
 		// Walk through each of the mesh's vertices
-		file << "#INNO_MESH_VERTICES#" << std::endl;
+		file << "v" << std::endl;
 		for (auto i = 0; i < mesh->mNumVertices; i++)
 		{
 			// positions
@@ -106,13 +106,13 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, const 
 				file << mesh->mNormals[i].y << " ";
 				file << mesh->mNormals[i].z << " " << std::endl;
 			}
-			else 
+			else
 			{
 				file << 0.0f << " ";
 				file << 0.0f << " ";
 				file << 0.0f << " " << std::endl;
 			}
-			
+
 			//// tangent
 			//vector.x = mesh->mTangents[i].x;
 			//vector.y = mesh->mTangents[i].y;
@@ -127,7 +127,7 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, const 
 		}
 
 		// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-		file << "#INNO_MESH_INDICES#" << std::endl;
+		file << "i" << std::endl;
 		for (auto i = 0; i < mesh->mNumFaces; i++)
 		{
 			aiFace face = mesh->mFaces[i];
@@ -137,16 +137,13 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, const 
 				file << face.mIndices[j] << std::endl;
 			}
 		}
-		file << "#INNO_MESH_EOF#";
-
 		file.flush();
-
-		file.close();
 
 		LogManager::getInstance().printLog("innoMesh created.");
 	}
-	else 
+	else
 	{
-		LogManager::getInstance().printLog("Error: Cannot inport model!");
+		LogManager::getInstance().printLog("Error: Cannot import model!");
 	}
 }
+

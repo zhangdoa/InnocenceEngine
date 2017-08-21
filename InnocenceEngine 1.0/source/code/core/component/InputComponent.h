@@ -17,6 +17,11 @@ private:
 	int l_keyAResult = 0;
 	int l_keyDResult = 0;
 
+	enum moveDirection { FORWARD, BACKWARD, LEFT, RIGHT };
+	float moveSpeed = 0.05f;
+	float rotateSpeed = 2.0f;
+	void move(moveDirection moveDirection);
+
 	void init() override;
 	void update() override;
 	void shutdown() override;

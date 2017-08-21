@@ -30,7 +30,7 @@ void TimeManager::update()
 		m_unprocessedTime -= m_frameTime;
 		setStatus(objectStatus::INITIALIZIED);
 	}
-	else 
+	else
 	{
 		setStatus(objectStatus::STANDBY);
 	}
@@ -55,12 +55,9 @@ const double TimeManager::getDeltaTime() const
 std::string TimeManager::getCurrentTimeInLocal()
 {
 
-		//auto now = std::chrono::system_clock::now();
-		//auto in_time_t = std::chrono::system_clock::to_time_t(now);
-
-		//std::stringstream ss;
-		//struct tm buf;
-		//ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
-		//return ss.str();
-	return "CurrentTime";
+	auto now = std::chrono::system_clock::now();
+	auto nowTime = std::chrono::system_clock::to_time_t(now);
+	char str[128];
+	ctime_s(str, sizeof str, &nowTime);
+	return std::to_string(*str);
 }
