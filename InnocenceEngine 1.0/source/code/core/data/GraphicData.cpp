@@ -38,14 +38,14 @@ void StaticMeshData::loadData(const std::string & meshFileName)
 		while (meshFile.good() && meshFile.is_open())
 		{
 			getline(meshFile, line);
-			if (line.find("#INNO_MESH_EOF#") == std::string::npos)
+			if (!line.empty())
 			{
-				if (line.find("#INNO_MESH_VERTICES#") != std::string::npos)
+				if (line.find("v") != std::string::npos)
 				{
 					isProcessingVerticesData = true;
 					getline(meshFile, line);
 				}
-				if (line.find("#INNO_MESH_INDICES#") != std::string::npos)
+				if (line.find("i") != std::string::npos)
 				{
 					isProcessingVerticesData = false;
 					getline(meshFile, line);
@@ -84,9 +84,7 @@ void StaticMeshData::loadData(const std::string & meshFileName)
 				}
 				else
 				{
-					unsigned int index;
-					index = std::stoi(line);
-					m_intices.emplace_back(index);
+					m_intices.emplace_back(std::stoi(line));
 				}
 			}
 			else

@@ -20,8 +20,8 @@ void InnocenceGarden::init()
 	skyboxActor.addChildComponent(&testSkyboxComponent);
 	testStaticMeshActor.addChildComponent(&testStaticMeshComponent);
 	rootActor.exec(execMessage::INIT);
-	testStaticMeshComponent.loadMesh("nanosuit/nanosuit_c11_m0.innoMesh");
-	testStaticMeshComponent.loadTexture("nanosuit/body_dif.png");
+	testStaticMeshComponent.loadMesh("nanosuit/nanosuit.innoMesh");
+	//testStaticMeshComponent.loadTexture("nanosuit/body_dif.png");
 
 	testStaticMeshActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -5.0f));
 }
