@@ -13,6 +13,7 @@
 #include <cmath>
 #include <chrono>
 #include <ctime>
+#include <tuple>
 #include <iomanip>
 #include <fstream>
 #include <istream>
