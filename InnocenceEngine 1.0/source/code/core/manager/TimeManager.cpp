@@ -51,13 +51,3 @@ const double TimeManager::getDeltaTime() const
 {
 	return m_deltaTime;
 }
-
-std::string TimeManager::getCurrentTimeInLocal()
-{
-
-	auto now = std::chrono::system_clock::now();
-	auto nowTime = std::chrono::system_clock::to_time_t(now);
-	char str[128];
-	ctime_s(str, sizeof str, &nowTime);
-	return std::to_string(*str);
-}

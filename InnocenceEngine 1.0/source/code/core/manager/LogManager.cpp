@@ -14,19 +14,19 @@ LogManager::~LogManager()
 
 void LogManager::printLog(float logMessage)
 {
-	std::cout << "[" << TimeManager::getCurrentTimeInLocal() << "]" << logMessage << std::endl;
+	std::cout << "[" << TimeManager::getInstance().getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }
 
 void LogManager::printLog(std::string logMessage)
 {
-	std::cout << "[" << TimeManager::getCurrentTimeInLocal()  << "]" << logMessage << std::endl;
+	std::cout << "[" << TimeManager::getInstance().getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }
 
 void LogManager::printLog(const glm::vec2 & logMessage)
 {
 	std::cout
 		<< "[" 
-		<< TimeManager::getCurrentTimeInLocal() 
+		<< TimeManager::getInstance().getCurrentTimeInLocal()
 		<< "]"
 		<<"glm::vec2(x: "
 		<< logMessage.x
@@ -40,7 +40,7 @@ void LogManager::printLog(const glm::vec3 & logMessage)
 {
 	std::cout
 		<< "["
-		<< TimeManager::getCurrentTimeInLocal()
+		<< TimeManager::getInstance().getCurrentTimeInLocal()
 		<< "]"
 		<< "glm::vec3(x: "
 		<< logMessage.x
@@ -56,7 +56,7 @@ void LogManager::printLog(const glm::quat & logMessage)
 {
 	std::cout
 		<< "["
-		<< TimeManager::getCurrentTimeInLocal()
+		<< TimeManager::getInstance().getCurrentTimeInLocal()
 		<< "]"
 		<< "glm::quat(x: "
 		<< logMessage.x
@@ -74,7 +74,7 @@ void LogManager::printLog(const glm::mat4 & logMessage)
 {
 	std::cout
 		<< "["
-		<< TimeManager::getCurrentTimeInLocal()
+		<< TimeManager::getInstance().getCurrentTimeInLocal()
 		<< "]"
 		<< std::endl
 		<< "|"
