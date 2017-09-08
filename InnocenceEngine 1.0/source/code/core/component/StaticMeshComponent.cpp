@@ -16,16 +16,12 @@ void StaticMeshComponent::render()
 	{
 		i.update();
 	}
-	//m_textureData.update();
+	m_textureData.update();
 }
 
 void StaticMeshComponent::loadModel(const std::string & modelFileName)
 {
 	AssetManager::getInstance().loadModel(modelFileName, m_meshData);
-	for (auto i : m_meshData)
-	{
-		i.addGLMeshData();
-	}
 }
 
 void StaticMeshComponent::loadTexture(const std::string & textureFileName) const

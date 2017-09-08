@@ -2,7 +2,7 @@
 
 #include "IEventManager.h"
 #include "LogManager.h"
-#include "WindowManager.h"
+#include "../manager/graphic/GLWindowManager.h"
 
 class InputManager : public IEventManager
 {
