@@ -12,13 +12,20 @@ StaticMeshComponent::~StaticMeshComponent()
 
 void StaticMeshComponent::render()
 {
-	m_meshData.update();
-	m_textureData.update();
+	for (auto i : m_meshData)
+	{
+		i.update();
+	}
+	//m_textureData.update();
 }
 
-void StaticMeshComponent::loadMesh(const std::string & meshFileName)
+void StaticMeshComponent::loadModel(const std::string & modelFileName)
 {
-	m_meshData.loadData(meshFileName);
+	AssetManager::getInstance().loadModel(modelFileName, m_meshData);
+	for (auto i : m_meshData)
+	{
+		i.addGLMeshData();
+	}
 }
 
 void StaticMeshComponent::loadTexture(const std::string & textureFileName) const
@@ -29,7 +36,6 @@ void StaticMeshComponent::loadTexture(const std::string & textureFileName) const
 void StaticMeshComponent::init()
 {
 	setVisibleGameEntityType(visibleGameEntityType::STATIC_MESH);
-	m_meshData.init();
 	m_textureData.init();
 }
 
@@ -42,5 +48,8 @@ void StaticMeshComponent::update()
 void StaticMeshComponent::shutdown()
 {
 	m_textureData.shutdown();
-	m_meshData.shutdown();
+	for (auto i : m_meshData)
+	{
+		i.shutdown();
+	}
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "../data/GraphicData.h"
+#include "../manager/AssetManager.h"
 #include "../interface/IVisibleGameEntity.h"
 #include "../manager/CoreManager.h"
 
@@ -11,11 +11,11 @@ public:
 
 	void render() override;
 
-	void loadMesh(const std::string& meshFileName);
+	void loadModel(const std::string& meshFileName);
 	void loadTexture(const std::string& textureFileName) const;
 
 private:
-	StaticMeshData m_meshData;
+	std::vector<StaticMeshData> m_meshData;
 	TextureData m_textureData;
 
 	void init() override;

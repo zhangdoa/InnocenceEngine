@@ -24,9 +24,6 @@ private:
 	GLuint m_VAO;
 	GLuint m_VBO;
 	GLuint m_IBO;
-
-	void generateData();
-	void attributeArray() const;
 };
 
 class GLTextureData
