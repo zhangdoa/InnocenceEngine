@@ -21,9 +21,9 @@ TimeManager & CoreManager::getTimeManager() const
 	return TimeManager::getInstance();
 }
 
-WindowManager & CoreManager::getWindowManager() const
+GLWindowManager & CoreManager::getWindowManager() const
 {
-	return WindowManager::getInstance();
+	return GLWindowManager::getInstance();
 }
 
 InputManager & CoreManager::getInputManager() const
@@ -46,7 +46,7 @@ void CoreManager::init()
 	// emplace_back in a static order.
 	m_childEventManager.emplace_back(&AssetManager::getInstance());
 	m_childEventManager.emplace_back(&TimeManager::getInstance());
-	m_childEventManager.emplace_back(&WindowManager::getInstance());
+	m_childEventManager.emplace_back(&GLWindowManager::getInstance());
 	m_childEventManager.emplace_back(&InputManager::getInstance());
 	m_childEventManager.emplace_back(&RenderingManager::getInstance());
 	m_childEventManager.emplace_back(&GUIManager::getInstance());
@@ -55,7 +55,7 @@ void CoreManager::init()
 	std::string l_gameName;
 	m_gameData->getGameName(l_gameName);
 
-	WindowManager::getInstance().setWindowName(l_gameName);
+	GLWindowManager::getInstance().setWindowName(l_gameName);
 
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
@@ -83,7 +83,7 @@ void CoreManager::update()
 	if (TimeManager::getInstance().getStatus() == objectStatus::INITIALIZIED)
 	{
 
-		if (WindowManager::getInstance().getStatus() == objectStatus::INITIALIZIED)
+		if (GLWindowManager::getInstance().getStatus() == objectStatus::INITIALIZIED)
 		{
 			// input manager decides the game& engine behivour which was based on user's input.
 			InputManager::getInstance().exec(execMessage::UPDATE);
@@ -102,7 +102,7 @@ void CoreManager::update()
 				//SceneGraphManager::getInstance().exec(execMessage::UPDATE);
 				//GUIManager::getInstance().exec(execMessage::UPDATE);
 				// window manager updates last
-				WindowManager::getInstance().exec(execMessage::UPDATE);
+				GLWindowManager::getInstance().exec(execMessage::UPDATE);
 			}
 			else
 			{

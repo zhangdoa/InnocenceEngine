@@ -1,7 +1,7 @@
 #pragma once
 #include "../../manager/LogManager.h"
 
-struct VertexData
+struct GLVertexData
 {
 	glm::vec3 m_pos;
 	glm::vec2 m_texCoord;
@@ -18,7 +18,7 @@ public:
 	void update(std::vector<unsigned int>& indices);
 	void shutdown();
 
-	void addGLMeshData(std::vector<VertexData>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
+	void sendDataToGPU(std::vector<GLVertexData>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
 
 private:
 	GLuint m_VAO;

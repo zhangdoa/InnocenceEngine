@@ -3,10 +3,10 @@
 #include "IEventManager.h"
 
 #include "TimeManager.h"
-#include "WindowManager.h"
+#include "../manager/graphic/GLWindowManager.h"
 #include "InputManager.h"
-#include "RenderingManager.h"
-#include "SceneGraphManager.h"
+#include "../manager/graphic/RenderingManager.h"
+#include "../manager/graphic/SceneGraphManager.h"
 #include "LogManager.h"
 
 #include "../interface/IGameData.h"
@@ -24,7 +24,7 @@ public:
 
 	void setGameData(IGameData* gameData);
 	TimeManager& getTimeManager() const;
-	WindowManager& getWindowManager() const;
+	GLWindowManager& getWindowManager() const;
 	InputManager& getInputManager() const;
 	RenderingManager& getRenderingManager() const;
 	// SceneGraphManager& getTimeManager() const;

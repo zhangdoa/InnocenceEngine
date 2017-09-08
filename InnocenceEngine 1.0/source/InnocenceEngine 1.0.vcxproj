@@ -164,14 +164,14 @@
     <ClCompile Include="code\core\interface\IVisibleGameEntity.cpp" />
     <ClCompile Include="code\core\manager\AssetManager.cpp" />
     <ClCompile Include="code\core\manager\CoreManager.cpp" />
-    <ClCompile Include="code\core\manager\GUIManager.cpp" />
+    <ClCompile Include="code\core\manager\graphic\GUIManager.cpp" />
     <ClCompile Include="code\core\manager\IEventManager.cpp" />
     <ClCompile Include="code\core\manager\InputManager.cpp" />
     <ClCompile Include="code\core\manager\LogManager.cpp" />
-    <ClCompile Include="code\core\manager\RenderingManager.cpp" />
-    <ClCompile Include="code\core\manager\SceneGraphManager.cpp" />
+    <ClCompile Include="code\core\manager\graphic\RenderingManager.cpp" />
+    <ClCompile Include="code\core\manager\graphic\SceneGraphManager.cpp" />
     <ClCompile Include="code\core\manager\TimeManager.cpp" />
-    <ClCompile Include="code\core\manager\WindowManager.cpp" />
+    <ClCompile Include="code\core\manager\graphic\GLWindowManager.cpp" />
     <ClCompile Include="code\core\platform-dependency\GL\GLGraphicData.cpp" />
     <ClCompile Include="code\core\platform-dependency\GL\GLRenderingManager.cpp" />
     <ClCompile Include="code\game\InnocenceGarden.cpp" />
@@ -180,6 +180,7 @@
     <ClCompile Include="code\core\data\GameMapData.cpp" />
     <ClCompile Include="code\core\component\InputComponent.cpp" />
     <ClCompile Include="code\game\PlayerCharacter.cpp" />
+    <ClCompile Include="code\core\platform-dependency\DX\DXGraphicData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
@@ -192,14 +193,14 @@
     <ClInclude Include="code\core\interface\IVisibleGameEntity.h" />
     <ClInclude Include="code\core\manager\AssetManager.h" />
     <ClInclude Include="code\core\manager\CoreManager.h" />
-    <ClInclude Include="code\core\manager\GUIManager.h" />
+    <ClInclude Include="code\core\manager\graphic\GUIManager.h" />
     <ClInclude Include="code\core\manager\IEventManager.h" />
     <ClInclude Include="code\core\manager\InputManager.h" />
     <ClInclude Include="code\core\manager\LogManager.h" />
-    <ClInclude Include="code\core\manager\RenderingManager.h" />
-    <ClInclude Include="code\core\manager\SceneGraphManager.h" />
+    <ClInclude Include="code\core\manager\graphic\RenderingManager.h" />
+    <ClInclude Include="code\core\manager\graphic\SceneGraphManager.h" />
     <ClInclude Include="code\core\manager\TimeManager.h" />
-    <ClInclude Include="code\core\manager\WindowManager.h" />
+    <ClInclude Include="code\core\manager\graphic\GLWindowManager.h" />
     <ClInclude Include="code\core\platform-dependency\GL\GLGraphicData.h" />
     <ClInclude Include="code\core\platform-dependency\GL\GLRenderingManager.h" />
     <ClInclude Include="code\core\third-party\nuklear.h" />
@@ -212,6 +213,7 @@
     <ClInclude Include="code\core\data\GameMapData.h" />
     <ClInclude Include="code\core\component\InputComponent.h" />
     <ClInclude Include="code\game\PlayerCharacter.h" />
+    <ClInclude Include="code\core\platform-dependency\DX\DXGraphicData.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
