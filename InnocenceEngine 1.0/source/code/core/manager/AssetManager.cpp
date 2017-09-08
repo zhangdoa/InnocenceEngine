@@ -82,6 +82,7 @@ void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, std::
 		staticMeshData.init();
 		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], scene, staticMeshData);
 		staticMeshDatas.emplace_back(staticMeshData);
+		staticMeshData.sendDataToGPU();
 	}
 }
 
@@ -89,7 +90,7 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, Static
 {
 	for (auto i = 0; i < mesh->mNumVertices; i++)
 	{
-		VertexData vertexData;
+		GLVertexData vertexData;
 		// positions
 		vertexData.m_pos.x = mesh->mVertices[i].x;
 		vertexData.m_pos.y = mesh->mVertices[i].y;

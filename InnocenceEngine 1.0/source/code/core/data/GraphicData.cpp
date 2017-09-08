@@ -25,12 +25,12 @@ void StaticMeshData::shutdown()
 	m_GLMeshData.shutdown();
 }
 
-void StaticMeshData::addGLMeshData()
+void StaticMeshData::sendDataToGPU()
 {
-	m_GLMeshData.addGLMeshData(m_vertices, m_intices, false);
+	m_GLMeshData.sendDataToGPU(m_vertices, m_intices, false);
 }
 
-std::vector<VertexData>& StaticMeshData::getVertices()
+std::vector<GLVertexData>& StaticMeshData::getVertices()
 {
 	return m_vertices;
 }
@@ -42,42 +42,42 @@ std::vector<unsigned int>& StaticMeshData::getIntices()
 
 void StaticMeshData::addTestCube()
 {
-	VertexData l_VertexData_1;
+	GLVertexData l_VertexData_1;
 	l_VertexData_1.m_pos = glm::vec3(0.5f, 0.5f, 0.5f);
 	l_VertexData_1.m_texCoord = glm::vec2(1.0f, 1.0f);
 	l_VertexData_1.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
 
-	VertexData l_VertexData_2;
+	GLVertexData l_VertexData_2;
 	l_VertexData_2.m_pos = glm::vec3(0.5f, -0.5f, 0.5f);
 	l_VertexData_2.m_texCoord = glm::vec2(1.0f, 0.0f);
 	l_VertexData_2.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
 
-	VertexData l_VertexData_3;
+	GLVertexData l_VertexData_3;
 	l_VertexData_3.m_pos = glm::vec3(-0.5f, -0.5f, 0.5f);
 	l_VertexData_3.m_texCoord = glm::vec2(0.0f, 0.0f);
 	l_VertexData_3.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
 
-	VertexData l_VertexData_4;
+	GLVertexData l_VertexData_4;
 	l_VertexData_4.m_pos = glm::vec3(-0.5f, 0.5f, 0.5f);
 	l_VertexData_4.m_texCoord = glm::vec2(0.0f, 1.0f);
 	l_VertexData_4.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
 
-	VertexData l_VertexData_5;
+	GLVertexData l_VertexData_5;
 	l_VertexData_5.m_pos = glm::vec3(0.5f, 0.5f, -0.5f);
 	l_VertexData_5.m_texCoord = glm::vec2(1.0f, 1.0f);
 	l_VertexData_5.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
 
-	VertexData l_VertexData_6;
+	GLVertexData l_VertexData_6;
 	l_VertexData_6.m_pos = glm::vec3(0.5f, -0.5f, -0.5f);
 	l_VertexData_6.m_texCoord = glm::vec2(1.0f, 0.0f);
 	l_VertexData_6.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
 
-	VertexData l_VertexData_7;
+	GLVertexData l_VertexData_7;
 	l_VertexData_7.m_pos = glm::vec3(-0.5f, -0.5f, -0.5f);
 	l_VertexData_7.m_texCoord = glm::vec2(0.0f, 0.0f);
 	l_VertexData_7.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
 
-	VertexData l_VertexData_8;
+	GLVertexData l_VertexData_8;
 	l_VertexData_8.m_pos = glm::vec3(-0.5f, 0.5f, -0.5f);
 	l_VertexData_8.m_texCoord = glm::vec2(0.0f, 1.0f);
 	l_VertexData_8.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -91,33 +91,33 @@ void StaticMeshData::addTestCube()
 		4, 0, 7, 0, 3, 7,
 		1, 5, 2, 5, 6, 2 };
 
-	m_GLMeshData.addGLMeshData(m_vertices, m_intices, false);
+	m_GLMeshData.sendDataToGPU(m_vertices, m_intices, false);
 }
 
 void StaticMeshData::addTestSkybox()
 {
-	VertexData l_VertexData_1;
+	GLVertexData l_VertexData_1;
 	l_VertexData_1.m_pos = glm::vec3(1.0f, 1.0f, 1.0f);
 
-	VertexData l_VertexData_2;
+	GLVertexData l_VertexData_2;
 	l_VertexData_2.m_pos = glm::vec3(1.0f, -1.0f, 1.0f);
 
-	VertexData l_VertexData_3;
+	GLVertexData l_VertexData_3;
 	l_VertexData_3.m_pos = glm::vec3(-1.0f, -1.0f, 1.0f);
 
-	VertexData l_VertexData_4;
+	GLVertexData l_VertexData_4;
 	l_VertexData_4.m_pos = glm::vec3(-1.0f, 1.0f, 1.0f);
 
-	VertexData l_VertexData_5;
+	GLVertexData l_VertexData_5;
 	l_VertexData_5.m_pos = glm::vec3(1.0f, 1.0f, -1.0f);
 
-	VertexData l_VertexData_6;
+	GLVertexData l_VertexData_6;
 	l_VertexData_6.m_pos = glm::vec3(1.0f, -1.0f, -1.0f);
 
-	VertexData l_VertexData_7;
+	GLVertexData l_VertexData_7;
 	l_VertexData_7.m_pos = glm::vec3(-1.0f, -1.0f, -1.0f);
 
-	VertexData l_VertexData_8;
+	GLVertexData l_VertexData_8;
 	l_VertexData_8.m_pos = glm::vec3(-1.0f, 1.0f, -1.0f);
 
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
@@ -129,7 +129,7 @@ void StaticMeshData::addTestSkybox()
 		4, 0, 7, 0, 3, 7,
 		1, 5, 2, 5, 6, 2 };
 
-	m_GLMeshData.addGLMeshData(m_vertices, m_intices, false);
+	m_GLMeshData.sendDataToGPU(m_vertices, m_intices, false);
 }
 
 TextureData::TextureData()

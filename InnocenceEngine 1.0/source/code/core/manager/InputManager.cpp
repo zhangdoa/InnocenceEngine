@@ -13,12 +13,12 @@ InputManager::~InputManager()
 
 void InputManager::getKey(int keyCode, int& result) const
 {
-	result = glfwGetKey(WindowManager::getInstance().getWindow(), keyCode);
+	result = glfwGetKey(GLWindowManager::getInstance().getWindow(), keyCode);
 }
 
 void InputManager::getMouse(int mouseButton, int& result) const
 {
-	result = glfwGetMouseButton(WindowManager::getInstance().getWindow(), mouseButton);
+	result = glfwGetMouseButton(GLWindowManager::getInstance().getWindow(), mouseButton);
 }
 
 void InputManager::getMousePosition(glm::vec2& mousePosition) const
@@ -69,17 +69,17 @@ void InputManager::init()
 {
 	std::vector<int>lastKeys(NUM_KEYCODES);
 	std::vector<int>lastMouse(NUM_MOUSEBUTTONS);
-	glfwSetFramebufferSizeCallback(WindowManager::getInstance().getWindow(), &framebufferSizeCallback);
-	glfwSetCursorPosCallback(WindowManager::getInstance().getWindow(), &mousePositionCallback);
-	glfwSetScrollCallback(WindowManager::getInstance().getWindow(), &scrollCallback);
-	glfwSetInputMode(WindowManager::getInstance().getWindow(), GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetFramebufferSizeCallback(GLWindowManager::getInstance().getWindow(), &framebufferSizeCallback);
+	glfwSetCursorPosCallback(GLWindowManager::getInstance().getWindow(), &mousePositionCallback);
+	glfwSetScrollCallback(GLWindowManager::getInstance().getWindow(), &scrollCallback);
+	glfwSetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_STICKY_KEYS, GL_TRUE);
 	this->setStatus(objectStatus::INITIALIZIED);
 	LogManager::getInstance().printLog("InputManager has been initialized.");
 }
 
 void InputManager::update()
 {
-	if (WindowManager::getInstance().getWindow() != nullptr)
+	if (GLWindowManager::getInstance().getWindow() != nullptr)
 	{
 		//m_lastKeys.clear();
 		//for (int i = 0; i < NUM_KEYCODES; i++)
@@ -92,9 +92,9 @@ void InputManager::update()
 		//{
 		//	m_lastMouse.emplace_back(getMouse(i));
 		//}
-		if (glfwGetMouseButton(WindowManager::getInstance().getWindow(), GLFW_MOUSE_BUTTON_RIGHT))
+		if (glfwGetMouseButton(GLWindowManager::getInstance().getWindow(), GLFW_MOUSE_BUTTON_RIGHT))
 		{
-			glfwSetInputMode(WindowManager::getInstance().getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			glfwSetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		}
 
 		int l_escapeResult = 0;
@@ -103,9 +103,9 @@ void InputManager::update()
 
 		if (l_escapeResult)
 		{
-			if (glfwGetInputMode(WindowManager::getInstance().getWindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+			if (glfwGetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
 			{
-				glfwSetInputMode(WindowManager::getInstance().getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				glfwSetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 			}
 		}
 	}
@@ -118,7 +118,7 @@ void InputManager::update()
 
 void InputManager::shutdown()
 {
-	glfwSetInputMode(WindowManager::getInstance().getWindow(), GLFW_STICKY_KEYS, GL_FALSE);
+	glfwSetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_STICKY_KEYS, GL_FALSE);
 	this->setStatus(objectStatus::UNINITIALIZIED);
 	LogManager::getInstance().printLog("InputManager has been shutdown.");
 }

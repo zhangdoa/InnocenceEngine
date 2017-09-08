@@ -32,7 +32,7 @@ void GLMeshData::shutdown()
 	glDeleteBuffers(1, &m_IBO);
 }
 
-void GLMeshData::addGLMeshData(std::vector<VertexData>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const
+void GLMeshData::sendDataToGPU(std::vector<GLVertexData>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const
 {
 	if (calcNormals) {
 		for (size_t i = 0; i < vertices.size(); i += 3) {
@@ -51,7 +51,7 @@ void GLMeshData::addGLMeshData(std::vector<VertexData>& vertices, std::vector<un
 
 		}
 
-		std::for_each(vertices.begin(), vertices.end(), [](VertexData val)
+		std::for_each(vertices.begin(), vertices.end(), [](GLVertexData val)
 		{
 			val.m_normal = glm::normalize(val.m_normal);
 		});
@@ -59,7 +59,7 @@ void GLMeshData::addGLMeshData(std::vector<VertexData>& vertices, std::vector<un
 
 	std::vector<float> verticesBuffer;
 
-	std::for_each(vertices.begin(), vertices.end(), [&](VertexData val)
+	std::for_each(vertices.begin(), vertices.end(), [&](GLVertexData val)
 	{
 		verticesBuffer.emplace_back(val.m_pos.x);
 		verticesBuffer.emplace_back(val.m_pos.y);

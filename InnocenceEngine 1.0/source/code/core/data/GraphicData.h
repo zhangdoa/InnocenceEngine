@@ -11,15 +11,15 @@ public:
 	void init();
 	void update();
 	void shutdown();
-	void addGLMeshData();
-	std::vector<VertexData>& getVertices();
+	void sendDataToGPU();
+	std::vector<GLVertexData>& getVertices();
 	std::vector<unsigned int>& getIntices();
 	void addTestCube();
 	void addTestSkybox();
 
 private:
 	GLMeshData m_GLMeshData;
-	std::vector<VertexData> m_vertices;
+	std::vector<GLVertexData> m_vertices;
 	std::vector<unsigned int> m_intices;
 };
 
