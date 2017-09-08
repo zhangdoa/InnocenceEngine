@@ -1,8 +1,10 @@
 #pragma once
 #include "IEventManager.h"
 #include "../manager/LogManager.h"
+#include "../data/GraphicData.h"
 
 #include "assimp/Importer.hpp"
+#include "assimp/Exporter.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
@@ -18,7 +20,8 @@ public:
 	}
 
 	std::string loadShader(const std::string& shaderFileName) const;
-	void loadModel(const std::string& fileName) const;
+	void importModel(const std::string& fileName) const;
+	void loadModel(const std::string& fileName, std::vector<StaticMeshData>& staticMeshData) const;
 private:
 	AssetManager();
 
@@ -26,8 +29,8 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	void processAssimpNode(aiNode* node, const aiScene* scene, std::ofstream& file) const;
-	void processAssimpMesh(aiMesh* mesh, const aiScene* scene, std::ofstream& file) const;
+	void processAssimpNode(aiNode* node, const aiScene* scene, std::vector<StaticMeshData>& staticMeshData) const;
+	void processAssimpMesh(aiMesh* mesh, const aiScene* scene, StaticMeshData& staticMeshData) const;
 
 };
 

@@ -11,8 +11,9 @@ public:
 	void init();
 	void update();
 	void shutdown();
-	void loadData(const std::string & meshFileName);
-
+	void addGLMeshData();
+	std::vector<VertexData>& getVertices();
+	std::vector<unsigned int>& getIntices();
 	void addTestCube();
 	void addTestSkybox();
 
