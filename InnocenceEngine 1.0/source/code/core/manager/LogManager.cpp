@@ -119,7 +119,7 @@ void LogManager::printLog(const glm::mat4 & logMessage)
 		<< std::endl;
 }
 
-void LogManager::init()
+void LogManager::initialize()
 {
 }
 

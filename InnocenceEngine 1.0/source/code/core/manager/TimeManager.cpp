@@ -11,10 +11,10 @@ TimeManager::~TimeManager()
 {
 }
 
-void TimeManager::init()
+void TimeManager::initialize()
 {
 	m_gameStartTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	setStatus(objectStatus::INITIALIZIED);
+	setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("TimeManager has been initialized.");
 }
 
@@ -28,7 +28,7 @@ void TimeManager::update()
 	if (m_unprocessedTime > m_frameTime)
 	{
 		m_unprocessedTime -= m_frameTime;
-		setStatus(objectStatus::INITIALIZIED);
+		setStatus(objectStatus::ALIVE);
 	}
 	else
 	{
@@ -38,7 +38,7 @@ void TimeManager::update()
 
 void TimeManager::shutdown()
 {
-	setStatus(objectStatus::UNINITIALIZIED);
+	setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("TimeManager has been shutdown.");
 }
 

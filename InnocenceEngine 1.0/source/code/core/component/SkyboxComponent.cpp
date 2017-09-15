@@ -17,7 +17,7 @@ void SkyboxComponent::render()
 	m_cubemapData.update();
 }
 
-void SkyboxComponent::init()
+void SkyboxComponent::initialize()
 {
 	setVisibleGameEntityType(visibleGameEntityType::SKYBOX);
 	m_meshData.init();

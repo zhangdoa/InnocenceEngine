@@ -1,17 +1,17 @@
 #pragma once
-#include "../IEventManager.h"
+#include "../../interface/IEventManager.h"
 #include "GLWindowManager.h"
 #include "../../third-party/nuklear.h"
 #include "../../third-party/nuklear_glfw_gl3.h"
 
-class GUIManager : public IEventManager
+class GLGUIManager : public IEventManager
 {
 public:
-	~GUIManager();
+	~GLGUIManager();
 
-	static GUIManager& getInstance()
+	static GLGUIManager& getInstance()
 	{
-		static GUIManager instance;
+		static GLGUIManager instance;
 		return instance;
 	}
 
@@ -20,7 +20,7 @@ public:
 	struct nk_font_atlas* atlas;
 
 private:
-	GUIManager();
+	GLGUIManager();
 
 	enum { EASY, HARD };
 	 int op = EASY;
@@ -29,7 +29,7 @@ private:
 	 int g = 255;
 	 int b = 255;
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 };

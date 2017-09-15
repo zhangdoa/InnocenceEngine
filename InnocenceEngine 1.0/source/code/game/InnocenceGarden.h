@@ -13,7 +13,7 @@ public:
 	~InnocenceGarden();
 
 private:
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 

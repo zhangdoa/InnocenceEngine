@@ -18,7 +18,7 @@ private:
 	std::vector<StaticMeshData> m_meshData;
 	TextureData m_textureData;
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 };

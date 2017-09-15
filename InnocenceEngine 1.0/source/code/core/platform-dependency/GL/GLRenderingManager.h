@@ -1,7 +1,6 @@
 #pragma once
-#include "../../manager/IEventManager.h"
+#include "../../interface/IEventManager.h"
 #include "../../manager/AssetManager.h"
-#include "../../manager/graphic/GUIManager.h"
 #include "../../manager/LogManager.h"
 #include "../../interface/IVisibleGameEntity.h"
 
@@ -30,50 +29,15 @@ protected:
 	inline void initProgram();
 	inline void addUniform(std::string uniform) const;
 
-	inline void updateUniform(const std::string &uniformName, bool uniformValue) const
-	{
-		glUniform1i(glGetUniformLocation(m_program, uniformName.c_str()), (int)uniformValue);
-	}
-
-	inline void updateUniform(const std::string &uniformName, int uniformValue) const
-	{
-		glUniform1i(glGetUniformLocation(m_program, uniformName.c_str()), uniformValue);
-	}
-
-	inline void updateUniform(const std::string &uniformName, float uniformValue) const
-	{
-		glUniform1f(glGetUniformLocation(m_program, uniformName.c_str()), uniformValue);
-	}
-
-	inline void updateUniform(const std::string &uniformName, const glm::vec2 &uniformValue) const
-	{
-		glUniform2fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &uniformValue[0]);
-	}
-
-	inline void updateUniform(const std::string &uniformName, float x, float y) const
-	{
-		glUniform2f(glGetUniformLocation(m_program, uniformName.c_str()), x, y);
-	}
-
-	inline void updateUniform(const std::string &uniformName, const glm::vec3& uniformValue) const
-	{
-		glUniform3fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &uniformValue[0]);
-	}
-
-	inline void updateUniform(const std::string &uniformName, float x, float y, float z) const
-	{
-		glUniform3f(glGetUniformLocation(m_program, uniformName.c_str()), x, y, z);
-	}
-
-	inline void updateUniform(const std::string &uniformName, float x, float y, float z, float w)
-	{
-		glUniform4f(glGetUniformLocation(m_program, uniformName.c_str()), x, y, z, w);
-	}
-
-	inline void updateUniform(const std::string &uniformName, const glm::mat4& mat) const
-	{
-		glUniformMatrix4fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, GL_FALSE, &mat[0][0]);
-	}
+	inline void updateUniform(const std::string &uniformName, bool uniformValue) const;
+	inline void updateUniform(const std::string &uniformName, int uniformValue) const;
+	inline void updateUniform(const std::string &uniformName, float uniformValue) const;
+	inline void updateUniform(const std::string &uniformName, const glm::vec2 &uniformValue) const;
+	inline void updateUniform(const std::string &uniformName, float x, float y) const;
+	inline void updateUniform(const std::string &uniformName, const glm::vec3& uniformValue) const;
+	inline void updateUniform(const std::string &uniformName, float x, float y, float z) const;
+	inline void updateUniform(const std::string &uniformName, float x, float y, float z, float w);
+	inline void updateUniform(const std::string &uniformName, const glm::mat4& mat) const;
 
 private:
 	inline void attachShader(shaderType shaderType, const std::string& fileContent, int m_program) const;
@@ -81,7 +45,6 @@ private:
 	inline void detachShader(int shader) const;
 
 	unsigned int m_program;
-	//std::map<std::string, int> m_uniforms;
 };
 
 class BasicGLShader : public GLShader
@@ -172,7 +135,7 @@ private:
 	glm::mat4 cameraViewMatrix = glm::mat4();
 	glm::mat4 cameraProjectionMatrix = glm::mat4();
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 };

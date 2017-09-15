@@ -8,17 +8,17 @@
 #define NK_GLFW_GL3_IMPLEMENTATION
 
 
-#include "GUIManager.h"
+#include "GLGUIManager.h"
 
-GUIManager::GUIManager()
+GLGUIManager::GLGUIManager()
 {
 }
 
-GUIManager::~GUIManager()
+GLGUIManager::~GLGUIManager()
 {
 }
 
-void GUIManager::init()
+void GLGUIManager::initialize()
 {
 	ctx = nk_glfw3_init(GLWindowManager::getInstance().getWindow(), NK_GLFW3_INSTALL_CALLBACKS);
 	nk_glfw3_font_stash_begin(&atlas);
@@ -32,7 +32,7 @@ void GUIManager::init()
 	background = nk_rgb(28, 48, 62);
 }
 
-void GUIManager::update()
+void GLGUIManager::update()
 {
 	nk_glfw3_new_frame();
 	if (nk_begin(ctx, "Properties", nk_rect(50, 50, 230, 250),
@@ -85,7 +85,7 @@ void GUIManager::update()
 	nk_glfw3_render(NK_ANTI_ALIASING_ON, 512 * 1024, 128 * 1024);
 }
 
-void GUIManager::shutdown()
+void GLGUIManager::shutdown()
 {
 	nk_glfw3_shutdown();
 }

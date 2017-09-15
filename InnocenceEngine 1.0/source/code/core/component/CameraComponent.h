@@ -15,7 +15,7 @@ public:
 private:
 	glm::mat4 m_projectionMatrix;
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 };

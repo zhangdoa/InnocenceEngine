@@ -6,14 +6,9 @@ GLShader::GLShader()
 {
 }
 
-
-GLShader::~GLShader()
+inline void GLShader::addShader(shaderType shaderType, const std::string & fileLocation) const
 {
-}
-
-void GLShader::addShader(shaderType shaderType, const std::string& shaderFileName) const
-{
-	attachShader(shaderType, AssetManager::getInstance().loadShader(shaderFileName), m_program);
+	attachShader(shaderType, AssetManager::getInstance().loadShader(fileLocation), m_program);
 }
 
 inline void GLShader::setAttributeLocation(int arrtributeLocation, const std::string & arrtributeName) const
@@ -25,12 +20,17 @@ inline void GLShader::setAttributeLocation(int arrtributeLocation, const std::st
 	}
 }
 
-void GLShader::bindShader() const
+inline void GLShader::bindShader() const
 {
 	glUseProgram(m_program);
 }
 
-void GLShader::addUniform(std::string uniform) const
+inline void GLShader::initProgram()
+{
+	m_program = glCreateProgram();
+}
+
+inline void GLShader::addUniform(std::string uniform) const
 {
 	int uniformLocation = glGetUniformLocation(m_program, uniform.c_str());
 	if (uniformLocation == 0xFFFFFFFF)
@@ -38,6 +38,56 @@ void GLShader::addUniform(std::string uniform) const
 		LogManager::getInstance().printLog("Error: Uniform lost: " + uniform);
 	}
 	//m_uniforms.emplace(std::pair<std::string, int>(uniform.c_str(), uniformLocation));
+}
+
+inline void GLShader::updateUniform(const std::string & uniformName, bool uniformValue) const
+{
+	glUniform1i(glGetUniformLocation(m_program, uniformName.c_str()), (int)uniformValue);
+}
+
+inline void GLShader::updateUniform(const std::string & uniformName, int uniformValue) const
+{
+	glUniform1i(glGetUniformLocation(m_program, uniformName.c_str()), uniformValue);
+}
+
+inline void GLShader::updateUniform(const std::string & uniformName, float uniformValue) const
+{
+	glUniform1f(glGetUniformLocation(m_program, uniformName.c_str()), uniformValue);
+}
+
+inline void GLShader::updateUniform(const std::string & uniformName, const glm::vec2 & uniformValue) const
+{
+	glUniform2fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &uniformValue[0]);
+}
+
+inline void GLShader::updateUniform(const std::string & uniformName, float x, float y) const
+{
+	glUniform2f(glGetUniformLocation(m_program, uniformName.c_str()), x, y);
+}
+
+inline void GLShader::updateUniform(const std::string & uniformName, const glm::vec3 & uniformValue) const
+{
+	glUniform3fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &uniformValue[0]);
+}
+
+inline void GLShader::updateUniform(const std::string & uniformName, float x, float y, float z) const
+{
+	glUniform3f(glGetUniformLocation(m_program, uniformName.c_str()), x, y, z);
+}
+
+inline void GLShader::updateUniform(const std::string & uniformName, float x, float y, float z, float w)
+{
+	glUniform4f(glGetUniformLocation(m_program, uniformName.c_str()), x, y, z, w);
+}
+
+inline void GLShader::updateUniform(const std::string & uniformName, const glm::mat4 & mat) const
+{
+	glUniformMatrix4fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, GL_FALSE, &mat[0][0]);
+}
+
+
+GLShader::~GLShader()
+{
 }
 
 inline void GLShader::attachShader(shaderType shaderType, const std::string& shaderFileContent, int m_program) const
@@ -100,11 +150,6 @@ inline void GLShader::detachShader(int shader) const
 {
 	//glDetachShader(m_program, shader);
 	glDeleteShader(shader);
-}
-
-void GLShader::initProgram()
-{
-	m_program = glCreateProgram();
 }
 
 BasicGLShader::BasicGLShader()
@@ -279,7 +324,7 @@ void GLRenderingManager::setCameraProjectionMatrix(const glm::mat4 & p)
 	cameraProjectionMatrix = p;
 }
 
-void GLRenderingManager::init()
+void GLRenderingManager::initialize()
 {
 	glEnable(GL_DEPTH_TEST);
 	m_staticMeshGLShader.emplace_back(&ForwardAmbientShader::getInstance());
@@ -291,7 +336,7 @@ void GLRenderingManager::init()
 
 	SkyboxShader::getInstance().init();
 
-	this->setStatus(objectStatus::INITIALIZIED);
+	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
 }
 
@@ -313,6 +358,6 @@ void GLRenderingManager::shutdown()
 	{
 		m_staticMeshGLShader[i].release();
 	}
-	this->setStatus(objectStatus::UNINITIALIZIED);
+	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
 }

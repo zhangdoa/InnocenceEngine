@@ -1,5 +1,5 @@
 #pragma once
-#include "../manager/IEventManager.h"
+#include "../interface/IEventManager.h"
 #include "../manager/LogManager.h"
 
 
@@ -74,7 +74,7 @@ private:
 	double m_deltaTime;
 	double m_unprocessedTime;
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 };

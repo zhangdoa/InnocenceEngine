@@ -1,5 +1,5 @@
 #pragma once
-#include "../IEventManager.h"
+#include "../../interface/IEventManager.h"
 #include "../LogManager.h"
 #include "../../interface/IGameEntity.h"
 
@@ -17,7 +17,7 @@ public:
 private:
 	SceneGraphManager();
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 
