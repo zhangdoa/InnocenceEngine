@@ -1,5 +1,5 @@
 #pragma once
-#include "IEventManager.h"
+#include "../interface/IEventManager.h"
 
 class LogManager : public IEventManager
 {
@@ -21,7 +21,7 @@ public:
 private:
 	LogManager();
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 };

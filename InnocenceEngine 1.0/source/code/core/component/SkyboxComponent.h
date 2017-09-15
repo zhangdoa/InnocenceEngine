@@ -15,7 +15,7 @@ private:
 	StaticMeshData m_meshData;
 	CubemapData m_cubemapData;
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 };

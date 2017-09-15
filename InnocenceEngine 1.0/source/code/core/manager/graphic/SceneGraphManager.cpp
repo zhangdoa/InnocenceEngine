@@ -11,18 +11,17 @@ SceneGraphManager::~SceneGraphManager()
 {
 }
 
-void SceneGraphManager::init()
+void SceneGraphManager::initialize()
 {
-	m_rootActor.exec(execMessage::INIT);
-	this->setStatus(objectStatus::INITIALIZIED);
+	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("SceneGraphManager has been initialized.");
 }
 
 void SceneGraphManager::update()
 {
-	if (m_rootActor.getStatus() == objectStatus::INITIALIZIED)
+	if (m_rootActor.getStatus() == objectStatus::ALIVE)
 	{
-		m_rootActor.exec(execMessage::UPDATE);
+		m_rootActor.excute(executeMessage::UPDATE);
 	}
 	else
 	{
@@ -33,6 +32,6 @@ void SceneGraphManager::update()
 
 void SceneGraphManager::shutdown()
 {
-	m_rootActor.exec(execMessage::SHUTDOWN);
+	m_rootActor.excute(executeMessage::SHUTDOWN);
 	LogManager::getInstance().printLog("SceneGraphManager has been shutdown.");
 }

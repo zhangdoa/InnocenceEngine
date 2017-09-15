@@ -1,7 +1,6 @@
 #pragma once
-#include "../../manager/IEventManager.h"
+#include "../../interface/IEventManager.h"
 #include "../../manager/LogManager.h"
-#include "GUIManager.h"
 
 class GLWindowManager : public IEventManager
 {
@@ -26,7 +25,7 @@ private:
 	GLFWwindow* m_window;
 	std::string m_windowName;
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 };

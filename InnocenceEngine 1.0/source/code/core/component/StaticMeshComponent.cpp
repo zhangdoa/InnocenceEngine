@@ -29,7 +29,7 @@ void StaticMeshComponent::loadTexture(const std::string & textureFileName) const
 	m_textureData.loadTexture(textureFileName);
 }
 
-void StaticMeshComponent::init()
+void StaticMeshComponent::initialize()
 {
 	setVisibleGameEntityType(visibleGameEntityType::STATIC_MESH);
 	m_textureData.init();

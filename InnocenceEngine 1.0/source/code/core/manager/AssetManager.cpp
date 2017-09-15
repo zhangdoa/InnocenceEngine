@@ -10,7 +10,7 @@ AssetManager::~AssetManager()
 {
 }
 
-void AssetManager::init()
+void AssetManager::initialize()
 {
 }
 
@@ -71,6 +71,25 @@ void AssetManager::loadModel(const std::string & fileName, std::vector<StaticMes
 	LogManager::getInstance().printLog("innoModel loaded.");
 }
 
+void AssetManager::loadModel(const std::string & fileName, VisibleComponent & visibleComponent) const
+{
+	// read file via ASSIMP
+	Assimp::Importer l_assImporter;
+	const aiScene* l_assScene = l_assImporter.ReadFile("../res/models/" + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	// check for errors
+	if (!l_assScene || l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
+	{
+		LogManager::getInstance().printLog("ERROR::ASSIMP:: " + std::string{ l_assImporter.GetErrorString() });
+		return;
+	}
+	processAssimpNode(l_assScene->mRootNode, l_assScene, visibleComponent);
+	for (auto i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
+	{
+		processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent);
+	}
+	LogManager::getInstance().printLog("innoModel loaded.");
+}
+
 void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, std::vector<StaticMeshData>& staticMeshDatas) const
 {
 	// process each mesh located at the current node
@@ -83,6 +102,18 @@ void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, std::
 		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], scene, staticMeshData);
 		staticMeshDatas.emplace_back(staticMeshData);
 		staticMeshData.sendDataToGPU();
+	}
+}
+
+void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
+{
+	// process each mesh located at the current node
+	for (auto i = 0; i < node->mNumMeshes; i++)
+	{
+		// the node object only contains indices to index the actual objects in the scene. 
+		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
+		visibleComponent.addMeshData();
+		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], scene, visibleComponent.getMeshData()[i]);
 	}
 }
 

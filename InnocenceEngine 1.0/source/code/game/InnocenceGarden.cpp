@@ -10,7 +10,7 @@ InnocenceGarden::~InnocenceGarden()
 {
 }
 
-void InnocenceGarden::init()
+void InnocenceGarden::initialize()
 {	
 	AssetManager::getInstance().importModel("nanosuit/nanosuit.blend");
 
@@ -21,9 +21,8 @@ void InnocenceGarden::init()
 	skyboxActor.addChildComponent(&testSkyboxComponent);
 	testStaticMeshActor.addChildComponent(&testStaticMeshComponent);
 
-	rootActor.exec(execMessage::INIT);
+	rootActor.excute(executeMessage::INITIALIZE);
 	testStaticMeshComponent.loadModel("nanosuit/nanosuit.innoModel");
-
 	//testStaticMeshComponent.loadTexture("nanosuit/body_dif.png");
 
 	testStaticMeshActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -5.0f));
@@ -35,11 +34,10 @@ void InnocenceGarden::update()
 	//testTriangleActor.getTransform()->rotate(glm::vec3(-1.0f, 0.0f, 0.0f), 1.0);
 	//testTriangleActor.getTransform()->rotate(glm::vec3(0.0f, -1.0f, 0.0f), 0.5);
 	//testTriangleActor.getTransform()->rotate(glm::vec3(0.0f, 0.0f, -1.0f), 0.25);
-
-	rootActor.exec(execMessage::UPDATE);
+	rootActor.excute(executeMessage::UPDATE);
 }
 
 void InnocenceGarden::shutdown()
 {	
-	rootActor.exec(execMessage::SHUTDOWN);
+	rootActor.excute(executeMessage::SHUTDOWN);
 }

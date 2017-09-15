@@ -10,6 +10,16 @@ RenderingManager::~RenderingManager()
 {
 }
 
+GLWindowManager& RenderingManager::getWindowManager() const
+{
+	return GLWindowManager::getInstance();
+}
+
+GLInputManager& RenderingManager::getInputManager() const
+{
+	return GLInputManager::getInstance();
+}
+
 void RenderingManager::render(IVisibleGameEntity * visibleGameEntity) const
 {
 	GLRenderingManager::getInstance().render(visibleGameEntity);
@@ -50,21 +60,44 @@ void RenderingManager::setCameraProjectionMatrix(const glm::mat4 & p)
 	GLRenderingManager::getInstance().setCameraProjectionMatrix(p);
 }
 
-void RenderingManager::init()
+void RenderingManager::initialize()
 {
-	GLRenderingManager::getInstance().exec(execMessage::INIT);
-	this->setStatus(objectStatus::INITIALIZIED);
+	m_childEventManager.emplace_back(&GLWindowManager::getInstance());
+	m_childEventManager.emplace_back(&GLInputManager::getInstance());
+	m_childEventManager.emplace_back(&GLRenderingManager::getInstance());
+	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	{
+		m_childEventManager[i].get()->excute(executeMessage::INITIALIZE);
+	}
+	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("RenderingManager has been initialized.");
 }
 
 void RenderingManager::update()
 {
-	GLRenderingManager::getInstance().exec(execMessage::UPDATE);
+	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	{
+		m_childEventManager[i].get()->excute(executeMessage::UPDATE);
+	}
+	if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)
+	{
+		this->setStatus(objectStatus::STANDBY);
+		LogManager::getInstance().printLog("RenderingManager is stand-by.");
+	}
 }
 
 void RenderingManager::shutdown()
 {
-	GLRenderingManager::getInstance().exec(execMessage::SHUTDOWN);
-	this->setStatus(objectStatus::UNINITIALIZIED);
+	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	{
+		// reverse 'destructor'
+		m_childEventManager[m_childEventManager.size() - 1 - i].get()->excute(executeMessage::SHUTDOWN);
+	}
+	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	{
+		// reverse 'destructor'
+		m_childEventManager[m_childEventManager.size() - 1 - i].release();
+	}
+	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("RenderingManager has been shutdown.");
 }

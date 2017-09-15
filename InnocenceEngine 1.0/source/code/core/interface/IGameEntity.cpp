@@ -252,17 +252,17 @@ glm::quat BaseActor::caclTransformedRot() const
 }
 
 
-void BaseActor::init()
+void BaseActor::initialize()
 {
 	for (size_t i = 0; i < m_childActor.size(); i++)
 	{
-		m_childActor[i]->exec(execMessage::INIT);
+		m_childActor[i]->excute(executeMessage::INITIALIZE);
 	}
 	for (size_t i = 0; i < m_childComponent.size(); i++)
 	{
-		m_childComponent[i]->exec(execMessage::INIT);
+		m_childComponent[i]->excute(executeMessage::INITIALIZE);
 	}
-	this->setStatus(objectStatus::INITIALIZIED);
+	this->setStatus(objectStatus::ALIVE);
 }
 
 void BaseActor::update()
@@ -272,14 +272,14 @@ void BaseActor::update()
 	{
 		for (size_t i = 0; i < getChildrenActors().size(); i++)
 		{
-			m_childActor[i]->exec(execMessage::UPDATE);
+			m_childActor[i]->excute(executeMessage::UPDATE);
 		}
 	}
 	if (m_childComponent.size() != 0)
 	{
 		for (size_t i = 0; i < m_childComponent.size(); i++)
 		{
-			m_childComponent[i]->exec(execMessage::UPDATE);
+			m_childComponent[i]->excute(executeMessage::UPDATE);
 		}
 	}
 }
@@ -288,13 +288,13 @@ void BaseActor::shutdown()
 {
 	for (size_t i = 0; i < getChildrenActors().size(); i++)
 	{
-		getChildrenActors()[i]->exec(execMessage::SHUTDOWN);
+		getChildrenActors()[i]->excute(executeMessage::SHUTDOWN);
 	}
 	for (size_t i = 0; i < m_childComponent.size(); i++)
 	{
-		m_childComponent[i]->exec(execMessage::SHUTDOWN);
+		m_childComponent[i]->excute(executeMessage::SHUTDOWN);
 	}
-	this->setStatus(objectStatus::UNINITIALIZIED);
+	this->setStatus(objectStatus::SHUTDOWN);
 }
 
 BaseComponent::BaseComponent()
