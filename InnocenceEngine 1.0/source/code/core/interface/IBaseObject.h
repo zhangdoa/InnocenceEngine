@@ -3,10 +3,9 @@
 #ifndef _I_BASE_OBJECT_H_
 #define _I_BASE_OBJECT_H_
 
-enum class execMessage
+enum class executeMessage
 {
-	DEFAULT,
-	INIT,
+	INITIALIZE,
 	UPDATE,
 	SHUTDOWN
 };
@@ -14,8 +13,8 @@ enum class execMessage
 enum class objectStatus
 {
 	STANDBY,
-	INITIALIZIED,
-	UNINITIALIZIED,
+	ALIVE,
+	SHUTDOWN,
 	ERROR
 };
 class IBaseObject
@@ -24,16 +23,16 @@ public:
 	IBaseObject();
 	virtual ~IBaseObject();
 
-	void exec(execMessage execMessage);
+	void excute(executeMessage execteMessage);
 	const objectStatus& getStatus() const;
 
 protected:
 	void setStatus(objectStatus objectStatus);
 
 private:
-	objectStatus m_ObjectStatus = objectStatus::UNINITIALIZIED;
+	objectStatus m_ObjectStatus = objectStatus::SHUTDOWN;
 
-	virtual void init() = 0;
+	virtual void initialize() = 0;
 	virtual void update() = 0;
 	virtual void shutdown() = 0;
 };

@@ -26,7 +26,7 @@ void GLWindowManager::setWindowName(const std::string & windowName)
 	m_windowName = windowName;
 }
 
-void GLWindowManager::init()
+void GLWindowManager::initialize()
 {
 	if (glfwInit() != GL_TRUE)
 	{
@@ -53,7 +53,7 @@ void GLWindowManager::init()
 		this->setStatus(objectStatus::ERROR);
 		LogManager::getInstance().printLog("Failed to initialize GLEW.");
 	}
-	this->setStatus(objectStatus::INITIALIZIED);
+	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("GLWindowManager has been initialized.");
 }
 
@@ -76,7 +76,7 @@ void GLWindowManager::shutdown()
 	{
 		glfwDestroyWindow(m_window);
 		glfwTerminate();
-		this->setStatus(objectStatus::UNINITIALIZIED);
+		this->setStatus(objectStatus::SHUTDOWN);
 		LogManager::getInstance().printLog("GLWindowManager has been shutdown.");
 	}
 }

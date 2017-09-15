@@ -67,7 +67,7 @@ private:
 	std::vector<BaseComponent*> m_childComponent;
 	Transform m_transform;
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 };

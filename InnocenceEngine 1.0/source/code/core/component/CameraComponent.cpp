@@ -31,7 +31,7 @@ glm::mat4 CameraComponent::getProjectionMatrix() const
 	return m_projectionMatrix;
 }
 
-void CameraComponent::init()
+void CameraComponent::initialize()
 {
 	m_projectionMatrix = glm::perspective((70.0f / 180.0f) * glm::pi<float>(), (4.0f / 3.0f), 0.1f, 1000000.0f);
 }

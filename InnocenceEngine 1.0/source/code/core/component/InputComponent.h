@@ -22,7 +22,7 @@ private:
 	float rotateSpeed = 2.0f;
 	void move(moveDirection moveDirection);
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 };

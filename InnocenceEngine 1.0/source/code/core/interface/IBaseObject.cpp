@@ -11,13 +11,13 @@ IBaseObject::~IBaseObject()
 {
 }
 
-void IBaseObject::exec(execMessage execMessage)
+void IBaseObject::excute(executeMessage execteMessage)
 {
-	switch (execMessage)
+	switch (execteMessage)
 	{
-	case  execMessage::INIT: init(); m_ObjectStatus = objectStatus::INITIALIZIED;  break;
-	case  execMessage::UPDATE: update(); break;
-	case  execMessage::SHUTDOWN: shutdown(); m_ObjectStatus = objectStatus::UNINITIALIZIED; break;
+	case  executeMessage::INITIALIZE: initialize(); m_ObjectStatus = objectStatus::ALIVE;  break;
+	case  executeMessage::UPDATE: update(); break;
+	case  executeMessage::SHUTDOWN: shutdown(); m_ObjectStatus = objectStatus::SHUTDOWN; break;
 	default: m_ObjectStatus = objectStatus::ERROR; break;
 	}
 }

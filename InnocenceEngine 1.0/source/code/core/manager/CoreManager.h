@@ -1,10 +1,8 @@
 #pragma once
 
-#include "IEventManager.h"
+#include "../interface/IEventManager.h"
 
 #include "TimeManager.h"
-#include "../manager/graphic/GLWindowManager.h"
-#include "InputManager.h"
 #include "../manager/graphic/RenderingManager.h"
 #include "../manager/graphic/SceneGraphManager.h"
 #include "LogManager.h"
@@ -24,8 +22,6 @@ public:
 
 	void setGameData(IGameData* gameData);
 	TimeManager& getTimeManager() const;
-	GLWindowManager& getWindowManager() const;
-	InputManager& getInputManager() const;
 	RenderingManager& getRenderingManager() const;
 	// SceneGraphManager& getTimeManager() const;
 	LogManager& getLogManager() const;
@@ -33,7 +29,7 @@ public:
 private:
 	~CoreManager();
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 

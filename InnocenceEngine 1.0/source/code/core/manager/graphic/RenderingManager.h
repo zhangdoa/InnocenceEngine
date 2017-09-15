@@ -1,9 +1,10 @@
 #pragma once
 #include "../../interface/IVisibleGameEntity.h"
-#include "../../manager/IEventManager.h"
+#include "../../interface/IEventManager.h"
 #include "../../manager/LogManager.h"
 #include "../../platform-dependency/GL/GLRenderingManager.h"
-
+#include "GLWindowManager.h"
+#include "GLInputManager.h"
 
 class RenderingManager : public IEventManager
 {
@@ -15,6 +16,9 @@ public:
 		static RenderingManager instance;
 		return instance;
 	}
+
+	GLWindowManager& getWindowManager() const;
+	GLInputManager& getInputManager() const;
 
 	void render(IVisibleGameEntity* visibleGameEntity) const;
 	void finishRender() const;
@@ -29,8 +33,10 @@ public:
 private:
 	RenderingManager();
 
-	void init() override;
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
+
+	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 };
 
