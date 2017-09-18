@@ -74,8 +74,6 @@ void CoreManager::update()
 			RenderingManager::getInstance().excute(executeMessage::UPDATE);
 			// game data update
 			m_gameData->excute(executeMessage::UPDATE);
-			//@TODO: invoke finishRender() at the end of multi-thread rendering pipeline
-			RenderingManager::getInstance().finishRender();
 		}
 		else
 		{

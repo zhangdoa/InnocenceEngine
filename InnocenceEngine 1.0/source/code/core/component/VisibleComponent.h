@@ -8,6 +8,7 @@ public:
 	VisibleComponent();
 	~VisibleComponent();
 
+	void draw() const;
 	const visiblilityType& getVisiblilityType() const;
 	void setVisiblilityType(visiblilityType visiblilityType);
 	void addMeshData(MeshData& MeshData);

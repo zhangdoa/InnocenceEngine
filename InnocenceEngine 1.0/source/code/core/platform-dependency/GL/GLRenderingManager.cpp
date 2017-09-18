@@ -171,7 +171,7 @@ void BasicGLShader::init()
 	updateUniform("uni_Texture", 0);
 }
 
-void BasicGLShader::update(IVisibleGameEntity* visibleGameEntity)
+void BasicGLShader::draw(VisibleComponent * visibleComponent)
 {
 	bindShader();
 
@@ -179,7 +179,7 @@ void BasicGLShader::update(IVisibleGameEntity* visibleGameEntity)
 	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
 	GLRenderingManager::getInstance().getCameraViewMatrix(v);
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleGameEntity->getParentActor().caclTransformation();
+	m = visibleComponent->getParentActor().caclTransformation();
 
 	updateUniform("uni_MVP", p * v * t * m);
 
@@ -206,7 +206,7 @@ void ForwardAmbientShader::init()
 	m_ambientIntensity = 1.0f;
 }
 
-void ForwardAmbientShader::update(IVisibleGameEntity* visibleGameEntity)
+void ForwardAmbientShader::draw(VisibleComponent * visibleComponent)
 {
 	bindShader();
 
@@ -214,7 +214,7 @@ void ForwardAmbientShader::update(IVisibleGameEntity* visibleGameEntity)
 	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
 	GLRenderingManager::getInstance().getCameraViewMatrix(v);
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleGameEntity->getParentActor().caclTransformation();
+	m = visibleComponent->getParentActor().caclTransformation();
 
 	updateUniform("uni_MVP", p * v * t * m);
 	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
@@ -244,7 +244,7 @@ void SkyboxShader::init()
 	updateUniform("uni_skybox", 0);
 }
 
-void SkyboxShader::update(IVisibleGameEntity* visibleGameEntity)
+void SkyboxShader::draw(VisibleComponent * visibleComponent)
 {
 	bindShader();
 
@@ -266,26 +266,25 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
-void GLRenderingManager::render(IVisibleGameEntity* visibleGameEntity) const
+void GLRenderingManager::render(VisibleComponent * visibleComponent) const
 {
-	// update shader
-	switch (visibleGameEntity->getVisibleGameEntityType())
+	switch (visibleComponent->getVisiblilityType())
 	{
-	case visibleGameEntityType::INVISIBLE: break;
-	case visibleGameEntityType::STATIC_MESH:
+	case visiblilityType::INVISIBLE: break;
+	case visiblilityType::STATIC_MESH:
 		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
 		{
-			m_staticMeshGLShader[i]->update(visibleGameEntity);
+			m_staticMeshGLShader[i]->draw(visibleComponent);
 		}
 		break;
-	case visibleGameEntityType::SKYBOX:
+	case visiblilityType::SKYBOX:
 		glDepthFunc(GL_LEQUAL);
-		SkyboxShader::getInstance().update(visibleGameEntity);
+		SkyboxShader::getInstance().draw(visibleComponent);
 		break;
 	}
 
 	// update visibleGameEntity's mesh& texture
-	visibleGameEntity->render();
+	visibleComponent->draw();
 }
 
 void GLRenderingManager::finishRender() const

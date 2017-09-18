@@ -19,12 +19,14 @@ void InnocenceGarden::initialize()
 
 	rootActor.addChildActor(&playCharacter);
 	rootActor.addChildActor(&skyboxActor);
-	//rootActor.addChildActor(&testStaticMeshActor);
+	rootActor.addChildActor(&testStaticMeshActor);
 
 	testSkyboxComponent.setVisiblilityType(visiblilityType::SKYBOX);
 	skyboxActor.addChildComponent(&testSkyboxComponent);
-	//testStaticMeshComponent.setVisiblilityType(visiblilityType::STATIC_MESH);
-	//testStaticMeshActor.addChildComponent(&testStaticMeshComponent);
+	SceneGraphManager::getInstance().getRenderingQueue().emplace_back(&testSkyboxComponent);
+	testStaticMeshComponent.setVisiblilityType(visiblilityType::STATIC_MESH);
+	testStaticMeshActor.addChildComponent(&testStaticMeshComponent);
+	SceneGraphManager::getInstance().getRenderingQueue().emplace_back(&testStaticMeshComponent);
 
 	//testStaticMeshComponent.loadTexture("nanosuit/body_dif.png");
 
