@@ -20,10 +20,11 @@ public:
 		return instance;
 	}
 
-	std::string loadShader(const std::string& shaderFileName) const;
+	std::string loadShader(const std::string& FileName) const;
 	void importModel(const std::string& fileName) const;
-	void loadModel(const std::string& fileName, std::vector<StaticMeshData>& staticMeshData) const;
 	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent) const;
+	void loadTexture(const std::string& fileName, VisibleComponent& visibleComponent) const;
+	void loadTexture(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
 private:
 	AssetManager();
 
@@ -31,10 +32,7 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	void processAssimpNode(aiNode* node, const aiScene* scene, std::vector<StaticMeshData>& staticMeshData) const;
 	void processAssimpNode(aiNode* node, const aiScene* scene, VisibleComponent& visibleComponent) const;
-	void processAssimpMesh(aiMesh* mesh, const aiScene* scene, StaticMeshData& staticMeshData) const;
-	void processAssimpMesh(aiMesh* mesh, const aiScene* scene, VisibleComponent& visibleComponent) const;
-
+	void processAssimpMesh(aiMesh* mesh, const aiScene* scene, MeshData& staticMeshData) const;
 };
 
