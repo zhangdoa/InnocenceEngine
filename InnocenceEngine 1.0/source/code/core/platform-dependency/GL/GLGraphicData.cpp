@@ -1,6 +1,4 @@
 #include "../../../main/stdafx.h"
-#define STB_IMAGE_IMPLEMENTATION    
-#include "../../third-party/stb_image.h"
 #include "GLGraphicData.h"
 
 GLMeshData::GLMeshData()
@@ -103,104 +101,70 @@ GLTextureData::~GLTextureData()
 {
 }
 
-void GLTextureData::init()
+void GLTextureData::init(textureType textureType)
 {
-	glGenTextures(1, &m_textureID);
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	switch (textureType)
+	{
+	case textureType::INVISIBLE: break;
+	case textureType::ALBEGO:
+		glGenTextures(1, &m_textureID);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		// set the texture wrapping parameters
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		// set texture filtering parameters
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		break;
+	case textureType::CUBEMAP:
+		glGenTextures(1, &m_textureID);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
+		// set the texture wrapping parameters
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		// set texture filtering parameters
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		break;
+	}
 }
 
-void GLTextureData::update()
+void GLTextureData::update(textureType textureType)
 {
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	switch (textureType)
+	{
+	case textureType::INVISIBLE: break;
+	case textureType::ALBEGO:
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		break;
+	case textureType::CUBEMAP:
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
+		break;
+	}
 }
 
 void GLTextureData::shutdown()
 {
 }
 
-void GLTextureData::loadTexture(const std::string & textureFileName) const
+void GLTextureData::sendDataToGPU(textureType textureType, std::vector<int>& textureWidth, std::vector<int>& textureHeight, unsigned char * textureData) const
 {
-	// load image, create texture and generate mipmaps
-	int width, height, nrChannels;
-	stbi_set_flip_vertically_on_load(true);
-	unsigned char *data = stbi_load(("../res/textures/" + textureFileName).c_str(), &width, &height, &nrChannels, 0);
-	if (data)
+	switch (textureType)
 	{
-		addTextureData(width, height, data);
-	}
-	else
-	{
-		LogManager::getInstance().printLog("Error: Failed to load texture: " + textureFileName);
-	}
-	stbi_image_free(data);
-}
-
-void GLTextureData::addTextureData(int textureWidth, int textureHeight, unsigned char * GLTextureData) const
-{
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, GLTextureData);
-	glGenerateMipmap(GL_TEXTURE_2D);
-}
-
-GLCubemapData::GLCubemapData()
-{
-}
-
-GLCubemapData::~GLCubemapData()
-{
-}
-
-void GLCubemapData::init()
-{
-	glGenTextures(1, &m_cubemapTextureID);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemapTextureID);
-
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-}
-
-void GLCubemapData::update()
-{
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemapTextureID);
-}
-
-void GLCubemapData::shutdown()
-{
-}
-
-void GLCubemapData::addCubemapData(unsigned int faceCount, int cubemapTextureWidth, int cubemapTextureHeight, unsigned char * cubemapGLTextureData) const
-{
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + faceCount,
-		0, GL_RGB, cubemapTextureWidth, cubemapTextureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, cubemapGLTextureData);
-}
-
-void GLCubemapData::loadCubemap(const std::vector<std::string> & faceImagePath) const
-{
-	int width, height, nrChannels;
-	for (unsigned int i = 0; i < faceImagePath.size(); i++)
-	{
-		unsigned char *data = stbi_load(("../res/textures/" + faceImagePath[i]).c_str(), &width, &height, &nrChannels, 0);
-		if (data)
+	case textureType::INVISIBLE: break;
+	case textureType::ALBEGO:
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth[0], textureHeight[0], 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
+		glGenerateMipmap(GL_TEXTURE_2D);
+		break;
+	case textureType::CUBEMAP:
+		for (unsigned int i = 0; i < textureWidth.size(); i++)
 		{
-			addCubemapData(i, width, height, data);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, textureWidth[i], textureWidth[i], 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
 		}
-		else
-		{
-			LogManager::getInstance().printLog("Error: Failed to load cubemap texture: " + ("../res/textures/" + faceImagePath[i]));
-		}
-		stbi_image_free(data);
+		break;
 	}
 }
+

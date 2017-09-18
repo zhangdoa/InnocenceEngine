@@ -2,8 +2,6 @@
 #include "../interface/IGameEntity.h"
 #include "../data/GraphicData.h"
 
-enum class visiblilityType { INVISIBLE, STATIC_MESH, SKYBOX };
-
 class VisibleComponent : public BaseComponent
 {
 public:
@@ -12,13 +10,11 @@ public:
 
 	const visiblilityType& getVisiblilityType() const;
 	void setVisiblilityType(visiblilityType visiblilityType);
-	std::vector<StaticMeshData>&getMeshData() const;
-	std::vector<TextureData>&getTextureData() const;
-	void addMeshData();
-	void addTextureData();
+	void addMeshData(MeshData& MeshData);
+	void addTextureData(TextureData& textureData);
 
 private:
-	std::vector<StaticMeshData> m_meshData;
+	std::vector<MeshData> m_meshData;
 	std::vector<TextureData> m_textureData;
 
 	void initialize() override;

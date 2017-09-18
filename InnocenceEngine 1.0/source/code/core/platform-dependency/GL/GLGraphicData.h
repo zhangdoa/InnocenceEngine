@@ -1,6 +1,8 @@
 #pragma once
 #include "../../manager/LogManager.h"
 
+enum class textureType { INVISIBLE, ALBEGO, CUBEMAP };
+
 struct GLVertexData
 {
 	glm::vec3 m_pos;
@@ -32,32 +34,14 @@ public:
 	GLTextureData();
 	~GLTextureData();
 
-	void init();
-	void update();
+	void init(textureType textureType);
+	void update(textureType textureType);
 	void shutdown();
 
-	void loadTexture(const std::string& textureFileName) const;
-	void addTextureData(int textureWidth, int textureHeight, unsigned char * textureData) const;
+	void sendDataToGPU(textureType textureType, std::vector<int>& textureWidth, std::vector<int>& textureHeight, unsigned char * textureData) const;
 
 private:
 	GLuint m_textureID;
-};
-
-class GLCubemapData
-{
-public:
-	GLCubemapData();
-	~GLCubemapData();
-
-	void init();
-	void update();
-	void shutdown();
-
-	void loadCubemap(const std::vector<std::string>& faceImagePath) const;
-	void addCubemapData(unsigned int faceCount, int cubemapTextureWidth, int cubemapTextureHeight, unsigned char * cubemapTextureData) const;
-
-private:
-	GLuint m_cubemapTextureID;
 };
 
 

@@ -13,8 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="code\core\component\CameraComponent.cpp" />
-    <ClCompile Include="code\core\component\SkyboxComponent.cpp" />
-    <ClCompile Include="code\core\component\StaticMeshComponent.cpp" />
     <ClCompile Include="code\core\data\GraphicData.cpp" />
     <ClCompile Include="code\core\interface\IBaseObject.cpp" />
     <ClCompile Include="code\core\interface\IGameData.cpp" />
@@ -42,8 +40,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
-    <ClInclude Include="code\core\component\SkyboxComponent.h" />
-    <ClInclude Include="code\core\component\StaticMeshComponent.h" />
     <ClInclude Include="code\core\data\GraphicData.h" />
     <ClInclude Include="code\core\interface\IBaseObject.h" />
     <ClInclude Include="code\core\interface\IGameData.h" />

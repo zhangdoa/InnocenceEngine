@@ -21,33 +21,26 @@ void VisibleComponent::setVisiblilityType(visiblilityType visiblilityType)
 	m_visiblilityType = visiblilityType;
 }
 
-std::vector<StaticMeshData>& VisibleComponent::getMeshData() const
+void VisibleComponent::addMeshData(MeshData & MeshData)
 {
-	return m_meshData;
+	m_meshData.emplace_back(MeshData);
 }
 
-std::vector<TextureData>& VisibleComponent::getTextureData() const
+void VisibleComponent::addTextureData(TextureData & textureData)
 {
-	return m_textureData;
-}
-
-void VisibleComponent::addMeshData()
-{
-	StaticMeshData newMeshData;
-	newMeshData.init();
-	newMeshData.sendDataToGPU();
-	m_meshData.emplace_back(newMeshData);
-}
-
-void VisibleComponent::addTextureData()
-{
-	TextureData newTextureData;
-	newTextureData.init();
-	m_textureData.emplace_back(newTextureData);
+	m_textureData.emplace_back(textureData);
 }
 
 void VisibleComponent::initialize()
 {
+	if (m_visiblilityType == visiblilityType::SKYBOX)
+	{
+		MeshData newMeshData;
+		newMeshData.addTestSkybox();
+		m_meshData.emplace_back(newMeshData);
+	}
+	std::for_each(m_meshData.begin(), m_meshData.end(), [&](MeshData val) {val.init(); val.sendDataToGPU();});
+	std::for_each(m_textureData.begin(), m_textureData.end(), [&](TextureData val) {val.init(); val.sendDataToGPU();});
 }
 
 void VisibleComponent::update()
@@ -57,4 +50,6 @@ void VisibleComponent::update()
 
 void VisibleComponent::shutdown()
 {
+	std::for_each(m_textureData.begin(), m_textureData.end(), [](TextureData val) {val.shutdown(); });
+	std::for_each(m_meshData.begin(), m_meshData.end(), [](MeshData val) {val.shutdown(); });
 }

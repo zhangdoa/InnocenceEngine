@@ -1,6 +1,8 @@
 
 #include "../../main/stdafx.h"
 #include "AssetManager.h"
+#define STB_IMAGE_IMPLEMENTATION    
+#include "../third-party/stb_image.h"
 
 AssetManager::AssetManager()
 {
@@ -52,25 +54,6 @@ void AssetManager::importModel(const std::string& fileName) const
 	LogManager::getInstance().printLog("Model imported.");
 }
 
-void AssetManager::loadModel(const std::string & fileName, std::vector<StaticMeshData>& staticMeshDatas) const
-{
-	// read file via ASSIMP
-	Assimp::Importer l_assImporter;
-	const aiScene* l_assScene = l_assImporter.ReadFile("../res/models/" + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-	// check for errors
-	if (!l_assScene || l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
-	{
-		LogManager::getInstance().printLog("ERROR::ASSIMP:: " + std::string{ l_assImporter.GetErrorString() });
-		return;
-	}
-	processAssimpNode(l_assScene->mRootNode, l_assScene, staticMeshDatas);
-	for (auto i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
-	{
-		processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, staticMeshDatas);
-	}
-	LogManager::getInstance().printLog("innoModel loaded.");
-}
-
 void AssetManager::loadModel(const std::string & fileName, VisibleComponent & visibleComponent) const
 {
 	// read file via ASSIMP
@@ -90,18 +73,47 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	LogManager::getInstance().printLog("innoModel loaded.");
 }
 
-void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, std::vector<StaticMeshData>& staticMeshDatas) const
+void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & visibleComponent) const
 {
-	// process each mesh located at the current node
-	for (auto i = 0; i < node->mNumMeshes; i++)
+	TextureData newTextureData;
+	newTextureData.setTextureType(textureType::ALBEGO);
+	visibleComponent.addTextureData(newTextureData);
+	// load image, create texture and generate mipmaps
+	stbi_set_flip_vertically_on_load(true);
+	newTextureData.setTextureData(stbi_load(("../res/textures/" + fileName).c_str(), &newTextureData.getTextureWidth()[0], &newTextureData.getTextureHeight()[0], &newTextureData.getTextureNormalChannels()[0], 0));
+	if (newTextureData.getTextureData())
 	{
-		// the node object only contains indices to index the actual objects in the scene. 
-		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-		StaticMeshData staticMeshData;
-		staticMeshData.init();
-		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], scene, staticMeshData);
-		staticMeshDatas.emplace_back(staticMeshData);
-		staticMeshData.sendDataToGPU();
+		LogManager::getInstance().printLog("innoTexture loaded.");
+	}
+	else
+	{
+		LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
+	}
+	stbi_image_free(newTextureData.getTextureData());
+}
+
+void AssetManager::loadTexture(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
+{
+	TextureData newTextureData;
+	newTextureData.setTextureType(textureType::CUBEMAP);
+	visibleComponent.addTextureData(newTextureData);
+	for (auto i = 0; i < fileName.size(); i++)
+	{
+		newTextureData.getTextureWidth().emplace_back(0);
+		newTextureData.getTextureHeight().emplace_back(0);
+		newTextureData.getTextureNormalChannels().emplace_back(0);
+		// load image, create texture and generate mipmaps
+		stbi_set_flip_vertically_on_load(true);
+		newTextureData.setTextureData(stbi_load(("../res/textures/" + fileName[i]).c_str(), &newTextureData.getTextureWidth()[i], &newTextureData.getTextureHeight()[i], &newTextureData.getTextureNormalChannels()[i], 0));
+		if (newTextureData.getTextureData())
+		{
+			LogManager::getInstance().printLog("innoTexture loaded.");
+		}
+		else
+		{
+			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + ("../res/textures/" + fileName[i]));
+		}
+		stbi_image_free(newTextureData.getTextureData());
 	}
 }
 
@@ -112,12 +124,13 @@ void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, Visib
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-		visibleComponent.addMeshData();
-		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], scene, visibleComponent.getMeshData()[i]);
+		MeshData newMeshData;
+		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], scene, newMeshData);
+		visibleComponent.addMeshData(newMeshData);
 	}
 }
 
-void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, StaticMeshData& staticMeshData) const
+void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, MeshData& staticMeshData) const
 {
 	for (auto i = 0; i < mesh->mNumVertices; i++)
 	{
@@ -169,7 +182,7 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, Static
 
 		staticMeshData.getVertices().emplace_back(vertexData);
 	}
-	
+
 	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
 	for (auto i = 0; i < mesh->mNumFaces; i++)
 	{
