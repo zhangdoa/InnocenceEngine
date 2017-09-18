@@ -1,46 +1,46 @@
 #include "../../main/stdafx.h"
 #include "GraphicData.h"
 
-StaticMeshData::StaticMeshData()
+MeshData::MeshData()
 {
 }
 
 
-StaticMeshData::~StaticMeshData()
+MeshData::~MeshData()
 {
 }
 
-void StaticMeshData::init()
+void MeshData::init()
 {
 	m_GLMeshData.init();
 }
 
-void StaticMeshData::update()
+void MeshData::draw()
 {
 	m_GLMeshData.update(m_intices);
 }
 
-void StaticMeshData::shutdown()
+void MeshData::shutdown()
 {
 	m_GLMeshData.shutdown();
 }
 
-void StaticMeshData::sendDataToGPU()
+void MeshData::sendDataToGPU()
 {
 	m_GLMeshData.sendDataToGPU(m_vertices, m_intices, false);
 }
 
-std::vector<GLVertexData>& StaticMeshData::getVertices()
+std::vector<GLVertexData>& MeshData::getVertices()
 {
 	return m_vertices;
 }
 
-std::vector<unsigned int>& StaticMeshData::getIntices()
+std::vector<unsigned int>& MeshData::getIntices()
 {
 	return m_intices;
 }
 
-void StaticMeshData::addTestCube()
+void MeshData::addTestCube()
 {
 	GLVertexData l_VertexData_1;
 	l_VertexData_1.m_pos = glm::vec3(0.5f, 0.5f, 0.5f);
@@ -90,11 +90,9 @@ void StaticMeshData::addTestCube()
 		3, 2, 7, 2, 6 ,7,
 		4, 0, 7, 0, 3, 7,
 		1, 5, 2, 5, 6, 2 };
-
-	m_GLMeshData.sendDataToGPU(m_vertices, m_intices, false);
 }
 
-void StaticMeshData::addTestSkybox()
+void MeshData::addTestSkybox()
 {
 	GLVertexData l_VertexData_1;
 	l_VertexData_1.m_pos = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -128,8 +126,6 @@ void StaticMeshData::addTestSkybox()
 		3, 2, 7, 2, 6 ,7,
 		4, 0, 7, 0, 3, 7,
 		1, 5, 2, 5, 6, 2 };
-
-	m_GLMeshData.sendDataToGPU(m_vertices, m_intices, false);
 }
 
 TextureData::TextureData()
@@ -142,12 +138,12 @@ TextureData::~TextureData()
 
 void TextureData::init()
 {
-	m_GLTextureData.init();
+	m_GLTextureData.init(m_textureType);
 }
 
-void TextureData::update()
+void TextureData::draw()
 {
-	m_GLTextureData.update();
+	m_GLTextureData.update(m_textureType);
 }
 
 void TextureData::shutdown()
@@ -155,37 +151,43 @@ void TextureData::shutdown()
 	m_GLTextureData.shutdown();
 }
 
-void TextureData::loadTexture(const std::string & filePath) const
+void TextureData::sendDataToGPU()
 {
-	m_GLTextureData.loadTexture(filePath);
+	m_GLTextureData.sendDataToGPU(m_textureType, m_textureWidths, m_textureHeights, m_textureData);
 }
 
-CubemapData::CubemapData()
+std::vector<int>& TextureData::getTextureWidth()
 {
+	return m_textureWidths;
 }
 
-CubemapData::~CubemapData()
+std::vector<int>& TextureData::getTextureHeight()
 {
+	return m_textureHeights;
 }
 
-void CubemapData::init()
+std::vector<int>& TextureData::getTextureNormalChannels()
 {
-	m_GLCubemapData.init();
+	return m_normalChannels;
 }
 
-void CubemapData::update()
+unsigned char * TextureData::getTextureData()
 {
-	m_GLCubemapData.update();
+	return m_textureData;
 }
 
-void CubemapData::shutdown()
+void TextureData::setTextureData(unsigned char * textureData)
 {
-	m_GLCubemapData.shutdown();
+	m_textureData = textureData;
 }
 
-
-void CubemapData::loadCubemap(const std::vector<std::string> & filePath) const
+void TextureData::setTextureType(textureType textureType)
 {
-	m_GLCubemapData.loadCubemap(filePath);
+	m_textureType = textureType;
+}
+
+textureType TextureData::getTextureType() const
+{
+	return m_textureType;
 }
 
