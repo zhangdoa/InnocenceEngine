@@ -17,7 +17,6 @@
     <ClCompile Include="code\core\interface\IBaseObject.cpp" />
     <ClCompile Include="code\core\interface\IGameData.cpp" />
     <ClCompile Include="code\core\interface\IGameEntity.cpp" />
-    <ClCompile Include="code\core\interface\IVisibleGameEntity.cpp" />
     <ClCompile Include="code\core\manager\AssetManager.cpp" />
     <ClCompile Include="code\core\manager\CoreManager.cpp" />
     <ClCompile Include="code\core\manager\LogManager.cpp" />
@@ -44,7 +43,6 @@
     <ClInclude Include="code\core\interface\IBaseObject.h" />
     <ClInclude Include="code\core\interface\IGameData.h" />
     <ClInclude Include="code\core\interface\IGameEntity.h" />
-    <ClInclude Include="code\core\interface\IVisibleGameEntity.h" />
     <ClInclude Include="code\core\manager\AssetManager.h" />
     <ClInclude Include="code\core\manager\CoreManager.h" />
     <ClInclude Include="code\core\manager\LogManager.h" />
