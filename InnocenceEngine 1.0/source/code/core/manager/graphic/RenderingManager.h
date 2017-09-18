@@ -1,10 +1,12 @@
 #pragma once
-#include "../../interface/IVisibleGameEntity.h"
+
 #include "../../interface/IEventManager.h"
 #include "../../manager/LogManager.h"
+#include "SceneGraphManager.h"
 #include "../../platform-dependency/GL/GLRenderingManager.h"
 #include "GLWindowManager.h"
 #include "GLInputManager.h"
+#include "../../data/GraphicData.h"
 
 class RenderingManager : public IEventManager
 {
@@ -20,8 +22,7 @@ public:
 	GLWindowManager& getWindowManager() const;
 	GLInputManager& getInputManager() const;
 
-	void render(IVisibleGameEntity* visibleGameEntity) const;
-	void finishRender() const;
+	void render() const;
 
 	void getCameraTranslationMatrix(glm::mat4& t) const;
 	void setCameraTranslationMatrix(const glm::mat4& t) ;

@@ -2,7 +2,7 @@
 #include "../../interface/IEventManager.h"
 #include "../LogManager.h"
 #include "../../interface/IGameEntity.h"
-
+#include "../../component/VisibleComponent.h"
 class SceneGraphManager : public IEventManager
 {
 public:
@@ -14,6 +14,8 @@ public:
 		return instance;
 	}
 
+	void addToRenderingQueue(VisibleComponent* visibleComponent);
+	std::vector<VisibleComponent*>& getRenderingQueue();
 private:
 	SceneGraphManager();
 
@@ -21,6 +23,6 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	BaseActor m_rootActor;
+	std::vector<VisibleComponent*> m_visibleComponents;
 };
 

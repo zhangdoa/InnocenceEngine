@@ -20,13 +20,12 @@ GLInputManager& RenderingManager::getInputManager() const
 	return GLInputManager::getInstance();
 }
 
-void RenderingManager::render(IVisibleGameEntity * visibleGameEntity) const
+void RenderingManager::render() const
 {
-	GLRenderingManager::getInstance().render(visibleGameEntity);
-}
-
-void RenderingManager::finishRender() const
-{
+	for (auto i : SceneGraphManager::getInstance().getRenderingQueue())
+	{
+		GLRenderingManager::getInstance().render(i);
+	}
 	GLRenderingManager::getInstance().finishRender();
 }
 
@@ -79,6 +78,7 @@ void RenderingManager::update()
 	{
 		m_childEventManager[i].get()->excute(executeMessage::UPDATE);
 	}
+	this->render();
 	if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)
 	{
 		this->setStatus(objectStatus::STANDBY);

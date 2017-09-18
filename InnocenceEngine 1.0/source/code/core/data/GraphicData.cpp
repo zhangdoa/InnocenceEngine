@@ -17,7 +17,7 @@ void MeshData::init()
 
 void MeshData::draw()
 {
-	m_GLMeshData.update(m_intices);
+	m_GLMeshData.draw(m_intices);
 }
 
 void MeshData::shutdown()

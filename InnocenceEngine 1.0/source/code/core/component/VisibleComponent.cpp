@@ -11,6 +11,20 @@ VisibleComponent::~VisibleComponent()
 {
 }
 
+void VisibleComponent::draw() const
+{
+	for (auto i : m_textureData)
+	{
+		i.draw();
+	}
+	for (auto i : m_meshData)
+	{
+		i.draw();
+	}
+	//std::for_each(m_meshData.begin(), m_meshData.end(), [&](MeshData val) {val.draw();});
+	//std::for_each(m_textureData.begin(), m_textureData.end(), [&](TextureData val) {val.draw();});
+}
+
 const visiblilityType & VisibleComponent::getVisiblilityType() const
 {
 	return m_visiblilityType;
@@ -39,8 +53,18 @@ void VisibleComponent::initialize()
 		newMeshData.addTestSkybox();
 		m_meshData.emplace_back(newMeshData);
 	}
-	std::for_each(m_meshData.begin(), m_meshData.end(), [&](MeshData val) {val.init(); val.sendDataToGPU();});
-	std::for_each(m_textureData.begin(), m_textureData.end(), [&](TextureData val) {val.init(); val.sendDataToGPU();});
+	for (auto i : m_meshData)
+	{
+		i.init();
+		i.sendDataToGPU();
+	}
+	for (auto i : m_textureData)
+	{
+		i.init();
+		i.sendDataToGPU();
+	}
+	//std::for_each(m_meshData.begin(), m_meshData.end(), [&](MeshData val) {val.init(); val.sendDataToGPU();});
+	//std::for_each(m_textureData.begin(), m_textureData.end(), [&](TextureData val) {val.init(); val.sendDataToGPU();});
 }
 
 void VisibleComponent::update()
@@ -50,6 +74,14 @@ void VisibleComponent::update()
 
 void VisibleComponent::shutdown()
 {
-	std::for_each(m_textureData.begin(), m_textureData.end(), [](TextureData val) {val.shutdown(); });
-	std::for_each(m_meshData.begin(), m_meshData.end(), [](MeshData val) {val.shutdown(); });
+	for (auto i : m_textureData)
+	{
+		i.shutdown();
+	}
+	for (auto i : m_meshData)
+	{
+		i.shutdown();
+	}
+	//std::for_each(m_textureData.begin(), m_textureData.end(), [](TextureData val) {val.shutdown(); });
+	//std::for_each(m_meshData.begin(), m_meshData.end(), [](MeshData val) {val.shutdown(); });
 }

@@ -17,7 +17,7 @@ public:
 	~GLMeshData();
 
 	void init();
-	void update(std::vector<unsigned int>& indices);
+	void draw(std::vector<unsigned int>& indices);
 	void shutdown();
 
 	void sendDataToGPU(std::vector<GLVertexData>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;

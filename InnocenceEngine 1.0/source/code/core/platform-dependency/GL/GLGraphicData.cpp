@@ -16,7 +16,7 @@ void GLMeshData::init()
 	glGenBuffers(1, &m_IBO);
 }
 
-void GLMeshData::update(std::vector<unsigned int>& indices)
+void GLMeshData::draw(std::vector<unsigned int>& indices)
 {
 	glBindVertexArray(m_VAO);
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);

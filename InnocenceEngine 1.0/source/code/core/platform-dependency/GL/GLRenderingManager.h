@@ -2,7 +2,7 @@
 #include "../../interface/IEventManager.h"
 #include "../../manager/AssetManager.h"
 #include "../../manager/LogManager.h"
-#include "../../interface/IVisibleGameEntity.h"
+#include "../../component/VisibleComponent.h"
 
 class GLShader
 {
@@ -10,7 +10,7 @@ public:
 	virtual ~GLShader();
 
 	virtual void init() = 0;
-	virtual void update(IVisibleGameEntity* visibleGameEntity) = 0;
+	virtual void draw(VisibleComponent * visibleComponent) = 0;
 
 protected:
 	GLShader();
@@ -60,7 +60,7 @@ public:
 	}
 
 	void init() override;
-	void update(IVisibleGameEntity* visibleGameEntity) override;
+	void draw(VisibleComponent * visibleComponent) override;
 
 private:
 	BasicGLShader();
@@ -79,7 +79,7 @@ public:
 	}
 
 	void init() override;
-	void update(IVisibleGameEntity* visibleGameEntity) override;
+	void draw(VisibleComponent * visibleComponent) override;
 	void setAmbientIntensity(float ambientIntensity);
 
 private:
@@ -100,7 +100,7 @@ public:
 	}
 
 	void init() override;
-	void update(IVisibleGameEntity* visibleGameEntity) override;
+	void draw(VisibleComponent * visibleComponent) override;
 
 private:
 	SkyboxShader();
@@ -117,7 +117,7 @@ public:
 		return instance;
 	}
 
-	void render(IVisibleGameEntity* visibleGameEntity) const;
+	void render(VisibleComponent* visibleComponent) const;
 	void finishRender() const;
 
 	void getCameraTranslationMatrix(glm::mat4& t) const;
