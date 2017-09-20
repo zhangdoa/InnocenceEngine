@@ -23,7 +23,6 @@ public:
 	void setGameData(IGameData* gameData);
 	TimeManager& getTimeManager() const;
 	RenderingManager& getRenderingManager() const;
-	// SceneGraphManager& getTimeManager() const;
 	LogManager& getLogManager() const;
 
 private:

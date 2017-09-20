@@ -14,7 +14,6 @@ public:
 	void draw();
 	void shutdown();
 
-	void sendDataToGPU();
 	std::vector<GLVertexData>& getVertices();
 	std::vector<unsigned int>& getIntices();
 	void addTestCube();
@@ -36,12 +35,10 @@ public:
 	void draw();
 	void shutdown();
 
-	void sendDataToGPU();
 	std::vector<int>& getTextureWidth();
 	std::vector<int>& getTextureHeight();
 	std::vector<int>& getTextureNormalChannels();
-	unsigned char* getTextureData();
-	void setTextureData(unsigned char * textureData);
+	std::vector<unsigned char*> getTextureData();
 
 	void setTextureType(textureType textureType);
 	textureType getTextureType() const;
@@ -51,7 +48,7 @@ private:
 	std::vector<int> m_textureWidths;
 	std::vector<int> m_textureHeights;
 	std::vector<int> m_normalChannels;
-	unsigned char* m_textureData;
+	std::vector<unsigned char*> m_textureDatas;
 
 	textureType m_textureType;
 };

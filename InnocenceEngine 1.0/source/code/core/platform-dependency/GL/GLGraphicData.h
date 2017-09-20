@@ -38,7 +38,7 @@ public:
 	void update(textureType textureType);
 	void shutdown();
 
-	void sendDataToGPU(textureType textureType, std::vector<int>& textureWidth, std::vector<int>& textureHeight, unsigned char * textureData) const;
+	void sendDataToGPU(textureType textureType, std::vector<int>& textureWidth, std::vector<int>& textureHeight, std::vector<unsigned char*> textureData) const;
 
 private:
 	GLuint m_textureID;

@@ -8,11 +8,13 @@ public:
 	VisibleComponent();
 	~VisibleComponent();
 
-	void draw() const;
+	void draw();
 	const visiblilityType& getVisiblilityType() const;
 	void setVisiblilityType(visiblilityType visiblilityType);
-	void addMeshData(MeshData& MeshData);
-	void addTextureData(TextureData& textureData);
+	void addMeshData();
+	void addTextureData();
+	std::vector<MeshData>& getMeshData();
+	std::vector<TextureData>& getTextureData();
 
 private:
 	std::vector<MeshData> m_meshData;

@@ -171,7 +171,7 @@ void BasicGLShader::init()
 	updateUniform("uni_Texture", 0);
 }
 
-void BasicGLShader::draw(VisibleComponent * visibleComponent)
+void BasicGLShader::draw(VisibleComponent& visibleComponent)
 {
 	bindShader();
 
@@ -179,7 +179,7 @@ void BasicGLShader::draw(VisibleComponent * visibleComponent)
 	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
 	GLRenderingManager::getInstance().getCameraViewMatrix(v);
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleComponent->getParentActor().caclTransformation();
+	m = visibleComponent.getParentActor().caclTransformation();
 
 	updateUniform("uni_MVP", p * v * t * m);
 
@@ -206,7 +206,7 @@ void ForwardAmbientShader::init()
 	m_ambientIntensity = 1.0f;
 }
 
-void ForwardAmbientShader::draw(VisibleComponent * visibleComponent)
+void ForwardAmbientShader::draw(VisibleComponent& visibleComponent)
 {
 	bindShader();
 
@@ -214,7 +214,7 @@ void ForwardAmbientShader::draw(VisibleComponent * visibleComponent)
 	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
 	GLRenderingManager::getInstance().getCameraViewMatrix(v);
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleComponent->getParentActor().caclTransformation();
+	m = visibleComponent.getParentActor().caclTransformation();
 
 	updateUniform("uni_MVP", p * v * t * m);
 	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
@@ -244,7 +244,7 @@ void SkyboxShader::init()
 	updateUniform("uni_skybox", 0);
 }
 
-void SkyboxShader::draw(VisibleComponent * visibleComponent)
+void SkyboxShader::draw(VisibleComponent& visibleComponent)
 {
 	bindShader();
 
@@ -266,9 +266,9 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
-void GLRenderingManager::render(VisibleComponent * visibleComponent) const
+void GLRenderingManager::render(VisibleComponent& visibleComponent)
 {
-	switch (visibleComponent->getVisiblilityType())
+	switch (visibleComponent.getVisiblilityType())
 	{
 	case visiblilityType::INVISIBLE: break;
 	case visiblilityType::STATIC_MESH:
@@ -284,7 +284,7 @@ void GLRenderingManager::render(VisibleComponent * visibleComponent) const
 	}
 
 	// update visibleGameEntity's mesh& texture
-	visibleComponent->draw();
+	visibleComponent.draw();
 }
 
 void GLRenderingManager::finishRender() const
