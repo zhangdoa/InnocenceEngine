@@ -11,7 +11,7 @@ SceneGraphManager::~SceneGraphManager()
 }
 
 
-void SceneGraphManager::addToRenderingQueue(VisibleComponent * visibleComponent)
+void SceneGraphManager::addToRenderingQueue(VisibleComponent* visibleComponent) 
 {
 	m_visibleComponents.emplace_back(visibleComponent);
 }

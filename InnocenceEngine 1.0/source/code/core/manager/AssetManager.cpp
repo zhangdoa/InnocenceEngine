@@ -66,73 +66,28 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 		return;
 	}
 	processAssimpNode(l_assScene->mRootNode, l_assScene, visibleComponent);
-	for (auto i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
+	for (unsigned int i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
 	{
 		processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent);
 	}
 	LogManager::getInstance().printLog("innoModel loaded.");
 }
 
-void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & visibleComponent) const
-{
-	TextureData newTextureData;
-	newTextureData.setTextureType(textureType::ALBEGO);
-	visibleComponent.addTextureData(newTextureData);
-	// load image, create texture and generate mipmaps
-	stbi_set_flip_vertically_on_load(true);
-	newTextureData.setTextureData(stbi_load(("../res/textures/" + fileName).c_str(), &newTextureData.getTextureWidth()[0], &newTextureData.getTextureHeight()[0], &newTextureData.getTextureNormalChannels()[0], 0));
-	if (newTextureData.getTextureData())
-	{
-		LogManager::getInstance().printLog("innoTexture loaded.");
-	}
-	else
-	{
-		LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
-	}
-	stbi_image_free(newTextureData.getTextureData());
-}
-
-void AssetManager::loadTexture(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
-{
-	TextureData newTextureData;
-	newTextureData.setTextureType(textureType::CUBEMAP);
-	visibleComponent.addTextureData(newTextureData);
-	for (auto i = 0; i < fileName.size(); i++)
-	{
-		newTextureData.getTextureWidth().emplace_back(0);
-		newTextureData.getTextureHeight().emplace_back(0);
-		newTextureData.getTextureNormalChannels().emplace_back(0);
-		// load image, create texture and generate mipmaps
-		stbi_set_flip_vertically_on_load(true);
-		newTextureData.setTextureData(stbi_load(("../res/textures/" + fileName[i]).c_str(), &newTextureData.getTextureWidth()[i], &newTextureData.getTextureHeight()[i], &newTextureData.getTextureNormalChannels()[i], 0));
-		if (newTextureData.getTextureData())
-		{
-			LogManager::getInstance().printLog("innoTexture loaded.");
-		}
-		else
-		{
-			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + ("../res/textures/" + fileName[i]));
-		}
-		stbi_image_free(newTextureData.getTextureData());
-	}
-}
-
 void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
 {
 	// process each mesh located at the current node
-	for (auto i = 0; i < node->mNumMeshes; i++)
+	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-		MeshData newMeshData;
-		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], scene, newMeshData);
-		visibleComponent.addMeshData(newMeshData);
+		visibleComponent.addMeshData();
+		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], visibleComponent.getMeshData()[i]);
 	}
 }
 
-void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, MeshData& staticMeshData) const
+void AssetManager::processAssimpMesh(aiMesh *mesh, MeshData& staticMeshData) const
 {
-	for (auto i = 0; i < mesh->mNumVertices; i++)
+	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 	{
 		GLVertexData vertexData;
 		// positions
@@ -184,17 +139,59 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, const aiScene * scene, MeshDa
 	}
 
 	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-	for (auto i = 0; i < mesh->mNumFaces; i++)
+	for (unsigned int i = 0; i < mesh->mNumFaces; i++)
 	{
 		aiFace face = mesh->mFaces[i];
 		// retrieve all indices of the face and store them in the indices vector
-		for (auto j = 0; j < face.mNumIndices; j++)
+		for (unsigned int j = 0; j < face.mNumIndices; j++)
 		{
 			staticMeshData.getIntices().emplace_back(face.mIndices[j]);
 		}
 	}
-
 	LogManager::getInstance().printLog("innoMesh loaded.");
 }
 
 
+void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & visibleComponent) const
+{
+	visibleComponent.addTextureData();
+	visibleComponent.getTextureData()[0].setTextureType(textureType::ALBEGO);
+	// load image, create texture and generate mipmaps
+	stbi_set_flip_vertically_on_load(true);
+	visibleComponent.getTextureData()[0].getTextureData().emplace_back(stbi_load(("../res/textures/" + fileName).c_str(), &visibleComponent.getTextureData()[0].getTextureWidth()[0], &visibleComponent.getTextureData()[0].getTextureHeight()[0], &visibleComponent.getTextureData()[0].getTextureNormalChannels()[0], 0));
+	if (visibleComponent.getTextureData()[0].getTextureData()[0])
+	{
+		LogManager::getInstance().printLog("innoTexture loaded.");
+	}
+	else
+	{
+		LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
+	}
+	//stbi_image_free(visibleComponent.getTextureData()[0].getTextureData());
+}
+
+void AssetManager::loadTexture(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
+{
+	visibleComponent.addTextureData();
+	visibleComponent.getTextureData()[0].setTextureType(textureType::CUBEMAP);
+	for (unsigned int i = 0; i < fileName.size(); i++)
+	{
+		visibleComponent.getTextureData()[0].getTextureWidth().emplace_back(0);
+		visibleComponent.getTextureData()[0].getTextureHeight().emplace_back(0);
+		visibleComponent.getTextureData()[0].getTextureNormalChannels().emplace_back(0);
+		unsigned char* t;
+		visibleComponent.getTextureData()[0].getTextureData().emplace_back(t);
+		// load image, create texture and generate mipmaps
+		stbi_set_flip_vertically_on_load(true);
+		visibleComponent.getTextureData()[0].getTextureData()[i] = stbi_load(("../res/textures/" + fileName[i]).c_str(), &visibleComponent.getTextureData()[0].getTextureWidth()[i], &visibleComponent.getTextureData()[0].getTextureHeight()[i], &visibleComponent.getTextureData()[0].getTextureNormalChannels()[i], 0);
+		if (visibleComponent.getTextureData()[0].getTextureData()[i])
+		{
+			LogManager::getInstance().printLog("innoTexture loaded.");
+		}
+		else
+		{
+			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + ("../res/textures/" + fileName[i]));
+		}
+		//stbi_image_free(visibleComponent.getTextureData()[0].getTextureData());
+	}
+}

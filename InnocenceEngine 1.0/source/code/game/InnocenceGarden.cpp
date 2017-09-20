@@ -12,26 +12,26 @@ InnocenceGarden::~InnocenceGarden()
 
 void InnocenceGarden::initialize()
 {	
-	AssetManager::getInstance().importModel("nanosuit/nanosuit.blend");
-	AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", testStaticMeshComponent);
-	AssetManager::getInstance().loadTexture({ "skybox/right.jpg",
-		"skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg" }, testSkyboxComponent);
+	//AssetManager::getInstance().importModel("nanosuit/nanosuit.blend");
+	//AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", testStaticMeshComponent);
 
 	rootActor.addChildActor(&playCharacter);
 	rootActor.addChildActor(&skyboxActor);
-	rootActor.addChildActor(&testStaticMeshActor);
+	//rootActor.addChildActor(&testStaticMeshActor);
 
 	testSkyboxComponent.setVisiblilityType(visiblilityType::SKYBOX);
 	skyboxActor.addChildComponent(&testSkyboxComponent);
-	SceneGraphManager::getInstance().getRenderingQueue().emplace_back(&testSkyboxComponent);
-	testStaticMeshComponent.setVisiblilityType(visiblilityType::STATIC_MESH);
-	testStaticMeshActor.addChildComponent(&testStaticMeshComponent);
-	SceneGraphManager::getInstance().getRenderingQueue().emplace_back(&testStaticMeshComponent);
+	SceneGraphManager::getInstance().addToRenderingQueue(&testSkyboxComponent);
+	//testStaticMeshComponent.setVisiblilityType(visiblilityType::STATIC_MESH);
+	//testStaticMeshActor.addChildComponent(&testStaticMeshComponent);
+	//SceneGraphManager::getInstance().addToRenderingQueue(&testStaticMeshComponent);
 
 	//testStaticMeshComponent.loadTexture("nanosuit/body_dif.png");
 
 	//testStaticMeshActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -5.0f));
 	//testStaticMeshActor.getTransform()->setScale(glm::vec3(0.1f, 0.1f, 0.1f));
+	AssetManager::getInstance().loadTexture({ "skybox/right.jpg",
+		"skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg" }, testSkyboxComponent);
 
 	rootActor.excute(executeMessage::INITIALIZE);
 }

@@ -20,14 +20,15 @@ GLInputManager& RenderingManager::getInputManager() const
 	return GLInputManager::getInstance();
 }
 
-void RenderingManager::render() const
+void RenderingManager::render()
 {
-	for (auto i : SceneGraphManager::getInstance().getRenderingQueue())
+	for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
 	{
-		GLRenderingManager::getInstance().render(i);
+		GLRenderingManager::getInstance().render(*SceneGraphManager::getInstance().getRenderingQueue()[i]);
 	}
 	GLRenderingManager::getInstance().finishRender();
 }
+	
 
 void RenderingManager::getCameraTranslationMatrix(glm::mat4 & t) const
 {
