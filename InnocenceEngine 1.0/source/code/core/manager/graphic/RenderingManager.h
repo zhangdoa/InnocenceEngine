@@ -22,7 +22,7 @@ public:
 	GLWindowManager& getWindowManager() const;
 	GLInputManager& getInputManager() const;
 
-	void render() const;
+	void render();
 
 	void getCameraTranslationMatrix(glm::mat4& t) const;
 	void setCameraTranslationMatrix(const glm::mat4& t) ;

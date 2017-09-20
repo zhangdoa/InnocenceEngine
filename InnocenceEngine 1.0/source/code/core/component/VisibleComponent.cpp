@@ -11,18 +11,16 @@ VisibleComponent::~VisibleComponent()
 {
 }
 
-void VisibleComponent::draw() const
+void VisibleComponent::draw()
 {
-	for (auto i : m_textureData)
+	for (size_t i = 0; i < m_meshData.size(); i++)
 	{
-		i.draw();
+		m_meshData[i].draw();
 	}
-	for (auto i : m_meshData)
+	for (size_t i = 0; i < m_textureData.size(); i++)
 	{
-		i.draw();
+		m_textureData[i].draw();
 	}
-	//std::for_each(m_meshData.begin(), m_meshData.end(), [&](MeshData val) {val.draw();});
-	//std::for_each(m_textureData.begin(), m_textureData.end(), [&](TextureData val) {val.draw();});
 }
 
 const visiblilityType & VisibleComponent::getVisiblilityType() const
@@ -35,36 +33,43 @@ void VisibleComponent::setVisiblilityType(visiblilityType visiblilityType)
 	m_visiblilityType = visiblilityType;
 }
 
-void VisibleComponent::addMeshData(MeshData & MeshData)
+void VisibleComponent::addMeshData()
 {
-	m_meshData.emplace_back(MeshData);
+	MeshData newMeshData;
+	m_meshData.emplace_back(newMeshData);
 }
 
-void VisibleComponent::addTextureData(TextureData & textureData)
+void VisibleComponent::addTextureData()
 {
-	m_textureData.emplace_back(textureData);
+	TextureData newTextureData;
+	m_textureData.emplace_back(newTextureData);
+}
+
+std::vector<MeshData>& VisibleComponent::getMeshData()
+{
+	return m_meshData;
+}
+
+std::vector<TextureData>& VisibleComponent::getTextureData()
+{
+	return m_textureData;
 }
 
 void VisibleComponent::initialize()
 {
 	if (m_visiblilityType == visiblilityType::SKYBOX)
 	{
-		MeshData newMeshData;
-		newMeshData.addTestSkybox();
-		m_meshData.emplace_back(newMeshData);
+		this->addMeshData();
+		m_meshData[0].addTestSkybox();
 	}
-	for (auto i : m_meshData)
+	for (size_t i = 0; i < m_meshData.size(); i++)
 	{
-		i.init();
-		i.sendDataToGPU();
+		m_meshData[i].init();
 	}
-	for (auto i : m_textureData)
+	for (size_t i = 0; i < m_textureData.size(); i++)
 	{
-		i.init();
-		i.sendDataToGPU();
+		m_textureData[i].init();
 	}
-	//std::for_each(m_meshData.begin(), m_meshData.end(), [&](MeshData val) {val.init(); val.sendDataToGPU();});
-	//std::for_each(m_textureData.begin(), m_textureData.end(), [&](TextureData val) {val.init(); val.sendDataToGPU();});
 }
 
 void VisibleComponent::update()
