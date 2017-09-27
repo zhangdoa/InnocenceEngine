@@ -65,13 +65,10 @@ void RenderingManager::initialize()
 
 void RenderingManager::update()
 {
-	//for (size_t i = 0; i < m_childEventManager.size(); i++)
-	//{
-	//	m_childEventManager[i].get()->excute(executeMessage::UPDATE);
-	//}
-	GLWindowManager::getInstance().excute(executeMessage::UPDATE);
-	GLInputManager::getInstance().excute(executeMessage::UPDATE);
-	GLRenderingManager::getInstance().excute(executeMessage::UPDATE);
+	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	{
+		m_childEventManager[i].get()->excute(executeMessage::UPDATE);
+	}
 
 	for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
 	{

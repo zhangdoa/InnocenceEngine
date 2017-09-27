@@ -72,10 +72,6 @@ void VisibleComponent::initialize()
 		m_meshData[i].init();
 		m_meshData[i].sendDataToGPU();
 	}
-	for (size_t i = 0; i < m_textureData.size(); i++)
-	{
-		m_textureData[i].init();
-	}
 }
 
 void VisibleComponent::update()
