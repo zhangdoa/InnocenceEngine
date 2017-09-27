@@ -16,23 +16,21 @@ void InnocenceGarden::initialize()
 	//AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", testStaticMeshComponent);
 
 	rootActor.addChildActor(&playCharacter);
-	rootActor.addChildActor(&skyboxActor);
-	//rootActor.addChildActor(&testStaticMeshActor);
+	//rootActor.addChildActor(&skyboxActor);
+	rootActor.addChildActor(&testStaticMeshActor);
 
-	testSkyboxComponent.setVisiblilityType(visiblilityType::SKYBOX);
-	skyboxActor.addChildComponent(&testSkyboxComponent);
-	SceneGraphManager::getInstance().addToRenderingQueue(&testSkyboxComponent);
-	//testStaticMeshComponent.setVisiblilityType(visiblilityType::STATIC_MESH);
-	//testStaticMeshActor.addChildComponent(&testStaticMeshComponent);
-	//SceneGraphManager::getInstance().addToRenderingQueue(&testStaticMeshComponent);
+	//testSkyboxComponent.setVisiblilityType(visiblilityType::SKYBOX);
+	//skyboxActor.addChildComponent(&testSkyboxComponent);
+	//SceneGraphManager::getInstance().addToRenderingQueue(&testSkyboxComponent);
+	//AssetManager::getInstance().loadTexture({ "skybox/right.jpg",
+	//	"skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg" }, testSkyboxComponent);
 
-	//testStaticMeshComponent.loadTexture("nanosuit/body_dif.png");
-
-	//testStaticMeshActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -5.0f));
-	//testStaticMeshActor.getTransform()->setScale(glm::vec3(0.1f, 0.1f, 0.1f));
-	AssetManager::getInstance().loadTexture({ "skybox/right.jpg",
-		"skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg" }, testSkyboxComponent);
-
+	testStaticMeshComponent.setVisiblilityType(visiblilityType::STATIC_MESH);
+	testStaticMeshActor.addChildComponent(&testStaticMeshComponent);
+	SceneGraphManager::getInstance().addToRenderingQueue(&testStaticMeshComponent);
+	AssetManager::getInstance().loadTexture("container.jpg", testStaticMeshComponent);
+	
+	playCharacter.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 2.0f));
 	rootActor.excute(executeMessage::INITIALIZE);
 }
 

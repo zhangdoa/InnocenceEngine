@@ -35,10 +35,10 @@ public:
 	~GLTextureData();
 
 	void init(textureType textureType);
-	void update(textureType textureType);
+	void draw(textureType textureType);
 	void shutdown();
 
-	void sendDataToGPU(textureType textureType, std::vector<int>& textureWidth, std::vector<int>& textureHeight, std::vector<unsigned char>& textureData) const;
+	void sendDataToGPU(textureType textureType, int textureIndex, int textureWidth, int textureHeight, void* textureData) const;
 
 private:
 	GLuint m_textureID;

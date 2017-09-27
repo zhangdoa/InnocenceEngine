@@ -13,7 +13,6 @@ MeshData::~MeshData()
 void MeshData::init()
 {
 	m_GLMeshData.init();
-	m_GLMeshData.sendDataToGPU(m_vertices, m_intices, false);
 }
 
 void MeshData::draw()
@@ -34,6 +33,11 @@ std::vector<GLVertexData>& MeshData::getVertices()
 std::vector<unsigned int>& MeshData::getIntices()
 {
 	return m_intices;
+}
+
+void MeshData::sendDataToGPU()
+{
+	m_GLMeshData.sendDataToGPU(m_vertices, m_intices, false);
 }
 
 void MeshData::addTestCube()
@@ -135,12 +139,11 @@ TextureData::~TextureData()
 void TextureData::init()
 {
 	m_GLTextureData.init(m_textureType);
-	m_GLTextureData.sendDataToGPU(m_textureType, m_textureWidths, m_textureHeights, m_textureDatas);
 }
 
 void TextureData::draw()
 {
-	m_GLTextureData.update(m_textureType);
+	m_GLTextureData.draw(m_textureType);
 }
 
 void TextureData::shutdown()
@@ -148,24 +151,9 @@ void TextureData::shutdown()
 	m_GLTextureData.shutdown();
 }
 
-std::vector<int>& TextureData::getTextureWidth()
+void TextureData::sendDataToGPU(int textureIndex, int textureWidth, int textureHeight, void * textureData) const
 {
-	return m_textureWidths;
-}
-
-std::vector<int>& TextureData::getTextureHeight()
-{
-	return m_textureHeights;
-}
-
-std::vector<int>& TextureData::getTextureNormalChannels()
-{
-	return m_normalChannels;
-}
-
-std::vector<unsigned char>& TextureData::getTextureData()
-{
-	return m_textureDatas;
+	m_GLTextureData.sendDataToGPU(m_textureType, textureIndex, textureWidth, textureHeight, textureData);
 }
 
 void TextureData::setTextureType(textureType textureType)

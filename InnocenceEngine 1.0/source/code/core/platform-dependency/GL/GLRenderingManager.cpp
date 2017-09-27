@@ -182,8 +182,6 @@ void BasicGLShader::draw(VisibleComponent& visibleComponent)
 	m = visibleComponent.getParentActor().caclTransformation();
 
 	updateUniform("uni_MVP", p * v * t * m);
-
-	updateUniform("uni_MVP", p * v * m);
 }
 
 
@@ -202,7 +200,6 @@ void ForwardAmbientShader::init()
 	setAttributeLocation(0, "in_Position");
 	setAttributeLocation(1, "in_TexCoord");
 	addShader(GLShader::FRAGMENT, "GL3.3/forwardAmbientFragment.sf");
-	updateUniform("uni_Texture", 0);
 	m_ambientIntensity = 1.0f;
 }
 
@@ -216,6 +213,7 @@ void ForwardAmbientShader::draw(VisibleComponent& visibleComponent)
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
 	m = visibleComponent.getParentActor().caclTransformation();
 
+	updateUniform("uni_Texture", 0);
 	updateUniform("uni_MVP", p * v * t * m);
 	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
 	updateUniform("uni_color", glm::vec3(1.0f, 1.0f, 1.0f));
@@ -325,7 +323,7 @@ void GLRenderingManager::setCameraProjectionMatrix(const glm::mat4 & p)
 
 void GLRenderingManager::initialize()
 {
-	glEnable(GL_DEPTH_TEST);
+	//m_staticMeshGLShader.emplace_back(&BasicGLShader::getInstance());
 	m_staticMeshGLShader.emplace_back(&ForwardAmbientShader::getInstance());
 
 	for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
@@ -341,13 +339,13 @@ void GLRenderingManager::initialize()
 
 void GLRenderingManager::update()
 {
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearColor(0.0f, 0.2f, 0.2f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
-	glFrontFace(GL_CW);
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_CLAMP);
+	glFrontFace(GL_CW);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 	glEnable(GL_TEXTURE_2D);
 }
 
