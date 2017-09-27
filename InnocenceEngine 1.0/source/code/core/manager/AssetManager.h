@@ -32,7 +32,7 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	void processAssimpNode(aiNode* node, const aiScene* scene, VisibleComponent& visibleComponent) const;
+	void processAssimpNode(aiNode* node, const aiScene* scene, MeshData& staticMeshData) const;
 	void processAssimpMesh(aiMesh* mesh, MeshData& staticMeshData) const;
 };
 
