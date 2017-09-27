@@ -82,6 +82,7 @@ void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, Visib
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 		visibleComponent.addMeshData();
 		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], visibleComponent.getMeshData()[i]);
+		visibleComponent.getMeshData()[i].init();
 		visibleComponent.getMeshData()[i].sendDataToGPU();
 	}
 }
@@ -157,15 +158,14 @@ void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & 
 {
 	visibleComponent.addTextureData();
 	visibleComponent.getTextureData()[0].setTextureType(textureType::ALBEGO);
+	visibleComponent.getTextureData()[0].init();
 	int width, height, nrChannel;
 	// load image, create texture and generate mipmaps
 	stbi_set_flip_vertically_on_load(true);
 	auto *data = stbi_load(("../res/textures/" + fileName).c_str(), &width, &height, &nrChannel, 0);
 	if (data)
 	{
-		//visibleComponent.getTextureData()[0].sendDataToGPU(0, width, height, data);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		visibleComponent.getTextureData()[0].sendDataToGPU(0, width, height, data);
 		LogManager::getInstance().printLog("innoTexture loaded.");
 	}
 	else
@@ -179,11 +179,11 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 {
 	visibleComponent.addTextureData();
 	visibleComponent.getTextureData()[0].setTextureType(textureType::CUBEMAP);
+	visibleComponent.getTextureData()[0].init();
 	int width, height, nrChannel;
 	for (unsigned int i = 0; i < fileName.size(); i++)
 	{
 		// load image, create texture and generate mipmaps
-		stbi_set_flip_vertically_on_load(true);
 		auto *data  = stbi_load(("../res/textures/" + fileName[i]).c_str(), &width, &height, &nrChannel, 0);
 		if (data)
 		{

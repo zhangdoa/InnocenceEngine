@@ -201,6 +201,8 @@ void ForwardAmbientShader::init()
 	setAttributeLocation(1, "in_TexCoord");
 	addShader(GLShader::FRAGMENT, "GL3.3/forwardAmbientFragment.sf");
 	m_ambientIntensity = 1.0f;
+	bindShader();
+	updateUniform("uni_Texture", 0);
 }
 
 void ForwardAmbientShader::draw(VisibleComponent& visibleComponent)
@@ -213,7 +215,6 @@ void ForwardAmbientShader::draw(VisibleComponent& visibleComponent)
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
 	m = visibleComponent.getParentActor().caclTransformation();
 
-	updateUniform("uni_Texture", 0);
 	updateUniform("uni_MVP", p * v * t * m);
 	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
 	updateUniform("uni_color", glm::vec3(1.0f, 1.0f, 1.0f));
@@ -239,6 +240,7 @@ void SkyboxShader::init()
 	addShader(GLShader::VERTEX, "GL3.3/skyboxVertex.sf");
 	setAttributeLocation(0, "in_Position");
 	addShader(GLShader::FRAGMENT, "GL3.3/skyboxFragment.sf");
+	bindShader();
 	updateUniform("uni_skybox", 0);
 }
 
@@ -339,7 +341,7 @@ void GLRenderingManager::initialize()
 
 void GLRenderingManager::update()
 {
-	glClearColor(0.0f, 0.2f, 0.2f, 0.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
