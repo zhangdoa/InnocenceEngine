@@ -38,7 +38,7 @@ public:
 	std::vector<int>& getTextureWidth();
 	std::vector<int>& getTextureHeight();
 	std::vector<int>& getTextureNormalChannels();
-	std::vector<unsigned char*> getTextureData();
+	std::vector<unsigned char>& getTextureData();
 
 	void setTextureType(textureType textureType);
 	textureType getTextureType() const;
@@ -48,7 +48,7 @@ private:
 	std::vector<int> m_textureWidths;
 	std::vector<int> m_textureHeights;
 	std::vector<int> m_normalChannels;
-	std::vector<unsigned char*> m_textureDatas;
+	std::vector<unsigned char> m_textureDatas;
 
 	textureType m_textureType;
 };
