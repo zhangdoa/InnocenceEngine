@@ -82,6 +82,7 @@ void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, Visib
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 		visibleComponent.addMeshData();
 		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], visibleComponent.getMeshData()[i]);
+		visibleComponent.getMeshData()[i].sendDataToGPU();
 	}
 }
 
@@ -156,42 +157,43 @@ void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & 
 {
 	visibleComponent.addTextureData();
 	visibleComponent.getTextureData()[0].setTextureType(textureType::ALBEGO);
+	int width, height, nrChannel;
 	// load image, create texture and generate mipmaps
 	stbi_set_flip_vertically_on_load(true);
-	visibleComponent.getTextureData()[0].getTextureData().emplace_back(*stbi_load(("../res/textures/" + fileName).c_str(), &visibleComponent.getTextureData()[0].getTextureWidth()[0], &visibleComponent.getTextureData()[0].getTextureHeight()[0], &visibleComponent.getTextureData()[0].getTextureNormalChannels()[0], 0));
-	if (visibleComponent.getTextureData()[0].getTextureData()[0])
+	auto *data = stbi_load(("../res/textures/" + fileName).c_str(), &width, &height, &nrChannel, 0);
+	if (data)
 	{
+		//visibleComponent.getTextureData()[0].sendDataToGPU(0, width, height, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
 		LogManager::getInstance().printLog("innoTexture loaded.");
 	}
 	else
 	{
 		LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
 	}
-	//stbi_image_free(visibleComponent.getTextureData()[0].getTextureData());
+	stbi_image_free(data);
 }
 
 void AssetManager::loadTexture(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
 {
 	visibleComponent.addTextureData();
 	visibleComponent.getTextureData()[0].setTextureType(textureType::CUBEMAP);
+	int width, height, nrChannel;
 	for (unsigned int i = 0; i < fileName.size(); i++)
 	{
-		visibleComponent.getTextureData()[0].getTextureWidth().emplace_back(0);
-		visibleComponent.getTextureData()[0].getTextureHeight().emplace_back(0);
-		visibleComponent.getTextureData()[0].getTextureNormalChannels().emplace_back(0);
-		visibleComponent.getTextureData()[0].getTextureData().emplace_back(0);
-
 		// load image, create texture and generate mipmaps
 		stbi_set_flip_vertically_on_load(true);
-		visibleComponent.getTextureData()[0].getTextureData()[i]  = *stbi_load(("../res/textures/" + fileName[i]).c_str(), &visibleComponent.getTextureData()[0].getTextureWidth()[i], &visibleComponent.getTextureData()[0].getTextureHeight()[i], &visibleComponent.getTextureData()[0].getTextureNormalChannels()[i], 0);
-		if (visibleComponent.getTextureData()[0].getTextureData()[i])
+		auto *data  = stbi_load(("../res/textures/" + fileName[i]).c_str(), &width, &height, &nrChannel, 0);
+		if (data)
 		{
+			visibleComponent.getTextureData()[0].sendDataToGPU(i, width, height, data);
 			LogManager::getInstance().printLog("innoTexture loaded.");
 		}
 		else
 		{
 			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + ("../res/textures/" + fileName[i]));
 		}
-		//stbi_image_free(visibleComponent.getTextureData()[0].getTextureData());
+		stbi_image_free(data);
 	}
 }
