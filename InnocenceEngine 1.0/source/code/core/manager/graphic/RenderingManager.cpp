@@ -20,16 +20,6 @@ GLInputManager& RenderingManager::getInputManager() const
 	return GLInputManager::getInstance();
 }
 
-void RenderingManager::render()
-{
-	for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
-	{
-		GLRenderingManager::getInstance().render(*SceneGraphManager::getInstance().getRenderingQueue()[i]);
-	}
-	GLRenderingManager::getInstance().finishRender();
-}
-	
-
 void RenderingManager::getCameraTranslationMatrix(glm::mat4 & t) const
 {
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
@@ -75,11 +65,20 @@ void RenderingManager::initialize()
 
 void RenderingManager::update()
 {
-	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	//for (size_t i = 0; i < m_childEventManager.size(); i++)
+	//{
+	//	m_childEventManager[i].get()->excute(executeMessage::UPDATE);
+	//}
+	GLWindowManager::getInstance().excute(executeMessage::UPDATE);
+	GLInputManager::getInstance().excute(executeMessage::UPDATE);
+	GLRenderingManager::getInstance().excute(executeMessage::UPDATE);
+
+	for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
 	{
-		m_childEventManager[i].get()->excute(executeMessage::UPDATE);
+		GLRenderingManager::getInstance().render(*SceneGraphManager::getInstance().getRenderingQueue()[i]);
 	}
-	this->render();
+	GLRenderingManager::getInstance().finishRender();
+
 	if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)
 	{
 		this->setStatus(objectStatus::STANDBY);

@@ -13,13 +13,13 @@ VisibleComponent::~VisibleComponent()
 
 void VisibleComponent::draw()
 {
-	for (size_t i = 0; i < m_meshData.size(); i++)
-	{
-		m_meshData[i].draw();
-	}
 	for (size_t i = 0; i < m_textureData.size(); i++)
 	{
 		m_textureData[i].draw();
+	}
+	for (size_t i = 0; i < m_meshData.size(); i++)
+	{
+		m_meshData[i].draw();
 	}
 }
 
@@ -62,9 +62,15 @@ void VisibleComponent::initialize()
 		this->addMeshData();
 		m_meshData[0].addTestSkybox();
 	}
+	else 
+	{
+		this->addMeshData();
+		m_meshData[0].addTestCube();
+	}
 	for (size_t i = 0; i < m_meshData.size(); i++)
 	{
 		m_meshData[i].init();
+		m_meshData[i].sendDataToGPU();
 	}
 	for (size_t i = 0; i < m_textureData.size(); i++)
 	{

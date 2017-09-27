@@ -130,7 +130,7 @@ void GLTextureData::init(textureType textureType)
 	}
 }
 
-void GLTextureData::update(textureType textureType)
+void GLTextureData::draw(textureType textureType)
 {
 	switch (textureType)
 	{
@@ -150,20 +150,17 @@ void GLTextureData::shutdown()
 {
 }
 
-void GLTextureData::sendDataToGPU(textureType textureType, std::vector<int>& textureWidth, std::vector<int>& textureHeight, std::vector<unsigned char>& textureData) const
+void GLTextureData::sendDataToGPU(textureType textureType, int textureIndex, int textureWidth, int textureHeight, void* textureData) const
 {
 	switch (textureType)
 	{
 	case textureType::INVISIBLE: break;
 	case textureType::ALBEGO:
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth[0], textureHeight[0], 0, GL_RGB, GL_UNSIGNED_BYTE, &textureData[0]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		break;
 	case textureType::CUBEMAP:
-		for (unsigned int i = 0; i < textureWidth.size(); i++)
-		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, textureWidth[i], textureWidth[i], 0, GL_RGB, GL_UNSIGNED_BYTE, &textureData[i]);
-		}
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
 		break;
 	}
 }
