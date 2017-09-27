@@ -163,7 +163,7 @@ std::vector<int>& TextureData::getTextureNormalChannels()
 	return m_normalChannels;
 }
 
-std::vector<unsigned char*> TextureData::getTextureData()
+std::vector<unsigned char>& TextureData::getTextureData()
 {
 	return m_textureDatas;
 }

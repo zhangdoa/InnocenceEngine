@@ -158,7 +158,7 @@ void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & 
 	visibleComponent.getTextureData()[0].setTextureType(textureType::ALBEGO);
 	// load image, create texture and generate mipmaps
 	stbi_set_flip_vertically_on_load(true);
-	visibleComponent.getTextureData()[0].getTextureData().emplace_back(stbi_load(("../res/textures/" + fileName).c_str(), &visibleComponent.getTextureData()[0].getTextureWidth()[0], &visibleComponent.getTextureData()[0].getTextureHeight()[0], &visibleComponent.getTextureData()[0].getTextureNormalChannels()[0], 0));
+	visibleComponent.getTextureData()[0].getTextureData().emplace_back(*stbi_load(("../res/textures/" + fileName).c_str(), &visibleComponent.getTextureData()[0].getTextureWidth()[0], &visibleComponent.getTextureData()[0].getTextureHeight()[0], &visibleComponent.getTextureData()[0].getTextureNormalChannels()[0], 0));
 	if (visibleComponent.getTextureData()[0].getTextureData()[0])
 	{
 		LogManager::getInstance().printLog("innoTexture loaded.");
@@ -179,11 +179,11 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 		visibleComponent.getTextureData()[0].getTextureWidth().emplace_back(0);
 		visibleComponent.getTextureData()[0].getTextureHeight().emplace_back(0);
 		visibleComponent.getTextureData()[0].getTextureNormalChannels().emplace_back(0);
-		unsigned char* t;
-		visibleComponent.getTextureData()[0].getTextureData().emplace_back(t);
+		visibleComponent.getTextureData()[0].getTextureData().emplace_back(0);
+
 		// load image, create texture and generate mipmaps
 		stbi_set_flip_vertically_on_load(true);
-		visibleComponent.getTextureData()[0].getTextureData()[i] = stbi_load(("../res/textures/" + fileName[i]).c_str(), &visibleComponent.getTextureData()[0].getTextureWidth()[i], &visibleComponent.getTextureData()[0].getTextureHeight()[i], &visibleComponent.getTextureData()[0].getTextureNormalChannels()[i], 0);
+		visibleComponent.getTextureData()[0].getTextureData()[i]  = *stbi_load(("../res/textures/" + fileName[i]).c_str(), &visibleComponent.getTextureData()[0].getTextureWidth()[i], &visibleComponent.getTextureData()[0].getTextureHeight()[i], &visibleComponent.getTextureData()[0].getTextureNormalChannels()[i], 0);
 		if (visibleComponent.getTextureData()[0].getTextureData()[i])
 		{
 			LogManager::getInstance().printLog("innoTexture loaded.");
