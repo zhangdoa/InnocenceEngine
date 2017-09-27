@@ -65,25 +65,34 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 		LogManager::getInstance().printLog("ERROR::ASSIMP:: " + std::string{ l_assImporter.GetErrorString() });
 		return;
 	}
-	processAssimpNode(l_assScene->mRootNode, l_assScene, visibleComponent);
+	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
+	if (l_assScene->mRootNode->mNumMeshes > 0)
+	{
+		visibleComponent.addMeshData();
+		processAssimpNode(l_assScene->mRootNode, l_assScene, visibleComponent.getMeshData()[0]);
+		visibleComponent.getMeshData()[0].init();
+		visibleComponent.getMeshData()[0].sendDataToGPU();
+	}
+	
+	// @TODO: deal with the node
 	for (unsigned int i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
 	{
-		processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent);
+		visibleComponent.addMeshData();
+		processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent.getMeshData()[i]);
+		visibleComponent.getMeshData()[i].init();
+		visibleComponent.getMeshData()[i].sendDataToGPU();
 	}
 	LogManager::getInstance().printLog("innoModel loaded.");
 }
 
-void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
+void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, MeshData& staticMeshData) const
 {
 	// process each mesh located at the current node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-		visibleComponent.addMeshData();
-		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], visibleComponent.getMeshData()[i]);
-		visibleComponent.getMeshData()[i].init();
-		visibleComponent.getMeshData()[i].sendDataToGPU();
+		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], staticMeshData);
 	}
 }
 
