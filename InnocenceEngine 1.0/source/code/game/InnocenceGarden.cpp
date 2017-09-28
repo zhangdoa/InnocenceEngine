@@ -26,6 +26,7 @@ void InnocenceGarden::initialize()
 
 	
 	playCharacter.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 2.0f));
+	testStaticMeshActor.getTransform()->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	rootActor.excute(executeMessage::INITIALIZE);
 
 	AssetManager::getInstance().importModel("nanosuit/nanosuit.blend");
@@ -34,7 +35,7 @@ void InnocenceGarden::initialize()
 	AssetManager::getInstance().loadTexture({ "skybox/right.jpg",
 		"skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg" }, testSkyboxComponent);
 
-	//AssetManager::getInstance().loadTexture("container.jpg", testStaticMeshComponent);
+	AssetManager::getInstance().loadTexture("container.jpg", testStaticMeshComponent);
 }
 
 void InnocenceGarden::update()

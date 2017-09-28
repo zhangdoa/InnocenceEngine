@@ -77,8 +77,15 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	// @TODO: deal with the node
 	for (unsigned int i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
 	{
-		visibleComponent.addMeshData();
-		processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent.getMeshData()[i]);
+		if (l_assScene->mRootNode->mChildren[i]->mNumMeshes > 0)
+		{
+			visibleComponent.addMeshData();
+			processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent.getMeshData()[visibleComponent.getMeshData().size() - 1]);
+		}
+	}
+	// initialize mesh datas
+	for (unsigned int i = 0; i < visibleComponent.getMeshData().size(); i++)
+	{
 		visibleComponent.getMeshData()[i].init();
 		visibleComponent.getMeshData()[i].sendDataToGPU();
 	}
