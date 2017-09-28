@@ -29,6 +29,8 @@ public:
 	void getCameraProjectionMatrix(glm::mat4& p) const;
 	void setCameraProjectionMatrix(const glm::mat4& p);
 
+	void changeDrawPolygonMode() const;
+
 private:
 	RenderingManager();
 

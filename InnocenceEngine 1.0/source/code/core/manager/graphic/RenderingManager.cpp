@@ -50,6 +50,11 @@ void RenderingManager::setCameraProjectionMatrix(const glm::mat4 & p)
 	GLRenderingManager::getInstance().setCameraProjectionMatrix(p);
 }
 
+void RenderingManager::changeDrawPolygonMode() const
+{
+	GLRenderingManager::getInstance().changeDrawPolygonMode();
+}
+
 void RenderingManager::initialize()
 {
 	m_childEventManager.emplace_back(&GLWindowManager::getInstance());

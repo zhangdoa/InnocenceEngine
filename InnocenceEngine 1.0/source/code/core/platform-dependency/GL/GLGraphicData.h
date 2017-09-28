@@ -1,7 +1,7 @@
 #pragma once
 #include "../../manager/LogManager.h"
 
-enum class textureType { INVISIBLE, ALBEGO, CUBEMAP };
+enum class textureType { INVISIBLE, DIFFUSE, CUBEMAP };
 
 struct GLVertexData
 {
@@ -35,10 +35,10 @@ public:
 	~GLTextureData();
 
 	void init(textureType textureType);
-	void draw(textureType textureType);
+	void draw(textureType textureType, int textureIndex);
 	void shutdown();
 
-	void sendDataToGPU(textureType textureType, int textureIndex, int textureWidth, int textureHeight, void* textureData) const;
+	void sendDataToGPU(textureType textureType, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void* textureData) const;
 
 private:
 	GLuint m_textureID;

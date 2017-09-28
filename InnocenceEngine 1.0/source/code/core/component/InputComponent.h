@@ -16,7 +16,8 @@ private:
 	int l_keySResult = 0;
 	int l_keyAResult = 0;
 	int l_keyDResult = 0;
-
+	int l_keyF1Result = 0;
+	int l_oldKeyF1Result = 0;
 	enum moveDirection { FORWARD, BACKWARD, LEFT, RIGHT };
 	float moveSpeed = 0.05f;
 	float rotateSpeed = 2.0f;

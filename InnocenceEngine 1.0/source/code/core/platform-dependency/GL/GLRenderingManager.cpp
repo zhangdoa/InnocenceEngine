@@ -323,6 +323,20 @@ void GLRenderingManager::setCameraProjectionMatrix(const glm::mat4 & p)
 	cameraProjectionMatrix = p;
 }
 
+void GLRenderingManager::changeDrawPolygonMode()
+{
+	if (m_polygonMode == 3)
+	{
+		m_polygonMode = 0;
+	}
+	switch (m_polygonMode)
+	{
+	case 0: glPolygonMode(GL_FRONT_AND_BACK, GL_POINT); break;
+	case 1:	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); break;
+	case 2: glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); break;
+	}
+	m_polygonMode += 1;
+}
 void GLRenderingManager::initialize()
 {
 	//m_staticMeshGLShader.emplace_back(&BasicGLShader::getInstance());
