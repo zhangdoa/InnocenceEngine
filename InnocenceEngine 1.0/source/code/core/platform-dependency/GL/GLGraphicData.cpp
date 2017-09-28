@@ -106,7 +106,7 @@ void GLTextureData::init(textureType textureType)
 	switch (textureType)
 	{
 	case textureType::INVISIBLE: break;
-	case textureType::ALBEGO:
+	case textureType::DIFFUSE:
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		// set the texture wrapping parameters
@@ -130,13 +130,13 @@ void GLTextureData::init(textureType textureType)
 	}
 }
 
-void GLTextureData::draw(textureType textureType)
+void GLTextureData::draw(textureType textureType, int textureIndex)
 {
 	switch (textureType)
 	{
 	case textureType::INVISIBLE: break;
-	case textureType::ALBEGO:
-		glActiveTexture(GL_TEXTURE0);
+	case textureType::DIFFUSE:
+		glActiveTexture(GL_TEXTURE0+textureIndex);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
 	case textureType::CUBEMAP:
@@ -150,13 +150,20 @@ void GLTextureData::shutdown()
 {
 }
 
-void GLTextureData::sendDataToGPU(textureType textureType, int textureIndex, int textureWidth, int textureHeight, void* textureData) const
+void GLTextureData::sendDataToGPU(textureType textureType, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void* textureData) const
 {
+	GLenum l_Format;
+	if (textureFormat == 1)
+		l_Format = GL_RED;
+	else if (textureFormat == 3)
+		l_Format = GL_RGB;
+	else if (textureFormat == 4)
+		l_Format = GL_RGBA;
 	switch (textureType)
 	{
 	case textureType::INVISIBLE: break;
-	case textureType::ALBEGO:
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
+	case textureType::DIFFUSE:
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, l_Format, GL_UNSIGNED_BYTE, textureData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		break;
 	case textureType::CUBEMAP:

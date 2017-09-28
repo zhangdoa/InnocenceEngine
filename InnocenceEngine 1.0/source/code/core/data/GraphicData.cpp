@@ -141,9 +141,9 @@ void TextureData::init()
 	m_GLTextureData.init(m_textureType);
 }
 
-void TextureData::draw()
+void TextureData::draw(int textureIndex)
 {
-	m_GLTextureData.draw(m_textureType);
+	m_GLTextureData.draw(m_textureType, textureIndex);
 }
 
 void TextureData::shutdown()
@@ -151,9 +151,9 @@ void TextureData::shutdown()
 	m_GLTextureData.shutdown();
 }
 
-void TextureData::sendDataToGPU(int textureIndex, int textureWidth, int textureHeight, void * textureData) const
+void TextureData::sendDataToGPU(int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData) const
 {
-	m_GLTextureData.sendDataToGPU(m_textureType, textureIndex, textureWidth, textureHeight, textureData);
+	m_GLTextureData.sendDataToGPU(m_textureType, textureIndex, textureFormat, textureWidth, textureHeight, textureData);
 }
 
 void TextureData::setTextureType(textureType textureType)

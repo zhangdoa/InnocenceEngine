@@ -33,9 +33,9 @@ public:
 	~TextureData();
 
 	void init();
-	void draw();
+	void draw(int textureIndex);
 	void shutdown();
-	void sendDataToGPU(int textureIndex, int textureWidth, int textureHeight, void* textureData) const;
+	void sendDataToGPU(int textureIndex, int textureFormat, int textureWidth, int textureHeight, void* textureData) const;
 	void setTextureType(textureType textureType);
 	textureType getTextureType() const;
 

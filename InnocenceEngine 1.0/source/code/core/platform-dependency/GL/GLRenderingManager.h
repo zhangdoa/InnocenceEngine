@@ -127,6 +127,8 @@ public:
 	void getCameraProjectionMatrix(glm::mat4& p) const;
 	void setCameraProjectionMatrix(const glm::mat4& p);
 
+	void changeDrawPolygonMode();
+
 private:
 	GLRenderingManager();
 
@@ -134,6 +136,8 @@ private:
 	glm::mat4 cameraTranslationMatrix = glm::mat4();
 	glm::mat4 cameraViewMatrix = glm::mat4();
 	glm::mat4 cameraProjectionMatrix = glm::mat4();
+
+	int m_polygonMode = 0;
 
 	void initialize() override;
 	void update() override;
