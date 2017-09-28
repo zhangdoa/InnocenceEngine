@@ -61,6 +61,8 @@ void VisibleComponent::initialize()
 	{
 		this->addMeshData();
 		m_meshData[0].addTestSkybox();
+		m_meshData[0].init();
+		m_meshData[0].sendDataToGPU();
 	}
 }
 
