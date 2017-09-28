@@ -69,18 +69,16 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	if (l_assScene->mRootNode->mNumMeshes > 0)
 	{
 		visibleComponent.addMeshData();
-		processAssimpNode(l_assScene->mRootNode, l_assScene, visibleComponent.getMeshData()[0]);
+		processAssimpNode(l_assScene->mRootNode, l_assScene, visibleComponent);
 		visibleComponent.getMeshData()[0].init();
 		visibleComponent.getMeshData()[0].sendDataToGPU();
 	}
-	
-	// @TODO: deal with the node
 	for (unsigned int i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
 	{
 		if (l_assScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
 			visibleComponent.addMeshData();
-			processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent.getMeshData()[visibleComponent.getMeshData().size() - 1]);
+			processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent);
 		}
 	}
 	// initialize mesh datas
@@ -92,18 +90,23 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	LogManager::getInstance().printLog("innoModel loaded.");
 }
 
-void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, MeshData& staticMeshData) const
+void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
 {
 	// process each mesh located at the current node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], staticMeshData);
+		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], visibleComponent.getMeshData()[visibleComponent.getMeshData().size() - 1]);
+		/*if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
+		{
+			visibleComponent.addTextureData();
+			processAssimpMaterial(scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1]);
+		}*/
 	}
 }
 
-void AssetManager::processAssimpMesh(aiMesh *mesh, MeshData& staticMeshData) const
+void AssetManager::processAssimpMesh(aiMesh *mesh, MeshData& meshData) const
 {
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 	{
@@ -153,7 +156,7 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, MeshData& staticMeshData) con
 		//vector.z = mesh->mBitangents[i].z;
 		//vertex.Bitangent = vector;
 
-		staticMeshData.getVertices().emplace_back(vertexData);
+		meshData.getVertices().emplace_back(vertexData);
 	}
 
 	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -163,25 +166,36 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, MeshData& staticMeshData) con
 		// retrieve all indices of the face and store them in the indices vector
 		for (unsigned int j = 0; j < face.mNumIndices; j++)
 		{
-			staticMeshData.getIntices().emplace_back(face.mIndices[j]);
+			meshData.getIntices().emplace_back(face.mIndices[j]);
 		}
 	}
 	LogManager::getInstance().printLog("innoMesh loaded.");
+}
+
+void AssetManager::processAssimpMaterial(aiMaterial * material, TextureData & textureData) const
+{
+	aiString l_AssString;
+	for (unsigned int i = 0; i < material->GetTextureCount(aiTextureType_DIFFUSE); i++)
+	{
+		// @TODO: load materials
+		material->GetTexture(aiTextureType_DIFFUSE, i, &l_AssString);
+		textureData.setTextureType(textureType::DIFFUSE);
+	}
 }
 
 
 void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & visibleComponent) const
 {
 	visibleComponent.addTextureData();
-	visibleComponent.getTextureData()[0].setTextureType(textureType::ALBEGO);
-	visibleComponent.getTextureData()[0].init();
-	int width, height, nrChannel;
+	visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1].setTextureType(textureType::DIFFUSE);
+	visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1].init();
+	int width, height, nrChannels;
 	// load image, create texture and generate mipmaps
 	stbi_set_flip_vertically_on_load(true);
-	auto *data = stbi_load(("../res/textures/" + fileName).c_str(), &width, &height, &nrChannel, 0);
+	auto *data = stbi_load(("../res/textures/" + fileName).c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		visibleComponent.getTextureData()[0].sendDataToGPU(0, width, height, data);
+		visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1].sendDataToGPU(0, nrChannels, width, height, data);
 		LogManager::getInstance().printLog("innoTexture loaded.");
 	}
 	else
@@ -200,10 +214,11 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 	for (unsigned int i = 0; i < fileName.size(); i++)
 	{
 		// load image, create texture and generate mipmaps
+		stbi_set_flip_vertically_on_load(false);
 		auto *data  = stbi_load(("../res/textures/" + fileName[i]).c_str(), &width, &height, &nrChannel, 0);
 		if (data)
 		{
-			visibleComponent.getTextureData()[0].sendDataToGPU(i, width, height, data);
+			visibleComponent.getTextureData()[0].sendDataToGPU(i, 0, width, height, data);
 			LogManager::getInstance().printLog("innoTexture loaded.");
 		}
 		else

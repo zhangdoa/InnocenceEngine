@@ -15,7 +15,7 @@ void VisibleComponent::draw()
 {
 	for (size_t i = 0; i < m_textureData.size(); i++)
 	{
-		m_textureData[i].draw();
+		m_textureData[i].draw(i);
 	}
 	for (size_t i = 0; i < m_meshData.size(); i++)
 	{

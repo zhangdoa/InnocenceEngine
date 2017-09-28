@@ -31,11 +31,14 @@ void InnocenceGarden::initialize()
 
 	AssetManager::getInstance().importModel("nanosuit/nanosuit.blend");
 	AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", testStaticMeshComponent);
-
+	AssetManager::getInstance().loadTexture("nanosuit/arm_dif.png", testStaticMeshComponent);
+	AssetManager::getInstance().loadTexture("nanosuit/body_dif.png", testStaticMeshComponent);
+	AssetManager::getInstance().loadTexture("nanosuit/glass_dif.png", testStaticMeshComponent); 
+	AssetManager::getInstance().loadTexture("nanosuit/hand_dif.png", testStaticMeshComponent);
+	AssetManager::getInstance().loadTexture("nanosuit/helmet_diff.png", testStaticMeshComponent);
+	AssetManager::getInstance().loadTexture("nanosuit/leg_dif.png", testStaticMeshComponent); 
 	AssetManager::getInstance().loadTexture({ "skybox/right.jpg",
 		"skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg" }, testSkyboxComponent);
-
-	AssetManager::getInstance().loadTexture("container.jpg", testStaticMeshComponent);
 }
 
 void InnocenceGarden::update()

@@ -35,6 +35,8 @@ void InputComponent::update()
 	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_S, l_keySResult);
 	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_A, l_keyAResult);
 	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_D, l_keyDResult);
+	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_F1, l_keyF1Result);
+
 
 	if (l_mouseRightResult)
 	{
@@ -68,6 +70,16 @@ void InputComponent::update()
 		{
 			move(moveDirection::RIGHT);
 		}
+	}
+
+	
+	if (l_keyF1Result != l_oldKeyF1Result)
+	{
+		l_oldKeyF1Result = l_keyF1Result;
+		if (l_keyF1Result)
+		{
+			CoreManager::getInstance().getRenderingManager().changeDrawPolygonMode();
+		}	
 	}
 }
 
