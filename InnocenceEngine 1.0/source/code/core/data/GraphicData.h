@@ -33,7 +33,7 @@ public:
 	~TextureData();
 
 	void init();
-	void draw(int textureIndex);
+	void draw();
 	void shutdown();
 	void sendDataToGPU(int textureIndex, int textureFormat, int textureWidth, int textureHeight, void* textureData) const;
 	void setTextureType(textureType textureType);
