@@ -46,12 +46,12 @@ void AssetManager::importModel(const std::string& fileName) const
 	// check for errors
 	if (!l_assScene || l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 	{
-		LogManager::getInstance().printLog("ERROR::ASSIMP:: " + std::string{ l_assImporter.GetErrorString() });
+		LogManager::getInstance().printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
 		return;
 	}
 	Assimp::Exporter l_assExporter;
 	l_assExporter.Export(l_assScene, "assbin", "../res/models/" + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
-	LogManager::getInstance().printLog("Model imported.");
+	LogManager::getInstance().printLog("Model: " + fileName + " imported.");
 }
 
 void AssetManager::loadModel(const std::string & fileName, VisibleComponent & visibleComponent) const
@@ -62,13 +62,12 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	// check for errors
 	if (!l_assScene || l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 	{
-		LogManager::getInstance().printLog("ERROR::ASSIMP:: " + std::string{ l_assImporter.GetErrorString() });
+		LogManager::getInstance().printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
 		return;
 	}
 	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
 	if (l_assScene->mRootNode->mNumMeshes > 0)
 	{
-		visibleComponent.addMeshData();
 		processAssimpNode(l_assScene->mRootNode, l_assScene, visibleComponent);
 		visibleComponent.getMeshData()[0].init();
 		visibleComponent.getMeshData()[0].sendDataToGPU();
@@ -77,7 +76,6 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	{
 		if (l_assScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
-			visibleComponent.addMeshData();
 			processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent);
 		}
 	}
@@ -87,26 +85,27 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 		visibleComponent.getMeshData()[i].init();
 		visibleComponent.getMeshData()[i].sendDataToGPU();
 	}
-	LogManager::getInstance().printLog("innoModel loaded.");
+	LogManager::getInstance().printLog("innoModel: " + fileName +  " loaded.");
 }
 
 void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
 {
+	visibleComponent.addMeshData();
 	// process each mesh located at the current node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], visibleComponent.getMeshData()[visibleComponent.getMeshData().size() - 1]);
-		/*if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
+		if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
 		{
 			visibleComponent.addTextureData();
 			processAssimpMaterial(scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1]);
-		}*/
+		}
 	}
 }
 
-void AssetManager::processAssimpMesh(aiMesh *mesh, MeshData& meshData) const
+void AssetManager::processAssimpMesh(aiMesh*mesh, MeshData& meshData) const
 {
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 	{
@@ -172,14 +171,47 @@ void AssetManager::processAssimpMesh(aiMesh *mesh, MeshData& meshData) const
 	LogManager::getInstance().printLog("innoMesh loaded.");
 }
 
-void AssetManager::processAssimpMaterial(aiMaterial * material, TextureData & textureData) const
+void AssetManager::processAssimpMaterial(aiMaterial* material, TextureData& textureData) const
 {
 	aiString l_AssString;
 	for (unsigned int i = 0; i < material->GetTextureCount(aiTextureType_DIFFUSE); i++)
 	{
 		// @TODO: load materials
 		material->GetTexture(aiTextureType_DIFFUSE, i, &l_AssString);
+		// set local path, remove slash
+		std::string l_localPath;
+		if (std::string(l_AssString.C_Str()).find_last_of('//') != std::string::npos)
+		{
+			l_localPath = std::string(l_AssString.C_Str()).substr(std::string(l_AssString.C_Str()).find_last_of("//"));
+		}
+		else if (std::string(l_AssString.C_Str()).find_last_of('\\') != std::string::npos)
+		{
+			l_localPath = std::string(l_AssString.C_Str()).substr(std::string(l_AssString.C_Str()).find_last_of("\\"));
+		}
+		else
+		{
+			l_localPath = std::string(l_AssString.C_Str());
+		}
+		
 		textureData.setTextureType(textureType::DIFFUSE);
+
+		// load image
+		int width, height, nrChannels;
+
+		stbi_set_flip_vertically_on_load(true);
+
+		auto *data = stbi_load(("../res/textures/nanosuit/" + l_localPath).c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			textureData.init();
+			textureData.sendDataToGPU(0, nrChannels, width, height, data);
+			LogManager::getInstance().printLog("innoTexture: " + l_localPath + " loaded.");
+		}
+		else
+		{
+			LogManager::getInstance().printLog("ERROR:STBI: Failed to load texture: " + l_localPath);
+		}
+		stbi_image_free(data);
 	}
 }
 
@@ -190,13 +222,13 @@ void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & 
 	visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1].setTextureType(textureType::DIFFUSE);
 	visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1].init();
 	int width, height, nrChannels;
-	// load image, create texture and generate mipmaps
+	// load image
 	stbi_set_flip_vertically_on_load(true);
 	auto *data = stbi_load(("../res/textures/" + fileName).c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
 		visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1].sendDataToGPU(0, nrChannels, width, height, data);
-		LogManager::getInstance().printLog("innoTexture loaded.");
+		LogManager::getInstance().printLog("innoTexture: " + fileName + " loaded.");
 	}
 	else
 	{
@@ -213,13 +245,13 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 	int width, height, nrChannel;
 	for (unsigned int i = 0; i < fileName.size(); i++)
 	{
-		// load image, create texture and generate mipmaps
+		// load image, do not flip texture
 		stbi_set_flip_vertically_on_load(false);
-		auto *data  = stbi_load(("../res/textures/" + fileName[i]).c_str(), &width, &height, &nrChannel, 0);
+		auto *data = stbi_load(("../res/textures/" + fileName[i]).c_str(), &width, &height, &nrChannel, 0);
 		if (data)
 		{
 			visibleComponent.getTextureData()[0].sendDataToGPU(i, 0, width, height, data);
-			LogManager::getInstance().printLog("innoTexture loaded.");
+			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " loaded.");
 		}
 		else
 		{
