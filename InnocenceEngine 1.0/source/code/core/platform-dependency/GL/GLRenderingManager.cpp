@@ -207,6 +207,10 @@ void ForwardAmbientShader::init()
 
 void ForwardAmbientShader::draw(VisibleComponent& visibleComponent)
 {
+	glFrontFace(GL_CCW);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
 	bindShader();
 
 	glm::mat4 m, t, v, p;
@@ -246,6 +250,10 @@ void SkyboxShader::init()
 
 void SkyboxShader::draw(VisibleComponent& visibleComponent)
 {
+	glFrontFace(GL_CW);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
 	bindShader();
 
 	// TODO: fix "looking outside" problem// almost there
@@ -359,9 +367,6 @@ void GLRenderingManager::update()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
-	glFrontFace(GL_CW);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
 	glEnable(GL_TEXTURE_2D);
 }
 

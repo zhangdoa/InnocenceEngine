@@ -141,9 +141,9 @@ void TextureData::init()
 	m_GLTextureData.init(m_textureType);
 }
 
-void TextureData::draw(int textureIndex)
+void TextureData::draw()
 {
-	m_GLTextureData.draw(m_textureType, textureIndex);
+	m_GLTextureData.draw(m_textureType);
 }
 
 void TextureData::shutdown()

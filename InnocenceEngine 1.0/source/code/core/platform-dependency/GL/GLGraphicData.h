@@ -35,7 +35,7 @@ public:
 	~GLTextureData();
 
 	void init(textureType textureType);
-	void draw(textureType textureType, int textureIndex);
+	void draw(textureType textureType);
 	void shutdown();
 
 	void sendDataToGPU(textureType textureType, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void* textureData) const;

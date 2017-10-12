@@ -130,13 +130,13 @@ void GLTextureData::init(textureType textureType)
 	}
 }
 
-void GLTextureData::draw(textureType textureType, int textureIndex)
+void GLTextureData::draw(textureType textureType)
 {
 	switch (textureType)
 	{
 	case textureType::INVISIBLE: break;
 	case textureType::DIFFUSE:
-		glActiveTexture(GL_TEXTURE0+textureIndex);
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
 	case textureType::CUBEMAP:
@@ -163,10 +163,12 @@ void GLTextureData::sendDataToGPU(textureType textureType, int textureIndex, int
 	{
 	case textureType::INVISIBLE: break;
 	case textureType::DIFFUSE:
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, l_Format, GL_UNSIGNED_BYTE, textureData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		break;
 	case textureType::CUBEMAP:
+		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
 		break;
 	}
