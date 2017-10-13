@@ -26,6 +26,16 @@ void GLWindowManager::setWindowName(const std::string & windowName)
 	m_windowName = windowName;
 }
 
+void GLWindowManager::hideMouseCursor() const
+{
+	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+
+void GLWindowManager::showMouseCursor() const
+{
+	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+}
+
 void GLWindowManager::initialize()
 {
 	if (glfwInit() != GL_TRUE)

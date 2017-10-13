@@ -32,8 +32,8 @@ private:
 	void update() override;
 	void shutdown() override;
 
-	void processAssimpNode(aiNode* node, const aiScene* scene, VisibleComponent & visibleComponent) const;
+	void processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, VisibleComponent & visibleComponent) const;
 	void processAssimpMesh(aiMesh* mesh, MeshData& meshData) const;
-	void processAssimpMaterial(aiMaterial* material, TextureData& textureData) const;
+	void processAssimpMaterial(const std::string& fileName, aiMaterial* material, TextureData& textureData) const;
 };
 

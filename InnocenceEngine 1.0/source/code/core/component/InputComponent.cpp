@@ -35,11 +35,13 @@ void InputComponent::update()
 	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_S, l_keySResult);
 	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_A, l_keyAResult);
 	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_D, l_keyDResult);
+	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_ESCAPE, l_ketEscapeResult);
 	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_F1, l_keyF1Result);
 
 
 	if (l_mouseRightResult)
 	{
+		CoreManager::getInstance().getRenderingManager().getWindowManager().hideMouseCursor();
 		CoreManager::getInstance().getRenderingManager().getInputManager().getMousePosition(l_mousePosition);
 
 		if (l_mousePosition.x != 0)
@@ -71,8 +73,14 @@ void InputComponent::update()
 			move(moveDirection::RIGHT);
 		}
 	}
-
-	
+	else
+	{
+		CoreManager::getInstance().getRenderingManager().getWindowManager().showMouseCursor();
+	}
+	if (l_ketEscapeResult)
+	{
+	// @Placeholder
+	}
 	if (l_keyF1Result != l_oldKeyF1Result)
 	{
 		l_oldKeyF1Result = l_keyF1Result;

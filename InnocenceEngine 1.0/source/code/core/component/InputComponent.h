@@ -16,6 +16,7 @@ private:
 	int l_keySResult = 0;
 	int l_keyAResult = 0;
 	int l_keyDResult = 0;
+	int l_ketEscapeResult = 0;
 	int l_keyF1Result = 0;
 	int l_oldKeyF1Result = 0;
 	enum moveDirection { FORWARD, BACKWARD, LEFT, RIGHT };

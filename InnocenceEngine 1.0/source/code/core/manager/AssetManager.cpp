@@ -65,10 +65,11 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 		LogManager::getInstance().printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
 		return;
 	}
+	std::string l_fileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
 	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
 	if (l_assScene->mRootNode->mNumMeshes > 0)
 	{
-		processAssimpNode(l_assScene->mRootNode, l_assScene, visibleComponent);
+		processAssimpNode(l_fileName, l_assScene->mRootNode, l_assScene, visibleComponent);
 		visibleComponent.getMeshData()[0].init();
 		visibleComponent.getMeshData()[0].sendDataToGPU();
 	}
@@ -76,7 +77,7 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	{
 		if (l_assScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
-			processAssimpNode(l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent);
+			processAssimpNode(l_fileName, l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent);
 		}
 	}
 	// initialize mesh datas
@@ -88,7 +89,7 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	LogManager::getInstance().printLog("innoModel: " + fileName +  " loaded.");
 }
 
-void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
+void AssetManager::processAssimpNode(const std::string& fileName, aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
 {
 	visibleComponent.addMeshData();
 	// process each mesh located at the current node
@@ -100,7 +101,7 @@ void AssetManager::processAssimpNode(aiNode * node, const aiScene * scene, Visib
 		if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
 		{
 			visibleComponent.addTextureData();
-			processAssimpMaterial(scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1]);
+			processAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1]);
 		}
 	}
 }
@@ -171,7 +172,7 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, MeshData& meshData) const
 	LogManager::getInstance().printLog("innoMesh loaded.");
 }
 
-void AssetManager::processAssimpMaterial(aiMaterial* material, TextureData& textureData) const
+void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial* material, TextureData& textureData) const
 {
 	aiString l_AssString;
 	for (unsigned int i = 0; i < material->GetTextureCount(aiTextureType_DIFFUSE); i++)
@@ -200,7 +201,7 @@ void AssetManager::processAssimpMaterial(aiMaterial* material, TextureData& text
 
 		stbi_set_flip_vertically_on_load(true);
 
-		auto *data = stbi_load(("../res/textures/nanosuit/" + l_localPath).c_str(), &width, &height, &nrChannels, 0);
+		auto *data = stbi_load(("../res/textures/" + fileName + "//" + l_localPath).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
 			textureData.init();

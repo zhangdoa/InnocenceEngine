@@ -20,9 +20,11 @@ private:
 
 	PlayerCharacter playCharacter;
 	BaseActor skyboxActor;
-	BaseActor testStaticMeshActor;
+	BaseActor testStaticMeshActor1;
+	BaseActor testStaticMeshActor2;
 
 	VisibleComponent testSkyboxComponent;
-	VisibleComponent testStaticMeshComponent;
+	VisibleComponent testStaticMeshComponent1;
+	VisibleComponent testStaticMeshComponent2;
 };
 
