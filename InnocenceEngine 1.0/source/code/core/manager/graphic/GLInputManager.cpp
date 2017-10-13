@@ -92,22 +92,6 @@ void GLInputManager::update()
 		//{
 		//	m_lastMouse.emplace_back(getMouse(i));
 		//}
-		if (glfwGetMouseButton(GLWindowManager::getInstance().getWindow(), GLFW_MOUSE_BUTTON_RIGHT))
-		{
-			glfwSetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		}
-
-		int l_escapeResult = 0;
-
-		getKey(GLFW_KEY_ESCAPE, l_escapeResult);
-
-		if (l_escapeResult)
-		{
-			if (glfwGetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
-			{
-				glfwSetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			}
-		}
 	}
 	else
 	{

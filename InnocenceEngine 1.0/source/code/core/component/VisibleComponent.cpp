@@ -15,8 +15,12 @@ void VisibleComponent::draw()
 {
 	for (size_t i = 0; i < m_textureData.size(); i++)
 	{
+		// @TODO: needs a better architecture among mesh & texture
 		m_textureData[i].draw();
-		m_meshData[i].draw();
+		if (i < m_meshData.size())
+		{
+			m_meshData[i].draw();
+		}
 	}
 }
 
