@@ -16,6 +16,8 @@ public:
 	GLFWwindow* getWindow() const;
 	glm::vec2 getScreenCenterPosition() const;
 	void setWindowName(const std::string& windowName);
+	void hideMouseCursor() const;
+	void showMouseCursor() const;
 
 private:
 	GLWindowManager();
