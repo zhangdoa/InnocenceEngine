@@ -15,19 +15,12 @@ public:
 		return instance;
 	}
 
-	struct nk_context* ctx;
-	struct nk_color background;
-	struct nk_font_atlas* atlas;
-
 private:
 	GLGUIManager();
 
-	enum { EASY, HARD };
-	 int op = EASY;
-	 int property = 20;
-	 int r = 255;
-	 int g = 255;
-	 int b = 255;
+	struct nk_context* ctx;
+	struct nk_color background;
+	struct nk_font_atlas* atlas;
 
 	void initialize() override;
 	void update() override;

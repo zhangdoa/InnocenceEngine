@@ -57,9 +57,13 @@ void RenderingManager::changeDrawPolygonMode() const
 
 void RenderingManager::initialize()
 {
+
 	m_childEventManager.emplace_back(&GLWindowManager::getInstance());
 	m_childEventManager.emplace_back(&GLInputManager::getInstance());
 	m_childEventManager.emplace_back(&GLRenderingManager::getInstance());
+	m_childEventManager.emplace_back(&GLGUIManager::getInstance());
+
+
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		m_childEventManager[i].get()->excute(executeMessage::INITIALIZE);
@@ -70,16 +74,21 @@ void RenderingManager::initialize()
 
 void RenderingManager::update()
 {
-	for (size_t i = 0; i < m_childEventManager.size(); i++)
-	{
-		m_childEventManager[i].get()->excute(executeMessage::UPDATE);
-	}
+	GLWindowManager::getInstance().excute(executeMessage::UPDATE);
+	
+	GLInputManager::getInstance().excute(executeMessage::UPDATE);
 
+	//prepare rendering global state
+	GLRenderingManager::getInstance().excute(executeMessage::UPDATE);
+
+	//forward render
 	for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
 	{
 		GLRenderingManager::getInstance().render(*SceneGraphManager::getInstance().getRenderingQueue()[i]);
 	}
-	GLRenderingManager::getInstance().finishRender();
+
+	GLGUIManager::getInstance().excute(executeMessage::UPDATE);
+
 
 	if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)
 	{

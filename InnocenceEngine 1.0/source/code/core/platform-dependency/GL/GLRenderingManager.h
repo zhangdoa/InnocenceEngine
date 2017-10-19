@@ -118,7 +118,6 @@ public:
 	}
 
 	void render(VisibleComponent& visibleComponent);
-	void finishRender() const;
 
 	void getCameraTranslationMatrix(glm::mat4& t) const;
 	void setCameraTranslationMatrix(const glm::mat4& t);
