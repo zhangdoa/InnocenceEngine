@@ -3,9 +3,11 @@
 #include "../../interface/IEventManager.h"
 #include "../../manager/LogManager.h"
 #include "SceneGraphManager.h"
-#include "../../platform-dependency/GL/GLRenderingManager.h"
+
 #include "GLWindowManager.h"
 #include "GLInputManager.h"
+#include "../../platform-dependency/GL/GLRenderingManager.h"
+#include "GLGUIManager.h"
 #include "../../data/GraphicData.h"
 
 class RenderingManager : public IEventManager

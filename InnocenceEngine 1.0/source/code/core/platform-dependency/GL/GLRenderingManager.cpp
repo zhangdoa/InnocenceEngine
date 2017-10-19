@@ -284,20 +284,17 @@ void GLRenderingManager::render(VisibleComponent& visibleComponent)
 		{
 			m_staticMeshGLShader[i]->draw(visibleComponent);
 		}
+		// update visibleGameEntity's mesh& texture
+		visibleComponent.draw();
 		break;
 	case visiblilityType::SKYBOX:
 		glDepthFunc(GL_LEQUAL);
 		SkyboxShader::getInstance().draw(visibleComponent);
+		// update visibleGameEntity's mesh& texture
+		visibleComponent.draw();
+		glDepthFunc(GL_LESS);
 		break;
 	}
-
-	// update visibleGameEntity's mesh& texture
-	visibleComponent.draw();
-}
-
-void GLRenderingManager::finishRender() const
-{
-	glDepthFunc(GL_LESS);
 }
 
 void GLRenderingManager::getCameraTranslationMatrix(glm::mat4 & t) const
