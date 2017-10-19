@@ -4,6 +4,7 @@
 #define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
 #define NK_INCLUDE_FONT_BAKING
 #define NK_INCLUDE_DEFAULT_FONT
+//#define NK_INCLUDE_STANDARD_IO
 #define NK_IMPLEMENTATION
 #define NK_GLFW_GL3_IMPLEMENTATION
 
@@ -22,7 +23,7 @@ void GLGUIManager::initialize()
 {
 	ctx = nk_glfw3_init(GLWindowManager::getInstance().getWindow(), NK_GLFW3_INSTALL_CALLBACKS);
 	nk_glfw3_font_stash_begin(&atlas);
-	/*struct nk_font *droid = nk_font_atlas_add_from_file(atlas, "../../../extra_font/DroidSans.ttf", 14, 0);*/
+	//struct nk_font *freeSans = nk_font_atlas_add_from_file(atlas, "../res/fonts/fonts/DroidSans.ttf", 14, 0);
 	/*struct nk_font *roboto = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Roboto-Regular.ttf", 14, 0);*/
 	/*struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../extra_font/kenvector_future_thin.ttf", 13, 0);*/
 	/*struct nk_font *clean = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyClean.ttf", 12, 0);*/
@@ -41,42 +42,24 @@ void GLGUIManager::update()
 	{
 
 		nk_layout_row_dynamic(ctx, 30, 2);
-		if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
-		if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
-
-		nk_layout_row_dynamic(ctx, 25, 1);
-		nk_property_int(ctx, "Red:", 0, &r, 255, 1, 1);
-
-		nk_layout_row_dynamic(ctx, 25, 1);
-		nk_property_int(ctx, "Green:", 0, &g, 255, 1, 1);
-
-		nk_layout_row_dynamic(ctx, 25, 1);
-		nk_property_int(ctx, "Blue:", 0, &b, 255, 1, 1);
 
 		nk_layout_row_static(ctx, 30, 100, 1);
-		if (nk_button_label(ctx, "Set Color"))
-		{
-			background.r = r;
-			background.g = g;
-			background.b = b;
-		}
 
+		//nk_layout_row_dynamic(ctx, 20, 1);
+		//nk_label(ctx, "background:", NK_TEXT_LEFT);
 
-		nk_layout_row_dynamic(ctx, 20, 1);
-		nk_label(ctx, "background:", NK_TEXT_LEFT);
-
-		nk_layout_row_dynamic(ctx, 25, 1);
-		if (nk_combo_begin_color(ctx, background, nk_vec2(nk_widget_width(ctx), 400))) {
-			nk_layout_row_dynamic(ctx, 120, 1);
-			nk_color canvasBackground = background;
-			canvasBackground = nk_color_picker(ctx, canvasBackground, NK_RGBA);
-			nk_layout_row_dynamic(ctx, 25, 1);
-			background.r = (nk_byte)nk_propertyi(ctx, "#R:", 0, canvasBackground.r, 255, 1, 1);
-			background.g = (nk_byte)nk_propertyi(ctx, "#G:", 0, canvasBackground.g, 255, 1, 1);
-			background.b = (nk_byte)nk_propertyi(ctx, "#B:", 0, canvasBackground.b, 255, 1, 1);
-			background.a = (nk_byte)nk_propertyi(ctx, "#A:", 0, canvasBackground.a, 255, 1, 1);
-			nk_combo_end(ctx);
-		}
+		//nk_layout_row_dynamic(ctx, 25, 1);
+		//if (nk_combo_begin_color(ctx, background, nk_vec2(nk_widget_width(ctx), 400))) {
+		//	nk_layout_row_dynamic(ctx, 120, 1);
+		//	nk_color canvasBackground = background;
+		//	canvasBackground = nk_color_picker(ctx, canvasBackground, NK_RGBA);
+		//	nk_layout_row_dynamic(ctx, 25, 1);
+		//	background.r = (nk_byte)nk_propertyi(ctx, "#R:", 0, canvasBackground.r, 255, 1, 1);
+		//	background.g = (nk_byte)nk_propertyi(ctx, "#G:", 0, canvasBackground.g, 255, 1, 1);
+		//	background.b = (nk_byte)nk_propertyi(ctx, "#B:", 0, canvasBackground.b, 255, 1, 1);
+		//	background.a = (nk_byte)nk_propertyi(ctx, "#A:", 0, canvasBackground.a, 255, 1, 1);
+		//	nk_combo_end(ctx);
+		//}
 	}
 	nk_end(ctx);
 
