@@ -278,7 +278,7 @@ void PhongShader::draw(VisibleComponent & visibleComponent)
 	updateUniform("uni_m", m);
 
 	// @TODO: add a light class
-	updateUniform("uni_lightPos", glm::vec3(3.5f,1.5f, 0.5f));
+	updateUniform("uni_lightPos", glm::vec3(3.5f, 1.5f, 0.5f));
 	updateUniform("uni_ambientIntensity", m_ambientIntensity);
 	updateUniform("uni_ambientColor", m_ambientColor);
 	updateUniform("uni_diffuseColor", m_diffuseColor);
@@ -297,6 +297,43 @@ void PhongShader::setAmbientColor(glm::vec3 ambientColor)
 void PhongShader::setDiffuseColor(glm::vec3 diffuseColor)
 {
 	m_diffuseColor = diffuseColor;
+}
+
+BillboardShader::BillboardShader()
+{
+}
+
+BillboardShader::~BillboardShader()
+{
+}
+
+void BillboardShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/billboardVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	setAttributeLocation(1, "in_TexCoord");
+	addShader(GLShader::FRAGMENT, "GL3.3/billboardFragment.sf");
+	bindShader();
+	updateUniform("uni_texture", 0);
+}
+
+void BillboardShader::draw(VisibleComponent & visibleComponent)
+{
+	bindShader();
+
+	glm::mat4 m, t, v, p;
+
+	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
+	GLRenderingManager::getInstance().getCameraViewMatrix(v);
+	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
+	m = visibleComponent.getParentActor().caclTransformation();
+	// @TODO: multiply with invertion of rotation matrix
+
+	updateUniform("uni_p", p);
+	updateUniform("uni_v", v);
+	updateUniform("uni_t", t);
+	updateUniform("uni_m", m);
 }
 
 SkyboxShader::SkyboxShader()
@@ -348,6 +385,11 @@ void GLRenderingManager::render(VisibleComponent& visibleComponent)
 	switch (visibleComponent.getVisiblilityType())
 	{
 	case visiblilityType::INVISIBLE: break;
+	case visiblilityType::BILLBOARD:
+		BillboardShader::getInstance().draw(visibleComponent);
+		// update visibleGameEntity's mesh& texture
+		visibleComponent.draw();
+		break;
 	case visiblilityType::STATIC_MESH:
 		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
 		{
@@ -422,6 +464,7 @@ void GLRenderingManager::initialize()
 		m_staticMeshGLShader[i]->init();
 	}
 
+	BillboardShader::getInstance().init();
 	SkyboxShader::getInstance().init();
 
 	this->setStatus(objectStatus::ALIVE);

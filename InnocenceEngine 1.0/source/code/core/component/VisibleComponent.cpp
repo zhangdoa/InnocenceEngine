@@ -65,6 +65,13 @@ void VisibleComponent::initialize()
 		m_meshData[0].init();
 		m_meshData[0].sendDataToGPU();
 	}
+	if (m_visiblilityType == visiblilityType::BILLBOARD)
+	{
+		this->addMeshData();
+		m_meshData[0].addTestBillboard();
+		m_meshData[0].init();
+		m_meshData[0].sendDataToGPU();
+	}
 }
 
 void VisibleComponent::update()
