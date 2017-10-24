@@ -81,10 +81,35 @@ public:
 	void init() override;
 	void draw(VisibleComponent& visibleComponent) override;
 	void setAmbientIntensity(float ambientIntensity);
-
+	void setColor(glm::vec3 color);
 private:
 	ForwardAmbientShader();
 	float m_ambientIntensity;
+	glm::vec3 m_color;
+};
+
+class PhongShader : public GLShader
+{
+
+public:
+	~PhongShader();
+
+	static PhongShader& getInstance()
+	{
+		static PhongShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void draw(VisibleComponent& visibleComponent) override;
+	void setAmbientIntensity(float ambientIntensity);
+	void setAmbientColor(glm::vec3 ambientColor);
+	void setDiffuseColor(glm::vec3 diffuseColor);
+private:
+	PhongShader();
+	float m_ambientIntensity;
+	glm::vec3 m_ambientColor;
+	glm::vec3 m_diffuseColor;
 };
 
 class SkyboxShader : public GLShader

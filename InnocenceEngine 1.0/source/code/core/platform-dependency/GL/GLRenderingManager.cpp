@@ -201,6 +201,7 @@ void ForwardAmbientShader::init()
 	setAttributeLocation(1, "in_TexCoord");
 	addShader(GLShader::FRAGMENT, "GL3.3/forwardAmbientFragment.sf");
 	m_ambientIntensity = 1.0f;
+	m_color = glm::vec3(0.75f, 1.0f, 1.0f);
 	bindShader();
 	updateUniform("uni_Texture", 0);
 }
@@ -221,7 +222,7 @@ void ForwardAmbientShader::draw(VisibleComponent& visibleComponent)
 
 	updateUniform("uni_MVP", p * v * t * m);
 	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
-	updateUniform("uni_color", glm::vec3(1.0f, 1.0f, 1.0f));
+	updateUniform("uni_color", m_color);
 }
 
 void ForwardAmbientShader::setAmbientIntensity(float ambientIntensity)
@@ -229,6 +230,74 @@ void ForwardAmbientShader::setAmbientIntensity(float ambientIntensity)
 	m_ambientIntensity = ambientIntensity;
 }
 
+void ForwardAmbientShader::setColor(glm::vec3 color)
+{
+	m_color = color;
+}
+
+PhongShader::PhongShader()
+{
+}
+
+PhongShader::~PhongShader()
+{
+}
+
+void PhongShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/phongVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	setAttributeLocation(1, "in_TexCoord");
+	setAttributeLocation(2, "in_Normal");
+	addShader(GLShader::FRAGMENT, "GL3.3/phongFragment.sf");
+	m_ambientIntensity = 1.0f;
+	m_ambientColor = glm::vec3(0.75f, 0.85f, 1.0f);
+	m_diffuseColor = glm::vec3(0.65f, 0.1f, 0.1f);
+	bindShader();
+	updateUniform("uni_texture", 0);
+}
+
+void PhongShader::draw(VisibleComponent & visibleComponent)
+{
+	glFrontFace(GL_CCW);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	bindShader();
+
+	glm::mat4 m, t, v, p;
+	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
+	GLRenderingManager::getInstance().getCameraViewMatrix(v);
+	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
+	m = visibleComponent.getParentActor().caclTransformation();
+
+	updateUniform("uni_p", p);
+	updateUniform("uni_v", v);
+	updateUniform("uni_t", t);
+	updateUniform("uni_m", m);
+
+	// @TODO: add a light class
+	updateUniform("uni_lightPos", glm::vec3(3.5f,1.5f, 0.5f));
+	updateUniform("uni_ambientIntensity", m_ambientIntensity);
+	updateUniform("uni_ambientColor", m_ambientColor);
+	updateUniform("uni_diffuseColor", m_diffuseColor);
+}
+
+void PhongShader::setAmbientIntensity(float ambientIntensity)
+{
+	m_ambientIntensity = ambientIntensity;
+}
+
+void PhongShader::setAmbientColor(glm::vec3 ambientColor)
+{
+	m_ambientColor = ambientColor;
+}
+
+void PhongShader::setDiffuseColor(glm::vec3 diffuseColor)
+{
+	m_diffuseColor = diffuseColor;
+}
 
 SkyboxShader::SkyboxShader()
 {
@@ -345,7 +414,8 @@ void GLRenderingManager::changeDrawPolygonMode()
 void GLRenderingManager::initialize()
 {
 	//m_staticMeshGLShader.emplace_back(&BasicGLShader::getInstance());
-	m_staticMeshGLShader.emplace_back(&ForwardAmbientShader::getInstance());
+	m_staticMeshGLShader.emplace_back(&PhongShader::getInstance());
+	//m_staticMeshGLShader.emplace_back(&ForwardAmbientShader::getInstance());
 
 	for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
 	{

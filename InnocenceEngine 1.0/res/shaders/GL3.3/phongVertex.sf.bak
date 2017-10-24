@@ -16,7 +16,7 @@ out vec3 thefrag_Normal;
 void main()
 {
 	gl_Position = uni_p * uni_v * uni_t * uni_m * vec4(in_Position, 1.0);
-	thefrag_FragPos = vec3(uni_m * vec4(in_Position, 1.0));
+	thefrag_FragPos = vec3(uni_m * vec4(in_Position, 1.0))
 	thefrag_TexCoord = in_TexCoord;
 	thefrag_Normal = in_Normal;
 }

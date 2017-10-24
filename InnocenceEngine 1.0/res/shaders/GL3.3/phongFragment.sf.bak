@@ -21,7 +21,7 @@ void main()
 	//diffuse color
 	vec3 normalizedNormal = normalize(thefrag_Normal);
 	vec3 normalizedlightPos = normalize(uni_lightPos - thefrag_FragPos);
-	vec3 diffuse = max(dot(normalizedNormal, normalizedlightPos), 0.0) * uni_diffuseColor;
+	vec3 diffuse = max(dot(normalizedNormal, normalizedlightPos), 0.0) * uni_lightColor;
 	
 	//final result
 	color = texture(uni_texture, thefrag_TexCoord) * vec4(ambient + diffuse, 1.0);
