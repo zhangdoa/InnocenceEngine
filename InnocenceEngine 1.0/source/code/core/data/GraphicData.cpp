@@ -128,6 +128,32 @@ void MeshData::addTestSkybox()
 		1, 5, 2, 5, 6, 2 };
 }
 
+void MeshData::addTestBillboard()
+{
+	GLVertexData l_VertexData_1;
+	l_VertexData_1.m_pos = glm::vec3(0.2f, 0.2f, 0.0f);
+	l_VertexData_1.m_texCoord = glm::vec2(1.0f, 1.0f);
+	l_VertexData_1.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+
+	GLVertexData l_VertexData_2;
+	l_VertexData_2.m_pos = glm::vec3(0.2f, -0.2f, 0.0f);
+	l_VertexData_2.m_texCoord = glm::vec2(1.0f, 0.0f);
+	l_VertexData_2.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+
+	GLVertexData l_VertexData_3;
+	l_VertexData_3.m_pos = glm::vec3(-0.2f, -0.2f, 0.0f);
+	l_VertexData_3.m_texCoord = glm::vec2(0.0f, 0.0f);
+	l_VertexData_3.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+
+	GLVertexData l_VertexData_4;
+	l_VertexData_4.m_pos = glm::vec3(-0.2f, 0.2f, 0.0f);
+	l_VertexData_4.m_texCoord = glm::vec2(0.0f, 1.0f);
+	l_VertexData_4.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+
+	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4 };
+	m_intices = { 0, 1, 3, 1, 2, 3 };
+}
+
 TextureData::TextureData()
 {
 }

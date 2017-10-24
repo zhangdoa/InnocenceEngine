@@ -2,7 +2,7 @@
 #include "../manager/LogManager.h"
 #include "../platform-dependency/GL/GLGraphicData.h"
 
-enum class visiblilityType { INVISIBLE, STATIC_MESH, SKYBOX };
+enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX };
 
 class MeshData
 {
@@ -19,6 +19,7 @@ public:
 	void sendDataToGPU();
 	void addTestCube();
 	void addTestSkybox();
+	void addTestBillboard();
 
 private:
 	GLMeshData m_GLMeshData;

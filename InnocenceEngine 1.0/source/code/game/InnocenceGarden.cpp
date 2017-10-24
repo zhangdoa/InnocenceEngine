@@ -14,6 +14,7 @@ void InnocenceGarden::initialize()
 {	
 	rootActor.addChildActor(&playCharacter);
 	rootActor.addChildActor(&skyboxActor);
+	rootActor.addChildActor(&testLightActor);
 	rootActor.addChildActor(&testStaticMeshActor1);
 	rootActor.addChildActor(&testStaticMeshActor2);
 
@@ -21,6 +22,10 @@ void InnocenceGarden::initialize()
 	skyboxActor.addChildComponent(&testSkyboxComponent);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testSkyboxComponent);
 	
+	testLightComponent.setVisiblilityType(visiblilityType::BILLBOARD);
+	testLightActor.addChildComponent(&testLightComponent);
+	SceneGraphManager::getInstance().addToRenderingQueue(&testLightComponent);
+
 	testStaticMeshComponent1.setVisiblilityType(visiblilityType::STATIC_MESH);
 	testStaticMeshActor1.addChildComponent(&testStaticMeshComponent1);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testStaticMeshComponent1);
@@ -30,6 +35,7 @@ void InnocenceGarden::initialize()
 	SceneGraphManager::getInstance().addToRenderingQueue(&testStaticMeshComponent2);
 	
 	playCharacter.getTransform()->setPos(glm::vec3(0.0f, 2.0f, 5.0f));
+	testLightActor.getTransform()->setPos(glm::vec3(2.0f, 1.0f, 2.0f));
 	testStaticMeshActor1.getTransform()->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	testStaticMeshActor1.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 1.5f));
 	testStaticMeshActor2.getTransform()->setScale(glm::vec3(0.05f, 0.05f, 0.05f));
@@ -39,11 +45,10 @@ void InnocenceGarden::initialize()
 	AssetManager::getInstance().importModel("nanosuit/nanosuit.obj");
 	AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", testStaticMeshComponent1);
 
-	//AssetManager::getInstance().importModel("bugatti/bugatti.obj");
-	//AssetManager::getInstance().loadModel("bugatti/bugatti.innoModel", testStaticMeshComponent2);
-
 	AssetManager::getInstance().loadTexture({ "skybox2/right.tga",
 		"skybox2/left.tga", "skybox2/top.tga", "skybox2/bottom.tga", "skybox2/back.tga", "skybox2/front.tga" }, testSkyboxComponent);
+
+	AssetManager::getInstance().loadTexture("lightbulb.png", testLightComponent);
 }
 
 void InnocenceGarden::update()

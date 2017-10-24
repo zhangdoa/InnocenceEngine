@@ -1,0 +1,17 @@
+#version 330 core
+
+layout (location = 0) in vec3 in_Position;
+layout (location = 1) in vec2 in_TexCoord;
+
+out vec2 thefrag_TexCoord;
+
+uniform mat4 uni_p;
+uniform mat4 uni_v;
+uniform mat4 uni_t;
+uniform mat4 uni_m;
+
+void main()
+{
+	gl_Position = uni_p * uni_v * uni_t * uni_m * vec4(in_Position, 1.0);
+	thefrag_TexCoord = in_TexCoord;
+}

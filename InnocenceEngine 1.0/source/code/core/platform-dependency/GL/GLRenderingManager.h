@@ -112,6 +112,25 @@ private:
 	glm::vec3 m_diffuseColor;
 };
 
+class BillboardShader : public GLShader
+{
+
+public:
+	~BillboardShader();
+
+	static BillboardShader& getInstance()
+	{
+		static BillboardShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void draw(VisibleComponent& visibleComponent) override;
+
+private:
+	BillboardShader();
+};
+
 class SkyboxShader : public GLShader
 {
 
