@@ -9,19 +9,19 @@ CameraComponent::~CameraComponent()
 {
 }
 
-glm::mat4 CameraComponent::getTranslatonMatrix() const
+glm::mat4 CameraComponent::getPosMatrix() const
 {
-	return glm::translate(glm::mat4(), getParentActor().caclTransformedPos() * -1.0f);
+	return glm::translate(glm::mat4(), getParentActor()->caclWorldPos() * -1.0f);
 }
 
-glm::mat4 CameraComponent::getRotationMatrix() const
+glm::mat4 CameraComponent::getRotMatrix() const
 {
 	// quaternion rotation
 	glm::quat conjugateRotQuat;
-	conjugateRotQuat.w = getParentActor().caclTransformedRot().w;
-	conjugateRotQuat.x = -getParentActor().caclTransformedRot().x;
-	conjugateRotQuat.y = -getParentActor().caclTransformedRot().y;
-	conjugateRotQuat.z = -getParentActor().caclTransformedRot().z;
+	conjugateRotQuat.w = getParentActor()->caclWorldRot().w;
+	conjugateRotQuat.x = -getParentActor()->caclWorldRot().x;
+	conjugateRotQuat.y = -getParentActor()->caclWorldRot().y;
+	conjugateRotQuat.z = -getParentActor()->caclWorldRot().z;
 
 	return glm::toMat4(conjugateRotQuat);
 }
@@ -40,8 +40,9 @@ void CameraComponent::update()
 {
 	getTransform()->update();
 	CoreManager::getInstance().getRenderingManager().setCameraProjectionMatrix(getProjectionMatrix());
-	CoreManager::getInstance().getRenderingManager().setCameraTranslationMatrix(getTranslatonMatrix());
-	CoreManager::getInstance().getRenderingManager().setCameraViewMatrix(getRotationMatrix());
+	CoreManager::getInstance().getRenderingManager().setCameraPosMatrix(getPosMatrix());
+	CoreManager::getInstance().getRenderingManager().setCameraRotMatrix(getRotMatrix());
+	CoreManager::getInstance().getRenderingManager().setCameraPos(getParentActor()->caclWorldPos());
 }
 
 void CameraComponent::shutdown()

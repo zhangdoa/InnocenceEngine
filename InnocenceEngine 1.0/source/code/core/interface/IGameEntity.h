@@ -49,7 +49,7 @@ public:
 
 	void addChildActor(BaseActor* childActor);
 	const std::vector<BaseActor*>& getChildrenActors() const;
-	const BaseActor& getParentActor() const;
+	BaseActor* getParentActor() const;
 	void setParentActor(BaseActor* parentActor);
 
 	void addChildComponent(BaseComponent* childComponent);
@@ -57,9 +57,20 @@ public:
 
 	Transform* getTransform();
 	bool hasTransformChanged() const;
-	glm::mat4 caclTransformation() const;
-	glm::vec3 caclTransformedPos() const;
-	glm::quat caclTransformedRot() const;
+
+	glm::mat4 caclLocalPosMatrix() const;
+	glm::mat4 caclLocalRotMatrix() const;
+	glm::mat4 caclLocalScaleMatrix() const;
+
+	glm::vec3 caclWorldPos() const;
+	glm::quat caclWorldRot() const;
+	glm::vec3 caclWorldScale() const;
+
+	glm::mat4 caclWorldPosMatrix() const;
+	glm::mat4 caclWorldRotMatrix() const;
+	glm::mat4 caclWorldScaleMatrix() const;
+
+	glm::mat4 caclTransformationMatrix() const;
 
 private:
 	std::vector<BaseActor*> m_childActor;
@@ -78,7 +89,7 @@ public:
 	BaseComponent();
 	virtual ~BaseComponent();
 
-	const BaseActor& getParentActor() const;
+	BaseActor* getParentActor() const;
 	void setParentActor(BaseActor* parentActor);
 	Transform*getTransform();
 private:
