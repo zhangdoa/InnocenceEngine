@@ -25,17 +25,17 @@ void RenderingManager::getCameraTranslationMatrix(glm::mat4 & t) const
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
 }
 
-void RenderingManager::setCameraTranslationMatrix(const glm::mat4 & t)
+void RenderingManager::setCameraPosMatrix(const glm::mat4 & t)
 {
 	GLRenderingManager::getInstance().setCameraTranslationMatrix(t);
 }
 
 void RenderingManager::getCameraViewMatrix(glm::mat4 & v) const
 {
-	GLRenderingManager::getInstance().getCameraViewMatrix(v);
+	GLRenderingManager::getInstance().getCameraRotMatrix(v);
 }
 
-void RenderingManager::setCameraViewMatrix(const glm::mat4 & v)
+void RenderingManager::setCameraRotMatrix(const glm::mat4 & v)
 {
 	GLRenderingManager::getInstance().setCameraViewMatrix(v);
 }
@@ -48,6 +48,16 @@ void RenderingManager::getCameraProjectionMatrix(glm::mat4 & p) const
 void RenderingManager::setCameraProjectionMatrix(const glm::mat4 & p)
 {
 	GLRenderingManager::getInstance().setCameraProjectionMatrix(p);
+}
+
+void RenderingManager::getCameraPos(glm::vec3 & pos) const
+{
+	GLRenderingManager::getInstance().getCameraPos(pos);
+}
+
+void RenderingManager::setCameraPos(const glm::vec3 & pos)
+{
+	GLRenderingManager::getInstance().setCameraPos(pos);
 }
 
 void RenderingManager::changeDrawPolygonMode() const
@@ -84,7 +94,10 @@ void RenderingManager::update()
 	//forward render
 	for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
 	{
-		GLRenderingManager::getInstance().render(*SceneGraphManager::getInstance().getRenderingQueue()[i]);
+		for (size_t j = 0; j < SceneGraphManager::getInstance().getLightQueue().size(); j++)
+		{
+			GLRenderingManager::getInstance().render(*SceneGraphManager::getInstance().getLightQueue()[j] , *SceneGraphManager::getInstance().getRenderingQueue()[i]);
+		}
 	}
 
 	GLGUIManager::getInstance().excute(executeMessage::UPDATE);

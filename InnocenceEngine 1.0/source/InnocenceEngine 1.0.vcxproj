@@ -178,6 +178,7 @@
     <ClCompile Include="code\game\PlayerCharacter.cpp" />
     <ClCompile Include="code\core\platform-dependency\DX\DXGraphicData.cpp" />
     <ClCompile Include="code\core\component\VisibleComponent.cpp" />
+    <ClCompile Include="code\core\component\LightComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
@@ -208,6 +209,7 @@
     <ClInclude Include="code\game\PlayerCharacter.h" />
     <ClInclude Include="code\core\platform-dependency\DX\DXGraphicData.h" />
     <ClInclude Include="code\core\component\VisibleComponent.h" />
+    <ClInclude Include="code\core\component\LightComponent.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

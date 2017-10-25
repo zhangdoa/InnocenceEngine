@@ -3,6 +3,8 @@
 #include "../LogManager.h"
 #include "../../interface/IGameEntity.h"
 #include "../../component/VisibleComponent.h"
+#include "../../component/LightComponent.h"
+
 class SceneGraphManager : public IEventManager
 {
 public:
@@ -15,7 +17,11 @@ public:
 	}
 
 	void addToRenderingQueue(VisibleComponent* visibleComponent);
+	void addToLightQueue(LightComponent* lightComponent);
+
 	std::vector<VisibleComponent*>& getRenderingQueue();
+	std::vector<LightComponent*>& getLightQueue();
+
 private:
 	SceneGraphManager();
 
@@ -24,5 +30,6 @@ private:
 	void shutdown() override;
 
 	std::vector<VisibleComponent*> m_visibleComponents;
+	std::vector<LightComponent*> m_LightComponents;
 };
 

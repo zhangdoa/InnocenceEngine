@@ -152,9 +152,9 @@ const std::vector<BaseActor*>& BaseActor::getChildrenActors() const
 	return m_childActor;
 }
 
-const BaseActor& BaseActor::getParentActor() const
+BaseActor* BaseActor::getParentActor() const
 {
-	return *m_parentActor;
+	return m_parentActor;
 }
 
 void BaseActor::setParentActor(BaseActor* parentActor)
@@ -186,9 +186,9 @@ bool BaseActor::hasTransformChanged() const
 		return true;
 	}
 
-	if (&getParentActor() != nullptr)
+	if (getParentActor() != nullptr)
 	{
-		if (getParentActor().hasTransformChanged())
+		if (getParentActor()->hasTransformChanged())
 		{
 			return true;
 		}
@@ -196,61 +196,112 @@ bool BaseActor::hasTransformChanged() const
 	return false;
 }
 
-glm::mat4 BaseActor::caclTransformation() const
+glm::mat4 BaseActor::caclLocalPosMatrix() const
 {
-	glm::mat4 l_translationMatrix;
-	l_translationMatrix = glm::translate(l_translationMatrix, m_transform.getPos());
+	glm::mat4 l_posMatrix;
+	l_posMatrix = glm::translate(l_posMatrix, m_transform.getPos());
+	return l_posMatrix;
+}
+
+glm::mat4 BaseActor::caclLocalRotMatrix() const
+{
+	glm::mat4 l_rotaionMartix = glm::toMat4(m_transform.getRot());
+	return l_rotaionMartix;
+}
+
+glm::mat4 BaseActor::caclLocalScaleMatrix() const
+{
+	glm::mat4 l_scaleMatrix;
+	l_scaleMatrix = glm::scale(l_scaleMatrix, m_transform.getScale());
+	return l_scaleMatrix;
+}
+
+glm::vec3 BaseActor::caclWorldPos() const
+{
+	glm::mat4 l_parentTransformationMatrix;
+
+	l_parentTransformationMatrix[0][0] = 1.0f;
+	l_parentTransformationMatrix[1][1] = 1.0f;
+	l_parentTransformationMatrix[2][2] = 1.0f;
+	l_parentTransformationMatrix[3][3] = 1.0f;
+
+	if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
+	{
+		l_parentTransformationMatrix = getParentActor()->caclTransformationMatrix();
+	}
+
+	return glm::vec3(l_parentTransformationMatrix[0][0] * m_transform.getPos().x + l_parentTransformationMatrix[1][0] * m_transform.getPos().y + l_parentTransformationMatrix[2][0] * m_transform.getPos().z + l_parentTransformationMatrix[3][0],
+		l_parentTransformationMatrix[0][1] * m_transform.getPos().x + l_parentTransformationMatrix[1][1] * m_transform.getPos().y + l_parentTransformationMatrix[2][1] * m_transform.getPos().z + l_parentTransformationMatrix[3][1],
+		l_parentTransformationMatrix[0][2] * m_transform.getPos().x + l_parentTransformationMatrix[1][2] * m_transform.getPos().y + l_parentTransformationMatrix[2][2] * m_transform.getPos().z + l_parentTransformationMatrix[3][2]);
+}
+
+glm::quat BaseActor::caclWorldRot() const
+{
+	glm::quat l_parentRotationQuat = glm::quat(1, 0, 0, 0);
+
+	if (getParentActor() != nullptr)
+	{
+		l_parentRotationQuat = getParentActor()->caclWorldRot();
+	}
+
+	return l_parentRotationQuat * m_transform.getRot();
+}
+
+glm::vec3 BaseActor::caclWorldScale() const
+{
+	glm::vec3 l_parentScale = glm::vec3(1.0, 1.0, 1.0);
+
+	if (getParentActor() != nullptr)
+	{
+		l_parentScale = getParentActor()->caclWorldScale();
+	}
+
+	return l_parentScale * m_transform.getScale();
+}
+
+glm::mat4 BaseActor::caclWorldPosMatrix() const
+{
+	glm::mat4 l_posMatrix;
+	l_posMatrix = glm::translate(l_posMatrix, caclWorldPos());
+	return l_posMatrix;
+}
+
+glm::mat4 BaseActor::caclWorldRotMatrix() const
+{
+	glm::mat4 l_rotaionMartix = glm::toMat4(caclWorldRot());
+	return l_rotaionMartix;
+}
+
+glm::mat4 BaseActor::caclWorldScaleMatrix() const
+{
+	glm::mat4 l_scaleMatrix;
+	l_scaleMatrix = glm::scale(l_scaleMatrix, caclWorldScale());
+	return l_scaleMatrix;
+}
+
+glm::mat4 BaseActor::caclTransformationMatrix() const
+{
+	glm::mat4 l_posMatrix;
+	l_posMatrix = glm::translate(l_posMatrix, m_transform.getPos());
 	glm::mat4 l_rotaionMartix = glm::toMat4(m_transform.getRot());
 
 	glm::mat4 l_scaleMatrix;
 	l_scaleMatrix = glm::scale(l_scaleMatrix, m_transform.getScale());
 
-	glm::mat4 l_parentMatrix;
+	glm::mat4 l_parentTransformationMatrix;
 	
-	l_parentMatrix[0][0] = 1.0f;
-	l_parentMatrix[1][1] = 1.0f;
-	l_parentMatrix[2][2] = 1.0f;
-	l_parentMatrix[3][3] = 1.0f;
+	l_parentTransformationMatrix[0][0] = 1.0f;
+	l_parentTransformationMatrix[1][1] = 1.0f;
+	l_parentTransformationMatrix[2][2] = 1.0f;
+	l_parentTransformationMatrix[3][3] = 1.0f;
 
-	if (&getParentActor() != nullptr && getParentActor().hasTransformChanged())
+	if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
 	{
-		l_parentMatrix = getParentActor().caclTransformation();
+		l_parentTransformationMatrix = getParentActor()->caclTransformationMatrix();
 	}
 
-	return l_parentMatrix * l_translationMatrix * l_rotaionMartix * l_scaleMatrix;
+	return l_parentTransformationMatrix * l_posMatrix * l_rotaionMartix * l_scaleMatrix;
 }
-
-glm::vec3 BaseActor::caclTransformedPos() const
-{
-	glm::mat4 l_parentMatrix;
-
-	l_parentMatrix[0][0] = 1.0f;
-	l_parentMatrix[1][1] = 1.0f;
-	l_parentMatrix[2][2] = 1.0f;
-	l_parentMatrix[3][3] = 1.0f;
-
-	if (&getParentActor() != nullptr && getParentActor().hasTransformChanged())
-	{
-		l_parentMatrix = getParentActor().caclTransformation();
-	}
-
-	return glm::vec3(l_parentMatrix[0][0] * m_transform.getPos().x + l_parentMatrix[1][0] * m_transform.getPos().y + l_parentMatrix[2][0] * m_transform.getPos().z + l_parentMatrix[3][0],
-		l_parentMatrix[0][1] * m_transform.getPos().x + l_parentMatrix[1][1] * m_transform.getPos().y + l_parentMatrix[2][1] * m_transform.getPos().z + l_parentMatrix[3][1],
-		l_parentMatrix[0][2] * m_transform.getPos().x + l_parentMatrix[1][2] * m_transform.getPos().y + l_parentMatrix[2][2] * m_transform.getPos().z + l_parentMatrix[3][2]);
-}
-
-glm::quat BaseActor::caclTransformedRot() const
-{
-	glm::quat l_parentRotation = glm::quat(1, 0, 0, 0);
-
-	if (&getParentActor() != nullptr)
-	{
-		l_parentRotation = getParentActor().caclTransformedRot();
-	}
-
-	return l_parentRotation * m_transform.getRot();
-}
-
 
 void BaseActor::initialize()
 {
@@ -305,9 +356,9 @@ BaseComponent::~BaseComponent()
 {
 }
 
-const BaseActor& BaseComponent::getParentActor() const
+BaseActor* BaseComponent::getParentActor() const
 {
-	return *m_parentActor;
+	return m_parentActor;
 }
 
 void BaseComponent::setParentActor(BaseActor * parentActor)
