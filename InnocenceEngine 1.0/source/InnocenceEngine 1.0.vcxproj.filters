@@ -36,6 +36,7 @@
     <ClCompile Include="code\core\interface\IEventManager.cpp" />
     <ClCompile Include="code\core\manager\graphic\GLGUIManager.cpp" />
     <ClCompile Include="code\core\component\VisibleComponent.cpp" />
+    <ClCompile Include="code\core\component\LightComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
@@ -66,5 +67,6 @@
     <ClInclude Include="code\core\interface\IEventManager.h" />
     <ClInclude Include="code\core\manager\graphic\GLGUIManager.h" />
     <ClInclude Include="code\core\component\VisibleComponent.h" />
+    <ClInclude Include="code\core\component\LightComponent.h" />
   </ItemGroup>
 </Project>

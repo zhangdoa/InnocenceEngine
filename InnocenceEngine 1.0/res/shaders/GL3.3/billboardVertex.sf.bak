@@ -6,7 +6,7 @@ layout (location = 1) in vec2 in_TexCoord;
 out vec2 thefrag_TexCoord;
 
 uniform mat4 uni_p;
-uniform mat4 uni_v;
+//uniform mat4 uni_v;
 uniform mat4 uni_t;
 uniform mat4 uni_m;
 

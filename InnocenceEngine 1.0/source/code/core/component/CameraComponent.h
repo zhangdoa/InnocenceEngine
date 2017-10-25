@@ -8,8 +8,8 @@ public:
 	CameraComponent();
 	~CameraComponent();
 
-	glm::mat4 getTranslatonMatrix() const;
-	glm::mat4 getRotationMatrix() const;
+	glm::mat4 getPosMatrix() const;
+	glm::mat4 getRotMatrix() const;
 	glm::mat4 getProjectionMatrix() const;
 
 private:

@@ -3,6 +3,7 @@
 #include "../../manager/AssetManager.h"
 #include "../../manager/LogManager.h"
 #include "../../component/VisibleComponent.h"
+#include "../../component/LightComponent.h"
 
 class GLShader
 {
@@ -10,7 +11,7 @@ public:
 	virtual ~GLShader();
 
 	virtual void init() = 0;
-	virtual void draw(VisibleComponent& visibleComponent) = 0;
+	virtual void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) = 0;
 
 protected:
 	GLShader();
@@ -60,7 +61,7 @@ public:
 	}
 
 	void init() override;
-	void draw(VisibleComponent& visibleComponent) override;
+	void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) override;
 
 private:
 	BasicGLShader();
@@ -79,7 +80,7 @@ public:
 	}
 
 	void init() override;
-	void draw(VisibleComponent& visibleComponent) override;
+	void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) override;
 	void setAmbientIntensity(float ambientIntensity);
 	void setColor(glm::vec3 color);
 private:
@@ -101,7 +102,7 @@ public:
 	}
 
 	void init() override;
-	void draw(VisibleComponent& visibleComponent) override;
+	void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) override;
 	void setAmbientIntensity(float ambientIntensity);
 	void setAmbientColor(glm::vec3 ambientColor);
 	void setDiffuseColor(glm::vec3 diffuseColor);
@@ -125,7 +126,7 @@ public:
 	}
 
 	void init() override;
-	void draw(VisibleComponent& visibleComponent) override;
+	void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) override;
 
 private:
 	BillboardShader();
@@ -144,7 +145,7 @@ public:
 	}
 
 	void init() override;
-	void draw(VisibleComponent& visibleComponent) override;
+	void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) override;
 
 private:
 	SkyboxShader();
@@ -161,15 +162,16 @@ public:
 		return instance;
 	}
 
-	void render(VisibleComponent& visibleComponent);
+	void render(LightComponent& lightComponent, VisibleComponent& visibleComponent);
 
 	void getCameraTranslationMatrix(glm::mat4& t) const;
 	void setCameraTranslationMatrix(const glm::mat4& t);
-	void getCameraViewMatrix(glm::mat4& v) const;
+	void getCameraRotMatrix(glm::mat4& v) const;
 	void setCameraViewMatrix(const glm::mat4& v);
 	void getCameraProjectionMatrix(glm::mat4& p) const;
 	void setCameraProjectionMatrix(const glm::mat4& p);
-
+	void getCameraPos(glm::vec3& pos) const;
+	void setCameraPos(const glm::vec3& pos);
 	void changeDrawPolygonMode();
 
 private:
@@ -179,6 +181,7 @@ private:
 	glm::mat4 cameraTranslationMatrix = glm::mat4();
 	glm::mat4 cameraViewMatrix = glm::mat4();
 	glm::mat4 cameraProjectionMatrix = glm::mat4();
+	glm::vec3 cameraPos = glm::vec3();
 
 	int m_polygonMode = 0;
 

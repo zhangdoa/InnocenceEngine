@@ -171,17 +171,17 @@ void BasicGLShader::init()
 	updateUniform("uni_Texture", 0);
 }
 
-void BasicGLShader::draw(VisibleComponent& visibleComponent)
+void BasicGLShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)
 {
 	bindShader();
 
-	glm::mat4 m, t, v, p;
+	glm::mat4 m, t, r, p;
 	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	GLRenderingManager::getInstance().getCameraViewMatrix(v);
+	GLRenderingManager::getInstance().getCameraRotMatrix(r);
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleComponent.getParentActor().caclTransformation();
+	m = visibleComponent.getParentActor()->caclTransformationMatrix();
 
-	updateUniform("uni_MVP", p * v * t * m);
+	updateUniform("uni_MVP", p * r * t * m);
 }
 
 
@@ -206,7 +206,7 @@ void ForwardAmbientShader::init()
 	updateUniform("uni_Texture", 0);
 }
 
-void ForwardAmbientShader::draw(VisibleComponent& visibleComponent)
+void ForwardAmbientShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)
 {
 	glFrontFace(GL_CCW);
 	glEnable(GL_CULL_FACE);
@@ -214,13 +214,13 @@ void ForwardAmbientShader::draw(VisibleComponent& visibleComponent)
 
 	bindShader();
 
-	glm::mat4 m, t, v, p;
+	glm::mat4 m, t, r, p;
 	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	GLRenderingManager::getInstance().getCameraViewMatrix(v);
+	GLRenderingManager::getInstance().getCameraRotMatrix(r);
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleComponent.getParentActor().caclTransformation();
+	m = visibleComponent.getParentActor()->caclTransformationMatrix();
 
-	updateUniform("uni_MVP", p * v * t * m);
+	updateUniform("uni_MVP", p * r * t * m);
 	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
 	updateUniform("uni_color", m_color);
 }
@@ -253,12 +253,12 @@ void PhongShader::init()
 	addShader(GLShader::FRAGMENT, "GL3.3/phongFragment.sf");
 	m_ambientIntensity = 1.0f;
 	m_ambientColor = glm::vec3(0.75f, 0.85f, 1.0f);
-	m_diffuseColor = glm::vec3(0.65f, 0.1f, 0.1f);
+	m_diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
 	bindShader();
 	updateUniform("uni_texture", 0);
 }
 
-void PhongShader::draw(VisibleComponent & visibleComponent)
+void PhongShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)
 {
 	glFrontFace(GL_CCW);
 	glEnable(GL_CULL_FACE);
@@ -266,22 +266,29 @@ void PhongShader::draw(VisibleComponent & visibleComponent)
 
 	bindShader();
 
-	glm::mat4 m, t, v, p;
+	glm::mat4 m, t, r, p;
 	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	GLRenderingManager::getInstance().getCameraViewMatrix(v);
+	GLRenderingManager::getInstance().getCameraRotMatrix(r);
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleComponent.getParentActor().caclTransformation();
+	m = visibleComponent.getParentActor()->caclTransformationMatrix();
+
+	glm::vec3 cameraPos;
+	GLRenderingManager::getInstance().getCameraPos(cameraPos);
 
 	updateUniform("uni_p", p);
-	updateUniform("uni_v", v);
+	updateUniform("uni_v", r);
 	updateUniform("uni_t", t);
 	updateUniform("uni_m", m);
 
-	// @TODO: add a light class
-	updateUniform("uni_lightPos", glm::vec3(3.5f, 1.5f, 0.5f));
+	updateUniform("uni_lightPos", lightComponent.getParentActor()->getTransform()->getPos());
+	updateUniform("uni_viewPos", cameraPos);
+
 	updateUniform("uni_ambientIntensity", m_ambientIntensity);
 	updateUniform("uni_ambientColor", m_ambientColor);
-	updateUniform("uni_diffuseColor", m_diffuseColor);
+
+	updateUniform("uni_specularIntensity", 0.75f);
+
+	updateUniform("uni_diffuseColor", lightComponent.getColor() * lightComponent.getIntensity());		
 }
 
 void PhongShader::setAmbientIntensity(float ambientIntensity)
@@ -318,20 +325,19 @@ void BillboardShader::init()
 	updateUniform("uni_texture", 0);
 }
 
-void BillboardShader::draw(VisibleComponent & visibleComponent)
+void BillboardShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)
 {
 	bindShader();
 
-	glm::mat4 m, t, v, p;
+	glm::mat4 m, t, r, p;
 
 	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	GLRenderingManager::getInstance().getCameraViewMatrix(v);
+	GLRenderingManager::getInstance().getCameraRotMatrix(r);
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleComponent.getParentActor().caclTransformation();
-	// @TODO: multiply with invertion of rotation matrix
-
+	m = visibleComponent.getParentActor()->caclTransformationMatrix();
+	// @TODO: multiply with inverse of camera rotation matrix
 	updateUniform("uni_p", p);
-	updateUniform("uni_v", v);
+	updateUniform("uni_v", r);
 	updateUniform("uni_t", t);
 	updateUniform("uni_m", m);
 }
@@ -354,7 +360,7 @@ void SkyboxShader::init()
 	updateUniform("uni_skybox", 0);
 }
 
-void SkyboxShader::draw(VisibleComponent& visibleComponent)
+void SkyboxShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)
 {
 	glFrontFace(GL_CW);
 	glEnable(GL_CULL_FACE);
@@ -363,11 +369,11 @@ void SkyboxShader::draw(VisibleComponent& visibleComponent)
 	bindShader();
 
 	// TODO: fix "looking outside" problem// almost there
-	glm::mat4 v, p;
+	glm::mat4 r, p;
 	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	GLRenderingManager::getInstance().getCameraViewMatrix(v);
+	GLRenderingManager::getInstance().getCameraRotMatrix(r);
 
-	updateUniform("uni_VP", p * v * -1.0f);
+	updateUniform("uni_VP", p * r * -1.0f);
 }
 
 
@@ -380,27 +386,27 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
-void GLRenderingManager::render(VisibleComponent& visibleComponent)
+void GLRenderingManager::render( LightComponent& lightComponent, VisibleComponent& visibleComponent)
 {
 	switch (visibleComponent.getVisiblilityType())
 	{
 	case visiblilityType::INVISIBLE: break;
 	case visiblilityType::BILLBOARD:
-		BillboardShader::getInstance().draw(visibleComponent);
+		BillboardShader::getInstance().draw(lightComponent, visibleComponent);
 		// update visibleGameEntity's mesh& texture
 		visibleComponent.draw();
 		break;
 	case visiblilityType::STATIC_MESH:
 		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
 		{
-			m_staticMeshGLShader[i]->draw(visibleComponent);
+			m_staticMeshGLShader[i]->draw(lightComponent, visibleComponent);
 		}
 		// update visibleGameEntity's mesh& texture
 		visibleComponent.draw();
 		break;
 	case visiblilityType::SKYBOX:
 		glDepthFunc(GL_LEQUAL);
-		SkyboxShader::getInstance().draw(visibleComponent);
+		SkyboxShader::getInstance().draw(lightComponent, visibleComponent);
 		// update visibleGameEntity's mesh& texture
 		visibleComponent.draw();
 		glDepthFunc(GL_LESS);
@@ -419,7 +425,7 @@ void GLRenderingManager::setCameraTranslationMatrix(const glm::mat4 & t)
 }
 
 
-void GLRenderingManager::getCameraViewMatrix(glm::mat4 & v) const
+void GLRenderingManager::getCameraRotMatrix(glm::mat4 & v) const
 {
 	v = cameraViewMatrix;
 }
@@ -437,6 +443,16 @@ void GLRenderingManager::getCameraProjectionMatrix(glm::mat4 & p) const
 void GLRenderingManager::setCameraProjectionMatrix(const glm::mat4 & p)
 {
 	cameraProjectionMatrix = p;
+}
+
+void GLRenderingManager::getCameraPos(glm::vec3 & pos) const
+{
+	pos = cameraPos;
+}
+
+void GLRenderingManager::setCameraPos(const glm::vec3 & pos)
+{
+	cameraPos = pos;
 }
 
 void GLRenderingManager::changeDrawPolygonMode()

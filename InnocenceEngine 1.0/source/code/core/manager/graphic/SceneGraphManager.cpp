@@ -11,14 +11,24 @@ SceneGraphManager::~SceneGraphManager()
 }
 
 
-void SceneGraphManager::addToRenderingQueue(VisibleComponent* visibleComponent) 
+void SceneGraphManager::addToRenderingQueue(VisibleComponent* visibleComponent)
 {
 	m_visibleComponents.emplace_back(visibleComponent);
+}
+
+void SceneGraphManager::addToLightQueue(LightComponent * lightComponent)
+{
+	m_LightComponents.emplace_back(lightComponent);
 }
 
 std::vector<VisibleComponent*>& SceneGraphManager::getRenderingQueue()
 {
 	return m_visibleComponents;
+}
+
+std::vector<LightComponent*>& SceneGraphManager::getLightQueue()
+{
+	return m_LightComponents;
 }
 
 
@@ -40,6 +50,7 @@ void SceneGraphManager::update()
 void SceneGraphManager::shutdown()
 {
 	m_visibleComponents.empty();
+	m_LightComponents.empty();
 	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("SceneGraphManager has been shutdown.");
 }

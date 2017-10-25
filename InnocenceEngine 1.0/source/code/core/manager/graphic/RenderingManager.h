@@ -25,11 +25,13 @@ public:
 	GLInputManager& getInputManager() const;
 
 	void getCameraTranslationMatrix(glm::mat4& t) const;
-	void setCameraTranslationMatrix(const glm::mat4& t) ;
+	void setCameraPosMatrix(const glm::mat4& t) ;
 	void getCameraViewMatrix(glm::mat4& v) const;
-	void setCameraViewMatrix(const glm::mat4& v);
+	void setCameraRotMatrix(const glm::mat4& v);
 	void getCameraProjectionMatrix(glm::mat4& p) const;
 	void setCameraProjectionMatrix(const glm::mat4& p);
+	void getCameraPos(glm::vec3& pos) const;
+	void setCameraPos(const glm::vec3& pos);
 
 	void changeDrawPolygonMode() const;
 
