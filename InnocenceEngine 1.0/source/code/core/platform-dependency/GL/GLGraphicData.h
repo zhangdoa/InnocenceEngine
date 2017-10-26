@@ -1,13 +1,14 @@
 #pragma once
 #include "../../manager/LogManager.h"
 
-enum class textureType { INVISIBLE, DIFFUSE, SPECULAR, CUBEMAP };
+enum class textureType { INVISIBLE, DIFFUSE, SPECULAR, AMBIENT, EMISSIVE, HEIGHT, NORMALS, SHININESS, OPACITY, DISPLACEMENT, LIGHTMAP, REFLECTION, CUBEMAP };
 
 struct GLVertexData
 {
 	glm::vec3 m_pos;
 	glm::vec2 m_texCoord;
 	glm::vec3 m_normal;
+	// @TODO: tangent and bitangent
 };
 
 class GLMeshData

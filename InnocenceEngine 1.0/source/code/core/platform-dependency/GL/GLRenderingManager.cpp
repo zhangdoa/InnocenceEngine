@@ -257,6 +257,7 @@ void PhongShader::init()
 	bindShader();
 	updateUniform("uni_diffuseTexture", 0);
 	updateUniform("uni_specularTexture", 1);
+	updateUniform("uni_normalTexture", 2);
 }
 
 void PhongShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)
