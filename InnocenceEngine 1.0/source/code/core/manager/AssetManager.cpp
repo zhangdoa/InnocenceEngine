@@ -70,8 +70,7 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	if (l_assScene->mRootNode->mNumMeshes > 0)
 	{
 		processAssimpNode(l_fileName, l_assScene->mRootNode, l_assScene, visibleComponent);
-		visibleComponent.getMeshData()[0].init();
-		visibleComponent.getMeshData()[0].sendDataToGPU();
+		visibleComponent.getGraphicData()[0].init();
 	}
 	for (unsigned int i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
 	{
@@ -81,27 +80,25 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 		}
 	}
 	// initialize mesh datas
-	for (unsigned int i = 0; i < visibleComponent.getMeshData().size(); i++)
+	for (unsigned int i = 0; i < visibleComponent.getGraphicData().size(); i++)
 	{
-		visibleComponent.getMeshData()[i].init();
-		visibleComponent.getMeshData()[i].sendDataToGPU();
+		visibleComponent.getGraphicData()[i].init();
 	}
 	LogManager::getInstance().printLog("innoModel: " + fileName +  " loaded.");
 }
 
 void AssetManager::processAssimpNode(const std::string& fileName, aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
 {
-	visibleComponent.addMeshData();
+	visibleComponent.addGraphicData();
 	// process each mesh located at the current node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], visibleComponent.getMeshData()[visibleComponent.getMeshData().size() - 1]);
+		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getMeshData());
 		if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
 		{
-			visibleComponent.addTextureData();
-			processAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1]);
+			processAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData());
 		}
 	}
 }
@@ -172,13 +169,28 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, MeshData& meshData) const
 	LogManager::getInstance().printLog("innoMesh loaded.");
 }
 
-void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial* material, TextureData& textureData) const
+void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial* material, std::vector<TextureData>& textureData) const
+{
+	if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+	{
+		TextureData newTextureData;
+		textureData.emplace_back(newTextureData);
+		loadTexture(fileName, material, aiTextureType_DIFFUSE, textureData[textureData.size() - 1]);
+	}
+	if (material->GetTextureCount(aiTextureType_SPECULAR) > 0)
+	{
+		TextureData newTextureData;
+		textureData.emplace_back(newTextureData);
+		loadTexture(fileName, material, aiTextureType_SPECULAR, textureData[textureData.size() - 1]);
+	}
+}
+
+void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material, aiTextureType aiTextureType, TextureData& textureData) const
 {
 	aiString l_AssString;
-	for (unsigned int i = 0; i < material->GetTextureCount(aiTextureType_DIFFUSE); i++)
+	for (unsigned int i = 0; i < material->GetTextureCount(aiTextureType); i++)
 	{
-		// @TODO: load materials
-		material->GetTexture(aiTextureType_DIFFUSE, i, &l_AssString);
+		material->GetTexture(aiTextureType, i, &l_AssString);
 		// set local path, remove slash
 		std::string l_localPath;
 		if (std::string(l_AssString.C_Str()).find_last_of('//') != std::string::npos)
@@ -193,8 +205,8 @@ void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial
 		{
 			l_localPath = std::string(l_AssString.C_Str());
 		}
-		
-		textureData.setTextureType(textureType::DIFFUSE);
+
+		textureData.setTextureType(textureType(aiTextureType));
 
 		// load image
 		int width, height, nrChannels;
@@ -205,7 +217,7 @@ void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial
 		if (data)
 		{
 			textureData.init();
-			textureData.sendDataToGPU(0, nrChannels, width, height, data);
+			textureData.sendDataToGPU(aiTextureType - 1, nrChannels, width, height, data);
 			LogManager::getInstance().printLog("innoTexture: " + l_localPath + " loaded.");
 		}
 		else
@@ -216,19 +228,19 @@ void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial
 	}
 }
 
-
 void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & visibleComponent) const
 {
-	visibleComponent.addTextureData();
-	visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1].setTextureType(textureType::DIFFUSE);
-	visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1].init();
+	TextureData newTextureData;
+	visibleComponent.getGraphicData()[0].getTextureData().emplace_back(newTextureData);
+	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].setTextureType(textureType::DIFFUSE);
+	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].init();
 	int width, height, nrChannels;
 	// load image
 	stbi_set_flip_vertically_on_load(true);
 	auto *data = stbi_load(("../res/textures/" + fileName).c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		visibleComponent.getTextureData()[visibleComponent.getTextureData().size() - 1].sendDataToGPU(0, nrChannels, width, height, data);
+		visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].sendDataToGPU(0, nrChannels, width, height, data);
 		LogManager::getInstance().printLog("innoTexture: " + fileName + " loaded.");
 	}
 	else
@@ -240,9 +252,10 @@ void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & 
 
 void AssetManager::loadTexture(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
 {
-	visibleComponent.addTextureData();
-	visibleComponent.getTextureData()[0].setTextureType(textureType::CUBEMAP);
-	visibleComponent.getTextureData()[0].init();
+	TextureData newTextureData;
+	visibleComponent.getGraphicData()[0].getTextureData().emplace_back(newTextureData);
+	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].setTextureType(textureType::CUBEMAP);
+	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].init();
 	int width, height, nrChannel;
 	for (unsigned int i = 0; i < fileName.size(); i++)
 	{
@@ -251,7 +264,7 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 		auto *data = stbi_load(("../res/textures/" + fileName[i]).c_str(), &width, &height, &nrChannel, 0);
 		if (data)
 		{
-			visibleComponent.getTextureData()[0].sendDataToGPU(i, 0, width, height, data);
+			visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].sendDataToGPU(i, 0, width, height, data);
 			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " loaded.");
 		}
 		else

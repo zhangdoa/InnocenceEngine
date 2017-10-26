@@ -11,14 +11,12 @@ public:
 	void draw();
 	const visiblilityType& getVisiblilityType() const;
 	void setVisiblilityType(visiblilityType visiblilityType);
-	void addMeshData();
-	void addTextureData();
-	std::vector<MeshData>& getMeshData();
-	std::vector<TextureData>& getTextureData();
+
+	void addGraphicData();
+	std::vector<GraphicData>& getGraphicData();
 
 private:
-	std::vector<MeshData> m_meshData;
-	std::vector<TextureData> m_textureData;
+	std::vector<GraphicData> m_graphicData;
 
 	void initialize() override;
 	void update() override;

@@ -255,7 +255,8 @@ void PhongShader::init()
 	m_ambientColor = glm::vec3(0.75f, 0.85f, 1.0f);
 	m_diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
 	bindShader();
-	updateUniform("uni_texture", 0);
+	updateUniform("uni_diffuseTexture", 0);
+	updateUniform("uni_specularTexture", 1);
 }
 
 void PhongShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)

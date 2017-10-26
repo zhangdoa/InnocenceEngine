@@ -9,9 +9,10 @@ uniform vec3 uni_ambientColor;
 
 uniform vec3 uni_viewPos;
 uniform float uni_specularIntensity;
+uniform sampler2D uni_specularTexture;
 
 uniform vec3 uni_lightPos;
-uniform sampler2D uni_texture;
+uniform sampler2D uni_diffuseTexture;
 uniform vec3 uni_diffuseColor;
 
 out vec4 color;
@@ -21,16 +22,16 @@ void main()
 	vec3 normalizedNormal = normalize(thefrag_Normal);
 	
 	//ambient color
-	vec3 ambient = uni_ambientIntensity * uni_ambientColor;
+	vec3 ambient = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * uni_ambientIntensity * uni_ambientColor;
 
 	//diffuse color
 	vec3 normalizedLightPos = normalize(uni_lightPos - thefrag_FragPos);
-	vec3 diffuse = max(dot(normalizedNormal, normalizedLightPos), 0.0) * uni_diffuseColor;
+	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(normalizedNormal, normalizedLightPos), 0.0) * uni_diffuseColor;
 	
 	// specular color
 	vec3 normalizedViewPos = normalize(uni_viewPos - thefrag_FragPos);
-	vec3 specular = uni_specularIntensity * pow(max(dot(normalizedViewPos, reflect(-normalizedViewPos, normalizedNormal)), 0.0), 32) * uni_diffuseColor;  
+	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * uni_specularIntensity * pow(max(dot(normalizedViewPos, reflect(-normalizedViewPos, normalizedNormal)), 0.0), 32) * uni_diffuseColor;  
 	
 	//final result
-	color = texture(uni_texture, thefrag_TexCoord) * vec4(ambient + diffuse + specular, 1.0);
+	color = vec4(ambient + diffuse + specular, 1.0);
 }
