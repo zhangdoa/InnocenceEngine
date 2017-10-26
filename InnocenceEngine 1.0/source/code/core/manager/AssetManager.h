@@ -34,6 +34,7 @@ private:
 
 	void processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, VisibleComponent & visibleComponent) const;
 	void processAssimpMesh(aiMesh* mesh, MeshData& meshData) const;
-	void processAssimpMaterial(const std::string& fileName, aiMaterial* material, TextureData& textureData) const;
+	void processAssimpMaterial(const std::string& fileName, aiMaterial* material, std::vector<TextureData>& textureData) const;
+	void loadTexture(const std::string& fileName, aiMaterial* material, aiTextureType aiTextureType, TextureData& textureData) const;
 };
 

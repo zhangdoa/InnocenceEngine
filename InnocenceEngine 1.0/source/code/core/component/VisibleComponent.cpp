@@ -13,14 +13,9 @@ VisibleComponent::~VisibleComponent()
 
 void VisibleComponent::draw()
 {
-	for (size_t i = 0; i < m_textureData.size(); i++)
+	for (size_t i = 0; i < m_graphicData.size(); i++)
 	{
-		// @TODO: needs a better architecture among mesh & texture
-		m_textureData[i].draw();
-		if (i < m_meshData.size())
-		{
-			m_meshData[i].draw();
-		}
+		m_graphicData[i].draw();
 	}
 }
 
@@ -34,43 +29,31 @@ void VisibleComponent::setVisiblilityType(visiblilityType visiblilityType)
 	m_visiblilityType = visiblilityType;
 }
 
-void VisibleComponent::addMeshData()
+void VisibleComponent::addGraphicData()
 {
-	MeshData newMeshData;
-	m_meshData.emplace_back(newMeshData);
+	GraphicData newGraphicData;
+	m_graphicData.emplace_back(newGraphicData);
 }
 
-void VisibleComponent::addTextureData()
+std::vector<GraphicData>& VisibleComponent::getGraphicData()
 {
-	TextureData newTextureData;
-	m_textureData.emplace_back(newTextureData);
-}
-
-std::vector<MeshData>& VisibleComponent::getMeshData()
-{
-	return m_meshData;
-}
-
-std::vector<TextureData>& VisibleComponent::getTextureData()
-{
-	return m_textureData;
+	return m_graphicData;
 }
 
 void VisibleComponent::initialize()
 {
 	if (m_visiblilityType == visiblilityType::SKYBOX)
 	{
-		this->addMeshData();
-		m_meshData[0].addTestSkybox();
-		m_meshData[0].init();
-		m_meshData[0].sendDataToGPU();
+		addGraphicData();
 	}
 	if (m_visiblilityType == visiblilityType::BILLBOARD)
 	{
-		this->addMeshData();
-		m_meshData[0].addTestBillboard();
-		m_meshData[0].init();
-		m_meshData[0].sendDataToGPU();
+		addGraphicData();
+	}
+	for (size_t i = 0; i < m_graphicData.size(); i++)
+	{
+		m_graphicData[i].setVisiblilityType(m_visiblilityType);
+		m_graphicData[i].init();
 	}
 }
 
@@ -81,14 +64,8 @@ void VisibleComponent::update()
 
 void VisibleComponent::shutdown()
 {
-	for (auto i : m_textureData)
+	for (auto i : m_graphicData)
 	{
 		i.shutdown();
 	}
-	for (auto i : m_meshData)
-	{
-		i.shutdown();
-	}
-	//std::for_each(m_textureData.begin(), m_textureData.end(), [](TextureData val) {val.shutdown(); });
-	//std::for_each(m_meshData.begin(), m_meshData.end(), [](MeshData val) {val.shutdown(); });
 }

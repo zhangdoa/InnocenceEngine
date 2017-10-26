@@ -1,7 +1,7 @@
 #pragma once
 #include "../../manager/LogManager.h"
 
-enum class textureType { INVISIBLE, DIFFUSE, CUBEMAP };
+enum class textureType { INVISIBLE, DIFFUSE, SPECULAR, CUBEMAP };
 
 struct GLVertexData
 {
