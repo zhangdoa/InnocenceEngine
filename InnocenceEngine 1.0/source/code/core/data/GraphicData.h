@@ -45,6 +45,28 @@ private:
 	textureType m_textureType;
 };
 
+class GraphicData
+{
+public:
+	GraphicData();
+	~GraphicData();
+
+	void init();
+	void draw();
+	void shutdown();
+
+	const visiblilityType& getVisiblilityType() const;
+	void setVisiblilityType(visiblilityType visiblilityType);
+
+	MeshData& getMeshData();
+	std::vector<TextureData>& getTextureData();
+
+private:
+	MeshData m_meshData;
+	std::vector<TextureData> m_textureData;
+
+	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
+};
 //class ITextureData
 //{
 //public:
