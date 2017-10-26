@@ -15,10 +15,13 @@ uniform vec3 uni_lightPos;
 uniform sampler2D uni_diffuseTexture;
 uniform vec3 uni_diffuseColor;
 
+uniform sampler2D uni_normalTexture;
+
 out vec4 color;
 
 void main()
 {
+	//vec3 normalizedNormal = normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0);
 	vec3 normalizedNormal = normalize(thefrag_Normal);
 	
 	//ambient color
