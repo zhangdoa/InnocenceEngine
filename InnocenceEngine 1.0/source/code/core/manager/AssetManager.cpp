@@ -70,6 +70,7 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	if (l_assScene->mRootNode->mNumMeshes > 0)
 	{
 		processAssimpNode(l_fileName, l_assScene->mRootNode, l_assScene, visibleComponent);
+		visibleComponent.getGraphicData()[0].setVisiblilityType(visibleComponent.getVisiblilityType());
 		visibleComponent.getGraphicData()[0].init();
 	}
 	for (unsigned int i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
@@ -82,6 +83,7 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	// initialize mesh datas
 	for (unsigned int i = 0; i < visibleComponent.getGraphicData().size(); i++)
 	{
+		visibleComponent.getGraphicData()[i].setVisiblilityType(visibleComponent.getVisiblilityType());
 		visibleComponent.getGraphicData()[i].init();
 	}
 	LogManager::getInstance().printLog("innoModel: " + fileName +  " loaded.");
@@ -182,6 +184,12 @@ void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial
 		TextureData newTextureData;
 		textureData.emplace_back(newTextureData);
 		loadTexture(fileName, material, aiTextureType_SPECULAR, textureData[textureData.size() - 1]);
+	}
+	if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
+	{
+		TextureData newTextureData;
+		textureData.emplace_back(newTextureData);
+		loadTexture(fileName, material, aiTextureType_NORMALS, textureData[textureData.size() - 1]);
 	}
 }
 

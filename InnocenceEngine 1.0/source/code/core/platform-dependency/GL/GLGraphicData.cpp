@@ -126,6 +126,16 @@ void GLTextureData::init(textureType textureType)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		break;
+	case textureType::NORMALS:
+		glGenTextures(1, &m_textureID);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		// set the texture wrapping parameters
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		// set texture filtering parameters
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		break;
 	case textureType::CUBEMAP:
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
@@ -149,9 +159,12 @@ void GLTextureData::draw(textureType textureType)
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
-		// @TODO: there should be only one m_textureID
 	case textureType::SPECULAR:
 		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		break;
+	case textureType::NORMALS:
+		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
 	case textureType::CUBEMAP:
@@ -183,6 +196,11 @@ void GLTextureData::sendDataToGPU(textureType textureType, int textureIndex, int
 		glGenerateMipmap(GL_TEXTURE_2D);
 		break;
 	case textureType::SPECULAR:
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, l_Format, GL_UNSIGNED_BYTE, textureData);
+		glGenerateMipmap(GL_TEXTURE_2D);
+		break;
+	case textureType::NORMALS:
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, l_Format, GL_UNSIGNED_BYTE, textureData);
 		glGenerateMipmap(GL_TEXTURE_2D);
