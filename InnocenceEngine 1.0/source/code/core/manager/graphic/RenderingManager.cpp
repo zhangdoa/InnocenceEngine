@@ -65,6 +65,11 @@ void RenderingManager::changeDrawPolygonMode() const
 	GLRenderingManager::getInstance().changeDrawPolygonMode();
 }
 
+void RenderingManager::toggleDepthBufferVisualizer()
+{
+	GLRenderingManager::getInstance().toggleDepthBufferVisualizer();
+}
+
 void RenderingManager::initialize()
 {
 

@@ -67,6 +67,13 @@ void GLMeshData::sendDataToGPU(std::vector<GLVertexData>& vertices, std::vector<
 		verticesBuffer.emplace_back(val.m_normal.x);
 		verticesBuffer.emplace_back(val.m_normal.y);
 		verticesBuffer.emplace_back(val.m_normal.z);
+		verticesBuffer.emplace_back(val.m_tangent.x);
+		verticesBuffer.emplace_back(val.m_tangent.y);
+		verticesBuffer.emplace_back(val.m_tangent.z);
+		verticesBuffer.emplace_back(val.m_bitangent.x);
+		verticesBuffer.emplace_back(val.m_bitangent.y);
+		verticesBuffer.emplace_back(val.m_bitangent.z);
+
 	});
 
 	glBindVertexArray(m_VAO);
@@ -79,15 +86,23 @@ void GLMeshData::sendDataToGPU(std::vector<GLVertexData>& vertices, std::vector<
 
 	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
 
 	// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
 
 	// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(5 * sizeof(float)));
+
+	// tangent coord attribute, 4th attribution with 3 * sizeof(float) bits of data
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+
+	// bitangent coord attribute, 5th attribution with 3 * sizeof(float) bits of data
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);

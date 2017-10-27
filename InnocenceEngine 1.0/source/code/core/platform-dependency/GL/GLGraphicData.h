@@ -8,7 +8,8 @@ struct GLVertexData
 	glm::vec3 m_pos;
 	glm::vec2 m_texCoord;
 	glm::vec3 m_normal;
-	// @TODO: tangent and bitangent
+	glm::vec3 m_tangent;
+	glm::vec3 m_bitangent;
 };
 
 class GLMeshData

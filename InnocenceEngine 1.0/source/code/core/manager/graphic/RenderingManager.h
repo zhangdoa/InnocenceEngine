@@ -34,6 +34,7 @@ public:
 	void setCameraPos(const glm::vec3& pos);
 
 	void changeDrawPolygonMode() const;
+	void toggleDepthBufferVisualizer();
 
 private:
 	RenderingManager();

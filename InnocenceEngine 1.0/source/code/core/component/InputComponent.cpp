@@ -37,7 +37,7 @@ void InputComponent::update()
 	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_D, l_keyDResult);
 	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_ESCAPE, l_ketEscapeResult);
 	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_F1, l_keyF1Result);
-
+	CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_F2, l_keyF2Result);
 
 	if (l_mouseRightResult)
 	{
@@ -88,6 +88,14 @@ void InputComponent::update()
 		{
 			CoreManager::getInstance().getRenderingManager().changeDrawPolygonMode();
 		}	
+	}
+	if (l_keyF2Result != l_oldKeyF2Result)
+	{
+		l_oldKeyF2Result = l_keyF2Result;
+		if (l_keyF2Result)
+		{
+			CoreManager::getInstance().getRenderingManager().toggleDepthBufferVisualizer();
+		}
 	}
 }
 
