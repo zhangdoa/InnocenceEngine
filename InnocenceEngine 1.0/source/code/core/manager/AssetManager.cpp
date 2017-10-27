@@ -49,9 +49,14 @@ void AssetManager::importModel(const std::string& fileName) const
 		LogManager::getInstance().printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
 		return;
 	}
+	if (l_assImporter.ReadFile("../res/models/" + fileName.substr(0, fileName.find(".")) + ".innoModel", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace) != nullptr)
+	{
+		LogManager::getInstance().printLog("Model: " + fileName + " has been already imported.");
+		return;
+	}
 	Assimp::Exporter l_assExporter;
 	l_assExporter.Export(l_assScene, "assbin", "../res/models/" + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
-	LogManager::getInstance().printLog("Model: " + fileName + " imported.");
+	LogManager::getInstance().printLog("Model: " + fileName + " is imported.");
 }
 
 void AssetManager::loadModel(const std::string & fileName, VisibleComponent & visibleComponent) const
@@ -86,7 +91,7 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 		visibleComponent.getGraphicData()[i].setVisiblilityType(visibleComponent.getVisiblilityType());
 		visibleComponent.getGraphicData()[i].init();
 	}
-	LogManager::getInstance().printLog("innoModel: " + fileName +  " loaded.");
+	LogManager::getInstance().printLog("innoModel: " + fileName +  " is loaded.");
 }
 
 void AssetManager::processAssimpNode(const std::string& fileName, aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
@@ -143,17 +148,34 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, MeshData& meshData) const
 			vertexData.m_normal.z = 0.0f;
 		}
 
-		//// tangent
-		//vector.x = mesh->mTangents[i].x;
-		//vector.y = mesh->mTangents[i].y;
-		//vector.z = mesh->mTangents[i].z;
-		//vertex.Tangent = vector;
+		// tangent
+		if (mesh->mTangents)
+		{
+			vertexData.m_tangent.x = mesh->mTangents[i].x;
+			vertexData.m_tangent.y = mesh->mTangents[i].y;
+			vertexData.m_tangent.z = mesh->mTangents[i].z;
+		}
+		else
+		{
+			vertexData.m_tangent.x = 0.0f;
+			vertexData.m_tangent.y = 0.0f;
+			vertexData.m_tangent.z = 0.0f;
+		}
 
-		//// bitangent
-		//vector.x = mesh->mBitangents[i].x;
-		//vector.y = mesh->mBitangents[i].y;
-		//vector.z = mesh->mBitangents[i].z;
-		//vertex.Bitangent = vector;
+
+		// bitangent
+		if (mesh->mBitangents)
+		{
+			vertexData.m_bitangent.x = mesh->mBitangents[i].x;
+			vertexData.m_bitangent.y = mesh->mBitangents[i].y;
+			vertexData.m_bitangent.z = mesh->mBitangents[i].z;
+		}
+		else
+		{
+			vertexData.m_bitangent.x = 0.0f;
+			vertexData.m_bitangent.y = 0.0f;
+			vertexData.m_bitangent.z = 0.0f;
+		}
 
 		meshData.getVertices().emplace_back(vertexData);
 	}
@@ -168,7 +190,7 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, MeshData& meshData) const
 			meshData.getIntices().emplace_back(face.mIndices[j]);
 		}
 	}
-	LogManager::getInstance().printLog("innoMesh loaded.");
+	LogManager::getInstance().printLog("innoMesh is loaded.");
 }
 
 void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial* material, std::vector<TextureData>& textureData) const
@@ -226,7 +248,7 @@ void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material
 		{
 			textureData.init();
 			textureData.sendDataToGPU(aiTextureType - 1, nrChannels, width, height, data);
-			LogManager::getInstance().printLog("innoTexture: " + l_localPath + " loaded.");
+			LogManager::getInstance().printLog("innoTexture: " + l_localPath + " is loaded.");
 		}
 		else
 		{
@@ -249,7 +271,7 @@ void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & 
 	if (data)
 	{
 		visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].sendDataToGPU(0, nrChannels, width, height, data);
-		LogManager::getInstance().printLog("innoTexture: " + fileName + " loaded.");
+		LogManager::getInstance().printLog("innoTexture: " + fileName + " is loaded.");
 	}
 	else
 	{
@@ -273,7 +295,7 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 		if (data)
 		{
 			visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].sendDataToGPU(i, 0, width, height, data);
-			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " loaded.");
+			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " is loaded.");
 		}
 		else
 		{

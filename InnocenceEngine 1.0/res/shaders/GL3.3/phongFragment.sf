@@ -2,39 +2,60 @@
 
 in vec2 thefrag_TexCoord;
 in vec3 thefrag_FragPos;
-in vec3 thefrag_Normal;
+in vec3 thefrag_TangentLightPos;
+in vec3 thefrag_TangentViewPos;
+in vec3 thefrag_TangentFragPos;
 
 uniform float uni_ambientIntensity;
 uniform vec3 uni_ambientColor;
 
-uniform vec3 uni_viewPos;
 uniform float uni_specularIntensity;
 uniform sampler2D uni_specularTexture;
 
-uniform vec3 uni_lightPos;
-uniform sampler2D uni_diffuseTexture;
 uniform vec3 uni_diffuseColor;
+uniform sampler2D uni_diffuseTexture;
 
 uniform sampler2D uni_normalTexture;
 
+uniform bool uni_drawDepthBuffer;
+
 out vec4 color;
+
+float near = 0.1; 
+float far  = 100.0; 
+  
+float LinearizeDepth(float depth) 
+{
+    float z = depth * 2.0 - 1.0; // back to NDC 
+    return (2.0 * near * far) / (far + near - z * (far - near));	
+}
 
 void main()
 {
-	//vec3 normalizedNormal = normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0);
-	vec3 normalizedNormal = normalize(thefrag_Normal);
+	vec3 normalizedNormal = normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0);
 	
 	//ambient color
 	vec3 ambient = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * uni_ambientIntensity * uni_ambientColor;
 
 	//diffuse color
-	vec3 normalizedLightPos = normalize(uni_lightPos - thefrag_FragPos);
-	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(normalizedNormal, normalizedLightPos), 0.0) * uni_diffuseColor;
+	vec3 normalizedLightPos = normalize(thefrag_TangentLightPos - thefrag_TangentFragPos);
+	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(normalizedLightPos, normalizedNormal), 0.0) * uni_diffuseColor;
 	
 	// specular color
-	vec3 normalizedViewPos = normalize(uni_viewPos - thefrag_FragPos);
-	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * uni_specularIntensity * pow(max(dot(normalizedViewPos, reflect(-normalizedViewPos, normalizedNormal)), 0.0), 32) * uni_diffuseColor;  
+	vec3 normalizedViewPos = normalize(thefrag_TangentViewPos - thefrag_TangentFragPos);
+	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * uni_specularIntensity * pow(max(dot(normalizedNormal, normalize(normalizedLightPos + normalizedViewPos)), 0.0), 32) * uni_diffuseColor;  
 	
-	//final result
-	color = vec4(ambient + diffuse + specular, 1.0);
+	if(uni_drawDepthBuffer)
+	{
+		// depthBuffer visualizer       
+		vec3 depthBufferColor = vec3(LinearizeDepth(gl_FragCoord.z) / far);
+    
+		//final result
+		color = vec4(depthBufferColor, 1.0);
+	}
+	else
+	{
+		color = vec4(ambient + diffuse + specular, 1.0);
+	}
+
 }

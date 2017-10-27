@@ -173,6 +173,8 @@ public:
 	void getCameraPos(glm::vec3& pos) const;
 	void setCameraPos(const glm::vec3& pos);
 	void changeDrawPolygonMode();
+	void toggleDepthBufferVisualizer();
+	bool canDrawDepthBuffer() const;
 
 private:
 	GLRenderingManager();
@@ -184,6 +186,7 @@ private:
 	glm::vec3 cameraPos = glm::vec3();
 
 	int m_polygonMode = 0;
+	bool m_drawDepthBuffer = false;
 
 	void initialize() override;
 	void update() override;

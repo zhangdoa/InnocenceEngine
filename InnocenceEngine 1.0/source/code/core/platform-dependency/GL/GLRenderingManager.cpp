@@ -37,7 +37,6 @@ inline void GLShader::addUniform(std::string uniform) const
 	{
 		LogManager::getInstance().printLog("Error: Uniform lost: " + uniform);
 	}
-	//m_uniforms.emplace(std::pair<std::string, int>(uniform.c_str(), uniformLocation));
 }
 
 inline void GLShader::updateUniform(const std::string & uniformName, bool uniformValue) const
@@ -143,7 +142,7 @@ inline void GLShader::compileShader() const
 	glLinkProgram(m_program);
 
 	glValidateProgram(m_program);
-	LogManager::getInstance().printLog("Shader compiled.");
+	LogManager::getInstance().printLog("Shader is compiled.");
 }
 
 inline void GLShader::detachShader(int shader) const
@@ -166,7 +165,8 @@ void BasicGLShader::init()
 	addShader(GLShader::VERTEX, "GL3.3/basicVertex.sf");
 	setAttributeLocation(0, "in_Position");
 	setAttributeLocation(1, "in_TexCoord");
-	//setAttributeLocation(2, "in_Normal");
+	setAttributeLocation(2, "in_Normal");
+	// @TODO: a more general shader class
 	addShader(GLShader::FRAGMENT, "GL3.3/basicFragment.sf");
 	updateUniform("uni_Texture", 0);
 }
@@ -250,6 +250,9 @@ void PhongShader::init()
 	setAttributeLocation(0, "in_Position");
 	setAttributeLocation(1, "in_TexCoord");
 	setAttributeLocation(2, "in_Normal");
+	setAttributeLocation(3, "in_Tangent");
+	setAttributeLocation(4, "in_Bitangent");
+
 	addShader(GLShader::FRAGMENT, "GL3.3/phongFragment.sf");
 	m_ambientIntensity = 1.0f;
 	m_ambientColor = glm::vec3(0.75f, 0.85f, 1.0f);
@@ -290,7 +293,9 @@ void PhongShader::draw(LightComponent& lightComponent, VisibleComponent& visible
 
 	updateUniform("uni_specularIntensity", 0.75f);
 
-	updateUniform("uni_diffuseColor", lightComponent.getColor() * lightComponent.getIntensity());		
+	updateUniform("uni_diffuseColor", lightComponent.getColor() * lightComponent.getIntensity());	
+
+	updateUniform("uni_drawDepthBuffer", GLRenderingManager::getInstance().canDrawDepthBuffer());
 }
 
 void PhongShader::setAmbientIntensity(float ambientIntensity)
@@ -470,6 +475,21 @@ void GLRenderingManager::changeDrawPolygonMode()
 	case 2: glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); break;
 	}
 	m_polygonMode += 1;
+}
+void GLRenderingManager::toggleDepthBufferVisualizer()
+{
+	if (m_drawDepthBuffer)
+	{
+		m_drawDepthBuffer = false;
+	}
+	else
+	{
+		m_drawDepthBuffer = true;
+	}
+}
+bool GLRenderingManager::canDrawDepthBuffer() const
+{
+	return m_drawDepthBuffer;
 }
 void GLRenderingManager::initialize()
 {

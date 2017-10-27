@@ -19,6 +19,9 @@ private:
 	int l_ketEscapeResult = 0;
 	int l_keyF1Result = 0;
 	int l_oldKeyF1Result = 0;
+	int l_keyF2Result = 0;
+	int l_oldKeyF2Result = 0;
+
 	enum moveDirection { FORWARD, BACKWARD, LEFT, RIGHT };
 	float moveSpeed = 0.05f;
 	float rotateSpeed = 2.0f;
