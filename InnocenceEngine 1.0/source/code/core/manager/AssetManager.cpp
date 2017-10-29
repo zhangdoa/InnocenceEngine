@@ -286,15 +286,15 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 	visibleComponent.getGraphicData()[0].getTextureData().emplace_back(newTextureData);
 	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].setTextureType(textureType::CUBEMAP);
 	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].init();
-	int width, height, nrChannel;
+	int width, height, nrChannels;
 	for (unsigned int i = 0; i < fileName.size(); i++)
 	{
 		// load image, do not flip texture
 		stbi_set_flip_vertically_on_load(false);
-		auto *data = stbi_load(("../res/textures/" + fileName[i]).c_str(), &width, &height, &nrChannel, 0);
+		auto *data = stbi_load(("../res/textures/" + fileName[i]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].sendDataToGPU(i, 0, width, height, data);
+			visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].sendDataToGPU(i, nrChannels, width, height, data);
 			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " is loaded.");
 		}
 		else
