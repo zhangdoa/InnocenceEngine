@@ -29,6 +29,16 @@ void VisibleComponent::setVisiblilityType(visiblilityType visiblilityType)
 	m_visiblilityType = visiblilityType;
 }
 
+const textureWrapMethod & VisibleComponent::getTextureWrapMethod() const
+{
+	return m_textureWrapMethod;
+}
+
+void VisibleComponent::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
+{
+	m_textureWrapMethod = textureWrapMethod;
+}
+
 void VisibleComponent::addGraphicData()
 {
 	GraphicData newGraphicData;
@@ -53,6 +63,7 @@ void VisibleComponent::initialize()
 	for (size_t i = 0; i < m_graphicData.size(); i++)
 	{
 		m_graphicData[i].setVisiblilityType(m_visiblilityType);
+		m_graphicData[i].setTextureWrapMethod(m_textureWrapMethod);
 		m_graphicData[i].init();
 	}
 }

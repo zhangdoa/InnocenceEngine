@@ -39,10 +39,12 @@ public:
 	void sendDataToGPU(int textureIndex, int textureFormat, int textureWidth, int textureHeight, void* textureData) const;
 	void setTextureType(textureType textureType);
 	textureType getTextureType() const;
-
+	void setTextureWrapMethod(textureWrapMethod textureWrapMethod);
+	const textureWrapMethod& getTextureWrapMethod() const;
 private:
 	GLTextureData m_GLTextureData;
 	textureType m_textureType;
+	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
 };
 
 class GraphicData
@@ -57,6 +59,8 @@ public:
 
 	const visiblilityType& getVisiblilityType() const;
 	void setVisiblilityType(visiblilityType visiblilityType);
+	const textureWrapMethod& getTextureWrapMethod() const;
+	void setTextureWrapMethod(textureWrapMethod textureWrapMethod);
 
 	MeshData& getMeshData();
 	std::vector<TextureData>& getTextureData();
@@ -66,6 +70,7 @@ private:
 	std::vector<TextureData> m_textureData;
 
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
+	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
 };
 //class ITextureData
 //{

@@ -2,6 +2,7 @@
 #include "../../manager/LogManager.h"
 
 enum class textureType { INVISIBLE, DIFFUSE, SPECULAR, AMBIENT, EMISSIVE, HEIGHT, NORMALS, SHININESS, OPACITY, DISPLACEMENT, LIGHTMAP, REFLECTION, CUBEMAP };
+enum class textureWrapMethod { CLAMPTOEDGE, REPEAT };
 
 struct GLVertexData
 {
@@ -36,7 +37,7 @@ public:
 	GLTextureData();
 	~GLTextureData();
 
-	void init(textureType textureType);
+	void init(textureType textureType, textureWrapMethod textureWrapMethod);
 	void draw(textureType textureType);
 	void shutdown();
 
