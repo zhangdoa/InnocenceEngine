@@ -164,7 +164,7 @@ TextureData::~TextureData()
 
 void TextureData::init()
 {
-	m_GLTextureData.init(m_textureType);
+	m_GLTextureData.init(m_textureType, m_textureWrapMethod);
 }
 
 void TextureData::draw()
@@ -190,6 +190,16 @@ void TextureData::setTextureType(textureType textureType)
 textureType TextureData::getTextureType() const
 {
 	return m_textureType;
+}
+
+void TextureData::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
+{
+	m_textureWrapMethod = textureWrapMethod;
+}
+
+const textureWrapMethod & TextureData::getTextureWrapMethod() const
+{
+	return m_textureWrapMethod;
 }
 
 GraphicData::GraphicData()
@@ -235,6 +245,16 @@ const visiblilityType & GraphicData::getVisiblilityType() const
 void GraphicData::setVisiblilityType(visiblilityType visiblilityType)
 {
 	m_visiblilityType = visiblilityType;
+}
+
+const textureWrapMethod & GraphicData::getTextureWrapMethod() const
+{
+	return m_textureWrapMethod;
+}
+
+void GraphicData::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
+{
+	m_textureWrapMethod = textureWrapMethod;
 }
 
 MeshData & GraphicData::getMeshData()

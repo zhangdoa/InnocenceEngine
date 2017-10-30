@@ -22,13 +22,15 @@ void InnocenceGarden::initialize()
 	rootActor.addChildActor(&testStaticMeshActor2);
 
 	testSkyboxComponent.setVisiblilityType(visiblilityType::SKYBOX);
+	testSkyboxComponent.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
 	skyboxActor.addChildComponent(&testSkyboxComponent);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testSkyboxComponent);
-	
+
 	testLightActor1.addChildComponent(&testLightComponent1);
 	SceneGraphManager::getInstance().addToLightQueue(&testLightComponent1);
 
 	testLightBillboardComponent1.setVisiblilityType(visiblilityType::BILLBOARD);
+	testLightBillboardComponent1.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
 	testLightActor1.addChildComponent(&testLightBillboardComponent1);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testLightBillboardComponent1);
 
@@ -36,6 +38,7 @@ void InnocenceGarden::initialize()
 	SceneGraphManager::getInstance().addToLightQueue(&testLightComponent2);
 
 	testLightBillboardComponent2.setVisiblilityType(visiblilityType::BILLBOARD);
+	testLightBillboardComponent2.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
 	testLightActor2.addChildComponent(&testLightBillboardComponent2);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testLightBillboardComponent2);
 	
@@ -43,6 +46,7 @@ void InnocenceGarden::initialize()
 	SceneGraphManager::getInstance().addToLightQueue(&testLightComponent3);
 
 	testLightBillboardComponent3.setVisiblilityType(visiblilityType::BILLBOARD);
+	testLightBillboardComponent3.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
 	testLightActor3.addChildComponent(&testLightBillboardComponent3);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testLightBillboardComponent3);
 

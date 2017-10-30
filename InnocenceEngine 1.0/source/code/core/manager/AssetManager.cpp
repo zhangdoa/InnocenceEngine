@@ -105,7 +105,7 @@ void AssetManager::processAssimpNode(const std::string& fileName, aiNode * node,
 		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getMeshData());
 		if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
 		{
-			processAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData());
+			processAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], visibleComponent);
 		}
 	}
 }
@@ -193,29 +193,29 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, MeshData& meshData) const
 	LogManager::getInstance().printLog("innoMesh is loaded.");
 }
 
-void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial* material, std::vector<TextureData>& textureData) const
+void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial* material, VisibleComponent & visibleComponent) const
 {
 	if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
 	{
 		TextureData newTextureData;
-		textureData.emplace_back(newTextureData);
-		loadTexture(fileName, material, aiTextureType_DIFFUSE, textureData[textureData.size() - 1]);
+		visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData().emplace_back(newTextureData);
+		loadTexture(fileName, material, aiTextureType_DIFFUSE, visibleComponent);
 	}
 	if (material->GetTextureCount(aiTextureType_SPECULAR) > 0)
 	{
 		TextureData newTextureData;
-		textureData.emplace_back(newTextureData);
-		loadTexture(fileName, material, aiTextureType_SPECULAR, textureData[textureData.size() - 1]);
+		visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData().emplace_back(newTextureData);
+		loadTexture(fileName, material, aiTextureType_SPECULAR, visibleComponent);
 	}
 	if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
 	{
 		TextureData newTextureData;
-		textureData.emplace_back(newTextureData);
-		loadTexture(fileName, material, aiTextureType_NORMALS, textureData[textureData.size() - 1]);
+		visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData().emplace_back(newTextureData);
+		loadTexture(fileName, material, aiTextureType_NORMALS, visibleComponent);
 	}
 }
 
-void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material, aiTextureType aiTextureType, TextureData& textureData) const
+void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material, aiTextureType aiTextureType, VisibleComponent & visibleComponent) const
 {
 	aiString l_AssString;
 	for (unsigned int i = 0; i < material->GetTextureCount(aiTextureType); i++)
@@ -236,8 +236,8 @@ void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material
 			l_localPath = std::string(l_AssString.C_Str());
 		}
 
-		textureData.setTextureType(textureType(aiTextureType));
-
+		visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData()[visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData().size() -1].setTextureType(textureType(aiTextureType));
+		visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData()[visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData().size() - 1].setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
 		// load image
 		int width, height, nrChannels;
 
@@ -246,8 +246,8 @@ void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material
 		auto *data = stbi_load(("../res/textures/" + fileName + "//" + l_localPath).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			textureData.init();
-			textureData.sendDataToGPU(aiTextureType - 1, nrChannels, width, height, data);
+			visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData()[visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData().size() - 1].init();
+			visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData()[visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData().size() - 1].sendDataToGPU(aiTextureType - 1, nrChannels, width, height, data);
 			LogManager::getInstance().printLog("innoTexture: " + l_localPath + " is loaded.");
 		}
 		else
@@ -263,6 +263,7 @@ void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & 
 	TextureData newTextureData;
 	visibleComponent.getGraphicData()[0].getTextureData().emplace_back(newTextureData);
 	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].setTextureType(textureType::DIFFUSE);
+	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].setTextureWrapMethod(visibleComponent.getGraphicData()[0].getTextureWrapMethod());
 	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].init();
 	int width, height, nrChannels;
 	// load image
@@ -285,6 +286,7 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 	TextureData newTextureData;
 	visibleComponent.getGraphicData()[0].getTextureData().emplace_back(newTextureData);
 	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].setTextureType(textureType::CUBEMAP);
+	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].setTextureWrapMethod(visibleComponent.getGraphicData()[0].getTextureWrapMethod());
 	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].init();
 	int width, height, nrChannels;
 	for (unsigned int i = 0; i < fileName.size(); i++)

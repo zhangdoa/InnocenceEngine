@@ -11,6 +11,8 @@ public:
 	void draw();
 	const visiblilityType& getVisiblilityType() const;
 	void setVisiblilityType(visiblilityType visiblilityType);
+	const textureWrapMethod& getTextureWrapMethod() const;
+	void setTextureWrapMethod(textureWrapMethod textureWrapMethod);
 
 	void addGraphicData();
 	std::vector<GraphicData>& getGraphicData();
@@ -23,5 +25,6 @@ private:
 	void shutdown() override;
 
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
+	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
 };
 
