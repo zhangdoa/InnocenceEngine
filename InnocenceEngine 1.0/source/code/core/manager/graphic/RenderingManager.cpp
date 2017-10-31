@@ -99,10 +99,7 @@ void RenderingManager::update()
 	//forward render
 	for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
 	{
-		for (size_t j = 0; j < SceneGraphManager::getInstance().getLightQueue().size(); j++)
-		{
-			GLRenderingManager::getInstance().render(*SceneGraphManager::getInstance().getLightQueue()[j] , *SceneGraphManager::getInstance().getRenderingQueue()[i]);
-		}
+	GLRenderingManager::getInstance().render(SceneGraphManager::getInstance().getLightQueue(), *SceneGraphManager::getInstance().getRenderingQueue()[i]);
 	}
 
 	GLGUIManager::getInstance().excute(executeMessage::UPDATE);
