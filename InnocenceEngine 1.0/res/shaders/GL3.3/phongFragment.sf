@@ -1,3 +1,4 @@
+// shadertype=glsl
 #version 330 core
 
 in vec2 thefrag_TexCoord;
@@ -6,16 +7,27 @@ in vec3 thefrag_TangentLightPos;
 in vec3 thefrag_TangentViewPos;
 in vec3 thefrag_TangentFragPos;
 
-uniform float uni_ambientIntensity;
-uniform vec3 uni_ambientColor;
-
-uniform float uni_specularIntensity;
 uniform sampler2D uni_specularTexture;
-
-uniform vec3 uni_diffuseColor;
 uniform sampler2D uni_diffuseTexture;
-
 uniform sampler2D uni_normalTexture;
+
+struct dirLight {
+    vec3 ambientColor;
+    vec3 diffuseColor;
+    vec3 specularColor;
+};
+
+struct pointLight {
+    vec3 ambientColor;
+    vec3 diffuseColor;
+    vec3 specularColor;
+};
+
+#define NR_POINT_LIGHTS 4
+
+uniform dirLight uni_dirLight;
+
+uniform pointLight uni_pointLights[NR_POINT_LIGHTS];
 
 uniform bool uni_drawDepthBuffer;
 
@@ -23,7 +35,41 @@ out vec4 color;
 
 float near = 0.1; 
 float far  = 100.0; 
-  
+
+vec3 CalcDirLight(dirLight light, vec3 normal, vec3 lightDir, vec3 viewDir)
+{
+	//ambient color
+
+	vec3 ambient = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * light.ambientColor;
+
+	//diffuse color: texture * factor * light color
+	
+	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(lightDir, normal), 0.0) * light.diffuseColor;
+	
+	// specular color: texture * factor * light color
+	
+	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * pow(max(dot(normal, normalize(lightDir + viewDir)), 0.0), 32) * light.specularColor;
+	
+	return (ambient + diffuse + specular);
+}
+
+vec3 CalcPointLight(pointLight light, vec3 normal, vec3 lightDir, vec3 viewDir)
+{
+	//ambient color
+
+	vec3 ambient = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * light.ambientColor;
+
+	//diffuse color: texture * factor * light color
+	
+	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(lightDir, normal), 0.0) * light.diffuseColor;
+	
+	// specular color: texture * factor * light color
+	
+	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * pow(max(dot(normal, normalize(lightDir + viewDir)), 0.0), 32) * light.specularColor;
+	
+	return (ambient + diffuse + specular);
+}
+
 float LinearizeDepth(float depth) 
 {
     float z = depth * 2.0 - 1.0; // back to NDC 
@@ -31,20 +77,7 @@ float LinearizeDepth(float depth)
 }
 
 void main()
-{
-	vec3 normalizedNormal = normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0);
-	
-	//ambient color
-	vec3 ambient = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * uni_ambientIntensity * uni_ambientColor;
-
-	//diffuse color
-	vec3 normalizedLightPos = normalize(thefrag_TangentLightPos - thefrag_TangentFragPos);
-	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(normalizedLightPos, normalizedNormal), 0.0) * uni_diffuseColor;
-	
-	// specular color
-	vec3 normalizedViewPos = normalize(thefrag_TangentViewPos - thefrag_TangentFragPos);
-	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * uni_specularIntensity * pow(max(dot(normalizedNormal, normalize(normalizedLightPos + normalizedViewPos)), 0.0), 32) * uni_diffuseColor;  
-	
+{	
 	if(uni_drawDepthBuffer)
 	{
 		// depthBuffer visualizer       
@@ -54,8 +87,24 @@ void main()
 		color = vec4(depthBufferColor, 1.0);
 	}
 	else
-	{
-		color = vec4(ambient + diffuse + specular, 1.0);
+	{	
+	//normal
+	vec3 normalizedNormal = normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0);
+
+	//light direction
+	vec3 normalizedLightDir = normalize(thefrag_TangentLightPos - thefrag_TangentFragPos);
+	
+	//view direction
+	vec3 normalizedViewDir = normalize(thefrag_TangentViewPos - thefrag_TangentFragPos);
+
+	//final result
+	vec3 finalColor = CalcDirLight(uni_dirLight, normalizedNormal, normalizedLightDir, normalizedViewDir);
+
+	for(int i = 0; i < NR_POINT_LIGHTS; i++)
+    {
+		finalColor += CalcPointLight(uni_pointLights[i], normalizedNormal, normalizedLightDir, normalizedViewDir);  
 	}
 
+	color = vec4(finalColor, 1.0);
+	}
 }

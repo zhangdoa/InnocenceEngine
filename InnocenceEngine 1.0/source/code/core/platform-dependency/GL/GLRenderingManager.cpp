@@ -171,7 +171,7 @@ void BasicGLShader::init()
 	updateUniform("uni_Texture", 0);
 }
 
-void BasicGLShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)
+void BasicGLShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
 {
 	bindShader();
 
@@ -182,57 +182,6 @@ void BasicGLShader::draw(LightComponent& lightComponent, VisibleComponent& visib
 	m = visibleComponent.getParentActor()->caclTransformationMatrix();
 
 	updateUniform("uni_MVP", p * r * t * m);
-}
-
-
-ForwardAmbientShader::ForwardAmbientShader()
-{
-}
-
-ForwardAmbientShader::~ForwardAmbientShader()
-{
-}
-
-void ForwardAmbientShader::init()
-{
-	initProgram();
-	addShader(GLShader::VERTEX, "GL3.3/forwardAmbientVertex.sf");
-	setAttributeLocation(0, "in_Position");
-	setAttributeLocation(1, "in_TexCoord");
-	addShader(GLShader::FRAGMENT, "GL3.3/forwardAmbientFragment.sf");
-	m_ambientIntensity = 1.0f;
-	m_color = glm::vec3(0.75f, 1.0f, 1.0f);
-	bindShader();
-	updateUniform("uni_Texture", 0);
-}
-
-void ForwardAmbientShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)
-{
-	glFrontFace(GL_CCW);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-
-	bindShader();
-
-	glm::mat4 m, t, r, p;
-	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	GLRenderingManager::getInstance().getCameraRotMatrix(r);
-	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleComponent.getParentActor()->caclTransformationMatrix();
-
-	updateUniform("uni_MVP", p * r * t * m);
-	updateUniform("uni_ambientIntensity", glm::vec3(m_ambientIntensity, m_ambientIntensity, m_ambientIntensity));
-	updateUniform("uni_color", m_color);
-}
-
-void ForwardAmbientShader::setAmbientIntensity(float ambientIntensity)
-{
-	m_ambientIntensity = ambientIntensity;
-}
-
-void ForwardAmbientShader::setColor(glm::vec3 color)
-{
-	m_color = color;
 }
 
 PhongShader::PhongShader()
@@ -254,16 +203,13 @@ void PhongShader::init()
 	setAttributeLocation(4, "in_Bitangent");
 
 	addShader(GLShader::FRAGMENT, "GL3.3/phongFragment.sf");
-	m_ambientIntensity = 1.0f;
-	m_ambientColor = glm::vec3(0.75f, 0.85f, 1.0f);
-	m_diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
 	bindShader();
 	updateUniform("uni_diffuseTexture", 0);
 	updateUniform("uni_specularTexture", 1);
 	updateUniform("uni_normalTexture", 2);
 }
 
-void PhongShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)
+void PhongShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
 {
 	glFrontFace(GL_CCW);
 	glEnable(GL_CULL_FACE);
@@ -285,32 +231,27 @@ void PhongShader::draw(LightComponent& lightComponent, VisibleComponent& visible
 	updateUniform("uni_t", t);
 	updateUniform("uni_m", m);
 
-	updateUniform("uni_lightPos", lightComponent.getParentActor()->getTransform()->getPos());
-	updateUniform("uni_viewPos", cameraPos);
-
-	updateUniform("uni_ambientIntensity", m_ambientIntensity);
-	updateUniform("uni_ambientColor", m_ambientColor);
-
-	updateUniform("uni_specularIntensity", 0.75f);
-
-	updateUniform("uni_diffuseColor", lightComponent.getColor() * lightComponent.getIntensity());	
-
+	for (size_t i = 0; i < lightComponents.size(); i++)
+	{
+		std::stringstream ss;
+		ss << i;
+		updateUniform("uni_lightPos", lightComponents[i]->getParentActor()->getTransform()->getPos());
+		updateUniform("uni_viewPos", cameraPos);
+		//@TODO: complete forward shadering
+		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
+		{
+			updateUniform("uni_dirLight.ambientColor", lightComponents[i]->getAmbientColor());
+			updateUniform("uni_dirLight.diffuseColor", lightComponents[i]->getDiffuseColor() * lightComponents[i]->getIntensity());
+			updateUniform("uni_dirLight.specularColor", lightComponents[i]->getSpecularColor());
+		}
+		else if (lightComponents[i]->getLightType() == lightType::POINT)
+		{
+			updateUniform("uni_pointLights[" + ss.str() + "].ambientColor", lightComponents[i]->getAmbientColor());
+			updateUniform("uni_pointLights[" + ss.str() + "].diffuseColor", lightComponents[i]->getDiffuseColor() * lightComponents[i]->getIntensity());
+			updateUniform("uni_pointLights[" + ss.str() + "].specularColor", lightComponents[i]->getSpecularColor());
+		}
+	}
 	updateUniform("uni_drawDepthBuffer", GLRenderingManager::getInstance().canDrawDepthBuffer());
-}
-
-void PhongShader::setAmbientIntensity(float ambientIntensity)
-{
-	m_ambientIntensity = ambientIntensity;
-}
-
-void PhongShader::setAmbientColor(glm::vec3 ambientColor)
-{
-	m_ambientColor = ambientColor;
-}
-
-void PhongShader::setDiffuseColor(glm::vec3 diffuseColor)
-{
-	m_diffuseColor = diffuseColor;
 }
 
 BillboardShader::BillboardShader()
@@ -332,7 +273,7 @@ void BillboardShader::init()
 	updateUniform("uni_texture", 0);
 }
 
-void BillboardShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)
+void BillboardShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
 {
 	bindShader();
 
@@ -367,7 +308,7 @@ void SkyboxShader::init()
 	updateUniform("uni_skybox", 0);
 }
 
-void SkyboxShader::draw(LightComponent& lightComponent, VisibleComponent& visibleComponent)
+void SkyboxShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
 {
 	glFrontFace(GL_CW);
 	glEnable(GL_CULL_FACE);
@@ -393,27 +334,27 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
-void GLRenderingManager::render( LightComponent& lightComponent, VisibleComponent& visibleComponent)
+void GLRenderingManager::render(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
 {
 	switch (visibleComponent.getVisiblilityType())
 	{
 	case visiblilityType::INVISIBLE: break;
 	case visiblilityType::BILLBOARD:
-		BillboardShader::getInstance().draw(lightComponent, visibleComponent);
+		BillboardShader::getInstance().draw(lightComponents, visibleComponent);
 		// update visibleGameEntity's mesh& texture
 		visibleComponent.draw();
 		break;
 	case visiblilityType::STATIC_MESH:
 		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
 		{
-			m_staticMeshGLShader[i]->draw(lightComponent, visibleComponent);
+			m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
 		}
 		// update visibleGameEntity's mesh& texture
 		visibleComponent.draw();
 		break;
 	case visiblilityType::SKYBOX:
 		glDepthFunc(GL_LEQUAL);
-		SkyboxShader::getInstance().draw(lightComponent, visibleComponent);
+		SkyboxShader::getInstance().draw(lightComponents, visibleComponent);
 		// update visibleGameEntity's mesh& texture
 		visibleComponent.draw();
 		glDepthFunc(GL_LESS);

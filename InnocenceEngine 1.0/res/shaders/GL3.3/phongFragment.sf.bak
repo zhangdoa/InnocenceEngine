@@ -1,3 +1,4 @@
+// shadertype=glsl
 #version 330 core
 
 in vec2 thefrag_TexCoord;
@@ -51,7 +52,7 @@ void main()
 		vec3 depthBufferColor = vec3(LinearizeDepth(gl_FragCoord.z) / far);
     
 		//final result
-		color = vec4(ambient + diffuse + specular + depthBufferColor, 1.0);
+		color = vec4(depthBufferColor, 1.0);
 	}
 	else
 	{

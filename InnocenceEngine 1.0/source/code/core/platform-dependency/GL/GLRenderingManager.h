@@ -11,7 +11,7 @@ public:
 	virtual ~GLShader();
 
 	virtual void init() = 0;
-	virtual void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) = 0;
+	virtual void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) = 0;
 
 protected:
 	GLShader();
@@ -61,32 +61,10 @@ public:
 	}
 
 	void init() override;
-	void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) override;
+	void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) override;
 
 private:
 	BasicGLShader();
-};
-
-class ForwardAmbientShader : public GLShader
-{
-
-public:
-	~ForwardAmbientShader();
-
-	static ForwardAmbientShader& getInstance()
-	{
-		static ForwardAmbientShader instance;
-		return instance;
-	}
-
-	void init() override;
-	void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) override;
-	void setAmbientIntensity(float ambientIntensity);
-	void setColor(glm::vec3 color);
-private:
-	ForwardAmbientShader();
-	float m_ambientIntensity;
-	glm::vec3 m_color;
 };
 
 class PhongShader : public GLShader
@@ -102,15 +80,10 @@ public:
 	}
 
 	void init() override;
-	void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) override;
-	void setAmbientIntensity(float ambientIntensity);
-	void setAmbientColor(glm::vec3 ambientColor);
-	void setDiffuseColor(glm::vec3 diffuseColor);
+	void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) override;
+
 private:
 	PhongShader();
-	float m_ambientIntensity;
-	glm::vec3 m_ambientColor;
-	glm::vec3 m_diffuseColor;
 };
 
 class BillboardShader : public GLShader
@@ -126,7 +99,7 @@ public:
 	}
 
 	void init() override;
-	void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) override;
+	void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) override;
 
 private:
 	BillboardShader();
@@ -145,7 +118,7 @@ public:
 	}
 
 	void init() override;
-	void draw(LightComponent& lightComponent, VisibleComponent& visibleComponent) override;
+	void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) override;
 
 private:
 	SkyboxShader();
@@ -162,7 +135,7 @@ public:
 		return instance;
 	}
 
-	void render(LightComponent& lightComponent, VisibleComponent& visibleComponent);
+	void render(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent);
 
 	void getCameraTranslationMatrix(glm::mat4& t) const;
 	void setCameraTranslationMatrix(const glm::mat4& t);

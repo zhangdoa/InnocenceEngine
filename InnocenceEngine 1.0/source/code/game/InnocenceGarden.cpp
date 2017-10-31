@@ -87,9 +87,9 @@ void InnocenceGarden::initialize()
 void InnocenceGarden::update()
 {
 	temp += 0.05f;
-	testLightComponent1.setColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
-	testLightComponent2.setColor(glm::vec3((glm::sin(temp) + 1.0f) / 2.0f, 0.0f, 0.0f));
-	testLightComponent3.setColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp) + 1.0f) / 2.0f));
+	testLightComponent1.setDiffuseColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
+	//testLightComponent2.setDiffuseColor(glm::vec3((glm::sin(temp) + 1.0f) / 2.0f, 0.0f, 0.0f));
+	testLightComponent3.setDiffuseColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp) + 1.0f) / 2.0f));
 
 	rootActor.excute(executeMessage::UPDATE);
 }

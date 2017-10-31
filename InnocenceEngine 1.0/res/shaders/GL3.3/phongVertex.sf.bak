@@ -1,3 +1,4 @@
+// shadertype=<glsl>
 #version 330 core
 
 layout (location = 0) in vec3 in_Position;
@@ -22,7 +23,7 @@ out vec3 thefrag_TangentFragPos;
 
 void main()
 { 
-    mat3 normalMatrix = transpose(inverse(mat3(uni_m)));
+    mat3 normalMatrix = transpose(inverse(mat3(uni_t * uni_m)));
     vec3 T = normalize(normalMatrix * in_Tangent);
     vec3 N = normalize(normalMatrix * in_Normal);
     T = normalize(T - dot(T, N) * N);
