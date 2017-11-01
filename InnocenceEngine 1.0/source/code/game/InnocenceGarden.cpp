@@ -18,6 +18,7 @@ void InnocenceGarden::initialize()
 	rootActor.addChildActor(&testLightActor2);
 	rootActor.addChildActor(&testLightActor3);
 
+	rootActor.addChildActor(&landscapeStaticMeshActor);
 	rootActor.addChildActor(&testStaticMeshActor1);
 	rootActor.addChildActor(&testStaticMeshActor2);
 
@@ -25,7 +26,8 @@ void InnocenceGarden::initialize()
 	testSkyboxComponent.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
 	skyboxActor.addChildComponent(&testSkyboxComponent);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testSkyboxComponent);
-
+	
+	testLightComponent1.setIntensity(0.0f);
 	testLightActor1.addChildComponent(&testLightComponent1);
 	SceneGraphManager::getInstance().addToLightQueue(&testLightComponent1);
 
@@ -34,6 +36,7 @@ void InnocenceGarden::initialize()
 	testLightActor1.addChildComponent(&testLightBillboardComponent1);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testLightBillboardComponent1);
 
+	testLightComponent2.setIntensity(0.0f);
 	testLightActor2.addChildComponent(&testLightComponent2);
 	SceneGraphManager::getInstance().addToLightQueue(&testLightComponent2);
 
@@ -50,6 +53,12 @@ void InnocenceGarden::initialize()
 	testLightActor3.addChildComponent(&testLightBillboardComponent3);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testLightBillboardComponent3);
 
+	landscapeStaticMeshComponent.addGraphicData();
+	landscapeStaticMeshComponent.getGraphicData()[0].getMeshData().addTestCube();
+	landscapeStaticMeshComponent.setVisiblilityType(visiblilityType::STATIC_MESH);
+	landscapeStaticMeshActor.addChildComponent(&landscapeStaticMeshComponent);
+	SceneGraphManager::getInstance().addToRenderingQueue(&landscapeStaticMeshComponent);
+
 	testStaticMeshComponent1.setVisiblilityType(visiblilityType::STATIC_MESH);
 	testStaticMeshActor1.addChildComponent(&testStaticMeshComponent1);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testStaticMeshComponent1);
@@ -63,6 +72,8 @@ void InnocenceGarden::initialize()
 	testLightActor2.getTransform()->setPos(glm::vec3(2.0f, 1.0f, 2.0f));
 	testLightActor3.getTransform()->setPos(glm::vec3(0.0f, 1.0f, 4.0f));
 
+	landscapeStaticMeshActor.getTransform()->setScale(glm::vec3(20.0f, 0.1f, 20.0f));
+	landscapeStaticMeshActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 0.0f));
 	testStaticMeshActor1.getTransform()->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	testStaticMeshActor1.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 1.5f));
 	testStaticMeshActor2.getTransform()->setScale(glm::vec3(0.002f, 0.002f, 0.002f));
@@ -82,14 +93,25 @@ void InnocenceGarden::initialize()
 	AssetManager::getInstance().loadTexture("lightbulb.png", testLightBillboardComponent1);
 	AssetManager::getInstance().loadTexture("lightbulb.png", testLightBillboardComponent2);
 	AssetManager::getInstance().loadTexture("lightbulb.png", testLightBillboardComponent3);
+
+	AssetManager::getInstance().loadTexture("test.png", landscapeStaticMeshComponent);
 }
 
 void InnocenceGarden::update()
 {
 	temp += 0.05f;
+	testLightComponent1.setAmbientColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
 	testLightComponent1.setDiffuseColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
-	//testLightComponent2.setDiffuseColor(glm::vec3((glm::sin(temp) + 1.0f) / 2.0f, 0.0f, 0.0f));
-	testLightComponent3.setDiffuseColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp) + 1.0f) / 2.0f));
+	testLightComponent1.setSpecularColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
+
+	testLightComponent2.setAmbientColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
+	testLightComponent2.setDiffuseColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
+	testLightComponent2.setSpecularColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
+
+
+	testLightComponent3.setAmbientColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
+	testLightComponent3.setDiffuseColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
+	testLightComponent3.setSpecularColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
 
 	rootActor.excute(executeMessage::UPDATE);
 }

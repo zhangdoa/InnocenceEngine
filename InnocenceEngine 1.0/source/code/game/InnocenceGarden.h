@@ -25,6 +25,7 @@ private:
 	BaseActor testLightActor2;
 	BaseActor testLightActor3;
 
+	BaseActor landscapeStaticMeshActor;
 	BaseActor testStaticMeshActor1;
 	BaseActor testStaticMeshActor2;
 
@@ -38,6 +39,7 @@ private:
 	VisibleComponent testLightBillboardComponent2;
 	VisibleComponent testLightBillboardComponent3;
 
+	VisibleComponent landscapeStaticMeshComponent;
 	VisibleComponent testStaticMeshComponent1;
 	VisibleComponent testStaticMeshComponent2;
 

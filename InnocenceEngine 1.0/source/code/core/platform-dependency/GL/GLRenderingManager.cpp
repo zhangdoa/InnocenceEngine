@@ -181,7 +181,7 @@ void BasicGLShader::draw(std::vector<LightComponent*>& lightComponents, VisibleC
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
 	m = visibleComponent.getParentActor()->caclTransformationMatrix();
 
-	updateUniform("uni_MVP", p * r * t * m);
+	updateUniform("uni_MTRP", p * r * t * m);
 }
 
 PhongShader::PhongShader()
@@ -227,7 +227,7 @@ void PhongShader::draw(std::vector<LightComponent*>& lightComponents, VisibleCom
 	GLRenderingManager::getInstance().getCameraPos(cameraPos);
 
 	updateUniform("uni_p", p);
-	updateUniform("uni_v", r);
+	updateUniform("uni_r", r);
 	updateUniform("uni_t", t);
 	updateUniform("uni_m", m);
 
@@ -235,7 +235,6 @@ void PhongShader::draw(std::vector<LightComponent*>& lightComponents, VisibleCom
 	{
 		std::stringstream ss;
 		ss << i;
-		updateUniform("uni_lightPos", lightComponents[i]->getParentActor()->getTransform()->getPos());
 		updateUniform("uni_viewPos", cameraPos);
 		//@TODO: complete forward shadering
 		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
@@ -246,6 +245,10 @@ void PhongShader::draw(std::vector<LightComponent*>& lightComponents, VisibleCom
 		}
 		else if (lightComponents[i]->getLightType() == lightType::POINT)
 		{
+			updateUniform("uni_pointLights[" + ss.str() + "].position", lightComponents[i]->getParentActor()->getTransform()->getPos());
+			updateUniform("uni_pointLights[" + ss.str() + "].constantFactor", lightComponents[i]->getConstantFactor());
+			updateUniform("uni_pointLights[" + ss.str() + "].linearFactor", lightComponents[i]->getLinearFactor());
+			updateUniform("uni_pointLights[" + ss.str() + "].quadraticFactor", lightComponents[i]->getQuadraticFactor());
 			updateUniform("uni_pointLights[" + ss.str() + "].ambientColor", lightComponents[i]->getAmbientColor());
 			updateUniform("uni_pointLights[" + ss.str() + "].diffuseColor", lightComponents[i]->getDiffuseColor() * lightComponents[i]->getIntensity());
 			updateUniform("uni_pointLights[" + ss.str() + "].specularColor", lightComponents[i]->getSpecularColor());
@@ -285,7 +288,7 @@ void BillboardShader::draw(std::vector<LightComponent*>& lightComponents, Visibl
 	m = visibleComponent.getParentActor()->caclTransformationMatrix();
 	// @TODO: multiply with inverse of camera rotation matrix
 	updateUniform("uni_p", p);
-	updateUniform("uni_v", r);
+	updateUniform("uni_r", r);
 	updateUniform("uni_t", t);
 	updateUniform("uni_m", m);
 }
@@ -321,7 +324,7 @@ void SkyboxShader::draw(std::vector<LightComponent*>& lightComponents, VisibleCo
 	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
 	GLRenderingManager::getInstance().getCameraRotMatrix(r);
 
-	updateUniform("uni_VP", p * r * -1.0f);
+	updateUniform("uni_RP", p * r * -1.0f);
 }
 
 
