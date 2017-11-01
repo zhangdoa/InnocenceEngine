@@ -10,7 +10,6 @@ public:
 	~LightComponent();
 
 	const lightType getLightType();
-	float getIntensity() const;
 	glm::vec3 getDirection() const;
 	float getConstantFactor() const;
 	float getLinearFactor() const;
@@ -20,7 +19,6 @@ public:
 	glm::vec3 getSpecularColor() const;
 
 	void setlightType(lightType lightType);
-	void setIntensity(float intensity);
 	void setDirection(glm::vec3 direction);
 	void setConstantFactor(float constantFactor);
 	void setLinearFactor(float linearFactor);
@@ -31,7 +29,6 @@ public:
 
 private:
 	lightType m_lightType = lightType::POINT;
-	float m_intensity;
 	glm::vec3 m_direction;
 	float m_constantFactor;
 	float m_linearFactor;
