@@ -231,26 +231,31 @@ void PhongShader::draw(std::vector<LightComponent*>& lightComponents, VisibleCom
 	updateUniform("uni_t", t);
 	updateUniform("uni_m", m);
 
+	int l_pointLightIndexOffset = 0;
 	for (size_t i = 0; i < lightComponents.size(); i++)
 	{
-		std::stringstream ss;
-		ss << i;
+		//@TODO: generalization
+
 		updateUniform("uni_viewPos", cameraPos);
-		//@TODO: complete forward shadering
+
 		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
 		{
+			l_pointLightIndexOffset -= 1;
+			updateUniform("uni_dirLight.direction", lightComponents[i]->getDirection());
 			updateUniform("uni_dirLight.ambientColor", lightComponents[i]->getAmbientColor());
-			updateUniform("uni_dirLight.diffuseColor", lightComponents[i]->getDiffuseColor() * lightComponents[i]->getIntensity());
+			updateUniform("uni_dirLight.diffuseColor", lightComponents[i]->getDiffuseColor());
 			updateUniform("uni_dirLight.specularColor", lightComponents[i]->getSpecularColor());
 		}
 		else if (lightComponents[i]->getLightType() == lightType::POINT)
 		{
+			std::stringstream ss;
+			ss << i + l_pointLightIndexOffset;
 			updateUniform("uni_pointLights[" + ss.str() + "].position", lightComponents[i]->getParentActor()->getTransform()->getPos());
 			updateUniform("uni_pointLights[" + ss.str() + "].constantFactor", lightComponents[i]->getConstantFactor());
 			updateUniform("uni_pointLights[" + ss.str() + "].linearFactor", lightComponents[i]->getLinearFactor());
 			updateUniform("uni_pointLights[" + ss.str() + "].quadraticFactor", lightComponents[i]->getQuadraticFactor());
 			updateUniform("uni_pointLights[" + ss.str() + "].ambientColor", lightComponents[i]->getAmbientColor());
-			updateUniform("uni_pointLights[" + ss.str() + "].diffuseColor", lightComponents[i]->getDiffuseColor() * lightComponents[i]->getIntensity());
+			updateUniform("uni_pointLights[" + ss.str() + "].diffuseColor", lightComponents[i]->getDiffuseColor());
 			updateUniform("uni_pointLights[" + ss.str() + "].specularColor", lightComponents[i]->getSpecularColor());
 		}
 	}

@@ -14,9 +14,10 @@ void InnocenceGarden::initialize()
 {	
 	rootActor.addChildActor(&playCharacter);
 	rootActor.addChildActor(&skyboxActor);
-	rootActor.addChildActor(&testLightActor1);
-	rootActor.addChildActor(&testLightActor2);
-	rootActor.addChildActor(&testLightActor3);
+	rootActor.addChildActor(&directionalLightActor);
+	rootActor.addChildActor(&pointLightActor1);
+	rootActor.addChildActor(&pointLightActor2);
+	rootActor.addChildActor(&pointLightActor3);
 
 	rootActor.addChildActor(&landscapeStaticMeshActor);
 	rootActor.addChildActor(&testStaticMeshActor1);
@@ -27,31 +28,37 @@ void InnocenceGarden::initialize()
 	skyboxActor.addChildComponent(&testSkyboxComponent);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testSkyboxComponent);
 	
-	testLightComponent1.setIntensity(0.0f);
-	testLightActor1.addChildComponent(&testLightComponent1);
-	SceneGraphManager::getInstance().addToLightQueue(&testLightComponent1);
+	directionalLightComponent.setlightType(lightType::DIRECTIONAL);
+	directionalLightComponent.setDirection(glm::vec3(1.0f, 1.0f, 1.0f));
+	directionalLightComponent.setAmbientColor(glm::vec3(0.0f, 0.35f, 0.55f));
+	directionalLightComponent.setDiffuseColor(glm::vec3(0.0f, 0.35f, 0.55f));
+	directionalLightComponent.setSpecularColor(glm::vec3(0.0f, 0.35f, 0.55f));
+	directionalLightActor.addChildComponent(&directionalLightComponent);
+	SceneGraphManager::getInstance().addToLightQueue(&directionalLightComponent);
 
-	testLightBillboardComponent1.setVisiblilityType(visiblilityType::BILLBOARD);
-	testLightBillboardComponent1.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
-	testLightActor1.addChildComponent(&testLightBillboardComponent1);
-	SceneGraphManager::getInstance().addToRenderingQueue(&testLightBillboardComponent1);
+	pointLightActor1.addChildComponent(&pointLightComponent1);
+	SceneGraphManager::getInstance().addToLightQueue(&pointLightComponent1);
 
-	testLightComponent2.setIntensity(0.0f);
-	testLightActor2.addChildComponent(&testLightComponent2);
-	SceneGraphManager::getInstance().addToLightQueue(&testLightComponent2);
+	pointLightBillboardComponent1.setVisiblilityType(visiblilityType::BILLBOARD);
+	pointLightBillboardComponent1.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
+	pointLightActor1.addChildComponent(&pointLightBillboardComponent1);
+	SceneGraphManager::getInstance().addToRenderingQueue(&pointLightBillboardComponent1);
 
-	testLightBillboardComponent2.setVisiblilityType(visiblilityType::BILLBOARD);
-	testLightBillboardComponent2.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
-	testLightActor2.addChildComponent(&testLightBillboardComponent2);
-	SceneGraphManager::getInstance().addToRenderingQueue(&testLightBillboardComponent2);
+	pointLightActor2.addChildComponent(&pointLightComponent2);
+	SceneGraphManager::getInstance().addToLightQueue(&pointLightComponent2);
+
+	pointLightBillboardComponent2.setVisiblilityType(visiblilityType::BILLBOARD);
+	pointLightBillboardComponent2.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
+	pointLightActor2.addChildComponent(&pointLightBillboardComponent2);
+	SceneGraphManager::getInstance().addToRenderingQueue(&pointLightBillboardComponent2);
 	
-	testLightActor3.addChildComponent(&testLightComponent3);
-	SceneGraphManager::getInstance().addToLightQueue(&testLightComponent3);
+	pointLightActor3.addChildComponent(&pointLightComponent3);
+	SceneGraphManager::getInstance().addToLightQueue(&pointLightComponent3);
 
-	testLightBillboardComponent3.setVisiblilityType(visiblilityType::BILLBOARD);
-	testLightBillboardComponent3.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
-	testLightActor3.addChildComponent(&testLightBillboardComponent3);
-	SceneGraphManager::getInstance().addToRenderingQueue(&testLightBillboardComponent3);
+	pointLightBillboardComponent3.setVisiblilityType(visiblilityType::BILLBOARD);
+	pointLightBillboardComponent3.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
+	pointLightActor3.addChildComponent(&pointLightBillboardComponent3);
+	SceneGraphManager::getInstance().addToRenderingQueue(&pointLightBillboardComponent3);
 
 	landscapeStaticMeshComponent.addGraphicData();
 	landscapeStaticMeshComponent.getGraphicData()[0].getMeshData().addTestCube();
@@ -68,15 +75,15 @@ void InnocenceGarden::initialize()
 	SceneGraphManager::getInstance().addToRenderingQueue(&testStaticMeshComponent2);
 	
 	playCharacter.getTransform()->setPos(glm::vec3(0.0f, 2.0f, 5.0f));
-	testLightActor1.getTransform()->setPos(glm::vec3(-2.0f, 1.0f, 2.0f));
-	testLightActor2.getTransform()->setPos(glm::vec3(2.0f, 1.0f, 2.0f));
-	testLightActor3.getTransform()->setPos(glm::vec3(0.0f, 1.0f, 4.0f));
+	pointLightActor1.getTransform()->setPos(glm::vec3(-2.0f, 1.0f, 2.0f));
+	pointLightActor2.getTransform()->setPos(glm::vec3(2.0f, 1.0f, 2.0f));
+	pointLightActor3.getTransform()->setPos(glm::vec3(0.0f, 1.0f, 4.0f));
 
-	landscapeStaticMeshActor.getTransform()->setScale(glm::vec3(20.0f, 20.0f, 0.1f));
+	landscapeStaticMeshActor.getTransform()->setScale(glm::vec3(60.0f, 60.0f, 0.1f));
 	landscapeStaticMeshActor.getTransform()->rotate(glm::vec3(1.0f, 0.0f, 0.0f), 90.0f);
 	landscapeStaticMeshActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 0.0f));
 	testStaticMeshActor1.getTransform()->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
-	testStaticMeshActor1.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 1.5f));
+	testStaticMeshActor1.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -1.5f));
 	testStaticMeshActor2.getTransform()->setScale(glm::vec3(0.002f, 0.002f, 0.002f));
 	testStaticMeshActor2.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 3.5f));
 
@@ -91,28 +98,32 @@ void InnocenceGarden::initialize()
 	AssetManager::getInstance().loadTexture({ "skybox2/right.tga",
 		"skybox2/left.tga", "skybox2/top.tga", "skybox2/bottom.tga", "skybox2/back.tga", "skybox2/front.tga" }, testSkyboxComponent);
 
-	AssetManager::getInstance().loadTexture("lightbulb.png", testLightBillboardComponent1);
-	AssetManager::getInstance().loadTexture("lightbulb.png", testLightBillboardComponent2);
-	AssetManager::getInstance().loadTexture("lightbulb.png", testLightBillboardComponent3);
+	AssetManager::getInstance().loadTexture("lightbulb.png", pointLightBillboardComponent1);
+	AssetManager::getInstance().loadTexture("lightbulb.png", pointLightBillboardComponent2);
+	AssetManager::getInstance().loadTexture("lightbulb.png", pointLightBillboardComponent3);
 
 	AssetManager::getInstance().loadTexture("test.png", landscapeStaticMeshComponent);
+
+
 }
 
 void InnocenceGarden::update()
 {
-	temp += 0.05f;
-	testLightComponent1.setAmbientColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
-	testLightComponent1.setDiffuseColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
-	testLightComponent1.setSpecularColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
+	temp += 0.02f;
+	pointLightComponent1.setAmbientColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
+	pointLightComponent1.setDiffuseColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
+	pointLightComponent1.setSpecularColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
+	pointLightActor1.getTransform()->setPos(glm::vec3(-2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 3.0f));
 
-	testLightComponent2.setAmbientColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
-	testLightComponent2.setDiffuseColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
-	testLightComponent2.setSpecularColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
+	pointLightComponent2.setAmbientColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
+	pointLightComponent2.setDiffuseColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
+	pointLightComponent2.setSpecularColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
+	pointLightActor2.getTransform()->setPos(glm::vec3(2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 2.0f));
 
-
-	testLightComponent3.setAmbientColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
-	testLightComponent3.setDiffuseColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
-	testLightComponent3.setSpecularColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
+	pointLightComponent3.setAmbientColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
+	pointLightComponent3.setDiffuseColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
+	pointLightComponent3.setSpecularColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
+	pointLightActor3.getTransform()->setPos(glm::vec3(0.0f, 1.0f, 4.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 1.0f));
 
 	rootActor.excute(executeMessage::UPDATE);
 }

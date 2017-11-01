@@ -58,7 +58,7 @@ vec3 CalcDirLight(dirLight light, vec3 normal, vec3 viewPos, vec3 fragPos)
 	// specular color: texture * factor * light color
 	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * pow(max(dot(normal, normalize(normalizedLightDir + normalizedViewDir)), 0.0), 32) * light.specularColor;
 	
-	return (ambient + diffuse + specular);
+	return (ambient + diffuse + specular) * 0.1;
 }
 
 vec3 CalcPointLight(pointLight light, vec3 normal, vec3 viewPos, vec3 fragPos)

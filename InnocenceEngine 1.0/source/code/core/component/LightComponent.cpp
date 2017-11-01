@@ -16,11 +16,6 @@ void LightComponent::setlightType(lightType lightType)
 	m_lightType = lightType;
 }
 
-void LightComponent::setIntensity(float intensity)
-{
-	m_intensity = intensity;
-}
-
 void LightComponent::setDirection(glm::vec3 direction)
 {
 	m_direction = direction;
@@ -62,11 +57,6 @@ const lightType LightComponent::getLightType()
 	return m_lightType;
 }
 
-float LightComponent::getIntensity() const
-{
-	return m_intensity;
-}
-
 glm::vec3 LightComponent::getDirection() const
 {
 	return m_direction;
@@ -105,7 +95,6 @@ glm::vec3 LightComponent::getSpecularColor() const
 
 void LightComponent::initialize()
 {
-	m_intensity = 1.0f;
 	m_direction = glm::vec3(0.0f, 0.0f, 1.0f);
 	m_constantFactor = 1.0f;
 	m_linearFactor = 0.14f;
