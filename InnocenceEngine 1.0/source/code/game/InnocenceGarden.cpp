@@ -72,7 +72,8 @@ void InnocenceGarden::initialize()
 	testLightActor2.getTransform()->setPos(glm::vec3(2.0f, 1.0f, 2.0f));
 	testLightActor3.getTransform()->setPos(glm::vec3(0.0f, 1.0f, 4.0f));
 
-	landscapeStaticMeshActor.getTransform()->setScale(glm::vec3(20.0f, 0.1f, 20.0f));
+	landscapeStaticMeshActor.getTransform()->setScale(glm::vec3(20.0f, 20.0f, 0.1f));
+	landscapeStaticMeshActor.getTransform()->rotate(glm::vec3(1.0f, 0.0f, 0.0f), 90.0f);
 	landscapeStaticMeshActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 0.0f));
 	testStaticMeshActor1.getTransform()->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	testStaticMeshActor1.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 1.5f));
