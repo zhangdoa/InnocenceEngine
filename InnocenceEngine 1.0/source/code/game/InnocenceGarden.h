@@ -21,9 +21,10 @@ private:
 
 	PlayerCharacter playCharacter;
 	BaseActor skyboxActor;
-	BaseActor testLightActor1;
-	BaseActor testLightActor2;
-	BaseActor testLightActor3;
+	BaseActor directionalLightActor;
+	BaseActor pointLightActor1;
+	BaseActor pointLightActor2;
+	BaseActor pointLightActor3;
 
 	BaseActor landscapeStaticMeshActor;
 	BaseActor testStaticMeshActor1;
@@ -31,13 +32,14 @@ private:
 
 	VisibleComponent testSkyboxComponent;
 
-	LightComponent testLightComponent1;
-	LightComponent testLightComponent2;
-	LightComponent testLightComponent3;
+	LightComponent directionalLightComponent;
+	LightComponent pointLightComponent1;
+	LightComponent pointLightComponent2;
+	LightComponent pointLightComponent3;
 
-	VisibleComponent testLightBillboardComponent1;
-	VisibleComponent testLightBillboardComponent2;
-	VisibleComponent testLightBillboardComponent3;
+	VisibleComponent pointLightBillboardComponent1;
+	VisibleComponent pointLightBillboardComponent2;
+	VisibleComponent pointLightBillboardComponent3;
 
 	VisibleComponent landscapeStaticMeshComponent;
 	VisibleComponent testStaticMeshComponent1;
