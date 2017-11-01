@@ -2,28 +2,33 @@
 #version 330 core
 
 in vec2 thefrag_TexCoord;
+in vec3 thefrag_ViewPos;
 in vec3 thefrag_FragPos;
-in vec3 thefrag_TangentLightPos;
-in vec3 thefrag_TangentViewPos;
-in vec3 thefrag_TangentFragPos;
+in mat3 TBN;
 
 uniform sampler2D uni_specularTexture;
 uniform sampler2D uni_diffuseTexture;
 uniform sampler2D uni_normalTexture;
 
 struct dirLight {
+	vec3 direction;
     vec3 ambientColor;
     vec3 diffuseColor;
     vec3 specularColor;
 };
 
 struct pointLight {
+	vec3 position;
+	float constantFactor;
+    float linearFactor;
+    float quadraticFactor;
+
     vec3 ambientColor;
     vec3 diffuseColor;
     vec3 specularColor;
 };
 
-#define NR_POINT_LIGHTS 4
+#define NR_POINT_LIGHTS 3
 
 uniform dirLight uni_dirLight;
 
@@ -36,37 +41,51 @@ out vec4 color;
 float near = 0.1; 
 float far  = 100.0; 
 
-vec3 CalcDirLight(dirLight light, vec3 normal, vec3 lightDir, vec3 viewDir)
-{
-	//ambient color
+vec3 CalcDirLight(dirLight light, vec3 normal, vec3 viewPos, vec3 fragPos)
+{	
+	//light direction
+	vec3 normalizedLightDir = normalize(-light.direction);
 
+	//view direction
+	vec3 normalizedViewDir = normalize(viewPos - fragPos);
+
+	//ambient color
 	vec3 ambient = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * light.ambientColor;
 
 	//diffuse color: texture * factor * light color
-	
-	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(lightDir, normal), 0.0) * light.diffuseColor;
+	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(normal, normalizedLightDir), 0.0) * light.diffuseColor;
 	
 	// specular color: texture * factor * light color
-	
-	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * pow(max(dot(normal, normalize(lightDir + viewDir)), 0.0), 32) * light.specularColor;
+	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * pow(max(dot(normal, normalize(normalizedLightDir + normalizedViewDir)), 0.0), 32) * light.specularColor;
 	
 	return (ambient + diffuse + specular);
 }
 
-vec3 CalcPointLight(pointLight light, vec3 normal, vec3 lightDir, vec3 viewDir)
+vec3 CalcPointLight(pointLight light, vec3 normal, vec3 viewPos, vec3 fragPos)
 {
-	//ambient color
+	//light direction
+	vec3 normalizedLightDir = normalize(light.position - fragPos);
 
+	//view direction
+	vec3 normalizedViewDir = normalize(viewPos - fragPos);
+
+	//ambient color
 	vec3 ambient = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * light.ambientColor;
 
 	//diffuse color: texture * factor * light color
+	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(normal, normalizedLightDir), 0.0) * light.diffuseColor;
 	
-	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(lightDir, normal), 0.0) * light.diffuseColor;
+	//specular color: texture * factor * light color
+	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * pow(max(dot(normal, normalize(normalizedLightDir + normalizedViewDir)), 0.0), 32) * light.specularColor;
 	
-	// specular color: texture * factor * light color
+	//attenuation
+	float distance = length(light.position - fragPos);
+    float attenuation = 1.0 / (light.constantFactor + light.linearFactor * distance + light.quadraticFactor * (distance * distance)); 
 	
-	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * pow(max(dot(normal, normalize(lightDir + viewDir)), 0.0), 32) * light.specularColor;
-	
+	ambient  *= attenuation;
+    diffuse  *= attenuation;
+    specular *= attenuation;
+
 	return (ambient + diffuse + specular);
 }
 
@@ -89,20 +108,14 @@ void main()
 	else
 	{	
 	//normal
-	vec3 normalizedNormal = normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0);
-
-	//light direction
-	vec3 normalizedLightDir = normalize(thefrag_TangentLightPos - thefrag_TangentFragPos);
-	
-	//view direction
-	vec3 normalizedViewDir = normalize(thefrag_TangentViewPos - thefrag_TangentFragPos);
+	vec3 normalizedNormal = normalize(normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0) * TBN);
 
 	//final result
-	vec3 finalColor = CalcDirLight(uni_dirLight, normalizedNormal, normalizedLightDir, normalizedViewDir);
+	vec3 finalColor = CalcDirLight(uni_dirLight, normalizedNormal, thefrag_ViewPos, thefrag_FragPos);
 
 	for(int i = 0; i < NR_POINT_LIGHTS; i++)
     {
-		finalColor += CalcPointLight(uni_pointLights[i], normalizedNormal, normalizedLightDir, normalizedViewDir);  
+		finalColor += CalcPointLight(uni_pointLights[i], normalizedNormal, thefrag_ViewPos, thefrag_FragPos);  
 	}
 
 	color = vec4(finalColor, 1.0);

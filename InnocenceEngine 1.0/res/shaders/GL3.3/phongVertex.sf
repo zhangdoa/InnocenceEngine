@@ -8,33 +8,27 @@ layout (location = 3) in vec3 in_Tangent;
 layout (location = 4) in vec3 in_Bitangent;  
 
 uniform mat4 uni_p;
-uniform mat4 uni_v;
+uniform mat4 uni_r;
 uniform mat4 uni_t;
 uniform mat4 uni_m;
 
-uniform vec3 uni_lightPos;
 uniform vec3 uni_viewPos;
 
 out vec2 thefrag_TexCoord;
+out vec3 thefrag_ViewPos;
 out vec3 thefrag_FragPos;
-out vec3 thefrag_TangentLightPos;
-out vec3 thefrag_TangentViewPos;
-out vec3 thefrag_TangentFragPos;
+out mat3 TBN;
 
 void main()
 { 
-    mat3 normalMatrix = transpose(inverse(mat3(uni_t * uni_m)));
-    vec3 T = normalize(normalMatrix * in_Tangent);
-    vec3 N = normalize(normalMatrix * in_Normal);
-    T = normalize(T - dot(T, N) * N);
-    vec3 B = cross(N, T);    
-    mat3 TBN = transpose(mat3(T, B, N));    
+	vec3 T = normalize(vec3(uni_m * vec4(in_Tangent,   0.0)));
+	vec3 B = normalize(vec3(uni_m * vec4(in_Bitangent, 0.0)));
+	vec3 N = normalize(vec3(uni_m * vec4(in_Normal,    0.0)));
+	TBN = mat3(T, B, N);  
 	
-	thefrag_FragPos = vec3(uni_m * vec4(in_Position, 1.0));
 	thefrag_TexCoord = in_TexCoord;	
-	thefrag_TangentLightPos = TBN * uni_lightPos;
-	thefrag_TangentViewPos = TBN * uni_viewPos;
-	thefrag_TangentFragPos = TBN * thefrag_FragPos;
-	
-	gl_Position = uni_p * uni_v * uni_t * uni_m * vec4(in_Position, 1.0);
+	thefrag_ViewPos = uni_viewPos;
+	thefrag_FragPos = vec3(uni_m * vec4(in_Position, 1.0));
+
+	gl_Position = uni_p * uni_r * uni_t * uni_m * vec4(in_Position, 1.0);
 }
