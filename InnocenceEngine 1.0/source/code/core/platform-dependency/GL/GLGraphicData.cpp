@@ -178,15 +178,15 @@ void GLTextureData::draw(textureType textureType)
 	{
 	case textureType::INVISIBLE: break;
 	case textureType::DIFFUSE:
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		break;
-	case textureType::SPECULAR:
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
-	case textureType::NORMALS:
+	case textureType::SPECULAR:
 		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		break;
+	case textureType::NORMALS:
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
 	case textureType::CUBEMAP:

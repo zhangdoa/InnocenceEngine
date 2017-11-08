@@ -204,9 +204,10 @@ void PhongShader::init()
 
 	addShader(GLShader::FRAGMENT, "GL3.3/phongFragment.sf");
 	bindShader();
-	updateUniform("uni_diffuseTexture", 0);
-	updateUniform("uni_specularTexture", 1);
-	updateUniform("uni_normalTexture", 2);
+	updateUniform("uni_skyboxTexture", 0);
+	updateUniform("uni_diffuseTexture", 1);
+	updateUniform("uni_specularTexture", 2);
+	updateUniform("uni_normalTexture", 3);
 }
 
 void PhongShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
@@ -259,7 +260,14 @@ void PhongShader::draw(std::vector<LightComponent*>& lightComponents, VisibleCom
 			updateUniform("uni_pointLights[" + ss.str() + "].specularColor", lightComponents[i]->getSpecularColor());
 		}
 	}
-	updateUniform("uni_drawDepthBuffer", GLRenderingManager::getInstance().canDrawDepthBuffer());
+	if (visibleComponent.getVisiblilityType() == visiblilityType::GLASSWARE)
+	{
+		updateUniform("uni_isGlassware", true);
+	}
+	else
+	{
+		updateUniform("uni_isGlassware", false);
+	}
 }
 
 BillboardShader::BillboardShader()
@@ -366,6 +374,14 @@ void GLRenderingManager::render(std::vector<LightComponent*>& lightComponents, V
 		// update visibleGameEntity's mesh& texture
 		visibleComponent.draw();
 		glDepthFunc(GL_LESS);
+		break;
+	case visiblilityType::GLASSWARE:
+		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
+		{
+			m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
+		}
+		// update visibleGameEntity's mesh& texture
+		visibleComponent.draw();
 		break;
 	}
 }
