@@ -2,7 +2,7 @@
 #include "../manager/LogManager.h"
 #include "../platform-dependency/GL/GLGraphicData.h"
 
-enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX };
+enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
 
 class MeshData
 {
