@@ -6,6 +6,7 @@ in vec3 thefrag_ViewPos;
 in vec3 thefrag_FragPos;
 in mat3 TBN;
 
+uniform samplerCube uni_skyboxTexture;
 uniform sampler2D uni_specularTexture;
 uniform sampler2D uni_diffuseTexture;
 uniform sampler2D uni_normalTexture;
@@ -35,6 +36,7 @@ uniform dirLight uni_dirLight;
 uniform pointLight uni_pointLights[NR_POINT_LIGHTS];
 
 uniform bool uni_drawDepthBuffer;
+uniform bool uni_isGlassware;
 
 out vec4 color;
 
@@ -106,10 +108,21 @@ void main()
 		color = vec4(depthBufferColor, 1.0);
 	}
 	else
-	{	
+	{
 	//normal
 	vec3 normalizedNormal = normalize(normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0) * TBN);
 
+	if(uni_isGlassware)
+	{
+		//sky light refraction
+		vec3 finalColor = vec3(texture(uni_skyboxTexture, reflect(normalize(thefrag_FragPos - thefrag_ViewPos), normalize(normalizedNormal))));
+
+		//final result
+		color = vec4(finalColor, 1.0);
+	}
+
+	else
+	{	
 	//final result
 	vec3 finalColor = CalcDirLight(uni_dirLight, normalizedNormal, thefrag_ViewPos, thefrag_FragPos);
 
@@ -117,7 +130,9 @@ void main()
     {
 		finalColor += CalcPointLight(uni_pointLights[i], normalizedNormal, thefrag_ViewPos, thefrag_FragPos);  
 	}
-
 	color = vec4(finalColor, 1.0);
 	}
+	}
+
+	
 }
