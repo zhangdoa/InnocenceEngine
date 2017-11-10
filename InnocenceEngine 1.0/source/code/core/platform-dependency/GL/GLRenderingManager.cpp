@@ -286,7 +286,7 @@ void BillboardShader::init()
 	setAttributeLocation(1, "in_TexCoord");
 	addShader(GLShader::FRAGMENT, "GL3.3/billboardFragment.sf");
 	bindShader();
-	updateUniform("uni_texture", 0);
+	updateUniform("uni_texture", 1);
 }
 
 void BillboardShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
@@ -458,9 +458,8 @@ bool GLRenderingManager::canDrawDepthBuffer() const
 }
 void GLRenderingManager::initialize()
 {
-	//m_staticMeshGLShader.emplace_back(&BasicGLShader::getInstance());
 	m_staticMeshGLShader.emplace_back(&PhongShader::getInstance());
-	//m_staticMeshGLShader.emplace_back(&ForwardAmbientShader::getInstance());
+	//m_staticMeshGLShader.emplace_back(&BasicGLShader::getInstance());
 
 	for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
 	{

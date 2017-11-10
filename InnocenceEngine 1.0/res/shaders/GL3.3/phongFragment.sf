@@ -117,6 +117,9 @@ void main()
 		//sky light refraction
 		vec3 finalColor = vec3(texture(uni_skyboxTexture, reflect(normalize(thefrag_FragPos - thefrag_ViewPos), normalize(normalizedNormal))));
 
+		//gamma correction
+		finalColor = pow(finalColor, vec3(1.0 / 2.2));
+
 		//final result
 		color = vec4(finalColor, 1.0);
 	}
@@ -130,6 +133,10 @@ void main()
     {
 		finalColor += CalcPointLight(uni_pointLights[i], normalizedNormal, thefrag_ViewPos, thefrag_FragPos);  
 	}
+
+	//gamma correction
+	finalColor = pow(finalColor, vec3(1.0 / 2.2));
+
 	color = vec4(finalColor, 1.0);
 	}
 	}
