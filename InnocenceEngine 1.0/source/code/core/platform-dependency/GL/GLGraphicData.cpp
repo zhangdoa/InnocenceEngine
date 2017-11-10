@@ -202,34 +202,55 @@ void GLTextureData::shutdown()
 
 void GLTextureData::sendDataToGPU(textureType textureType, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void* textureData) const
 {
-	GLenum l_Format;
+	GLenum l_internalFormat;
 	if (textureFormat == 1)
-		l_Format = GL_RED;
+	{
+		l_internalFormat = GL_RED;
+	}
 	else if (textureFormat == 3)
-		l_Format = GL_RGB;
+	{
+		if (textureType == textureType::CUBEMAP)
+		{
+			l_internalFormat = GL_SRGB;
+		}
+		else
+		{
+			l_internalFormat = GL_RGB;
+		}
+	}
 	else if (textureFormat == 4)
-		l_Format = GL_RGBA;
+	{
+		if (textureType == textureType::CUBEMAP)
+		{
+			l_internalFormat = GL_SRGB_ALPHA;
+		}
+		else
+		{
+			l_internalFormat = GL_RGBA;
+		}
+	}
+
 	switch (textureType)
 	{
 	case textureType::INVISIBLE: break;
 	case textureType::DIFFUSE:
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, l_Format, textureWidth, textureHeight, 0, l_Format, GL_UNSIGNED_BYTE, textureData);
+		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, textureWidth, textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, textureData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		break;
 	case textureType::SPECULAR:
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, l_Format, textureWidth, textureHeight, 0, l_Format, GL_UNSIGNED_BYTE, textureData);
+		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, textureWidth, textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, textureData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		break;
 	case textureType::NORMALS:
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, l_Format, textureWidth, textureHeight, 0, l_Format, GL_UNSIGNED_BYTE, textureData);
+		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, textureWidth, textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, textureData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		break;
 	case textureType::CUBEMAP:
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, 0, l_Format, textureWidth, textureHeight, 0, l_Format, GL_UNSIGNED_BYTE, textureData);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, 0, l_internalFormat, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
 		break;
 	}
 }
