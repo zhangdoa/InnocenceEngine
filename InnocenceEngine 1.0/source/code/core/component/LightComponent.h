@@ -1,5 +1,6 @@
 #pragma once
 #include "../interface/IGameEntity.h"
+#include "../data/GraphicData.h"
 
 enum class lightType {DIRECTIONAL, POINT, SPOT};
 
@@ -27,6 +28,11 @@ public:
 	void setDiffuseColor(glm::vec3 diffuseColor);
 	void setSpecularColor(glm::vec3 specularColor);
 
+	void getLightPosMatrix(glm::mat4& lightPosMatrix);
+	void getLightRotMatrix(glm::mat4& lightRotMatrix);
+
+	ShadowMapData& getShadowMapData();
+
 private:
 	lightType m_lightType = lightType::POINT;
 	glm::vec3 m_direction;
@@ -36,6 +42,7 @@ private:
 	glm::vec3 m_ambientColor;
 	glm::vec3 m_diffuseColor;
 	glm::vec3 m_specularColor;
+	ShadowMapData m_shadowMapData;
 
 	void initialize() override;
 	void update() override;

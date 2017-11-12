@@ -48,25 +48,6 @@ private:
 	unsigned int m_program;
 };
 
-class BasicGLShader : public GLShader
-{
-
-public:
-	~BasicGLShader();
-
-	static BasicGLShader& getInstance()
-	{
-		static BasicGLShader instance;
-		return instance;
-	}
-
-	void init() override;
-	void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) override;
-
-private:
-	BasicGLShader();
-};
-
 class PhongShader : public GLShader
 {
 
@@ -124,6 +105,25 @@ private:
 	SkyboxShader();
 };
 
+class ShadowMapShader : public GLShader
+{
+
+public:
+	~ShadowMapShader();
+
+	static ShadowMapShader& getInstance()
+	{
+		static ShadowMapShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) override;
+
+private:
+	ShadowMapShader();
+};
+
 class GLRenderingManager : public IEventManager
 {
 public:
@@ -145,6 +145,8 @@ public:
 	void setCameraProjectionMatrix(const glm::mat4& p);
 	void getCameraPos(glm::vec3& pos) const;
 	void setCameraPos(const glm::vec3& pos);
+
+
 	void changeDrawPolygonMode();
 	void toggleDepthBufferVisualizer();
 	bool canDrawDepthBuffer() const;
