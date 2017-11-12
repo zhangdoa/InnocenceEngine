@@ -51,6 +51,21 @@ void LightComponent::setSpecularColor(glm::vec3 specularColor)
 	m_specularColor = specularColor;
 }
 
+void LightComponent::getLightPosMatrix(glm::mat4 & lightPosMatrix)
+{
+	lightPosMatrix = getParentActor()->caclWorldPosMatrix();
+}
+
+void LightComponent::getLightRotMatrix(glm::mat4 & lightRotMatrix)
+{
+	lightRotMatrix = getParentActor()->caclWorldRotMatrix();
+}
+
+ShadowMapData & LightComponent::getShadowMapData()
+{
+	return m_shadowMapData;
+}
+
 
 const lightType LightComponent::getLightType()
 {
