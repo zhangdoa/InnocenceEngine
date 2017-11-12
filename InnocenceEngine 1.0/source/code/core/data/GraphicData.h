@@ -41,6 +41,7 @@ public:
 	textureType getTextureType() const;
 	void setTextureWrapMethod(textureWrapMethod textureWrapMethod);
 	const textureWrapMethod& getTextureWrapMethod() const;
+
 private:
 	GLTextureData m_GLTextureData;
 	textureType m_textureType;
@@ -72,38 +73,28 @@ private:
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
 	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
 };
-//class ITextureData
-//{
-//public:
-//	ITextureData();
-//	virtual ~ITextureData();
-//
-//	enum class textureType { INVISIBLE, ALBEGO, CUBEMAP };
-//
-//	virtual void init() = 0;
-//	virtual void update() = 0;
-//	virtual void shutdown() = 0;
-//
-//	virtual void setTextureType(textureType textureType) = 0;
-//	virtual textureType getTextureType() const = 0;
-//};
-//
-//class GLTextureData : public ITextureData
-//{
-//public:
-//	GLTextureData();
-//	~GLTextureData();
-//
-//	void init() override;
-//	void update() override;
-//	void shutdown() override;
-//
-//	void setTextureType(textureType textureType) override;
-//	textureType getTextureType() const override;
-//
-//private:
-//	GLuint m_textureID;
-//	textureType m_textureType;
-//	void sendDataToGPU(int textureWidth, int textureHeight, unsigned char * textureData) const;
-//	void sendDataToGPU(unsigned int faceCount, int cubemapTextureWidth, int cubemapTextureHeight, unsigned char * cubemapTextureData) const;
-//};
+
+enum class shadowProjectionType { ORTHOGRAPHIC, PERSPECTIVE };
+
+class ShadowMapData
+{
+public:
+	ShadowMapData();
+	~ShadowMapData();
+
+	void init();
+	void draw();
+	void shutdown();
+
+	void setShadowProjectionType(shadowProjectionType shadowProjectionType);
+	void getProjectionMatrix(glm::mat4& projectionMatrix);
+
+private:
+	GLuint m_textureID;
+	GLuint depthMapFBO;
+	const unsigned int m_shadowMapWidth = 2048;
+	const unsigned int m_shadowMapHeight = 2048;
+
+	glm::mat4 m_projectionMatrix = glm::mat4();
+	shadowProjectionType m_shadowProjectionType = shadowProjectionType::ORTHOGRAPHIC;
+};

@@ -151,39 +151,6 @@ inline void GLShader::detachShader(int shader) const
 	glDeleteShader(shader);
 }
 
-BasicGLShader::BasicGLShader()
-{
-}
-
-BasicGLShader::~BasicGLShader()
-{
-}
-
-void BasicGLShader::init()
-{
-	initProgram();
-	addShader(GLShader::VERTEX, "GL3.3/basicVertex.sf");
-	setAttributeLocation(0, "in_Position");
-	setAttributeLocation(1, "in_TexCoord");
-	setAttributeLocation(2, "in_Normal");
-	// @TODO: a more general shader class
-	addShader(GLShader::FRAGMENT, "GL3.3/basicFragment.sf");
-	updateUniform("uni_Texture", 0);
-}
-
-void BasicGLShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
-{
-	bindShader();
-
-	glm::mat4 m, t, r, p;
-	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	GLRenderingManager::getInstance().getCameraRotMatrix(r);
-	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleComponent.getParentActor()->caclTransformationMatrix();
-
-	updateUniform("uni_MTRP", p * r * t * m);
-}
-
 PhongShader::PhongShader()
 {
 }
@@ -340,11 +307,42 @@ void SkyboxShader::draw(std::vector<LightComponent*>& lightComponents, VisibleCo
 	updateUniform("uni_RP", p * r * -1.0f);
 }
 
+ShadowMapShader::ShadowMapShader()
+{
+}
+
+ShadowMapShader::~ShadowMapShader()
+{
+}
+
+void ShadowMapShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/shadowMapVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	addShader(GLShader::FRAGMENT, "GL3.3/shadowMapFragment.sf");
+	bindShader();
+	updateUniform("uni_shadowMap", 0);
+}
+
+void ShadowMapShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent & visibleComponent)
+{
+	bindShader();
+
+	glm::mat4 p, t, r;
+
+	lightComponents[0]->getShadowMapData().getProjectionMatrix(p);
+	t = lightComponents[0]->getParentActor()->caclWorldPosMatrix();
+	r = lightComponents[0]->getParentActor()->caclWorldRotMatrix();
+
+	updateUniform("uni_p", p);
+	updateUniform("uni_t", t);
+	updateUniform("uni_r", r);
+}
 
 GLRenderingManager::GLRenderingManager()
 {
 }
-
 
 GLRenderingManager::~GLRenderingManager()
 {
@@ -468,6 +466,7 @@ void GLRenderingManager::initialize()
 
 	BillboardShader::getInstance().init();
 	SkyboxShader::getInstance().init();
+	ShadowMapShader::getInstance().init();
 
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
@@ -491,3 +490,5 @@ void GLRenderingManager::shutdown()
 	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
 }
+
+

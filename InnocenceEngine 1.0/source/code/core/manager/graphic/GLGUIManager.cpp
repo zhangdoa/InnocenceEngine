@@ -40,27 +40,8 @@ void GLGUIManager::update()
 		NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
 		NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE))
 	{
-
 		nk_layout_row_dynamic(ctx, 30, 2);
 		nk_layout_row_static(ctx, 30, 100, 1);
-
-		nk_layout_row_dynamic(ctx, 20, 1);
-		nk_label(ctx, "background:", NK_TEXT_LEFT);
-
-		nk_layout_row_dynamic(ctx, 25, 1);
-		if (nk_combo_begin_color(ctx, background, nk_vec2(nk_widget_width(ctx), 400))) {
-			nk_layout_row_dynamic(ctx, 120, 1);
-			nk_color canvasBackground = background;
-			canvasBackground = nk_color_picker(ctx, canvasBackground, NK_RGBA);
-			nk_layout_row_dynamic(ctx, 25, 1);
-			background.r = (nk_byte)nk_propertyi(ctx, "#R:", 0, canvasBackground.r, 255, 1, 1);
-			background.g = (nk_byte)nk_propertyi(ctx, "#G:", 0, canvasBackground.g, 255, 1, 1);
-			background.b = (nk_byte)nk_propertyi(ctx, "#B:", 0, canvasBackground.b, 255, 1, 1);
-			background.a = (nk_byte)nk_propertyi(ctx, "#A:", 0, canvasBackground.a, 255, 1, 1);
-
-			
-			nk_combo_end(ctx);
-		}
 	}
 	nk_end(ctx);
 
