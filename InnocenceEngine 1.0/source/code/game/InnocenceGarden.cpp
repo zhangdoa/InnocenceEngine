@@ -13,7 +13,9 @@ InnocenceGarden::~InnocenceGarden()
 void InnocenceGarden::initialize()
 {	
 	rootActor.addChildActor(&playCharacter);
+
 	rootActor.addChildActor(&skyboxActor);
+
 	rootActor.addChildActor(&directionalLightActor);
 	rootActor.addChildActor(&pointLightActor1);
 	rootActor.addChildActor(&pointLightActor2);
@@ -22,6 +24,10 @@ void InnocenceGarden::initialize()
 	rootActor.addChildActor(&landscapeStaticMeshActor);
 	rootActor.addChildActor(&testStaticMeshActor1);
 	rootActor.addChildActor(&testStaticMeshActor2);
+
+	SceneGraphManager::getInstance().addToCameraQueue(&playCharacter.getCameraComponent());
+
+	SceneGraphManager::getInstance().addToInputQueue(&playCharacter.getInputComponent());
 
 	testSkyboxComponent.setVisiblilityType(visiblilityType::SKYBOX);
 	testSkyboxComponent.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);

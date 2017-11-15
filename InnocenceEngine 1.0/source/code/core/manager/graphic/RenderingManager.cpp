@@ -20,6 +20,16 @@ GLInputManager& RenderingManager::getInputManager() const
 	return GLInputManager::getInstance();
 }
 
+void RenderingManager::initInput()
+{
+	for (size_t i = 0; i < SceneGraphManager::getInstance().getInputQueue().size(); i++)
+	{
+		// @TODO: multi input components need to register to multi map
+		GLInputManager::getInstance().setKeyboardInputCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getKeyboardInputCallbackImpl());
+		GLInputManager::getInstance().setMouseMovementCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getMouseInputCallbackImpl());
+	}
+}
+
 void RenderingManager::getCameraTranslationMatrix(glm::mat4 & t) const
 {
 	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
@@ -76,13 +86,14 @@ void RenderingManager::initialize()
 	m_childEventManager.emplace_back(&GLWindowManager::getInstance());
 	m_childEventManager.emplace_back(&GLInputManager::getInstance());
 	m_childEventManager.emplace_back(&GLRenderingManager::getInstance());
-	m_childEventManager.emplace_back(&GLGUIManager::getInstance());
+	//m_childEventManager.emplace_back(&GLGUIManager::getInstance());
 
 
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		m_childEventManager[i].get()->excute(executeMessage::INITIALIZE);
 	}
+
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("RenderingManager has been initialized.");
 }
@@ -96,13 +107,18 @@ void RenderingManager::update()
 	//prepare rendering global state
 	GLRenderingManager::getInstance().excute(executeMessage::UPDATE);
 
+	setCameraProjectionMatrix(SceneGraphManager::getInstance().getCameraQueue()[0]->getProjectionMatrix());
+	setCameraPosMatrix(SceneGraphManager::getInstance().getCameraQueue()[0]->getPosMatrix());
+	setCameraRotMatrix(SceneGraphManager::getInstance().getCameraQueue()[0]->getRotMatrix());
+	setCameraPos(SceneGraphManager::getInstance().getCameraQueue()[0]->getParentActor()->caclWorldPos());
+
 	//forward render
 	for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
 	{
 	GLRenderingManager::getInstance().render(SceneGraphManager::getInstance().getLightQueue(), *SceneGraphManager::getInstance().getRenderingQueue()[i]);
 	}
 
-	GLGUIManager::getInstance().excute(executeMessage::UPDATE);
+	//GLGUIManager::getInstance().excute(executeMessage::UPDATE);
 
 
 	if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)

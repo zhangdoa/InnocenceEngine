@@ -21,6 +21,16 @@ void SceneGraphManager::addToLightQueue(LightComponent * lightComponent)
 	m_LightComponents.emplace_back(lightComponent);
 }
 
+void SceneGraphManager::addToCameraQueue(CameraComponent * cameraComponent)
+{
+	m_CameraComponents.emplace_back(cameraComponent);
+}
+
+void SceneGraphManager::addToInputQueue(InputComponent * inputComponent)
+{
+	m_InputComponents.emplace_back(inputComponent);
+}
+
 std::vector<VisibleComponent*>& SceneGraphManager::getRenderingQueue()
 {
 	return m_visibleComponents;
@@ -29,6 +39,16 @@ std::vector<VisibleComponent*>& SceneGraphManager::getRenderingQueue()
 std::vector<LightComponent*>& SceneGraphManager::getLightQueue()
 {
 	return m_LightComponents;
+}
+
+std::vector<CameraComponent*>& SceneGraphManager::getCameraQueue()
+{
+	return m_CameraComponents;
+}
+
+std::vector<InputComponent*>& SceneGraphManager::getInputQueue()
+{
+	return m_InputComponents;
 }
 
 
@@ -40,17 +60,13 @@ void SceneGraphManager::initialize()
 
 void SceneGraphManager::update()
 {
-	//if (m_visibleComponents.size() == 0)
-	//{
-	//	this->setStatus(objectStatus::STANDBY);
-	//	LogManager::getInstance().printLog("SceneGraphManager is stand-by.");
-	//}
 }
 
 void SceneGraphManager::shutdown()
 {
 	m_visibleComponents.empty();
 	m_LightComponents.empty();
+	m_CameraComponents.empty();
 	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("SceneGraphManager has been shutdown.");
 }

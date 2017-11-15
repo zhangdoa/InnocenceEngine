@@ -1,9 +1,7 @@
 #pragma once
 #include "../core/interface/IGameData.h"
 #include "../core/interface/IGameEntity.h"
-
-#include "../core/component/LightComponent.h"
-#include "../core/component/VisibleComponent.h"
+#include "../core/manager/CoreManager.h"
 
 #include "PlayerCharacter.h"
 class InnocenceGarden :	public IGameData

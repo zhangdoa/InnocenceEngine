@@ -57,6 +57,9 @@ void CoreManager::initialize()
 		LogManager::getInstance().printLog(e.what());
 	}
 
+	// @TODO
+	RenderingManager::getInstance().initInput();
+
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("CoreManager has been initialized.");
 }

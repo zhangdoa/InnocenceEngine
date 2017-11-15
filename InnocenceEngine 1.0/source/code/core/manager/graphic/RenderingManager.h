@@ -7,7 +7,7 @@
 #include "GLWindowManager.h"
 #include "GLInputManager.h"
 #include "../../platform-dependency/GL/GLRenderingManager.h"
-#include "GLGUIManager.h"
+//#include "GLGUIManager.h"
 #include "../../data/GraphicData.h"
 
 class RenderingManager : public IEventManager
@@ -24,6 +24,7 @@ public:
 	GLWindowManager& getWindowManager() const;
 	GLInputManager& getInputManager() const;
 
+	void initInput();
 	void getCameraTranslationMatrix(glm::mat4& t) const;
 	void setCameraPosMatrix(const glm::mat4& t) ;
 	void getCameraViewMatrix(glm::mat4& v) const;
