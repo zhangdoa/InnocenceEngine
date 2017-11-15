@@ -16,20 +16,6 @@ void CoreManager::setGameData(IGameData * gameData)
 	m_gameData = gameData;
 }
 
-TimeManager & CoreManager::getTimeManager() const
-{
-	return TimeManager::getInstance();
-}
-
-RenderingManager & CoreManager::getRenderingManager() const
-{
-	return RenderingManager::getInstance();
-}
-
-LogManager & CoreManager::getLogManager() const
-{
-	return LogManager::getInstance();
-}
 
 void CoreManager::initialize()
 {

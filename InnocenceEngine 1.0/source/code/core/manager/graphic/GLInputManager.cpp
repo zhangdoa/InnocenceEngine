@@ -76,22 +76,27 @@ void GLInputManager::update()
 			}
 		}
 
-		for (int i = 0; i < NUM_MOUSEBUTTONS; i++)
-		{
-		}
 
-		if (m_mouseXOffset != 0)
+		if (glfwGetMouseButton(GLWindowManager::getInstance().getWindow(), 1) == GLFW_PRESS)
 		{
-			m_mouseMovementCallback.find(0)->second(m_mouseXOffset);
+			GLWindowManager::getInstance().hideMouseCursor();
+			if (m_mouseXOffset != 0)
+			{
+				m_mouseMovementCallback.find(0)->second(m_mouseXOffset);
+			}
+			if (m_mouseYOffset != 0)
+			{
+				m_mouseMovementCallback.find(1)->second(m_mouseYOffset);
+			}
+			if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
+			{
+				m_mouseXOffset = 0;
+				m_mouseYOffset = 0;
+			}
 		}
-		if (m_mouseYOffset != 0)
+		else
 		{
-			m_mouseMovementCallback.find(1)->second(m_mouseYOffset);
-		}
-		if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
-		{
-			m_mouseXOffset = 0;
-			m_mouseYOffset = 0;
+			GLWindowManager::getInstance().showMouseCursor();
 		}
 	}
 	else
