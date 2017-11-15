@@ -67,6 +67,7 @@ void SceneGraphManager::shutdown()
 	m_visibleComponents.empty();
 	m_LightComponents.empty();
 	m_CameraComponents.empty();
+	m_InputComponents.empty();
 	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("SceneGraphManager has been shutdown.");
 }

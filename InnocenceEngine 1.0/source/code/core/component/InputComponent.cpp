@@ -76,18 +76,6 @@ void InputComponent::update()
 	//CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_F1, l_keyF1Result);
 	//CoreManager::getInstance().getRenderingManager().getInputManager().getKey(GLFW_KEY_F2, l_keyF2Result);
 
-	if (l_mouseRightResult)
-	{
-		//CoreManager::getInstance().getRenderingManager().getWindowManager().hideMouseCursor();
-		if (l_mousePosition.x != 0 || l_mousePosition.y != 0)
-		{
-			//CoreManager::getInstance().getRenderingManager().getInputManager().setMousePosition(glm::vec2(0.0f, 0.0f));
-		}
-	}
-	else
-	{
-		//CoreManager::getInstance().getRenderingManager().getWindowManager().showMouseCursor();
-	}
 	if (l_ketEscapeResult)
 	{
 		// @Placeholder
