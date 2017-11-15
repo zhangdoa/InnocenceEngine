@@ -39,10 +39,6 @@ void CameraComponent::initialize()
 void CameraComponent::update()
 {
 	getTransform()->update();
-	CoreManager::getInstance().getRenderingManager().setCameraProjectionMatrix(getProjectionMatrix());
-	CoreManager::getInstance().getRenderingManager().setCameraPosMatrix(getPosMatrix());
-	CoreManager::getInstance().getRenderingManager().setCameraRotMatrix(getRotMatrix());
-	CoreManager::getInstance().getRenderingManager().setCameraPos(getParentActor()->caclWorldPos());
 }
 
 void CameraComponent::shutdown()
