@@ -146,7 +146,7 @@ public:
 	void getCameraPos(glm::vec3& pos) const;
 	void setCameraPos(const glm::vec3& pos);
 
-
+	void renderBaseGeometryPass();
 	void changeDrawPolygonMode();
 	void toggleDepthBufferVisualizer();
 	bool canDrawDepthBuffer() const;

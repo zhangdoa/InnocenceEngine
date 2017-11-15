@@ -96,11 +96,14 @@ void RenderingManager::AsyncRender()
 	GLRenderingManager::getInstance().setCameraViewMatrix(SceneGraphManager::getInstance().getCameraQueue()[0]->getRotMatrix());
 	GLRenderingManager::getInstance().setCameraPos(SceneGraphManager::getInstance().getCameraQueue()[0]->getParentActor()->caclWorldPos());
 
-	//forward render
-	for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
-	{
-		GLRenderingManager::getInstance().render(SceneGraphManager::getInstance().getLightQueue(), *SceneGraphManager::getInstance().getRenderingQueue()[i]);
-	}
+	////forward render
+	//for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
+	//{
+	//	GLRenderingManager::getInstance().render(SceneGraphManager::getInstance().getLightQueue(), *SceneGraphManager::getInstance().getRenderingQueue()[i]);
+	//}
+
+	//defer render
+	GLRenderingManager::getInstance().renderBaseGeometryPass();
 
 	//GLGUIManager::getInstance().excute(executeMessage::UPDATE);
 
