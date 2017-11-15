@@ -21,9 +21,6 @@ public:
 	}
 
 	void setGameData(IGameData* gameData);
-	TimeManager& getTimeManager() const;
-	RenderingManager& getRenderingManager() const;
-	LogManager& getLogManager() const;
 
 private:
 	~CoreManager();

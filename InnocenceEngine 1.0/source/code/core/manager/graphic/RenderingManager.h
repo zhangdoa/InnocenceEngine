@@ -21,19 +21,7 @@ public:
 		return instance;
 	}
 
-	GLWindowManager& getWindowManager() const;
-	GLInputManager& getInputManager() const;
-
 	void initInput();
-	void getCameraTranslationMatrix(glm::mat4& t) const;
-	void setCameraPosMatrix(const glm::mat4& t) ;
-	void getCameraViewMatrix(glm::mat4& v) const;
-	void setCameraRotMatrix(const glm::mat4& v);
-	void getCameraProjectionMatrix(glm::mat4& p) const;
-	void setCameraProjectionMatrix(const glm::mat4& p);
-	void getCameraPos(glm::vec3& pos) const;
-	void setCameraPos(const glm::vec3& pos);
-
 	void changeDrawPolygonMode() const;
 	void toggleDepthBufferVisualizer();
 
@@ -43,7 +31,8 @@ private:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
-
+	std::thread* m_asyncRenderThread;
+	void AsyncRender();
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 };
 

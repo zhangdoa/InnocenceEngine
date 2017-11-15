@@ -28,7 +28,6 @@ private:
 	void rotateAroundXAxis(float offset);
 	void rotateAroundYAxis(float offset);
 
-	glm::vec2 l_mousePosition;
 	int l_mouseRightResult = 0;
 
 	int l_ketEscapeResult = 0;
