@@ -11,26 +11,14 @@ GLInputManager::~GLInputManager()
 {
 }
 
-void GLInputManager::getKey(int keyCode, int& result) const
+void GLInputManager::setKeyboardInputCallback(std::multimap<int, std::function<void()>>& keyboardInputCallback)
 {
-	result = glfwGetKey(GLWindowManager::getInstance().getWindow(), keyCode);
+	m_keyboardInputCallback = keyboardInputCallback;
 }
 
-void GLInputManager::getMouse(int mouseButton, int& result) const
+void GLInputManager::setMouseMovementCallback(std::multimap<int, std::function<void(float)>>& mouseMovementCallback)
 {
-	result = glfwGetMouseButton(GLWindowManager::getInstance().getWindow(), mouseButton);
-}
-
-void GLInputManager::getMousePosition(glm::vec2& mousePosition) const
-{
-	mousePosition.x = m_mouseXOffset;
-	mousePosition.y = m_mouseYOffset;
-}
-
-void GLInputManager::setMousePosition(const glm::vec2 & mousePosition)
-{
-	m_mouseXOffset = mousePosition.x;
-	m_mouseYOffset = mousePosition.y;
+	m_mouseMovementCallback = mouseMovementCallback;
 }
 
 void GLInputManager::framebufferSizeCallback(GLFWwindow * window, int width, int height)
@@ -67,8 +55,6 @@ void GLInputManager::scrollCallbackImpl(GLFWwindow * window, double xoffset, dou
 
 void GLInputManager::initialize()
 {
-	std::vector<int>lastKeys(NUM_KEYCODES);
-	std::vector<int>lastMouse(NUM_MOUSEBUTTONS);
 	glfwSetFramebufferSizeCallback(GLWindowManager::getInstance().getWindow(), &framebufferSizeCallback);
 	glfwSetCursorPosCallback(GLWindowManager::getInstance().getWindow(), &mousePositionCallback);
 	glfwSetScrollCallback(GLWindowManager::getInstance().getWindow(), &scrollCallback);
@@ -81,17 +67,32 @@ void GLInputManager::update()
 {
 	if (GLWindowManager::getInstance().getWindow() != nullptr)
 	{
-		//m_lastKeys.clear();
-		//for (int i = 0; i < NUM_KEYCODES; i++)
-		//{
-		//	m_lastKeys.emplace_back(getKey(i));
-		//}
 
-		//m_lastMouse.clear();
-		//for (int i = 0; i < NUM_KEYCODES; i++)
-		//{
-		//	m_lastMouse.emplace_back(getMouse(i));
-		//}
+		for (int i = 0; i < NUM_KEYCODES; i++)
+		{
+			if (glfwGetKey(GLWindowManager::getInstance().getWindow(), i) == GLFW_PRESS)
+			{
+				m_keyboardInputCallback.find(i)->second();
+			}
+		}
+
+		for (int i = 0; i < NUM_MOUSEBUTTONS; i++)
+		{
+		}
+
+		if (m_mouseXOffset != 0)
+		{
+			m_mouseMovementCallback.find(0)->second(m_mouseXOffset);
+		}
+		if (m_mouseYOffset != 0)
+		{
+			m_mouseMovementCallback.find(1)->second(m_mouseYOffset);
+		}
+		if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
+		{
+			m_mouseXOffset = 0;
+			m_mouseYOffset = 0;
+		}
 	}
 	else
 	{

@@ -1,6 +1,5 @@
 #pragma once
 #include "../interface/IGameEntity.h"
-#include "../manager/CoreManager.h"
 
 class CameraComponent : public BaseComponent
 {

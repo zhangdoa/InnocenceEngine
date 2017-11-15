@@ -9,8 +9,10 @@ public:
 	PlayerCharacter();
 	~PlayerCharacter();
 
+	CameraComponent& getCameraComponent();
+	InputComponent& getInputComponent();
 private:	
-	InputComponent inputComponent;
-	CameraComponent cameraComponent;
+	InputComponent m_inputComponent;
+	CameraComponent m_cameraComponent;
 };
 

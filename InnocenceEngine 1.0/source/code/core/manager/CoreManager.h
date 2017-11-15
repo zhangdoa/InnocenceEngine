@@ -33,7 +33,6 @@ private:
 	void shutdown() override;
 
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
-
 	IGameData* m_gameData;
 };
 
