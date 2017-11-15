@@ -468,6 +468,7 @@ void GLRenderingManager::initialize()
 	SkyboxShader::getInstance().init();
 	ShadowMapShader::getInstance().init();
 
+
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
 }
