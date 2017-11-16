@@ -18,7 +18,7 @@ private:
 	BaseActor rootActor;
 
 	PlayerCharacter playCharacter;
-	BaseActor skyboxActor;
+	//BaseActor skyboxActor;
 	BaseActor directionalLightActor;
 	BaseActor pointLightActor1;
 	BaseActor pointLightActor2;
@@ -28,7 +28,7 @@ private:
 	BaseActor testStaticMeshActor1;
 	BaseActor testStaticMeshActor2;
 
-	VisibleComponent testSkyboxComponent;
+	//VisibleComponent testSkyboxComponent;
 
 	LightComponent directionalLightComponent;
 	LightComponent pointLightComponent1;

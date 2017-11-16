@@ -38,13 +38,15 @@ void RenderingManager::initialize()
 	m_childEventManager.emplace_back(&GLRenderingManager::getInstance());
 	//m_childEventManager.emplace_back(&GLGUIManager::getInstance());
 
+	GLRenderingManager::getInstance().setScreenResolution(GLWindowManager::getInstance().getScreenResolution());
+
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		m_childEventManager[i].get()->excute(executeMessage::INITIALIZE);
 	}
 
 	//m_asyncRenderThread = new std::thread(&RenderingManager::AsyncRender, this);
-
+	
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("RenderingManager has been initialized.");
 }
@@ -89,23 +91,23 @@ void RenderingManager::AsyncRender()
 	//prepare rendering global state
 	GLRenderingManager::getInstance().excute(executeMessage::UPDATE);
 
-	//update camera data
-	//@TODO: multi camera with frame buffer
-	GLRenderingManager::getInstance().setCameraProjectionMatrix(SceneGraphManager::getInstance().getCameraQueue()[0]->getProjectionMatrix());
-	GLRenderingManager::getInstance().setCameraTranslationMatrix((SceneGraphManager::getInstance().getCameraQueue()[0]->getPosMatrix()));
-	GLRenderingManager::getInstance().setCameraViewMatrix(SceneGraphManager::getInstance().getCameraQueue()[0]->getRotMatrix());
-	GLRenderingManager::getInstance().setCameraPos(SceneGraphManager::getInstance().getCameraQueue()[0]->getParentActor()->caclWorldPos());
-
 	////forward render
+	//update camera data
+	////@TODO: multi camera with frame buffer
+	//GLRenderingManager::getInstance().setCameraProjectionMatrix(SceneGraphManager::getInstance().getCameraQueue()[0]->getProjectionMatrix());
+	//GLRenderingManager::getInstance().setCameraTranslationMatrix((SceneGraphManager::getInstance().getCameraQueue()[0]->getPosMatrix()));
+	//GLRenderingManager::getInstance().setCameraViewMatrix(SceneGraphManager::getInstance().getCameraQueue()[0]->getRotMatrix());
+	//GLRenderingManager::getInstance().setCameraPos(SceneGraphManager::getInstance().getCameraQueue()[0]->getParentActor()->caclWorldPos());
+
 	//for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
 	//{
 	//	GLRenderingManager::getInstance().render(SceneGraphManager::getInstance().getLightQueue(), *SceneGraphManager::getInstance().getRenderingQueue()[i]);
 	//}
 
 	//defer render
-	GLRenderingManager::getInstance().renderBaseGeometryPass();
+	GLRenderingManager::getInstance().render(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
 
 	//GLGUIManager::getInstance().excute(executeMessage::UPDATE);
 
-	LogManager::getInstance().printLog("Async Rendering Finished.");
+	//LogManager::getInstance().printLog("Async Rendering Finished.");
 }

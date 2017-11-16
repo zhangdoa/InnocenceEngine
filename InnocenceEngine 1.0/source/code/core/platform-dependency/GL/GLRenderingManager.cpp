@@ -177,64 +177,64 @@ void PhongShader::init()
 	updateUniform("uni_normalTexture", 3);
 }
 
-void PhongShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
+void PhongShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	glFrontFace(GL_CCW);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	//glFrontFace(GL_CCW);
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);
 
-	bindShader();
+	//bindShader();
 
-	glm::mat4 m, t, r, p;
-	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	GLRenderingManager::getInstance().getCameraRotMatrix(r);
-	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleComponent.getParentActor()->caclTransformationMatrix();
+	//glm::mat4 m, t, r, p;
+	//GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
+	//GLRenderingManager::getInstance().getCameraRotMatrix(r);
+	//GLRenderingManager::getInstance().getCameraPosMatrix(t);
+	//m = visibleComponent.getParentActor()->caclTransformationMatrix();
 
-	glm::vec3 cameraPos;
-	GLRenderingManager::getInstance().getCameraPos(cameraPos);
+	//glm::vec3 cameraPos;
+	//GLRenderingManager::getInstance().getCameraPos(cameraPos);
 
-	updateUniform("uni_p", p);
-	updateUniform("uni_r", r);
-	updateUniform("uni_t", t);
-	updateUniform("uni_m", m);
+	//updateUniform("uni_p", p);
+	//updateUniform("uni_r", r);
+	//updateUniform("uni_t", t);
+	//updateUniform("uni_m", m);
 
-	int l_pointLightIndexOffset = 0;
-	for (size_t i = 0; i < lightComponents.size(); i++)
-	{
-		//@TODO: generalization
+	//int l_pointLightIndexOffset = 0;
+	//for (size_t i = 0; i < lightComponents.size(); i++)
+	//{
+	//	//@TODO: generalization
 
-		updateUniform("uni_viewPos", cameraPos);
+	//	updateUniform("uni_viewPos", cameraPos);
 
-		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
-		{
-			l_pointLightIndexOffset -= 1;
-			updateUniform("uni_dirLight.direction", lightComponents[i]->getDirection());
-			updateUniform("uni_dirLight.ambientColor", lightComponents[i]->getAmbientColor());
-			updateUniform("uni_dirLight.diffuseColor", lightComponents[i]->getDiffuseColor());
-			updateUniform("uni_dirLight.specularColor", lightComponents[i]->getSpecularColor());
-		}
-		else if (lightComponents[i]->getLightType() == lightType::POINT)
-		{
-			std::stringstream ss;
-			ss << i + l_pointLightIndexOffset;
-			updateUniform("uni_pointLights[" + ss.str() + "].position", lightComponents[i]->getParentActor()->getTransform()->getPos());
-			updateUniform("uni_pointLights[" + ss.str() + "].constantFactor", lightComponents[i]->getConstantFactor());
-			updateUniform("uni_pointLights[" + ss.str() + "].linearFactor", lightComponents[i]->getLinearFactor());
-			updateUniform("uni_pointLights[" + ss.str() + "].quadraticFactor", lightComponents[i]->getQuadraticFactor());
-			updateUniform("uni_pointLights[" + ss.str() + "].ambientColor", lightComponents[i]->getAmbientColor());
-			updateUniform("uni_pointLights[" + ss.str() + "].diffuseColor", lightComponents[i]->getDiffuseColor());
-			updateUniform("uni_pointLights[" + ss.str() + "].specularColor", lightComponents[i]->getSpecularColor());
-		}
-	}
-	if (visibleComponent.getVisiblilityType() == visiblilityType::GLASSWARE)
-	{
-		updateUniform("uni_isGlassware", true);
-	}
-	else
-	{
-		updateUniform("uni_isGlassware", false);
-	}
+	//	if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
+	//	{
+	//		l_pointLightIndexOffset -= 1;
+	//		updateUniform("uni_dirLight.direction", lightComponents[i]->getDirection());
+	//		updateUniform("uni_dirLight.ambientColor", lightComponents[i]->getAmbientColor());
+	//		updateUniform("uni_dirLight.diffuseColor", lightComponents[i]->getDiffuseColor());
+	//		updateUniform("uni_dirLight.specularColor", lightComponents[i]->getSpecularColor());
+	//	}
+	//	else if (lightComponents[i]->getLightType() == lightType::POINT)
+	//	{
+	//		std::stringstream ss;
+	//		ss << i + l_pointLightIndexOffset;
+	//		updateUniform("uni_pointLights[" + ss.str() + "].position", lightComponents[i]->getParentActor()->getTransform()->getPos());
+	//		updateUniform("uni_pointLights[" + ss.str() + "].constantFactor", lightComponents[i]->getConstantFactor());
+	//		updateUniform("uni_pointLights[" + ss.str() + "].linearFactor", lightComponents[i]->getLinearFactor());
+	//		updateUniform("uni_pointLights[" + ss.str() + "].quadraticFactor", lightComponents[i]->getQuadraticFactor());
+	//		updateUniform("uni_pointLights[" + ss.str() + "].ambientColor", lightComponents[i]->getAmbientColor());
+	//		updateUniform("uni_pointLights[" + ss.str() + "].diffuseColor", lightComponents[i]->getDiffuseColor());
+	//		updateUniform("uni_pointLights[" + ss.str() + "].specularColor", lightComponents[i]->getSpecularColor());
+	//	}
+	//}
+	//if (visibleComponent.getVisiblilityType() == visiblilityType::GLASSWARE)
+	//{
+	//	updateUniform("uni_isGlassware", true);
+	//}
+	//else
+	//{
+	//	updateUniform("uni_isGlassware", false);
+	//}
 }
 
 BillboardShader::BillboardShader()
@@ -256,21 +256,21 @@ void BillboardShader::init()
 	updateUniform("uni_texture", 1);
 }
 
-void BillboardShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
+void BillboardShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	bindShader();
+	//bindShader();
 
-	glm::mat4 m, t, r, p;
+	//glm::mat4 m, t, r, p;
 
-	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	GLRenderingManager::getInstance().getCameraRotMatrix(r);
-	GLRenderingManager::getInstance().getCameraTranslationMatrix(t);
-	m = visibleComponent.getParentActor()->caclTransformationMatrix();
-	// @TODO: multiply with inverse of camera rotation matrix
-	updateUniform("uni_p", p);
-	updateUniform("uni_r", r);
-	updateUniform("uni_t", t);
-	updateUniform("uni_m", m);
+	//GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
+	//GLRenderingManager::getInstance().getCameraRotMatrix(r);
+	//GLRenderingManager::getInstance().getCameraPosMatrix(t);
+	//m = visibleComponent.getParentActor()->caclTransformationMatrix();
+	//// @TODO: multiply with inverse of camera rotation matrix
+	//updateUniform("uni_p", p);
+	//updateUniform("uni_r", r);
+	//updateUniform("uni_t", t);
+	//updateUniform("uni_m", m);
 }
 
 SkyboxShader::SkyboxShader()
@@ -291,7 +291,7 @@ void SkyboxShader::init()
 	updateUniform("uni_skybox", 0);
 }
 
-void SkyboxShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
+void SkyboxShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	glFrontFace(GL_CW);
 	glEnable(GL_CULL_FACE);
@@ -307,39 +307,80 @@ void SkyboxShader::draw(std::vector<LightComponent*>& lightComponents, VisibleCo
 	updateUniform("uni_RP", p * r * -1.0f);
 }
 
-ShadowMapShader::ShadowMapShader()
+GeometryPassShader::GeometryPassShader()
+{
+}
+GeometryPassShader::~GeometryPassShader()
 {
 }
 
-ShadowMapShader::~ShadowMapShader()
-{
-}
-
-void ShadowMapShader::init()
+void GeometryPassShader::init()
 {
 	initProgram();
-	addShader(GLShader::VERTEX, "GL3.3/shadowMapVertex.sf");
+	addShader(GLShader::VERTEX, "GL3.3/geometryPassVertex.sf");
 	setAttributeLocation(0, "in_Position");
-	addShader(GLShader::FRAGMENT, "GL3.3/shadowMapFragment.sf");
+	setAttributeLocation(1, "in_TexCoord");
+	setAttributeLocation(2, "in_Normal");
+
+	addShader(GLShader::FRAGMENT, "GL3.3/geometryPassFragment.sf");
 	bindShader();
-	updateUniform("uni_shadowMap", 0);
 }
 
-void ShadowMapShader::draw(std::vector<LightComponent*>& lightComponents, VisibleComponent & visibleComponent)
+void GeometryPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	bindShader();
 
-	glm::mat4 p, t, r;
-
-	lightComponents[0]->getShadowMapData().getProjectionMatrix(p);
-	t = lightComponents[0]->getParentActor()->caclWorldPosMatrix();
-	r = lightComponents[0]->getParentActor()->caclWorldRotMatrix();
+	glm::mat4 p = cameraComponents[0]->getProjectionMatrix();
+	glm::mat4 r = cameraComponents[0]->getRotMatrix();
+	glm::mat4 t = cameraComponents[0]->getPosMatrix();
+	glm::mat4 m = glm::mat4();
 
 	updateUniform("uni_p", p);
-	updateUniform("uni_t", t);
 	updateUniform("uni_r", r);
+	updateUniform("uni_t", t);
+
+	for (unsigned int i = 0; i < visibleComponents.size(); i++)
+	{
+		updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
+		visibleComponents[i]->draw();
+	}
 }
 
+LightPassShader::LightPassShader()
+{
+}
+
+LightPassShader::~LightPassShader()
+{
+}
+
+void LightPassShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/lightPassVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	setAttributeLocation(1, "in_TexCoord");
+
+	addShader(GLShader::FRAGMENT, "GL3.3/lightPassFragment.sf");
+	bindShader();
+	updateUniform("m_gPosition", 0);
+	updateUniform("m_gNormal", 1);
+	updateUniform("m_gAlbedoSpec", 2);
+}
+
+void LightPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	bindShader();
+
+	for (size_t i = 0; i < lightComponents.size(); i++)
+	{
+		updateUniform("uni_viewPos", cameraComponents[0]->getParentActor()->caclWorldPos());
+		updateUniform("uni_Lights.Position", lightComponents[i]->getParentActor()->getTransform()->getPos());
+		updateUniform("uni_Lights.Color", lightComponents[i]->getDiffuseColor());
+		updateUniform("uni_Lights.Linear", lightComponents[i]->getLinearFactor());
+		updateUniform("uni_Lights.Quadratic", lightComponents[i]->getQuadraticFactor());
+	}
+}
 GLRenderingManager::GLRenderingManager()
 {
 }
@@ -348,61 +389,72 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
-void GLRenderingManager::render(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
+void GLRenderingManager::render(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	switch (visibleComponent.getVisiblilityType())
-	{
-	case visiblilityType::INVISIBLE: break;
-	case visiblilityType::BILLBOARD:
-		BillboardShader::getInstance().draw(lightComponents, visibleComponent);
-		// update visibleGameEntity's mesh& texture
-		visibleComponent.draw();
-		break;
-	case visiblilityType::STATIC_MESH:
-		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
-		{
-			m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
-		}
-		// update visibleGameEntity's mesh& texture
-		visibleComponent.draw();
-		break;
-	case visiblilityType::SKYBOX:
-		glDepthFunc(GL_LEQUAL);
-		SkyboxShader::getInstance().draw(lightComponents, visibleComponent);
-		// update visibleGameEntity's mesh& texture
-		visibleComponent.draw();
-		glDepthFunc(GL_LESS);
-		break;
-	case visiblilityType::GLASSWARE:
-		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
-		{
-			m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
-		}
-		// update visibleGameEntity's mesh& texture
-		visibleComponent.draw();
-		break;
-	}
+	renderGeometryPass(cameraComponents, lightComponents, visibleComponents);
+	//renderLightPass(cameraComponents, lightComponents, visibleComponents);
+}
+//
+//void GLRenderingManager::render(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
+//{
+//	switch (visibleComponent.getVisiblilityType())
+//	{
+//	case visiblilityType::INVISIBLE: break;
+//	case visiblilityType::BILLBOARD:
+//		BillboardShader::getInstance().draw(lightComponents, visibleComponent);
+//		// update visibleGameEntity's mesh& texture
+//		visibleComponent.draw();
+//		break;
+//	case visiblilityType::STATIC_MESH:
+//		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
+//		{
+//			m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
+//		}
+//		// update visibleGameEntity's mesh& texture
+//		visibleComponent.draw();
+//		break;
+//	case visiblilityType::SKYBOX:
+//		glDepthFunc(GL_LEQUAL);
+//		SkyboxShader::getInstance().draw(lightComponents, visibleComponent);
+//		// update visibleGameEntity's mesh& texture
+//		visibleComponent.draw();
+//		glDepthFunc(GL_LESS);
+//		break;
+//	case visiblilityType::GLASSWARE:
+//		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
+//		{
+//			m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
+//		}
+//		// update visibleGameEntity's mesh& texture
+//		visibleComponent.draw();
+//		break;
+//	}
+//}
+
+void GLRenderingManager::setScreenResolution(glm::vec2 screenResolution)
+{
+	m_screenResolution = screenResolution;
 }
 
-void GLRenderingManager::getCameraTranslationMatrix(glm::mat4 & t) const
+void GLRenderingManager::getCameraPosMatrix(glm::mat4 & t) const
 {
-	t = cameraTranslationMatrix;
+	t = cameraPosMatrix;
 }
 
-void GLRenderingManager::setCameraTranslationMatrix(const glm::mat4 & t)
+void GLRenderingManager::setCameraPosMatrix(const glm::mat4 & t)
 {
-	cameraTranslationMatrix = t;
+	cameraPosMatrix = t;
 }
 
 
 void GLRenderingManager::getCameraRotMatrix(glm::mat4 & v) const
 {
-	v = cameraViewMatrix;
+	v = cameraRotMatrix;
 }
 
-void GLRenderingManager::setCameraViewMatrix(const glm::mat4 & v)
+void GLRenderingManager::setCameraRotMatrix(const glm::mat4 & v)
 {
-	cameraViewMatrix = v;
+	cameraRotMatrix = v;
 }
 
 void GLRenderingManager::getCameraProjectionMatrix(glm::mat4 & p) const
@@ -423,6 +475,85 @@ void GLRenderingManager::getCameraPos(glm::vec3 & pos) const
 void GLRenderingManager::setCameraPos(const glm::vec3 & pos)
 {
 	cameraPos = pos;
+}
+
+void GLRenderingManager::initializeGeometryPass()
+{
+	glGenFramebuffers(1, &m_gBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_gBuffer);
+
+	// position color buffer
+	glGenTextures(1, &m_gPosition);
+	glBindTexture(GL_TEXTURE_2D, m_gPosition);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_gPosition, 0);
+
+	// normal color buffer
+	glGenTextures(1, &m_gNormal);
+	glBindTexture(GL_TEXTURE_2D, m_gNormal);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_gNormal, 0);
+
+	// albedo color + specular color buffer
+	glGenTextures(1, &m_gAlbedoSpec);
+	glBindTexture(GL_TEXTURE_2D, m_gAlbedoSpec);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_screenResolution.x, m_screenResolution.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_gAlbedoSpec, 0);
+
+	// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
+	unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, attachments);
+
+	// create and attach depth buffer (renderbuffer)
+	glGenRenderbuffers(1, &m_rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, m_screenResolution.x, m_screenResolution.y);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
+
+	// finally check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		LogManager::getInstance().printLog("Framebuffer not complete!");
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// initialize shader
+	GeometryPassShader::getInstance().init();
+	//LightPassShader::getInstance().init();
+}
+
+void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, m_gBuffer);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glFrontFace(GL_CW);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	GeometryPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m_gPosition);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m_gNormal);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, m_gAlbedoSpec);
+
+	LightPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
 }
 
 void GLRenderingManager::changeDrawPolygonMode()
@@ -456,19 +587,11 @@ bool GLRenderingManager::canDrawDepthBuffer() const
 }
 void GLRenderingManager::initialize()
 {
-	m_staticMeshGLShader.emplace_back(&PhongShader::getInstance());
-	//m_staticMeshGLShader.emplace_back(&BasicGLShader::getInstance());
+	//PhongShader::getInstance().init();
+	//BillboardShader::getInstance().init();
+	//SkyboxShader::getInstance().init();
 
-	for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
-	{
-		m_staticMeshGLShader[i]->init();
-	}
-
-	BillboardShader::getInstance().init();
-	SkyboxShader::getInstance().init();
-	ShadowMapShader::getInstance().init();
-
-
+	initializeGeometryPass();
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
 }
@@ -484,10 +607,6 @@ void GLRenderingManager::update()
 
 void GLRenderingManager::shutdown()
 {
-	for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
-	{
-		m_staticMeshGLShader[i].release();
-	}
 	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
 }
