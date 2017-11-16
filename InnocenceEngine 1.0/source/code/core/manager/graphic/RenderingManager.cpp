@@ -84,10 +84,6 @@ void RenderingManager::shutdown()
 
 void RenderingManager::AsyncRender()
 {
-	GLWindowManager::getInstance().excute(executeMessage::UPDATE);
-
-	GLInputManager::getInstance().excute(executeMessage::UPDATE);
-
 	//prepare rendering global state
 	GLRenderingManager::getInstance().excute(executeMessage::UPDATE);
 
@@ -103,10 +99,12 @@ void RenderingManager::AsyncRender()
 	//{
 	//	GLRenderingManager::getInstance().render(SceneGraphManager::getInstance().getLightQueue(), *SceneGraphManager::getInstance().getRenderingQueue()[i]);
 	//}
-
 	//defer render
 	GLRenderingManager::getInstance().render(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
+	
+	GLWindowManager::getInstance().excute(executeMessage::UPDATE);
 
+	GLInputManager::getInstance().excute(executeMessage::UPDATE);
 	//GLGUIManager::getInstance().excute(executeMessage::UPDATE);
 
 	//LogManager::getInstance().printLog("Async Rendering Finished.");

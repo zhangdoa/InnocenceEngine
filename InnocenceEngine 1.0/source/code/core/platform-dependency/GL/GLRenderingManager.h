@@ -174,8 +174,13 @@ private:
 	GLuint m_gBuffer;
 	GLuint m_gPosition;
 	GLuint m_gNormal;
-	GLuint m_gAlbedoSpec;
+	GLuint m_gAlbedo;
+	GLuint m_gSpecular;
 	GLuint m_rbo;
+
+	GLuint m_screenVAO;
+	GLuint m_screenVBO;
+	std::vector<float> m_screenVertices;
 
 	glm::mat4 cameraPosMatrix = glm::mat4();
 	glm::mat4 cameraRotMatrix = glm::mat4();
