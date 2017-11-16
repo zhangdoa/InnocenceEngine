@@ -21,6 +21,11 @@ glm::vec2 GLWindowManager::getScreenCenterPosition() const
 	return glm::vec2(SCR_WIDTH / 2.0f, SCR_HEIGHT / 2.0f);
 }
 
+glm::vec2 GLWindowManager::getScreenResolution() const
+{
+	return glm::vec2(SCR_WIDTH, SCR_HEIGHT);
+}
+
 void GLWindowManager::setWindowName(const std::string & windowName)
 {
 	m_windowName = windowName;

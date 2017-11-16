@@ -4,14 +4,14 @@
 #include "../../manager/LogManager.h"
 #include "../../component/VisibleComponent.h"
 #include "../../component/LightComponent.h"
-
+#include "../../component/CameraComponent.h"
 class GLShader
 {
 public:
 	virtual ~GLShader();
 
 	virtual void init() = 0;
-	virtual void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) = 0;
+	virtual void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) = 0;
 
 protected:
 	GLShader();
@@ -50,7 +50,6 @@ private:
 
 class PhongShader : public GLShader
 {
-
 public:
 	~PhongShader();
 
@@ -61,7 +60,7 @@ public:
 	}
 
 	void init() override;
-	void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) override;
+	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
 
 private:
 	PhongShader();
@@ -69,7 +68,6 @@ private:
 
 class BillboardShader : public GLShader
 {
-
 public:
 	~BillboardShader();
 
@@ -80,7 +78,7 @@ public:
 	}
 
 	void init() override;
-	void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) override;
+	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
 
 private:
 	BillboardShader();
@@ -88,7 +86,6 @@ private:
 
 class SkyboxShader : public GLShader
 {
-
 public:
 	~SkyboxShader();
 
@@ -99,29 +96,46 @@ public:
 	}
 
 	void init() override;
-	void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) override;
+	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
 
 private:
 	SkyboxShader();
 };
 
-class ShadowMapShader : public GLShader
+class GeometryPassShader : public GLShader
 {
-
 public:
-	~ShadowMapShader();
+	~GeometryPassShader();
 
-	static ShadowMapShader& getInstance()
+	static GeometryPassShader& getInstance()
 	{
-		static ShadowMapShader instance;
+		static GeometryPassShader instance;
 		return instance;
 	}
 
 	void init() override;
-	void draw(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent) override;
+	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
 
 private:
-	ShadowMapShader();
+	GeometryPassShader();
+};
+
+class LightPassShader : public GLShader
+{
+public:
+	~LightPassShader();
+
+	static LightPassShader& getInstance()
+	{
+		static LightPassShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
+
+private:
+	LightPassShader();
 };
 
 class GLRenderingManager : public IEventManager
@@ -135,18 +149,19 @@ public:
 		return instance;
 	}
 
-	void render(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent);
+	void render(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 
-	void getCameraTranslationMatrix(glm::mat4& t) const;
-	void setCameraTranslationMatrix(const glm::mat4& t);
+	void setScreenResolution(glm::vec2 screenResolution);
+
+	void getCameraPosMatrix(glm::mat4& t) const;
+	void setCameraPosMatrix(const glm::mat4& t);
 	void getCameraRotMatrix(glm::mat4& v) const;
-	void setCameraViewMatrix(const glm::mat4& v);
+	void setCameraRotMatrix(const glm::mat4& v);
 	void getCameraProjectionMatrix(glm::mat4& p) const;
 	void setCameraProjectionMatrix(const glm::mat4& p);
 	void getCameraPos(glm::vec3& pos) const;
 	void setCameraPos(const glm::vec3& pos);
 
-	void renderBaseGeometryPass();
 	void changeDrawPolygonMode();
 	void toggleDepthBufferVisualizer();
 	bool canDrawDepthBuffer() const;
@@ -154,9 +169,16 @@ public:
 private:
 	GLRenderingManager();
 
-	std::vector<std::unique_ptr<GLShader>> m_staticMeshGLShader;
-	glm::mat4 cameraTranslationMatrix = glm::mat4();
-	glm::mat4 cameraViewMatrix = glm::mat4();
+	glm::vec2 m_screenResolution = glm::vec2();
+
+	GLuint m_gBuffer;
+	GLuint m_gPosition;
+	GLuint m_gNormal;
+	GLuint m_gAlbedoSpec;
+	GLuint m_rbo;
+
+	glm::mat4 cameraPosMatrix = glm::mat4();
+	glm::mat4 cameraRotMatrix = glm::mat4();
 	glm::mat4 cameraProjectionMatrix = glm::mat4();
 	glm::vec3 cameraPos = glm::vec3();
 
@@ -166,4 +188,9 @@ private:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
+
+	void initializeGeometryPass();
+	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+
+	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 };
