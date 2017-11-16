@@ -6,7 +6,8 @@ in vec2 TexCoords;
 
 uniform sampler2D m_gPosition;
 uniform sampler2D m_gNormal;
-uniform sampler2D m_gAlbedoSpec;
+uniform sampler2D m_gAlbedo;
+uniform sampler2D m_gSpecular;
 
 struct Light {
     vec3 Position;
@@ -23,8 +24,8 @@ void main()
     // retrieve data from gbuffer
     vec3 FragPos = texture(m_gPosition, TexCoords).rgb;
     vec3 Normal = texture(m_gNormal, TexCoords).rgb;
-    vec3 Diffuse = texture(m_gAlbedoSpec, TexCoords).rgb;
-    float Specular = texture(m_gAlbedoSpec, TexCoords).a;
+    vec3 Diffuse = texture(m_gAlbedo, TexCoords).rgb;
+    vec3 Specular = texture(m_gSpecular, TexCoords).rgb;
     
     // then calculate lighting as usual
     vec3 lighting  = Diffuse * 0.1; // hard-coded ambient component
