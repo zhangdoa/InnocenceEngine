@@ -151,15 +151,15 @@ inline void GLShader::detachShader(int shader) const
 	glDeleteShader(shader);
 }
 
-PhongShader::PhongShader()
+forwardBlinnPhongShader::forwardBlinnPhongShader()
 {
 }
 
-PhongShader::~PhongShader()
+forwardBlinnPhongShader::~forwardBlinnPhongShader()
 {
 }
 
-void PhongShader::init()
+void forwardBlinnPhongShader::init()
 {
 	initProgram();
 	addShader(GLShader::VERTEX, "GL3.3/phongVertex.sf");
@@ -172,12 +172,12 @@ void PhongShader::init()
 	addShader(GLShader::FRAGMENT, "GL3.3/phongFragment.sf");
 	bindShader();
 	updateUniform("uni_skyboxTexture", 0);
-	updateUniform("uni_diffuseTexture", 1);
+	updateUniform("uni_albedoTexture", 1);
 	updateUniform("uni_specularTexture", 2);
 	updateUniform("uni_normalTexture", 3);
 }
 
-void PhongShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void forwardBlinnPhongShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	//glFrontFace(GL_CCW);
 	//glEnable(GL_CULL_FACE);
@@ -301,8 +301,8 @@ void SkyboxShader::draw(std::vector<CameraComponent*>& cameraComponents, std::ve
 
 	// TODO: fix "looking outside" problem// almost there
 	glm::mat4 r, p;
-	GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	GLRenderingManager::getInstance().getCameraRotMatrix(r);
+	p = cameraComponents[0]->getProjectionMatrix();
+	r = cameraComponents[0]->getRotMatrix();
 
 	updateUniform("uni_RP", p * r * -1.0f);
 }
@@ -321,10 +321,12 @@ void GeometryPassShader::init()
 	setAttributeLocation(0, "in_Position");
 	setAttributeLocation(1, "in_TexCoord");
 	setAttributeLocation(2, "in_Normal");
+	setAttributeLocation(3, "in_Tangent");
+	setAttributeLocation(4, "in_Bitangent");
 
 	addShader(GLShader::FRAGMENT, "GL3.3/geometryPassFragment.sf");
 	bindShader();
-	updateUniform("uni_diffuseTexture", 0);
+	updateUniform("uni_albedoTexture", 0);
 	updateUniform("uni_specularTexture", 1);
 	updateUniform("uni_normalTexture", 2);
 }
@@ -376,13 +378,35 @@ void LightPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std:
 {
 	bindShader();
 
+	glm::vec3 cameraPos = cameraComponents[0]->getParentActor()->getTransform()->getPos();
+
+	int l_pointLightIndexOffset = 0;
 	for (size_t i = 0; i < lightComponents.size(); i++)
 	{
-		updateUniform("uni_viewPos", cameraComponents[0]->getParentActor()->caclWorldPos());
-		updateUniform("uni_Lights.Position", lightComponents[i]->getParentActor()->getTransform()->getPos());
-		updateUniform("uni_Lights.Color", lightComponents[i]->getDiffuseColor());
-		updateUniform("uni_Lights.Linear", lightComponents[i]->getLinearFactor());
-		updateUniform("uni_Lights.Quadratic", lightComponents[i]->getQuadraticFactor());
+		//@TODO: generalization
+
+		updateUniform("uni_viewPos", cameraPos);
+
+		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
+		{
+			l_pointLightIndexOffset -= 1;
+			updateUniform("uni_dirLight.direction", lightComponents[i]->getDirection());
+			updateUniform("uni_dirLight.ambientColor", lightComponents[i]->getAmbientColor());
+			updateUniform("uni_dirLight.diffuseColor", lightComponents[i]->getDiffuseColor());
+			updateUniform("uni_dirLight.specularColor", lightComponents[i]->getSpecularColor());
+		}
+		else if (lightComponents[i]->getLightType() == lightType::POINT)
+		{
+			std::stringstream ss;
+			ss << i + l_pointLightIndexOffset;
+			updateUniform("uni_pointLights[" + ss.str() + "].position", lightComponents[i]->getParentActor()->getTransform()->getPos());
+			updateUniform("uni_pointLights[" + ss.str() + "].constantFactor", lightComponents[i]->getConstantFactor());
+			updateUniform("uni_pointLights[" + ss.str() + "].linearFactor", lightComponents[i]->getLinearFactor());
+			updateUniform("uni_pointLights[" + ss.str() + "].quadraticFactor", lightComponents[i]->getQuadraticFactor());
+			updateUniform("uni_pointLights[" + ss.str() + "].ambientColor", lightComponents[i]->getAmbientColor());
+			updateUniform("uni_pointLights[" + ss.str() + "].diffuseColor", lightComponents[i]->getDiffuseColor());
+			updateUniform("uni_pointLights[" + ss.str() + "].specularColor", lightComponents[i]->getSpecularColor());
+		}
 	}
 }
 GLRenderingManager::GLRenderingManager()
@@ -393,92 +417,51 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
-void GLRenderingManager::render(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	renderGeometryPass(cameraComponents, lightComponents, visibleComponents);
 	renderLightPass(cameraComponents, lightComponents, visibleComponents);
 }
-//
-//void GLRenderingManager::render(std::vector<LightComponent*>& lightComponents, VisibleComponent& visibleComponent)
-//{
-//	switch (visibleComponent.getVisiblilityType())
-//	{
-//	case visiblilityType::INVISIBLE: break;
-//	case visiblilityType::BILLBOARD:
-//		BillboardShader::getInstance().draw(lightComponents, visibleComponent);
-//		// update visibleGameEntity's mesh& texture
-//		visibleComponent.draw();
-//		break;
-//	case visiblilityType::STATIC_MESH:
-//		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
-//		{
-//			m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
-//		}
-//		// update visibleGameEntity's mesh& texture
-//		visibleComponent.draw();
-//		break;
-//	case visiblilityType::SKYBOX:
-//		glDepthFunc(GL_LEQUAL);
-//		SkyboxShader::getInstance().draw(lightComponents, visibleComponent);
-//		// update visibleGameEntity's mesh& texture
-//		visibleComponent.draw();
-//		glDepthFunc(GL_LESS);
-//		break;
-//	case visiblilityType::GLASSWARE:
-//		for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
-//		{
-//			m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
-//		}
-//		// update visibleGameEntity's mesh& texture
-//		visibleComponent.draw();
-//		break;
-//	}
-//}
+
+void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	//switch (visibleComponent.getVisiblilityType())
+	//{
+	//case visiblilityType::INVISIBLE: break;
+	//case visiblilityType::BILLBOARD:
+	//	BillboardShader::getInstance().draw(lightComponents, visibleComponent);
+	//	// update visibleGameEntity's mesh& texture
+	//	visibleComponent.draw();
+	//	break;
+	//case visiblilityType::STATIC_MESH:
+	//	for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
+	//	{
+	//		m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
+	//	}
+	//	// update visibleGameEntity's mesh& texture
+	//	visibleComponent.draw();
+	//	break;
+	//case visiblilityType::SKYBOX:
+	//	glDepthFunc(GL_LEQUAL);
+	//	SkyboxShader::getInstance().draw(lightComponents, visibleComponent);
+	//	// update visibleGameEntity's mesh& texture
+	//	visibleComponent.draw();
+	//	glDepthFunc(GL_LESS);
+	//	break;
+	//case visiblilityType::GLASSWARE:
+	//	for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
+	//	{
+	//		m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
+	//	}
+	//	// update visibleGameEntity's mesh& texture
+	//	visibleComponent.draw();
+	//	break;
+	//}
+}
 
 void GLRenderingManager::setScreenResolution(glm::vec2 screenResolution)
 {
 	m_screenResolution = screenResolution;
-}
-
-void GLRenderingManager::getCameraPosMatrix(glm::mat4 & t) const
-{
-	t = cameraPosMatrix;
-}
-
-void GLRenderingManager::setCameraPosMatrix(const glm::mat4 & t)
-{
-	cameraPosMatrix = t;
-}
-
-
-void GLRenderingManager::getCameraRotMatrix(glm::mat4 & v) const
-{
-	v = cameraRotMatrix;
-}
-
-void GLRenderingManager::setCameraRotMatrix(const glm::mat4 & v)
-{
-	cameraRotMatrix = v;
-}
-
-void GLRenderingManager::getCameraProjectionMatrix(glm::mat4 & p) const
-{
-	p = cameraProjectionMatrix;
-}
-
-void GLRenderingManager::setCameraProjectionMatrix(const glm::mat4 & p)
-{
-	cameraProjectionMatrix = p;
-}
-
-void GLRenderingManager::getCameraPos(glm::vec3 & pos) const
-{
-	pos = cameraPos;
-}
-
-void GLRenderingManager::setCameraPos(const glm::vec3 & pos)
-{
-	cameraPos = pos;
 }
 
 void GLRenderingManager::initializeGeometryPass()
@@ -549,7 +532,8 @@ void GLRenderingManager::initializeGeometryPass()
 	glGenBuffers(1, &m_screenVBO);
 	glBindVertexArray(m_screenVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, m_screenVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(m_screenVertices), &m_screenVertices, GL_STATIC_DRAW);
+	// take care of std::vector's size and pointer of first element!!!
+	glBufferData(GL_ARRAY_BUFFER, m_screenVertices.size() * sizeof(float), &m_screenVertices[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
@@ -560,13 +544,13 @@ void GLRenderingManager::initializeGeometryPass()
 
 void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, m_gBuffer);
+
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
 	glEnable(GL_TEXTURE_2D);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, m_gBuffer);
 
 	//glFrontFace(GL_CW);
 	//glEnable(GL_CULL_FACE);
@@ -577,10 +561,10 @@ void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& camer
 
 void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_gPosition);
@@ -593,7 +577,7 @@ void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraCo
 
 	LightPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
 
-	// write to default framebuffer
+	//// write to default framebuffer
 	//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gBuffer);
 	//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); 
 	//

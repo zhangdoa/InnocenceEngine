@@ -48,14 +48,14 @@ private:
 	unsigned int m_program;
 };
 
-class PhongShader : public GLShader
+class forwardBlinnPhongShader : public GLShader
 {
 public:
-	~PhongShader();
+	~forwardBlinnPhongShader();
 
-	static PhongShader& getInstance()
+	static forwardBlinnPhongShader& getInstance()
 	{
-		static PhongShader instance;
+		static forwardBlinnPhongShader instance;
 		return instance;
 	}
 
@@ -63,7 +63,7 @@ public:
 	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
 
 private:
-	PhongShader();
+	forwardBlinnPhongShader();
 };
 
 class BillboardShader : public GLShader
@@ -149,18 +149,10 @@ public:
 		return instance;
 	}
 
-	void render(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+	void forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+	void deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 
 	void setScreenResolution(glm::vec2 screenResolution);
-
-	void getCameraPosMatrix(glm::mat4& t) const;
-	void setCameraPosMatrix(const glm::mat4& t);
-	void getCameraRotMatrix(glm::mat4& v) const;
-	void setCameraRotMatrix(const glm::mat4& v);
-	void getCameraProjectionMatrix(glm::mat4& p) const;
-	void setCameraProjectionMatrix(const glm::mat4& p);
-	void getCameraPos(glm::vec3& pos) const;
-	void setCameraPos(const glm::vec3& pos);
 
 	void changeDrawPolygonMode();
 	void toggleDepthBufferVisualizer();
@@ -181,11 +173,6 @@ private:
 	GLuint m_screenVAO;
 	GLuint m_screenVBO;
 	std::vector<float> m_screenVertices;
-
-	glm::mat4 cameraPosMatrix = glm::mat4();
-	glm::mat4 cameraRotMatrix = glm::mat4();
-	glm::mat4 cameraProjectionMatrix = glm::mat4();
-	glm::vec3 cameraPos = glm::vec3();
 
 	int m_polygonMode = 0;
 	bool m_drawDepthBuffer = false;

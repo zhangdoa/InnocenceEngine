@@ -88,19 +88,10 @@ void RenderingManager::AsyncRender()
 	GLRenderingManager::getInstance().excute(executeMessage::UPDATE);
 
 	////forward render
-	//update camera data
-	////@TODO: multi camera with frame buffer
-	//GLRenderingManager::getInstance().setCameraProjectionMatrix(SceneGraphManager::getInstance().getCameraQueue()[0]->getProjectionMatrix());
-	//GLRenderingManager::getInstance().setCameraTranslationMatrix((SceneGraphManager::getInstance().getCameraQueue()[0]->getPosMatrix()));
-	//GLRenderingManager::getInstance().setCameraViewMatrix(SceneGraphManager::getInstance().getCameraQueue()[0]->getRotMatrix());
-	//GLRenderingManager::getInstance().setCameraPos(SceneGraphManager::getInstance().getCameraQueue()[0]->getParentActor()->caclWorldPos());
-
-	//for (size_t i = 0; i < SceneGraphManager::getInstance().getRenderingQueue().size(); i++)
-	//{
-	//	GLRenderingManager::getInstance().render(SceneGraphManager::getInstance().getLightQueue(), *SceneGraphManager::getInstance().getRenderingQueue()[i]);
-	//}
+	//GLRenderingManager::getInstance().forwardRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
+	
 	//defer render
-	GLRenderingManager::getInstance().render(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
+	GLRenderingManager::getInstance().deferRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
 	
 	GLWindowManager::getInstance().excute(executeMessage::UPDATE);
 

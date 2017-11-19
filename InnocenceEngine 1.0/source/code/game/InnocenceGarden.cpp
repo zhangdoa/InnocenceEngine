@@ -35,7 +35,7 @@ void InnocenceGarden::initialize()
 	SceneGraphManager::getInstance().addToRenderingQueue(&testSkyboxComponent);*/
 	
 	directionalLightComponent.setlightType(lightType::DIRECTIONAL);
-	directionalLightComponent.setDirection(glm::vec3(1.0f, 1.0f, 1.0f));
+	directionalLightComponent.setDirection(glm::vec3(0.5f, 1.0f, 1.0f));
 	directionalLightComponent.setAmbientColor(glm::vec3(0.0f, 0.35f, 0.55f));
 	directionalLightComponent.setDiffuseColor(glm::vec3(0.0f, 0.35f, 0.55f));
 	directionalLightComponent.setSpecularColor(glm::vec3(0.0f, 0.35f, 0.55f));
