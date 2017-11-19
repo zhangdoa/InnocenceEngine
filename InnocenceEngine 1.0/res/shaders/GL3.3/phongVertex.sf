@@ -12,10 +12,7 @@ uniform mat4 uni_r;
 uniform mat4 uni_t;
 uniform mat4 uni_m;
 
-uniform vec3 uni_viewPos;
-
 out vec2 thefrag_TexCoord;
-out vec3 thefrag_ViewPos;
 out vec3 thefrag_FragPos;
 out mat3 TBN;
 
@@ -31,7 +28,6 @@ void main()
 	TBN = mat3(T, B, N);  
 	
 	thefrag_TexCoord = in_TexCoord;	
-	thefrag_ViewPos = uni_viewPos;
 	thefrag_FragPos = vec3(uni_m * vec4(in_Position, 1.0));
 
 	gl_Position = uni_p * uni_r * uni_t * uni_m * vec4(in_Position, 1.0);

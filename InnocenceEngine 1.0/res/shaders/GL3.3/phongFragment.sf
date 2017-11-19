@@ -6,9 +6,11 @@ in vec3 thefrag_ViewPos;
 in vec3 thefrag_FragPos;
 in mat3 TBN;
 
+uniform vec3 uni_viewPos;
+
 uniform samplerCube uni_skyboxTexture;
 uniform sampler2D uni_specularTexture;
-uniform sampler2D uni_diffuseTexture;
+uniform sampler2D uni_albedoTexture;
 uniform sampler2D uni_normalTexture;
 
 struct dirLight {
@@ -52,10 +54,10 @@ vec3 CalcDirLight(dirLight light, vec3 normal, vec3 viewPos, vec3 fragPos)
 	vec3 normalizedViewDir = normalize(viewPos - fragPos);
 
 	//ambient color
-	vec3 ambient = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * light.ambientColor;
+	vec3 ambient = vec3(texture(uni_albedoTexture, thefrag_TexCoord)) * light.ambientColor;
 
 	//diffuse color: texture * factor * light color
-	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(normal, normalizedLightDir), 0.0) * light.diffuseColor;
+	vec3 diffuse = vec3(texture(uni_albedoTexture, thefrag_TexCoord)) * max(dot(normal, normalizedLightDir), 0.0) * light.diffuseColor;
 	
 	// specular color: texture * factor * light color
 	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * pow(max(dot(normal, normalize(normalizedLightDir + normalizedViewDir)), 0.0), 32) * light.specularColor;
@@ -72,10 +74,10 @@ vec3 CalcPointLight(pointLight light, vec3 normal, vec3 viewPos, vec3 fragPos)
 	vec3 normalizedViewDir = normalize(viewPos - fragPos);
 
 	//ambient color
-	vec3 ambient = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * light.ambientColor;
+	vec3 ambient = vec3(texture(uni_albedoTexture, thefrag_TexCoord)) * light.ambientColor;
 
 	//diffuse color: texture * factor * light color
-	vec3 diffuse = vec3(texture(uni_diffuseTexture, thefrag_TexCoord)) * max(dot(normal, normalizedLightDir), 0.0) * light.diffuseColor;
+	vec3 diffuse = vec3(texture(uni_albedoTexture, thefrag_TexCoord)) * max(dot(normal, normalizedLightDir), 0.0) * light.diffuseColor;
 	
 	//specular color: texture * factor * light color
 	vec3 specular = vec3(texture(uni_specularTexture, thefrag_TexCoord)) * pow(max(dot(normal, normalize(normalizedLightDir + normalizedViewDir)), 0.0), 32) * light.specularColor;
