@@ -59,7 +59,15 @@ void AssetManager::importModel(const std::string& fileName) const
 	LogManager::getInstance().printLog("Model: " + fileName + " is imported.");
 }
 
-void AssetManager::loadModel(const std::string & fileName, VisibleComponent & visibleComponent) const
+void AssetManager::loadModel(const std::string & fileName, VisibleComponent & visibleComponent)
+{
+	//std::thread l_loadModelTask([&] { loadModelImpl(fileName, visibleComponent); });
+	//l_loadModelTask.join();
+	//LogManager::getInstance().printLog("joined.");
+	loadModelImpl(fileName, visibleComponent);
+}
+
+void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent & visibleComponent)
 {
 	// read file via ASSIMP
 	Assimp::Importer l_assImporter;
@@ -75,8 +83,6 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 	if (l_assScene->mRootNode->mNumMeshes > 0)
 	{
 		processAssimpNode(l_fileName, l_assScene->mRootNode, l_assScene, visibleComponent);
-		visibleComponent.getGraphicData()[0].setVisiblilityType(visibleComponent.getVisiblilityType());
-		visibleComponent.getGraphicData()[0].init();
 	}
 	for (unsigned int i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
 	{
@@ -91,8 +97,9 @@ void AssetManager::loadModel(const std::string & fileName, VisibleComponent & vi
 		visibleComponent.getGraphicData()[i].setVisiblilityType(visibleComponent.getVisiblilityType());
 		visibleComponent.getGraphicData()[i].init();
 	}
-	LogManager::getInstance().printLog("innoModel: " + fileName +  " is loaded.");
+	LogManager::getInstance().printLog("innoModel: " + fileName + " is loaded.");
 }
+
 
 void AssetManager::processAssimpNode(const std::string& fileName, aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
 {

@@ -417,12 +417,6 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
-void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
-{
-	renderGeometryPass(cameraComponents, lightComponents, visibleComponents);
-	renderLightPass(cameraComponents, lightComponents, visibleComponents);
-}
-
 void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	//switch (visibleComponent.getVisiblilityType())
@@ -457,6 +451,12 @@ void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComp
 	//	visibleComponent.draw();
 	//	break;
 	//}
+}
+
+void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	renderGeometryPass(cameraComponents, lightComponents, visibleComponents);
+	renderLightPass(cameraComponents, lightComponents, visibleComponents);
 }
 
 void GLRenderingManager::setScreenResolution(glm::vec2 screenResolution)
@@ -552,7 +552,7 @@ void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& camer
 	glEnable(GL_DEPTH_CLAMP);
 	glEnable(GL_TEXTURE_2D);
 
-	//glFrontFace(GL_CW);
+	//glFrontFace(GL_CCW);
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 
@@ -565,6 +565,7 @@ void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraCo
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_gPosition);
