@@ -22,7 +22,7 @@ public:
 
 	std::string loadShader(const std::string& FileName) const;
 	void importModel(const std::string& fileName) const;
-	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent) const;
+	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
 	void loadTexture(const std::string& fileName, VisibleComponent& visibleComponent) const;
 	void loadTexture(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
 private:
@@ -32,6 +32,7 @@ private:
 	void update() override;
 	void shutdown() override;
 
+	void loadModelImpl(const std::string& fileName, VisibleComponent& visibleComponent);
 	void processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, VisibleComponent & visibleComponent) const;
 	void processAssimpMesh(aiMesh* mesh, MeshData& meshData) const;
 	void processAssimpMaterial(const std::string& fileName, aiMaterial* material, VisibleComponent & visibleComponent) const;
