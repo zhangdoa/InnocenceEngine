@@ -265,11 +265,11 @@ void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material
 	}
 }
 
-void AssetManager::loadTexture(const std::string & fileName, VisibleComponent & visibleComponent) const
+void AssetManager::loadTexture(const std::string & fileName, textureType textureType, VisibleComponent & visibleComponent) const
 {
 	TextureData newTextureData;
 	visibleComponent.getGraphicData()[0].getTextureData().emplace_back(newTextureData);
-	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].setTextureType(textureType::DIFFUSE);
+	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].setTextureType(textureType);
 	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].setTextureWrapMethod(visibleComponent.getGraphicData()[0].getTextureWrapMethod());
 	visibleComponent.getGraphicData()[0].getTextureData()[visibleComponent.getGraphicData()[0].getTextureData().size() - 1].init();
 	int width, height, nrChannels;

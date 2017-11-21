@@ -21,6 +21,11 @@ void LightComponent::setDirection(glm::vec3 direction)
 	m_direction = direction;
 }
 
+void LightComponent::setRadius(float radius)
+{
+	m_radius = radius;
+}
+
 void LightComponent::setConstantFactor(float constantFactor)
 {
 	m_constantFactor = constantFactor;
@@ -77,6 +82,11 @@ glm::vec3 LightComponent::getDirection() const
 	return m_direction;
 }
 
+float LightComponent::getRadius() const
+{
+	return m_radius;
+}
+
 float LightComponent::getConstantFactor() const
 {
 	return m_constantFactor;
@@ -121,6 +131,9 @@ void LightComponent::initialize()
 
 void LightComponent::update()
 {
+	// light volume
+	float l_lightMaxIntensity = std::fmaxf(std::fmaxf(m_diffuseColor.x, m_diffuseColor.y), m_diffuseColor.z);
+	m_radius = (-m_linearFactor + std::sqrtf(m_linearFactor * m_linearFactor - 4 * m_quadraticFactor * (m_constantFactor - (256.0 / 5.0) * l_lightMaxIntensity))) / (2 * m_quadraticFactor);
 }
 
 void LightComponent::shutdown()
