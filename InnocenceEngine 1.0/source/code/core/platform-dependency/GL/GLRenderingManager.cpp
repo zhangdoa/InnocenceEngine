@@ -237,26 +237,26 @@ void forwardBlinnPhongShader::draw(std::vector<CameraComponent*>& cameraComponen
 	//}
 }
 
-BillboardShader::BillboardShader()
+BillboardPassShader::BillboardPassShader()
 {
 }
 
-BillboardShader::~BillboardShader()
+BillboardPassShader::~BillboardPassShader()
 {
 }
 
-void BillboardShader::init()
+void BillboardPassShader::init()
 {
 	initProgram();
-	addShader(GLShader::VERTEX, "GL3.3/billboardVertex.sf");
+	addShader(GLShader::VERTEX, "GL3.3/billboardPassVertex.sf");
 	setAttributeLocation(0, "in_Position");
 	setAttributeLocation(1, "in_TexCoord");
-	addShader(GLShader::FRAGMENT, "GL3.3/billboardFragment.sf");
+	addShader(GLShader::FRAGMENT, "GL3.3/billboardPassFragment.sf");
 	bindShader();
-	updateUniform("uni_texture", 1);
+	updateUniform("uni_texture", 0);
 }
 
-void BillboardShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void BillboardPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	bindShader();
 
@@ -433,6 +433,33 @@ void LightPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std:
 		}
 	}
 }
+
+FinalPassShader::FinalPassShader()
+{
+}
+
+FinalPassShader::~FinalPassShader()
+{
+}
+
+void FinalPassShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/finalPassVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	setAttributeLocation(1, "in_TexCoord");
+
+	addShader(GLShader::FRAGMENT, "GL3.3/finalPassFragment.sf");
+	bindShader();
+	updateUniform("finalColor", 0);
+}
+
+void FinalPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	bindShader();
+}
+
+
 GLRenderingManager::GLRenderingManager()
 {
 }
@@ -444,7 +471,7 @@ GLRenderingManager::~GLRenderingManager()
 void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	// draw billboard
-	BillboardShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+	BillboardPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
 	// draw skybox
 	SkyboxShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
 }
@@ -453,6 +480,7 @@ void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraCompon
 {
 	renderGeometryPass(cameraComponents, lightComponents, visibleComponents);
 	renderLightPass(cameraComponents, lightComponents, visibleComponents);
+	renderFinalPass(cameraComponents, lightComponents, visibleComponents);
 }
 
 void GLRenderingManager::setScreenResolution(glm::vec2 screenResolution)
@@ -465,72 +493,75 @@ void GLRenderingManager::initializeGeometryPass()
 	// initialize shader
 	GeometryPassShader::getInstance().init();
 
-	glGenFramebuffers(1, &m_gBuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_gBuffer);
+	glGenFramebuffers(1, &m_geometryPassBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_geometryPassBuffer);
 
 	// position color buffer
-	glGenTextures(1, &m_gPosition);
-	glBindTexture(GL_TEXTURE_2D, m_gPosition);
+	glGenTextures(1, &m_geometryPassPosition);
+	glBindTexture(GL_TEXTURE_2D, m_geometryPassPosition);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_gPosition, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_geometryPassPosition, 0);
 
 	// normal color buffer
-	glGenTextures(1, &m_gNormal);
-	glBindTexture(GL_TEXTURE_2D, m_gNormal);
+	glGenTextures(1, &m_geometryPassNormal);
+	glBindTexture(GL_TEXTURE_2D, m_geometryPassNormal);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_gNormal, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_geometryPassNormal, 0);
 
 	// albedo color buffer
-	glGenTextures(1, &m_gAlbedo);
-	glBindTexture(GL_TEXTURE_2D, m_gAlbedo);
+	glGenTextures(1, &m_geometryPassAlbedo);
+	glBindTexture(GL_TEXTURE_2D, m_geometryPassAlbedo);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_gAlbedo, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_geometryPassAlbedo, 0);
 
 	// specular color buffer
-	glGenTextures(1, &m_gSpecular);
-	glBindTexture(GL_TEXTURE_2D, m_gSpecular);
+	glGenTextures(1, &m_geometryPassSpecular);
+	glBindTexture(GL_TEXTURE_2D, m_geometryPassSpecular);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, m_gSpecular, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, m_geometryPassSpecular, 0);
 
 	// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
 	unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
 	glDrawBuffers(4, attachments);
 
 	// create and attach depth buffer (renderbuffer)
-	glGenRenderbuffers(1, &m_rbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+	glGenRenderbuffers(1, &m_geometryPassRBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_geometryPassRBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_screenResolution.x, m_screenResolution.y);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_geometryPassRBO);
 
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
 		LogManager::getInstance().printLog("Framebuffer not complete!");
 	}
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, m_gBuffer);
-
+	glBindFramebuffer(GL_FRAMEBUFFER, m_geometryPassBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_geometryPassRBO);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
-	glEnable(GL_TEXTURE_2D);
 
 	//glFrontFace(GL_CCW);
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
+
+	unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+	glDrawBuffers(4, attachments);
 
 	GeometryPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
 }
@@ -539,6 +570,77 @@ void GLRenderingManager::initializeLightPass()
 {
 	// initialize shader
 	LightPassShader::getInstance().init();
+
+	glGenFramebuffers(1, &m_lightPassBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_lightPassBuffer);
+
+	// final color buffer
+	glGenTextures(1, &m_lightPassFinal);
+	glBindTexture(GL_TEXTURE_2D, m_lightPassFinal);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_lightPassFinal, 0);
+
+	// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
+	unsigned int attachments[1] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers(1, attachments);
+
+	// create and attach depth buffer (renderbuffer)
+	glGenRenderbuffers(1, &m_lightPassRBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_lightPassRBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_screenResolution.x, m_screenResolution.y);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_lightPassRBO);
+
+	// finally check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		LogManager::getInstance().printLog("Framebuffer not complete!");
+	}
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, m_lightPassBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_lightPassRBO);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m_geometryPassPosition);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m_geometryPassNormal);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, m_geometryPassAlbedo);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, m_geometryPassSpecular);
+
+	unsigned int attachments[1] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers(1, attachments);
+
+	LightPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+
+	// draw screen rectangle
+	glBindVertexArray(m_screenVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+}
+
+void GLRenderingManager::initializeBillboardPass()
+{
+}
+
+void GLRenderingManager::renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+}
+
+void GLRenderingManager::initializeFinalPass()
+{
+	// initialize shader
+	FinalPassShader::getInstance().init();
 
 	// initialize screen quad
 	m_screenVertices = {
@@ -561,32 +663,23 @@ void GLRenderingManager::initializeLightPass()
 	glBindVertexArray(0);
 }
 
-void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_gPosition);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_gNormal);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, m_gAlbedo);
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, m_gSpecular);
+	FinalPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
 
-	LightPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+	// write to final pass framebuffer
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_lightPassBuffer);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-	//// write to default framebuffer
-	//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gBuffer);
-	//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); 
-	//
-	////// blit to default framebuffer
-	//glBlitFramebuffer(0, 0, m_screenResolution.x, m_screenResolution.y, 0, 0, m_screenResolution.x, m_screenResolution.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//// blit to final pass framebuffer
+	glBlitFramebuffer(0, 0, m_screenResolution.x, m_screenResolution.y, 0, 0, m_screenResolution.x, m_screenResolution.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// draw screen rectangle
 	glBindVertexArray(m_screenVAO);
@@ -626,11 +719,12 @@ bool GLRenderingManager::canDrawDepthBuffer() const
 void GLRenderingManager::initialize()
 {
 	//PhongShader::getInstance().init();
-	BillboardShader::getInstance().init();
-	SkyboxShader::getInstance().init();
-
+	//BillboardPassShader::getInstance().init();
+	//SkyboxShader::getInstance().init();
+	glEnable(GL_TEXTURE_2D);
 	initializeGeometryPass();
 	initializeLightPass();
+	initializeFinalPass();
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
 }
@@ -644,5 +738,3 @@ void GLRenderingManager::shutdown()
 	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
 }
-
-
