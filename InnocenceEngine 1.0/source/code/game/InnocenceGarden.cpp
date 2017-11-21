@@ -14,7 +14,7 @@ void InnocenceGarden::initialize()
 {	
 	rootActor.addChildActor(&playCharacter);
 
-	//rootActor.addChildActor(&skyboxActor);
+	rootActor.addChildActor(&skyboxActor);
 
 	rootActor.addChildActor(&directionalLightActor);
 	rootActor.addChildActor(&pointLightActor1);
@@ -29,10 +29,10 @@ void InnocenceGarden::initialize()
 
 	SceneGraphManager::getInstance().addToInputQueue(&playCharacter.getInputComponent());
 
-	/*testSkyboxComponent.setVisiblilityType(visiblilityType::SKYBOX);
+	testSkyboxComponent.setVisiblilityType(visiblilityType::SKYBOX);
 	testSkyboxComponent.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
 	skyboxActor.addChildComponent(&testSkyboxComponent);
-	SceneGraphManager::getInstance().addToRenderingQueue(&testSkyboxComponent);*/
+	SceneGraphManager::getInstance().addToRenderingQueue(&testSkyboxComponent);
 	
 	directionalLightComponent.setlightType(lightType::DIRECTIONAL);
 	directionalLightComponent.setDirection(glm::vec3(0.5f, 1.0f, 1.0f));
@@ -76,7 +76,7 @@ void InnocenceGarden::initialize()
 	testStaticMeshActor1.addChildComponent(&testStaticMeshComponent1);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testStaticMeshComponent1);
 
-	testStaticMeshComponent2.setVisiblilityType(visiblilityType::GLASSWARE);
+	testStaticMeshComponent2.setVisiblilityType(visiblilityType::STATIC_MESH);
 	testStaticMeshActor2.addChildComponent(&testStaticMeshComponent2);
 	SceneGraphManager::getInstance().addToRenderingQueue(&testStaticMeshComponent2);
 	
@@ -103,16 +103,16 @@ void InnocenceGarden::initialize()
 	AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", testStaticMeshComponent2);
 	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
 
-	/*AssetManager::getInstance().loadTexture({ "skybox2/right.tga",
-		"skybox2/left.tga", "skybox2/top.tga", "skybox2/bottom.tga", "skybox2/back.tga", "skybox2/front.tga" }, testSkyboxComponent);*/
+	AssetManager::getInstance().loadTexture({ "skybox2/right.tga",
+		"skybox2/left.tga", "skybox2/top.tga", "skybox2/bottom.tga", "skybox2/back.tga", "skybox2/front.tga" }, testSkyboxComponent);
 
-	AssetManager::getInstance().loadTexture("lightbulb.png", pointLightBillboardComponent1);
-	AssetManager::getInstance().loadTexture("lightbulb.png", pointLightBillboardComponent2);
-	AssetManager::getInstance().loadTexture("lightbulb.png", pointLightBillboardComponent3);
+	AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent1);
+	AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent2);
+	AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent3);
 
-	AssetManager::getInstance().loadTexture("test.png", landscapeStaticMeshComponent);
-
-
+	AssetManager::getInstance().loadTexture("test_diffuse.png", textureType::DIFFUSE, landscapeStaticMeshComponent);
+	AssetManager::getInstance().loadTexture("test_specular.png", textureType::SPECULAR, landscapeStaticMeshComponent);
+	AssetManager::getInstance().loadTexture("test_normal.png", textureType::NORMALS, landscapeStaticMeshComponent);
 }
 
 void InnocenceGarden::update()

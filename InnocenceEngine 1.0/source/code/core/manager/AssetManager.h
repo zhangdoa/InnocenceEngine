@@ -23,7 +23,7 @@ public:
 	std::string loadShader(const std::string& FileName) const;
 	void importModel(const std::string& fileName) const;
 	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
-	void loadTexture(const std::string& fileName, VisibleComponent& visibleComponent) const;
+	void loadTexture(const std::string& fileName, textureType textureType, VisibleComponent& visibleComponent) const;
 	void loadTexture(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
 private:
 	AssetManager();
