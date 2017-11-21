@@ -20,6 +20,7 @@ struct dirLight {
 
 struct pointLight {
 	vec3 position;
+	float radius;
 	float constantFactor;
     float linearFactor;
     float quadraticFactor;
@@ -58,6 +59,8 @@ vec3 CalcDirLight(dirLight light, vec3 diffuse, vec3 specular, vec3 normal, vec3
 
 vec3 CalcPointLight(pointLight light, vec3 diffuse, vec3 specular, vec3 normal, vec3 viewPos, vec3 fragPos)
 {
+	if(length(light.position - fragPos) < light.radius)
+	{
 	//light direction
 	vec3 normalizedLightDir = normalize(light.position - fragPos);
 
@@ -76,12 +79,17 @@ vec3 CalcPointLight(pointLight light, vec3 diffuse, vec3 specular, vec3 normal, 
 	//attenuation
 	float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constantFactor + light.linearFactor * distance + light.quadraticFactor * (distance * distance)); 
-	
+
 	ambientColor  *= attenuation;
     diffuseColor  *= attenuation;
     specularColor *= attenuation;
 
 	return (ambientColor + diffuseColor + specularColor);
+	}
+	else
+	{
+	return vec3(0.0f, 0.0f, 0.0f);
+	}
 }
 
 void main()

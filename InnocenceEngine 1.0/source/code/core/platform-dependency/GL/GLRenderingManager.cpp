@@ -258,19 +258,26 @@ void BillboardShader::init()
 
 void BillboardShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	//bindShader();
+	bindShader();
 
-	//glm::mat4 m, t, r, p;
+	glm::mat4 p = cameraComponents[0]->getProjectionMatrix();
+	glm::mat4 r = cameraComponents[0]->getRotMatrix();
+	glm::mat4 t = cameraComponents[0]->getPosMatrix();
+	glm::mat4 m = glm::mat4();
 
-	//GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	//GLRenderingManager::getInstance().getCameraRotMatrix(r);
-	//GLRenderingManager::getInstance().getCameraPosMatrix(t);
-	//m = visibleComponent.getParentActor()->caclTransformationMatrix();
-	//// @TODO: multiply with inverse of camera rotation matrix
-	//updateUniform("uni_p", p);
-	//updateUniform("uni_r", r);
-	//updateUniform("uni_t", t);
-	//updateUniform("uni_m", m);
+	// @TODO: multiply with inverse of camera rotation matrix
+	updateUniform("uni_p", p);
+	updateUniform("uni_r", r);
+	updateUniform("uni_t", t);
+
+	for (unsigned int i = 0; i < visibleComponents.size(); i++)
+	{
+		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::BILLBOARD)
+		{
+			updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
+			visibleComponents[i]->draw();
+		}
+	}
 }
 
 SkyboxShader::SkyboxShader()
@@ -293,8 +300,10 @@ void SkyboxShader::init()
 
 void SkyboxShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	glFrontFace(GL_CW);
+	glDepthFunc(GL_LEQUAL);
+
 	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CW);
 	glCullFace(GL_BACK);
 
 	bindShader();
@@ -305,6 +314,17 @@ void SkyboxShader::draw(std::vector<CameraComponent*>& cameraComponents, std::ve
 	r = cameraComponents[0]->getRotMatrix();
 
 	updateUniform("uni_RP", p * r * -1.0f);
+	for (unsigned int i = 0; i < visibleComponents.size(); i++)
+	{
+		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::SKYBOX)
+		{
+			visibleComponents[i]->draw();
+		}
+	}
+
+	glDisable(GL_CULL_FACE);
+
+	glDepthFunc(GL_LESS);
 }
 
 GeometryPassShader::GeometryPassShader()
@@ -346,8 +366,11 @@ void GeometryPassShader::draw(std::vector<CameraComponent*>& cameraComponents, s
 
 	for (unsigned int i = 0; i < visibleComponents.size(); i++)
 	{
-		updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
-		visibleComponents[i]->draw();
+		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::STATIC_MESH)
+		{
+			updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
+			visibleComponents[i]->draw();
+		}
 	}
 }
 
@@ -400,6 +423,7 @@ void LightPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std:
 			std::stringstream ss;
 			ss << i + l_pointLightIndexOffset;
 			updateUniform("uni_pointLights[" + ss.str() + "].position", lightComponents[i]->getParentActor()->getTransform()->getPos());
+			updateUniform("uni_pointLights[" + ss.str() + "].radius", lightComponents[i]->getRadius());
 			updateUniform("uni_pointLights[" + ss.str() + "].constantFactor", lightComponents[i]->getConstantFactor());
 			updateUniform("uni_pointLights[" + ss.str() + "].linearFactor", lightComponents[i]->getLinearFactor());
 			updateUniform("uni_pointLights[" + ss.str() + "].quadraticFactor", lightComponents[i]->getQuadraticFactor());
@@ -419,38 +443,10 @@ GLRenderingManager::~GLRenderingManager()
 
 void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	//switch (visibleComponent.getVisiblilityType())
-	//{
-	//case visiblilityType::INVISIBLE: break;
-	//case visiblilityType::BILLBOARD:
-	//	BillboardShader::getInstance().draw(lightComponents, visibleComponent);
-	//	// update visibleGameEntity's mesh& texture
-	//	visibleComponent.draw();
-	//	break;
-	//case visiblilityType::STATIC_MESH:
-	//	for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
-	//	{
-	//		m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
-	//	}
-	//	// update visibleGameEntity's mesh& texture
-	//	visibleComponent.draw();
-	//	break;
-	//case visiblilityType::SKYBOX:
-	//	glDepthFunc(GL_LEQUAL);
-	//	SkyboxShader::getInstance().draw(lightComponents, visibleComponent);
-	//	// update visibleGameEntity's mesh& texture
-	//	visibleComponent.draw();
-	//	glDepthFunc(GL_LESS);
-	//	break;
-	//case visiblilityType::GLASSWARE:
-	//	for (size_t i = 0; i < m_staticMeshGLShader.size(); i++)
-	//	{
-	//		m_staticMeshGLShader[i]->draw(lightComponents, visibleComponent);
-	//	}
-	//	// update visibleGameEntity's mesh& texture
-	//	visibleComponent.draw();
-	//	break;
-	//}
+	// draw billboard
+	BillboardShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+	// draw skybox
+	SkyboxShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
 }
 
 void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
@@ -468,7 +464,6 @@ void GLRenderingManager::initializeGeometryPass()
 {
 	// initialize shader
 	GeometryPassShader::getInstance().init();
-	LightPassShader::getInstance().init();
 
 	glGenFramebuffers(1, &m_gBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_gBuffer);
@@ -521,7 +516,31 @@ void GLRenderingManager::initializeGeometryPass()
 		LogManager::getInstance().printLog("Framebuffer not complete!");
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
+void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, m_gBuffer);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_CLAMP);
+	glEnable(GL_TEXTURE_2D);
+
+	//glFrontFace(GL_CCW);
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);
+
+	GeometryPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+}
+
+void GLRenderingManager::initializeLightPass()
+{
+	// initialize shader
+	LightPassShader::getInstance().init();
+
+	// initialize screen quad
 	m_screenVertices = {
 		-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
 		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
@@ -540,23 +559,6 @@ void GLRenderingManager::initializeGeometryPass()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
-}
-
-void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
-{
-	glBindFramebuffer(GL_FRAMEBUFFER, m_gBuffer);
-
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_DEPTH_CLAMP);
-	glEnable(GL_TEXTURE_2D);
-
-	//glFrontFace(GL_CCW);
-	//glEnable(GL_CULL_FACE);
-	//glCullFace(GL_BACK);
-
-	GeometryPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
 }
 
 void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
@@ -624,10 +626,11 @@ bool GLRenderingManager::canDrawDepthBuffer() const
 void GLRenderingManager::initialize()
 {
 	//PhongShader::getInstance().init();
-	//BillboardShader::getInstance().init();
-	//SkyboxShader::getInstance().init();
+	BillboardShader::getInstance().init();
+	SkyboxShader::getInstance().init();
 
 	initializeGeometryPass();
+	initializeLightPass();
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
 }

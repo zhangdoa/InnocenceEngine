@@ -12,6 +12,7 @@ public:
 
 	const lightType getLightType();
 	glm::vec3 getDirection() const;
+	float getRadius() const;
 	float getConstantFactor() const;
 	float getLinearFactor() const;
 	float getQuadraticFactor() const;
@@ -21,6 +22,7 @@ public:
 
 	void setlightType(lightType lightType);
 	void setDirection(glm::vec3 direction);
+	void setRadius(float radius);
 	void setConstantFactor(float constantFactor);
 	void setLinearFactor(float linearFactor);
 	void setQuadraticFactor(float quadraticFactor);
@@ -36,6 +38,7 @@ public:
 private:
 	lightType m_lightType = lightType::POINT;
 	glm::vec3 m_direction;
+	float m_radius;
 	float m_constantFactor;
 	float m_linearFactor;
 	float m_quadraticFactor;
