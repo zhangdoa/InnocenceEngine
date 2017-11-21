@@ -1,9 +1,8 @@
 // shadertype=glsl
 #version 330 core
+layout (location = 0) out vec3 finalColor;
 
 in vec2 TexCoords;
-
-out vec4 FragColor;
 
 uniform vec3 uni_viewPos;
 uniform sampler2D m_gPosition;
@@ -101,7 +100,7 @@ void main()
     vec3 Normal = texture(m_gNormal, TexCoords).rgb;
     
 	//final result
-	vec3 finalColor = CalcDirLight(uni_dirLight, Diffuse, Specular, Normal, uni_viewPos, FragPos);
+	finalColor = CalcDirLight(uni_dirLight, Diffuse, Specular, Normal, uni_viewPos, FragPos);
 
 	for(int i = 0; i < NR_POINT_LIGHTS; i++)
     {
@@ -110,6 +109,4 @@ void main()
 
 	//gamma correction
 	finalColor = pow(finalColor, vec3(1.0 / 2.2));
-
-	FragColor = vec4(finalColor, 1.0);
 }

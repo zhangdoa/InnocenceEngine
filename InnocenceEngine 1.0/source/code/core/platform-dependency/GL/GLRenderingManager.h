@@ -66,23 +66,6 @@ private:
 	forwardBlinnPhongShader();
 };
 
-class BillboardShader : public GLShader
-{
-public:
-	~BillboardShader();
-
-	static BillboardShader& getInstance()
-	{
-		static BillboardShader instance;
-		return instance;
-	}
-
-	void init() override;
-	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
-
-private:
-	BillboardShader();
-};
 
 class SkyboxShader : public GLShader
 {
@@ -138,6 +121,42 @@ private:
 	LightPassShader();
 };
 
+class FinalPassShader : public GLShader
+{
+public:
+	~FinalPassShader();
+
+	static FinalPassShader& getInstance()
+	{
+		static FinalPassShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
+
+private:
+	FinalPassShader();
+};
+
+class BillboardPassShader : public GLShader
+{
+public:
+	~BillboardPassShader();
+
+	static BillboardPassShader& getInstance()
+	{
+		static BillboardPassShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
+
+private:
+	BillboardPassShader();
+};
+
 class GLRenderingManager : public IEventManager
 {
 public:
@@ -163,15 +182,20 @@ private:
 
 	glm::vec2 m_screenResolution = glm::vec2();
 
-	GLuint m_gBuffer;
-	GLuint m_gPosition;
-	GLuint m_gNormal;
-	GLuint m_gAlbedo;
-	GLuint m_gSpecular;
-	GLuint m_rbo;
+	GLuint m_geometryPassBuffer;
+	GLuint m_geometryPassPosition;
+	GLuint m_geometryPassNormal;
+	GLuint m_geometryPassAlbedo;
+	GLuint m_geometryPassSpecular;
+	GLuint m_geometryPassRBO;
+
+	GLuint m_lightPassBuffer;
+	GLuint m_lightPassFinal;
+	GLuint m_lightPassRBO;
 
 	GLuint m_screenVAO;
 	GLuint m_screenVBO;
+
 	std::vector<float> m_screenVertices;
 
 	int m_polygonMode = 0;
@@ -185,4 +209,8 @@ private:
 	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 	void initializeLightPass();
 	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+	void initializeBillboardPass();
+	void renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+	void initializeFinalPass();
+	void renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 };
