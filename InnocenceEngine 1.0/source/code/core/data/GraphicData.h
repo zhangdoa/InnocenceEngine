@@ -18,13 +18,18 @@ public:
 	std::vector<unsigned int>& getIntices();
 	void sendDataToGPU();
 	void addTestCube();
+	void addTestSphere();
 	void addTestSkybox();
 	void addTestBillboard();
+
+	void setMeshDrawMethod(meshDrawMethod meshDrawMethod);
+	const meshDrawMethod& getMeshDrawMethod() const;
 
 private:
 	GLMeshData m_GLMeshData;
 	std::vector<GLVertexData> m_vertices;
-	std::vector<unsigned int> m_intices;
+	std::vector<unsigned int> m_indices;
+	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 };
 
 class TextureData

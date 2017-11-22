@@ -4,12 +4,25 @@
 in vec2 TexCoords;
 out vec4 FragColor;
 
-uniform sampler2D finalColor;
+uniform sampler2D uni_finalColor;
 
 void main()
-{       
-	//gamma correction
-	vec3 gammaCorrectedfinalColor = pow(texture(finalColor, TexCoords).rgb, vec3(1.0 / 2.2));
+{  
+	if(texture(uni_finalColor, TexCoords).a == 0.0)
+	{
+	FragColor = vec4(0.2, 0.4, 0.6, 1.0);
+	}
+	else
+	{
+	vec3 finalColor = texture(uni_finalColor, TexCoords).rgb;
+	
+	//HDR to LDR
+	finalColor = finalColor / (finalColor + vec3(1.0));
 
-	FragColor = vec4(gammaCorrectedfinalColor, 1.0);
+	//gamma correction
+	finalColor = pow(finalColor, vec3(1.0 / 2.2));
+
+	FragColor = vec4(finalColor, 1.0);
+	}
+
 }

@@ -1,11 +1,11 @@
 // shadertype=glsl
 #version 330 core
-layout (location = 0) out vec3 m_gPosition;
-layout (location = 1) out vec3 m_gNormal;
-layout (location = 2) out vec3 m_gAlbedo;
-layout (location = 3) out vec3 m_gSpecular;
+layout (location = 0) out vec4 m_gPosition;
+layout (location = 1) out vec4 m_gNormal;
+layout (location = 2) out vec4 m_gAlbedo;
+layout (location = 3) out vec4 m_gSpecular;
 
-in vec3 thefrag_FragPos;
+in vec4 thefrag_FragPos;
 in vec2 thefrag_TexCoord;
 in mat3 TBN;
 
@@ -19,11 +19,11 @@ void main()
     m_gPosition = thefrag_FragPos;
 
     // also store the per-fragment normals into the gbuffer
-	m_gNormal = normalize(normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0) * TBN);
+	m_gNormal = vec4(normalize(normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0) * TBN), 1.0);
 
     // and the diffuse per-fragment color
-    m_gAlbedo.rgb = texture(uni_albedoTexture, thefrag_TexCoord).rgb;
+    m_gAlbedo = texture(uni_albedoTexture, thefrag_TexCoord);
 
     // specular
-    m_gSpecular.rgb = texture(uni_specularTexture, thefrag_TexCoord).rgb;
+    m_gSpecular = texture(uni_specularTexture, thefrag_TexCoord);
 }

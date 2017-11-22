@@ -17,7 +17,7 @@ void MeshData::init()
 
 void MeshData::draw()
 {
-	m_GLMeshData.draw(m_intices);
+	m_GLMeshData.draw(m_indices, m_meshDrawMethod);
 }
 
 void MeshData::shutdown()
@@ -32,12 +32,12 @@ std::vector<GLVertexData>& MeshData::getVertices()
 
 std::vector<unsigned int>& MeshData::getIntices()
 {
-	return m_intices;
+	return m_indices;
 }
 
 void MeshData::sendDataToGPU()
 {
-	m_GLMeshData.sendDataToGPU(m_vertices, m_intices, false);
+	m_GLMeshData.sendDataToGPU(m_vertices, m_indices, false);
 }
 
 void MeshData::addTestCube()
@@ -84,12 +84,59 @@ void MeshData::addTestCube()
 
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
-	m_intices = { 0, 1, 3, 1, 2, 3,
+	m_indices = { 0, 1, 3, 1, 2, 3,
 		4, 5, 0, 5, 1, 0,
 		7, 6, 4, 6, 5, 4,
 		3, 2, 7, 2, 6 ,7,
 		4, 0, 7, 0, 3, 7,
 		1, 5, 2, 5, 6, 2 };
+}
+
+void MeshData::addTestSphere()
+{
+	int X_SEGMENTS = 64;
+	int Y_SEGMENTS = 64;
+	double PI = 3.14159265359;
+
+	for (int y = 0; y <= Y_SEGMENTS; ++y)
+	{
+		for (int x = 0; x <= X_SEGMENTS; ++x)
+		{
+			float xSegment = (float)x / (float)X_SEGMENTS;
+			float ySegment = (float)y / (float)Y_SEGMENTS;
+			double xPos = glm::cos(xSegment * 2.0f * PI) * glm::sin(ySegment * PI);
+			double yPos = glm::cos(ySegment * PI);
+			double zPos = glm::sin(xSegment * 2.0f * PI) * glm::sin(ySegment * PI);
+
+			GLVertexData l_VertexData;
+			l_VertexData.m_pos = glm::vec3(xPos, yPos, zPos);
+			l_VertexData.m_texCoord = glm::vec2(xSegment, ySegment);
+			l_VertexData.m_normal = glm::vec3(xPos, yPos, zPos);
+			m_vertices.emplace_back(l_VertexData);
+		}
+	}
+
+	bool oddRow = false;
+	for (int y = 0; y < Y_SEGMENTS; ++y)
+	{
+		if (!oddRow) // even rows: y == 0, y == 2; and so on
+		{
+			for (int x = 0; x <= X_SEGMENTS; ++x)
+			{
+				m_indices.push_back(y       * (X_SEGMENTS + 1) + x);
+				m_indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+			}
+		}
+		else
+		{
+			for (int x = X_SEGMENTS; x >= 0; --x)
+			{
+				m_indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+				m_indices.push_back(y       * (X_SEGMENTS + 1) + x);
+			}
+		}
+		oddRow = !oddRow;
+	}
 }
 
 void MeshData::addTestSkybox()
@@ -120,7 +167,7 @@ void MeshData::addTestSkybox()
 
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
-	m_intices = { 0, 1, 3, 1, 2, 3,
+	m_indices = { 0, 1, 3, 1, 2, 3,
 		4, 5, 0, 5, 1, 0,
 		7, 6, 4, 6, 5, 4,
 		3, 2, 7, 2, 6 ,7,
@@ -151,7 +198,17 @@ void MeshData::addTestBillboard()
 	l_VertexData_4.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
 
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4 };
-	m_intices = { 0, 1, 3, 1, 2, 3 };
+	m_indices = { 0, 1, 3, 1, 2, 3 };
+}
+
+void MeshData::setMeshDrawMethod(meshDrawMethod meshDrawMethod)
+{
+	m_meshDrawMethod = meshDrawMethod;
+}
+
+const meshDrawMethod & MeshData::getMeshDrawMethod() const
+{
+	return m_meshDrawMethod;
 }
 
 TextureData::TextureData()

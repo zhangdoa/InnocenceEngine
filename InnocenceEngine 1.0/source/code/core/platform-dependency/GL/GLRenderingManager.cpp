@@ -151,92 +151,6 @@ inline void GLShader::detachShader(int shader) const
 	glDeleteShader(shader);
 }
 
-forwardBlinnPhongShader::forwardBlinnPhongShader()
-{
-}
-
-forwardBlinnPhongShader::~forwardBlinnPhongShader()
-{
-}
-
-void forwardBlinnPhongShader::init()
-{
-	initProgram();
-	addShader(GLShader::VERTEX, "GL3.3/phongVertex.sf");
-	setAttributeLocation(0, "in_Position");
-	setAttributeLocation(1, "in_TexCoord");
-	setAttributeLocation(2, "in_Normal");
-	setAttributeLocation(3, "in_Tangent");
-	setAttributeLocation(4, "in_Bitangent");
-
-	addShader(GLShader::FRAGMENT, "GL3.3/phongFragment.sf");
-	bindShader();
-	updateUniform("uni_skyboxTexture", 0);
-	updateUniform("uni_albedoTexture", 1);
-	updateUniform("uni_specularTexture", 2);
-	updateUniform("uni_normalTexture", 3);
-}
-
-void forwardBlinnPhongShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
-{
-	//glFrontFace(GL_CCW);
-	//glEnable(GL_CULL_FACE);
-	//glCullFace(GL_BACK);
-
-	//bindShader();
-
-	//glm::mat4 m, t, r, p;
-	//GLRenderingManager::getInstance().getCameraProjectionMatrix(p);
-	//GLRenderingManager::getInstance().getCameraRotMatrix(r);
-	//GLRenderingManager::getInstance().getCameraPosMatrix(t);
-	//m = visibleComponent.getParentActor()->caclTransformationMatrix();
-
-	//glm::vec3 cameraPos;
-	//GLRenderingManager::getInstance().getCameraPos(cameraPos);
-
-	//updateUniform("uni_p", p);
-	//updateUniform("uni_r", r);
-	//updateUniform("uni_t", t);
-	//updateUniform("uni_m", m);
-
-	//int l_pointLightIndexOffset = 0;
-	//for (size_t i = 0; i < lightComponents.size(); i++)
-	//{
-	//	//@TODO: generalization
-
-	//	updateUniform("uni_viewPos", cameraPos);
-
-	//	if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
-	//	{
-	//		l_pointLightIndexOffset -= 1;
-	//		updateUniform("uni_dirLight.direction", lightComponents[i]->getDirection());
-	//		updateUniform("uni_dirLight.ambientColor", lightComponents[i]->getAmbientColor());
-	//		updateUniform("uni_dirLight.diffuseColor", lightComponents[i]->getDiffuseColor());
-	//		updateUniform("uni_dirLight.specularColor", lightComponents[i]->getSpecularColor());
-	//	}
-	//	else if (lightComponents[i]->getLightType() == lightType::POINT)
-	//	{
-	//		std::stringstream ss;
-	//		ss << i + l_pointLightIndexOffset;
-	//		updateUniform("uni_pointLights[" + ss.str() + "].position", lightComponents[i]->getParentActor()->getTransform()->getPos());
-	//		updateUniform("uni_pointLights[" + ss.str() + "].constantFactor", lightComponents[i]->getConstantFactor());
-	//		updateUniform("uni_pointLights[" + ss.str() + "].linearFactor", lightComponents[i]->getLinearFactor());
-	//		updateUniform("uni_pointLights[" + ss.str() + "].quadraticFactor", lightComponents[i]->getQuadraticFactor());
-	//		updateUniform("uni_pointLights[" + ss.str() + "].ambientColor", lightComponents[i]->getAmbientColor());
-	//		updateUniform("uni_pointLights[" + ss.str() + "].diffuseColor", lightComponents[i]->getDiffuseColor());
-	//		updateUniform("uni_pointLights[" + ss.str() + "].specularColor", lightComponents[i]->getSpecularColor());
-	//	}
-	//}
-	//if (visibleComponent.getVisiblilityType() == visiblilityType::GLASSWARE)
-	//{
-	//	updateUniform("uni_isGlassware", true);
-	//}
-	//else
-	//{
-	//	updateUniform("uni_isGlassware", false);
-	//}
-}
-
 BillboardPassShader::BillboardPassShader()
 {
 }
@@ -314,6 +228,7 @@ void SkyboxShader::draw(std::vector<CameraComponent*>& cameraComponents, std::ve
 	r = cameraComponents[0]->getRotMatrix();
 
 	updateUniform("uni_RP", p * r * -1.0f);
+
 	for (unsigned int i = 0; i < visibleComponents.size(); i++)
 	{
 		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::SKYBOX)
@@ -451,7 +366,7 @@ void FinalPassShader::init()
 
 	addShader(GLShader::FRAGMENT, "GL3.3/finalPassFragment.sf");
 	bindShader();
-	updateUniform("finalColor", 0);
+	updateUniform("uni_finalColor", 0);
 }
 
 void FinalPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
@@ -499,7 +414,7 @@ void GLRenderingManager::initializeGeometryPass()
 	// position color buffer
 	glGenTextures(1, &m_geometryPassPositionTexture);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassPositionTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_geometryPassPositionTexture, 0);
@@ -507,7 +422,7 @@ void GLRenderingManager::initializeGeometryPass()
 	// normal color buffer
 	glGenTextures(1, &m_geometryPassNormalTexture);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassNormalTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_geometryPassNormalTexture, 0);
@@ -515,7 +430,7 @@ void GLRenderingManager::initializeGeometryPass()
 	// albedo color buffer
 	glGenTextures(1, &m_geometryPassAlbedoTexture);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassAlbedoTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_geometryPassAlbedoTexture, 0);
@@ -523,7 +438,7 @@ void GLRenderingManager::initializeGeometryPass()
 	// specular color buffer
 	glGenTextures(1, &m_geometryPassSpecularTexture);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassSpecularTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, m_geometryPassSpecularTexture, 0);
@@ -556,9 +471,9 @@ void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& camer
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
 
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
+	//glEnable(GL_CULL_FACE);
+	//glFrontFace(GL_CCW);
+	//glCullFace(GL_BACK);
 
 	GeometryPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
 }
@@ -574,7 +489,7 @@ void GLRenderingManager::initializeLightPass()
 	// final color buffer
 	glGenTextures(1, &m_lightPassFinalTexture);
 	glBindTexture(GL_TEXTURE_2D, m_lightPassFinalTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_lightPassFinalTexture, 0);
