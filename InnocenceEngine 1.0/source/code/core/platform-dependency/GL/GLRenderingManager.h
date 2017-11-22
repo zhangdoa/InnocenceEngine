@@ -182,20 +182,22 @@ private:
 
 	glm::vec2 m_screenResolution = glm::vec2();
 
-	GLuint m_geometryPassBuffer;
-	GLuint m_geometryPassPosition;
-	GLuint m_geometryPassNormal;
-	GLuint m_geometryPassAlbedo;
-	GLuint m_geometryPassSpecular;
+	GLuint m_geometryPassFBO;
+	GLuint m_geometryPassPositionTexture;
+	GLuint m_geometryPassNormalTexture;
+	GLuint m_geometryPassAlbedoTexture;
+	GLuint m_geometryPassSpecularTexture;
 	GLuint m_geometryPassRBO;
 
-	GLuint m_lightPassBuffer;
-	GLuint m_lightPassFinal;
+	GLuint m_lightPassFBO;
+	GLuint m_lightPassFinalTexture;
 	GLuint m_lightPassRBO;
+	GLuint m_lightPassVAO;
+	GLuint m_lightPassVBO;
+	std::vector<float> m_lightPassVertices;
 
 	GLuint m_screenVAO;
 	GLuint m_screenVBO;
-
 	std::vector<float> m_screenVertices;
 
 	int m_polygonMode = 0;

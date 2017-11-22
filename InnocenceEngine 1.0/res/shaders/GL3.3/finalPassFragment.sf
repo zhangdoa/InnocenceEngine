@@ -7,6 +7,9 @@ out vec4 FragColor;
 uniform sampler2D finalColor;
 
 void main()
-{             
-	FragColor = vec4(texture(finalColor, TexCoords).rgb, 1.0);
+{       
+	//gamma correction
+	vec3 gammaCorrectedfinalColor = pow(texture(finalColor, TexCoords).rgb, vec3(1.0 / 2.2));
+
+	FragColor = vec4(gammaCorrectedfinalColor, 1.0);
 }

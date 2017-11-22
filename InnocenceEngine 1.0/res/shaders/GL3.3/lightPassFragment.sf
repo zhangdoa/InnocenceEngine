@@ -106,7 +106,4 @@ void main()
     {
 		finalColor += CalcPointLight(uni_pointLights[i], Diffuse, Specular, Normal, uni_viewPos, FragPos);  
 	}
-
-	//gamma correction
-	finalColor = pow(finalColor, vec3(1.0 / 2.2));
 }
