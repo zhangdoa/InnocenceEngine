@@ -48,25 +48,6 @@ private:
 	unsigned int m_program;
 };
 
-class forwardBlinnPhongShader : public GLShader
-{
-public:
-	~forwardBlinnPhongShader();
-
-	static forwardBlinnPhongShader& getInstance()
-	{
-		static forwardBlinnPhongShader instance;
-		return instance;
-	}
-
-	void init() override;
-	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
-
-private:
-	forwardBlinnPhongShader();
-};
-
-
 class SkyboxShader : public GLShader
 {
 public:

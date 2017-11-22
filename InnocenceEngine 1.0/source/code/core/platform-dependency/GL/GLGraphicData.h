@@ -3,6 +3,7 @@
 
 enum class textureType { INVISIBLE, DIFFUSE, SPECULAR, AMBIENT, EMISSIVE, HEIGHT, NORMALS, SHININESS, OPACITY, DISPLACEMENT, LIGHTMAP, REFLECTION, CUBEMAP };
 enum class textureWrapMethod { CLAMPTOEDGE, REPEAT };
+enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP};
 
 struct GLVertexData
 {
@@ -20,7 +21,7 @@ public:
 	~GLMeshData();
 
 	void init();
-	void draw(std::vector<unsigned int>& indices);
+	void draw(std::vector<unsigned int>& indices, meshDrawMethod meshDrawMethod);
 	void shutdown();
 
 	void sendDataToGPU(std::vector<GLVertexData>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
