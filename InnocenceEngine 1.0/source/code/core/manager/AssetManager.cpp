@@ -250,7 +250,17 @@ void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material
 
 		stbi_set_flip_vertically_on_load(true);
 
-		auto *data = stbi_load(("../res/textures/" + fileName + "//" + l_localPath).c_str(), &width, &height, &nrChannels, 0);
+		stbi_uc* data;
+
+		if (loadedTexture.find(std::string(fileName + "//" + l_localPath)) != loadedTexture.end())
+		{
+			data = loadedTexture.find(std::string(fileName + "//" + l_localPath))->second;
+		}
+		else
+		{
+			data = stbi_load(("../res/textures/" + fileName + "//" + l_localPath).c_str(), &width, &height, &nrChannels, 0);
+			// @TODO: insert data to loaded texture map
+		}
 		if (data)
 		{
 			visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData()[visibleComponent.getGraphicData()[visibleComponent.getGraphicData().size() - 1].getTextureData().size() - 1].init();
@@ -261,7 +271,7 @@ void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material
 		{
 			LogManager::getInstance().printLog("ERROR:STBI: Failed to load texture: " + l_localPath);
 		}
-		stbi_image_free(data);
+		//stbi_image_free(data);
 	}
 }
 
@@ -285,7 +295,7 @@ void AssetManager::loadTexture(const std::string & fileName, textureType texture
 	{
 		LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
 	}
-	stbi_image_free(data);
+	//stbi_image_free(data);
 }
 
 void AssetManager::loadTexture(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
@@ -310,6 +320,6 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 		{
 			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + ("../res/textures/" + fileName[i]));
 		}
-		stbi_image_free(data);
+		//stbi_image_free(data);
 	}
 }

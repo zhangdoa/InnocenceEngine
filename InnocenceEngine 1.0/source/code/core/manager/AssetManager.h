@@ -37,5 +37,7 @@ private:
 	void processAssimpMesh(aiMesh* mesh, MeshData& meshData) const;
 	void processAssimpMaterial(const std::string& fileName, aiMaterial* material, VisibleComponent & visibleComponent) const;
 	void loadTexture(const std::string& fileName, aiMaterial* material, aiTextureType aiTextureType, VisibleComponent & visibleComponent) const;
+
+	std::map<std::string, unsigned char*> loadedTexture;
 };
 
