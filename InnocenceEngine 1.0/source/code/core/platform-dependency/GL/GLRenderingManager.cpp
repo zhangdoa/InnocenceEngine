@@ -242,31 +242,31 @@ void SkyboxShader::draw(std::vector<CameraComponent*>& cameraComponents, std::ve
 	glDepthFunc(GL_LESS);
 }
 
-GeometryPassShader::GeometryPassShader()
+GeometryPassBlinnPhongShader::GeometryPassBlinnPhongShader()
 {
 }
-GeometryPassShader::~GeometryPassShader()
+GeometryPassBlinnPhongShader::~GeometryPassBlinnPhongShader()
 {
 }
 
-void GeometryPassShader::init()
+void GeometryPassBlinnPhongShader::init()
 {
 	initProgram();
-	addShader(GLShader::VERTEX, "GL3.3/geometryPassVertex.sf");
+	addShader(GLShader::VERTEX, "GL3.3/geometryPassBlinnPhongVertex.sf");
 	setAttributeLocation(0, "in_Position");
 	setAttributeLocation(1, "in_TexCoord");
 	setAttributeLocation(2, "in_Normal");
 	setAttributeLocation(3, "in_Tangent");
 	setAttributeLocation(4, "in_Bitangent");
 
-	addShader(GLShader::FRAGMENT, "GL3.3/geometryPassFragment.sf");
+	addShader(GLShader::FRAGMENT, "GL3.3/geometryPassBlinnPhongFragment.sf");
 	bindShader();
 	updateUniform("uni_albedoTexture", 0);
 	updateUniform("uni_specularTexture", 1);
 	updateUniform("uni_normalTexture", 2);
 }
 
-void GeometryPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GeometryPassBlinnPhongShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	bindShader();
 
@@ -289,22 +289,22 @@ void GeometryPassShader::draw(std::vector<CameraComponent*>& cameraComponents, s
 	}
 }
 
-LightPassShader::LightPassShader()
+LightPassBlinnPhongShader::LightPassBlinnPhongShader()
 {
 }
 
-LightPassShader::~LightPassShader()
+LightPassBlinnPhongShader::~LightPassBlinnPhongShader()
 {
 }
 
-void LightPassShader::init()
+void LightPassBlinnPhongShader::init()
 {
 	initProgram();
-	addShader(GLShader::VERTEX, "GL3.3/lightPassVertex.sf");
+	addShader(GLShader::VERTEX, "GL3.3/lightPassBlinnPhongVertex.sf");
 	setAttributeLocation(0, "in_Position");
 	setAttributeLocation(1, "in_TexCoord");
 
-	addShader(GLShader::FRAGMENT, "GL3.3/lightPassFragment.sf");
+	addShader(GLShader::FRAGMENT, "GL3.3/lightPassBlinnPhongFragment.sf");
 	bindShader();
 	updateUniform("m_gPosition", 0);
 	updateUniform("m_gNormal", 1);
@@ -312,7 +312,119 @@ void LightPassShader::init()
 	updateUniform("m_gSpecular", 3);
 }
 
-void LightPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void LightPassBlinnPhongShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	bindShader();
+
+	glm::vec3 cameraPos = cameraComponents[0]->getParentActor()->getTransform()->getPos();
+
+	int l_pointLightIndexOffset = 0;
+	for (size_t i = 0; i < lightComponents.size(); i++)
+	{
+		//@TODO: generalization
+
+		updateUniform("uni_viewPos", cameraPos);
+
+		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
+		{
+			l_pointLightIndexOffset -= 1;
+			updateUniform("uni_dirLight.direction", lightComponents[i]->getDirection());
+			updateUniform("uni_dirLight.ambientColor", lightComponents[i]->getAmbientColor());
+			updateUniform("uni_dirLight.diffuseColor", lightComponents[i]->getDiffuseColor());
+			updateUniform("uni_dirLight.specularColor", lightComponents[i]->getSpecularColor());
+		}
+		else if (lightComponents[i]->getLightType() == lightType::POINT)
+		{
+			std::stringstream ss;
+			ss << i + l_pointLightIndexOffset;
+			updateUniform("uni_pointLights[" + ss.str() + "].position", lightComponents[i]->getParentActor()->getTransform()->getPos());
+			updateUniform("uni_pointLights[" + ss.str() + "].radius", lightComponents[i]->getRadius());
+			updateUniform("uni_pointLights[" + ss.str() + "].constantFactor", lightComponents[i]->getConstantFactor());
+			updateUniform("uni_pointLights[" + ss.str() + "].linearFactor", lightComponents[i]->getLinearFactor());
+			updateUniform("uni_pointLights[" + ss.str() + "].quadraticFactor", lightComponents[i]->getQuadraticFactor());
+			updateUniform("uni_pointLights[" + ss.str() + "].ambientColor", lightComponents[i]->getAmbientColor());
+			updateUniform("uni_pointLights[" + ss.str() + "].diffuseColor", lightComponents[i]->getDiffuseColor());
+			updateUniform("uni_pointLights[" + ss.str() + "].specularColor", lightComponents[i]->getSpecularColor());
+		}
+	}
+}
+
+GeometryPassPBSShader::GeometryPassPBSShader()
+{
+}
+
+GeometryPassPBSShader::~GeometryPassPBSShader()
+{
+}
+
+void GeometryPassPBSShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/geometryPassPBSVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	setAttributeLocation(1, "in_TexCoord");
+	setAttributeLocation(2, "in_Normal");
+	setAttributeLocation(3, "in_Tangent");
+	setAttributeLocation(4, "in_Bitangent");
+
+	addShader(GLShader::FRAGMENT, "GL3.3/geometryPassPBSFragment.sf");
+	bindShader();
+	updateUniform("uni_normalTexture", 0);
+	updateUniform("uni_albedoTexture", 1);
+	updateUniform("uni_metallicTexture", 2);
+	updateUniform("uni_roughnessTexture", 3);
+	updateUniform("uni_aoTexture", 4);
+}
+
+void GeometryPassPBSShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	bindShader();
+
+	glm::mat4 p = cameraComponents[0]->getProjectionMatrix();
+	glm::mat4 r = cameraComponents[0]->getRotMatrix();
+	glm::mat4 t = cameraComponents[0]->getPosMatrix();
+	glm::mat4 m = glm::mat4();
+
+	updateUniform("uni_p", p);
+	updateUniform("uni_r", r);
+	updateUniform("uni_t", t);
+
+	for (unsigned int i = 0; i < visibleComponents.size(); i++)
+	{
+		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::STATIC_MESH)
+		{
+			updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
+			visibleComponents[i]->draw();
+		}
+	}
+}
+
+LightPassPBSShader::LightPassPBSShader()
+{
+}
+
+LightPassPBSShader::~LightPassPBSShader()
+{
+}
+
+void LightPassPBSShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/lightPassPBSVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	setAttributeLocation(1, "in_TexCoord");
+
+	addShader(GLShader::FRAGMENT, "GL3.3/lightPassPBSFragment.sf");
+	bindShader();
+	updateUniform("m_gPosition", 0);
+	updateUniform("m_gNormal", 1);
+	updateUniform("m_gAlbedo", 2);
+	updateUniform("m_gSpecular", 3);
+	updateUniform("m_gAlbedo", 4);
+	updateUniform("m_gSpecular", 5);
+}
+
+void LightPassPBSShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	bindShader();
 
@@ -406,7 +518,7 @@ void GLRenderingManager::setScreenResolution(glm::vec2 screenResolution)
 void GLRenderingManager::initializeGeometryPass()
 {
 	// initialize shader
-	GeometryPassShader::getInstance().init();
+	GeometryPassBlinnPhongShader::getInstance().init();
 
 	glGenFramebuffers(1, &m_geometryPassFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_geometryPassFBO);
@@ -475,13 +587,13 @@ void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& camer
 	//glFrontFace(GL_CCW);
 	//glCullFace(GL_BACK);
 
-	GeometryPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+	GeometryPassBlinnPhongShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
 }
 
 void GLRenderingManager::initializeLightPass()
 {
 	// initialize shader
-	LightPassShader::getInstance().init();
+	LightPassBlinnPhongShader::getInstance().init();
 
 	glGenFramebuffers(1, &m_lightPassFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_lightPassFBO);
@@ -552,7 +664,7 @@ void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraCo
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassSpecularTexture);
 
 
-	LightPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+	LightPassBlinnPhongShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
 
 	// draw light pass rectangle
 	glBindVertexArray(m_lightPassVAO);
@@ -664,3 +776,4 @@ void GLRenderingManager::shutdown()
 	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
 }
+

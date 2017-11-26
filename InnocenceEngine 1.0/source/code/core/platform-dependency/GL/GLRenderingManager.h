@@ -66,14 +66,14 @@ private:
 	SkyboxShader();
 };
 
-class GeometryPassShader : public GLShader
+class GeometryPassBlinnPhongShader : public GLShader
 {
 public:
-	~GeometryPassShader();
+	~GeometryPassBlinnPhongShader();
 
-	static GeometryPassShader& getInstance()
+	static GeometryPassBlinnPhongShader& getInstance()
 	{
-		static GeometryPassShader instance;
+		static GeometryPassBlinnPhongShader instance;
 		return instance;
 	}
 
@@ -81,17 +81,17 @@ public:
 	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
 
 private:
-	GeometryPassShader();
+	GeometryPassBlinnPhongShader();
 };
 
-class LightPassShader : public GLShader
+class LightPassBlinnPhongShader : public GLShader
 {
 public:
-	~LightPassShader();
+	~LightPassBlinnPhongShader();
 
-	static LightPassShader& getInstance()
+	static LightPassBlinnPhongShader& getInstance()
 	{
-		static LightPassShader instance;
+		static LightPassBlinnPhongShader instance;
 		return instance;
 	}
 
@@ -99,7 +99,43 @@ public:
 	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
 
 private:
-	LightPassShader();
+	LightPassBlinnPhongShader();
+};
+
+class GeometryPassPBSShader : public GLShader
+{
+public:
+	~GeometryPassPBSShader();
+
+	static GeometryPassPBSShader& getInstance()
+	{
+		static GeometryPassPBSShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
+
+private:
+	GeometryPassPBSShader();
+};
+
+class LightPassPBSShader : public GLShader
+{
+public:
+	~LightPassPBSShader();
+
+	static LightPassPBSShader& getInstance()
+	{
+		static LightPassPBSShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents) override;
+
+private:
+	LightPassPBSShader();
 };
 
 class FinalPassShader : public GLShader

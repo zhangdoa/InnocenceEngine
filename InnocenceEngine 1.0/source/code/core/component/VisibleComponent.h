@@ -11,6 +11,7 @@ public:
 	void draw();
 	const visiblilityType& getVisiblilityType() const;
 	void setVisiblilityType(visiblilityType visiblilityType);
+
 	const textureWrapMethod& getTextureWrapMethod() const;
 	void setTextureWrapMethod(textureWrapMethod textureWrapMethod);
 
