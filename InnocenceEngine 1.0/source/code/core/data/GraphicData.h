@@ -17,8 +17,8 @@ public:
 	std::vector<GLVertexData>& getVertices();
 	std::vector<unsigned int>& getIntices();
 	void sendDataToGPU();
-	void addTestCube();
-	void addTestSphere();
+	void addUnitCube();
+	void addUnitSphere();
 	void addTestSkybox();
 	void addTestBillboard();
 

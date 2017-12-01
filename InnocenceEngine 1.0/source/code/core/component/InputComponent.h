@@ -28,14 +28,6 @@ private:
 	void rotateAroundXAxis(float offset);
 	void rotateAroundYAxis(float offset);
 
-	int l_mouseRightResult = 0;
-
-	int l_ketEscapeResult = 0;
-	int l_keyF1Result = 0;
-	int l_oldKeyF1Result = 0;
-	int l_keyF2Result = 0;
-	int l_oldKeyF2Result = 0;
-
 	std::multimap<int, std::function<void()>> m_keyboardInputCallbackImpl;
 	std::multimap<int, std::function<void(float)>> m_mouseMovementCallbackImpl;
 
