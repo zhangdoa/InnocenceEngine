@@ -40,7 +40,7 @@ void MeshData::sendDataToGPU()
 	m_GLMeshData.sendDataToGPU(m_vertices, m_indices, false);
 }
 
-void MeshData::addTestCube()
+void MeshData::addUnitCube()
 {
 	GLVertexData l_VertexData_1;
 	l_VertexData_1.m_pos = glm::vec3(0.5f, 0.5f, 0.5f);
@@ -92,7 +92,7 @@ void MeshData::addTestCube()
 		1, 5, 2, 5, 6, 2 };
 }
 
-void MeshData::addTestSphere()
+void MeshData::addUnitSphere()
 {
 	int X_SEGMENTS = 64;
 	int Y_SEGMENTS = 64;
