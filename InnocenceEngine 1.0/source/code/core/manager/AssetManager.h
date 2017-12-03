@@ -1,6 +1,7 @@
 #pragma once
 #include "../interface/IEventManager.h"
 #include "../manager/LogManager.h"
+#include "../manager/graphic/RenderingManager.h"
 #include "../data/GraphicData.h"
 #include "../component/VisibleComponent.h"
 
@@ -25,6 +26,10 @@ public:
 	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
 	void loadTexture(const std::string& fileName, textureType textureType, VisibleComponent& visibleComponent) const;
 	void loadTexture(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
+
+	void addUnitCube(VisibleComponent& visibleComponent) const;
+	void addUnitSphere(VisibleComponent& visibleComponent) const;
+
 private:
 	AssetManager();
 
@@ -34,7 +39,7 @@ private:
 
 	void loadModelImpl(const std::string& fileName, VisibleComponent& visibleComponent);
 	void processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, VisibleComponent & visibleComponent) const;
-	void processAssimpMesh(aiMesh* mesh, MeshData& meshData) const;
+	void processAssimpMesh(aiMesh* mesh, VisibleComponent & visibleComponent) const;
 	void processAssimpMaterial(const std::string& fileName, aiMaterial* material, VisibleComponent & visibleComponent) const;
 	void loadTexture(const std::string& fileName, aiMaterial* material, aiTextureType aiTextureType, VisibleComponent & visibleComponent) const;
 

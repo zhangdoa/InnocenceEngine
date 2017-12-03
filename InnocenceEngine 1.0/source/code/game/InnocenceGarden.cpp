@@ -66,8 +66,6 @@ void InnocenceGarden::initialize()
 	pointLightActor3.addChildComponent(&pointLightBillboardComponent3);
 	SceneGraphManager::getInstance().addToRenderingQueue(&pointLightBillboardComponent3);
 
-	landscapeStaticMeshComponent.addGraphicData();
-	landscapeStaticMeshComponent.getGraphicData()[0].getMeshData().addUnitCube();
 	landscapeStaticMeshComponent.setVisiblilityType(visiblilityType::STATIC_MESH);
 	landscapeActor.addChildComponent(&landscapeStaticMeshComponent);
 	SceneGraphManager::getInstance().addToRenderingQueue(&landscapeStaticMeshComponent);
@@ -150,9 +148,7 @@ void InnocenceGarden::initSpheres()
 {
 	for (int i = 0; i < 8; i++)
 	{
-		sphereComponents[i].addGraphicData();
-		sphereComponents[i].getGraphicData()[0].getMeshData().addUnitSphere();
-		sphereComponents[i].getGraphicData()[0].getMeshData().setMeshDrawMethod(meshDrawMethod::TRIANGLE_STRIP);
+		sphereComponents[i].setMeshDrawMethod(meshDrawMethod::TRIANGLE_STRIP);
 		sphereComponents[i].setVisiblilityType(visiblilityType::STATIC_MESH);
 
 		rootActor.addChildActor(&sphereActors[i]);
