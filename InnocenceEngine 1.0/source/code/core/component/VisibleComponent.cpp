@@ -13,10 +13,6 @@ VisibleComponent::~VisibleComponent()
 
 void VisibleComponent::draw()
 {
-	for (size_t i = 0; i < m_graphicData.size(); i++)
-	{
-		m_graphicData[i].draw();
-	}
 }
 
 const visiblilityType & VisibleComponent::getVisiblilityType() const
@@ -29,6 +25,16 @@ void VisibleComponent::setVisiblilityType(visiblilityType visiblilityType)
 	m_visiblilityType = visiblilityType;
 }
 
+const meshDrawMethod & VisibleComponent::getMeshDrawMethod() const
+{
+	return m_meshDrawMethod;
+}
+
+void VisibleComponent::setMeshDrawMethod(meshDrawMethod meshDrawMethod)
+{
+	m_meshDrawMethod = meshDrawMethod;
+}
+
 const textureWrapMethod & VisibleComponent::getTextureWrapMethod() const
 {
 	return m_textureWrapMethod;
@@ -39,32 +45,24 @@ void VisibleComponent::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
 	m_textureWrapMethod = textureWrapMethod;
 }
 
-void VisibleComponent::addGraphicData()
+void VisibleComponent::addMeshData(MeshData * meshData)
 {
-	GraphicData newGraphicData;
-	m_graphicData.emplace_back(newGraphicData);
+	m_meshDatas.emplace_back(meshData);
 }
 
-std::vector<GraphicData>& VisibleComponent::getGraphicData()
+void VisibleComponent::addTextureData(TextureData * textureData)
 {
-	return m_graphicData;
+	m_textureDatas.emplace_back(textureData);
 }
+
 
 void VisibleComponent::initialize()
 {
 	if (m_visiblilityType == visiblilityType::SKYBOX)
 	{
-		addGraphicData();
 	}
 	if (m_visiblilityType == visiblilityType::BILLBOARD)
 	{
-		addGraphicData();
-	}
-	for (size_t i = 0; i < m_graphicData.size(); i++)
-	{
-		m_graphicData[i].setVisiblilityType(m_visiblilityType);
-		m_graphicData[i].setTextureWrapMethod(m_textureWrapMethod);
-		m_graphicData[i].init();
 	}
 }
 
@@ -75,8 +73,4 @@ void VisibleComponent::update()
 
 void VisibleComponent::shutdown()
 {
-	for (auto i : m_graphicData)
-	{
-		i.shutdown();
-	}
 }

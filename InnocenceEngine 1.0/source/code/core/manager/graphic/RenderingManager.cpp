@@ -30,6 +30,38 @@ void RenderingManager::toggleDepthBufferVisualizer()
 	GLRenderingManager::getInstance().toggleDepthBufferVisualizer();
 }
 
+void RenderingManager::addMeshData()
+{
+	MeshData newMeshData;
+	m_meshDatas.emplace_back(newMeshData);
+}
+
+void RenderingManager::addTextureData()
+{
+	TextureData newTextureData;
+	m_textureDatas.emplace_back(newTextureData);
+}
+
+std::vector<MeshData>& RenderingManager::getMeshData()
+{
+	return m_meshDatas;
+}
+
+std::vector<TextureData>& RenderingManager::getTextureData()
+{
+	return m_textureDatas;
+}
+
+MeshData & RenderingManager::getLastMeshData()
+{
+	return m_meshDatas[m_meshDatas.size() - 1];
+}
+
+TextureData & RenderingManager::getLastTextureData()
+{
+	return m_textureDatas[m_textureDatas.size() - 1];
+}
+
 void RenderingManager::initialize()
 {
 
