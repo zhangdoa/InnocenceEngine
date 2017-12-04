@@ -95,14 +95,17 @@ void InnocenceGarden::initialize()
 
 	initSpheres();
 
-	rootActor.excute(executeMessage::INITIALIZE);
-
 	AssetManager::getInstance().importModel("nanosuit/nanosuit.obj");	
 	//AssetManager::getInstance().importModel("deer.obj");
 
-	AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent1);
-	AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent2);
+	//AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent1);
+	//AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent2);
 	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
+	AssetManager::getInstance().addUnitSkybox(skyboxComponent);
+	AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent1);
+	AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent2);
+	AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent3);
+	AssetManager::getInstance().addUnitCube(landscapeStaticMeshComponent);
 
 	AssetManager::getInstance().loadTexture({ "skybox2/right.tga",
 		"skybox2/left.tga", "skybox2/top.tga", "skybox2/bottom.tga", "skybox2/back.tga", "skybox2/front.tga" }, skyboxComponent);
@@ -116,6 +119,8 @@ void InnocenceGarden::initialize()
 	AssetManager::getInstance().loadTexture("test_normal.png", textureType::NORMALS, landscapeStaticMeshComponent);
 
 	loadTextureForSpheres();
+
+	rootActor.excute(executeMessage::INITIALIZE);
 }
 
 void InnocenceGarden::update()
@@ -146,8 +151,12 @@ void InnocenceGarden::shutdown()
 
 void InnocenceGarden::initSpheres()
 {
-	for (int i = 0; i < 8; i++)
+	for (auto i = 0; i < sphereComponents.size(); i++)
 	{
+		BaseActor newBaseActor;
+		sphereActors.emplace_back(newBaseActor);
+		VisibleComponent newVisibleComponent;
+		sphereComponents.emplace_back(newVisibleComponent);
 		sphereComponents[i].setMeshDrawMethod(meshDrawMethod::TRIANGLE_STRIP);
 		sphereComponents[i].setVisiblilityType(visiblilityType::STATIC_MESH);
 
@@ -157,6 +166,8 @@ void InnocenceGarden::initSpheres()
 		SceneGraphManager::getInstance().addToRenderingQueue(&sphereComponents[i]);
 
 		sphereActors[i].getTransform()->setPos(glm::vec3(-16 + i * 4, 2.0, -6.0));
+
+		AssetManager::getInstance().addUnitCube(sphereComponents[i]);
 	}
 }
 

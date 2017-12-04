@@ -52,14 +52,14 @@ std::vector<TextureData>& RenderingManager::getTextureData()
 	return m_textureDatas;
 }
 
-MeshData & RenderingManager::getLastMeshData()
+MeshData* RenderingManager::getLastMeshData()
 {
-	return m_meshDatas[m_meshDatas.size() - 1];
+	return &m_meshDatas[m_meshDatas.size() - 1];
 }
 
-TextureData & RenderingManager::getLastTextureData()
+TextureData* RenderingManager::getLastTextureData()
 {
-	return m_textureDatas[m_textureDatas.size() - 1];
+	return &m_textureDatas[m_textureDatas.size() - 1];
 }
 
 void RenderingManager::initialize()

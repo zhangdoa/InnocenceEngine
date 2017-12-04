@@ -38,7 +38,7 @@ private:
 	BaseActor sp6;
 	BaseActor sp7;
 	BaseActor sp8;
-	std::vector<BaseActor> sphereActors = { sp1, sp2, sp3, sp4, sp5, sp6, sp7, sp8 };
+	std::vector<BaseActor> sphereActors;
 
 	VisibleComponent skyboxComponent;
 
@@ -63,7 +63,7 @@ private:
 	VisibleComponent sp6Component;
 	VisibleComponent sp7Component;
 	VisibleComponent sp8Component;
-	std::vector<VisibleComponent> sphereComponents = { sp1Component , sp2Component , sp3Component , sp4Component , sp5Component , sp6Component , sp7Component , sp8Component };
+	std::vector<VisibleComponent> sphereComponents;
 	double temp = 0.0f;
 };
 
