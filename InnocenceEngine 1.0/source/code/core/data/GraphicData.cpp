@@ -259,70 +259,70 @@ const textureWrapMethod & TextureData::getTextureWrapMethod() const
 	return m_textureWrapMethod;
 }
 
-GraphicData::GraphicData()
-{
-}
-
-GraphicData::~GraphicData()
-{
-}
-
-void GraphicData::init()
-{
-	if (m_visiblilityType == visiblilityType::SKYBOX)
-	{
-		m_meshData.addTestSkybox();
-	}
-	if (m_visiblilityType == visiblilityType::BILLBOARD)
-	{
-		m_meshData.addTestBillboard();
-	}
-	m_meshData.init();
-	m_meshData.sendDataToGPU();
-}
-
-void GraphicData::draw()
-{
-	for (size_t i = 0; i < m_textureData.size(); i++)
-	{
-		m_textureData[i].draw();
-	}
-	m_meshData.draw();
-}
-
-void GraphicData::shutdown()
-{
-}
-
-const visiblilityType & GraphicData::getVisiblilityType() const
-{
-	return m_visiblilityType;
-}
-
-void GraphicData::setVisiblilityType(visiblilityType visiblilityType)
-{
-	m_visiblilityType = visiblilityType;
-}
-
-const textureWrapMethod & GraphicData::getTextureWrapMethod() const
-{
-	return m_textureWrapMethod;
-}
-
-void GraphicData::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
-{
-	m_textureWrapMethod = textureWrapMethod;
-}
-
-MeshData & GraphicData::getMeshData()
-{
-	return m_meshData;
-}
-
-std::vector<TextureData>& GraphicData::getTextureData()
-{
-	return m_textureData;
-}
+//GraphicData::GraphicData()
+//{
+//}
+//
+//GraphicData::~GraphicData()
+//{
+//}
+//
+//void GraphicData::init()
+//{
+//	if (m_visiblilityType == visiblilityType::SKYBOX)
+//	{
+//		m_meshData.addTestSkybox();
+//	}
+//	if (m_visiblilityType == visiblilityType::BILLBOARD)
+//	{
+//		m_meshData.addTestBillboard();
+//	}
+//	m_meshData.init();
+//	m_meshData.sendDataToGPU();
+//}
+//
+//void GraphicData::draw()
+//{
+//	for (size_t i = 0; i < m_textureData.size(); i++)
+//	{
+//		m_textureData[i].draw();
+//	}
+//	m_meshData.draw();
+//}
+//
+//void GraphicData::shutdown()
+//{
+//}
+//
+//const visiblilityType & GraphicData::getVisiblilityType() const
+//{
+//	return m_visiblilityType;
+//}
+//
+//void GraphicData::setVisiblilityType(visiblilityType visiblilityType)
+//{
+//	m_visiblilityType = visiblilityType;
+//}
+//
+//const textureWrapMethod & GraphicData::getTextureWrapMethod() const
+//{
+//	return m_textureWrapMethod;
+//}
+//
+//void GraphicData::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
+//{
+//	m_textureWrapMethod = textureWrapMethod;
+//}
+//
+//MeshData & GraphicData::getMeshData()
+//{
+//	return m_meshData;
+//}
+//
+//std::vector<TextureData>& GraphicData::getTextureData()
+//{
+//	return m_textureData;
+//}
 
 ShadowMapData::ShadowMapData()
 {

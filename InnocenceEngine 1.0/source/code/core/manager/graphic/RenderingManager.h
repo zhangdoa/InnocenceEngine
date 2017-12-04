@@ -28,8 +28,8 @@ public:
 	void addTextureData();
 	std::vector<MeshData>& getMeshData();
 	std::vector<TextureData>& getTextureData();
-	MeshData& getLastMeshData();
-	TextureData& getLastTextureData();
+	MeshData* getLastMeshData();
+	TextureData* getLastTextureData();
 
 private:
 	RenderingManager();
