@@ -13,6 +13,10 @@ VisibleComponent::~VisibleComponent()
 
 void VisibleComponent::draw()
 {
+	for (size_t i = 0; i < m_meshDatas.size(); i++)
+	{
+		m_meshDatas[i]->draw();
+	}
 }
 
 const visiblilityType & VisibleComponent::getVisiblilityType() const
@@ -45,12 +49,12 @@ void VisibleComponent::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
 	m_textureWrapMethod = textureWrapMethod;
 }
 
-void VisibleComponent::addMeshData(MeshData * meshData)
+void VisibleComponent::addMeshData(MeshData* meshData)
 {
 	m_meshDatas.emplace_back(meshData);
 }
 
-void VisibleComponent::addTextureData(TextureData * textureData)
+void VisibleComponent::addTextureData(TextureData* textureData)
 {
 	m_textureDatas.emplace_back(textureData);
 }
@@ -58,12 +62,6 @@ void VisibleComponent::addTextureData(TextureData * textureData)
 
 void VisibleComponent::initialize()
 {
-	if (m_visiblilityType == visiblilityType::SKYBOX)
-	{
-	}
-	if (m_visiblilityType == visiblilityType::BILLBOARD)
-	{
-	}
 }
 
 void VisibleComponent::update()

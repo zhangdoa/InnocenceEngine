@@ -84,15 +84,13 @@ void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent 
 	{
 		processAssimpNode(l_fileName, l_assScene->mRootNode, l_assScene, visibleComponent);
 	}
-	for (unsigned int i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
+	for (auto i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
 	{
 		if (l_assScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
 			processAssimpNode(l_fileName, l_assScene->mRootNode->mChildren[i], l_assScene, visibleComponent);
 		}
 	}
-	// initialize mesh datas
-
 	LogManager::getInstance().printLog("innoModel: " + fileName + " is loaded.");
 }
 
@@ -100,7 +98,7 @@ void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent 
 void AssetManager::processAssimpNode(const std::string& fileName, aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
 {
 	// process each mesh located at the current node
-	for (unsigned int i = 0; i < node->mNumMeshes; i++)
+	for (auto i = 0; i < node->mNumMeshes; i++)
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
@@ -115,7 +113,9 @@ void AssetManager::processAssimpNode(const std::string& fileName, aiNode * node,
 void AssetManager::processAssimpMesh(aiMesh*mesh, VisibleComponent & visibleComponent) const
 {
 	RenderingManager::getInstance().addMeshData();
-	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+	auto lastMeshData = RenderingManager::getInstance().getLastMeshData();
+
+	for (auto i = 0; i < mesh->mNumVertices; i++)
 	{
 		GLVertexData vertexData;
 		// positions
@@ -180,7 +180,7 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, VisibleComponent & visibleComp
 			vertexData.m_bitangent.z = 0.0f;
 		}
 
-		RenderingManager::getInstance().getLastMeshData().getVertices().emplace_back(vertexData);
+		lastMeshData->getVertices().emplace_back(vertexData);
 	}
 
 	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -188,12 +188,15 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, VisibleComponent & visibleComp
 	{
 		aiFace face = mesh->mFaces[i];
 		// retrieve all indices of the face and store them in the indices vector
-		for (unsigned int j = 0; j < face.mNumIndices; j++)
+		for (auto j = 0; j < face.mNumIndices; j++)
 		{
-			RenderingManager::getInstance().getLastMeshData().getIntices().emplace_back(face.mIndices[j]);
+			lastMeshData->getIntices().emplace_back(face.mIndices[j]);
 		}
 	}
-	visibleComponent.addMeshData(&RenderingManager::getInstance().getLastMeshData());
+	lastMeshData->setMeshDrawMethod(visibleComponent.getMeshDrawMethod());
+	lastMeshData->init();
+	lastMeshData->sendDataToGPU();
+	visibleComponent.addMeshData(lastMeshData);
 	LogManager::getInstance().printLog("innoMesh is loaded.");
 }
 
@@ -201,17 +204,14 @@ void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial
 {
 	if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
 	{
-		RenderingManager::getInstance().addTextureData();
 		loadTexture(fileName, material, aiTextureType_DIFFUSE, visibleComponent);
 	}
 	if (material->GetTextureCount(aiTextureType_SPECULAR) > 0)
 	{
-		RenderingManager::getInstance().addTextureData();
 		loadTexture(fileName, material, aiTextureType_SPECULAR, visibleComponent);
 	}
 	if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
 	{
-		RenderingManager::getInstance().addTextureData();
 		loadTexture(fileName, material, aiTextureType_NORMALS, visibleComponent);
 	}
 }
@@ -219,7 +219,7 @@ void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial
 void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material, aiTextureType aiTextureType, VisibleComponent & visibleComponent) const
 {
 	aiString l_AssString;
-	for (unsigned int i = 0; i < material->GetTextureCount(aiTextureType); i++)
+	for (auto i = 0; i < material->GetTextureCount(aiTextureType); i++)
 	{
 		material->GetTexture(aiTextureType, i, &l_AssString);
 		// set local path, remove slash
@@ -236,9 +236,6 @@ void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material
 		{
 			l_localPath = std::string(l_AssString.C_Str());
 		}
-		RenderingManager::getInstance().addTextureData();
-		RenderingManager::getInstance().getLastTextureData().setTextureType(textureType(aiTextureType));
-		RenderingManager::getInstance().getLastTextureData().setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
 
 		// load image
 		int width, height, nrChannels;
@@ -258,9 +255,13 @@ void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material
 		}
 		if (data)
 		{
-			RenderingManager::getInstance().getLastTextureData().init();
-			RenderingManager::getInstance().getLastTextureData().sendDataToGPU(aiTextureType - 1, nrChannels, width, height, data);
-			visibleComponent.addTextureData(&RenderingManager::getInstance().getLastTextureData());
+			RenderingManager::getInstance().addTextureData();
+			auto lastTextureData = RenderingManager::getInstance().getLastTextureData();
+			lastTextureData->setTextureType(textureType(aiTextureType));
+			lastTextureData->setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
+			lastTextureData->init();
+			lastTextureData->sendDataToGPU(aiTextureType - 1, nrChannels, width, height, data);
+			visibleComponent.addTextureData(lastTextureData);
 			LogManager::getInstance().printLog("innoTexture: " + l_localPath + " is loaded.");
 		}
 		else
@@ -273,18 +274,19 @@ void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material
 
 void AssetManager::loadTexture(const std::string & fileName, textureType textureType, VisibleComponent & visibleComponent) const
 {
-	RenderingManager::getInstance().addTextureData();
-	RenderingManager::getInstance().getLastTextureData().setTextureType(textureType);
-	RenderingManager::getInstance().getLastTextureData().setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
 	int width, height, nrChannels;
 	// load image
 	stbi_set_flip_vertically_on_load(true);
 	auto *data = stbi_load(("../res/textures/" + fileName).c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		RenderingManager::getInstance().getLastTextureData().init();
-		RenderingManager::getInstance().getLastTextureData().sendDataToGPU(0, nrChannels, width, height, data);
-		visibleComponent.addTextureData(&RenderingManager::getInstance().getLastTextureData());
+		RenderingManager::getInstance().addTextureData();
+		auto lastTextureData = RenderingManager::getInstance().getLastTextureData();
+		lastTextureData->setTextureType(textureType);
+		lastTextureData->setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
+		lastTextureData->init();
+		lastTextureData->sendDataToGPU(0, nrChannels, width, height, data);
+		visibleComponent.addTextureData(lastTextureData);
 		LogManager::getInstance().printLog("innoTexture: " + fileName + " is loaded.");
 	}
 	else
@@ -296,21 +298,21 @@ void AssetManager::loadTexture(const std::string & fileName, textureType texture
 
 void AssetManager::loadTexture(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
 {
-	RenderingManager::getInstance().addTextureData();
-	RenderingManager::getInstance().getLastTextureData().setTextureType(textureType::CUBEMAP);
-	RenderingManager::getInstance().getLastTextureData().setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
-
 	int width, height, nrChannels;
-	for (unsigned int i = 0; i < fileName.size(); i++)
+	for (auto i = 0; i < fileName.size(); i++)
 	{
 		// load image, do not flip texture
 		stbi_set_flip_vertically_on_load(false);
 		auto *data = stbi_load(("../res/textures/" + fileName[i]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			RenderingManager::getInstance().getLastTextureData().init();
-			RenderingManager::getInstance().getLastTextureData().sendDataToGPU(i, nrChannels, width, height, data);
-			visibleComponent.addTextureData(&RenderingManager::getInstance().getLastTextureData());
+			RenderingManager::getInstance().addTextureData();
+			auto lastTextureData = RenderingManager::getInstance().getLastTextureData();
+			lastTextureData->setTextureType(textureType::CUBEMAP);
+			lastTextureData->setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
+			lastTextureData->init();
+			lastTextureData->sendDataToGPU(i, nrChannels, width, height, data);
+			visibleComponent.addTextureData(lastTextureData);
 			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " is loaded.");
 		}
 		else
@@ -325,13 +327,35 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 void AssetManager::addUnitCube(VisibleComponent & visibleComponent) const
 {
 	RenderingManager::getInstance().addMeshData();
-	RenderingManager::getInstance().getLastMeshData().addUnitCube();
-	visibleComponent.addMeshData(&RenderingManager::getInstance().getLastMeshData());
+	RenderingManager::getInstance().getLastMeshData()->addUnitCube();
+	RenderingManager::getInstance().getLastMeshData()->init();
+	RenderingManager::getInstance().getLastMeshData()->sendDataToGPU();
+	visibleComponent.addMeshData(RenderingManager::getInstance().getLastMeshData());
 }
 
 void AssetManager::addUnitSphere(VisibleComponent & visibleComponent) const
 {
 	RenderingManager::getInstance().addMeshData();
-	RenderingManager::getInstance().getLastMeshData().addUnitSphere();
-	visibleComponent.addMeshData(&RenderingManager::getInstance().getLastMeshData());
+	RenderingManager::getInstance().getLastMeshData()->addUnitSphere();
+	RenderingManager::getInstance().getLastMeshData()->init();
+	RenderingManager::getInstance().getLastMeshData()->sendDataToGPU();
+	visibleComponent.addMeshData(RenderingManager::getInstance().getLastMeshData());
+}
+
+void AssetManager::addUnitSkybox(VisibleComponent & visibleComponent) const
+{
+	RenderingManager::getInstance().addMeshData();
+	RenderingManager::getInstance().getLastMeshData()->addTestSkybox();
+	RenderingManager::getInstance().getLastMeshData()->init();
+	RenderingManager::getInstance().getLastMeshData()->sendDataToGPU();
+	visibleComponent.addMeshData(RenderingManager::getInstance().getLastMeshData());
+}
+
+void AssetManager::addUnitQuad(VisibleComponent & visibleComponent) const
+{
+	RenderingManager::getInstance().addMeshData();
+	RenderingManager::getInstance().getLastMeshData()->addTestBillboard();
+	RenderingManager::getInstance().getLastMeshData()->init();
+	RenderingManager::getInstance().getLastMeshData()->sendDataToGPU();
+	visibleComponent.addMeshData(RenderingManager::getInstance().getLastMeshData());
 }

@@ -29,7 +29,8 @@ public:
 
 	void addUnitCube(VisibleComponent& visibleComponent) const;
 	void addUnitSphere(VisibleComponent& visibleComponent) const;
-
+	void addUnitSkybox(VisibleComponent& visibleComponent) const;
+	void addUnitQuad(VisibleComponent& visibleComponent) const;
 private:
 	AssetManager();
 
