@@ -13,12 +13,12 @@ int main()
 
 	CoreManager::getInstance().setGameData(m_innocenceGarden);
 
-	CoreManager::getInstance().excute(executeMessage::INITIALIZE);
+	CoreManager::getInstance().initialize();
 	while (CoreManager::getInstance().getStatus() == objectStatus::ALIVE)
 	{
-		CoreManager::getInstance().excute(executeMessage::UPDATE);
+		CoreManager::getInstance().update();
 	}
-	CoreManager::getInstance().excute(executeMessage::SHUTDOWN);
+	CoreManager::getInstance().shutdown();
 	delete m_innocenceGarden;
 	
 	return EXIT_SUCCESS;

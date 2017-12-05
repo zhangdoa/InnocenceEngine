@@ -112,8 +112,8 @@ void AssetManager::processAssimpNode(const std::string& fileName, aiNode * node,
 
 void AssetManager::processAssimpMesh(aiMesh*mesh, VisibleComponent & visibleComponent) const
 {
-	RenderingManager::getInstance().addMeshData();
-	auto lastMeshData = RenderingManager::getInstance().getLastMeshData();
+	auto id = RenderingManager::getInstance().addMeshData();
+	auto lastMeshData = &RenderingManager::getInstance().getMeshData(id);
 
 	for (auto i = 0; i < mesh->mNumVertices; i++)
 	{
@@ -196,7 +196,7 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, VisibleComponent & visibleComp
 	lastMeshData->setMeshDrawMethod(visibleComponent.getMeshDrawMethod());
 	lastMeshData->init();
 	lastMeshData->sendDataToGPU();
-	visibleComponent.addMeshData(lastMeshData);
+	visibleComponent.addMeshData(id);
 	LogManager::getInstance().printLog("innoMesh is loaded.");
 }
 
@@ -239,29 +239,17 @@ void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material
 
 		// load image
 		int width, height, nrChannels;
-
 		stbi_set_flip_vertically_on_load(true);
-
-		stbi_uc* data;
-
-		if (loadedTexture.find(std::string(fileName + "//" + l_localPath)) != loadedTexture.end())
-		{
-			data = loadedTexture.find(std::string(fileName + "//" + l_localPath))->second;
-		}
-		else
-		{
-			data = stbi_load(("../res/textures/" + fileName + "//" + l_localPath).c_str(), &width, &height, &nrChannels, 0);
-			// @TODO: insert data to loaded texture map
-		}
+		auto data = stbi_load(("../res/textures/" + fileName + "//" + l_localPath).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			RenderingManager::getInstance().addTextureData();
-			auto lastTextureData = RenderingManager::getInstance().getLastTextureData();
+			auto id = RenderingManager::getInstance().addTextureData();
+			auto lastTextureData = &RenderingManager::getInstance().getTextureData(id);
 			lastTextureData->setTextureType(textureType(aiTextureType));
 			lastTextureData->setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
 			lastTextureData->init();
 			lastTextureData->sendDataToGPU(aiTextureType - 1, nrChannels, width, height, data);
-			visibleComponent.addTextureData(lastTextureData);
+			visibleComponent.addTextureData(id);
 			LogManager::getInstance().printLog("innoTexture: " + l_localPath + " is loaded.");
 		}
 		else
@@ -280,13 +268,13 @@ void AssetManager::loadTexture(const std::string & fileName, textureType texture
 	auto *data = stbi_load(("../res/textures/" + fileName).c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		RenderingManager::getInstance().addTextureData();
-		auto lastTextureData = RenderingManager::getInstance().getLastTextureData();
+		auto id = RenderingManager::getInstance().addTextureData();
+		auto lastTextureData = &RenderingManager::getInstance().getTextureData(id);
 		lastTextureData->setTextureType(textureType);
 		lastTextureData->setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
 		lastTextureData->init();
 		lastTextureData->sendDataToGPU(0, nrChannels, width, height, data);
-		visibleComponent.addTextureData(lastTextureData);
+		visibleComponent.addTextureData(id);
 		LogManager::getInstance().printLog("innoTexture: " + fileName + " is loaded.");
 	}
 	else
@@ -306,13 +294,13 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 		auto *data = stbi_load(("../res/textures/" + fileName[i]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			RenderingManager::getInstance().addTextureData();
-			auto lastTextureData = RenderingManager::getInstance().getLastTextureData();
+			auto id = RenderingManager::getInstance().addTextureData();
+			auto lastTextureData = &RenderingManager::getInstance().getTextureData(id);
 			lastTextureData->setTextureType(textureType::CUBEMAP);
 			lastTextureData->setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
 			lastTextureData->init();
 			lastTextureData->sendDataToGPU(i, nrChannels, width, height, data);
-			visibleComponent.addTextureData(lastTextureData);
+			visibleComponent.addTextureData(id);
 			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " is loaded.");
 		}
 		else
@@ -326,36 +314,40 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 
 void AssetManager::addUnitCube(VisibleComponent & visibleComponent) const
 {
-	RenderingManager::getInstance().addMeshData();
-	RenderingManager::getInstance().getLastMeshData()->addUnitCube();
-	RenderingManager::getInstance().getLastMeshData()->init();
-	RenderingManager::getInstance().getLastMeshData()->sendDataToGPU();
-	visibleComponent.addMeshData(RenderingManager::getInstance().getLastMeshData());
+	auto id = RenderingManager::getInstance().addMeshData();
+	auto lastMeshData = &RenderingManager::getInstance().getMeshData(id);
+	lastMeshData->addUnitCube();
+	lastMeshData->init();
+	lastMeshData->sendDataToGPU();
+	visibleComponent.addMeshData(id);
 }
 
 void AssetManager::addUnitSphere(VisibleComponent & visibleComponent) const
 {
-	RenderingManager::getInstance().addMeshData();
-	RenderingManager::getInstance().getLastMeshData()->addUnitSphere();
-	RenderingManager::getInstance().getLastMeshData()->init();
-	RenderingManager::getInstance().getLastMeshData()->sendDataToGPU();
-	visibleComponent.addMeshData(RenderingManager::getInstance().getLastMeshData());
+	auto id = RenderingManager::getInstance().addMeshData();
+	auto lastMeshData = &RenderingManager::getInstance().getMeshData(id);
+	lastMeshData->addUnitSphere();
+	lastMeshData->init();
+	lastMeshData->sendDataToGPU();
+	visibleComponent.addMeshData(id);
 }
 
 void AssetManager::addUnitSkybox(VisibleComponent & visibleComponent) const
 {
-	RenderingManager::getInstance().addMeshData();
-	RenderingManager::getInstance().getLastMeshData()->addTestSkybox();
-	RenderingManager::getInstance().getLastMeshData()->init();
-	RenderingManager::getInstance().getLastMeshData()->sendDataToGPU();
-	visibleComponent.addMeshData(RenderingManager::getInstance().getLastMeshData());
+	auto id = RenderingManager::getInstance().addMeshData();
+	auto lastMeshData = &RenderingManager::getInstance().getMeshData(id);
+	lastMeshData->addTestSkybox();
+	lastMeshData->init();
+	lastMeshData->sendDataToGPU();
+	visibleComponent.addMeshData(id);
 }
 
 void AssetManager::addUnitQuad(VisibleComponent & visibleComponent) const
 {
-	RenderingManager::getInstance().addMeshData();
-	RenderingManager::getInstance().getLastMeshData()->addTestBillboard();
-	RenderingManager::getInstance().getLastMeshData()->init();
-	RenderingManager::getInstance().getLastMeshData()->sendDataToGPU();
-	visibleComponent.addMeshData(RenderingManager::getInstance().getLastMeshData());
+	auto id = RenderingManager::getInstance().addMeshData();
+	auto lastMeshData = &RenderingManager::getInstance().getMeshData(id);
+	lastMeshData->addTestBillboard();
+	lastMeshData->init();
+	lastMeshData->sendDataToGPU();
+	visibleComponent.addMeshData(id);
 }

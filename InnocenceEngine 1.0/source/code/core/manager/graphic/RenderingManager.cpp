@@ -30,36 +30,38 @@ void RenderingManager::toggleDepthBufferVisualizer()
 	GLRenderingManager::getInstance().toggleDepthBufferVisualizer();
 }
 
-void RenderingManager::addMeshData()
+unsigned long int RenderingManager::addMeshData()
 {
-	MeshData newMeshData;
-	m_meshDatas.emplace_back(newMeshData);
+	unsigned long int id = std::rand();
+	m_meshDatas.emplace(std::pair<unsigned long int, MeshData>(id, MeshData()));
+	return id;
 }
 
-void RenderingManager::addTextureData()
+unsigned long int RenderingManager::addTextureData()
 {
-	TextureData newTextureData;
-	m_textureDatas.emplace_back(newTextureData);
+	unsigned long int id = std::rand();
+	m_textureDatas.emplace(std::pair<unsigned long int, TextureData>(id, TextureData()));
+	return id;
 }
 
-std::vector<MeshData>& RenderingManager::getMeshData()
+std::unordered_map<unsigned long int, MeshData>& RenderingManager::getMeshData()
 {
 	return m_meshDatas;
 }
 
-std::vector<TextureData>& RenderingManager::getTextureData()
+std::unordered_map<unsigned long int, TextureData>& RenderingManager::getTextureData()
 {
 	return m_textureDatas;
 }
 
-MeshData* RenderingManager::getLastMeshData()
+MeshData & RenderingManager::getMeshData(unsigned long int meshDataIndex)
 {
-	return &m_meshDatas[m_meshDatas.size() - 1];
+	return m_meshDatas.find(meshDataIndex)->second;
 }
 
-TextureData* RenderingManager::getLastTextureData()
+TextureData & RenderingManager::getTextureData(unsigned long int textureDataIndex)
 {
-	return &m_textureDatas[m_textureDatas.size() - 1];
+	return m_textureDatas.find(textureDataIndex)->second;
 }
 
 void RenderingManager::initialize()
@@ -74,7 +76,7 @@ void RenderingManager::initialize()
 
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
-		m_childEventManager[i].get()->excute(executeMessage::INITIALIZE);
+		m_childEventManager[i].get()->initialize();
 	}
 
 	//m_asyncRenderThread = new std::thread(&RenderingManager::AsyncRender, this);
@@ -103,7 +105,7 @@ void RenderingManager::shutdown()
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		// reverse 'destructor'
-		m_childEventManager[m_childEventManager.size() - 1 - i].get()->excute(executeMessage::SHUTDOWN);
+		m_childEventManager[m_childEventManager.size() - 1 - i].get()->shutdown();
 	}
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
@@ -117,18 +119,18 @@ void RenderingManager::shutdown()
 void RenderingManager::AsyncRender()
 {
 	//prepare rendering global state
-	GLRenderingManager::getInstance().excute(executeMessage::UPDATE);
+	GLRenderingManager::getInstance().update();
 
 	//forward render
 	//GLRenderingManager::getInstance().forwardRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
 	
 	//defer render
-	GLRenderingManager::getInstance().deferRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
+	GLRenderingManager::getInstance().deferRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue(), m_meshDatas, m_textureDatas);
 	
-	GLWindowManager::getInstance().excute(executeMessage::UPDATE);
+	GLWindowManager::getInstance().update();
 
-	GLInputManager::getInstance().excute(executeMessage::UPDATE);
-	//GLGUIManager::getInstance().excute(executeMessage::UPDATE);
+	GLInputManager::getInstance().update();
+	//GLGUIManager::getInstance().update();
 
 	//LogManager::getInstance().printLog("Async Rendering Finished.");
 }

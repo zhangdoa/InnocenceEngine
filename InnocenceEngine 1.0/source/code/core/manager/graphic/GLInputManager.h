@@ -9,6 +9,10 @@ class GLInputManager : public IEventManager
 public:
 	~GLInputManager();
 
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
 	static GLInputManager& getInstance()
 	{
 		static GLInputManager instance; 
@@ -20,10 +24,6 @@ public:
 
 private:
 	GLInputManager();
-
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
 
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void mousePositionCallback(GLFWwindow* window, double mouseXPos, double mouseYPos);

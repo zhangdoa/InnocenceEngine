@@ -7,6 +7,10 @@ class GLWindowManager : public IEventManager
 public:
 	~GLWindowManager();
 
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
 	static GLWindowManager& getInstance()
 	{
 		static GLWindowManager instance;
@@ -27,9 +31,5 @@ private:
 	const unsigned int SCR_HEIGHT = 768;
 	GLFWwindow* m_window;
 	std::string m_windowName;
-
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
 };
 
