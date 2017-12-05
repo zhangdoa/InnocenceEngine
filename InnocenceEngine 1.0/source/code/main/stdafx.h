@@ -24,6 +24,7 @@
 #include <thread>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <algorithm>
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>

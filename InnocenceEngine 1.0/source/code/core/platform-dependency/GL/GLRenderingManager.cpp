@@ -170,7 +170,7 @@ void BillboardPassShader::init()
 	updateUniform("uni_texture", 0);
 }
 
-void BillboardPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas)
 {
 	bindShader();
 
@@ -184,12 +184,19 @@ void BillboardPassShader::draw(std::vector<CameraComponent*>& cameraComponents, 
 	updateUniform("uni_r", r);
 	updateUniform("uni_t", t);
 
-	for (unsigned int i = 0; i < visibleComponents.size(); i++)
+	for (auto i = 0; i < visibleComponents.size(); i++)
 	{
 		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::BILLBOARD)
 		{
 			updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
-			visibleComponents[i]->draw();
+			for (auto j = 0; j < visibleComponents[i]->getMeshData().size(); j++)
+			{
+				meshDatas.find(visibleComponents[i]->getMeshData()[j])->second.draw();
+			}
+			for (auto k = 0; k < visibleComponents[i]->getTextureData().size(); k++)
+			{
+				textureDatas.find(visibleComponents[i]->getTextureData()[k])->second.draw();
+			}
 		}
 	}
 }
@@ -212,7 +219,7 @@ void SkyboxShader::init()
 	updateUniform("uni_skybox", 0);
 }
 
-void SkyboxShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void SkyboxShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas)
 {
 	glDepthFunc(GL_LEQUAL);
 
@@ -229,11 +236,19 @@ void SkyboxShader::draw(std::vector<CameraComponent*>& cameraComponents, std::ve
 
 	updateUniform("uni_RP", p * r * -1.0f);
 
-	for (unsigned int i = 0; i < visibleComponents.size(); i++)
+	for (auto i = 0; i < visibleComponents.size(); i++)
 	{
 		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::SKYBOX)
 		{
-			visibleComponents[i]->draw();
+			updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
+			for (auto j = 0; j < visibleComponents[i]->getMeshData().size(); j++)
+			{
+				meshDatas.find(visibleComponents[i]->getMeshData()[j])->second.draw();
+			}
+			for (auto k = 0; k < visibleComponents[i]->getTextureData().size(); k++)
+			{
+				textureDatas.find(visibleComponents[i]->getTextureData()[k])->second.draw();
+			}
 		}
 	}
 
@@ -266,7 +281,7 @@ void GeometryPassBlinnPhongShader::init()
 	updateUniform("uni_normalTexture", 2);
 }
 
-void GeometryPassBlinnPhongShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas)
 {
 	bindShader();
 
@@ -279,12 +294,19 @@ void GeometryPassBlinnPhongShader::draw(std::vector<CameraComponent*>& cameraCom
 	updateUniform("uni_r", r);
 	updateUniform("uni_t", t);
 
-	for (unsigned int i = 0; i < visibleComponents.size(); i++)
+	for (auto i = 0; i < visibleComponents.size(); i++)
 	{
 		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::STATIC_MESH)
 		{
 			updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
-			visibleComponents[i]->draw();
+			for (auto j = 0; j < visibleComponents[i]->getMeshData().size(); j++)
+			{
+				meshDatas.find(visibleComponents[i]->getMeshData()[j])->second.draw();
+			}
+			for (auto k = 0; k < visibleComponents[i]->getTextureData().size(); k++)
+			{
+				textureDatas.find(visibleComponents[i]->getTextureData()[k])->second.draw();
+			}
 		}
 	}
 }
@@ -312,14 +334,14 @@ void LightPassBlinnPhongShader::init()
 	updateUniform("m_gSpecular", 3);
 }
 
-void LightPassBlinnPhongShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas)
 {
 	bindShader();
 
 	glm::vec3 cameraPos = cameraComponents[0]->getParentActor()->getTransform()->getPos();
 
 	int l_pointLightIndexOffset = 0;
-	for (size_t i = 0; i < lightComponents.size(); i++)
+	for (auto i = 0; i < lightComponents.size(); i++)
 	{
 		//@TODO: generalization
 
@@ -376,7 +398,7 @@ void GeometryPassPBSShader::init()
 	updateUniform("uni_aoTexture", 4);
 }
 
-void GeometryPassPBSShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas)
 {
 	bindShader();
 
@@ -389,12 +411,19 @@ void GeometryPassPBSShader::draw(std::vector<CameraComponent*>& cameraComponents
 	updateUniform("uni_r", r);
 	updateUniform("uni_t", t);
 
-	for (unsigned int i = 0; i < visibleComponents.size(); i++)
+	for (auto i = 0; i < visibleComponents.size(); i++)
 	{
 		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::STATIC_MESH)
 		{
 			updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
-			visibleComponents[i]->draw();
+			for (auto j = 0; j < visibleComponents[i]->getMeshData().size(); j++)
+			{
+				meshDatas.find(visibleComponents[i]->getMeshData()[j])->second.draw();
+			}		
+			for (auto k = 0; k < visibleComponents[i]->getTextureData().size(); k++)
+			{
+				textureDatas.find(visibleComponents[i]->getTextureData()[k])->second.draw();
+			}
 		}
 	}
 }
@@ -424,14 +453,14 @@ void LightPassPBSShader::init()
 	updateUniform("m_gSpecular", 5);
 }
 
-void LightPassPBSShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas)
 {
 	bindShader();
 
 	glm::vec3 cameraPos = cameraComponents[0]->getParentActor()->getTransform()->getPos();
 
 	int l_pointLightIndexOffset = 0;
-	for (size_t i = 0; i < lightComponents.size(); i++)
+	for (auto i = 0; i < lightComponents.size(); i++)
 	{
 		//@TODO: generalization
 
@@ -481,7 +510,7 @@ void FinalPassShader::init()
 	updateUniform("uni_finalColor", 0);
 }
 
-void FinalPassShader::draw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void FinalPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas)
 {
 	bindShader();
 }
@@ -495,19 +524,19 @@ GLRenderingManager::~GLRenderingManager()
 {
 }
 
-void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData>& meshDatas, std::unordered_map<unsigned long int, TextureData>& textureDatas)
 {
 	// draw billboard
-	BillboardPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+	BillboardPassShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 	// draw skybox
-	SkyboxShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+	SkyboxShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 }
 
-void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData>& meshDatas, std::unordered_map<unsigned long int, TextureData>& textureDatas)
 {
-	renderGeometryPass(cameraComponents, lightComponents, visibleComponents);
-	renderLightPass(cameraComponents, lightComponents, visibleComponents);
-	renderFinalPass(cameraComponents, lightComponents, visibleComponents);
+	renderGeometryPass(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
+	renderLightPass(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
+	renderFinalPass(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 }
 
 void GLRenderingManager::setScreenResolution(glm::vec2 screenResolution)
@@ -574,7 +603,7 @@ void GLRenderingManager::initializeGeometryPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_geometryPassFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_geometryPassRBO);
@@ -587,7 +616,7 @@ void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& camer
 	//glFrontFace(GL_CCW);
 	//glCullFace(GL_BACK);
 
-	GeometryPassBlinnPhongShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+	GeometryPassBlinnPhongShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 }
 
 void GLRenderingManager::initializeLightPass()
@@ -646,7 +675,7 @@ void GLRenderingManager::initializeLightPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_lightPassFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_lightPassRBO);
@@ -664,7 +693,7 @@ void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraCo
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassSpecularTexture);
 
 
-	LightPassBlinnPhongShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+	LightPassBlinnPhongShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 
 	// draw light pass rectangle
 	glBindVertexArray(m_lightPassVAO);
@@ -676,7 +705,7 @@ void GLRenderingManager::initializeBillboardPass()
 {
 }
 
-void GLRenderingManager::renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GLRenderingManager::renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas)
 {
 }
 
@@ -706,7 +735,7 @@ void GLRenderingManager::initializeFinalPass()
 	glBindVertexArray(0);
 }
 
-void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -717,7 +746,7 @@ void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraCo
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_lightPassFinalTexture);
 
-	FinalPassShader::getInstance().draw(cameraComponents, lightComponents, visibleComponents);
+	FinalPassShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 
 	// draw screen rectangle
 	glBindVertexArray(m_screenVAO);

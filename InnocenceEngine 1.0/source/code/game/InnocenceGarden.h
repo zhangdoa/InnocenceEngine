@@ -10,10 +10,11 @@ public:
 	InnocenceGarden();
 	~InnocenceGarden();
 
-private:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
+
+private:
 
 	void initSpheres();
 	void loadTextureForSpheres();

@@ -32,11 +32,11 @@ void CoreManager::initialize()
 
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
-		m_childEventManager[i].get()->excute(executeMessage::INITIALIZE);
+		m_childEventManager[i].get()->initialize();
 	}
 
 	try {
-		m_gameData->excute(executeMessage::INITIALIZE);
+		m_gameData->initialize();
 	}
 	catch (std::exception& e) {
 		LogManager::getInstance().printLog("No game added!");
@@ -53,7 +53,7 @@ void CoreManager::initialize()
 void CoreManager::update()
 {
 	// time manager should update without any limitation.
-	TimeManager::getInstance().excute(executeMessage::UPDATE);
+	TimeManager::getInstance().update();
 
 	// when time manager's status was execMessage::INITIALIZED, that means we can update other managers, a frame counter occurred.
 	if (TimeManager::getInstance().getStatus() == objectStatus::ALIVE)
@@ -61,8 +61,8 @@ void CoreManager::update()
 		if (RenderingManager::getInstance().getStatus() == objectStatus::ALIVE)
 		{			
 			// game data update
-			m_gameData->excute(executeMessage::UPDATE);
-			RenderingManager::getInstance().excute(executeMessage::UPDATE);
+			m_gameData->update();
+			RenderingManager::getInstance().update();
 		}
 		else
 		{
@@ -76,11 +76,11 @@ void CoreManager::update()
 
 void CoreManager::shutdown()
 {
-	m_gameData->excute(executeMessage::SHUTDOWN);
+	m_gameData->shutdown();
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		// reverse 'destructor'
-		m_childEventManager[m_childEventManager.size() - 1 - i].get()->excute(executeMessage::SHUTDOWN);
+		m_childEventManager[m_childEventManager.size() - 1 - i].get()->shutdown();
 	}
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{

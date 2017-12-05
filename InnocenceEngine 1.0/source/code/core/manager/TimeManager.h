@@ -8,6 +8,10 @@ class TimeManager : public IEventManager
 public:
 	~TimeManager();
 
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
 	static TimeManager& getInstance()
 	{
 		static TimeManager instance;
@@ -73,9 +77,5 @@ private:
 	std::chrono::high_resolution_clock::time_point m_updateStartTime;
 	double m_deltaTime;
 	double m_unprocessedTime;
-
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
 };
 

@@ -15,6 +15,10 @@ class AssetManager : public IEventManager
 public:
 	~AssetManager();
 
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
 	static AssetManager& getInstance()
 	{
 		static AssetManager instance;
@@ -31,19 +35,14 @@ public:
 	void addUnitSphere(VisibleComponent& visibleComponent) const;
 	void addUnitSkybox(VisibleComponent& visibleComponent) const;
 	void addUnitQuad(VisibleComponent& visibleComponent) const;
+
 private:
 	AssetManager();
-
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
 
 	void loadModelImpl(const std::string& fileName, VisibleComponent& visibleComponent);
 	void processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, VisibleComponent & visibleComponent) const;
 	void processAssimpMesh(aiMesh* mesh, VisibleComponent & visibleComponent) const;
 	void processAssimpMaterial(const std::string& fileName, aiMaterial* material, VisibleComponent & visibleComponent) const;
 	void loadTexture(const std::string& fileName, aiMaterial* material, aiTextureType aiTextureType, VisibleComponent & visibleComponent) const;
-
-	std::map<std::string, unsigned char*> loadedTexture;
 };
 

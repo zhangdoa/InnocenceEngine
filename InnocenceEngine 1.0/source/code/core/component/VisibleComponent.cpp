@@ -11,13 +11,6 @@ VisibleComponent::~VisibleComponent()
 {
 }
 
-void VisibleComponent::draw()
-{
-	for (size_t i = 0; i < m_meshDatas.size(); i++)
-	{
-		m_meshDatas[i]->draw();
-	}
-}
 
 const visiblilityType & VisibleComponent::getVisiblilityType() const
 {
@@ -49,14 +42,25 @@ void VisibleComponent::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
 	m_textureWrapMethod = textureWrapMethod;
 }
 
-void VisibleComponent::addMeshData(MeshData* meshData)
+void VisibleComponent::addMeshData(unsigned long int meshDataIndex)
 {
-	m_meshDatas.emplace_back(meshData);
+	m_meshDatas.emplace_back();
+	m_meshDatas[m_meshDatas.size() - 1] = meshDataIndex;
 }
 
-void VisibleComponent::addTextureData(TextureData* textureData)
+std::vector<unsigned long int>& VisibleComponent::getMeshData()
 {
-	m_textureDatas.emplace_back(textureData);
+	return m_meshDatas;
+}
+
+void VisibleComponent::addTextureData(unsigned long int meshDataIndex)
+{
+	m_textureDatas.emplace_back(meshDataIndex);
+}
+
+std::vector<unsigned long int>& VisibleComponent::getTextureData()
+{
+	return m_textureDatas;
 }
 
 

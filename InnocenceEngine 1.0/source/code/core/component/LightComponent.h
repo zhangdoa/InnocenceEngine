@@ -10,6 +10,10 @@ public:
 	LightComponent();
 	~LightComponent();
 
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
 	const lightType getLightType();
 	glm::vec3 getDirection() const;
 	float getRadius() const;
@@ -46,9 +50,5 @@ private:
 	glm::vec3 m_diffuseColor;
 	glm::vec3 m_specularColor;
 	ShadowMapData m_shadowMapData;
-
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
 };
 

@@ -6,20 +6,8 @@ IBaseObject::IBaseObject()
 {
 }
 
-
 IBaseObject::~IBaseObject()
 {
-}
-
-void IBaseObject::excute(executeMessage execteMessage)
-{
-	switch (execteMessage)
-	{
-	case  executeMessage::INITIALIZE: initialize(); m_ObjectStatus = objectStatus::ALIVE;  break;
-	case  executeMessage::UPDATE: update(); break;
-	case  executeMessage::SHUTDOWN: shutdown(); m_ObjectStatus = objectStatus::SHUTDOWN; break;
-	default: m_ObjectStatus = objectStatus::ERROR; break;
-	}
 }
 
 const objectStatus& IBaseObject::getStatus() const

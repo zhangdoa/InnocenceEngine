@@ -47,6 +47,10 @@ public:
 	BaseActor();
 	virtual ~BaseActor();
 
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
 	void addChildActor(BaseActor* childActor);
 	const std::vector<BaseActor*>& getChildrenActors() const;
 	BaseActor* getParentActor() const;
@@ -77,10 +81,6 @@ private:
 	BaseActor* m_parentActor;
 	std::vector<BaseComponent*> m_childComponent;
 	Transform m_transform;
-
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
 };
 
 class BaseComponent : public IBaseObject

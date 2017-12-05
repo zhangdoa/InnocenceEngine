@@ -307,11 +307,11 @@ void BaseActor::initialize()
 {
 	for (size_t i = 0; i < m_childActor.size(); i++)
 	{
-		m_childActor[i]->excute(executeMessage::INITIALIZE);
+		m_childActor[i]->initialize();
 	}
 	for (size_t i = 0; i < m_childComponent.size(); i++)
 	{
-		m_childComponent[i]->excute(executeMessage::INITIALIZE);
+		m_childComponent[i]->initialize();
 	}
 	this->setStatus(objectStatus::ALIVE);
 }
@@ -323,14 +323,14 @@ void BaseActor::update()
 	{
 		for (size_t i = 0; i < getChildrenActors().size(); i++)
 		{
-			m_childActor[i]->excute(executeMessage::UPDATE);
+			m_childActor[i]->update();
 		}
 	}
 	if (m_childComponent.size() != 0)
 	{
 		for (size_t i = 0; i < m_childComponent.size(); i++)
 		{
-			m_childComponent[i]->excute(executeMessage::UPDATE);
+			m_childComponent[i]->update();
 		}
 	}
 }
@@ -339,11 +339,11 @@ void BaseActor::shutdown()
 {
 	for (size_t i = 0; i < getChildrenActors().size(); i++)
 	{
-		getChildrenActors()[i]->excute(executeMessage::SHUTDOWN);
+		getChildrenActors()[i]->shutdown();
 	}
 	for (size_t i = 0; i < m_childComponent.size(); i++)
 	{
-		m_childComponent[i]->excute(executeMessage::SHUTDOWN);
+		m_childComponent[i]->shutdown();
 	}
 	this->setStatus(objectStatus::SHUTDOWN);
 }
