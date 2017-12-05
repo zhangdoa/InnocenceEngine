@@ -14,6 +14,10 @@ class CoreManager : public IEventManager
 public:
 	CoreManager();
 
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
 	static CoreManager& getInstance()
 	{
 		static CoreManager instance;
@@ -24,10 +28,6 @@ public:
 
 private:
 	~CoreManager();
-
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
 
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 	IGameData* m_gameData;

@@ -98,21 +98,21 @@ void InnocenceGarden::initialize()
 	AssetManager::getInstance().importModel("nanosuit/nanosuit.obj");	
 	//AssetManager::getInstance().importModel("deer.obj");
 
-	//AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent1);
+	AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent1);
 	//AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent2);
 	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
-	AssetManager::getInstance().addUnitSkybox(skyboxComponent);
-	AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent1);
-	AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent2);
-	AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent3);
+	//AssetManager::getInstance().addUnitSkybox(skyboxComponent);
+	//AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent1);
+	//AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent2);
+	//AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent3);
 	AssetManager::getInstance().addUnitCube(landscapeStaticMeshComponent);
 
-	AssetManager::getInstance().loadTexture({ "skybox2/right.tga",
-		"skybox2/left.tga", "skybox2/top.tga", "skybox2/bottom.tga", "skybox2/back.tga", "skybox2/front.tga" }, skyboxComponent);
+	//AssetManager::getInstance().loadTexture({ "skybox2/right.tga",
+	//	"skybox2/left.tga", "skybox2/top.tga", "skybox2/bottom.tga", "skybox2/back.tga", "skybox2/front.tga" }, skyboxComponent);
 
-	AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent1);
-	AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent2);
-	AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent3);
+	//AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent1);
+	//AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent2);
+	//AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent3);
 
 	AssetManager::getInstance().loadTexture("test_diffuse.png", textureType::DIFFUSE, landscapeStaticMeshComponent);
 	AssetManager::getInstance().loadTexture("test_specular.png", textureType::SPECULAR, landscapeStaticMeshComponent);
@@ -120,7 +120,7 @@ void InnocenceGarden::initialize()
 
 	loadTextureForSpheres();
 
-	rootActor.excute(executeMessage::INITIALIZE);
+	rootActor.initialize();
 }
 
 void InnocenceGarden::update()
@@ -141,12 +141,12 @@ void InnocenceGarden::update()
 	pointLightComponent3.setSpecularColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
 	pointLightActor3.getTransform()->setPos(glm::vec3(0.0f, 1.0f, 4.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 1.0f));
 
-	rootActor.excute(executeMessage::UPDATE);
+	rootActor.update();
 }
 
 void InnocenceGarden::shutdown()
 {	
-	rootActor.excute(executeMessage::SHUTDOWN);
+	rootActor.shutdown();
 }
 
 void InnocenceGarden::initSpheres()

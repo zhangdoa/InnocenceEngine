@@ -7,16 +7,16 @@ public:
 	InputComponent();
 	~InputComponent();
 
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
 	void registerInputCallback(int keyCode, void* function);
 	std::multimap<int, std::function<void()>>& getKeyboardInputCallbackImpl();
 	std::multimap<int, std::function<void(float)>>& getMouseInputCallbackImpl();
 
 private:
 	enum moveDirection { FORWARD, BACKWARD, LEFT, RIGHT };
-
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
 
 	void moveForward ();
 	void moveBackward ();

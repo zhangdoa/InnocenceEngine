@@ -12,6 +12,10 @@ class SceneGraphManager : public IEventManager
 public:
 	~SceneGraphManager();
 
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
 	static SceneGraphManager& getInstance()
 	{
 		static SceneGraphManager instance;
@@ -30,10 +34,6 @@ public:
 
 private:
 	SceneGraphManager();
-
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
 
 	std::vector<VisibleComponent*> m_visibleComponents;
 	std::vector<LightComponent*> m_LightComponents;

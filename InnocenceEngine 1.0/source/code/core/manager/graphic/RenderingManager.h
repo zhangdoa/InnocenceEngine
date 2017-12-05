@@ -15,6 +15,10 @@ class RenderingManager : public IEventManager
 public:
 	~RenderingManager();
 
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
 	static RenderingManager& getInstance()
 	{
 		static RenderingManager instance;
@@ -24,24 +28,21 @@ public:
 	void initInput();
 	void changeDrawPolygonMode() const;
 	void toggleDepthBufferVisualizer();
-	void addMeshData();
-	void addTextureData();
-	std::vector<MeshData>& getMeshData();
-	std::vector<TextureData>& getTextureData();
-	MeshData* getLastMeshData();
-	TextureData* getLastTextureData();
+	unsigned long int addMeshData();
+	unsigned long int addTextureData();
+	std::unordered_map<unsigned long int, MeshData>& getMeshData();
+	std::unordered_map<unsigned long int, TextureData>& getTextureData();
+	MeshData& getMeshData(unsigned long int meshDataIndex);
+	TextureData& getTextureData(unsigned long int textureDataIndex);
 
 private:
 	RenderingManager();
 
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
 	std::thread* m_asyncRenderThread;
 	void AsyncRender();
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 
-	std::vector<MeshData> m_meshDatas;
-	std::vector<TextureData> m_textureDatas;
+	std::unordered_map<unsigned long int, MeshData> m_meshDatas;
+	std::unordered_map<unsigned long int, TextureData> m_textureDatas;
 };
 

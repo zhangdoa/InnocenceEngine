@@ -27,9 +27,9 @@ public:
 	void sendDataToGPU(std::vector<GLVertexData>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
 
 private:
-	GLuint m_VAO;
-	GLuint m_VBO;
-	GLuint m_IBO;
+	GLuint m_VAO = 0;
+	GLuint m_VBO = 0;
+	GLuint m_IBO = 0;
 };
 
 class GLTextureData
@@ -45,7 +45,7 @@ public:
 	void sendDataToGPU(textureType textureType, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void* textureData) const;
 
 private:
-	GLuint m_textureID;
+	GLuint m_textureID = 0;
 };
 
 
