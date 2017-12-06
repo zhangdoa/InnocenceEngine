@@ -125,7 +125,6 @@ void InnocenceGarden::initialize()
 
 void InnocenceGarden::update()
 {
-	LogManager::getInstance().printLog(pointLightComponent1.getClassName());
 	temp += 0.02f;
 	pointLightComponent1.setAmbientColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
 	pointLightComponent1.setDiffuseColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));

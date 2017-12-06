@@ -53,31 +53,10 @@ private:
 	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
 };
 
-//class GraphicData
-//{
-//public:
-//	GraphicData();
-//	~GraphicData();
-//
-//	void init();
-//	void draw();
-//	void shutdown();
-//
-//	const visiblilityType& getVisiblilityType() const;
-//	void setVisiblilityType(visiblilityType visiblilityType);
-//	const textureWrapMethod& getTextureWrapMethod() const;
-//	void setTextureWrapMethod(textureWrapMethod textureWrapMethod);
-//
-//	MeshData& getMeshData();
-//	std::vector<TextureData>& getTextureData();
-//
-//private:
-//	MeshData m_meshData;
-//	std::vector<TextureData> m_textureData;
-//
-//	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
-//	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
-//};
+typedef GameObjectID textureDataID;
+typedef GameObjectID meshDataID;
+typedef std::unordered_multimap<textureType, textureDataID> textureDataMap;
+typedef std::unordered_multimap<meshDataID, textureDataMap> graphicDataMap;
 
 enum class shadowProjectionType { ORTHOGRAPHIC, PERSPECTIVE };
 
