@@ -11,7 +11,7 @@ public:
 	virtual ~GLShader();
 
 	virtual void init() = 0;
-	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas) = 0;
+	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas) = 0;
 
 protected:
 	GLShader();
@@ -60,7 +60,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas) override;
 
 private:
 	SkyboxShader();
@@ -78,7 +78,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas) override;
 
 private:
 	GeometryPassBlinnPhongShader();
@@ -96,7 +96,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas) override;
 
 private:
 	LightPassBlinnPhongShader();
@@ -114,7 +114,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas) override;
 
 private:
 	GeometryPassPBSShader();
@@ -132,7 +132,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas) override;
 
 private:
 	LightPassPBSShader();
@@ -150,7 +150,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas) override;
 
 private:
 	FinalPassShader();
@@ -168,7 +168,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas) override;
 
 private:
 	BillboardPassShader();
@@ -189,8 +189,8 @@ public:
 		return instance;
 	}
 
-	void forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData>& meshDatas, std::unordered_map<unsigned long int, TextureData>& textureDatas);
-	void deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData>& meshDatas, std::unordered_map<unsigned long int, TextureData>& textureDatas);
+	void forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
+	void deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
 
 	void setScreenResolution(glm::vec2 screenResolution);
 
@@ -225,11 +225,11 @@ private:
 	bool m_drawDepthBuffer = false;
 
 	void initializeGeometryPass();
-	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas);
+	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas);
 	void initializeLightPass();
-	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas);
+	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas);
 	void initializeBillboardPass();
-	void renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas);
+	void renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas);
 	void initializeFinalPass();
-	void renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<unsigned long int, MeshData> meshDatas, std::unordered_map<unsigned long int, TextureData> textureDatas);
+	void renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas);
 };

@@ -4,15 +4,15 @@
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
 
-class MeshData
+class MeshData : public IBaseObject
 {
 public:
 	MeshData();
 	~MeshData();
 
-	void init();
-	void draw();
-	void shutdown();
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
 
 	std::vector<GLVertexData>& getVertices();
 	std::vector<unsigned int>& getIntices();
@@ -32,15 +32,16 @@ private:
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 };
 
-class TextureData
+class TextureData : public IBaseObject
 {
 public:
 	TextureData();
 	~TextureData();
 
-	void init();
-	void draw();
-	void shutdown();
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
 	void sendDataToGPU(int textureIndex, int textureFormat, int textureWidth, int textureHeight, void* textureData) const;
 	void setTextureType(textureType textureType);
 	textureType getTextureType() const;

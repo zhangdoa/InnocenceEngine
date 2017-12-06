@@ -30,36 +30,36 @@ void RenderingManager::toggleDepthBufferVisualizer()
 	GLRenderingManager::getInstance().toggleDepthBufferVisualizer();
 }
 
-unsigned long int RenderingManager::addMeshData()
+GameObjectID RenderingManager::addMeshData()
 {
-	unsigned long int id = std::rand();
-	m_meshDatas.emplace(std::pair<unsigned long int, MeshData>(id, MeshData()));
-	return id;
+	MeshData newMeshData;
+	m_meshDatas.emplace(std::pair<GameObjectID, MeshData>(newMeshData.getGameObjectID(), newMeshData));
+	return newMeshData.getGameObjectID();
 }
 
-unsigned long int RenderingManager::addTextureData()
+GameObjectID RenderingManager::addTextureData()
 {
-	unsigned long int id = std::rand();
-	m_textureDatas.emplace(std::pair<unsigned long int, TextureData>(id, TextureData()));
-	return id;
+	TextureData newTextureData;
+	m_textureDatas.emplace(std::pair<GameObjectID, TextureData>(newTextureData.getGameObjectID(), newTextureData));
+	return newTextureData.getGameObjectID();
 }
 
-std::unordered_map<unsigned long int, MeshData>& RenderingManager::getMeshData()
+std::unordered_map<GameObjectID, MeshData>& RenderingManager::getMeshData()
 {
 	return m_meshDatas;
 }
 
-std::unordered_map<unsigned long int, TextureData>& RenderingManager::getTextureData()
+std::unordered_map<GameObjectID, TextureData>& RenderingManager::getTextureData()
 {
 	return m_textureDatas;
 }
 
-MeshData & RenderingManager::getMeshData(unsigned long int meshDataIndex)
+MeshData & RenderingManager::getMeshData(GameObjectID meshDataIndex)
 {
 	return m_meshDatas.find(meshDataIndex)->second;
 }
 
-TextureData & RenderingManager::getTextureData(unsigned long int textureDataIndex)
+TextureData & RenderingManager::getTextureData(GameObjectID textureDataIndex)
 {
 	return m_textureDatas.find(textureDataIndex)->second;
 }

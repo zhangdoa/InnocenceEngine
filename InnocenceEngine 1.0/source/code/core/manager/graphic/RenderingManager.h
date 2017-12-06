@@ -28,12 +28,12 @@ public:
 	void initInput();
 	void changeDrawPolygonMode() const;
 	void toggleDepthBufferVisualizer();
-	unsigned long int addMeshData();
-	unsigned long int addTextureData();
-	std::unordered_map<unsigned long int, MeshData>& getMeshData();
-	std::unordered_map<unsigned long int, TextureData>& getTextureData();
-	MeshData& getMeshData(unsigned long int meshDataIndex);
-	TextureData& getTextureData(unsigned long int textureDataIndex);
+	GameObjectID addMeshData();
+	GameObjectID addTextureData();
+	std::unordered_map<GameObjectID, MeshData>& getMeshData();
+	std::unordered_map<GameObjectID, TextureData>& getTextureData();
+	MeshData& getMeshData(GameObjectID meshDataIndex);
+	TextureData& getTextureData(GameObjectID textureDataIndex);
 
 private:
 	RenderingManager();
@@ -42,7 +42,7 @@ private:
 	void AsyncRender();
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 
-	std::unordered_map<unsigned long int, MeshData> m_meshDatas;
-	std::unordered_map<unsigned long int, TextureData> m_textureDatas;
+	std::unordered_map<GameObjectID, MeshData> m_meshDatas;
+	std::unordered_map<GameObjectID, TextureData> m_textureDatas;
 };
 
