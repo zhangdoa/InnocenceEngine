@@ -11,6 +11,8 @@ enum class objectStatus
 	ERROR
 };
 
+typedef unsigned long int GameObjectID;
+
 class IBaseObject
 {
 public:
@@ -18,6 +20,8 @@ public:
 	virtual ~IBaseObject();
 
 	const objectStatus& getStatus() const;
+	const GameObjectID& getGameObjectID() const;
+
 	virtual void initialize() = 0;
 	virtual void update() = 0;
 	virtual void shutdown() = 0;
@@ -27,6 +31,7 @@ protected:
 
 private:
 	objectStatus m_ObjectStatus = objectStatus::SHUTDOWN;
+	GameObjectID m_gameObjectID = 0;
 };
 
 #endif // !_I_BASE_OBJECT_H_
