@@ -42,6 +42,10 @@ void VisibleComponent::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
 	m_textureWrapMethod = textureWrapMethod;
 }
 
+void VisibleComponent::addGraphicData()
+{
+}
+
 void VisibleComponent::addMeshData(GameObjectID meshDataIndex)
 {
 	m_meshDatas.emplace_back();

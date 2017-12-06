@@ -84,7 +84,7 @@ void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent 
 	{
 		processAssimpNode(l_fileName, l_assScene->mRootNode, l_assScene, visibleComponent);
 	}
-	for (auto i = 0; i < l_assScene->mRootNode->mNumChildren; i++)
+	for (auto i = (unsigned int)0; i < l_assScene->mRootNode->mNumChildren; i++)
 	{
 		if (l_assScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
@@ -98,7 +98,7 @@ void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent 
 void AssetManager::processAssimpNode(const std::string& fileName, aiNode * node, const aiScene * scene, VisibleComponent & visibleComponent) const
 {
 	// process each mesh located at the current node
-	for (auto i = 0; i < node->mNumMeshes; i++)
+	for (auto i = (unsigned int)0; i < node->mNumMeshes; i++)
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
@@ -115,7 +115,7 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, VisibleComponent & visibleComp
 	auto id = RenderingManager::getInstance().addMeshData();
 	auto lastMeshData = &RenderingManager::getInstance().getMeshData(id);
 
-	for (auto i = 0; i < mesh->mNumVertices; i++)
+	for (auto i = (unsigned int)0; i < mesh->mNumVertices; i++)
 	{
 		GLVertexData vertexData;
 		// positions
@@ -184,11 +184,11 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, VisibleComponent & visibleComp
 	}
 
 	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-	for (unsigned int i = 0; i < mesh->mNumFaces; i++)
+	for (auto i = (unsigned int)0; i < mesh->mNumFaces; i++)
 	{
 		aiFace face = mesh->mFaces[i];
 		// retrieve all indices of the face and store them in the indices vector
-		for (auto j = 0; j < face.mNumIndices; j++)
+		for (auto j = (unsigned int)0; j < face.mNumIndices; j++)
 		{
 			lastMeshData->getIntices().emplace_back(face.mIndices[j]);
 		}
@@ -219,7 +219,7 @@ void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial
 void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material, aiTextureType aiTextureType, VisibleComponent & visibleComponent) const
 {
 	aiString l_AssString;
-	for (auto i = 0; i < material->GetTextureCount(aiTextureType); i++)
+	for (auto i = (unsigned int)0; i < material->GetTextureCount(aiTextureType); i++)
 	{
 		material->GetTexture(aiTextureType, i, &l_AssString);
 		// set local path, remove slash
@@ -287,7 +287,7 @@ void AssetManager::loadTexture(const std::string & fileName, textureType texture
 void AssetManager::loadTexture(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
 {
 	int width, height, nrChannels;
-	for (auto i = 0; i < fileName.size(); i++)
+	for (auto i = (unsigned int)0; i < fileName.size(); i++)
 	{
 		// load image, do not flip texture
 		stbi_set_flip_vertically_on_load(false);
@@ -332,21 +332,11 @@ void AssetManager::addUnitSphere(VisibleComponent & visibleComponent) const
 	visibleComponent.addMeshData(id);
 }
 
-void AssetManager::addUnitSkybox(VisibleComponent & visibleComponent) const
-{
-	auto id = RenderingManager::getInstance().addMeshData();
-	auto lastMeshData = &RenderingManager::getInstance().getMeshData(id);
-	lastMeshData->addTestSkybox();
-	lastMeshData->initialize();
-	lastMeshData->sendDataToGPU();
-	visibleComponent.addMeshData(id);
-}
-
 void AssetManager::addUnitQuad(VisibleComponent & visibleComponent) const
 {
 	auto id = RenderingManager::getInstance().addMeshData();
 	auto lastMeshData = &RenderingManager::getInstance().getMeshData(id);
-	lastMeshData->addTestBillboard();
+	lastMeshData->addUnitQuad();
 	lastMeshData->initialize();
 	lastMeshData->sendDataToGPU();
 	visibleComponent.addMeshData(id);
