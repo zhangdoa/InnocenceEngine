@@ -117,70 +117,7 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, VisibleComponent & visibleComp
 
 	for (auto i = (unsigned int)0; i < mesh->mNumVertices; i++)
 	{
-		GLVertexData vertexData;
-		// positions
-		vertexData.m_pos.x = mesh->mVertices[i].x;
-		vertexData.m_pos.y = mesh->mVertices[i].y;
-		vertexData.m_pos.z = mesh->mVertices[i].z;
-
-		// texture coordinates
-		if (mesh->mTextureCoords[0])
-		{
-			// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
-			// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-			vertexData.m_texCoord.x = mesh->mTextureCoords[0][i].x;
-			vertexData.m_texCoord.y = mesh->mTextureCoords[0][i].y;
-		}
-		else
-		{
-			vertexData.m_texCoord.x = 0.0f;
-			vertexData.m_texCoord.y = 0.0f;
-		}
-
-		// normals
-		if (mesh->mNormals)
-		{
-			vertexData.m_normal.x = mesh->mNormals[i].x;
-			vertexData.m_normal.y = mesh->mNormals[i].y;
-			vertexData.m_normal.z = mesh->mNormals[i].z;
-		}
-		else
-		{
-			vertexData.m_normal.x = 0.0f;
-			vertexData.m_normal.y = 0.0f;
-			vertexData.m_normal.z = 0.0f;
-		}
-
-		// tangent
-		if (mesh->mTangents)
-		{
-			vertexData.m_tangent.x = mesh->mTangents[i].x;
-			vertexData.m_tangent.y = mesh->mTangents[i].y;
-			vertexData.m_tangent.z = mesh->mTangents[i].z;
-		}
-		else
-		{
-			vertexData.m_tangent.x = 0.0f;
-			vertexData.m_tangent.y = 0.0f;
-			vertexData.m_tangent.z = 0.0f;
-		}
-
-
-		// bitangent
-		if (mesh->mBitangents)
-		{
-			vertexData.m_bitangent.x = mesh->mBitangents[i].x;
-			vertexData.m_bitangent.y = mesh->mBitangents[i].y;
-			vertexData.m_bitangent.z = mesh->mBitangents[i].z;
-		}
-		else
-		{
-			vertexData.m_bitangent.x = 0.0f;
-			vertexData.m_bitangent.y = 0.0f;
-			vertexData.m_bitangent.z = 0.0f;
-		}
-
-		lastMeshData->getVertices().emplace_back(vertexData);
+		addVertexData(mesh, i, lastMeshData);
 	}
 
 	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -198,6 +135,74 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, VisibleComponent & visibleComp
 	lastMeshData->sendDataToGPU();
 	visibleComponent.addMeshData(id);
 	LogManager::getInstance().printLog("innoMesh is loaded.");
+}
+
+void AssetManager::addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData * meshData) const
+{
+	GLVertexData vertexData;
+	// positions
+	vertexData.m_pos.x = aiMesh->mVertices[vertexIndex].x;
+	vertexData.m_pos.y = aiMesh->mVertices[vertexIndex].y;
+	vertexData.m_pos.z = aiMesh->mVertices[vertexIndex].z;
+
+	// texture coordinates
+	if (aiMesh->mTextureCoords[0])
+	{
+		// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
+		// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
+		vertexData.m_texCoord.x = aiMesh->mTextureCoords[0][vertexIndex].x;
+		vertexData.m_texCoord.y = aiMesh->mTextureCoords[0][vertexIndex].y;
+	}
+	else
+	{
+		vertexData.m_texCoord.x = 0.0f;
+		vertexData.m_texCoord.y = 0.0f;
+	}
+
+	// normals
+	if (aiMesh->mNormals)
+	{
+		vertexData.m_normal.x = aiMesh->mNormals[vertexIndex].x;
+		vertexData.m_normal.y = aiMesh->mNormals[vertexIndex].y;
+		vertexData.m_normal.z = aiMesh->mNormals[vertexIndex].z;
+	}
+	else
+	{
+		vertexData.m_normal.x = 0.0f;
+		vertexData.m_normal.y = 0.0f;
+		vertexData.m_normal.z = 0.0f;
+	}
+
+	// tangent
+	if (aiMesh->mTangents)
+	{
+		vertexData.m_tangent.x = aiMesh->mTangents[vertexIndex].x;
+		vertexData.m_tangent.y = aiMesh->mTangents[vertexIndex].y;
+		vertexData.m_tangent.z = aiMesh->mTangents[vertexIndex].z;
+	}
+	else
+	{
+		vertexData.m_tangent.x = 0.0f;
+		vertexData.m_tangent.y = 0.0f;
+		vertexData.m_tangent.z = 0.0f;
+	}
+
+
+	// bitangent
+	if (aiMesh->mBitangents)
+	{
+		vertexData.m_bitangent.x = aiMesh->mBitangents[vertexIndex].x;
+		vertexData.m_bitangent.y = aiMesh->mBitangents[vertexIndex].y;
+		vertexData.m_bitangent.z = aiMesh->mBitangents[vertexIndex].z;
+	}
+	else
+	{
+		vertexData.m_bitangent.x = 0.0f;
+		vertexData.m_bitangent.y = 0.0f;
+		vertexData.m_bitangent.z = 0.0f;
+	}
+
+	meshData->getVertices().emplace_back(vertexData);
 }
 
 void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial* material, VisibleComponent & visibleComponent) const
