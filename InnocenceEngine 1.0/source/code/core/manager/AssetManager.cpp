@@ -102,18 +102,18 @@ void AssetManager::processAssimpNode(const std::string& fileName, aiNode * node,
 	{
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], visibleComponent);
+		auto l_meshDataID = RenderingManager::getInstance().addMeshData();
+		processAssimpMesh(scene->mMeshes[node->mMeshes[i]], l_meshDataID, visibleComponent);
 		if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
 		{
-			processAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], visibleComponent);
+			processAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], l_meshDataID, visibleComponent);
 		}
 	}
 }
 
-void AssetManager::processAssimpMesh(aiMesh*mesh, VisibleComponent & visibleComponent) const
+void AssetManager::processAssimpMesh(aiMesh*mesh, meshDataID meshDataID, VisibleComponent & visibleComponent) const
 {
-	auto id = RenderingManager::getInstance().addMeshData();
-	auto lastMeshData = &RenderingManager::getInstance().getMeshData(id);
+	auto lastMeshData = &RenderingManager::getInstance().getMeshData(meshDataID);
 
 	for (auto i = (unsigned int)0; i < mesh->mNumVertices; i++)
 	{
@@ -133,7 +133,7 @@ void AssetManager::processAssimpMesh(aiMesh*mesh, VisibleComponent & visibleComp
 	lastMeshData->setMeshDrawMethod(visibleComponent.getMeshDrawMethod());
 	lastMeshData->initialize();
 	lastMeshData->sendDataToGPU();
-	visibleComponent.addMeshData(id);
+	visibleComponent.addMeshData(meshDataID);
 	LogManager::getInstance().printLog("innoMesh is loaded.");
 }
 
@@ -205,28 +205,28 @@ void AssetManager::addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData * me
 	meshData->getVertices().emplace_back(vertexData);
 }
 
-void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial* material, VisibleComponent & visibleComponent) const
+void AssetManager::processAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, meshDataID meshDataID, VisibleComponent & visibleComponent) const
 {
-	if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+	if (aiMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
 	{
-		loadTexture(fileName, material, aiTextureType_DIFFUSE, visibleComponent);
+		loadTexture(fileName, aiMaterial, aiTextureType_DIFFUSE, meshDataID, visibleComponent);
 	}
-	if (material->GetTextureCount(aiTextureType_SPECULAR) > 0)
+	if (aiMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0)
 	{
-		loadTexture(fileName, material, aiTextureType_SPECULAR, visibleComponent);
+		loadTexture(fileName, aiMaterial, aiTextureType_SPECULAR, meshDataID, visibleComponent);
 	}
-	if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
+	if (aiMaterial->GetTextureCount(aiTextureType_NORMALS) > 0)
 	{
-		loadTexture(fileName, material, aiTextureType_NORMALS, visibleComponent);
+		loadTexture(fileName, aiMaterial, aiTextureType_NORMALS, meshDataID, visibleComponent);
 	}
 }
 
-void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material, aiTextureType aiTextureType, VisibleComponent & visibleComponent) const
+void AssetManager::loadTexture(const std::string& fileName, aiMaterial * aiMaterial, aiTextureType aiTextureType, meshDataID meshDataID, VisibleComponent & visibleComponent) const
 {
 	aiString l_AssString;
-	for (auto i = (unsigned int)0; i < material->GetTextureCount(aiTextureType); i++)
+	for (auto i = (unsigned int)0; i < aiMaterial->GetTextureCount(aiTextureType); i++)
 	{
-		material->GetTexture(aiTextureType, i, &l_AssString);
+		aiMaterial->GetTexture(aiTextureType, i, &l_AssString);
 		// set local path, remove slash
 		std::string l_localPath;
 		if (std::string(l_AssString.C_Str()).find_last_of('//') != std::string::npos)
@@ -248,13 +248,13 @@ void AssetManager::loadTexture(const std::string& fileName, aiMaterial* material
 		auto data = stbi_load(("../res/textures/" + fileName + "//" + l_localPath).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			auto id = RenderingManager::getInstance().addTextureData();
-			auto lastTextureData = &RenderingManager::getInstance().getTextureData(id);
+			auto l_textureDataID = RenderingManager::getInstance().addTextureData();
+			auto lastTextureData = &RenderingManager::getInstance().getTextureData(l_textureDataID);
 			lastTextureData->setTextureType(textureType(aiTextureType));
 			lastTextureData->setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
 			lastTextureData->initialize();
 			lastTextureData->sendDataToGPU(aiTextureType - 1, nrChannels, width, height, data);
-			visibleComponent.addTextureData(id);
+			visibleComponent.addTextureData(meshDataID, l_textureDataID, textureType(aiTextureType));
 			LogManager::getInstance().printLog("innoTexture: " + l_localPath + " is loaded.");
 		}
 		else
@@ -279,7 +279,7 @@ void AssetManager::loadTexture(const std::string & fileName, textureType texture
 		lastTextureData->setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
 		lastTextureData->initialize();
 		lastTextureData->sendDataToGPU(0, nrChannels, width, height, data);
-		visibleComponent.addTextureData(id);
+		//visibleComponent.addTextureData(id);
 		LogManager::getInstance().printLog("innoTexture: " + fileName + " is loaded.");
 	}
 	else
@@ -305,7 +305,7 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 			lastTextureData->setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
 			lastTextureData->initialize();
 			lastTextureData->sendDataToGPU(i, nrChannels, width, height, data);
-			visibleComponent.addTextureData(id);
+			//visibleComponent.addTextureData(id);
 			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " is loaded.");
 		}
 		else

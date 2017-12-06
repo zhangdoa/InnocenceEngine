@@ -21,16 +21,12 @@ public:
 	const textureWrapMethod& getTextureWrapMethod() const;
 	void setTextureWrapMethod(textureWrapMethod textureWrapMethod);
 
-	void addGraphicData();
-	void addMeshData(GameObjectID meshDataIndex);
-	std::vector<GameObjectID>& getMeshData();
-	void addTextureData(GameObjectID textureDataIndex);
-	std::vector<GameObjectID>& getTextureData();
+	void addMeshData(meshDataID meshDataID);
+	void addTextureData(meshDataID meshDataID, textureDataID textureDataID, textureType textureType);
+	graphicDataMap& getGraphicDatas();
 
 private:
-	std::vector<std::tuple<GameObjectID, std::list<GameObjectID>>> m_graphicDatas;
-	std::vector<GameObjectID> m_meshDatas;
-	std::vector<GameObjectID> m_textureDatas;
+	graphicDataMap m_graphicDatas;
 
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;

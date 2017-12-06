@@ -184,18 +184,17 @@ void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraCompon
 	updateUniform("uni_r", r);
 	updateUniform("uni_t", t);
 
-	for (auto i = 0; i < visibleComponents.size(); i++)
+	for (auto& l_visibleComponent : visibleComponents)
 	{
-		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::BILLBOARD)
+		if (l_visibleComponent->getVisiblilityType() == visiblilityType::BILLBOARD)
 		{
-			updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
-			for (auto j = 0; j < visibleComponents[i]->getMeshData().size(); j++)
+			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
+			for (auto& l_graphicData : l_visibleComponent->getGraphicDatas())
 			{
-				meshDatas.find(visibleComponents[i]->getMeshData()[j])->second.update();
-			}
-			for (auto k = 0; k < visibleComponents[i]->getTextureData().size(); k++)
-			{
-				textureDatas.find(visibleComponents[i]->getTextureData()[k])->second.update();
+				meshDatas.find(l_graphicData.first)->second.update();
+				textureDatas.find(l_graphicData.second.find(textureType::DIFFUSE)->second)->second.update();
+				textureDatas.find(l_graphicData.second.find(textureType::SPECULAR)->second)->second.update();
+				textureDatas.find(l_graphicData.second.find(textureType::NORMALS)->second)->second.update();
 			}
 		}
 	}
@@ -236,18 +235,15 @@ void SkyboxShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, s
 
 	updateUniform("uni_RP", p * r * -1.0f);
 
-	for (auto i = 0; i < visibleComponents.size(); i++)
+	for (auto& l_visibleComponent : visibleComponents)
 	{
-		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::SKYBOX)
+		if (l_visibleComponent->getVisiblilityType() == visiblilityType::SKYBOX)
 		{
-			updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
-			for (auto j = 0; j < visibleComponents[i]->getMeshData().size(); j++)
+			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
+			for (auto& l_graphicData : l_visibleComponent->getGraphicDatas())
 			{
-				meshDatas.find(visibleComponents[i]->getMeshData()[j])->second.update();
-			}
-			for (auto k = 0; k < visibleComponents[i]->getTextureData().size(); k++)
-			{
-				textureDatas.find(visibleComponents[i]->getTextureData()[k])->second.update();
+				meshDatas.find(l_graphicData.first)->second.update();
+				textureDatas.find(l_graphicData.second.find(textureType::CUBEMAP)->second)->second.update();
 			}
 		}
 	}
@@ -294,23 +290,49 @@ void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cam
 	updateUniform("uni_r", r);
 	updateUniform("uni_t", t);
 
-	for (auto i = 0; i < visibleComponents.size(); i++)
+	// draw each visibleComponent
+	for (auto& l_visibleComponent : visibleComponents)
 	{
-		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::STATIC_MESH)
+		if (l_visibleComponent->getVisiblilityType() == visiblilityType::STATIC_MESH)
 		{
-			updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
-			for (auto j = 0; j < visibleComponents[i]->getMeshData().size(); j++)
+			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
+
+			// draw each graphic data of visibleComponent
+			for (auto& l_graphicData : l_visibleComponent->getGraphicDatas())
 			{
-				meshDatas.find(visibleComponents[i]->getMeshData()[j])->second.update();
-			}
-			for (auto k = 0; k < visibleComponents[i]->getTextureData().size(); k++)
-			{
-				textureDatas.find(visibleComponents[i]->getTextureData()[k])->second.update();
+				//active and bind textures
+				// is there any texture?
+				auto l_textureMap = l_graphicData.second;
+				if (&l_textureMap != nullptr)
+				{
+					// any diffuse?
+					auto l_diffuseTextureID = l_textureMap.find(textureType::DIFFUSE);
+					if (l_diffuseTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureDatas.find(l_diffuseTextureID->second)->second;
+						l_textureData.update();
+					}
+					// any specular?
+					auto l_specularTextureID = l_textureMap.find(textureType::SPECULAR);
+					if (l_specularTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureDatas.find(l_specularTextureID->second)->second;
+						l_textureData.update();
+					}
+					// any normal?
+					auto l_normalTextureID = l_textureMap.find(textureType::NORMALS);
+					if (l_normalTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureDatas.find(l_normalTextureID->second)->second;
+						l_textureData.update();
+					}
+				}
+				// draw meshes
+				meshDatas.find(l_graphicData.first)->second.update();
 			}
 		}
 	}
 }
-
 LightPassBlinnPhongShader::LightPassBlinnPhongShader()
 {
 }
@@ -341,7 +363,7 @@ void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& camera
 	glm::vec3 cameraPos = cameraComponents[0]->getParentActor()->getTransform()->getPos();
 
 	int l_pointLightIndexOffset = 0;
-	for (auto i = 0; i < lightComponents.size(); i++)
+	for (auto i = (unsigned int)0; i < lightComponents.size(); i++)
 	{
 		//@TODO: generalization
 
@@ -411,18 +433,17 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 	updateUniform("uni_r", r);
 	updateUniform("uni_t", t);
 
-	for (auto i = 0; i < visibleComponents.size(); i++)
+	for (auto& l_visibleComponent : visibleComponents)
 	{
-		if (visibleComponents[i]->getVisiblilityType() == visiblilityType::STATIC_MESH)
+		if (l_visibleComponent->getVisiblilityType() == visiblilityType::STATIC_MESH)
 		{
-			updateUniform("uni_m", visibleComponents[i]->getParentActor()->caclTransformationMatrix());
-			for (auto j = 0; j < visibleComponents[i]->getMeshData().size(); j++)
+			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
+			for (auto& l_graphicData : l_visibleComponent->getGraphicDatas())
 			{
-				meshDatas.find(visibleComponents[i]->getMeshData()[j])->second.update();
-			}		
-			for (auto k = 0; k < visibleComponents[i]->getTextureData().size(); k++)
-			{
-				textureDatas.find(visibleComponents[i]->getTextureData()[k])->second.update();
+				meshDatas.find(l_graphicData.first)->second.update();
+				textureDatas.find(l_graphicData.second.find(textureType::DIFFUSE)->second)->second.update();
+				textureDatas.find(l_graphicData.second.find(textureType::SPECULAR)->second)->second.update();
+				textureDatas.find(l_graphicData.second.find(textureType::NORMALS)->second)->second.update();
 			}
 		}
 	}
@@ -460,7 +481,7 @@ void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraCompone
 	glm::vec3 cameraPos = cameraComponents[0]->getParentActor()->getTransform()->getPos();
 
 	int l_pointLightIndexOffset = 0;
-	for (auto i = 0; i < lightComponents.size(); i++)
+	for (auto i = (unsigned int)0; i < lightComponents.size(); i++)
 	{
 		//@TODO: generalization
 
@@ -555,7 +576,7 @@ void GLRenderingManager::initializeGeometryPass()
 	// position color buffer
 	glGenTextures(1, &m_geometryPassPositionTexture);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassPositionTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_geometryPassPositionTexture, 0);
@@ -563,7 +584,7 @@ void GLRenderingManager::initializeGeometryPass()
 	// normal color buffer
 	glGenTextures(1, &m_geometryPassNormalTexture);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassNormalTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_geometryPassNormalTexture, 0);
@@ -571,7 +592,7 @@ void GLRenderingManager::initializeGeometryPass()
 	// albedo color buffer
 	glGenTextures(1, &m_geometryPassAlbedoTexture);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassAlbedoTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_geometryPassAlbedoTexture, 0);
@@ -579,7 +600,7 @@ void GLRenderingManager::initializeGeometryPass()
 	// specular color buffer
 	glGenTextures(1, &m_geometryPassSpecularTexture);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassSpecularTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, m_geometryPassSpecularTexture, 0);
@@ -591,7 +612,7 @@ void GLRenderingManager::initializeGeometryPass()
 	// create and attach depth buffer (renderbuffer)
 	glGenRenderbuffers(1, &m_geometryPassRBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_geometryPassRBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_screenResolution.x, m_screenResolution.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)m_screenResolution.x, (int)m_screenResolution.y);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_geometryPassRBO);
 
 	// finally check if framebuffer is complete
@@ -630,7 +651,7 @@ void GLRenderingManager::initializeLightPass()
 	// final color buffer
 	glGenTextures(1, &m_lightPassFinalTexture);
 	glBindTexture(GL_TEXTURE_2D, m_lightPassFinalTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, m_screenResolution.x, m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_lightPassFinalTexture, 0);
@@ -642,7 +663,7 @@ void GLRenderingManager::initializeLightPass()
 	// create and attach depth buffer (renderbuffer)
 	glGenRenderbuffers(1, &m_lightPassRBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_lightPassRBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_screenResolution.x, m_screenResolution.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)m_screenResolution.x, (int)m_screenResolution.y);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_lightPassRBO);
 
 	// finally check if framebuffer is complete
