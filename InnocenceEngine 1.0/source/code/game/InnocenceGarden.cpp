@@ -101,7 +101,7 @@ void InnocenceGarden::initialize()
 	AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent1);
 	//AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent2);
 	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
-	//AssetManager::getInstance().addUnitSkybox(skyboxComponent);
+	//AssetManager::getInstance().addUnitCube(skyboxComponent);
 	//AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent1);
 	//AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent2);
 	//AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent3);
@@ -151,7 +151,7 @@ void InnocenceGarden::shutdown()
 
 void InnocenceGarden::initSpheres()
 {
-	for (auto i = 0; i < sphereComponents.size(); i++)
+	for (auto i = (unsigned int)0; i < sphereComponents.size(); i++)
 	{
 		BaseActor newBaseActor;
 		sphereActors.emplace_back(newBaseActor);
