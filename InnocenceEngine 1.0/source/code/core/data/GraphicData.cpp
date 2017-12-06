@@ -10,12 +10,12 @@ MeshData::~MeshData()
 {
 }
 
-void MeshData::init()
+void MeshData::initialize()
 {
 	m_GLMeshData.init();
 }
 
-void MeshData::draw()
+void MeshData::update()
 {
 	m_GLMeshData.draw(m_indices, m_meshDrawMethod);
 }
@@ -219,12 +219,12 @@ TextureData::~TextureData()
 {
 }
 
-void TextureData::init()
+void TextureData::initialize()
 {
 	m_GLTextureData.init(m_textureType, m_textureWrapMethod);
 }
 
-void TextureData::draw()
+void TextureData::update()
 {
 	m_GLTextureData.draw(m_textureType);
 }
