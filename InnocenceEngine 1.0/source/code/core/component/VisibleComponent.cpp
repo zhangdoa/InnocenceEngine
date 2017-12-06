@@ -48,8 +48,7 @@ void VisibleComponent::addGraphicData()
 
 void VisibleComponent::addMeshData(GameObjectID meshDataIndex)
 {
-	m_meshDatas.emplace_back();
-	m_meshDatas[m_meshDatas.size() - 1] = meshDataIndex;
+	m_meshDatas.emplace_back(meshDataIndex);
 }
 
 std::vector<GameObjectID>& VisibleComponent::getMeshData()
@@ -57,9 +56,9 @@ std::vector<GameObjectID>& VisibleComponent::getMeshData()
 	return m_meshDatas;
 }
 
-void VisibleComponent::addTextureData(GameObjectID meshDataIndex)
+void VisibleComponent::addTextureData(GameObjectID textureDataIndex)
 {
-	m_textureDatas.emplace_back(meshDataIndex);
+	m_textureDatas.emplace_back(textureDataIndex);
 }
 
 std::vector<GameObjectID>& VisibleComponent::getTextureData()
