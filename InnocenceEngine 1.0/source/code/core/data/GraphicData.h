@@ -19,8 +19,7 @@ public:
 	void sendDataToGPU();
 	void addUnitCube();
 	void addUnitSphere();
-	void addTestSkybox();
-	void addTestBillboard();
+	void addUnitQuad();
 
 	void setMeshDrawMethod(meshDrawMethod meshDrawMethod);
 	const meshDrawMethod& getMeshDrawMethod() const;
