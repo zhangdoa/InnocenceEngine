@@ -8,7 +8,6 @@
 #include "GLInputManager.h"
 #include "../../platform-dependency/GL/GLRenderingManager.h"
 //#include "GLGUIManager.h"
-#include "../../data/GraphicData.h"
 
 class RenderingManager : public IEventManager
 {
@@ -28,12 +27,12 @@ public:
 	void initInput();
 	void changeDrawPolygonMode() const;
 	void toggleDepthBufferVisualizer();
-	GameObjectID addMeshData();
-	GameObjectID addTextureData();
-	std::unordered_map<GameObjectID, MeshData>& getMeshData();
-	std::unordered_map<GameObjectID, TextureData>& getTextureData();
-	MeshData& getMeshData(GameObjectID meshDataIndex);
-	TextureData& getTextureData(GameObjectID textureDataIndex);
+	meshDataID addMeshData();
+	textureDataID addTextureData();
+	std::unordered_map<meshDataID, MeshData>& getMeshData();
+	std::unordered_map<textureDataID, TextureData>& getTextureData();
+	MeshData& getMeshData(meshDataID meshDataIndex);
+	TextureData& getTextureData(textureDataID textureDataIndex);
 
 private:
 	RenderingManager();
@@ -42,7 +41,7 @@ private:
 	void AsyncRender();
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 
-	std::unordered_map<GameObjectID, MeshData> m_meshDatas;
-	std::unordered_map<GameObjectID, TextureData> m_textureDatas;
+	std::unordered_map<meshDataID, MeshData> m_meshDatas;
+	std::unordered_map<textureDataID, TextureData> m_textureDatas;
 };
 

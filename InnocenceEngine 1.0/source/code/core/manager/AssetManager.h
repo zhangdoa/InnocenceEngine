@@ -40,9 +40,9 @@ private:
 
 	void loadModelImpl(const std::string& fileName, VisibleComponent& visibleComponent);
 	void processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, VisibleComponent & visibleComponent) const;
-	void processAssimpMesh(aiMesh* mesh, VisibleComponent & visibleComponent) const;
+	void processAssimpMesh(aiMesh* mesh, meshDataID meshDataID, VisibleComponent & visibleComponent) const;
 	void addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData * meshData) const;
-	void processAssimpMaterial(const std::string& fileName, aiMaterial* material, VisibleComponent & visibleComponent) const;
-	void loadTexture(const std::string& fileName, aiMaterial* material, aiTextureType aiTextureType, VisibleComponent & visibleComponent) const;
+	void processAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, meshDataID meshDataID, VisibleComponent & visibleComponent) const;
+	void loadTexture(const std::string& fileName, aiMaterial * aiMaterial, aiTextureType aiTextureType, meshDataID meshDataID, VisibleComponent & visibleComponent) const;
 };
 

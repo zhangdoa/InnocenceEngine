@@ -42,28 +42,19 @@ void VisibleComponent::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
 	m_textureWrapMethod = textureWrapMethod;
 }
 
-void VisibleComponent::addGraphicData()
+void VisibleComponent::addMeshData(meshDataID meshDataID)
 {
+	m_graphicDatas.emplace(meshDataID, textureDataMap());
 }
 
-void VisibleComponent::addMeshData(GameObjectID meshDataIndex)
+void VisibleComponent::addTextureData(meshDataID meshDataID, textureDataID textureDataID, textureType textureType)
 {
-	m_meshDatas.emplace_back(meshDataIndex);
+	m_graphicDatas.find(meshDataID)->second.emplace(textureType, textureDataID);
 }
 
-std::vector<GameObjectID>& VisibleComponent::getMeshData()
+graphicDataMap& VisibleComponent::getGraphicDatas()
 {
-	return m_meshDatas;
-}
-
-void VisibleComponent::addTextureData(GameObjectID textureDataIndex)
-{
-	m_textureDatas.emplace_back(textureDataIndex);
-}
-
-std::vector<GameObjectID>& VisibleComponent::getTextureData()
-{
-	return m_textureDatas;
+	return m_graphicDatas;
 }
 
 
