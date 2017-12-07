@@ -21,13 +21,15 @@ public:
 	const textureWrapMethod& getTextureWrapMethod() const;
 	void setTextureWrapMethod(textureWrapMethod textureWrapMethod);
 
+	graphicDataMap& getGraphicDataMap();
+	void setGraphicDataMap(graphicDataMap& graphicDataMap);
 	void addMeshData(meshDataID meshDataID);
 	void addTextureData(meshDataID meshDataID, textureDataID textureDataID, textureType textureType);
 	void addTextureData(textureDataID textureDataID, textureType textureType);
-	graphicDataMap& getGraphicDatas();
+
 
 private:
-	graphicDataMap m_graphicDatas;
+	graphicDataMap m_graphicDataMap;
 
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;

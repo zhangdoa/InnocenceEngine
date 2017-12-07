@@ -39,10 +39,14 @@ private:
 	AssetManager();
 
 	void loadModelImpl(const std::string& fileName, VisibleComponent& visibleComponent);
-	void processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, VisibleComponent & visibleComponent) const;
-	void processAssimpMesh(aiMesh* mesh, meshDataID meshDataID, VisibleComponent & visibleComponent) const;
+	void assignloadedModel(graphicDataMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
+	void loadModelFromDisk(const std::string& fileName, VisibleComponent& visibleComponent);
+
+	void processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, graphicDataMap* graphicDataMap, VisibleComponent & visibleComponent);
+	void processSingleAssimpMesh(aiMesh* mesh, meshDataID meshDataID, meshDrawMethod meshDrawMethod) const;
 	void addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData * meshData) const;
-	void processAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, meshDataID meshDataID, VisibleComponent & visibleComponent) const;
-	void loadTexture(const std::string& fileName, aiMaterial * aiMaterial, aiTextureType aiTextureType, meshDataID meshDataID, VisibleComponent & visibleComponent) const;
+	void processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod, textureDataMap* textureDataMap) const;
+	void loadTexture(const std::string& fileName, aiMaterial * aiMaterial, aiTextureType aiTextureType, textureWrapMethod textureWrapMethod, textureDataMap* textureDataMap) const;
+	std::unordered_map<std::string, graphicDataMap> m_loadedAssetMap;
 };
 

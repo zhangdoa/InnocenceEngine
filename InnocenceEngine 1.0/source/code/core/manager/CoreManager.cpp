@@ -66,7 +66,7 @@ void CoreManager::update()
 			m_gameData->update();
 			RenderingManager::getInstance().update();
 			l_tickTime = TimeManager::getInstance().getcurrentTime() - l_tickTime;
-			LogManager::getInstance().printLog(l_tickTime);
+			//LogManager::getInstance().printLog(l_tickTime);
 		}	
 		else
 		{

@@ -44,25 +44,30 @@ void VisibleComponent::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
 
 void VisibleComponent::addMeshData(meshDataID meshDataID)
 {
-	m_graphicDatas.emplace(meshDataID, textureDataMap());
+	m_graphicDataMap.emplace(meshDataID, textureDataMap());
 }
 
 void VisibleComponent::addTextureData(meshDataID meshDataID, textureDataID textureDataID, textureType textureType)
 {
-	m_graphicDatas.find(meshDataID)->second.emplace(textureType, textureDataID);
+	m_graphicDataMap.find(meshDataID)->second.emplace(textureType, textureDataID);
 }
 
 void VisibleComponent::addTextureData(textureDataID textureDataID, textureType textureType)
 {
-	for (auto& l_graphicDatas : m_graphicDatas)
+	for (auto& l_graphicDatas : m_graphicDataMap)
 	{
 		l_graphicDatas.second.emplace(textureType, textureDataID);
 	}
 }
 
-graphicDataMap& VisibleComponent::getGraphicDatas()
+graphicDataMap& VisibleComponent::getGraphicDataMap()
 {
-	return m_graphicDatas;
+	return m_graphicDataMap;
+}
+
+void VisibleComponent::setGraphicDataMap(graphicDataMap & graphicDataMap)
+{
+	m_graphicDataMap = graphicDataMap;
 }
 
 
