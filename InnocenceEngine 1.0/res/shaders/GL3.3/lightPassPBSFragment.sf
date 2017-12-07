@@ -111,7 +111,7 @@ vec3 CalcDirectionalLightRadiance(dirLight light, vec3 albedo, float metallic, f
         float NdotL = max(dot(normal, normalizedLightDir), 0.0);        
 
         // add to outgoing radiance Lo
-        return (kD * albedo / PI + specular) * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+        return ((kD * albedo / PI + specular) * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
 }
 
 vec3 CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float roughness, float ao, vec3 normal, vec3 viewPos, vec3 fragPos, vec3 F0)
@@ -147,11 +147,12 @@ vec3 CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float
         float NdotL = max(dot(normal, normalizedLightDir), 0.0);        
 
 		// attenuation
-		float distance = (light.position - fragPos);
+		float distance = length(light.position - fragPos);
         vec3 attenuation = light.diffuseColor / (distance * distance);
 
         // add to outgoing radiance Lo
-        return (kD * albedo / PI + specular) * attenuation * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+        return ((kD * albedo / PI + specular) * attenuation * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+	}
 	else
 	{
 	return vec3(0.0f, 0.0f, 0.0f);
@@ -161,7 +162,7 @@ vec3 CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float
 // ----------------------------------------------------------------------------
 void main()
 {	
-	if(texture(m_gPosition, TexCoords).a == 1.0)
+	if(texture(uni_gPosition, TexCoords).a == 1.0)
     {
 	uni_finalColor.a = 0.0;
 	}    

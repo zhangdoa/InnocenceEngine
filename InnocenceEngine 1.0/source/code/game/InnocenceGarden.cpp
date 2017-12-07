@@ -102,17 +102,17 @@ void InnocenceGarden::initialize()
 	AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent2);
 	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
 	//AssetManager::getInstance().addUnitCube(skyboxComponent);
-	//AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent1);
-	//AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent2);
-	//AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent3);
+	AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent1);
+	AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent2);
+	AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent3);
 	AssetManager::getInstance().addUnitCube(landscapeStaticMeshComponent);
 
 	//AssetManager::getInstance().loadTexture({ "skybox2/right.tga",
 	//	"skybox2/left.tga", "skybox2/top.tga", "skybox2/bottom.tga", "skybox2/back.tga", "skybox2/front.tga" }, skyboxComponent);
 
-	//AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent1);
-	//AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent2);
-	//AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent3);
+	AssetManager::getInstance().loadSingleTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent1);
+	AssetManager::getInstance().loadSingleTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent2);
+	AssetManager::getInstance().loadSingleTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent3);
 
 	AssetManager::getInstance().loadSingleTexture("test_diffuse.png", textureType::DIFFUSE, landscapeStaticMeshComponent);
 	AssetManager::getInstance().loadSingleTexture("test_specular.png", textureType::SPECULAR, landscapeStaticMeshComponent);

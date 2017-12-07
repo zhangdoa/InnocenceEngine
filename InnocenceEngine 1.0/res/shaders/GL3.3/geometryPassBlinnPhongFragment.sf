@@ -1,29 +1,30 @@
 // shadertype=glsl
 #version 330 core
-layout (location = 0) out vec4 m_gPosition;
-layout (location = 1) out vec4 m_gNormal;
-layout (location = 2) out vec4 m_gAlbedo;
-layout (location = 3) out vec4 m_gSpecular;
+layout (location = 0) out vec4 uni_RT0;
+layout (location = 1) out vec4 uni_RT1;
+layout (location = 2) out vec4 uni_RT2;
+layout (location = 3) out vec4 uni_RT3;
 
 in vec4 thefrag_FragPos;
 in vec2 thefrag_TexCoord;
 in mat3 TBN;
 
-uniform sampler2D uni_albedoTexture;
-uniform sampler2D uni_specularTexture;
 uniform sampler2D uni_normalTexture;
+uniform sampler2D uni_diffuseTexture;
+uniform sampler2D uni_specularTexture;
+
 
 void main()
 {    
-    // store the fragment position vector in the first gbuffer texture
-    m_gPosition = thefrag_FragPos;
+    // store the fragment position vector in the first rendering target texture
+    uni_RT0 = thefrag_FragPos;
 
-    // also store the per-fragment normals into the gbuffer
-	m_gNormal = vec4(normalize(normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0) * TBN), 1.0);
+    // store the normal vector in the second rendering target texture
+	uni_RT1 = vec4(normalize(normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0) * TBN), 1.0);
 
-    // and the diffuse per-fragment color
-    m_gAlbedo = texture(uni_albedoTexture, thefrag_TexCoord);
+    // store the diffuse color vector in the third rendering target texture
+    uni_RT2 = texture(uni_diffuseTexture, thefrag_TexCoord);
 
-    // specular
-    m_gSpecular = texture(uni_specularTexture, thefrag_TexCoord);
+    // store the specular color vector in the fourth rendering target texture
+    uni_RT3 = texture(uni_specularTexture, thefrag_TexCoord);
 }
