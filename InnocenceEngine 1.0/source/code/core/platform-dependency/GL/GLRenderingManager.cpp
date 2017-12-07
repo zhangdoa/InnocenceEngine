@@ -189,7 +189,7 @@ void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraCompon
 		if (l_visibleComponent->getVisiblilityType() == visiblilityType::BILLBOARD)
 		{
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
-			for (auto& l_graphicData : l_visibleComponent->getGraphicDatas())
+			for (auto& l_graphicData : l_visibleComponent->getGraphicDataMap())
 			{
 				meshDatas.find(l_graphicData.first)->second.update();
 				textureDatas.find(l_graphicData.second.find(textureType::DIFFUSE)->second)->second.update();
@@ -240,7 +240,7 @@ void SkyboxShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, s
 		if (l_visibleComponent->getVisiblilityType() == visiblilityType::SKYBOX)
 		{
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
-			for (auto& l_graphicData : l_visibleComponent->getGraphicDatas())
+			for (auto& l_graphicData : l_visibleComponent->getGraphicDataMap())
 			{
 				meshDatas.find(l_graphicData.first)->second.update();
 				textureDatas.find(l_graphicData.second.find(textureType::CUBEMAP)->second)->second.update();
@@ -298,7 +298,7 @@ void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cam
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
 
 			// draw each graphic data of visibleComponent
-			for (auto& l_graphicData : l_visibleComponent->getGraphicDatas())
+			for (auto& l_graphicData : l_visibleComponent->getGraphicDataMap())
 			{
 				//active and bind textures
 				// is there any texture?
@@ -438,7 +438,7 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 		if (l_visibleComponent->getVisiblilityType() == visiblilityType::STATIC_MESH)
 		{
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
-			for (auto& l_graphicData : l_visibleComponent->getGraphicDatas())
+			for (auto& l_graphicData : l_visibleComponent->getGraphicDataMap())
 			{
 				meshDatas.find(l_graphicData.first)->second.update();
 				textureDatas.find(l_graphicData.second.find(textureType::DIFFUSE)->second)->second.update();

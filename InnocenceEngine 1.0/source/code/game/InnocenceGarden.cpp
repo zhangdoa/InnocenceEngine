@@ -99,7 +99,7 @@ void InnocenceGarden::initialize()
 	//AssetManager::getInstance().importModel("deer.obj");
 
 	AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent1);
-	//AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent2);
+	AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent2);
 	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
 	//AssetManager::getInstance().addUnitCube(skyboxComponent);
 	//AssetManager::getInstance().addUnitQuad(pointLightBillboardComponent1);
