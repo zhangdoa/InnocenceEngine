@@ -21,11 +21,11 @@ void TimeManager::initialize()
 void TimeManager::update()
 {
 	m_updateStartTime = std::chrono::high_resolution_clock::now();
-	m_deltaTime = (std::chrono::high_resolution_clock::now() - m_updateStartTime).count() / 1000.0;
+	m_deltaTime = (std::chrono::high_resolution_clock::now() - m_updateStartTime).count();
 
-	m_unprocessedTime += getDeltaTime();
+	m_unprocessedTime += m_deltaTime;
 
-	if (m_unprocessedTime > m_frameTime)
+	if (m_unprocessedTime >= m_frameTime)
 	{
 		m_unprocessedTime -= m_frameTime;
 		setStatus(objectStatus::ALIVE);
@@ -50,4 +50,9 @@ const __time64_t TimeManager::getGameStartTime() const
 const double TimeManager::getDeltaTime() const
 {
 	return m_deltaTime;
+}
+
+const double TimeManager::getcurrentTime() const
+{
+	return (std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1));
 }

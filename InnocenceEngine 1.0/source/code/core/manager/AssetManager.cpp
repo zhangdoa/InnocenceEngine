@@ -279,7 +279,7 @@ void AssetManager::loadTexture(const std::string & fileName, textureType texture
 		lastTextureData->setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
 		lastTextureData->initialize();
 		lastTextureData->sendDataToGPU(0, nrChannels, width, height, data);
-		//visibleComponent.addTextureData(id);
+		visibleComponent.addTextureData(id, textureType);
 		LogManager::getInstance().printLog("innoTexture: " + fileName + " is loaded.");
 	}
 	else
@@ -305,7 +305,7 @@ void AssetManager::loadTexture(const std::vector<std::string>& fileName, Visible
 			lastTextureData->setTextureWrapMethod(visibleComponent.getTextureWrapMethod());
 			lastTextureData->initialize();
 			lastTextureData->sendDataToGPU(i, nrChannels, width, height, data);
-			//visibleComponent.addTextureData(id);
+			visibleComponent.addTextureData(id, textureType::CUBEMAP);
 			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " is loaded.");
 		}
 		else
