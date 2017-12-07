@@ -52,6 +52,14 @@ void VisibleComponent::addTextureData(meshDataID meshDataID, textureDataID textu
 	m_graphicDatas.find(meshDataID)->second.emplace(textureType, textureDataID);
 }
 
+void VisibleComponent::addTextureData(textureDataID textureDataID, textureType textureType)
+{
+	for (auto& l_graphicDatas : m_graphicDatas)
+	{
+		l_graphicDatas.second.emplace(textureType, textureDataID);
+	}
+}
+
 graphicDataMap& VisibleComponent::getGraphicDatas()
 {
 	return m_graphicDatas;

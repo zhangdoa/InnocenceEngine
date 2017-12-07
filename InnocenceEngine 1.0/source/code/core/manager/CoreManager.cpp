@@ -58,12 +58,16 @@ void CoreManager::update()
 	// when time manager's status was execMessage::INITIALIZED, that means we can update other managers, a frame counter occurred.
 	if (TimeManager::getInstance().getStatus() == objectStatus::ALIVE)
 	{
+
 		if (RenderingManager::getInstance().getStatus() == objectStatus::ALIVE)
-		{			
+		{
+			auto l_tickTime = TimeManager::getInstance().getcurrentTime();
 			// game data update
 			m_gameData->update();
 			RenderingManager::getInstance().update();
-		}
+			l_tickTime = TimeManager::getInstance().getcurrentTime() - l_tickTime;
+			LogManager::getInstance().printLog(l_tickTime);
+		}	
 		else
 		{
 			this->setStatus(objectStatus::STANDBY);

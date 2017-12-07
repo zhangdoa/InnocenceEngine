@@ -19,14 +19,7 @@ void GLMeshData::init()
 void GLMeshData::draw(std::vector<unsigned int>& indices, meshDrawMethod meshDrawMethod)
 {
 	glBindVertexArray(m_VAO);
-	if (meshDrawMethod == meshDrawMethod::TRIANGLE_STRIP)
-	{
-		glDrawElements(GL_TRIANGLE_STRIP, indices.size(), GL_UNSIGNED_INT, 0);
-	}
-	else
-	{
-		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-	}
+	glDrawElements(GL_TRIANGLES + (int)meshDrawMethod, indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 	glActiveTexture(GL_TEXTURE0);
 }

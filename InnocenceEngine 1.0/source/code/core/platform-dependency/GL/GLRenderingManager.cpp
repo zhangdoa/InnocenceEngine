@@ -170,7 +170,7 @@ void BillboardPassShader::init()
 	updateUniform("uni_texture", 0);
 }
 
-void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas)
+void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	bindShader();
 
@@ -218,7 +218,7 @@ void SkyboxShader::init()
 	updateUniform("uni_skybox", 0);
 }
 
-void SkyboxShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas)
+void SkyboxShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	glDepthFunc(GL_LEQUAL);
 
@@ -277,7 +277,7 @@ void GeometryPassBlinnPhongShader::init()
 	updateUniform("uni_normalTexture", 2);
 }
 
-void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas)
+void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	bindShader();
 
@@ -356,7 +356,7 @@ void LightPassBlinnPhongShader::init()
 	updateUniform("m_gSpecular", 3);
 }
 
-void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas)
+void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	bindShader();
 
@@ -420,7 +420,7 @@ void GeometryPassPBSShader::init()
 	updateUniform("uni_aoTexture", 4);
 }
 
-void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas)
+void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	bindShader();
 
@@ -474,7 +474,7 @@ void LightPassPBSShader::init()
 	updateUniform("m_gSpecular", 5);
 }
 
-void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas)
+void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	bindShader();
 
@@ -531,7 +531,7 @@ void FinalPassShader::init()
 	updateUniform("uni_finalColor", 0);
 }
 
-void FinalPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas)
+void FinalPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	bindShader();
 }
@@ -624,7 +624,7 @@ void GLRenderingManager::initializeGeometryPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas)
+void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_geometryPassFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_geometryPassRBO);
@@ -696,7 +696,7 @@ void GLRenderingManager::initializeLightPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas)
+void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_lightPassFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_lightPassRBO);
@@ -726,7 +726,7 @@ void GLRenderingManager::initializeBillboardPass()
 {
 }
 
-void GLRenderingManager::renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas)
+void GLRenderingManager::renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 }
 
@@ -756,7 +756,7 @@ void GLRenderingManager::initializeFinalPass()
 	glBindVertexArray(0);
 }
 
-void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData> meshDatas, std::unordered_map<GameObjectID, TextureData> textureDatas)
+void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);

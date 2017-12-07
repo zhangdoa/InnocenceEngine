@@ -20,7 +20,7 @@ public:
 
 	const __time64_t getGameStartTime() const;
 	const double getDeltaTime() const;
-
+	const double getcurrentTime() const;
 	// Returns year/month/day triple in civil calendar
 	// Preconditions:  z is number of days since 1970-01-01 and is in the range:
 	//                   [numeric_limits<Int>::min(), numeric_limits<Int>::max()-719468].
@@ -72,7 +72,7 @@ public:
 private:
 	TimeManager();
 
-	const double m_frameTime = (1.0 / 60.0) * 1000.0;
+	const double m_frameTime = 1.0 / 60.0;
 	__time64_t m_gameStartTime;
 	std::chrono::high_resolution_clock::time_point m_updateStartTime;
 	double m_deltaTime;
