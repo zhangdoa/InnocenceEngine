@@ -54,5 +54,6 @@ private:
 	std::unordered_map<std::string, textureDataPair> m_loadedTextureMap;
 	meshDataID m_UnitCubeTemplate;
 	meshDataID m_UnitSphereTemplate;
+	meshDataID m_UnitQuadTemplate;
 };
 

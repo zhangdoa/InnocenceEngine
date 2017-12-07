@@ -204,14 +204,14 @@ private:
 	glm::vec2 m_screenResolution = glm::vec2();
 
 	GLuint m_geometryPassFBO;
-	GLuint m_geometryPassPositionTexture;
-	GLuint m_geometryPassNormalTexture;
-	GLuint m_geometryPassAlbedoTexture;
-	GLuint m_geometryPassSpecularTexture;
+	GLuint m_geometryPassRT0Texture;
+	GLuint m_geometryPassRT1Texture;
+	GLuint m_geometryPassRT2Texture;
+	GLuint m_geometryPassRT3Texture;
 	GLuint m_geometryPassRBO;
 
 	GLuint m_lightPassFBO;
-	GLuint m_lightPassFinalTexture;
+	GLuint m_lightPassRT0Texture;
 	GLuint m_lightPassRBO;
 	GLuint m_lightPassVAO;
 	GLuint m_lightPassVBO;
@@ -224,10 +224,10 @@ private:
 	int m_polygonMode = 0;
 	bool m_drawDepthBuffer = false;
 
-	void initializeGeometryPass();
-	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
-	void initializeLightPass();
-	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
+	void initializeGeometryBlinnPhongPass();
+	void renderGeometryBlinnPhongPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
+	void initializeLightBlinnPhongPass();
+	void renderLightBlinnPhongPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
 	void initializeBillboardPass();
 	void renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
 	void initializeFinalPass();

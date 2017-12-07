@@ -26,6 +26,12 @@ void AssetManager::initialize()
 	lastMeshData->setMeshDrawMethod(meshDrawMethod::TRIANGLE_STRIP);
 	lastMeshData->initialize();
 	lastMeshData->sendDataToGPU();
+
+	m_UnitQuadTemplate = RenderingManager::getInstance().addMeshData();
+	lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitQuadTemplate);
+	lastMeshData->addUnitQuad();
+	lastMeshData->initialize();
+	lastMeshData->sendDataToGPU();
 }
 
 void AssetManager::update()
@@ -396,10 +402,5 @@ void AssetManager::addUnitSphere(VisibleComponent & visibleComponent) const
 
 void AssetManager::addUnitQuad(VisibleComponent & visibleComponent) const
 {
-	auto id = RenderingManager::getInstance().addMeshData();
-	auto lastMeshData = &RenderingManager::getInstance().getMeshData(id);
-	lastMeshData->addUnitQuad();
-	lastMeshData->initialize();
-	lastMeshData->sendDataToGPU();
-	visibleComponent.addMeshData(id);
+	visibleComponent.addMeshData(m_UnitQuadTemplate);
 }
