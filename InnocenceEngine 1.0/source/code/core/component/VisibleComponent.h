@@ -26,7 +26,7 @@ public:
 	void addMeshData(meshDataID meshDataID);
 	void addTextureData(meshDataID meshDataID, textureDataID textureDataID, textureType textureType);
 	void addTextureData(textureDataID textureDataID, textureType textureType);
-
+	void addTextureData(textureDataPair textureDataPair);
 
 private:
 	graphicDataMap m_graphicDataMap;

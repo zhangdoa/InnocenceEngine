@@ -17,7 +17,6 @@ public:
 private:
 
 	void initSpheres();
-	void loadTextureForSpheres();
 	BaseActor rootActor;
 
 	PlayerCharacter playCharacter;

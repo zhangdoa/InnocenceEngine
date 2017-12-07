@@ -114,11 +114,9 @@ void InnocenceGarden::initialize()
 	//AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent2);
 	//AssetManager::getInstance().loadTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent3);
 
-	AssetManager::getInstance().loadTexture("test_diffuse.png", textureType::DIFFUSE, landscapeStaticMeshComponent);
-	AssetManager::getInstance().loadTexture("test_specular.png", textureType::SPECULAR, landscapeStaticMeshComponent);
-	AssetManager::getInstance().loadTexture("test_normal.png", textureType::NORMALS, landscapeStaticMeshComponent);
-
-	loadTextureForSpheres();
+	AssetManager::getInstance().loadSingleTexture("test_diffuse.png", textureType::DIFFUSE, landscapeStaticMeshComponent);
+	AssetManager::getInstance().loadSingleTexture("test_specular.png", textureType::SPECULAR, landscapeStaticMeshComponent);
+	AssetManager::getInstance().loadSingleTexture("test_normal.png", textureType::NORMALS, landscapeStaticMeshComponent);
 
 	rootActor.initialize();
 }
@@ -151,12 +149,15 @@ void InnocenceGarden::shutdown()
 
 void InnocenceGarden::initSpheres()
 {
+	int sphereMatrixDim = 8;
+	float sphereBreadthInterval = 3.0;
+	for (auto i = (unsigned int)0; i < sphereMatrixDim * sphereMatrixDim; i++)
+	{
+		sphereActors.emplace_back();
+		sphereComponents.emplace_back();
+	}
 	for (auto i = (unsigned int)0; i < sphereComponents.size(); i++)
 	{
-		BaseActor newBaseActor;
-		sphereActors.emplace_back(newBaseActor);
-		VisibleComponent newVisibleComponent;
-		sphereComponents.emplace_back(newVisibleComponent);
 		sphereComponents[i].setMeshDrawMethod(meshDrawMethod::TRIANGLE_STRIP);
 		sphereComponents[i].setVisiblilityType(visiblilityType::STATIC_MESH);
 
@@ -165,19 +166,17 @@ void InnocenceGarden::initSpheres()
 
 		SceneGraphManager::getInstance().addToRenderingQueue(&sphereComponents[i]);
 
-		sphereActors[i].getTransform()->setPos(glm::vec3(-16 + i * 4, 2.0, -6.0));
-
-		AssetManager::getInstance().addUnitCube(sphereComponents[i]);
+		AssetManager::getInstance().addUnitSphere(sphereComponents[i]);
+		AssetManager::getInstance().loadSingleTexture("pbr_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
+		AssetManager::getInstance().loadSingleTexture("pbr_metallic.png", textureType::SPECULAR, sphereComponents[i]);
+		AssetManager::getInstance().loadSingleTexture("pbr_normal.png", textureType::NORMALS, sphereComponents[i]);
 	}
-}
-
-void InnocenceGarden::loadTextureForSpheres()
-{
-	for (int i = 0; i < 8; i++)
+	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
 	{
-		//AssetManager::getInstance().loadTexture("pbr_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
-		//AssetManager::getInstance().loadTexture("pbr_metallic.png", textureType::SPECULAR, sphereComponents[i]);
-		//AssetManager::getInstance().loadTexture("pbr_normal.png", textureType::NORMALS, sphereComponents[i]);
+		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
+		{
+			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(glm::vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval/ 2.0) + (i * sphereBreadthInterval), 2.0 + (j * sphereBreadthInterval), -6.0));
+		}
 	}
 	
 }
