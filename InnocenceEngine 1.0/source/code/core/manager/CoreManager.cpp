@@ -20,10 +20,10 @@ void CoreManager::setGameData(IGameData * gameData)
 void CoreManager::initialize()
 {
 	// emplace_back in a static order.
-	m_childEventManager.emplace_back(&AssetManager::getInstance());
 	m_childEventManager.emplace_back(&TimeManager::getInstance());
 	m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
 	m_childEventManager.emplace_back(&RenderingManager::getInstance());
+	m_childEventManager.emplace_back(&AssetManager::getInstance());
 
 	std::string l_gameName;
 	m_gameData->getGameName(l_gameName);

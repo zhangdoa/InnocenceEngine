@@ -28,8 +28,8 @@ public:
 	std::string loadShader(const std::string& FileName) const;
 	void importModel(const std::string& fileName) const;
 	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
-	void loadTexture(const std::string& fileName, textureType textureType, VisibleComponent& visibleComponent) const;
-	void loadTexture(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
+	void loadSingleTexture(const std::string& fileName, textureType textureType, VisibleComponent& visibleComponent);
+	void loadCubeMapTextures(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
 
 	void addUnitCube(VisibleComponent& visibleComponent) const;
 	void addUnitSphere(VisibleComponent& visibleComponent) const;
@@ -46,7 +46,13 @@ private:
 	void processSingleAssimpMesh(aiMesh* mesh, meshDataID meshDataID, meshDrawMethod meshDrawMethod) const;
 	void addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData * meshData) const;
 	void processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod, textureDataMap* textureDataMap) const;
-	void loadTexture(const std::string& fileName, aiMaterial * aiMaterial, aiTextureType aiTextureType, textureWrapMethod textureWrapMethod, textureDataMap* textureDataMap) const;
-	std::unordered_map<std::string, graphicDataMap> m_loadedAssetMap;
+	void loadTextureForModel(const std::string& fileName, aiMaterial * aiMaterial, aiTextureType aiTextureType, textureWrapMethod textureWrapMethod, textureDataMap* textureDataMap) const;
+	
+	void assignloadedTexture(textureDataPair& loadedTextureDataPair, VisibleComponent& visibleComponent);
+	void loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod);
+	std::unordered_map<std::string, graphicDataMap> m_loadedModelMap;
+	std::unordered_map<std::string, textureDataPair> m_loadedTextureMap;
+	meshDataID m_UnitCubeTemplate;
+	meshDataID m_UnitSphereTemplate;
 };
 
