@@ -60,6 +60,14 @@ void VisibleComponent::addTextureData(textureDataID textureDataID, textureType t
 	}
 }
 
+void VisibleComponent::addTextureData(textureDataPair textureDataPair)
+{
+	for (auto& l_graphicDatas : m_graphicDataMap)
+	{
+		l_graphicDatas.second.emplace(textureDataPair);
+	}
+}
+
 graphicDataMap& VisibleComponent::getGraphicDataMap()
 {
 	return m_graphicDataMap;

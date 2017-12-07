@@ -55,6 +55,7 @@ private:
 
 typedef GameObjectID textureDataID;
 typedef GameObjectID meshDataID;
+typedef std::pair<textureType, textureDataID> textureDataPair;
 typedef std::unordered_multimap<textureType, textureDataID> textureDataMap;
 typedef std::unordered_multimap<meshDataID, textureDataMap> graphicDataMap;
 
