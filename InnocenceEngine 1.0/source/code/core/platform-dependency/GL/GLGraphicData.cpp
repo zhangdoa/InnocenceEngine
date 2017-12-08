@@ -125,41 +125,12 @@ void GLTextureData::init(textureType textureType, textureWrapMethod textureWrapM
 	case textureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
 	case textureWrapMethod::CLAMPTOEDGE: l_textureWrapMethod = GL_CLAMP_TO_EDGE; break;
 	}
-	switch (textureType)
+	if (textureType == textureType::INVISIBLE)
 	{
-	case textureType::INVISIBLE: break;
-	case textureType::DIFFUSE:
-		// @TODO: more general texture parameter
-		glGenTextures(1, &m_textureID);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		// set the texture wrapping parameters
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
-		// set texture filtering parameters
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		break;
-	case textureType::SPECULAR:
-		glGenTextures(1, &m_textureID);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		// set the texture wrapping parameters
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
-		// set texture filtering parameters
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		break;
-	case textureType::NORMALS:
-		glGenTextures(1, &m_textureID);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		// set the texture wrapping parameters
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
-		// set texture filtering parameters
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		break;
-	case textureType::CUBEMAP:
+		return;
+	}
+	else if (textureType == textureType::CUBEMAP)
+	{
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 		// set the texture wrapping parameters
@@ -169,7 +140,18 @@ void GLTextureData::init(textureType textureType, textureWrapMethod textureWrapM
 		// set texture filtering parameters
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		break;
+	}
+	else
+	{
+		// @TODO: more general texture parameter
+		glGenTextures(1, &m_textureID);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		// set the texture wrapping parameters
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
+		// set texture filtering parameters
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 }
 
@@ -188,6 +170,14 @@ void GLTextureData::draw(textureType textureType)
 		break;
 	case textureType::NORMALS:
 		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		break;
+	case textureType::AMBIENT:
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		break;
+	case textureType::EMISSIVE:
+		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
 	case textureType::CUBEMAP:
@@ -231,28 +221,26 @@ void GLTextureData::sendDataToGPU(textureType textureType, int textureIndex, int
 		}
 	}
 
-	switch (textureType)
+	if (textureType == textureType::INVISIBLE)
 	{
-	case textureType::INVISIBLE: break;
-	case textureType::DIFFUSE:
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, textureWidth, textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, textureData);
-		glGenerateMipmap(GL_TEXTURE_2D);
-		break;
-	case textureType::SPECULAR:
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, textureWidth, textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, textureData);
-		glGenerateMipmap(GL_TEXTURE_2D);
-		break;
-	case textureType::NORMALS:
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, textureWidth, textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, textureData);
-		glGenerateMipmap(GL_TEXTURE_2D);
-		break;
-	case textureType::CUBEMAP:
+		return;
+	}
+	else if (textureType == textureType::CUBEMAP)
+	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, 0, l_internalFormat, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
-		break;
+	}
+	else if (textureType == textureType::NORMALS)
+	{
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, textureWidth, textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, textureData);
+		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 }
 

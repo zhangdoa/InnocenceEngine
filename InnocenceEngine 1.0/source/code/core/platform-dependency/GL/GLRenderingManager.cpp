@@ -613,8 +613,8 @@ void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComp
 
 void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
-	renderGeometryBlinnPhongPass(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
-	renderLightBlinnPhongPass(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
+	renderGeometryPass(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
+	renderLightPass(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 	renderFinalPass(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 }
 
@@ -623,8 +623,12 @@ void GLRenderingManager::setScreenResolution(glm::vec2 screenResolution)
 	m_screenResolution = screenResolution;
 }
 
-void GLRenderingManager::initializeGeometryBlinnPhongPass()
+void GLRenderingManager::initializeGeometryPass()
 {
+	// initialize shader
+	m_geometryPassShader->init();
+
+	//generate and bind frame buffer
 	glGenFramebuffers(1, &m_geometryPassFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_geometryPassFBO);
 
@@ -652,7 +656,7 @@ void GLRenderingManager::initializeGeometryBlinnPhongPass()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_geometryPassRT2Texture, 0);
 
-	// specular color buffer
+	// metallic +  roughness + ao buffer
 	glGenTextures(1, &m_geometryPassRT3Texture);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT3Texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -679,7 +683,7 @@ void GLRenderingManager::initializeGeometryBlinnPhongPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLRenderingManager::renderGeometryBlinnPhongPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
+void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_geometryPassFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_geometryPassRBO);
@@ -688,16 +692,16 @@ void GLRenderingManager::renderGeometryBlinnPhongPass(std::vector<CameraComponen
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
 
-	//glEnable(GL_CULL_FACE);
-	//glFrontFace(GL_CCW);
-	//glCullFace(GL_BACK);
 
-	//GeometryPassBlinnPhongShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
-	GeometryPassPBSShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
+	m_geometryPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 }
 
-void GLRenderingManager::initializeLightBlinnPhongPass()
+void GLRenderingManager::initializeLightPass()
 {
+	// initialize shader
+	m_lightPassShader->init();
+
+	//generate and bind frame buffer
 	glGenFramebuffers(1, &m_lightPassFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_lightPassFBO);
 
@@ -749,7 +753,7 @@ void GLRenderingManager::initializeLightBlinnPhongPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLRenderingManager::renderLightBlinnPhongPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
+void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_lightPassFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_lightPassRBO);
@@ -766,9 +770,7 @@ void GLRenderingManager::renderLightBlinnPhongPass(std::vector<CameraComponent*>
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT3Texture);
 
-
-	//LightPassBlinnPhongShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
-	LightPassPBSShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
+	m_lightPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 	// draw light pass rectangle
 	glBindVertexArray(m_lightPassVAO);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -862,15 +864,17 @@ void GLRenderingManager::initialize()
 	//BillboardPassShader::getInstance().init();
 	//SkyboxShader::getInstance().init();
 	glEnable(GL_TEXTURE_2D);
-	// initialize shader
-	//GeometryPassBlinnPhongShader::getInstance().init();
-	GeometryPassPBSShader::getInstance().init();
-	initializeGeometryBlinnPhongPass();
-	// initialize shader
-	//LightPassBlinnPhongShader::getInstance().init();
-	LightPassPBSShader::getInstance().init();
-	initializeLightBlinnPhongPass();
+
+	//m_geometryPassShader = &GeometryPassBlinnPhongShader::getInstance();
+	m_geometryPassShader = &GeometryPassPBSShader::getInstance();
+	initializeGeometryPass();
+
+	//m_lightPassShader = &LightPassBlinnPhongShader::getInstance();
+	m_lightPassShader = &LightPassPBSShader::getInstance();
+	initializeLightPass();
+
 	initializeFinalPass();
+
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
 }

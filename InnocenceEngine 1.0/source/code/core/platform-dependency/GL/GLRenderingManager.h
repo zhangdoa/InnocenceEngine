@@ -209,6 +209,7 @@ private:
 	GLuint m_geometryPassRT2Texture;
 	GLuint m_geometryPassRT3Texture;
 	GLuint m_geometryPassRBO;
+	GLShader* m_geometryPassShader;
 
 	GLuint m_lightPassFBO;
 	GLuint m_lightPassRT0Texture;
@@ -216,6 +217,7 @@ private:
 	GLuint m_lightPassVAO;
 	GLuint m_lightPassVBO;
 	std::vector<float> m_lightPassVertices;
+	GLShader* m_lightPassShader;
 
 	GLuint m_screenVAO;
 	GLuint m_screenVBO;
@@ -224,10 +226,10 @@ private:
 	int m_polygonMode = 0;
 	bool m_drawDepthBuffer = false;
 
-	void initializeGeometryBlinnPhongPass();
-	void renderGeometryBlinnPhongPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
-	void initializeLightBlinnPhongPass();
-	void renderLightBlinnPhongPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
+	void initializeGeometryPass();
+	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
+	void initializeLightPass();
+	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
 	void initializeBillboardPass();
 	void renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
 	void initializeFinalPass();
