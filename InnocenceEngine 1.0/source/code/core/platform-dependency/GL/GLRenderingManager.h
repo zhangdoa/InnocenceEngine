@@ -156,6 +156,24 @@ private:
 	FinalPassShader();
 };
 
+class DebuggerShader : public GLShader
+{
+public:
+	~DebuggerShader();
+
+	static DebuggerShader& getInstance()
+	{
+		static DebuggerShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas) override;
+
+private:
+	DebuggerShader();
+};
+
 class BillboardPassShader : public GLShader
 {
 public:

@@ -16,7 +16,7 @@ public:
 
 	std::vector<GLVertexData>& getVertices();
 	std::vector<unsigned int>& getIntices();
-	void sendDataToGPU();
+	void sendDataToGPU(bool calculateNormals, bool calculateTangents);
 	void addUnitCube();
 	void addUnitSphere();
 	void addUnitQuad();

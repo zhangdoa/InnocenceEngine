@@ -1,5 +1,6 @@
 // shadertype=glsl
 #version 330 core
+
 layout (location = 0) in vec3 in_Position;
 layout (location = 1) in vec2 in_TexCoord;
 layout (location = 2) in vec3 in_Normal;
@@ -22,11 +23,23 @@ void main()
 	vec3 T = normalize(vec3(uni_m * vec4(in_Tangent,   0.0)));
 	vec3 B = normalize(vec3(uni_m * vec4(in_Bitangent, 0.0)));
 	vec3 N = normalize(vec3(uni_m * vec4(in_Normal,    0.0)));
+
+		
+    //vec3 Q1  = dFdx(in_Position);
+    //vec3 Q2  = dFdy(in_Position);
+    //vec2 st1 = dFdx(in_TexCoord);
+    //vec2 st2 = dFdy(in_TexCoord);
+
+    //vec3 N   = normalize(in_Normal);
+    //vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+    //vec3 B  = -normalize(cross(N, T));
+
 	if (dot(cross(N, T), B) < 0.0f)
 	{
      T = T * -1.0f;
 	 }
 	TBN = mat3(T, B, N); 
+
 
 	// output the fragment position, alpha should be set to 0 for background rendering pass
 	thefrag_FragPos = uni_m * vec4(in_Position, 0.0);

@@ -35,9 +35,63 @@ std::vector<unsigned int>& MeshData::getIntices()
 	return m_indices;
 }
 
-void MeshData::sendDataToGPU()
+void MeshData::sendDataToGPU(bool calculateNormals = false, bool calculateTangents = false)
 {
-	m_GLMeshData.sendDataToGPU(m_vertices, m_indices, false);
+	if (calculateNormals)
+	{
+		for (auto& l_vertices : m_vertices)
+		{
+			l_vertices.m_normal = l_vertices.m_pos;
+		}
+	}
+	if (calculateTangents)
+	{
+		// @TODO: correct tangent calculation
+		for (size_t i = 0; i < m_vertices.size(); i += 3) {
+			int i0 = m_indices[i];
+			int i1 = m_indices[i + 1];
+			int i2 = m_indices[i + 2];
+
+			glm::vec3 l_edge1 = m_vertices[i1].m_pos - m_vertices[i0].m_pos;
+			glm::vec3 l_edge2 = m_vertices[i2].m_pos - m_vertices[i0].m_pos;
+
+			double DeltaU1 = m_vertices[i1].m_texCoord.x -  m_vertices[i0].m_texCoord.x;
+			double DeltaV1 =  m_vertices[i1].m_texCoord.y -  m_vertices[i0].m_texCoord.y;
+			double DeltaU2 =  m_vertices[i2].m_texCoord.x -  m_vertices[i0].m_texCoord.x;
+			double DeltaV2 =  m_vertices[i2].m_texCoord.y -  m_vertices[i0].m_texCoord.y;
+
+			double f = DeltaU1 * DeltaV2 - DeltaU2 * DeltaV1;
+
+			if (f == 0.0)
+			{
+				f = 1.0;
+			}
+			else
+			{
+				f = 1.0 / f;
+			}
+
+			glm::vec3 l_tangent;
+
+			double ftx = DeltaV2 * l_edge1.x - DeltaV1 * l_edge2.x;
+			double fty = DeltaV2 * l_edge1.y - DeltaV1 * l_edge2.y;
+			double ftz = DeltaV2 * l_edge1.z - DeltaV1 * l_edge2.z;
+
+			l_tangent.x = f * ftx;
+			l_tangent.y = f * fty;
+			l_tangent.z = f * ftz;
+
+			m_vertices[i0].m_tangent += l_tangent;
+			m_vertices[i1].m_tangent += l_tangent;
+			m_vertices[i2].m_tangent += l_tangent;
+		}
+		for (auto& l_vertices : m_vertices)
+		{
+			l_vertices.m_tangent = glm::normalize(glm::cross(glm::cross(l_vertices.m_normal, l_vertices.m_tangent), l_vertices.m_normal));
+			l_vertices.m_bitangent = glm::normalize(glm::cross(l_vertices.m_normal, l_vertices.m_tangent));
+		}
+	}
+	m_GLMeshData.sendDataToGPU(m_vertices, m_indices);
 }
 
 void MeshData::addUnitCube()
@@ -45,61 +99,44 @@ void MeshData::addUnitCube()
 	GLVertexData l_VertexData_1;
 	l_VertexData_1.m_pos = glm::vec3(1.0f, 1.0f, 1.0f);
 	l_VertexData_1.m_texCoord = glm::vec2(1.0f, 1.0f);
-	l_VertexData_1.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
-	l_VertexData_1.m_tangent = glm::vec3(1.0f, 0.0f, 0.0f);
-	l_VertexData_1.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLVertexData l_VertexData_2;
 	l_VertexData_2.m_pos = glm::vec3(1.0f, -1.0f, 1.0f);
 	l_VertexData_2.m_texCoord = glm::vec2(1.0f, 0.0f);
-	l_VertexData_2.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
-	l_VertexData_2.m_tangent = glm::vec3(-1.0f, 0.0f, 0.0f);
-	l_VertexData_2.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLVertexData l_VertexData_3;
 	l_VertexData_3.m_pos = glm::vec3(-1.0f, -1.0f, 1.0f);
 	l_VertexData_3.m_texCoord = glm::vec2(0.0f, 0.0f);
-	l_VertexData_3.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
-	l_VertexData_3.m_tangent = glm::vec3(-1.0f, 0.0f, 0.0f);
-	l_VertexData_3.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLVertexData l_VertexData_4;
 	l_VertexData_4.m_pos = glm::vec3(-1.0f, 1.0f, 1.0f);
 	l_VertexData_4.m_texCoord = glm::vec2(0.0f, 1.0f);
-	l_VertexData_4.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
-	l_VertexData_4.m_tangent = glm::vec3(1.0f, 0.0f, 0.0f);
-	l_VertexData_4.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLVertexData l_VertexData_5;
 	l_VertexData_5.m_pos = glm::vec3(1.0f, 1.0f, -1.0f);
 	l_VertexData_5.m_texCoord = glm::vec2(1.0f, 1.0f);
-	l_VertexData_5.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
-	l_VertexData_5.m_tangent = glm::vec3(1.0f, 0.0f, 0.0f);
-	l_VertexData_5.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLVertexData l_VertexData_6;
 	l_VertexData_6.m_pos = glm::vec3(1.0f, -1.0f, -1.0f);
 	l_VertexData_6.m_texCoord = glm::vec2(1.0f, 0.0f);
-	l_VertexData_6.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
-	l_VertexData_6.m_tangent = glm::vec3(-1.0f, 0.0f, 0.0f);
-	l_VertexData_6.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLVertexData l_VertexData_7;
 	l_VertexData_7.m_pos = glm::vec3(-1.0f, -1.0f, -1.0f);
 	l_VertexData_7.m_texCoord = glm::vec2(0.0f, 0.0f);
-	l_VertexData_7.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
-	l_VertexData_7.m_tangent = glm::vec3(-1.0f, 0.0f, 0.0f);
-	l_VertexData_7.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLVertexData l_VertexData_8;
 	l_VertexData_8.m_pos = glm::vec3(-1.0f, 1.0f, -1.0f);
 	l_VertexData_8.m_texCoord = glm::vec2(0.0f, 1.0f);
-	l_VertexData_8.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
-	l_VertexData_8.m_tangent = glm::vec3(1.0f, 0.0f, 0.0f);
-	l_VertexData_8.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
+
 
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
+	for (auto& l_vertexData : m_vertices)
+	{
+		l_vertexData.m_normal = l_vertexData.m_pos;
+		l_vertexData.m_tangent = glm::cross(glm::vec3(0.0, 0.0, 1.0), l_vertexData.m_normal);
+		l_vertexData.m_bitangent = glm::cross(l_vertexData.m_tangent, l_vertexData.m_normal);
+	}
 	m_indices = { 0, 1, 3, 1, 2, 3,
 		4, 5, 0, 5, 1, 0,
 		7, 6, 4, 6, 5, 4,
@@ -114,9 +151,9 @@ void MeshData::addUnitSphere()
 	int Y_SEGMENTS = 64;
 	double PI = 3.14159265359;
 
-	for (int y = 0; y <= Y_SEGMENTS; ++y)
+	for (int y = 0; y < Y_SEGMENTS; ++y)
 	{
-		for (int x = 0; x <= X_SEGMENTS; ++x)
+		for (int x = 0; x < X_SEGMENTS; ++x)
 		{
 			float xSegment = (float)x / (float)X_SEGMENTS;
 			float ySegment = (float)y / (float)Y_SEGMENTS;
@@ -129,12 +166,7 @@ void MeshData::addUnitSphere()
 			l_VertexData.m_texCoord = glm::vec2(xSegment, ySegment);
 			l_VertexData.m_normal = glm::vec3(xPos, yPos, zPos);
 			l_VertexData.m_tangent = glm::cross(glm::vec3(0.0, 0.0, 1.0), l_VertexData.m_normal);
-			l_VertexData.m_bitangent = glm::cross(l_VertexData.m_normal, l_VertexData.m_tangent);
-			// @TODO: correct TBN calculation
-			/*auto l_theta = glm::acos(zPos);
-			auto l_phi = glm::atan(yPos + 0.0001, xPos + 0.0001);
-			l_VertexData.m_tangent = glm::vec3(-glm::cos(l_theta) * glm::sin(l_phi), 0.0, glm::cos(l_theta) * glm::cos(l_phi));
-			l_VertexData.m_bitangent = glm::vec3(-glm::sin(l_theta) * glm::cos(l_phi), glm::cos(l_theta), -glm::sin(l_theta) * glm::sin(l_phi));*/
+			l_VertexData.m_bitangent = glm::cross(l_VertexData.m_tangent, l_VertexData.m_normal);
 			m_vertices.emplace_back(l_VertexData);
 		}
 	}
@@ -168,22 +200,18 @@ void MeshData::addUnitQuad()
 	GLVertexData l_VertexData_1;
 	l_VertexData_1.m_pos = glm::vec3(1.0f, 1.0f, 0.0f);
 	l_VertexData_1.m_texCoord = glm::vec2(1.0f, 1.0f);
-	l_VertexData_1.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_2;
 	l_VertexData_2.m_pos = glm::vec3(1.0f, -1.0f, 0.0f);
 	l_VertexData_2.m_texCoord = glm::vec2(1.0f, 0.0f);
-	l_VertexData_2.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_3;
 	l_VertexData_3.m_pos = glm::vec3(-1.0f, -1.0f, 0.0f);
 	l_VertexData_3.m_texCoord = glm::vec2(0.0f, 0.0f);
-	l_VertexData_3.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_4;
 	l_VertexData_4.m_pos = glm::vec3(-1.0f, 1.0f, 0.0f);
 	l_VertexData_4.m_texCoord = glm::vec2(0.0f, 1.0f);
-	l_VertexData_4.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4 };
 	m_indices = { 0, 1, 3, 1, 2, 3 };
