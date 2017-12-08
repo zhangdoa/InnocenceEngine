@@ -35,15 +35,14 @@ void InnocenceGarden::initialize()
 	SceneGraphManager::getInstance().addToRenderingQueue(&skyboxComponent);
 	
 	directionalLightComponent.setlightType(lightType::DIRECTIONAL);
-	directionalLightComponent.setDirection(glm::vec3(0.25f, 1.0f, 1.0f));
-	directionalLightComponent.setAmbientColor(glm::vec3(0.0f, 0.35f, 0.55f));
-	directionalLightComponent.setDiffuseColor(glm::vec3(0.0f, 0.35f, 0.55f));
-	directionalLightComponent.setSpecularColor(glm::vec3(0.0f, 0.35f, 0.55f));
+	directionalLightComponent.setDirection(glm::vec3(0.65f, 0.0f, 0.0f));
+	directionalLightComponent.setColor(glm::vec3(0.0f, 3.5f, 5.5f));
 	directionalLightActor.addChildComponent(&directionalLightComponent);
 	SceneGraphManager::getInstance().addToLightQueue(&directionalLightComponent);
 
 	pointLightActor1.addChildComponent(&pointLightComponent1);
 	SceneGraphManager::getInstance().addToLightQueue(&pointLightComponent1);
+	pointLightComponent1.setColor(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	pointLightBillboardComponent1.setVisiblilityType(visiblilityType::BILLBOARD);
 	pointLightBillboardComponent1.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
@@ -52,6 +51,7 @@ void InnocenceGarden::initialize()
 
 	pointLightActor2.addChildComponent(&pointLightComponent2);
 	SceneGraphManager::getInstance().addToLightQueue(&pointLightComponent2);
+	pointLightComponent2.setColor(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	pointLightBillboardComponent2.setVisiblilityType(visiblilityType::BILLBOARD);
 	pointLightBillboardComponent2.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
@@ -60,6 +60,7 @@ void InnocenceGarden::initialize()
 	
 	pointLightActor3.addChildComponent(&pointLightComponent3);
 	SceneGraphManager::getInstance().addToLightQueue(&pointLightComponent3);
+	pointLightComponent3.setColor(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	pointLightBillboardComponent3.setVisiblilityType(visiblilityType::BILLBOARD);
 	pointLightBillboardComponent3.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
@@ -120,20 +121,15 @@ void InnocenceGarden::initialize()
 void InnocenceGarden::update()
 {
 	temp += 0.02f;
-	pointLightComponent1.setAmbientColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
-	pointLightComponent1.setDiffuseColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
-	pointLightComponent1.setSpecularColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
-	pointLightActor1.getTransform()->setPos(glm::vec3(-2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 3.0f));
+	//directionalLightComponent.setDirection(glm::vec3((glm::sin(temp), 1.0f, 1.0f)));
+	//pointLightComponent1.setColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
+	//pointLightActor1.getTransform()->setPos(glm::vec3(-2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 3.0f));
 
-	pointLightComponent2.setAmbientColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
-	pointLightComponent2.setDiffuseColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
-	pointLightComponent2.setSpecularColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
-	pointLightActor2.getTransform()->setPos(glm::vec3(2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 2.0f));
+	//pointLightComponent2.setColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
+	//pointLightActor2.getTransform()->setPos(glm::vec3(2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 2.0f));
 
-	pointLightComponent3.setAmbientColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
-	pointLightComponent3.setDiffuseColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
-	pointLightComponent3.setSpecularColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
-	pointLightActor3.getTransform()->setPos(glm::vec3(0.0f, 1.0f, 4.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 1.0f));
+	//pointLightComponent3.setColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
+	//pointLightActor3.getTransform()->setPos(glm::vec3(0.0f, 1.0f, 4.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 1.0f));
 
 	rootActor.update();
 }
@@ -163,9 +159,9 @@ void InnocenceGarden::initSpheres()
 		SceneGraphManager::getInstance().addToRenderingQueue(&sphereComponents[i]);
 
 		AssetManager::getInstance().addUnitSphere(sphereComponents[i]);
-		//AssetManager::getInstance().loadSingleTexture("pbr_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
-		//AssetManager::getInstance().loadSingleTexture("pbr_metallic.png", textureType::SPECULAR, sphereComponents[i]);
-		//AssetManager::getInstance().loadSingleTexture("pbr_normal.png", textureType::NORMALS, sphereComponents[i]);
+		AssetManager::getInstance().loadSingleTexture("pbr_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
+		AssetManager::getInstance().loadSingleTexture("pbr_metallic.png", textureType::SPECULAR, sphereComponents[i]);
+		AssetManager::getInstance().loadSingleTexture("pbr_normal.png", textureType::NORMALS, sphereComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
 	{
