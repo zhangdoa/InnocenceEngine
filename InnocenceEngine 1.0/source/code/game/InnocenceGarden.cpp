@@ -36,7 +36,7 @@ void InnocenceGarden::initialize()
 	
 	directionalLightComponent.setlightType(lightType::DIRECTIONAL);
 	directionalLightComponent.setDirection(glm::vec3(0.65f, 0.0f, 0.0f));
-	directionalLightComponent.setColor(glm::vec3(0.0f, 3.5f, 5.5f));
+	directionalLightComponent.setColor(glm::vec3(0.0f, 0.35f, 0.55f));
 	directionalLightActor.addChildComponent(&directionalLightComponent);
 	SceneGraphManager::getInstance().addToLightQueue(&directionalLightComponent);
 
@@ -121,15 +121,15 @@ void InnocenceGarden::initialize()
 void InnocenceGarden::update()
 {
 	temp += 0.02f;
-	//directionalLightComponent.setDirection(glm::vec3((glm::sin(temp), 1.0f, 1.0f)));
-	//pointLightComponent1.setColor(glm::vec3(0.0f, (glm::sin(temp) + 1.0f) / 2.0f, 0.0f));
-	//pointLightActor1.getTransform()->setPos(glm::vec3(-2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 3.0f));
+	//directionalLightComponent.setDirection(glm::vec3((((glm::sin(temp) + 1.0) / 2.0), 1.0f, 1.0f)));
+	pointLightComponent1.setColor(glm::vec3(0.5f, (glm::sin(temp) + 1.0f) / 2.0f, 0.5f));
+	pointLightActor1.getTransform()->setPos(glm::vec3(-2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 3.0f));
 
-	//pointLightComponent2.setColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.0f, 0.0f));
-	//pointLightActor2.getTransform()->setPos(glm::vec3(2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 2.0f));
+	pointLightComponent2.setColor(glm::vec3((glm::sin(temp * 2) + 1.0f) / 2.0f, 0.5f, 0.5f));
+	pointLightActor2.getTransform()->setPos(glm::vec3(2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 2.0f));
 
-	//pointLightComponent3.setColor(glm::vec3(0.0f, 0.0f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
-	//pointLightActor3.getTransform()->setPos(glm::vec3(0.0f, 1.0f, 4.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 1.0f));
+	pointLightComponent3.setColor(glm::vec3(0.5f, 0.5f, (glm::sin(temp * 3) + 1.0f) / 2.0f));
+	pointLightActor3.getTransform()->setPos(glm::vec3(0.0f, 1.0f, 4.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 1.0f));
 
 	rootActor.update();
 }

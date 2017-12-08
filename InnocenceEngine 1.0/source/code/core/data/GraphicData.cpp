@@ -52,15 +52,15 @@ void MeshData::addUnitCube()
 	GLVertexData l_VertexData_2;
 	l_VertexData_2.m_pos = glm::vec3(1.0f, -1.0f, 1.0f);
 	l_VertexData_2.m_texCoord = glm::vec2(1.0f, 0.0f);
-	l_VertexData_2.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
-	l_VertexData_2.m_tangent = glm::vec3(1.0f, 0.0f, 0.0f);
+	l_VertexData_2.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
+	l_VertexData_2.m_tangent = glm::vec3(-1.0f, 0.0f, 0.0f);
 	l_VertexData_2.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLVertexData l_VertexData_3;
 	l_VertexData_3.m_pos = glm::vec3(-1.0f, -1.0f, 1.0f);
 	l_VertexData_3.m_texCoord = glm::vec2(0.0f, 0.0f);
-	l_VertexData_3.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
-	l_VertexData_3.m_tangent = glm::vec3(1.0f, 0.0f, 0.0f);
+	l_VertexData_3.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
+	l_VertexData_3.m_tangent = glm::vec3(-1.0f, 0.0f, 0.0f);
 	l_VertexData_3.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLVertexData l_VertexData_4;
@@ -80,15 +80,15 @@ void MeshData::addUnitCube()
 	GLVertexData l_VertexData_6;
 	l_VertexData_6.m_pos = glm::vec3(1.0f, -1.0f, -1.0f);
 	l_VertexData_6.m_texCoord = glm::vec2(1.0f, 0.0f);
-	l_VertexData_6.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
-	l_VertexData_6.m_tangent = glm::vec3(1.0f, 0.0f, 0.0f);
+	l_VertexData_6.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
+	l_VertexData_6.m_tangent = glm::vec3(-1.0f, 0.0f, 0.0f);
 	l_VertexData_6.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLVertexData l_VertexData_7;
 	l_VertexData_7.m_pos = glm::vec3(-1.0f, -1.0f, -1.0f);
 	l_VertexData_7.m_texCoord = glm::vec2(0.0f, 0.0f);
-	l_VertexData_7.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
-	l_VertexData_7.m_tangent = glm::vec3(1.0f, 0.0f, 0.0f);
+	l_VertexData_7.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
+	l_VertexData_7.m_tangent = glm::vec3(-1.0f, 0.0f, 0.0f);
 	l_VertexData_7.m_bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	GLVertexData l_VertexData_8;
