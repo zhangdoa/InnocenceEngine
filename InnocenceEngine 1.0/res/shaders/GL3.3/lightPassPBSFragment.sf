@@ -76,6 +76,7 @@ vec3 CalcDirectionalLightRadiance(dirLight light, vec3 albedo, float metallic, f
         vec3 normalizedLightDir = normalize(-light.direction);
 		vec3 normalizedViewDir = normalize(viewPos - fragPos);
         vec3 normalizedHalfwayDir = normalize(normalizedViewDir + normalizedLightDir);
+        vec3 radiance = light.color;
 
         // Cook-Torrance BRDF
         float NDF = DistributionGGX(normal, normalizedHalfwayDir, roughness);   
@@ -101,7 +102,7 @@ vec3 CalcDirectionalLightRadiance(dirLight light, vec3 albedo, float metallic, f
         float NdotL = max(dot(normal, normalizedLightDir), 0.0);        
 
         // add to outgoing radiance Lo
-        return ((kD * albedo / PI + specular) * light.color * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+        return ((kD * albedo / PI + specular) * radiance * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
 }
 
 vec3 CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float roughness, float ao, vec3 normal, vec3 viewPos, vec3 fragPos, vec3 F0)
@@ -112,6 +113,9 @@ vec3 CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float
         vec3 normalizedLightDir = normalize(light.position - fragPos);
 		vec3 normalizedViewDir = normalize(viewPos - fragPos);
         vec3 normalizedHalfwayDir = normalize(normalizedViewDir + normalizedLightDir);
+		float distance = length(light.position - fragPos);
+        float attenuation = 1.0 / (distance * distance);
+        vec3 radiance = light.color * attenuation;
 
         // Cook-Torrance BRDF
         float NDF = DistributionGGX(normal, normalizedHalfwayDir, roughness);   
@@ -134,14 +138,10 @@ vec3 CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float
         kD *= 1.0 - metallic;	  
 
         // scale light by NdotL
-        float NdotL = max(dot(normal, normalizedLightDir), 0.0);        
-
-		// attenuation
-		float distance = length(light.position - fragPos);
-        vec3 attenuation = light.color / (distance * distance);
+        float NdotL = max(dot(normal, normalizedLightDir), 0.0);
 
         // add to outgoing radiance Lo
-        return ((kD * albedo / PI + specular) * attenuation * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+        return ((kD * albedo / PI + specular) * radiance * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
 	}
 	else
 	{
@@ -160,9 +160,12 @@ void main()
 	{
 	vec3 FragPos	= texture(uni_RT0, TexCoords).rgb;
 	vec3 Normal		= texture(uni_RT1, TexCoords).rgb;
-	vec3 Albedo     = texture(uni_RT2, TexCoords).rgb;
-    float Metallic  = texture(uni_RT3, TexCoords).r;
-    float Roughness = texture(uni_RT3, TexCoords).g;
+	//vec3 Albedo     = texture(uni_RT2, TexCoords).rgb;
+	vec3 Albedo     = vec3(0.5, 0.5, 0.5);
+    //float Metallic  = texture(uni_RT3, TexCoords).r;
+	float Metallic  = 1.0;
+    //float Roughness = texture(uni_RT3, TexCoords).g;
+	float Roughness = 0.2;
     float AO        = texture(uni_RT3, TexCoords).b;
 
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
