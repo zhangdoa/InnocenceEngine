@@ -578,6 +578,60 @@ void FinalPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents
 	bindShader();
 }
 
+DebuggerShader::DebuggerShader()
+{
+}
+
+DebuggerShader::~DebuggerShader()
+{
+}
+
+void DebuggerShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/debuggerVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	setAttributeLocation(1, "in_TexCoord");
+	setAttributeLocation(2, "in_Normal");
+	setAttributeLocation(3, "in_Tangent");
+	setAttributeLocation(4, "in_Bitangent");
+
+	addShader(GLShader::GEOMETRY, "GL3.3/debuggerGeometry.sf");
+
+	addShader(GLShader::FRAGMENT, "GL3.3/debuggerFragment.sf");
+
+	bindShader();
+}
+
+void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
+{
+	bindShader();
+
+	glm::mat4 p = cameraComponents[0]->getProjectionMatrix();
+	glm::mat4 r = cameraComponents[0]->getRotMatrix();
+	glm::mat4 t = cameraComponents[0]->getPosMatrix();
+	glm::mat4 m = glm::mat4();
+
+	updateUniform("uni_p", p);
+	updateUniform("uni_r", r);
+	updateUniform("uni_t", t);
+
+	// draw each visibleComponent
+	for (auto& l_visibleComponent : visibleComponents)
+	{
+		if (l_visibleComponent->getVisiblilityType() == visiblilityType::STATIC_MESH)
+		{
+			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
+
+			// draw each graphic data of visibleComponent
+			for (auto& l_graphicData : l_visibleComponent->getGraphicDataMap())
+			{
+				// draw meshes
+				meshDatas.find(l_graphicData.first)->second.update();
+			}
+		}
+	}
+}
 
 GLRenderingManager::GLRenderingManager()
 {
@@ -808,6 +862,8 @@ void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraCo
 
 	FinalPassShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 
+	//DebuggerShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
+
 	// draw screen rectangle
 	glBindVertexArray(m_screenVAO);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -857,6 +913,7 @@ void GLRenderingManager::initialize()
 	m_lightPassShader = &LightPassPBSShader::getInstance();
 	initializeLightPass();
 
+	DebuggerShader::getInstance().init();
 	initializeFinalPass();
 
 	this->setStatus(objectStatus::ALIVE);
@@ -872,4 +929,6 @@ void GLRenderingManager::shutdown()
 	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
 }
+
+
 
