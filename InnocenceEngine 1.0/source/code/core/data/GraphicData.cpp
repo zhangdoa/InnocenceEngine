@@ -45,42 +45,42 @@ void MeshData::addUnitCube()
 	GLVertexData l_VertexData_1;
 	l_VertexData_1.m_pos = glm::vec3(1.0f, 1.0f, 1.0f);
 	l_VertexData_1.m_texCoord = glm::vec2(1.0f, 1.0f);
-	l_VertexData_1.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+	l_VertexData_1.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_2;
 	l_VertexData_2.m_pos = glm::vec3(1.0f, -1.0f, 1.0f);
 	l_VertexData_2.m_texCoord = glm::vec2(1.0f, 0.0f);
-	l_VertexData_2.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+	l_VertexData_2.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_3;
 	l_VertexData_3.m_pos = glm::vec3(-1.0f, -1.0f, 1.0f);
 	l_VertexData_3.m_texCoord = glm::vec2(0.0f, 0.0f);
-	l_VertexData_3.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+	l_VertexData_3.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_4;
 	l_VertexData_4.m_pos = glm::vec3(-1.0f, 1.0f, 1.0f);
 	l_VertexData_4.m_texCoord = glm::vec2(0.0f, 1.0f);
-	l_VertexData_4.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+	l_VertexData_4.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_5;
 	l_VertexData_5.m_pos = glm::vec3(1.0f, 1.0f, -1.0f);
 	l_VertexData_5.m_texCoord = glm::vec2(1.0f, 1.0f);
-	l_VertexData_5.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
+	l_VertexData_5.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_6;
 	l_VertexData_6.m_pos = glm::vec3(1.0f, -1.0f, -1.0f);
 	l_VertexData_6.m_texCoord = glm::vec2(1.0f, 0.0f);
-	l_VertexData_6.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
+	l_VertexData_6.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_7;
 	l_VertexData_7.m_pos = glm::vec3(-1.0f, -1.0f, -1.0f);
 	l_VertexData_7.m_texCoord = glm::vec2(0.0f, 0.0f);
-	l_VertexData_7.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
+	l_VertexData_7.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_8;
 	l_VertexData_8.m_pos = glm::vec3(-1.0f, 1.0f, -1.0f);
 	l_VertexData_8.m_texCoord = glm::vec2(0.0f, 1.0f);
-	l_VertexData_8.m_normal = glm::vec3(0.0f, 0.0f, -1.0f);
+	l_VertexData_8.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
@@ -145,22 +145,22 @@ void MeshData::addUnitQuad()
 	GLVertexData l_VertexData_1;
 	l_VertexData_1.m_pos = glm::vec3(1.0f, 1.0f, 0.0f);
 	l_VertexData_1.m_texCoord = glm::vec2(1.0f, 1.0f);
-	l_VertexData_1.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+	l_VertexData_1.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_2;
 	l_VertexData_2.m_pos = glm::vec3(1.0f, -1.0f, 0.0f);
 	l_VertexData_2.m_texCoord = glm::vec2(1.0f, 0.0f);
-	l_VertexData_2.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+	l_VertexData_2.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_3;
 	l_VertexData_3.m_pos = glm::vec3(-1.0f, -1.0f, 0.0f);
 	l_VertexData_3.m_texCoord = glm::vec2(0.0f, 0.0f);
-	l_VertexData_3.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+	l_VertexData_3.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	GLVertexData l_VertexData_4;
 	l_VertexData_4.m_pos = glm::vec3(-1.0f, 1.0f, 0.0f);
 	l_VertexData_4.m_texCoord = glm::vec2(0.0f, 1.0f);
-	l_VertexData_4.m_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+	l_VertexData_4.m_normal = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4 };
 	m_indices = { 0, 1, 3, 1, 2, 3 };

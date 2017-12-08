@@ -32,6 +32,12 @@ void AssetManager::initialize()
 	lastMeshData->addUnitQuad();
 	lastMeshData->initialize();
 	lastMeshData->sendDataToGPU();
+
+	m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", textureType::NORMALS, textureWrapMethod::REPEAT);
+	m_basicAlbedoTemplate = loadTextureFromDisk("basic_diffuse.png", textureType::DIFFUSE, textureWrapMethod::REPEAT);
+	m_basicMetallicTemplate = loadTextureFromDisk("basic_specular.png", textureType::SPECULAR, textureWrapMethod::REPEAT);
+	m_basicRoughnessTemplate = loadTextureFromDisk("basic_roughness.png", textureType::AMBIENT, textureWrapMethod::REPEAT);
+	m_basicAOTemplate = loadTextureFromDisk("basic_ao.png", textureType::EMISSIVE, textureWrapMethod::REPEAT);
 }
 
 void AssetManager::update()
@@ -80,6 +86,7 @@ void AssetManager::importModel(const std::string& fileName) const
 void AssetManager::loadModel(const std::string & fileName, VisibleComponent & visibleComponent)
 {
 	loadModelImpl(fileName, visibleComponent);
+	assignDefaultTextures(visibleComponent);
 }
 
 void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent & visibleComponent)
@@ -320,22 +327,24 @@ void AssetManager::loadSingleTexture(const std::string & fileName, textureType t
 		LogManager::getInstance().printLog("innoTexture: " + fileName + " is already loaded, successfully assigned loaded texture data IDs.");
 	}
 	else
-	{
-		loadTextureFromDisk(fileName, textureType, visibleComponent.getTextureWrapMethod());
-		l_loadedTextureData = m_loadedTextureMap.find(fileName);
-		visibleComponent.addTextureData(l_loadedTextureData->second);
+	{	
+		auto l_textureDataPair = textureDataPair();
+		l_textureDataPair.first = textureType;
+		l_textureDataPair.second = loadTextureFromDisk(fileName, textureType, visibleComponent.getTextureWrapMethod());
+		m_loadedTextureMap.emplace(fileName, l_textureDataPair);
+		visibleComponent.addTextureData(l_textureDataPair);
 	}
 }
 
 void AssetManager::assignloadedTexture(textureDataPair& loadedTextureDataPair, VisibleComponent & visibleComponent)
 {
-	for (auto l_graphicData : visibleComponent.getGraphicDataMap())
+	for (auto& l_graphicData : visibleComponent.getGraphicDataMap())
 	{
 		l_graphicData.second.emplace(loadedTextureDataPair.first, loadedTextureDataPair.second);
 	}
 }
 
-void AssetManager::loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod)
+textureDataID AssetManager::loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod)
 {
 	int width, height, nrChannels;
 	// load image
@@ -344,20 +353,18 @@ void AssetManager::loadTextureFromDisk(const std::string & fileName, textureType
 	if (data)
 	{
 		auto id = RenderingManager::getInstance().addTextureData();
-		auto l_textureDataPair = textureDataPair();
-		l_textureDataPair.first = textureType;
-		l_textureDataPair.second = id;
-		m_loadedTextureMap.emplace(fileName, l_textureDataPair);
 		auto lastTextureData = &RenderingManager::getInstance().getTextureData(id);
 		lastTextureData->setTextureType(textureType);
 		lastTextureData->setTextureWrapMethod(textureWrapMethod);
 		lastTextureData->initialize();
 		lastTextureData->sendDataToGPU(0, nrChannels, width, height, data);
 		LogManager::getInstance().printLog("innoTexture: " + fileName + " is loaded.");
+		return id;
 	}
 	else
 	{
 		LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
+		return 0;
 	}
 	//stbi_image_free(data);
 }
@@ -390,14 +397,52 @@ void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName,
 }
 
 
+void AssetManager::assignDefaultTextures(VisibleComponent & visibleComponent) const
+{
+	for (auto& l_graphicData : visibleComponent.getGraphicDataMap())
+	{
+		auto l_textureDataMap = &l_graphicData.second;
+
+		if (l_textureDataMap->find(textureType::NORMALS) == l_textureDataMap->end())
+		{
+			l_textureDataMap->emplace(textureType::NORMALS, m_basicNormalTemplate);
+		};
+		if (l_textureDataMap->find(textureType::DIFFUSE) == l_textureDataMap->end())
+		{
+			l_textureDataMap->emplace(textureType::DIFFUSE, m_basicAlbedoTemplate);
+		};
+		if (l_textureDataMap->find(textureType::SPECULAR) == l_textureDataMap->end())
+		{
+			l_textureDataMap->emplace(textureType::SPECULAR, m_basicMetallicTemplate);
+		};
+		if (l_textureDataMap->find(textureType::AMBIENT) == l_textureDataMap->end())
+		{
+			l_textureDataMap->emplace(textureType::AMBIENT, m_basicRoughnessTemplate);
+		};
+		if (l_textureDataMap->find(textureType::EMISSIVE) == l_textureDataMap->end())
+		{
+			l_textureDataMap->emplace(textureType::EMISSIVE, m_basicAOTemplate);
+		};
+	}
+}
+
 void AssetManager::addUnitCube(VisibleComponent & visibleComponent) const
 {
 	visibleComponent.addMeshData(m_UnitCubeTemplate);
+	if (visibleComponent.getVisiblilityType() == visiblilityType::STATIC_MESH)
+	{
+		assignDefaultTextures(visibleComponent);
+	}
 }
+
 
 void AssetManager::addUnitSphere(VisibleComponent & visibleComponent) const
 {
 	visibleComponent.addMeshData(m_UnitSphereTemplate);
+	if (visibleComponent.getVisiblilityType() == visiblilityType::STATIC_MESH)
+	{
+		assignDefaultTextures(visibleComponent);
+	}
 }
 
 void AssetManager::addUnitQuad(VisibleComponent & visibleComponent) const

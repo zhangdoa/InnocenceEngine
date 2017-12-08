@@ -1,11 +1,9 @@
 // shadertype=glsl
 #version 330 core
-layout (location = 0) out vec4 uni_gPosition;
-layout (location = 1) out vec4 uni_gNormal;
-layout (location = 2) out vec4 uni_gAlbedo;
-layout (location = 3) out vec4 uni_gMetallic;
-layout (location = 4) out vec4 uni_gRoughness;
-layout (location = 5) out vec4 uni_gAO;
+layout (location = 0) out vec4 uni_RT0;
+layout (location = 1) out vec4 uni_RT1;
+layout (location = 2) out vec4 uni_RT2;
+layout (location = 3) out vec4 uni_RT3;
 
 in vec4 thefrag_FragPos;
 in vec2 thefrag_TexCoord;
@@ -19,15 +17,11 @@ uniform sampler2D uni_aoTexture;
 
 void main()
 {    
-    uni_gPosition = thefrag_FragPos;
+    uni_RT0 = thefrag_FragPos;
 
-	uni_gNormal = vec4(normalize(normalize(texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0) * TBN), 1.0);
+	uni_RT1 = vec4(normalize((texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0) * TBN), 1.0);
+	//uni_RT1 = vec4((texture(uni_normalTexture, thefrag_TexCoord).rgb * TBN), 1.0);
+    uni_RT2 = texture(uni_albedoTexture, thefrag_TexCoord);
 
-    uni_gAlbedo = texture(uni_albedoTexture, thefrag_TexCoord);
-
-	uni_gMetallic = texture(uni_metallicTexture, thefrag_TexCoord);
-	    
-	uni_gRoughness = texture(uni_roughnessTexture, thefrag_TexCoord);
-
-	uni_gAO = texture(uni_aoTexture, thefrag_TexCoord);
+	uni_RT3 = vec4(texture(uni_metallicTexture, thefrag_TexCoord).r, texture(uni_roughnessTexture, thefrag_TexCoord).r, texture(uni_aoTexture, thefrag_TexCoord).r, 1.0);
 }

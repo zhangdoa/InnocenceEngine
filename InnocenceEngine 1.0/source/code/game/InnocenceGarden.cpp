@@ -114,10 +114,6 @@ void InnocenceGarden::initialize()
 	AssetManager::getInstance().loadSingleTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent2);
 	AssetManager::getInstance().loadSingleTexture("lightbulb.png", textureType::DIFFUSE, pointLightBillboardComponent3);
 
-	AssetManager::getInstance().loadSingleTexture("test_diffuse.png", textureType::DIFFUSE, landscapeStaticMeshComponent);
-	AssetManager::getInstance().loadSingleTexture("test_specular.png", textureType::SPECULAR, landscapeStaticMeshComponent);
-	AssetManager::getInstance().loadSingleTexture("test_normal.png", textureType::NORMALS, landscapeStaticMeshComponent);
-
 	rootActor.initialize();
 }
 
@@ -167,9 +163,9 @@ void InnocenceGarden::initSpheres()
 		SceneGraphManager::getInstance().addToRenderingQueue(&sphereComponents[i]);
 
 		AssetManager::getInstance().addUnitSphere(sphereComponents[i]);
-		AssetManager::getInstance().loadSingleTexture("pbr_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
-		AssetManager::getInstance().loadSingleTexture("pbr_metallic.png", textureType::SPECULAR, sphereComponents[i]);
-		AssetManager::getInstance().loadSingleTexture("pbr_normal.png", textureType::NORMALS, sphereComponents[i]);
+		//AssetManager::getInstance().loadSingleTexture("pbr_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
+		//AssetManager::getInstance().loadSingleTexture("pbr_metallic.png", textureType::SPECULAR, sphereComponents[i]);
+		//AssetManager::getInstance().loadSingleTexture("pbr_normal.png", textureType::NORMALS, sphereComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
 	{
