@@ -403,9 +403,7 @@ void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& camera
 		{
 			l_pointLightIndexOffset -= 1;
 			updateUniform("uni_dirLight.direction", lightComponents[i]->getDirection());
-			updateUniform("uni_dirLight.ambientColor", lightComponents[i]->getAmbientColor());
-			updateUniform("uni_dirLight.diffuseColor", lightComponents[i]->getDiffuseColor());
-			updateUniform("uni_dirLight.specularColor", lightComponents[i]->getSpecularColor());
+			updateUniform("uni_dirLight.color", lightComponents[i]->getColor());
 		}
 		else if (lightComponents[i]->getLightType() == lightType::POINT)
 		{
@@ -413,12 +411,7 @@ void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& camera
 			ss << i + l_pointLightIndexOffset;
 			updateUniform("uni_pointLights[" + ss.str() + "].position", lightComponents[i]->getParentActor()->getTransform()->getPos());
 			updateUniform("uni_pointLights[" + ss.str() + "].radius", lightComponents[i]->getRadius());
-			updateUniform("uni_pointLights[" + ss.str() + "].constantFactor", lightComponents[i]->getConstantFactor());
-			updateUniform("uni_pointLights[" + ss.str() + "].linearFactor", lightComponents[i]->getLinearFactor());
-			updateUniform("uni_pointLights[" + ss.str() + "].quadraticFactor", lightComponents[i]->getQuadraticFactor());
-			updateUniform("uni_pointLights[" + ss.str() + "].ambientColor", lightComponents[i]->getAmbientColor());
-			updateUniform("uni_pointLights[" + ss.str() + "].diffuseColor", lightComponents[i]->getDiffuseColor());
-			updateUniform("uni_pointLights[" + ss.str() + "].specularColor", lightComponents[i]->getSpecularColor());
+			updateUniform("uni_pointLights[" + ss.str() + "].color", lightComponents[i]->getColor());
 		}
 	}
 }
@@ -524,12 +517,10 @@ void LightPassPBSShader::init()
 
 	addShader(GLShader::FRAGMENT, "GL3.3/lightPassPBSFragment.sf");
 	bindShader();
-	updateUniform("uni_gPosition", 0);
-	updateUniform("uni_gNormal", 1);
-	updateUniform("uni_gAlbedo", 2);
-	updateUniform("uni_gMetallic", 3);
-	updateUniform("uni_gRoughness", 4);
-	updateUniform("uni_gAO", 5);
+	updateUniform("uni_RT0", 0);
+	updateUniform("uni_RT1", 1);
+	updateUniform("uni_RT2", 2);
+	updateUniform("uni_RT3", 3);
 }
 
 void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
@@ -549,9 +540,7 @@ void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraCompone
 		{
 			l_pointLightIndexOffset -= 1;
 			updateUniform("uni_dirLight.direction", lightComponents[i]->getDirection());
-			updateUniform("uni_dirLight.ambientColor", lightComponents[i]->getAmbientColor());
-			updateUniform("uni_dirLight.diffuseColor", lightComponents[i]->getDiffuseColor());
-			updateUniform("uni_dirLight.specularColor", lightComponents[i]->getSpecularColor());
+			updateUniform("uni_dirLight.color", lightComponents[i]->getColor());
 		}
 		else if (lightComponents[i]->getLightType() == lightType::POINT)
 		{
@@ -559,12 +548,7 @@ void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraCompone
 			ss << i + l_pointLightIndexOffset;
 			updateUniform("uni_pointLights[" + ss.str() + "].position", lightComponents[i]->getParentActor()->getTransform()->getPos());
 			updateUniform("uni_pointLights[" + ss.str() + "].radius", lightComponents[i]->getRadius());
-			updateUniform("uni_pointLights[" + ss.str() + "].constantFactor", lightComponents[i]->getConstantFactor());
-			updateUniform("uni_pointLights[" + ss.str() + "].linearFactor", lightComponents[i]->getLinearFactor());
-			updateUniform("uni_pointLights[" + ss.str() + "].quadraticFactor", lightComponents[i]->getQuadraticFactor());
-			updateUniform("uni_pointLights[" + ss.str() + "].ambientColor", lightComponents[i]->getAmbientColor());
-			updateUniform("uni_pointLights[" + ss.str() + "].diffuseColor", lightComponents[i]->getDiffuseColor());
-			updateUniform("uni_pointLights[" + ss.str() + "].specularColor", lightComponents[i]->getSpecularColor());
+			updateUniform("uni_pointLights[" + ss.str() + "].color", lightComponents[i]->getColor());
 		}
 	}
 }
