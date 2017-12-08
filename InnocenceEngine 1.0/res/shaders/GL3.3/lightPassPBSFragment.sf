@@ -12,21 +12,13 @@ uniform sampler2D uni_RT3;
 
 struct dirLight {
 	vec3 direction;
-    vec3 ambientColor;
-    vec3 diffuseColor;
-    vec3 specularColor;
+    vec3 color;
 };
 
 struct pointLight {
 	vec3 position;
 	float radius;
-	float constantFactor;
-    float linearFactor;
-    float quadraticFactor;
-
-    vec3 ambientColor;
-    vec3 diffuseColor;
-    vec3 specularColor;
+    vec3 color;
 };
 
 const float PI = 3.14159265359;
@@ -109,7 +101,7 @@ vec3 CalcDirectionalLightRadiance(dirLight light, vec3 albedo, float metallic, f
         float NdotL = max(dot(normal, normalizedLightDir), 0.0);        
 
         // add to outgoing radiance Lo
-        return ((kD * albedo / PI + specular) * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+        return ((kD * albedo / PI + specular) * light.color * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
 }
 
 vec3 CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float roughness, float ao, vec3 normal, vec3 viewPos, vec3 fragPos, vec3 F0)
@@ -146,7 +138,7 @@ vec3 CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float
 
 		// attenuation
 		float distance = length(light.position - fragPos);
-        vec3 attenuation = light.diffuseColor / (distance * distance);
+        vec3 attenuation = light.color / (distance * distance);
 
         // add to outgoing radiance Lo
         return ((kD * albedo / PI + specular) * attenuation * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
@@ -168,7 +160,6 @@ void main()
 	{
 	vec3 FragPos	= texture(uni_RT0, TexCoords).rgb;
 	vec3 Normal		= texture(uni_RT1, TexCoords).rgb;
-    //vec3 Albedo     = pow(texture(uni_RT2, TexCoords).rgb, vec3(2.2));
 	vec3 Albedo     = texture(uni_RT2, TexCoords).rgb;
     float Metallic  = texture(uni_RT3, TexCoords).r;
     float Roughness = texture(uni_RT3, TexCoords).g;
@@ -187,7 +178,7 @@ void main()
 	for(int i = 0; i < NR_POINT_LIGHTS; ++i) 
     {
         Lo += CalcPointLightRadiance(uni_pointLights[i], Albedo, Metallic, Roughness, AO, Normal, uni_viewPos, FragPos, F0);
-    }       
+    }
 	uni_finalColor.rgb = Lo;
 	uni_finalColor.a = 1.0;
 	}

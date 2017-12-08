@@ -328,11 +328,9 @@ void AssetManager::loadSingleTexture(const std::string & fileName, textureType t
 	}
 	else
 	{	
-		auto l_textureDataPair = textureDataPair();
-		l_textureDataPair.first = textureType;
-		l_textureDataPair.second = loadTextureFromDisk(fileName, textureType, visibleComponent.getTextureWrapMethod());
+		auto l_textureDataPair = textureDataPair(textureType, loadTextureFromDisk(fileName, textureType, visibleComponent.getTextureWrapMethod()));
 		m_loadedTextureMap.emplace(fileName, l_textureDataPair);
-		visibleComponent.addTextureData(l_textureDataPair);
+		assignloadedTexture(l_textureDataPair, visibleComponent);
 	}
 }
 
@@ -340,7 +338,15 @@ void AssetManager::assignloadedTexture(textureDataPair& loadedTextureDataPair, V
 {
 	for (auto& l_graphicData : visibleComponent.getGraphicDataMap())
 	{
-		l_graphicData.second.emplace(loadedTextureDataPair.first, loadedTextureDataPair.second);
+		auto& l_texturePair = l_graphicData.second.find(loadedTextureDataPair.first);
+		if (l_texturePair != l_graphicData.second.end())
+		{
+			l_texturePair->second = loadedTextureDataPair.second;
+		}
+		else
+		{
+			l_graphicData.second.emplace(loadedTextureDataPair.first, loadedTextureDataPair.second);
+		}
 	}
 }
 

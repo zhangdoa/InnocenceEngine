@@ -26,35 +26,11 @@ void LightComponent::setRadius(float radius)
 	m_radius = radius;
 }
 
-void LightComponent::setConstantFactor(float constantFactor)
+void LightComponent::setColor(glm::vec3 color)
 {
-	m_constantFactor = constantFactor;
+	m_color = color;
 }
 
-void LightComponent::setLinearFactor(float linearFactor)
-{
-	m_linearFactor = linearFactor;
-}
-
-void LightComponent::setQuadraticFactor(float quadraticFactor)
-{
-	m_quadraticFactor = quadraticFactor;
-}
-
-void LightComponent::setAmbientColor(glm::vec3 ambientColor)
-{
-	m_ambientColor = ambientColor;
-}
-
-void LightComponent::setDiffuseColor(glm::vec3 diffuseColor)
-{
-	m_diffuseColor = diffuseColor;
-}
-
-void LightComponent::setSpecularColor(glm::vec3 specularColor)
-{
-	m_specularColor = specularColor;
-}
 
 void LightComponent::getLightPosMatrix(glm::mat4 & lightPosMatrix)
 {
@@ -87,36 +63,10 @@ float LightComponent::getRadius() const
 	return m_radius;
 }
 
-float LightComponent::getConstantFactor() const
+glm::vec3 LightComponent::getColor() const
 {
-	return m_constantFactor;
+	return m_color;
 }
-
-float LightComponent::getLinearFactor() const
-{
-	return m_linearFactor;
-}
-
-float LightComponent::getQuadraticFactor() const
-{
-	return m_quadraticFactor;
-}
-
-glm::vec3 LightComponent::getAmbientColor() const
-{
-	return m_ambientColor;
-}
-
-glm::vec3 LightComponent::getDiffuseColor() const
-{
-	return m_diffuseColor;
-}
-
-glm::vec3 LightComponent::getSpecularColor() const
-{
-	return m_specularColor;
-}
-
 
 void LightComponent::initialize()
 {
@@ -124,15 +74,13 @@ void LightComponent::initialize()
 	m_constantFactor = 1.0f;
 	m_linearFactor = 0.14f;
 	m_quadraticFactor = 0.07f;
-	m_ambientColor = glm::vec3(1.0f, 1.0f, 1.0f);
-	m_diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
-	m_specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
+	m_color = glm::vec3(1.0f, 1.0f, 1.0f);
 }
 
 void LightComponent::update()
 {
 	// light volume
-	float l_lightMaxIntensity = std::fmaxf(std::fmaxf(m_diffuseColor.x, m_diffuseColor.y), m_diffuseColor.z);
+	float l_lightMaxIntensity = std::fmaxf(std::fmaxf(m_color.x, m_color.y), m_color.z);
 	m_radius = (-m_linearFactor + std::sqrtf(m_linearFactor * m_linearFactor - 4 * m_quadraticFactor * (m_constantFactor - (256.0 / 5.0) * l_lightMaxIntensity))) / (2 * m_quadraticFactor);
 }
 

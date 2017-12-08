@@ -20,8 +20,11 @@ void main()
     uni_RT0 = thefrag_FragPos;
 
 	uni_RT1 = vec4(normalize((texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0) * TBN), 1.0);
-	//uni_RT1 = vec4((texture(uni_normalTexture, thefrag_TexCoord).rgb * TBN), 1.0);
+
     uni_RT2 = texture(uni_albedoTexture, thefrag_TexCoord);
 
-	uni_RT3 = vec4(texture(uni_metallicTexture, thefrag_TexCoord).r, texture(uni_roughnessTexture, thefrag_TexCoord).r, texture(uni_aoTexture, thefrag_TexCoord).r, 1.0);
+	uni_RT3.r = texture(uni_metallicTexture, thefrag_TexCoord).r;
+	uni_RT3.g = texture(uni_roughnessTexture, thefrag_TexCoord).g;
+	uni_RT3.b = texture(uni_aoTexture, thefrag_TexCoord).b;
+	uni_RT3.a = 1.0;
 }
