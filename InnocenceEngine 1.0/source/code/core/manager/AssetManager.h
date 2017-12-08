@@ -32,6 +32,7 @@ public:
 	void loadCubeMapTextures(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
 
 	void addUnitCube(VisibleComponent& visibleComponent) const;
+	void assignDefaultTextures(VisibleComponent & visibleComponent) const;
 	void addUnitSphere(VisibleComponent& visibleComponent) const;
 	void addUnitQuad(VisibleComponent& visibleComponent) const;
 
@@ -49,11 +50,16 @@ private:
 	void loadTextureForModel(const std::string& fileName, aiMaterial * aiMaterial, aiTextureType aiTextureType, textureWrapMethod textureWrapMethod, textureDataMap* textureDataMap) const;
 	
 	void assignloadedTexture(textureDataPair& loadedTextureDataPair, VisibleComponent& visibleComponent);
-	void loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod);
+	textureDataID loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod);
 	std::unordered_map<std::string, graphicDataMap> m_loadedModelMap;
 	std::unordered_map<std::string, textureDataPair> m_loadedTextureMap;
 	meshDataID m_UnitCubeTemplate;
 	meshDataID m_UnitSphereTemplate;
 	meshDataID m_UnitQuadTemplate;
+	textureDataID m_basicNormalTemplate;
+	textureDataID m_basicAlbedoTemplate;
+	textureDataID m_basicMetallicTemplate;
+	textureDataID m_basicRoughnessTemplate;
+	textureDataID m_basicAOTemplate;
 };
 
