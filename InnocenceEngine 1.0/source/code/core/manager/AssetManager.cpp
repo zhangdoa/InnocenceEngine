@@ -18,20 +18,20 @@ void AssetManager::initialize()
 	auto lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitCubeTemplate);
 	lastMeshData->addUnitCube();
 	lastMeshData->initialize();
-	lastMeshData->sendDataToGPU();
+	lastMeshData->sendDataToGPU(false, false);
 
 	m_UnitSphereTemplate = RenderingManager::getInstance().addMeshData();
 	lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitSphereTemplate);
 	lastMeshData->addUnitSphere();
 	lastMeshData->setMeshDrawMethod(meshDrawMethod::TRIANGLE_STRIP);
 	lastMeshData->initialize();
-	lastMeshData->sendDataToGPU();
+	lastMeshData->sendDataToGPU(false, false);
 
 	m_UnitQuadTemplate = RenderingManager::getInstance().addMeshData();
 	lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitQuadTemplate);
 	lastMeshData->addUnitQuad();
 	lastMeshData->initialize();
-	lastMeshData->sendDataToGPU();
+	lastMeshData->sendDataToGPU(true, true);
 
 	m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", textureType::NORMALS, textureWrapMethod::REPEAT);
 	m_basicAlbedoTemplate = loadTextureFromDisk("basic_diffuse.png", textureType::DIFFUSE, textureWrapMethod::REPEAT);
@@ -190,7 +190,7 @@ void AssetManager::processSingleAssimpMesh(aiMesh*mesh, meshDataID meshDataID, m
 	}
 	lastMeshData->setMeshDrawMethod(meshDrawMethod);
 	lastMeshData->initialize();
-	lastMeshData->sendDataToGPU();
+	lastMeshData->sendDataToGPU(false, false);
 	LogManager::getInstance().printLog("innoMesh is loaded.");
 }
 

@@ -24,7 +24,7 @@ public:
 	void draw(std::vector<unsigned int>& indices, meshDrawMethod meshDrawMethod);
 	void shutdown();
 
-	void sendDataToGPU(std::vector<GLVertexData>& vertices, std::vector<unsigned int>& indices, bool calcNormals) const;
+	void sendDataToGPU(std::vector<GLVertexData>& vertices, std::vector<unsigned int>& indices) const;
 
 private:
 	GLuint m_VAO = 0;

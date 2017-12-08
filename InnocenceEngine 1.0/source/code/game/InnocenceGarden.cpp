@@ -89,10 +89,10 @@ void InnocenceGarden::initialize()
 	landscapeActor.getTransform()->rotate(glm::vec3(1.0f, 0.0f, 0.0f), 90.0f);
 	landscapeActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 0.0f));
 	pawnActor1.getTransform()->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
-	pawnActor1.getTransform()->setPos(glm::vec3(0.0f, 0.0f, -1.5f));
+	pawnActor1.getTransform()->setPos(glm::vec3(0.0f, 0.2f, -1.5f));
 	pawnActor2.getTransform()->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	//testStaticMeshActor2.getTransform()->setScale(glm::vec3(0.002f, 0.002f, 0.002f));
-	pawnActor2.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 3.5f));
+	pawnActor2.getTransform()->setPos(glm::vec3(0.0f, 0.2f, 3.5f));
 
 	initSpheres();
 
@@ -167,7 +167,7 @@ void InnocenceGarden::initSpheres()
 	{
 		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 		{
-			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(glm::vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval/ 2.0) + (i * sphereBreadthInterval), 2.0 + (j * sphereBreadthInterval), -6.0));
+			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(glm::vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval/ 2.0) + (i * sphereBreadthInterval), 2.0 + (j * sphereBreadthInterval), 8.0));
 		}
 	}
 	
