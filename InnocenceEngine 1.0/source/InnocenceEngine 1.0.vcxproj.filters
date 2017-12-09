@@ -37,6 +37,7 @@
     <ClCompile Include="code\core\manager\graphic\GLGUIManager.cpp" />
     <ClCompile Include="code\core\component\VisibleComponent.cpp" />
     <ClCompile Include="code\core\component\LightComponent.cpp" />
+    <ClCompile Include="code\core\third-party\glad.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />

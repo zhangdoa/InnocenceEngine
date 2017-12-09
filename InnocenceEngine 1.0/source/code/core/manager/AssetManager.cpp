@@ -14,6 +14,12 @@ AssetManager::~AssetManager()
 
 void AssetManager::initialize()
 {
+	m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", textureType::NORMALS, textureWrapMethod::REPEAT);
+	m_basicAlbedoTemplate = loadTextureFromDisk("basic_diffuse.png", textureType::DIFFUSE, textureWrapMethod::REPEAT);
+	m_basicMetallicTemplate = loadTextureFromDisk("basic_specular.png", textureType::SPECULAR, textureWrapMethod::REPEAT);
+	m_basicRoughnessTemplate = loadTextureFromDisk("basic_roughness.png", textureType::AMBIENT, textureWrapMethod::REPEAT);
+	m_basicAOTemplate = loadTextureFromDisk("basic_ao.png", textureType::EMISSIVE, textureWrapMethod::REPEAT);
+
 	m_UnitCubeTemplate = RenderingManager::getInstance().addMeshData();
 	auto lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitCubeTemplate);
 	lastMeshData->addUnitCube();
@@ -32,12 +38,6 @@ void AssetManager::initialize()
 	lastMeshData->addUnitQuad();
 	lastMeshData->initialize();
 	lastMeshData->sendDataToGPU(true, true);
-
-	m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", textureType::NORMALS, textureWrapMethod::REPEAT);
-	m_basicAlbedoTemplate = loadTextureFromDisk("basic_diffuse.png", textureType::DIFFUSE, textureWrapMethod::REPEAT);
-	m_basicMetallicTemplate = loadTextureFromDisk("basic_specular.png", textureType::SPECULAR, textureWrapMethod::REPEAT);
-	m_basicRoughnessTemplate = loadTextureFromDisk("basic_roughness.png", textureType::AMBIENT, textureWrapMethod::REPEAT);
-	m_basicAOTemplate = loadTextureFromDisk("basic_ao.png", textureType::EMISSIVE, textureWrapMethod::REPEAT);
 }
 
 void AssetManager::update()

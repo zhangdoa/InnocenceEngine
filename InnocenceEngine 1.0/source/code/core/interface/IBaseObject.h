@@ -8,7 +8,6 @@ enum class objectStatus
 	STANDBY,
 	ALIVE,
 	SHUTDOWN,
-	ERROR
 };
 
 typedef unsigned long int GameObjectID;

@@ -15,8 +15,6 @@ public:
 	void shutdown() override;
 
 private:
-
-	void initSpheres();
 	BaseActor rootActor;
 
 	PlayerCharacter playCharacter;
@@ -30,15 +28,9 @@ private:
 	BaseActor pawnActor1;
 	BaseActor pawnActor2;
 
-	BaseActor sp1;
-	BaseActor sp2;
-	BaseActor sp3;
-	BaseActor sp4;
-	BaseActor sp5;
-	BaseActor sp6;
-	BaseActor sp7;
-	BaseActor sp8;
 	std::vector<BaseActor> sphereActors;
+
+	std::vector<BaseActor> pointLightActors;
 
 	VisibleComponent skyboxComponent;
 
@@ -55,15 +47,14 @@ private:
 	VisibleComponent pawnMeshComponent1;
 	VisibleComponent pawnMeshComponent2;
 
-	VisibleComponent sp1Component;
-	VisibleComponent sp2Component;
-	VisibleComponent sp3Component;
-	VisibleComponent sp4Component;
-	VisibleComponent sp5Component;
-	VisibleComponent sp6Component;
-	VisibleComponent sp7Component;
-	VisibleComponent sp8Component;
 	std::vector<VisibleComponent> sphereComponents;
+
+	std::vector<LightComponent> pointLightComponents;
+
 	double temp = 0.0f;
+
+	void initSpheres();
+	void initLights();
+	void updateLights(double seed);
 };
 

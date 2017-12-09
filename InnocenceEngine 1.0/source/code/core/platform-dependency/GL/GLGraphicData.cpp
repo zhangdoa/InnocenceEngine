@@ -207,12 +207,6 @@ void GLTextureData::sendDataToGPU(textureType textureType, int textureIndex, int
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, 0, l_internalFormat, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
 	}
-	else if (textureType == textureType::NORMALS)
-	{
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
 	else
 	{
 		glBindTexture(GL_TEXTURE_2D, m_textureID);

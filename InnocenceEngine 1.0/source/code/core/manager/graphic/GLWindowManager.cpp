@@ -45,7 +45,7 @@ void GLWindowManager::initialize()
 {
 	if (glfwInit() != GL_TRUE)
 	{
-		this->setStatus(objectStatus::ERROR);
+		this->setStatus(objectStatus::STANDBY);
 		LogManager::getInstance().printLog("Failed to initialize GLFW.");
 	}
 
@@ -57,16 +57,18 @@ void GLWindowManager::initialize()
 
 	// Open a window and create its OpenGL context
 	m_window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, m_windowName.c_str(), NULL, NULL);
+	glfwMakeContextCurrent(m_window);
 	if (m_window == nullptr) {
-		this->setStatus(objectStatus::ERROR);
+		this->setStatus(objectStatus::STANDBY);
 		LogManager::getInstance().printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
 		glfwTerminate();
 	}
-	glfwMakeContextCurrent(m_window); // Initialize GLEW
-	glewExperimental = true; // Needed in core profile
-	if (glewInit() != GLEW_OK) {
-		this->setStatus(objectStatus::ERROR);
-		LogManager::getInstance().printLog("Failed to initialize GLEW.");
+	// glad: load all OpenGL function pointers
+	// ---------------------------------------
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		this->setStatus(objectStatus::STANDBY);
+		LogManager::getInstance().printLog("Failed to initialize GLAD.");
 	}
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("GLWindowManager has been initialized.");

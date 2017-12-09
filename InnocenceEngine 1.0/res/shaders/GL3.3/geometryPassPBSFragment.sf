@@ -5,9 +5,9 @@ layout (location = 1) out vec4 uni_RT1;
 layout (location = 2) out vec4 uni_RT2;
 layout (location = 3) out vec4 uni_RT3;
 
-in vec4 thefrag_FragPos;
+in vec3 thefrag_FragPos;
 in vec2 thefrag_TexCoord;
-in mat3 TBN;
+in vec3 thefrag_Normal;
 
 uniform sampler2D uni_normalTexture;
 uniform sampler2D uni_albedoTexture;
@@ -17,14 +17,27 @@ uniform sampler2D uni_aoTexture;
 
 void main()
 {    
-    uni_RT0 = thefrag_FragPos;
+	// let glsl calculate partial derivatives!
+    vec3 Q1  = dFdx(thefrag_FragPos);
+    vec3 Q2  = dFdy(thefrag_FragPos);
+    vec2 st1 = dFdx(thefrag_TexCoord);
+    vec2 st2 = dFdy(thefrag_TexCoord);
+
+    vec3 N   = normalize(thefrag_Normal);
+    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 B  = -normalize(cross(N, T));
+
+    mat3 TBN = transpose(mat3(T, B, N));
+
+	//alpha should be set to 0 for background rendering pass
+    uni_RT0 = vec4(thefrag_FragPos, 0.0);
 
 	uni_RT1 = vec4(normalize((texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0) * TBN), 1.0);
 
     uni_RT2 = texture(uni_albedoTexture, thefrag_TexCoord);
 
 	uni_RT3.r = texture(uni_metallicTexture, thefrag_TexCoord).r;
-	uni_RT3.g = texture(uni_roughnessTexture, thefrag_TexCoord).g;
-	uni_RT3.b = texture(uni_aoTexture, thefrag_TexCoord).b;
+	uni_RT3.g = texture(uni_roughnessTexture, thefrag_TexCoord).r;
+	uni_RT3.b = texture(uni_aoTexture, thefrag_TexCoord).r;
 	uni_RT3.a = 1.0;
 }
