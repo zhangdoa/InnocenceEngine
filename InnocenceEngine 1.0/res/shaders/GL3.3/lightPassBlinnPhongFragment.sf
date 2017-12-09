@@ -12,24 +12,16 @@ uniform sampler2D uni_RT3;
 
 struct dirLight {
 	vec3 direction;
-    vec3 ambientColor;
-    vec3 diffuseColor;
-    vec3 specularColor;
+    vec3 color;
 };
 
 struct pointLight {
 	vec3 position;
 	float radius;
-	float constantFactor;
-    float linearFactor;
-    float quadraticFactor;
-
-    vec3 ambientColor;
-    vec3 diffuseColor;
-    vec3 specularColor;
+    vec3 color;
 };
 
-const int NR_POINT_LIGHTS = 3;
+const int NR_POINT_LIGHTS = 64;
 
 uniform dirLight uni_dirLight;
 
@@ -45,13 +37,13 @@ vec3 CalcDirLight(dirLight light, vec3 normal, vec3 diffuse, vec3 specular, vec3
 	vec3 normalizedViewDir = normalize(viewPos - fragPos);
 
 	//ambient color
-	vec3 ambientColor = diffuse * light.ambientColor * 0.04;
+	vec3 ambientColor = diffuse * light.color * 0.04;
 
 	//diffuse color: texture * factor * light color
-	vec3 diffuseColor = diffuse * max(dot(normal, normalizedLightDir), 0.0) * light.diffuseColor;
+	vec3 diffuseColor = diffuse * max(dot(normal, normalizedLightDir), 0.0) * light.color;
 	
 	// specular color: texture * factor * light color
-	vec3 specularColor = specular * pow(max(dot(normal, normalize(normalizedLightDir + normalizedViewDir)), 0.0), 32) * light.specularColor;
+	vec3 specularColor = specular * pow(max(dot(normal, normalize(normalizedLightDir + normalizedViewDir)), 0.0), 32) * light.color;
 	
 	return (ambientColor + diffuseColor + specularColor) * 0.1;
 }
@@ -67,17 +59,17 @@ vec3 CalcPointLight(pointLight light, vec3 normal, vec3 diffuse, vec3 specular, 
 	vec3 normalizedViewDir = normalize(viewPos - fragPos);
 
 	//ambient color
-	vec3 ambientColor = diffuse * light.ambientColor * 0.04;
+	vec3 ambientColor = diffuse * light.color * 0.04;
 
 	//diffuse color: texture * factor * light color
-	vec3 diffuseColor = diffuse * max(dot(normal, normalizedLightDir), 0.0) * light.diffuseColor;
+	vec3 diffuseColor = diffuse * max(dot(normal, normalizedLightDir), 0.0) * light.color;
 	
 	//specular color: texture * factor * light color
-	vec3 specularColor = specular * pow(max(dot(normal, normalize(normalizedLightDir + normalizedViewDir)), 0.0), 32) * light.specularColor;
+	vec3 specularColor = specular * pow(max(dot(normal, normalize(normalizedLightDir + normalizedViewDir)), 0.0), 32) * light.color;
 	
 	//attenuation
 	float distance = length(light.position - fragPos);
-    float attenuation = 1.0 / (light.constantFactor + light.linearFactor * distance + light.quadraticFactor * (distance * distance)); 
+    float attenuation = 1.0 /(distance * distance); 
 
 	ambientColor  *= attenuation;
     diffuseColor  *= attenuation;
@@ -100,10 +92,11 @@ void main()
 	else
 	{
 	// retrieve data from gbuffer
-    vec3 FragPos = texture(uni_RT0, TexCoords).rgb;
-	vec3 Diffuse = texture(uni_RT2, TexCoords).rgb;
+    vec3 FragPos  = texture(uni_RT0, TexCoords).rgb;
+	vec3 Normal   = texture(uni_RT1, TexCoords).rgb;
+	vec3 Diffuse  = texture(uni_RT2, TexCoords).rgb;
     vec3 Specular = texture(uni_RT3, TexCoords).rgb;
-    vec3 Normal = texture(uni_RT1, TexCoords).rgb;
+
     
 	//final result
 	uni_finalColor.rgb = CalcDirLight(uni_dirLight, Normal, Diffuse, Specular, uni_viewPos, FragPos);

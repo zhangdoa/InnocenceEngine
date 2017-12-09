@@ -6,9 +6,9 @@ layout (location = 2) in vec3 in_Normal;
 layout (location = 3) in vec3 in_Tangent;
 layout (location = 4) in vec3 in_Bitangent;
 
-out vec4 thefrag_FragPos;
+out vec3 thefrag_FragPos;
 out vec2 thefrag_TexCoord;
-out mat3 TBN;
+out vec3 thefrag_Normal;
 
 uniform mat4 uni_p;
 uniform mat4 uni_r;
@@ -17,22 +17,14 @@ uniform mat4 uni_m;
 
 void main()
 {
-	// calculate the TBN matrix
-	vec3 T = normalize(vec3(uni_m * vec4(in_Tangent,   0.0)));
-	vec3 B = normalize(vec3(uni_m * vec4(in_Bitangent, 0.0)));
-	vec3 N = normalize(vec3(uni_m * vec4(in_Normal,    0.0)));
-
-	if (dot(cross(N, T), B) < 0.0f)
-	{
-     T = T * -1.0f;
-	 }
-	TBN = mat3(T, B, N); 
-
-	// output the fragment position, alpha should be set to 0 for background rendering pass
-	thefrag_FragPos = uni_m * vec4(in_Position, 0.0);
+	// output the fragment position
+	thefrag_FragPos = vec3(uni_m * vec4(in_Position, 1.0));
 
 	// output the texture coordinate
 	thefrag_TexCoord = in_TexCoord;
+
+	// output the normal
+	thefrag_Normal = in_Normal;
 
 	gl_Position = uni_p * uni_r * uni_t * uni_m * vec4(in_Position, 1.0);
 }

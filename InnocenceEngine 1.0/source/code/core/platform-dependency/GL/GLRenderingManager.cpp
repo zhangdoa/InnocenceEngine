@@ -920,6 +920,7 @@ void GLRenderingManager::initialize()
 	//SkyboxShader::getInstance().init();
 	glEnable(GL_TEXTURE_2D);
 
+	//@TODO: add a switch for different shader model
 	//m_geometryPassShader = &GeometryPassBlinnPhongShader::getInstance();
 	m_geometryPassShader = &GeometryPassPBSShader::getInstance();
 	initializeGeometryPass();
