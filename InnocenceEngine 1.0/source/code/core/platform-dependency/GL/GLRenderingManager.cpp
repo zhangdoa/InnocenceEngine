@@ -471,25 +471,39 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 				auto l_textureMap = l_graphicData.second;
 				if (&l_textureMap != nullptr)
 				{
-					// any diffuse?
-					auto l_diffuseTextureID = l_textureMap.find(textureType::DIFFUSE);
-					if (l_diffuseTextureID != l_textureMap.end())
-					{
-						auto& l_textureData = textureDatas.find(l_diffuseTextureID->second)->second;
-						l_textureData.update();
-					}
-					// any specular?
-					auto l_specularTextureID = l_textureMap.find(textureType::SPECULAR);
-					if (l_specularTextureID != l_textureMap.end())
-					{
-						auto& l_textureData = textureDatas.find(l_specularTextureID->second)->second;
-						l_textureData.update();
-					}
 					// any normal?
 					auto l_normalTextureID = l_textureMap.find(textureType::NORMALS);
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_normalTextureID->second)->second;
+						l_textureData.update();
+					}
+					// any albedo?
+					auto l_albedoTextureID = l_textureMap.find(textureType::DIFFUSE);
+					if (l_albedoTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureDatas.find(l_albedoTextureID->second)->second;
+						l_textureData.update();
+					}
+					// any metallic?
+					auto l_metallicTextureID = l_textureMap.find(textureType::SPECULAR);
+					if (l_metallicTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureDatas.find(l_metallicTextureID->second)->second;
+						l_textureData.update();
+					}
+					// any roughness?
+					auto l_roughnessTextureID = l_textureMap.find(textureType::AMBIENT);
+					if (l_roughnessTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureDatas.find(l_roughnessTextureID->second)->second;
+						l_textureData.update();
+					}
+					// any ao?
+					auto l_aoTextureID = l_textureMap.find(textureType::EMISSIVE);
+					if (l_aoTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureDatas.find(l_aoTextureID->second)->second;
 						l_textureData.update();
 					}
 				}
@@ -729,9 +743,10 @@ void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& camer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
-
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	m_geometryPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void GLRenderingManager::initializeLightPass()

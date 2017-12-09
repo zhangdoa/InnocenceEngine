@@ -133,9 +133,9 @@ void MeshData::addUnitCube()
 
 	for (auto& l_vertexData : m_vertices)
 	{
-		l_vertexData.m_normal = l_vertexData.m_pos;
-		l_vertexData.m_tangent = glm::cross(glm::vec3(0.0, 0.0, 1.0), l_vertexData.m_normal);
-		l_vertexData.m_bitangent = glm::cross(l_vertexData.m_tangent, l_vertexData.m_normal);
+		l_vertexData.m_normal = glm::normalize(l_vertexData.m_pos);
+		l_vertexData.m_tangent = glm::normalize(glm::cross(glm::vec3(0.0, 0.0, 1.0), l_vertexData.m_normal));
+		l_vertexData.m_bitangent = glm::normalize(glm::cross(l_vertexData.m_tangent, l_vertexData.m_normal));
 	}
 	m_indices = { 0, 1, 3, 1, 2, 3,
 		4, 5, 0, 5, 1, 0,
@@ -147,13 +147,13 @@ void MeshData::addUnitCube()
 
 void MeshData::addUnitSphere()
 {
-	int X_SEGMENTS = 64;
-	int Y_SEGMENTS = 64;
+	unsigned int X_SEGMENTS = 64;
+	unsigned int Y_SEGMENTS = 64;
 	double PI = 3.14159265359;
 
-	for (int y = 0; y < Y_SEGMENTS; ++y)
+	for (unsigned int y = 0; y <= Y_SEGMENTS; ++y)
 	{
-		for (int x = 0; x < X_SEGMENTS; ++x)
+		for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
 		{
 			float xSegment = (float)x / (float)X_SEGMENTS;
 			float ySegment = (float)y / (float)Y_SEGMENTS;
@@ -164,9 +164,9 @@ void MeshData::addUnitSphere()
 			GLVertexData l_VertexData;
 			l_VertexData.m_pos = glm::vec3(xPos, yPos, zPos);
 			l_VertexData.m_texCoord = glm::vec2(xSegment, ySegment);
-			l_VertexData.m_normal = glm::vec3(xPos, yPos, zPos);
-			l_VertexData.m_tangent = glm::cross(glm::vec3(0.0, 0.0, 1.0), l_VertexData.m_normal);
-			l_VertexData.m_bitangent = glm::cross(l_VertexData.m_tangent, l_VertexData.m_normal);
+			l_VertexData.m_normal = glm::normalize(glm::vec3(xPos, yPos, zPos));
+			l_VertexData.m_tangent = glm::normalize(glm::cross(glm::vec3(0.0, 0.0, 1.0), l_VertexData.m_normal));
+			l_VertexData.m_bitangent = glm::normalize(glm::cross(l_VertexData.m_tangent, l_VertexData.m_normal));
 			m_vertices.emplace_back(l_VertexData);
 		}
 	}
