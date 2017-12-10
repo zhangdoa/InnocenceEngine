@@ -55,6 +55,7 @@ private:
 
 	void initSpheres();
 	void initLights();
-	void updateLights(float seed);
+	void updateLights(float seed);	
+	void updateSpheres(float seed);
 };
 

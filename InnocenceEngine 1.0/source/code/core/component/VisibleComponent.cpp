@@ -16,19 +16,31 @@ void VisibleComponent::addMeshData(meshDataID& meshDataID)
 	m_graphicDataMap.emplace(meshDataID, textureDataMap());
 }
 
-
-void VisibleComponent::addTextureData(textureDataPair& textureDataPair)
+void VisibleComponent::addTextureData(textureDataPair & textureDataPair)
 {
 	for (auto& l_graphicData : m_graphicDataMap)
 	{
 		auto& l_texturePair = l_graphicData.second.find(textureDataPair.first);
-		if (l_texturePair != l_graphicData.second.end())
+		if (l_texturePair == l_graphicData.second.end())
 		{
-			l_texturePair->second = textureDataPair.second;
+			l_graphicData.second.emplace(textureDataPair);
+		}
+	}
+}
+
+
+void VisibleComponent::overwriteTextureData(textureDataPair& textureDataPair)
+{
+	for (auto& l_graphicData : m_graphicDataMap)
+	{
+		auto& l_texturePair = l_graphicData.second.find(textureDataPair.first);
+		if (l_texturePair == l_graphicData.second.end())
+		{
+			l_graphicData.second.emplace(textureDataPair);
 		}
 		else
 		{
-			l_graphicData.second.emplace(textureDataPair);
+			l_texturePair->second = textureDataPair.second;
 		}
 	}
 }
