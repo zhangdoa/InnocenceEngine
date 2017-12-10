@@ -11,60 +11,25 @@ VisibleComponent::~VisibleComponent()
 {
 }
 
-
-const visiblilityType & VisibleComponent::getVisiblilityType() const
-{
-	return m_visiblilityType;
-}
-
-void VisibleComponent::setVisiblilityType(visiblilityType visiblilityType)
-{
-	m_visiblilityType = visiblilityType;
-}
-
-const meshDrawMethod & VisibleComponent::getMeshDrawMethod() const
-{
-	return m_meshDrawMethod;
-}
-
-void VisibleComponent::setMeshDrawMethod(meshDrawMethod meshDrawMethod)
-{
-	m_meshDrawMethod = meshDrawMethod;
-}
-
-const textureWrapMethod & VisibleComponent::getTextureWrapMethod() const
-{
-	return m_textureWrapMethod;
-}
-
-void VisibleComponent::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
-{
-	m_textureWrapMethod = textureWrapMethod;
-}
-
-void VisibleComponent::addMeshData(meshDataID meshDataID)
+void VisibleComponent::addMeshData(meshDataID& meshDataID)
 {
 	m_graphicDataMap.emplace(meshDataID, textureDataMap());
 }
 
-void VisibleComponent::addTextureData(meshDataID meshDataID, textureDataID textureDataID, textureType textureType)
-{
-	m_graphicDataMap.find(meshDataID)->second.emplace(textureType, textureDataID);
-}
 
-void VisibleComponent::addTextureData(textureDataID textureDataID, textureType textureType)
+void VisibleComponent::addTextureData(textureDataPair& textureDataPair)
 {
-	for (auto& l_graphicDatas : m_graphicDataMap)
+	for (auto& l_graphicData : m_graphicDataMap)
 	{
-		l_graphicDatas.second.emplace(textureType, textureDataID);
-	}
-}
-
-void VisibleComponent::addTextureData(textureDataPair textureDataPair)
-{
-	for (auto& l_graphicDatas : m_graphicDataMap)
-	{
-		l_graphicDatas.second.emplace(textureDataPair);
+		auto& l_texturePair = l_graphicData.second.find(textureDataPair.first);
+		if (l_texturePair != l_graphicData.second.end())
+		{
+			l_texturePair->second = textureDataPair.second;
+		}
+		else
+		{
+			l_graphicData.second.emplace(textureDataPair);
+		}
 	}
 }
 

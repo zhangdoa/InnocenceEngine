@@ -31,10 +31,9 @@ public:
 	void loadSingleTexture(const std::string& fileName, textureType textureType, VisibleComponent& visibleComponent);
 	void loadCubeMapTextures(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
 
-	void addUnitCube(VisibleComponent& visibleComponent) const;
-	void assignDefaultTextures(VisibleComponent & visibleComponent) const;
-	void addUnitSphere(VisibleComponent& visibleComponent) const;
-	void addUnitQuad(VisibleComponent& visibleComponent) const;
+	void addUnitCube(VisibleComponent& visibleComponent);
+	void addUnitSphere(VisibleComponent& visibleComponent);
+	void addUnitQuad(VisibleComponent& visibleComponent);
 
 private:
 	AssetManager();
@@ -43,14 +42,17 @@ private:
 	void assignloadedModel(graphicDataMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
 	void loadModelFromDisk(const std::string& fileName, VisibleComponent& visibleComponent);
 
-	void processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, graphicDataMap* graphicDataMap, VisibleComponent & visibleComponent);
+	void processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, graphicDataMap& graphicDataMap, VisibleComponent & visibleComponent);
 	void processSingleAssimpMesh(aiMesh* mesh, meshDataID meshDataID, meshDrawMethod meshDrawMethod) const;
 	void addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData * meshData) const;
-	void processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod, textureDataMap* textureDataMap) const;
-	void loadTextureForModel(const std::string& fileName, aiMaterial * aiMaterial, aiTextureType aiTextureType, textureWrapMethod textureWrapMethod, textureDataMap* textureDataMap) const;
+	void processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod, textureDataMap& textureDataMap) const;
+	void loadTextureForModel(const std::string& fileName, aiMaterial * aiMaterial, aiTextureType aiTextureType, textureWrapMethod textureWrapMethod, textureDataMap& textureDataMap) const;
 	
+	void assignDefaultTextures(VisibleComponent & visibleComponent);
 	void assignloadedTexture(textureDataPair& loadedTextureDataPair, VisibleComponent& visibleComponent);
+
 	textureDataID loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod);
+
 	std::unordered_map<std::string, graphicDataMap> m_loadedModelMap;
 	std::unordered_map<std::string, textureDataPair> m_loadedTextureMap;
 	meshDataID m_UnitCubeTemplate;

@@ -187,7 +187,7 @@ void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraCompon
 	// draw each visibleComponent
 	for (auto& l_visibleComponent : visibleComponents)
 	{
-		if (l_visibleComponent->getVisiblilityType() == visiblilityType::STATIC_MESH)
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 		{
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
 
@@ -265,7 +265,7 @@ void SkyboxShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, s
 
 	for (auto& l_visibleComponent : visibleComponents)
 	{
-		if (l_visibleComponent->getVisiblilityType() == visiblilityType::SKYBOX)
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
 		{
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
 			for (auto& l_graphicData : l_visibleComponent->getGraphicDataMap())
@@ -323,7 +323,7 @@ void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cam
 	// draw each visibleComponent
 	for (auto& l_visibleComponent : visibleComponents)
 	{
-		if (l_visibleComponent->getVisiblilityType() == visiblilityType::STATIC_MESH)
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 		{
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
 
@@ -459,7 +459,7 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 	// draw each visibleComponent
 	for (auto& l_visibleComponent : visibleComponents)
 	{
-		if (l_visibleComponent->getVisiblilityType() == visiblilityType::STATIC_MESH)
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 		{
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
 
@@ -633,7 +633,7 @@ void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents,
 	// draw each visibleComponent
 	for (auto& l_visibleComponent : visibleComponents)
 	{
-		if (l_visibleComponent->getVisiblilityType() == visiblilityType::STATIC_MESH)
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 		{
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
 

@@ -11,6 +11,7 @@ public:
 	~MeshData();
 
 	void initialize() override;
+	void initialize(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents);
 	void update() override;
 	void shutdown() override;
 
@@ -57,7 +58,7 @@ typedef GameObjectID textureDataID;
 typedef GameObjectID meshDataID;
 typedef std::pair<textureType, textureDataID> textureDataPair;
 typedef std::unordered_map<textureType, textureDataID> textureDataMap;
-typedef std::unordered_multimap<meshDataID, textureDataMap> graphicDataMap;
+typedef std::unordered_map<meshDataID, textureDataMap> graphicDataMap;
 
 enum class shadowProjectionType { ORTHOGRAPHIC, PERSPECTIVE };
 
