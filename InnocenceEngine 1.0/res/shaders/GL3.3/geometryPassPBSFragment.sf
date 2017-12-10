@@ -27,12 +27,12 @@ void main()
     vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
     vec3 B  = -normalize(cross(N, T));
 
-    mat3 TBN = transpose(mat3(T, B, N));
+    mat3 TBN = mat3(T, B, N);
 
 	//alpha should be set to 0 for background rendering pass
     uni_RT0 = vec4(thefrag_FragPos, 0.0);
 
-	uni_RT1 = vec4(normalize((texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0) * TBN), 1.0);
+	uni_RT1 = vec4(normalize(TBN * (texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0)), 1.0);
 
     uni_RT2 = texture(uni_albedoTexture, thefrag_TexCoord);
 
