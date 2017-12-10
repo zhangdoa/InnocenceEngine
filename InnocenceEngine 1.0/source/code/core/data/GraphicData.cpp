@@ -12,8 +12,7 @@ MeshData::~MeshData()
 
 void MeshData::initialize()
 {
-	m_GLMeshData.init();
-	sendDataToGPU(false, false);
+	initialize(m_meshDrawMethod, false, false);
 }
 
 void MeshData::initialize(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents)
@@ -43,6 +42,11 @@ std::vector<unsigned int>& MeshData::getIntices()
 	return m_indices;
 }
 
+void MeshData::addVertices(GLVertexData & GLVertexData)
+{
+	m_vertices.emplace_back(GLVertexData);
+}
+
 void MeshData::sendDataToGPU(bool calculateNormals = false, bool calculateTangents = false)
 {
 	if (calculateNormals)
@@ -52,53 +56,53 @@ void MeshData::sendDataToGPU(bool calculateNormals = false, bool calculateTangen
 			l_vertices.m_normal = l_vertices.m_pos;
 		}
 	}
-	if (calculateTangents)
-	{
-		// @TODO: correct tangent calculation
-		for (size_t i = 0; i < m_vertices.size(); i += 3) {
-			int i0 = m_indices[i];
-			int i1 = m_indices[i + 1];
-			int i2 = m_indices[i + 2];
+	//if (calculateTangents)
+	//{
+	//	// @TODO: correct tangent calculation
+	//	for (size_t i = 0; i < m_vertices.size(); i += 3) {
+	//		int i0 = m_indices[i];
+	//		int i1 = m_indices[i + 1];
+	//		int i2 = m_indices[i + 2];
 
-			glm::vec3 l_edge1 = m_vertices[i1].m_pos - m_vertices[i0].m_pos;
-			glm::vec3 l_edge2 = m_vertices[i2].m_pos - m_vertices[i0].m_pos;
+	//		glm::vec3 l_edge1 = m_vertices[i1].m_pos - m_vertices[i0].m_pos;
+	//		glm::vec3 l_edge2 = m_vertices[i2].m_pos - m_vertices[i0].m_pos;
 
-			double DeltaU1 = m_vertices[i1].m_texCoord.x -  m_vertices[i0].m_texCoord.x;
-			double DeltaV1 =  m_vertices[i1].m_texCoord.y -  m_vertices[i0].m_texCoord.y;
-			double DeltaU2 =  m_vertices[i2].m_texCoord.x -  m_vertices[i0].m_texCoord.x;
-			double DeltaV2 =  m_vertices[i2].m_texCoord.y -  m_vertices[i0].m_texCoord.y;
+	//		double DeltaU1 = m_vertices[i1].m_texCoord.x -  m_vertices[i0].m_texCoord.x;
+	//		double DeltaV1 =  m_vertices[i1].m_texCoord.y -  m_vertices[i0].m_texCoord.y;
+	//		double DeltaU2 =  m_vertices[i2].m_texCoord.x -  m_vertices[i0].m_texCoord.x;
+	//		double DeltaV2 =  m_vertices[i2].m_texCoord.y -  m_vertices[i0].m_texCoord.y;
 
-			double f = DeltaU1 * DeltaV2 - DeltaU2 * DeltaV1;
+	//		double f = DeltaU1 * DeltaV2 - DeltaU2 * DeltaV1;
 
-			if (f == 0.0)
-			{
-				f = 1.0;
-			}
-			else
-			{
-				f = 1.0 / f;
-			}
+	//		if (f == 0.0)
+	//		{
+	//			f = 1.0;
+	//		}
+	//		else
+	//		{
+	//			f = 1.0 / f;
+	//		}
 
-			glm::vec3 l_tangent;
+	//		glm::vec3 l_tangent;
 
-			double ftx = DeltaV2 * l_edge1.x - DeltaV1 * l_edge2.x;
-			double fty = DeltaV2 * l_edge1.y - DeltaV1 * l_edge2.y;
-			double ftz = DeltaV2 * l_edge1.z - DeltaV1 * l_edge2.z;
+	//		double ftx = DeltaV2 * l_edge1.x - DeltaV1 * l_edge2.x;
+	//		double fty = DeltaV2 * l_edge1.y - DeltaV1 * l_edge2.y;
+	//		double ftz = DeltaV2 * l_edge1.z - DeltaV1 * l_edge2.z;
 
-			l_tangent.x = f * ftx;
-			l_tangent.y = f * fty;
-			l_tangent.z = f * ftz;
+	//		l_tangent.x = f * ftx;
+	//		l_tangent.y = f * fty;
+	//		l_tangent.z = f * ftz;
 
-			m_vertices[i0].m_tangent += l_tangent;
-			m_vertices[i1].m_tangent += l_tangent;
-			m_vertices[i2].m_tangent += l_tangent;
-		}
-		for (auto& l_vertices : m_vertices)
-		{
-			l_vertices.m_tangent = glm::normalize(glm::cross(glm::cross(l_vertices.m_normal, l_vertices.m_tangent), l_vertices.m_normal));
-			l_vertices.m_bitangent = glm::normalize(glm::cross(l_vertices.m_normal, l_vertices.m_tangent));
-		}
-	}
+	//		m_vertices[i0].m_tangent += l_tangent;
+	//		m_vertices[i1].m_tangent += l_tangent;
+	//		m_vertices[i2].m_tangent += l_tangent;
+	//	}
+	//	for (auto& l_vertices : m_vertices)
+	//	{
+	//		l_vertices.m_tangent = glm::normalize(glm::cross(glm::cross(l_vertices.m_normal, l_vertices.m_tangent), l_vertices.m_normal));
+	//		l_vertices.m_bitangent = glm::normalize(glm::cross(l_vertices.m_normal, l_vertices.m_tangent));
+	//	}
+	//}
 	m_GLMeshData.sendDataToGPU(m_vertices, m_indices);
 }
 
@@ -142,8 +146,8 @@ void MeshData::addUnitCube()
 	for (auto& l_vertexData : m_vertices)
 	{
 		l_vertexData.m_normal = glm::normalize(l_vertexData.m_pos);
-		l_vertexData.m_tangent = glm::normalize(glm::cross(glm::vec3(0.0, 0.0, 1.0), l_vertexData.m_normal));
-		l_vertexData.m_bitangent = glm::normalize(glm::cross(l_vertexData.m_tangent, l_vertexData.m_normal));
+		//l_vertexData.m_tangent = glm::normalize(glm::cross(glm::vec3(0.0, 0.0, 1.0), l_vertexData.m_normal));
+		//l_vertexData.m_bitangent = glm::normalize(glm::cross(l_vertexData.m_tangent, l_vertexData.m_normal));
 	}
 	m_indices = { 0, 1, 3, 1, 2, 3,
 		4, 5, 0, 5, 1, 0,
@@ -173,8 +177,8 @@ void MeshData::addUnitSphere()
 			l_VertexData.m_pos = glm::vec3(xPos, yPos, zPos);
 			l_VertexData.m_texCoord = glm::vec2(xSegment, ySegment);
 			l_VertexData.m_normal = glm::normalize(glm::vec3(xPos, yPos, zPos));
-			l_VertexData.m_tangent = glm::normalize(glm::cross(glm::vec3(0.0, 0.0, 1.0), l_VertexData.m_normal));
-			l_VertexData.m_bitangent = glm::normalize(glm::cross(l_VertexData.m_tangent, l_VertexData.m_normal));
+			//l_VertexData.m_tangent = glm::normalize(glm::cross(glm::vec3(0.0, 0.0, 1.0), l_VertexData.m_normal));
+			//l_VertexData.m_bitangent = glm::normalize(glm::cross(l_VertexData.m_tangent, l_VertexData.m_normal));
 			m_vertices.emplace_back(l_VertexData);
 		}
 	}
@@ -246,6 +250,14 @@ TextureData::~TextureData()
 void TextureData::initialize()
 {
 	m_GLTextureData.init(m_textureType, m_textureWrapMethod);
+}
+
+void TextureData::initialize(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData)
+{
+	m_textureType = textureType;
+	m_textureWrapMethod = textureWrapMethod;
+	m_GLTextureData.init(m_textureType, m_textureWrapMethod);
+	m_GLTextureData.sendDataToGPU(m_textureType, textureIndex, textureFormat, textureWidth, textureHeight, textureData);
 }
 
 void TextureData::update()

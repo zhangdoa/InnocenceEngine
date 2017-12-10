@@ -10,6 +10,8 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
+enum class assetType {MODEL, TEXTURE};
+
 class AssetManager : public IEventManager
 {
 public:
@@ -25,10 +27,11 @@ public:
 		return instance;
 	}
 
+	void loadAsset(assetType assetType, const std::string& filePath, VisibleComponent& visibleComponent);
+	void loadAsset(assetType assetType, const std::string& filePath, textureType textureType, VisibleComponent& visibleComponent);
+
 	std::string loadShader(const std::string& FileName) const;
-	void importModel(const std::string& fileName) const;
-	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
-	void loadSingleTexture(const std::string& fileName, textureType textureType, VisibleComponent& visibleComponent);
+
 	void loadCubeMapTextures(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
 
 	void addUnitCube(VisibleComponent& visibleComponent);
@@ -38,23 +41,29 @@ public:
 private:
 	AssetManager();
 
-	void loadModelImpl(const std::string& fileName, VisibleComponent& visibleComponent);
-	void assignloadedModel(graphicDataMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
-	void loadModelFromDisk(const std::string& fileName, VisibleComponent& visibleComponent);
+	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
 
-	void processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, graphicDataMap& graphicDataMap, VisibleComponent & visibleComponent);
-	void processSingleAssimpMesh(aiMesh* mesh, meshDataID meshDataID, meshDrawMethod meshDrawMethod) const;
-	void addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData * meshData) const;
-	void processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod, textureDataMap& textureDataMap) const;
-	void loadTextureForModel(const std::string& fileName, aiMaterial * aiMaterial, aiTextureType aiTextureType, textureWrapMethod textureWrapMethod, textureDataMap& textureDataMap) const;
+	void loadShaderImpl(const std::string& filePath, std::string& fileContent);
+	void loadModelImpl(const std::string& fileName, VisibleComponent& visibleComponent);
+	void loadTextureImpl(const std::string& fileName, textureType textureType, VisibleComponent& visibleComponent);
+
+	void assignloadedModel(graphicDataMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
+
+	void loadModelFromDisk(const std::string& fileName) const;
+	graphicDataMap processAssimpScene(const std::string& fileName, const aiScene* aiScene, meshDrawMethod& meshDrawMethod, textureWrapMethod& textureWrapMethod);
+	graphicDataMap processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod);
+	meshDataID processSingleAssimpMesh(aiMesh* mesh, meshDrawMethod meshDrawMethod) const;
+	void addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData& meshData) const;
+	textureDataMap processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod);
 	
-	void assignDefaultTextures(VisibleComponent & visibleComponent);
-	void assignloadedTexture(textureDataPair& loadedTextureDataPair, VisibleComponent& visibleComponent);
+	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
+	void assignLoadedTexture(textureAssignType textureAssignType, textureDataPair& loadedTextureDataPair, VisibleComponent& visibleComponent);
 
 	textureDataID loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod);
 
 	std::unordered_map<std::string, graphicDataMap> m_loadedModelMap;
 	std::unordered_map<std::string, textureDataPair> m_loadedTextureMap;
+
 	meshDataID m_UnitCubeTemplate;
 	meshDataID m_UnitSphereTemplate;
 	meshDataID m_UnitQuadTemplate;

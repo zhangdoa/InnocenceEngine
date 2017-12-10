@@ -47,7 +47,7 @@ void InnocenceGarden::initialize()
 	playCharacter.getTransform()->setPos(glm::vec3(0.0f, 2.0f, 5.0f));
 
 	landscapeActor.getTransform()->setScale(glm::vec3(60.0f, 60.0f, 0.1f));
-	landscapeActor.getTransform()->rotate(glm::vec3(1.0f, 0.0f, 0.0f), 90.0f);
+	landscapeActor.getTransform()->rotate(glm::vec3(1.0f, 0.0f, 0.0f), -90.0f);
 	landscapeActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 0.0f));
 	pawnActor1.getTransform()->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
 	pawnActor1.getTransform()->setPos(glm::vec3(0.0f, 0.2f, -1.5f));
@@ -58,11 +58,11 @@ void InnocenceGarden::initialize()
 	initLights();
 	initSpheres();
 
-	//AssetManager::getInstance().importModel("nanosuit/nanosuit.obj");	
 	//AssetManager::getInstance().importModel("deer.obj");
 
-	//AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent1);
-	//AssetManager::getInstance().loadModel("nanosuit/nanosuit.innoModel", pawnMeshComponent2);
+	AssetManager::getInstance().loadAsset(assetType::MODEL, "nanosuit/nanosuit.obj", pawnMeshComponent1);
+	AssetManager::getInstance().loadAsset(assetType::MODEL, "nanosuit/nanosuit.obj", pawnMeshComponent2);
+
 	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
 	//AssetManager::getInstance().addUnitCube(skyboxComponent);
 	AssetManager::getInstance().addUnitCube(landscapeStaticMeshComponent);
@@ -77,17 +77,7 @@ void InnocenceGarden::update()
 {
 	temp += 0.02f;
 	updateLights(temp);
-	//directionalLightComponent.setDirection(glm::vec3((((glm::sin(temp) + 1.0) / 2.0), 1.0f, 1.0f)));
-	//directionalLightComponent.setColor(glm::vec3(0.0f * 30.0, (glm::sin(temp) + 1.0f) * 30.0 / 2.0f, 0.0f * 30.0));
-	//pointLightComponent1.setColor(glm::vec3(0.5f * 30.0, (glm::sin(temp) + 1.0f) * 30.0 / 2.0f, 0.5f * 30.0));
-	//pointLightActor1.getTransform()->setPos(glm::vec3(-2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 3.0f));
-
-	//pointLightComponent2.setColor(glm::vec3((glm::sin(temp * 2) + 1.0f)* 30.0 / 2.0f, 0.5f * 30.0, 0.5f * 30.0));
-	//pointLightActor2.getTransform()->setPos(glm::vec3(2.0f, 1.0f, 2.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 2.0f));
-
-	//pointLightComponent3.setColor(glm::vec3(0.5f * 30.0, 0.5f * 30.0, (glm::sin(temp * 3) + 1.0f) * 30.0 / 2.0f));
-	//pointLightActor3.getTransform()->setPos(glm::vec3(0.0f, 1.0f, 4.0f) + glm::vec3(glm::sin(temp) + 1.0f, 0.0f, -glm::cos(temp) * 1.0f));
-
+	updateSpheres(temp);
 	rootActor.update();
 }
 
@@ -119,26 +109,26 @@ void InnocenceGarden::initSpheres()
 	}
 	for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
 	{
-		AssetManager::getInstance().loadSingleTexture("PBS/rustediron2_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
-		AssetManager::getInstance().loadSingleTexture("PBS/rustediron2_metallic.png", textureType::SPECULAR, sphereComponents[i]);
-		AssetManager::getInstance().loadSingleTexture("PBS/rustediron2_normal.png", textureType::NORMALS, sphereComponents[i]);
-		AssetManager::getInstance().loadSingleTexture("PBS/rustediron2_roughness.png", textureType::AMBIENT, sphereComponents[i]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_metallic.png", textureType::SPECULAR, sphereComponents[i]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_normal.png", textureType::NORMALS, sphereComponents[i]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_roughness.png", textureType::AMBIENT, sphereComponents[i]);
 
-		AssetManager::getInstance().loadSingleTexture("PBS/bamboo-wood-semigloss-albedo.png", textureType::DIFFUSE, sphereComponents[i + 1]);
-		AssetManager::getInstance().loadSingleTexture("PBS/bamboo-wood-semigloss-metal.psd", textureType::SPECULAR, sphereComponents[i + 1]);
-		AssetManager::getInstance().loadSingleTexture("PBS/bamboo-wood-semigloss-normal.png", textureType::NORMALS, sphereComponents[i + 1]);
-		AssetManager::getInstance().loadSingleTexture("PBS/bamboo-wood-semigloss-ao.png", textureType::EMISSIVE, sphereComponents[i + 1]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/bamboo-wood-semigloss-albedo.png", textureType::DIFFUSE, sphereComponents[i + 1]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/bamboo-wood-semigloss-metal.psd", textureType::SPECULAR, sphereComponents[i + 1]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/bamboo-wood-semigloss-normal.png", textureType::NORMALS, sphereComponents[i + 1]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/bamboo-wood-semigloss-ao.png", textureType::EMISSIVE, sphereComponents[i + 1]);
 
-		AssetManager::getInstance().loadSingleTexture("PBS/greasy-metal-pan1-albedo.png", textureType::DIFFUSE, sphereComponents[i + 2]);
-		AssetManager::getInstance().loadSingleTexture("PBS/greasy-metal-pan1-metal.png", textureType::SPECULAR, sphereComponents[i + 2]);
-		AssetManager::getInstance().loadSingleTexture("PBS/greasy-metal-pan1-normal.png", textureType::NORMALS, sphereComponents[i + 2]);
-		AssetManager::getInstance().loadSingleTexture("PBS/greasy-metal-pan1-roughness.png", textureType::AMBIENT, sphereComponents[i + 2]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/greasy-metal-pan1-albedo.png", textureType::DIFFUSE, sphereComponents[i + 2]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/greasy-metal-pan1-metal.png", textureType::SPECULAR, sphereComponents[i + 2]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/greasy-metal-pan1-normal.png", textureType::NORMALS, sphereComponents[i + 2]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/greasy-metal-pan1-roughness.png", textureType::AMBIENT, sphereComponents[i + 2]);
 
-		AssetManager::getInstance().loadSingleTexture("PBS/roughrock1-albedo.png", textureType::DIFFUSE, sphereComponents[i + 3]);
-		AssetManager::getInstance().loadSingleTexture("PBS/roughrock1-metalness.png", textureType::SPECULAR, sphereComponents[i + 3]);
-		AssetManager::getInstance().loadSingleTexture("PBS/roughrock1-normal.png", textureType::NORMALS, sphereComponents[i + 3]);
-		AssetManager::getInstance().loadSingleTexture("PBS/roughrock1-roughness.png", textureType::AMBIENT, sphereComponents[i + 3]);
-		AssetManager::getInstance().loadSingleTexture("PBS/roughrock1-ao.png", textureType::EMISSIVE, sphereComponents[i + 3]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-albedo.png", textureType::DIFFUSE, sphereComponents[i + 3]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-metalness.png", textureType::SPECULAR, sphereComponents[i + 3]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-normal.png", textureType::NORMALS, sphereComponents[i + 3]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-roughness.png", textureType::AMBIENT, sphereComponents[i + 3]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-ao.png", textureType::EMISSIVE, sphereComponents[i + 3]);
 	}
 	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
 	{
@@ -183,5 +173,15 @@ void InnocenceGarden::updateLights(float seed)
 		pointLightComponents[i + 1].setColor(glm::vec3(0.2f * 10.0f, (glm::sin(seed + i) + 1.0f) * 10.0f / 2.0f, 0.4f * 10.0f));
 		pointLightComponents[i + 2].setColor(glm::vec3((0.2f * 10.0f, 0.4f * 10.0f, glm::sin(seed + i) + 1.0f) * 10.0f / 2.0f));
 		pointLightComponents[i + 3].setColor(glm::vec3((glm::sin(seed + i * 2.0 ) + 1.0f) * 10.0f / 2.0f, (glm::sin(seed + i* 3.0) + 1.0f) * 10.0f / 2.0f, (glm::sin(seed + i * 5.0) + 1.0f) * 10.0f / 2.0f));
+	}
+}
+
+void InnocenceGarden::updateSpheres(float seed)
+{
+	for (auto i = (unsigned int)0; i < sphereActors.size(); i++)
+	{
+		// @TODO: fix stationary texture problem 
+		sphereActors[i].getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.1 * i);
+		//sphereActors[i].getTransform()->setPos(sphereActors[i].getTransform()->getPos() + glm::vec3(glm::cos(seed) * 0.1, 0.0, 0.0));
 	}
 }

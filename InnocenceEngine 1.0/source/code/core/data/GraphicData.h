@@ -17,6 +17,8 @@ public:
 
 	std::vector<GLVertexData>& getVertices();
 	std::vector<unsigned int>& getIntices();
+
+	void addVertices(GLVertexData& GLVertexData);
 	void sendDataToGPU(bool calculateNormals, bool calculateTangents);
 	void addUnitCube();
 	void addUnitSphere();
@@ -39,6 +41,7 @@ public:
 	~TextureData();
 
 	void initialize() override;
+	void initialize(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData);
 	void update() override;
 	void shutdown() override;
 
@@ -58,6 +61,7 @@ typedef GameObjectID textureDataID;
 typedef GameObjectID meshDataID;
 typedef std::pair<textureType, textureDataID> textureDataPair;
 typedef std::unordered_map<textureType, textureDataID> textureDataMap;
+typedef std::pair<meshDataID, textureDataMap> graphicDataPair;
 typedef std::unordered_map<meshDataID, textureDataMap> graphicDataMap;
 
 enum class shadowProjectionType { ORTHOGRAPHIC, PERSPECTIVE };
