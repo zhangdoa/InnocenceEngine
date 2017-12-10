@@ -15,8 +15,8 @@ AssetManager::~AssetManager()
 void AssetManager::initialize()
 {
 	m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", textureType::NORMALS, textureWrapMethod::REPEAT);
-	m_basicAlbedoTemplate = loadTextureFromDisk("basic_diffuse.png", textureType::DIFFUSE, textureWrapMethod::REPEAT);
-	m_basicMetallicTemplate = loadTextureFromDisk("basic_specular.png", textureType::SPECULAR, textureWrapMethod::REPEAT);
+	m_basicAlbedoTemplate = loadTextureFromDisk("basic_albedo.png", textureType::DIFFUSE, textureWrapMethod::REPEAT);
+	m_basicMetallicTemplate = loadTextureFromDisk("basic_metallic.png", textureType::SPECULAR, textureWrapMethod::REPEAT);
 	m_basicRoughnessTemplate = loadTextureFromDisk("basic_roughness.png", textureType::AMBIENT, textureWrapMethod::REPEAT);
 	m_basicAOTemplate = loadTextureFromDisk("basic_ao.png", textureType::EMISSIVE, textureWrapMethod::REPEAT);
 
@@ -44,6 +44,23 @@ void AssetManager::shutdown()
 {
 }
 
+void AssetManager::loadAsset(assetType assetType, const std::string & filePath, VisibleComponent& visibleComponent)
+{
+	if (assetType == assetType::MODEL)
+	{
+		loadModelImpl(filePath, visibleComponent);
+	}
+	// @TODO: needs robust overload function
+}
+
+void AssetManager::loadAsset(assetType assetType, const std::string & filePath, textureType textureType, VisibleComponent & visibleComponent)
+{
+	if (assetType == assetType::TEXTURE)
+	{
+		loadTextureImpl(filePath, textureType, visibleComponent);
+	}
+}
+
 std::string AssetManager::loadShader(const std::string & shaderFileName) const
 {
 	std::ifstream file;
@@ -58,116 +75,104 @@ std::string AssetManager::loadShader(const std::string & shaderFileName) const
 	return output;
 }
 
-void AssetManager::importModel(const std::string& fileName) const
+void AssetManager::loadShaderImpl(const std::string & filePath, std::string & fileContent)
 {
-	// read file via ASSIMP
-	Assimp::Importer l_assImporter;
-	const aiScene* l_assScene = l_assImporter.ReadFile("../res/models/" + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-	// check for errors
-	if (!l_assScene || l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
-	{
-		LogManager::getInstance().printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
-		return;
-	}
-	if (l_assImporter.ReadFile("../res/models/" + fileName.substr(0, fileName.find(".")) + ".innoModel", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace) != nullptr)
-	{
-		LogManager::getInstance().printLog("Model: " + fileName + " has been already imported.");
-		return;
-	}
-	Assimp::Exporter l_assExporter;
-	l_assExporter.Export(l_assScene, "assbin", "../res/models/" + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
-	LogManager::getInstance().printLog("Model: " + fileName + " is imported.");
-}
-
-void AssetManager::loadModel(const std::string & fileName, VisibleComponent & visibleComponent)
-{
-	loadModelImpl(fileName, visibleComponent);
-	assignDefaultTextures(visibleComponent);
 }
 
 void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent & visibleComponent)
 {
-	auto l_loadedAssetData = m_loadedModelMap.find(fileName);
-	// check if this file has already loaded
-	if (l_loadedAssetData != m_loadedModelMap.end())
+	auto l_convertedFilePath = fileName.substr(0, fileName.find(".")) + ".innoModel";
+
+	// check if this file has already been loaded once
+	auto l_loadedGraphicDataMap = m_loadedModelMap.find(l_convertedFilePath);
+	if (l_loadedGraphicDataMap != m_loadedModelMap.end())
 	{
-		assignloadedModel(l_loadedAssetData->second, visibleComponent);
-		LogManager::getInstance().printLog("innoModel: " + fileName + " is already loaded, successfully assigned loaded graphic data IDs.");
+		assignloadedModel(l_loadedGraphicDataMap->second, visibleComponent);
+		LogManager::getInstance().printLog("AssetManager: " + l_convertedFilePath + " has already been loaded before, successfully assigned graphicDataMap IDs.");
 	}
 	else
-	{
-		loadModelFromDisk(fileName, visibleComponent);
+	{	
+		// read file via ASSIMP
+		Assimp::Importer l_assImporter;
+		auto l_assScene = l_assImporter.ReadFile("../res/models/" + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		if (l_assScene == nullptr)
+		{
+			l_assScene = l_assImporter.ReadFile("../res/models/" + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+			// save model file as .innoModel binary file
+			Assimp::Exporter l_assExporter;
+			l_assExporter.Export(l_assScene, "assbin", "../res/models/" + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
+			LogManager::getInstance().printLog("AssetManager: " + fileName + " is successfully converted.");
+		}
+		if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
+		{
+			LogManager::getInstance().printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
+			addUnitCube(visibleComponent);
+			return;
+		}
+		// only need last part of file name without subfix as material's subfolder name
+		auto& l_fileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
+		auto& l_graphicDataMap = processAssimpScene(l_fileName, l_assScene, visibleComponent.m_meshDrawMethod, visibleComponent.m_textureWrapMethod);
+
+		m_loadedModelMap.emplace(l_convertedFilePath, l_graphicDataMap);
+		assignloadedModel(l_graphicDataMap, visibleComponent);
+
+		LogManager::getInstance().printLog("AssetManager: " + l_convertedFilePath + " is loaded for the first time, successfully assigned graphicDataMap IDs.");
 	}
 }
 
 void AssetManager::assignloadedModel(graphicDataMap& loadedGraphicDataMap, VisibleComponent & visibleComponent)
 {
 	visibleComponent.setGraphicDataMap(loadedGraphicDataMap);
+	assignDefaultTextures(textureAssignType::ADD_DEFAULT, visibleComponent);
 }
 
-void AssetManager::loadModelFromDisk(const std::string& fileName, VisibleComponent& visibleComponent)
+graphicDataMap AssetManager::processAssimpScene(const std::string& fileName, const aiScene* aiScene, meshDrawMethod& meshDrawMethod, textureWrapMethod& textureWrapMethod)
 {
-	// read file via ASSIMP
-	Assimp::Importer l_assImporter;
-	const aiScene* l_assScene = l_assImporter.ReadFile("../res/models/" + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-	// check for errors
-	if (!l_assScene || l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
-	{
-		LogManager::getInstance().printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
-		return;
-	}
-	// record that file's been loaded 
-	m_loadedModelMap.emplace(fileName, graphicDataMap());
-
-	// find corresponded graphicDataMap
-	auto& l_graphicDataMap = m_loadedModelMap.find(fileName)->second;
-
-	// only need last part of file name without subfix as material's subfolder name
-	std::string l_fileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
+	auto l_graphicDataMap = graphicDataMap();
 
 	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
-	if (l_assScene->mRootNode->mNumMeshes > 0)
+	if (aiScene->mRootNode->mNumMeshes > 0)
 	{
-		processAssimpNode(l_fileName, l_assScene->mRootNode, l_assScene, l_graphicDataMap, visibleComponent);
+		 auto& l_loadedgraphicDataMap = processAssimpNode(fileName, aiScene->mRootNode, aiScene, meshDrawMethod, textureWrapMethod);
+		 l_graphicDataMap.insert(l_loadedgraphicDataMap.begin(), l_loadedgraphicDataMap.end());
 	}
-	for (auto i = (unsigned int)0; i < l_assScene->mRootNode->mNumChildren; i++)
+	for (auto i = (unsigned int)0; i < aiScene->mRootNode->mNumChildren; i++)
 	{
-		if (l_assScene->mRootNode->mChildren[i]->mNumMeshes > 0)
+		if (aiScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
-			processAssimpNode(l_fileName, l_assScene->mRootNode->mChildren[i], l_assScene, l_graphicDataMap, visibleComponent);
+			auto& l_loadedgraphicDataMap = processAssimpNode(fileName, aiScene->mRootNode->mChildren[i], aiScene, meshDrawMethod, textureWrapMethod);
+			l_graphicDataMap.insert(l_loadedgraphicDataMap.begin(), l_loadedgraphicDataMap.end());
 		}
 	}
-
-	assignloadedModel(l_graphicDataMap, visibleComponent);
-
-	LogManager::getInstance().printLog("innoModel: " + fileName + " is loaded.");
+	
+	return l_graphicDataMap;
 }
 
 
-void AssetManager::processAssimpNode(const std::string& fileName, aiNode * node, const aiScene * scene, graphicDataMap& graphicDataMap, VisibleComponent & visibleComponent)
+graphicDataMap AssetManager::processAssimpNode(const std::string& fileName, aiNode * node, const aiScene * scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod)
 {
+	auto l_graphicDataMap = graphicDataMap();
 	// process each mesh located at the current node
 	for (auto i = (unsigned int)0; i < node->mNumMeshes; i++)
 	{
-		auto l_meshDataID = RenderingManager::getInstance().addMeshData();
+		auto l_graphicDataPair = graphicDataPair();
 
-		graphicDataMap.emplace(l_meshDataID, textureDataMap());
-
-		processSingleAssimpMesh(scene->mMeshes[node->mMeshes[i]], l_meshDataID, visibleComponent.m_meshDrawMethod);
+		l_graphicDataPair.first = processSingleAssimpMesh(scene->mMeshes[node->mMeshes[i]], meshDrawMethod);
 
 		// process material if there was anyone
 		if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
 		{
-			auto& l_textureDataMap = graphicDataMap.find(l_meshDataID)->second;
-
-			processSingleAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], visibleComponent.m_textureWrapMethod, l_textureDataMap);
+			l_graphicDataPair.second = processSingleAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], textureWrapMethod);
 		}
+		l_graphicDataMap.emplace(l_graphicDataPair);
 	}
+	return l_graphicDataMap;
 }
 
-void AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDataID meshDataID, meshDrawMethod meshDrawMethod) const
+meshDataID AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDrawMethod meshDrawMethod) const
 {
-	auto lastMeshData = &RenderingManager::getInstance().getMeshData(meshDataID);
+	auto l_meshDataID = RenderingManager::getInstance().addMeshData();
+	auto& lastMeshData = RenderingManager::getInstance().getMeshData(l_meshDataID);
 
 	for (auto i = (unsigned int)0; i < mesh->mNumVertices; i++)
 	{
@@ -181,15 +186,17 @@ void AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDataID meshDataID,
 		// retrieve all indices of the face and store them in the indices vector
 		for (auto j = (unsigned int)0; j < face.mNumIndices; j++)
 		{
-			lastMeshData->getIntices().emplace_back(face.mIndices[j]);
+			lastMeshData.getIntices().emplace_back(face.mIndices[j]);
 		}
 	}
-	lastMeshData->initialize(meshDrawMethod, false, false);
+	lastMeshData.initialize(meshDrawMethod, false, false);
 	LogManager::getInstance().printLog("innoMesh is loaded.");
+	return l_meshDataID;
 }
 
-void AssetManager::addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData * meshData) const
+void AssetManager::addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData& meshData) const
 {
+	// @TODO: should pass in a GLVertexData reference rather than wasting memory here
 	GLVertexData vertexData;
 	// positions
 	vertexData.m_pos.x = aiMesh->mVertices[vertexIndex].x;
@@ -253,84 +260,71 @@ void AssetManager::addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData * me
 		vertexData.m_bitangent.z = 0.0f;
 	}
 
-	meshData->getVertices().emplace_back(vertexData);
+	meshData.getVertices().emplace_back(vertexData);
 }
 
-void AssetManager::processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod, textureDataMap& textureDataMap) const
+textureDataMap AssetManager::processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod)
 {
+	auto l_textureDataMap = textureDataMap();
 	for (auto i = (unsigned int)0; i < aiTextureType_UNKNOWN; i++)
 	{
 		if (aiMaterial->GetTextureCount(aiTextureType(i)) > 0)
 		{
-			loadTextureForModel(fileName, aiMaterial, aiTextureType(i), textureWrapMethod, textureDataMap);
+			auto l_textureDataPair = textureDataPair();
+			aiString l_AssString;
+			aiMaterial->GetTexture(aiTextureType(i), 0, &l_AssString);
+			// set local path, remove slash
+			std::string l_localPath;
+			if (std::string(l_AssString.C_Str()).find_last_of('//') != std::string::npos)
+			{
+				l_localPath = std::string(l_AssString.C_Str()).substr(std::string(l_AssString.C_Str()).find_last_of("//"));
+			}
+			else if (std::string(l_AssString.C_Str()).find_last_of('\\') != std::string::npos)
+			{
+				l_localPath = std::string(l_AssString.C_Str()).substr(std::string(l_AssString.C_Str()).find_last_of("\\"));
+			}
+			else
+			{
+				l_localPath = std::string(l_AssString.C_Str());
+			}
+
+			// load image
+			l_textureDataPair.first = textureType(aiTextureType(i));
+			l_textureDataPair.second = loadTextureFromDisk(fileName + "//" + l_localPath, textureType(aiTextureType(i)), textureWrapMethod);
+
+			l_textureDataMap.emplace(l_textureDataPair);
 		}
 	}
+	return l_textureDataMap;
 }
 
-void AssetManager::loadTextureForModel(const std::string& fileName, aiMaterial * aiMaterial, aiTextureType aiTextureType, textureWrapMethod textureWrapMethod, textureDataMap& textureDataMap) const
-{
-	aiString l_AssString;
-	for (auto i = (unsigned int)0; i < aiMaterial->GetTextureCount(aiTextureType); i++)
-	{
-		aiMaterial->GetTexture(aiTextureType, i, &l_AssString);
-		// set local path, remove slash
-		std::string l_localPath;
-		if (std::string(l_AssString.C_Str()).find_last_of('//') != std::string::npos)
-		{
-			l_localPath = std::string(l_AssString.C_Str()).substr(std::string(l_AssString.C_Str()).find_last_of("//"));
-		}
-		else if (std::string(l_AssString.C_Str()).find_last_of('\\') != std::string::npos)
-		{
-			l_localPath = std::string(l_AssString.C_Str()).substr(std::string(l_AssString.C_Str()).find_last_of("\\"));
-		}
-		else
-		{
-			l_localPath = std::string(l_AssString.C_Str());
-		}
-
-		// load image
-		int width, height, nrChannels;
-		stbi_set_flip_vertically_on_load(true);
-		auto data = stbi_load(("../res/textures/" + fileName + "//" + l_localPath).c_str(), &width, &height, &nrChannels, 0);
-		if (data)
-		{
-			auto l_textureDataID = RenderingManager::getInstance().addTextureData();
-			textureDataMap.emplace(textureType(aiTextureType), l_textureDataID);
-			auto lastTextureData = &RenderingManager::getInstance().getTextureData(l_textureDataID);
-			lastTextureData->setTextureType(textureType(aiTextureType));
-			lastTextureData->setTextureWrapMethod(textureWrapMethod);
-			lastTextureData->initialize();
-			lastTextureData->sendDataToGPU(aiTextureType - 1, nrChannels, width, height, data);
-			LogManager::getInstance().printLog("innoTexture: " + l_localPath + " is loaded.");
-		}
-		else
-		{
-			LogManager::getInstance().printLog("ERROR:STBI: Failed to load texture: " + l_localPath);
-		}
-		//stbi_image_free(data);
-	}
-}
-
-void AssetManager::loadSingleTexture(const std::string & fileName, textureType textureType, VisibleComponent & visibleComponent)
+void AssetManager::loadTextureImpl(const std::string & fileName, textureType textureType, VisibleComponent & visibleComponent)
 {
 	auto l_loadedTextureData = m_loadedTextureMap.find(fileName);
 	// check if this file has already loaded
 	if (l_loadedTextureData != m_loadedTextureMap.end())
 	{
-		assignloadedTexture(l_loadedTextureData->second, visibleComponent);
+		assignLoadedTexture(textureAssignType::OVERWRITE, l_loadedTextureData->second, visibleComponent);
 		LogManager::getInstance().printLog("innoTexture: " + fileName + " is already loaded, successfully assigned loaded texture data IDs.");
 	}
 	else
 	{
 		auto l_textureDataPair = textureDataPair(textureType, loadTextureFromDisk(fileName, textureType, visibleComponent.m_textureWrapMethod));
 		m_loadedTextureMap.emplace(fileName, l_textureDataPair);
-		assignloadedTexture(l_textureDataPair, visibleComponent);
+		assignLoadedTexture(textureAssignType::OVERWRITE, l_textureDataPair, visibleComponent);
 	}
 }
 
-void AssetManager::assignloadedTexture(textureDataPair& loadedTextureDataPair, VisibleComponent & visibleComponent)
+void AssetManager::assignLoadedTexture(textureAssignType textureAssignType, textureDataPair& loadedTextureDataPair, VisibleComponent & visibleComponent)
 {
-	visibleComponent.addTextureData(loadedTextureDataPair);
+	if (textureAssignType == textureAssignType::ADD_DEFAULT)
+	{
+		visibleComponent.addTextureData(loadedTextureDataPair);
+	}
+	else if (textureAssignType == textureAssignType::OVERWRITE)
+	{
+		visibleComponent.overwriteTextureData(loadedTextureDataPair);
+	}
 }
 
 textureDataID AssetManager::loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod)
@@ -343,10 +337,7 @@ textureDataID AssetManager::loadTextureFromDisk(const std::string & fileName, te
 	{
 		auto id = RenderingManager::getInstance().addTextureData();
 		auto lastTextureData = &RenderingManager::getInstance().getTextureData(id);
-		lastTextureData->setTextureType(textureType);
-		lastTextureData->setTextureWrapMethod(textureWrapMethod);
-		lastTextureData->initialize();
-		lastTextureData->sendDataToGPU(0, nrChannels, width, height, data);
+		lastTextureData->initialize(textureType, textureWrapMethod, 0, nrChannels, width, height, data);
 		LogManager::getInstance().printLog("innoTexture: " + fileName + " is loaded.");
 		return id;
 	}
@@ -370,11 +361,8 @@ void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName,
 		{
 			auto id = RenderingManager::getInstance().addTextureData();
 			auto lastTextureData = &RenderingManager::getInstance().getTextureData(id);
-			lastTextureData->setTextureType(textureType::CUBEMAP);
-			lastTextureData->setTextureWrapMethod(visibleComponent.m_textureWrapMethod);
-			lastTextureData->initialize();
-			lastTextureData->sendDataToGPU(i, nrChannels, width, height, data);
-			visibleComponent.addTextureData(textureDataPair(textureType::CUBEMAP, id));
+			lastTextureData->initialize(textureType::CUBEMAP, visibleComponent.m_textureWrapMethod, i, nrChannels, width, height, data);
+			visibleComponent.overwriteTextureData(textureDataPair(textureType::CUBEMAP, id));
 			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " is loaded.");
 		}
 		else
@@ -386,34 +374,33 @@ void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName,
 }
 
 
-void AssetManager::assignDefaultTextures(VisibleComponent & visibleComponent)
+void AssetManager::assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent)
 {
 	if (visibleComponent.m_visiblilityType == visiblilityType::STATIC_MESH)
 	{
-		assignloadedTexture(textureDataPair(textureType::NORMALS, m_basicNormalTemplate), visibleComponent);
-		visibleComponent.addTextureData(textureDataPair(textureType::NORMALS, m_basicNormalTemplate));
-		visibleComponent.addTextureData(textureDataPair(textureType::DIFFUSE, m_basicAlbedoTemplate));
-		visibleComponent.addTextureData(textureDataPair(textureType::SPECULAR, m_basicMetallicTemplate));
-		visibleComponent.addTextureData(textureDataPair(textureType::AMBIENT, m_basicRoughnessTemplate));
-		visibleComponent.addTextureData(textureDataPair(textureType::EMISSIVE, m_basicAOTemplate));
+		assignLoadedTexture(textureAssignType, textureDataPair(textureType::NORMALS, m_basicNormalTemplate), visibleComponent);
+		assignLoadedTexture(textureAssignType, textureDataPair(textureType::DIFFUSE, m_basicAlbedoTemplate), visibleComponent);
+		assignLoadedTexture(textureAssignType, textureDataPair(textureType::SPECULAR, m_basicMetallicTemplate), visibleComponent);
+		assignLoadedTexture(textureAssignType, textureDataPair(textureType::AMBIENT, m_basicRoughnessTemplate), visibleComponent);
+		assignLoadedTexture(textureAssignType, textureDataPair(textureType::EMISSIVE, m_basicAOTemplate), visibleComponent);
 	}
 }
 
 void AssetManager::addUnitCube(VisibleComponent & visibleComponent)
 {
 	visibleComponent.addMeshData(m_UnitCubeTemplate);
-	assignDefaultTextures(visibleComponent);
+	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
 }
 
 
 void AssetManager::addUnitSphere(VisibleComponent & visibleComponent)
 {
 	visibleComponent.addMeshData(m_UnitSphereTemplate);
-	assignDefaultTextures(visibleComponent);
+	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
 }
 
 void AssetManager::addUnitQuad(VisibleComponent & visibleComponent)
 {
 	visibleComponent.addMeshData(m_UnitQuadTemplate);
-	assignDefaultTextures(visibleComponent);
+	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
 }

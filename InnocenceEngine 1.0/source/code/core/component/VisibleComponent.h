@@ -20,6 +20,7 @@ public:
 	void setGraphicDataMap(graphicDataMap& graphicDataMap);
 	void addMeshData(meshDataID& meshDataID);
 	void addTextureData(textureDataPair& textureDataPair);
+	void overwriteTextureData(textureDataPair& textureDataPair);
 
 private:
 	graphicDataMap m_graphicDataMap;
