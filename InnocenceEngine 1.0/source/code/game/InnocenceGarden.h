@@ -51,10 +51,10 @@ private:
 
 	std::vector<LightComponent> pointLightComponents;
 
-	double temp = 0.0f;
+	float temp = 0.0f;
 
 	void initSpheres();
 	void initLights();
-	void updateLights(double seed);
+	void updateLights(float seed);
 };
 

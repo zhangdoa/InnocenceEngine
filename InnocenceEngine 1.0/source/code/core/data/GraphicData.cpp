@@ -13,6 +13,14 @@ MeshData::~MeshData()
 void MeshData::initialize()
 {
 	m_GLMeshData.init();
+	sendDataToGPU(false, false);
+}
+
+void MeshData::initialize(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents)
+{
+	m_meshDrawMethod = meshDrawMethod;
+	m_GLMeshData.init();
+	sendDataToGPU(calculateNormals, calculateTangents);
 }
 
 void MeshData::update()
@@ -172,11 +180,11 @@ void MeshData::addUnitSphere()
 	}
 
 	bool oddRow = false;
-	for (int y = 0; y < Y_SEGMENTS; ++y)
+	for (unsigned y = 0; y < Y_SEGMENTS; ++y)
 	{
 		if (!oddRow) // even rows: y == 0, y == 2; and so on
 		{
-			for (int x = 0; x <= X_SEGMENTS; ++x)
+			for (unsigned x = 0; x <= X_SEGMENTS; ++x)
 			{
 				m_indices.push_back(y       * (X_SEGMENTS + 1) + x);
 				m_indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
@@ -310,7 +318,7 @@ const textureWrapMethod & TextureData::getTextureWrapMethod() const
 //{
 //}
 //
-//const visiblilityType & GraphicData::getVisiblilityType() const
+//const visiblilityType & GraphicData::m_visiblilityType const
 //{
 //	return m_visiblilityType;
 //}

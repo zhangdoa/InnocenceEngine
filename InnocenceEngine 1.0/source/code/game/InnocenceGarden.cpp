@@ -26,21 +26,21 @@ void InnocenceGarden::initialize()
 
 	SceneGraphManager::getInstance().addToInputQueue(&playCharacter.getInputComponent());
 
-	skyboxComponent.setVisiblilityType(visiblilityType::SKYBOX);
-	skyboxComponent.setTextureWrapMethod(textureWrapMethod::CLAMPTOEDGE);
+	skyboxComponent.m_visiblilityType = visiblilityType::SKYBOX;
+	skyboxComponent.m_textureWrapMethod = textureWrapMethod::CLAMPTOEDGE;
 	skyboxActor.addChildComponent(&skyboxComponent);
 	SceneGraphManager::getInstance().addToRenderingQueue(&skyboxComponent);
 	
 
-	landscapeStaticMeshComponent.setVisiblilityType(visiblilityType::STATIC_MESH);
+	landscapeStaticMeshComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
 	landscapeActor.addChildComponent(&landscapeStaticMeshComponent);
 	SceneGraphManager::getInstance().addToRenderingQueue(&landscapeStaticMeshComponent);
 
-	pawnMeshComponent1.setVisiblilityType(visiblilityType::STATIC_MESH);
+	pawnMeshComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	pawnActor1.addChildComponent(&pawnMeshComponent1);
 	SceneGraphManager::getInstance().addToRenderingQueue(&pawnMeshComponent1);
 
-	pawnMeshComponent2.setVisiblilityType(visiblilityType::STATIC_MESH);
+	pawnMeshComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
 	pawnActor2.addChildComponent(&pawnMeshComponent2);
 	SceneGraphManager::getInstance().addToRenderingQueue(&pawnMeshComponent2);
 	
@@ -98,7 +98,7 @@ void InnocenceGarden::shutdown()
 
 void InnocenceGarden::initSpheres()
 {
-	int sphereMatrixDim = 8;
+	unsigned int sphereMatrixDim = 8;
 	float sphereBreadthInterval = 4.0;
 	for (auto i = (unsigned int)0; i < sphereMatrixDim * sphereMatrixDim; i++)
 	{
@@ -107,8 +107,8 @@ void InnocenceGarden::initSpheres()
 	}
 	for (auto i = (unsigned int)0; i < sphereComponents.size(); i++)
 	{
-		sphereComponents[i].setMeshDrawMethod(meshDrawMethod::TRIANGLE_STRIP);
-		sphereComponents[i].setVisiblilityType(visiblilityType::STATIC_MESH);
+		sphereComponents[i].m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
+		sphereComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
 
 		rootActor.addChildActor(&sphereActors[i]);
 		sphereActors[i].addChildComponent(&sphereComponents[i]);
@@ -152,7 +152,7 @@ void InnocenceGarden::initSpheres()
 
 void InnocenceGarden::initLights()
 {
-	int pointLightMatrixDim = 8;
+	unsigned int pointLightMatrixDim = 8;
 	float pointLightBreadthInterval = 4.0;
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim * pointLightMatrixDim; i++)
 	{
@@ -175,7 +175,7 @@ void InnocenceGarden::initLights()
 	}
 }
 
-void InnocenceGarden::updateLights(double seed)
+void InnocenceGarden::updateLights(float seed)
 {
 	for (auto i = (unsigned int)0; i < pointLightComponents.size(); i+=4)
 	{
