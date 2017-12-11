@@ -15,22 +15,21 @@ public:
 	void update();
 	void rotate(const glm::vec3& axis, float angle);
 
-	const glm::vec3& getPos() const;
-	const glm::quat& getRot() const;
-	const glm::vec3& getScale() const;
+	glm::vec3& getPos();
+	glm::quat& getRot();
+	glm::vec3& getScale();
 
 	void setPos(const glm::vec3& pos);
 	void setRot(const glm::quat& rot);
 	void setScale(const glm::vec3& scale);
 
-	const glm::vec3& getOldPos() const;
-	const glm::quat& getOldRot() const;
-	const glm::vec3& getOldScale() const;
+	glm::vec3& getOldPos();
+	glm::quat& getOldRot();
+	glm::vec3& getOldScale();
 
 	glm::vec3 getDirection(direction direction) const;
 
 private:
-
 	glm::vec3 m_pos;
 	glm::quat m_rot;
 	glm::vec3 m_scale;
@@ -60,21 +59,21 @@ public:
 	const std::vector<BaseComponent*>& getChildrenComponents() const;
 
 	Transform* getTransform();
-	bool hasTransformChanged() const;
+	bool hasTransformChanged();
 
-	glm::mat4 caclLocalPosMatrix() const;
-	glm::mat4 caclLocalRotMatrix() const;
-	glm::mat4 caclLocalScaleMatrix() const;
+	glm::mat4 caclLocalPosMatrix();
+	glm::mat4 caclLocalRotMatrix();
+	glm::mat4 caclLocalScaleMatrix();
 
-	glm::vec3 caclWorldPos() const;
-	glm::quat caclWorldRot() const;
-	glm::vec3 caclWorldScale() const;
+	glm::vec3 caclWorldPos();
+	glm::quat caclWorldRot();
+	glm::vec3 caclWorldScale();
 
-	glm::mat4 caclWorldPosMatrix() const;
-	glm::mat4 caclWorldRotMatrix() const;
-	glm::mat4 caclWorldScaleMatrix() const;
+	glm::mat4 caclWorldPosMatrix();
+	glm::mat4 caclWorldRotMatrix();
+	glm::mat4 caclWorldScaleMatrix();
 
-	glm::mat4 caclTransformationMatrix() const;
+	glm::mat4 caclTransformationMatrix();
 
 private:
 	std::vector<BaseActor*> m_childActor;
