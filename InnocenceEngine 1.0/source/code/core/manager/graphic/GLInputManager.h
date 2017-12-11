@@ -18,7 +18,7 @@ public:
 		static GLInputManager instance; 
 		return instance;
 	}
-
+	void addKeyboardInputCallback(int keyCode, std::function<void()>& keyboardInputCallback);
 	void setKeyboardInputCallback(std::multimap<int, std::function<void()>>& keyboardInputCallback);
 	void setMouseMovementCallback(std::multimap<int, std::function<void(float)>>& mouseMovementCallback);
 
