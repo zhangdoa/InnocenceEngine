@@ -20,6 +20,16 @@ void RenderingManager::initInput()
 	}
 }
 
+void RenderingManager::changeDrawPolygonMode()
+{
+	GLRenderingManager::getInstance().changeDrawPolygonMode();
+}
+
+void RenderingManager::changeDrawTextureMode()
+{
+	GLRenderingManager::getInstance().changeDrawTextureMode();
+}
+
 meshDataID RenderingManager::addMeshData()
 {
 	MeshData newMeshData;
@@ -68,8 +78,11 @@ void RenderingManager::initialize()
 	{
 		m_childEventManager[i].get()->initialize();
 	}
-	f_changeDrawPolygonMode = std::bind(&GLRenderingManager::changeDrawPolygonMode, GLRenderingManager::getInstance());
-	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawPolygonMode);
+
+	f_changeDrawPolygonMode = std::bind(&RenderingManager::changeDrawPolygonMode, this);
+	f_changeDrawTextureMode = std::bind(&RenderingManager::changeDrawTextureMode, this);
+	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_Q, &f_changeDrawPolygonMode);
+	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
 	//m_asyncRenderThread = new std::thread(&RenderingManager::AsyncRender, this);
 	
 	this->setStatus(objectStatus::ALIVE);
@@ -84,7 +97,7 @@ void RenderingManager::update()
 	//}
 	AsyncRender();
 	
-	if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)
+if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)
 	{
 		this->setStatus(objectStatus::STANDBY);
 		LogManager::getInstance().printLog("RenderingManager is stand-by.");

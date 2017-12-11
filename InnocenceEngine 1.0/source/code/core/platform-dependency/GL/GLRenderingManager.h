@@ -213,7 +213,7 @@ public:
 	void setScreenResolution(glm::vec2 screenResolution);
 
 	void changeDrawPolygonMode();
-	void toggleDepthBufferVisualizer();
+	void changeDrawTextureMode();
 
 private:
 	GLRenderingManager();
@@ -241,7 +241,7 @@ private:
 	std::vector<float> m_screenVertices;
 
 	int m_polygonMode = 0;
-	bool m_drawDepthBuffer = false;
+	int m_textureMode = 0;
 
 	void initializeGeometryPass();
 	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas);
