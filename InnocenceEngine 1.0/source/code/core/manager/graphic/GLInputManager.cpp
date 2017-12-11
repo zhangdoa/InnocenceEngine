@@ -11,6 +11,11 @@ GLInputManager::~GLInputManager()
 {
 }
 
+void GLInputManager::addKeyboardInputCallback(int keyCode, std::function<void()>& keyboardInputCallback)
+{
+	m_keyboardInputCallback.emplace(keyCode, keyboardInputCallback);
+}
+
 void GLInputManager::setKeyboardInputCallback(std::multimap<int, std::function<void()>>& keyboardInputCallback)
 {
 	m_keyboardInputCallback = keyboardInputCallback;
@@ -59,6 +64,7 @@ void GLInputManager::initialize()
 	glfwSetCursorPosCallback(GLWindowManager::getInstance().getWindow(), &mousePositionCallback);
 	glfwSetScrollCallback(GLWindowManager::getInstance().getWindow(), &scrollCallback);
 	glfwSetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_STICKY_KEYS, GL_TRUE);
+
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("GLInputManager has been initialized.");
 }
