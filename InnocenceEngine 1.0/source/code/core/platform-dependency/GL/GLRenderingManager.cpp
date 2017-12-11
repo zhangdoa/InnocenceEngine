@@ -743,10 +743,10 @@ void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& camer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL - m_polygonMode);
 
 	m_geometryPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void GLRenderingManager::initializeLightPass()
@@ -887,17 +887,15 @@ void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraCo
 
 void GLRenderingManager::changeDrawPolygonMode()
 {
-	if (m_polygonMode == 3)
+	if (m_polygonMode == 2)
 	{
 		m_polygonMode = 0;
 	}
-	switch (m_polygonMode)
+	else
 	{
-	case 0: glPolygonMode(GL_FRONT_AND_BACK, GL_POINT); break;
-	case 1:	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); break;
-	case 2: glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); break;
+		m_polygonMode += 1;
 	}
-	m_polygonMode += 1;
+	LogManager::getInstance().printLog(m_polygonMode);
 }
 void GLRenderingManager::toggleDepthBufferVisualizer()
 {
@@ -910,10 +908,7 @@ void GLRenderingManager::toggleDepthBufferVisualizer()
 		m_drawDepthBuffer = true;
 	}
 }
-bool GLRenderingManager::canDrawDepthBuffer() const
-{
-	return m_drawDepthBuffer;
-}
+
 void GLRenderingManager::initialize()
 {
 	//BillboardPassShader::getInstance().init();

@@ -15,19 +15,9 @@ void RenderingManager::initInput()
 	for (size_t i = 0; i < SceneGraphManager::getInstance().getInputQueue().size(); i++)
 	{
 		// @TODO: multi input components need to register to multi map
-		GLInputManager::getInstance().setKeyboardInputCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getKeyboardInputCallbackImpl());
-		GLInputManager::getInstance().setMouseMovementCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getMouseInputCallbackImpl());
+		GLInputManager::getInstance().addKeyboardInputCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getKeyboardInputCallbackImpl());
+		GLInputManager::getInstance().addMouseMovementCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getMouseInputCallbackImpl());
 	}
-}
-
-void RenderingManager::changeDrawPolygonMode() const
-{
-	GLRenderingManager::getInstance().changeDrawPolygonMode();
-}
-
-void RenderingManager::toggleDepthBufferVisualizer()
-{
-	GLRenderingManager::getInstance().toggleDepthBufferVisualizer();
 }
 
 meshDataID RenderingManager::addMeshData()
@@ -78,7 +68,8 @@ void RenderingManager::initialize()
 	{
 		m_childEventManager[i].get()->initialize();
 	}
-
+	f_changeDrawPolygonMode = std::bind(&GLRenderingManager::changeDrawPolygonMode, GLRenderingManager::getInstance());
+	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawPolygonMode);
 	//m_asyncRenderThread = new std::thread(&RenderingManager::AsyncRender, this);
 	
 	this->setStatus(objectStatus::ALIVE);

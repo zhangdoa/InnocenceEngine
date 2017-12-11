@@ -214,7 +214,6 @@ public:
 
 	void changeDrawPolygonMode();
 	void toggleDepthBufferVisualizer();
-	bool canDrawDepthBuffer() const;
 
 private:
 	GLRenderingManager();

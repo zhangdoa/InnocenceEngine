@@ -11,19 +11,62 @@ GLInputManager::~GLInputManager()
 {
 }
 
-void GLInputManager::addKeyboardInputCallback(int keyCode, std::function<void()>& keyboardInputCallback)
+void GLInputManager::addKeyboardInputCallback(int keyCode, std::function<void()>* keyboardInputCallback)
 {
-	m_keyboardInputCallback.emplace(keyCode, keyboardInputCallback);
+	auto l_keyboardInputCallbackFunctionVector = m_keyboardInputCallback.find(keyCode);
+	if (l_keyboardInputCallbackFunctionVector != m_keyboardInputCallback.end())
+	{
+		l_keyboardInputCallbackFunctionVector->second.emplace_back(keyboardInputCallback);
+	}
+	else
+	{
+		m_keyboardInputCallback.emplace(keyCode, std::vector<std::function<void()>*>{keyboardInputCallback});
+	}
 }
 
-void GLInputManager::setKeyboardInputCallback(std::multimap<int, std::function<void()>>& keyboardInputCallback)
+void GLInputManager::addKeyboardInputCallback(int keyCode, std::vector<std::function<void()>*>& keyboardInputCallback)
 {
-	m_keyboardInputCallback = keyboardInputCallback;
+	for (auto i : keyboardInputCallback)
+	{
+		addKeyboardInputCallback(keyCode, i);
+	}
 }
 
-void GLInputManager::setMouseMovementCallback(std::multimap<int, std::function<void(float)>>& mouseMovementCallback)
+void GLInputManager::addKeyboardInputCallback(std::multimap<int, std::vector<std::function<void()>*>>& keyboardInputCallback)
 {
-	m_mouseMovementCallback = mouseMovementCallback;
+	for (auto i : keyboardInputCallback)
+	{
+		addKeyboardInputCallback(i.first, i.second);
+	}
+}
+
+void GLInputManager::addMouseMovementCallback(int keyCode, std::function<void(float)>* mouseMovementCallback)
+{
+	auto l_mouseMovementCallbackFunctionVector = m_mouseMovementCallback.find(keyCode);
+	if (l_mouseMovementCallbackFunctionVector != m_mouseMovementCallback.end())
+	{
+		l_mouseMovementCallbackFunctionVector->second.emplace_back(mouseMovementCallback);
+	}
+	else
+	{
+		m_mouseMovementCallback.emplace(keyCode, std::vector<std::function<void(float)>*>{mouseMovementCallback});
+	}
+}
+
+void GLInputManager::addMouseMovementCallback(int keyCode, std::vector<std::function<void(float)>*>& mouseMovementCallback)
+{
+	for (auto i : mouseMovementCallback)
+	{
+		addMouseMovementCallback(keyCode, i);
+	}
+}
+
+void GLInputManager::addMouseMovementCallback(std::multimap<int, std::vector<std::function<void(float)>*>>& mouseMovementCallback)
+{
+	for (auto i : mouseMovementCallback)
+	{
+		addMouseMovementCallback(i.first, i.second);
+	}
 }
 
 void GLInputManager::framebufferSizeCallback(GLFWwindow * window, int width, int height)
@@ -78,7 +121,17 @@ void GLInputManager::update()
 		{
 			if (glfwGetKey(GLWindowManager::getInstance().getWindow(), i) == GLFW_PRESS)
 			{
-				m_keyboardInputCallback.find(i)->second();
+				auto l_keybinding = m_keyboardInputCallback.find(i);
+				if (l_keybinding != m_keyboardInputCallback.end())
+				{
+					for (auto j : l_keybinding->second)
+					{
+						if (j)
+						{
+							(*j)();
+						}
+					}
+				}
 			}
 		}
 
@@ -88,11 +141,17 @@ void GLInputManager::update()
 			GLWindowManager::getInstance().hideMouseCursor();
 			if (m_mouseXOffset != 0)
 			{
-				m_mouseMovementCallback.find(0)->second(m_mouseXOffset);
+				for (auto j : m_mouseMovementCallback.find(0)->second)
+				{
+					(*j)(m_mouseXOffset);
+				};
 			}
 			if (m_mouseYOffset != 0)
 			{
-				m_mouseMovementCallback.find(1)->second(m_mouseYOffset);
+				for (auto j : m_mouseMovementCallback.find(1)->second)
+				{
+					(*j)(m_mouseYOffset);
+				};
 			}
 			if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
 			{
