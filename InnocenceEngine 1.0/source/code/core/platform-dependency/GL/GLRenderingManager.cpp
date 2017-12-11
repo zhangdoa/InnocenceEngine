@@ -744,7 +744,6 @@ void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& camer
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL - m_polygonMode);
-
 	m_geometryPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
@@ -822,7 +821,7 @@ void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraCo
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT2Texture);
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT3Texture);
-
+	
 	m_lightPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 	// draw light pass rectangle
 	glBindVertexArray(m_lightPassVAO);
@@ -895,19 +894,20 @@ void GLRenderingManager::changeDrawPolygonMode()
 	{
 		m_polygonMode += 1;
 	}
-	LogManager::getInstance().printLog(m_polygonMode);
 }
-void GLRenderingManager::toggleDepthBufferVisualizer()
+
+void GLRenderingManager::changeDrawTextureMode()
 {
-	if (m_drawDepthBuffer)
+	if (m_textureMode == 3)
 	{
-		m_drawDepthBuffer = false;
+		m_textureMode = 0;
 	}
 	else
 	{
-		m_drawDepthBuffer = true;
+		m_textureMode += 1;
 	}
 }
+
 
 void GLRenderingManager::initialize()
 {
