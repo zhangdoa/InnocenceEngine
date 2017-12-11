@@ -60,8 +60,8 @@ void InnocenceGarden::initialize()
 
 	//AssetManager::getInstance().importModel("deer.obj");
 
-	AssetManager::getInstance().loadAsset(assetType::MODEL, "nanosuit/nanosuit.obj", pawnMeshComponent1);
-	AssetManager::getInstance().loadAsset(assetType::MODEL, "nanosuit/nanosuit.obj", pawnMeshComponent2);
+	//AssetManager::getInstance().loadAsset(assetType::MODEL, "nanosuit/nanosuit.obj", pawnMeshComponent1);
+	//AssetManager::getInstance().loadAsset(assetType::MODEL, "nanosuit/nanosuit.obj", pawnMeshComponent2);
 
 	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
 	//AssetManager::getInstance().addUnitCube(skyboxComponent);
@@ -109,7 +109,7 @@ void InnocenceGarden::initSpheres()
 	}
 	for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
 	{
-		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
+		/*AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_metallic.png", textureType::SPECULAR, sphereComponents[i]);
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_normal.png", textureType::NORMALS, sphereComponents[i]);
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_roughness.png", textureType::AMBIENT, sphereComponents[i]);
@@ -128,7 +128,7 @@ void InnocenceGarden::initSpheres()
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-metalness.png", textureType::SPECULAR, sphereComponents[i + 3]);
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-normal.png", textureType::NORMALS, sphereComponents[i + 3]);
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-roughness.png", textureType::AMBIENT, sphereComponents[i + 3]);
-		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-ao.png", textureType::EMISSIVE, sphereComponents[i + 3]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-ao.png", textureType::EMISSIVE, sphereComponents[i + 3]);*/
 	}
 	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
 	{
@@ -181,7 +181,7 @@ void InnocenceGarden::updateSpheres(float seed)
 	for (auto i = (unsigned int)0; i < sphereActors.size(); i++)
 	{
 		// @TODO: fix stationary texture problem 
-		sphereActors[i].getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.1 * i);
+		//sphereActors[i].getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.1 * i);
 		//sphereActors[i].getTransform()->setPos(sphereActors[i].getTransform()->getPos() + glm::vec3(glm::cos(seed) * 0.1, 0.0, 0.0));
 	}
 }
