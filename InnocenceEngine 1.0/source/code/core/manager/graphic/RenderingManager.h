@@ -25,8 +25,6 @@ public:
 	}
 
 	void initInput();
-	void changeDrawPolygonMode() const;
-	void toggleDepthBufferVisualizer();
 	meshDataID addMeshData();
 	textureDataID addTextureData();
 	std::unordered_map<meshDataID, MeshData>& getMeshData();
@@ -40,7 +38,7 @@ private:
 	std::thread* m_asyncRenderThread;
 	void AsyncRender();
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
-
+	std::function<void()> f_changeDrawPolygonMode;
 	std::unordered_map<meshDataID, MeshData> m_meshDatas;
 	std::unordered_map<textureDataID, TextureData> m_textureDatas;
 };

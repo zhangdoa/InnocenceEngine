@@ -17,12 +17,12 @@ void InputComponent::registerInputCallback(int keyCode, void * function)
 	// @TODO: it seems that there should be a template for unknown member function 
 }
 
-std::multimap<int, std::function<void()>>& InputComponent::getKeyboardInputCallbackImpl()
+std::multimap<int, std::vector<std::function<void()>*>>& InputComponent::getKeyboardInputCallbackImpl()
 {
 	return m_keyboardInputCallbackImpl;
 }
 
-std::multimap<int, std::function<void(float)>>& InputComponent::getMouseInputCallbackImpl()
+std::multimap<int, std::vector<std::function<void(float)>*>>& InputComponent::getMouseInputCallbackImpl()
 {
 	return m_mouseMovementCallbackImpl;
 }
@@ -51,21 +51,21 @@ void InputComponent::rotateAroundYAxis(float offset)
 
 void InputComponent::initialize()
 {
-	std::function<void()> f_moveForward = std::bind(&InputComponent::moveForward, this);
-	std::function<void()> f_moveBackward = std::bind(&InputComponent::moveBackward, this);
-	std::function<void()> f_moveLeft = std::bind(&InputComponent::moveLeft, this);
-	std::function<void()> f_moveRight = std::bind(&InputComponent::moveRight, this);
-	std::function<void(float)> f_rotateAroundXAxis = std::bind(&InputComponent::rotateAroundXAxis, this, std::placeholders::_1);
-	std::function<void(float)> f_rotateAroundYAxis = std::bind(&InputComponent::rotateAroundYAxis, this, std::placeholders::_1);
+	f_moveForward = std::bind(&InputComponent::moveForward, this);
+	f_moveBackward = std::bind(&InputComponent::moveBackward, this);
+	f_moveLeft = std::bind(&InputComponent::moveLeft, this);
+	f_moveRight = std::bind(&InputComponent::moveRight, this);
+	f_rotateAroundXAxis = std::bind(&InputComponent::rotateAroundXAxis, this, std::placeholders::_1);
+	f_rotateAroundYAxis = std::bind(&InputComponent::rotateAroundYAxis, this, std::placeholders::_1);
 
-	m_keyboardInputCallbackImpl.insert(std::pair<int, std::function<void()>>(GLFW_KEY_W, f_moveForward));
-	m_keyboardInputCallbackImpl.insert(std::pair<int, std::function<void()>>(GLFW_KEY_S, f_moveBackward));
-	m_keyboardInputCallbackImpl.insert(std::pair<int, std::function<void()>>(GLFW_KEY_A, f_moveLeft));
-	m_keyboardInputCallbackImpl.insert(std::pair<int, std::function<void()>>(GLFW_KEY_D, f_moveRight));
+	m_keyboardInputCallbackImpl.emplace(GLFW_KEY_W, std::vector<std::function<void()>*>{&f_moveForward});
+	m_keyboardInputCallbackImpl.emplace(GLFW_KEY_S, std::vector<std::function<void()>*>{&f_moveBackward});
+	m_keyboardInputCallbackImpl.emplace(GLFW_KEY_A, std::vector<std::function<void()>*>{&f_moveLeft});
+	m_keyboardInputCallbackImpl.emplace(GLFW_KEY_D, std::vector<std::function<void()>*>{&f_moveRight});
 
 	// @TODO: key name binding
-	m_mouseMovementCallbackImpl.insert(std::pair<int, std::function<void(float)>>(0, f_rotateAroundXAxis));
-	m_mouseMovementCallbackImpl.insert(std::pair<int, std::function<void(float)>>(1, f_rotateAroundYAxis));
+	m_mouseMovementCallbackImpl.emplace(0, std::vector<std::function<void(float)>*>{&f_rotateAroundXAxis});
+	m_mouseMovementCallbackImpl.emplace(1, std::vector<std::function<void(float)>*>{&f_rotateAroundYAxis});
 }
 
 void InputComponent::update()
