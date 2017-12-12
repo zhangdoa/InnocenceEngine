@@ -22,6 +22,7 @@
 #include <sstream>
 #include <iostream>
 #include <thread>
+#include <future>
 #include <vector>
 #include <map>
 #include <unordered_map>
