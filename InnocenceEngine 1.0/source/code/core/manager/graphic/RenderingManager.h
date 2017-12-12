@@ -38,7 +38,6 @@ public:
 private:
 	RenderingManager();
 
-	std::thread* m_asyncRenderThread;
 	void AsyncRender();
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 	std::function<void()> f_changeDrawPolygonMode;

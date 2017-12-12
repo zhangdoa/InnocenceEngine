@@ -91,10 +91,6 @@ void RenderingManager::initialize()
 
 void RenderingManager::update()
 {
-	//if (m_asyncRenderThread->joinable())
-	//{
-	//	m_asyncRenderThread->join();
-	//}
 	AsyncRender();
 	
 if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)

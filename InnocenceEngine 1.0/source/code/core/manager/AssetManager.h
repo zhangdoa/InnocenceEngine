@@ -41,6 +41,8 @@ public:
 private:
 	AssetManager();
 
+	void initializeAsync();
+
 	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
 
 	void loadShaderImpl(const std::string& filePath, std::string& fileContent);
@@ -49,7 +51,6 @@ private:
 
 	void assignloadedModel(graphicDataMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
 
-	void loadModelFromDisk(const std::string& fileName) const;
 	graphicDataMap processAssimpScene(const std::string& fileName, const aiScene* aiScene, meshDrawMethod& meshDrawMethod, textureWrapMethod& textureWrapMethod);
 	graphicDataMap processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod);
 	meshDataID processSingleAssimpMesh(aiMesh* mesh, meshDrawMethod meshDrawMethod) const;

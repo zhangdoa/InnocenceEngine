@@ -20,11 +20,15 @@ void MeshData::initialize(meshDrawMethod meshDrawMethod, bool calculateNormals, 
 	m_meshDrawMethod = meshDrawMethod;
 	m_GLMeshData.init();
 	sendDataToGPU(calculateNormals, calculateTangents);
+	setStatus(objectStatus::ALIVE);
 }
 
 void MeshData::update()
 {
-	m_GLMeshData.draw(m_indices, m_meshDrawMethod);
+	if (getStatus() == objectStatus::ALIVE)
+	{
+		m_GLMeshData.draw(m_indices, m_meshDrawMethod);
+	}
 }
 
 void MeshData::shutdown()
@@ -258,11 +262,15 @@ void TextureData::initialize(textureType textureType, textureWrapMethod textureW
 	m_textureWrapMethod = textureWrapMethod;
 	m_GLTextureData.init(m_textureType, m_textureWrapMethod);
 	m_GLTextureData.sendDataToGPU(m_textureType, textureIndex, textureFormat, textureWidth, textureHeight, textureData);
+	setStatus(objectStatus::ALIVE);
 }
 
 void TextureData::update()
 {
-	m_GLTextureData.draw(m_textureType);
+	if (getStatus() == objectStatus::ALIVE)
+	{
+		m_GLTextureData.draw(m_textureType);
+	}
 }
 
 void TextureData::shutdown()
