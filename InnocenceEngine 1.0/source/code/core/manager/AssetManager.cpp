@@ -14,6 +14,20 @@ AssetManager::~AssetManager()
 
 void AssetManager::initialize()
 {
+	//auto t = std::async(std::launch::async, &AssetManager::initializeAsync, this);
+	initializeAsync();
+}
+
+void AssetManager::update()
+{
+}
+
+void AssetManager::shutdown()
+{
+}
+
+void AssetManager::initializeAsync()
+{
 	m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", textureType::NORMALS, textureWrapMethod::REPEAT);
 	m_basicAlbedoTemplate = loadTextureFromDisk("basic_albedo.png", textureType::DIFFUSE, textureWrapMethod::REPEAT);
 	m_basicMetallicTemplate = loadTextureFromDisk("basic_metallic.png", textureType::SPECULAR, textureWrapMethod::REPEAT);
@@ -34,14 +48,6 @@ void AssetManager::initialize()
 	lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitQuadTemplate);
 	lastMeshData->addUnitQuad();
 	lastMeshData->initialize(meshDrawMethod::TRIANGLE, true, true);
-}
-
-void AssetManager::update()
-{
-}
-
-void AssetManager::shutdown()
-{
 }
 
 void AssetManager::loadAsset(assetType assetType, const std::string & filePath, VisibleComponent& visibleComponent)
