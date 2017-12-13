@@ -12,10 +12,10 @@ MeshData::~MeshData()
 
 void MeshData::initialize()
 {
-	initialize(m_meshDrawMethod, false, false);
+	setup(m_meshDrawMethod, false, false);
 }
 
-void MeshData::initialize(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents)
+void MeshData::setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents)
 {
 	m_meshDrawMethod = meshDrawMethod;
 	m_GLMeshData.init();
@@ -254,14 +254,18 @@ TextureData::~TextureData()
 void TextureData::initialize()
 {
 	m_GLTextureData.init(m_textureType, m_textureWrapMethod);
+	m_GLTextureData.sendDataToGPU(m_textureType, m_textureIndex, m_textureFormat, m_textureWidth, m_textureHeight, m_textureRawData);
 }
 
-void TextureData::initialize(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData)
+void TextureData::setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData)
 {
 	m_textureType = textureType;
 	m_textureWrapMethod = textureWrapMethod;
-	m_GLTextureData.init(m_textureType, m_textureWrapMethod);
-	m_GLTextureData.sendDataToGPU(m_textureType, textureIndex, textureFormat, textureWidth, textureHeight, textureData);
+	m_textureIndex = textureIndex;
+	m_textureFormat = textureFormat;
+	m_textureWidth = textureWidth;
+	m_textureHeight = textureHeight;
+	m_textureRawData = textureData;
 	setStatus(objectStatus::ALIVE);
 }
 
@@ -278,30 +282,6 @@ void TextureData::shutdown()
 	m_GLTextureData.shutdown();
 }
 
-void TextureData::sendDataToGPU(int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData) const
-{
-	m_GLTextureData.sendDataToGPU(m_textureType, textureIndex, textureFormat, textureWidth, textureHeight, textureData);
-}
-
-void TextureData::setTextureType(textureType textureType)
-{
-	m_textureType = textureType;
-}
-
-textureType TextureData::getTextureType() const
-{
-	return m_textureType;
-}
-
-void TextureData::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
-{
-	m_textureWrapMethod = textureWrapMethod;
-}
-
-const textureWrapMethod & TextureData::getTextureWrapMethod() const
-{
-	return m_textureWrapMethod;
-}
 
 //GraphicData::GraphicData()
 //{

@@ -11,7 +11,7 @@ public:
 	~MeshData();
 
 	void initialize() override;
-	void initialize(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents);
+	void setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents);
 	void update() override;
 	void shutdown() override;
 
@@ -34,6 +34,8 @@ private:
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 };
 
+typedef unsigned char stbi_uc;
+
 class TextureData : public IBaseObject
 {
 public:
@@ -41,20 +43,21 @@ public:
 	~TextureData();
 
 	void initialize() override;
-	void initialize(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData);
+	void setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData);
 	void update() override;
 	void shutdown() override;
 
-	void sendDataToGPU(int textureIndex, int textureFormat, int textureWidth, int textureHeight, void* textureData) const;
-	void setTextureType(textureType textureType);
-	textureType getTextureType() const;
-	void setTextureWrapMethod(textureWrapMethod textureWrapMethod);
-	const textureWrapMethod& getTextureWrapMethod() const;
-
 private:
 	GLTextureData m_GLTextureData;
+
 	textureType m_textureType;
 	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
+
+	int m_textureIndex;
+	int m_textureFormat;
+	int m_textureWidth;
+	int m_textureHeight;
+	void* m_textureRawData;
 };
 
 typedef GameObjectID textureDataID;
