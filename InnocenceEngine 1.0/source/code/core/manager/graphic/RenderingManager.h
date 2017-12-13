@@ -14,6 +14,7 @@ class RenderingManager : public IEventManager
 public:
 	~RenderingManager();
 
+	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;

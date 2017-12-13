@@ -52,6 +52,10 @@ std::vector<InputComponent*>& SceneGraphManager::getInputQueue()
 }
 
 
+void SceneGraphManager::setup()
+{
+}
+
 void SceneGraphManager::initialize()
 {
 	this->setStatus(objectStatus::ALIVE);

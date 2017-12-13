@@ -12,6 +12,7 @@ class SceneGraphManager : public IEventManager
 public:
 	~SceneGraphManager();
 
+	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;

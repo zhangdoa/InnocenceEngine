@@ -64,25 +64,30 @@ TextureData & RenderingManager::getTextureData(textureDataID textureDataIndex)
 	return m_textureDatas.find(textureDataIndex)->second;
 }
 
-void RenderingManager::initialize()
+void RenderingManager::setup()
 {
-
 	m_childEventManager.emplace_back(&GLWindowManager::getInstance());
 	m_childEventManager.emplace_back(&GLInputManager::getInstance());
 	m_childEventManager.emplace_back(&GLRenderingManager::getInstance());
 	//m_childEventManager.emplace_back(&GLGUIManager::getInstance());
-
-	GLRenderingManager::getInstance().setScreenResolution(GLWindowManager::getInstance().getScreenResolution());
-
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
-		m_childEventManager[i].get()->initialize();
+		m_childEventManager[i].get()->setup();
 	}
+	GLRenderingManager::getInstance().setScreenResolution(GLWindowManager::getInstance().getScreenResolution());
 
 	f_changeDrawPolygonMode = std::bind(&RenderingManager::changeDrawPolygonMode, this);
 	f_changeDrawTextureMode = std::bind(&RenderingManager::changeDrawTextureMode, this);
 	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_Q, &f_changeDrawPolygonMode);
 	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
+}
+
+void RenderingManager::initialize()
+{
+	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	{
+		m_childEventManager[i].get()->initialize();
+	}
 	//m_asyncRenderThread = new std::thread(&RenderingManager::AsyncRender, this);
 	
 	this->setStatus(objectStatus::ALIVE);

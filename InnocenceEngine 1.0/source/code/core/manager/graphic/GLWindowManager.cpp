@@ -41,6 +41,10 @@ void GLWindowManager::showMouseCursor() const
 	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
+void GLWindowManager::setup()
+{
+}
+
 void GLWindowManager::initialize()
 {
 	if (glfwInit() != GL_TRUE)

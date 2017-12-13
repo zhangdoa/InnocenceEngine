@@ -40,8 +40,10 @@ int main()
 
 	//std::thread tempthread(asyncPrimeNumberCalculation);
 
-	//auto f = std::async(std::launch::async, asyncPrimeNumberCalculation);
+	auto f = std::async(std::launch::async, asyncPrimeNumberCalculation);
+	CoreManager::getInstance().setup();
 	CoreManager::getInstance().initialize();
+
 	while (CoreManager::getInstance().getStatus() == objectStatus::ALIVE)
 	{
 		CoreManager::getInstance().update();

@@ -12,21 +12,12 @@ AssetManager::~AssetManager()
 {
 }
 
+void AssetManager::setup()
+{
+	
+}
+
 void AssetManager::initialize()
-{
-	//auto t = std::async(std::launch::async, &AssetManager::initializeAsync, this);
-	initializeAsync();
-}
-
-void AssetManager::update()
-{
-}
-
-void AssetManager::shutdown()
-{
-}
-
-void AssetManager::initializeAsync()
 {
 	m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", textureType::NORMALS, textureWrapMethod::REPEAT);
 	m_basicAlbedoTemplate = loadTextureFromDisk("basic_albedo.png", textureType::DIFFUSE, textureWrapMethod::REPEAT);
@@ -38,16 +29,27 @@ void AssetManager::initializeAsync()
 	auto lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitCubeTemplate);
 	lastMeshData->addUnitCube();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE, false, false);
+	lastMeshData->initialize();
 
 	m_UnitSphereTemplate = RenderingManager::getInstance().addMeshData();
 	lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitSphereTemplate);
 	lastMeshData->addUnitSphere();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
+	lastMeshData->initialize();
 
 	m_UnitQuadTemplate = RenderingManager::getInstance().addMeshData();
 	lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitQuadTemplate);
 	lastMeshData->addUnitQuad();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE, true, true);
+	lastMeshData->initialize();
+}
+
+void AssetManager::update()
+{
+}
+
+void AssetManager::shutdown()
+{
 }
 
 void AssetManager::loadAsset(assetType assetType, const std::string & filePath, VisibleComponent& visibleComponent)
@@ -196,6 +198,7 @@ meshDataID AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDrawMethod m
 		}
 	}
 	lastMeshData.setup(meshDrawMethod, false, false);
+	//lastMeshData.initialize();
 	LogManager::getInstance().printLog("innoMesh is loaded.");
 	return l_meshDataID;
 }
@@ -265,7 +268,6 @@ void AssetManager::addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData& mes
 		vertexData.m_bitangent.y = 0.0f;
 		vertexData.m_bitangent.z = 0.0f;
 	}
-
 	meshData.getVertices().emplace_back(vertexData);
 }
 

@@ -8,6 +8,7 @@ class TimeManager : public IEventManager
 public:
 	~TimeManager();
 
+	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;

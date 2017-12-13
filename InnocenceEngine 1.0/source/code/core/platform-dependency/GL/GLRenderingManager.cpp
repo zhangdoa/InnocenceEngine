@@ -909,19 +909,24 @@ void GLRenderingManager::changeDrawTextureMode()
 }
 
 
+void GLRenderingManager::setup()
+{
+	//@TODO: add a switch for different shader model
+	//m_geometryPassShader = &GeometryPassBlinnPhongShader::getInstance();
+	m_geometryPassShader = &GeometryPassPBSShader::getInstance();
+
+	//m_lightPassShader = &LightPassBlinnPhongShader::getInstance();
+	m_lightPassShader = &LightPassPBSShader::getInstance();
+}
+
 void GLRenderingManager::initialize()
 {
 	//BillboardPassShader::getInstance().init();
 	//SkyboxShader::getInstance().init();
 	glEnable(GL_TEXTURE_2D);
 
-	//@TODO: add a switch for different shader model
-	//m_geometryPassShader = &GeometryPassBlinnPhongShader::getInstance();
-	m_geometryPassShader = &GeometryPassPBSShader::getInstance();
 	initializeGeometryPass();
 
-	//m_lightPassShader = &LightPassBlinnPhongShader::getInstance();
-	m_lightPassShader = &LightPassPBSShader::getInstance();
 	initializeLightPass();
 
 	DebuggerShader::getInstance().init();

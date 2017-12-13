@@ -101,6 +101,10 @@ void GLInputManager::scrollCallbackImpl(GLFWwindow * window, double xoffset, dou
 {
 }
 
+void GLInputManager::setup()
+{
+}
+
 void GLInputManager::initialize()
 {
 	glfwSetFramebufferSizeCallback(GLWindowManager::getInstance().getWindow(), &framebufferSizeCallback);
@@ -177,3 +181,4 @@ void GLInputManager::shutdown()
 	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("GLInputManager has been shutdown.");
 }
+

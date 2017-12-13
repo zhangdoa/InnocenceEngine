@@ -6,6 +6,7 @@ class LogManager : public IEventManager
 public:
 	~LogManager();
 
+	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
