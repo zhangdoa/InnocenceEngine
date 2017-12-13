@@ -3,10 +3,16 @@
 
 enum class textureType { INVISIBLE, DIFFUSE, SPECULAR, AMBIENT, EMISSIVE, HEIGHT, NORMALS, SHININESS, OPACITY, DISPLACEMENT, LIGHTMAP, REFLECTION, CUBEMAP };
 enum class textureWrapMethod { CLAMPTOEDGE, REPEAT };
-enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP};
+enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 
-struct GLVertexData
+class GLVertexData
 {
+public:
+	GLVertexData();
+	GLVertexData(glm::vec3& pos, glm::vec2& texCoord, glm::vec3& m_normal);
+	GLVertexData(float pos_x, float pos_y, float pos_z, float texCoord_x, float texCoord_y, float normal_x, float normal_y, float normal_z);
+	~GLVertexData();
+
 	glm::vec3 m_pos;
 	glm::vec2 m_texCoord;
 	glm::vec3 m_normal;

@@ -17,9 +17,8 @@ void CoreManager::setGameData(IGameData * gameData)
 }
 
 
-void CoreManager::initialize()
-{
-	// emplace_back in a static order.
+void CoreManager::setup()
+{	// emplace_back in a static order.
 	m_childEventManager.emplace_back(&TimeManager::getInstance());
 	m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
 	m_childEventManager.emplace_back(&RenderingManager::getInstance());
@@ -30,6 +29,14 @@ void CoreManager::initialize()
 
 	GLWindowManager::getInstance().setWindowName(l_gameName);
 
+	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	{
+		m_childEventManager[i].get()->setup();
+	}
+}
+
+void CoreManager::initialize()
+{
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		m_childEventManager[i].get()->initialize();

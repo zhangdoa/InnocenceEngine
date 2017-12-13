@@ -19,7 +19,8 @@ public:
 	std::vector<unsigned int>& getIntices();
 
 	void addVertices(GLVertexData& GLVertexData);
-	void sendDataToGPU(bool calculateNormals, bool calculateTangents);
+	void addVertices(glm::vec3 & pos, glm::vec2 & texCoord, glm::vec3 & m_normal);
+	void addVertices(float pos_x, float pos_y, float pos_z, float texCoord_x, float texCoord_y, float normal_x, float normal_y, float normal_z);
 	void addUnitCube();
 	void addUnitSphere();
 	void addUnitQuad();
@@ -31,7 +32,10 @@ private:
 	GLMeshData m_GLMeshData;
 	std::vector<GLVertexData> m_vertices;
 	std::vector<unsigned int> m_indices;
+
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
+	bool m_calculateNormals;
+	bool m_calculateTangents;
 };
 
 typedef unsigned char stbi_uc;

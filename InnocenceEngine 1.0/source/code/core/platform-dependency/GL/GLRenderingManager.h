@@ -197,6 +197,7 @@ class GLRenderingManager : public IEventManager
 public:
 	~GLRenderingManager();
 
+	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
