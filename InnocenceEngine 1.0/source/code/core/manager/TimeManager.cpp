@@ -11,6 +11,10 @@ TimeManager::~TimeManager()
 {
 }
 
+void TimeManager::setup()
+{
+}
+
 void TimeManager::initialize()
 {
 	m_gameStartTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());

@@ -1,6 +1,32 @@
 #include "../../../main/stdafx.h"
 #include "GLGraphicData.h"
 
+
+GLVertexData::GLVertexData()
+{
+}
+
+GLVertexData::GLVertexData(glm::vec3 & pos, glm::vec2 & texCoord, glm::vec3 & m_normal)
+{
+}
+
+GLVertexData::GLVertexData(float pos_x, float pos_y, float pos_z, float texCoord_x, float texCoord_y, float normal_x, float normal_y, float normal_z)
+{
+	m_pos.x = pos_x;
+	m_pos.y = pos_y;
+	m_pos.z = pos_z;
+	m_texCoord.x = texCoord_x;
+	m_texCoord.y = texCoord_y;
+	m_normal.x = normal_x;
+	m_normal.y = normal_y;
+	m_normal.z = normal_z;
+}
+
+GLVertexData::~GLVertexData()
+{
+}
+
+
 GLMeshData::GLMeshData()
 {
 }
@@ -214,4 +240,3 @@ void GLTextureData::sendDataToGPU(textureType textureType, int textureIndex, int
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 }
-

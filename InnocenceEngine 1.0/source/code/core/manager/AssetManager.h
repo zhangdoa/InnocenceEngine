@@ -17,6 +17,7 @@ class AssetManager : public IEventManager
 public:
 	~AssetManager();
 
+	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
@@ -40,8 +41,6 @@ public:
 
 private:
 	AssetManager();
-
-	void initializeAsync();
 
 	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
 

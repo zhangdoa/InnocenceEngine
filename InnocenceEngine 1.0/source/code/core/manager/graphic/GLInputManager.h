@@ -9,6 +9,7 @@ class GLInputManager : public IEventManager
 public:
 	~GLInputManager();
 
+	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
