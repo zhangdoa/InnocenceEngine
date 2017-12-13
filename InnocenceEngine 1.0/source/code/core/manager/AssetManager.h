@@ -61,7 +61,6 @@ private:
 	void assignLoadedTexture(textureAssignType textureAssignType, textureDataPair& loadedTextureDataPair, VisibleComponent& visibleComponent);
 
 	textureDataID loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod);
-
 	std::unordered_map<std::string, graphicDataMap> m_loadedModelMap;
 	std::unordered_map<std::string, textureDataPair> m_loadedTextureMap;
 
