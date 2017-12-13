@@ -37,17 +37,17 @@ void AssetManager::initializeAsync()
 	m_UnitCubeTemplate = RenderingManager::getInstance().addMeshData();
 	auto lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitCubeTemplate);
 	lastMeshData->addUnitCube();
-	lastMeshData->initialize(meshDrawMethod::TRIANGLE, false, false);
+	lastMeshData->setup(meshDrawMethod::TRIANGLE, false, false);
 
 	m_UnitSphereTemplate = RenderingManager::getInstance().addMeshData();
 	lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitSphereTemplate);
 	lastMeshData->addUnitSphere();
-	lastMeshData->initialize(meshDrawMethod::TRIANGLE_STRIP, false, false);
+	lastMeshData->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
 
 	m_UnitQuadTemplate = RenderingManager::getInstance().addMeshData();
 	lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitQuadTemplate);
 	lastMeshData->addUnitQuad();
-	lastMeshData->initialize(meshDrawMethod::TRIANGLE, true, true);
+	lastMeshData->setup(meshDrawMethod::TRIANGLE, true, true);
 }
 
 void AssetManager::loadAsset(assetType assetType, const std::string & filePath, VisibleComponent& visibleComponent)
@@ -195,7 +195,7 @@ meshDataID AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDrawMethod m
 			lastMeshData.getIntices().emplace_back(face.mIndices[j]);
 		}
 	}
-	lastMeshData.initialize(meshDrawMethod, false, false);
+	lastMeshData.setup(meshDrawMethod, false, false);
 	LogManager::getInstance().printLog("innoMesh is loaded.");
 	return l_meshDataID;
 }
@@ -342,8 +342,9 @@ textureDataID AssetManager::loadTextureFromDisk(const std::string & fileName, te
 	if (data)
 	{
 		auto id = RenderingManager::getInstance().addTextureData();
-		auto lastTextureData = &RenderingManager::getInstance().getTextureData(id);
-		lastTextureData->initialize(textureType, textureWrapMethod, 0, nrChannels, width, height, data);
+		auto& lastTextureData = RenderingManager::getInstance().getTextureData(id);
+		lastTextureData.setup(textureType, textureWrapMethod, 0, nrChannels, width, height, data);
+		lastTextureData.initialize();
 		LogManager::getInstance().printLog("innoTexture: " + fileName + " is loaded.");
 		return id;
 	}
@@ -367,7 +368,7 @@ void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName,
 		{
 			auto id = RenderingManager::getInstance().addTextureData();
 			auto lastTextureData = &RenderingManager::getInstance().getTextureData(id);
-			lastTextureData->initialize(textureType::CUBEMAP, visibleComponent.m_textureWrapMethod, i, nrChannels, width, height, data);
+			lastTextureData->setup(textureType::CUBEMAP, visibleComponent.m_textureWrapMethod, i, nrChannels, width, height, data);
 			visibleComponent.overwriteTextureData(textureDataPair(textureType::CUBEMAP, id));
 			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " is loaded.");
 		}
