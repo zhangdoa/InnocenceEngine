@@ -2,8 +2,12 @@
 //
 
 #include "stdafx.h"
+#include "../core/data/InnoMath.h"
 #include "../core/manager/CoreManager.h"
 #include "../game/InnocenceGarden.h"
+
+auto temp1 = vec4<double>(1.0, 2.0, 3.0, 4.0);
+auto temp2 = vec4<double>(1.0, 2.0, 3.0, 4.0);
 
 std::vector<int> primeNumberPool;
 int initial = 100000;
@@ -36,7 +40,7 @@ int main()
 
 	//std::thread tempthread(asyncPrimeNumberCalculation);
 
-	auto f = std::async(std::launch::async, asyncPrimeNumberCalculation);
+	//auto f = std::async(std::launch::async, asyncPrimeNumberCalculation);
 	CoreManager::getInstance().initialize();
 	while (CoreManager::getInstance().getStatus() == objectStatus::ALIVE)
 	{

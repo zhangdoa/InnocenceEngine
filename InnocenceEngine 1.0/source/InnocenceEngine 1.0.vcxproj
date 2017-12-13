@@ -180,6 +180,7 @@
     <ClCompile Include="code\core\platform-dependency\DX\DXGraphicData.cpp" />
     <ClCompile Include="code\core\component\VisibleComponent.cpp" />
     <ClCompile Include="code\core\component\LightComponent.cpp" />
+    <ClCompile Include="code\core\data\InnoMath.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
@@ -211,6 +212,7 @@
     <ClInclude Include="code\core\platform-dependency\DX\DXGraphicData.h" />
     <ClInclude Include="code\core\component\VisibleComponent.h" />
     <ClInclude Include="code\core\component\LightComponent.h" />
+    <ClInclude Include="code\core\data\InnoMath.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
