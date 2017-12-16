@@ -76,9 +76,9 @@ public:
 	glm::mat4 caclTransformationMatrix();
 
 private:
-	std::vector<BaseActor*> m_childActor;
+	std::vector<BaseActor*> m_childActors;
 	BaseActor* m_parentActor;
-	std::vector<BaseComponent*> m_childComponent;
+	std::vector<BaseComponent*> m_childComponents;
 	Transform m_transform;
 };
 
@@ -90,7 +90,7 @@ public:
 
 	BaseActor* getParentActor() const;
 	void setParentActor(BaseActor* parentActor);
-	Transform*getTransform();
+	Transform* getTransform();
 private:
 	BaseActor* m_parentActor;
 };

@@ -38,7 +38,6 @@ void CameraComponent::initialize()
 
 void CameraComponent::update()
 {
-	getTransform()->update();
 }
 
 void CameraComponent::shutdown()

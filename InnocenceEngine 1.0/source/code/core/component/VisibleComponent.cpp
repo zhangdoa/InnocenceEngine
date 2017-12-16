@@ -62,7 +62,6 @@ void VisibleComponent::initialize()
 
 void VisibleComponent::update()
 {
-	getTransform()->update();
 }
 
 void VisibleComponent::shutdown()

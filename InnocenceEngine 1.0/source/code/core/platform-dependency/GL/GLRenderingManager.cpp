@@ -468,39 +468,39 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 			{
 				//active and bind textures
 				// is there any texture?
-				auto l_textureMap = l_graphicData.second;
+				auto& l_textureMap = l_graphicData.second;
 				if (&l_textureMap != nullptr)
 				{
 					// any normal?
-					auto l_normalTextureID = l_textureMap.find(textureType::NORMALS);
+					auto& l_normalTextureID = l_textureMap.find(textureType::NORMALS);
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_normalTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any albedo?
-					auto l_albedoTextureID = l_textureMap.find(textureType::DIFFUSE);
+					auto& l_albedoTextureID = l_textureMap.find(textureType::DIFFUSE);
 					if (l_albedoTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_albedoTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any metallic?
-					auto l_metallicTextureID = l_textureMap.find(textureType::SPECULAR);
+					auto& l_metallicTextureID = l_textureMap.find(textureType::SPECULAR);
 					if (l_metallicTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_metallicTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any roughness?
-					auto l_roughnessTextureID = l_textureMap.find(textureType::AMBIENT);
+					auto& l_roughnessTextureID = l_textureMap.find(textureType::AMBIENT);
 					if (l_roughnessTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_roughnessTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any ao?
-					auto l_aoTextureID = l_textureMap.find(textureType::EMISSIVE);
+					auto& l_aoTextureID = l_textureMap.find(textureType::EMISSIVE);
 					if (l_aoTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_aoTextureID->second)->second;
