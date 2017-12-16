@@ -60,7 +60,8 @@ glm::vec3 LightComponent::getDirection() const
 
 float LightComponent::getRadius() const
 {
-	return m_radius;
+	float l_lightMaxIntensity = std::fmaxf(std::fmaxf(m_color.x, m_color.y), m_color.z);
+	return 	 (-m_linearFactor + std::sqrtf(m_linearFactor * m_linearFactor - 4 * m_quadraticFactor * (m_constantFactor - (256.0 / 5.0) * l_lightMaxIntensity))) / (2 * m_quadraticFactor);
 }
 
 glm::vec3 LightComponent::getColor() const
@@ -79,9 +80,6 @@ void LightComponent::initialize()
 
 void LightComponent::update()
 {
-	// light volume
-	float l_lightMaxIntensity = std::fmaxf(std::fmaxf(m_color.x, m_color.y), m_color.z);
-	m_radius = (-m_linearFactor + std::sqrtf(m_linearFactor * m_linearFactor - 4 * m_quadraticFactor * (m_constantFactor - (256.0 / 5.0) * l_lightMaxIntensity))) / (2 * m_quadraticFactor);
 }
 
 void LightComponent::shutdown()

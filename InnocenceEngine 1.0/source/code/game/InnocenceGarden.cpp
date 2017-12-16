@@ -109,7 +109,7 @@ void InnocenceGarden::initSpheres()
 	}
 	for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
 	{
-		/*AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_metallic.png", textureType::SPECULAR, sphereComponents[i]);
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_normal.png", textureType::NORMALS, sphereComponents[i]);
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/rustediron2_roughness.png", textureType::AMBIENT, sphereComponents[i]);
@@ -128,7 +128,7 @@ void InnocenceGarden::initSpheres()
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-metalness.png", textureType::SPECULAR, sphereComponents[i + 3]);
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-normal.png", textureType::NORMALS, sphereComponents[i + 3]);
 		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-roughness.png", textureType::AMBIENT, sphereComponents[i + 3]);
-		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-ao.png", textureType::EMISSIVE, sphereComponents[i + 3]);*/
+		AssetManager::getInstance().loadAsset(assetType::TEXTURE, "PBS/roughrock1-ao.png", textureType::EMISSIVE, sphereComponents[i + 3]);
 	}
 	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
 	{
