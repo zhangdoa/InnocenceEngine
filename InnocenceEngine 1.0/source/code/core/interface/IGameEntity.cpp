@@ -137,13 +137,13 @@ BaseActor::~BaseActor()
 
 void BaseActor::addChildActor(BaseActor* childActor)
 {
-	m_childActor.emplace_back(childActor);
+	m_childActors.emplace_back(childActor);
 	childActor->setParentActor(this);
 }
 
 const std::vector<BaseActor*>& BaseActor::getChildrenActors() const
 {
-	return m_childActor;
+	return m_childActors;
 }
 
 BaseActor* BaseActor::getParentActor() const
@@ -158,13 +158,13 @@ void BaseActor::setParentActor(BaseActor* parentActor)
 
 void BaseActor::addChildComponent(BaseComponent * childComponent)
 {
-	m_childComponent.emplace_back(childComponent);
+	m_childComponents.emplace_back(childComponent);
 	childComponent->setParentActor(this);
 }
 
 const std::vector<BaseComponent*>& BaseActor::getChildrenComponents() const
 {
-	return m_childComponent;
+	return m_childComponents;
 }
 
 Transform* BaseActor::getTransform()
@@ -281,13 +281,13 @@ glm::mat4 BaseActor::caclTransformationMatrix()
 
 void BaseActor::initialize()
 {
-	for (size_t i = 0; i < m_childActor.size(); i++)
+	for (auto l_childComponent : m_childComponents)
 	{
-		m_childActor[i]->initialize();
+		l_childComponent->initialize();
 	}
-	for (size_t i = 0; i < m_childComponent.size(); i++)
+	for (auto l_childActor : m_childActors)
 	{
-		m_childComponent[i]->initialize();
+		l_childActor->initialize();
 	}
 	this->setStatus(objectStatus::ALIVE);
 }
@@ -295,31 +295,21 @@ void BaseActor::initialize()
 void BaseActor::update()
 {
 	m_transform.update();
-	if (m_childActor.size() != 0)
+	for (auto l_childActor : m_childActors)
 	{
-		for (size_t i = 0; i < getChildrenActors().size(); i++)
-		{
-			m_childActor[i]->update();
-		}
-	}
-	if (m_childComponent.size() != 0)
-	{
-		for (size_t i = 0; i < m_childComponent.size(); i++)
-		{
-			m_childComponent[i]->update();
-		}
+		l_childActor->update();
 	}
 }
 
 void BaseActor::shutdown()
 {
-	for (size_t i = 0; i < getChildrenActors().size(); i++)
+	for (auto l_childActor : m_childActors)
 	{
-		getChildrenActors()[i]->shutdown();
+		l_childActor->shutdown();
 	}
-	for (size_t i = 0; i < m_childComponent.size(); i++)
+	for (auto l_childComponent : m_childComponents)
 	{
-		m_childComponent[i]->shutdown();
+		l_childComponent->shutdown();
 	}
 	this->setStatus(objectStatus::SHUTDOWN);
 }
