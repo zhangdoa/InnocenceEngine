@@ -6,8 +6,8 @@
 #include "../core/manager/CoreManager.h"
 #include "../game/InnocenceGarden.h"
 
-auto temp1 = vec4<double>(1.0, 2.0, 3.0, 4.0);
-auto temp2 = vec4<double>(1.0, 2.0, 3.0, 4.0);
+auto temp1 = vec4<double>(1.0, 0.0, 0.0, 0.0);
+auto temp2 = vec4<double>(0.0, 1.0, 0.0, 0.0);
 
 std::vector<int> primeNumberPool;
 int initial = 100000;
@@ -38,9 +38,10 @@ int main()
 
 	CoreManager::getInstance().setGameData(m_innocenceGarden);
 
-	//std::thread tempthread(asyncPrimeNumberCalculation);
+	//auto f = std::async(std::launch::async, asyncPrimeNumberCalculation);
 
-	auto f = std::async(std::launch::async, asyncPrimeNumberCalculation);
+	std::cout << temp1.cross(temp2).m_x<<temp1.cross(temp2).m_y<<temp1.cross(temp2).m_z<<temp1.cross(temp2).m_w << std::endl;
+
 	CoreManager::getInstance().setup();
 	CoreManager::getInstance().initialize();
 
