@@ -9,13 +9,13 @@ public :
 	vec4(T x, T y, T z, T w);
 	~vec4();
 
-	void operator=(const vec4<T>& reference);
-	bool operator==(const vec4<T>& reference);
-	bool operator!=(const vec4<T>& reference);
-	vec4<T> operator+(const vec4<T>& augend);
-	vec4<T> operator-(const vec4<T>& minuend);
-	T dot(const vec4<T>& multiplicand);
-
+	void operator=(const vec4<T>& rhs);
+	bool operator==(const vec4<T>& rhs);
+	bool operator!=(const vec4<T>& rhs);
+	vec4<T> operator+(const vec4<T>& rhs);
+	vec4<T> operator-(const vec4<T>& rhs);
+	T dot(const vec4<T>& rhs);
+	vec4<T> cross(const vec4<T>& rhs);
 	T m_x, m_y, m_z, m_w;
 };
 
@@ -100,4 +100,10 @@ template<class T>
 inline T vec4<T>::dot(const vec4<T>& multiplicand)
 {
 	return m_x * multiplicand.m_x + m_y * multiplicand.m_y + m_z * multiplicand.m_z + m_w * multiplicand.m_w;
+}
+
+template<class T>
+inline vec4<T> vec4<T>::cross(const vec4<T>& rhs)
+{
+	return vec4<T>(m_y * rhs.m_z - m_z * rhs.m_x, m_z * rhs.m_x - m_x * rhs.m_z, m_x * rhs.m_y - m_y * rhs.m_x, 0);
 }
