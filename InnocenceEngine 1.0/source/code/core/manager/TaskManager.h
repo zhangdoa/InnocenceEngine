@@ -20,8 +20,9 @@ public:
 
 private:
 	~TaskManager();
-
+	void threadHolder();
 	unsigned int m_hardwareConcurrency;
 	std::vector<std::thread> m_threadPool;
+	std::vector<std::function<void()>*> m_taskQueue;
 };
 

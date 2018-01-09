@@ -6,9 +6,6 @@
 #include "../core/manager/CoreManager.h"
 #include "../game/InnocenceGarden.h"
 
-auto temp1 = vec4<double>(1.0, 0.0, 0.0, 0.0);
-auto temp2 = vec4<double>(0.0, 1.0, 0.0, 0.0);
-
 std::vector<int> primeNumberPool;
 int initial = 100000;
 void asyncPrimeNumberCalculation()
