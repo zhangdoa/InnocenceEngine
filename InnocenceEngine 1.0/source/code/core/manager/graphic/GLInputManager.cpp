@@ -81,6 +81,7 @@ void GLInputManager::mousePositionCallback(GLFWwindow * window, double mouseXPos
 
 void GLInputManager::scrollCallback(GLFWwindow * window, double xoffset, double yoffset)
 {
+	getInstance().scrollCallbackImpl(window, xoffset, yoffset);
 }
 
 void GLInputManager::framebufferSizeCallbackImpl(GLFWwindow * window, int width, int height)
