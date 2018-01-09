@@ -19,6 +19,7 @@ void CoreManager::setGameData(IGameData * gameData)
 
 void CoreManager::setup()
 {	// emplace_back in a static order.
+	m_childEventManager.emplace_back(&TaskManager::getInstance());
 	m_childEventManager.emplace_back(&TimeManager::getInstance());
 	m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
 	m_childEventManager.emplace_back(&RenderingManager::getInstance());

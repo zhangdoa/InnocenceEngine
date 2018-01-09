@@ -40,8 +40,6 @@ int main()
 
 	//auto f = std::async(std::launch::async, asyncPrimeNumberCalculation);
 
-	std::cout << temp1.cross(temp2).m_x<<temp1.cross(temp2).m_y<<temp1.cross(temp2).m_z<<temp1.cross(temp2).m_w << std::endl;
-
 	CoreManager::getInstance().setup();
 	CoreManager::getInstance().initialize();
 
