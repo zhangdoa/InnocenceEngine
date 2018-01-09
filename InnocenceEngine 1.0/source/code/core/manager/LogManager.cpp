@@ -119,6 +119,11 @@ void LogManager::printLog(const glm::mat4 & logMessage)
 		<< std::endl;
 }
 
+void LogManager::printLog(const std::thread::id logMessage)
+{
+	std::cout << "[" << TimeManager::getInstance().getCurrentTimeInLocal() << "]"<< "Thread: " << logMessage << std::endl;
+}
+
 void LogManager::setup()
 {
 }
