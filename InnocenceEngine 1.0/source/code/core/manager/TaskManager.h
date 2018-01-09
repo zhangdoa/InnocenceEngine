@@ -1,5 +1,7 @@
 #pragma once
 #include "../interface/IEventManager.h"
+#include "LogManager.h"
+
 class TaskManager : public IEventManager
 {
 public:
@@ -18,5 +20,8 @@ public:
 
 private:
 	~TaskManager();
+
+	unsigned int m_hardwareConcurrency;
+	std::vector<std::thread> m_threadPool;
 };
 
