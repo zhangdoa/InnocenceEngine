@@ -24,6 +24,8 @@ public:
 	void printLog(const glm::quat& logMessage);
 	void printLog(const glm::mat4& logMessage);
 
+	void printLog(const std::thread::id logMessage);
+
 private:
 	LogManager();
 };
