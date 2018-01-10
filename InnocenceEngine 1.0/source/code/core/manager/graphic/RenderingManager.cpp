@@ -88,8 +88,7 @@ void RenderingManager::initialize()
 	{
 		m_childEventManager[i].get()->initialize();
 	}
-	//m_asyncRenderThread = new std::thread(&RenderingManager::AsyncRender, this);
-	
+
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("RenderingManager has been initialized.");
 }

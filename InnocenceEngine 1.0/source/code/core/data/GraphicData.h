@@ -73,25 +73,40 @@ typedef std::unordered_map<meshDataID, textureDataMap> graphicDataMap;
 
 enum class shadowProjectionType { ORTHOGRAPHIC, PERSPECTIVE };
 
-class ShadowMapData
+//class ShadowMapData
+//{
+//public:
+//	ShadowMapData();
+//	~ShadowMapData();
+//
+//	void init();
+//	void draw();
+//	void shutdown();
+//
+//	void setShadowProjectionType(shadowProjectionType shadowProjectionType);
+//	void getProjectionMatrix(glm::mat4& projectionMatrix);
+//
+//private:
+//	GLuint m_textureID;
+//	GLuint depthMapFBO;
+//	const unsigned int m_shadowMapWidth = 2048;
+//	const unsigned int m_shadowMapHeight = 2048;
+//
+//	glm::mat4 m_projectionMatrix = glm::mat4();
+//	shadowProjectionType m_shadowProjectionType = shadowProjectionType::ORTHOGRAPHIC;
+//};
+
+class Material : public IBaseObject
 {
 public:
-	ShadowMapData();
-	~ShadowMapData();
+	Material();
+	~Material();
 
-	void init();
-	void draw();
-	void shutdown();
-
-	void setShadowProjectionType(shadowProjectionType shadowProjectionType);
-	void getProjectionMatrix(glm::mat4& projectionMatrix);
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+	void addTextureData(textureType textureType, textureDataID textureDataID);
 
 private:
-	GLuint m_textureID;
-	GLuint depthMapFBO;
-	const unsigned int m_shadowMapWidth = 2048;
-	const unsigned int m_shadowMapHeight = 2048;
-
-	glm::mat4 m_projectionMatrix = glm::mat4();
-	shadowProjectionType m_shadowProjectionType = shadowProjectionType::ORTHOGRAPHIC;
+	textureDataMap m_textureMap;
 };

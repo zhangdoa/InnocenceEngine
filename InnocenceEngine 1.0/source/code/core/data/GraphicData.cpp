@@ -307,65 +307,98 @@ void TextureData::shutdown()
 //	return m_textureData;
 //}
 
-ShadowMapData::ShadowMapData()
+//ShadowMapData::ShadowMapData()
+//{
+//}
+//
+//ShadowMapData::~ShadowMapData()
+//{
+//}
+//
+//void ShadowMapData::init()
+//{
+//	//generate depth map frame buffer
+//	glGenFramebuffers(1, &depthMapFBO);
+//
+//	//generate depth map texture
+//	glGenTextures(1, &m_textureID);
+//	glBindTexture(GL_TEXTURE_2D, m_textureID);
+//	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_shadowMapWidth, m_shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//
+//	//bind frame buffer
+//	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+//	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_textureID, 0);
+//
+//	//no need for color
+//	glDrawBuffer(GL_NONE);
+//	glReadBuffer(GL_NONE);
+//	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//}
+//
+//void ShadowMapData::draw()
+//{
+//	glViewport(0, 0, m_shadowMapWidth, m_shadowMapHeight);
+//	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+//	glClear(GL_DEPTH_BUFFER_BIT);
+//
+//	switch (m_shadowProjectionType)
+//	{
+//	case shadowProjectionType::ORTHOGRAPHIC: m_projectionMatrix = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 10.0f); break;
+//	case shadowProjectionType::PERSPECTIVE: m_projectionMatrix = glm::perspective(glm::radians(45.0f), (GLfloat)m_shadowMapWidth / (GLfloat)m_shadowMapHeight, 1.0f, 100.0f); break;
+//	}
+//
+//
+//	// @TODO: finish shadow map drawing
+//	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//}
+//
+//void ShadowMapData::shutdown()
+//{
+//}
+//
+//void ShadowMapData::setShadowProjectionType(shadowProjectionType shadowProjectionType)
+//{
+//	m_shadowProjectionType = shadowProjectionType;
+//}
+//
+//void ShadowMapData::getProjectionMatrix(glm::mat4 & projectionMatrix)
+//{
+//	projectionMatrix = m_projectionMatrix;
+//}
+
+Material::Material()
 {
 }
 
-ShadowMapData::~ShadowMapData()
+Material::~Material()
 {
 }
 
-void ShadowMapData::init()
+void Material::initialize()
 {
-	//generate depth map frame buffer
-	glGenFramebuffers(1, &depthMapFBO);
-
-	//generate depth map texture
-	glGenTextures(1, &m_textureID);
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_shadowMapWidth, m_shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	//bind frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_textureID, 0);
-
-	//no need for color
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void ShadowMapData::draw()
+void Material::update()
 {
-	glViewport(0, 0, m_shadowMapWidth, m_shadowMapHeight);
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	glClear(GL_DEPTH_BUFFER_BIT);
+}
 
-	switch (m_shadowProjectionType)
+void Material::shutdown()
+{
+}
+
+void Material::addTextureData(textureType textureType, textureDataID textureDataID)
+{
+	auto l_exsistedTextureData = m_textureMap.find(textureType);
+	if (l_exsistedTextureData != m_textureMap.end())
 	{
-	case shadowProjectionType::ORTHOGRAPHIC: m_projectionMatrix = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 10.0f); break;
-	case shadowProjectionType::PERSPECTIVE: m_projectionMatrix = glm::perspective(glm::radians(45.0f), (GLfloat)m_shadowMapWidth / (GLfloat)m_shadowMapHeight, 1.0f, 100.0f); break;
+		l_exsistedTextureData->second = textureDataID;
 	}
-
-
-	// @TODO: finish shadow map drawing
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void ShadowMapData::shutdown()
-{
-}
-
-void ShadowMapData::setShadowProjectionType(shadowProjectionType shadowProjectionType)
-{
-	m_shadowProjectionType = shadowProjectionType;
-}
-
-void ShadowMapData::getProjectionMatrix(glm::mat4 & projectionMatrix)
-{
-	projectionMatrix = m_projectionMatrix;
+	else
+	{
+		m_textureMap.emplace(textureType, textureDataID);
+	}
 }

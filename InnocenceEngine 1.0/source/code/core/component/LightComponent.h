@@ -27,7 +27,7 @@ public:
 	void getLightPosMatrix(glm::mat4& lightPosMatrix);
 	void getLightRotMatrix(glm::mat4& lightRotMatrix);
 
-	ShadowMapData& getShadowMapData();
+	//ShadowMapData& getShadowMapData();
 
 private:
 	lightType m_lightType = lightType::POINT;
@@ -37,6 +37,6 @@ private:
 	float m_linearFactor;
 	float m_quadraticFactor;
 	glm::vec3 m_color;
-	ShadowMapData m_shadowMapData;
+	//ShadowMapData m_shadowMapData;
 };
 
