@@ -52,21 +52,23 @@ void AssetManager::shutdown()
 {
 }
 
-void AssetManager::loadAsset(assetType assetType, const std::string & filePath, VisibleComponent& visibleComponent)
+void AssetManager::loadAsset(const std::string & filePath, VisibleComponent & visibleComponent)
 {
-	if (assetType == assetType::MODEL)
+	auto l_subfix = filePath.substr(filePath.find(".") + 1);
+	//@TODO: generalize a loader base class 
+	if (m_supportedTextureType.find(l_subfix) != m_supportedTextureType.end())
+	{
+		loadTextureImpl(filePath, textureType::DIFFUSE, visibleComponent);
+	}
+	else if (m_supportedModelType.find(l_subfix) != m_supportedModelType.end())
 	{
 		loadModelImpl(filePath, visibleComponent);
 	}
-	// @TODO: needs robust overload function
 }
 
-void AssetManager::loadAsset(assetType assetType, const std::string & filePath, textureType textureType, VisibleComponent & visibleComponent)
+void AssetManager::loadAsset(const std::string & filePath, textureType textureType, VisibleComponent & visibleComponent)
 {
-	if (assetType == assetType::TEXTURE)
-	{
 		loadTextureImpl(filePath, textureType, visibleComponent);
-	}
 }
 
 std::string AssetManager::loadShader(const std::string & shaderFileName) const
@@ -85,6 +87,14 @@ std::string AssetManager::loadShader(const std::string & shaderFileName) const
 
 void AssetManager::loadShaderImpl(const std::string & filePath, std::string & fileContent)
 {
+	std::ifstream file;
+	file.open(("../res/shaders/" + filePath).c_str());
+	std::stringstream shaderStream;
+	std::string output;
+
+	shaderStream << file.rdbuf();
+	fileContent = shaderStream.str();
+	file.close();
 }
 
 void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent & visibleComponent)
@@ -102,19 +112,19 @@ void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent 
 	{	
 		// read file via ASSIMP
 		Assimp::Importer l_assImporter;
-		auto l_assScene = l_assImporter.ReadFile("../res/models/" + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		auto l_assScene = l_assImporter.ReadFile(m_modelRelativePath + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 		if (l_assScene == nullptr)
 		{
-			l_assScene = l_assImporter.ReadFile("../res/models/" + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+			l_assScene = l_assImporter.ReadFile(m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 			// save model file as .innoModel binary file
 			Assimp::Exporter l_assExporter;
-			l_assExporter.Export(l_assScene, "assbin", "../res/models/" + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
+			l_assExporter.Export(l_assScene, "assbin", m_modelRelativePath + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
 			LogManager::getInstance().printLog("AssetManager: " + fileName + " is successfully converted.");
 		}
 		if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 		{
 			LogManager::getInstance().printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
-			addUnitCube(visibleComponent);
+			addUnitMesh(visibleComponent, unitMeshType::CUBE);
 			return;
 		}
 		// only need last part of file name without subfix as material's subfolder name
@@ -132,6 +142,7 @@ void AssetManager::assignloadedModel(graphicDataMap& loadedGraphicDataMap, Visib
 {
 	visibleComponent.setGraphicDataMap(loadedGraphicDataMap);
 	assignDefaultTextures(textureAssignType::ADD_DEFAULT, visibleComponent);
+	SceneGraphManager::getInstance().addToRenderingQueue(&visibleComponent);
 }
 
 graphicDataMap AssetManager::processAssimpScene(const std::string& fileName, const aiScene* aiScene, meshDrawMethod& meshDrawMethod, textureWrapMethod& textureWrapMethod)
@@ -340,7 +351,7 @@ textureDataID AssetManager::loadTextureFromDisk(const std::string & fileName, te
 	int width, height, nrChannels;
 	// load image
 	stbi_set_flip_vertically_on_load(true);
-	auto *data = stbi_load(("../res/textures/" + fileName).c_str(), &width, &height, &nrChannels, 0);
+	auto *data = stbi_load((m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
 		auto id = RenderingManager::getInstance().addTextureData();
@@ -365,7 +376,7 @@ void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName,
 	{
 		// load image, do not flip texture
 		stbi_set_flip_vertically_on_load(false);
-		auto *data = stbi_load(("../res/textures/" + fileName[i]).c_str(), &width, &height, &nrChannels, 0);
+		auto *data = stbi_load((m_textureRelativePath + fileName[i]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
 			auto id = RenderingManager::getInstance().addTextureData();
@@ -376,7 +387,7 @@ void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName,
 		}
 		else
 		{
-			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + ("../res/textures/" + fileName[i]));
+			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + (m_textureRelativePath + fileName[i]));
 		}
 		//stbi_image_free(data);
 	}
@@ -395,21 +406,16 @@ void AssetManager::assignDefaultTextures(textureAssignType textureAssignType, Vi
 	}
 }
 
-void AssetManager::addUnitCube(VisibleComponent & visibleComponent)
+void AssetManager::addUnitMesh(VisibleComponent & visibleComponent, unitMeshType unitMeshType)
 {
-	visibleComponent.addMeshData(m_UnitCubeTemplate);
+	meshDataID l_UnitMeshTemmplate;
+	switch(unitMeshType)
+	{
+	case unitMeshType::QUAD: l_UnitMeshTemmplate = m_UnitQuadTemplate; break;
+	case unitMeshType::CUBE: l_UnitMeshTemmplate = m_UnitCubeTemplate; break;
+	case unitMeshType::SPHERE: l_UnitMeshTemmplate = m_UnitSphereTemplate; break;
+	}
+	visibleComponent.addMeshData(l_UnitMeshTemmplate);
 	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
-}
-
-
-void AssetManager::addUnitSphere(VisibleComponent & visibleComponent)
-{
-	visibleComponent.addMeshData(m_UnitSphereTemplate);
-	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
-}
-
-void AssetManager::addUnitQuad(VisibleComponent & visibleComponent)
-{
-	visibleComponent.addMeshData(m_UnitQuadTemplate);
-	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
+	SceneGraphManager::getInstance().addToRenderingQueue(&visibleComponent);
 }

@@ -14,10 +14,11 @@ void TaskManager::setup()
 
 void TaskManager::initialize()
 {
-	for (unsigned int i = 0; i < m_hardwareConcurrency - 1; ++i)
+	for (unsigned int i = 0; i < m_hardwareConcurrency; ++i)
 	{
 		m_threadPool.emplace_back(std::thread(&TaskManager::threadHolder, this));
 	}
+	LogManager::getInstance().printLog("TaskManager has been initialized.");
 }
 
 void TaskManager::update()
@@ -26,6 +27,15 @@ void TaskManager::update()
 
 void TaskManager::shutdown()
 {
+	for (auto& i : m_threadPool)
+	{
+		if (i.joinable())
+		{
+			i.join();
+		}
+	}
+	this->setStatus(objectStatus::SHUTDOWN);
+	LogManager::getInstance().printLog("TaskManager has been shutdown.");
 }
 
 
@@ -42,7 +52,6 @@ void TaskManager::threadHolder()
 		}
 		else
 		{
-			//LogManager::getInstance().printLog(std::this_thread::get_id());
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 	} 

@@ -23,6 +23,7 @@ private:
 	void threadHolder();
 	unsigned int m_hardwareConcurrency;
 	std::vector<std::thread> m_threadPool;
+	std::condition_variable m_cv;
 	std::vector<std::function<void()>*> m_taskQueue;
 };
 
