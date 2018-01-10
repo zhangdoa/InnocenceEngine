@@ -21,6 +21,7 @@
 #include <istream>
 #include <sstream>
 #include <iostream>
+#include <condition_variable>
 #include <thread>
 #include <future>
 #include <vector>

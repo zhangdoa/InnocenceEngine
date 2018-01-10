@@ -99,7 +99,7 @@ void CoreManager::shutdown()
 		// reverse 'destructor'
 		m_childEventManager[m_childEventManager.size() - 1 - i].release();
 	}
-	this->setStatus(objectStatus::ALIVE);
+	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("CoreManager has been shutdown.");
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 }
