@@ -23,6 +23,10 @@ void MeshData::initialize()
 	m_GLMeshData.sendDataToGPU(m_vertices, m_indices);
 }
 
+void MeshData::setup()
+{
+}
+
 void MeshData::setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents)
 {
 	m_meshDrawMethod = meshDrawMethod;
@@ -216,6 +220,10 @@ void TextureData::initialize()
 	m_GLTextureData.sendDataToGPU(m_textureType, m_textureIndex, m_textureFormat, m_textureWidth, m_textureHeight, m_textureRawData);
 }
 
+void TextureData::setup()
+{
+}
+
 void TextureData::setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData)
 {
 	m_textureType = textureType;
@@ -392,13 +400,13 @@ void Material::shutdown()
 
 void Material::addTextureData(textureType textureType, textureDataID textureDataID)
 {
-	auto l_exsistedTextureData = m_textureMap.find(textureType);
-	if (l_exsistedTextureData != m_textureMap.end())
+	auto l_exsistedTextureData = m_textureDataMap.find(textureType);
+	if (l_exsistedTextureData != m_textureDataMap.end())
 	{
 		l_exsistedTextureData->second = textureDataID;
 	}
 	else
 	{
-		m_textureMap.emplace(textureType, textureDataID);
+		m_textureDataMap.emplace(textureType, textureDataID);
 	}
 }

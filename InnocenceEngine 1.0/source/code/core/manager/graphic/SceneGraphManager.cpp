@@ -13,7 +13,7 @@ SceneGraphManager::~SceneGraphManager()
 
 void SceneGraphManager::addToRenderingQueue(VisibleComponent* visibleComponent)
 {
-	m_visibleComponents.emplace_back(visibleComponent);
+	m_VisibleComponents.emplace_back(visibleComponent);
 }
 
 void SceneGraphManager::addToLightQueue(LightComponent * lightComponent)
@@ -33,7 +33,7 @@ void SceneGraphManager::addToInputQueue(InputComponent * inputComponent)
 
 std::vector<VisibleComponent*>& SceneGraphManager::getRenderingQueue()
 {
-	return m_visibleComponents;
+	return m_VisibleComponents;
 }
 
 std::vector<LightComponent*>& SceneGraphManager::getLightQueue()
@@ -68,7 +68,7 @@ void SceneGraphManager::update()
 
 void SceneGraphManager::shutdown()
 {
-	m_visibleComponents.empty();
+	m_VisibleComponents.empty();
 	m_LightComponents.empty();
 	m_CameraComponents.empty();
 	m_InputComponents.empty();

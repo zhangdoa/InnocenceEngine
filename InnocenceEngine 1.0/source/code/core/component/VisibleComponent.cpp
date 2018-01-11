@@ -56,6 +56,10 @@ void VisibleComponent::setGraphicDataMap(graphicDataMap & graphicDataMap)
 }
 
 
+void VisibleComponent::setup()
+{
+}
+
 void VisibleComponent::initialize()
 {
 }

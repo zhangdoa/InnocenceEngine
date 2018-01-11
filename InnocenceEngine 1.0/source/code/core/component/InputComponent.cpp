@@ -49,7 +49,7 @@ void InputComponent::rotateAroundYAxis(float offset)
 	getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((offset * rotateSpeed) / 180.0f)* glm::pi<float>());
 }
 
-void InputComponent::initialize()
+void InputComponent::setup()
 {
 	f_moveForward = std::bind(&InputComponent::moveForward, this);
 	f_moveBackward = std::bind(&InputComponent::moveBackward, this);
@@ -66,6 +66,10 @@ void InputComponent::initialize()
 	// @TODO: key name binding
 	m_mouseMovementCallbackImpl.emplace(0, std::vector<std::function<void(float)>*>{&f_rotateAroundXAxis});
 	m_mouseMovementCallbackImpl.emplace(1, std::vector<std::function<void(float)>*>{&f_rotateAroundYAxis});
+}
+
+void InputComponent::initialize()
+{
 }
 
 void InputComponent::update()

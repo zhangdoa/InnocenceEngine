@@ -10,8 +10,8 @@ InnocenceGarden::~InnocenceGarden()
 {
 }
 
-void InnocenceGarden::initialize()
-{	
+void InnocenceGarden::setup()
+{
 	rootActor.addChildActor(&playCharacter);
 
 	rootActor.addChildActor(&skyboxActor);
@@ -28,7 +28,7 @@ void InnocenceGarden::initialize()
 
 	skyboxComponent.m_visiblilityType = visiblilityType::SKYBOX;
 	skyboxComponent.m_textureWrapMethod = textureWrapMethod::CLAMPTOEDGE;
-	skyboxActor.addChildComponent(&skyboxComponent);	
+	skyboxActor.addChildComponent(&skyboxComponent);
 
 	landscapeStaticMeshComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
 	landscapeActor.addChildComponent(&landscapeStaticMeshComponent);
@@ -38,7 +38,7 @@ void InnocenceGarden::initialize()
 
 	pawnMeshComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
 	pawnActor2.addChildComponent(&pawnMeshComponent2);
-	
+
 	playCharacter.getTransform()->setPos(glm::vec3(0.0f, 2.0f, 5.0f));
 
 	landscapeActor.getTransform()->setScale(glm::vec3(60.0f, 60.0f, 0.1f));
@@ -50,8 +50,15 @@ void InnocenceGarden::initialize()
 	//testStaticMeshActor2.getTransform()->setScale(glm::vec3(0.002f, 0.002f, 0.002f));
 	pawnActor2.getTransform()->setPos(glm::vec3(0.0f, 0.2f, 3.5f));
 
-	initLights();
-	initSpheres();
+	setupLights();
+	setupSpheres();
+
+	rootActor.setup();
+}
+
+void InnocenceGarden::initialize()
+{	
+	initializeSpheres();
 
 	//AssetManager::getInstance().importModel("deer.obj");
 
@@ -81,7 +88,7 @@ void InnocenceGarden::shutdown()
 	rootActor.shutdown();
 }
 
-void InnocenceGarden::initSpheres()
+void InnocenceGarden::setupSpheres()
 {
 	unsigned int sphereMatrixDim = 8;
 	float sphereBreadthInterval = 4.0;
@@ -97,10 +104,25 @@ void InnocenceGarden::initSpheres()
 
 		rootActor.addChildActor(&sphereActors[i]);
 		sphereActors[i].addChildComponent(&sphereComponents[i]);
+	}
 
+	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
+	{
+		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
+		{
+			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(glm::vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0 + (j * sphereBreadthInterval), 2.0));
+		}
+	}
+}
+
+void InnocenceGarden::initializeSpheres()
+{
+	for (auto i = (unsigned int)0; i < sphereComponents.size(); i++)
+	{
 		AssetManager::getInstance().addUnitMesh(sphereComponents[i], unitMeshType::SPHERE);
 	}
-	for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
+
+	/*for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
 	{
 		AssetManager::getInstance().loadAsset("PBS/rustediron2_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
 		AssetManager::getInstance().loadAsset("PBS/rustediron2_metallic.png", textureType::SPECULAR, sphereComponents[i]);
@@ -122,18 +144,10 @@ void InnocenceGarden::initSpheres()
 		AssetManager::getInstance().loadAsset("PBS/roughrock1-normal.png", textureType::NORMALS, sphereComponents[i + 3]);
 		AssetManager::getInstance().loadAsset("PBS/roughrock1-roughness.png", textureType::AMBIENT, sphereComponents[i + 3]);
 		AssetManager::getInstance().loadAsset("PBS/roughrock1-ao.png", textureType::EMISSIVE, sphereComponents[i + 3]);
-	}
-	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
-	{
-		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
-		{
-			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(glm::vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval/ 2.0) + (i * sphereBreadthInterval), 2.0 + (j * sphereBreadthInterval), 2.0));
-		}
-	}
-	
+	}	*/
 }
 
-void InnocenceGarden::initLights()
+void InnocenceGarden::setupLights()
 {
 	unsigned int pointLightMatrixDim = 8;
 	float pointLightBreadthInterval = 4.0;

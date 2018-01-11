@@ -36,7 +36,7 @@ public:
 private:
 	SceneGraphManager();
 
-	std::vector<VisibleComponent*> m_visibleComponents;
+	std::vector<VisibleComponent*> m_VisibleComponents;
 	std::vector<LightComponent*> m_LightComponents;
 	std::vector<CameraComponent*> m_CameraComponents;
 	std::vector<InputComponent*> m_InputComponents;

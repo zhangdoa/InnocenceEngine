@@ -25,10 +25,6 @@ public:
 		return instance;
 	}
 
-	void initInput();
-	void changeDrawPolygonMode();
-	void changeDrawTextureMode();
-
 	meshDataID addMeshData();
 	textureDataID addTextureData();
 	std::unordered_map<meshDataID, MeshData>& getMeshData();
@@ -40,6 +36,9 @@ private:
 	RenderingManager();
 
 	void AsyncRender();
+	void changeDrawPolygonMode();
+	void changeDrawTextureMode();
+
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 	std::function<void()> f_changeDrawPolygonMode;
 	std::function<void()> f_changeDrawTextureMode;	
