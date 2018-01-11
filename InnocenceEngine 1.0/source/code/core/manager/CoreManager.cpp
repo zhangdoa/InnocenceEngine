@@ -25,15 +25,22 @@ void CoreManager::setup()
 	m_childEventManager.emplace_back(&RenderingManager::getInstance());
 	m_childEventManager.emplace_back(&AssetManager::getInstance());
 
-	std::string l_gameName;
-	m_gameData->getGameName(l_gameName);
-
-	GLWindowManager::getInstance().setWindowName(l_gameName);
-
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		m_childEventManager[i].get()->setup();
 	}
+
+	std::string l_gameName;
+	try {
+		m_gameData->getGameName(l_gameName);
+	}
+	catch (std::exception& e) {
+		LogManager::getInstance().printLog("No game added!");
+		LogManager::getInstance().printLog(e.what());
+	}
+	GLWindowManager::getInstance().setWindowName(l_gameName);
+
+	m_gameData->setup();
 }
 
 void CoreManager::initialize()
@@ -43,16 +50,7 @@ void CoreManager::initialize()
 		m_childEventManager[i].get()->initialize();
 	}
 
-	try {
-		m_gameData->initialize();
-	}
-	catch (std::exception& e) {
-		LogManager::getInstance().printLog("No game added!");
-		LogManager::getInstance().printLog(e.what());
-	}
-
-	// @TODO
-	RenderingManager::getInstance().initInput();
+	m_gameData->initialize();
 
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("CoreManager has been initialized.");

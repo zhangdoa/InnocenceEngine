@@ -10,6 +10,7 @@ public:
 	InnocenceGarden();
 	~InnocenceGarden();
 
+	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
@@ -53,8 +54,9 @@ private:
 
 	float temp = 0.0f;
 
-	void initSpheres();
-	void initLights();
+	void setupSpheres();
+	void initializeSpheres();
+	void setupLights();
 	void updateLights(float seed);	
 	void updateSpheres(float seed);
 };

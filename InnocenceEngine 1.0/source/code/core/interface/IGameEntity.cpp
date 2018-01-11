@@ -279,6 +279,18 @@ glm::mat4 BaseActor::caclTransformationMatrix()
 	return l_parentTransformationMatrix * caclLocalPosMatrix() * caclLocalRotMatrix() * caclLocalScaleMatrix();
 }
 
+void BaseActor::setup()
+{
+	for (auto l_childComponent : m_childComponents)
+	{
+		l_childComponent->setup();
+	}
+	for (auto l_childActor : m_childActors)
+	{
+		l_childActor->setup();
+	}
+}
+
 void BaseActor::initialize()
 {
 	for (auto l_childComponent : m_childComponents)

@@ -69,6 +69,10 @@ glm::vec3 LightComponent::getColor() const
 	return m_color;
 }
 
+void LightComponent::setup()
+{
+}
+
 void LightComponent::initialize()
 {
 	m_direction = glm::vec3(0.0f, 0.0f, 1.0f);

@@ -39,8 +39,8 @@
     <ClCompile Include="code\core\component\LightComponent.cpp" />
     <ClCompile Include="code\core\third-party\glad.c" />
     <ClCompile Include="code\core\data\InnoMath.cpp" />
-    <ClCompile Include="code\core\data\ITask.cpp" />
     <ClCompile Include="code\core\manager\TaskManager.cpp" />
+    <ClCompile Include="code\core\data\InnoTask.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
@@ -73,7 +73,7 @@
     <ClInclude Include="code\core\component\VisibleComponent.h" />
     <ClInclude Include="code\core\component\LightComponent.h" />
     <ClInclude Include="code\core\data\InnoMath.h" />
-    <ClInclude Include="code\core\data\ITask.h" />
     <ClInclude Include="code\core\manager\TaskManager.h" />
+    <ClInclude Include="code\core\data\InnoTask.h" />
   </ItemGroup>
 </Project>

@@ -10,8 +10,9 @@ public:
 	MeshData();
 	~MeshData();
 
-	void initialize() override;
+	void setup() override;
 	void setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents);
+	void initialize() override;
 	void update() override;
 	void shutdown() override;
 
@@ -46,8 +47,9 @@ public:
 	TextureData();
 	~TextureData();
 
-	void initialize() override;
+	void setup() override;
 	void setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData);
+	void initialize() override;	
 	void update() override;
 	void shutdown() override;
 
@@ -108,5 +110,5 @@ public:
 	void addTextureData(textureType textureType, textureDataID textureDataID);
 
 private:
-	textureDataMap m_textureMap;
+	textureDataMap m_textureDataMap;
 };
