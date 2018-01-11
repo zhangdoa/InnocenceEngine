@@ -10,16 +10,6 @@ RenderingManager::~RenderingManager()
 {
 }
 
-void RenderingManager::initInput()
-{
-	for (size_t i = 0; i < SceneGraphManager::getInstance().getInputQueue().size(); i++)
-	{
-		// @TODO: multi input components need to register to multi map
-		GLInputManager::getInstance().addKeyboardInputCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getKeyboardInputCallbackImpl());
-		GLInputManager::getInstance().addMouseMovementCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getMouseInputCallbackImpl());
-	}
-}
-
 void RenderingManager::changeDrawPolygonMode()
 {
 	GLRenderingManager::getInstance().changeDrawPolygonMode();
@@ -78,8 +68,6 @@ void RenderingManager::setup()
 
 	f_changeDrawPolygonMode = std::bind(&RenderingManager::changeDrawPolygonMode, this);
 	f_changeDrawTextureMode = std::bind(&RenderingManager::changeDrawTextureMode, this);
-	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_Q, &f_changeDrawPolygonMode);
-	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
 }
 
 void RenderingManager::initialize()
@@ -88,6 +76,16 @@ void RenderingManager::initialize()
 	{
 		m_childEventManager[i].get()->initialize();
 	}
+
+	for (size_t i = 0; i < SceneGraphManager::getInstance().getInputQueue().size(); i++)
+	{
+		// @TODO: multi input components need to register to multi map
+		GLInputManager::getInstance().addKeyboardInputCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getKeyboardInputCallbackImpl());
+		GLInputManager::getInstance().addMouseMovementCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getMouseInputCallbackImpl());
+	}
+
+	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_Q, &f_changeDrawPolygonMode);
+	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
 
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("RenderingManager has been initialized.");
