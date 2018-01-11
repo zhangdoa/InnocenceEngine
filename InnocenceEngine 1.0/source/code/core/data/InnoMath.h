@@ -108,21 +108,19 @@
 //	return vec4<T>(m_y * rhs.m_z - m_z * rhs.m_x, m_z * rhs.m_x - m_x * rhs.m_z, m_x * rhs.m_y - m_y * rhs.m_x, 0);
 //}
 
-typedef __m128 vec4;
+typedef __m128 __vec4;
+typedef __vec4 __vec3;
+typedef __vec4 __vec2;
 
-inline vec4 add(vec4 a, vec4 b)
+struct vec3
 {
-	return(_mm_add_ps(a, b));
-}
+	vec3();
+	~vec3();
 
-inline vec4 sub(vec4 a, vec4 b)
-{
-	return(_mm_sub_ps(a, b));
-}
-
-inline void getX(float& x, vec4 a)
-{
-	float result[4];
-	_mm_store_ps(result, a);
-	x = result[0];
-}
+	inline vec3 add(vec3& rhs);
+	inline vec3 sub(vec3& rhs);
+	inline float dot(vec3& rhs);
+	inline vec3 cross(vec3& rhs);
+	inline float length(vec3& rhs);
+	inline vec3 normalize(vec3& rhs);
+};

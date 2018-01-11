@@ -218,6 +218,7 @@ void TextureData::initialize()
 {
 	m_GLTextureData.init(m_textureType, m_textureWrapMethod);
 	m_GLTextureData.sendDataToGPU(m_textureType, m_textureIndex, m_textureFormat, m_textureWidth, m_textureHeight, m_textureRawData);
+	setStatus(objectStatus::ALIVE);
 }
 
 void TextureData::setup()
@@ -233,7 +234,6 @@ void TextureData::setup(textureType textureType, textureWrapMethod textureWrapMe
 	m_textureWidth = textureWidth;
 	m_textureHeight = textureHeight;
 	m_textureRawData = textureData;
-	setStatus(objectStatus::ALIVE);
 }
 
 void TextureData::update()
@@ -378,35 +378,39 @@ void TextureData::shutdown()
 //	projectionMatrix = m_projectionMatrix;
 //}
 
-Material::Material()
-{
-}
-
-Material::~Material()
-{
-}
-
-void Material::initialize()
-{
-}
-
-void Material::update()
-{
-}
-
-void Material::shutdown()
-{
-}
-
-void Material::addTextureData(textureType textureType, textureDataID textureDataID)
-{
-	auto l_exsistedTextureData = m_textureDataMap.find(textureType);
-	if (l_exsistedTextureData != m_textureDataMap.end())
-	{
-		l_exsistedTextureData->second = textureDataID;
-	}
-	else
-	{
-		m_textureDataMap.emplace(textureType, textureDataID);
-	}
-}
+//Material::Material()
+//{
+//}
+//
+//Material::~Material()
+//{
+//}
+//
+//void Material::setup()
+//{
+//}
+//
+//void Material::initialize()
+//{
+//}
+//
+//void Material::update()
+//{
+//}
+//
+//void Material::shutdown()
+//{
+//}
+//
+//void Material::addTextureData(textureType textureType, textureDataID textureDataID)
+//{
+//	auto l_exsistedTextureData = m_textureDataMap.find(textureType);
+//	if (l_exsistedTextureData != m_textureDataMap.end())
+//	{
+//		l_exsistedTextureData->second = textureDataID;
+//	}
+//	else
+//	{
+//		m_textureDataMap.emplace(textureType, textureDataID);
+//	}
+//}
