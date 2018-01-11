@@ -1,6 +1,7 @@
 #pragma once
 #include "../manager/LogManager.h"
 #include "../platform-dependency/GL/GLGraphicData.h"
+#include "innoMath.h"
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
 
@@ -39,7 +40,7 @@ private:
 	bool m_calculateTangents;
 };
 
-typedef unsigned char stbi_uc;
+//typedef unsigned char stbi_uc;
 
 class TextureData : public IBaseObject
 {
@@ -98,17 +99,50 @@ enum class shadowProjectionType { ORTHOGRAPHIC, PERSPECTIVE };
 //	shadowProjectionType m_shadowProjectionType = shadowProjectionType::ORTHOGRAPHIC;
 //};
 
-class Material : public IBaseObject
+struct Vertex
 {
-public:
-	Material();
-	~Material();
 
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
-	void addTextureData(textureType textureType, textureDataID textureDataID);
-
-private:
-	textureDataMap m_textureDataMap;
 };
+
+//class Mesh : public IBaseObject
+//{
+//public:
+//	Mesh();
+//	~Mesh();
+//
+//	void setup() override;
+//	void initialize() override;
+//	void update() override;
+//	void shutdown() override;
+//
+//private:
+//
+//};
+//
+//class Material : public IBaseObject
+//{
+//public:
+//	Material();
+//	~Material();
+//
+//	void setup() override;
+//	void initialize() override;
+//	void update() override;
+//	void shutdown() override;
+//	void addTextureData(textureType textureType, textureDataID textureDataID);
+//
+//private:
+//	textureDataMap m_textureDataMap;
+//};
+//
+//class Model : public IBaseObject
+//{
+//public:
+//	Model();
+//	~Model();
+//
+//	void setup() override;
+//	void initialize() override;
+//	void update() override;
+//	void shutdown() override;
+//};

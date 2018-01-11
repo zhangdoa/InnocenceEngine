@@ -14,7 +14,7 @@ AssetManager::~AssetManager()
 
 void AssetManager::setup()
 {
-	
+
 }
 
 void AssetManager::initialize()
@@ -52,6 +52,24 @@ void AssetManager::shutdown()
 {
 }
 
+void AssetManager::loadAsset(const std::string & filePath)
+{
+	auto l_subfix = filePath.substr(filePath.find(".") + 1);
+	//@TODO: generalize a loader base class 
+	if (m_supportedTextureType.find(l_subfix) != m_supportedTextureType.end())
+	{
+		loadTextureImpl(filePath);
+	}
+	else if (m_supportedModelType.find(l_subfix) != m_supportedModelType.end())
+	{
+		loadModelImpl(filePath);
+	}
+	else if (m_supportedShaderType.find(l_subfix) != m_supportedShaderType.end())
+	{
+		loadShaderImpl(filePath);
+	}
+}
+
 void AssetManager::loadAsset(const std::string & filePath, VisibleComponent & visibleComponent)
 {
 	auto l_subfix = filePath.substr(filePath.find(".") + 1);
@@ -68,13 +86,13 @@ void AssetManager::loadAsset(const std::string & filePath, VisibleComponent & vi
 
 void AssetManager::loadAsset(const std::string & filePath, textureType textureType, VisibleComponent & visibleComponent)
 {
-		loadTextureImpl(filePath, textureType, visibleComponent);
+	loadTextureImpl(filePath, textureType, visibleComponent);
 }
 
-std::string AssetManager::loadShader(const std::string & shaderFileName) const
+std::string AssetManager::loadShader(const std::string & fileName) const
 {
 	std::ifstream file;
-	file.open(("../res/shaders/" + shaderFileName).c_str());
+	file.open(("../res/shaders/" + fileName).c_str());
 	std::stringstream shaderStream;
 	std::string output;
 
@@ -109,7 +127,7 @@ void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent 
 		LogManager::getInstance().printLog("AssetManager: " + l_convertedFilePath + " has already been loaded before, successfully assigned graphicDataMap IDs.");
 	}
 	else
-	{	
+	{
 		// read file via ASSIMP
 		Assimp::Importer l_assImporter;
 		auto l_assScene = l_assImporter.ReadFile(m_modelRelativePath + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
@@ -152,8 +170,8 @@ graphicDataMap AssetManager::processAssimpScene(const std::string& fileName, con
 	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
 	if (aiScene->mRootNode->mNumMeshes > 0)
 	{
-		 auto& l_loadedgraphicDataMap = processAssimpNode(fileName, aiScene->mRootNode, aiScene, meshDrawMethod, textureWrapMethod);
-		 l_graphicDataMap.insert(l_loadedgraphicDataMap.begin(), l_loadedgraphicDataMap.end());
+		auto& l_loadedgraphicDataMap = processAssimpNode(fileName, aiScene->mRootNode, aiScene, meshDrawMethod, textureWrapMethod);
+		l_graphicDataMap.insert(l_loadedgraphicDataMap.begin(), l_loadedgraphicDataMap.end());
 	}
 	for (auto i = (unsigned int)0; i < aiScene->mRootNode->mNumChildren; i++)
 	{
@@ -163,7 +181,7 @@ graphicDataMap AssetManager::processAssimpScene(const std::string& fileName, con
 			l_graphicDataMap.insert(l_loadedgraphicDataMap.begin(), l_loadedgraphicDataMap.end());
 		}
 	}
-	
+
 	return l_graphicDataMap;
 }
 
@@ -334,6 +352,24 @@ void AssetManager::loadTextureImpl(const std::string & fileName, textureType tex
 	}
 }
 
+void AssetManager::loadModelImpl(const std::string & fileName)
+{
+}
+
+void AssetManager::loadTextureImpl(const std::string &filePath)
+{
+	auto l_loadedTextureData = m_loadedTextureMap.find(filePath);
+	// check if this file has already loaded
+	if (l_loadedTextureData != m_loadedTextureMap.end())
+	{
+		return;
+	}
+	else
+	{
+		loadTextureFromDisk(filePath);
+	}
+}
+
 void AssetManager::assignLoadedTexture(textureAssignType textureAssignType, textureDataPair& loadedTextureDataPair, VisibleComponent & visibleComponent)
 {
 	if (textureAssignType == textureAssignType::ADD_DEFAULT)
@@ -367,6 +403,36 @@ textureDataID AssetManager::loadTextureFromDisk(const std::string & fileName, te
 		return 0;
 	}
 	//stbi_image_free(data);
+}
+
+void AssetManager::loadTextureFromDisk(const std::string & filePath)
+{
+	int width, height, nrChannels;
+	// load image
+	stbi_set_flip_vertically_on_load(true);
+	auto *data = stbi_load((m_textureRelativePath + filePath).c_str(), &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		m_rawTextureDatas.emplace(filePath, data);
+	}
+	else
+	{
+		LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + filePath);
+	}
+	//stbi_image_free(data);
+}
+
+void AssetManager::loadShaderImpl(const std::string & filePath)
+{
+	//@TODO: such a generalized file loader!
+	std::ifstream file;
+	file.open((m_shaderRelativePath + filePath).c_str());
+	std::stringstream shaderStream;
+	std::string output;
+
+	shaderStream << file.rdbuf();
+	m_rawShaderDatas.emplace(filePath, shaderStream.str());
+	file.close();
 }
 
 void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
@@ -409,7 +475,7 @@ void AssetManager::assignDefaultTextures(textureAssignType textureAssignType, Vi
 void AssetManager::addUnitMesh(VisibleComponent & visibleComponent, unitMeshType unitMeshType)
 {
 	meshDataID l_UnitMeshTemmplate;
-	switch(unitMeshType)
+	switch (unitMeshType)
 	{
 	case unitMeshType::QUAD: l_UnitMeshTemmplate = m_UnitQuadTemplate; break;
 	case unitMeshType::CUBE: l_UnitMeshTemmplate = m_UnitCubeTemplate; break;
