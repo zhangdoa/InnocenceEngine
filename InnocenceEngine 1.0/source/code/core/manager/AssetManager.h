@@ -50,21 +50,21 @@ private:
 	void loadTextureFromDisk(const std::string& filePath);
 	void loadShaderImpl(const std::string& filePath);
 
-	void assignloadedModel(graphicDataMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
+	void assignloadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
 
-	graphicDataMap processAssimpScene(const std::string& fileName, const aiScene* aiScene, meshDrawMethod& meshDrawMethod, textureWrapMethod& textureWrapMethod);
-	graphicDataMap processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod);
-	meshDataID processSingleAssimpMesh(aiMesh* mesh, meshDrawMethod meshDrawMethod) const;
+	modelMap processAssimpScene(const std::string& fileName, const aiScene* aiScene, meshDrawMethod& meshDrawMethod, textureWrapMethod& textureWrapMethod);
+	modelMap processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod);
+	meshID processSingleAssimpMesh(aiMesh* mesh, meshDrawMethod meshDrawMethod) const;
 	void addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData& meshData) const;
-	textureDataMap processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod);
+	textureMap processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod);
 
 	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
-	void assignLoadedTexture(textureAssignType textureAssignType, textureDataPair& loadedTextureDataPair, VisibleComponent& visibleComponent);
+	void assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
 
-	textureDataID loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod);
+	textureID loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod);
 
-	std::unordered_map<std::string, graphicDataMap> m_loadedModelMap;
-	std::unordered_map<std::string, textureDataPair> m_loadedTextureMap;
+	std::unordered_map<std::string, modelMap> m_loadedModelMap;
+	std::unordered_map<std::string, texturePair> m_loadedTextureMap;
 	std::unordered_map<std::string, int> m_supportedTextureType = { std::pair<std::string, int>("png", 0) };
 	std::unordered_map<std::string, int> m_supportedModelType = { std::pair<std::string, int>("obj",0), std::pair<std::string, int>("innoModel", 0) };
 	std::unordered_map<std::string, int> m_supportedShaderType = { std::pair<std::string, int>("sf", 0) };
@@ -75,13 +75,13 @@ private:
 	std::unordered_map<std::string, void*> m_rawTextureDatas;
 	std::unordered_map<std::string, std::string> m_rawShaderDatas;
 
-	meshDataID m_UnitCubeTemplate;
-	meshDataID m_UnitSphereTemplate;
-	meshDataID m_UnitQuadTemplate;
-	textureDataID m_basicNormalTemplate;
-	textureDataID m_basicAlbedoTemplate;
-	textureDataID m_basicMetallicTemplate;
-	textureDataID m_basicRoughnessTemplate;
-	textureDataID m_basicAOTemplate;
+	meshID m_UnitCubeTemplate;
+	meshID m_UnitSphereTemplate;
+	meshID m_UnitQuadTemplate;
+	textureID m_basicNormalTemplate;
+	textureID m_basicAlbedoTemplate;
+	textureID m_basicMetallicTemplate;
+	textureID m_basicRoughnessTemplate;
+	textureID m_basicAOTemplate;
 };
 
