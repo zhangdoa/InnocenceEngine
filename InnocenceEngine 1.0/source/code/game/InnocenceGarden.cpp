@@ -122,7 +122,7 @@ void InnocenceGarden::initializeSpheres()
 		AssetManager::getInstance().addUnitMesh(sphereComponents[i], unitMeshType::SPHERE);
 	}
 
-	/*for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
+	for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
 	{
 		AssetManager::getInstance().loadAsset("PBS/rustediron2_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
 		AssetManager::getInstance().loadAsset("PBS/rustediron2_metallic.png", textureType::SPECULAR, sphereComponents[i]);
@@ -144,7 +144,7 @@ void InnocenceGarden::initializeSpheres()
 		AssetManager::getInstance().loadAsset("PBS/roughrock1-normal.png", textureType::NORMALS, sphereComponents[i + 3]);
 		AssetManager::getInstance().loadAsset("PBS/roughrock1-roughness.png", textureType::AMBIENT, sphereComponents[i + 3]);
 		AssetManager::getInstance().loadAsset("PBS/roughrock1-ao.png", textureType::EMISSIVE, sphereComponents[i + 3]);
-	}	*/
+	}	
 }
 
 void InnocenceGarden::setupLights()

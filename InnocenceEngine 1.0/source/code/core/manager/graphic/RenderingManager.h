@@ -25,12 +25,12 @@ public:
 		return instance;
 	}
 
-	meshDataID addMeshData();
-	textureDataID addTextureData();
-	std::unordered_map<meshDataID, MeshData>& getMeshData();
-	std::unordered_map<textureDataID, TextureData>& getTextureData();
-	MeshData& getMeshData(meshDataID meshDataIndex);
-	TextureData& getTextureData(textureDataID textureDataIndex);
+	meshID addMeshData();
+	textureID addTextureData();
+	std::unordered_map<meshID, MeshData>& getMeshData();
+	std::unordered_map<textureID, TextureData>& getTextureData();
+	MeshData& getMeshData(meshID meshDataID);
+	TextureData& getTextureData(textureID textureDataID);
 
 private:
 	RenderingManager();
@@ -42,7 +42,7 @@ private:
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 	std::function<void()> f_changeDrawPolygonMode;
 	std::function<void()> f_changeDrawTextureMode;	
-	std::unordered_map<meshDataID, MeshData> m_meshDatas;
-	std::unordered_map<textureDataID, TextureData> m_textureDatas;
+	std::unordered_map<meshID, MeshData> m_meshDatas;
+	std::unordered_map<textureID, TextureData> m_textureDatas;
 };
 

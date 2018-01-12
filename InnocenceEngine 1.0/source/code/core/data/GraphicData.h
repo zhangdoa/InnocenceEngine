@@ -67,12 +67,12 @@ private:
 	void* m_textureRawData;
 };
 
-typedef GameObjectID textureDataID;
-typedef GameObjectID meshDataID;
-typedef std::pair<textureType, textureDataID> textureDataPair;
-typedef std::unordered_map<textureType, textureDataID> textureDataMap;
-typedef std::pair<meshDataID, textureDataMap> graphicDataPair;
-typedef std::unordered_map<meshDataID, textureDataMap> graphicDataMap;
+typedef GameObjectID textureID;
+typedef GameObjectID meshID;
+typedef std::pair<textureType, textureID> texturePair;
+typedef std::unordered_map<textureType, textureID> textureMap;
+typedef std::pair<meshID, textureMap> modelPair;
+typedef std::unordered_map<meshID, textureMap> modelMap;
 
 enum class shadowProjectionType { ORTHOGRAPHIC, PERSPECTIVE };
 
@@ -99,50 +99,120 @@ enum class shadowProjectionType { ORTHOGRAPHIC, PERSPECTIVE };
 //	shadowProjectionType m_shadowProjectionType = shadowProjectionType::ORTHOGRAPHIC;
 //};
 
-struct Vertex
+struct IVertex
 {
-
+	//@TODO: generalize math class
+	glm::vec3 m_pos;
+	glm::vec2 m_texCoord;
+	glm::vec3 m_normal;
 };
 
-//class Mesh : public IBaseObject
-//{
-//public:
-//	Mesh();
-//	~Mesh();
-//
-//	void setup() override;
-//	void initialize() override;
-//	void update() override;
-//	void shutdown() override;
-//
-//private:
-//
-//};
-//
-//class Material : public IBaseObject
-//{
-//public:
-//	Material();
-//	~Material();
-//
-//	void setup() override;
-//	void initialize() override;
-//	void update() override;
-//	void shutdown() override;
-//	void addTextureData(textureType textureType, textureDataID textureDataID);
-//
-//private:
-//	textureDataMap m_textureDataMap;
-//};
-//
-//class Model : public IBaseObject
-//{
-//public:
-//	Model();
-//	~Model();
-//
-//	void setup() override;
-//	void initialize() override;
-//	void update() override;
-//	void shutdown() override;
-//};
+class IMesh : public IBaseObject
+{
+public:
+	IMesh() {};
+	virtual ~IMesh() {};
+
+	void setup() override;
+	void setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents);
+
+	void addVertices(IVertex& IVertex);
+	//void addVertices(glm::vec3 & pos, glm::vec2 & texCoord, glm::vec3 & m_normal);
+	void addVertices(float pos_x, float pos_y, float pos_z, float texCoord_x, float texCoord_y, float normal_x, float normal_y, float normal_z);
+	void addUnitCube();
+	void addUnitSphere();
+	void addUnitQuad();
+
+	meshID getMeshDataID() const;
+
+protected:
+	std::vector<IVertex> m_vertices;
+	std::vector<unsigned int> m_indices;
+
+	meshDrawMethod m_meshDrawMethod;
+	bool m_calculateNormals;
+	bool m_calculateTangents;
+};
+
+class GLMesh : public IMesh
+{
+public:
+	GLMesh() {};
+	~GLMesh() {};
+
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
+private:
+	GLuint m_VAO = 0;
+	GLuint m_VBO = 0;
+	GLuint m_IBO = 0;
+};
+
+class ITexture : public IBaseObject
+{
+public:
+	ITexture() {};
+	virtual ~ITexture() {};
+
+	void setup() override;
+	void setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData);
+
+	textureID getTextureDataID() const;
+
+protected:	
+	textureType m_textureType;
+	textureWrapMethod m_textureWrapMethod;
+
+	int m_textureIndex;
+	int m_textureFormat;
+	int m_textureWidth;
+	int m_textureHeight;
+	void* m_textureRawData;
+};
+
+class GLTexture : ITexture
+{
+public:
+	GLTexture() {};
+	~GLTexture() {};
+
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
+private:
+	GLuint m_textureID = 0;
+};
+
+class Material : public IBaseObject
+{
+public:
+	Material();
+	~Material();
+
+	void setup() override;
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+	void addTextureData(textureType textureType, textureID textureDataID);
+
+private:
+	textureMap m_textureDataMap;
+};
+
+class Model : public IBaseObject
+{
+public:
+	Model();
+	~Model();
+
+	void setup() override;
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
+private:
+	IMesh* m_mesh;
+};

@@ -11,48 +11,48 @@ VisibleComponent::~VisibleComponent()
 {
 }
 
-void VisibleComponent::addMeshData(meshDataID& meshDataID)
+void VisibleComponent::addMeshData(meshID& meshID)
 {
-	m_graphicDataMap.emplace(meshDataID, textureDataMap());
+	m_modelMap.emplace(meshID, textureMap());
 }
 
-void VisibleComponent::addTextureData(textureDataPair & textureDataPair)
+void VisibleComponent::addTextureData(texturePair & texturePair)
 {
-	for (auto& l_graphicData : m_graphicDataMap)
+	for (auto& l_model : m_modelMap)
 	{
-		auto& l_texturePair = l_graphicData.second.find(textureDataPair.first);
-		if (l_texturePair == l_graphicData.second.end())
+		auto& l_texturePair = l_model.second.find(texturePair.first);
+		if (l_texturePair == l_model.second.end())
 		{
-			l_graphicData.second.emplace(textureDataPair);
+			l_model.second.emplace(texturePair);
 		}
 	}
 }
 
 
-void VisibleComponent::overwriteTextureData(textureDataPair& textureDataPair)
+void VisibleComponent::overwriteTextureData(texturePair& texturePair)
 {
-	for (auto& l_graphicData : m_graphicDataMap)
+	for (auto& l_model : m_modelMap)
 	{
-		auto& l_texturePair = l_graphicData.second.find(textureDataPair.first);
-		if (l_texturePair == l_graphicData.second.end())
+		auto& l_texturePair = l_model.second.find(texturePair.first);
+		if (l_texturePair == l_model.second.end())
 		{
-			l_graphicData.second.emplace(textureDataPair);
+			l_model.second.emplace(texturePair);
 		}
 		else
 		{
-			l_texturePair->second = textureDataPair.second;
+			l_texturePair->second = texturePair.second;
 		}
 	}
 }
 
-graphicDataMap& VisibleComponent::getGraphicDataMap()
+modelMap& VisibleComponent::getModelMap()
 {
-	return m_graphicDataMap;
+	return m_modelMap;
 }
 
-void VisibleComponent::setGraphicDataMap(graphicDataMap & graphicDataMap)
+void VisibleComponent::setModelMap(modelMap & modelMap)
 {
-	m_graphicDataMap = graphicDataMap;
+	m_modelMap = modelMap;
 }
 
 
