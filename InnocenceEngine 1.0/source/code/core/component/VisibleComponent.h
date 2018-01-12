@@ -18,13 +18,13 @@ public:
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
 
-	graphicDataMap& getGraphicDataMap();
-	void setGraphicDataMap(graphicDataMap& graphicDataMap);
-	void addMeshData(meshDataID& meshDataID);
-	void addTextureData(textureDataPair& textureDataPair);
-	void overwriteTextureData(textureDataPair& textureDataPair);
+	modelMap& getModelMap();
+	void setModelMap(modelMap& graphicDataMap);
+	void addMeshData(meshID& meshDataID);
+	void addTextureData(texturePair& textureDataPair);
+	void overwriteTextureData(texturePair& textureDataPair);
 
 private:
-	graphicDataMap m_graphicDataMap;
+	modelMap m_modelMap;
 };
 

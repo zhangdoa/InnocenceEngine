@@ -20,36 +20,36 @@ void RenderingManager::changeDrawTextureMode()
 	GLRenderingManager::getInstance().changeDrawTextureMode();
 }
 
-meshDataID RenderingManager::addMeshData()
+meshID RenderingManager::addMeshData()
 {
 	MeshData newMeshData;
-	m_meshDatas.emplace(std::pair<meshDataID, MeshData>(newMeshData.getGameObjectID(), newMeshData));
+	m_meshDatas.emplace(std::pair<meshID, MeshData>(newMeshData.getGameObjectID(), newMeshData));
 	return newMeshData.getGameObjectID();
 }
 
-textureDataID RenderingManager::addTextureData()
+textureID RenderingManager::addTextureData()
 {
 	TextureData newTextureData;
-	m_textureDatas.emplace(std::pair<textureDataID, TextureData>(newTextureData.getGameObjectID(), newTextureData));
+	m_textureDatas.emplace(std::pair<textureID, TextureData>(newTextureData.getGameObjectID(), newTextureData));
 	return newTextureData.getGameObjectID();
 }
 
-std::unordered_map<meshDataID, MeshData>& RenderingManager::getMeshData()
+std::unordered_map<meshID, MeshData>& RenderingManager::getMeshData()
 {
 	return m_meshDatas;
 }
 
-std::unordered_map<textureDataID, TextureData>& RenderingManager::getTextureData()
+std::unordered_map<textureID, TextureData>& RenderingManager::getTextureData()
 {
 	return m_textureDatas;
 }
 
-MeshData & RenderingManager::getMeshData(meshDataID meshDataIndex)
+MeshData & RenderingManager::getMeshData(meshID meshDataIndex)
 {
 	return m_meshDatas.find(meshDataIndex)->second;
 }
 
-TextureData & RenderingManager::getTextureData(textureDataID textureDataIndex)
+TextureData & RenderingManager::getTextureData(textureID textureDataIndex)
 {
 	return m_textureDatas.find(textureDataIndex)->second;
 }

@@ -192,7 +192,7 @@ void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraCompon
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
 
 			// draw each graphic data of visibleComponent
-			for (auto& l_graphicData : l_visibleComponent->getGraphicDataMap())
+			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
 				//active and bind textures
 				// is there any texture?
@@ -268,7 +268,7 @@ void SkyboxShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, s
 		if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
 		{
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
-			for (auto& l_graphicData : l_visibleComponent->getGraphicDataMap())
+			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
 				meshDatas.find(l_graphicData.first)->second.update();
 				textureDatas.find(l_graphicData.second.find(textureType::CUBEMAP)->second)->second.update();
@@ -328,7 +328,7 @@ void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cam
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
 
 			// draw each graphic data of visibleComponent
-			for (auto& l_graphicData : l_visibleComponent->getGraphicDataMap())
+			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
 				//active and bind textures
 				// is there any texture?
@@ -464,7 +464,7 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
 
 			// draw each graphic data of visibleComponent
-			for (auto& l_graphicData : l_visibleComponent->getGraphicDataMap())
+			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
 				//active and bind textures
 				// is there any texture?
@@ -638,7 +638,7 @@ void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents,
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
 
 			// draw each graphic data of visibleComponent
-			for (auto& l_graphicData : l_visibleComponent->getGraphicDataMap())
+			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
 				// draw meshes
 				meshDatas.find(l_graphicData.first)->second.update();
