@@ -1,24 +1,15 @@
 #include "../../main/stdafx.h"
 #include "CoreManager.h"
 
-
-CoreManager::CoreManager()
-{
-}
-
-
-CoreManager::~CoreManager()
-{
-}
-
 void CoreManager::setGameData(IGameData * gameData)
 {
 	m_gameData = gameData;
 }
 
-
 void CoreManager::setup()
 {	// emplace_back in a static order.
+	m_childEventManager.emplace_back(&LogManager::getInstance());
+	m_childEventManager.emplace_back(&MemoryManager::getInstance());
 	m_childEventManager.emplace_back(&TaskManager::getInstance());
 	m_childEventManager.emplace_back(&TimeManager::getInstance());
 	m_childEventManager.emplace_back(&SceneGraphManager::getInstance());

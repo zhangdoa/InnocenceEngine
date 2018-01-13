@@ -647,14 +647,6 @@ void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents,
 	}
 }
 
-GLRenderingManager::GLRenderingManager()
-{
-}
-
-GLRenderingManager::~GLRenderingManager()
-{
-}
-
 void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<GameObjectID, MeshData>& meshDatas, std::unordered_map<GameObjectID, TextureData>& textureDatas)
 {
 	// draw billboard

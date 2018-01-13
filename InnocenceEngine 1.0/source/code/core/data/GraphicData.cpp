@@ -249,72 +249,6 @@ void TextureData::shutdown()
 	m_GLTextureData.shutdown();
 }
 
-
-//GraphicData::GraphicData()
-//{
-//}
-//
-//GraphicData::~GraphicData()
-//{
-//}
-//
-//void GraphicData::init()
-//{
-//	if (m_visiblilityType == visiblilityType::SKYBOX)
-//	{
-//		m_meshData.addTestSkybox();
-//	}
-//	if (m_visiblilityType == visiblilityType::BILLBOARD)
-//	{
-//		m_meshData.addTestBillboard();
-//	}
-//	m_meshData.init();
-//	m_meshData.sendDataToGPU();
-//}
-//
-//void GraphicData::draw()
-//{
-//	for (size_t i = 0; i < m_textureData.size(); i++)
-//	{
-//		m_textureData[i].draw();
-//	}
-//	m_meshData.draw();
-//}
-//
-//void GraphicData::shutdown()
-//{
-//}
-//
-//const visiblilityType & GraphicData::m_visiblilityType const
-//{
-//	return m_visiblilityType;
-//}
-//
-//void GraphicData::setVisiblilityType(visiblilityType visiblilityType)
-//{
-//	m_visiblilityType = visiblilityType;
-//}
-//
-//const textureWrapMethod & GraphicData::getTextureWrapMethod() const
-//{
-//	return m_textureWrapMethod;
-//}
-//
-//void GraphicData::setTextureWrapMethod(textureWrapMethod textureWrapMethod)
-//{
-//	m_textureWrapMethod = textureWrapMethod;
-//}
-//
-//MeshData & GraphicData::getMeshData()
-//{
-//	return m_meshData;
-//}
-//
-//std::vector<TextureData>& GraphicData::getTextureData()
-//{
-//	return m_textureData;
-//}
-
 //ShadowMapData::ShadowMapData()
 //{
 //}
@@ -378,42 +312,7 @@ void TextureData::shutdown()
 //	projectionMatrix = m_projectionMatrix;
 //}
 
-//Material::Material()
-//{
-//}
-//
-//Material::~Material()
-//{
-//}
-//
-//void Material::setup()
-//{
-//}
-//
-//void Material::initialize()
-//{
-//}
-//
-//void Material::update()
-//{
-//}
-//
-//void Material::shutdown()
-//{
-//}
-//
-//void Material::addTextureData(textureType textureType, textureDataID textureDataID)
-//{
-//	auto l_exsistedTextureData = m_textureDataMap.find(textureType);
-//	if (l_exsistedTextureData != m_textureDataMap.end())
-//	{
-//		l_exsistedTextureData->second = textureDataID;
-//	}
-//	else
-//	{
-//		m_textureDataMap.emplace(textureType, textureDataID);
-//	}
-//}
+
 
 void IMesh::setup()
 {

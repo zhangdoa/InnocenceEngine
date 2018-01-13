@@ -1,16 +1,6 @@
 #include "../../../main/stdafx.h"
 #include "GLInputManager.h"
 
-
-GLInputManager::GLInputManager()
-{
-}
-
-
-GLInputManager::~GLInputManager()
-{
-}
-
 void GLInputManager::addKeyboardInputCallback(int keyCode, std::function<void()>* keyboardInputCallback)
 {
 	auto l_keyboardInputCallbackFunctionVector = m_keyboardInputCallback.find(keyCode);

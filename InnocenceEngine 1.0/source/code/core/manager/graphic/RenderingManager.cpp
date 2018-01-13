@@ -1,15 +1,6 @@
 #include "../../../main/stdafx.h"
 #include "RenderingManager.h"
 
-RenderingManager::RenderingManager()
-{
-}
-
-
-RenderingManager::~RenderingManager()
-{
-}
-
 void RenderingManager::changeDrawPolygonMode()
 {
 	GLRenderingManager::getInstance().changeDrawPolygonMode();

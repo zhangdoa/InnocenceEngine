@@ -6,7 +6,7 @@
 class TimeManager : public IEventManager
 {
 public:
-	~TimeManager();
+	~TimeManager() {};
 
 	void setup() override;
 	void initialize() override;
@@ -71,7 +71,7 @@ public:
 	}
 
 private:
-	TimeManager();
+	TimeManager() {};
 
 	const double m_frameTime = 1.0 / 60.0;
 	__time64_t m_gameStartTime;

@@ -1,16 +1,6 @@
 #include "../../../main/stdafx.h"
 #include "SceneGraphManager.h"
 
-SceneGraphManager::SceneGraphManager()
-{
-}
-
-
-SceneGraphManager::~SceneGraphManager()
-{
-}
-
-
 void SceneGraphManager::addToRenderingQueue(VisibleComponent* visibleComponent)
 {
 	m_VisibleComponents.emplace_back(visibleComponent);

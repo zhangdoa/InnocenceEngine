@@ -4,7 +4,7 @@
 class LogManager : public IEventManager
 {
 public:
-	~LogManager();
+	~LogManager() {};
 
 	void setup() override;
 	void initialize() override;
@@ -27,6 +27,6 @@ public:
 	void printLog(const std::thread::id logMessage);
 
 private:
-	LogManager();
+	LogManager() {};
 };
 
