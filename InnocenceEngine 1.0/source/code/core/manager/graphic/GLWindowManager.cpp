@@ -1,16 +1,6 @@
 #include "../../../main/stdafx.h"
 #include "GLWindowManager.h"
 
-
-GLWindowManager::GLWindowManager()
-{
-}
-
-
-GLWindowManager::~GLWindowManager()
-{
-}
-
 GLFWwindow * GLWindowManager::getWindow() const
 {
 	return m_window;

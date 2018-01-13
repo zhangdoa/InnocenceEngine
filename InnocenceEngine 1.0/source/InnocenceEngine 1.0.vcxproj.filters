@@ -41,6 +41,7 @@
     <ClCompile Include="code\core\data\InnoMath.cpp" />
     <ClCompile Include="code\core\manager\TaskManager.cpp" />
     <ClCompile Include="code\core\data\InnoTask.cpp" />
+    <ClCompile Include="code\core\manager\MemoryManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
@@ -75,5 +76,6 @@
     <ClInclude Include="code\core\data\InnoMath.h" />
     <ClInclude Include="code\core\manager\TaskManager.h" />
     <ClInclude Include="code\core\data\InnoTask.h" />
+    <ClInclude Include="code\core\manager\MemoryManager.h" />
   </ItemGroup>
 </Project>

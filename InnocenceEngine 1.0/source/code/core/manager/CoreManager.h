@@ -3,9 +3,11 @@
 #include "../interface/IEventManager.h"
 
 #include "TimeManager.h"
+#include "MemoryManager.h"
+#include "TaskManager.h"
 #include "../manager/graphic/RenderingManager.h"
 #include "../manager/graphic/SceneGraphManager.h"
-#include "../manager/TaskManager.h"
+
 #include "LogManager.h"
 
 #include "../interface/IGameData.h"
@@ -13,7 +15,7 @@
 class CoreManager : public IEventManager
 {
 public:
-	CoreManager();
+	CoreManager() {};
 
 	void setup() override;
 	void initialize() override;
@@ -29,7 +31,7 @@ public:
 	void setGameData(IGameData* gameData);
 
 private:
-	~CoreManager();
+	~CoreManager() {};
 
 	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
 	IGameData* m_gameData;

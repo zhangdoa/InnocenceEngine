@@ -12,7 +12,7 @@
 class RenderingManager : public IEventManager
 {
 public:
-	~RenderingManager();
+	~RenderingManager() {};
 
 	void setup() override;
 	void initialize() override;
@@ -33,7 +33,7 @@ public:
 	TextureData& getTextureData(textureID textureDataID);
 
 private:
-	RenderingManager();
+	RenderingManager() {};
 
 	void AsyncRender();
 	void changeDrawPolygonMode();

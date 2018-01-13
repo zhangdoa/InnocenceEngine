@@ -7,7 +7,7 @@
 class GLInputManager : public IEventManager
 {
 public:
-	~GLInputManager();
+	~GLInputManager() {};
 
 	void setup() override;
 	void initialize() override;
@@ -27,7 +27,7 @@ public:
 	void addMouseMovementCallback(std::multimap<int, std::vector<std::function<void(float)>*>>& mouseMovementCallback);
 
 private:
-	GLInputManager();
+	GLInputManager() {};
 
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void mousePositionCallback(GLFWwindow* window, double mouseXPos, double mouseYPos);

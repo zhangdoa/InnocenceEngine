@@ -195,7 +195,7 @@ private:
 class GLRenderingManager : public IEventManager
 {
 public:
-	~GLRenderingManager();
+	~GLRenderingManager() {};
 
 	void setup() override;
 	void initialize() override;
@@ -217,7 +217,7 @@ public:
 	void changeDrawTextureMode();
 
 private:
-	GLRenderingManager();
+	GLRenderingManager() {};
 
 	glm::vec2 m_screenResolution = glm::vec2();
 

@@ -14,7 +14,7 @@ enum class unitMeshType { QUAD, CUBE, SPHERE };
 class AssetManager : public IEventManager
 {
 public:
-	~AssetManager();
+	~AssetManager() {};
 
 	void setup() override;
 	void initialize() override;
@@ -38,7 +38,7 @@ public:
 	void addUnitMesh(VisibleComponent& visibleComponent, unitMeshType unitMeshType);
 
 private:
-	AssetManager();
+	AssetManager() {};
 
 	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
 
