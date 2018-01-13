@@ -1,11 +1,6 @@
 #include "../../main/stdafx.h"
 #include "TaskManager.h"
 
-
-TaskManager::TaskManager()
-{
-}
-
 void TaskManager::setup()
 {
 	m_hardwareConcurrency =	std::thread::hardware_concurrency();
@@ -16,7 +11,7 @@ void TaskManager::initialize()
 {
 	for (unsigned int i = 0; i < m_hardwareConcurrency; ++i)
 	{
-		m_threadPool.emplace_back(std::thread(&TaskManager::threadHolder, this));
+		m_threadPool.emplace_back(std::thread(&TaskManager::m_threadHolder, this));
 	}
 	LogManager::getInstance().printLog("TaskManager has been initialized.");
 }
@@ -27,6 +22,7 @@ void TaskManager::update()
 
 void TaskManager::shutdown()
 {
+	this->setStatus(objectStatus::STANDBY);
 	for (auto& i : m_threadPool)
 	{
 		if (i.joinable())
@@ -38,12 +34,7 @@ void TaskManager::shutdown()
 	LogManager::getInstance().printLog("TaskManager has been shutdown.");
 }
 
-
-TaskManager::~TaskManager()
-{
-}
-
-void TaskManager::threadHolder()
+void TaskManager::m_threadHolder()
 {
 	do 
 	{

@@ -5,7 +5,7 @@
 class TaskManager : public IEventManager
 {
 public:
-	TaskManager();
+	TaskManager() {};
 
 	void setup() override;
 	void initialize() override;
@@ -19,8 +19,10 @@ public:
 	}
 
 private:
-	~TaskManager();
-	void threadHolder();
+	~TaskManager() {};
+
+	void m_threadHolder();
+
 	unsigned int m_hardwareConcurrency;
 	std::vector<std::thread> m_threadPool;
 	std::condition_variable m_cv;

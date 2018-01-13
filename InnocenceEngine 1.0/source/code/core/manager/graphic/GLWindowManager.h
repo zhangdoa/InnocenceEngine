@@ -5,7 +5,7 @@
 class GLWindowManager : public IEventManager
 {
 public:
-	~GLWindowManager();
+	~GLWindowManager() {};
 
 	void setup() override;
 	void initialize() override;
@@ -26,7 +26,7 @@ public:
 	void showMouseCursor() const;
 
 private:
-	GLWindowManager();
+	GLWindowManager() {};
 
 	const unsigned int SCR_WIDTH = 1024;
 	const unsigned int SCR_HEIGHT = 768;

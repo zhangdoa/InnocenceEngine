@@ -10,7 +10,7 @@
 class SceneGraphManager : public IEventManager
 {
 public:
-	~SceneGraphManager();
+	~SceneGraphManager() {};
 
 	void setup() override;
 	void initialize() override;
@@ -34,7 +34,7 @@ public:
 	std::vector<InputComponent*>& getInputQueue();
 
 private:
-	SceneGraphManager();
+	SceneGraphManager() {};
 
 	std::vector<VisibleComponent*> m_VisibleComponents;
 	std::vector<LightComponent*> m_LightComponents;

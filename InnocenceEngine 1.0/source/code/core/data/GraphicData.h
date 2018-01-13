@@ -185,34 +185,3 @@ public:
 private:
 	GLuint m_textureID = 0;
 };
-
-class Material : public IBaseObject
-{
-public:
-	Material();
-	~Material();
-
-	void setup() override;
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
-	void addTextureData(textureType textureType, textureID textureDataID);
-
-private:
-	textureMap m_textureDataMap;
-};
-
-class Model : public IBaseObject
-{
-public:
-	Model();
-	~Model();
-
-	void setup() override;
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
-
-private:
-	IMesh* m_mesh;
-};

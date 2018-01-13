@@ -2,16 +2,6 @@
 #include "LogManager.h"
 #include "TimeManager.h"
 
-
-LogManager::LogManager()
-{
-}
-
-
-LogManager::~LogManager()
-{
-}
-
 void LogManager::printLog(float logMessage)
 {
 	std::cout << "[" << TimeManager::getInstance().getCurrentTimeInLocal() << "]" << logMessage << std::endl;
