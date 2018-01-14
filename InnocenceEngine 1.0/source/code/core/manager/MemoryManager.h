@@ -25,9 +25,13 @@ public:
 private:
 	MemoryManager() {};
 
-	const int m_maxMemoryPoolSize = 1024 * 1024 * 1024;
-	const unsigned char  MemoryManager::m_startBound[16] = { '[','I','n','n','o','C','h','u','c','k','S','t','a','r','t',']' };
-	const unsigned char  MemoryManager::m_endBound[16] = { '[','I','n','n','o','C','h','u','c','k','.','.','E','n','d',']' };
+	//const int m_maxPoolSize = 1024 * 1024 * 1024;
+	const int m_maxPoolSize = 1024;
+	unsigned int m_totalPoolSize;
+	unsigned int m_freePoolSize;
+
+	const unsigned char  m_startBound[16] = { '[','I','n','n','o','C','h','u','c','k','S','t','a','r','t',']' };
+	const unsigned char  m_endBound[16] = { '[','I','n','n','o','C','h','u','c','k','.','.','E','n','d',']' };
 
 	unsigned char* m_poolMemory;
 
