@@ -15,7 +15,7 @@ void CoreManager::setup()
 	m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
 	m_childEventManager.emplace_back(&RenderingManager::getInstance());
 	m_childEventManager.emplace_back(&AssetManager::getInstance());
-
+	LogManager::getInstance().printLog("Start to setup all the managers.");
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		m_childEventManager[i].get()->setup();
