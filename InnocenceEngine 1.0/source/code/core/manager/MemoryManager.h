@@ -8,12 +8,12 @@ public:
 	~MemoryManager() {};
 
 	void setup() override;
-	void setup(unsigned int memoryPoolSize);
+	void setup(unsigned long  memoryPoolSize);
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
 
-	inline void* allocate(unsigned int size);
+	inline void* allocate(unsigned long  size);
 	inline void free(void* ptr);
 
 	static MemoryManager& getInstance()
@@ -25,13 +25,15 @@ public:
 private:
 	MemoryManager() {};
 
-	//const int m_maxPoolSize = 1024 * 1024 * 1024;
-	const int m_maxPoolSize = 1024;
-	unsigned int m_totalPoolSize;
-	unsigned int m_freePoolSize;
+	//const unsigned long  m_maxPoolSize = 1024 * 1024 * 1024;
+	const unsigned long  m_maxPoolSize = 1024;
+	static const unsigned char m_minFreeBlockSize = 16;
+	unsigned long  m_totalPoolSize;
+	unsigned long  m_freePoolSize;
 
-	const unsigned char  m_startBound[16] = { '[','I','n','n','o','C','h','u','c','k','S','t','a','r','t',']' };
-	const unsigned char  m_endBound[16] = { '[','I','n','n','o','C','h','u','c','k','.','.','E','n','d',']' };
+	static const unsigned int m_boundCheckSize = 16;
+	const unsigned char  m_startBound[m_boundCheckSize] = { '[','I','n','n','o','C','h','u','c','k','S','t','a','r','t',']' };
+	const unsigned char  m_endBound[m_boundCheckSize] = { '[','I','n','n','o','C','h','u','c','k','.','.','E','n','d',']' };
 
 	unsigned char* m_poolMemory;
 
