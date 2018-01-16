@@ -130,7 +130,7 @@ void InnocenceGarden::initializeSpheres()
 		AssetManager::getInstance().loadAsset("PBS/rustediron2_roughness.png", textureType::AMBIENT, sphereComponents[i]);
 
 		AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-albedo.png", textureType::DIFFUSE, sphereComponents[i + 1]);
-		AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-metal.psd", textureType::SPECULAR, sphereComponents[i + 1]);
+		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-metal.png", textureType::SPECULAR, sphereComponents[i + 1]);
 		AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-normal.png", textureType::NORMALS, sphereComponents[i + 1]);
 		AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-ao.png", textureType::EMISSIVE, sphereComponents[i + 1]);
 
