@@ -18,14 +18,14 @@ void MemoryManager::setup(unsigned long  memoryPoolSize)
 	Chunk freeChunk(memoryPoolSize - sizeof(Chunk) - m_boundCheckSize * 2);
 	freeChunk.write(m_poolMemory + m_boundCheckSize);
 	memcpy(m_poolMemory, m_startBound, m_boundCheckSize);
-	memcpy(m_poolMemory + memoryPoolSize - m_boundCheckSize,
-		m_endBound, m_boundCheckSize);
+	memcpy(m_poolMemory + memoryPoolSize - m_boundCheckSize, m_endBound, m_boundCheckSize);
 	LogManager::getInstance().printLog("Memory is allocated " + sizeof(m_poolMemory));
 }
 
 void MemoryManager::initialize()
 {
-	void* test = allocate(16);
+	void* test = allocate(32);
+	dumpToFile("memoryDump.innoDump");
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("MemoryManager has been initialized.");
 }
@@ -42,44 +42,42 @@ void MemoryManager::shutdown()
 
 inline void * MemoryManager::allocate(unsigned long  size)
 {
-	unsigned long l_requiredSize = size + sizeof(Chunk);
-	
 	// add bound check size
-	l_requiredSize += m_boundCheckSize * 2;
-
+	unsigned long l_requiredSize = size + sizeof(Chunk) + m_boundCheckSize * 2;
+	
 	// Now search for a block big enough, double linked list, O(n)
 	Chunk* l_block = (Chunk*)(m_poolMemory + m_boundCheckSize);
 	while (l_block)
 	{
-		if (l_block->m_free && l_block->m_chuckSize >= l_requiredSize) { break; }
+		if (l_block->m_free && l_block->m_chuckSize - l_requiredSize > m_minFreeBlockSize) { break; }
 		l_block = l_block->m_next;
 	}
-
-	unsigned char* l_blockData = (unsigned char*)l_block;
 
 	// If no block is found, return NULL
 	if (!l_block) { return NULL; }
 
 	// If the block is valid, create a new free block with 
 	// what remains of the block memory
+
+	unsigned char* l_blockData = (unsigned char*)l_block;
+
 	unsigned long l_freeChuckSize = l_block->m_chuckSize - l_requiredSize;
-	if (l_freeChuckSize > m_minFreeBlockSize)
+
+	Chunk freeBlock(l_freeChuckSize);
+	freeBlock.m_next = l_block->m_next;
+	freeBlock.m_prev = l_block;
+	freeBlock.write(l_blockData + l_requiredSize);
+
+	if (freeBlock.m_next)
 	{
-		Chunk freeBlock(l_freeChuckSize);
-		freeBlock.m_next = l_block->m_next;
-		freeBlock.m_prev = l_block;
-		freeBlock.write(l_blockData + l_requiredSize);
-		if (freeBlock.m_next)
-		{
-			freeBlock.m_next->m_prev = (Chunk*)(l_blockData + l_requiredSize);
-			memcpy(l_blockData + l_requiredSize - m_boundCheckSize, m_startBound,
-				m_boundCheckSize);
-			l_block->m_next = (Chunk*)(l_blockData + l_requiredSize);
-			l_block->m_chuckSize = size;
-		}
+		freeBlock.m_next->m_prev = (Chunk*)(l_blockData + l_requiredSize);
+		memcpy(l_blockData + l_requiredSize - m_boundCheckSize, m_startBound,
+			m_boundCheckSize);
+		l_block->m_next = (Chunk*)(l_blockData + l_requiredSize);
+		l_block->m_chuckSize = size;
 	}
 
-	// If a block is found, update the pool size
+	// update the pool size
 	m_freePoolSize -= l_block->m_chuckSize;
 
 	// Set the memory block
@@ -95,4 +93,77 @@ inline void * MemoryManager::allocate(unsigned long  size)
 
 inline void MemoryManager::free(void * ptr)
 {
+}
+
+inline void MemoryManager::dumpToFile(const std::string & fileName) const
+{
+	_iobuf* f = NULL;
+	fopen_s(&f, fileName.c_str(), "w+");
+	if (f)
+	{
+		fprintf(f, "Memory pool ----------------------------------\n");
+		fprintf(f, "Type: Standard Memory\n");
+		fprintf(f, "Total Size: %d\n", m_totalPoolSize);
+		fprintf(f, "Free Size: %d\n", m_freePoolSize);
+
+		// Now search for a block big enough
+		Chunk* block = (Chunk*)(m_poolMemory + m_boundCheckSize);
+
+		while (block)
+		{
+			if (block->m_free)
+				fprintf(f, "Free:\t0x%08x [Bytes:%d]\n", block, block->m_chuckSize);
+			else
+				fprintf(f, "Used:\t0x%08x [Bytes:%d]\n", block, block->m_chuckSize);
+			block = block->m_next;
+		}
+
+		fprintf(f, "\n\nMemory Dump:\n");
+		unsigned char* ptr = m_poolMemory;
+		unsigned char* charPtr = m_poolMemory;
+
+		fprintf(f, "Start: 0x%08x\n", ptr);
+		unsigned char i = 0;
+
+		// Write the hex memory data
+		unsigned long bytesPerLine = 4 * 4;
+
+		fprintf(f, "\n0x%08x: ", ptr);
+		fprintf(f, "%02x", *(ptr));
+		++ptr;
+		for (i = 1; ((unsigned long)(ptr - m_poolMemory) < m_totalPoolSize); ++i, ++ptr)
+		{
+			if (i == bytesPerLine)
+			{
+				// Write all the chars for this line now
+				fprintf(f, "  ", charPtr);
+				for (unsigned long charI = 0; charI<bytesPerLine; ++charI, ++charPtr)
+					fprintf(f, "%c", *charPtr);
+				charPtr = ptr;
+
+				// Write the new line memory data
+				fprintf(f, "\n0x%08x: ", ptr);
+				fprintf(f, "%02x", *(ptr));
+				i = 0;
+			}
+			else
+				fprintf(f, ":%02x", *(ptr));
+		}
+
+		// Fill any gaps in the tab
+		if ((unsigned long)(ptr - m_poolMemory) >= m_totalPoolSize)
+		{
+			unsigned long lastLineBytes = i;
+			for (i; i< bytesPerLine; i++)
+				fprintf(f, " --");
+
+			// Write all the chars for this line now
+			fprintf(f, "  ", charPtr);
+			for (unsigned long charI = 0; charI<lastLineBytes; ++charI, ++charPtr)
+				fprintf(f, "%c", *charPtr);
+			charPtr = ptr;
+		}
+	}
+
+	fclose(f);
 }
