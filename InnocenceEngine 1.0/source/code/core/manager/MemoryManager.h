@@ -13,8 +13,10 @@ public:
 	void update() override;
 	void shutdown() override;
 
+
 	inline void* allocate(unsigned long  size);
 	inline void free(void* ptr);
+	inline void dumpToFile(const std::string& fileName) const;
 
 	static MemoryManager& getInstance()
 	{
@@ -26,7 +28,7 @@ private:
 	MemoryManager() {};
 
 	//const unsigned long  m_maxPoolSize = 1024 * 1024 * 1024;
-	const unsigned long  m_maxPoolSize = 1024;
+	const unsigned long  m_maxPoolSize = 256;
 	static const unsigned char m_minFreeBlockSize = 16;
 	unsigned long  m_totalPoolSize;
 	unsigned long  m_freePoolSize;
