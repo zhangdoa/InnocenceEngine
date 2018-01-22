@@ -10,6 +10,7 @@ void MemoryManager::setup(unsigned long  memoryPoolSize)
 {
 	// Allocate memory pool
 	m_poolMemory = ::new unsigned char[memoryPoolSize];
+	memset(m_poolMemory, 0xCC, memoryPoolSize);
 	m_freePoolSize = memoryPoolSize - sizeof(Chunk);
 	m_totalPoolSize = memoryPoolSize;
 	m_freePoolSize -= m_boundCheckSize * 2;
