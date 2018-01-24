@@ -1,18 +1,47 @@
 #include "../../main/stdafx.h"
 #include "GraphicData.h"
 
-MeshData::MeshData()
+Vertex::Vertex()
 {
 }
 
+Vertex::Vertex(const Vertex & rhs)
+{
+	m_pos = rhs.m_pos;
+	m_texCoord = rhs.m_texCoord;
+	m_normal = rhs.m_normal;
+}
 
-MeshData::~MeshData()
+Vertex& Vertex::operator=(const Vertex & rhs)
+{
+	m_pos = rhs.m_pos;
+	m_texCoord = rhs.m_texCoord;
+	m_normal = rhs.m_normal;
+	return *this;
+}
+
+Vertex::Vertex(const vec3& pos, const vec2& texCoord, const vec3& normal)
+{
+	m_pos = pos;
+	m_texCoord = texCoord;
+	m_normal = normal;
+}
+
+Vertex::~Vertex()
 {
 }
 
-void MeshData::initialize()
+void IMesh::setup()
 {
-	m_GLMeshData.init();
+	this->setup(meshDrawMethod::TRIANGLE, false, false);
+}
+
+void IMesh::setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents)
+{
+	m_meshDrawMethod = meshDrawMethod;
+	m_calculateNormals = calculateNormals;
+	m_calculateTangents = calculateTangents;
+
 	if (m_calculateNormals)
 	{
 		for (auto& l_vertices : m_vertices)
@@ -20,99 +49,68 @@ void MeshData::initialize()
 			l_vertices.m_normal = l_vertices.m_pos;
 		}
 	}
-	m_GLMeshData.sendDataToGPU(m_vertices, m_indices);
 }
 
-void MeshData::setup()
+void IMesh::addVertices(const Vertex & Vertex)
 {
+	m_vertices.emplace_back(Vertex);
 }
 
-void MeshData::setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents)
+void IMesh::addVertices(const vec3 & pos, const vec2 & texCoord, const vec3 & normal)
 {
-	m_meshDrawMethod = meshDrawMethod;
-	m_calculateNormals = calculateNormals;
-	m_calculateTangents = calculateTangents;
-	setStatus(objectStatus::ALIVE);
+
 }
 
-void MeshData::update()
+void IMesh::addVertices(float pos_x, float pos_y, float pos_z, float texCoord_x, float texCoord_y, float normal_x, float normal_y, float normal_z)
 {
-	if (getStatus() == objectStatus::ALIVE)
-	{
-		m_GLMeshData.draw(m_indices, m_meshDrawMethod);
-	}
+	m_vertices.emplace_back(Vertex(vec3(pos_x, pos_y, pos_z), vec2(texCoord_x, texCoord_y), vec3(normal_x, normal_y, normal_z)));
 }
 
-void MeshData::shutdown()
+void IMesh::addIndices(unsigned int index)
 {
-	m_GLMeshData.shutdown();
+	m_indices.emplace_back(index);
 }
 
-std::vector<GLVertexData>& MeshData::getVertices()
+void IMesh::addUnitCube()
 {
-	return m_vertices;
-}
+	Vertex l_VertexData_1;
+	l_VertexData_1.m_pos = vec3(1.0f, 1.0f, 1.0f);
+	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 
-std::vector<unsigned int>& MeshData::getIntices()
-{
-	return m_indices;
-}
+	Vertex l_VertexData_2;
+	l_VertexData_2.m_pos = vec3(1.0f, -1.0f, 1.0f);
+	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
 
-void MeshData::addVertices(GLVertexData & GLVertexData)
-{
-	m_vertices.emplace_back(GLVertexData);
-}
+	Vertex l_VertexData_3;
+	l_VertexData_3.m_pos = vec3(-1.0f, -1.0f, 1.0f);
+	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
 
-void MeshData::addVertices(glm::vec3 & pos, glm::vec2 & texCoord, glm::vec3 & m_normal)
-{
-	m_vertices.emplace_back(GLVertexData(pos, texCoord, m_normal));
-}
+	Vertex l_VertexData_4;
+	l_VertexData_4.m_pos = vec3(-1.0f, 1.0f, 1.0f);
+	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 
-void MeshData::addVertices(float pos_x, float pos_y, float pos_z, float texCoord_x, float texCoord_y, float normal_x, float normal_y, float normal_z)
-{
-	m_vertices.emplace_back(GLVertexData(pos_x, pos_y, pos_z, texCoord_x, texCoord_y, normal_x, normal_y, normal_z));
-}
+	Vertex l_VertexData_5;
+	l_VertexData_5.m_pos = vec3(1.0f, 1.0f, -1.0f);
+	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
 
-void MeshData::addUnitCube()
-{
-	GLVertexData l_VertexData_1;
-	l_VertexData_1.m_pos = glm::vec3(1.0f, 1.0f, 1.0f);
-	l_VertexData_1.m_texCoord = glm::vec2(1.0f, 1.0f);
+	Vertex l_VertexData_6;
+	l_VertexData_6.m_pos = vec3(1.0f, -1.0f, -1.0f);
+	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
 
-	GLVertexData l_VertexData_2;
-	l_VertexData_2.m_pos = glm::vec3(1.0f, -1.0f, 1.0f);
-	l_VertexData_2.m_texCoord = glm::vec2(1.0f, 0.0f);
+	Vertex l_VertexData_7;
+	l_VertexData_7.m_pos = vec3(-1.0f, -1.0f, -1.0f);
+	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
 
-	GLVertexData l_VertexData_3;
-	l_VertexData_3.m_pos = glm::vec3(-1.0f, -1.0f, 1.0f);
-	l_VertexData_3.m_texCoord = glm::vec2(0.0f, 0.0f);
-
-	GLVertexData l_VertexData_4;
-	l_VertexData_4.m_pos = glm::vec3(-1.0f, 1.0f, 1.0f);
-	l_VertexData_4.m_texCoord = glm::vec2(0.0f, 1.0f);
-
-	GLVertexData l_VertexData_5;
-	l_VertexData_5.m_pos = glm::vec3(1.0f, 1.0f, -1.0f);
-	l_VertexData_5.m_texCoord = glm::vec2(1.0f, 1.0f);
-
-	GLVertexData l_VertexData_6;
-	l_VertexData_6.m_pos = glm::vec3(1.0f, -1.0f, -1.0f);
-	l_VertexData_6.m_texCoord = glm::vec2(1.0f, 0.0f);
-
-	GLVertexData l_VertexData_7;
-	l_VertexData_7.m_pos = glm::vec3(-1.0f, -1.0f, -1.0f);
-	l_VertexData_7.m_texCoord = glm::vec2(0.0f, 0.0f);
-
-	GLVertexData l_VertexData_8;
-	l_VertexData_8.m_pos = glm::vec3(-1.0f, 1.0f, -1.0f);
-	l_VertexData_8.m_texCoord = glm::vec2(0.0f, 1.0f);
+	Vertex l_VertexData_8;
+	l_VertexData_8.m_pos = vec3(-1.0f, 1.0f, -1.0f);
+	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
 
 
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
 	for (auto& l_vertexData : m_vertices)
 	{
-		l_vertexData.m_normal = glm::normalize(l_vertexData.m_pos);
+		l_vertexData.m_normal = l_vertexData.m_pos.normalize();
 		//l_vertexData.m_tangent = glm::normalize(glm::cross(glm::vec3(0.0, 0.0, 1.0), l_vertexData.m_normal));
 		//l_vertexData.m_bitangent = glm::normalize(glm::cross(l_vertexData.m_tangent, l_vertexData.m_normal));
 	}
@@ -124,7 +122,7 @@ void MeshData::addUnitCube()
 		1, 5, 2, 5, 6, 2 };
 }
 
-void MeshData::addUnitSphere()
+void IMesh::addUnitSphere()
 {
 	unsigned int X_SEGMENTS = 64;
 	unsigned int Y_SEGMENTS = 64;
@@ -140,10 +138,10 @@ void MeshData::addUnitSphere()
 			double yPos = glm::cos(ySegment * PI);
 			double zPos = glm::sin(xSegment * 2.0f * PI) * glm::sin(ySegment * PI);
 
-			GLVertexData l_VertexData;
-			l_VertexData.m_pos = glm::vec3(xPos, yPos, zPos);
-			l_VertexData.m_texCoord = glm::vec2(xSegment, ySegment);
-			l_VertexData.m_normal = glm::normalize(glm::vec3(xPos, yPos, zPos));
+			Vertex l_VertexData;
+			l_VertexData.m_pos = vec3(xPos, yPos, zPos);
+			l_VertexData.m_texCoord = vec2(xSegment, ySegment);
+			l_VertexData.m_normal = vec3(xPos, yPos, zPos).normalize();
 			//l_VertexData.m_tangent = glm::normalize(glm::cross(glm::vec3(0.0, 0.0, 1.0), l_VertexData.m_normal));
 			//l_VertexData.m_bitangent = glm::normalize(glm::cross(l_VertexData.m_tangent, l_VertexData.m_normal));
 			m_vertices.emplace_back(l_VertexData);
@@ -173,177 +171,26 @@ void MeshData::addUnitSphere()
 	}
 }
 
-
-void MeshData::addUnitQuad()
+void IMesh::addUnitQuad()
 {
-	GLVertexData l_VertexData_1;
-	l_VertexData_1.m_pos = glm::vec3(1.0f, 1.0f, 0.0f);
-	l_VertexData_1.m_texCoord = glm::vec2(1.0f, 1.0f);
+	Vertex l_VertexData_1;
+	l_VertexData_1.m_pos = vec3(1.0f, 1.0f, 0.0f);
+	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 
-	GLVertexData l_VertexData_2;
-	l_VertexData_2.m_pos = glm::vec3(1.0f, -1.0f, 0.0f);
-	l_VertexData_2.m_texCoord = glm::vec2(1.0f, 0.0f);
+	Vertex l_VertexData_2;
+	l_VertexData_2.m_pos = vec3(1.0f, -1.0f, 0.0f);
+	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
 
-	GLVertexData l_VertexData_3;
-	l_VertexData_3.m_pos = glm::vec3(-1.0f, -1.0f, 0.0f);
-	l_VertexData_3.m_texCoord = glm::vec2(0.0f, 0.0f);
+	Vertex l_VertexData_3;
+	l_VertexData_3.m_pos = vec3(-1.0f, -1.0f, 0.0f);
+	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
 
-	GLVertexData l_VertexData_4;
-	l_VertexData_4.m_pos = glm::vec3(-1.0f, 1.0f, 0.0f);
-	l_VertexData_4.m_texCoord = glm::vec2(0.0f, 1.0f);
+	Vertex l_VertexData_4;
+	l_VertexData_4.m_pos = vec3(-1.0f, 1.0f, 0.0f);
+	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4 };
 	m_indices = { 0, 1, 3, 1, 2, 3 };
-}
-
-void MeshData::setMeshDrawMethod(meshDrawMethod meshDrawMethod)
-{
-	m_meshDrawMethod = meshDrawMethod;
-}
-
-const meshDrawMethod & MeshData::getMeshDrawMethod() const
-{
-	return m_meshDrawMethod;
-}
-
-TextureData::TextureData()
-{
-}
-
-TextureData::~TextureData()
-{
-}
-
-void TextureData::initialize()
-{
-	m_GLTextureData.init(m_textureType, m_textureWrapMethod);
-	m_GLTextureData.sendDataToGPU(m_textureType, m_textureIndex, m_textureFormat, m_textureWidth, m_textureHeight, m_textureRawData);
-	setStatus(objectStatus::ALIVE);
-}
-
-void TextureData::setup()
-{
-}
-
-void TextureData::setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData)
-{
-	m_textureType = textureType;
-	m_textureWrapMethod = textureWrapMethod;
-	m_textureIndex = textureIndex;
-	m_textureFormat = textureFormat;
-	m_textureWidth = textureWidth;
-	m_textureHeight = textureHeight;
-	m_textureRawData = textureData;
-}
-
-void TextureData::update()
-{
-	if (getStatus() == objectStatus::ALIVE)
-	{
-		m_GLTextureData.draw(m_textureType);
-	}
-}
-
-void TextureData::shutdown()
-{
-	m_GLTextureData.shutdown();
-}
-
-//ShadowMapData::ShadowMapData()
-//{
-//}
-//
-//ShadowMapData::~ShadowMapData()
-//{
-//}
-//
-//void ShadowMapData::init()
-//{
-//	//generate depth map frame buffer
-//	glGenFramebuffers(1, &depthMapFBO);
-//
-//	//generate depth map texture
-//	glGenTextures(1, &m_textureID);
-//	glBindTexture(GL_TEXTURE_2D, m_textureID);
-//	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_shadowMapWidth, m_shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-//
-//	//bind frame buffer
-//	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-//	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_textureID, 0);
-//
-//	//no need for color
-//	glDrawBuffer(GL_NONE);
-//	glReadBuffer(GL_NONE);
-//	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//}
-//
-//void ShadowMapData::draw()
-//{
-//	glViewport(0, 0, m_shadowMapWidth, m_shadowMapHeight);
-//	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-//	glClear(GL_DEPTH_BUFFER_BIT);
-//
-//	switch (m_shadowProjectionType)
-//	{
-//	case shadowProjectionType::ORTHOGRAPHIC: m_projectionMatrix = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 10.0f); break;
-//	case shadowProjectionType::PERSPECTIVE: m_projectionMatrix = glm::perspective(glm::radians(45.0f), (GLfloat)m_shadowMapWidth / (GLfloat)m_shadowMapHeight, 1.0f, 100.0f); break;
-//	}
-//
-//
-//	// @TODO: finish shadow map drawing
-//	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//}
-//
-//void ShadowMapData::shutdown()
-//{
-//}
-//
-//void ShadowMapData::setShadowProjectionType(shadowProjectionType shadowProjectionType)
-//{
-//	m_shadowProjectionType = shadowProjectionType;
-//}
-//
-//void ShadowMapData::getProjectionMatrix(glm::mat4 & projectionMatrix)
-//{
-//	projectionMatrix = m_projectionMatrix;
-//}
-
-
-
-void IMesh::setup()
-{
-	this->setup(meshDrawMethod::TRIANGLE, false, false);
-}
-
-void IMesh::setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents)
-{
-	m_meshDrawMethod = meshDrawMethod;
-	m_calculateNormals = calculateNormals;
-	m_calculateTangents = calculateTangents;
-}
-
-void IMesh::addVertices(IVertex & IVertex)
-{
-}
-
-void IMesh::addVertices(float pos_x, float pos_y, float pos_z, float texCoord_x, float texCoord_y, float normal_x, float normal_y, float normal_z)
-{
-}
-
-void IMesh::addUnitCube()
-{
-}
-
-void IMesh::addUnitSphere()
-{
-}
-
-void IMesh::addUnitQuad()
-{
 }
 
 meshID IMesh::getMeshDataID() const
@@ -359,7 +206,7 @@ void GLMesh::initialize()
 
 	std::vector<float> l_verticesBuffer;
 
-	std::for_each(m_vertices.begin(), m_vertices.end(), [&](IVertex val)
+	std::for_each(m_vertices.begin(), m_vertices.end(), [&](Vertex val)
 	{
 		l_verticesBuffer.emplace_back(val.m_pos.x);
 		l_verticesBuffer.emplace_back(val.m_pos.y);
@@ -399,10 +246,13 @@ void GLMesh::initialize()
 
 void GLMesh::update()
 {
-	glBindVertexArray(m_VAO);
-	glDrawElements(GL_TRIANGLES + (int)m_meshDrawMethod, m_indices.size(), GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-	glActiveTexture(GL_TEXTURE0);
+	if (getStatus() == objectStatus::ALIVE)
+	{
+		glBindVertexArray(m_VAO);
+		glDrawElements(GL_TRIANGLES + (int)m_meshDrawMethod, m_indices.size(), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		glActiveTexture(GL_TEXTURE0);
+	}
 }
 
 void GLMesh::shutdown()
@@ -557,3 +407,4 @@ void GLTexture::shutdown()
 
 	setStatus(objectStatus::SHUTDOWN);
 }
+

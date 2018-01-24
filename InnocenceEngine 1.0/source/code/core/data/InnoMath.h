@@ -108,19 +108,48 @@
 //	return vec4<T>(m_y * rhs.m_z - m_z * rhs.m_x, m_z * rhs.m_x - m_x * rhs.m_z, m_x * rhs.m_y - m_y * rhs.m_x, 0);
 //}
 
-typedef __m128 __vec4;
-typedef __vec4 __vec3;
-typedef __vec4 __vec2;
+//typedef __m128 __vec4;
+//typedef __vec4 __vec3;
+//typedef __vec4 __vec2;
 
-struct vec3
+class vec3
 {
+public:
 	vec3();
+	vec3(float rhsX, float rhsY, float rhsZ);
+	vec3(const vec3& rhs);
+	vec3& operator=(const vec3& rhs);
+
 	~vec3();
 
-	inline vec3 add(vec3& rhs);
-	inline vec3 sub(vec3& rhs);
-	inline float dot(vec3& rhs);
-	inline vec3 cross(vec3& rhs);
-	inline float length(vec3& rhs);
-	inline vec3 normalize(vec3& rhs);
+	vec3 add(const vec3& rhs);
+	vec3 sub(const vec3& rhs);
+	float dot(const vec3& rhs);
+	vec3 cross(const vec3& rhs);
+	float length();
+	vec3 normalize();
+
+	float x;
+	float y;
+	float z;
+};
+
+class vec2
+{
+public:
+	vec2();
+	vec2(float rhsX, float rhsY);
+	vec2(const vec2& rhs);
+	vec2& operator=(const vec2& rhs);
+
+	~vec2();
+
+	vec2 add(const vec2& rhs);
+	vec2 sub(const vec2& rhs);
+	float dot(const vec2& rhs);
+	float length();
+	vec2 normalize();
+
+	float x;
+	float y;
 };

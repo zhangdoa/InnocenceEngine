@@ -13,47 +13,39 @@ void RenderingManager::changeDrawTextureMode()
 
 meshID RenderingManager::addMeshData()
 {
-	MeshData newMeshData;
-	m_meshDatas.emplace(std::pair<meshID, MeshData>(newMeshData.getEntityID(), newMeshData));
-	return newMeshData.getEntityID();
+	//@TODO: dangling pointer problem here
+	GLMesh newMesh;
+	m_meshMap.emplace(std::pair<meshID, IMesh*>(newMesh.getEntityID(), &newMesh));
+	return newMesh.getEntityID();
 }
 
 textureID RenderingManager::addTextureData()
 {
-	TextureData newTextureData;
-	m_textureDatas.emplace(std::pair<textureID, TextureData>(newTextureData.getEntityID(), newTextureData));
-	return newTextureData.getEntityID();
+	//@TODO: dangling pointer problem here
+	GLTexture newTexture;
+	m_textureMap.emplace(std::pair<textureID, ITexture*>(newTexture.getEntityID(), &newTexture));
+	return newTexture.getEntityID();
 }
 
-std::unordered_map<meshID, MeshData>& RenderingManager::getMeshData()
+IMesh* RenderingManager::getMesh(meshID meshID)
 {
-	return m_meshDatas;
+	return m_meshMap.find(meshID)->second;
 }
 
-std::unordered_map<textureID, TextureData>& RenderingManager::getTextureData()
+ITexture* RenderingManager::getTexture(textureID textureID)
 {
-	return m_textureDatas;
-}
-
-MeshData & RenderingManager::getMeshData(meshID meshDataIndex)
-{
-	return m_meshDatas.find(meshDataIndex)->second;
-}
-
-TextureData & RenderingManager::getTextureData(textureID textureDataIndex)
-{
-	return m_textureDatas.find(textureDataIndex)->second;
+	return m_textureMap.find(textureID)->second;
 }
 
 void RenderingManager::setup()
 {
-	m_childEventManager.emplace_back(&GLWindowManager::getInstance());
-	m_childEventManager.emplace_back(&GLInputManager::getInstance());
-	m_childEventManager.emplace_back(&GLRenderingManager::getInstance());
+	m_childManager.emplace_back(&GLWindowManager::getInstance());
+	m_childManager.emplace_back(&GLInputManager::getInstance());
+	m_childManager.emplace_back(&GLRenderingManager::getInstance());
 	//m_childEventManager.emplace_back(&GLGUIManager::getInstance());
-	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	for (size_t i = 0; i < m_childManager.size(); i++)
 	{
-		m_childEventManager[i].get()->setup();
+		m_childManager[i].get()->setup();
 	}
 	GLRenderingManager::getInstance().setScreenResolution(GLWindowManager::getInstance().getScreenResolution());
 
@@ -63,9 +55,9 @@ void RenderingManager::setup()
 
 void RenderingManager::initialize()
 {
-	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	for (size_t i = 0; i < m_childManager.size(); i++)
 	{
-		m_childEventManager[i].get()->initialize();
+		m_childManager[i].get()->initialize();
 	}
 
 	for (size_t i = 0; i < SceneGraphManager::getInstance().getInputQueue().size(); i++)
@@ -95,15 +87,15 @@ if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)
 
 void RenderingManager::shutdown()
 {
-	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	for (size_t i = 0; i < m_childManager.size(); i++)
 	{
 		// reverse 'destructor'
-		m_childEventManager[m_childEventManager.size() - 1 - i].get()->shutdown();
+		m_childManager[m_childManager.size() - 1 - i].get()->shutdown();
 	}
-	for (size_t i = 0; i < m_childEventManager.size(); i++)
+	for (size_t i = 0; i < m_childManager.size(); i++)
 	{
 		// reverse 'destructor'
-		m_childEventManager[m_childEventManager.size() - 1 - i].release();
+		m_childManager[m_childManager.size() - 1 - i].release();
 	}
 	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("RenderingManager has been shutdown.");
@@ -118,7 +110,7 @@ void RenderingManager::AsyncRender()
 	//GLRenderingManager::getInstance().forwardRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
 	
 	//defer render
-	GLRenderingManager::getInstance().deferRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue(), m_meshDatas, m_textureDatas);
+	GLRenderingManager::getInstance().deferRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue(), m_meshMap, m_textureMap);
 	
 	GLWindowManager::getInstance().update();
 

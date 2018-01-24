@@ -55,7 +55,7 @@ private:
 	modelMap processAssimpScene(const std::string& fileName, const aiScene* aiScene, meshDrawMethod& meshDrawMethod, textureWrapMethod& textureWrapMethod);
 	modelMap processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod);
 	meshID processSingleAssimpMesh(aiMesh* mesh, meshDrawMethod meshDrawMethod) const;
-	void addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData& meshData) const;
+	void addVertex(aiMesh * aiMesh, int vertexIndex, IMesh* mesh) const;
 	textureMap processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod);
 
 	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
