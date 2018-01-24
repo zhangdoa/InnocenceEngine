@@ -25,10 +25,6 @@ void MemoryManager::setup(unsigned long  memoryPoolSize)
 
 void MemoryManager::initialize()
 {
-	void* test1 = allocate(16);
-	void* test2 = allocate(24);
-	free(test1);
-	dumpToFile("memoryDump.innoDump");
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("MemoryManager has been initialized.");
 }
@@ -43,7 +39,8 @@ void MemoryManager::shutdown()
 	LogManager::getInstance().printLog("MemoryManager has been shutdown.");
 }
 
-inline void * MemoryManager::allocate(unsigned long  size)
+template<class T>
+inline T * MemoryManager::allocate(unsigned long size)
 {
 	// add bound check size
 	unsigned long l_requiredSize = size + sizeof(Chunk) + m_boundCheckSize * 2;
@@ -98,7 +95,8 @@ inline void * MemoryManager::allocate(unsigned long  size)
 	return (l_blockData + sizeof(Chunk));
 }
 
-inline void MemoryManager::free(void * ptr)
+template<class T>
+inline void MemoryManager::free(T * ptr)
 {
 	// is a valid node?
 	if (!ptr) return;

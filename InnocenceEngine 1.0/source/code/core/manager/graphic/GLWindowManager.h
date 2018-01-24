@@ -1,8 +1,8 @@
 #pragma once
-#include "../../interface/IEventManager.h"
+#include "../../interface/IManager.h"
 #include "../../manager/LogManager.h"
 
-class GLWindowManager : public IEventManager
+class GLWindowManager : public IManager
 {
 public:
 	~GLWindowManager() {};

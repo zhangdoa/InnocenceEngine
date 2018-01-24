@@ -1,5 +1,5 @@
 #pragma once
-#include "../interface/IEventManager.h"
+#include "../interface/IManager.h"
 #include "../manager/LogManager.h"
 #include "../manager/graphic/RenderingManager.h"
 #include "../data/GraphicData.h"
@@ -11,7 +11,7 @@
 #include "assimp/postprocess.h"
 
 enum class unitMeshType { QUAD, CUBE, SPHERE };
-class AssetManager : public IEventManager
+class AssetManager : public IManager
 {
 public:
 	~AssetManager() {};

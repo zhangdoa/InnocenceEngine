@@ -14,9 +14,7 @@
   <ItemGroup>
     <ClCompile Include="code\core\component\CameraComponent.cpp" />
     <ClCompile Include="code\core\data\GraphicData.cpp" />
-    <ClCompile Include="code\core\interface\IBaseObject.cpp" />
     <ClCompile Include="code\core\interface\IGameData.cpp" />
-    <ClCompile Include="code\core\interface\IGameEntity.cpp" />
     <ClCompile Include="code\core\manager\AssetManager.cpp" />
     <ClCompile Include="code\core\manager\CoreManager.cpp" />
     <ClCompile Include="code\core\manager\LogManager.cpp" />
@@ -33,7 +31,6 @@
     <ClCompile Include="code\core\manager\graphic\SceneGraphManager.cpp" />
     <ClCompile Include="code\core\manager\graphic\GLWindowManager.cpp" />
     <ClCompile Include="code\core\manager\graphic\GLInputManager.cpp" />
-    <ClCompile Include="code\core\interface\IEventManager.cpp" />
     <ClCompile Include="code\core\manager\graphic\GLGUIManager.cpp" />
     <ClCompile Include="code\core\component\VisibleComponent.cpp" />
     <ClCompile Include="code\core\component\LightComponent.cpp" />
@@ -42,13 +39,15 @@
     <ClCompile Include="code\core\manager\TaskManager.cpp" />
     <ClCompile Include="code\core\data\InnoTask.cpp" />
     <ClCompile Include="code\core\manager\MemoryManager.cpp" />
+    <ClCompile Include="code\core\interface\BaseEntity.cpp" />
+    <ClCompile Include="code\core\interface\IEntity.cpp" />
+    <ClCompile Include="code\core\interface\IObject.cpp" />
+    <ClCompile Include="code\core\interface\IManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
     <ClInclude Include="code\core\data\GraphicData.h" />
-    <ClInclude Include="code\core\interface\IBaseObject.h" />
     <ClInclude Include="code\core\interface\IGameData.h" />
-    <ClInclude Include="code\core\interface\IGameEntity.h" />
     <ClInclude Include="code\core\manager\AssetManager.h" />
     <ClInclude Include="code\core\manager\CoreManager.h" />
     <ClInclude Include="code\core\manager\LogManager.h" />
@@ -69,7 +68,6 @@
     <ClInclude Include="code\core\manager\graphic\SceneGraphManager.h" />
     <ClInclude Include="code\core\manager\graphic\GLWindowManager.h" />
     <ClInclude Include="code\core\manager\graphic\GLInputManager.h" />
-    <ClInclude Include="code\core\interface\IEventManager.h" />
     <ClInclude Include="code\core\manager\graphic\GLGUIManager.h" />
     <ClInclude Include="code\core\component\VisibleComponent.h" />
     <ClInclude Include="code\core\component\LightComponent.h" />
@@ -77,5 +75,9 @@
     <ClInclude Include="code\core\manager\TaskManager.h" />
     <ClInclude Include="code\core\data\InnoTask.h" />
     <ClInclude Include="code\core\manager\MemoryManager.h" />
+    <ClInclude Include="code\core\interface\BaseEntity.h" />
+    <ClInclude Include="code\core\interface\IEntity.h" />
+    <ClInclude Include="code\core\interface\IObject.h" />
+    <ClInclude Include="code\core\interface\IManager.h" />
   </ItemGroup>
 </Project>

@@ -1,8 +1,8 @@
 #pragma once
-#include "../interface/IEventManager.h"
+#include "../interface/IManager.h"
 #include "LogManager.h"
 
-class MemoryManager : public IEventManager
+class MemoryManager : public IManager
 {
 public:
 	~MemoryManager() {};
@@ -13,9 +13,12 @@ public:
 	void update() override;
 	void shutdown() override;
 
-
-	inline void* allocate(unsigned long  size);
-	inline void free(void* ptr);
+	template<class T>
+	inline T* allocate(unsigned long size);
+	
+	template<class T>
+	inline void free(T* ptr);
+	
 	inline void dumpToFile(const std::string& fileName) const;
 
 	static MemoryManager& getInstance()

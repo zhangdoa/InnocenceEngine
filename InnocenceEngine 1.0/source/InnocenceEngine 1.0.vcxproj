@@ -156,13 +156,14 @@
   <ItemGroup>
     <ClCompile Include="code\core\component\CameraComponent.cpp" />
     <ClCompile Include="code\core\data\GraphicData.cpp" />
-    <ClCompile Include="code\core\interface\IBaseObject.cpp" />
+    <ClCompile Include="code\core\interface\BaseEntity.cpp" />
+    <ClCompile Include="code\core\interface\IObject.cpp" />
     <ClCompile Include="code\core\interface\IGameData.cpp" />
-    <ClCompile Include="code\core\interface\IGameEntity.cpp" />
+    <ClCompile Include="code\core\interface\IEntity.cpp" />
     <ClCompile Include="code\core\manager\AssetManager.cpp" />
     <ClCompile Include="code\core\manager\CoreManager.cpp" />
     <ClCompile Include="code\core\manager\graphic\GLGUIManager.cpp" />
-    <ClCompile Include="code\core\interface\IEventManager.cpp" />
+    <ClCompile Include="code\core\interface\IManager.cpp" />
     <ClCompile Include="code\core\manager\graphic\GLInputManager.cpp" />
     <ClCompile Include="code\core\manager\LogManager.cpp" />
     <ClCompile Include="code\core\manager\graphic\RenderingManager.cpp" />
@@ -188,13 +189,14 @@
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
     <ClInclude Include="code\core\data\GraphicData.h" />
-    <ClInclude Include="code\core\interface\IBaseObject.h" />
+    <ClInclude Include="code\core\interface\BaseEntity.h" />
+    <ClInclude Include="code\core\interface\IObject.h" />
     <ClInclude Include="code\core\interface\IGameData.h" />
-    <ClInclude Include="code\core\interface\IGameEntity.h" />
+    <ClInclude Include="code\core\interface\IEntity.h" />
     <ClInclude Include="code\core\manager\AssetManager.h" />
     <ClInclude Include="code\core\manager\CoreManager.h" />
     <ClInclude Include="code\core\manager\graphic\GLGUIManager.h" />
-    <ClInclude Include="code\core\interface\IEventManager.h" />
+    <ClInclude Include="code\core\interface\IManager.h" />
     <ClInclude Include="code\core\manager\graphic\GLInputManager.h" />
     <ClInclude Include="code\core\manager\LogManager.h" />
     <ClInclude Include="code\core\manager\graphic\RenderingManager.h" />

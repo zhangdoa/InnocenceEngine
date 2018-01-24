@@ -1,9 +1,9 @@
 #pragma once
-#include "../interface/IEventManager.h"
+#include "../interface/IManager.h"
 #include "../manager/LogManager.h"
 
 
-class TimeManager : public IEventManager
+class TimeManager : public IManager
 {
 public:
 	~TimeManager() {};

@@ -1,5 +1,5 @@
 #pragma once
-#include "../interface/IGameEntity.h"
+#include "../interface/BaseEntity.h"
 #include "../data/GraphicData.h"
 
 enum class lightType {DIRECTIONAL, POINT, SPOT};
