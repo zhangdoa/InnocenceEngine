@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../interface/IEventManager.h"
+#include "../../interface/IManager.h"
 #include "../../manager/LogManager.h"
 #include "SceneGraphManager.h"
 
@@ -9,7 +9,7 @@
 #include "../../platform-dependency/GL/GLRenderingManager.h"
 //#include "GLGUIManager.h"
 
-class RenderingManager : public IEventManager
+class RenderingManager : public IManager
 {
 public:
 	~RenderingManager() {};
@@ -39,7 +39,7 @@ private:
 	void changeDrawPolygonMode();
 	void changeDrawTextureMode();
 
-	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
+	std::vector<std::unique_ptr<IManager>> m_childEventManager;
 	std::function<void()> f_changeDrawPolygonMode;
 	std::function<void()> f_changeDrawTextureMode;	
 	std::unordered_map<meshID, MeshData> m_meshDatas;

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "IBaseObject.h"
+#include "IObject.h"
 
 #ifndef _I_GAME_DATA_H_
 #define _I_GAME_DATA_H_
 
-class IGameData : public IBaseObject
+class IGameData : public IObject
 {
 public:
 	IGameData();

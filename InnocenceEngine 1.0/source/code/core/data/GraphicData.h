@@ -1,11 +1,12 @@
 #pragma once
 #include "../manager/LogManager.h"
+#include "../interface/IEntity.h"
 #include "../platform-dependency/GL/GLGraphicData.h"
 #include "innoMath.h"
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
 
-class MeshData : public IBaseObject
+class MeshData : public IEntity
 {
 public:
 	MeshData();
@@ -42,7 +43,7 @@ private:
 
 //typedef unsigned char stbi_uc;
 
-class TextureData : public IBaseObject
+class TextureData : public IEntity
 {
 public:
 	TextureData();
@@ -67,8 +68,8 @@ private:
 	void* m_textureRawData;
 };
 
-typedef GameObjectID textureID;
-typedef GameObjectID meshID;
+typedef EntityID textureID;
+typedef EntityID meshID;
 typedef std::pair<textureType, textureID> texturePair;
 typedef std::unordered_map<textureType, textureID> textureMap;
 typedef std::pair<meshID, textureMap> modelPair;
@@ -107,7 +108,7 @@ struct IVertex
 	glm::vec3 m_normal;
 };
 
-class IMesh : public IBaseObject
+class IMesh : public IEntity
 {
 public:
 	IMesh() {};
@@ -150,7 +151,7 @@ private:
 	GLuint m_IBO = 0;
 };
 
-class ITexture : public IBaseObject
+class ITexture : public IEntity
 {
 public:
 	ITexture() {};

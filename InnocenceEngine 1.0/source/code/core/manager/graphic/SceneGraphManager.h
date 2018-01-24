@@ -1,13 +1,12 @@
 #pragma once
-#include "../../interface/IEventManager.h"
+#include "../../interface/IManager.h"
 #include "../LogManager.h"
-#include "../../interface/IGameEntity.h"
 #include "../../component/VisibleComponent.h"
 #include "../../component/LightComponent.h"
 #include "../../component/CameraComponent.h"
 #include "../../component/InputComponent.h"
 
-class SceneGraphManager : public IEventManager
+class SceneGraphManager : public IManager
 {
 public:
 	~SceneGraphManager() {};

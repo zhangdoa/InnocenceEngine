@@ -1,8 +1,8 @@
 #pragma once
-#include "../interface/IEventManager.h"
+#include "../interface/IManager.h"
 #include "LogManager.h"
 
-class TaskManager : public IEventManager
+class TaskManager : public IManager
 {
 public:
 	TaskManager() {};
