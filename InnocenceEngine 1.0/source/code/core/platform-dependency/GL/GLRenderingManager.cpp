@@ -170,7 +170,7 @@ void BillboardPassShader::init()
 	updateUniform("uni_texture", 0);
 }
 
-void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	bindShader();
 
@@ -204,25 +204,25 @@ void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraCompon
 					if (l_diffuseTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_diffuseTextureID->second)->second;
-						l_textureData.update();
+						l_textureData->update();
 					}
 					// any specular?
 					auto l_specularTextureID = l_textureMap.find(textureType::SPECULAR);
 					if (l_specularTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_specularTextureID->second)->second;
-						l_textureData.update();
+						l_textureData->update();
 					}
 					// any normal?
 					auto l_normalTextureID = l_textureMap.find(textureType::NORMALS);
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_normalTextureID->second)->second;
-						l_textureData.update();
+						l_textureData->update();
 					}
 				}
 				// draw meshes
-				meshDatas.find(l_graphicData.first)->second.update();
+				meshDatas.find(l_graphicData.first)->second->update();
 			}
 		}
 	}
@@ -246,7 +246,7 @@ void SkyboxShader::init()
 	updateUniform("uni_skybox", 0);
 }
 
-void SkyboxShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void SkyboxShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	glDepthFunc(GL_LEQUAL);
 
@@ -270,8 +270,8 @@ void SkyboxShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, s
 			updateUniform("uni_m", l_visibleComponent->getParentActor()->caclTransformationMatrix());
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
-				meshDatas.find(l_graphicData.first)->second.update();
-				textureDatas.find(l_graphicData.second.find(textureType::CUBEMAP)->second)->second.update();
+				meshDatas.find(l_graphicData.first)->second->update();
+				textureDatas.find(l_graphicData.second.find(textureType::CUBEMAP)->second)->second->update();
 			}
 		}
 	}
@@ -307,7 +307,7 @@ void GeometryPassBlinnPhongShader::init()
 
 }
 
-void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	bindShader();
 
@@ -340,25 +340,25 @@ void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cam
 					if (l_diffuseTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_diffuseTextureID->second)->second;
-						l_textureData.update();
+						l_textureData->update();
 					}
 					// any specular?
 					auto l_specularTextureID = l_textureMap.find(textureType::SPECULAR);
 					if (l_specularTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_specularTextureID->second)->second;
-						l_textureData.update();
+						l_textureData->update();
 					}
 					// any normal?
 					auto l_normalTextureID = l_textureMap.find(textureType::NORMALS);
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_normalTextureID->second)->second;
-						l_textureData.update();
+						l_textureData->update();
 					}
 				}
 				// draw meshes
-				meshDatas.find(l_graphicData.first)->second.update();
+				meshDatas.find(l_graphicData.first)->second->update();
 			}
 		}
 	}
@@ -386,7 +386,7 @@ void LightPassBlinnPhongShader::init()
 	updateUniform("uni_RT3", 3);
 }
 
-void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	bindShader();
 
@@ -443,7 +443,7 @@ void GeometryPassPBSShader::init()
 	updateUniform("uni_aoTexture", 4);
 }
 
-void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	bindShader();
 
@@ -476,39 +476,39 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_normalTextureID->second)->second;
-						l_textureData.update();
+						l_textureData->update();
 					}
 					// any albedo?
 					auto& l_albedoTextureID = l_textureMap.find(textureType::DIFFUSE);
 					if (l_albedoTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_albedoTextureID->second)->second;
-						l_textureData.update();
+						l_textureData->update();
 					}
 					// any metallic?
 					auto& l_metallicTextureID = l_textureMap.find(textureType::SPECULAR);
 					if (l_metallicTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_metallicTextureID->second)->second;
-						l_textureData.update();
+						l_textureData->update();
 					}
 					// any roughness?
 					auto& l_roughnessTextureID = l_textureMap.find(textureType::AMBIENT);
 					if (l_roughnessTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_roughnessTextureID->second)->second;
-						l_textureData.update();
+						l_textureData->update();
 					}
 					// any ao?
 					auto& l_aoTextureID = l_textureMap.find(textureType::EMISSIVE);
 					if (l_aoTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureDatas.find(l_aoTextureID->second)->second;
-						l_textureData.update();
+						l_textureData->update();
 					}
 				}
 				// draw meshes
-				meshDatas.find(l_graphicData.first)->second.update();
+				meshDatas.find(l_graphicData.first)->second->update();
 			}
 		}
 	}
@@ -537,7 +537,7 @@ void LightPassPBSShader::init()
 	updateUniform("uni_RT3", 3);
 }
 
-void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	bindShader();
 
@@ -587,7 +587,7 @@ void FinalPassShader::init()
 	updateUniform("uni_finalColor", 0);
 }
 
-void FinalPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void FinalPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	bindShader();
 }
@@ -617,7 +617,7 @@ void DebuggerShader::init()
 	bindShader();
 }
 
-void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	bindShader();
 
@@ -641,13 +641,13 @@ void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents,
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
 				// draw meshes
-				meshDatas.find(l_graphicData.first)->second.update();
+				meshDatas.find(l_graphicData.first)->second->update();
 			}
 		}
 	}
 }
 
-void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	// draw billboard
 	BillboardPassShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
@@ -655,7 +655,7 @@ void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComp
 	SkyboxShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 }
 
-void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	renderGeometryPass(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
 	renderLightPass(cameraComponents, lightComponents, visibleComponents, meshDatas, textureDatas);
@@ -727,7 +727,7 @@ void GLRenderingManager::initializeGeometryPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_geometryPassFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_geometryPassRBO);
@@ -797,7 +797,7 @@ void GLRenderingManager::initializeLightPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_lightPassFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_lightPassRBO);
@@ -825,7 +825,7 @@ void GLRenderingManager::initializeBillboardPass()
 {
 }
 
-void GLRenderingManager::renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void GLRenderingManager::renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 }
 
@@ -855,7 +855,7 @@ void GLRenderingManager::initializeFinalPass()
 	glBindVertexArray(0);
 }
 
-void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, MeshData>& meshDatas, std::unordered_map<EntityID, TextureData>& textureDatas)
+void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);

@@ -18,19 +18,19 @@ void AssetManager::initialize()
 	m_basicAOTemplate = loadTextureFromDisk("basic_ao.png", textureType::EMISSIVE, textureWrapMethod::REPEAT);
 
 	m_UnitCubeTemplate = RenderingManager::getInstance().addMeshData();
-	auto lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitCubeTemplate);
+	auto lastMeshData = RenderingManager::getInstance().getMesh(m_UnitCubeTemplate);
 	lastMeshData->addUnitCube();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE, false, false);
 	lastMeshData->initialize();
 
 	m_UnitSphereTemplate = RenderingManager::getInstance().addMeshData();
-	lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitSphereTemplate);
+	lastMeshData = RenderingManager::getInstance().getMesh(m_UnitSphereTemplate);
 	lastMeshData->addUnitSphere();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
 	lastMeshData->initialize();
 
 	m_UnitQuadTemplate = RenderingManager::getInstance().addMeshData();
-	lastMeshData = &RenderingManager::getInstance().getMeshData(m_UnitQuadTemplate);
+	lastMeshData = RenderingManager::getInstance().getMesh(m_UnitQuadTemplate);
 	lastMeshData->addUnitQuad();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE, true, true);
 	lastMeshData->initialize();
@@ -201,11 +201,11 @@ modelMap AssetManager::processAssimpNode(const std::string& fileName, aiNode * n
 meshID AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDrawMethod meshDrawMethod) const
 {
 	auto l_meshDataID = RenderingManager::getInstance().addMeshData();
-	auto& lastMeshData = RenderingManager::getInstance().getMeshData(l_meshDataID);
+	auto lastMeshData = RenderingManager::getInstance().getMesh(l_meshDataID);
 
 	for (auto i = (unsigned int)0; i < mesh->mNumVertices; i++)
 	{
-		addVertexData(mesh, i, lastMeshData);
+		addVertex(mesh, i, lastMeshData);
 	}
 
 	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -215,81 +215,61 @@ meshID AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDrawMethod meshD
 		// retrieve all indices of the face and store them in the indices vector
 		for (auto j = (unsigned int)0; j < face.mNumIndices; j++)
 		{
-			lastMeshData.getIntices().emplace_back(face.mIndices[j]);
+			lastMeshData->addIndices(face.mIndices[j]);
 		}
 	}
-	lastMeshData.setup(meshDrawMethod, false, false);
-	//lastMeshData.initialize();
+	lastMeshData->setup(meshDrawMethod, false, false);
 	LogManager::getInstance().printLog("innoMesh is loaded.");
 	return l_meshDataID;
 }
 
-void AssetManager::addVertexData(aiMesh * aiMesh, int vertexIndex, MeshData& meshData) const
+void AssetManager::addVertex(aiMesh * aiMesh, int vertexIndex, IMesh * mesh) const
 {
-	// @TODO: should pass in a GLVertexData reference rather than wasting memory here
-	GLVertexData vertexData;
+	Vertex l_Vertex;
+
 	// positions
-	vertexData.m_pos.x = aiMesh->mVertices[vertexIndex].x;
-	vertexData.m_pos.y = aiMesh->mVertices[vertexIndex].y;
-	vertexData.m_pos.z = aiMesh->mVertices[vertexIndex].z;
+	if (&aiMesh->mVertices[vertexIndex] != nullptr)
+	{
+		l_Vertex.m_pos.x = aiMesh->mVertices[vertexIndex].x;
+		l_Vertex.m_pos.y = aiMesh->mVertices[vertexIndex].y;
+		l_Vertex.m_pos.z = aiMesh->mVertices[vertexIndex].z;
+	}
+	else
+	{
+		l_Vertex.m_pos.x = 0.0f;
+		l_Vertex.m_pos.y = 0.0f;
+		l_Vertex.m_pos.z = 0.0f;
+	}
 
 	// texture coordinates
 	if (aiMesh->mTextureCoords[0])
 	{
 		// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
 		// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-		vertexData.m_texCoord.x = aiMesh->mTextureCoords[0][vertexIndex].x;
-		vertexData.m_texCoord.y = aiMesh->mTextureCoords[0][vertexIndex].y;
+		l_Vertex.m_texCoord.x = aiMesh->mTextureCoords[0][vertexIndex].x;
+		l_Vertex.m_texCoord.y = aiMesh->mTextureCoords[0][vertexIndex].y;
 	}
 	else
 	{
-		vertexData.m_texCoord.x = 0.0f;
-		vertexData.m_texCoord.y = 0.0f;
+		l_Vertex.m_texCoord.x = 0.0f;
+		l_Vertex.m_texCoord.y = 0.0f;
 	}
 
 	// normals
 	if (aiMesh->mNormals)
 	{
-		vertexData.m_normal.x = aiMesh->mNormals[vertexIndex].x;
-		vertexData.m_normal.y = aiMesh->mNormals[vertexIndex].y;
-		vertexData.m_normal.z = aiMesh->mNormals[vertexIndex].z;
+		l_Vertex.m_normal.x = aiMesh->mNormals[vertexIndex].x;
+		l_Vertex.m_normal.y = aiMesh->mNormals[vertexIndex].y;
+		l_Vertex.m_normal.z = aiMesh->mNormals[vertexIndex].z;
 	}
 	else
 	{
-		vertexData.m_normal.x = 0.0f;
-		vertexData.m_normal.y = 0.0f;
-		vertexData.m_normal.z = 0.0f;
+		l_Vertex.m_normal.x = 0.0f;
+		l_Vertex.m_normal.y = 0.0f;
+		l_Vertex.m_normal.z = 0.0f;
 	}
 
-	// tangent
-	if (aiMesh->mTangents)
-	{
-		vertexData.m_tangent.x = aiMesh->mTangents[vertexIndex].x;
-		vertexData.m_tangent.y = aiMesh->mTangents[vertexIndex].y;
-		vertexData.m_tangent.z = aiMesh->mTangents[vertexIndex].z;
-	}
-	else
-	{
-		vertexData.m_tangent.x = 0.0f;
-		vertexData.m_tangent.y = 0.0f;
-		vertexData.m_tangent.z = 0.0f;
-	}
-
-
-	// bitangent
-	if (aiMesh->mBitangents)
-	{
-		vertexData.m_bitangent.x = aiMesh->mBitangents[vertexIndex].x;
-		vertexData.m_bitangent.y = aiMesh->mBitangents[vertexIndex].y;
-		vertexData.m_bitangent.z = aiMesh->mBitangents[vertexIndex].z;
-	}
-	else
-	{
-		vertexData.m_bitangent.x = 0.0f;
-		vertexData.m_bitangent.y = 0.0f;
-		vertexData.m_bitangent.z = 0.0f;
-	}
-	meshData.getVertices().emplace_back(vertexData);
+	mesh->addVertices(l_Vertex);
 }
 
 textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod)
@@ -383,9 +363,9 @@ textureID AssetManager::loadTextureFromDisk(const std::string & fileName, textur
 	if (data)
 	{
 		auto id = RenderingManager::getInstance().addTextureData();
-		auto& lastTextureData = RenderingManager::getInstance().getTextureData(id);
-		lastTextureData.setup(textureType, textureWrapMethod, 0, nrChannels, width, height, data);
-		lastTextureData.initialize();
+		auto lastTextureData = RenderingManager::getInstance().getTexture(id);
+		lastTextureData->setup(textureType, textureWrapMethod, 0, nrChannels, width, height, data);
+		lastTextureData->initialize();
 		LogManager::getInstance().printLog("innoTexture: " + fileName + " is loaded.");
 		return id;
 	}
@@ -438,7 +418,7 @@ void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName,
 		if (data)
 		{
 			auto id = RenderingManager::getInstance().addTextureData();
-			auto lastTextureData = &RenderingManager::getInstance().getTextureData(id);
+			auto lastTextureData = RenderingManager::getInstance().getTexture(id);
 			lastTextureData->setup(textureType::CUBEMAP, visibleComponent.m_textureWrapMethod, i, nrChannels, width, height, data);
 			visibleComponent.overwriteTextureData(texturePair(textureType::CUBEMAP, id));
 			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " is loaded.");
