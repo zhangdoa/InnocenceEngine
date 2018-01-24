@@ -14,15 +14,15 @@ void RenderingManager::changeDrawTextureMode()
 meshID RenderingManager::addMeshData()
 {
 	MeshData newMeshData;
-	m_meshDatas.emplace(std::pair<meshID, MeshData>(newMeshData.getGameObjectID(), newMeshData));
-	return newMeshData.getGameObjectID();
+	m_meshDatas.emplace(std::pair<meshID, MeshData>(newMeshData.getEntityID(), newMeshData));
+	return newMeshData.getEntityID();
 }
 
 textureID RenderingManager::addTextureData()
 {
 	TextureData newTextureData;
-	m_textureDatas.emplace(std::pair<textureID, TextureData>(newTextureData.getGameObjectID(), newTextureData));
-	return newTextureData.getGameObjectID();
+	m_textureDatas.emplace(std::pair<textureID, TextureData>(newTextureData.getEntityID(), newTextureData));
+	return newTextureData.getEntityID();
 }
 
 std::unordered_map<meshID, MeshData>& RenderingManager::getMeshData()

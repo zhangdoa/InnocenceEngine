@@ -1,7 +1,7 @@
 #pragma once
-#include "../interface/IEventManager.h"
+#include "../interface/IManager.h"
 
-class LogManager : public IEventManager
+class LogManager : public IManager
 {
 public:
 	~LogManager() {};

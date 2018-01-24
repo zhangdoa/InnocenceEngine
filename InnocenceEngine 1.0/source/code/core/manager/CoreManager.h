@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../interface/IEventManager.h"
+#include "../interface/IManager.h"
 
 #include "TimeManager.h"
 #include "MemoryManager.h"
@@ -12,7 +12,7 @@
 
 #include "../interface/IGameData.h"
 
-class CoreManager : public IEventManager
+class CoreManager : public IManager
 {
 public:
 	CoreManager() {};
@@ -33,7 +33,7 @@ public:
 private:
 	~CoreManager() {};
 
-	std::vector<std::unique_ptr<IEventManager>> m_childEventManager;
+	std::vector<std::unique_ptr<IManager>> m_childEventManager;
 	IGameData* m_gameData;
 };
 

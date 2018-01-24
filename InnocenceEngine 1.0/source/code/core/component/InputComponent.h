@@ -1,5 +1,5 @@
 #pragma once
-#include "../interface/IGameEntity.h"
+#include "../interface/BaseEntity.h"
 
 class InputComponent : public BaseComponent
 {

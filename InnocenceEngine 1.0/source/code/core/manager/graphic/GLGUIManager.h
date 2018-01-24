@@ -1,10 +1,10 @@
 //#pragma once
-//#include "../../interface/IEventManager.h"
+//#include "../../interface/IManager.h"
 //#include "GLWindowManager.h"
 //#include "../../third-party/nuklear.h"
 //#include "../../third-party/nuklear_glfw_gl3.h"
 //
-//class GLGUIManager : public IEventManager
+//class GLGUIManager : public IManager
 //{
 //public:
 //	~GLGUIManager();

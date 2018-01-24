@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../../interface/IEventManager.h"
+#include "../../interface/IManager.h"
 #include "../LogManager.h"
 #include "GLWindowManager.h"
 
-class GLInputManager : public IEventManager
+class GLInputManager : public IManager
 {
 public:
 	~GLInputManager() {};

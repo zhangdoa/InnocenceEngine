@@ -348,7 +348,7 @@ void IMesh::addUnitQuad()
 
 meshID IMesh::getMeshDataID() const
 {
-	return this->getGameObjectID();
+	return this->getEntityID();
 }
 
 void GLMesh::initialize()
@@ -432,7 +432,7 @@ void ITexture::setup(textureType textureType, textureWrapMethod textureWrapMetho
 
 textureID ITexture::getTextureDataID() const
 {
-	return this->getGameObjectID();
+	return this->getEntityID();
 }
 
 void GLTexture::initialize()
