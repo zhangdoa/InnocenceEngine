@@ -51,6 +51,8 @@ void InputComponent::rotateAroundYAxis(float offset)
 
 void InputComponent::setup()
 {
+	IEntity::setup();
+
 	f_moveForward = std::bind(&InputComponent::moveForward, this);
 	f_moveBackward = std::bind(&InputComponent::moveBackward, this);
 	f_moveLeft = std::bind(&InputComponent::moveLeft, this);

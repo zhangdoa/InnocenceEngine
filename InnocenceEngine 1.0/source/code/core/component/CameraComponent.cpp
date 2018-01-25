@@ -33,6 +33,7 @@ glm::mat4 CameraComponent::getProjectionMatrix() const
 
 void CameraComponent::setup()
 {
+	IEntity::setup();
 }
 
 void CameraComponent::initialize()
