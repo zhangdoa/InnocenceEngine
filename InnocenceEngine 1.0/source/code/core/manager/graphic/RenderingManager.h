@@ -25,8 +25,8 @@ public:
 		return instance;
 	}
 
-	meshID addMeshData();
-	textureID addTextureData();
+	meshID addMesh();
+	textureID addTexture();
 	IMesh* getMesh(meshID meshID);
 	ITexture* getTexture(textureID textureID);
 
@@ -40,7 +40,5 @@ private:
 	std::vector<std::unique_ptr<IManager>> m_childManager;
 	std::function<void()> f_changeDrawPolygonMode;
 	std::function<void()> f_changeDrawTextureMode;	
-	std::unordered_map<meshID, IMesh*> m_meshMap;
-	std::unordered_map<textureID, ITexture*> m_textureMap;
 };
 
