@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IEntity.h"
+#include "../data/InnoMath.h"
 
 class Transform
 {
@@ -12,28 +13,28 @@ public:
 	void update();
 	void rotate(const glm::vec3& axis, float angle);
 
-	glm::vec3& getPos();
-	glm::quat& getRot();
-	glm::vec3& getScale();
+	vec3& getPos();
+	quat& getRot();
+	vec3& getScale();
 
-	void setPos(const glm::vec3& pos);
-	void setRot(const glm::quat& rot);
-	void setScale(const glm::vec3& scale);
+	void setPos(const vec3& pos);
+	void setRot(const quat& rot);
+	void setScale(const vec3& scale);
 
-	glm::vec3& getOldPos();
-	glm::quat& getOldRot();
-	glm::vec3& getOldScale();
+	vec3& getOldPos();
+	quat& getOldRot();
+	vec3& getOldScale();
 
-	glm::vec3 getDirection(direction direction) const;
+	vec3 getDirection(direction direction) const;
 
 private:
-	glm::vec3 m_pos;
-	glm::quat m_rot;
-	glm::vec3 m_scale;
+	vec3 m_pos;
+	quat m_rot;
+	vec3 m_scale;
 
-	glm::vec3 m_oldPos;
-	glm::quat m_oldRot;
-	glm::vec3 m_oldScale;
+	vec3 m_oldPos;
+	quat m_oldRot;
+	vec3 m_oldScale;
 };
 
 class BaseComponent;
@@ -59,19 +60,19 @@ public:
 	Transform* getTransform();
 	bool hasTransformChanged();
 
-	glm::mat4 caclLocalPosMatrix();
-	glm::mat4 caclLocalRotMatrix();
-	glm::mat4 caclLocalScaleMatrix();
+	mat4 caclLocalPosMatrix();
+	mat4 caclLocalRotMatrix();
+	mat4 caclLocalScaleMatrix();
 
-	glm::vec3 caclWorldPos();
-	glm::quat caclWorldRot();
-	glm::vec3 caclWorldScale();
+	vec3 caclWorldPos();
+	quat caclWorldRot();
+	vec3 caclWorldScale();
 
-	glm::mat4 caclWorldPosMatrix();
-	glm::mat4 caclWorldRotMatrix();
-	glm::mat4 caclWorldScaleMatrix();
+	mat4 caclWorldPosMatrix();
+	mat4 caclWorldRotMatrix();
+	mat4 caclWorldScaleMatrix();
 
-	glm::mat4 caclTransformationMatrix();
+	mat4 caclTransformationMatrix();
 
 private:
 	std::vector<BaseActor*> m_childActors;
