@@ -4,12 +4,16 @@
 IEntity::IEntity()
 {
 	m_entityID = std::rand();
-	m_className = std::string{ typeid(*this).name() };
-	m_className = m_className.substr(m_className.find("class"), std::string::npos);
 }
 
 IEntity::~IEntity()
 {
+}
+
+void IEntity::setup()
+{
+	m_className = std::string{ typeid(*this).name() };
+	m_className = m_className.substr(m_className.find("class"), std::string::npos);
 }
 
 const EntityID & IEntity::getEntityID() const

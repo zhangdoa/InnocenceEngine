@@ -281,6 +281,7 @@ mat4 BaseActor::caclTransformationMatrix()
 
 void BaseActor::setup()
 {
+	IEntity::setup();
 	for (auto l_childComponent : m_childComponents)
 	{
 		l_childComponent->setup();

@@ -42,12 +42,6 @@ void LightComponent::getLightRotMatrix(glm::mat4 & lightRotMatrix)
 	lightRotMatrix = getParentActor()->caclWorldRotMatrix();
 }
 
-//ShadowMapData & LightComponent::getShadowMapData()
-//{
-//	return m_shadowMapData;
-//}
-
-
 const lightType LightComponent::getLightType()
 {
 	return m_lightType;
@@ -71,6 +65,7 @@ glm::vec3 LightComponent::getColor() const
 
 void LightComponent::setup()
 {
+	IEntity::setup();
 }
 
 void LightComponent::initialize()
