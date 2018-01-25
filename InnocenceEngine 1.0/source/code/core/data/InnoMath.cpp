@@ -6,6 +6,7 @@ vec3::vec3()
 	x = 0.0f;
 	y = 0.0f;
 	z = 0.0f;
+	glm::mat4()[0][0];
 }
 
 vec3::vec3(float rhsX, float rhsY, float rhsZ)
@@ -245,32 +246,47 @@ mat4::mat4()
 
 mat4::mat4(const mat4 & rhs)
 {
-	m[0][0] = rhs[0][0];
-	m[0][1] = 0.0f;
-	m[0][2] = 0.0f;
-	m[0][3] = 0.0f;
-	m[1][0] = 0.0f;
-	m[1][1] = 0.0f;
-	m[1][2] = 0.0f;
-	m[1][3] = 0.0f;
-	m[2][0] = 0.0f;
-	m[2][1] = 0.0f;
-	m[2][2] = 0.0f;
-	m[2][3] = 0.0f;
-	m[3][0] = 0.0f;
-	m[3][1] = 0.0f;
-	m[3][2] = 0.0f;
-	m[3][3] = 0.0f;
+	m[0][0] = rhs.m[0][0];
+	m[0][1] = rhs.m[0][1];
+	m[0][2] = rhs.m[0][2];
+	m[0][3] = rhs.m[0][3];
+	m[1][0] = rhs.m[1][0];
+	m[1][1] = rhs.m[1][1];
+	m[1][2] = rhs.m[1][2];
+	m[1][3] = rhs.m[1][3];
+	m[2][0] = rhs.m[2][0];
+	m[2][1] = rhs.m[2][1];
+	m[2][2] = rhs.m[2][2];
+	m[2][3] = rhs.m[2][3];
+	m[3][0] = rhs.m[3][0];
+	m[3][1] = rhs.m[3][1];
+	m[3][2] = rhs.m[3][2];
+	m[3][3] = rhs.m[3][3];
 }
 
 mat4 & mat4::operator=(const mat4 & rhs)
 {
-	// TODO: insert return statement here
+	m[0][0] = rhs.m[0][0];
+	m[0][1] = rhs.m[0][1];
+	m[0][2] = rhs.m[0][2];
+	m[0][3] = rhs.m[0][3];
+	m[1][0] = rhs.m[1][0];
+	m[1][1] = rhs.m[1][1];
+	m[1][2] = rhs.m[1][2];
+	m[1][3] = rhs.m[1][3];
+	m[2][0] = rhs.m[2][0];
+	m[2][1] = rhs.m[2][1];
+	m[2][2] = rhs.m[2][2];
+	m[2][3] = rhs.m[2][3];
+	m[3][0] = rhs.m[3][0];
+	m[3][1] = rhs.m[3][1];
+	m[3][2] = rhs.m[3][2];
+	m[3][3] = rhs.m[3][3];
 }
 
-float* mat4::operator[](int index)
+float mat4::get(int rowIndex, int columnIndex)
 {
-	return m[index];
+	return m[rowIndex][columnIndex];
 }
 
 mat4 mat4::mul(const mat4 & rhs)

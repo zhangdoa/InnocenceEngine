@@ -14,6 +14,7 @@ public:
 	IEntity();
 	virtual ~IEntity();
 
+	virtual void setup() override;
 	const EntityID& getEntityID() const;
 	const std::string& getClassName() const;
 
