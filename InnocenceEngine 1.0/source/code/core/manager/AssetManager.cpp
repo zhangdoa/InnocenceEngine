@@ -17,19 +17,19 @@ void AssetManager::initialize()
 	m_basicRoughnessTemplate = loadTextureFromDisk("basic_roughness.png", textureType::AMBIENT, textureWrapMethod::REPEAT);
 	m_basicAOTemplate = loadTextureFromDisk("basic_ao.png", textureType::EMISSIVE, textureWrapMethod::REPEAT);
 
-	m_UnitCubeTemplate = RenderingManager::getInstance().addMeshData();
+	m_UnitCubeTemplate = RenderingManager::getInstance().addMesh();
 	auto lastMeshData = RenderingManager::getInstance().getMesh(m_UnitCubeTemplate);
 	lastMeshData->addUnitCube();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE, false, false);
 	lastMeshData->initialize();
 
-	m_UnitSphereTemplate = RenderingManager::getInstance().addMeshData();
+	m_UnitSphereTemplate = RenderingManager::getInstance().addMesh();
 	lastMeshData = RenderingManager::getInstance().getMesh(m_UnitSphereTemplate);
 	lastMeshData->addUnitSphere();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
 	lastMeshData->initialize();
 
-	m_UnitQuadTemplate = RenderingManager::getInstance().addMeshData();
+	m_UnitQuadTemplate = RenderingManager::getInstance().addMesh();
 	lastMeshData = RenderingManager::getInstance().getMesh(m_UnitQuadTemplate);
 	lastMeshData->addUnitQuad();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE, true, true);
@@ -200,7 +200,7 @@ modelMap AssetManager::processAssimpNode(const std::string& fileName, aiNode * n
 
 meshID AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDrawMethod meshDrawMethod) const
 {
-	auto l_meshDataID = RenderingManager::getInstance().addMeshData();
+	auto l_meshDataID = RenderingManager::getInstance().addMesh();
 	auto lastMeshData = RenderingManager::getInstance().getMesh(l_meshDataID);
 
 	for (auto i = (unsigned int)0; i < mesh->mNumVertices; i++)
@@ -219,6 +219,7 @@ meshID AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDrawMethod meshD
 		}
 	}
 	lastMeshData->setup(meshDrawMethod, false, false);
+	lastMeshData->initialize();
 	LogManager::getInstance().printLog("innoMesh is loaded.");
 	return l_meshDataID;
 }
@@ -362,7 +363,7 @@ textureID AssetManager::loadTextureFromDisk(const std::string & fileName, textur
 	auto *data = stbi_load((m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		auto id = RenderingManager::getInstance().addTextureData();
+		auto id = RenderingManager::getInstance().addTexture();
 		auto lastTextureData = RenderingManager::getInstance().getTexture(id);
 		lastTextureData->setup(textureType, textureWrapMethod, 0, nrChannels, width, height, data);
 		lastTextureData->initialize();
@@ -417,7 +418,7 @@ void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName,
 		auto *data = stbi_load((m_textureRelativePath + fileName[i]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			auto id = RenderingManager::getInstance().addTextureData();
+			auto id = RenderingManager::getInstance().addTexture();
 			auto lastTextureData = RenderingManager::getInstance().getTexture(id);
 			lastTextureData->setup(textureType::CUBEMAP, visibleComponent.m_textureWrapMethod, i, nrChannels, width, height, data);
 			visibleComponent.overwriteTextureData(texturePair(textureType::CUBEMAP, id));
@@ -446,14 +447,14 @@ void AssetManager::assignDefaultTextures(textureAssignType textureAssignType, Vi
 
 void AssetManager::addUnitMesh(VisibleComponent & visibleComponent, unitMeshType unitMeshType)
 {
-	meshID l_UnitMeshTemmplate;
+	meshID l_UnitMeshTemplate;
 	switch (unitMeshType)
 	{
-	case unitMeshType::QUAD: l_UnitMeshTemmplate = m_UnitQuadTemplate; break;
-	case unitMeshType::CUBE: l_UnitMeshTemmplate = m_UnitCubeTemplate; break;
-	case unitMeshType::SPHERE: l_UnitMeshTemmplate = m_UnitSphereTemplate; break;
+	case unitMeshType::QUAD: l_UnitMeshTemplate = m_UnitQuadTemplate; break;
+	case unitMeshType::CUBE: l_UnitMeshTemplate = m_UnitCubeTemplate; break;
+	case unitMeshType::SPHERE: l_UnitMeshTemplate = m_UnitSphereTemplate; break;
 	}
-	visibleComponent.addMeshData(l_UnitMeshTemmplate);
+	visibleComponent.addMeshData(l_UnitMeshTemplate);
 	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
 	SceneGraphManager::getInstance().addToRenderingQueue(&visibleComponent);
 }

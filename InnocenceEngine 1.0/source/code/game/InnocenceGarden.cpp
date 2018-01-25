@@ -62,7 +62,7 @@ void InnocenceGarden::initialize()
 
 	//AssetManager::getInstance().importModel("deer.obj");
 
-	//AssetManager::getInstance().loadAsset(assetType::MODEL, "nanosuit/nanosuit.obj", pawnMeshComponent1);
+	//AssetManager::getInstance().loadAsset("nanosuit/nanosuit.obj", pawnMeshComponent1);
 	//AssetManager::getInstance().loadAsset(assetType::MODEL, "nanosuit/nanosuit.obj", pawnMeshComponent2);
 
 	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
@@ -112,7 +112,7 @@ void InnocenceGarden::setupSpheres()
 		{
 			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(glm::vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0 + (j * sphereBreadthInterval), 2.0));
 		}
-	}
+	}	
 }
 
 void InnocenceGarden::initializeSpheres()
@@ -121,7 +121,6 @@ void InnocenceGarden::initializeSpheres()
 	{
 		AssetManager::getInstance().addUnitMesh(sphereComponents[i], unitMeshType::SPHERE);
 	}
-
 	for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
 	{
 		AssetManager::getInstance().loadAsset("PBS/rustediron2_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
@@ -144,7 +143,7 @@ void InnocenceGarden::initializeSpheres()
 		AssetManager::getInstance().loadAsset("PBS/roughrock1-normal.png", textureType::NORMALS, sphereComponents[i + 3]);
 		AssetManager::getInstance().loadAsset("PBS/roughrock1-roughness.png", textureType::AMBIENT, sphereComponents[i + 3]);
 		AssetManager::getInstance().loadAsset("PBS/roughrock1-ao.png", textureType::EMISSIVE, sphereComponents[i + 3]);
-	}	
+	}
 }
 
 void InnocenceGarden::setupLights()

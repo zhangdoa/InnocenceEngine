@@ -170,7 +170,6 @@
     <ClCompile Include="code\core\manager\graphic\SceneGraphManager.cpp" />
     <ClCompile Include="code\core\manager\TimeManager.cpp" />
     <ClCompile Include="code\core\manager\graphic\GLWindowManager.cpp" />
-    <ClCompile Include="code\core\platform-dependency\GL\GLGraphicData.cpp" />
     <ClCompile Include="code\core\platform-dependency\GL\GLRenderingManager.cpp" />
     <ClCompile Include="code\core\third-party\glad.c" />
     <ClCompile Include="code\game\InnocenceGarden.cpp" />
@@ -203,7 +202,6 @@
     <ClInclude Include="code\core\manager\graphic\SceneGraphManager.h" />
     <ClInclude Include="code\core\manager\TimeManager.h" />
     <ClInclude Include="code\core\manager\graphic\GLWindowManager.h" />
-    <ClInclude Include="code\core\platform-dependency\GL\GLGraphicData.h" />
     <ClInclude Include="code\core\platform-dependency\GL\GLRenderingManager.h" />
     <ClInclude Include="code\core\third-party\nuklear.h" />
     <ClInclude Include="code\core\third-party\nuklear_glfw_gl3.h" />

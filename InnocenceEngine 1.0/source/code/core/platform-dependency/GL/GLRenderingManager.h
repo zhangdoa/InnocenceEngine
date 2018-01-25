@@ -11,7 +11,7 @@ public:
 	virtual ~GLShader();
 
 	virtual void init() = 0;
-	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas) = 0;
+	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) = 0;
 
 protected:
 	GLShader();
@@ -60,7 +60,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
 
 private:
 	SkyboxShader();
@@ -78,7 +78,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
 
 private:
 	GeometryPassBlinnPhongShader();
@@ -96,7 +96,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
 
 private:
 	LightPassBlinnPhongShader();
@@ -114,7 +114,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
 
 private:
 	GeometryPassPBSShader();
@@ -132,7 +132,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
 
 private:
 	LightPassPBSShader();
@@ -150,7 +150,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
 
 private:
 	FinalPassShader();
@@ -168,7 +168,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
 
 private:
 	DebuggerShader();
@@ -186,7 +186,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
 
 private:
 	BillboardPassShader();
@@ -208,8 +208,13 @@ public:
 		return instance;
 	}
 
-	void forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas);
-	void deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas);
+	meshID addMesh();
+	textureID addTexture();
+	IMesh* getMesh(meshID meshID);
+	ITexture* getTexture(textureID textureID);
+
+	void forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap);
+	void deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 
 	void setScreenResolution(glm::vec2 screenResolution);
 
@@ -220,6 +225,9 @@ private:
 	GLRenderingManager() {};
 
 	glm::vec2 m_screenResolution = glm::vec2();
+
+	std::unordered_map<meshID, GLMesh> m_meshMap;
+	std::unordered_map<textureID, GLTexture> m_textureMap;
 
 	GLuint m_geometryPassFBO;
 	GLuint m_geometryPassRT0Texture;
@@ -245,11 +253,11 @@ private:
 	int m_textureMode = 0;
 
 	void initializeGeometryPass();
-	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas);
+	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 	void initializeLightPass();
-	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas);
+	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 	void initializeBillboardPass();
-	void renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas);
+	void renderBillboardPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 	void initializeFinalPass();
-	void renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, IMesh*>& meshDatas, std::unordered_map<EntityID, ITexture*>& textureDatas);
+	void renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 };

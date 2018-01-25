@@ -1,10 +1,12 @@
 #pragma once
 #include "../manager/LogManager.h"
 #include "../interface/IEntity.h"
-#include "../platform-dependency/GL/GLGraphicData.h"
 #include "innoMath.h"
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
+enum class textureType { INVISIBLE, DIFFUSE, SPECULAR, AMBIENT, EMISSIVE, HEIGHT, NORMALS, SHININESS, OPACITY, DISPLACEMENT, LIGHTMAP, REFLECTION, CUBEMAP };
+enum class textureWrapMethod { CLAMPTOEDGE, REPEAT };
+enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 
 typedef EntityID textureID;
 typedef EntityID meshID;

@@ -11,30 +11,24 @@ void RenderingManager::changeDrawTextureMode()
 	GLRenderingManager::getInstance().changeDrawTextureMode();
 }
 
-meshID RenderingManager::addMeshData()
+meshID RenderingManager::addMesh()
 {
-	//@TODO: dangling pointer problem here
-	GLMesh newMesh;
-	m_meshMap.emplace(std::pair<meshID, IMesh*>(newMesh.getEntityID(), &newMesh));
-	return newMesh.getEntityID();
+	return GLRenderingManager::getInstance().addMesh();
 }
 
-textureID RenderingManager::addTextureData()
+textureID RenderingManager::addTexture()
 {
-	//@TODO: dangling pointer problem here
-	GLTexture newTexture;
-	m_textureMap.emplace(std::pair<textureID, ITexture*>(newTexture.getEntityID(), &newTexture));
-	return newTexture.getEntityID();
+	return GLRenderingManager::getInstance().addTexture();
 }
 
 IMesh* RenderingManager::getMesh(meshID meshID)
 {
-	return m_meshMap.find(meshID)->second;
+	return GLRenderingManager::getInstance().getMesh(meshID);
 }
 
 ITexture* RenderingManager::getTexture(textureID textureID)
 {
-	return m_textureMap.find(textureID)->second;
+	return  GLRenderingManager::getInstance().getTexture(textureID);
 }
 
 void RenderingManager::setup()
@@ -110,7 +104,7 @@ void RenderingManager::AsyncRender()
 	//GLRenderingManager::getInstance().forwardRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
 	
 	//defer render
-	GLRenderingManager::getInstance().deferRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue(), m_meshMap, m_textureMap);
+	GLRenderingManager::getInstance().deferRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
 	
 	GLWindowManager::getInstance().update();
 
