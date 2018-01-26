@@ -1,6 +1,7 @@
 #pragma once
 #include "../../interface/IManager.h"
 #include "../../manager/LogManager.h"
+#include "../../data/InnoMath.h"
 
 class GLWindowManager : public IManager
 {
@@ -19,8 +20,8 @@ public:
 	}
 
 	GLFWwindow* getWindow() const;
-	glm::vec2 getScreenCenterPosition() const;
-	glm::vec2 getScreenResolution() const;
+	vec2 getScreenCenterPosition() const;
+	vec2 getScreenResolution() const;
 	void setWindowName(const std::string& windowName);
 	void hideMouseCursor() const;
 	void showMouseCursor() const;

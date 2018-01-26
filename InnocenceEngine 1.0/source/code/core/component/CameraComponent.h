@@ -12,10 +12,10 @@ public:
 	void update() override;
 	void shutdown() override;
 
-	glm::mat4 getPosMatrix() const;
-	glm::mat4 getRotMatrix() const;
-	glm::mat4 getProjectionMatrix() const;
+	mat4 getPosMatrix() const;
+	mat4 getRotMatrix() const;
+	mat4 getProjectionMatrix() const;
 
 private:
-	glm::mat4 m_projectionMatrix;
+	mat4 m_projectionMatrix;
 };

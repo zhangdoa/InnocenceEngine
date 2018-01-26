@@ -33,12 +33,12 @@ protected:
 	inline void updateUniform(const std::string &uniformName, bool uniformValue) const;
 	inline void updateUniform(const std::string &uniformName, int uniformValue) const;
 	inline void updateUniform(const std::string &uniformName, float uniformValue) const;
-	inline void updateUniform(const std::string &uniformName, const glm::vec2 &uniformValue) const;
+	inline void updateUniform(const std::string &uniformName, const vec2 &uniformValue) const;
 	inline void updateUniform(const std::string &uniformName, float x, float y) const;
-	inline void updateUniform(const std::string &uniformName, const glm::vec3& uniformValue) const;
+	inline void updateUniform(const std::string &uniformName, const vec3& uniformValue) const;
 	inline void updateUniform(const std::string &uniformName, float x, float y, float z) const;
 	inline void updateUniform(const std::string &uniformName, float x, float y, float z, float w);
-	inline void updateUniform(const std::string &uniformName, const glm::mat4& mat) const;
+	inline void updateUniform(const std::string &uniformName, const mat4& mat) const;
 
 private:
 	inline void attachShader(shaderType shaderType, const std::string& fileContent, int m_program) const;
@@ -216,7 +216,7 @@ public:
 	void forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap);
 	void deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 
-	void setScreenResolution(glm::vec2 screenResolution);
+	void setScreenResolution(vec2 screenResolution);
 
 	void changeDrawPolygonMode();
 	void changeDrawTextureMode();
@@ -224,7 +224,7 @@ public:
 private:
 	GLRenderingManager() {};
 
-	glm::vec2 m_screenResolution = glm::vec2();
+	vec2 m_screenResolution = vec2();
 
 	std::unordered_map<meshID, GLMesh> m_meshMap;
 	std::unordered_map<textureID, GLTexture> m_textureMap;

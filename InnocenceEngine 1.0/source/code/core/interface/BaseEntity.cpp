@@ -22,12 +22,12 @@ void Transform::update()
 	m_oldScale = m_scale;
 }
 
-void Transform::rotate(const glm::vec3& axis, float angle)
+void Transform::rotate(const vec3 & axis, float angle)
 {
-	float sinHalfAngle = glm::sin((angle * glm::pi<float>() / 180.0f) / 2.0f);
-	float cosHalfAngle = glm::cos((angle * glm::pi<float>() / 180.0f) / 2.0f);
+	float sinHalfAngle = sin((angle * PI / 180.0f) / 2.0f);
+	float cosHalfAngle = cos((angle * PI / 180.0f) / 2.0f);
 	// get final rotation
-	m_rot = quat(cosHalfAngle, axis.x * sinHalfAngle, axis.y * sinHalfAngle, axis.z * sinHalfAngle).mul(m_rot);
+	m_rot = quat(axis.x * sinHalfAngle, axis.y * sinHalfAngle, axis.z * sinHalfAngle, cosHalfAngle).mul(m_rot);
 }
 
 vec3 & Transform::getPos()
@@ -121,7 +121,7 @@ vec3 Transform::getDirection(direction direction) const
 	// optimized version ([Kavan et al. ] Lemma 4)
 	//V' = V + 2 * Qv x (Qv x V + Qs * V)
 	vec3 l_Qv = vec3(m_rot.x, m_rot.y, m_rot.z);
-	l_directionVec3 = l_directionVec3 + l_Qv.cross((l_Qv.cross(l_directionVec3) + l_directionVec3.dot(m_rot.w))).dot(2.0f);
+	l_directionVec3 = l_directionVec3 + l_Qv.cross((l_Qv.cross(l_directionVec3) + l_directionVec3.mul(m_rot.w))).mul(2.0f);
 
 	return l_directionVec3;
 }
@@ -208,19 +208,19 @@ mat4 BaseActor::caclLocalScaleMatrix()
 vec3 BaseActor::caclWorldPos()
 {
 	mat4 l_parentTransformationMatrix;
-	l_parentTransformationMatrix[0][0] = 1.0f;
-	l_parentTransformationMatrix[1][1] = 1.0f;
-	l_parentTransformationMatrix[2][2] = 1.0f;
-	l_parentTransformationMatrix[3][3] = 1.0f;
+	l_parentTransformationMatrix.m[0][0] = 1.0f;
+	l_parentTransformationMatrix.m[1][1] = 1.0f;
+	l_parentTransformationMatrix.m[2][2] = 1.0f;
+	l_parentTransformationMatrix.m[3][3] = 1.0f;
 
 	if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
 	{
 		l_parentTransformationMatrix = getParentActor()->caclTransformationMatrix();
 	}
 
-	return vec3(l_parentTransformationMatrix[0][0] * m_transform.getPos().x + l_parentTransformationMatrix[1][0] * m_transform.getPos().y + l_parentTransformationMatrix[2][0] * m_transform.getPos().z + l_parentTransformationMatrix[3][0],
-		l_parentTransformationMatrix[0][1] * m_transform.getPos().x + l_parentTransformationMatrix[1][1] * m_transform.getPos().y + l_parentTransformationMatrix[2][1] * m_transform.getPos().z + l_parentTransformationMatrix[3][1],
-		l_parentTransformationMatrix[0][2] * m_transform.getPos().x + l_parentTransformationMatrix[1][2] * m_transform.getPos().y + l_parentTransformationMatrix[2][2] * m_transform.getPos().z + l_parentTransformationMatrix[3][2]);
+	return vec3(l_parentTransformationMatrix.m[0][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][0] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][0] * m_transform.getPos().z + l_parentTransformationMatrix.m[3][0],
+		l_parentTransformationMatrix.m[0][1] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][1] * m_transform.getPos().z + l_parentTransformationMatrix.m[3][1],
+		l_parentTransformationMatrix.m[0][2] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][2] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][2] * m_transform.getPos().z + l_parentTransformationMatrix.m[3][2]);
 }
 
 quat BaseActor::caclWorldRot()
@@ -232,7 +232,7 @@ quat BaseActor::caclWorldRot()
 		l_parentRotationQuat = getParentActor()->caclWorldRot();
 	}
 
-	return l_parentRotationQuat * m_transform.getRot();
+	return l_parentRotationQuat.mul(m_transform.getRot());
 }
 
 vec3 BaseActor::caclWorldScale()
@@ -266,10 +266,10 @@ mat4 BaseActor::caclTransformationMatrix()
 {
 	mat4 l_parentTransformationMatrix;
 
-	l_parentTransformationMatrix[0][0] = 1.0f;
-	l_parentTransformationMatrix[1][1] = 1.0f;
-	l_parentTransformationMatrix[2][2] = 1.0f;
-	l_parentTransformationMatrix[3][3] = 1.0f;
+	l_parentTransformationMatrix.m[0][0] = 1.0f;
+	l_parentTransformationMatrix.m[1][1] = 1.0f;
+	l_parentTransformationMatrix.m[2][2] = 1.0f;
+	l_parentTransformationMatrix.m[3][3] = 1.0f;
 
 	if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
 	{

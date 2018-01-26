@@ -4,10 +4,7 @@
 //typedef __vec4 __vec3;
 //typedef __vec4 __vec2;
 
-static float sin(float angle);
-static float cos(float angle);
-static float tan(float angle);
-static float cot(float angle);
+const static double PI = 3.14159265358979323846264338327950288;
 
 // [rowIndex][columnIndex]
 class mat4
@@ -16,10 +13,14 @@ public:
 	mat4();
 	mat4(const mat4& rhs);
 	mat4& operator=(const mat4& rhs);
+	mat4 operator*(const mat4& rhs);
+	// only for some semantically or literally usage
+	mat4 operator*(float rhs);
 	mat4 mul(const mat4& rhs);
 	// only for some semantically or literally usage
 	mat4 mul(float rhs);
 
+	void initializeToPerspectiveMatrix(float FOV, float HWRatio, float zNear, float zFar);
 	float m[4][4];
 };
 
@@ -39,6 +40,9 @@ public:
 	quat mul(float rhs);
 	float length();
 	quat normalize();
+
+	bool operator!=(const quat& rhs);
+	bool operator==(const quat& rhs);
 
 	mat4 toRotationMartix();
 
@@ -67,12 +71,14 @@ public:
 	vec3 sub(float rhs);
 	vec3 operator-(float rhs);
 	float dot(const vec3& rhs);
-	float dot(float rhs);
 	vec3 cross(const vec3& rhs);
 	vec3 mul(const vec3& rhs);
 	vec3 mul(float rhs);
 	float length();
 	vec3 normalize();
+
+	bool operator!=(const vec3& rhs);
+	bool operator==(const vec3& rhs);
 
 	mat4 toTranslationMartix();
 	mat4 toScaleMartix();

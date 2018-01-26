@@ -134,9 +134,9 @@ void IMesh::addUnitSphere()
 		{
 			float xSegment = (float)x / (float)X_SEGMENTS;
 			float ySegment = (float)y / (float)Y_SEGMENTS;
-			double xPos = glm::cos(xSegment * 2.0f * PI) * glm::sin(ySegment * PI);
-			double yPos = glm::cos(ySegment * PI);
-			double zPos = glm::sin(xSegment * 2.0f * PI) * glm::sin(ySegment * PI);
+			double xPos = cos(xSegment * 2.0f * PI) * sin(ySegment * PI);
+			double yPos = cos(ySegment * PI);
+			double zPos = sin(xSegment * 2.0f * PI) * sin(ySegment * PI);
 
 			Vertex l_VertexData;
 			l_VertexData.m_pos = vec3(xPos, yPos, zPos);

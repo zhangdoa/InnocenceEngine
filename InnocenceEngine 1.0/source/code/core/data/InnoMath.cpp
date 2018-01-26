@@ -6,7 +6,6 @@ vec3::vec3()
 	x = 0.0f;
 	y = 0.0f;
 	z = 0.0f;
-	glm::mat4()[0][0];
 }
 
 vec3::vec3(float rhsX, float rhsY, float rhsZ)
@@ -80,14 +79,19 @@ float vec3::dot(const vec3 & rhs)
 	return x * rhs.x + y * rhs.y + z * rhs.z;
 }
 
-float vec3::dot(float rhs)
-{
-	return x * rhs + y * rhs + z * rhs;
-}
-
 vec3 vec3::cross(const vec3 & rhs)
 {
 	return vec3(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x);
+}
+
+vec3 vec3::mul(const vec3 & rhs)
+{
+	return vec3(x * rhs.x, y * rhs.y, z * rhs.z);
+}
+
+vec3 vec3::mul(float rhs)
+{
+	return vec3(x * rhs, y * rhs, z * rhs);
 }
 
 float vec3::length()
@@ -100,6 +104,53 @@ vec3 vec3::normalize()
 {
 	// @TODO: optimaze
 	return vec3(x / length(), y / length(), z / length());
+}
+
+bool vec3::operator!=(const vec3 & rhs)
+{
+	//@TODO: optimize
+	if (x != rhs.x)
+	{
+		return true;
+	}
+	else if (y != rhs.y)
+	{
+		return true;
+	}
+	else if (z != rhs.z)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool vec3::operator==(const vec3 & rhs)
+{
+	//@TODO: optimize
+	return !(*this != rhs);
+}
+
+mat4 vec3::toTranslationMartix()
+{
+	mat4 l_m;
+	l_m.m[0][3] = x;
+	l_m.m[1][3] = y;
+	l_m.m[2][3] = z;
+	l_m.m[3][3] = 1;
+	return l_m;
+}
+
+mat4 vec3::toScaleMartix()
+{
+	mat4 l_m;
+	l_m.m[0][0] = x;
+	l_m.m[1][1] = y;
+	l_m.m[2][2] = z;
+	l_m.m[3][3] = 1;
+	return l_m;
 }
 
 vec2::vec2()
@@ -186,6 +237,8 @@ quat & quat::operator=(const quat & rhs)
 	y = rhs.y;
 	z = rhs.z;
 	w = rhs.w;
+
+	return *this;
 }
 
 quat::~quat()
@@ -222,6 +275,65 @@ quat quat::normalize()
 {	
 	// @TODO: optimaze
 	return quat(x / length(), y / length(), z / length(), w / length());
+}
+
+bool quat::operator!=(const quat & rhs)
+{
+	//@TODO: optimize
+	if (x != rhs.x)
+	{
+		return true;
+	}
+	else if (y != rhs.y)
+	{
+		return true;
+	}
+	else if (z != rhs.z)
+	{
+		return true;
+	}
+	else if (w != rhs.w)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool quat::operator==(const quat & rhs)
+{
+	//@TODO: optimize
+	return !(*this != rhs);
+}
+
+mat4 quat::toRotationMartix()
+{
+	//@TODO:optimize
+	mat4 l_m;
+
+	l_m.m[0][0] = 1 - 2 * y * y - 2 * z * z;
+	l_m.m[0][1] = 2 * x * y - 2 * z * w;
+	l_m.m[0][2] = 2 * x * z + 2 * y * w;
+	l_m.m[0][3] = 0;
+
+	l_m.m[1][0] = 2 * x * y + 2 * z * w;
+	l_m.m[1][1] = 1 - 2 * x * x - 2 * z * z;
+	l_m.m[1][2] = 2 * y * z - 2 * x * w;
+	l_m.m[1][3] = 0;
+
+	l_m.m[2][0] = 2 * x * z - 2 * y * w;
+	l_m.m[2][1] = 2 * y * z + 2 * x * w;
+	l_m.m[2][2] = 1 - 2 * x * x - 2 * y * y;
+	l_m.m[2][3] = 0;
+
+	l_m.m[3][0] = 0;
+	l_m.m[3][1] = 0;
+	l_m.m[3][2] = 0;
+	l_m.m[3][3] = 1;
+
+	return l_m;
 }
 
 mat4::mat4()
@@ -282,19 +394,121 @@ mat4 & mat4::operator=(const mat4 & rhs)
 	m[3][1] = rhs.m[3][1];
 	m[3][2] = rhs.m[3][2];
 	m[3][3] = rhs.m[3][3];
+
+	return *this;
 }
 
-float mat4::get(int rowIndex, int columnIndex)
+mat4 mat4::operator*(const mat4 & rhs)
 {
-	return m[rowIndex][columnIndex];
+	//@TODO:optimize
+	mat4 l_m;
+
+	l_m.m[0][0] = m[0][0] * rhs.m[0][0] + m[0][1] * rhs.m[1][0] + m[0][2] * rhs.m[2][0] + m[0][3] * rhs.m[3][0];
+	l_m.m[0][1] = m[0][0] * rhs.m[0][1] + m[0][1] * rhs.m[1][1] + m[0][2] * rhs.m[2][1] + m[0][3] * rhs.m[3][1];
+	l_m.m[0][2] = m[0][0] * rhs.m[0][2] + m[0][1] * rhs.m[1][2] + m[0][2] * rhs.m[2][2] + m[0][3] * rhs.m[3][2];
+	l_m.m[0][3] = m[0][0] * rhs.m[0][3] + m[0][1] * rhs.m[1][3] + m[0][2] * rhs.m[2][3] + m[0][3] * rhs.m[3][3];
+
+	l_m.m[1][0] = m[1][0] * rhs.m[0][0] + m[1][1] * rhs.m[1][0] + m[1][2] * rhs.m[2][0] + m[1][3] * rhs.m[3][0];
+	l_m.m[1][1] = m[1][0] * rhs.m[0][1] + m[1][1] * rhs.m[1][1] + m[1][2] * rhs.m[2][1] + m[1][3] * rhs.m[3][1];
+	l_m.m[1][2] = m[1][0] * rhs.m[0][2] + m[1][1] * rhs.m[1][2] + m[1][2] * rhs.m[2][2] + m[1][3] * rhs.m[3][2];
+	l_m.m[1][3] = m[1][0] * rhs.m[0][3] + m[1][1] * rhs.m[1][3] + m[1][2] * rhs.m[2][3] + m[1][3] * rhs.m[3][3];
+
+	l_m.m[2][0] = m[2][0] * rhs.m[0][0] + m[2][1] * rhs.m[1][0] + m[2][2] * rhs.m[2][0] + m[2][3] * rhs.m[3][0];
+	l_m.m[2][1] = m[2][0] * rhs.m[0][1] + m[2][1] * rhs.m[1][1] + m[2][2] * rhs.m[2][1] + m[2][3] * rhs.m[3][1];
+	l_m.m[2][2] = m[2][0] * rhs.m[0][2] + m[2][1] * rhs.m[1][2] + m[2][2] * rhs.m[2][2] + m[2][3] * rhs.m[3][2];
+	l_m.m[2][3] = m[2][0] * rhs.m[0][3] + m[2][1] * rhs.m[1][3] + m[2][2] * rhs.m[2][3] + m[2][3] * rhs.m[3][3];
+
+	l_m.m[3][0] = m[3][0] * rhs.m[0][0] + m[3][1] * rhs.m[1][0] + m[3][2] * rhs.m[2][0] + m[3][3] * rhs.m[3][0];
+	l_m.m[3][1] = m[3][0] * rhs.m[0][1] + m[3][1] * rhs.m[1][1] + m[3][2] * rhs.m[2][1] + m[3][3] * rhs.m[3][1];
+	l_m.m[3][2] = m[3][0] * rhs.m[0][2] + m[3][1] * rhs.m[1][2] + m[3][2] * rhs.m[2][2] + m[3][3] * rhs.m[3][2];
+	l_m.m[3][3] = m[3][0] * rhs.m[0][3] + m[3][1] * rhs.m[1][3] + m[3][2] * rhs.m[2][3] + m[3][3] * rhs.m[3][3];
+
+	return l_m;
+}
+
+mat4 mat4::operator*(float rhs)
+{
+	//@TODO:optimize
+	mat4 l_m;
+
+	l_m.m[0][0] = rhs * m[0][0];
+	l_m.m[0][1] = rhs * m[0][1];
+	l_m.m[0][2] = rhs * m[0][2];
+	l_m.m[0][3] = rhs * m[0][3];
+	l_m.m[1][0] = rhs * m[1][0];
+	l_m.m[1][1] = rhs * m[1][1];
+	l_m.m[1][2] = rhs * m[1][2];
+	l_m.m[1][3] = rhs * m[1][3];
+	l_m.m[2][0] = rhs * m[2][0];
+	l_m.m[2][1] = rhs * m[2][1];
+	l_m.m[2][2] = rhs * m[2][2];
+	l_m.m[2][3] = rhs * m[2][3];
+	l_m.m[3][0] = rhs * m[3][0];
+	l_m.m[3][1] = rhs * m[3][1];
+	l_m.m[3][2] = rhs * m[3][2];
+	l_m.m[3][3] = rhs * m[3][3];
+
+	return l_m;
 }
 
 mat4 mat4::mul(const mat4 & rhs)
 {
-	return mat4();
+	//@TODO:optimize
+	mat4 l_m;
+
+	l_m.m[0][0] = m[0][0] * rhs.m[0][0] + m[0][1] * rhs.m[1][0] + m[0][2] * rhs.m[2][0] + m[0][3] * rhs.m[3][0];
+	l_m.m[0][1] = m[0][0] * rhs.m[0][1] + m[0][1] * rhs.m[1][1] + m[0][2] * rhs.m[2][1] + m[0][3] * rhs.m[3][1];
+	l_m.m[0][2] = m[0][0] * rhs.m[0][2] + m[0][1] * rhs.m[1][2] + m[0][2] * rhs.m[2][2] + m[0][3] * rhs.m[3][2];
+	l_m.m[0][3] = m[0][0] * rhs.m[0][3] + m[0][1] * rhs.m[1][3] + m[0][2] * rhs.m[2][3] + m[0][3] * rhs.m[3][3];
+
+	l_m.m[1][0] = m[1][0] * rhs.m[0][0] + m[1][1] * rhs.m[1][0] + m[1][2] * rhs.m[2][0] + m[1][3] * rhs.m[3][0];
+	l_m.m[1][1] = m[1][0] * rhs.m[0][1] + m[1][1] * rhs.m[1][1] + m[1][2] * rhs.m[2][1] + m[1][3] * rhs.m[3][1];
+	l_m.m[1][2] = m[1][0] * rhs.m[0][2] + m[1][1] * rhs.m[1][2] + m[1][2] * rhs.m[2][2] + m[1][3] * rhs.m[3][2];
+	l_m.m[1][3] = m[1][0] * rhs.m[0][3] + m[1][1] * rhs.m[1][3] + m[1][2] * rhs.m[2][3] + m[1][3] * rhs.m[3][3];
+
+	l_m.m[2][0] = m[2][0] * rhs.m[0][0] + m[2][1] * rhs.m[1][0] + m[2][2] * rhs.m[2][0] + m[2][3] * rhs.m[3][0];
+	l_m.m[2][1] = m[2][0] * rhs.m[0][1] + m[2][1] * rhs.m[1][1] + m[2][2] * rhs.m[2][1] + m[2][3] * rhs.m[3][1];
+	l_m.m[2][2] = m[2][0] * rhs.m[0][2] + m[2][1] * rhs.m[1][2] + m[2][2] * rhs.m[2][2] + m[2][3] * rhs.m[3][2];
+	l_m.m[2][3] = m[2][0] * rhs.m[0][3] + m[2][1] * rhs.m[1][3] + m[2][2] * rhs.m[2][3] + m[2][3] * rhs.m[3][3];
+
+	l_m.m[3][0] = m[3][0] * rhs.m[0][0] + m[3][1] * rhs.m[1][0] + m[3][2] * rhs.m[2][0] + m[3][3] * rhs.m[3][0];
+	l_m.m[3][1] = m[3][0] * rhs.m[0][1] + m[3][1] * rhs.m[1][1] + m[3][2] * rhs.m[2][1] + m[3][3] * rhs.m[3][1];
+	l_m.m[3][2] = m[3][0] * rhs.m[0][2] + m[3][1] * rhs.m[1][2] + m[3][2] * rhs.m[2][2] + m[3][3] * rhs.m[3][2];
+	l_m.m[3][3] = m[3][0] * rhs.m[0][3] + m[3][1] * rhs.m[1][3] + m[3][2] * rhs.m[2][3] + m[3][3] * rhs.m[3][3];
+
+	return l_m;
 }
 
 mat4 mat4::mul(float rhs)
 {
-	return mat4();
+	//@TODO:optimize
+	mat4 l_m;
+
+	l_m.m[0][0] = rhs * m[0][0];
+	l_m.m[0][1] = rhs * m[0][1];
+	l_m.m[0][2] = rhs * m[0][2];
+	l_m.m[0][3] = rhs * m[0][3];
+	l_m.m[1][0] = rhs * m[1][0];
+	l_m.m[1][1] = rhs * m[1][1];
+	l_m.m[1][2] = rhs * m[1][2];
+	l_m.m[1][3] = rhs * m[1][3];
+	l_m.m[2][0] = rhs * m[2][0];
+	l_m.m[2][1] = rhs * m[2][1];
+	l_m.m[2][2] = rhs * m[2][2];
+	l_m.m[2][3] = rhs * m[2][3];
+	l_m.m[3][0] = rhs * m[3][0];
+	l_m.m[3][1] = rhs * m[3][1];
+	l_m.m[3][2] = rhs * m[3][2];
+	l_m.m[3][3] = rhs * m[3][3];
+
+	return l_m;
+}
+
+void mat4::initializeToPerspectiveMatrix(float FOV, float HWRatio, float zNear, float zFar)
+{
+	m[0][0] = 1 / (tanf(FOV / 2) * HWRatio);
+	m[1][1] = 1 / tanf(FOV / 2);
+	m[2][2] = -(zFar + zNear) / ((zFar - zNear));
+	m[2][3] = -(2 * zFar *zNear) / ((zFar - zNear));
+	m[3][2] = -1;
 }
