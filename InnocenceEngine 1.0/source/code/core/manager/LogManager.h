@@ -23,7 +23,7 @@ public:
 	void printLog(const vec3& logMessage);
 	void printLog(const quat& logMessage);
 	void printLog(const mat4& logMessage);
-
+	void printLog(const glm::mat4& logMessage);
 	void printLog(const std::thread::id logMessage);
 
 private:
