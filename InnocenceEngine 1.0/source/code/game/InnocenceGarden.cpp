@@ -14,45 +14,44 @@ void InnocenceGarden::setup()
 {
 	rootActor.addChildActor(&playCharacter);
 
-	//rootActor.addChildActor(&skyboxActor);
+	rootActor.addChildActor(&skyboxActor);
 
 	rootActor.addChildActor(&directionalLightActor);
 
 	rootActor.addChildActor(&landscapeActor);
-	//rootActor.addChildActor(&pawnActor1);
-	//rootActor.addChildActor(&pawnActor2);
+	rootActor.addChildActor(&pawnActor1);
+	rootActor.addChildActor(&pawnActor2);
 
 	SceneGraphManager::getInstance().addToCameraQueue(&playCharacter.getCameraComponent());
 
 	SceneGraphManager::getInstance().addToInputQueue(&playCharacter.getInputComponent());
 
-	/*skyboxComponent.m_visiblilityType = visiblilityType::SKYBOX;
+	skyboxComponent.m_visiblilityType = visiblilityType::SKYBOX;
 	skyboxComponent.m_textureWrapMethod = textureWrapMethod::CLAMPTOEDGE;
-	skyboxActor.addChildComponent(&skyboxComponent);*/
+	skyboxActor.addChildComponent(&skyboxComponent);
 
 	landscapeStaticMeshComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
 	landscapeActor.addChildComponent(&landscapeStaticMeshComponent);
 
-	//pawnMeshComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
-	//pawnActor1.addChildComponent(&pawnMeshComponent1);
+	pawnMeshComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
+	pawnActor1.addChildComponent(&pawnMeshComponent1);
 
-	//pawnMeshComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
-	//pawnActor2.addChildComponent(&pawnMeshComponent2);
+	pawnMeshComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
+	pawnActor2.addChildComponent(&pawnMeshComponent2);
 
 	playCharacter.getTransform()->setPos(vec3(0.0f, 2.0f, 5.0f));
-	//playCharacter.getTransform()->rotate(vec3(1.0f, 0.0f, 0.0f), -90.0f);
 	playCharacter.getTransform()->setScale(vec3(2.0f, 2.0f, 2.0f));
 	landscapeActor.getTransform()->setScale(vec3(60.0f, 60.0f, 0.1f));
 	landscapeActor.getTransform()->rotate(vec3(1.0f, 0.0f, 0.0f), -90.0f);
 	landscapeActor.getTransform()->setPos(vec3(0.0f, 0.0f, 0.0f));
-	/*pawnActor1.getTransform()->setScale(vec3(0.2f, 0.2f, 0.2f));
+	pawnActor1.getTransform()->setScale(vec3(0.2f, 0.2f, 0.2f));
 	pawnActor1.getTransform()->setPos(vec3(0.0f, 0.2f, -1.5f));
-	pawnActor2.getTransform()->setScale(vec3(0.2f, 0.2f, 0.2f));*/
+	pawnActor2.getTransform()->setScale(vec3(0.2f, 0.2f, 0.2f));
 	//testStaticMeshActor2.getTransform()->setScale(vec3(0.002f, 0.002f, 0.002f));
 	//pawnActor2.getTransform()->setPos(vec3(0.0f, 0.2f, 3.5f));
 
-	//setupLights();
-	//setupSpheres();
+	setupLights();
+	setupSpheres();
 
 	rootActor.setup();
 }
@@ -78,9 +77,9 @@ void InnocenceGarden::initialize()
 
 void InnocenceGarden::update()
 {
-	//temp += 0.02f;
-	//updateLights(temp);
-	//updateSpheres(temp);
+	temp += 0.02f;
+	updateLights(temp);
+	updateSpheres(temp);
 	rootActor.update();
 }
 
@@ -122,29 +121,29 @@ void InnocenceGarden::initializeSpheres()
 	{
 		AssetManager::getInstance().addUnitMesh(sphereComponents[i], unitMeshType::SPHERE);
 	}
-	//for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
-	//{
-	//	AssetManager::getInstance().loadAsset("PBS/rustediron2_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
-	//	AssetManager::getInstance().loadAsset("PBS/rustediron2_metallic.png", textureType::SPECULAR, sphereComponents[i]);
-	//	AssetManager::getInstance().loadAsset("PBS/rustediron2_normal.png", textureType::NORMALS, sphereComponents[i]);
-	//	AssetManager::getInstance().loadAsset("PBS/rustediron2_roughness.png", textureType::AMBIENT, sphereComponents[i]);
+	for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
+	{
+		AssetManager::getInstance().loadAsset("PBS/rustediron2_basecolor.png", textureType::DIFFUSE, sphereComponents[i]);
+		AssetManager::getInstance().loadAsset("PBS/rustediron2_metallic.png", textureType::SPECULAR, sphereComponents[i]);
+		AssetManager::getInstance().loadAsset("PBS/rustediron2_normal.png", textureType::NORMALS, sphereComponents[i]);
+		AssetManager::getInstance().loadAsset("PBS/rustediron2_roughness.png", textureType::AMBIENT, sphereComponents[i]);
 
-	//	AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-albedo.png", textureType::DIFFUSE, sphereComponents[i + 1]);
-	//	//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-metal.png", textureType::SPECULAR, sphereComponents[i + 1]);
-	//	AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-normal.png", textureType::NORMALS, sphereComponents[i + 1]);
-	//	AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-ao.png", textureType::EMISSIVE, sphereComponents[i + 1]);
+		AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-albedo.png", textureType::DIFFUSE, sphereComponents[i + 1]);
+		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-metal.png", textureType::SPECULAR, sphereComponents[i + 1]);
+		AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-normal.png", textureType::NORMALS, sphereComponents[i + 1]);
+		AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-ao.png", textureType::EMISSIVE, sphereComponents[i + 1]);
 
-	//	AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-albedo.png", textureType::DIFFUSE, sphereComponents[i + 2]);
-	//	AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-metal.png", textureType::SPECULAR, sphereComponents[i + 2]);
-	//	AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-normal.png", textureType::NORMALS, sphereComponents[i + 2]);
-	//	AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-roughness.png", textureType::AMBIENT, sphereComponents[i + 2]);
+		AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-albedo.png", textureType::DIFFUSE, sphereComponents[i + 2]);
+		AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-metal.png", textureType::SPECULAR, sphereComponents[i + 2]);
+		AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-normal.png", textureType::NORMALS, sphereComponents[i + 2]);
+		AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-roughness.png", textureType::AMBIENT, sphereComponents[i + 2]);
 
-	//	AssetManager::getInstance().loadAsset("PBS/roughrock1-albedo.png", textureType::DIFFUSE, sphereComponents[i + 3]);
-	//	AssetManager::getInstance().loadAsset("PBS/roughrock1-metalness.png", textureType::SPECULAR, sphereComponents[i + 3]);
-	//	AssetManager::getInstance().loadAsset("PBS/roughrock1-normal.png", textureType::NORMALS, sphereComponents[i + 3]);
-	//	AssetManager::getInstance().loadAsset("PBS/roughrock1-roughness.png", textureType::AMBIENT, sphereComponents[i + 3]);
-	//	AssetManager::getInstance().loadAsset("PBS/roughrock1-ao.png", textureType::EMISSIVE, sphereComponents[i + 3]);
-	//}
+		AssetManager::getInstance().loadAsset("PBS/roughrock1-albedo.png", textureType::DIFFUSE, sphereComponents[i + 3]);
+		AssetManager::getInstance().loadAsset("PBS/roughrock1-metalness.png", textureType::SPECULAR, sphereComponents[i + 3]);
+		AssetManager::getInstance().loadAsset("PBS/roughrock1-normal.png", textureType::NORMALS, sphereComponents[i + 3]);
+		AssetManager::getInstance().loadAsset("PBS/roughrock1-roughness.png", textureType::AMBIENT, sphereComponents[i + 3]);
+		AssetManager::getInstance().loadAsset("PBS/roughrock1-ao.png", textureType::EMISSIVE, sphereComponents[i + 3]);
+	}
 }
 
 void InnocenceGarden::setupLights()
