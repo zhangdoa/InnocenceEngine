@@ -4,7 +4,7 @@
 Transform::Transform()
 {
 	m_pos = vec3(0.0f, 0.0f, 0.0f);
-	m_rot = quat(1.0f, 0.0f, 0.0f, 0.0f);
+	m_rot = quat(0.0f, 0.0f, 0.0f, 1.0f);
 	m_scale = vec3(1.0f, 1.0f, 1.0f);
 	m_oldPos = m_pos + (1.0f);
 	m_oldRot = m_rot.mul(0.5f);
@@ -172,7 +172,6 @@ Transform* BaseActor::getTransform()
 	return &m_transform;
 }
 
-
 bool BaseActor::hasTransformChanged()
 {
 	if (m_transform.getPos() != m_transform.getOldPos() || m_transform.getRot() != m_transform.getOldRot() || m_transform.getScale() != m_transform.getOldScale())
@@ -218,9 +217,9 @@ vec3 BaseActor::caclWorldPos()
 		l_parentTransformationMatrix = getParentActor()->caclTransformationMatrix();
 	}
 
-	return vec3(l_parentTransformationMatrix.m[0][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][0] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][0] * m_transform.getPos().z + l_parentTransformationMatrix.m[3][0],
-		l_parentTransformationMatrix.m[0][1] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][1] * m_transform.getPos().z + l_parentTransformationMatrix.m[3][1],
-		l_parentTransformationMatrix.m[0][2] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][2] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][2] * m_transform.getPos().z + l_parentTransformationMatrix.m[3][2]);
+	return vec3(l_parentTransformationMatrix.m[0][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][0] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][0] * m_transform.getPos().z,
+		l_parentTransformationMatrix.m[0][1] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][1] * m_transform.getPos().z,
+		l_parentTransformationMatrix.m[0][2] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][2] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][2] * m_transform.getPos().z);
 }
 
 quat BaseActor::caclWorldRot()
@@ -276,7 +275,7 @@ mat4 BaseActor::caclTransformationMatrix()
 		l_parentTransformationMatrix = getParentActor()->caclTransformationMatrix();
 	}
 
-	return l_parentTransformationMatrix.mul(caclLocalPosMatrix()).mul(caclLocalRotMatrix()).mul(caclLocalScaleMatrix());
+	return l_parentTransformationMatrix * caclLocalPosMatrix() * caclLocalRotMatrix() * caclLocalScaleMatrix();
 }
 
 void BaseActor::setup()

@@ -42,6 +42,7 @@
     <ClCompile Include="code\core\interface\IEntity.cpp" />
     <ClCompile Include="code\core\interface\IObject.cpp" />
     <ClCompile Include="code\core\interface\IManager.cpp" />
+    <ClCompile Include="code\game\MathTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
@@ -77,5 +78,6 @@
     <ClInclude Include="code\core\interface\IEntity.h" />
     <ClInclude Include="code\core\interface\IObject.h" />
     <ClInclude Include="code\core\interface\IManager.h" />
+    <ClInclude Include="code\game\MathTest.h" />
   </ItemGroup>
 </Project>

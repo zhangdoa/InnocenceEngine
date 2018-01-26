@@ -5,37 +5,14 @@
 #include "../core/data/InnoMath.h"
 #include "../core/manager/CoreManager.h"
 #include "../game/InnocenceGarden.h"
+#include "../game/MathTest.h"
 
-std::vector<int> primeNumberPool;
-int initial = 100000;
-void asyncPrimeNumberCalculation()
+void startEngine()
 {
-	for (auto i = 2; i < initial; i++)
-	{
-		bool isPrime = true;
-		for (auto j = 2; j < i; j++)
-		{
-			if (i % j == 0)
-			{
-				isPrime = false;
-			}
-		}
-		if (isPrime)
-		{
-			primeNumberPool.emplace_back(i);
-			std::cout << "The prime is " << i << ", " << std::this_thread::get_id() << " said primeNumberPool size is " << primeNumberPool.size() << std::endl;
-		}
-	}
-}
-
-int main()
-{
-
 	InnocenceGarden* m_innocenceGarden = new InnocenceGarden();
-
 	CoreManager::getInstance().setGameData(m_innocenceGarden);
-
-	//auto f = std::async(std::launch::async, asyncPrimeNumberCalculation);
+	//MathTest* m_MathTest = new MathTest();
+	//CoreManager::getInstance().setGameData(m_MathTest);
 
 	CoreManager::getInstance().setup();
 	CoreManager::getInstance().initialize();
@@ -46,7 +23,12 @@ int main()
 	}
 	CoreManager::getInstance().shutdown();
 	delete m_innocenceGarden;
+	//delete m_MathTest;
+}
 
+int main()
+{
+	startEngine();
 	return EXIT_SUCCESS;
 }
 
