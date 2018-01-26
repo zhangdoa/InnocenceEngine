@@ -108,54 +108,6 @@ void LogManager::printLog(const mat4 & logMessage)
 		<< "|"
 		<< std::endl;
 }
-void LogManager::printLog(const glm::mat4 & logMessage)
-{
-	std::cout
-		<< "["
-		<< TimeManager::getInstance().getCurrentTimeInLocal()
-		<< "]"
-		<< std::endl
-		<< "|"
-		<< logMessage[0][0]
-		<< "]["
-		<< logMessage[1][0]
-		<< "]["
-		<< logMessage[2][0]
-		<< "]["
-		<< logMessage[3][0]
-		<< "|"
-		<< std::endl
-		<< "|"
-		<< logMessage[0][1]
-		<< "]["
-		<< logMessage[1][1]
-		<< "]["
-		<< logMessage[2][1]
-		<< "]["
-		<< logMessage[3][1]
-		<< "|"
-		<< std::endl
-		<< "|"
-		<< logMessage[0][2]
-		<< "]["
-		<< logMessage[1][2]
-		<< "]["
-		<< logMessage[2][2]
-		<< "]["
-		<< logMessage[3][2]
-		<< "|"
-		<< std::endl
-		<< "|"
-		<< logMessage[0][3]
-		<< "]["
-		<< logMessage[1][3]
-		<< "]["
-		<< logMessage[2][3]
-		<< "]["
-		<< logMessage[3][3]
-		<< "|"
-		<< std::endl;
-}
 void LogManager::printLog(const std::thread::id logMessage)
 {
 	std::cout << "[" << TimeManager::getInstance().getCurrentTimeInLocal() << "]"<< "Thread: " << logMessage << std::endl;

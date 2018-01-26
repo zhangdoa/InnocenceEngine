@@ -146,10 +146,16 @@ bool vec3::operator==(const vec3 & rhs)
 mat4 vec3::toTranslationMartix()
 {
 	mat4 l_m;
+
+	l_m.m[0][0] = 1;
+	l_m.m[1][1] = 1;
+	l_m.m[2][2] = 1;
+	l_m.m[3][3] = 1;
+
 	l_m.m[3][0] = x;
 	l_m.m[3][1] = y;
 	l_m.m[3][2] = z;
-	l_m.m[3][3] = 1;
+
 	return l_m;
 }
 
