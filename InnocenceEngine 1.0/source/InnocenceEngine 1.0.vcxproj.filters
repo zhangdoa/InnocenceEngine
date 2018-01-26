@@ -30,7 +30,6 @@
     <ClCompile Include="code\core\manager\graphic\SceneGraphManager.cpp" />
     <ClCompile Include="code\core\manager\graphic\GLWindowManager.cpp" />
     <ClCompile Include="code\core\manager\graphic\GLInputManager.cpp" />
-    <ClCompile Include="code\core\manager\graphic\GLGUIManager.cpp" />
     <ClCompile Include="code\core\component\VisibleComponent.cpp" />
     <ClCompile Include="code\core\component\LightComponent.cpp" />
     <ClCompile Include="code\core\third-party\glad.c" />
@@ -53,8 +52,6 @@
     <ClInclude Include="code\core\manager\LogManager.h" />
     <ClInclude Include="code\core\manager\TimeManager.h" />
     <ClInclude Include="code\core\platform-dependency\GL\GLRenderingManager.h" />
-    <ClInclude Include="code\core\third-party\nuklear.h" />
-    <ClInclude Include="code\core\third-party\nuklear_glfw_gl3.h" />
     <ClInclude Include="code\core\third-party\stb_image.h" />
     <ClInclude Include="code\game\InnocenceGarden.h" />
     <ClInclude Include="code\main\resource.h" />
@@ -67,7 +64,6 @@
     <ClInclude Include="code\core\manager\graphic\SceneGraphManager.h" />
     <ClInclude Include="code\core\manager\graphic\GLWindowManager.h" />
     <ClInclude Include="code\core\manager\graphic\GLInputManager.h" />
-    <ClInclude Include="code\core\manager\graphic\GLGUIManager.h" />
     <ClInclude Include="code\core\component\VisibleComponent.h" />
     <ClInclude Include="code\core\component\LightComponent.h" />
     <ClInclude Include="code\core\data\InnoMath.h" />
