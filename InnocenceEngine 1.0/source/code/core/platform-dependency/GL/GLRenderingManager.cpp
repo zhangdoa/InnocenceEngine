@@ -54,9 +54,10 @@ inline void GLShader::updateUniform(const std::string & uniformName, float unifo
 	glUniform1f(glGetUniformLocation(m_program, uniformName.c_str()), uniformValue);
 }
 
-inline void GLShader::updateUniform(const std::string & uniformName, const glm::vec2 & uniformValue) const
+inline void GLShader::updateUniform(const std::string & uniformName, const vec2 & uniformValue) const
 {
-	glUniform2fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &uniformValue[0]);
+	float l_vec[2] = { uniformValue.x, uniformValue.y};
+	glUniform2fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &l_vec[0]);
 }
 
 inline void GLShader::updateUniform(const std::string & uniformName, float x, float y) const
@@ -64,9 +65,10 @@ inline void GLShader::updateUniform(const std::string & uniformName, float x, fl
 	glUniform2f(glGetUniformLocation(m_program, uniformName.c_str()), x, y);
 }
 
-inline void GLShader::updateUniform(const std::string & uniformName, const glm::vec3 & uniformValue) const
+inline void GLShader::updateUniform(const std::string & uniformName, const vec3 & uniformValue) const
 {
-	glUniform3fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &uniformValue[0]);
+	float l_vec[3] = { uniformValue.x, uniformValue.y, uniformValue.z };
+	glUniform3fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, &l_vec[0]);
 }
 
 inline void GLShader::updateUniform(const std::string & uniformName, float x, float y, float z) const
@@ -79,9 +81,9 @@ inline void GLShader::updateUniform(const std::string & uniformName, float x, fl
 	glUniform4f(glGetUniformLocation(m_program, uniformName.c_str()), x, y, z, w);
 }
 
-inline void GLShader::updateUniform(const std::string & uniformName, const glm::mat4 & mat) const
+inline void GLShader::updateUniform(const std::string & uniformName, const mat4 & mat) const
 {
-	glUniformMatrix4fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, GL_FALSE, &mat[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(m_program, uniformName.c_str()), 1, GL_FALSE, &mat.m[0][0]);
 }
 
 
@@ -174,10 +176,10 @@ void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraCompon
 {
 	bindShader();
 
-	glm::mat4 p = cameraComponents[0]->getProjectionMatrix();
-	glm::mat4 r = cameraComponents[0]->getRotMatrix();
-	glm::mat4 t = cameraComponents[0]->getPosMatrix();
-	glm::mat4 m = glm::mat4();
+	mat4 p = cameraComponents[0]->getProjectionMatrix();
+	mat4 r = cameraComponents[0]->getRotMatrix();
+	mat4 t = cameraComponents[0]->getPosMatrix();
+	mat4 m = mat4();
 
 	// @TODO: multiply with inverse of camera rotation matrix
 	updateUniform("uni_p", p);
@@ -257,7 +259,7 @@ void SkyboxShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, s
 	bindShader();
 
 	// TODO: fix "looking outside" problem// almost there
-	glm::mat4 r, p;
+	mat4 r, p;
 	p = cameraComponents[0]->getProjectionMatrix();
 	r = cameraComponents[0]->getRotMatrix();
 
@@ -311,10 +313,10 @@ void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cam
 {
 	bindShader();
 
-	glm::mat4 p = cameraComponents[0]->getProjectionMatrix();
-	glm::mat4 r = cameraComponents[0]->getRotMatrix();
-	glm::mat4 t = cameraComponents[0]->getPosMatrix();
-	glm::mat4 m = glm::mat4();
+	mat4 p = cameraComponents[0]->getProjectionMatrix();
+	mat4 r = cameraComponents[0]->getRotMatrix();
+	mat4 t = cameraComponents[0]->getPosMatrix();
+	mat4 m = mat4();
 
 	updateUniform("uni_p", p);
 	updateUniform("uni_r", r);
@@ -390,7 +392,7 @@ void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& camera
 {
 	bindShader();
 
-	glm::vec3 cameraPos = cameraComponents[0]->getParentActor()->getTransform()->getPos();
+	vec3 cameraPos = cameraComponents[0]->getParentActor()->getTransform()->getPos();
 
 	int l_pointLightIndexOffset = 0;
 	for (auto i = (unsigned int)0; i < lightComponents.size(); i++)
@@ -447,10 +449,10 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 {
 	bindShader();
 
-	glm::mat4 p = cameraComponents[0]->getProjectionMatrix();
-	glm::mat4 r = cameraComponents[0]->getRotMatrix();
-	glm::mat4 t = cameraComponents[0]->getPosMatrix();
-	glm::mat4 m = glm::mat4();
+	mat4 p = cameraComponents[0]->getProjectionMatrix();
+	mat4 r = cameraComponents[0]->getRotMatrix();
+	mat4 t = cameraComponents[0]->getPosMatrix();
+	mat4 m = mat4();
 
 	updateUniform("uni_p", p);
 	updateUniform("uni_r", r);
@@ -541,7 +543,7 @@ void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraCompone
 {
 	bindShader();
 
-	glm::vec3 cameraPos = cameraComponents[0]->getParentActor()->getTransform()->getPos();
+	vec3 cameraPos = cameraComponents[0]->getParentActor()->getTransform()->getPos();
 
 	int l_pointLightIndexOffset = 0;
 	for (auto i = (unsigned int)0; i < lightComponents.size(); i++)
@@ -621,10 +623,10 @@ void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents,
 {
 	bindShader();
 
-	glm::mat4 p = cameraComponents[0]->getProjectionMatrix();
-	glm::mat4 r = cameraComponents[0]->getRotMatrix();
-	glm::mat4 t = cameraComponents[0]->getPosMatrix();
-	glm::mat4 m = glm::mat4();
+	mat4 p = cameraComponents[0]->getProjectionMatrix();
+	mat4 r = cameraComponents[0]->getRotMatrix();
+	mat4 t = cameraComponents[0]->getPosMatrix();
+	mat4 m = mat4();
 
 	updateUniform("uni_p", p);
 	updateUniform("uni_r", r);
@@ -686,7 +688,7 @@ void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraCompon
 	renderFinalPass(cameraComponents, lightComponents, visibleComponents);
 }
 
-void GLRenderingManager::setScreenResolution(glm::vec2 screenResolution)
+void GLRenderingManager::setScreenResolution(vec2 screenResolution)
 {
 	m_screenResolution = screenResolution;
 }

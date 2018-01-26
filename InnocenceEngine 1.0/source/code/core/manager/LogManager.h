@@ -1,6 +1,6 @@
 #pragma once
 #include "../interface/IManager.h"
-
+#include "../data/InnoMath.h"
 class LogManager : public IManager
 {
 public:
@@ -19,10 +19,10 @@ public:
 
 	void printLog(float logMessage);
 	void printLog(std::string logMessage);
-	void printLog(const glm::vec2& logMessage);
-	void printLog(const glm::vec3& logMessage);
-	void printLog(const glm::quat& logMessage);
-	void printLog(const glm::mat4& logMessage);
+	void printLog(const vec2& logMessage);
+	void printLog(const vec3& logMessage);
+	void printLog(const quat& logMessage);
+	void printLog(const mat4& logMessage);
 
 	void printLog(const std::thread::id logMessage);
 

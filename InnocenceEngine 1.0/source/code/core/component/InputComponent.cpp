@@ -32,21 +32,21 @@ void InputComponent::move(moveDirection moveDirection)
 	switch (moveDirection)
 	{
 		// opengl use right-hand-coordinate, so go foward means get into the negative z-axis
-	case FORWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::BACKWARD) * moveSpeed); break;
-	case BACKWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::FORWARD) *  moveSpeed);  break;
-	case LEFT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::LEFT) *  moveSpeed);  break;
-	case RIGHT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::RIGHT) *  moveSpeed);  break;
+	case FORWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::BACKWARD).mul(moveSpeed)); break;
+	case BACKWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::FORWARD).mul(moveSpeed));  break;
+	case LEFT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::LEFT).mul(moveSpeed));  break;
+	case RIGHT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::RIGHT).mul(moveSpeed));  break;
 	}
 }
 
 void InputComponent::rotateAroundXAxis(float offset)
 {
-	getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), ((-offset * rotateSpeed) / 180.0f)* glm::pi<float>());
+	getTransform()->rotate(vec3(0.0f, 1.0f, 0.0f), ((-offset * rotateSpeed) / 180.0f)* PI);
 }
 
 void InputComponent::rotateAroundYAxis(float offset)
 {
-	getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((offset * rotateSpeed) / 180.0f)* glm::pi<float>());
+	getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((offset * rotateSpeed) / 180.0f)* PI);
 }
 
 void InputComponent::setup()

@@ -39,16 +39,16 @@ void InnocenceGarden::setup()
 	pawnMeshComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
 	pawnActor2.addChildComponent(&pawnMeshComponent2);
 
-	playCharacter.getTransform()->setPos(glm::vec3(0.0f, 2.0f, 5.0f));
+	playCharacter.getTransform()->setPos(vec3(0.0f, 2.0f, 5.0f));
 
-	landscapeActor.getTransform()->setScale(glm::vec3(60.0f, 60.0f, 0.1f));
-	landscapeActor.getTransform()->rotate(glm::vec3(1.0f, 0.0f, 0.0f), -90.0f);
-	landscapeActor.getTransform()->setPos(glm::vec3(0.0f, 0.0f, 0.0f));
-	pawnActor1.getTransform()->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
-	pawnActor1.getTransform()->setPos(glm::vec3(0.0f, 0.2f, -1.5f));
-	pawnActor2.getTransform()->setScale(glm::vec3(0.2f, 0.2f, 0.2f));
-	//testStaticMeshActor2.getTransform()->setScale(glm::vec3(0.002f, 0.002f, 0.002f));
-	pawnActor2.getTransform()->setPos(glm::vec3(0.0f, 0.2f, 3.5f));
+	landscapeActor.getTransform()->setScale(vec3(60.0f, 60.0f, 0.1f));
+	landscapeActor.getTransform()->rotate(vec3(1.0f, 0.0f, 0.0f), -90.0f);
+	landscapeActor.getTransform()->setPos(vec3(0.0f, 0.0f, 0.0f));
+	pawnActor1.getTransform()->setScale(vec3(0.2f, 0.2f, 0.2f));
+	pawnActor1.getTransform()->setPos(vec3(0.0f, 0.2f, -1.5f));
+	pawnActor2.getTransform()->setScale(vec3(0.2f, 0.2f, 0.2f));
+	//testStaticMeshActor2.getTransform()->setScale(vec3(0.002f, 0.002f, 0.002f));
+	pawnActor2.getTransform()->setPos(vec3(0.0f, 0.2f, 3.5f));
 
 	setupLights();
 	setupSpheres();
@@ -110,7 +110,7 @@ void InnocenceGarden::setupSpheres()
 	{
 		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 		{
-			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(glm::vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0 + (j * sphereBreadthInterval), 2.0));
+			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0 + (j * sphereBreadthInterval), 2.0));
 		}
 	}	
 }
@@ -166,7 +166,7 @@ void InnocenceGarden::setupLights()
 	{
 		for (auto j = (unsigned int)0; j < pointLightMatrixDim; j++)
 		{
-			pointLightActors[i * pointLightMatrixDim + j].getTransform()->setPos(glm::vec3((-(pointLightMatrixDim - 1.0) * pointLightBreadthInterval / 2.0) + (i * pointLightBreadthInterval), 2.0 + (j * pointLightBreadthInterval), 0.0));
+			pointLightActors[i * pointLightMatrixDim + j].getTransform()->setPos(vec3((-(pointLightMatrixDim - 1.0) * pointLightBreadthInterval / 2.0) + (i * pointLightBreadthInterval), 2.0 + (j * pointLightBreadthInterval), 0.0));
 		}
 	}
 }
@@ -175,10 +175,10 @@ void InnocenceGarden::updateLights(float seed)
 {
 	for (auto i = (unsigned int)0; i < pointLightComponents.size(); i+=4)
 	{
-		pointLightComponents[i].setColor(glm::vec3((glm::sin(seed + i) + 1.0f) * 10.0f / 2.0f, 0.2f * 10.0f, 0.4f * 10.0f));
-		pointLightComponents[i + 1].setColor(glm::vec3(0.2f * 10.0f, (glm::sin(seed + i) + 1.0f) * 10.0f / 2.0f, 0.4f * 10.0f));
-		pointLightComponents[i + 2].setColor(glm::vec3((0.2f * 10.0f, 0.4f * 10.0f, glm::sin(seed + i) + 1.0f) * 10.0f / 2.0f));
-		pointLightComponents[i + 3].setColor(glm::vec3((glm::sin(seed + i * 2.0 ) + 1.0f) * 10.0f / 2.0f, (glm::sin(seed + i* 3.0) + 1.0f) * 10.0f / 2.0f, (glm::sin(seed + i * 5.0) + 1.0f) * 10.0f / 2.0f));
+		pointLightComponents[i].setColor(vec3((sin(seed + i) + 1.0f) * 10.0f / 2.0f, 0.2f * 10.0f, 0.4f * 10.0f));
+		pointLightComponents[i + 1].setColor(vec3(0.2f * 10.0f, (sin(seed + i) + 1.0f) * 10.0f / 2.0f, 0.4f * 10.0f));
+		pointLightComponents[i + 2].setColor(vec3(0.2f * 10.0f, 0.4f * 10.0f, (sin(seed + i) + 1.0f) * 10.0f / 2.0f));
+		pointLightComponents[i + 3].setColor(vec3((sin(seed + i * 2.0 ) + 1.0f) * 10.0f / 2.0f, (sin(seed + i* 3.0) + 1.0f) * 10.0f / 2.0f, (sin(seed + i * 5.0) + 1.0f) * 10.0f / 2.0f));
 	}
 }
 
@@ -187,7 +187,7 @@ void InnocenceGarden::updateSpheres(float seed)
 	for (auto i = (unsigned int)0; i < sphereActors.size(); i++)
 	{
 		// @TODO: fix stationary texture problem 
-		//sphereActors[i].getTransform()->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 0.1 * i);
-		//sphereActors[i].getTransform()->setPos(sphereActors[i].getTransform()->getPos() + glm::vec3(glm::cos(seed) * 0.1, 0.0, 0.0));
+		//sphereActors[i].getTransform()->rotate(vec3(0.0f, 1.0f, 0.0f), 0.1 * i);
+		//sphereActors[i].getTransform()->setPos(sphereActors[i].getTransform()->getPos() + vec3(cos(seed) * 0.1, 0.0, 0.0));
 	}
 }
