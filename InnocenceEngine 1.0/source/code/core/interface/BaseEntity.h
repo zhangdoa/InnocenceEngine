@@ -11,7 +11,7 @@ public:
 
 	enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
 	void update();
-	void rotate(const glm::vec3& axis, float angle);
+	void rotate(const vec3 & axis, float angle);
 
 	vec3& getPos();
 	quat& getRot();

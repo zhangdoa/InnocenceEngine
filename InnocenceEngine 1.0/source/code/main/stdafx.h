@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <tchar.h>
-#include <cmath>
 #include <chrono>
 #include <ctime>
 #include <tuple>
