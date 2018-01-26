@@ -162,7 +162,6 @@
     <ClCompile Include="code\core\interface\IEntity.cpp" />
     <ClCompile Include="code\core\manager\AssetManager.cpp" />
     <ClCompile Include="code\core\manager\CoreManager.cpp" />
-    <ClCompile Include="code\core\manager\graphic\GLGUIManager.cpp" />
     <ClCompile Include="code\core\interface\IManager.cpp" />
     <ClCompile Include="code\core\manager\graphic\GLInputManager.cpp" />
     <ClCompile Include="code\core\manager\LogManager.cpp" />
@@ -195,7 +194,6 @@
     <ClInclude Include="code\core\interface\IEntity.h" />
     <ClInclude Include="code\core\manager\AssetManager.h" />
     <ClInclude Include="code\core\manager\CoreManager.h" />
-    <ClInclude Include="code\core\manager\graphic\GLGUIManager.h" />
     <ClInclude Include="code\core\interface\IManager.h" />
     <ClInclude Include="code\core\manager\graphic\GLInputManager.h" />
     <ClInclude Include="code\core\manager\LogManager.h" />
@@ -204,8 +202,6 @@
     <ClInclude Include="code\core\manager\TimeManager.h" />
     <ClInclude Include="code\core\manager\graphic\GLWindowManager.h" />
     <ClInclude Include="code\core\platform-dependency\GL\GLRenderingManager.h" />
-    <ClInclude Include="code\core\third-party\nuklear.h" />
-    <ClInclude Include="code\core\third-party\nuklear_glfw_gl3.h" />
     <ClInclude Include="code\core\third-party\stb_image.h" />
     <ClInclude Include="code\game\InnocenceGarden.h" />
     <ClInclude Include="code\main\resource.h" />

@@ -36,7 +36,6 @@ void RenderingManager::setup()
 	m_childManager.emplace_back(&GLWindowManager::getInstance());
 	m_childManager.emplace_back(&GLInputManager::getInstance());
 	m_childManager.emplace_back(&GLRenderingManager::getInstance());
-	//m_childEventManager.emplace_back(&GLGUIManager::getInstance());
 	for (size_t i = 0; i < m_childManager.size(); i++)
 	{
 		m_childManager[i].get()->setup();
@@ -109,7 +108,4 @@ void RenderingManager::AsyncRender()
 	GLWindowManager::getInstance().update();
 
 	GLInputManager::getInstance().update();
-	//GLGUIManager::getInstance().update();
-
-	//LogManager::getInstance().printLog("Async Rendering Finished.");
 }

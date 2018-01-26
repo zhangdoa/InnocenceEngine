@@ -66,11 +66,16 @@ void InnocenceGarden::initialize()
 	//AssetManager::getInstance().loadAsset(assetType::MODEL, "nanosuit/nanosuit.obj", pawnMeshComponent2);
 
 	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
-	//AssetManager::getInstance().addUnitCube(skyboxComponent);
+	AssetManager::getInstance().addUnitMesh(skyboxComponent, unitMeshType::CUBE);
+	AssetManager::getInstance().loadAsset("skybox2/right.tga",textureType::CUBEMAP, skyboxComponent);
+	AssetManager::getInstance().loadAsset("skybox2/left.tga", textureType::CUBEMAP, skyboxComponent);
+	AssetManager::getInstance().loadAsset("skybox2/top.tga", textureType::CUBEMAP, skyboxComponent);
+	AssetManager::getInstance().loadAsset("skybox2/bottom.tga", textureType::CUBEMAP, skyboxComponent);
+	AssetManager::getInstance().loadAsset("skybox2/back.tga", textureType::CUBEMAP, skyboxComponent);
+	AssetManager::getInstance().loadAsset("skybox2/front.tga", textureType::CUBEMAP, skyboxComponent);
 	AssetManager::getInstance().addUnitMesh(landscapeStaticMeshComponent, unitMeshType::CUBE);
 
-	//AssetManager::getInstance().loadTexture({ "skybox2/right.tga",
-	//	"skybox2/left.tga", "skybox2/top.tga", "skybox2/bottom.tga", "skybox2/back.tga", "skybox2/front.tga" }, skyboxComponent);
+	
 
 	rootActor.initialize();
 }
