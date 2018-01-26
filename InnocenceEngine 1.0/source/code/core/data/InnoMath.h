@@ -7,6 +7,7 @@
 const static double PI = 3.14159265358979323846264338327950288;
 
 // [rowIndex][columnIndex]
+// Column-major order
 class mat4
 {
 public:
@@ -71,9 +72,11 @@ public:
 	vec3 sub(float rhs);
 	vec3 operator-(float rhs);
 	float dot(const vec3& rhs);
+	float operator*(const vec3& rhs);
 	vec3 cross(const vec3& rhs);
 	vec3 mul(const vec3& rhs);
 	vec3 mul(float rhs);
+	vec3 operator*(float rhs);
 	float length();
 	vec3 normalize();
 

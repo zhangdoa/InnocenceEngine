@@ -100,7 +100,7 @@
       <AdditionalDependencies>alut.lib;OpenAL32.lib;glfw3dll.lib;glew32.lib;glew32s.lib;opengl32.lib;assimp-vc140-mt.lib;tinyxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Bscmake>
-      <PreserveSbr>true</PreserveSbr>
+      <PreserveSbr>false</PreserveSbr>
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -184,6 +184,7 @@
     <ClCompile Include="code\core\manager\TaskManager.cpp" />
     <ClCompile Include="code\core\data\InnoTask.cpp" />
     <ClCompile Include="code\core\manager\MemoryManager.cpp" />
+    <ClCompile Include="code\game\MathTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
@@ -219,6 +220,7 @@
     <ClInclude Include="code\core\manager\TaskManager.h" />
     <ClInclude Include="code\core\data\InnoTask.h" />
     <ClInclude Include="code\core\manager\MemoryManager.h" />
+    <ClInclude Include="code\game\MathTest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
