@@ -264,12 +264,12 @@ void GLMesh::shutdown()
 	setStatus(objectStatus::SHUTDOWN);
 }
 
-void ITexture::setup()
+void I2DTexture::setup()
 {
 	this->setup(textureType::DIFFUSE, textureWrapMethod::REPEAT, 0, 0, 0, 0, nullptr);
 }
 
-void ITexture::setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData)
+void I2DTexture::setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData)
 {
 	m_textureType = textureType;
 	m_textureWrapMethod = textureWrapMethod;
@@ -280,12 +280,12 @@ void ITexture::setup(textureType textureType, textureWrapMethod textureWrapMetho
 	m_textureRawData = textureData;
 }
 
-textureID ITexture::getTextureDataID() const
+textureID I2DTexture::getTextureDataID() const
 {
 	return this->getEntityID();
 }
 
-void GLTexture::initialize()
+void GL2DTexture::initialize()
 {
 	GLint l_textureWrapMethod;
 	switch (m_textureWrapMethod)
@@ -368,7 +368,7 @@ void GLTexture::initialize()
 	setStatus(objectStatus::ALIVE);
 }
 
-void GLTexture::update()
+void GL2DTexture::update()
 {
 	//@TODO: switch is too slow for CPU
 	switch (m_textureType)
@@ -401,7 +401,7 @@ void GLTexture::update()
 	}
 }
 
-void GLTexture::shutdown()
+void GL2DTexture::shutdown()
 {
 	glDeleteTextures(1, &m_textureID);
 
