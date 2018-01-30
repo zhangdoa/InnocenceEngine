@@ -74,11 +74,11 @@ private:
 	GLuint m_IBO = 0;
 };
 
-class ITexture : public IEntity
+class I2DTexture : public IEntity
 {
 public:
-	ITexture() {};
-	virtual ~ITexture() {};
+	I2DTexture() {};
+	virtual ~I2DTexture() {};
 
 	void setup() override;
 	void setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData);
@@ -96,11 +96,45 @@ protected:
 	void* m_textureRawData;
 };
 
-class GLTexture : public ITexture
+class GL2DTexture : public I2DTexture
 {
 public:
-	GLTexture() {};
-	~GLTexture() {};
+	GL2DTexture() {};
+	~GL2DTexture() {};
+
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
+private:
+	GLuint m_textureID = 0;
+};
+
+enum class cubemapTexturePositionType{RIGHT, LEFT, TOP, BOTTOM, BACK, FRONT};
+
+class I3DTexture : public IEntity
+{
+public:
+	I3DTexture() {};
+	virtual ~I3DTexture() {};
+
+	void setup() override;
+	void setup(const std::vector<textureID>& textures);
+
+protected:
+	textureID m_rightTexture;
+	textureID m_leftTexture;
+	textureID m_topTexture;
+	textureID m_bottomTexture;
+	textureID m_backTexture;
+	textureID m_frontTexture;
+};
+
+class GL3DTexture : public I3DTexture
+{
+public:
+	GL3DTexture() {};
+	~GL3DTexture() {};
 
 	void initialize() override;
 	void update() override;

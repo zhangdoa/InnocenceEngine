@@ -26,7 +26,7 @@ IMesh* RenderingManager::getMesh(meshID meshID)
 	return GLRenderingManager::getInstance().getMesh(meshID);
 }
 
-ITexture* RenderingManager::getTexture(textureID textureID)
+I2DTexture* RenderingManager::getTexture(textureID textureID)
 {
 	return  GLRenderingManager::getInstance().getTexture(textureID);
 }

@@ -27,7 +27,7 @@ public:
 	meshID addMesh();
 	textureID addTexture();
 	IMesh* getMesh(meshID meshID);
-	ITexture* getTexture(textureID textureID);
+	I2DTexture* getTexture(textureID textureID);
 
 private:
 	RenderingManager() {};
