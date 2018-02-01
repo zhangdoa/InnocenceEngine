@@ -193,11 +193,6 @@ void IMesh::addUnitQuad()
 	m_indices = { 0, 1, 3, 1, 2, 3 };
 }
 
-meshID IMesh::getMeshDataID() const
-{
-	return this->getEntityID();
-}
-
 void GLMesh::initialize()
 {
 	glGenVertexArrays(1, &m_VAO);
@@ -266,23 +261,17 @@ void GLMesh::shutdown()
 
 void I2DTexture::setup()
 {
-	this->setup(textureType::DIFFUSE, textureWrapMethod::REPEAT, 0, 0, 0, 0, nullptr);
+	this->setup(textureType::DIFFUSE, textureWrapMethod::REPEAT, 0, 0, 0, nullptr);
 }
 
-void I2DTexture::setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData)
+void I2DTexture::setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureFormat, int textureWidth, int textureHeight, void * textureData)
 {
 	m_textureType = textureType;
 	m_textureWrapMethod = textureWrapMethod;
-	m_textureIndex = textureIndex;
 	m_textureFormat = textureFormat;
 	m_textureWidth = textureWidth;
 	m_textureHeight = textureHeight;
 	m_textureRawData = textureData;
-}
-
-textureID I2DTexture::getTextureDataID() const
-{
-	return this->getEntityID();
 }
 
 void GL2DTexture::initialize()
@@ -296,18 +285,6 @@ void GL2DTexture::initialize()
 	if (m_textureType == textureType::INVISIBLE)
 	{
 		return;
-	}
-	else if (m_textureType == textureType::CUBEMAP)
-	{
-		glGenTextures(1, &m_textureID);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
-		// set the texture wrapping parameters
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, l_textureWrapMethod);
-		// set texture filtering parameters
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 	else
 	{
@@ -328,42 +305,17 @@ void GL2DTexture::initialize()
 	}
 	else if (m_textureFormat == 3)
 	{
-		if (m_textureType == textureType::CUBEMAP)
-		{
-			l_internalFormat = GL_SRGB;
-		}
-		else
-		{
-			l_internalFormat = GL_RGB;
-		}
+
+		l_internalFormat = GL_RGB;
 	}
 	else if (m_textureFormat == 4)
 	{
-		if (m_textureType == textureType::CUBEMAP)
-		{
-			l_internalFormat = GL_SRGB_ALPHA;
-		}
-		else
-		{
-			l_internalFormat = GL_RGBA;
-		}
+		l_internalFormat = GL_RGBA;
 	}
 
-	if (m_textureType == textureType::INVISIBLE)
-	{
-		return;
-	}
-	else if (m_textureType == textureType::CUBEMAP)
-	{
-		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + m_textureIndex, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData);
-	}
-	else
-	{
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, m_textureRawData);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
+	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, m_textureRawData);
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	setStatus(objectStatus::ALIVE);
 }
@@ -394,10 +346,6 @@ void GL2DTexture::update()
 		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
-	case textureType::CUBEMAP:
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
-		break;
 	}
 }
 
@@ -408,3 +356,69 @@ void GL2DTexture::shutdown()
 	setStatus(objectStatus::SHUTDOWN);
 }
 
+void I3DTexture::setup()
+{
+}
+
+void I3DTexture::setup(int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData)
+{
+	m_textureFormat = textureFormat;
+	m_textureWidth = textureWidth;
+	m_textureHeight = textureHeight;
+	m_textureRawData_Right = textureData[0];
+	m_textureRawData_Left = textureData[1];
+	m_textureRawData_Top = textureData[2];
+	m_textureRawData_Bottom = textureData[3];
+	m_textureRawData_Back = textureData[4];
+	m_textureRawData_Front = textureData[5];
+}
+
+void GL3DTexture::initialize()
+{
+	glGenTextures(1, &m_textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	GLenum l_internalFormat;
+	if (m_textureFormat == 1)
+	{
+		l_internalFormat = GL_RED;
+	}
+	else if (m_textureFormat == 3)
+	{
+
+		l_internalFormat = GL_SRGB;
+	}
+	else if (m_textureFormat == 4)
+	{
+		l_internalFormat = GL_SRGB_ALPHA;
+	}
+	glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Right);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Left);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Top);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Bottom);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Back);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Front);
+
+	setStatus(objectStatus::ALIVE);
+}
+
+void GL3DTexture::update()
+{
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
+}
+
+void GL3DTexture::shutdown()
+{
+	glDeleteTextures(1, &m_textureID);
+
+	setStatus(objectStatus::SHUTDOWN);
+}
