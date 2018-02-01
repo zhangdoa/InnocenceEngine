@@ -9,5 +9,13 @@ uniform sampler2D uni_backgroundFPassRT0;
 
 void main()
 {    
-	uni_backgroundDPassRT0 = texture(uni_backgroundFPassRT0, TexCoords) * texture(uni_lightPassRT0, TexCoords);
+	if(texture(uni_lightPassRT0, TexCoords).a == 1.0)
+	{
+		uni_backgroundDPassRT0 = texture(uni_lightPassRT0, TexCoords);
+	}
+	else
+	{
+		uni_backgroundDPassRT0 = texture(uni_backgroundFPassRT0, TexCoords);
+	}
+	
 }

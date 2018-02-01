@@ -479,11 +479,11 @@ void BackgroundFPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraC
 	bindShader();
 
 	// TODO: fix "looking outside" problem// almost there
-	mat4 r, p;
-	p = cameraComponents[0]->getProjectionMatrix();
-	r = cameraComponents[0]->getRotMatrix();
+	mat4 p = cameraComponents[0]->getProjectionMatrix();
+	mat4 r = cameraComponents[0]->getRotMatrix();
 
-	updateUniform("uni_RP", p * r * -1.0f);
+	updateUniform("uni_p", p);
+	updateUniform("uni_r", r);
 
 	for (auto& l_visibleComponent : visibleComponents)
 	{
@@ -507,6 +507,7 @@ void BackgroundDPassPBSShader::init()
 	initProgram();
 	addShader(GLShader::VERTEX, "GL3.3/backgroundDPassPBSVertex.sf");
 	setAttributeLocation(0, "in_Position");
+	setAttributeLocation(1, "in_TexCoord");
 	addShader(GLShader::FRAGMENT, "GL3.3/backgroundDPassPBSFragment.sf");
 	bindShader();
 	updateUniform("uni_lightPassRT0", 0);
@@ -834,11 +835,11 @@ void GLRenderingManager::initializeBackgroundPass()
 		1.0f, -1.0f, 0.0f, 1.0f, 0.0f, };
 
 	glGenVertexArrays(1, &m_backgroundFPassVAO);
-	glGenBuffers(1, &m_backgroundDPassVBO);
-	glBindVertexArray(m_backgroundDPassVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, m_backgroundDPassVBO);
+	glGenBuffers(1, &m_backgroundFPassVBO);
+	glBindVertexArray(m_backgroundFPassVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_backgroundFPassVBO);
 	// take care of std::vector's size and pointer of first element!!!
-	glBufferData(GL_ARRAY_BUFFER, m_backgroundDPassVertices.size() * sizeof(float), &m_backgroundDPassVertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, m_backgroundFPassVertices.size() * sizeof(float), &m_backgroundFPassVertices[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
@@ -850,7 +851,7 @@ void GLRenderingManager::initializeBackgroundPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// background defer pass
-	m_backgroundFPassShader->init();
+	m_backgroundDPassShader->init();
 
 	//generate and bind frame buffer
 	glGenFramebuffers(1, &m_backgroundDPassFBO);
@@ -877,7 +878,7 @@ void GLRenderingManager::initializeBackgroundPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogManager::getInstance().printLog("Background Pass Framebuffer not complete!");
+		LogManager::getInstance().printLog("Background Defer Pass Framebuffer not complete!");
 	}
 
 	// initialize background defer pass rectangle
@@ -914,11 +915,6 @@ void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cam
 	glDisable(GL_CULL_FACE);
 
 	m_backgroundFPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_3DTextureMap);
-	
-	// draw background forward pass rectangle
-	glBindVertexArray(m_backgroundFPassVAO);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	glBindVertexArray(0);
 
 	// draw background defer pass
 	glBindFramebuffer(GL_FRAMEBUFFER, m_backgroundDPassFBO);
@@ -929,6 +925,8 @@ void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cam
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_lightPassRT0Texture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m_backgroundFPassRT0Texture);
 
 	m_backgroundDPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_3DTextureMap);
 
