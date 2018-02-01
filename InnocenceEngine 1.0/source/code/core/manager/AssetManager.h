@@ -29,6 +29,7 @@ public:
 
 	void loadAsset(const std::string& filePath);
 	void loadAsset(const std::string& filePath, VisibleComponent& visibleComponent);
+	void loadAsset(const std::vector<std::string>& filePath, VisibleComponent& visibleComponent);
 	void loadAsset(const std::string& filePath, textureType textureType, VisibleComponent& visibleComponent);
 
 	std::string loadShader(const std::string& fileName) const;

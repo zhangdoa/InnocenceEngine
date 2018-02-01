@@ -76,6 +76,11 @@ void AssetManager::loadAsset(const std::string & filePath, VisibleComponent & vi
 	}
 }
 
+void AssetManager::loadAsset(const std::vector<std::string>& filePath, VisibleComponent & visibleComponent)
+{
+	loadCubeMapTextures(filePath, visibleComponent);
+}
+
 void AssetManager::loadAsset(const std::string & filePath, textureType textureType, VisibleComponent & visibleComponent)
 {
 	loadTextureImpl(filePath, textureType, visibleComponent);
@@ -315,7 +320,7 @@ void AssetManager::loadTextureImpl(const std::string & fileName, textureType tex
 	if (l_loadedTextureData != m_loadedTextureMap.end())
 	{
 		assignLoadedTexture(textureAssignType::OVERWRITE, l_loadedTextureData->second, visibleComponent);
-		LogManager::getInstance().printLog("innoTexture: " + fileName + " is already loaded, successfully assigned loaded texture data IDs.");
+		LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is already loaded, successfully assigned loaded texture data IDs.");
 	}
 	else
 	{
@@ -363,11 +368,11 @@ textureID AssetManager::loadTextureFromDisk(const std::string & fileName, textur
 	auto *data = stbi_load((m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		auto id = RenderingManager::getInstance().addTexture();
-		auto lastTextureData = RenderingManager::getInstance().getTexture(id);
-		lastTextureData->setup(textureType, textureWrapMethod, 0, nrChannels, width, height, data);
+		auto id = RenderingManager::getInstance().add2DTexture();
+		auto lastTextureData = RenderingManager::getInstance().get2DTexture(id);
+		lastTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
 		lastTextureData->initialize();
-		LogManager::getInstance().printLog("innoTexture: " + fileName + " is loaded.");
+		LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is loaded.");
 		return id;
 	}
 	else
@@ -411,6 +416,11 @@ void AssetManager::loadShaderImpl(const std::string & filePath)
 void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
 {
 	int width, height, nrChannels;
+	auto id = RenderingManager::getInstance().add3DTexture();
+	auto lastTextureData = RenderingManager::getInstance().get3DTexture(id);
+
+	std::vector<void*> l_3DTextureRawData;
+
 	for (auto i = (unsigned int)0; i < fileName.size(); i++)
 	{
 		// load image, do not flip texture
@@ -418,11 +428,8 @@ void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName,
 		auto *data = stbi_load((m_textureRelativePath + fileName[i]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			auto id = RenderingManager::getInstance().addTexture();
-			auto lastTextureData = RenderingManager::getInstance().getTexture(id);
-			lastTextureData->setup(textureType::CUBEMAP, visibleComponent.m_textureWrapMethod, i, nrChannels, width, height, data);
-			visibleComponent.overwriteTextureData(texturePair(textureType::CUBEMAP, id));
-			LogManager::getInstance().printLog("innoTexture: " + fileName[i] + " is loaded.");
+			l_3DTextureRawData.emplace_back(data);
+			LogManager::getInstance().printLog("inno3DTexture: " + fileName[i] + " is loaded.");
 		}
 		else
 		{
@@ -430,6 +437,10 @@ void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName,
 		}
 		//stbi_image_free(data);
 	}
+	lastTextureData->setup(nrChannels, width, height, l_3DTextureRawData);
+	lastTextureData->initialize();
+	visibleComponent.addTextureData(texturePair(textureType::CUBEMAP, id));
+	LogManager::getInstance().printLog("inno3DTexture is fully loaded.");
 }
 
 

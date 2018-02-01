@@ -47,8 +47,6 @@ public:
 	void addUnitSphere();
 	void addUnitQuad();
 
-	meshID getMeshDataID() const;
-
 protected:
 	std::vector<Vertex> m_vertices;
 	std::vector<unsigned int> m_indices;
@@ -81,15 +79,12 @@ public:
 	virtual ~I2DTexture() {};
 
 	void setup() override;
-	void setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureIndex, int textureFormat, int textureWidth, int textureHeight, void * textureData);
-
-	textureID getTextureDataID() const;
+	void setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureFormat, int textureWidth, int textureHeight, void * textureData);
 
 protected:	
 	textureType m_textureType;
 	textureWrapMethod m_textureWrapMethod;
 
-	int m_textureIndex;
 	int m_textureFormat;
 	int m_textureWidth;
 	int m_textureHeight;
@@ -119,15 +114,21 @@ public:
 	virtual ~I3DTexture() {};
 
 	void setup() override;
-	void setup(const std::vector<textureID>& textures);
+	void setup(int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData);
 
 protected:
-	textureID m_rightTexture;
-	textureID m_leftTexture;
-	textureID m_topTexture;
-	textureID m_bottomTexture;
-	textureID m_backTexture;
-	textureID m_frontTexture;
+
+	int m_textureIndex;
+	int m_textureFormat;
+	int m_textureWidth;
+	int m_textureHeight;
+
+	void* m_textureRawData_Right;
+	void* m_textureRawData_Left;
+	void* m_textureRawData_Top;
+	void* m_textureRawData_Bottom;
+	void* m_textureRawData_Back;
+	void* m_textureRawData_Front;
 };
 
 class GL3DTexture : public I3DTexture
