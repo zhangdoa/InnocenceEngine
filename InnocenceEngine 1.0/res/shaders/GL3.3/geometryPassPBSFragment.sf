@@ -1,9 +1,9 @@
 // shadertype=glsl
 #version 330 core
-layout (location = 0) out vec4 uni_RT0;
-layout (location = 1) out vec4 uni_RT1;
-layout (location = 2) out vec4 uni_RT2;
-layout (location = 3) out vec4 uni_RT3;
+layout (location = 0) out vec4 uni_geometryPassRT0;
+layout (location = 1) out vec4 uni_geometryPassRT1;
+layout (location = 2) out vec4 uni_geometryPassRT2;
+layout (location = 3) out vec4 uni_geometryPassRT3;
 
 in vec3 thefrag_FragPos;
 in vec2 thefrag_TexCoord;
@@ -30,14 +30,14 @@ void main()
     mat3 TBN = mat3(T, B, N);
 
 	//alpha should be set to 0 for background rendering pass
-    uni_RT0 = vec4(thefrag_FragPos, 0.0);
+    uni_geometryPassRT0 = vec4(thefrag_FragPos, 0.0);
 
-	uni_RT1 = vec4(normalize(TBN * (texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0)), 1.0);
+	uni_geometryPassRT1 = vec4(normalize(TBN * (texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0)), 1.0);
 
-    uni_RT2 = texture(uni_albedoTexture, thefrag_TexCoord);
+    uni_geometryPassRT2 = texture(uni_albedoTexture, thefrag_TexCoord);
 
-	uni_RT3.r = texture(uni_metallicTexture, thefrag_TexCoord).r;
-	uni_RT3.g = texture(uni_roughnessTexture, thefrag_TexCoord).r;
-	uni_RT3.b = texture(uni_aoTexture, thefrag_TexCoord).r;
-	uni_RT3.a = 1.0;
+	uni_geometryPassRT3.r = texture(uni_metallicTexture, thefrag_TexCoord).r;
+	uni_geometryPassRT3.g = texture(uni_roughnessTexture, thefrag_TexCoord).r;
+	uni_geometryPassRT3.b = texture(uni_aoTexture, thefrag_TexCoord).r;
+	uni_geometryPassRT3.a = 1.0;
 }

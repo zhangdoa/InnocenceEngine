@@ -1,0 +1,13 @@
+// shadertype=<glsl>
+#version 330 core
+layout (location = 0) out vec4 uni_backgroundDPassRT0;
+
+in vec2 TexCoords;
+
+uniform sampler2D uni_lightPassRT0;
+uniform sampler2D uni_backgroundFPassRT0;
+
+void main()
+{    
+	uni_backgroundDPassRT0 = texture(uni_backgroundFPassRT0, TexCoords) * texture(uni_lightPassRT0, TexCoords);
+}

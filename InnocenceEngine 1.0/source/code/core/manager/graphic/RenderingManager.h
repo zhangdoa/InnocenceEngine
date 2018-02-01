@@ -25,9 +25,11 @@ public:
 	}
 
 	meshID addMesh();
-	textureID addTexture();
+	textureID add2DTexture();
+	textureID add3DTexture();
 	IMesh* getMesh(meshID meshID);
-	I2DTexture* getTexture(textureID textureID);
+	I2DTexture* get2DTexture(textureID textureID);
+	I3DTexture* get3DTexture(textureID textureID);
 
 private:
 	RenderingManager() {};

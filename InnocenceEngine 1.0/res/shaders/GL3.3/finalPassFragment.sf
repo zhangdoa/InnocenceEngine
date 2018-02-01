@@ -4,17 +4,17 @@
 in vec2 TexCoords;
 out vec4 FragColor;
 
-uniform sampler2D uni_finalColor;
+uniform sampler2D uni_backgroundDPassRT0;
 
 void main()
 {  
-	if(texture(uni_finalColor, TexCoords).a == 0.0)
+	if(texture(uni_backgroundDPassRT0, TexCoords).a == 0.0)
 	{
 	FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 	}
 	else
 	{
-	vec3 finalColor = texture(uni_finalColor, TexCoords).rgb;
+	vec3 finalColor = texture(uni_backgroundDPassRT0, TexCoords).rgb;
 	
 	//HDR to LDR
 	finalColor = finalColor / (finalColor + vec3(1.0));
@@ -24,5 +24,4 @@ void main()
 
 	FragColor = vec4(finalColor, 1.0);
 	}
-
 }
