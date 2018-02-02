@@ -11,11 +11,11 @@ void AssetManager::setup()
 
 void AssetManager::initialize()
 {
-	m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", textureType::NORMALS, textureWrapMethod::REPEAT);
-	m_basicAlbedoTemplate = loadTextureFromDisk("basic_albedo.png", textureType::DIFFUSE, textureWrapMethod::REPEAT);
-	m_basicMetallicTemplate = loadTextureFromDisk("basic_metallic.png", textureType::SPECULAR, textureWrapMethod::REPEAT);
-	m_basicRoughnessTemplate = loadTextureFromDisk("basic_roughness.png", textureType::AMBIENT, textureWrapMethod::REPEAT);
-	m_basicAOTemplate = loadTextureFromDisk("basic_ao.png", textureType::EMISSIVE, textureWrapMethod::REPEAT);
+	m_basicNormalTemplate = load2DTextureFromDisk("basic_normal.png", textureType::NORMAL, textureWrapMethod::REPEAT);
+	m_basicAlbedoTemplate = load2DTextureFromDisk("basic_albedo.png", textureType::ALBEDO, textureWrapMethod::REPEAT);
+	m_basicMetallicTemplate = load2DTextureFromDisk("basic_metallic.png", textureType::METALLIC, textureWrapMethod::REPEAT);
+	m_basicRoughnessTemplate = load2DTextureFromDisk("basic_roughness.png", textureType::ROUGHNESS, textureWrapMethod::REPEAT);
+	m_basicAOTemplate = load2DTextureFromDisk("basic_ao.png", textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT);
 
 	m_UnitCubeTemplate = RenderingManager::getInstance().addMesh();
 	auto lastMeshData = RenderingManager::getInstance().getMesh(m_UnitCubeTemplate);
@@ -68,7 +68,7 @@ void AssetManager::loadAsset(const std::string & filePath, VisibleComponent & vi
 	//@TODO: generalize a loader base class 
 	if (m_supportedTextureType.find(l_subfix) != m_supportedTextureType.end())
 	{
-		loadTextureImpl(filePath, textureType::DIFFUSE, visibleComponent);
+		loadTextureImpl(filePath, textureType::ALBEDO, visibleComponent);
 	}
 	else if (m_supportedModelType.find(l_subfix) != m_supportedModelType.end())
 	{
@@ -78,7 +78,7 @@ void AssetManager::loadAsset(const std::string & filePath, VisibleComponent & vi
 
 void AssetManager::loadAsset(const std::vector<std::string>& filePath, VisibleComponent & visibleComponent)
 {
-	loadCubeMapTextures(filePath, visibleComponent);
+	load3DTextureFromDisk(filePath, visibleComponent);
 }
 
 void AssetManager::loadAsset(const std::string & filePath, textureType textureType, VisibleComponent & visibleComponent)
@@ -303,9 +303,41 @@ textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName
 				l_localPath = std::string(l_AssString.C_Str());
 			}
 
+			textureType l_textureType;
+
+			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
+			{
+				LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is unknown type!");
+				return textureMap();
+			}
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
+			{
+				l_textureType = textureType::NORMAL;
+			}
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_DIFFUSE)
+			{
+				l_textureType = textureType::ALBEDO;
+			}
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_SPECULAR)
+			{
+				l_textureType = textureType::METALLIC;
+			}
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_AMBIENT)
+			{
+				l_textureType = textureType::ROUGHNESS;
+			}
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_EMISSIVE)
+			{
+				l_textureType = textureType::AMBIENT_OCCLUSION;
+			}
+			else
+			{
+				LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is unsupported type!");
+				return textureMap();
+			}
 			// load image
-			l_texturePair.first = textureType(aiTextureType(i));
-			l_texturePair.second = loadTextureFromDisk(fileName + "//" + l_localPath, textureType(aiTextureType(i)), textureWrapMethod);
+			l_texturePair.first = l_textureType;
+			l_texturePair.second = load2DTextureFromDisk(fileName + "//" + l_localPath, l_textureType, textureWrapMethod);
 
 			l_textureMap.emplace(l_texturePair);
 		}
@@ -324,7 +356,7 @@ void AssetManager::loadTextureImpl(const std::string & fileName, textureType tex
 	}
 	else
 	{
-		auto l_texturePair = texturePair(textureType, loadTextureFromDisk(fileName, textureType, visibleComponent.m_textureWrapMethod));
+		auto l_texturePair = texturePair(textureType, load2DTextureFromDisk(fileName, textureType, visibleComponent.m_textureWrapMethod));
 		m_loadedTextureMap.emplace(fileName, l_texturePair);
 		assignLoadedTexture(textureAssignType::OVERWRITE, l_texturePair, visibleComponent);
 	}
@@ -344,7 +376,7 @@ void AssetManager::loadTextureImpl(const std::string &filePath)
 	}
 	else
 	{
-		loadTextureFromDisk(filePath);
+		load2DTextureFromDisk(filePath);
 	}
 }
 
@@ -360,7 +392,7 @@ void AssetManager::assignLoadedTexture(textureAssignType textureAssignType, text
 	}
 }
 
-textureID AssetManager::loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod)
+textureID AssetManager::load2DTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod)
 {
 	int width, height, nrChannels;
 	// load image
@@ -383,7 +415,7 @@ textureID AssetManager::loadTextureFromDisk(const std::string & fileName, textur
 	//stbi_image_free(data);
 }
 
-void AssetManager::loadTextureFromDisk(const std::string & filePath)
+void AssetManager::load2DTextureFromDisk(const std::string & filePath)
 {
 	int width, height, nrChannels;
 	// load image
@@ -413,7 +445,7 @@ void AssetManager::loadShaderImpl(const std::string & filePath)
 	file.close();
 }
 
-void AssetManager::loadCubeMapTextures(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
+void AssetManager::load3DTextureFromDisk(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
 {
 	int width, height, nrChannels;
 	auto id = RenderingManager::getInstance().add3DTexture();
@@ -448,11 +480,11 @@ void AssetManager::assignDefaultTextures(textureAssignType textureAssignType, Vi
 {
 	if (visibleComponent.m_visiblilityType == visiblilityType::STATIC_MESH)
 	{
-		assignLoadedTexture(textureAssignType, texturePair(textureType::NORMALS, m_basicNormalTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::DIFFUSE, m_basicAlbedoTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::SPECULAR, m_basicMetallicTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::AMBIENT, m_basicRoughnessTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::EMISSIVE, m_basicAOTemplate), visibleComponent);
+		assignLoadedTexture(textureAssignType, texturePair(textureType::NORMAL, m_basicNormalTemplate), visibleComponent);
+		assignLoadedTexture(textureAssignType, texturePair(textureType::ALBEDO, m_basicAlbedoTemplate), visibleComponent);
+		assignLoadedTexture(textureAssignType, texturePair(textureType::METALLIC, m_basicMetallicTemplate), visibleComponent);
+		assignLoadedTexture(textureAssignType, texturePair(textureType::ROUGHNESS, m_basicRoughnessTemplate), visibleComponent);
+		assignLoadedTexture(textureAssignType, texturePair(textureType::AMBIENT_OCCLUSION, m_basicAOTemplate), visibleComponent);
 	}
 }
 

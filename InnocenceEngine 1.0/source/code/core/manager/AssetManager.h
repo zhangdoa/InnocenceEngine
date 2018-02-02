@@ -34,7 +34,7 @@ public:
 
 	std::string loadShader(const std::string& fileName) const;
 
-	void loadCubeMapTextures(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
+	void load3DTextureFromDisk(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
 
 	void addUnitMesh(VisibleComponent& visibleComponent, unitMeshType unitMeshType);
 
@@ -48,7 +48,7 @@ private:
 	void loadTextureImpl(const std::string& fileName, textureType textureType, VisibleComponent& visibleComponent);
 	void loadModelImpl(const std::string& filePath);
 	void loadTextureImpl(const std::string& filePath);
-	void loadTextureFromDisk(const std::string& filePath);
+	void load2DTextureFromDisk(const std::string& filePath);
 	void loadShaderImpl(const std::string& filePath);
 
 	void assignloadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
@@ -62,7 +62,7 @@ private:
 	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
 	void assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
 
-	textureID loadTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod);
+	textureID load2DTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod);
 
 	std::unordered_map<std::string, modelMap> m_loadedModelMap;
 	std::unordered_map<std::string, texturePair> m_loadedTextureMap;
