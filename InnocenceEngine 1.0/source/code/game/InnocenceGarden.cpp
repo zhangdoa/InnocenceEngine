@@ -68,6 +68,7 @@ void InnocenceGarden::initialize()
 	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
 
 	AssetManager::getInstance().addUnitMesh(skyboxComponent, unitMeshType::CUBE);
+	//AssetManager::getInstance().loadAsset("ibl/Barce_Rooftop_C_3k.hdr", textureType::IRRADIANCE, skyboxComponent);
 	AssetManager::getInstance().loadAsset({ "skybox2/right.tga", "skybox2/left.tga", "skybox2/top.tga", "skybox2/bottom.tga", "skybox2/back.tga", "skybox2/front.tga" }, skyboxComponent);
 	AssetManager::getInstance().addUnitMesh(landscapeStaticMeshComponent, unitMeshType::CUBE);
 
