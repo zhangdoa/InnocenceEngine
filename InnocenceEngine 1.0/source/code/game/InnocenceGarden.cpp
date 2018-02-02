@@ -27,7 +27,7 @@ void InnocenceGarden::setup()
 	SceneGraphManager::getInstance().addToInputQueue(&playCharacter.getInputComponent());
 
 	skyboxComponent.m_visiblilityType = visiblilityType::SKYBOX;
-	skyboxComponent.m_textureWrapMethod = textureWrapMethod::CLAMPTOEDGE;
+	skyboxComponent.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
 	skyboxActor.addChildComponent(&skyboxComponent);
 
 	landscapeStaticMeshComponent.m_visiblilityType = visiblilityType::STATIC_MESH;

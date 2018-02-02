@@ -6,6 +6,7 @@ in vec2 TexCoords;
 
 uniform sampler2D uni_lightPassRT0;
 uniform sampler2D uni_backgroundFPassRT0;
+uniform sampler2D uni_debuggerPassRT0;
 
 void main()
 {    
@@ -17,5 +18,4 @@ void main()
 	{
 		uni_backgroundDPassRT0 = texture(uni_backgroundFPassRT0, TexCoords);
 	}
-	
 }

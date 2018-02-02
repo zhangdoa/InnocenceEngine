@@ -261,7 +261,7 @@ void GLMesh::shutdown()
 
 void I2DTexture::setup()
 {
-	this->setup(textureType::DIFFUSE, textureWrapMethod::REPEAT, 0, 0, 0, nullptr);
+	this->setup(textureType::ALBEDO, textureWrapMethod::REPEAT, 0, 0, 0, nullptr);
 }
 
 void I2DTexture::setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureFormat, int textureWidth, int textureHeight, void * textureData)
@@ -280,7 +280,7 @@ void GL2DTexture::initialize()
 	switch (m_textureWrapMethod)
 	{
 	case textureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
-	case textureWrapMethod::CLAMPTOEDGE: l_textureWrapMethod = GL_CLAMP_TO_EDGE; break;
+	case textureWrapMethod::CLAMP_TO_EDGE: l_textureWrapMethod = GL_CLAMP_TO_EDGE; break;
 	}
 	if (m_textureType == textureType::INVISIBLE)
 	{
@@ -326,23 +326,23 @@ void GL2DTexture::update()
 	switch (m_textureType)
 	{
 	case textureType::INVISIBLE: break;
-	case textureType::DIFFUSE:
+	case textureType::ALBEDO:
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
-	case textureType::SPECULAR:
+	case textureType::METALLIC:
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
-	case textureType::NORMALS:
+	case textureType::NORMAL:
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
-	case textureType::AMBIENT:
+	case textureType::ROUGHNESS:
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;
-	case textureType::EMISSIVE:
+	case textureType::AMBIENT_OCCLUSION:
 		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		break;

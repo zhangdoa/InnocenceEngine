@@ -159,7 +159,6 @@ void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraCompon
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
 	mat4 r = cameraComponents[0]->getRotMatrix();
 	mat4 t = cameraComponents[0]->getPosMatrix();
-	mat4 m = mat4();
 
 	// @TODO: multiply with inverse of camera rotation matrix
 	updateUniform("uni_p", p);
@@ -182,21 +181,21 @@ void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraCompon
 				if (&l_textureMap != nullptr)
 				{
 					// any diffuse?
-					auto l_diffuseTextureID = l_textureMap.find(textureType::DIFFUSE);
+					auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
 					if (l_diffuseTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any specular?
-					auto l_specularTextureID = l_textureMap.find(textureType::SPECULAR);
+					auto l_specularTextureID = l_textureMap.find(textureType::METALLIC);
 					if (l_specularTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_specularTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any normal?
-					auto l_normalTextureID = l_textureMap.find(textureType::NORMALS);
+					auto l_normalTextureID = l_textureMap.find(textureType::NORMAL);
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
@@ -234,7 +233,6 @@ void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cam
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
 	mat4 r = cameraComponents[0]->getRotMatrix();
 	mat4 t = cameraComponents[0]->getPosMatrix();
-	mat4 m = mat4();
 
 	updateUniform("uni_p", p);
 	updateUniform("uni_r", r);
@@ -256,21 +254,21 @@ void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cam
 				if (&l_textureMap != nullptr)
 				{
 					// any diffuse?
-					auto l_diffuseTextureID = l_textureMap.find(textureType::DIFFUSE);
+					auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
 					if (l_diffuseTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any specular?
-					auto l_specularTextureID = l_textureMap.find(textureType::SPECULAR);
+					auto l_specularTextureID = l_textureMap.find(textureType::METALLIC);
 					if (l_specularTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_specularTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any normal?
-					auto l_normalTextureID = l_textureMap.find(textureType::NORMALS);
+					auto l_normalTextureID = l_textureMap.find(textureType::NORMAL);
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
@@ -351,7 +349,6 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
 	mat4 r = cameraComponents[0]->getRotMatrix();
 	mat4 t = cameraComponents[0]->getPosMatrix();
-	mat4 m = mat4();
 
 	updateUniform("uni_p", p);
 	updateUniform("uni_r", r);
@@ -373,35 +370,35 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 				if (&l_textureMap != nullptr)
 				{
 					// any normal?
-					auto& l_normalTextureID = l_textureMap.find(textureType::NORMALS);
+					auto& l_normalTextureID = l_textureMap.find(textureType::NORMAL);
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any albedo?
-					auto& l_albedoTextureID = l_textureMap.find(textureType::DIFFUSE);
+					auto& l_albedoTextureID = l_textureMap.find(textureType::ALBEDO);
 					if (l_albedoTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_albedoTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any metallic?
-					auto& l_metallicTextureID = l_textureMap.find(textureType::SPECULAR);
+					auto& l_metallicTextureID = l_textureMap.find(textureType::METALLIC);
 					if (l_metallicTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_metallicTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any roughness?
-					auto& l_roughnessTextureID = l_textureMap.find(textureType::AMBIENT);
+					auto& l_roughnessTextureID = l_textureMap.find(textureType::ROUGHNESS);
 					if (l_roughnessTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_roughnessTextureID->second)->second;
 						l_textureData.update();
 					}
 					// any ao?
-					auto& l_aoTextureID = l_textureMap.find(textureType::EMISSIVE);
+					auto& l_aoTextureID = l_textureMap.find(textureType::AMBIENT_OCCLUSION);
 					if (l_aoTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_aoTextureID->second)->second;
@@ -502,40 +499,6 @@ void BackgroundFPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraC
 	glDepthFunc(GL_LESS);
 }
 
-void BackgroundDPassPBSShader::init()
-{
-	initProgram();
-	addShader(GLShader::VERTEX, "GL3.3/backgroundDPassPBSVertex.sf");
-	setAttributeLocation(0, "in_Position");
-	setAttributeLocation(1, "in_TexCoord");
-	addShader(GLShader::FRAGMENT, "GL3.3/backgroundDPassPBSFragment.sf");
-	bindShader();
-	updateUniform("uni_lightPassRT0", 0);
-	updateUniform("uni_backgroundFPassRT0", 1);
-}
-
-void BackgroundDPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL3DTexture>& textureMap)
-{
-	bindShader();
-}
-
-void FinalPassShader::init()
-{
-	initProgram();
-	addShader(GLShader::VERTEX, "GL3.3/finalPassVertex.sf");
-	setAttributeLocation(0, "in_Position");
-	setAttributeLocation(1, "in_TexCoord");
-
-	addShader(GLShader::FRAGMENT, "GL3.3/finalPassFragment.sf");
-	bindShader();
-	updateUniform("uni_backgroundPassRT0", 0);
-}
-
-void FinalPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
-{
-	bindShader();
-}
-
 void DebuggerShader::init()
 {
 	initProgram();
@@ -543,8 +506,6 @@ void DebuggerShader::init()
 	setAttributeLocation(0, "in_Position");
 	setAttributeLocation(1, "in_TexCoord");
 	setAttributeLocation(2, "in_Normal");
-	setAttributeLocation(3, "in_Tangent");
-	setAttributeLocation(4, "in_Bitangent");
 
 	addShader(GLShader::GEOMETRY, "GL3.3/debuggerGeometry.sf");
 
@@ -560,7 +521,6 @@ void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents,
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
 	mat4 r = cameraComponents[0]->getRotMatrix();
 	mat4 t = cameraComponents[0]->getPosMatrix();
-	mat4 m = mat4();
 
 	updateUniform("uni_p", p);
 	updateUniform("uni_r", r);
@@ -582,6 +542,44 @@ void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents,
 		}
 	}
 }
+
+
+void BackgroundDPassPBSShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/backgroundDPassPBSVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	setAttributeLocation(1, "in_TexCoord");
+	addShader(GLShader::FRAGMENT, "GL3.3/backgroundDPassPBSFragment.sf");
+	bindShader();
+	updateUniform("uni_lightPassRT0", 0);
+	updateUniform("uni_backgroundFPassRT0", 1);
+	updateUniform("uni_debuggerPassRT0", 2);
+}
+
+void BackgroundDPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL3DTexture>& textureMap)
+{
+	bindShader();
+}
+
+
+void FinalPassShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/finalPassVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	setAttributeLocation(1, "in_TexCoord");
+
+	addShader(GLShader::FRAGMENT, "GL3.3/finalPassFragment.sf");
+	bindShader();
+	updateUniform("uni_backgroundDPassRT0", 0);
+}
+
+void FinalPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
+{
+	bindShader();
+}
+
 
 meshID GLRenderingManager::addMesh()
 {
@@ -827,28 +825,43 @@ void GLRenderingManager::initializeBackgroundPass()
 		LogManager::getInstance().printLog("Background Forward Pass Framebuffer not complete!");
 	}
 
-	// initialize background forward pass rectangle
-	m_backgroundFPassVertices = {
-		-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-		1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-		1.0f, -1.0f, 0.0f, 1.0f, 0.0f, };
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	glGenVertexArrays(1, &m_backgroundFPassVAO);
-	glGenBuffers(1, &m_backgroundFPassVBO);
-	glBindVertexArray(m_backgroundFPassVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, m_backgroundFPassVBO);
-	// take care of std::vector's size and pointer of first element!!!
-	glBufferData(GL_ARRAY_BUFFER, m_backgroundFPassVertices.size() * sizeof(float), &m_backgroundFPassVertices[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	// initialize Debugger Pass shader
+	m_debuggerPassShader->init();
+
+	//generate and bind frame buffer
+	glGenFramebuffers(1, &m_debuggerPassFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_debuggerPassFBO);
+
+	// Debugger Pass color buffer
+	glGenTextures(1, &m_debuggerPassRT0Texture);
+	glBindTexture(GL_TEXTURE_2D, m_debuggerPassRT0Texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_debuggerPassRT0Texture, 0);
+
+	// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
+	unsigned int attachments_debugger[1] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers(1, attachments_debugger);
+
+	// create and attach depth buffer (renderbuffer)
+	glGenRenderbuffers(1, &m_debuggerPassRBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_debuggerPassRBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)m_screenResolution.x, (int)m_screenResolution.y);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_debuggerPassRBO);
+
+	// finally check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		LogManager::getInstance().printLog("Debugger Pass Framebuffer not complete!");
+	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
 	// background defer pass
 	m_backgroundDPassShader->init();
@@ -916,6 +929,15 @@ void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cam
 
 	m_backgroundFPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_3DTextureMap);
 
+	// draw debugger pass
+	glBindFramebuffer(GL_FRAMEBUFFER, m_debuggerPassFBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_debuggerPassRBO);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
+	m_debuggerPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_2DTextureMap);
+
 	// draw background defer pass
 	glBindFramebuffer(GL_FRAMEBUFFER, m_backgroundDPassFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_backgroundDPassRBO);
@@ -927,6 +949,8 @@ void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cam
 	glBindTexture(GL_TEXTURE_2D, m_lightPassRT0Texture);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, m_backgroundFPassRT0Texture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, m_debuggerPassRT0Texture);
 
 	m_backgroundDPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_3DTextureMap);
 
@@ -938,8 +962,8 @@ void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cam
 
 void GLRenderingManager::initializeFinalPass()
 {
-	// initialize shader
-	FinalPassShader::getInstance().init();
+	// initialize Final Pass shader
+	m_finalPassShader->init();
 
 	// initialize screen rectangle
 	m_screenVertices = {
@@ -964,6 +988,7 @@ void GLRenderingManager::initializeFinalPass()
 
 void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
+	// draw final pass
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -973,9 +998,10 @@ void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraCo
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_backgroundDPassRT0Texture);
 
-	FinalPassShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_2DTextureMap);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m_debuggerPassRT0Texture);
 
-	//DebuggerShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshMap, textureMap);
+	m_finalPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_2DTextureMap);
 
 	// draw screen rectangle
 	glBindVertexArray(m_finalPassVAO);
@@ -1019,6 +1045,10 @@ void GLRenderingManager::setup()
 
 	m_backgroundFPassShader = &BackgroundFPassPBSShader::getInstance();
 	m_backgroundDPassShader = &BackgroundDPassPBSShader::getInstance();
+
+	m_debuggerPassShader = &DebuggerShader::getInstance();
+
+	m_finalPassShader = &FinalPassShader::getInstance();
 }
 
 void GLRenderingManager::initialize()
@@ -1032,7 +1062,6 @@ void GLRenderingManager::initialize()
 
 	initializeBackgroundPass();
 
-	DebuggerShader::getInstance().init();
 	initializeFinalPass();
 
 	this->setStatus(objectStatus::ALIVE);

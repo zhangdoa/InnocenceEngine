@@ -3,13 +3,9 @@
 layout (location = 0) in vec3 in_Position;
 layout (location = 1) in vec2 in_TexCoord;
 layout (location = 2) in vec3 in_Normal;
-layout (location = 3) in vec3 in_Tangent;
-layout (location = 4) in vec3 in_Bitangent;
 
 out VS_OUT {
     vec3 normal;
-	vec3 tangent;
-	vec3 bitangent;
 } vs_out;
 
 uniform mat4 uni_p;
@@ -20,8 +16,6 @@ uniform mat4 uni_m;
 void main()
 {
 	vs_out.normal = in_Normal;
-	vs_out.tangent = in_Tangent;
-	vs_out.bitangent = in_Bitangent;
 
     gl_Position = uni_p * uni_r * uni_t * uni_m * vec4(in_Position, 1.0);
 }
