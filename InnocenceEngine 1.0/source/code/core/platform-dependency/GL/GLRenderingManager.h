@@ -268,9 +268,7 @@ private:
 	GLuint m_backgroundFPassFBO;
 	GLuint m_backgroundFPassRT0Texture;
 	GLuint m_backgroundFPassRBO;
-	GLuint m_backgroundFPassVAO;
-	GLuint m_backgroundFPassVBO;
-	std::vector<float> m_backgroundFPassVertices;
+	GLShader* m_backgroundFPassShader;
 
 	GLuint m_backgroundDPassFBO;
 	GLuint m_backgroundDPassRT0Texture;
@@ -278,13 +276,17 @@ private:
 	GLuint m_backgroundDPassVAO;
 	GLuint m_backgroundDPassVBO;
 	std::vector<float> m_backgroundDPassVertices;
-
-	GLShader* m_backgroundFPassShader;
 	GLShader* m_backgroundDPassShader;
+
+	GLuint m_debuggerPassFBO;
+	GLuint m_debuggerPassRT0Texture;
+	GLuint m_debuggerPassRBO;
+	GLShader* m_debuggerPassShader;
 
 	GLuint m_finalPassVAO;
 	GLuint m_finalPassVBO;
 	std::vector<float> m_screenVertices;
+	GLShader* m_finalPassShader;
 
 	int m_polygonMode = 0;
 	int m_textureMode = 0;

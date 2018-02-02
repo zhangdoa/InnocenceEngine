@@ -4,8 +4,8 @@
 #include "innoMath.h"
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
-enum class textureType { INVISIBLE, DIFFUSE, SPECULAR, AMBIENT, EMISSIVE, HEIGHT, NORMALS, SHININESS, OPACITY, DISPLACEMENT, LIGHTMAP, REFLECTION, CUBEMAP };
-enum class textureWrapMethod { CLAMPTOEDGE, REPEAT };
+enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP };
+enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 
 typedef EntityID textureID;
