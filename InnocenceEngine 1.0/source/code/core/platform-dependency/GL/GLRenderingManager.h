@@ -13,6 +13,7 @@ public:
 	virtual void init() = 0;
 	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) {};
 	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL3DTexture>& textureMap) {};
+	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, std::unordered_map<EntityID, GL3DHDRTexture>& threeDTextureMap) {};
 
 protected:
 	GLShader();
@@ -131,7 +132,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL3DTexture>& textureMap);
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, std::unordered_map<EntityID, GL3DHDRTexture>& threeDTextureMap);
 
 private:
 	EnvironmentMapPassPBSShader() {};
@@ -269,6 +270,7 @@ private:
 	std::unordered_map<textureID, GL2DTexture> m_2DTextureMap;
 	std::unordered_map<textureID, GL2DHDRTexture> m_2DHDRTextureMap;
 	std::unordered_map<textureID, GL3DTexture> m_3DTextureMap;
+	std::unordered_map<textureID, GL3DHDRTexture> m_3DHDRTextureMap;
 
 	GLuint m_geometryPassFBO;
 	GLuint m_geometryPassRT0Texture;
@@ -285,6 +287,10 @@ private:
 	GLuint m_lightPassVBO;
 	std::vector<float> m_lightPassVertices;
 	GLShader* m_lightPassShader;
+
+	GLuint m_environmentMapPassFBO;
+	GLuint m_environmentMapPassRBO;
+	GLShader* m_environmentMapPassShader;
 
 	GLuint m_backgroundFPassFBO;
 	GLuint m_backgroundFPassRT0Texture;

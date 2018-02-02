@@ -466,7 +466,7 @@ void EnvironmentMapPassPBSShader::init()
 	updateUniform("uni_equirectangularMap", 0);
 }
 
-void EnvironmentMapPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL3DTexture>& textureMap)
+void EnvironmentMapPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, std::unordered_map<EntityID, GL3DHDRTexture>& threeDTextureMap)
 {
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix(90.0f, 1.0f, 0.1f, 10.0f);
@@ -483,17 +483,24 @@ void EnvironmentMapPassPBSShader::shaderDraw(std::vector<CameraComponent*>& came
 	bindShader();
 	updateUniform("uni_p", captureProjection);
 
-	for (auto& l_visibleComponent : visibleComponents)
-	{
-		if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
+		for (auto& l_visibleComponent : visibleComponents)
 		{
-			for (auto& l_graphicData : l_visibleComponent->getModelMap())
+			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
 			{
-				meshMap.find(l_graphicData.first)->second.update();
-				textureMap.find(l_graphicData.second.find(textureType::IRRADIANCE)->second)->second.update();
+				for (unsigned int i = 0; i < 6; ++i)
+				{
+					updateUniform("uni_r", captureViews[i]);
+					threeDTextureMap[0].updateFramebuffer(i);
+					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+					for (auto& l_graphicData : l_visibleComponent->getModelMap())
+					{
+						twoDTextureMap.find(l_graphicData.second.find(textureType::IRRADIANCE)->second)->second.update();
+						meshMap.find(l_graphicData.first)->second.update();
+					}
+				}
 			}
-		}
-	}
+		}	
 }
 
 void BackgroundFPassPBSShader::init()
@@ -530,7 +537,7 @@ void BackgroundFPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraC
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
 				meshMap.find(l_graphicData.first)->second.update();
-				textureMap.find(l_graphicData.second.find(textureType::CUBEMAP)->second)->second.update();
+				//textureMap.find(l_graphicData.second.find(textureType::CUBEMAP)->second)->second.update();
 			}
 		}
 	}
@@ -847,6 +854,23 @@ void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraCo
 
 void GLRenderingManager::initializeBackgroundPass()
 {
+	// environment map capture pass
+	m_environmentMapPassShader->init();
+
+	GL3DHDRTexture newGL3DHDRTexture;
+	m_3DHDRTextureMap.emplace(std::pair<EntityID, GL3DHDRTexture>(newGL3DHDRTexture.getEntityID(), newGL3DHDRTexture));
+	// @TODO: dangerous
+	m_3DHDRTextureMap[0].setup(3, 512, 512, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
+	m_3DHDRTextureMap[0].initialize();
+
+	glGenFramebuffers(1, &m_environmentMapPassFBO);
+	glGenRenderbuffers(1, &m_environmentMapPassRBO);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, m_environmentMapPassFBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_environmentMapPassRBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_environmentMapPassRBO);
+
 	// background forward pass
 	m_backgroundFPassShader->init();
 
@@ -973,6 +997,17 @@ void GLRenderingManager::initializeBackgroundPass()
 
 void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
+	// draw environment map capture pass
+	glBindFramebuffer(GL_FRAMEBUFFER, m_environmentMapPassFBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_environmentMapPassRBO);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glViewport(0, 0, 512, 512);
+
+	m_environmentMapPassShader->shaderDraw(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_2DHDRTextureMap, m_3DHDRTextureMap);
+
+	glViewport(0, 0, m_screenResolution.x, m_screenResolution.y);
 	// draw background forward pass
 	glBindFramebuffer(GL_FRAMEBUFFER, m_backgroundFPassFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_backgroundFPassRBO);
@@ -1095,6 +1130,8 @@ void GLRenderingManager::setup()
 
 	//m_lightPassShader = &LightPassBlinnPhongShader::getInstance();
 	m_lightPassShader = &LightPassPBSShader::getInstance();
+
+	m_environmentMapPassShader = &EnvironmentMapPassPBSShader::getInstance();
 
 	m_backgroundFPassShader = &BackgroundFPassPBSShader::getInstance();
 	m_backgroundDPassShader = &BackgroundDPassPBSShader::getInstance();
