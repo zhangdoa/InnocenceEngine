@@ -455,6 +455,47 @@ void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraCompone
 	}
 }
 
+
+void EnvironmentMapPassPBSShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/environmentMapPassPBSVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	addShader(GLShader::FRAGMENT, "GL3.3/environmentMapPassPBSFragment.sf");
+	bindShader();
+	updateUniform("uni_equirectangularMap", 0);
+}
+
+void EnvironmentMapPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL3DTexture>& textureMap)
+{
+	mat4 captureProjection;
+	captureProjection.initializeToPerspectiveMatrix(90.0f, 1.0f, 0.1f, 10.0f);
+	std::vector<mat4> captureViews =
+	{
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  1.0f,  0.0f), vec3(0.0f,  0.0f,  1.0f)),
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f), vec3(0.0f,  0.0f, -1.0f)),
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, -1.0f,  0.0f)),
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f))
+	};
+
+	bindShader();
+	updateUniform("uni_p", captureProjection);
+
+	for (auto& l_visibleComponent : visibleComponents)
+	{
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
+		{
+			for (auto& l_graphicData : l_visibleComponent->getModelMap())
+			{
+				meshMap.find(l_graphicData.first)->second.update();
+				textureMap.find(l_graphicData.second.find(textureType::IRRADIANCE)->second)->second.update();
+			}
+		}
+	}
+}
+
 void BackgroundFPassPBSShader::init()
 {
 	initProgram();
@@ -595,6 +636,13 @@ textureID GLRenderingManager::add2DTexture()
 	return new2DTexture.getEntityID();
 }
 
+textureID GLRenderingManager::add2DHDRTexture()
+{
+	GL2DHDRTexture new2DHDRTexture;
+	m_2DHDRTextureMap.emplace(std::pair<textureID, GL2DHDRTexture>(new2DHDRTexture.getEntityID(), new2DHDRTexture));
+	return new2DHDRTexture.getEntityID();
+}
+
 textureID GLRenderingManager::add3DTexture()
 {
 	GL3DTexture new3DTexture;
@@ -610,6 +658,11 @@ IMesh* GLRenderingManager::getMesh(meshID meshID)
 I2DTexture* GLRenderingManager::get2DTexture(textureID textureID)
 {
 	return &m_2DTextureMap.find(textureID)->second;
+}
+
+I2DTexture * GLRenderingManager::get2DHDRTexture(textureID textureID)
+{
+	return &m_2DHDRTextureMap.find(textureID)->second;;
 }
 
 I3DTexture * GLRenderingManager::get3DTexture(textureID textureID)
@@ -1077,5 +1130,4 @@ void GLRenderingManager::shutdown()
 	this->setStatus(objectStatus::SHUTDOWN);
 	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
 }
-
 

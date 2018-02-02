@@ -21,6 +21,11 @@ textureID RenderingManager::add2DTexture()
 	return GLRenderingManager::getInstance().add2DTexture();
 }
 
+textureID RenderingManager::add2DHDRTexture()
+{
+	return  GLRenderingManager::getInstance().add2DHDRTexture();
+}
+
 textureID RenderingManager::add3DTexture()
 {
 	return GLRenderingManager::getInstance().add3DTexture();
@@ -34,6 +39,11 @@ IMesh* RenderingManager::getMesh(meshID meshID)
 I2DTexture* RenderingManager::get2DTexture(textureID textureID)
 {
 	return  GLRenderingManager::getInstance().get2DTexture(textureID);
+}
+
+I2DTexture * RenderingManager::get2DHDRTexture(textureID textureID)
+{
+	return GLRenderingManager::getInstance().get2DHDRTexture(textureID);
 }
 
 I3DTexture * RenderingManager::get3DTexture(textureID textureID)

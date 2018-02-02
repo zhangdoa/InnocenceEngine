@@ -4,7 +4,7 @@
 #include "innoMath.h"
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
-enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP };
+enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, IRRADIANCE};
 enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 
@@ -96,6 +96,20 @@ class GL2DTexture : public I2DTexture
 public:
 	GL2DTexture() {};
 	~GL2DTexture() {};
+
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
+private:
+	GLuint m_textureID = 0;
+};
+
+class GL2DHDRTexture : public I2DTexture
+{
+public:
+	GL2DHDRTexture() {};
+	~GL2DHDRTexture() {};
 
 	void initialize() override;
 	void update() override;

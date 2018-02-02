@@ -27,14 +27,11 @@ public:
 		return instance;
 	}
 
-	void loadAsset(const std::string& filePath);
 	void loadAsset(const std::string& filePath, VisibleComponent& visibleComponent);
 	void loadAsset(const std::vector<std::string>& filePath, VisibleComponent& visibleComponent);
 	void loadAsset(const std::string& filePath, textureType textureType, VisibleComponent& visibleComponent);
 
 	std::string loadShader(const std::string& fileName) const;
-
-	void load3DTextureFromDisk(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
 
 	void addUnitMesh(VisibleComponent& visibleComponent, unitMeshType unitMeshType);
 
@@ -43,13 +40,10 @@ private:
 
 	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
 
-	void loadShaderImpl(const std::string& filePath, std::string& fileContent);
 	void loadModelImpl(const std::string& fileName, VisibleComponent& visibleComponent);
-	void loadTextureImpl(const std::string& fileName, textureType textureType, VisibleComponent& visibleComponent);
-	void loadModelImpl(const std::string& filePath);
-	void loadTextureImpl(const std::string& filePath);
-	void load2DTextureFromDisk(const std::string& filePath);
-	void loadShaderImpl(const std::string& filePath);
+	void load2DTextureImpl(const std::string& fileName, textureType textureType, VisibleComponent& visibleComponent);
+
+	void load3DTextureFromDisk(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
 
 	void assignloadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
 
@@ -65,7 +59,7 @@ private:
 	textureID load2DTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod);
 
 	std::unordered_map<std::string, modelMap> m_loadedModelMap;
-	std::unordered_map<std::string, texturePair> m_loadedTextureMap;
+	std::unordered_map<std::string, texturePair> m_loaded2DTextureMap;
 	std::unordered_map<std::string, int> m_supportedTextureType = { std::pair<std::string, int>("png", 0) };
 	std::unordered_map<std::string, int> m_supportedModelType = { std::pair<std::string, int>("obj",0), std::pair<std::string, int>("innoModel", 0) };
 	std::unordered_map<std::string, int> m_supportedShaderType = { std::pair<std::string, int>("sf", 0) };

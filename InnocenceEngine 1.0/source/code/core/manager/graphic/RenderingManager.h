@@ -26,9 +26,11 @@ public:
 
 	meshID addMesh();
 	textureID add2DTexture();
+	textureID add2DHDRTexture();
 	textureID add3DTexture();
 	IMesh* getMesh(meshID meshID);
 	I2DTexture* get2DTexture(textureID textureID);
+	I2DTexture* get2DHDRTexture(textureID textureID);
 	I3DTexture* get3DTexture(textureID textureID);
 
 private:
