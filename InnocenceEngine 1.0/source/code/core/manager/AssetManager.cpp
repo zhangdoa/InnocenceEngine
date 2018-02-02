@@ -44,33 +44,15 @@ void AssetManager::shutdown()
 {
 }
 
-void AssetManager::loadAsset(const std::string & filePath)
-{
-	auto l_subfix = filePath.substr(filePath.find(".") + 1);
-	//@TODO: generalize a loader base class 
-	if (m_supportedTextureType.find(l_subfix) != m_supportedTextureType.end())
-	{
-		loadTextureImpl(filePath);
-	}
-	else if (m_supportedModelType.find(l_subfix) != m_supportedModelType.end())
-	{
-		loadModelImpl(filePath);
-	}
-	else if (m_supportedShaderType.find(l_subfix) != m_supportedShaderType.end())
-	{
-		loadShaderImpl(filePath);
-	}
-}
-
 void AssetManager::loadAsset(const std::string & filePath, VisibleComponent & visibleComponent)
 {
 	auto l_subfix = filePath.substr(filePath.find(".") + 1);
-	//@TODO: generalize a loader base class 
-	if (m_supportedTextureType.find(l_subfix) != m_supportedTextureType.end())
-	{
-		loadTextureImpl(filePath, textureType::ALBEDO, visibleComponent);
-	}
-	else if (m_supportedModelType.find(l_subfix) != m_supportedModelType.end())
+	////@TODO: generalize a loader base class 
+	//if (m_supportedTextureType.find(l_subfix) != m_supportedTextureType.end())
+	//{
+	//	loadTextureImpl(filePath, textureType::ALBEDO, visibleComponent);
+	//}
+	if (m_supportedModelType.find(l_subfix) != m_supportedModelType.end())
 	{
 		loadModelImpl(filePath, visibleComponent);
 	}
@@ -83,7 +65,7 @@ void AssetManager::loadAsset(const std::vector<std::string>& filePath, VisibleCo
 
 void AssetManager::loadAsset(const std::string & filePath, textureType textureType, VisibleComponent & visibleComponent)
 {
-	loadTextureImpl(filePath, textureType, visibleComponent);
+	load2DTextureImpl(filePath, textureType, visibleComponent);
 }
 
 std::string AssetManager::loadShader(const std::string & fileName) const
@@ -98,18 +80,6 @@ std::string AssetManager::loadShader(const std::string & fileName) const
 	file.close();
 
 	return output;
-}
-
-void AssetManager::loadShaderImpl(const std::string & filePath, std::string & fileContent)
-{
-	std::ifstream file;
-	file.open(("../res/shaders/" + filePath).c_str());
-	std::stringstream shaderStream;
-	std::string output;
-
-	shaderStream << file.rdbuf();
-	fileContent = shaderStream.str();
-	file.close();
 }
 
 void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent & visibleComponent)
@@ -345,38 +315,20 @@ textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName
 	return l_textureMap;
 }
 
-void AssetManager::loadTextureImpl(const std::string & fileName, textureType textureType, VisibleComponent & visibleComponent)
+void AssetManager::load2DTextureImpl(const std::string & fileName, textureType textureType, VisibleComponent & visibleComponent)
 {
-	auto l_loadedTextureData = m_loadedTextureMap.find(fileName);
+	auto l_loaded2DTexturePair = m_loaded2DTextureMap.find(fileName);
 	// check if this file has already loaded
-	if (l_loadedTextureData != m_loadedTextureMap.end())
+	if (l_loaded2DTexturePair != m_loaded2DTextureMap.end())
 	{
-		assignLoadedTexture(textureAssignType::OVERWRITE, l_loadedTextureData->second, visibleComponent);
+		assignLoadedTexture(textureAssignType::OVERWRITE, l_loaded2DTexturePair->second, visibleComponent);
 		LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is already loaded, successfully assigned loaded texture data IDs.");
 	}
 	else
 	{
 		auto l_texturePair = texturePair(textureType, load2DTextureFromDisk(fileName, textureType, visibleComponent.m_textureWrapMethod));
-		m_loadedTextureMap.emplace(fileName, l_texturePair);
+		m_loaded2DTextureMap.emplace(fileName, l_texturePair);
 		assignLoadedTexture(textureAssignType::OVERWRITE, l_texturePair, visibleComponent);
-	}
-}
-
-void AssetManager::loadModelImpl(const std::string & fileName)
-{
-}
-
-void AssetManager::loadTextureImpl(const std::string &filePath)
-{
-	auto l_loadedTextureData = m_loadedTextureMap.find(filePath);
-	// check if this file has already loaded
-	if (l_loadedTextureData != m_loadedTextureMap.end())
-	{
-		return;
-	}
-	else
-	{
-		load2DTextureFromDisk(filePath);
 	}
 }
 
@@ -397,52 +349,44 @@ textureID AssetManager::load2DTextureFromDisk(const std::string & fileName, text
 	int width, height, nrChannels;
 	// load image
 	stbi_set_flip_vertically_on_load(true);
-	auto *data = stbi_load((m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
-	if (data)
+	if (textureType == textureType::IRRADIANCE)
 	{
-		auto id = RenderingManager::getInstance().add2DTexture();
-		auto lastTextureData = RenderingManager::getInstance().get2DTexture(id);
-		lastTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
-		lastTextureData->initialize();
-		LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is loaded.");
-		return id;
+		auto *data = stbi_loadf((m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			auto id = RenderingManager::getInstance().add2DHDRTexture();
+			auto lastTextureData = RenderingManager::getInstance().get2DHDRTexture(id);
+			lastTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
+			lastTextureData->initialize();
+			LogManager::getInstance().printLog("inno2DHDRTexture: " + fileName + " is loaded.");
+			return id;
+		}
+		else
+		{
+			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
+			return 0;
+		}
 	}
-	else
+	else 
 	{
-		LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
-		return 0;
+		auto *data = stbi_load((m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			auto id = RenderingManager::getInstance().add2DTexture();
+			auto lastTextureData = RenderingManager::getInstance().get2DTexture(id);
+			lastTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
+			lastTextureData->initialize();
+			LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is loaded.");
+			return id;
+		}
+		else
+		{
+			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
+			return 0;
+		}
 	}
+	
 	//stbi_image_free(data);
-}
-
-void AssetManager::load2DTextureFromDisk(const std::string & filePath)
-{
-	int width, height, nrChannels;
-	// load image
-	stbi_set_flip_vertically_on_load(true);
-	auto *data = stbi_load((m_textureRelativePath + filePath).c_str(), &width, &height, &nrChannels, 0);
-	if (data)
-	{
-		m_rawTextureDatas.emplace(filePath, data);
-	}
-	else
-	{
-		LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + filePath);
-	}
-	//stbi_image_free(data);
-}
-
-void AssetManager::loadShaderImpl(const std::string & filePath)
-{
-	//@TODO: such a generalized file loader!
-	std::ifstream file;
-	file.open((m_shaderRelativePath + filePath).c_str());
-	std::stringstream shaderStream;
-	std::string output;
-
-	shaderStream << file.rdbuf();
-	m_rawShaderDatas.emplace(filePath, shaderStream.str());
-	file.close();
 }
 
 void AssetManager::load3DTextureFromDisk(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const

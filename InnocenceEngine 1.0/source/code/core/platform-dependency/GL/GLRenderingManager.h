@@ -119,6 +119,24 @@ private:
 	LightPassPBSShader() {};
 };
 
+class EnvironmentMapPassPBSShader : public GLShader
+{
+public:
+	~EnvironmentMapPassPBSShader() {};
+
+	static EnvironmentMapPassPBSShader& getInstance()
+	{
+		static EnvironmentMapPassPBSShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL3DTexture>& textureMap);
+
+private:
+	EnvironmentMapPassPBSShader() {};
+};
+
 class BackgroundFPassPBSShader : public GLShader
 {
 public:
@@ -227,9 +245,11 @@ public:
 
 	meshID addMesh();
 	textureID add2DTexture();
+	textureID add2DHDRTexture();
 	textureID add3DTexture();
 	IMesh* getMesh(meshID meshID);
 	I2DTexture* get2DTexture(textureID textureID);
+	I2DTexture* get2DHDRTexture(textureID textureID);
 	I3DTexture* get3DTexture(textureID textureID);
 
 	void forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap);
@@ -247,6 +267,7 @@ private:
 
 	std::unordered_map<meshID, GLMesh> m_meshMap;
 	std::unordered_map<textureID, GL2DTexture> m_2DTextureMap;
+	std::unordered_map<textureID, GL2DHDRTexture> m_2DHDRTextureMap;
 	std::unordered_map<textureID, GL3DTexture> m_3DTextureMap;
 
 	GLuint m_geometryPassFBO;

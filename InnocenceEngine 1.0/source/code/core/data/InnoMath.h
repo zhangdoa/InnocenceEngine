@@ -6,6 +6,7 @@
 
 const static double PI = 3.14159265358979323846264338327950288;
 
+class vec3;
 // [rowIndex][columnIndex]
 // Column-major order
 class mat4
@@ -22,6 +23,7 @@ public:
 	mat4 mul(float rhs);
 
 	void initializeToPerspectiveMatrix(float FOV, float HWRatio, float zNear, float zFar);
+	mat4 lookAt(const vec3& eyePos, const vec3& centerPos, const vec3& upDir);
 	float m[4][4];
 };
 

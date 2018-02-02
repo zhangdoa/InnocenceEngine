@@ -528,3 +528,42 @@ void mat4::initializeToPerspectiveMatrix(float FOV, float HWRatio, float zNear, 
 	m[3][2] = -(2 * zFar *zNear) / ((zFar - zNear));
 	m[2][3] = -1;
 }
+
+mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDir)
+{
+	mat4 l_m;
+	vec3 l_X;
+	vec3 l_Y;
+	vec3 l_Z = eyePos;
+
+	l_Z = l_Z - centerPos;
+	l_Z.normalize();
+
+	l_Y = upDir;
+
+	l_X = l_Y.cross(l_Z);
+
+	l_Y = l_Z.cross(l_X);
+
+	l_X.normalize();
+	l_Y.normalize();
+
+	l_m.m[0][0] = l_X.x;
+	l_m.m[1][0] = l_X.y;
+	l_m.m[2][0] = l_X.z;
+	l_m.m[3][0] = -l_X.dot(eyePos);
+	l_m.m[0][1] = l_Y.x;
+	l_m.m[1][1] = l_Y.y;
+	l_m.m[2][1] = l_Y.z;
+	l_m.m[3][1] = -l_Y.dot(eyePos);
+	l_m.m[0][2] = l_Z.x;
+	l_m.m[1][2] = l_Z.y;
+	l_m.m[2][2] = l_Z.z;
+	l_m.m[3][2] = -l_Z.dot(eyePos);
+	l_m.m[0][3] = 0;
+	l_m.m[1][3] = 0;
+	l_m.m[2][3] = 0;
+	l_m.m[3][3] = 1.0f;
+	
+	return l_m;
+}

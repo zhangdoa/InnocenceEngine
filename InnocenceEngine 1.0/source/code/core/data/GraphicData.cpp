@@ -356,6 +356,34 @@ void GL2DTexture::shutdown()
 	setStatus(objectStatus::SHUTDOWN);
 }
 
+void GL2DHDRTexture::initialize()
+{
+	glGenTextures(1, &m_textureID);
+	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_FLOAT, m_textureRawData);
+
+	setStatus(objectStatus::ALIVE);
+}
+
+void GL2DHDRTexture::update()
+{
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m_textureID);
+}
+
+void GL2DHDRTexture::shutdown()
+{
+	glDeleteTextures(1, &m_textureID);
+
+	setStatus(objectStatus::SHUTDOWN);
+}
+
 void I3DTexture::setup()
 {
 }
