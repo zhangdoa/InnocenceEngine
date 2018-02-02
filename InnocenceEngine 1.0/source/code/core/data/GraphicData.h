@@ -158,3 +158,19 @@ public:
 private:
 	GLuint m_textureID = 0;
 };
+
+class GL3DHDRTexture : public I3DTexture
+{
+public:
+	GL3DHDRTexture() {};
+	~GL3DHDRTexture() {};
+
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
+	// @TODO: need a FBO class
+	void updateFramebuffer(int index);
+private:
+	GLuint m_textureID = 0;
+};
