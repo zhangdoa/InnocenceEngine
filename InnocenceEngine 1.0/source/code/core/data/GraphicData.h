@@ -4,7 +4,7 @@
 #include "innoMath.h"
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
-enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, IRRADIANCE};
+enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, CUBEMAP_HDR, EQUIRETANGULAR};
 enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 
@@ -128,10 +128,10 @@ public:
 	virtual ~I3DTexture() {};
 
 	void setup() override;
-	void setup(int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData);
+	void setup(textureType textureType, int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData);
 
 protected:
-
+	textureType m_textureType;
 	int m_textureIndex;
 	int m_textureFormat;
 	int m_textureWidth;

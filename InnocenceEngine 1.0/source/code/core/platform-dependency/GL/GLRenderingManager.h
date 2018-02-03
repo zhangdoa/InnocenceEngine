@@ -248,10 +248,12 @@ public:
 	textureID add2DTexture();
 	textureID add2DHDRTexture();
 	textureID add3DTexture();
+	textureID add3DHDRTexture();
 	IMesh* getMesh(meshID meshID);
 	I2DTexture* get2DTexture(textureID textureID);
 	I2DTexture* get2DHDRTexture(textureID textureID);
 	I3DTexture* get3DTexture(textureID textureID);
+	I3DTexture* get3DHDRTexture(textureID textureID);
 
 	void forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap);
 	void deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);

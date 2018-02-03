@@ -469,7 +469,7 @@ void EnvironmentMapPassPBSShader::init()
 void EnvironmentMapPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, std::unordered_map<EntityID, GL3DHDRTexture>& threeDTextureMap)
 {
 	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix(90.0f, 1.0f, 0.1f, 10.0f);
+	captureProjection.initializeToPerspectiveMatrix((90.0f/ 180.0f) * PI, 1.0f, 0.1f, 10.0f);
 	std::vector<mat4> captureViews =
 	{
 		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
@@ -489,13 +489,12 @@ void EnvironmentMapPassPBSShader::shaderDraw(std::vector<CameraComponent*>& came
 			{
 				for (unsigned int i = 0; i < 6; ++i)
 				{
-					updateUniform("uni_r", captureViews[i]);
-					threeDTextureMap[0].updateFramebuffer(i);
-					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 					for (auto& l_graphicData : l_visibleComponent->getModelMap())
 					{
-						twoDTextureMap.find(l_graphicData.second.find(textureType::IRRADIANCE)->second)->second.update();
+						updateUniform("uni_r", captureViews[i]);
+						threeDTextureMap.find(l_graphicData.second.find(textureType::CUBEMAP_HDR)->second)->second.updateFramebuffer(i);
+						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+						twoDTextureMap.find(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second)->second.update();
 						meshMap.find(l_graphicData.first)->second.update();
 					}
 				}
@@ -657,6 +656,13 @@ textureID GLRenderingManager::add3DTexture()
 	return new3DTexture.getEntityID();
 }
 
+textureID GLRenderingManager::add3DHDRTexture()
+{
+	GL3DHDRTexture new3DHDRTexture;
+	m_3DHDRTextureMap.emplace(std::pair<textureID, GL3DHDRTexture>(new3DHDRTexture.getEntityID(), new3DHDRTexture));
+	return new3DHDRTexture.getEntityID();
+}
+
 IMesh* GLRenderingManager::getMesh(meshID meshID)
 {
 	return &m_meshMap.find(meshID)->second;
@@ -675,6 +681,11 @@ I2DTexture * GLRenderingManager::get2DHDRTexture(textureID textureID)
 I3DTexture * GLRenderingManager::get3DTexture(textureID textureID)
 {
 	return &m_3DTextureMap.find(textureID)->second;
+}
+
+I3DTexture * GLRenderingManager::get3DHDRTexture(textureID textureID)
+{
+	return &m_3DHDRTextureMap.find(textureID)->second;;
 }
 
 void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
@@ -857,12 +868,6 @@ void GLRenderingManager::initializeBackgroundPass()
 	// environment map capture pass
 	m_environmentMapPassShader->init();
 
-	GL3DHDRTexture newGL3DHDRTexture;
-	m_3DHDRTextureMap.emplace(std::pair<EntityID, GL3DHDRTexture>(newGL3DHDRTexture.getEntityID(), newGL3DHDRTexture));
-	// @TODO: dangerous
-	m_3DHDRTextureMap[0].setup(3, 512, 512, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
-	m_3DHDRTextureMap[0].initialize();
-
 	glGenFramebuffers(1, &m_environmentMapPassFBO);
 	glGenRenderbuffers(1, &m_environmentMapPassRBO);
 
@@ -999,7 +1004,7 @@ void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cam
 {
 	// draw environment map capture pass
 	glBindFramebuffer(GL_FRAMEBUFFER, m_environmentMapPassFBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_environmentMapPassRBO);
+	//glBindRenderbuffer(GL_RENDERBUFFER, m_environmentMapPassRBO);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
