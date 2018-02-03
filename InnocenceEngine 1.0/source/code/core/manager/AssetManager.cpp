@@ -58,14 +58,21 @@ void AssetManager::loadAsset(const std::string & filePath, VisibleComponent & vi
 	}
 }
 
-void AssetManager::loadAsset(const std::vector<std::string>& filePath, VisibleComponent & visibleComponent)
+void AssetManager::loadAsset(const std::vector<std::string>& filePath, textureType textureType, VisibleComponent & visibleComponent)
 {
-	load3DTextureFromDisk(filePath, visibleComponent);
+	load3DTextureFromDisk(filePath, textureType, visibleComponent);
 }
 
 void AssetManager::loadAsset(const std::string & filePath, textureType textureType, VisibleComponent & visibleComponent)
 {
-	load2DTextureImpl(filePath, textureType, visibleComponent);
+	if (textureType == textureType::EQUIRETANGULAR)
+	{
+		load3DTextureFromDisk(filePath, textureType, visibleComponent);
+	}
+	else
+	{
+		load2DTextureImpl(filePath, textureType, visibleComponent);
+	}
 }
 
 std::string AssetManager::loadShader(const std::string & fileName) const
@@ -349,74 +356,100 @@ textureID AssetManager::load2DTextureFromDisk(const std::string & fileName, text
 	int width, height, nrChannels;
 	// load image
 	stbi_set_flip_vertically_on_load(true);
-	if (textureType == textureType::IRRADIANCE)
+
+	auto *data = stbi_load((m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
+	if (data)
 	{
-		auto *data = stbi_loadf((m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
-		if (data)
-		{
-			auto id = RenderingManager::getInstance().add2DHDRTexture();
-			auto lastTextureData = RenderingManager::getInstance().get2DHDRTexture(id);
-			lastTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
-			lastTextureData->initialize();
-			LogManager::getInstance().printLog("inno2DHDRTexture: " + fileName + " is loaded.");
-			return id;
-		}
-		else
-		{
-			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
-			return 0;
-		}
+		auto id = RenderingManager::getInstance().add2DTexture();
+		auto lastTextureData = RenderingManager::getInstance().get2DTexture(id);
+		lastTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
+		lastTextureData->initialize();
+		LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is loaded.");
+		return id;
 	}
-	else 
+	else
 	{
-		auto *data = stbi_load((m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
-		if (data)
-		{
-			auto id = RenderingManager::getInstance().add2DTexture();
-			auto lastTextureData = RenderingManager::getInstance().get2DTexture(id);
-			lastTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
-			lastTextureData->initialize();
-			LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is loaded.");
-			return id;
-		}
-		else
-		{
-			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
-			return 0;
-		}
+		LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
+		return 0;
 	}
-	
+
 	//stbi_image_free(data);
 }
 
-void AssetManager::load3DTextureFromDisk(const std::vector<std::string>& fileName, VisibleComponent & visibleComponent) const
+void AssetManager::load3DTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent & visibleComponent) const
 {
-	int width, height, nrChannels;
-	auto id = RenderingManager::getInstance().add3DTexture();
-	auto lastTextureData = RenderingManager::getInstance().get3DTexture(id);
-
-	std::vector<void*> l_3DTextureRawData;
-
-	for (auto i = (unsigned int)0; i < fileName.size(); i++)
+	if (textureType == textureType::CUBEMAP)
 	{
-		// load image, do not flip texture
-		stbi_set_flip_vertically_on_load(false);
-		auto *data = stbi_load((m_textureRelativePath + fileName[i]).c_str(), &width, &height, &nrChannels, 0);
+		int width, height, nrChannels;
+		auto id = RenderingManager::getInstance().add3DTexture();
+		auto lastTextureData = RenderingManager::getInstance().get3DTexture(id);
+
+		std::vector<void*> l_3DTextureRawData;
+
+		for (auto i = (unsigned int)0; i < fileName.size(); i++)
+		{
+			// load image, do not flip texture
+			stbi_set_flip_vertically_on_load(false);
+			auto *data = stbi_load((m_textureRelativePath + fileName[i]).c_str(), &width, &height, &nrChannels, 0);
+			if (data)
+			{
+				l_3DTextureRawData.emplace_back(data);
+				LogManager::getInstance().printLog("inno3DTexture: " + fileName[i] + " is loaded.");
+			}
+			else
+			{
+				LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + (m_textureRelativePath + fileName[i]));
+			}
+			//stbi_image_free(data);
+		}
+		lastTextureData->setup(textureType::CUBEMAP, nrChannels, width, height, l_3DTextureRawData);
+		lastTextureData->initialize();
+		visibleComponent.addTextureData(texturePair(textureType::CUBEMAP, id));
+		LogManager::getInstance().printLog("inno3DTexture is fully loaded.");
+	}
+	else
+	{
+		LogManager::getInstance().printLog("3Dtexture type is invalid!");
+		return;
+	}
+}
+
+void AssetManager::load3DTextureFromDisk(const std::string & filePath, textureType textureType, VisibleComponent & visibleComponent) const
+{
+	if (textureType == textureType::EQUIRETANGULAR)
+	{
+		int width, height, nrChannels;
+		// load image
+		stbi_set_flip_vertically_on_load(true);
+		auto *data = stbi_loadf((m_textureRelativePath + filePath).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			l_3DTextureRawData.emplace_back(data);
-			LogManager::getInstance().printLog("inno3DTexture: " + fileName[i] + " is loaded.");
+			auto twoDid = RenderingManager::getInstance().add2DHDRTexture();
+			auto last2DTextureData = RenderingManager::getInstance().get2DHDRTexture(twoDid);
+			last2DTextureData->setup(textureType::EQUIRETANGULAR, textureWrapMethod::CLAMP_TO_EDGE, nrChannels, width, height, data);
+			last2DTextureData->initialize();
+
+			auto threeDid = RenderingManager::getInstance().add3DHDRTexture();
+			// @TODO: generalize
+			auto last3DTextureData = RenderingManager::getInstance().get3DHDRTexture(threeDid);
+			last3DTextureData->setup(textureType::CUBEMAP_HDR, 3, 512, 512, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
+			last3DTextureData->initialize();
+
+			visibleComponent.addTextureData(texturePair(textureType::EQUIRETANGULAR, twoDid));
+			visibleComponent.addTextureData(texturePair(textureType::CUBEMAP_HDR, threeDid));
+			LogManager::getInstance().printLog("inno2DHDRTexture: " + filePath + " is loaded.");
 		}
 		else
 		{
-			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + (m_textureRelativePath + fileName[i]));
+			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + filePath);
+			return;
 		}
-		//stbi_image_free(data);
 	}
-	lastTextureData->setup(nrChannels, width, height, l_3DTextureRawData);
-	lastTextureData->initialize();
-	visibleComponent.addTextureData(texturePair(textureType::CUBEMAP, id));
-	LogManager::getInstance().printLog("inno3DTexture is fully loaded.");
+	else
+	{
+		LogManager::getInstance().printLog("3Dtexture type is invalid!");
+		return;
+	}
 }
 
 

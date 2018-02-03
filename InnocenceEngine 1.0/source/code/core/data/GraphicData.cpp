@@ -111,8 +111,6 @@ void IMesh::addUnitCube()
 	for (auto& l_vertexData : m_vertices)
 	{
 		l_vertexData.m_normal = l_vertexData.m_pos.normalize();
-		//l_vertexData.m_tangent = glm::normalize(glm::cross(glm::vec3(0.0, 0.0, 1.0), l_vertexData.m_normal));
-		//l_vertexData.m_bitangent = glm::normalize(glm::cross(l_vertexData.m_tangent, l_vertexData.m_normal));
 	}
 	m_indices = { 0, 1, 3, 1, 2, 3,
 		4, 5, 0, 5, 1, 0,
@@ -388,8 +386,9 @@ void I3DTexture::setup()
 {
 }
 
-void I3DTexture::setup(int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData)
+void I3DTexture::setup(textureType textureType, int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData)
 {
+	m_textureType = textureType;
 	m_textureFormat = textureFormat;
 	m_textureWidth = textureWidth;
 	m_textureHeight = textureHeight;
@@ -490,4 +489,6 @@ void GL3DHDRTexture::shutdown()
 void GL3DHDRTexture::updateFramebuffer(int index)
 {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, m_textureID, 0);
+	unsigned int attachments[1] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers(1, attachments);
 }

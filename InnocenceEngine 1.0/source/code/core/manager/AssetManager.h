@@ -28,7 +28,7 @@ public:
 	}
 
 	void loadAsset(const std::string& filePath, VisibleComponent& visibleComponent);
-	void loadAsset(const std::vector<std::string>& filePath, VisibleComponent& visibleComponent);
+	void loadAsset(const std::vector<std::string>& filePath, textureType textureType, VisibleComponent& visibleComponent);
 	void loadAsset(const std::string& filePath, textureType textureType, VisibleComponent& visibleComponent);
 
 	std::string loadShader(const std::string& fileName) const;
@@ -43,7 +43,8 @@ private:
 	void loadModelImpl(const std::string& fileName, VisibleComponent& visibleComponent);
 	void load2DTextureImpl(const std::string& fileName, textureType textureType, VisibleComponent& visibleComponent);
 
-	void load3DTextureFromDisk(const std::vector<std::string>&  fileName, VisibleComponent& visibleComponent) const;
+	void load3DTextureFromDisk(const std::vector<std::string>&  fileName, textureType textureType, VisibleComponent& visibleComponent) const;
+	void load3DTextureFromDisk(const std::string& filePath, textureType textureType, VisibleComponent& visibleComponent) const;
 
 	void assignloadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
 

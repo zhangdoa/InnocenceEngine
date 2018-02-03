@@ -28,10 +28,12 @@ public:
 	textureID add2DTexture();
 	textureID add2DHDRTexture();
 	textureID add3DTexture();
+	textureID add3DHDRTexture();
 	IMesh* getMesh(meshID meshID);
 	I2DTexture* get2DTexture(textureID textureID);
 	I2DTexture* get2DHDRTexture(textureID textureID);
 	I3DTexture* get3DTexture(textureID textureID);
+	I3DTexture* get3DHDRTexture(textureID textureID);
 
 private:
 	RenderingManager() {};
