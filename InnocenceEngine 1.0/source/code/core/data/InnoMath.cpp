@@ -537,7 +537,7 @@ mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDi
 	vec3 l_Z = eyePos;
 
 	l_Z = l_Z - centerPos;
-	l_Z.normalize();
+	l_Z = l_Z.normalize();
 
 	l_Y = upDir;
 
@@ -545,8 +545,8 @@ mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDi
 
 	l_Y = l_Z.cross(l_X);
 
-	l_X.normalize();
-	l_Y.normalize();
+	l_X = l_X.normalize();
+	l_Y = l_Y.normalize();
 
 	l_m.m[0][0] = l_X.x;
 	l_m.m[1][0] = l_X.y;
