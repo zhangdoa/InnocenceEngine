@@ -1,0 +1,21 @@
+// shadertype=<glsl>
+#version 330 core
+layout (location = 0) out vec4 uni_backgroundDPassRT0;
+
+in vec2 TexCoords;
+
+uniform sampler2D uni_lightPassRT0;
+uniform sampler2D uni_skyForwardPassRT0;
+uniform sampler2D uni_debuggerPassRT0;
+
+void main()
+{    
+	if(texture(uni_lightPassRT0, TexCoords).a == 1.0)
+	{
+		uni_backgroundDPassRT0 = texture(uni_lightPassRT0, TexCoords);
+	}
+	else
+	{
+		uni_backgroundDPassRT0 = texture(uni_skyForwardPassRT0, TexCoords);
+	}
+}

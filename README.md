@@ -30,7 +30,9 @@
 
 [GLFW](https://github.com/glfw/glfw)
 
-[GLEW](https://github.com/nigels-com/glew) 
+[GLAD](https://github.com/Dav1dde/glad) 
+
+[stb](https://github.com/nothings/stb)
 
 [assimp](https://github.com/assimp)
 
@@ -43,6 +45,9 @@
 
 [Musopen](https://musopen.org)
 
+[Free PBR Materials](https://freepbr.com/)
+
+[HDR Labs](http://www.hdrlabs.com/)
 
 ## Inspirations
 
@@ -75,7 +80,7 @@
 
 [Learn OpenGL](https://learnopengl.com)
 
-[Scratchapixel](www.scratchapixel.com)
+[Scratchapixel](https://www.scratchapixel.com)
 
 [Randy Gaul's Game Programming Blog](http://www.randygaul.net)
 

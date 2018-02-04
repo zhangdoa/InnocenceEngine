@@ -29,8 +29,8 @@ public:
 private:
 	GLWindowManager() {};
 
-	const unsigned int SCR_WIDTH = 1024;
-	const unsigned int SCR_HEIGHT = 768;
+	unsigned int SCR_WIDTH = 1280;
+	unsigned int SCR_HEIGHT = 720;
 	GLFWwindow* m_window;
 	std::string m_windowName;
 };

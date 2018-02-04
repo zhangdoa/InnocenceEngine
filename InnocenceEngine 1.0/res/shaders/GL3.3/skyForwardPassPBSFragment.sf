@@ -1,0 +1,12 @@
+// shadertype=<glsl>
+#version 330 core
+layout (location = 0) out vec4 uni_backgroundFPassRT0;
+
+in vec3 TexCoords;
+
+uniform samplerCube uni_skybox;
+
+void main()
+{    
+    uni_backgroundFPassRT0 = texture(uni_skybox, TexCoords);
+}

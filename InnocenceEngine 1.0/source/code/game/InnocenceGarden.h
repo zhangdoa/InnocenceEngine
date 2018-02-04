@@ -36,13 +36,6 @@ private:
 	VisibleComponent skyboxComponent;
 
 	LightComponent directionalLightComponent;
-	LightComponent pointLightComponent1;
-	LightComponent pointLightComponent2;
-	LightComponent pointLightComponent3;
-
-	VisibleComponent pointLightBillboardComponent1;
-	VisibleComponent pointLightBillboardComponent2;
-	VisibleComponent pointLightBillboardComponent3;
 
 	VisibleComponent landscapeStaticMeshComponent;
 	VisibleComponent pawnMeshComponent1;

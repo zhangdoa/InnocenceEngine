@@ -9,6 +9,7 @@ uniform sampler2D uni_geometryPassRT0;
 uniform sampler2D uni_geometryPassRT1;
 uniform sampler2D uni_geometryPassRT2;
 uniform sampler2D uni_geometryPassRT3;
+uniform samplerCube uni_irradianceMap;
 
 struct dirLight {
 	vec3 direction;
@@ -160,12 +161,12 @@ void main()
 	{
 	vec3 FragPos	= texture(uni_geometryPassRT0, TexCoords).rgb;
 	vec3 Normal		= texture(uni_geometryPassRT1, TexCoords).rgb;
-	vec3 Albedo     = texture(uni_geometryPassRT2, TexCoords).rgb;
-	//vec3 Albedo     = vec3(0.5, 0.0, 0.0);
-    float Metallic  = texture(uni_geometryPassRT3, TexCoords).r;
-	//float Metallic  = 1.0;
-    float Roughness = texture(uni_geometryPassRT3, TexCoords).g;
-	//float Roughness = 0.5;
+	//vec3 Albedo     = texture(uni_geometryPassRT2, TexCoords).rgb;
+	vec3 Albedo     = vec3(1.0, 1.0, 1.0);
+    //float Metallic  = texture(uni_geometryPassRT3, TexCoords).r;
+	float Metallic  = 0.3;
+    //float Roughness = texture(uni_geometryPassRT3, TexCoords).g;
+	float Roughness = 0.65;
     //float AO        = texture(uni_geometryPassRT3, TexCoords).b;
 	float AO = 1.0;
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
@@ -180,12 +181,18 @@ void main()
     
 	for(int i = 0; i < NR_POINT_LIGHTS; ++i) 
     {
-        Lo += CalcPointLightRadiance(uni_pointLights[i], Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
+        //Lo += CalcPointLightRadiance(uni_pointLights[i], Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
     }
 
-	//ambient lighting
-	Lo = Lo + vec3(0.03) * Albedo * AO;
-
+	//IBL ambient lighting
+	vec3 normalizedViewDir = normalize(uni_viewPos - FragPos);
+	vec3 kS = fresnelSchlick(max(dot(Normal, normalizedViewDir), 0.0), F0);
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - Metallic;	  
+	vec3 irradiance = texture(uni_irradianceMap, Normal).rgb;
+    vec3 diffuse      = irradiance * Albedo;
+    vec3 ambient = (kD * diffuse) * AO;
+	Lo = Lo + ambient;
 	uni_lightPassRT0.rgb = Lo;
 	uni_lightPassRT0.a = 1.0;
 	}
