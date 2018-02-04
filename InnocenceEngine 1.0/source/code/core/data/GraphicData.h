@@ -171,6 +171,7 @@ public:
 
 	// @TODO: need a FBO class
 	void updateFramebuffer(int index);
+	void updateForLightPass();
 private:
 	GLuint m_textureID = 0;
 };

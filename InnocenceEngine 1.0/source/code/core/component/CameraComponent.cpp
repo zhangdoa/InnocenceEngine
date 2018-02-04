@@ -38,7 +38,7 @@ void CameraComponent::setup()
 
 void CameraComponent::initialize()
 {
-	m_projectionMatrix.initializeToPerspectiveMatrix((70.0f / 180.0f) * PI, (4.0f / 3.0f), 0.1f, 1000000.0f);
+	m_projectionMatrix.initializeToPerspectiveMatrix((70.0f / 180.0f) * PI, (16.0f / 9.0f), 0.1f, 1000000.0f);
 }
 
 void CameraComponent::update()

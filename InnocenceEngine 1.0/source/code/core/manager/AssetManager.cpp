@@ -361,9 +361,9 @@ textureID AssetManager::load2DTextureFromDisk(const std::string & fileName, text
 	if (data)
 	{
 		auto id = RenderingManager::getInstance().add2DTexture();
-		auto lastTextureData = RenderingManager::getInstance().get2DTexture(id);
-		lastTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
-		lastTextureData->initialize();
+		auto last2DTextureData = RenderingManager::getInstance().get2DTexture(id);
+		last2DTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
+		last2DTextureData->initialize();
 		LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is loaded.");
 		return id;
 	}
@@ -424,19 +424,12 @@ void AssetManager::load3DTextureFromDisk(const std::string & filePath, textureTy
 		auto *data = stbi_loadf((m_textureRelativePath + filePath).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			auto twoDid = RenderingManager::getInstance().add2DHDRTexture();
-			auto last2DTextureData = RenderingManager::getInstance().get2DHDRTexture(twoDid);
+			auto id = RenderingManager::getInstance().add2DHDRTexture();
+			auto last2DTextureData = RenderingManager::getInstance().get2DHDRTexture(id);
 			last2DTextureData->setup(textureType::EQUIRETANGULAR, textureWrapMethod::CLAMP_TO_EDGE, nrChannels, width, height, data);
 			last2DTextureData->initialize();
 
-			auto threeDid = RenderingManager::getInstance().add3DHDRTexture();
-			// @TODO: generalize
-			auto last3DTextureData = RenderingManager::getInstance().get3DHDRTexture(threeDid);
-			last3DTextureData->setup(textureType::CUBEMAP_HDR, 3, 512, 512, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
-			last3DTextureData->initialize();
-
-			visibleComponent.addTextureData(texturePair(textureType::EQUIRETANGULAR, twoDid));
-			visibleComponent.addTextureData(texturePair(textureType::CUBEMAP_HDR, threeDid));
+			visibleComponent.addTextureData(texturePair(textureType::EQUIRETANGULAR, id));
 			LogManager::getInstance().printLog("inno2DHDRTexture: " + filePath + " is loaded.");
 		}
 		else
