@@ -274,18 +274,19 @@ void I2DTexture::setup(textureType textureType, textureWrapMethod textureWrapMet
 
 void GL2DTexture::initialize()
 {
-	GLint l_textureWrapMethod;
-	switch (m_textureWrapMethod)
-	{
-	case textureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
-	case textureWrapMethod::CLAMP_TO_EDGE: l_textureWrapMethod = GL_CLAMP_TO_EDGE; break;
-	}
 	if (m_textureType == textureType::INVISIBLE)
 	{
 		return;
 	}
 	else
 	{
+		GLint l_textureWrapMethod;
+		switch (m_textureWrapMethod)
+		{
+		case textureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
+		case textureWrapMethod::CLAMP_TO_EDGE: l_textureWrapMethod = GL_CLAMP_TO_EDGE; break;
+		}
+
 		// @TODO: more general texture parameter
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
@@ -295,27 +296,25 @@ void GL2DTexture::initialize()
 		// set texture filtering parameters
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	}
-	GLenum l_internalFormat;
-	if (m_textureFormat == 1)
-	{
-		l_internalFormat = GL_RED;
-	}
-	else if (m_textureFormat == 3)
-	{
+		GLenum l_internalFormat;
+		if (m_textureFormat == 1)
+		{
+			l_internalFormat = GL_RED;
+		}
+		else if (m_textureFormat == 3)
+		{
 
-		l_internalFormat = GL_RGB;
-	}
-	else if (m_textureFormat == 4)
-	{
-		l_internalFormat = GL_RGBA;
-	}
+			l_internalFormat = GL_RGB;
+		}
+		else if (m_textureFormat == 4)
+		{
+			l_internalFormat = GL_RGBA;
+		}
+		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, m_textureRawData);
+		glGenerateMipmap(GL_TEXTURE_2D);
 
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, m_textureRawData);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	setStatus(objectStatus::ALIVE);
+		setStatus(objectStatus::ALIVE);
+	}	
 }
 
 void GL2DTexture::update()
@@ -362,7 +361,7 @@ void GL2DHDRTexture::initialize()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_FLOAT, m_textureRawData);
 
@@ -426,7 +425,6 @@ void GL3DTexture::initialize()
 	{
 		l_internalFormat = GL_SRGB_ALPHA;
 	}
-	glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Right);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Left);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Top);
@@ -489,6 +487,10 @@ void GL3DHDRTexture::shutdown()
 void GL3DHDRTexture::updateFramebuffer(int index)
 {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, m_textureID, 0);
-	unsigned int attachments[1] = { GL_COLOR_ATTACHMENT0 };
-	glDrawBuffers(1, attachments);
+}
+
+void GL3DHDRTexture::updateForLightPass()
+{
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 }
