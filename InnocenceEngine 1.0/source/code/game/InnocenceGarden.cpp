@@ -52,8 +52,8 @@ void InnocenceGarden::setup()
 	pawnActor1.getTransform()->setScale(vec3(0.2f, 0.2f, 0.2f));
 	pawnActor1.getTransform()->setPos(vec3(0.0f, 0.2f, -1.5f));
 	pawnActor2.getTransform()->setScale(vec3(0.2f, 0.2f, 0.2f));
-	//testStaticMeshActor2.getTransform()->setScale(vec3(0.002f, 0.002f, 0.002f));
-	//pawnActor2.getTransform()->setPos(vec3(0.0f, 0.2f, 3.5f));
+	pawnActor2.getTransform()->setScale(vec3(0.02f, 0.02f, 0.02f));
+	pawnActor2.getTransform()->setPos(vec3(0.0f, 0.2f, 3.5f));
 
 	setupLights();
 	setupSpheres();
@@ -65,12 +65,13 @@ void InnocenceGarden::initialize()
 {	
 	initializeSpheres();
 
-	//AssetManager::getInstance().importModel("deer.obj");
-
-	//AssetManager::getInstance().loadAsset("nanosuit/nanosuit.obj", pawnMeshComponent1);
-	//AssetManager::getInstance().loadAsset(assetType::MODEL, "nanosuit/nanosuit.obj", pawnMeshComponent2);
-
-	//AssetManager::getInstance().loadModel("deer.innoModel", testStaticMeshComponent2);
+	AssetManager::getInstance().loadAsset("nanosuit/nanosuit.obj", pawnMeshComponent1);
+	AssetManager::getInstance().loadAsset("lantern/lantern.obj", pawnMeshComponent2);
+	AssetManager::getInstance().loadAsset("lantern/lantern_Normal_OpenGL.jpg", textureType::NORMAL, pawnMeshComponent2);
+	AssetManager::getInstance().loadAsset("lantern/lantern_Base_Color.jpg", textureType::ALBEDO, pawnMeshComponent2);
+	AssetManager::getInstance().loadAsset("lantern/lantern_Metallic.jpg", textureType::METALLIC, pawnMeshComponent2);
+	AssetManager::getInstance().loadAsset("lantern/lantern_Roughness.jpg", textureType::ROUGHNESS, pawnMeshComponent2);
+	AssetManager::getInstance().loadAsset("lantern/lantern_Mixed_AO.jpg", textureType::AMBIENT_OCCLUSION, pawnMeshComponent2);
 
 	AssetManager::getInstance().addUnitMesh(skyboxComponent, unitMeshType::CUBE);
 	AssetManager::getInstance().loadAsset("ibl/Playa_Sunrise.hdr", textureType::EQUIRETANGULAR, skyboxComponent);
