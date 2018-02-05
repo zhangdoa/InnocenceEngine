@@ -23,7 +23,7 @@ void main()
 	thefrag_TexCoord = in_TexCoord;
 
 	// output the normal
-	thefrag_Normal = in_Normal;
+	thefrag_Normal = mat3(transpose(inverse(uni_m))) * in_Normal;
 
 	gl_Position = uni_p * uni_r * uni_t * uni_m * vec4(in_Position, 1.0);
 }
