@@ -319,31 +319,38 @@ void GL2DTexture::initialize()
 
 void GL2DTexture::update()
 {
-	//@TODO: switch is too slow for CPU
-	switch (m_textureType)
-	{
-	case textureType::INVISIBLE: break;
-	case textureType::ALBEDO:
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		break;
-	case textureType::METALLIC:
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		break;
-	case textureType::NORMAL:
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		break;
-	case textureType::ROUGHNESS:
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		break;
-	case textureType::AMBIENT_OCCLUSION:
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		break;
-	}
+	this->update(0);
+	////@TODO: switch is too slow for CPU
+	//switch (m_textureType)
+	//{
+	//case textureType::INVISIBLE: break;
+	//case textureType::ALBEDO:
+	//	glActiveTexture(GL_TEXTURE1);
+	//	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	//	break;
+	//case textureType::METALLIC:
+	//	glActiveTexture(GL_TEXTURE2);
+	//	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	//	break;
+	//case textureType::NORMAL:
+	//	glActiveTexture(GL_TEXTURE0);
+	//	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	//	break;
+	//case textureType::ROUGHNESS:
+	//	glActiveTexture(GL_TEXTURE3);
+	//	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	//	break;
+	//case textureType::AMBIENT_OCCLUSION:
+	//	glActiveTexture(GL_TEXTURE4);
+	//	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	//	break;
+	//}
+}
+
+void GL2DTexture::update(int textureIndex)
+{
+	glActiveTexture(GL_TEXTURE0 + textureIndex);
+	glBindTexture(GL_TEXTURE_2D, m_textureID);
 }
 
 void GL2DTexture::shutdown()
@@ -370,7 +377,12 @@ void GL2DHDRTexture::initialize()
 
 void GL2DHDRTexture::update()
 {
-	glActiveTexture(GL_TEXTURE0);
+	this->update(0);
+}
+
+void GL2DHDRTexture::update(int textureIndex)
+{
+	glActiveTexture(GL_TEXTURE0 + textureIndex);
 	glBindTexture(GL_TEXTURE_2D, m_textureID);
 }
 
@@ -437,7 +449,12 @@ void GL3DTexture::initialize()
 
 void GL3DTexture::update()
 {
-	glActiveTexture(GL_TEXTURE0);
+	this->update(0);
+}
+
+void GL3DTexture::update(int textureIndex)
+{
+	glActiveTexture(GL_TEXTURE0 + textureIndex);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 }
 
@@ -473,7 +490,12 @@ void GL3DHDRTexture::initialize()
 
 void GL3DHDRTexture::update()
 {
-	glActiveTexture(GL_TEXTURE0);
+	this->update(0);
+}
+
+void GL3DHDRTexture::update(int textureIndex)
+{
+	glActiveTexture(GL_TEXTURE0 + textureIndex);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 }
 
@@ -487,10 +509,4 @@ void GL3DHDRTexture::shutdown()
 void GL3DHDRTexture::updateFramebuffer(int index)
 {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, m_textureID, 0);
-}
-
-void GL3DHDRTexture::updateForLightPass()
-{
-	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 }

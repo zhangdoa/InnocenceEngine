@@ -85,8 +85,8 @@ vec3 CalcDirectionalLightRadiance(dirLight light, vec3 albedo, float metallic, f
         vec3 F    = fresnelSchlick(max(dot(normalizedHalfwayDir, normalizedViewDir), 0.0), F0);
            
         vec3 nominator    = NDF * G * F; 
-        float denominator = 4 * max(dot(normal, normalizedViewDir), 0.0) * max(dot(normal, normalizedLightDir), 0.0) + 0.001; // 0.001 to prevent divide by zero.
-        vec3 specular = nominator / denominator;
+        float denominator = 4 * max(dot(normal, normalizedViewDir), 0.0) * max(dot(normal, normalizedLightDir), 0.0);
+        vec3 specular = nominator / max(denominator, 0.001);
         
         // kS is equal to Fresnel
         vec3 kS = F;
@@ -124,8 +124,8 @@ vec3 CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float
         vec3 F    = fresnelSchlick(max(dot(normalizedHalfwayDir, normalizedViewDir), 0.0), F0);
            
         vec3 nominator    = NDF * G * F; 
-        float denominator = 4 * max(dot(normal, normalizedViewDir), 0.0) * max(dot(normal, normalizedLightDir), 0.0) + 0.001; // 0.001 to prevent divide by zero.
-        vec3 specular = nominator / denominator;
+        float denominator = 4 * max(dot(normal, normalizedViewDir), 0.0) * max(dot(normal, normalizedLightDir), 0.0);
+        vec3 specular = nominator / max(denominator, 0.001);
         
         // kS is equal to Fresnel
         vec3 kS = F;
