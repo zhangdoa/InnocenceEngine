@@ -130,7 +130,7 @@ public:
 	virtual ~I3DTexture() {};
 
 	void setup() override;
-	void setup(textureType textureType, int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData);
+	void setup(textureType textureType, int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData, bool generateMipMap);
 
 protected:
 	textureType m_textureType;
@@ -138,6 +138,7 @@ protected:
 	int m_textureFormat;
 	int m_textureWidth;
 	int m_textureHeight;
+	bool m_generateMipMap;
 
 	void* m_textureRawData_Right;
 	void* m_textureRawData_Left;
@@ -174,7 +175,7 @@ public:
 	void shutdown() override;
 
 	// @TODO: need a FBO class
-	void updateFramebuffer(int index);
+	void updateFramebuffer(int index, int mipLevel);
 
 private:
 	GLuint m_textureID = 0;

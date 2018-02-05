@@ -10,6 +10,8 @@ uniform sampler2D uni_geometryPassRT1;
 uniform sampler2D uni_geometryPassRT2;
 uniform sampler2D uni_geometryPassRT3;
 uniform samplerCube uni_irradianceMap;
+uniform samplerCube uni_preFiltedMap;
+uniform sampler2D uni_brdfLUT;
 
 struct dirLight {
 	vec3 direction;
@@ -25,6 +27,8 @@ struct pointLight {
 const float PI = 3.14159265359;
 
 const int NR_POINT_LIGHTS = 64;
+
+const float MAX_REFLECTION_LOD = 4.0;
 
 uniform dirLight uni_dirLight;
 
@@ -70,7 +74,12 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
-
+// ----------------------------------------------------------------------------
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+}  
+// ----------------------------------------------------------------------------
 vec3 CalcDirectionalLightRadiance(dirLight light, vec3 albedo, float metallic, float roughness, vec3 normal, vec3 viewPos, vec3 fragPos, vec3 F0)
 {
 		// calculate per-light radiance
@@ -164,9 +173,9 @@ void main()
 	vec3 Albedo     = texture(uni_geometryPassRT2, TexCoords).rgb;
 	//vec3 Albedo     = vec3(1.0, 1.0, 1.0);
     float Metallic  = texture(uni_geometryPassRT3, TexCoords).r;
-	//float Metallic  = 0.3;
+	//float Metallic  = 0.75;
     float Roughness = texture(uni_geometryPassRT3, TexCoords).g;
-	//float Roughness = 0.65;
+	//float Roughness = 0.2;
     float AO        = texture(uni_geometryPassRT3, TexCoords).b;
 	//float AO = 1.0;
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
@@ -181,17 +190,25 @@ void main()
     
 	for(int i = 0; i < NR_POINT_LIGHTS; ++i) 
     {
-        Lo += CalcPointLightRadiance(uni_pointLights[i], Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
+        //Lo += CalcPointLightRadiance(uni_pointLights[i], Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
     }
 
 	//IBL ambient lighting
-	vec3 normalizedViewDir = normalize(uni_viewPos - FragPos);
+	vec3 normalizedViewDir = normalize(uni_viewPos - FragPos);	
+	vec3 R = reflect(-normalizedViewDir, Normal);
+    vec3 F = fresnelSchlickRoughness(max(dot(Normal, normalizedViewDir), 0.0), F0, Roughness); 
 	vec3 kS = fresnelSchlick(max(dot(Normal, normalizedViewDir), 0.0), F0);
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - Metallic;	  
 	vec3 irradiance = texture(uni_irradianceMap, Normal).rgb;
     vec3 diffuse      = irradiance * Albedo;
-    vec3 ambient = (kD * diffuse) * AO;
+
+	// sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
+    vec3 prefilteredColor = textureLod(uni_preFiltedMap, R,  Roughness * MAX_REFLECTION_LOD).rgb;    
+    vec2 brdf  = texture(uni_brdfLUT, vec2(max(dot(Normal, normalizedViewDir), 0.0), Roughness)).rg;
+    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+
+    vec3 ambient = (kD * diffuse + specular) * AO;
 	Lo = Lo + ambient;
 	uni_lightPassRT0.rgb = Lo;
 	uni_lightPassRT0.a = 1.0;

@@ -8,12 +8,6 @@ uniform sampler2D uni_skyDeferPassRT0;
 
 void main()
 {  
-	if(texture(uni_skyDeferPassRT0, TexCoords).a == 0.0)
-	{
-	FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-	}
-	else
-	{
 	vec3 finalColor = texture(uni_skyDeferPassRT0, TexCoords).rgb;
 	
 	//HDR to LDR
@@ -23,5 +17,4 @@ void main()
 	finalColor = pow(finalColor, vec3(1.0 / 2.2));
 	
 	FragColor = vec4(finalColor, 1.0);
-	}
 }
