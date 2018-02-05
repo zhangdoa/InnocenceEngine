@@ -30,7 +30,7 @@ void InnocenceGarden::setup()
 	skyboxComponent.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
 	skyboxActor.addChildComponent(&skyboxComponent);
 
-	directionalLightComponent.setColor(vec3(0.0f, 0.0f, 0.0f));
+	directionalLightComponent.setColor(vec3(1.0f, 1.0f, 1.0f));
 	directionalLightComponent.setlightType(lightType::DIRECTIONAL);
 	directionalLightComponent.setDirection(vec3(0.0f, 0.0f, -0.85f));
 	SceneGraphManager::getInstance().addToLightQueue(&directionalLightComponent);

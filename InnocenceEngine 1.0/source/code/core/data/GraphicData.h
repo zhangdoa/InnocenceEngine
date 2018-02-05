@@ -99,6 +99,7 @@ public:
 
 	void initialize() override;
 	void update() override;
+	void update(int textureIndex);
 	void shutdown() override;
 
 private:
@@ -113,6 +114,7 @@ public:
 
 	void initialize() override;
 	void update() override;
+	void update(int textureIndex);
 	void shutdown() override;
 
 private:
@@ -153,6 +155,7 @@ public:
 
 	void initialize() override;
 	void update() override;
+	void update(int textureIndex);
 	void shutdown() override;
 
 private:
@@ -167,11 +170,12 @@ public:
 
 	void initialize() override;
 	void update() override;
+	void update(int textureIndex);
 	void shutdown() override;
 
 	// @TODO: need a FBO class
 	void updateFramebuffer(int index);
-	void updateForLightPass();
+
 private:
 	GLuint m_textureID = 0;
 };
