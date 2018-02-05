@@ -166,6 +166,42 @@ private:
 	EnvironmentConvolutionPassPBSShader() {};
 };
 
+class EnvironmentPreFilterPassPBSShader : public GLShader
+{
+public:
+	~EnvironmentPreFilterPassPBSShader() {};
+
+	static EnvironmentPreFilterPassPBSShader& getInstance()
+	{
+		static EnvironmentPreFilterPassPBSShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDCapturedTexture, GL3DHDRTexture& threeDPreFiltedTexture);
+
+private:
+	EnvironmentPreFilterPassPBSShader() {};
+};
+
+class EnvironmentBRDFLUTPassPBSShader : public GLShader
+{
+public:
+	~EnvironmentBRDFLUTPassPBSShader() {};
+
+	static EnvironmentBRDFLUTPassPBSShader& getInstance()
+	{
+		static EnvironmentBRDFLUTPassPBSShader instance;
+		return instance;
+	}
+
+	void init() override;
+	void shaderDraw();
+
+private:
+	EnvironmentBRDFLUTPassPBSShader() {};
+};
+
 class SkyForwardPassPBSShader : public GLShader
 {
 public:
@@ -322,8 +358,16 @@ private:
 	GLuint m_environmentPassRBO;
 	textureID m_environmentCapturePassTextureID;
 	textureID m_environmentConvolutionPassTextureID;
+	textureID m_environmentPreFilterPassTextureID;
+	GLuint m_environmentBRDFLUTTexture;
+	GLuint m_environmentBRDFLUTPassVAO;
+	GLuint m_environmentBRDFLUTPassVBO;
+	std::vector<float> m_environmentBRDFLUTPassVertices;
+
 	GLShader* m_environmentCapturePassShader;
 	GLShader* m_environmentConvolutionPassShader;
+	GLShader* m_environmentPreFilterPassShader;
+	GLShader* m_environmentBRDFLUTPassShader;
 
 	GLuint m_skyForwardPassFBO;
 	GLuint m_skyForwardPassRT0Texture;

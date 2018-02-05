@@ -193,7 +193,7 @@ void InnocenceGarden::updateSpheres(float seed)
 {
 	for (auto i = (unsigned int)0; i < sphereActors.size(); i++)
 	{
-		sphereActors[i].getTransform()->rotate(vec3(0.0f, 1.0f, 0.0f), 0.1 * i);
-		sphereActors[i].getTransform()->setPos(sphereActors[i].getTransform()->getPos() + vec3(cos(seed) * 0.1, 0.0, 0.0));
+		//sphereActors[i].getTransform()->rotate(vec3(0.0f, 1.0f, 0.0f), 0.1 * i);
+		//sphereActors[i].getTransform()->setPos(sphereActors[i].getTransform()->getPos() + vec3(cos(seed) * 0.1, 0.0, 0.0));
 	}
 }
