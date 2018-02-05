@@ -180,26 +180,26 @@ void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraCompon
 				auto l_textureMap = l_graphicData.second;
 				if (&l_textureMap != nullptr)
 				{
-					// any diffuse?
-					auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
-					if (l_diffuseTextureID != l_textureMap.end())
-					{
-						auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
-						l_textureData.update();
-					}
-					// any specular?
-					auto l_specularTextureID = l_textureMap.find(textureType::METALLIC);
-					if (l_specularTextureID != l_textureMap.end())
-					{
-						auto& l_textureData = textureMap.find(l_specularTextureID->second)->second;
-						l_textureData.update();
-					}
 					// any normal?
 					auto l_normalTextureID = l_textureMap.find(textureType::NORMAL);
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
-						l_textureData.update();
+						l_textureData.update(0);
+					}
+					// any albedo?
+					auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
+					if (l_diffuseTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
+						l_textureData.update(1);
+					}
+					// any metallic?
+					auto l_specularTextureID = l_textureMap.find(textureType::METALLIC);
+					if (l_specularTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureMap.find(l_specularTextureID->second)->second;
+						l_textureData.update(2);
 					}
 				}
 				// draw meshes
@@ -253,27 +253,27 @@ void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cam
 				auto l_textureMap = l_graphicData.second;
 				if (&l_textureMap != nullptr)
 				{
+					// any normal?
+					auto l_normalTextureID = l_textureMap.find(textureType::NORMAL);
+					if (l_normalTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
+						l_textureData.update(0);
+					}
 					// any diffuse?
 					auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
 					if (l_diffuseTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
-						l_textureData.update();
+						l_textureData.update(1);
 					}
 					// any specular?
 					auto l_specularTextureID = l_textureMap.find(textureType::METALLIC);
 					if (l_specularTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_specularTextureID->second)->second;
-						l_textureData.update();
-					}
-					// any normal?
-					auto l_normalTextureID = l_textureMap.find(textureType::NORMAL);
-					if (l_normalTextureID != l_textureMap.end())
-					{
-						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
-						l_textureData.update();
-					}
+						l_textureData.update(2);
+					}	
 				}
 				// draw meshes
 				meshMap.find(l_graphicData.first)->second.update();
@@ -374,35 +374,35 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
-						l_textureData.update();
+						l_textureData.update(0);
 					}
 					// any albedo?
 					auto& l_albedoTextureID = l_textureMap.find(textureType::ALBEDO);
 					if (l_albedoTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_albedoTextureID->second)->second;
-						l_textureData.update();
+						l_textureData.update(1);
 					}
 					// any metallic?
 					auto& l_metallicTextureID = l_textureMap.find(textureType::METALLIC);
 					if (l_metallicTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_metallicTextureID->second)->second;
-						l_textureData.update();
+						l_textureData.update(2);
 					}
 					// any roughness?
 					auto& l_roughnessTextureID = l_textureMap.find(textureType::ROUGHNESS);
 					if (l_roughnessTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_roughnessTextureID->second)->second;
-						l_textureData.update();
+						l_textureData.update(3);
 					}
 					// any ao?
 					auto& l_aoTextureID = l_textureMap.find(textureType::AMBIENT_OCCLUSION);
 					if (l_aoTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_aoTextureID->second)->second;
-						l_textureData.update();
+						l_textureData.update(4);
 					}
 				}
 				// draw meshes
@@ -906,7 +906,7 @@ void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraCo
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT3Texture);
 
-	m_3DHDRTextureMap.find(m_environmentConvolutionPassTextureID)->second.updateForLightPass();
+	m_3DHDRTextureMap.find(m_environmentConvolutionPassTextureID)->second.update(4);
 
 	m_lightPassShader->shaderDraw(cameraComponents, lightComponents);
 	// draw light pass rectangle
