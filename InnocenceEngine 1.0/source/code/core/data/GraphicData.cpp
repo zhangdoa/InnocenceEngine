@@ -397,12 +397,14 @@ void I3DTexture::setup()
 {
 }
 
-void I3DTexture::setup(textureType textureType, int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData)
+void I3DTexture::setup(textureType textureType, int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData, bool generateMipMap)
 {
 	m_textureType = textureType;
 	m_textureFormat = textureFormat;
 	m_textureWidth = textureWidth;
 	m_textureHeight = textureHeight;
+	m_generateMipMap = generateMipMap;
+
 	m_textureRawData_Right = textureData[0];
 	m_textureRawData_Left = textureData[1];
 	m_textureRawData_Top = textureData[2];
@@ -420,7 +422,16 @@ void GL3DTexture::initialize()
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	if (m_generateMipMap)
+	{
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);	
+	}
+	else
+	{
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	}
+
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	GLenum l_internalFormat;
@@ -443,6 +454,11 @@ void GL3DTexture::initialize()
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Bottom);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Back);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_textureRawData_Front);
+
+	if (m_generateMipMap)
+	{
+		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	}
 
 	setStatus(objectStatus::ALIVE);
 }
@@ -474,8 +490,15 @@ void GL3DHDRTexture::initialize()
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	if (m_generateMipMap)
+	{
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	}
+	else
+	{
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	}
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB16F, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_FLOAT, m_textureRawData_Right);
@@ -484,6 +507,11 @@ void GL3DHDRTexture::initialize()
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB16F, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_FLOAT, m_textureRawData_Bottom);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB16F, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_FLOAT, m_textureRawData_Back);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB16F, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_FLOAT, m_textureRawData_Front);
+
+	if (m_generateMipMap)
+	{
+		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	}
 
 	setStatus(objectStatus::ALIVE);
 }
@@ -506,7 +534,7 @@ void GL3DHDRTexture::shutdown()
 	setStatus(objectStatus::SHUTDOWN);
 }
 
-void GL3DHDRTexture::updateFramebuffer(int index)
+void GL3DHDRTexture::updateFramebuffer(int index, int mipLevel)
 {
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, m_textureID, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, m_textureID, mipLevel);
 }

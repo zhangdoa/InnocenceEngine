@@ -17,11 +17,10 @@ mat4 CameraComponent::getPosMatrix() const
 mat4 CameraComponent::getRotMatrix() const
 {
 	// quaternion rotation
-	quat conjugateRotQuat;
-	conjugateRotQuat.w = getParentActor()->caclWorldRot().w;
-	conjugateRotQuat.x = -getParentActor()->caclWorldRot().x;
-	conjugateRotQuat.y = -getParentActor()->caclWorldRot().y;
-	conjugateRotQuat.z = -getParentActor()->caclWorldRot().z;
+	quat conjugateRotQuat = getParentActor()->caclWorldRot();
+	conjugateRotQuat.x = -conjugateRotQuat.x;
+	conjugateRotQuat.y = -conjugateRotQuat.y;
+	conjugateRotQuat.z = -conjugateRotQuat.z;
 
 	return conjugateRotQuat.toRotationMartix();
 }

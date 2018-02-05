@@ -402,7 +402,7 @@ void AssetManager::load3DTextureFromDisk(const std::vector<std::string>& fileNam
 			}
 			//stbi_image_free(data);
 		}
-		lastTextureData->setup(textureType::CUBEMAP, nrChannels, width, height, l_3DTextureRawData);
+		lastTextureData->setup(textureType::CUBEMAP, nrChannels, width, height, l_3DTextureRawData, false);
 		lastTextureData->initialize();
 		visibleComponent.addTextureData(texturePair(textureType::CUBEMAP, id));
 		LogManager::getInstance().printLog("inno3DTexture is fully loaded.");

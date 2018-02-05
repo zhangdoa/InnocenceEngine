@@ -426,6 +426,8 @@ void LightPassPBSShader::init()
 	updateUniform("uni_geometryPassRT2", 2);
 	updateUniform("uni_geometryPassRT3", 3);
 	updateUniform("uni_irradianceMap", 4);
+	updateUniform("uni_preFiltedMap", 5);
+	updateUniform("uni_brdfLUT", 6);
 }
 
 void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents)
@@ -494,15 +496,16 @@ void EnvironmentCapturePassPBSShader::shaderDraw(std::vector<VisibleComponent*>&
 					for (unsigned int i = 0; i < 6; ++i)
 					{
 						updateUniform("uni_r", captureViews[i]);
-						threeDTexture.updateFramebuffer(i);
+						threeDTexture.updateFramebuffer(i, 0);
 						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 						meshMap.find(l_graphicData.first)->second.update();
+						threeDTexture.update(0);
+						glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 					}
 				}
 			}
 		}	
 }
-
 
 void EnvironmentConvolutionPassPBSShader::init()
 {
@@ -543,13 +546,89 @@ void EnvironmentConvolutionPassPBSShader::shaderDraw(std::vector<VisibleComponen
 				for (unsigned int i = 0; i < 6; ++i)
 				{
 					updateUniform("uni_r", captureViews[i]);
-					threeDConvolutedTexture.updateFramebuffer(i);
+					threeDConvolutedTexture.updateFramebuffer(i, 0);
 					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 					meshMap.find(l_graphicData.first)->second.update();
 				}
 			}
 		}
 	}
+}
+
+void EnvironmentPreFilterPassPBSShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/environmentPreFilterPassPBSVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	addShader(GLShader::FRAGMENT, "GL3.3/environmentPreFilterPassPBSFragment.sf");
+	bindShader();
+	updateUniform("uni_capturedCubeMap", 0);
+}
+
+void EnvironmentPreFilterPassPBSShader::shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture & threeDCapturedTexture, GL3DHDRTexture & threeDPreFiltedTexture)
+{
+	mat4 captureProjection;
+	captureProjection.initializeToPerspectiveMatrix((90.0f / 180.0f) * PI, 1.0f, 0.1f, 10.0f);
+
+	std::vector<mat4> captureViews =
+	{
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  1.0f,  0.0f), vec3(0.0f,  0.0f,  1.0f)),
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f), vec3(0.0f,  0.0f, -1.0f)),
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, -1.0f,  0.0f)),
+		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f))
+	};
+
+	bindShader();
+	updateUniform("uni_p", captureProjection);
+
+	for (auto& l_visibleComponent : visibleComponents)
+	{
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
+		{
+
+			for (auto& l_graphicData : l_visibleComponent->getModelMap())
+			{
+				threeDCapturedTexture.update();
+				unsigned int maxMipLevels = 5;
+				for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
+				{
+					// reisze framebuffer according to mip-level size.
+					unsigned int mipWidth = 128 * std::pow(0.5, mip);
+					unsigned int mipHeight = 128 * std::pow(0.5, mip);
+
+					glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
+					glViewport(0, 0, mipWidth, mipHeight);
+
+					float roughness = (float)mip / (float)(maxMipLevels - 1);
+					updateUniform("uni_roughness", roughness);
+					for (unsigned int i = 0; i < 6; ++i)
+					{
+						updateUniform("uni_r", captureViews[i]);
+						threeDPreFiltedTexture.updateFramebuffer(i, mip);
+						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+						meshMap.find(l_graphicData.first)->second.update();
+					}
+				}		
+			}
+		}
+	}
+}
+
+void EnvironmentBRDFLUTPassPBSShader::init()
+{
+	initProgram();
+	addShader(GLShader::VERTEX, "GL3.3/environmentBRDFLUTPassPBSVertex.sf");
+	setAttributeLocation(0, "in_Position");
+	setAttributeLocation(1, "in_TexCoord");
+	addShader(GLShader::FRAGMENT, "GL3.3/environmentBRDFLUTPassPBSFragment.sf");
+	bindShader();
+}
+
+void EnvironmentBRDFLUTPassPBSShader::shaderDraw()
+{
+	bindShader();
 }
 
 void SkyForwardPassPBSShader::init()
@@ -907,6 +986,10 @@ void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraCo
 	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT3Texture);
 
 	m_3DHDRTextureMap.find(m_environmentConvolutionPassTextureID)->second.update(4);
+	m_3DHDRTextureMap.find(m_environmentPreFilterPassTextureID)->second.update(5);
+
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D, m_environmentBRDFLUTTexture);
 
 	m_lightPassShader->shaderDraw(cameraComponents, lightComponents);
 	// draw light pass rectangle
@@ -930,7 +1013,7 @@ void GLRenderingManager::initializeBackgroundPass()
 	// @TODO: add a capturer class
 	m_environmentCapturePassTextureID = this->add3DHDRTexture();
 	auto environmentCapturePassTextureData = this->get3DHDRTexture(m_environmentCapturePassTextureID);
-	environmentCapturePassTextureData->setup(textureType::CUBEMAP_HDR, 3, 2048, 2048, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
+	environmentCapturePassTextureData->setup(textureType::CUBEMAP_HDR, 3, 2048, 2048, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, false);
 	environmentCapturePassTextureData->initialize();
 
 	// environment convolution pass
@@ -938,8 +1021,47 @@ void GLRenderingManager::initializeBackgroundPass()
 
 	m_environmentConvolutionPassTextureID = this->add3DHDRTexture();
 	auto environmentConvolutionPassTextureData = this->get3DHDRTexture(m_environmentConvolutionPassTextureID);
-	environmentConvolutionPassTextureData->setup(textureType::CUBEMAP_HDR, 3, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
+	environmentConvolutionPassTextureData->setup(textureType::CUBEMAP_HDR, 3, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, false);
 	environmentConvolutionPassTextureData->initialize();
+
+	// environment pre-filter pass
+	m_environmentPreFilterPassShader->init();
+	
+	m_environmentPreFilterPassTextureID = this->add3DHDRTexture();
+	auto environmentPreFilterPassTextureData = this->get3DHDRTexture(m_environmentPreFilterPassTextureID);
+	environmentPreFilterPassTextureData->setup(textureType::CUBEMAP_HDR, 3, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, true);
+	environmentPreFilterPassTextureData->initialize();
+
+	// environment brdf LUT pass
+	m_environmentBRDFLUTPassShader->init();
+
+	glGenTextures(1, &m_environmentBRDFLUTTexture);
+	glBindTexture(GL_TEXTURE_2D, m_environmentBRDFLUTTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// initialize background defer pass rectangle
+	m_environmentBRDFLUTPassVertices = {
+		-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+		1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+		1.0f, -1.0f, 0.0f, 1.0f, 0.0f, };
+
+	glGenVertexArrays(1, &m_environmentBRDFLUTPassVAO);
+	glGenBuffers(1, &m_environmentBRDFLUTPassVBO);
+	glBindVertexArray(m_environmentBRDFLUTPassVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_environmentBRDFLUTPassVBO);
+	// take care of std::vector's size and pointer of first element!!!
+	glBufferData(GL_ARRAY_BUFFER, m_environmentBRDFLUTPassVertices.size() * sizeof(float), &m_environmentBRDFLUTPassVertices[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
 	// background forward pass
 	m_skyForwardPassShader->init();
@@ -1087,6 +1209,22 @@ void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cam
 
 		m_environmentConvolutionPassShader->shaderDraw(visibleComponents, m_meshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second, m_3DHDRTextureMap.find(m_environmentConvolutionPassTextureID)->second);
 
+		// draw environment map pre-filter pass
+		m_environmentPreFilterPassShader->shaderDraw(visibleComponents, m_meshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second, m_3DHDRTextureMap.find(m_environmentPreFilterPassTextureID)->second);
+
+		// draw environment map BRDF LUT pass
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+		glViewport(0, 0, 512, 512);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_environmentBRDFLUTTexture, 0);
+
+		m_environmentBRDFLUTPassShader->shaderDraw();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// draw environment map BRDF LUT rectangle
+		glBindVertexArray(m_environmentBRDFLUTPassVAO);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		glBindVertexArray(0);
+
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, m_screenResolution.x, m_screenResolution.x);
 		glViewport(0, 0, m_screenResolution.x, m_screenResolution.y);
 
@@ -1215,6 +1353,8 @@ void GLRenderingManager::setup()
 
 	m_environmentCapturePassShader = &EnvironmentCapturePassPBSShader::getInstance();
 	m_environmentConvolutionPassShader = &EnvironmentConvolutionPassPBSShader::getInstance();
+	m_environmentPreFilterPassShader = &EnvironmentPreFilterPassPBSShader::getInstance();
+	m_environmentBRDFLUTPassShader = &EnvironmentBRDFLUTPassPBSShader::getInstance();
 
 	m_skyForwardPassShader = &SkyForwardPassPBSShader::getInstance();
 	m_skyDeferPassShader = &SkyDeferPassPBSShader::getInstance();
