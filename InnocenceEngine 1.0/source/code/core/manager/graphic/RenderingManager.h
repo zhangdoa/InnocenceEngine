@@ -6,7 +6,7 @@
 
 #include "GLWindowManager.h"
 #include "GLInputManager.h"
-#include "../../platform-dependency/GL/GLRenderingManager.h"
+#include "GLRenderingManager.h"
 
 class RenderingManager : public IManager
 {
