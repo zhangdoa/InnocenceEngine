@@ -539,3 +539,101 @@ void GL3DHDRTexture::updateFramebuffer(int index, int mipLevel)
 {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, m_textureID, mipLevel);
 }
+
+void IFrameBuffer::setup()
+{
+}
+
+void IFrameBuffer::setup(vec2 renderBufferStorageResolution, bool isDeferPass, unsigned int renderTargetTextureNumber)
+{
+	m_renderBufferStorageResolution = renderBufferStorageResolution;
+	m_isDeferPass = isDeferPass;
+	m_renderTargetTextureNumber = renderTargetTextureNumber;
+}
+
+void GLFrameBuffer::initialize()
+{
+	//generate and bind frame buffer
+	glGenFramebuffers(1, &m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
+
+	// create and attach depth buffer (renderbuffer)
+	glGenRenderbuffers(1, &m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
+	//@TODO: not only this static 24 + 8
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)m_renderBufferStorageResolution.x, (int)m_renderBufferStorageResolution.y);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_RBO);
+
+	std::vector<unsigned int> attachments;
+	for (auto i = 0; i < m_renderTargetTextureNumber; i++)
+	{
+		m_textures.emplace_back();
+		attachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
+	}
+	for (auto i = 0; i < m_textures.size(); i++)
+	{
+		glGenTextures(1, &m_textures[i]);
+		glBindTexture(GL_TEXTURE_2D, m_textures[i]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_renderBufferStorageResolution.x, (int)m_renderBufferStorageResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, m_textures[i], 0);
+	}
+	glDrawBuffers(attachments.size(), &attachments[0]);
+
+	// finally check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		LogManager::getInstance().printLog("Framebuffer is not completed!");
+	}
+
+	if (m_isDeferPass)
+	{	
+		m_Vertices = {
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			1.0f, -1.0f, 0.0f, 1.0f, 0.0f, };
+
+		glGenVertexArrays(1, &m_VAO);
+		glGenBuffers(1, &m_VBO);
+		glBindVertexArray(m_VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+		// take care of std::vector's size and pointer of first element!!!
+		glBufferData(GL_ARRAY_BUFFER, m_Vertices.size() * sizeof(float), &m_Vertices[0], GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void GLFrameBuffer::update()
+{
+	glBindRenderbuffer(GL_RENDERBUFFER, m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_RBO);
+}
+
+void GLFrameBuffer::activeTexture(int textureLevel, int textureIndex)
+{
+	glActiveTexture(GL_TEXTURE0 + textureLevel);
+	glBindTexture(GL_TEXTURE_2D, m_textures[textureIndex]);
+}
+
+void GLFrameBuffer::drawMesh()
+{
+	glBindVertexArray(m_VAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+}
+
+void GLFrameBuffer::shutdown()
+{
+	glDeleteFramebuffers(1, &m_FBO);
+	glDeleteRenderbuffers(1, &m_RBO);
+}

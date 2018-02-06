@@ -6,6 +6,7 @@
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
 enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, CUBEMAP_HDR, EQUIRETANGULAR};
 enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
+enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR};
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 
 typedef EntityID textureID;
@@ -179,4 +180,42 @@ public:
 
 private:
 	GLuint m_textureID = 0;
+};
+
+class IFrameBuffer : public IEntity
+{
+public:
+	IFrameBuffer() {};
+	virtual ~IFrameBuffer() {};
+
+	void setup() override;
+	void setup(vec2 renderBufferStorageResolution, bool isDeferPass, unsigned int renderTargetTextureNumber);
+
+protected:
+	vec2 m_renderBufferStorageResolution;
+	bool m_isDeferPass = false;
+	unsigned int m_renderTargetTextureNumber = 0;
+};
+
+class GLFrameBuffer : public IFrameBuffer
+{
+public:
+	GLFrameBuffer() {};
+	virtual ~GLFrameBuffer() {};
+
+	void initialize() override;
+	void update() override;
+	void activeTexture(int textureLevel, int textureIndex);
+	void drawMesh();
+	void shutdown() override;
+
+private:
+	GLuint m_FBO;
+	GLuint m_RBO;
+
+	std::vector<GLuint> m_textures;
+
+	GLuint m_VAO;
+	GLuint m_VBO;
+	std::vector<float> m_Vertices;
 };

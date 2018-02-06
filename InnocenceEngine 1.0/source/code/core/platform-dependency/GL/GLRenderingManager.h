@@ -338,20 +338,10 @@ private:
 	std::unordered_map<textureID, GL3DTexture> m_3DTextureMap;
 	std::unordered_map<textureID, GL3DHDRTexture> m_3DHDRTextureMap;
 
-	GLuint m_geometryPassFBO;
-	GLuint m_geometryPassRT0Texture;
-	GLuint m_geometryPassRT1Texture;
-	GLuint m_geometryPassRT2Texture;
-	GLuint m_geometryPassRT3Texture;
-	GLuint m_geometryPassRBO;
+	GLFrameBuffer m_geometryPassFrameBuffer;
 	GLShader* m_geometryPassShader;
 
-	GLuint m_lightPassFBO;
-	GLuint m_lightPassRT0Texture;
-	GLuint m_lightPassRBO;
-	GLuint m_lightPassVAO;
-	GLuint m_lightPassVBO;
-	std::vector<float> m_lightPassVertices;
+	GLFrameBuffer m_lightPassFrameBuffer;
 	GLShader* m_lightPassShader;
 
 	GLuint m_environmentPassFBO;
@@ -369,27 +359,19 @@ private:
 	GLShader* m_environmentPreFilterPassShader;
 	GLShader* m_environmentBRDFLUTPassShader;
 
-	GLuint m_skyForwardPassFBO;
-	GLuint m_skyForwardPassRT0Texture;
-	GLuint m_skyForwardPassRBO;
+	GLFrameBuffer m_skyForwardPassFrameBuffer;
 	GLShader* m_skyForwardPassShader;
 
-	GLuint m_skyDeferPassFBO;
-	GLuint m_skyDeferPassRT0Texture;
-	GLuint m_skyDeferPassRBO;
-	GLuint m_skyDeferPassVAO;
-	GLuint m_skyDeferPassVBO;
-	std::vector<float> m_skyDeferPassVertices;
+	GLFrameBuffer m_skyDeferPassFrameBuffer;
 	GLShader* m_skyDeferPassShader;
 
-	GLuint m_debuggerPassFBO;
-	GLuint m_debuggerPassRT0Texture;
-	GLuint m_debuggerPassRBO;
+	GLFrameBuffer m_debuggerPassFrameBuffer;
 	GLShader* m_debuggerPassShader;
 
 	GLuint m_finalPassVAO;
 	GLuint m_finalPassVBO;
 	std::vector<float> m_screenVertices;
+	GLFrameBuffer m_finalPassFrameBuffer;
 	GLShader* m_finalPassShader;
 
 	int m_polygonMode = 0;
