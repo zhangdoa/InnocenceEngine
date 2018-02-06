@@ -171,11 +171,11 @@ void main()
 	vec3 FragPos	= texture(uni_geometryPassRT0, TexCoords).rgb;
 	vec3 Normal		= texture(uni_geometryPassRT1, TexCoords).rgb;
 	vec3 Albedo     = texture(uni_geometryPassRT2, TexCoords).rgb;
-	//vec3 Albedo     = vec3(1.0, 1.0, 1.0);
+	//vec3 Albedo     = vec3(0.91, 0.92, 0.92);
     float Metallic  = texture(uni_geometryPassRT3, TexCoords).r;
-	//float Metallic  = 0.75;
+	//float Metallic  = 1.0;
     float Roughness = texture(uni_geometryPassRT3, TexCoords).g;
-	//float Roughness = 0.2;
+	//float Roughness = 0.3;
     float AO        = texture(uni_geometryPassRT3, TexCoords).b;
 	//float AO = 1.0;
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
@@ -201,10 +201,10 @@ void main()
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - Metallic;	  
 	vec3 irradiance = texture(uni_irradianceMap, Normal).rgb;
-    vec3 diffuse      = irradiance * Albedo;
+    vec3 diffuse = irradiance * Albedo;
 
 	// sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
-    vec3 prefilteredColor = textureLod(uni_preFiltedMap, R,  Roughness * MAX_REFLECTION_LOD).rgb;    
+    vec3 prefilteredColor = textureLod(uni_preFiltedMap, R, Roughness * MAX_REFLECTION_LOD).rgb;    
     vec2 brdf  = texture(uni_brdfLUT, vec2(max(dot(Normal, normalizedViewDir), 0.0), Roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 

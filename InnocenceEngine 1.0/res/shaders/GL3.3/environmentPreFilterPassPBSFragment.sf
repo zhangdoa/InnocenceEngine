@@ -9,9 +9,9 @@ uniform float uni_roughness;
 const float PI = 3.14159265359;
 
 // ----------------------------------------------------------------------------
-float DistributionGGX(vec3 N, vec3 H, float uni_roughness)
+float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
-    float a = uni_roughness*uni_roughness;
+    float a = roughness*roughness;
     float a2 = a*a;
     float NdotH = max(dot(N, H), 0.0);
     float NdotH2 = NdotH*NdotH;
@@ -40,9 +40,9 @@ vec2 Hammersley(uint i, uint N)
 	return vec2(float(i)/float(N), RadicalInverse_VdC(i));
 }
 // ----------------------------------------------------------------------------
-vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float uni_roughness)
+vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
 {
-	float a = uni_roughness*uni_roughness;
+	float a = roughness*roughness;
 	
 	float phi = 2.0 * PI * Xi.x;
 	float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a*a - 1.0) * Xi.y));
@@ -67,7 +67,7 @@ void main()
 {		
     vec3 N = normalize(TexCoords);
     
-    // make the simplyfying assumption that V equals R equals the normal 
+    // make the simplifying assumption that V equals R equals the normal 
     vec3 R = N;
     vec3 V = R;
 
