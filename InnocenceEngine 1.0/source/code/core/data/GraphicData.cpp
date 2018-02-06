@@ -297,20 +297,46 @@ void GL2DTexture::initialize()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		GLenum l_internalFormat;
-		if (m_textureFormat == 1)
+		GLenum l_dataFormat;
+		if (m_textureType == textureType::ALBEDO)
 		{
-			l_internalFormat = GL_RED;
-		}
-		else if (m_textureFormat == 3)
-		{
+			if (m_textureFormat == 1)
+			{
+				l_internalFormat = GL_RED;
+				l_dataFormat = GL_RED;
+			}
+			else if (m_textureFormat == 3)
+			{
 
-			l_internalFormat = GL_RGB;
+				l_internalFormat = GL_SRGB;
+				l_dataFormat = GL_RGB;
+			}
+			else if (m_textureFormat == 4)
+			{
+				l_internalFormat = GL_SRGB_ALPHA;
+				l_dataFormat = GL_RGBA;
+			}
 		}
-		else if (m_textureFormat == 4)
+		else 
 		{
-			l_internalFormat = GL_RGBA;
+			if (m_textureFormat == 1)
+			{
+				l_internalFormat = GL_RED;
+				l_dataFormat = GL_RED;
+			}
+			else if (m_textureFormat == 3)
+			{
+				l_internalFormat = GL_RGB;
+				l_dataFormat = GL_RGB;
+			}
+			else if (m_textureFormat == 4)
+			{
+				l_internalFormat = GL_RGBA;
+				l_dataFormat = GL_RGBA;
+			}
 		}
-		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, l_internalFormat, GL_UNSIGNED_BYTE, m_textureRawData);
+		
+		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, l_dataFormat, GL_UNSIGNED_BYTE, m_textureRawData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		setStatus(objectStatus::ALIVE);
@@ -320,31 +346,6 @@ void GL2DTexture::initialize()
 void GL2DTexture::update()
 {
 	this->update(0);
-	////@TODO: switch is too slow for CPU
-	//switch (m_textureType)
-	//{
-	//case textureType::INVISIBLE: break;
-	//case textureType::ALBEDO:
-	//	glActiveTexture(GL_TEXTURE1);
-	//	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	//	break;
-	//case textureType::METALLIC:
-	//	glActiveTexture(GL_TEXTURE2);
-	//	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	//	break;
-	//case textureType::NORMAL:
-	//	glActiveTexture(GL_TEXTURE0);
-	//	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	//	break;
-	//case textureType::ROUGHNESS:
-	//	glActiveTexture(GL_TEXTURE3);
-	//	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	//	break;
-	//case textureType::AMBIENT_OCCLUSION:
-	//	glActiveTexture(GL_TEXTURE4);
-	//	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	//	break;
-	//}
 }
 
 void GL2DTexture::update(int textureIndex)
