@@ -13,12 +13,23 @@ public:
 	void update() override;
 	void shutdown() override;
 
-	template<class T>
-	inline T* allocate(unsigned long size);
+	inline void* allocate(unsigned long size);
 	
-	template<class T>
-	inline void free(T* ptr);
-	
+	inline void free(void* ptr);
+
+	template <typename T>
+	T * spawn(void)
+	{
+		return reinterpret_cast<T *>(allocate(sizeof(T)));
+	}
+
+	template <typename T>
+	void destroy(T *p)
+	{
+		reinterpret_cast<T *>(p)->~T();
+		free(p);
+	}
+
 	inline void dumpToFile(const std::string& fileName) const;
 
 	static MemoryManager& getInstance()
@@ -31,7 +42,7 @@ private:
 	MemoryManager() {};
 
 	//const unsigned long  m_maxPoolSize = 1024 * 1024 * 1024;
-	const unsigned long  m_maxPoolSize = 256;
+	const unsigned long  m_maxPoolSize = 1024 * 1024;
 	static const unsigned char m_minFreeBlockSize = 16;
 	unsigned long  m_totalPoolSize;
 	unsigned long  m_freePoolSize;
