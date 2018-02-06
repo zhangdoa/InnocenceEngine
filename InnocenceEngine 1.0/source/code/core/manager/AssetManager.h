@@ -2,7 +2,7 @@
 #include "../interface/IManager.h"
 #include "../manager/LogManager.h"
 #include "../manager/graphic/RenderingManager.h"
-#include "../data/GraphicData.h"
+#include "../interface/IGraphicPrimitive.h"
 #include "../component/VisibleComponent.h"
 
 #include "assimp/Importer.hpp"
