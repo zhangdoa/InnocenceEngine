@@ -1,5 +1,5 @@
 #include "../../main/stdafx.h"
-#include "MemoryManager.h"
+#include "MemoryManager.hpp"
 
 void MemoryManager::setup()
 {
@@ -39,8 +39,7 @@ void MemoryManager::shutdown()
 	LogManager::getInstance().printLog("MemoryManager has been shutdown.");
 }
 
-template<class T>
-inline T * MemoryManager::allocate(unsigned long size)
+inline void * MemoryManager::allocate(unsigned long size)
 {
 	// add bound check size
 	unsigned long l_requiredSize = size + sizeof(Chunk) + m_boundCheckSize * 2;
@@ -95,8 +94,7 @@ inline T * MemoryManager::allocate(unsigned long size)
 	return (l_blockData + sizeof(Chunk));
 }
 
-template<class T>
-inline void MemoryManager::free(T * ptr)
+inline void MemoryManager::free(void * ptr)
 {
 	// is a valid node?
 	if (!ptr) return;

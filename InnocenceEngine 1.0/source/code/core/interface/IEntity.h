@@ -1,7 +1,6 @@
 #pragma once
 
 #include "IObject.h"
-#include "../manager/MemoryManager.h"
 
 #ifndef _I_ENTITY_H_
 #define _I_ENTITY_H_

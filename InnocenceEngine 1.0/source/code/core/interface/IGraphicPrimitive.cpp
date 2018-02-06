@@ -132,9 +132,9 @@ void IMesh::addUnitSphere()
 		{
 			float xSegment = (float)x / (float)X_SEGMENTS;
 			float ySegment = (float)y / (float)Y_SEGMENTS;
-			double xPos = cos(xSegment * 2.0f * PI) * sin(ySegment * PI);
-			double yPos = cos(ySegment * PI);
-			double zPos = sin(xSegment * 2.0f * PI) * sin(ySegment * PI);
+			float xPos = cosf(xSegment * 2.0f * PI) * sinf(ySegment * PI);
+			float yPos = cosf(ySegment * PI);
+			float zPos = sinf(xSegment * 2.0f * PI) * sinf(ySegment * PI);
 
 			Vertex l_VertexData;
 			l_VertexData.m_pos = vec3(xPos, yPos, zPos);

@@ -55,7 +55,7 @@ vec3 LightComponent::getDirection() const
 float LightComponent::getRadius() const
 {
 	float l_lightMaxIntensity = std::fmaxf(std::fmaxf(m_color.x, m_color.y), m_color.z);
-	return 	 (-m_linearFactor + std::sqrtf(m_linearFactor * m_linearFactor - 4 * m_quadraticFactor * (m_constantFactor - (256.0 / 5.0) * l_lightMaxIntensity))) / (2 * m_quadraticFactor);
+	return 	 (-m_linearFactor + std::sqrtf(m_linearFactor * m_linearFactor - 4.0f * m_quadraticFactor * (m_constantFactor - (256.0f / 5.0f) * l_lightMaxIntensity))) / (2.0f * m_quadraticFactor);
 }
 
 vec3 LightComponent::getColor() const

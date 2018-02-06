@@ -2,6 +2,7 @@
 
 #include "IEntity.h"
 #include "../data/InnoMath.h"
+#include "../manager/MemoryManager.hpp"
 
 class Transform
 {
