@@ -842,66 +842,13 @@ void GLRenderingManager::initializeGeometryPass()
 {
 	// initialize shader
 	m_geometryPassShader->init();
-
-	//generate and bind frame buffer
-	glGenFramebuffers(1, &m_geometryPassFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_geometryPassFBO);
-
-	// create and attach depth buffer (renderbuffer)
-	glGenRenderbuffers(1, &m_geometryPassRBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_geometryPassRBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)m_screenResolution.x, (int)m_screenResolution.y);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_geometryPassRBO);
-
-	// position color buffer
-	glGenTextures(1, &m_geometryPassRT0Texture);
-	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT0Texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_geometryPassRT0Texture, 0);
-
-	// normal color buffer
-	glGenTextures(1, &m_geometryPassRT1Texture);
-	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT1Texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_geometryPassRT1Texture, 0);
-
-	// albedo color buffer
-	glGenTextures(1, &m_geometryPassRT2Texture);
-	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT2Texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_geometryPassRT2Texture, 0);
-
-	// metallic +  roughness + ao buffer
-	glGenTextures(1, &m_geometryPassRT3Texture);
-	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT3Texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, m_geometryPassRT3Texture, 0);
-
-	// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-	unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-	glDrawBuffers(4, attachments);
-
-	// finally check if framebuffer is complete
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		LogManager::getInstance().printLog("Geometry Pass Framebuffer not complete!");
-	}
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	m_geometryPassFrameBuffer.setup(m_screenResolution, false, 4);
+	m_geometryPassFrameBuffer.initialize();
 }
 
 void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, m_geometryPassFBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_geometryPassRBO);
+	m_geometryPassFrameBuffer.update();
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
@@ -909,93 +856,6 @@ void GLRenderingManager::renderGeometryPass(std::vector<CameraComponent*>& camer
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL - m_polygonMode);
 	m_geometryPassShader->shaderDraw(cameraComponents, visibleComponents, m_meshMap, m_2DTextureMap);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-}
-
-void GLRenderingManager::initializeLightPass()
-{
-	// initialize shader
-	m_lightPassShader->init();
-
-	//generate and bind frame buffer
-	glGenFramebuffers(1, &m_lightPassFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_lightPassFBO);
-
-	// create and attach depth buffer (renderbuffer)
-	glGenRenderbuffers(1, &m_lightPassRBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_lightPassRBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)m_screenResolution.x, (int)m_screenResolution.y);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_lightPassRBO);
-
-	// final color buffer
-	glGenTextures(1, &m_lightPassRT0Texture);
-	glBindTexture(GL_TEXTURE_2D, m_lightPassRT0Texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_lightPassRT0Texture, 0);
-
-	// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-	unsigned int attachments[1] = { GL_COLOR_ATTACHMENT0 };
-	glDrawBuffers(1, attachments);
-
-	// finally check if framebuffer is complete
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		LogManager::getInstance().printLog("Light Pass Framebuffer not complete!");
-	}
-
-	// initialize light pass rectangle
-	m_lightPassVertices = {
-		-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-		1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-		1.0f, -1.0f, 0.0f, 1.0f, 0.0f, };
-
-	glGenVertexArrays(1, &m_lightPassVAO);
-	glGenBuffers(1, &m_lightPassVBO);
-	glBindVertexArray(m_lightPassVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, m_lightPassVBO);
-	// take care of std::vector's size and pointer of first element!!!
-	glBufferData(GL_ARRAY_BUFFER, m_lightPassVertices.size() * sizeof(float), &m_lightPassVertices[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
-{
-	glBindFramebuffer(GL_FRAMEBUFFER, m_lightPassFBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_lightPassRBO);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT0Texture);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT1Texture);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT2Texture);
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, m_geometryPassRT3Texture);
-
-	m_3DHDRTextureMap.find(m_environmentConvolutionPassTextureID)->second.update(4);
-	m_3DHDRTextureMap.find(m_environmentPreFilterPassTextureID)->second.update(5);
-
-	glActiveTexture(GL_TEXTURE6);
-	glBindTexture(GL_TEXTURE_2D, m_environmentBRDFLUTTexture);
-
-	m_lightPassShader->shaderDraw(cameraComponents, lightComponents);
-	// draw light pass rectangle
-	glBindVertexArray(m_lightPassVAO);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	glBindVertexArray(0);
 }
 
 void GLRenderingManager::initializeBackgroundPass()
@@ -1065,125 +925,18 @@ void GLRenderingManager::initializeBackgroundPass()
 
 	// background forward pass
 	m_skyForwardPassShader->init();
-
-	//generate and bind frame buffer
-	glGenFramebuffers(1, &m_skyForwardPassFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_skyForwardPassFBO);
-
-	// create and attach depth buffer (renderbuffer)
-	glGenRenderbuffers(1, &m_skyForwardPassRBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_skyForwardPassRBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)m_screenResolution.x, (int)m_screenResolution.y);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_skyForwardPassRBO);
-
-	// final color buffer
-	glGenTextures(1, &m_skyForwardPassRT0Texture);
-	glBindTexture(GL_TEXTURE_2D, m_skyForwardPassRT0Texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_skyForwardPassRT0Texture, 0);
-
-	// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-	unsigned int attachments_forward[1] = { GL_COLOR_ATTACHMENT0 };
-	glDrawBuffers(1, attachments_forward);
-
-	// finally check if framebuffer is complete
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		LogManager::getInstance().printLog("Background Forward Pass Framebuffer not complete!");
-	}
-
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	m_skyForwardPassFrameBuffer.setup(m_screenResolution, false, 1);
+	m_skyForwardPassFrameBuffer.initialize();
 
 	// initialize Debugger Pass shader
 	m_debuggerPassShader->init();
-
-	//generate and bind frame buffer
-	glGenFramebuffers(1, &m_debuggerPassFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_debuggerPassFBO);
-
-	// create and attach depth buffer (renderbuffer)
-	glGenRenderbuffers(1, &m_debuggerPassRBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_debuggerPassRBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)m_screenResolution.x, (int)m_screenResolution.y);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_debuggerPassRBO);
-
-	// Debugger Pass color buffer
-	glGenTextures(1, &m_debuggerPassRT0Texture);
-	glBindTexture(GL_TEXTURE_2D, m_debuggerPassRT0Texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_debuggerPassRT0Texture, 0);
-
-	// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-	unsigned int attachments_debugger[1] = { GL_COLOR_ATTACHMENT0 };
-	glDrawBuffers(1, attachments_debugger);
-
-	// finally check if framebuffer is complete
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		LogManager::getInstance().printLog("Debugger Pass Framebuffer not complete!");
-	}
-
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	m_debuggerPassFrameBuffer.setup(m_screenResolution, true, 1);
+	m_debuggerPassFrameBuffer.initialize();
 
 	// background defer pass
 	m_skyDeferPassShader->init();
-
-	//generate and bind frame buffer
-	glGenFramebuffers(1, &m_skyDeferPassFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_skyDeferPassFBO);
-
-	// create and attach depth buffer (renderbuffer)
-	glGenRenderbuffers(1, &m_skyDeferPassRBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_skyDeferPassRBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)m_screenResolution.x, (int)m_screenResolution.y);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_skyDeferPassRBO);
-
-	// final color buffer
-	glGenTextures(1, &m_skyDeferPassRT0Texture);
-	glBindTexture(GL_TEXTURE_2D, m_skyDeferPassRT0Texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, (int)m_screenResolution.x, (int)m_screenResolution.y, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_skyDeferPassRT0Texture, 0);
-
-	// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-	unsigned int attachments_defer[1] = { GL_COLOR_ATTACHMENT0 };
-	glDrawBuffers(1, attachments_defer);
-
-	// finally check if framebuffer is complete
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		LogManager::getInstance().printLog("Background Defer Pass Framebuffer not complete!");
-	}
-
-	// initialize background defer pass rectangle
-	m_skyDeferPassVertices = {
-		-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-		1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-		1.0f, -1.0f, 0.0f, 1.0f, 0.0f, };
-
-	glGenVertexArrays(1, &m_skyDeferPassVAO);
-	glGenBuffers(1, &m_skyDeferPassVBO);
-	glBindVertexArray(m_skyDeferPassVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, m_skyDeferPassVBO);
-	// take care of std::vector's size and pointer of first element!!!
-	glBufferData(GL_ARRAY_BUFFER, m_skyDeferPassVertices.size() * sizeof(float), &m_skyDeferPassVertices[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	m_skyDeferPassFrameBuffer.setup(m_screenResolution, true, 1);
+	m_skyDeferPassFrameBuffer.initialize();
 }
 
 void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
@@ -1232,8 +985,7 @@ void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cam
 	}
 
 	// draw background forward pass
-	glBindFramebuffer(GL_FRAMEBUFFER, m_skyForwardPassFBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_skyForwardPassRBO);
+	m_skyForwardPassFrameBuffer.update();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -1241,8 +993,7 @@ void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cam
 	m_skyForwardPassShader->shaderDraw(cameraComponents, visibleComponents, m_meshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second);
 
 	// draw debugger pass
-	glBindFramebuffer(GL_FRAMEBUFFER, m_debuggerPassFBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_debuggerPassRBO);
+	m_debuggerPassFrameBuffer.update();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -1250,32 +1001,57 @@ void GLRenderingManager::renderBackgroundPass(std::vector<CameraComponent*>& cam
 	m_debuggerPassShader->shaderDraw(cameraComponents, visibleComponents, m_meshMap);
 
 	// draw background defer pass
-	glBindFramebuffer(GL_FRAMEBUFFER, m_skyDeferPassFBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_skyDeferPassRBO);
+	m_skyDeferPassFrameBuffer.update();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_lightPassRT0Texture);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_skyForwardPassRT0Texture);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, m_debuggerPassRT0Texture);
+	m_lightPassFrameBuffer.activeTexture(0, 0);
+	m_skyForwardPassFrameBuffer.activeTexture(1, 0);
+	m_debuggerPassFrameBuffer.activeTexture(2, 0);
 
 	m_skyDeferPassShader->shaderDraw();
 
 	// draw background defer pass rectangle
-	glBindVertexArray(m_skyDeferPassVAO);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	glBindVertexArray(0);
+	m_skyDeferPassFrameBuffer.drawMesh();
+}
+
+void GLRenderingManager::initializeLightPass()
+{
+	// initialize shader
+	m_lightPassShader->init();
+	m_lightPassFrameBuffer.setup(m_screenResolution, true, 1);
+	m_lightPassFrameBuffer.initialize();
+}
+
+void GLRenderingManager::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	m_lightPassFrameBuffer.update();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
+	m_geometryPassFrameBuffer.activeTexture(0, 0);
+	m_geometryPassFrameBuffer.activeTexture(1, 1);
+	m_geometryPassFrameBuffer.activeTexture(2, 2);
+	m_geometryPassFrameBuffer.activeTexture(3, 3);
+
+	m_3DHDRTextureMap.find(m_environmentConvolutionPassTextureID)->second.update(4);
+	m_3DHDRTextureMap.find(m_environmentPreFilterPassTextureID)->second.update(5);
+
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D, m_environmentBRDFLUTTexture);
+
+	m_lightPassShader->shaderDraw(cameraComponents, lightComponents);
+
+	// draw light pass rectangle
+	m_lightPassFrameBuffer.drawMesh();
 }
 
 void GLRenderingManager::initializeFinalPass()
 {
 	// initialize Final Pass shader
 	m_finalPassShader->init();
-
 	// initialize screen rectangle
 	m_screenVertices = {
 		-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
@@ -1306,8 +1082,7 @@ void GLRenderingManager::renderFinalPass(std::vector<CameraComponent*>& cameraCo
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_skyDeferPassRT0Texture);
+	m_skyDeferPassFrameBuffer.activeTexture(0, 0);
 
 	m_finalPassShader->shaderDraw();
 
@@ -1366,7 +1141,6 @@ void GLRenderingManager::setup()
 
 void GLRenderingManager::initialize()
 {
-	//BillboardPassShader::getInstance().init();
 	glEnable(GL_TEXTURE_2D);
 
 	initializeGeometryPass();
