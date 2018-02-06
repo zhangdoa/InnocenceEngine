@@ -45,13 +45,11 @@ void InnocenceGarden::setup()
 	pawnActor2.addChildComponent(&pawnMeshComponent2);
 
 	playCharacter.getTransform()->setPos(vec3(0.0f, 2.0f, 5.0f));
-	playCharacter.getTransform()->setScale(vec3(2.0f, 2.0f, 2.0f));
-	landscapeActor.getTransform()->setScale(vec3(60.0f, 60.0f, 0.1f));
+	landscapeActor.getTransform()->setScale(vec3(10.0f, 10.0f, 0.1f));
 	landscapeActor.getTransform()->rotate(vec3(1.0f, 0.0f, 0.0f), -90.0f);
 	landscapeActor.getTransform()->setPos(vec3(0.0f, 0.0f, 0.0f));
-	pawnActor1.getTransform()->setScale(vec3(0.2f, 0.2f, 0.2f));
+	pawnActor1.getTransform()->setScale(vec3(0.02f, 0.02f, 0.02f));
 	pawnActor1.getTransform()->setPos(vec3(0.0f, 0.2f, -1.5f));
-	pawnActor2.getTransform()->setScale(vec3(0.2f, 0.2f, 0.2f));
 	pawnActor2.getTransform()->setScale(vec3(0.02f, 0.02f, 0.02f));
 	pawnActor2.getTransform()->setPos(vec3(0.0f, 0.2f, 3.5f));
 
@@ -65,7 +63,6 @@ void InnocenceGarden::initialize()
 {	
 	initializeSpheres();
 
-	AssetManager::getInstance().loadAsset("nanosuit/nanosuit.obj", pawnMeshComponent1);
 	AssetManager::getInstance().loadAsset("lantern/lantern.obj", pawnMeshComponent2);
 	AssetManager::getInstance().loadAsset("lantern/lantern_Normal_OpenGL.jpg", textureType::NORMAL, pawnMeshComponent2);
 	AssetManager::getInstance().loadAsset("lantern/lantern_Base_Color.jpg", textureType::ALBEDO, pawnMeshComponent2);
@@ -74,9 +71,8 @@ void InnocenceGarden::initialize()
 	AssetManager::getInstance().loadAsset("lantern/lantern_Mixed_AO.jpg", textureType::AMBIENT_OCCLUSION, pawnMeshComponent2);
 
 	AssetManager::getInstance().addUnitMesh(skyboxComponent, unitMeshType::CUBE);
-	AssetManager::getInstance().loadAsset("ibl/Playa_Sunrise.hdr", textureType::EQUIRETANGULAR, skyboxComponent);
-	//AssetManager::getInstance().loadAsset({ "skybox2/right.tga", "skybox2/left.tga", "skybox2/top.tga", "skybox2/bottom.tga", "skybox2/back.tga", "skybox2/front.tga" }, skyboxComponent);
-	//AssetManager::getInstance().addUnitMesh(landscapeStaticMeshComponent, unitMeshType::CUBE);
+	AssetManager::getInstance().loadAsset("ibl/Brooklyn_Bridge_Planks_2k.hdr", textureType::EQUIRETANGULAR, skyboxComponent);
+	AssetManager::getInstance().addUnitMesh(landscapeStaticMeshComponent, unitMeshType::CUBE);
 
 	
 
