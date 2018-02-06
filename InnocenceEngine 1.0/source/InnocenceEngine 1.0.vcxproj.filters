@@ -67,7 +67,6 @@
     <ClInclude Include="code\core\data\InnoMath.h" />
     <ClInclude Include="code\core\manager\TaskManager.h" />
     <ClInclude Include="code\core\data\InnoTask.h" />
-    <ClInclude Include="code\core\manager\MemoryManager.h" />
     <ClInclude Include="code\core\interface\BaseEntity.h" />
     <ClInclude Include="code\core\interface\IEntity.h" />
     <ClInclude Include="code\core\interface\IObject.h" />
@@ -77,6 +76,7 @@
     <ClInclude Include="code\core\manager\graphic\GLRenderingManager.h" />
     <ClInclude Include="code\core\interface\IGraphicPrimitive.h" />
     <ClInclude Include="code\core\data\GLGraphicPrimitive.h" />
+    <ClInclude Include="code\core\manager\MemoryManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />

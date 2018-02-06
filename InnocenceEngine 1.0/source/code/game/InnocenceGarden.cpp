@@ -56,6 +56,9 @@ void InnocenceGarden::setup()
 	setupLights();
 	setupSpheres();
 
+	//auto testActor = MemoryManager::getInstance().spawn<BaseActor>();
+	//auto testComponent = MemoryManager::getInstance().spawn<VisibleComponent>();
+
 	rootActor.setup();
 }
 
@@ -114,7 +117,7 @@ void InnocenceGarden::setupSpheres()
 	{
 		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 		{
-			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0 + (j * sphereBreadthInterval), 2.0));
+			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), 2.0f + (j * sphereBreadthInterval), 2.0f));
 		}
 	}	
 }

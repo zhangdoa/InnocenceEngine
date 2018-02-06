@@ -3,7 +3,7 @@
 #include "../interface/IManager.h"
 
 #include "TimeManager.h"
-#include "MemoryManager.h"
+#include "MemoryManager.hpp"
 #include "TaskManager.h"
 #include "../manager/graphic/RenderingManager.h"
 #include "../manager/graphic/SceneGraphManager.h"
