@@ -13,11 +13,13 @@ void TaskManager::initialize()
 	{
 		m_threadPool.emplace_back(std::thread(&TaskManager::m_threadHolder, this));
 	}
+
 	LogManager::getInstance().printLog("TaskManager has been initialized.");
 }
 
 void TaskManager::update()
 {
+
 }
 
 void TaskManager::shutdown()
@@ -34,16 +36,20 @@ void TaskManager::shutdown()
 	LogManager::getInstance().printLog("TaskManager has been shutdown.");
 }
 
+void TaskManager::addTask(std::function<void()>& task)
+{
+	m_mtx.lock();
+	m_taskQueue.emplace_back(&task);
+	m_mtx.unlock();
+}
+
 void TaskManager::m_threadHolder()
 {
 	do 
 	{
 		if (m_taskQueue.size() > 0)
 		{
-		}
-		else
-		{
-			std::this_thread::sleep_for(std::chrono::seconds(1));
+			(*m_taskQueue[0])();
 		}
 	} 
 	while (this->getStatus() == objectStatus::ALIVE);
