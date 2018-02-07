@@ -365,7 +365,7 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
 				//active and bind textures
-				// is there any texture?
+					// is there any texture?
 				auto& l_textureMap = l_graphicData.second;
 				if (&l_textureMap != nullptr)
 				{
@@ -405,6 +405,9 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 						l_textureData.update(4);
 					}
 				}
+				updateUniform("uni_useTexture", l_visibleComponent->m_useTexture);
+				updateUniform("uni_albedo", l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
+				updateUniform("uni_MRA", l_visibleComponent->m_MRA.x, l_visibleComponent->m_MRA.y, l_visibleComponent->m_MRA.z);
 				// draw meshes
 				meshMap.find(l_graphicData.first)->second.update();
 			}
