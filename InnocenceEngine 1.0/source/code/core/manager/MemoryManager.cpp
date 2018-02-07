@@ -25,6 +25,8 @@ void MemoryManager::setup(unsigned long  memoryPoolSize)
 
 void MemoryManager::initialize()
 {
+	auto test = allocate(6);
+	dumpToFile("memoryDump.innoDump");
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("MemoryManager has been initialized.");
 }
@@ -43,7 +45,15 @@ inline void * MemoryManager::allocate(unsigned long size)
 {
 	// add bound check size
 	unsigned long l_requiredSize = size + sizeof(Chunk) + m_boundCheckSize * 2;
-
+	// alignment to 4
+	for (size_t i = 0; i < s_NumBlockSizes; i++)
+	{
+		if (l_requiredSize < s_BlockSizes[i])
+		{
+			l_requiredSize = s_BlockSizes[i];
+			break;
+		}
+	}
 	// Now search for a block big enough, double linked list, O(n)
 	Chunk* l_block = (Chunk*)(m_poolMemory + m_boundCheckSize);
 	while (l_block)

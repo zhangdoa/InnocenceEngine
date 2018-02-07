@@ -182,7 +182,7 @@
     <ClCompile Include="code\core\manager\TaskManager.cpp" />
     <ClCompile Include="code\core\data\InnoTask.cpp" />
     <ClCompile Include="code\core\manager\MemoryManager.cpp" />
-    <ClCompile Include="code\game\MathTest.cpp" />
+    <ClCompile Include="code\game\TestCase.cpp" />
     <ClCompile Include="code\core\interface\IShader.cpp" />
     <ClCompile Include="code\core\interface\IGraphicPrimitive.cpp" />
   </ItemGroup>
@@ -216,12 +216,9 @@
     <ClInclude Include="code\core\manager\TaskManager.h" />
     <ClInclude Include="code\core\data\InnoTask.h" />
     <ClInclude Include="code\core\manager\MemoryManager.hpp" />
-    <ClInclude Include="code\game\MathTest.h" />
+    <ClInclude Include="code\game\TestCase.h" />
     <ClInclude Include="code\core\interface\IShader.h" />
     <ClInclude Include="code\core\interface\IGraphicPrimitive.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

@@ -5,14 +5,15 @@
 #include "../core/data/InnoMath.h"
 #include "../core/manager/CoreManager.h"
 #include "../game/InnocenceGarden.h"
-#include "../game/MathTest.h"
+#include "../game/TestCase.h"
 
 void startEngine()
 {
-	InnocenceGarden* m_innocenceGarden = new InnocenceGarden();
-	CoreManager::getInstance().setGameData(m_innocenceGarden);
-	//MathTest* m_MathTest = new MathTest();
-	//CoreManager::getInstance().setGameData(m_MathTest);
+	//InnocenceGarden* m_innocenceGarden = new InnocenceGarden();
+	//CoreManager::getInstance().setGameData(m_innocenceGarden);
+	TestCase* m_testCase = new TestCase();
+	m_testCase->needRender = false;
+	CoreManager::getInstance().setGameData(m_testCase);
 
 	CoreManager::getInstance().setup();
 	CoreManager::getInstance().initialize();
@@ -22,8 +23,8 @@ void startEngine()
 		CoreManager::getInstance().update();
 	}
 	CoreManager::getInstance().shutdown();
-	delete m_innocenceGarden;
-	//delete m_MathTest;
+	//delete m_innocenceGarden;
+	delete m_testCase;
 }
 
 int main()

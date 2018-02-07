@@ -1,6 +1,6 @@
 #pragma once
 #include "../interface/IManager.h"
-#include "../manager/LogManager.h"
+#include "LogManager.h"
 
 
 class TimeManager : public IManager
