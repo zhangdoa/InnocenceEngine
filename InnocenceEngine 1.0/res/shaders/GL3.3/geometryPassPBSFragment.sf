@@ -9,11 +9,16 @@ in vec3 thefrag_FragPos;
 in vec2 thefrag_TexCoord;
 in vec3 thefrag_Normal;
 
+uniform bool uni_useTexture = true;
+
 uniform sampler2D uni_normalTexture;
 uniform sampler2D uni_albedoTexture;
 uniform sampler2D uni_metallicTexture;
 uniform sampler2D uni_roughnessTexture;
 uniform sampler2D uni_aoTexture;
+
+uniform vec3 uni_albedo;
+uniform vec3 uni_MRA;
 
 void main()
 {    
@@ -29,15 +34,25 @@ void main()
 
     mat3 TBN = mat3(T, B, N);
 
-	//alpha should be set to 0 for background rendering pass
-    uni_geometryPassRT0 = vec4(thefrag_FragPos, 0.0);
-
+	//alpha should be set to 0 for background rendering
+	
+	uni_geometryPassRT0 = vec4(thefrag_FragPos, 0.0);
 	uni_geometryPassRT1 = vec4(normalize(TBN * (texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0)), 1.0);
-
+	if(uni_useTexture)
+	{
     uni_geometryPassRT2 = texture(uni_albedoTexture, thefrag_TexCoord);
-
 	uni_geometryPassRT3.r = texture(uni_metallicTexture, thefrag_TexCoord).r;
 	uni_geometryPassRT3.g = texture(uni_roughnessTexture, thefrag_TexCoord).r;
 	uni_geometryPassRT3.b = texture(uni_aoTexture, thefrag_TexCoord).r;
 	uni_geometryPassRT3.a = 1.0;
+	}
+	else
+	{
+	uni_geometryPassRT2 = vec4(uni_albedo, 1.0);
+	uni_geometryPassRT3.r = uni_MRA.r;
+	uni_geometryPassRT3.g = uni_MRA.g;
+	uni_geometryPassRT3.b = uni_MRA.b;
+	uni_geometryPassRT3.a = 1.0;
+	}
+
 }

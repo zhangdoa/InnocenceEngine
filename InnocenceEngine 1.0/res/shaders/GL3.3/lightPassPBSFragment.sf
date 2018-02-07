@@ -171,13 +171,10 @@ void main()
 	vec3 FragPos	= texture(uni_geometryPassRT0, TexCoords).rgb;
 	vec3 Normal		= texture(uni_geometryPassRT1, TexCoords).rgb;
 	vec3 Albedo     = texture(uni_geometryPassRT2, TexCoords).rgb;
-	//vec3 Albedo     = vec3(0.91, 0.92, 0.92);
-    float Metallic  = texture(uni_geometryPassRT3, TexCoords).r;
-	//float Metallic  = 1.0;
-    float Roughness = texture(uni_geometryPassRT3, TexCoords).g;
-	//float Roughness = 0.3;
-    float AO        = texture(uni_geometryPassRT3, TexCoords).b;
-	//float AO = 1.0;
+ 	vec3 MRA        = texture(uni_geometryPassRT3, TexCoords).rgb;  
+	float Metallic  = MRA.r;
+	float Roughness = MRA.g;
+    float AO        = MRA.b;
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
     // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)    
     vec3 F0 = vec3(0.04); 

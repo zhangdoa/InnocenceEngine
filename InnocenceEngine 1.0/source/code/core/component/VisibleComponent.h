@@ -17,6 +17,10 @@ public:
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
+	
+	bool m_useTexture = true;
+	vec3 m_albedo;
+	vec3 m_MRA;
 
 	modelMap& getModelMap();
 	void setModelMap(modelMap& graphicDataMap);

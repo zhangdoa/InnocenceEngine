@@ -9,11 +9,11 @@
 
 void startEngine()
 {
-	//InnocenceGarden* m_innocenceGarden = new InnocenceGarden();
-	//CoreManager::getInstance().setGameData(m_innocenceGarden);
-	TestCase* m_testCase = new TestCase();
-	m_testCase->needRender = false;
-	CoreManager::getInstance().setGameData(m_testCase);
+	InnocenceGarden* m_innocenceGarden = new InnocenceGarden();
+	CoreManager::getInstance().setGameData(m_innocenceGarden);
+	//TestCase* m_testCase = new TestCase();
+	//m_testCase->needRender = false;
+	//CoreManager::getInstance().setGameData(m_testCase);
 
 	CoreManager::getInstance().setup();
 	CoreManager::getInstance().initialize();
@@ -23,8 +23,8 @@ void startEngine()
 		CoreManager::getInstance().update();
 	}
 	CoreManager::getInstance().shutdown();
-	//delete m_innocenceGarden;
-	delete m_testCase;
+	delete m_innocenceGarden;
+	//delete m_testCase;
 }
 
 int main()
