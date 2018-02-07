@@ -7,7 +7,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="InnocenceEngine 1.0.rc">
+    <ResourceCompile Include="InnocenceEngine.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
@@ -19,7 +19,6 @@
     <ClCompile Include="code\core\manager\LogManager.cpp" />
     <ClCompile Include="code\core\manager\TimeManager.cpp" />
     <ClCompile Include="code\game\InnocenceGarden.cpp" />
-    <ClCompile Include="code\main\InnocenceEngine 1.0.cpp" />
     <ClCompile Include="code\main\stdafx.cpp" />
     <ClCompile Include="code\core\component\InputComponent.cpp" />
     <ClCompile Include="code\game\PlayerCharacter.cpp" />
@@ -43,6 +42,7 @@
     <ClCompile Include="code\core\interface\IGraphicPrimitive.cpp" />
     <ClCompile Include="code\core\data\GLGraphicPrimitive.cpp" />
     <ClCompile Include="code\game\TestCase.cpp" />
+    <ClCompile Include="code\main\InnocenceEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />

@@ -9,10 +9,10 @@ void TaskManager::setup()
 
 void TaskManager::initialize()
 {
-	for (unsigned int i = 0; i < m_hardwareConcurrency; ++i)
-	{
-		m_threadPool.emplace_back(std::thread(&TaskManager::m_threadHolder, this));
-	}
+	//for (unsigned int i = 0; i < m_hardwareConcurrency; ++i)
+	//{
+	//	m_threadPool.emplace_back(std::thread(&TaskManager::m_threadHolder, this));
+	//}
 
 	LogManager::getInstance().printLog("TaskManager has been initialized.");
 }
@@ -47,10 +47,10 @@ void TaskManager::m_threadHolder()
 {
 	do 
 	{
-		if (m_taskQueue.size() > 0)
-		{
-			(*m_taskQueue[0])();
-		}
+		//if (m_taskQueue.size() > 0)
+		//{
+		//	(*m_taskQueue[0])();
+		//}
 	} 
 	while (this->getStatus() == objectStatus::ALIVE);
 }
