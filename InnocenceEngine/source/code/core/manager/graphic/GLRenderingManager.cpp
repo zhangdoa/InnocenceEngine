@@ -102,7 +102,7 @@ inline void GLShader::attachShader(shaderType shaderType, const std::string& sha
 	glShaderSource(l_shader, 1, &sourcePointer, NULL);
 
 	GLint Result = GL_FALSE;
-	int l_infoLogLength;
+	int l_infoLogLength = 0;
 
 	glGetShaderiv(m_program, GL_COMPILE_STATUS, &Result);
 	glGetShaderiv(m_program, GL_INFO_LOG_LENGTH, &l_infoLogLength);
