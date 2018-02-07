@@ -1,0 +1,228 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2A8E700B-FC5B-4F53-8D75-89AA1DB94DA3}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>InnocenceEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>$(ProjectDir)lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <BrowseInformation>true</BrowseInformation>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>alut.lib;OpenAL32.lib;glfw3dll.lib;glew32.lib;glew32s.lib;opengl32.lib;assimp-vc140-mt.lib;tinyxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Bscmake>
+      <PreserveSbr>false</PreserveSbr>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>alut.lib;OpenAL32.lib;glfw3dll.lib;glew32.lib;glew32s.lib;opengl32.lib;assimp-vc140-mt.lib;tinyxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ResourceCompile Include="InnocenceEngine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="code\core\component\CameraComponent.cpp" />
+    <ClCompile Include="code\core\data\GLGraphicPrimitive.cpp" />
+    <ClCompile Include="code\core\interface\BaseEntity.cpp" />
+    <ClCompile Include="code\core\interface\IObject.cpp" />
+    <ClCompile Include="code\core\interface\IGameData.cpp" />
+    <ClCompile Include="code\core\interface\IEntity.cpp" />
+    <ClCompile Include="code\core\manager\AssetManager.cpp" />
+    <ClCompile Include="code\core\manager\CoreManager.cpp" />
+    <ClCompile Include="code\core\interface\IManager.cpp" />
+    <ClCompile Include="code\core\manager\graphic\GLInputManager.cpp" />
+    <ClCompile Include="code\core\manager\LogManager.cpp" />
+    <ClCompile Include="code\core\manager\graphic\RenderingManager.cpp" />
+    <ClCompile Include="code\core\manager\graphic\SceneGraphManager.cpp" />
+    <ClCompile Include="code\core\manager\TimeManager.cpp" />
+    <ClCompile Include="code\core\manager\graphic\GLWindowManager.cpp" />
+    <ClCompile Include="code\core\manager\graphic\GLRenderingManager.cpp" />
+    <ClCompile Include="code\core\third-party\glad.c" />
+    <ClCompile Include="code\game\InnocenceGarden.cpp" />
+    <ClCompile Include="code\main\InnocenceEngine.cpp" />
+    <ClCompile Include="code\main\stdafx.cpp" />
+    <ClCompile Include="code\core\component\InputComponent.cpp" />
+    <ClCompile Include="code\game\PlayerCharacter.cpp" />
+    <ClCompile Include="code\core\component\VisibleComponent.cpp" />
+    <ClCompile Include="code\core\component\LightComponent.cpp" />
+    <ClCompile Include="code\core\data\InnoMath.cpp" />
+    <ClCompile Include="code\core\manager\TaskManager.cpp" />
+    <ClCompile Include="code\core\data\InnoTask.cpp" />
+    <ClCompile Include="code\core\manager\MemoryManager.cpp" />
+    <ClCompile Include="code\game\TestCase.cpp" />
+    <ClCompile Include="code\core\interface\IShader.cpp" />
+    <ClCompile Include="code\core\interface\IGraphicPrimitive.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="code\core\component\CameraComponent.h" />
+    <ClInclude Include="code\core\data\GLGraphicPrimitive.h" />
+    <ClInclude Include="code\core\interface\BaseEntity.h" />
+    <ClInclude Include="code\core\interface\IObject.h" />
+    <ClInclude Include="code\core\interface\IGameData.h" />
+    <ClInclude Include="code\core\interface\IEntity.h" />
+    <ClInclude Include="code\core\manager\AssetManager.h" />
+    <ClInclude Include="code\core\manager\CoreManager.h" />
+    <ClInclude Include="code\core\interface\IManager.h" />
+    <ClInclude Include="code\core\manager\graphic\GLInputManager.h" />
+    <ClInclude Include="code\core\manager\LogManager.h" />
+    <ClInclude Include="code\core\manager\graphic\RenderingManager.h" />
+    <ClInclude Include="code\core\manager\graphic\SceneGraphManager.h" />
+    <ClInclude Include="code\core\manager\TimeManager.h" />
+    <ClInclude Include="code\core\manager\graphic\GLWindowManager.h" />
+    <ClInclude Include="code\core\manager\graphic\GLRenderingManager.h" />
+    <ClInclude Include="code\core\third-party\stb_image.h" />
+    <ClInclude Include="code\game\InnocenceGarden.h" />
+    <ClInclude Include="code\main\resource.h" />
+    <ClInclude Include="code\main\stdafx.h" />
+    <ClInclude Include="code\main\targetver.h" />
+    <ClInclude Include="code\core\component\InputComponent.h" />
+    <ClInclude Include="code\game\PlayerCharacter.h" />
+    <ClInclude Include="code\core\component\VisibleComponent.h" />
+    <ClInclude Include="code\core\component\LightComponent.h" />
+    <ClInclude Include="code\core\data\InnoMath.h" />
+    <ClInclude Include="code\core\manager\TaskManager.h" />
+    <ClInclude Include="code\core\data\InnoTask.h" />
+    <ClInclude Include="code\core\manager\MemoryManager.hpp" />
+    <ClInclude Include="code\game\TestCase.h" />
+    <ClInclude Include="code\core\interface\IShader.h" />
+    <ClInclude Include="code\core\interface\IGraphicPrimitive.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>
