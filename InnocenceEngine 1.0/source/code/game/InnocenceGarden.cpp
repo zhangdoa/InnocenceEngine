@@ -45,8 +45,9 @@ void InnocenceGarden::setup()
 	pawnActor2.addChildComponent(&pawnMeshComponent2);
 
 	playCharacter.getTransform()->setPos(vec3(0.0f, 2.0f, 5.0f));
-	landscapeActor.getTransform()->setScale(vec3(10.0f, 10.0f, 0.1f));
-	landscapeActor.getTransform()->rotate(vec3(1.0f, 0.0f, 0.0f), -90.0f);
+	landscapeActor.getTransform()->setScale(vec3(20.0f, 20.0f, 0.1f));
+	landscapeActor.getTransform()->rotate(vec3(1.0f, 0.0f, 0.0f), 90.0f);
+
 	landscapeActor.getTransform()->setPos(vec3(0.0f, 0.0f, 0.0f));
 	pawnActor1.getTransform()->setScale(vec3(0.02f, 0.02f, 0.02f));
 	pawnActor1.getTransform()->setPos(vec3(0.0f, 0.2f, -1.5f));
@@ -105,7 +106,7 @@ void InnocenceGarden::setupSpheres()
 	{
 		sphereComponents[i].m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 		sphereComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
-
+		sphereComponents[i].m_useTexture = false;
 		rootActor.addChildActor(&sphereActors[i]);
 		sphereActors[i].addChildComponent(&sphereComponents[i]);
 	}
@@ -114,7 +115,8 @@ void InnocenceGarden::setupSpheres()
 	{
 		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 		{
-			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), 2.0f + (j * sphereBreadthInterval), 2.0f));
+			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), 2.0f, (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1)));
+			sphereComponents[i * sphereMatrixDim + j].m_MRA = vec3((float)i / (float)sphereMatrixDim, (float)j / (float)sphereMatrixDim, 1.0);
 		}
 	}	
 }
@@ -127,21 +129,26 @@ void InnocenceGarden::initializeSpheres()
 	}
 	for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
 	{
+		////Copper
+		sphereComponents[i].m_albedo = vec3(0.95, 0.64, 0.54);
 		//AssetManager::getInstance().loadAsset("PBS/rustediron2_basecolor.png", textureType::ALBEDO, sphereComponents[i]);
 		//AssetManager::getInstance().loadAsset("PBS/rustediron2_metallic.png", textureType::METALLIC, sphereComponents[i]);
 		//AssetManager::getInstance().loadAsset("PBS/rustediron2_normal.png", textureType::NORMAL, sphereComponents[i]);
 		//AssetManager::getInstance().loadAsset("PBS/rustediron2_roughness.png", textureType::ROUGHNESS, sphereComponents[i]);
-
+		////Gold
+		sphereComponents[i + 1].m_albedo = vec3(1.00, 0.71, 0.29);
 		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-albedo.png", textureType::ALBEDO, sphereComponents[i + 1]);
 		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-metal.png", textureType::METALLIC, sphereComponents[i + 1]);
 		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-normal.png", textureType::NORMAL, sphereComponents[i + 1]);
 		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-ao.png", textureType::AMBIENT_OCCLUSION, sphereComponents[i + 1]);
-
+		////Iron
+		sphereComponents[i + 2].m_albedo = vec3(0.56, 0.57, 0.58);
 		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-albedo.png", textureType::ALBEDO, sphereComponents[i + 2]);
 		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-metal.png", textureType::METALLIC, sphereComponents[i + 2]);
 		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-normal.png", textureType::NORMAL, sphereComponents[i + 2]);
 		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-roughness.png", textureType::ROUGHNESS, sphereComponents[i + 2]);
-
+		////Silver
+		sphereComponents[i + 3].m_albedo = vec3(0.95, 0.93, 0.88);
 		//AssetManager::getInstance().loadAsset("PBS/roughrock1-albedo.png", textureType::ALBEDO, sphereComponents[i + 3]);
 		//AssetManager::getInstance().loadAsset("PBS/roughrock1-metalness.png", textureType::METALLIC, sphereComponents[i + 3]);
 		//AssetManager::getInstance().loadAsset("PBS/roughrock1-normal.png", textureType::NORMAL, sphereComponents[i + 3]);
