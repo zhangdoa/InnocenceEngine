@@ -817,15 +817,7 @@ I3DTexture * GLRenderingManager::get3DHDRTexture(textureID textureID)
 	return &m_3DHDRTextureMap.find(textureID)->second;;
 }
 
-void GLRenderingManager::forwardRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
-{
-	// draw billboard
-	BillboardPassShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshMap, textureMap);
-	// draw skybox
-	//SkyboxShader::getInstance().shaderDraw(cameraComponents, lightComponents, visibleComponents, meshMap, textureMap);
-}
-
-void GLRenderingManager::deferRender(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GLRenderingManager::Render(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	renderBackgroundPass(cameraComponents, lightComponents, visibleComponents);
 	renderGeometryPass(cameraComponents, lightComponents, visibleComponents);

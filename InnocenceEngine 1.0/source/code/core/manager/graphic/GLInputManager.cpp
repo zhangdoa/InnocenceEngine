@@ -134,25 +134,28 @@ void GLInputManager::update()
 		if (glfwGetMouseButton(GLWindowManager::getInstance().getWindow(), 1) == GLFW_PRESS)
 		{
 			GLWindowManager::getInstance().hideMouseCursor();
-			if (m_mouseXOffset != 0)
+			if (m_mouseMovementCallback.size() != 0)
 			{
-				for (auto j : m_mouseMovementCallback.find(0)->second)
+				if (m_mouseXOffset != 0)
 				{
-					(*j)(m_mouseXOffset);
-				};
-			}
-			if (m_mouseYOffset != 0)
-			{
-				for (auto j : m_mouseMovementCallback.find(1)->second)
+					for (auto j : m_mouseMovementCallback.find(0)->second)
+					{
+						(*j)(m_mouseXOffset);
+					};
+				}
+				if (m_mouseYOffset != 0)
 				{
-					(*j)(m_mouseYOffset);
-				};
-			}
-			if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
-			{
-				m_mouseXOffset = 0;
-				m_mouseYOffset = 0;
-			}
+					for (auto j : m_mouseMovementCallback.find(1)->second)
+					{
+						(*j)(m_mouseYOffset);
+					};
+				}
+				if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
+				{
+					m_mouseXOffset = 0;
+					m_mouseYOffset = 0;
+				}
+			}		
 		}
 		else
 		{

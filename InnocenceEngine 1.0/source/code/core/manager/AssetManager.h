@@ -68,9 +68,6 @@ private:
 	const std::string m_modelRelativePath = "../res/models/";
 	const std::string m_shaderRelativePath = "../res/shaders/";
 
-	std::unordered_map<std::string, void*> m_rawTextureDatas;
-	std::unordered_map<std::string, std::string> m_rawShaderDatas;
-
 	meshID m_UnitCubeTemplate;
 	meshID m_UnitSphereTemplate;
 	meshID m_UnitQuadTemplate;

@@ -11,6 +11,7 @@ public:
 	IGameData();
 	virtual ~IGameData();
 	void getGameName(std::string& gameName) const;
+	bool needRender = true;
 };
 
 #endif // !_I_GAME_DATA_H_

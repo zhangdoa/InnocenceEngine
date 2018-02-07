@@ -16,6 +16,7 @@ public:
 	void setup() override;
 	void initialize() override;
 	void update() override;
+	void render();
 	void shutdown() override;
 
 	static RenderingManager& getInstance()
@@ -38,7 +39,6 @@ public:
 private:
 	RenderingManager() {};
 
-	void AsyncRender();
 	void changeDrawPolygonMode();
 	void changeDrawTextureMode();
 
