@@ -38,11 +38,11 @@
     <ClCompile Include="code\core\interface\IEntity.cpp" />
     <ClCompile Include="code\core\interface\IObject.cpp" />
     <ClCompile Include="code\core\interface\IManager.cpp" />
-    <ClCompile Include="code\game\MathTest.cpp" />
     <ClCompile Include="code\core\interface\IShader.cpp" />
     <ClCompile Include="code\core\manager\graphic\GLRenderingManager.cpp" />
     <ClCompile Include="code\core\interface\IGraphicPrimitive.cpp" />
     <ClCompile Include="code\core\data\GLGraphicPrimitive.cpp" />
+    <ClCompile Include="code\game\TestCase.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\core\component\CameraComponent.h" />
@@ -71,14 +71,11 @@
     <ClInclude Include="code\core\interface\IEntity.h" />
     <ClInclude Include="code\core\interface\IObject.h" />
     <ClInclude Include="code\core\interface\IManager.h" />
-    <ClInclude Include="code\game\MathTest.h" />
     <ClInclude Include="code\core\interface\IShader.h" />
     <ClInclude Include="code\core\manager\graphic\GLRenderingManager.h" />
     <ClInclude Include="code\core\interface\IGraphicPrimitive.h" />
     <ClInclude Include="code\core\data\GLGraphicPrimitive.h" />
     <ClInclude Include="code\core\manager\MemoryManager.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram.cd" />
+    <ClInclude Include="code\game\TestCase.h" />
   </ItemGroup>
 </Project>

@@ -4,17 +4,18 @@
 #include "../core/manager/CoreManager.h"
 
 #include "PlayerCharacter.h"
-class MathTest : public IGameData
+class TestCase : public IGameData
 {
 public:
-	MathTest();
-	~MathTest();
+	TestCase();
+	~TestCase();
 
 	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
-
+	void testMath();
+	void testMemory();
 private:
 	BaseActor rootActor;
 

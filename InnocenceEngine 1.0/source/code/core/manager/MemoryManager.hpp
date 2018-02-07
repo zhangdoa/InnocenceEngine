@@ -2,6 +2,26 @@
 #include "../interface/IManager.h"
 #include "LogManager.h"
 
+	static const uint32_t s_BlockSizes[] = {
+		// 4-increments
+		4,  8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48,
+		52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96,
+
+		// 32-increments
+		128, 160, 192, 224, 256, 288, 320, 352, 384,
+		416, 448, 480, 512, 544, 576, 608, 640,
+
+		// 64-increments
+		704, 768, 832, 896, 960, 1024
+	};
+	// number of elements in the block size array
+	static const uint32_t s_NumBlockSizes =
+		sizeof(s_BlockSizes) / sizeof(s_BlockSizes[0]);
+
+	// largest valid block size
+	static const uint32_t s_MaxBlockSize =
+		s_BlockSizes[s_NumBlockSizes - 1];
+
 class MemoryManager : public IManager
 {
 public:
@@ -13,13 +33,14 @@ public:
 	void update() override;
 	void shutdown() override;
 
-	inline void* allocate(unsigned long size);
-	
-	inline void free(void* ptr);
-
 	template <typename T>
 	T * spawn(void)
 	{
+		for (size_t i = 0; i < s_MaxBlockSize; i++)
+		{
+
+		}
+		sizeof(T);
 		return reinterpret_cast<T *>(allocate(sizeof(T)));
 	}
 
@@ -41,8 +62,11 @@ public:
 private:
 	MemoryManager() {};
 
-	//const unsigned long  m_maxPoolSize = 1024 * 1024 * 1024;
-	const unsigned long  m_maxPoolSize = 1024 * 1024;
+	inline void* allocate(unsigned long size);
+
+	inline void free(void* ptr);
+
+	const unsigned long  m_maxPoolSize = 1024;
 	static const unsigned char m_minFreeBlockSize = 16;
 	unsigned long  m_totalPoolSize;
 	unsigned long  m_freePoolSize;

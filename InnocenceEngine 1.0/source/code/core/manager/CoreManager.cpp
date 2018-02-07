@@ -61,6 +61,10 @@ void CoreManager::update()
 			auto l_tickTime = TimeManager::getInstance().getcurrentTime();
 			// game data update
 			m_gameData->update();
+			if (m_gameData->needRender)
+			{
+				RenderingManager::getInstance().render();
+			}
 			RenderingManager::getInstance().update();
 			l_tickTime = TimeManager::getInstance().getcurrentTime() - l_tickTime;
 			//LogManager::getInstance().printLog(l_tickTime);

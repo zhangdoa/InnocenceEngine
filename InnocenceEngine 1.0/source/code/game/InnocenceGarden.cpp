@@ -56,9 +56,6 @@ void InnocenceGarden::setup()
 	setupLights();
 	setupSpheres();
 
-	//auto testActor = MemoryManager::getInstance().spawn<BaseActor>();
-	//auto testComponent = MemoryManager::getInstance().spawn<VisibleComponent>();
-
 	rootActor.setup();
 }
 

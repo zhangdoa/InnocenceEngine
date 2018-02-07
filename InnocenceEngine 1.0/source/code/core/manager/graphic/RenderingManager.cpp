@@ -99,8 +99,10 @@ void RenderingManager::initialize()
 
 void RenderingManager::update()
 {
-	AsyncRender();
-	
+	GLWindowManager::getInstance().update();
+
+	GLInputManager::getInstance().update();
+
 if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)
 	{
 		this->setStatus(objectStatus::STANDBY);
@@ -124,18 +126,11 @@ void RenderingManager::shutdown()
 	LogManager::getInstance().printLog("RenderingManager has been shutdown.");
 }
 
-void RenderingManager::AsyncRender()
+void RenderingManager::render()
 {
 	//prepare rendering global state
 	GLRenderingManager::getInstance().update();
-
-	//forward render
-	//GLRenderingManager::getInstance().forwardRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
 	
 	//defer render
-	GLRenderingManager::getInstance().deferRender(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
-	
-	GLWindowManager::getInstance().update();
-
-	GLInputManager::getInstance().update();
+	GLRenderingManager::getInstance().Render(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
 }
