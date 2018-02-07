@@ -12,6 +12,8 @@ public:
 	void update() override;
 	void shutdown() override;
 
+	void addTask(std::function<void()>& task);
+
 	static TaskManager& getInstance()
 	{
 		static TaskManager instance;
@@ -25,6 +27,7 @@ private:
 
 	unsigned int m_hardwareConcurrency;
 	std::vector<std::thread> m_threadPool;
+	std::mutex m_mtx;
 	std::condition_variable m_cv;
 	std::vector<std::function<void()>*> m_taskQueue;
 };
