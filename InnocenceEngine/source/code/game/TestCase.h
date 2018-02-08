@@ -1,7 +1,7 @@
 #pragma once
-#include "../core/interface/IGameData.h"
-#include "../core/interface/BaseEntity.h"
-#include "../core/manager/CoreManager.h"
+#include "../engine/interface/IGameData.h"
+#include "../engine/interface/BaseEntity.h"
+#include "../engine/manager/CoreManager.h"
 
 #include "PlayerCharacter.h"
 class TestCase : public IGameData

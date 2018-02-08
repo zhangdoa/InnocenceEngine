@@ -1,6 +1,6 @@
 #pragma once
-#include "../core/component/CameraComponent.h"
-#include "../core/component/InputComponent.h"
+#include "../engine/component/CameraComponent.h"
+#include "../engine/component/InputComponent.h"
 
 class PlayerCharacter : public BaseActor
 {
