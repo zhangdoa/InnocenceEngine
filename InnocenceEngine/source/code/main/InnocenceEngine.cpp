@@ -2,8 +2,8 @@
 //
 
 #include "stdafx.h"
-#include "../core/data/InnoMath.h"
-#include "../core/manager/CoreManager.h"
+#include "../engine/data/InnoMath.h"
+#include "../engine/manager/CoreManager.h"
 #include "../game/InnocenceGarden.h"
 #include "../game/TestCase.h"
 
