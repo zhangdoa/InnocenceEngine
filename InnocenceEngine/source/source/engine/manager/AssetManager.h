@@ -4,7 +4,6 @@
 #include "../manager/graphic/RenderingManager.h"
 #include "../interface/IGraphicPrimitive.h"
 #include "../component/VisibleComponent.h"
-
 #include "assimp/Importer.hpp"
 #include "assimp/Exporter.hpp"
 #include "assimp/scene.h"
