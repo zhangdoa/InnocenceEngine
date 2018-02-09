@@ -1,6 +1,6 @@
 #pragma once
-#include "../interface/BaseEntity.h"
-#include "../interface/IGraphicPrimitive.h"
+#include "../entity/BaseEntity.h"
+#include "../entity/IGraphicPrimitive.h"
 
 class VisibleComponent : public BaseComponent
 {

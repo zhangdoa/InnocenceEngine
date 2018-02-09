@@ -2,34 +2,23 @@
 //
 
 #include "stdafx.h"
-#include "../engine/data/InnoMath.h"
-#include "../engine/manager/CoreManager.h"
-#include "../game/InnocenceGarden.h"
-#include "../game/TestCase.h"
+#include "../engine/platform/Win32Application.h"
 
-void startEngine()
+int main(int argc, char** argv)
 {
-	InnocenceGarden* m_innocenceGarden = new InnocenceGarden();
-	CoreManager::getInstance().setGameData(m_innocenceGarden);
-	//TestCase* m_testCase = new TestCase();
-	//m_testCase->needRender = false;
-	//CoreManager::getInstance().setGameData(m_testCase);
+	IApplication* g_pApp = new Win32Application();
+	
+	g_pApp->setup();
+	g_pApp->initialize();
 
-	CoreManager::getInstance().setup();
-	CoreManager::getInstance().initialize();
-
-	while (CoreManager::getInstance().getStatus() == objectStatus::ALIVE)
+	while (g_pApp->getStatus() == objectStatus::ALIVE)
 	{
-		CoreManager::getInstance().update();
+		g_pApp->update();
 	}
-	CoreManager::getInstance().shutdown();
-	delete m_innocenceGarden;
-	//delete m_testCase;
-}
+	g_pApp->shutdown();
 
-int main()
-{
-	startEngine();
-	return EXIT_SUCCESS;
+	delete g_pApp;
+
+	return 0;
 }
 

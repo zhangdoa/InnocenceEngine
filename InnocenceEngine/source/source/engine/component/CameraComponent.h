@@ -1,5 +1,5 @@
 #pragma once
-#include "../interface/BaseEntity.h"
+#include "../entity/BaseEntity.h"
 
 class CameraComponent : public BaseComponent
 {

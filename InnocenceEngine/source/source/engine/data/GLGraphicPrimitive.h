@@ -1,7 +1,6 @@
 #pragma once
 #include "../manager/LogManager.h"
-#include "../interface/IEntity.h"
-#include "../interface/IGraphicPrimitive.h"
+#include "../entity/IGraphicPrimitive.h"
 
 class GLMesh : public IMesh
 {

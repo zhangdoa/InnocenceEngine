@@ -329,12 +329,12 @@ void GLFrameBuffer::initialize()
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_RBO);
 
 	std::vector<unsigned int> attachments;
-	for (auto i = 0; i < m_renderTargetTextureNumber; i++)
+	for (auto i = (unsigned int)0; i < m_renderTargetTextureNumber; i++)
 	{
 		m_textures.emplace_back();
 		attachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 	}
-	for (auto i = 0; i < m_textures.size(); i++)
+	for (auto i = (unsigned int)0; i < m_textures.size(); i++)
 	{
 		glGenTextures(1, &m_textures[i]);
 		glBindTexture(GL_TEXTURE_2D, m_textures[i]);

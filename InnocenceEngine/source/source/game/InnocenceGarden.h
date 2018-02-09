@@ -1,6 +1,6 @@
 #pragma once
 #include "../engine/interface/IGameData.h"
-#include "../engine/interface/BaseEntity.h"
+#include "../engine/entity/BaseEntity.h"
 #include "../engine/manager/CoreManager.h"
 
 #include "PlayerCharacter.h"

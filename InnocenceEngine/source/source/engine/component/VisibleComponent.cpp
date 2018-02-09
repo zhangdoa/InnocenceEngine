@@ -58,7 +58,7 @@ void VisibleComponent::setModelMap(modelMap & modelMap)
 
 void VisibleComponent::setup()
 {
-	IEntity::setup();
+	BaseEntity::setup();
 }
 
 void VisibleComponent::initialize()

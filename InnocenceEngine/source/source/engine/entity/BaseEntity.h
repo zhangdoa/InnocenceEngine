@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IEntity.h"
+#include "../interface/IObject.hpp"
 #include "../data/InnoMath.h"
 
 class Transform
@@ -37,8 +37,32 @@ private:
 	vec3 m_oldScale;
 };
 
+
+typedef unsigned long int EntityID;
+
+
+class BaseEntity : public IObject
+{
+public:
+	BaseEntity();
+	virtual ~BaseEntity();
+
+	virtual void setup() override;
+	const EntityID& getEntityID() const;
+	const std::string& getClassName() const;
+	const objectStatus& getStatus() const;
+
+protected:
+	void setStatus(objectStatus objectStatus);
+
+private:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_entityID = 0;
+	std::string m_className = {};
+};
+
 class BaseComponent;
-class BaseActor : public IEntity
+class BaseActor : public BaseEntity
 {
 public:
 	BaseActor();
@@ -81,7 +105,7 @@ private:
 	Transform m_transform;
 };
 
-class BaseComponent : public IEntity
+class BaseComponent : public BaseEntity
 {
 public:
 	BaseComponent();
