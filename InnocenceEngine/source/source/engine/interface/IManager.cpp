@@ -1,13 +1,12 @@
 #include "../../main/stdafx.h"
 #include "IManager.h"
 
-
-
-IManager::IManager()
+const objectStatus& IManager::getStatus() const
 {
+	return m_ObjectStatus;
 }
 
-
-IManager::~IManager()
+void IManager::setStatus(objectStatus ObjectStatus)
 {
+	m_ObjectStatus = ObjectStatus;
 }

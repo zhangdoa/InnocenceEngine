@@ -65,7 +65,7 @@ vec3 LightComponent::getColor() const
 
 void LightComponent::setup()
 {
-	IEntity::setup();
+	BaseEntity::setup();
 }
 
 void LightComponent::initialize()

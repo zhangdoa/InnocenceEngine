@@ -19,13 +19,8 @@
     <ClCompile Include="source\engine\data\GLGraphicPrimitive.cpp" />
     <ClCompile Include="source\engine\data\InnoMath.cpp" />
     <ClCompile Include="source\engine\data\InnoTask.cpp" />
-    <ClCompile Include="source\engine\interface\BaseEntity.cpp" />
-    <ClCompile Include="source\engine\interface\IEntity.cpp" />
     <ClCompile Include="source\engine\interface\IGameData.cpp" />
-    <ClCompile Include="source\engine\interface\IGraphicPrimitive.cpp" />
     <ClCompile Include="source\engine\interface\IManager.cpp" />
-    <ClCompile Include="source\engine\interface\IObject.cpp" />
-    <ClCompile Include="source\engine\interface\IShader.cpp" />
     <ClCompile Include="source\engine\manager\graphic\GLInputManager.cpp" />
     <ClCompile Include="source\engine\manager\graphic\GLRenderingManager.cpp" />
     <ClCompile Include="source\engine\manager\graphic\GLWindowManager.cpp" />
@@ -43,6 +38,11 @@
     <ClCompile Include="source\game\TestCase.cpp" />
     <ClCompile Include="source\main\InnocenceEngine.cpp" />
     <ClCompile Include="source\main\stdafx.cpp" />
+    <ClCompile Include="source\engine\entity\BaseEntity.cpp" />
+    <ClCompile Include="source\engine\entity\IGraphicPrimitive.cpp" />
+    <ClCompile Include="source\engine\interface\IApplication.cpp" />
+    <ClCompile Include="source\engine\platform\BaseApplication.cpp" />
+    <ClCompile Include="source\engine\platform\Win32Application.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\engine\component\CameraComponent.h" />
@@ -52,13 +52,8 @@
     <ClInclude Include="source\engine\data\GLGraphicPrimitive.h" />
     <ClInclude Include="source\engine\data\InnoMath.h" />
     <ClInclude Include="source\engine\data\InnoTask.h" />
-    <ClInclude Include="source\engine\interface\BaseEntity.h" />
-    <ClInclude Include="source\engine\interface\IEntity.h" />
     <ClInclude Include="source\engine\interface\IGameData.h" />
-    <ClInclude Include="source\engine\interface\IGraphicPrimitive.h" />
     <ClInclude Include="source\engine\interface\IManager.h" />
-    <ClInclude Include="source\engine\interface\IObject.h" />
-    <ClInclude Include="source\engine\interface\IShader.h" />
     <ClInclude Include="source\engine\manager\graphic\GLInputManager.h" />
     <ClInclude Include="source\engine\manager\graphic\GLRenderingManager.h" />
     <ClInclude Include="source\engine\manager\graphic\GLWindowManager.h" />
@@ -77,5 +72,12 @@
     <ClInclude Include="source\main\stdafx.h" />
     <ClInclude Include="source\main\targetver.h" />
     <ClInclude Include="source\engine\third-party\stb_image.h" />
+    <ClInclude Include="source\engine\entity\BaseEntity.h" />
+    <ClInclude Include="source\engine\entity\IGraphicPrimitive.h" />
+    <ClInclude Include="source\engine\interface\IShader.hpp" />
+    <ClInclude Include="source\engine\interface\IObject.hpp" />
+    <ClInclude Include="source\engine\interface\IApplication.h" />
+    <ClInclude Include="source\engine\platform\BaseApplication.h" />
+    <ClInclude Include="source\engine\platform\Win32Application.h" />
   </ItemGroup>
 </Project>

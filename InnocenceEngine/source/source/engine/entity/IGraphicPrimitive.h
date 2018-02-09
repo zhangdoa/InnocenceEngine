@@ -1,5 +1,5 @@
 #pragma once
-#include "IEntity.h"
+#include "BaseEntity.h"
 #include "../data/InnoMath.h"
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
@@ -30,7 +30,7 @@ public:
 	vec3 m_normal;
 };
 
-class IMesh : public IEntity
+class IMesh : public BaseEntity
 {
 public:
 	IMesh() {};
@@ -57,7 +57,7 @@ protected:
 	bool m_calculateTangents;
 };
 
-class I2DTexture : public IEntity
+class I2DTexture : public BaseEntity
 {
 public:
 	I2DTexture() {};
@@ -76,7 +76,7 @@ protected:
 	void* m_textureRawData;
 };
 
-class I3DTexture : public IEntity
+class I3DTexture : public BaseEntity
 {
 public:
 	I3DTexture() {};
@@ -101,7 +101,7 @@ protected:
 	void* m_textureRawData_Front;
 };
 
-class IFrameBuffer : public IEntity
+class IFrameBuffer : public BaseEntity
 {
 public:
 	IFrameBuffer() {};

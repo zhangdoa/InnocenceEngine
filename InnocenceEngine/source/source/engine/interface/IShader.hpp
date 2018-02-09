@@ -2,7 +2,6 @@
 class IShader
 {
 public:
-	IShader();
-	~IShader();
+	virtual ~IShader() {};
 };
 

@@ -157,12 +157,12 @@
     <ResourceCompile Include="InnocenceEngine.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\engine\platform\BaseApplication.cpp" />
     <ClCompile Include="source\engine\component\CameraComponent.cpp" />
     <ClCompile Include="source\engine\data\GLGraphicPrimitive.cpp" />
-    <ClCompile Include="source\engine\interface\BaseEntity.cpp" />
-    <ClCompile Include="source\engine\interface\IObject.cpp" />
+    <ClCompile Include="source\engine\entity\BaseEntity.cpp" />
+    <ClCompile Include="source\engine\interface\IApplication.cpp" />
     <ClCompile Include="source\engine\interface\IGameData.cpp" />
-    <ClCompile Include="source\engine\interface\IEntity.cpp" />
     <ClCompile Include="source\engine\manager\AssetManager.cpp" />
     <ClCompile Include="source\engine\manager\CoreManager.cpp" />
     <ClCompile Include="source\engine\interface\IManager.cpp" />
@@ -186,16 +186,17 @@
     <ClCompile Include="source\engine\data\InnoTask.cpp" />
     <ClCompile Include="source\engine\manager\MemoryManager.cpp" />
     <ClCompile Include="source\game\TestCase.cpp" />
-    <ClCompile Include="source\engine\interface\IShader.cpp" />
-    <ClCompile Include="source\engine\interface\IGraphicPrimitive.cpp" />
+    <ClCompile Include="source\engine\entity\IGraphicPrimitive.cpp" />
+    <ClCompile Include="source\engine\platform\Win32Application.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\engine\platform\BaseApplication.h" />
+    <ClInclude Include="source\engine\interface\IApplication.h" />
     <ClInclude Include="source\engine\component\CameraComponent.h" />
     <ClInclude Include="source\engine\data\GLGraphicPrimitive.h" />
-    <ClInclude Include="source\engine\interface\BaseEntity.h" />
-    <ClInclude Include="source\engine\interface\IObject.h" />
+    <ClInclude Include="source\engine\entity\BaseEntity.h" />
+    <ClInclude Include="source\engine\interface\IObject.hpp" />
     <ClInclude Include="source\engine\interface\IGameData.h" />
-    <ClInclude Include="source\engine\interface\IEntity.h" />
     <ClInclude Include="source\engine\manager\AssetManager.h" />
     <ClInclude Include="source\engine\manager\CoreManager.h" />
     <ClInclude Include="source\engine\interface\IManager.h" />
@@ -220,8 +221,9 @@
     <ClInclude Include="source\engine\data\InnoTask.h" />
     <ClInclude Include="source\engine\manager\MemoryManager.hpp" />
     <ClInclude Include="source\game\TestCase.h" />
-    <ClInclude Include="source\engine\interface\IShader.h" />
-    <ClInclude Include="source\engine\interface\IGraphicPrimitive.h" />
+    <ClInclude Include="source\engine\interface\IShader.hpp" />
+    <ClInclude Include="source\engine\entity\IGraphicPrimitive.h" />
+    <ClInclude Include="source\engine\platform\Win32Application.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

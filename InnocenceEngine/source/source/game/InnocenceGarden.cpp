@@ -130,25 +130,25 @@ void InnocenceGarden::initializeSpheres()
 	for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
 	{
 		////Copper
-		sphereComponents[i].m_albedo = vec3(0.95, 0.64, 0.54);
+		sphereComponents[i].m_albedo = vec3(0.95f, 0.64f, 0.54f);
 		//AssetManager::getInstance().loadAsset("PBS/rustediron2_basecolor.png", textureType::ALBEDO, sphereComponents[i]);
 		//AssetManager::getInstance().loadAsset("PBS/rustediron2_metallic.png", textureType::METALLIC, sphereComponents[i]);
 		//AssetManager::getInstance().loadAsset("PBS/rustediron2_normal.png", textureType::NORMAL, sphereComponents[i]);
 		//AssetManager::getInstance().loadAsset("PBS/rustediron2_roughness.png", textureType::ROUGHNESS, sphereComponents[i]);
 		////Gold
-		sphereComponents[i + 1].m_albedo = vec3(1.00, 0.71, 0.29);
+		sphereComponents[i + 1].m_albedo = vec3(1.00f, 0.71f, 0.29f);
 		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-albedo.png", textureType::ALBEDO, sphereComponents[i + 1]);
 		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-metal.png", textureType::METALLIC, sphereComponents[i + 1]);
 		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-normal.png", textureType::NORMAL, sphereComponents[i + 1]);
 		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-ao.png", textureType::AMBIENT_OCCLUSION, sphereComponents[i + 1]);
 		////Iron
-		sphereComponents[i + 2].m_albedo = vec3(0.56, 0.57, 0.58);
+		sphereComponents[i + 2].m_albedo = vec3(0.56f, 0.57f, 0.58f);
 		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-albedo.png", textureType::ALBEDO, sphereComponents[i + 2]);
 		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-metal.png", textureType::METALLIC, sphereComponents[i + 2]);
 		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-normal.png", textureType::NORMAL, sphereComponents[i + 2]);
 		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-roughness.png", textureType::ROUGHNESS, sphereComponents[i + 2]);
 		////Silver
-		sphereComponents[i + 3].m_albedo = vec3(0.95, 0.93, 0.88);
+		sphereComponents[i + 3].m_albedo = vec3(0.95f, 0.93f, 0.88f);
 		//AssetManager::getInstance().loadAsset("PBS/roughrock1-albedo.png", textureType::ALBEDO, sphereComponents[i + 3]);
 		//AssetManager::getInstance().loadAsset("PBS/roughrock1-metalness.png", textureType::METALLIC, sphereComponents[i + 3]);
 		//AssetManager::getInstance().loadAsset("PBS/roughrock1-normal.png", textureType::NORMAL, sphereComponents[i + 3]);
@@ -160,7 +160,7 @@ void InnocenceGarden::initializeSpheres()
 void InnocenceGarden::setupLights()
 {
 	unsigned int pointLightMatrixDim = 8;
-	float pointLightBreadthInterval = 4.0;
+	float pointLightBreadthInterval = 4.0f;
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim * pointLightMatrixDim; i++)
 	{
 		pointLightActors.emplace_back();
@@ -177,7 +177,7 @@ void InnocenceGarden::setupLights()
 	{
 		for (auto j = (unsigned int)0; j < pointLightMatrixDim; j++)
 		{
-			pointLightActors[i * pointLightMatrixDim + j].getTransform()->setPos(vec3((-(pointLightMatrixDim - 1.0) * pointLightBreadthInterval / 2.0) + (i * pointLightBreadthInterval), 2.0 + (j * pointLightBreadthInterval), 4.0));
+			pointLightActors[i * pointLightMatrixDim + j].getTransform()->setPos(vec3((-(pointLightMatrixDim - 1.0f) * pointLightBreadthInterval / 2.0f) + (i * pointLightBreadthInterval), 2.0f + (j * pointLightBreadthInterval), 4.0f));
 		}
 	}
 }
@@ -187,9 +187,9 @@ void InnocenceGarden::updateLights(float seed)
 	for (auto i = (unsigned int)0; i < pointLightComponents.size(); i+=4)
 	{
 		pointLightComponents[i].setColor(vec3((sin(seed + i) + 1.0f) * 10.0f / 2.0f, 0.2f * 10.0f, 0.4f * 10.0f));
-		pointLightComponents[i + 1].setColor(vec3(0.2f * 10.0f, (sin(seed + i) + 1.0f) * 10.0f / 2.0f, 0.4f * 10.0f));
-		pointLightComponents[i + 2].setColor(vec3(0.2f * 10.0f, 0.4f * 10.0f, (sin(seed + i) + 1.0f) * 10.0f / 2.0f));
-		pointLightComponents[i + 3].setColor(vec3((sin(seed + i * 2.0 ) + 1.0f) * 10.0f / 2.0f, (sin(seed + i* 3.0) + 1.0f) * 10.0f / 2.0f, (sin(seed + i * 5.0) + 1.0f) * 10.0f / 2.0f));
+		pointLightComponents[i + 1].setColor(vec3(0.2f * 10.0f, (sinf(seed + i) + 1.0f) * 10.0f / 2.0f, 0.4f * 10.0f));
+		pointLightComponents[i + 2].setColor(vec3(0.2f * 10.0f, 0.4f * 10.0f, (sinf(seed + i) + 1.0f) * 10.0f / 2.0f));
+		pointLightComponents[i + 3].setColor(vec3((sinf(seed + i * 2.0f ) + 1.0f) * 10.0f / 2.0f, (sinf(seed + i* 3.0f) + 1.0f) * 10.0f / 2.0f, (sinf(seed + i * 5.0f) + 1.0f) * 10.0f / 2.0f));
 	}
 }
 

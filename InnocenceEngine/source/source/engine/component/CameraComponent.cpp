@@ -32,7 +32,7 @@ mat4 CameraComponent::getProjectionMatrix() const
 
 void CameraComponent::setup()
 {
-	IEntity::setup();
+	BaseEntity::setup();
 }
 
 void CameraComponent::initialize()

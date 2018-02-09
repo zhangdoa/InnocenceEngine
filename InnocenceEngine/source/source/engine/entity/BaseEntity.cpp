@@ -24,8 +24,8 @@ void Transform::update()
 
 void Transform::rotate(const vec3 & axis, float angle)
 {
-	float sinHalfAngle = sin((angle * PI / 180.0f) / 2.0f);
-	float cosHalfAngle = cos((angle * PI / 180.0f) / 2.0f);
+	float sinHalfAngle = sinf((angle * PI / 180.0f) / 2.0f);
+	float cosHalfAngle = cosf((angle * PI / 180.0f) / 2.0f);
 	// get final rotation
 	m_rot = quat(axis.x * sinHalfAngle, axis.y * sinHalfAngle, axis.z * sinHalfAngle, cosHalfAngle).mul(m_rot);
 }
@@ -124,6 +124,42 @@ vec3 Transform::getDirection(direction direction) const
 	l_directionVec3 = l_directionVec3 + l_Qv.cross((l_Qv.cross(l_directionVec3) + l_directionVec3.mul(m_rot.w))).mul(2.0f);
 
 	return l_directionVec3;
+}
+
+
+BaseEntity::BaseEntity()
+{
+	m_entityID = std::rand();
+}
+
+BaseEntity::~BaseEntity()
+{
+}
+
+void BaseEntity::setup()
+{
+	m_className = std::string{ typeid(*this).name() };
+	m_className = m_className.substr(m_className.find("class"), std::string::npos);
+}
+
+const EntityID & BaseEntity::getEntityID() const
+{
+	return m_entityID;
+}
+
+const std::string & BaseEntity::getClassName() const
+{
+	return m_className;
+}
+
+const objectStatus & BaseEntity::getStatus() const
+{
+	return m_objectStatus;
+}
+
+void BaseEntity::setStatus(objectStatus objectStatus)
+{
+	m_objectStatus = objectStatus;
 }
 
 BaseActor::BaseActor()
@@ -280,7 +316,7 @@ mat4 BaseActor::caclTransformationMatrix()
 
 void BaseActor::setup()
 {
-	IEntity::setup();
+	BaseEntity::setup();
 	for (auto l_childComponent : m_childComponents)
 	{
 		l_childComponent->setup();
