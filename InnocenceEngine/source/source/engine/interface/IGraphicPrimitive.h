@@ -1,5 +1,4 @@
 #pragma once
-#include "../manager/LogManager.h"
 #include "IEntity.h"
 #include "../data/InnoMath.h"
 
