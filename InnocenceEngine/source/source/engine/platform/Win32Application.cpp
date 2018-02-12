@@ -29,6 +29,5 @@ void Win32Application::update()
 void Win32Application::shutdown()
 {
 	CoreManager::getInstance().shutdown();
-	delete m_ipGameData;
 	setStatus(objectStatus::SHUTDOWN);
 }
