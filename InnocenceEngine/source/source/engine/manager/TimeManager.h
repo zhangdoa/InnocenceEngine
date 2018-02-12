@@ -73,7 +73,7 @@ public:
 private:
 	TimeManager() {};
 
-	const double m_frameTime = 1.0 / 60.0;
+	const double m_frameTime = (1.0 / 120.0) * 1000.0 * 1000.0;
 	__time64_t m_gameStartTime;
 	std::chrono::high_resolution_clock::time_point m_updateStartTime;
 	double m_deltaTime;

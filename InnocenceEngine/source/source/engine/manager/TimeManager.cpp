@@ -19,7 +19,6 @@ void TimeManager::update()
 	m_deltaTime = (std::chrono::high_resolution_clock::now() - m_updateStartTime).count();
 
 	m_unprocessedTime += m_deltaTime;
-
 	if (m_unprocessedTime >= m_frameTime)
 	{
 		m_unprocessedTime -= m_frameTime;

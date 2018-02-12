@@ -187,7 +187,7 @@ void main()
     
 	for(int i = 0; i < NR_POINT_LIGHTS; ++i) 
     {
-        //Lo += CalcPointLightRadiance(uni_pointLights[i], Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
+        Lo += CalcPointLightRadiance(uni_pointLights[i], Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
     }
 
 	//IBL ambient lighting
