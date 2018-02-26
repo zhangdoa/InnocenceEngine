@@ -1,0 +1,5 @@
+add_subdirectory("common")
+add_subdirectory("component")
+add_subdirectory("entity")
+add_subdirectory("manager")
+add_subdirectory("third-party")
