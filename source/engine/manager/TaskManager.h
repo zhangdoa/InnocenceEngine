@@ -6,6 +6,7 @@ class TaskManager : public BaseManager
 {
 public:
 	TaskManager() {};
+	~TaskManager() {};
 
 	void setup() override;
 	void initialize() override;
@@ -14,15 +15,7 @@ public:
 
 	void addTask(std::function<void()>& task);
 
-	static TaskManager& getInstance()
-	{
-		static TaskManager instance;
-		return instance;
-	}
-
 private:
-	~TaskManager() {};
-
 	void m_threadHolder();
 
 	unsigned int m_hardwareConcurrency;

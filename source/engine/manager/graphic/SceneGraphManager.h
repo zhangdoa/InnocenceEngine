@@ -9,18 +9,13 @@
 class SceneGraphManager : public BaseManager
 {
 public:
+	SceneGraphManager() {};
 	~SceneGraphManager() {};
 
 	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
-
-	static SceneGraphManager& getInstance()
-	{
-		static SceneGraphManager instance;
-		return instance;
-	}
 
 	void addToRenderingQueue(VisibleComponent* visibleComponent);
 	void addToLightQueue(LightComponent* lightComponent);
@@ -33,8 +28,6 @@ public:
 	std::vector<InputComponent*>& getInputQueue();
 
 private:
-	SceneGraphManager() {};
-
 	std::vector<VisibleComponent*> m_VisibleComponents;
 	std::vector<LightComponent*> m_LightComponents;
 	std::vector<CameraComponent*> m_CameraComponents;

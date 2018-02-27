@@ -2,20 +2,21 @@
 
 void BaseApplication::setup()
 {
-	CoreManager::getInstance().setup();
+	m_pCoreManager = new CoreManager();
+	m_pCoreManager->setup();
 }
 
 void BaseApplication::initialize()
 {
-	CoreManager::getInstance().initialize();
+	m_pCoreManager->initialize();
 	setStatus(objectStatus::ALIVE);
 }
 
 void BaseApplication::update()
 {
-	if (CoreManager::getInstance().getStatus() == objectStatus::ALIVE)
+	if (m_pCoreManager->getStatus() == objectStatus::ALIVE)
 	{
-		CoreManager::getInstance().update();
+		m_pCoreManager->update();
 	}
 	else
 	{
@@ -25,7 +26,7 @@ void BaseApplication::update()
 
 void BaseApplication::shutdown()
 {
-	CoreManager::getInstance().shutdown();
+	m_pCoreManager->shutdown();
 	setStatus(objectStatus::SHUTDOWN);
 }
 

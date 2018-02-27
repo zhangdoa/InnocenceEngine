@@ -11,6 +11,7 @@
 class RenderingManager : public BaseManager
 {
 public:
+	RenderingManager() {};
 	~RenderingManager() {};
 
 	void setup() override;
@@ -18,12 +19,6 @@ public:
 	void update() override;
 	void render();
 	void shutdown() override;
-
-	static RenderingManager& getInstance()
-	{
-		static RenderingManager instance;
-		return instance;
-	}
 
 	meshID addMesh();
 	textureID add2DTexture();
@@ -37,8 +32,6 @@ public:
 	Base3DTexture* get3DHDRTexture(textureID textureID);
 
 private:
-	RenderingManager() {};
-
 	void changeDrawPolygonMode();
 	void changeDrawTextureMode();
 
