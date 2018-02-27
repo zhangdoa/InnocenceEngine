@@ -13,20 +13,20 @@ void AssetManager::initialize()
 	m_basicRoughnessTemplate = load2DTextureFromDisk("basic_roughness.png", textureType::ROUGHNESS, textureWrapMethod::REPEAT);
 	m_basicAOTemplate = load2DTextureFromDisk("basic_ao.png", textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT);
 
-	m_UnitCubeTemplate = RenderingManager::getInstance().addMesh();
-	auto lastMeshData = RenderingManager::getInstance().getMesh(m_UnitCubeTemplate);
+	m_UnitCubeTemplate = g_pRenderingManager->addMesh();
+	auto lastMeshData = g_pRenderingManager->getMesh(m_UnitCubeTemplate);
 	lastMeshData->addUnitCube();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE, false, false);
 	lastMeshData->initialize();
 
-	m_UnitSphereTemplate = RenderingManager::getInstance().addMesh();
-	lastMeshData = RenderingManager::getInstance().getMesh(m_UnitSphereTemplate);
+	m_UnitSphereTemplate = g_pRenderingManager->addMesh();
+	lastMeshData = g_pRenderingManager->getMesh(m_UnitSphereTemplate);
 	lastMeshData->addUnitSphere();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
 	lastMeshData->initialize();
 
-	m_UnitQuadTemplate = RenderingManager::getInstance().addMesh();
-	lastMeshData = RenderingManager::getInstance().getMesh(m_UnitQuadTemplate);
+	m_UnitQuadTemplate = g_pRenderingManager->addMesh();
+	lastMeshData = g_pRenderingManager->getMesh(m_UnitQuadTemplate);
 	lastMeshData->addUnitQuad();
 	lastMeshData->setup(meshDrawMethod::TRIANGLE, true, true);
 	lastMeshData->initialize();
@@ -94,7 +94,7 @@ void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent 
 	if (l_loadedmodelMap != m_loadedModelMap.end())
 	{
 		assignloadedModel(l_loadedmodelMap->second, visibleComponent);
-		LogManager::getInstance().printLog("AssetManager: " + l_convertedFilePath + " has already been loaded before, successfully assigned modelMap IDs.");
+		g_pLogManager->printLog("AssetManager: " + l_convertedFilePath + " has already been loaded before, successfully assigned modelMap IDs.");
 	}
 	else
 	{
@@ -107,11 +107,11 @@ void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent 
 			// save model file as .innoModel binary file
 			Assimp::Exporter l_assExporter;
 			l_assExporter.Export(l_assScene, "assbin", m_modelRelativePath + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
-			LogManager::getInstance().printLog("AssetManager: " + fileName + " is successfully converted.");
+			g_pLogManager->printLog("AssetManager: " + fileName + " is successfully converted.");
 		}
 		if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 		{
-			LogManager::getInstance().printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
+			g_pLogManager->printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
 			addUnitMesh(visibleComponent, unitMeshType::CUBE);
 			return;
 		}
@@ -122,7 +122,7 @@ void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent 
 		m_loadedModelMap.emplace(l_convertedFilePath, l_modelMap);
 		assignloadedModel(l_modelMap, visibleComponent);
 
-		LogManager::getInstance().printLog("AssetManager: " + l_convertedFilePath + " is loaded for the first time, successfully assigned modelMap IDs.");
+		g_pLogManager->printLog("AssetManager: " + l_convertedFilePath + " is loaded for the first time, successfully assigned modelMap IDs.");
 	}
 }
 
@@ -130,7 +130,7 @@ void AssetManager::assignloadedModel(modelMap& loadedmodelMap, VisibleComponent 
 {
 	visibleComponent.setModelMap(loadedmodelMap);
 	assignDefaultTextures(textureAssignType::ADD_DEFAULT, visibleComponent);
-	SceneGraphManager::getInstance().addToRenderingQueue(&visibleComponent);
+	g_pSceneGraphManager->addToRenderingQueue(&visibleComponent);
 }
 
 modelMap AssetManager::processAssimpScene(const std::string& fileName, const aiScene* aiScene, meshDrawMethod& meshDrawMethod, textureWrapMethod& textureWrapMethod)
@@ -178,8 +178,8 @@ modelMap AssetManager::processAssimpNode(const std::string& fileName, aiNode * n
 
 meshID AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDrawMethod meshDrawMethod) const
 {
-	auto l_meshDataID = RenderingManager::getInstance().addMesh();
-	auto lastMeshData = RenderingManager::getInstance().getMesh(l_meshDataID);
+	auto l_meshDataID = g_pRenderingManager->addMesh();
+	auto lastMeshData = g_pRenderingManager->getMesh(l_meshDataID);
 
 	for (auto i = (unsigned int)0; i < mesh->mNumVertices; i++)
 	{
@@ -198,7 +198,7 @@ meshID AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDrawMethod meshD
 	}
 	lastMeshData->setup(meshDrawMethod, false, false);
 	lastMeshData->initialize();
-	LogManager::getInstance().printLog("innoMesh is loaded.");
+	g_pLogManager->printLog("innoMesh is loaded.");
 	return l_meshDataID;
 }
 
@@ -281,7 +281,7 @@ textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName
 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
-				LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is unknown type!");
+				g_pLogManager->printLog("inno2DTexture: " + fileName + " is unknown type!");
 				return textureMap();
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
@@ -306,7 +306,7 @@ textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName
 			}
 			else
 			{
-				LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is unsupported type!");
+				g_pLogManager->printLog("inno2DTexture: " + fileName + " is unsupported type!");
 				return textureMap();
 			}
 			// load image
@@ -326,7 +326,7 @@ void AssetManager::load2DTextureImpl(const std::string & fileName, textureType t
 	if (l_loaded2DTexturePair != m_loaded2DTextureMap.end())
 	{
 		assignLoadedTexture(textureAssignType::OVERWRITE, l_loaded2DTexturePair->second, visibleComponent);
-		LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is already loaded, successfully assigned loaded texture data IDs.");
+		g_pLogManager->printLog("inno2DTexture: " + fileName + " is already loaded, successfully assigned loaded texture data IDs.");
 	}
 	else
 	{
@@ -357,16 +357,16 @@ textureID AssetManager::load2DTextureFromDisk(const std::string & fileName, text
 	auto *data = stbi_load((m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		auto id = RenderingManager::getInstance().add2DTexture();
-		auto last2DTextureData = RenderingManager::getInstance().get2DTexture(id);
+		auto id = g_pRenderingManager->add2DTexture();
+		auto last2DTextureData = g_pRenderingManager->get2DTexture(id);
 		last2DTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
 		last2DTextureData->initialize();
-		LogManager::getInstance().printLog("inno2DTexture: " + fileName + " is loaded.");
+		g_pLogManager->printLog("inno2DTexture: " + fileName + " is loaded.");
 		return id;
 	}
 	else
 	{
-		LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + fileName);
+		g_pLogManager->printLog("ERROR::STBI:: Failed to load texture: " + fileName);
 		return 0;
 	}
 
@@ -378,8 +378,8 @@ void AssetManager::load3DTextureFromDisk(const std::vector<std::string>& fileNam
 	if (textureType == textureType::CUBEMAP)
 	{
 		int width, height, nrChannels;
-		auto id = RenderingManager::getInstance().add3DTexture();
-		auto lastTextureData = RenderingManager::getInstance().get3DTexture(id);
+		auto id = g_pRenderingManager->add3DTexture();
+		auto lastTextureData = g_pRenderingManager->get3DTexture(id);
 
 		std::vector<void*> l_3DTextureRawData;
 
@@ -391,22 +391,22 @@ void AssetManager::load3DTextureFromDisk(const std::vector<std::string>& fileNam
 			if (data)
 			{
 				l_3DTextureRawData.emplace_back(data);
-				LogManager::getInstance().printLog("inno3DTexture: " + fileName[i] + " is loaded.");
+				g_pLogManager->printLog("inno3DTexture: " + fileName[i] + " is loaded.");
 			}
 			else
 			{
-				LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + (m_textureRelativePath + fileName[i]));
+				g_pLogManager->printLog("ERROR::STBI:: Failed to load texture: " + (m_textureRelativePath + fileName[i]));
 			}
 			//stbi_image_free(data);
 		}
 		lastTextureData->setup(textureType::CUBEMAP, nrChannels, width, height, l_3DTextureRawData, false);
 		lastTextureData->initialize();
 		visibleComponent.addTextureData(texturePair(textureType::CUBEMAP, id));
-		LogManager::getInstance().printLog("inno3DTexture is fully loaded.");
+		g_pLogManager->printLog("inno3DTexture is fully loaded.");
 	}
 	else
 	{
-		LogManager::getInstance().printLog("3Dtexture type is invalid!");
+		g_pLogManager->printLog("3Dtexture type is invalid!");
 		return;
 	}
 }
@@ -421,23 +421,23 @@ void AssetManager::load3DTextureFromDisk(const std::string & filePath, textureTy
 		auto *data = stbi_loadf((m_textureRelativePath + filePath).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			auto id = RenderingManager::getInstance().add2DHDRTexture();
-			auto last2DTextureData = RenderingManager::getInstance().get2DHDRTexture(id);
+			auto id = g_pRenderingManager->add2DHDRTexture();
+			auto last2DTextureData = g_pRenderingManager->get2DHDRTexture(id);
 			last2DTextureData->setup(textureType::EQUIRETANGULAR, textureWrapMethod::CLAMP_TO_EDGE, nrChannels, width, height, data);
 			last2DTextureData->initialize();
 
 			visibleComponent.addTextureData(texturePair(textureType::EQUIRETANGULAR, id));
-			LogManager::getInstance().printLog("inno2DHDRTexture: " + filePath + " is loaded.");
+			g_pLogManager->printLog("inno2DHDRTexture: " + filePath + " is loaded.");
 		}
 		else
 		{
-			LogManager::getInstance().printLog("ERROR::STBI:: Failed to load texture: " + filePath);
+			g_pLogManager->printLog("ERROR::STBI:: Failed to load texture: " + filePath);
 			return;
 		}
 	}
 	else
 	{
-		LogManager::getInstance().printLog("3Dtexture type is invalid!");
+		g_pLogManager->printLog("3Dtexture type is invalid!");
 		return;
 	}
 }
@@ -466,5 +466,5 @@ void AssetManager::addUnitMesh(VisibleComponent & visibleComponent, unitMeshType
 	}
 	visibleComponent.addMeshData(l_UnitMeshTemplate);
 	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
-	SceneGraphManager::getInstance().addToRenderingQueue(&visibleComponent);
+	g_pSceneGraphManager->addToRenderingQueue(&visibleComponent);
 }

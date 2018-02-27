@@ -19,13 +19,10 @@ void MemoryManager::setup(unsigned long  memoryPoolSize)
 	freeChunk.write(m_poolMemory + m_boundCheckSize);
 	memcpy(m_poolMemory, m_startBound, m_boundCheckSize);
 	memcpy(m_poolMemory + memoryPoolSize - m_boundCheckSize, m_endBound, m_boundCheckSize);
-	LogManager::getInstance().printLog("Memory is allocated " + sizeof(m_poolMemory));
 }
 
 void MemoryManager::initialize()
 {
-	auto test = allocate(6);
-	dumpToFile("memoryDump.innoDump");
 	this->setStatus(objectStatus::ALIVE);
 	LogManager::getInstance().printLog("MemoryManager has been initialized.");
 }

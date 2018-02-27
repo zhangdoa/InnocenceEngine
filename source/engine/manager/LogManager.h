@@ -5,18 +5,13 @@
 class LogManager : public BaseManager
 {
 public:
+	LogManager() {};
 	~LogManager() {};
 
 	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
-
-	static LogManager& getInstance()
-	{
-		static LogManager instance;
-		return instance;
-	}
 
 	void printLog(double logMessage);
 	void printLog(std::string logMessage);
@@ -25,8 +20,5 @@ public:
 	void printLog(const quat& logMessage);
 	void printLog(const mat4& logMessage);
 	void printLog(const std::thread::id logMessage);
-
-private:
-	LogManager() {};
 };
 

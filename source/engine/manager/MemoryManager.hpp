@@ -25,6 +25,7 @@
 class MemoryManager : public BaseManager
 {
 public:
+	MemoryManager() {};
 	~MemoryManager() {};
 
 	void setup() override;
@@ -32,6 +33,10 @@ public:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
+
+	inline void* allocate(unsigned long size);
+
+	inline void free(void* ptr);
 
 	template <typename T>
 	T * spawn(void)
@@ -53,19 +58,7 @@ public:
 
 	inline void dumpToFile(const std::string& fileName) const;
 
-	static MemoryManager& getInstance()
-	{
-		static MemoryManager instance;
-		return instance;
-	}
-
 private:
-	MemoryManager() {};
-
-	inline void* allocate(unsigned long size);
-
-	inline void free(void* ptr);
-
 	const unsigned long  m_maxPoolSize = 1024;
 	static const unsigned char m_minFreeBlockSize = 16;
 	unsigned long  m_totalPoolSize;

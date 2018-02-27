@@ -1,15 +1,30 @@
 #include "CoreManager.h"
 
 void CoreManager::setup()
-{	// emplace_back in a static order.
-	m_childEventManager.emplace_back(&LogManager::getInstance());
-	m_childEventManager.emplace_back(&MemoryManager::getInstance());
-	m_childEventManager.emplace_back(&TaskManager::getInstance());
-	m_childEventManager.emplace_back(&TimeManager::getInstance());
-	m_childEventManager.emplace_back(&SceneGraphManager::getInstance());
-	m_childEventManager.emplace_back(&RenderingManager::getInstance());
-	m_childEventManager.emplace_back(&AssetManager::getInstance());
-	LogManager::getInstance().printLog("Start to setup all the managers.");
+{
+	// emplace_back in a static order.
+	m_childEventManager.emplace_back(m_pMemoryManager);
+	m_childEventManager.emplace_back(m_pLogManager);
+	m_childEventManager.emplace_back(m_pTaskManager);
+	m_childEventManager.emplace_back(m_pTimeManager);
+	m_childEventManager.emplace_back(m_pSceneGraphManager);
+	m_childEventManager.emplace_back(m_pRenderingManager);
+	m_childEventManager.emplace_back(m_pAssetManager);
+
+	m_pMemoryManager = new MemoryManager();
+	m_pMemoryManager->setup();
+	m_pLogManager = m_pMemoryManager->spawn<LogManager>();
+	m_pTaskManager = m_pMemoryManager->spawn<TaskManager>();
+	m_pTimeManager = m_pMemoryManager->spawn<TimeManager>();
+	m_pSceneGraphManager = m_pMemoryManager->spawn<SceneGraphManager>();
+	m_pRenderingManager = m_pMemoryManager->spawn<RenderingManager>();
+	
+	m_pAssetManager = m_pMemoryManager->spawn<AssetManager>();
+	m_pAssetManager->g_pLogManager = m_pLogManager;
+	m_pAssetManager->g_pRenderingManager = m_pRenderingManager;
+	m_pAssetManager->g_pSceneGraphManager = m_pSceneGraphManager;
+
+	m_pLogManager->printLog("Start to setup all the managers.");
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		m_childEventManager[i].get()->setup();
@@ -20,8 +35,8 @@ void CoreManager::setup()
 		g_pGame->getGameName(l_gameName);
 	}
 	catch (std::exception& e) {
-		LogManager::getInstance().printLog("No game added!");
-		LogManager::getInstance().printLog(e.what());
+		m_pLogManager->printLog("No game added!");
+		m_pLogManager->printLog(e.what());
 	}
 	GLWindowManager::getInstance().setWindowName(l_gameName);
 
@@ -38,35 +53,35 @@ void CoreManager::initialize()
 	g_pGame->initialize();
 
 	this->setStatus(objectStatus::ALIVE);
-	LogManager::getInstance().printLog("CoreManager has been initialized.");
+	m_pLogManager->printLog("CoreManager has been initialized.");
 }
 
 void CoreManager::update()
 {
 	// time manager should update without any limitation.
-	TimeManager::getInstance().update();
+	m_pTimeManager->update();
 
 	// when time manager's status was execMessage::INITIALIZED, that means we can update other managers, a frame counter occurred.
-	if (TimeManager::getInstance().getStatus() == objectStatus::ALIVE)
+	if (m_pTimeManager->getStatus() == objectStatus::ALIVE)
 	{
 
-		if (RenderingManager::getInstance().getStatus() == objectStatus::ALIVE)
+		if (m_pRenderingManager->getStatus() == objectStatus::ALIVE)
 		{
-			auto l_tickTime = TimeManager::getInstance().getcurrentTime();
+			auto l_tickTime = m_pTimeManager->getcurrentTime();
 			// game data update
 			g_pGame->update();
 			if (g_pGame->needRender)
 			{
-				RenderingManager::getInstance().render();
+				m_pRenderingManager->render();
 			}
-			RenderingManager::getInstance().update();
-			l_tickTime = TimeManager::getInstance().getcurrentTime() - l_tickTime;
+			m_pRenderingManager->update();
+			l_tickTime = m_pTimeManager->getcurrentTime() - l_tickTime;
 			//LogManager::getInstance().printLog(l_tickTime);
 		}	
 		else
 		{
 			this->setStatus(objectStatus::STANDBY);
-			LogManager::getInstance().printLog("CoreManager is stand-by.");
+			m_pLogManager->printLog("CoreManager is stand-by.");
 		}
 
 	}
@@ -87,6 +102,6 @@ void CoreManager::shutdown()
 		m_childEventManager[m_childEventManager.size() - 1 - i].release();
 	}
 	this->setStatus(objectStatus::SHUTDOWN);
-	LogManager::getInstance().printLog("CoreManager has been shutdown.");
+	m_pLogManager->printLog("CoreManager has been shutdown.");
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 }

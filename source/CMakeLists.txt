@@ -1,4 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
+
+# for different compiler
+configure_file ("${CMAKE_SOURCE_DIR}/engine/common/config.h.in" "${CMAKE_SOURCE_DIR}/engine/common/config.h")
+# Use Clang?
+option (USE_CLANG "Use Clang as the default compiler" ON)
+if (USE_CLANG)
+set(CMAKE_C_COMPILER clang-cl.exe)
+set(CMAKE_CXX_COMPILER clang-cl.exe)
+endif (USE_CLANG)
+
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 11)
 

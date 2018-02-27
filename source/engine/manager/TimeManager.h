@@ -5,18 +5,13 @@
 class TimeManager : public BaseManager
 {
 public:
+	TimeManager() {};
 	~TimeManager() {};
 
 	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
-
-	static TimeManager& getInstance()
-	{
-		static TimeManager instance;
-		return instance;
-	}
 
 	const __time64_t getGameStartTime() const;
 	const double getDeltaTime() const;
@@ -70,10 +65,8 @@ public:
 	}
 
 private:
-	TimeManager() {};
-
 	const double m_frameTime = (1.0 / 120.0) * 1000.0 * 1000.0;
-	__time64_t m_gameStartTime;
+	double m_gameStartTime;
 	std::chrono::high_resolution_clock::time_point m_updateStartTime;
 	double m_deltaTime;
 	double m_unprocessedTime;

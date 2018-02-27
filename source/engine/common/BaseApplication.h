@@ -20,5 +20,6 @@ protected:
 
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	CoreManager* m_pCoreManager;
 };
 

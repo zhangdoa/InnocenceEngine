@@ -13,18 +13,13 @@ enum class unitMeshType { QUAD, CUBE, SPHERE };
 class AssetManager : public BaseManager
 {
 public:
+	AssetManager() {};
 	~AssetManager() {};
 
 	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
-
-	static AssetManager& getInstance()
-	{
-		static AssetManager instance;
-		return instance;
-	}
 
 	void loadAsset(const std::string& filePath, VisibleComponent& visibleComponent);
 	void loadAsset(const std::vector<std::string>& filePath, textureType textureType, VisibleComponent& visibleComponent);
@@ -33,10 +28,12 @@ public:
 	std::string loadShader(const std::string& fileName) const;
 
 	void addUnitMesh(VisibleComponent& visibleComponent, unitMeshType unitMeshType);
+	
+	static RenderingManager* g_pRenderingManager;
+	static LogManager* g_pLogManager;
+	static SceneGraphManager* g_pSceneGraphManager;
 
 private:
-	AssetManager() {};
-
 	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
 
 	void loadModelImpl(const std::string& fileName, VisibleComponent& visibleComponent);
