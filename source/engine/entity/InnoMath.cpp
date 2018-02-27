@@ -2,12 +2,12 @@
 
 vec3::vec3()
 {
-	x = 0.0f;
-	y = 0.0f;
-	z = 0.0f;
+	x = 0.0;
+	y = 0.0;
+	z = 0.0;
 }
 
-vec3::vec3(float rhsX, float rhsY, float rhsZ)
+vec3::vec3(double rhsX, double rhsY, double rhsZ)
 {
 	x = rhsX;
 	y = rhsY;
@@ -43,12 +43,12 @@ vec3 vec3::operator+(const vec3 & rhs)
 	return vec3(x + rhs.x, y + rhs.y, z + rhs.z);
 }
 
-vec3 vec3::add(float rhs)
+vec3 vec3::add(double rhs)
 {
 	return vec3(x + rhs, y + rhs, z + rhs);
 }
 
-vec3 vec3::operator+(float rhs)
+vec3 vec3::operator+(double rhs)
 {
 	return vec3(x + rhs, y + rhs, z + rhs);
 }
@@ -63,22 +63,22 @@ vec3 vec3::operator-(const vec3 & rhs)
 	return vec3(x - rhs.x, y - rhs.y, z - rhs.z);
 }
 
-vec3 vec3::sub(float rhs)
+vec3 vec3::sub(double rhs)
 {
 	return vec3(x - rhs, y - rhs, z - rhs);
 }
 
-vec3 vec3::operator-(float rhs)
+vec3 vec3::operator-(double rhs)
 {
 	return vec3(x - rhs, y - rhs, z - rhs);
 }
 
-float vec3::dot(const vec3 & rhs)
+double vec3::dot(const vec3 & rhs)
 {
 	return x * rhs.x + y * rhs.y + z * rhs.z;
 }
 
-float vec3::operator*(const vec3 & rhs)
+double vec3::operator*(const vec3 & rhs)
 {
 	return x * rhs.x + y * rhs.y + z * rhs.z;
 }
@@ -93,20 +93,20 @@ vec3 vec3::mul(const vec3 & rhs)
 	return vec3(x * rhs.x, y * rhs.y, z * rhs.z);
 }
 
-vec3 vec3::mul(float rhs)
+vec3 vec3::mul(double rhs)
 {
 	return vec3(x * rhs, y * rhs, z * rhs);
 }
 
-vec3 vec3::operator*(float rhs)
+vec3 vec3::operator*(double rhs)
 {
 	return vec3(x * rhs, y * rhs, z * rhs);
 }
 
-float vec3::length()
+double vec3::length()
 {
 	// @TODO: replace with override impl
-	return sqrtf(x * x + y * y + z * z);
+	return sqrt(x * x + y * y + z * z);
 }
 
 vec3 vec3::normalize()
@@ -170,11 +170,11 @@ mat4 vec3::toScaleMartix()
 
 vec2::vec2()
 {
-	x = 0.0f;
-	y = 0.0f;
+	x = 0.0;
+	y = 0.0;
 }
 
-vec2::vec2(float rhsX, float rhsY)
+vec2::vec2(double rhsX, double rhsY)
 {
 	x = rhsX;
 	y = rhsY;
@@ -207,14 +207,14 @@ vec2 vec2::sub(const vec2 & rhs)
 	return vec2(x - rhs.x, y - rhs.y);
 }
 
-float vec2::dot(const vec2 & rhs)
+double vec2::dot(const vec2 & rhs)
 {
 	return x * rhs.x + y * rhs.y;
 }
 
-float vec2::length()
+double vec2::length()
 {
-	return sqrtf(x * x + y * y);
+	return sqrt(x * x + y * y);
 }
 
 vec2 vec2::normalize()
@@ -224,13 +224,13 @@ vec2 vec2::normalize()
 
 quat::quat()
 {
-	x = 0.0f;
-	y = 0.0f;
-	z = 0.0f;
-	w = 1.0f;
+	x = 0.0;
+	y = 0.0;
+	z = 0.0;
+	w = 1.0;
 }
 
-quat::quat(float rhsX, float rhsY, float rhsZ, float rhsW)
+quat::quat(double rhsX, double rhsY, double rhsZ, double rhsW)
 {
 	x = rhsX;
 	y = rhsY;
@@ -270,7 +270,7 @@ quat quat::mul(const quat & rhs)
 	);
 }
 
-quat quat::mul(float rhs)
+quat quat::mul(double rhs)
 {
 	return quat(
 		w * rhs + x * rhs + y * rhs - z * rhs,
@@ -280,10 +280,10 @@ quat quat::mul(float rhs)
 	);
 }
 
-float quat::length()
+double quat::length()
 {
 	// @TODO: replace with override impl
-	return sqrtf(x * x + y * y + z * z + w * w);
+	return sqrt(x * x + y * y + z * z + w * w);
 }
 
 quat quat::normalize()
@@ -353,22 +353,22 @@ mat4 quat::toRotationMartix()
 
 mat4::mat4()
 {
-	m[0][0] = 0.0f;
-	m[0][1] = 0.0f;
-	m[0][2] = 0.0f;
-	m[0][3] = 0.0f;
-	m[1][0] = 0.0f;
-	m[1][1] = 0.0f;
-	m[1][2] = 0.0f;
-	m[1][3] = 0.0f;
-	m[2][0] = 0.0f;
-	m[2][1] = 0.0f;
-	m[2][2] = 0.0f;
-	m[2][3] = 0.0f;
-	m[3][0] = 0.0f;
-	m[3][1] = 0.0f;
-	m[3][2] = 0.0f;
-	m[3][3] = 0.0f;
+	m[0][0] = 0.0;
+	m[0][1] = 0.0;
+	m[0][2] = 0.0;
+	m[0][3] = 0.0;
+	m[1][0] = 0.0;
+	m[1][1] = 0.0;
+	m[1][2] = 0.0;
+	m[1][3] = 0.0;
+	m[2][0] = 0.0;
+	m[2][1] = 0.0;
+	m[2][2] = 0.0;
+	m[2][3] = 0.0;
+	m[3][0] = 0.0;
+	m[3][1] = 0.0;
+	m[3][2] = 0.0;
+	m[3][3] = 0.0;
 }
 
 mat4::mat4(const mat4 & rhs)
@@ -441,7 +441,7 @@ mat4 mat4::operator*(const mat4 & rhs)
 	return l_m;
 }
 
-mat4 mat4::operator*(float rhs)
+mat4 mat4::operator*(double rhs)
 {
 	//@TODO:optimize
 	mat4 l_m;
@@ -494,7 +494,7 @@ mat4 mat4::mul(const mat4 & rhs)
 	return l_m;
 }
 
-mat4 mat4::mul(float rhs)
+mat4 mat4::mul(double rhs)
 {
 	//@TODO:optimize
 	mat4 l_m;
@@ -519,10 +519,10 @@ mat4 mat4::mul(float rhs)
 	return l_m;
 }
 
-void mat4::initializeToPerspectiveMatrix(float FOV, float HWRatio, float zNear, float zFar)
+void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar)
 {
-	m[0][0] = 1 / (tanf(FOV / 2) * HWRatio);
-	m[1][1] = 1 / tanf(FOV / 2);
+	m[0][0] = 1 / (tan(FOV / 2) * HWRatio);
+	m[1][1] = 1 / tan(FOV / 2);
 	m[2][2] = -(zFar + zNear) / ((zFar - zNear));
 	m[3][2] = -(2 * zFar *zNear) / ((zFar - zNear));
 	m[2][3] = -1;
@@ -559,10 +559,10 @@ mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDi
 	l_m.m[1][2] = l_Z.y;
 	l_m.m[2][2] = l_Z.z;
 	l_m.m[3][2] = -l_Z.dot(eyePos);
-	l_m.m[0][3] = 0;
-	l_m.m[1][3] = 0;
-	l_m.m[2][3] = 0;
-	l_m.m[3][3] = 1.0f;
+	l_m.m[0][3] = 0.0;
+	l_m.m[1][3] = 0.0;
+	l_m.m[2][3] = 0.0;
+	l_m.m[3][3] = 1.0;
 	
 	return l_m;
 }

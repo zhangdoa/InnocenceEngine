@@ -21,7 +21,7 @@ std::multimap<int, std::vector<std::function<void()>*>>& InputComponent::getKeyb
 	return m_keyboardInputCallbackImpl;
 }
 
-std::multimap<int, std::vector<std::function<void(float)>*>>& InputComponent::getMouseInputCallbackImpl()
+std::multimap<int, std::vector<std::function<void(double)>*>>& InputComponent::getMouseInputCallbackImpl()
 {
 	return m_mouseMovementCallbackImpl;
 }
@@ -38,14 +38,14 @@ void InputComponent::move(moveDirection moveDirection)
 	}
 }
 
-void InputComponent::rotateAroundXAxis(float offset)
+void InputComponent::rotateAroundXAxis(double offset)
 {
-	getTransform()->rotate(vec3(0.0f, 1.0f, 0.0f), ((-offset * rotateSpeed) / 180.0f)* PI);
+	getTransform()->rotate(vec3(0.0, 1.0, 0.0), ((-offset * rotateSpeed) / 180.0)* PI);
 }
 
-void InputComponent::rotateAroundYAxis(float offset)
+void InputComponent::rotateAroundYAxis(double offset)
 {
-	getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((offset * rotateSpeed) / 180.0f)* PI);
+	getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((offset * rotateSpeed) / 180.0)* PI);
 }
 
 void InputComponent::setup()
@@ -65,8 +65,8 @@ void InputComponent::setup()
 	m_keyboardInputCallbackImpl.emplace(GLFW_KEY_D, std::vector<std::function<void()>*>{&f_moveRight});
 
 	// @TODO: key name binding
-	m_mouseMovementCallbackImpl.emplace(0, std::vector<std::function<void(float)>*>{&f_rotateAroundXAxis});
-	m_mouseMovementCallbackImpl.emplace(1, std::vector<std::function<void(float)>*>{&f_rotateAroundYAxis});
+	m_mouseMovementCallbackImpl.emplace(0, std::vector<std::function<void(double)>*>{&f_rotateAroundXAxis});
+	m_mouseMovementCallbackImpl.emplace(1, std::vector<std::function<void(double)>*>{&f_rotateAroundYAxis});
 }
 
 void InputComponent::initialize()

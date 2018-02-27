@@ -6,7 +6,7 @@ void GLMesh::initialize()
 	glGenBuffers(1, &m_VBO);
 	glGenBuffers(1, &m_IBO);
 
-	std::vector<float> l_verticesBuffer;
+	std::vector<double> l_verticesBuffer;
 
 	std::for_each(m_vertices.begin(), m_vertices.end(), [&](Vertex val)
 	{
@@ -23,22 +23,22 @@ void GLMesh::initialize()
 	glBindVertexArray(m_VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glBufferData(GL_ARRAY_BUFFER, l_verticesBuffer.size() * sizeof(float), &l_verticesBuffer[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, l_verticesBuffer.size() * sizeof(double), &l_verticesBuffer[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(float), &m_indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(double), &m_indices[0], GL_STATIC_DRAW);
 
-	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
+	// position attribute, 1st attribution with 3 * sizeof(double) bits of data
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(double), (void*)0);
 
-	// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
+	// texture attribute, 2nd attribution with 2 * sizeof(double) bits of data
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(double), (void*)(3 * sizeof(double)));
 
-	// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
+	// normal coord attribute, 3rd attribution with 3 * sizeof(double) bits of data
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(double), (void*)(5 * sizeof(double)));
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -363,11 +363,11 @@ void GLFrameBuffer::initialize()
 		glBindVertexArray(m_VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
 		// take care of std::vector's size and pointer of first element!!!
-		glBufferData(GL_ARRAY_BUFFER, m_Vertices.size() * sizeof(float), &m_Vertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, m_Vertices.size() * sizeof(double), &m_Vertices[0], GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(double), (void*)0);
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(double), (void*)(3 * sizeof(double)));
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 	}

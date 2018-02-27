@@ -263,7 +263,8 @@ textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName
 			aiMaterial->GetTexture(aiTextureType(i), 0, &l_AssString);
 			// set local path, remove slash
 			std::string l_localPath;
-			if (std::string(l_AssString.C_Str()).find_last_of('//') != std::string::npos)
+			auto l_AssString_char = std::string(l_AssString.C_Str());
+			if (l_AssString_char.find_last_of('//') != std::string::npos)
 			{
 				l_localPath = std::string(l_AssString.C_Str()).substr(std::string(l_AssString.C_Str()).find_last_of("//"));
 			}

@@ -10,7 +10,7 @@ CameraComponent::~CameraComponent()
 
 mat4 CameraComponent::getPosMatrix() const
 {
-	return getParentActor()->caclWorldPos().mul(-1.0f).toTranslationMartix();
+	return getParentActor()->caclWorldPos().mul(-1.0).toTranslationMartix();
 }
 
 mat4 CameraComponent::getRotMatrix() const
@@ -36,7 +36,7 @@ void CameraComponent::setup()
 
 void CameraComponent::initialize()
 {
-	m_projectionMatrix.initializeToPerspectiveMatrix((70.0f / 180.0f) * PI, (16.0f / 9.0f), 0.1f, 1000000.0f);
+	m_projectionMatrix.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 1000000.0);
 }
 
 void CameraComponent::update()

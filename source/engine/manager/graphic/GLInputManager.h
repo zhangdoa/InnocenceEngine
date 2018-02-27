@@ -21,9 +21,9 @@ public:
 	void addKeyboardInputCallback(int keyCode, std::function<void()>* keyboardInputCallback);
 	void addKeyboardInputCallback(int keyCode, std::vector<std::function<void()>*>& keyboardInputCallback);
 	void addKeyboardInputCallback(std::multimap<int, std::vector<std::function<void()>*>>& keyboardInputCallback);
-	void addMouseMovementCallback(int keyCode, std::function<void(float)>* mouseMovementCallback);
-	void addMouseMovementCallback(int keyCode, std::vector<std::function<void(float)>*>& mouseMovementCallback);
-	void addMouseMovementCallback(std::multimap<int, std::vector<std::function<void(float)>*>>& mouseMovementCallback);
+	void addMouseMovementCallback(int keyCode, std::function<void(double)>* mouseMovementCallback);
+	void addMouseMovementCallback(int keyCode, std::vector<std::function<void(double)>*>& mouseMovementCallback);
+	void addMouseMovementCallback(std::multimap<int, std::vector<std::function<void(double)>*>>& mouseMovementCallback);
 
 private:
 	GLInputManager() {};
@@ -40,7 +40,7 @@ private:
 	const int NUM_MOUSEBUTTONS = 5;
 
 	std::multimap<int, std::vector<std::function<void()>*>> m_keyboardInputCallback;
-	std::multimap<int, std::vector<std::function<void(float)>*>> m_mouseMovementCallback;
+	std::multimap<int, std::vector<std::function<void(double)>*>> m_mouseMovementCallback;
 
 	double m_mouseXOffset;
 	double m_mouseYOffset;
