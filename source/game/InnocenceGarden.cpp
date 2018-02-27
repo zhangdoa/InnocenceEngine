@@ -29,9 +29,9 @@ void InnocenceGarden::setup()
 	skyboxComponent.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
 	skyboxActor.addChildComponent(&skyboxComponent);
 
-	directionalLightComponent.setColor(vec3(1.0f, 1.0f, 1.0f));
+	directionalLightComponent.setColor(vec3(1.0, 1.0, 1.0));
 	directionalLightComponent.setlightType(lightType::DIRECTIONAL);
-	directionalLightComponent.setDirection(vec3(0.0f, 0.0f, -0.85f));
+	directionalLightComponent.setDirection(vec3(0.0, 0.0, -0.85));
 	SceneGraphManager::getInstance().addToLightQueue(&directionalLightComponent);
 
 	landscapeStaticMeshComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
@@ -43,15 +43,15 @@ void InnocenceGarden::setup()
 	pawnMeshComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
 	pawnActor2.addChildComponent(&pawnMeshComponent2);
 
-	playCharacter.getTransform()->setPos(vec3(0.0f, 2.0f, 5.0f));
-	landscapeActor.getTransform()->setScale(vec3(20.0f, 20.0f, 0.1f));
-	landscapeActor.getTransform()->rotate(vec3(1.0f, 0.0f, 0.0f), 90.0f);
+	playCharacter.getTransform()->setPos(vec3(0.0, 2.0, 5.0));
+	landscapeActor.getTransform()->setScale(vec3(20.0, 20.0, 0.1f));
+	landscapeActor.getTransform()->rotate(vec3(1.0, 0.0, 0.0), 90.0);
 
-	landscapeActor.getTransform()->setPos(vec3(0.0f, 0.0f, 0.0f));
-	pawnActor1.getTransform()->setScale(vec3(0.02f, 0.02f, 0.02f));
-	pawnActor1.getTransform()->setPos(vec3(0.0f, 0.2f, -1.5f));
-	pawnActor2.getTransform()->setScale(vec3(0.02f, 0.02f, 0.02f));
-	pawnActor2.getTransform()->setPos(vec3(0.0f, 0.2f, 3.5f));
+	landscapeActor.getTransform()->setPos(vec3(0.0, 0.0, 0.0));
+	pawnActor1.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
+	pawnActor1.getTransform()->setPos(vec3(0.0, 0.2, -1.5));
+	pawnActor2.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
+	pawnActor2.getTransform()->setPos(vec3(0.0, 0.2, 3.5));
 
 	setupLights();
 	setupSpheres();
@@ -93,7 +93,7 @@ void InnocenceGarden::shutdown()
 void InnocenceGarden::setupSpheres()
 {
 	unsigned int sphereMatrixDim = 8;
-	float sphereBreadthInterval = 4.0;
+	double sphereBreadthInterval = 4.0;
 	for (auto i = (unsigned int)0; i < sphereMatrixDim * sphereMatrixDim; i++)
 	{
 		sphereActors.emplace_back();
@@ -112,8 +112,8 @@ void InnocenceGarden::setupSpheres()
 	{
 		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 		{
-			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), 2.0f, (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1)));
-			sphereComponents[i * sphereMatrixDim + j].m_MRA = vec3((float)i / (float)sphereMatrixDim, (float)j / (float)sphereMatrixDim, 1.0);
+			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0, (j * sphereBreadthInterval) - 2.0 * (sphereMatrixDim - 1)));
+			sphereComponents[i * sphereMatrixDim + j].m_MRA = vec3(i / sphereMatrixDim, j / sphereMatrixDim, 1.0);
 		}
 	}	
 }
@@ -157,7 +157,7 @@ void InnocenceGarden::initializeSpheres()
 void InnocenceGarden::setupLights()
 {
 	unsigned int pointLightMatrixDim = 8;
-	float pointLightBreadthInterval = 4.0;
+	double pointLightBreadthInterval = 4.0;
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim * pointLightMatrixDim; i++)
 	{
 		pointLightActors.emplace_back();
@@ -179,22 +179,22 @@ void InnocenceGarden::setupLights()
 	}
 }
 
-void InnocenceGarden::updateLights(float seed)
+void InnocenceGarden::updateLights(double seed)
 {
 	for (auto i = (unsigned int)0; i < pointLightComponents.size(); i+=4)
 	{
-		pointLightComponents[i].setColor(vec3((sin(seed + i) + 1.0f) * 10.0f / 2.0f, 0.2f * 10.0f, 0.4f * 10.0f));
-		pointLightComponents[i + 1].setColor(vec3(0.2f * 10.0f, (sin(seed + i) + 1.0f) * 10.0f / 2.0f, 0.4f * 10.0f));
-		pointLightComponents[i + 2].setColor(vec3(0.2f * 10.0f, 0.4f * 10.0f, (sin(seed + i) + 1.0f) * 10.0f / 2.0f));
-		pointLightComponents[i + 3].setColor(vec3((sin(seed + i * 2.0 ) + 1.0f) * 10.0f / 2.0f, (sin(seed + i* 3.0) + 1.0f) * 10.0f / 2.0f, (sin(seed + i * 5.0) + 1.0f) * 10.0f / 2.0f));
+		pointLightComponents[i].setColor(vec3((sin(seed + i) + 1.0) * 10.0 / 2.0, 0.2f * 10.0, 0.4f * 10.0));
+		pointLightComponents[i + 1].setColor(vec3(0.2f * 10.0, (sin(seed + i) + 1.0) * 10.0 / 2.0, 0.4f * 10.0));
+		pointLightComponents[i + 2].setColor(vec3(0.2f * 10.0, 0.4f * 10.0, (sin(seed + i) + 1.0) * 10.0 / 2.0));
+		pointLightComponents[i + 3].setColor(vec3((sin(seed + i * 2.0 ) + 1.0) * 10.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 10.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 10.0 / 2.0));
 	}
 }
 
-void InnocenceGarden::updateSpheres(float seed)
+void InnocenceGarden::updateSpheres(double seed)
 {
 	for (auto i = (unsigned int)0; i < sphereActors.size(); i++)
 	{
-		//sphereActors[i].getTransform()->rotate(vec3(0.0f, 1.0f, 0.0f), 0.1 * i);
+		//sphereActors[i].getTransform()->rotate(vec3(0.0, 1.0, 0.0), 0.1 * i);
 		//sphereActors[i].getTransform()->setPos(sphereActors[i].getTransform()->getPos() + vec3(cos(seed) * 0.1, 0.0, 0.0));
 	}
 }

@@ -18,7 +18,7 @@ public:
 		return instance;
 	}
 
-	void printLog(float logMessage);
+	void printLog(double logMessage);
 	void printLog(std::string logMessage);
 	void printLog(const vec2& logMessage);
 	void printLog(const vec3& logMessage);

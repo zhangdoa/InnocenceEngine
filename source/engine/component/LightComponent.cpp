@@ -20,7 +20,7 @@ void LightComponent::setDirection(vec3 direction)
 	m_direction = direction;
 }
 
-void LightComponent::setRadius(float radius)
+void LightComponent::setRadius(double radius)
 {
 	m_radius = radius;
 }
@@ -51,10 +51,10 @@ vec3 LightComponent::getDirection() const
 	return m_direction;
 }
 
-float LightComponent::getRadius() const
+double LightComponent::getRadius() const
 {
-	float l_lightMaxIntensity = std::fmaxf(std::fmaxf(m_color.x, m_color.y), m_color.z);
-	return 	 (-m_linearFactor + std::sqrtf(m_linearFactor * m_linearFactor - 4.0f * m_quadraticFactor * (m_constantFactor - (256.0f / 5.0f) * l_lightMaxIntensity))) / (2.0f * m_quadraticFactor);
+	double l_lightMaxIntensity = std::fmax(std::fmax(m_color.x, m_color.y), m_color.z);
+	return 	 (-m_linearFactor + std::sqrt(m_linearFactor * m_linearFactor - 4.0 * m_quadraticFactor * (m_constantFactor - (256.0 / 5.0) * l_lightMaxIntensity))) / (2.0 * m_quadraticFactor);
 }
 
 vec3 LightComponent::getColor() const
@@ -69,11 +69,11 @@ void LightComponent::setup()
 
 void LightComponent::initialize()
 {
-	m_direction = vec3(0.0f, 0.0f, 1.0f);
-	m_constantFactor = 1.0f;
-	m_linearFactor = 0.14f;
-	m_quadraticFactor = 0.07f;
-	m_color = vec3(1.0f, 1.0f, 1.0f);
+	m_direction = vec3(0.0, 0.0, 1.0);
+	m_constantFactor = 1.0;
+	m_linearFactor = 0.14;
+	m_quadraticFactor = 0.07;
+	m_color = vec3(1.0, 1.0, 1.0);
 }
 
 void LightComponent::update()

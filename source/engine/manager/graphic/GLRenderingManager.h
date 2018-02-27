@@ -45,10 +45,10 @@ protected:
 	inline GLint getUniformLocation(const std::string &uniformName) const;
 	inline void updateUniform(const GLint uniformLocation, bool uniformValue) const;
 	inline void updateUniform(const GLint uniformLocation, int uniformValue) const;
-	inline void updateUniform(const GLint uniformLocation, float uniformValue) const;
-	inline void updateUniform(const GLint uniformLocation, float x, float y) const;
-	inline void updateUniform(const GLint uniformLocation, float x, float y, float z) const;
-	inline void updateUniform(const GLint uniformLocation, float x, float y, float z, float w);
+	inline void updateUniform(const GLint uniformLocation, double uniformValue) const;
+	inline void updateUniform(const GLint uniformLocation, double x, double y) const;
+	inline void updateUniform(const GLint uniformLocation, double x, double y, double z) const;
+	inline void updateUniform(const GLint uniformLocation, double x, double y, double z, double w);
 	inline void updateUniform(const GLint uniformLocation, const mat4& mat) const;
 
 private:
@@ -447,7 +447,7 @@ private:
 	GLuint m_environmentBRDFLUTTexture;
 	GLuint m_environmentBRDFLUTPassVAO;
 	GLuint m_environmentBRDFLUTPassVBO;
-	std::vector<float> m_environmentBRDFLUTPassVertices;
+	std::vector<double> m_environmentBRDFLUTPassVertices;
 
 	GLShader* m_environmentCapturePassShader;
 	GLShader* m_environmentConvolutionPassShader;
@@ -465,7 +465,7 @@ private:
 
 	GLuint m_finalPassVAO;
 	GLuint m_finalPassVBO;
-	std::vector<float> m_screenVertices;
+	std::vector<double> m_screenVertices;
 	GLFrameBuffer m_finalPassFrameBuffer;
 	GLShader* m_finalPassShader;
 

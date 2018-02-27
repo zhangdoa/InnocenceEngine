@@ -47,13 +47,13 @@ private:
 
 	std::vector<LightComponent> pointLightComponents;
 
-	float temp = 0.0f;
+	double temp = 0.0f;
 
 	void setupSpheres();
 	void initializeSpheres();
 	void setupLights();
-	void updateLights(float seed);	
-	void updateSpheres(float seed);
+	void updateLights(double seed);	
+	void updateSpheres(double seed);
 };
 
 InnocenceGarden g_game;

@@ -30,7 +30,7 @@ void BaseMesh::addVertices(const vec3 & pos, const vec2 & texCoord, const vec3 &
 
 }
 
-void BaseMesh::addVertices(float pos_x, float pos_y, float pos_z, float texCoord_x, float texCoord_y, float normal_x, float normal_y, float normal_z)
+void BaseMesh::addVertices(double pos_x, double pos_y, double pos_z, double texCoord_x, double texCoord_y, double normal_x, double normal_y, double normal_z)
 {
 	m_vertices.emplace_back(Vertex(vec3(pos_x, pos_y, pos_z), vec2(texCoord_x, texCoord_y), vec3(normal_x, normal_y, normal_z)));
 }
@@ -99,11 +99,11 @@ void BaseMesh::addUnitSphere()
 	{
 		for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
 		{
-			float xSegment = (float)x / (float)X_SEGMENTS;
-			float ySegment = (float)y / (float)Y_SEGMENTS;
-			float xPos = cosf(xSegment * 2.0f * PI) * sinf(ySegment * PI);
-			float yPos = cosf(ySegment * PI);
-			float zPos = sinf(xSegment * 2.0f * PI) * sinf(ySegment * PI);
+			double xSegment = (double)x / (double)X_SEGMENTS;
+			double ySegment = (double)y / (double)Y_SEGMENTS;
+			double xPos = cos(xSegment * 2.0 * PI) * sin(ySegment * PI);
+			double yPos = cos(ySegment * PI);
+			double zPos = sin(xSegment * 2.0 * PI) * sin(ySegment * PI);
 
 			Vertex l_VertexData;
 			l_VertexData.m_pos = vec3(xPos, yPos, zPos);

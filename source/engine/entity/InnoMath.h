@@ -17,14 +17,14 @@ public:
 	mat4& operator=(const mat4& rhs);
 	mat4 operator*(const mat4& rhs);
 	// only for some semantically or literally usage
-	mat4 operator*(float rhs);
+	mat4 operator*(double rhs);
 	mat4 mul(const mat4& rhs);
 	// only for some semantically or literally usage
-	mat4 mul(float rhs);
+	mat4 mul(double rhs);
 
-	void initializeToPerspectiveMatrix(float FOV, float HWRatio, float zNear, float zFar);
+	void initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar);
 	mat4 lookAt(const vec3& eyePos, const vec3& centerPos, const vec3& upDir);
-	float m[4][4];
+	double m[4][4];
 };
 
 //the w component is the last one
@@ -32,7 +32,7 @@ class quat
 {
 public:
 	quat();
-	quat(float rhsX, float rhsY, float rhsZ, float rhsW);
+	quat(double rhsX, double rhsY, double rhsZ, double rhsW);
 	quat(const quat& rhs);
 	quat& operator=(const quat& rhs);
 
@@ -40,8 +40,8 @@ public:
 
 	quat mul(const quat& rhs);
 	// only for some semantically or literally usage
-	quat mul(float rhs);
-	float length();
+	quat mul(double rhs);
+	double length();
 	quat normalize();
 
 	bool operator!=(const quat& rhs);
@@ -49,17 +49,17 @@ public:
 
 	mat4 toRotationMartix();
 
-	float x;
-	float y;
-	float z;
-	float w;
+	double x;
+	double y;
+	double z;
+	double w;
 };
 
 class vec3
 {
 public:
 	vec3();
-	vec3(float rhsX, float rhsY, float rhsZ);
+	vec3(double rhsX, double rhsY, double rhsZ);
 	vec3(const vec3& rhs);
 	vec3& operator=(const vec3& rhs);
 
@@ -67,19 +67,19 @@ public:
 
 	vec3 add(const vec3& rhs);
 	vec3 operator+(const vec3& rhs);
-	vec3 add(float rhs);
-	vec3 operator+(float rhs);
+	vec3 add(double rhs);
+	vec3 operator+(double rhs);
 	vec3 sub(const vec3& rhs);
 	vec3 operator-(const vec3& rhs);
-	vec3 sub(float rhs);
-	vec3 operator-(float rhs);
-	float dot(const vec3& rhs);
-	float operator*(const vec3& rhs);
+	vec3 sub(double rhs);
+	vec3 operator-(double rhs);
+	double dot(const vec3& rhs);
+	double operator*(const vec3& rhs);
 	vec3 cross(const vec3& rhs);
 	vec3 mul(const vec3& rhs);
-	vec3 mul(float rhs);
-	vec3 operator*(float rhs);
-	float length();
+	vec3 mul(double rhs);
+	vec3 operator*(double rhs);
+	double length();
 	vec3 normalize();
 
 	bool operator!=(const vec3& rhs);
@@ -88,16 +88,16 @@ public:
 	mat4 toTranslationMartix();
 	mat4 toScaleMartix();
 
-	float x;
-	float y;
-	float z;
+	double x;
+	double y;
+	double z;
 };
 
 class vec2
 {
 public:
 	vec2();
-	vec2(float rhsX, float rhsY);
+	vec2(double rhsX, double rhsY);
 	vec2(const vec2& rhs);
 	vec2& operator=(const vec2& rhs);
 
@@ -105,12 +105,12 @@ public:
 
 	vec2 add(const vec2& rhs);
 	vec2 sub(const vec2& rhs);
-	float dot(const vec2& rhs);
-	float length();
+	double dot(const vec2& rhs);
+	double length();
 	vec2 normalize();
 
-	float x;
-	float y;
+	double x;
+	double y;
 };
 
 class Vertex

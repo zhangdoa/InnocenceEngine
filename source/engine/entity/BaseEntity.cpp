@@ -21,10 +21,10 @@ void Transform::update()
 	m_oldScale = m_scale;
 }
 
-void Transform::rotate(const vec3 & axis, float angle)
+void Transform::rotate(const vec3 & axis, double angle)
 {
-	float sinHalfAngle = sinf((angle * PI / 180.0f) / 2.0f);
-	float cosHalfAngle = cosf((angle * PI / 180.0f) / 2.0f);
+	double sinHalfAngle = sin((angle * PI / 180.0) / 2.0);
+	double cosHalfAngle = cos((angle * PI / 180.0) / 2.0);
 	// get final rotation
 	m_rot = quat(axis.x * sinHalfAngle, axis.y * sinHalfAngle, axis.z * sinHalfAngle, cosHalfAngle).mul(m_rot);
 }

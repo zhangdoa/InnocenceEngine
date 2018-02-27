@@ -53,29 +53,29 @@ inline void GLShader::updateUniform(const GLint uniformLocation, int uniformValu
 	glUniform1i(uniformLocation, uniformValue);
 }
 
-inline void GLShader::updateUniform(const GLint uniformLocation, float uniformValue) const
+inline void GLShader::updateUniform(const GLint uniformLocation, double uniformValue) const
 {
-	glUniform1f(uniformLocation, uniformValue);
+	glUniform1d(uniformLocation, uniformValue);
 }
 
-inline void GLShader::updateUniform(const GLint uniformLocation, float x, float y) const
+inline void GLShader::updateUniform(const GLint uniformLocation, double x, double y) const
 {
-	glUniform2f(uniformLocation, x, y);
+	glUniform2d(uniformLocation, x, y);
 }
 
-inline void GLShader::updateUniform(const GLint uniformLocation, float x, float y, float z) const
+inline void GLShader::updateUniform(const GLint uniformLocation, double x, double y, double z) const
 {
-	glUniform3f(uniformLocation, x, y, z);
+	glUniform3d(uniformLocation, x, y, z);
 }
 
-inline void GLShader::updateUniform(const GLint uniformLocation, float x, float y, float z, float w)
+inline void GLShader::updateUniform(const GLint uniformLocation, double x, double y, double z, double w)
 {
-	glUniform4f(uniformLocation, x, y, z, w);
+	glUniform4d(uniformLocation, x, y, z, w);
 }
 
 inline void GLShader::updateUniform(const GLint uniformLocation, const mat4 & mat) const
 {
-	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat.m[0][0]);
+	glUniformMatrix4dv(uniformLocation, 1, GL_FALSE, &mat.m[0][0]);
 }
 
 
@@ -573,7 +573,7 @@ void EnvironmentCapturePassPBSShader::init()
 void EnvironmentCapturePassPBSShader::shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, GL3DHDRTexture& threeDTexture)
 {
 	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix((float)((90.0/ 180.0) * PI), 1.0f, 0.1f, 10.0f);
+	captureProjection.initializeToPerspectiveMatrix((90.0/ 180.0) * PI, 1.0f, 0.1f, 10.0f);
 	std::vector<mat4> captureViews =
 	{
 		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
@@ -627,7 +627,7 @@ void EnvironmentConvolutionPassPBSShader::init()
 void EnvironmentConvolutionPassPBSShader::shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture & threeDCapturedTexture, GL3DHDRTexture & threeDConvolutedTexture)
 {
 	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix((float)((90.0 / 180.0) * PI), 1.0f, 0.1f, 10.0f);
+	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
 
 	std::vector<mat4> captureViews =
 	{
@@ -682,7 +682,7 @@ void EnvironmentPreFilterPassPBSShader::init()
 void EnvironmentPreFilterPassPBSShader::shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture & threeDCapturedTexture, GL3DHDRTexture & threeDPreFiltedTexture)
 {
 	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix((float)((90.0 / 180.0) * PI), 1.0f, 0.1f, 10.0f);
+	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
 
 	std::vector<mat4> captureViews =
 	{
@@ -715,7 +715,7 @@ void EnvironmentPreFilterPassPBSShader::shaderDraw(std::vector<VisibleComponent*
 					glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
 					glViewport(0, 0, mipWidth, mipHeight);
 
-					float roughness = (float)mip / (float)(maxMipLevels - 1);
+					double roughness = (double)mip / (double)(maxMipLevels - 1);
 					updateUniform(m_uni_roughness, roughness);
 					for (unsigned int i = 0; i < 6; ++i)
 					{
@@ -1037,11 +1037,11 @@ void GLRenderingManager::initializeBackgroundPass()
 	glBindVertexArray(m_environmentBRDFLUTPassVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, m_environmentBRDFLUTPassVBO);
 	// take care of std::vector's size and pointer of first element!!!
-	glBufferData(GL_ARRAY_BUFFER, m_environmentBRDFLUTPassVertices.size() * sizeof(float), &m_environmentBRDFLUTPassVertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, m_environmentBRDFLUTPassVertices.size() * sizeof(double), &m_environmentBRDFLUTPassVertices[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(double), (void*)0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(double), (void*)(3 * sizeof(double)));
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
@@ -1186,11 +1186,11 @@ void GLRenderingManager::initializeFinalPass()
 	glBindVertexArray(m_finalPassVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, m_finalPassVBO);
 	// take care of std::vector's size and pointer of first element!!!
-	glBufferData(GL_ARRAY_BUFFER, m_screenVertices.size() * sizeof(float), &m_screenVertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, m_screenVertices.size() * sizeof(double), &m_screenVertices[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(double), (void*)0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(double), (void*)(3 * sizeof(double)));
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }

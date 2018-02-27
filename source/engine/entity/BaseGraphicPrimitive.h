@@ -25,7 +25,7 @@ public:
 
 	void addVertices(const Vertex& Vertex);
 	void addVertices(const vec3 & pos, const vec2 & texCoord, const vec3 & normal);
-	void addVertices(float pos_x, float pos_y, float pos_z, float texCoord_x, float texCoord_y, float normal_x, float normal_y, float normal_z);
+	void addVertices(double pos_x, double pos_y, double pos_z, double texCoord_x, double texCoord_y, double normal_x, double normal_y, double normal_z);
 	void addIndices(unsigned int index);
 
 	void addUnitCube();

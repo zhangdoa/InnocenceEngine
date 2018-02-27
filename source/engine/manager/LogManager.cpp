@@ -1,7 +1,7 @@
 #include "LogManager.h"
 #include "TimeManager.h"
 
-void LogManager::printLog(float logMessage)
+void LogManager::printLog(double logMessage)
 {
 	std::cout << "[" << TimeManager::getInstance().getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }

@@ -18,12 +18,12 @@ public:
 
 	const lightType getLightType();
 	vec3 getDirection() const;
-	float getRadius() const;
+	double getRadius() const;
 	vec3 getColor() const;
 
 	void setlightType(lightType lightType);
 	void setDirection(vec3 direction);
-	void setRadius(float radius);
+	void setRadius(double radius);
 	void setColor(const vec3& color);
 
 	void getLightPosMatrix(mat4 & lightPosMatrix);
@@ -34,10 +34,10 @@ public:
 private:
 	lightType m_lightType = lightType::POINT;
 	vec3 m_direction;
-	float m_radius;
-	float m_constantFactor;
-	float m_linearFactor;
-	float m_quadraticFactor;
+	double m_radius;
+	double m_constantFactor;
+	double m_linearFactor;
+	double m_quadraticFactor;
 	vec3 m_color;
 	//ShadowMapData m_shadowMapData;
 };
