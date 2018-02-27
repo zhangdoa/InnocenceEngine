@@ -146,14 +146,14 @@ mat4 vec3::toTranslationMartix()
 {
 	mat4 l_m;
 
-	l_m.m[0][0] = 1;
-	l_m.m[1][1] = 1;
-	l_m.m[2][2] = 1;
-	l_m.m[3][3] = 1;
+	l_m.m[0][0] = (float)1;
+	l_m.m[1][1] = (float)1;
+	l_m.m[2][2] = (float)1;
+	l_m.m[3][3] = (float)1;
 
-	l_m.m[3][0] = x;
-	l_m.m[3][1] = y;
-	l_m.m[3][2] = z;
+	l_m.m[3][0] = (float)x;
+	l_m.m[3][1] = (float)y;
+	l_m.m[3][2] = (float)z;
 
 	return l_m;
 }
@@ -161,10 +161,10 @@ mat4 vec3::toTranslationMartix()
 mat4 vec3::toScaleMartix()
 {
 	mat4 l_m;
-	l_m.m[0][0] = x;
-	l_m.m[1][1] = y;
-	l_m.m[2][2] = z;
-	l_m.m[3][3] = 1;
+	l_m.m[0][0] = (float)x;
+	l_m.m[1][1] = (float)y;
+	l_m.m[2][2] = (float)z;
+	l_m.m[3][3] = (float)1;
 	return l_m;
 }
 
@@ -328,25 +328,25 @@ mat4 quat::toRotationMartix()
 	//@TODO:optimize
 	mat4 l_m;
 
-	l_m.m[0][0] = 1 - 2 * y * y - 2 * z * z;
-	l_m.m[1][0] = 2 * x * y - 2 * z * w;
-	l_m.m[2][0] = 2 * x * z + 2 * y * w;
-	l_m.m[3][0] = 0;
+	l_m.m[0][0] = (float)(1 - 2 * y * y - 2 * z * z);
+	l_m.m[1][0] = (float)(2 * x * y - 2 * z * w);
+	l_m.m[2][0] = (float)(2 * x * z + 2 * y * w);
+	l_m.m[3][0] = (float)(0);
 
-	l_m.m[0][1] = 2 * x * y + 2 * z * w;
-	l_m.m[1][1] = 1 - 2 * x * x - 2 * z * z;
-	l_m.m[2][1] = 2 * y * z - 2 * x * w;
-	l_m.m[3][1] = 0;
+	l_m.m[0][1] = (float)(2 * x * y + 2 * z * w);
+	l_m.m[1][1] = (float)(1 - 2 * x * x - 2 * z * z);
+	l_m.m[2][1] = (float)(2 * y * z - 2 * x * w);
+	l_m.m[3][1] = (float)(0);
 
-	l_m.m[0][2] = 2 * x * z - 2 * y * w;
-	l_m.m[1][2] = 2 * y * z + 2 * x * w;
-	l_m.m[2][2] = 1 - 2 * x * x - 2 * y * y;
-	l_m.m[3][2] = 0;
+	l_m.m[0][2] = (float)(2 * x * z - 2 * y * w);
+	l_m.m[1][2] = (float)(2 * y * z + 2 * x * w);
+	l_m.m[2][2] = (float)(1 - 2 * x * x - 2 * y * y);
+	l_m.m[3][2] = (float)(0);
 
-	l_m.m[0][3] = 0;
-	l_m.m[1][3] = 0;
-	l_m.m[2][3] = 0;
-	l_m.m[3][3] = 1;
+	l_m.m[0][3] = (float)(0);
+	l_m.m[1][3] = (float)(0);
+	l_m.m[2][3] = (float)(0);
+	l_m.m[3][3] = (float)(1);
 
 	return l_m;
 }
@@ -446,22 +446,22 @@ mat4 mat4::operator*(double rhs)
 	//@TODO:optimize
 	mat4 l_m;
 
-	l_m.m[0][0] = rhs * m[0][0];
-	l_m.m[0][1] = rhs * m[0][1];
-	l_m.m[0][2] = rhs * m[0][2];
-	l_m.m[0][3] = rhs * m[0][3];
-	l_m.m[1][0] = rhs * m[1][0];
-	l_m.m[1][1] = rhs * m[1][1];
-	l_m.m[1][2] = rhs * m[1][2];
-	l_m.m[1][3] = rhs * m[1][3];
-	l_m.m[2][0] = rhs * m[2][0];
-	l_m.m[2][1] = rhs * m[2][1];
-	l_m.m[2][2] = rhs * m[2][2];
-	l_m.m[2][3] = rhs * m[2][3];
-	l_m.m[3][0] = rhs * m[3][0];
-	l_m.m[3][1] = rhs * m[3][1];
-	l_m.m[3][2] = rhs * m[3][2];
-	l_m.m[3][3] = rhs * m[3][3];
+	l_m.m[0][0] = (float)rhs * m[0][0];
+	l_m.m[0][1] = (float)rhs * m[0][1];
+	l_m.m[0][2] = (float)rhs * m[0][2];
+	l_m.m[0][3] = (float)rhs * m[0][3];
+	l_m.m[1][0] = (float)rhs * m[1][0];
+	l_m.m[1][1] = (float)rhs * m[1][1];
+	l_m.m[1][2] = (float)rhs * m[1][2];
+	l_m.m[1][3] = (float)rhs * m[1][3];
+	l_m.m[2][0] = (float)rhs * m[2][0];
+	l_m.m[2][1] = (float)rhs * m[2][1];
+	l_m.m[2][2] = (float)rhs * m[2][2];
+	l_m.m[2][3] = (float)rhs * m[2][3];
+	l_m.m[3][0] = (float)rhs * m[3][0];
+	l_m.m[3][1] = (float)rhs * m[3][1];
+	l_m.m[3][2] = (float)rhs * m[3][2];
+	l_m.m[3][3] = (float)rhs * m[3][3];
 
 	return l_m;
 }
@@ -499,33 +499,33 @@ mat4 mat4::mul(double rhs)
 	//@TODO:optimize
 	mat4 l_m;
 
-	l_m.m[0][0] = rhs * m[0][0];
-	l_m.m[0][1] = rhs * m[0][1];
-	l_m.m[0][2] = rhs * m[0][2];
-	l_m.m[0][3] = rhs * m[0][3];
-	l_m.m[1][0] = rhs * m[1][0];
-	l_m.m[1][1] = rhs * m[1][1];
-	l_m.m[1][2] = rhs * m[1][2];
-	l_m.m[1][3] = rhs * m[1][3];
-	l_m.m[2][0] = rhs * m[2][0];
-	l_m.m[2][1] = rhs * m[2][1];
-	l_m.m[2][2] = rhs * m[2][2];
-	l_m.m[2][3] = rhs * m[2][3];
-	l_m.m[3][0] = rhs * m[3][0];
-	l_m.m[3][1] = rhs * m[3][1];
-	l_m.m[3][2] = rhs * m[3][2];
-	l_m.m[3][3] = rhs * m[3][3];
+	l_m.m[0][0] = (float)rhs * m[0][0];
+	l_m.m[0][1] = (float)rhs * m[0][1];
+	l_m.m[0][2] = (float)rhs * m[0][2];
+	l_m.m[0][3] = (float)rhs * m[0][3];
+	l_m.m[1][0] = (float)rhs * m[1][0];
+	l_m.m[1][1] = (float)rhs * m[1][1];
+	l_m.m[1][2] = (float)rhs * m[1][2];
+	l_m.m[1][3] = (float)rhs * m[1][3];
+	l_m.m[2][0] = (float)rhs * m[2][0];
+	l_m.m[2][1] = (float)rhs * m[2][1];
+	l_m.m[2][2] = (float)rhs * m[2][2];
+	l_m.m[2][3] = (float)rhs * m[2][3];
+	l_m.m[3][0] = (float)rhs * m[3][0];
+	l_m.m[3][1] = (float)rhs * m[3][1];
+	l_m.m[3][2] = (float)rhs * m[3][2];
+	l_m.m[3][3] = (float)rhs * m[3][3];
 
 	return l_m;
 }
 
 void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar)
 {
-	m[0][0] = 1 / (tan(FOV / 2) * HWRatio);
-	m[1][1] = 1 / tan(FOV / 2);
-	m[2][2] = -(zFar + zNear) / ((zFar - zNear));
-	m[3][2] = -(2 * zFar *zNear) / ((zFar - zNear));
-	m[2][3] = -1;
+	m[0][0] = (float)(1 / (tan(FOV / 2) * HWRatio));
+	m[1][1] = (float)(1 / tan(FOV / 2));
+	m[2][2] = (float)(-(zFar + zNear) / ((zFar - zNear)));
+	m[3][2] = (float)(-(2 * zFar *zNear) / ((zFar - zNear)));
+	m[2][3] = -1.0f;
 }
 
 mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDir)
@@ -547,22 +547,22 @@ mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDi
 	l_X = l_X.normalize();
 	l_Y = l_Y.normalize();
 
-	l_m.m[0][0] = l_X.x;
-	l_m.m[1][0] = l_X.y;
-	l_m.m[2][0] = l_X.z;
-	l_m.m[3][0] = -l_X.dot(eyePos);
-	l_m.m[0][1] = l_Y.x;
-	l_m.m[1][1] = l_Y.y;
-	l_m.m[2][1] = l_Y.z;
-	l_m.m[3][1] = -l_Y.dot(eyePos);
-	l_m.m[0][2] = l_Z.x;
-	l_m.m[1][2] = l_Z.y;
-	l_m.m[2][2] = l_Z.z;
-	l_m.m[3][2] = -l_Z.dot(eyePos);
-	l_m.m[0][3] = 0.0;
-	l_m.m[1][3] = 0.0;
-	l_m.m[2][3] = 0.0;
-	l_m.m[3][3] = 1.0;
+	l_m.m[0][0] = (float)l_X.x;
+	l_m.m[1][0] = (float)l_X.y;
+	l_m.m[2][0] = (float)l_X.z;
+	l_m.m[3][0] = (float)-l_X.dot(eyePos);
+	l_m.m[0][1] = (float)l_Y.x;
+	l_m.m[1][1] = (float)l_Y.y;
+	l_m.m[2][1] = (float)l_Y.z;
+	l_m.m[3][1] = (float)-l_Y.dot(eyePos);
+	l_m.m[0][2] = (float)l_Z.x;
+	l_m.m[1][2] = (float)l_Z.y;
+	l_m.m[2][2] = (float)l_Z.z;
+	l_m.m[3][2] = (float)-l_Z.dot(eyePos);
+	l_m.m[0][3] = 0.0f;
+	l_m.m[1][3] = 0.0f;
+	l_m.m[2][3] = 0.0f;
+	l_m.m[3][3] = 1.0f;
 	
 	return l_m;
 }

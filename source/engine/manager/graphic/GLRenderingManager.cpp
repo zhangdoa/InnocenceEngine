@@ -55,27 +55,27 @@ inline void GLShader::updateUniform(const GLint uniformLocation, int uniformValu
 
 inline void GLShader::updateUniform(const GLint uniformLocation, double uniformValue) const
 {
-	glUniform1d(uniformLocation, uniformValue);
+	glUniform1f(uniformLocation, uniformValue);
 }
 
 inline void GLShader::updateUniform(const GLint uniformLocation, double x, double y) const
 {
-	glUniform2d(uniformLocation, x, y);
+	glUniform2f(uniformLocation, x, y);
 }
 
 inline void GLShader::updateUniform(const GLint uniformLocation, double x, double y, double z) const
 {
-	glUniform3d(uniformLocation, x, y, z);
+	glUniform3f(uniformLocation, x, y, z);
 }
 
 inline void GLShader::updateUniform(const GLint uniformLocation, double x, double y, double z, double w)
 {
-	glUniform4d(uniformLocation, x, y, z, w);
+	glUniform4f(uniformLocation, x, y, z, w);
 }
 
 inline void GLShader::updateUniform(const GLint uniformLocation, const mat4 & mat) const
 {
-	glUniformMatrix4dv(uniformLocation, 1, GL_FALSE, &mat.m[0][0]);
+	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat.m[0][0]);
 }
 
 
@@ -1037,11 +1037,11 @@ void GLRenderingManager::initializeBackgroundPass()
 	glBindVertexArray(m_environmentBRDFLUTPassVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, m_environmentBRDFLUTPassVBO);
 	// take care of std::vector's size and pointer of first element!!!
-	glBufferData(GL_ARRAY_BUFFER, m_environmentBRDFLUTPassVertices.size() * sizeof(double), &m_environmentBRDFLUTPassVertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, m_environmentBRDFLUTPassVertices.size() * sizeof(float), &m_environmentBRDFLUTPassVertices[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(double), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(double), (void*)(3 * sizeof(double)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
@@ -1186,11 +1186,11 @@ void GLRenderingManager::initializeFinalPass()
 	glBindVertexArray(m_finalPassVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, m_finalPassVBO);
 	// take care of std::vector's size and pointer of first element!!!
-	glBufferData(GL_ARRAY_BUFFER, m_screenVertices.size() * sizeof(double), &m_screenVertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, m_screenVertices.size() * sizeof(float), &m_screenVertices[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(double), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(double), (void*)(3 * sizeof(double)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
