@@ -113,7 +113,7 @@ void InnocenceGarden::setupSpheres()
 		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 		{
 			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0, (j * sphereBreadthInterval) - 2.0 * (sphereMatrixDim - 1)));
-			sphereComponents[i * sphereMatrixDim + j].m_MRA = vec3(i / sphereMatrixDim, j / sphereMatrixDim, 1.0);
+			sphereComponents[i * sphereMatrixDim + j].m_MRA = vec3((double)(i) / (double)(sphereMatrixDim), (double)(j) / (double)(sphereMatrixDim), 1.0);
 		}
 	}	
 }

@@ -447,7 +447,7 @@ private:
 	GLuint m_environmentBRDFLUTTexture;
 	GLuint m_environmentBRDFLUTPassVAO;
 	GLuint m_environmentBRDFLUTPassVBO;
-	std::vector<double> m_environmentBRDFLUTPassVertices;
+	std::vector<float> m_environmentBRDFLUTPassVertices;
 
 	GLShader* m_environmentCapturePassShader;
 	GLShader* m_environmentConvolutionPassShader;
@@ -465,7 +465,7 @@ private:
 
 	GLuint m_finalPassVAO;
 	GLuint m_finalPassVBO;
-	std::vector<double> m_screenVertices;
+	std::vector<float> m_screenVertices;
 	GLFrameBuffer m_finalPassFrameBuffer;
 	GLShader* m_finalPassShader;
 

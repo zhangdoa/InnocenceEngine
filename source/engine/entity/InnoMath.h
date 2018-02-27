@@ -21,10 +21,10 @@ public:
 	mat4 mul(const mat4& rhs);
 	// only for some semantically or literally usage
 	mat4 mul(double rhs);
-
+	 
 	void initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar);
 	mat4 lookAt(const vec3& eyePos, const vec3& centerPos, const vec3& upDir);
-	double m[4][4];
+	float m[4][4];
 };
 
 //the w component is the last one
