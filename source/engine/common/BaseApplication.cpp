@@ -4,12 +4,19 @@ void BaseApplication::setup()
 {
 	m_pCoreManager = new CoreManager();
 	m_pCoreManager->setup();
+	setStatus(objectStatus::ALIVE);
 }
 
 void BaseApplication::initialize()
 {
-	m_pCoreManager->initialize();
-	setStatus(objectStatus::ALIVE);
+	if (m_pCoreManager->getStatus() == objectStatus::ALIVE)
+	{
+		m_pCoreManager->initialize();
+	}
+	else
+	{
+		setStatus(objectStatus::STANDBY);
+	}
 }
 
 void BaseApplication::update()

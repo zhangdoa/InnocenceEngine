@@ -82,11 +82,11 @@ void RenderingManager::initialize()
 		m_childManager[i].get()->initialize();
 	}
 
-	for (size_t i = 0; i < SceneGraphManager::getInstance().getInputQueue().size(); i++)
+	for (size_t i = 0; i < m_InputComponents.size(); i++)
 	{
 		// @TODO: multi input components need to register to multi map
-		GLInputManager::getInstance().addKeyboardInputCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getKeyboardInputCallbackImpl());
-		GLInputManager::getInstance().addMouseMovementCallback(SceneGraphManager::getInstance().getInputQueue()[i]->getMouseInputCallbackImpl());
+		GLInputManager::getInstance().addKeyboardInputCallback(m_InputComponents[i]->getKeyboardInputCallbackImpl());
+		GLInputManager::getInstance().addMouseMovementCallback(m_InputComponents[i]->getMouseInputCallbackImpl());
 	}
 
 	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_Q, &f_changeDrawPolygonMode);
@@ -131,5 +131,5 @@ void RenderingManager::render()
 	GLRenderingManager::getInstance().update();
 	
 	//defer render
-	GLRenderingManager::getInstance().Render(SceneGraphManager::getInstance().getCameraQueue(), SceneGraphManager::getInstance().getLightQueue(), SceneGraphManager::getInstance().getRenderingQueue());
+	GLRenderingManager::getInstance().Render(m_CameraComponents, m_LightComponents, m_VisibleComponents);
 }

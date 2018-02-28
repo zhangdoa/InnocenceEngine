@@ -21,35 +21,40 @@ void InnocenceGarden::setup()
 	rootActor.addChildActor(&pawnActor1);
 	rootActor.addChildActor(&pawnActor2);
 
-	SceneGraphManager::getInstance().addToCameraQueue(&playCharacter.getCameraComponent());
-
-	SceneGraphManager::getInstance().addToInputQueue(&playCharacter.getInputComponent());
+	playCharacter.getTransform()->setPos(vec3(0.0, 2.0, 5.0));
 
 	skyboxComponent.m_visiblilityType = visiblilityType::SKYBOX;
+	skyboxComponent.m_meshType = meshType::CUBE;
 	skyboxComponent.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
+	skyboxComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl/Brooklyn_Bridge_Planks_2k.hdr"));
 	skyboxActor.addChildComponent(&skyboxComponent);
 
 	directionalLightComponent.setColor(vec3(1.0, 1.0, 1.0));
 	directionalLightComponent.setlightType(lightType::DIRECTIONAL);
 	directionalLightComponent.setDirection(vec3(0.0, 0.0, -0.85));
-	SceneGraphManager::getInstance().addToLightQueue(&directionalLightComponent);
 
 	landscapeStaticMeshComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
+	landscapeStaticMeshComponent.m_meshType = meshType::CUBE;
 	landscapeActor.addChildComponent(&landscapeStaticMeshComponent);
-
-	pawnMeshComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
-	pawnActor1.addChildComponent(&pawnMeshComponent1);
-
-	pawnMeshComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
-	pawnActor2.addChildComponent(&pawnMeshComponent2);
-
-	playCharacter.getTransform()->setPos(vec3(0.0, 2.0, 5.0));
 	landscapeActor.getTransform()->setScale(vec3(20.0, 20.0, 0.1f));
 	landscapeActor.getTransform()->rotate(vec3(1.0, 0.0, 0.0), 90.0);
-
 	landscapeActor.getTransform()->setPos(vec3(0.0, 0.0, 0.0));
+
+	pawnMeshComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
+	pawnMeshComponent1.m_meshType = meshType::CUSTOM;
+	pawnActor1.addChildComponent(&pawnMeshComponent1);
 	pawnActor1.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
 	pawnActor1.getTransform()->setPos(vec3(0.0, 0.2, -1.5));
+
+	pawnMeshComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
+	pawnMeshComponent1.m_meshType = meshType::CUSTOM;
+	pawnMeshComponent2.m_meshFileName = "lantern/lantern.obj";
+	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "lantern/lantern_Normal_OpenGL.jpg"));
+	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lantern/lantern_Base_Color.jpg"));
+	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "lantern/lantern_Metallic.jpg"));
+	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "lantern/lantern_Roughness.jpg"));
+	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "lantern/lantern_Mixed_AO.jpg"));
+	pawnActor2.addChildComponent(&pawnMeshComponent2);
 	pawnActor2.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
 	pawnActor2.getTransform()->setPos(vec3(0.0, 0.2, 3.5));
 
@@ -61,19 +66,6 @@ void InnocenceGarden::setup()
 
 void InnocenceGarden::initialize()
 {	
-	initializeSpheres();
-
-	AssetManager::getInstance().loadAsset("lantern/lantern.obj", pawnMeshComponent2);
-	AssetManager::getInstance().loadAsset("lantern/lantern_Normal_OpenGL.jpg", textureType::NORMAL, pawnMeshComponent2);
-	AssetManager::getInstance().loadAsset("lantern/lantern_Base_Color.jpg", textureType::ALBEDO, pawnMeshComponent2);
-	AssetManager::getInstance().loadAsset("lantern/lantern_Metallic.jpg", textureType::METALLIC, pawnMeshComponent2);
-	AssetManager::getInstance().loadAsset("lantern/lantern_Roughness.jpg", textureType::ROUGHNESS, pawnMeshComponent2);
-	AssetManager::getInstance().loadAsset("lantern/lantern_Mixed_AO.jpg", textureType::AMBIENT_OCCLUSION, pawnMeshComponent2);
-
-	AssetManager::getInstance().addUnitMesh(skyboxComponent, unitMeshType::CUBE);
-	AssetManager::getInstance().loadAsset("ibl/Brooklyn_Bridge_Planks_2k.hdr", textureType::EQUIRETANGULAR, skyboxComponent);
-	AssetManager::getInstance().addUnitMesh(landscapeStaticMeshComponent, unitMeshType::CUBE);
-
 	rootActor.initialize();
 }
 
@@ -90,6 +82,26 @@ void InnocenceGarden::shutdown()
 	rootActor.shutdown();
 }
 
+std::vector<CameraComponent*>& InnocenceGarden::getCameraComponents()
+{
+	return m_cameraComponents;
+}
+
+std::vector<InputComponent*>& InnocenceGarden::getInputComponents()
+{
+	return m_inputComponents;
+}
+
+std::vector<LightComponent*>& InnocenceGarden::getLightComponents()
+{
+	return m_lightComponents;
+}
+
+std::vector<VisibleComponent*>& InnocenceGarden::getVisibleComponents()
+{
+	return m_visibleComponents;
+}
+
 void InnocenceGarden::setupSpheres()
 {
 	unsigned int sphereMatrixDim = 8;
@@ -98,33 +110,14 @@ void InnocenceGarden::setupSpheres()
 	{
 		sphereActors.emplace_back();
 		sphereComponents.emplace_back();
-	}
-	for (auto i = (unsigned int)0; i < sphereComponents.size(); i++)
-	{
-		sphereComponents[i].m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 		sphereComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
+		sphereComponents[i].m_meshType = meshType::SPHERE;
+		sphereComponents[i].m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 		sphereComponents[i].m_useTexture = false;
 		rootActor.addChildActor(&sphereActors[i]);
 		sphereActors[i].addChildComponent(&sphereComponents[i]);
 	}
-
-	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
-	{
-		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
-		{
-			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0, (j * sphereBreadthInterval) - 2.0 * (sphereMatrixDim - 1)));
-			sphereComponents[i * sphereMatrixDim + j].m_MRA = vec3((double)(i) / (double)(sphereMatrixDim), (double)(j) / (double)(sphereMatrixDim), 1.0);
-		}
-	}	
-}
-
-void InnocenceGarden::initializeSpheres()
-{
-	for (auto i = (unsigned int)0; i < sphereComponents.size(); i++)
-	{
-		AssetManager::getInstance().addUnitMesh(sphereComponents[i], unitMeshType::SPHERE);
-	}
-	for (auto i = (unsigned int)0; i < sphereComponents.size(); i+=4)
+	for (auto i = (unsigned int)0; i < sphereComponents.size(); i += 4)
 	{
 		////Copper
 		sphereComponents[i].m_albedo = vec3(0.95, 0.64, 0.54);
@@ -152,6 +145,14 @@ void InnocenceGarden::initializeSpheres()
 		//AssetManager::getInstance().loadAsset("PBS/roughrock1-roughness.png", textureType::ROUGHNESS, sphereComponents[i + 3]);
 		//AssetManager::getInstance().loadAsset("PBS/roughrock1-ao.png", textureType::AMBIENT_OCCLUSION, sphereComponents[i + 3]);
 	}
+	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
+	{
+		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
+		{
+			sphereActors[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0, (j * sphereBreadthInterval) - 2.0 * (sphereMatrixDim - 1)));
+			sphereComponents[i * sphereMatrixDim + j].m_MRA = vec3((double)(i) / (double)(sphereMatrixDim), (double)(j) / (double)(sphereMatrixDim), 1.0);
+		}
+	}	
 }
 
 void InnocenceGarden::setupLights()
@@ -167,8 +168,6 @@ void InnocenceGarden::setupLights()
 	{
 		rootActor.addChildActor(&pointLightActors[i]);
 		pointLightActors[i].addChildComponent(&pointLightComponents[i]);
-
-		SceneGraphManager::getInstance().addToLightQueue(&pointLightComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim; i++)
 	{

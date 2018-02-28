@@ -1,9 +1,6 @@
 #pragma once
-#include "common/stdafx.h"
 #include "common/BaseGame.hpp"
 #include "entity/BaseEntity.h"
-#include "manager/CoreManager.h"
-
 #include "PlayerCharacter.h"
 
 class InnocenceGarden : public BaseGame
@@ -16,6 +13,10 @@ public:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
+	std::vector<CameraComponent*>& getCameraComponents() override;
+	std::vector<InputComponent*>& getInputComponents() override;
+	std::vector<LightComponent*>& getLightComponents() override;
+	std::vector<VisibleComponent*>& getVisibleComponents() override;
 
 private:
 	BaseActor rootActor;
@@ -23,9 +24,6 @@ private:
 	PlayerCharacter playCharacter;
 	BaseActor skyboxActor;
 	BaseActor directionalLightActor;
-	BaseActor pointLightActor1;
-	BaseActor pointLightActor2;
-	BaseActor pointLightActor3;
 
 	BaseActor landscapeActor;
 	BaseActor pawnActor1;
@@ -47,10 +45,14 @@ private:
 
 	std::vector<LightComponent> pointLightComponents;
 
+	std::vector<CameraComponent*> m_cameraComponents;
+	std::vector<InputComponent*> m_inputComponents;
+	std::vector<LightComponent*> m_lightComponents;
+	std::vector<VisibleComponent*> m_visibleComponents;
+
 	double temp = 0.0f;
 
 	void setupSpheres();
-	void initializeSpheres();
 	void setupLights();
 	void updateLights(double seed);	
 	void updateSpheres(double seed);

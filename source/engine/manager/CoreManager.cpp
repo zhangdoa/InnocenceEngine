@@ -7,7 +7,6 @@ void CoreManager::setup()
 	m_childEventManager.emplace_back(m_pLogManager);
 	m_childEventManager.emplace_back(m_pTaskManager);
 	m_childEventManager.emplace_back(m_pTimeManager);
-	m_childEventManager.emplace_back(m_pSceneGraphManager);
 	m_childEventManager.emplace_back(m_pRenderingManager);
 	m_childEventManager.emplace_back(m_pAssetManager);
 
@@ -16,31 +15,30 @@ void CoreManager::setup()
 	m_pLogManager = m_pMemoryManager->spawn<LogManager>();
 	m_pTaskManager = m_pMemoryManager->spawn<TaskManager>();
 	m_pTimeManager = m_pMemoryManager->spawn<TimeManager>();
-	m_pSceneGraphManager = m_pMemoryManager->spawn<SceneGraphManager>();
 	m_pRenderingManager = m_pMemoryManager->spawn<RenderingManager>();
-	
+
 	m_pAssetManager = m_pMemoryManager->spawn<AssetManager>();
 	m_pAssetManager->g_pLogManager = m_pLogManager;
 	m_pAssetManager->g_pRenderingManager = m_pRenderingManager;
-	m_pAssetManager->g_pSceneGraphManager = m_pSceneGraphManager;
 
 	m_pLogManager->printLog("Start to setup all the managers.");
 	for (size_t i = 0; i < m_childEventManager.size(); i++)
 	{
 		m_childEventManager[i].get()->setup();
 	}
-
-	std::string l_gameName;
-	try {
+	if (g_pGame != nullptr)
+	{
+		std::string l_gameName;
 		g_pGame->getGameName(l_gameName);
+		GLWindowManager::getInstance().setWindowName(l_gameName);
+		g_pGame->setup();
+		this->setStatus(objectStatus::ALIVE);
 	}
-	catch (std::exception& e) {
+	else
+	{
 		m_pLogManager->printLog("No game added!");
-		m_pLogManager->printLog(e.what());
+		this->setStatus(objectStatus::STANDBY);
 	}
-	GLWindowManager::getInstance().setWindowName(l_gameName);
-
-	g_pGame->setup();
 }
 
 void CoreManager::initialize()
@@ -52,7 +50,6 @@ void CoreManager::initialize()
 
 	g_pGame->initialize();
 
-	this->setStatus(objectStatus::ALIVE);
 	m_pLogManager->printLog("CoreManager has been initialized.");
 }
 
@@ -61,7 +58,7 @@ void CoreManager::update()
 	// time manager should update without any limitation.
 	m_pTimeManager->update();
 
-	// when time manager's status was execMessage::INITIALIZED, that means we can update other managers, a frame counter occurred.
+	// when time manager's status was objectStatus::ALIVE, that means we can update other managers, a frame counter occurred.
 	if (m_pTimeManager->getStatus() == objectStatus::ALIVE)
 	{
 
@@ -77,7 +74,7 @@ void CoreManager::update()
 			m_pRenderingManager->update();
 			l_tickTime = m_pTimeManager->getcurrentTime() - l_tickTime;
 			//LogManager::getInstance().printLog(l_tickTime);
-		}	
+		}
 		else
 		{
 			this->setStatus(objectStatus::STANDBY);

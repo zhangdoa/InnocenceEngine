@@ -2,11 +2,12 @@
 
 #include "manager/BaseManager.h"
 #include "manager/LogManager.h"
-#include "SceneGraphManager.h"
 
 #include "GLWindowManager.h"
 #include "GLInputManager.h"
 #include "GLRenderingManager.h"
+
+#include "entity/ComponentHeaders.h"
 
 class RenderingManager : public BaseManager
 {
@@ -37,6 +38,11 @@ private:
 
 	std::vector<std::unique_ptr<IManager>> m_childManager;
 	std::function<void()> f_changeDrawPolygonMode;
-	std::function<void()> f_changeDrawTextureMode;	
+	std::function<void()> f_changeDrawTextureMode;
+
+	std::vector<VisibleComponent*> m_VisibleComponents;
+	std::vector<LightComponent*> m_LightComponents;
+	std::vector<CameraComponent*> m_CameraComponents;
+	std::vector<InputComponent*> m_InputComponents;
 };
 

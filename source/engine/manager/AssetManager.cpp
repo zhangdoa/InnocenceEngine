@@ -112,7 +112,7 @@ void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent 
 		if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 		{
 			g_pLogManager->printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
-			addUnitMesh(visibleComponent, unitMeshType::CUBE);
+			addUnitMesh(visibleComponent, meshType::CUBE);
 			return;
 		}
 		// only need last part of file name without subfix as material's subfolder name
@@ -455,14 +455,14 @@ void AssetManager::assignDefaultTextures(textureAssignType textureAssignType, Vi
 	}
 }
 
-void AssetManager::addUnitMesh(VisibleComponent & visibleComponent, unitMeshType unitMeshType)
+void AssetManager::addUnitMesh(VisibleComponent & visibleComponent, meshType unitMeshType)
 {
 	meshID l_UnitMeshTemplate;
 	switch (unitMeshType)
 	{
-	case unitMeshType::QUAD: l_UnitMeshTemplate = m_UnitQuadTemplate; break;
-	case unitMeshType::CUBE: l_UnitMeshTemplate = m_UnitCubeTemplate; break;
-	case unitMeshType::SPHERE: l_UnitMeshTemplate = m_UnitSphereTemplate; break;
+	case meshType::QUAD: l_UnitMeshTemplate = m_UnitQuadTemplate; break;
+	case meshType::CUBE: l_UnitMeshTemplate = m_UnitCubeTemplate; break;
+	case meshType::SPHERE: l_UnitMeshTemplate = m_UnitSphereTemplate; break;
 	}
 	visibleComponent.addMeshData(l_UnitMeshTemplate);
 	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
