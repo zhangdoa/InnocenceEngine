@@ -9,7 +9,6 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
-enum class unitMeshType { QUAD, CUBE, SPHERE };
 class AssetManager : public BaseManager
 {
 public:
@@ -27,7 +26,7 @@ public:
 
 	std::string loadShader(const std::string& fileName) const;
 
-	void addUnitMesh(VisibleComponent& visibleComponent, unitMeshType unitMeshType);
+	void addUnitMesh(VisibleComponent& visibleComponent, meshType unitMeshType);
 	
 	static RenderingManager* g_pRenderingManager;
 	static LogManager* g_pLogManager;

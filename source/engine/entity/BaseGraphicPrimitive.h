@@ -2,10 +2,12 @@
 #include "BaseEntity.h"
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
+enum class meshType { QUAD, CUBE, SPHERE, CUSTOM };
+enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, CUBEMAP_HDR, EQUIRETANGULAR };
 enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
 enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
-enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
+
 
 typedef EntityID textureID;
 typedef EntityID meshID;
@@ -13,6 +15,9 @@ typedef std::pair<textureType, textureID> texturePair;
 typedef std::unordered_map<textureType, textureID> textureMap;
 typedef std::pair<meshID, textureMap> modelPair;
 typedef std::unordered_map<meshID, textureMap> modelMap;
+
+typedef std::pair<textureType, std::string> textureFileNamePair;
+typedef std::unordered_map<textureType, std::string> textureFileNameMap;
 
 class BaseMesh : public BaseEntity
 {

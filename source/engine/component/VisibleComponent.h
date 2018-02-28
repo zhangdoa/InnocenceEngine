@@ -15,12 +15,16 @@ public:
 	void shutdown() override;
 
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
+	meshType m_meshType = meshType::QUAD;
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
 	
 	bool m_useTexture = true;
 	vec3 m_albedo;
 	vec3 m_MRA;
+
+	std::string m_meshFileName;
+	textureFileNameMap m_textureFileNameMap;
 
 	modelMap& getModelMap();
 	void setModelMap(modelMap& graphicDataMap);
