@@ -46,6 +46,25 @@ protected:
 	bool m_calculateTangents;
 };
 
+class BaseTexture : public BaseEntity
+{
+public:
+	BaseTexture() {};
+	virtual ~BaseTexture() {};
+
+	void setup() override;
+	void setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData, bool generateMipMap);
+
+protected:
+	textureType m_textureType;
+	int m_textureIndex;
+	int m_textureFormat;
+	int m_textureWidth;
+	int m_textureHeight;	
+	std::vector<void *> m_textureData;
+	bool m_generateMipMap;
+};
+
 class Base2DTexture : public BaseEntity
 {
 public:
@@ -76,7 +95,6 @@ public:
 
 protected:
 	textureType m_textureType;
-	int m_textureIndex;
 	int m_textureFormat;
 	int m_textureWidth;
 	int m_textureHeight;
