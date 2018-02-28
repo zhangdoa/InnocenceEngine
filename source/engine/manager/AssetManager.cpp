@@ -2,34 +2,10 @@
 
 void AssetManager::setup()
 {
-
 }
 
 void AssetManager::initialize()
 {
-	m_basicNormalTemplate = load2DTextureFromDisk("basic_normal.png", textureType::NORMAL, textureWrapMethod::REPEAT);
-	m_basicAlbedoTemplate = load2DTextureFromDisk("basic_albedo.png", textureType::ALBEDO, textureWrapMethod::REPEAT);
-	m_basicMetallicTemplate = load2DTextureFromDisk("basic_metallic.png", textureType::METALLIC, textureWrapMethod::REPEAT);
-	m_basicRoughnessTemplate = load2DTextureFromDisk("basic_roughness.png", textureType::ROUGHNESS, textureWrapMethod::REPEAT);
-	m_basicAOTemplate = load2DTextureFromDisk("basic_ao.png", textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT);
-
-	m_UnitCubeTemplate = g_pRenderingManager->addMesh();
-	auto lastMeshData = g_pRenderingManager->getMesh(m_UnitCubeTemplate);
-	lastMeshData->addUnitCube();
-	lastMeshData->setup(meshDrawMethod::TRIANGLE, false, false);
-	lastMeshData->initialize();
-
-	m_UnitSphereTemplate = g_pRenderingManager->addMesh();
-	lastMeshData = g_pRenderingManager->getMesh(m_UnitSphereTemplate);
-	lastMeshData->addUnitSphere();
-	lastMeshData->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
-	lastMeshData->initialize();
-
-	m_UnitQuadTemplate = g_pRenderingManager->addMesh();
-	lastMeshData = g_pRenderingManager->getMesh(m_UnitQuadTemplate);
-	lastMeshData->addUnitQuad();
-	lastMeshData->setup(meshDrawMethod::TRIANGLE, true, true);
-	lastMeshData->initialize();
 }
 
 void AssetManager::update()
@@ -38,37 +14,6 @@ void AssetManager::update()
 
 void AssetManager::shutdown()
 {
-}
-
-void AssetManager::loadAsset(const std::string & filePath, VisibleComponent & visibleComponent)
-{
-	auto l_subfix = filePath.substr(filePath.find(".") + 1);
-	////@TODO: generalize a loader base class 
-	//if (m_supportedTextureType.find(l_subfix) != m_supportedTextureType.end())
-	//{
-	//	loadTextureImpl(filePath, textureType::ALBEDO, visibleComponent);
-	//}
-	if (m_supportedModelType.find(l_subfix) != m_supportedModelType.end())
-	{
-		loadModelImpl(filePath, visibleComponent);
-	}
-}
-
-void AssetManager::loadAsset(const std::vector<std::string>& filePath, textureType textureType, VisibleComponent & visibleComponent)
-{
-	load3DTextureFromDisk(filePath, textureType, visibleComponent);
-}
-
-void AssetManager::loadAsset(const std::string & filePath, textureType textureType, VisibleComponent & visibleComponent)
-{
-	if (textureType == textureType::EQUIRETANGULAR)
-	{
-		load3DTextureFromDisk(filePath, textureType, visibleComponent);
-	}
-	else
-	{
-		load2DTextureImpl(filePath, textureType, visibleComponent);
-	}
 }
 
 std::string AssetManager::loadShader(const std::string & fileName) const
@@ -85,52 +30,30 @@ std::string AssetManager::loadShader(const std::string & fileName) const
 	return output;
 }
 
-void AssetManager::loadModelImpl(const std::string & fileName, VisibleComponent & visibleComponent)
+modelMap AssetManager::loadModelFromDisk(const std::string & fileName, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod)
 {
-	auto l_convertedFilePath = fileName.substr(0, fileName.find(".")) + ".innoModel";
-
-	// check if this file has already been loaded once
-	auto l_loadedmodelMap = m_loadedModelMap.find(l_convertedFilePath);
-	if (l_loadedmodelMap != m_loadedModelMap.end())
+	// read file via ASSIMP
+	Assimp::Importer l_assImporter;
+	auto l_assScene = l_assImporter.ReadFile(m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	if (l_assScene == nullptr)
 	{
-		assignloadedModel(l_loadedmodelMap->second, visibleComponent);
-		g_pLogManager->printLog("AssetManager: " + l_convertedFilePath + " has already been loaded before, successfully assigned modelMap IDs.");
+		l_assScene = l_assImporter.ReadFile(m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		// save model file as .innoModel binary file
+		Assimp::Exporter l_assExporter;
+		l_assExporter.Export(l_assScene, "assbin", m_modelRelativePath + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
+		g_pLogManager->printLog("AssetManager: " + fileName + " is successfully converted.");
 	}
-	else
+	if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 	{
-		// read file via ASSIMP
-		Assimp::Importer l_assImporter;
-		auto l_assScene = l_assImporter.ReadFile(m_modelRelativePath + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-		if (l_assScene == nullptr)
-		{
-			l_assScene = l_assImporter.ReadFile(m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-			// save model file as .innoModel binary file
-			Assimp::Exporter l_assExporter;
-			l_assExporter.Export(l_assScene, "assbin", m_modelRelativePath + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
-			g_pLogManager->printLog("AssetManager: " + fileName + " is successfully converted.");
-		}
-		if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
-		{
-			g_pLogManager->printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
-			addUnitMesh(visibleComponent, meshType::CUBE);
-			return;
-		}
-		// only need last part of file name without subfix as material's subfolder name
-		auto& l_fileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
-		auto& l_modelMap = processAssimpScene(l_fileName, l_assScene, visibleComponent.m_meshDrawMethod, visibleComponent.m_textureWrapMethod);
-
-		m_loadedModelMap.emplace(l_convertedFilePath, l_modelMap);
-		assignloadedModel(l_modelMap, visibleComponent);
-
-		g_pLogManager->printLog("AssetManager: " + l_convertedFilePath + " is loaded for the first time, successfully assigned modelMap IDs.");
+		g_pLogManager->printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
+		return modelMap();
 	}
-}
-
-void AssetManager::assignloadedModel(modelMap& loadedmodelMap, VisibleComponent & visibleComponent)
-{
-	visibleComponent.setModelMap(loadedmodelMap);
-	assignDefaultTextures(textureAssignType::ADD_DEFAULT, visibleComponent);
-	g_pSceneGraphManager->addToRenderingQueue(&visibleComponent);
+	// only need last part of file name without subfix as material's subfolder name
+	auto& l_fileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
+	auto& l_modelMap = processAssimpScene(l_fileName, l_assScene, meshDrawMethod, textureWrapMethod);
+	
+	g_pLogManager->printLog("AssetManager: " + fileName + " is loaded for the first time, successfully assigned modelMap IDs.");
+	return l_modelMap;
 }
 
 modelMap AssetManager::processAssimpScene(const std::string& fileName, const aiScene* aiScene, meshDrawMethod& meshDrawMethod, textureWrapMethod& textureWrapMethod)
@@ -311,7 +234,7 @@ textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName
 			}
 			// load image
 			l_texturePair.first = l_textureType;
-			l_texturePair.second = load2DTextureFromDisk(fileName + "//" + l_localPath, l_textureType, textureWrapMethod);
+			l_texturePair.second = loadTextureFromDisk({ fileName + "//" + l_localPath }, l_textureType, textureWrapMethod);
 
 			l_textureMap.emplace(l_texturePair);
 		}
@@ -319,61 +242,7 @@ textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName
 	return l_textureMap;
 }
 
-void AssetManager::load2DTextureImpl(const std::string & fileName, textureType textureType, VisibleComponent & visibleComponent)
-{
-	auto l_loaded2DTexturePair = m_loaded2DTextureMap.find(fileName);
-	// check if this file has already loaded
-	if (l_loaded2DTexturePair != m_loaded2DTextureMap.end())
-	{
-		assignLoadedTexture(textureAssignType::OVERWRITE, l_loaded2DTexturePair->second, visibleComponent);
-		g_pLogManager->printLog("inno2DTexture: " + fileName + " is already loaded, successfully assigned loaded texture data IDs.");
-	}
-	else
-	{
-		auto l_texturePair = texturePair(textureType, load2DTextureFromDisk(fileName, textureType, visibleComponent.m_textureWrapMethod));
-		m_loaded2DTextureMap.emplace(fileName, l_texturePair);
-		assignLoadedTexture(textureAssignType::OVERWRITE, l_texturePair, visibleComponent);
-	}
-}
-
-void AssetManager::assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedtexturePair, VisibleComponent & visibleComponent)
-{
-	if (textureAssignType == textureAssignType::ADD_DEFAULT)
-	{
-		visibleComponent.addTextureData(loadedtexturePair);
-	}
-	else if (textureAssignType == textureAssignType::OVERWRITE)
-	{
-		visibleComponent.overwriteTextureData(loadedtexturePair);
-	}
-}
-
-textureID AssetManager::load2DTextureFromDisk(const std::string & fileName, textureType textureType, textureWrapMethod textureWrapMethod)
-{
-	int width, height, nrChannels;
-	// load image
-	stbi_set_flip_vertically_on_load(true);
-
-	auto *data = stbi_load((m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
-	if (data)
-	{
-		auto id = g_pRenderingManager->add2DTexture();
-		auto last2DTextureData = g_pRenderingManager->get2DTexture(id);
-		last2DTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
-		last2DTextureData->initialize();
-		g_pLogManager->printLog("inno2DTexture: " + fileName + " is loaded.");
-		return id;
-	}
-	else
-	{
-		g_pLogManager->printLog("ERROR::STBI:: Failed to load texture: " + fileName);
-		return 0;
-	}
-
-	//stbi_image_free(data);
-}
-
-void AssetManager::load3DTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent & visibleComponent) const
+textureID AssetManager::loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod) const
 {
 	if (textureType == textureType::CUBEMAP)
 	{
@@ -396,29 +265,21 @@ void AssetManager::load3DTextureFromDisk(const std::vector<std::string>& fileNam
 			else
 			{
 				g_pLogManager->printLog("ERROR::STBI:: Failed to load texture: " + (m_textureRelativePath + fileName[i]));
+				return 0;
 			}
 			//stbi_image_free(data);
 		}
 		lastTextureData->setup(textureType::CUBEMAP, nrChannels, width, height, l_3DTextureRawData, false);
 		lastTextureData->initialize();
-		visibleComponent.addTextureData(texturePair(textureType::CUBEMAP, id));
 		g_pLogManager->printLog("inno3DTexture is fully loaded.");
+		return id;
 	}
-	else
-	{
-		g_pLogManager->printLog("3Dtexture type is invalid!");
-		return;
-	}
-}
-
-void AssetManager::load3DTextureFromDisk(const std::string & filePath, textureType textureType, VisibleComponent & visibleComponent) const
-{
-	if (textureType == textureType::EQUIRETANGULAR)
+	else if(textureType == textureType::EQUIRETANGULAR)
 	{
 		int width, height, nrChannels;
-		// load image
+		// load image, flip texture
 		stbi_set_flip_vertically_on_load(true);
-		auto *data = stbi_loadf((m_textureRelativePath + filePath).c_str(), &width, &height, &nrChannels, 0);
+		auto *data = stbi_loadf((m_textureRelativePath + fileName[0]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
 			auto id = g_pRenderingManager->add2DHDRTexture();
@@ -426,45 +287,35 @@ void AssetManager::load3DTextureFromDisk(const std::string & filePath, textureTy
 			last2DTextureData->setup(textureType::EQUIRETANGULAR, textureWrapMethod::CLAMP_TO_EDGE, nrChannels, width, height, data);
 			last2DTextureData->initialize();
 
-			visibleComponent.addTextureData(texturePair(textureType::EQUIRETANGULAR, id));
-			g_pLogManager->printLog("inno2DHDRTexture: " + filePath + " is loaded.");
+			g_pLogManager->printLog("inno2DHDRTexture: " + fileName[0] + " is loaded.");
+			return id;
 		}
 		else
 		{
-			g_pLogManager->printLog("ERROR::STBI:: Failed to load texture: " + filePath);
-			return;
+			g_pLogManager->printLog("ERROR::STBI:: Failed to load texture: " + (m_textureRelativePath + fileName[0]));
+			return 0;
 		}
 	}
 	else
 	{
-		g_pLogManager->printLog("3Dtexture type is invalid!");
-		return;
-	}
-}
+		int width, height, nrChannels;
+		// load image
+		stbi_set_flip_vertically_on_load(true);
 
-
-void AssetManager::assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent)
-{
-	if (visibleComponent.m_visiblilityType == visiblilityType::STATIC_MESH)
-	{
-		assignLoadedTexture(textureAssignType, texturePair(textureType::NORMAL, m_basicNormalTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::ALBEDO, m_basicAlbedoTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::METALLIC, m_basicMetallicTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::ROUGHNESS, m_basicRoughnessTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::AMBIENT_OCCLUSION, m_basicAOTemplate), visibleComponent);
+		auto *data = stbi_load((m_textureRelativePath + fileName[0]).c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			auto id = g_pRenderingManager->add2DTexture();
+			auto last2DTextureData = g_pRenderingManager->get2DTexture(id);
+			last2DTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
+			last2DTextureData->initialize();
+			g_pLogManager->printLog("inno2DTexture: " + fileName[0] + " is loaded.");
+			return id;
+		}
+		else
+		{
+			g_pLogManager->printLog("ERROR::STBI:: Failed to load texture: " + fileName[0]);
+			return 0;
+		}
 	}
-}
-
-void AssetManager::addUnitMesh(VisibleComponent & visibleComponent, meshType unitMeshType)
-{
-	meshID l_UnitMeshTemplate;
-	switch (unitMeshType)
-	{
-	case meshType::QUAD: l_UnitMeshTemplate = m_UnitQuadTemplate; break;
-	case meshType::CUBE: l_UnitMeshTemplate = m_UnitCubeTemplate; break;
-	case meshType::SPHERE: l_UnitMeshTemplate = m_UnitSphereTemplate; break;
-	}
-	visibleComponent.addMeshData(l_UnitMeshTemplate);
-	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
-	g_pSceneGraphManager->addToRenderingQueue(&visibleComponent);
 }
