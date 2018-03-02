@@ -6,6 +6,10 @@
 #include "component/LightComponent.h"
 #include "component/CameraComponent.h"
 #include "entity/GLGraphicPrimitive.h"
+
+extern LogManager* g_pLogManager;
+extern IAssetManager* g_pAssetManager;
+
 class GLShader
 {
 public:
@@ -405,17 +409,11 @@ public:
 	}
 
 	meshID addMesh();
-	textureID add2DTexture();
-	textureID add2DHDRTexture();
-	textureID add3DTexture();
-	textureID add3DHDRTexture();
+	textureID addTexture(textureType textureType);
 	BaseMesh* getMesh(meshID meshID);
-	Base2DTexture* get2DTexture(textureID textureID);
-	Base2DTexture* get2DHDRTexture(textureID textureID);
-	Base3DTexture* get3DTexture(textureID textureID);
-	Base3DTexture* get3DHDRTexture(textureID textureID);
+	BaseTexture* getTexture(textureType textureType, textureID textureID);
 
-	void Render(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+	void render(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 
 	void setScreenResolution(vec2 screenResolution);
 

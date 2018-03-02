@@ -2,6 +2,8 @@
 #include "manager/LogManager.h"
 #include "entity/BaseGraphicPrimitive.h"
 
+extern LogManager* g_pLogManager;
+
 class GLMesh : public BaseMesh
 {
 public:
@@ -18,7 +20,7 @@ private:
 	GLuint m_IBO = 0;
 };
 
-class GL2DTexture : public Base2DTexture
+class GL2DTexture : public BaseTexture
 {
 public:
 	GL2DTexture() {};
@@ -33,7 +35,7 @@ private:
 	GLuint m_textureID = 0;
 };
 
-class GL2DHDRTexture : public Base2DTexture
+class GL2DHDRTexture : public BaseTexture
 {
 public:
 	GL2DHDRTexture() {};
@@ -48,7 +50,7 @@ private:
 	GLuint m_textureID = 0;
 };
 
-class GL3DTexture : public Base3DTexture
+class GL3DTexture : public BaseTexture
 {
 public:
 	GL3DTexture() {};
@@ -63,7 +65,7 @@ private:
 	GLuint m_textureID = 0;
 };
 
-class GL3DHDRTexture : public Base3DTexture
+class GL3DHDRTexture : public BaseTexture
 {
 public:
 	GL3DHDRTexture() {};

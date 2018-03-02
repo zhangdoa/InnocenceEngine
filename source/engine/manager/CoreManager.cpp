@@ -18,7 +18,6 @@ void CoreManager::setup()
 	m_pRenderingManager = m_pMemoryManager->spawn<RenderingManager>();
 
 	m_pAssetManager = m_pMemoryManager->spawn<AssetManager>();
-	m_pAssetManager->g_pLogManager = m_pLogManager;
 
 	m_pLogManager->printLog("Start to setup all the managers.");
 	for (size_t i = 0; i < m_childEventManager.size(); i++)

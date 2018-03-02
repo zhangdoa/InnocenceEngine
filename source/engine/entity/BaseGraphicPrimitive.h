@@ -8,6 +8,20 @@ enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT
 enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
 enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
 
+class IMeshRawData
+{
+public:
+	IMeshRawData() {};
+	virtual ~IMeshRawData() {};
+
+	virtual int getNumVertices() const = 0;
+	virtual int getNumFaces() const = 0;
+	virtual int getNumIndicesInFace(int faceIndex) const = 0;
+	virtual vec3 getVertices(unsigned int index) const = 0;
+	virtual vec2 getTextureCoords(unsigned int index) const = 0;
+	virtual vec3 getNormals(unsigned int index) const = 0;
+	virtual int getIndices(int faceIndex, int index) const = 0;
+};
 
 typedef EntityID textureID;
 typedef EntityID meshID;
@@ -18,6 +32,9 @@ typedef std::unordered_map<meshID, textureMap> modelMap;
 
 typedef std::pair<textureType, std::string> textureFileNamePair;
 typedef std::unordered_map<textureType, std::string> textureFileNameMap;
+typedef std::pair<IMeshRawData*, textureFileNameMap> modelPointerPair;
+typedef std::unordered_map<IMeshRawData*, textureFileNameMap> modelPointerMap;
+
 
 class BaseMesh : public BaseEntity
 {
@@ -57,55 +74,12 @@ public:
 
 protected:
 	textureType m_textureType;
-	int m_textureIndex;
+	textureWrapMethod m_textureWrapMethod;
 	int m_textureFormat;
 	int m_textureWidth;
 	int m_textureHeight;	
 	std::vector<void *> m_textureData;
 	bool m_generateMipMap;
-};
-
-class Base2DTexture : public BaseEntity
-{
-public:
-	Base2DTexture() {};
-	virtual ~Base2DTexture() {};
-
-	void setup() override;
-	void setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureFormat, int textureWidth, int textureHeight, void * textureData);
-
-protected:
-	textureType m_textureType;
-	textureWrapMethod m_textureWrapMethod;
-
-	int m_textureFormat;
-	int m_textureWidth;
-	int m_textureHeight;
-	void* m_textureRawData;
-};
-
-class Base3DTexture : public BaseEntity
-{
-public:
-	Base3DTexture() {};
-	virtual ~Base3DTexture() {};
-
-	void setup() override;
-	void setup(textureType textureType, int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData, bool generateMipMap);
-
-protected:
-	textureType m_textureType;
-	int m_textureFormat;
-	int m_textureWidth;
-	int m_textureHeight;
-	bool m_generateMipMap;
-
-	void* m_textureRawData_Right;
-	void* m_textureRawData_Left;
-	void* m_textureRawData_Top;
-	void* m_textureRawData_Bottom;
-	void* m_textureRawData_Back;
-	void* m_textureRawData_Front;
 };
 
 class BaseFrameBuffer : public BaseEntity

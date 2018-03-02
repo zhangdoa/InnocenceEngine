@@ -1,6 +1,9 @@
 #pragma once
 #include "BaseManager.h"
+#include "TimeManager.h"
 #include "entity/InnoMath.h"
+
+extern TimeManager* g_pTimeManager;
 
 class LogManager : public BaseManager
 {

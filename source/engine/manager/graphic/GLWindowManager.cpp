@@ -39,7 +39,7 @@ void GLWindowManager::initialize()
 	if (glfwInit() != GL_TRUE)
 	{
 		this->setStatus(objectStatus::STANDBY);
-		LogManager::getInstance().printLog("Failed to initialize GLFW.");
+		g_pLogManager->printLog("Failed to initialize GLFW.");
 	}
 
 	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
@@ -53,7 +53,7 @@ void GLWindowManager::initialize()
 	glfwMakeContextCurrent(m_window);
 	if (m_window == nullptr) {
 		this->setStatus(objectStatus::STANDBY);
-		LogManager::getInstance().printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
+		g_pLogManager->printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
 		glfwTerminate();
 	}
 	// glad: load all OpenGL function pointers
@@ -61,10 +61,10 @@ void GLWindowManager::initialize()
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		this->setStatus(objectStatus::STANDBY);
-		LogManager::getInstance().printLog("Failed to initialize GLAD.");
+		g_pLogManager->printLog("Failed to initialize GLAD.");
 	}
 	this->setStatus(objectStatus::ALIVE);
-	LogManager::getInstance().printLog("GLWindowManager has been initialized.");
+	g_pLogManager->printLog("GLWindowManager has been initialized.");
 }
 
 void GLWindowManager::update()
@@ -76,7 +76,7 @@ void GLWindowManager::update()
 	else
 	{
 		this->setStatus(objectStatus::STANDBY);
-		LogManager::getInstance().printLog("GLWindowManager is stand-by.");
+		g_pLogManager->printLog("GLWindowManager is stand-by.");
 	}
 }
 
@@ -87,6 +87,6 @@ void GLWindowManager::shutdown()
 		glfwDestroyWindow(m_window);
 		glfwTerminate();
 		this->setStatus(objectStatus::SHUTDOWN);
-		LogManager::getInstance().printLog("GLWindowManager has been shutdown.");
+		g_pLogManager->printLog("GLWindowManager has been shutdown.");
 	}
 }
