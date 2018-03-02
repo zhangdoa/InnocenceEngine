@@ -2,6 +2,8 @@
 #include "BaseManager.h"
 #include "LogManager.h"
 
+extern LogManager* g_pLogManager;
+
 class TaskManager : public BaseManager
 {
 public:

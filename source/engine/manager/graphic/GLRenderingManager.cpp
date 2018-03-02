@@ -1,13 +1,12 @@
 #include "GLRenderingManager.h"
 
-
 GLShader::GLShader()
 {
 }
 
 inline void GLShader::addShader(shaderType shaderType, const std::string & fileLocation) const
 {
-	attachShader(shaderType, AssetManager::getInstance().loadShader(fileLocation), m_program);
+	attachShader(shaderType, g_pAssetManager->loadShader(fileLocation), m_program);
 }
 
 inline void GLShader::setAttributeLocation(int arrtributeLocation, const std::string & arrtributeName) const
@@ -15,7 +14,7 @@ inline void GLShader::setAttributeLocation(int arrtributeLocation, const std::st
 	glBindAttribLocation(m_program, arrtributeLocation, arrtributeName.c_str());
 	if (glGetAttribLocation(m_program, arrtributeName.c_str()) == 0xFFFFFFFF)
 	{
-		LogManager::getInstance().printLog("Error: Attribute lost: " + arrtributeName);
+		g_pLogManager->printLog("Error: Attribute lost: " + arrtributeName);
 	}
 }
 
@@ -34,7 +33,7 @@ inline void GLShader::addUniform(std::string uniform) const
 	int uniformLocation = glGetUniformLocation(m_program, uniform.c_str());
 	if (uniformLocation == 0xFFFFFFFF)
 	{
-		LogManager::getInstance().printLog("Error: Uniform lost: " + uniform);
+		g_pLogManager->printLog("Error: Uniform lost: " + uniform);
 	}
 }
 
@@ -92,14 +91,14 @@ inline void GLShader::attachShader(shaderType shaderType, const std::string& sha
 	case VERTEX: l_glShaderType = GL_VERTEX_SHADER;  break;
 	case GEOMETRY: l_glShaderType = GL_GEOMETRY_SHADER;  break;
 	case FRAGMENT: l_glShaderType = GL_FRAGMENT_SHADER;  break;
-	default: LogManager::getInstance().printLog("Unknown shader type, cannot add program!");
+	default: g_pLogManager->printLog("Unknown shader type, cannot add program!");
 		break;
 	}
 
 	int l_shader = glCreateShader(l_glShaderType);
 
 	if (l_shader == 0) {
-		LogManager::getInstance().printLog("Shader creation failed: memory location invaild when adding shader!");
+		g_pLogManager->printLog("Shader creation failed: memory location invaild when adding shader!");
 	}
 
 	char const * sourcePointer = shaderFileContent.c_str();
@@ -114,7 +113,7 @@ inline void GLShader::attachShader(shaderType shaderType, const std::string& sha
 	if (l_infoLogLength > 0) {
 		std::vector<char> ShaderErrorMessage(l_infoLogLength + 1);
 		glGetShaderInfoLog(m_program, l_infoLogLength, NULL, &ShaderErrorMessage[0]);
-		LogManager::getInstance().printLog(&ShaderErrorMessage[0]);
+		g_pLogManager->printLog(&ShaderErrorMessage[0]);
 	}
 
 	glAttachShader(m_program, l_shader);
@@ -136,7 +135,7 @@ inline void GLShader::compileShader() const
 	glLinkProgram(m_program);
 
 	glValidateProgram(m_program);
-	LogManager::getInstance().printLog("Shader is compiled.");
+	g_pLogManager->printLog("Shader is compiled.");
 }
 
 inline void GLShader::detachShader(int shader) const
@@ -894,32 +893,32 @@ meshID GLRenderingManager::addMesh()
 	return newMesh.getEntityID();
 }
 
-textureID GLRenderingManager::add2DTexture()
+textureID GLRenderingManager::addTexture(textureType textureType)
 {
-	GL2DTexture new2DTexture;
-	m_2DTextureMap.emplace(std::pair<textureID, GL2DTexture>(new2DTexture.getEntityID(), new2DTexture));
-	return new2DTexture.getEntityID();
-}
-
-textureID GLRenderingManager::add2DHDRTexture()
-{
-	GL2DHDRTexture new2DHDRTexture;
-	m_2DHDRTextureMap.emplace(std::pair<textureID, GL2DHDRTexture>(new2DHDRTexture.getEntityID(), new2DHDRTexture));
-	return new2DHDRTexture.getEntityID();
-}
-
-textureID GLRenderingManager::add3DTexture()
-{
-	GL3DTexture new3DTexture;
-	m_3DTextureMap.emplace(std::pair<textureID, GL3DTexture>(new3DTexture.getEntityID(), new3DTexture));
-	return new3DTexture.getEntityID();
-}
-
-textureID GLRenderingManager::add3DHDRTexture()
-{
-	GL3DHDRTexture new3DHDRTexture;
-	m_3DHDRTextureMap.emplace(std::pair<textureID, GL3DHDRTexture>(new3DHDRTexture.getEntityID(), new3DHDRTexture));
-	return new3DHDRTexture.getEntityID();
+	if (textureType == textureType::CUBEMAP)
+	{
+		GL3DTexture new3DTexture;
+		m_3DTextureMap.emplace(std::pair<textureID, GL3DTexture>(new3DTexture.getEntityID(), new3DTexture));
+		return new3DTexture.getEntityID();
+	}
+	else if (textureType == textureType::CUBEMAP_HDR)
+	{
+		GL3DHDRTexture new3DHDRTexture;
+		m_3DHDRTextureMap.emplace(std::pair<textureID, GL3DHDRTexture>(new3DHDRTexture.getEntityID(), new3DHDRTexture));
+		return new3DHDRTexture.getEntityID();
+	}
+	else if (textureType == textureType::EQUIRETANGULAR)
+	{
+		GL2DHDRTexture new2DHDRTexture;
+		m_2DHDRTextureMap.emplace(std::pair<textureID, GL2DHDRTexture>(new2DHDRTexture.getEntityID(), new2DHDRTexture));
+		return new2DHDRTexture.getEntityID();
+	}
+	else
+	{
+		GL2DTexture new2DTexture;
+		m_2DTextureMap.emplace(std::pair<textureID, GL2DTexture>(new2DTexture.getEntityID(), new2DTexture));
+		return new2DTexture.getEntityID();
+	}
 }
 
 BaseMesh* GLRenderingManager::getMesh(meshID meshID)
@@ -927,27 +926,27 @@ BaseMesh* GLRenderingManager::getMesh(meshID meshID)
 	return &m_meshMap.find(meshID)->second;
 }
 
-Base2DTexture* GLRenderingManager::get2DTexture(textureID textureID)
+BaseTexture * GLRenderingManager::getTexture(textureType textureType, textureID textureID)
 {
-	return &m_2DTextureMap.find(textureID)->second;
+	if (textureType == textureType::CUBEMAP)
+	{
+		return &m_3DTextureMap.find(textureID)->second;
+	}
+	else if (textureType == textureType::CUBEMAP_HDR)
+	{
+		return &m_3DHDRTextureMap.find(textureID)->second;
+	}
+	else if (textureType == textureType::EQUIRETANGULAR)
+	{
+		return &m_2DHDRTextureMap.find(textureID)->second;
+	}
+	else
+	{
+		return &m_2DTextureMap.find(textureID)->second;
+	}
 }
 
-Base2DTexture * GLRenderingManager::get2DHDRTexture(textureID textureID)
-{
-	return &m_2DHDRTextureMap.find(textureID)->second;;
-}
-
-Base3DTexture * GLRenderingManager::get3DTexture(textureID textureID)
-{
-	return &m_3DTextureMap.find(textureID)->second;
-}
-
-Base3DTexture * GLRenderingManager::get3DHDRTexture(textureID textureID)
-{
-	return &m_3DHDRTextureMap.find(textureID)->second;;
-}
-
-void GLRenderingManager::Render(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+void GLRenderingManager::render(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	renderBackgroundPass(cameraComponents, lightComponents, visibleComponents);
 	renderGeometryPass(cameraComponents, lightComponents, visibleComponents);
@@ -993,25 +992,25 @@ void GLRenderingManager::initializeBackgroundPass()
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_environmentPassRBO);
 
 	// @TODO: add a capturer class
-	m_environmentCapturePassTextureID = this->add3DHDRTexture();
-	auto environmentCapturePassTextureData = this->get3DHDRTexture(m_environmentCapturePassTextureID);
-	environmentCapturePassTextureData->setup(textureType::CUBEMAP_HDR, 3, 2048, 2048, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, false);
+	m_environmentCapturePassTextureID = this->addTexture(textureType::CUBEMAP_HDR);
+	auto environmentCapturePassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentCapturePassTextureID);
+	environmentCapturePassTextureData->setup(textureType::CUBEMAP_HDR, textureWrapMethod::CLAMP_TO_EDGE, 3, 2048, 2048, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, false);
 	environmentCapturePassTextureData->initialize();
 
 	// environment convolution pass
 	m_environmentConvolutionPassShader->init();
 
-	m_environmentConvolutionPassTextureID = this->add3DHDRTexture();
-	auto environmentConvolutionPassTextureData = this->get3DHDRTexture(m_environmentConvolutionPassTextureID);
-	environmentConvolutionPassTextureData->setup(textureType::CUBEMAP_HDR, 3, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, false);
+	m_environmentConvolutionPassTextureID = this->addTexture(textureType::CUBEMAP_HDR);
+	auto environmentConvolutionPassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentConvolutionPassTextureID);
+	environmentConvolutionPassTextureData->setup(textureType::CUBEMAP_HDR, textureWrapMethod::CLAMP_TO_EDGE, 3, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, false);
 	environmentConvolutionPassTextureData->initialize();
 
 	// environment pre-filter pass
 	m_environmentPreFilterPassShader->init();
 	
-	m_environmentPreFilterPassTextureID = this->add3DHDRTexture();
-	auto environmentPreFilterPassTextureData = this->get3DHDRTexture(m_environmentPreFilterPassTextureID);
-	environmentPreFilterPassTextureData->setup(textureType::CUBEMAP_HDR, 3, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, true);
+	m_environmentPreFilterPassTextureID = this->addTexture(textureType::CUBEMAP_HDR);
+	auto environmentPreFilterPassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentPreFilterPassTextureID);
+	environmentPreFilterPassTextureData->setup(textureType::CUBEMAP_HDR, textureWrapMethod::CLAMP_TO_EDGE, 3, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, true);
 	environmentPreFilterPassTextureData->initialize();
 
 	// environment brdf LUT pass
@@ -1274,7 +1273,7 @@ void GLRenderingManager::initialize()
 	initializeFinalPass();
 
 	this->setStatus(objectStatus::ALIVE);
-	LogManager::getInstance().printLog("GLRenderingManager has been initialized.");
+	g_pLogManager->printLog("GLRenderingManager has been initialized.");
 }
 
 void GLRenderingManager::update()
@@ -1284,6 +1283,6 @@ void GLRenderingManager::update()
 void GLRenderingManager::shutdown()
 {
 	this->setStatus(objectStatus::SHUTDOWN);
-	LogManager::getInstance().printLog("GLRenderingManager has been shutdown.");
+	g_pLogManager->printLog("GLRenderingManager has been shutdown.");
 }
 

@@ -30,7 +30,7 @@ std::string AssetManager::loadShader(const std::string & fileName) const
 	return output;
 }
 
-modelMap AssetManager::loadModelFromDisk(const std::string & fileName, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod)
+modelPointerMap AssetManager::loadModelFromDisk(const std::string & fileName) const
 {
 	// read file via ASSIMP
 	Assimp::Importer l_assImporter;
@@ -46,142 +46,146 @@ modelMap AssetManager::loadModelFromDisk(const std::string & fileName, meshDrawM
 	if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 	{
 		g_pLogManager->printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
-		return modelMap();
+		return modelPointerMap();
 	}
 	// only need last part of file name without subfix as material's subfolder name
 	auto& l_fileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
-	auto& l_modelMap = processAssimpScene(l_fileName, l_assScene, meshDrawMethod, textureWrapMethod);
+	auto& l_modelPointerMap = processAssimpScene(l_fileName, l_assScene);
 	
 	g_pLogManager->printLog("AssetManager: " + fileName + " is loaded for the first time, successfully assigned modelMap IDs.");
-	return l_modelMap;
+	return l_modelPointerMap;
 }
 
-modelMap AssetManager::processAssimpScene(const std::string& fileName, const aiScene* aiScene, meshDrawMethod& meshDrawMethod, textureWrapMethod& textureWrapMethod)
+modelPointerMap AssetManager::processAssimpScene(const std::string& fileName, const aiScene* aiScene) const
 {
-	auto l_modelMap = modelMap();
+	auto l_modelPointerMap = modelPointerMap();
 
 	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
 	if (aiScene->mRootNode->mNumMeshes > 0)
 	{
-		auto& l_loadedmodelMap = processAssimpNode(fileName, aiScene->mRootNode, aiScene, meshDrawMethod, textureWrapMethod);
-		l_modelMap.insert(l_loadedmodelMap.begin(), l_loadedmodelMap.end());
+		auto& l_loadedmodelMap = processAssimpNode(fileName, aiScene->mRootNode, aiScene);
+		l_modelPointerMap.insert(l_loadedmodelMap.begin(), l_loadedmodelMap.end());
 	}
 	for (auto i = (unsigned int)0; i < aiScene->mRootNode->mNumChildren; i++)
 	{
 		if (aiScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
-			auto& l_loadedmodelMap = processAssimpNode(fileName, aiScene->mRootNode->mChildren[i], aiScene, meshDrawMethod, textureWrapMethod);
-			l_modelMap.insert(l_loadedmodelMap.begin(), l_loadedmodelMap.end());
+			auto& l_loadedModelPointerMap = processAssimpNode(fileName, aiScene->mRootNode->mChildren[i], aiScene);
+			l_modelPointerMap.insert(l_loadedModelPointerMap.begin(), l_loadedModelPointerMap.end());
 		}
 	}
 
-	return l_modelMap;
+	return l_modelPointerMap;
 }
 
 
-modelMap AssetManager::processAssimpNode(const std::string& fileName, aiNode * node, const aiScene * scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod)
+modelPointerMap AssetManager::processAssimpNode(const std::string& fileName, aiNode * node, const aiScene * scene) const
 {
-	auto l_modelMap = modelMap();
+	auto l_modelPointerMap = modelPointerMap();
 	// process each mesh located at the current node
 	for (auto i = (unsigned int)0; i < node->mNumMeshes; i++)
 	{
-		auto l_modelPair = modelPair();
-
-		l_modelPair.first = processSingleAssimpMesh(scene->mMeshes[node->mMeshes[i]], meshDrawMethod);
+		auto l_modelPointerPair = modelPointerPair();
+		auto l_assimpMeshData = new assimpMeshRawData();
+		l_assimpMeshData->m_aiMesh = scene->mMeshes[node->mMeshes[i]];
+		l_modelPointerPair.first = l_assimpMeshData;
 
 		// process material if there was anyone
 		if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
 		{
-			l_modelPair.second = processSingleAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], textureWrapMethod);
+			l_modelPointerPair.second = processSingleAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex]);
 		}
-		l_modelMap.emplace(l_modelPair);
+		l_modelPointerMap.emplace(l_modelPointerPair);
 	}
-	return l_modelMap;
+	return l_modelPointerMap;
 }
 
-meshID AssetManager::processSingleAssimpMesh(aiMesh * mesh, meshDrawMethod meshDrawMethod) const
+void AssetManager::parseloadRawModelData(const modelPointerMap & modelPointerMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, std::vector<BaseMesh*>& baseMesh, std::vector<BaseTexture*>& baseTexture) const
 {
-	auto l_meshDataID = g_pRenderingManager->addMesh();
-	auto lastMeshData = g_pRenderingManager->getMesh(l_meshDataID);
-
-	for (auto i = (unsigned int)0; i < mesh->mNumVertices; i++)
+	for (auto& l_meshRawData : modelPointerMap)
 	{
-		addVertex(mesh, i, lastMeshData);
-	}
-
-	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-	for (auto i = (unsigned int)0; i < mesh->mNumFaces; i++)
-	{
-		aiFace face = mesh->mFaces[i];
-		// retrieve all indices of the face and store them in the indices vector
-		for (auto j = (unsigned int)0; j < face.mNumIndices; j++)
+		int l_meshIterator = 0;
+		for (auto i = (unsigned int)0; i < l_meshRawData.first->getNumVertices(); i++)
 		{
-			lastMeshData->addIndices(face.mIndices[j]);
+			Vertex l_Vertex;
+
+			// positions
+			auto l_vertices = l_meshRawData.first->getVertices(i);
+			if (&l_vertices)
+			{
+				l_Vertex.m_pos.x = l_vertices.x;
+				l_Vertex.m_pos.y = l_vertices.y;
+				l_Vertex.m_pos.z = l_vertices.z;
+			}
+			else
+			{
+				l_Vertex.m_pos.x = 0.0f;
+				l_Vertex.m_pos.y = 0.0f;
+				l_Vertex.m_pos.z = 0.0f;
+			}
+
+			// texture coordinates
+			auto l_textureCoords = l_meshRawData.first->getTextureCoords(i);
+			if (&l_textureCoords)
+			{
+				l_Vertex.m_texCoord.x = l_textureCoords.x;
+				l_Vertex.m_texCoord.y = l_textureCoords.y;
+			}
+			else
+			{
+				l_Vertex.m_texCoord.x = 0.0f;
+				l_Vertex.m_texCoord.y = 0.0f;
+			}
+
+			// normals
+			auto l_normals = l_meshRawData.first->getNormals(i);
+			if (&l_normals)
+			{
+				l_Vertex.m_normal.x = l_normals.x;
+				l_Vertex.m_normal.y = l_normals.y;
+				l_Vertex.m_normal.z = l_normals.z;
+			}
+			else
+			{
+				l_Vertex.m_normal.x = 0.0f;
+				l_Vertex.m_normal.y = 0.0f;
+				l_Vertex.m_normal.z = 0.0f;
+			}
 		}
+
+		// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+		for (auto i = (unsigned int)0; i < l_meshRawData.first->getNumFaces(); i++)
+		{
+			// retrieve all indices of the face and store them in the indices vector
+			for (auto j = (unsigned int)0; j < l_meshRawData.first->getNumIndicesInFace(i); j++)
+			{
+				baseMesh[l_meshIterator]->addIndices(l_meshRawData.first->getIndices(i, j));
+			}
+		}
+		baseMesh[l_meshIterator]->setup(meshDrawMethod, false, false);
+		baseMesh[l_meshIterator]->initialize();
+		g_pLogManager->printLog("innoMesh is loaded.");
+
+		// assign texture
+		int l_textureIterator = 0;
+		for (auto& l_textureFileNamePair : l_meshRawData.second)
+		{		
+			loadTextureFromDisk({ l_textureFileNamePair.second }, l_textureFileNamePair.first, textureWrapMethod, baseTexture[l_textureIterator]);
+			l_textureIterator++;
+		}
+		l_meshIterator++;
 	}
-	lastMeshData->setup(meshDrawMethod, false, false);
-	lastMeshData->initialize();
-	g_pLogManager->printLog("innoMesh is loaded.");
-	return l_meshDataID;
+
 }
 
-void AssetManager::addVertex(aiMesh * aiMesh, int vertexIndex, BaseMesh * mesh) const
+textureFileNameMap AssetManager::processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial) const
 {
-	Vertex l_Vertex;
-
-	// positions
-	if (&aiMesh->mVertices[vertexIndex] != nullptr)
-	{
-		l_Vertex.m_pos.x = aiMesh->mVertices[vertexIndex].x;
-		l_Vertex.m_pos.y = aiMesh->mVertices[vertexIndex].y;
-		l_Vertex.m_pos.z = aiMesh->mVertices[vertexIndex].z;
-	}
-	else
-	{
-		l_Vertex.m_pos.x = 0.0f;
-		l_Vertex.m_pos.y = 0.0f;
-		l_Vertex.m_pos.z = 0.0f;
-	}
-
-	// texture coordinates
-	if (aiMesh->mTextureCoords[0])
-	{
-		// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
-		// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-		l_Vertex.m_texCoord.x = aiMesh->mTextureCoords[0][vertexIndex].x;
-		l_Vertex.m_texCoord.y = aiMesh->mTextureCoords[0][vertexIndex].y;
-	}
-	else
-	{
-		l_Vertex.m_texCoord.x = 0.0f;
-		l_Vertex.m_texCoord.y = 0.0f;
-	}
-
-	// normals
-	if (aiMesh->mNormals)
-	{
-		l_Vertex.m_normal.x = aiMesh->mNormals[vertexIndex].x;
-		l_Vertex.m_normal.y = aiMesh->mNormals[vertexIndex].y;
-		l_Vertex.m_normal.z = aiMesh->mNormals[vertexIndex].z;
-	}
-	else
-	{
-		l_Vertex.m_normal.x = 0.0f;
-		l_Vertex.m_normal.y = 0.0f;
-		l_Vertex.m_normal.z = 0.0f;
-	}
-
-	mesh->addVertices(l_Vertex);
-}
-
-textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod)
-{
-	auto l_textureMap = textureMap();
+	auto l_textureMap = textureFileNameMap();
 	for (auto i = (unsigned int)0; i < aiTextureType_UNKNOWN; i++)
 	{
 		if (aiMaterial->GetTextureCount(aiTextureType(i)) > 0)
 		{
-			auto l_texturePair = texturePair();
+			auto l_texturePair = textureFileNamePair();
 			aiString l_AssString;
 			aiMaterial->GetTexture(aiTextureType(i), 0, &l_AssString);
 			// set local path, remove slash
@@ -205,7 +209,7 @@ textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
 				g_pLogManager->printLog("inno2DTexture: " + fileName + " is unknown type!");
-				return textureMap();
+				return textureFileNameMap();
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
 			{
@@ -230,11 +234,11 @@ textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName
 			else
 			{
 				g_pLogManager->printLog("inno2DTexture: " + fileName + " is unsupported type!");
-				return textureMap();
+				return textureFileNameMap();
 			}
 			// load image
 			l_texturePair.first = l_textureType;
-			l_texturePair.second = loadTextureFromDisk({ fileName + "//" + l_localPath }, l_textureType, textureWrapMethod);
+			l_texturePair.second = fileName + "//" + l_localPath;
 
 			l_textureMap.emplace(l_texturePair);
 		}
@@ -242,13 +246,11 @@ textureMap AssetManager::processSingleAssimpMaterial(const std::string& fileName
 	return l_textureMap;
 }
 
-textureID AssetManager::loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod) const
+void AssetManager::loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod, BaseTexture* baseDexture) const
 {
 	if (textureType == textureType::CUBEMAP)
 	{
 		int width, height, nrChannels;
-		auto id = g_pRenderingManager->add3DTexture();
-		auto lastTextureData = g_pRenderingManager->get3DTexture(id);
 
 		std::vector<void*> l_3DTextureRawData;
 
@@ -265,14 +267,13 @@ textureID AssetManager::loadTextureFromDisk(const std::vector<std::string>& file
 			else
 			{
 				g_pLogManager->printLog("ERROR::STBI:: Failed to load texture: " + (m_textureRelativePath + fileName[i]));
-				return 0;
+				return;
 			}
 			//stbi_image_free(data);
 		}
-		lastTextureData->setup(textureType::CUBEMAP, nrChannels, width, height, l_3DTextureRawData, false);
-		lastTextureData->initialize();
+		baseDexture->setup(textureType::CUBEMAP, textureWrapMethod::CLAMP_TO_EDGE, nrChannels, width, height, l_3DTextureRawData, false);
+		baseDexture->initialize();
 		g_pLogManager->printLog("inno3DTexture is fully loaded.");
-		return id;
 	}
 	else if(textureType == textureType::EQUIRETANGULAR)
 	{
@@ -282,18 +283,14 @@ textureID AssetManager::loadTextureFromDisk(const std::vector<std::string>& file
 		auto *data = stbi_loadf((m_textureRelativePath + fileName[0]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			auto id = g_pRenderingManager->add2DHDRTexture();
-			auto last2DTextureData = g_pRenderingManager->get2DHDRTexture(id);
-			last2DTextureData->setup(textureType::EQUIRETANGULAR, textureWrapMethod::CLAMP_TO_EDGE, nrChannels, width, height, data);
-			last2DTextureData->initialize();
-
-			g_pLogManager->printLog("inno2DHDRTexture: " + fileName[0] + " is loaded.");
-			return id;
+			baseDexture->setup(textureType::EQUIRETANGULAR, textureWrapMethod::CLAMP_TO_EDGE, nrChannels, width, height, { data }, false);
+			baseDexture->initialize();
+		g_pLogManager->printLog("inno2DHDRTexture: " + fileName[0] + " is loaded.");
 		}
 		else
 		{
 			g_pLogManager->printLog("ERROR::STBI:: Failed to load texture: " + (m_textureRelativePath + fileName[0]));
-			return 0;
+			return;
 		}
 	}
 	else
@@ -305,17 +302,14 @@ textureID AssetManager::loadTextureFromDisk(const std::vector<std::string>& file
 		auto *data = stbi_load((m_textureRelativePath + fileName[0]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			auto id = g_pRenderingManager->add2DTexture();
-			auto last2DTextureData = g_pRenderingManager->get2DTexture(id);
-			last2DTextureData->setup(textureType, textureWrapMethod, nrChannels, width, height, data);
-			last2DTextureData->initialize();
+			baseDexture->setup(textureType, textureWrapMethod, nrChannels, width, height, { data }, true);
+			baseDexture->initialize();
 			g_pLogManager->printLog("inno2DTexture: " + fileName[0] + " is loaded.");
-			return id;
 		}
 		else
 		{
 			g_pLogManager->printLog("ERROR::STBI:: Failed to load texture: " + fileName[0]);
-			return 0;
+			return;
 		}
 	}
 }

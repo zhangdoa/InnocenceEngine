@@ -5,7 +5,6 @@
 #include "MemoryManager.hpp"
 #include "TaskManager.h"
 #include "TimeManager.h"
-#include "graphic/SceneGraphManager.h"
 #include "graphic/RenderingManager.h"
 #include "AssetManager.h"
 
@@ -29,7 +28,6 @@ private:
 	LogManager* m_pLogManager;
 	TaskManager* m_pTaskManager;
 	TimeManager* m_pTimeManager;
-	SceneGraphManager* m_pSceneGraphManager;
 	RenderingManager* m_pRenderingManager;
 	AssetManager* m_pAssetManager;
 };

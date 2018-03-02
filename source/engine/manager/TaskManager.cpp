@@ -13,7 +13,7 @@ void TaskManager::initialize()
 	//	m_threadPool.emplace_back(std::thread(&TaskManager::m_threadHolder, this));
 	//}
 
-	LogManager::getInstance().printLog("TaskManager has been initialized.");
+	g_pLogManager->printLog("TaskManager has been initialized.");
 }
 
 void TaskManager::update()
@@ -32,7 +32,7 @@ void TaskManager::shutdown()
 		}
 	}
 	this->setStatus(objectStatus::SHUTDOWN);
-	LogManager::getInstance().printLog("TaskManager has been shutdown.");
+	g_pLogManager->printLog("TaskManager has been shutdown.");
 }
 
 void TaskManager::addTask(std::function<void()>& task)

@@ -23,7 +23,7 @@ public:
 	vec3 m_albedo;
 	vec3 m_MRA;
 
-	std::string m_meshFileName;
+	std::string m_modelFileName;
 	textureFileNameMap m_textureFileNameMap;
 
 	modelMap& getModelMap();

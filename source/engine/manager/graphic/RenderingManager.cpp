@@ -10,56 +10,6 @@ void RenderingManager::changeDrawTextureMode()
 	GLRenderingManager::getInstance().changeDrawTextureMode();
 }
 
-meshID RenderingManager::addMesh()
-{
-	return GLRenderingManager::getInstance().addMesh();
-}
-
-textureID RenderingManager::add2DTexture()
-{
-	return GLRenderingManager::getInstance().add2DTexture();
-}
-
-textureID RenderingManager::add2DHDRTexture()
-{
-	return  GLRenderingManager::getInstance().add2DHDRTexture();
-}
-
-textureID RenderingManager::add3DTexture()
-{
-	return GLRenderingManager::getInstance().add3DTexture();
-}
-
-textureID RenderingManager::add3DHDRTexture()
-{
-	return  GLRenderingManager::getInstance().add3DHDRTexture();
-}
-
-BaseMesh* RenderingManager::getMesh(meshID meshID)
-{
-	return GLRenderingManager::getInstance().getMesh(meshID);
-}
-
-Base2DTexture* RenderingManager::get2DTexture(textureID textureID)
-{
-	return  GLRenderingManager::getInstance().get2DTexture(textureID);
-}
-
-Base2DTexture * RenderingManager::get2DHDRTexture(textureID textureID)
-{
-	return GLRenderingManager::getInstance().get2DHDRTexture(textureID);
-}
-
-Base3DTexture * RenderingManager::get3DTexture(textureID textureID)
-{
-	return GLRenderingManager::getInstance().get3DTexture(textureID);
-}
-
-Base3DTexture * RenderingManager::get3DHDRTexture(textureID textureID)
-{
-	return GLRenderingManager::getInstance().get3DHDRTexture(textureID);
-}
-
 void RenderingManager::setup()
 {
 	m_childManager.emplace_back(&GLWindowManager::getInstance());
@@ -92,32 +42,38 @@ void RenderingManager::initialize()
 	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_Q, &f_changeDrawPolygonMode);
 	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
 
-	m_basicNormalTemplate = AssetManager::loadTextureFromDisk("basic_normal.png", textureType::NORMAL, textureWrapMethod::REPEAT);
-	m_basicAlbedoTemplate = AssetManager::loadTextureFromDisk("basic_albedo.png", textureType::ALBEDO, textureWrapMethod::REPEAT);
-	m_basicMetallicTemplate = AssetManager::loadTextureFromDisk("basic_metallic.png", textureType::METALLIC, textureWrapMethod::REPEAT);
-	m_basicRoughnessTemplate = AssetManager::loadTextureFromDisk("basic_roughness.png", textureType::ROUGHNESS, textureWrapMethod::REPEAT);
-	m_basicAOTemplate = AssetManager::loadTextureFromDisk("basic_ao.png", textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT);
+	m_basicNormalTemplate = GLRenderingManager::getInstance().addTexture(textureType::NORMAL);
+	m_basicAlbedoTemplate = GLRenderingManager::getInstance().addTexture(textureType::ALBEDO);
+	m_basicMetallicTemplate = GLRenderingManager::getInstance().addTexture(textureType::METALLIC);
+	m_basicRoughnessTemplate = GLRenderingManager::getInstance().addTexture(textureType::ROUGHNESS);
+	m_basicAOTemplate = GLRenderingManager::getInstance().addTexture(textureType::AMBIENT_OCCLUSION);
 
-	m_UnitCubeTemplate = this->addMesh();
-	auto lastMeshData = this->getMesh(m_UnitCubeTemplate);
-	lastMeshData->addUnitCube();
-	lastMeshData->setup(meshDrawMethod::TRIANGLE, false, false);
-	lastMeshData->initialize();
+	g_pAssetManager->loadTextureFromDisk({ "basic_normal.png" }, textureType::NORMAL, textureWrapMethod::REPEAT, GLRenderingManager::getInstance().getTexture(textureType::NORMAL, m_basicNormalTemplate));
+	g_pAssetManager->loadTextureFromDisk({ "basic_albedo.png" }, textureType::ALBEDO, textureWrapMethod::REPEAT, GLRenderingManager::getInstance().getTexture(textureType::NORMAL, m_basicAlbedoTemplate));
+	g_pAssetManager->loadTextureFromDisk({"basic_metallic.png"}, textureType::METALLIC, textureWrapMethod::REPEAT, GLRenderingManager::getInstance().getTexture(textureType::NORMAL, m_basicMetallicTemplate));
+	g_pAssetManager->loadTextureFromDisk({ "basic_roughness.png" }, textureType::ROUGHNESS, textureWrapMethod::REPEAT, GLRenderingManager::getInstance().getTexture(textureType::NORMAL, m_basicRoughnessTemplate));
+	g_pAssetManager->loadTextureFromDisk({ "basic_ao.png" }, textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT, GLRenderingManager::getInstance().getTexture(textureType::NORMAL, m_basicAOTemplate));
 
-	m_UnitSphereTemplate = this->addMesh();
-	lastMeshData = this->getMesh(m_UnitSphereTemplate);
-	lastMeshData->addUnitSphere();
-	lastMeshData->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
-	lastMeshData->initialize();
+	m_UnitQuadTemplate = GLRenderingManager::getInstance().addMesh();
+	auto lastQuadMeshData = GLRenderingManager::getInstance().getMesh(m_UnitQuadTemplate);
+	lastQuadMeshData->addUnitQuad();
+	lastQuadMeshData->setup(meshDrawMethod::TRIANGLE, true, true);
+	lastQuadMeshData->initialize();
 
-	m_UnitQuadTemplate = this->addMesh();
-	lastMeshData = this->getMesh(m_UnitQuadTemplate);
-	lastMeshData->addUnitQuad();
-	lastMeshData->setup(meshDrawMethod::TRIANGLE, true, true);
-	lastMeshData->initialize();
+	m_UnitCubeTemplate = GLRenderingManager::getInstance().addMesh();
+	auto lastCubeMeshData = GLRenderingManager::getInstance().getMesh(m_UnitCubeTemplate);
+	lastCubeMeshData->addUnitCube();
+	lastCubeMeshData->setup(meshDrawMethod::TRIANGLE, false, false);
+	lastCubeMeshData->initialize();
+
+	m_UnitSphereTemplate = GLRenderingManager::getInstance().addMesh();
+	auto lastSphereMeshData = GLRenderingManager::getInstance().getMesh(m_UnitSphereTemplate);
+	lastSphereMeshData->addUnitSphere();
+	lastSphereMeshData->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
+	lastSphereMeshData->initialize();
 
 	this->setStatus(objectStatus::ALIVE);
-	LogManager::getInstance().printLog("RenderingManager has been initialized.");
+	g_pLogManager->printLog("RenderingManager has been initialized.");
 }
 
 void RenderingManager::update()
@@ -129,7 +85,7 @@ void RenderingManager::update()
 if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)
 	{
 		this->setStatus(objectStatus::STANDBY);
-		LogManager::getInstance().printLog("RenderingManager is stand-by.");
+		g_pLogManager->printLog("RenderingManager is stand-by.");
 	}
 }
 
@@ -146,7 +102,7 @@ void RenderingManager::shutdown()
 		m_childManager[m_childManager.size() - 1 - i].release();
 	}
 	this->setStatus(objectStatus::SHUTDOWN);
-	LogManager::getInstance().printLog("RenderingManager has been shutdown.");
+	g_pLogManager->printLog("RenderingManager has been shutdown.");
 }
 
 void RenderingManager::render()
@@ -155,7 +111,7 @@ void RenderingManager::render()
 	GLRenderingManager::getInstance().update();
 	
 	//defer render
-	GLRenderingManager::getInstance().Render(m_CameraComponents, m_LightComponents, m_VisibleComponents);
+	GLRenderingManager::getInstance().render(m_CameraComponents, m_LightComponents, m_VisibleComponents);
 }
 
 void RenderingManager::assignUnitMesh(VisibleComponent & visibleComponent, meshType unitMeshType)
@@ -210,13 +166,15 @@ void RenderingManager::loadTexture(const std::vector<std::string> &fileName, tex
 		if (l_loadedTexturePair != m_loadedTextureMap.end())
 		{
 			assignLoadedTexture(textureAssignType::OVERWRITE, l_loadedTexturePair->second, visibleComponent);
-			LogManager::getInstance().printLog("innoTexture: " + i + " is already loaded, successfully assigned loaded textureID.");
+			g_pLogManager->printLog("innoTexture: " + i + " is already loaded, successfully assigned loaded textureID.");
 		}
 		else
 		{
-			auto l_texturePair = texturePair(textureType, AssetManager::loadTextureFromDisk(i, textureType, visibleComponent.m_textureWrapMethod));
-			m_loadedTextureMap.emplace(i, l_texturePair);
-			assignLoadedTexture(textureAssignType::OVERWRITE, l_texturePair, visibleComponent);
+			auto l_textureID = GLRenderingManager::getInstance().addTexture(textureType);
+			auto l_baseTexture = GLRenderingManager::getInstance().getTexture(textureType,l_textureID);
+			g_pAssetManager->loadTextureFromDisk({ i }, textureType, visibleComponent.m_textureWrapMethod, l_baseTexture);
+			m_loadedTextureMap.emplace(i, texturePair(textureType, l_textureID));
+			assignLoadedTexture(textureAssignType::OVERWRITE, texturePair(textureType, l_textureID), visibleComponent);
 		}
 	}
 	
@@ -231,12 +189,38 @@ void RenderingManager::loadModel(const std::string & fileName, VisibleComponent 
 	if (l_loadedmodelMap != m_loadedModelMap.end())
 	{
 		assignloadedModel(l_loadedmodelMap->second, visibleComponent);
-		LogManager::getInstance().printLog("innoMesh: " + l_convertedFilePath + " is already loaded, successfully assigned loaded modelMap.");
+		g_pLogManager->printLog("innoMesh: " + l_convertedFilePath + " is already loaded, successfully assigned loaded modelMap.");
 	}
 	else
 	{
-		auto l_modelMap = AssetManager::loadModelFromDisk(l_convertedFilePath, visibleComponent.m_meshDrawMethod, visibleComponent.m_textureWrapMethod);
+		auto l_modelPointerMap = g_pAssetManager->loadModelFromDisk(l_convertedFilePath);
+		
+		std::vector<BaseMesh*> l_baseMesh;
+		std::vector<BaseTexture*> l_baseTexture;
+		modelMap l_modelMap;
+
+		//construct model data redirector
+		for (auto & l_meshRawDataPair : l_modelPointerMap)
+		{
+			auto l_meshID = GLRenderingManager::getInstance().addMesh();
+			l_baseMesh.emplace_back(GLRenderingManager::getInstance().getMesh(l_meshID));
+
+			textureMap l_textureMap;
+			for (auto & l_textureFileNamePair : l_meshRawDataPair.second)
+			{
+				auto l_textureID = GLRenderingManager::getInstance().addTexture(l_textureFileNamePair.first);
+				l_baseTexture.emplace_back(GLRenderingManager::getInstance().getTexture(l_textureFileNamePair.first, l_textureID));
+				l_textureMap.emplace(l_textureFileNamePair.first, l_textureID);
+			}
+
+			l_modelMap.emplace(l_meshID, l_textureMap);
+		}
+
+		//then set all of the raw data to the inno version one
+		g_pAssetManager->parseloadRawModelData(l_modelPointerMap, visibleComponent.m_meshDrawMethod, visibleComponent.m_textureWrapMethod, l_baseMesh, l_baseTexture);
+		
+		//mark as loaded
 		m_loadedModelMap.emplace(l_convertedFilePath, l_modelMap);
-		assignloadedModel(l_modelMap, visibleComponent); 
+		assignloadedModel(l_modelMap, visibleComponent);
 	}
 }

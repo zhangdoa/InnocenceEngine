@@ -24,7 +24,7 @@ void MemoryManager::setup(unsigned long  memoryPoolSize)
 void MemoryManager::initialize()
 {
 	this->setStatus(objectStatus::ALIVE);
-	LogManager::getInstance().printLog("MemoryManager has been initialized.");
+	g_pLogManager->printLog("MemoryManager has been initialized.");
 }
 
 void MemoryManager::update()
@@ -34,7 +34,7 @@ void MemoryManager::update()
 void MemoryManager::shutdown()
 {
 	::delete[] m_poolMemory;
-	LogManager::getInstance().printLog("MemoryManager has been shutdown.");
+	g_pLogManager->printLog("MemoryManager has been shutdown.");
 }
 
 inline void * MemoryManager::allocate(unsigned long size)

@@ -9,6 +9,9 @@
 
 #include "entity/ComponentHeaders.h"
 
+extern LogManager* g_pLogManager;
+extern IAssetManager* g_pAssetManager;
+
 class RenderingManager : public BaseManager
 {
 public:
@@ -20,18 +23,6 @@ public:
 	void update() override;
 	void render();
 	void shutdown() override;
-
-	meshID addMesh();
-	textureID add2DTexture();
-	textureID add2DHDRTexture();
-	textureID add3DTexture();
-	textureID add3DHDRTexture();
-	BaseMesh* getMesh(meshID meshID);
-	//@TODO: use BaseTexture instead
-	Base2DTexture* get2DTexture(textureID textureID);
-	Base2DTexture* get2DHDRTexture(textureID textureID);
-	Base3DTexture* get3DTexture(textureID textureID);
-	Base3DTexture* get3DHDRTexture(textureID textureID);
 
 private:
 	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };

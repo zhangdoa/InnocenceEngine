@@ -8,7 +8,6 @@ void TimeManager::initialize()
 {
 	m_gameStartTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	setStatus(objectStatus::ALIVE);
-	LogManager::getInstance().printLog("TimeManager has been initialized.");
 }
 
 void TimeManager::update()
@@ -31,7 +30,6 @@ void TimeManager::update()
 void TimeManager::shutdown()
 {
 	setStatus(objectStatus::SHUTDOWN);
-	LogManager::getInstance().printLog("TimeManager has been shutdown.");
 }
 
 const __time64_t TimeManager::getGameStartTime() const

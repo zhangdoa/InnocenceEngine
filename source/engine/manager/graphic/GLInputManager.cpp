@@ -103,7 +103,7 @@ void GLInputManager::initialize()
 	glfwSetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_STICKY_KEYS, GL_TRUE);
 
 	this->setStatus(objectStatus::ALIVE);
-	LogManager::getInstance().printLog("GLInputManager has been initialized.");
+	g_pLogManager->printLog("GLInputManager has been initialized.");
 }
 
 void GLInputManager::update()
@@ -164,7 +164,7 @@ void GLInputManager::update()
 	else
 	{
 		this->setStatus(objectStatus::STANDBY);
-		LogManager::getInstance().printLog("GLInputManager is stand-by.");
+		g_pLogManager->printLog("GLInputManager is stand-by.");
 	}
 }
 
@@ -172,6 +172,6 @@ void GLInputManager::shutdown()
 {
 	glfwSetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_STICKY_KEYS, GL_FALSE);
 	this->setStatus(objectStatus::SHUTDOWN);
-	LogManager::getInstance().printLog("GLInputManager has been shutdown.");
+	g_pLogManager->printLog("GLInputManager has been shutdown.");
 }
 

@@ -160,39 +160,19 @@ void BaseMesh::addUnitQuad()
 	m_indices = { 0, 1, 3, 1, 2, 3 };
 }
 
-void Base2DTexture::setup()
+void BaseTexture::setup()
 {
-	this->setup(textureType::ALBEDO, textureWrapMethod::REPEAT, 0, 0, 0, nullptr);
 }
 
-void Base2DTexture::setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureFormat, int textureWidth, int textureHeight, void * textureData)
+void BaseTexture::setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureFormat, int textureWidth, int textureHeight, const std::vector<void*>& textureData, bool generateMipMap)
 {
 	m_textureType = textureType;
 	m_textureWrapMethod = textureWrapMethod;
 	m_textureFormat = textureFormat;
 	m_textureWidth = textureWidth;
 	m_textureHeight = textureHeight;
-	m_textureRawData = textureData;
-}
-
-void Base3DTexture::setup()
-{
-}
-
-void Base3DTexture::setup(textureType textureType, int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData, bool generateMipMap)
-{
-	m_textureType = textureType;
-	m_textureFormat = textureFormat;
-	m_textureWidth = textureWidth;
-	m_textureHeight = textureHeight;
+	m_textureData = textureData;
 	m_generateMipMap = generateMipMap;
-
-	m_textureRawData_Right = textureData[0];
-	m_textureRawData_Left = textureData[1];
-	m_textureRawData_Top = textureData[2];
-	m_textureRawData_Bottom = textureData[3];
-	m_textureRawData_Back = textureData[4];
-	m_textureRawData_Front = textureData[5];
 }
 
 void BaseFrameBuffer::setup()

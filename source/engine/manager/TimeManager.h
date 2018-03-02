@@ -1,6 +1,5 @@
 #pragma once
 #include "BaseManager.h"
-#include "LogManager.h"
 
 class TimeManager : public BaseManager
 {

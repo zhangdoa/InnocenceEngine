@@ -2,25 +2,27 @@
 #include "BaseManager.h"
 #include "LogManager.h"
 
-	static const uint32_t s_BlockSizes[] = {
-		// 4-increments
-		4,  8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48,
-		52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96,
+extern LogManager* g_pLogManager;
 
-		// 32-increments
-		128, 160, 192, 224, 256, 288, 320, 352, 384,
-		416, 448, 480, 512, 544, 576, 608, 640,
+static const uint32_t s_BlockSizes[] = {
+	// 4-increments
+	4,  8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48,
+	52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96,
 
-		// 64-increments
-		704, 768, 832, 896, 960, 1024
-	};
-	// number of elements in the block size array
-	static const uint32_t s_NumBlockSizes =
-		sizeof(s_BlockSizes) / sizeof(s_BlockSizes[0]);
+	// 32-increments
+	128, 160, 192, 224, 256, 288, 320, 352, 384,
+	416, 448, 480, 512, 544, 576, 608, 640,
 
-	// largest valid block size
-	static const uint32_t s_MaxBlockSize =
-		s_BlockSizes[s_NumBlockSizes - 1];
+	// 64-increments
+	704, 768, 832, 896, 960, 1024
+};
+// number of elements in the block size array
+static const uint32_t s_NumBlockSizes =
+sizeof(s_BlockSizes) / sizeof(s_BlockSizes[0]);
+
+// largest valid block size
+static const uint32_t s_MaxBlockSize =
+s_BlockSizes[s_NumBlockSizes - 1];
 
 class MemoryManager : public BaseManager
 {

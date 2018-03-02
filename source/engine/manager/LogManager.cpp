@@ -1,21 +1,20 @@
 #include "LogManager.h"
-#include "TimeManager.h"
 
 void LogManager::printLog(double logMessage)
 {
-	std::cout << "[" << TimeManager::getInstance().getCurrentTimeInLocal() << "]" << logMessage << std::endl;
+	std::cout << "[" <<g_pTimeManager->getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }
 
 void LogManager::printLog(std::string logMessage)
 {
-	std::cout << "[" << TimeManager::getInstance().getCurrentTimeInLocal() << "]" << logMessage << std::endl;
+	std::cout << "[" <<g_pTimeManager->getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }
 
 void LogManager::printLog(const vec2 & logMessage)
 {
 	std::cout
 		<< "[" 
-		<< TimeManager::getInstance().getCurrentTimeInLocal()
+		<<g_pTimeManager->getCurrentTimeInLocal()
 		<< "]"
 		<<"vec2(x: "
 		<< logMessage.x
@@ -29,7 +28,7 @@ void LogManager::printLog(const vec3 & logMessage)
 {
 	std::cout
 		<< "["
-		<< TimeManager::getInstance().getCurrentTimeInLocal()
+		<<g_pTimeManager->getCurrentTimeInLocal()
 		<< "]"
 		<< "vec3(x: "
 		<< logMessage.x
@@ -45,7 +44,7 @@ void LogManager::printLog(const quat & logMessage)
 {
 	std::cout
 		<< "["
-		<< TimeManager::getInstance().getCurrentTimeInLocal()
+		<<g_pTimeManager->getCurrentTimeInLocal()
 		<< "]"
 		<< "quat(x: "
 		<< logMessage.x
@@ -63,7 +62,7 @@ void LogManager::printLog(const mat4 & logMessage)
 {
 	std::cout
 		<< "["
-		<< TimeManager::getInstance().getCurrentTimeInLocal()
+		<<g_pTimeManager->getCurrentTimeInLocal()
 		<< "]"
 		<< std::endl
 		<< "|"
@@ -109,7 +108,7 @@ void LogManager::printLog(const mat4 & logMessage)
 }
 void LogManager::printLog(const std::thread::id logMessage)
 {
-	std::cout << "[" << TimeManager::getInstance().getCurrentTimeInLocal() << "]"<< "Thread: " << logMessage << std::endl;
+	std::cout << "[" <<g_pTimeManager->getCurrentTimeInLocal() << "]"<< "Thread: " << logMessage << std::endl;
 }
 
 void LogManager::setup()

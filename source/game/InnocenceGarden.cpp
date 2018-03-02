@@ -48,7 +48,7 @@ void InnocenceGarden::setup()
 
 	pawnMeshComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
 	pawnMeshComponent1.m_meshType = meshType::CUSTOM;
-	pawnMeshComponent2.m_meshFileName = "lantern/lantern.obj";
+	pawnMeshComponent2.m_modelFileName = "lantern/lantern.obj";
 	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "lantern/lantern_Normal_OpenGL.jpg"));
 	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lantern/lantern_Base_Color.jpg"));
 	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "lantern/lantern_Metallic.jpg"));
