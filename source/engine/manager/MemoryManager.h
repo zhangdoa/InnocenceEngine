@@ -1,8 +1,6 @@
 #pragma once
-#include "BaseManager.h"
-#include "LogManager.h"
-
-extern LogManager* g_pLogManager;
+#include "interface/IMemoryManager.h"
+#include "interface/ILogManager.h"
 
 static const uint32_t s_BlockSizes[] = {
 	// 4-increments
@@ -24,7 +22,7 @@ sizeof(s_BlockSizes) / sizeof(s_BlockSizes[0]);
 static const uint32_t s_MaxBlockSize =
 s_BlockSizes[s_NumBlockSizes - 1];
 
-class MemoryManager : public BaseManager
+class MemoryManager : public IMemoryManager
 {
 public:
 	MemoryManager() {};
@@ -36,31 +34,20 @@ public:
 	void update() override;
 	void shutdown() override;
 
-	inline void* allocate(unsigned long size);
+	void* allocate(unsigned long size) override;
+	void free(void* ptr) override;
+	template <typename T> T * spawn(void) override;
+	template <typename T> void destroy(T *p) override;
+	void dumpToFile(const std::string& fileName) const override;
+	
+	const objectStatus& getStatus() const override;
 
-	inline void free(void* ptr);
-
-	template <typename T>
-	T * spawn(void)
-	{
-		for (size_t i = 0; i < s_MaxBlockSize; i++)
-		{
-
-		}
-		sizeof(T);
-		return reinterpret_cast<T *>(allocate(sizeof(T)));
-	}
-
-	template <typename T>
-	void destroy(T *p)
-	{
-		reinterpret_cast<T *>(p)->~T();
-		free(p);
-	}
-
-	inline void dumpToFile(const std::string& fileName) const;
+protected:
+	void setStatus(objectStatus objectStatus) override;
 
 private:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+
 	const unsigned long  m_maxPoolSize = 1024;
 	static const unsigned char m_minFreeBlockSize = 16;
 	unsigned long  m_totalPoolSize;

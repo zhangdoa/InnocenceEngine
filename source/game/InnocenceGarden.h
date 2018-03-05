@@ -59,5 +59,5 @@ private:
 };
 
 InnocenceGarden g_game;
-IGame* g_pGame = &g_game;
+g_pGame = &g_game;
 

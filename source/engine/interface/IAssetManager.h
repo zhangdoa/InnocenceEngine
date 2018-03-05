@@ -3,6 +3,8 @@
 #include "IManager.h"
 #include "entity/BaseGraphicPrimitive.h"
 
+IAssetManager* g_pAssetManager;
+
 class IAssetManager : public IManager
 {
 public:

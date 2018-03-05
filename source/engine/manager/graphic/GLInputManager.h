@@ -1,9 +1,7 @@
 #pragma once
 #include "manager/BaseManager.h"
-#include "manager/LogManager.h"
+#include "interface/ILogManager.h"
 #include "GLWindowManager.h"
-
-extern LogManager* g_pLogManager;
 
 class GLInputManager : public BaseManager
 {
