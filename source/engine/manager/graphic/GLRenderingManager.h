@@ -1,14 +1,12 @@
 #pragma once
 #include "manager/BaseManager.h"
-#include "manager/AssetManager.h"
-#include "manager/LogManager.h"
+#include "interface/IAssetManager.h"
+#include "interface/ILogManager.h"
 #include "component/VisibleComponent.h"
 #include "component/LightComponent.h"
 #include "component/CameraComponent.h"
 #include "entity/GLGraphicPrimitive.h"
 
-extern LogManager* g_pLogManager;
-extern IAssetManager* g_pAssetManager;
 
 class GLShader
 {

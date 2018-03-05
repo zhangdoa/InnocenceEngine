@@ -3,6 +3,8 @@
 #include "IObject.hpp"
 #include "entity/ComponentHeaders.h"
 
+extern IGame* g_pGame;
+
 class IGame : public IObject
 {
 public:

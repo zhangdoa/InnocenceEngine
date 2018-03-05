@@ -1,6 +1,6 @@
 #pragma once
 #include "interface/IAssetManager.h"
-#include "LogManager.h"
+#include "interface/ILogManager.h"
 
 #include "entity/BaseGraphicPrimitive.h"
 
@@ -8,8 +8,6 @@
 #include "assimp/Exporter.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
-
-extern LogManager* g_pLogManager;
 
 class assimpMeshRawData : public IMeshRawData
 {

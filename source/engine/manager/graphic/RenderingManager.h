@@ -1,7 +1,8 @@
 #pragma once
 
-#include "manager/BaseManager.h"
-#include "manager/LogManager.h"
+#include "interface/IRenderingManager.h"
+#include "interface/IAssetManager.h"
+#include "interface/ILogManager.h"
 
 #include "GLWindowManager.h"
 #include "GLInputManager.h"
@@ -9,10 +10,7 @@
 
 #include "entity/ComponentHeaders.h"
 
-extern LogManager* g_pLogManager;
-extern IAssetManager* g_pAssetManager;
-
-class RenderingManager : public BaseManager
+class RenderingManager : public IRenderingManager
 {
 public:
 	RenderingManager() {};
@@ -21,7 +19,7 @@ public:
 	void setup() override;
 	void initialize() override;
 	void update() override;
-	void render();
+	void render() override;
 	void shutdown() override;
 
 private:

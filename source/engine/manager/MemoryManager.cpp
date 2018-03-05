@@ -1,4 +1,4 @@
-#include "MemoryManager.hpp"
+#include "MemoryManager.h"
 
 void MemoryManager::setup()
 {
@@ -37,7 +37,7 @@ void MemoryManager::shutdown()
 	g_pLogManager->printLog("MemoryManager has been shutdown.");
 }
 
-inline void * MemoryManager::allocate(unsigned long size)
+void * MemoryManager::allocate(unsigned long size)
 {
 	// add bound check size
 	unsigned long l_requiredSize = size + sizeof(Chunk) + m_boundCheckSize * 2;
@@ -100,7 +100,7 @@ inline void * MemoryManager::allocate(unsigned long size)
 	return (l_blockData + sizeof(Chunk));
 }
 
-inline void MemoryManager::free(void * ptr)
+void MemoryManager::free(void * ptr)
 {
 	// is a valid node?
 	if (!ptr) return;
@@ -172,7 +172,25 @@ inline void MemoryManager::free(void * ptr)
 	memcpy(freeBlockStart + sizeof(Chunk) + l_freeUserDataSize, m_endBound, m_boundCheckSize);
 }
 
-inline void MemoryManager::dumpToFile(const std::string & fileName) const
+template <typename T>
+T * MemoryManager::spawn(void)
+{
+	for (size_t i = 0; i < s_MaxBlockSize; i++)
+	{
+
+	}
+	sizeof(T);
+	return reinterpret_cast<T *>(allocate(sizeof(T)));
+}
+
+template <typename T>
+void MemoryManager::destroy(T *p)
+{
+	reinterpret_cast<T *>(p)->~T();
+	free(p);
+}
+
+void MemoryManager::dumpToFile(const std::string & fileName) const
 {
 	_iobuf* f = NULL;
 	fopen_s(&f, fileName.c_str(), "w+");
