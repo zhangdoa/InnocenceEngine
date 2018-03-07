@@ -32,30 +32,30 @@ void TimeManager::shutdown()
 	setStatus(objectStatus::SHUTDOWN);
 }
 
-template<class Int> inline constexpr std::tuple<Int, unsigned, unsigned> TimeManager::getCivilFromDays(Int z) noexcept
+inline std::tuple<int, unsigned, unsigned> TimeManager::getCivilFromDays(int z) noexcept
 {
 	{
 		static_assert(
 			std::numeric_limits<unsigned>::digits >= 18,
 			"This algorithm has not been ported to a 16 bit unsigned integer");
 		static_assert(
-			std::numeric_limits<Int>::digits >= 20,
+			std::numeric_limits<int>::digits >= 20,
 			"This algorithm has not been ported to a 16 bit signed integer");
 		z += 719468;
-		const Int era = (z >= 0 ? z : z - 146096) / 146097;
+		const int era = (z >= 0 ? z : z - 146096) / 146097;
 		const unsigned doe = static_cast<unsigned>(z - era * 146097); // [0, 146096]
 		const unsigned yoe =
 			(doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;      // [0, 399]
-		const Int y = static_cast<Int>(yoe) + era * 400;
+		const int y = static_cast<int>(yoe) + era * 400;
 		const unsigned doy = doe - (365 * yoe + yoe / 4 - yoe / 100); // [0, 365]
 		const unsigned mp = (5 * doy + 2) / 153;                      // [0, 11]
 		const unsigned d = doy - (153 * mp + 2) / 5 + 1;              // [1, 31]
 		const unsigned m = (mp < 10 ? mp + 3 : mp - 9);               // [1, 12]
-		return std::tuple<Int, unsigned, unsigned>(y + (m <= 2), m, d);
+		return std::tuple<int, unsigned, unsigned>(y + (m <= 2), m, d);
 	}
 }
 
-template<typename Duration> std::string TimeManager::getCurrentTimeInLocal(Duration timezone_adjustment)
+std::string TimeManager::getCurrentTimeInLocal(std::chrono::hours timezone_adjustment)
 {
 
 	typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type> days;

@@ -2,6 +2,8 @@
 #include "interface/IMemoryManager.h"
 #include "interface/ILogManager.h"
 
+extern ILogManager* g_pLogManager;
+
 static const uint32_t s_BlockSizes[] = {
 	// 4-increments
 	4,  8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48,
@@ -36,8 +38,6 @@ public:
 
 	void* allocate(unsigned long size) override;
 	void free(void* ptr) override;
-	template <typename T> T * spawn(void) override;
-	template <typename T> void destroy(T *p) override;
 	void dumpToFile(const std::string& fileName) const override;
 	
 	const objectStatus& getStatus() const override;

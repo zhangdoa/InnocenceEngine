@@ -1,8 +1,8 @@
 #pragma once
 #include "BaseManager.h"
-#include "LogManager.h"
+#include "interface/ILogManager.h"
 
-extern LogManager* g_pLogManager;
+extern ILogManager* g_pLogManager;
 
 class TaskManager : public BaseManager
 {

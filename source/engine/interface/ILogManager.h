@@ -15,5 +15,3 @@ public:
 	virtual void printLog(const mat4& logMessage) const = 0;
 	virtual void printLog(const std::thread::id logMessage) const = 0;
 };
-
-ILogManager* g_pLogManager;

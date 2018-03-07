@@ -10,6 +10,9 @@
 
 #include "entity/ComponentHeaders.h"
 
+extern ILogManager* g_pLogManager;
+extern IAssetManager* g_pAssetManager;
+
 class RenderingManager : public IRenderingManager
 {
 public:

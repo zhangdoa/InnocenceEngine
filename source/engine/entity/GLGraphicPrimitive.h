@@ -2,6 +2,8 @@
 #include "interface/ILogManager.h"
 #include "entity/BaseGraphicPrimitive.h"
 
+extern ILogManager* g_pLogManager;
+
 class GLMesh : public BaseMesh
 {
 public:

@@ -1,9 +1,9 @@
 #pragma once
-#include "common/BaseGame.hpp"
+#include "interface/IGame.h"
 #include "entity/BaseEntity.h"
 #include "PlayerCharacter.h"
 
-class InnocenceGarden : public BaseGame
+class InnocenceGarden : public IGame
 {
 public:
 	InnocenceGarden();
@@ -13,12 +13,20 @@ public:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
+	const objectStatus& getStatus() const;
+
+	void getGameName(std::string & gameName) const override;
+
+protected:
+	void setStatus(objectStatus objectStatus);
+
+private:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	std::vector<CameraComponent*>& getCameraComponents() override;
 	std::vector<InputComponent*>& getInputComponents() override;
 	std::vector<LightComponent*>& getLightComponents() override;
 	std::vector<VisibleComponent*>& getVisibleComponents() override;
 
-private:
 	BaseActor rootActor;
 
 	PlayerCharacter playCharacter;
@@ -59,5 +67,5 @@ private:
 };
 
 InnocenceGarden g_game;
-g_pGame = &g_game;
+IGame* g_pGame = &g_game;
 

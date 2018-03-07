@@ -100,3 +100,13 @@ void CoreManager::shutdown()
 	g_pLogManager->printLog("CoreManager has been shutdown.");
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 }
+
+const objectStatus & CoreManager::getStatus() const
+{
+	return m_objectStatus;
+}
+
+void CoreManager::setStatus(objectStatus objectStatus)
+{
+	m_objectStatus = objectStatus;
+}

@@ -172,24 +172,6 @@ void MemoryManager::free(void * ptr)
 	memcpy(freeBlockStart + sizeof(Chunk) + l_freeUserDataSize, m_endBound, m_boundCheckSize);
 }
 
-template <typename T>
-T * MemoryManager::spawn(void)
-{
-	for (size_t i = 0; i < s_MaxBlockSize; i++)
-	{
-
-	}
-	sizeof(T);
-	return reinterpret_cast<T *>(allocate(sizeof(T)));
-}
-
-template <typename T>
-void MemoryManager::destroy(T *p)
-{
-	reinterpret_cast<T *>(p)->~T();
-	free(p);
-}
-
 void MemoryManager::dumpToFile(const std::string & fileName) const
 {
 	_iobuf* f = NULL;
@@ -261,4 +243,14 @@ void MemoryManager::dumpToFile(const std::string & fileName) const
 	}
 
 	fclose(f);
+}
+
+const objectStatus & MemoryManager::getStatus() const
+{
+	return m_objectStatus;
+}
+
+void MemoryManager::setStatus(objectStatus objectStatus)
+{
+	m_objectStatus = objectStatus;
 }
