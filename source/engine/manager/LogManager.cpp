@@ -1,16 +1,16 @@
 #include "LogManager.h"
 
-void LogManager::printLog(double logMessage)
+void LogManager::printLog(double logMessage) const
 {
 	std::cout << "[" <<g_pTimeManager->getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }
 
-void LogManager::printLog(std::string logMessage)
+void LogManager::printLog(std::string logMessage) const
 {
 	std::cout << "[" <<g_pTimeManager->getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }
 
-void LogManager::printLog(const vec2 & logMessage)
+void LogManager::printLog(const vec2 & logMessage) const
 {
 	std::cout
 		<< "[" 
@@ -24,7 +24,7 @@ void LogManager::printLog(const vec2 & logMessage)
 		<< std::endl;
 }
 
-void LogManager::printLog(const vec3 & logMessage)
+void LogManager::printLog(const vec3 & logMessage) const
 {
 	std::cout
 		<< "["
@@ -40,7 +40,7 @@ void LogManager::printLog(const vec3 & logMessage)
 		<< std::endl;
 }
 
-void LogManager::printLog(const quat & logMessage)
+void LogManager::printLog(const quat & logMessage) const
 {
 	std::cout
 		<< "["
@@ -58,7 +58,7 @@ void LogManager::printLog(const quat & logMessage)
 		<< std::endl;
 }
 
-void LogManager::printLog(const mat4 & logMessage)
+void LogManager::printLog(const mat4 & logMessage) const
 {
 	std::cout
 		<< "["
@@ -106,7 +106,7 @@ void LogManager::printLog(const mat4 & logMessage)
 		<< "|"
 		<< std::endl;
 }
-void LogManager::printLog(const std::thread::id logMessage)
+void LogManager::printLog(const std::thread::id logMessage) const
 {
 	std::cout << "[" <<g_pTimeManager->getCurrentTimeInLocal() << "]"<< "Thread: " << logMessage << std::endl;
 }

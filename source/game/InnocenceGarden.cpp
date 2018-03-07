@@ -82,6 +82,12 @@ void InnocenceGarden::shutdown()
 	rootActor.shutdown();
 }
 
+
+void InnocenceGarden::getGameName(std::string & gameName) const
+{
+	gameName = std::string{ typeid(*this).name() }.substr(std::string{ typeid(*this).name() }.find("class"), std::string::npos);
+}
+
 std::vector<CameraComponent*>& InnocenceGarden::getCameraComponents()
 {
 	return m_cameraComponents;

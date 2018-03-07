@@ -3,6 +3,8 @@
 #include "interface/ILogManager.h"
 #include "entity/InnoMath.h"
 
+extern ILogManager* g_pLogManager;
+
 class GLWindowManager : public BaseManager
 {
 public:

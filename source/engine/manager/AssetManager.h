@@ -9,6 +9,8 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
+extern ILogManager* g_pLogManager;
+
 class assimpMeshRawData : public IMeshRawData
 {
 public:

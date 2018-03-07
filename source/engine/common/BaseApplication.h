@@ -1,6 +1,8 @@
 #pragma once
 #include "interface/IApplication.h"
-#include "manager/CoreManager.h"
+#include "interface/ICoreManager.h"
+
+extern ICoreManager* g_pCoreManager;
 
 class BaseApplication : public IApplication
 {
@@ -20,6 +22,5 @@ protected:
 
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-	CoreManager* m_pCoreManager;
 };
 

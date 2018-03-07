@@ -3,6 +3,8 @@
 #include "interface/ILogManager.h"
 #include "GLWindowManager.h"
 
+extern ILogManager* g_pLogManager;
+
 class GLInputManager : public BaseManager
 {
 public:

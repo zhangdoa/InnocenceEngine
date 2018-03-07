@@ -9,5 +9,3 @@ public:
 
 	virtual void render() = 0;
 };
-
-IRenderingManager* g_pRenderingManager;
