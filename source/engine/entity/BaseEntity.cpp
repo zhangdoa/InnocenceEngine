@@ -350,7 +350,7 @@ void BaseActor::update()
 
 void BaseActor::shutdown()
 {
-	for (auto l_childActor : m_childActors)
+	for (auto& l_childActor : m_childActors)
 	{
 		l_childActor->shutdown();
 	}

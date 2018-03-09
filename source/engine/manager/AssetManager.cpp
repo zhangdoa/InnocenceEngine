@@ -30,6 +30,16 @@ std::string AssetManager::loadShader(const std::string & fileName) const
 	return output;
 }
 
+const objectStatus & AssetManager::getStatus() const
+{
+	return m_objectStatus;
+}
+
+void AssetManager::setStatus(objectStatus objectStatus)
+{
+	m_objectStatus = objectStatus;
+}
+
 modelPointerMap AssetManager::loadModelFromDisk(const std::string & fileName) const
 {
 	// read file via ASSIMP
@@ -312,4 +322,39 @@ void AssetManager::loadTextureFromDisk(const std::vector<std::string>& fileName,
 			return;
 		}
 	}
+}
+
+int assimpMeshRawData::getNumVertices() const
+{
+	return 0;
+}
+
+int assimpMeshRawData::getNumFaces() const
+{
+	return 0;
+}
+
+int assimpMeshRawData::getNumIndicesInFace(int faceIndex) const
+{
+	return 0;
+}
+
+vec3 assimpMeshRawData::getVertices(unsigned int index) const
+{
+	return vec3();
+}
+
+vec2 assimpMeshRawData::getTextureCoords(unsigned int index) const
+{
+	return vec2();
+}
+
+vec3 assimpMeshRawData::getNormals(unsigned int index) const
+{
+	return vec3();
+}
+
+int assimpMeshRawData::getIndices(int faceIndex, int index) const
+{
+	return 0;
 }

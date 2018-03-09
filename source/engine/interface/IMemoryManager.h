@@ -11,12 +11,7 @@ public:
 	virtual void free(void* ptr) = 0;
 	template <typename T> T * spawn()
 	{
-		for (size_t i = 0; i < s_MaxBlockSize; i++)
-		{
-
-		}
-		sizeof(T);
-		return reinterpret_cast<T *>(allocate(sizeof(T)));
+		return new(allocate(sizeof(T))) T();
 	};
 	template <typename T> void destroy(T *p)
 	{
