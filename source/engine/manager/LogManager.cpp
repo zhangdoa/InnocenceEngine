@@ -111,6 +111,16 @@ void LogManager::printLog(const std::thread::id logMessage) const
 	std::cout << "[" <<g_pTimeManager->getCurrentTimeInLocal() << "]"<< "Thread: " << logMessage << std::endl;
 }
 
+const objectStatus & LogManager::getStatus() const
+{
+	return m_objectStatus;
+}
+
+void LogManager::setStatus(objectStatus objectStatus)
+{
+	m_objectStatus = objectStatus;
+}
+
 void LogManager::setup()
 {	
 }

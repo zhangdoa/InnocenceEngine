@@ -7,6 +7,7 @@
 #include "component/CameraComponent.h"
 #include "entity/GLGraphicPrimitive.h"
 
+extern IAssetManager* g_pAssetManager;
 
 class GLShader
 {

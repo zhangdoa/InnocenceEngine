@@ -14,8 +14,8 @@ extern ILogManager* g_pLogManager;
 class assimpMeshRawData : public IMeshRawData
 {
 public:
-	assimpMeshRawData();
-	~assimpMeshRawData();
+	assimpMeshRawData() {};
+	~assimpMeshRawData() {};
 
 	int getNumVertices() const override;
 	int getNumFaces() const override;

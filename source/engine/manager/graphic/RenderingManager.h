@@ -24,8 +24,14 @@ public:
 	void update() override;
 	void render() override;
 	void shutdown() override;
+	const objectStatus& getStatus() const override;
+
+protected:
+	void setStatus(objectStatus objectStatus) override;
 
 private:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+
 	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
 
 	void changeDrawPolygonMode();
@@ -41,6 +47,7 @@ private:
 	std::function<void()> f_changeDrawPolygonMode;
 	std::function<void()> f_changeDrawTextureMode;
 
+	//@TODO:set
 	std::vector<VisibleComponent*> m_VisibleComponents;
 	std::vector<LightComponent*> m_LightComponents;
 	std::vector<CameraComponent*> m_CameraComponents;

@@ -105,6 +105,16 @@ void RenderingManager::shutdown()
 	g_pLogManager->printLog("RenderingManager has been shutdown.");
 }
 
+const objectStatus & RenderingManager::getStatus() const
+{
+	return m_objectStatus;
+}
+
+void RenderingManager::setStatus(objectStatus objectStatus)
+{
+	m_objectStatus = objectStatus;
+}
+
 void RenderingManager::render()
 {
 	//prepare rendering global state

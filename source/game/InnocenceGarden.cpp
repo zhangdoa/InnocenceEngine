@@ -58,8 +58,8 @@ void InnocenceGarden::setup()
 	pawnActor2.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
 	pawnActor2.getTransform()->setPos(vec3(0.0, 0.2, 3.5));
 
-	setupLights();
-	setupSpheres();
+	//setupLights();
+	//setupSpheres();
 
 	rootActor.setup();
 }
