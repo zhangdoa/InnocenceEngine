@@ -9,9 +9,9 @@ public:
 
 	const objectStatus& getStatus() const;
 
-	void BaseGame::getGameName(std::string & gameName) const override
+	std::string BaseGame::getGameName() const override
 	{
-		gameName = std::string{ typeid(*this).name() }.substr(std::string{ typeid(*this).name() }.find("class"), std::string::npos);
+		return std::string{ typeid(*this).name() }.substr(std::string{ typeid(*this).name() }.find("class"), std::string::npos);
 	}
 
 protected:

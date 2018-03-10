@@ -11,7 +11,7 @@ InnocenceGarden::~InnocenceGarden()
 
 void InnocenceGarden::setup()
 {
-	rootActor.addChildActor(&playCharacter);
+	rootActor.addChildActor(&m_playCharacter);
 
 	rootActor.addChildActor(&skyboxActor);
 
@@ -21,17 +21,22 @@ void InnocenceGarden::setup()
 	rootActor.addChildActor(&pawnActor1);
 	rootActor.addChildActor(&pawnActor2);
 
-	playCharacter.getTransform()->setPos(vec3(0.0, 2.0, 5.0));
+	m_playCharacter.getTransform()->setPos(vec3(0.0, 2.0, 5.0));
+	m_cameraComponents.emplace_back(&m_playCharacter.getCameraComponent());
+	m_inputComponents.emplace_back(&m_playCharacter.getInputComponent());
 
 	skyboxComponent.m_visiblilityType = visiblilityType::SKYBOX;
 	skyboxComponent.m_meshType = meshType::CUBE;
 	skyboxComponent.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
 	skyboxComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl/Brooklyn_Bridge_Planks_2k.hdr"));
 	skyboxActor.addChildComponent(&skyboxComponent);
+	m_visibleComponents.emplace_back(&skyboxComponent);
 
 	directionalLightComponent.setColor(vec3(1.0, 1.0, 1.0));
 	directionalLightComponent.setlightType(lightType::DIRECTIONAL);
 	directionalLightComponent.setDirection(vec3(0.0, 0.0, -0.85));
+	directionalLightActor.addChildComponent(&directionalLightComponent);
+	m_lightComponents.emplace_back(&directionalLightComponent);
 
 	landscapeStaticMeshComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
 	landscapeStaticMeshComponent.m_meshType = meshType::CUBE;
@@ -39,12 +44,14 @@ void InnocenceGarden::setup()
 	landscapeActor.getTransform()->setScale(vec3(20.0, 20.0, 0.1f));
 	landscapeActor.getTransform()->rotate(vec3(1.0, 0.0, 0.0), 90.0);
 	landscapeActor.getTransform()->setPos(vec3(0.0, 0.0, 0.0));
+	m_visibleComponents.emplace_back(&landscapeStaticMeshComponent);
 
 	pawnMeshComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	pawnMeshComponent1.m_meshType = meshType::CUSTOM;
 	pawnActor1.addChildComponent(&pawnMeshComponent1);
 	pawnActor1.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
 	pawnActor1.getTransform()->setPos(vec3(0.0, 0.2, -1.5));
+	m_visibleComponents.emplace_back(&pawnMeshComponent1);
 
 	pawnMeshComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
 	pawnMeshComponent1.m_meshType = meshType::CUSTOM;
@@ -57,6 +64,7 @@ void InnocenceGarden::setup()
 	pawnActor2.addChildComponent(&pawnMeshComponent2);
 	pawnActor2.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
 	pawnActor2.getTransform()->setPos(vec3(0.0, 0.2, 3.5));
+	m_visibleComponents.emplace_back(&pawnMeshComponent2);
 
 	//setupLights();
 	//setupSpheres();
@@ -82,10 +90,20 @@ void InnocenceGarden::shutdown()
 	rootActor.shutdown();
 }
 
-
-void InnocenceGarden::getGameName(std::string & gameName) const
+const objectStatus & InnocenceGarden::getStatus() const
 {
-	gameName = std::string{ typeid(*this).name() }.substr(std::string{ typeid(*this).name() }.find("class"), std::string::npos);
+	return m_objectStatus;
+}
+
+
+std::string InnocenceGarden::getGameName() const
+{
+	return std::string{ typeid(*this).name() }.substr(std::string{ typeid(*this).name() }.find("class"), std::string::npos);
+}
+
+void InnocenceGarden::setStatus(objectStatus objectStatus)
+{
+	m_objectStatus = objectStatus;
 }
 
 std::vector<CameraComponent*>& InnocenceGarden::getCameraComponents()
@@ -122,6 +140,7 @@ void InnocenceGarden::setupSpheres()
 		sphereComponents[i].m_useTexture = false;
 		rootActor.addChildActor(&sphereActors[i]);
 		sphereActors[i].addChildComponent(&sphereComponents[i]);
+		m_visibleComponents.emplace_back(&sphereComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < sphereComponents.size(); i += 4)
 	{
@@ -174,6 +193,7 @@ void InnocenceGarden::setupLights()
 	{
 		rootActor.addChildActor(&pointLightActors[i]);
 		pointLightActors[i].addChildComponent(&pointLightComponents[i]);
+		m_lightComponents.emplace_back(&pointLightComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim; i++)
 	{

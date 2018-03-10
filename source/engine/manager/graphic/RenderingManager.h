@@ -2,6 +2,7 @@
 
 #include "interface/IRenderingManager.h"
 #include "interface/IAssetManager.h"
+#include "interface/IGameManager.h"
 #include "interface/ILogManager.h"
 
 #include "GLWindowManager.h"
@@ -12,6 +13,7 @@
 
 extern ILogManager* g_pLogManager;
 extern IAssetManager* g_pAssetManager;
+extern IGameManager* g_pGameManager;
 
 class RenderingManager : public IRenderingManager
 {
@@ -46,12 +48,6 @@ private:
 	std::vector<std::unique_ptr<IManager>> m_childManager;
 	std::function<void()> f_changeDrawPolygonMode;
 	std::function<void()> f_changeDrawTextureMode;
-
-	//@TODO:set
-	std::vector<VisibleComponent*> m_VisibleComponents;
-	std::vector<LightComponent*> m_LightComponents;
-	std::vector<CameraComponent*> m_CameraComponents;
-	std::vector<InputComponent*> m_InputComponents;
 
 	meshID m_UnitCubeTemplate;
 	meshID m_UnitSphereTemplate;

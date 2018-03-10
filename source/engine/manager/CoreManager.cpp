@@ -18,21 +18,17 @@ void CoreManager::setup()
 	g_pAssetManager = g_pMemoryManager->spawn<INNO_ASSET_MANAGER>();
 	g_pAssetManager->setup();
 	g_pLogManager->printLog("AssetManager setup finished.");
-
-	if (g_pGame != nullptr)
+	g_pGameManager = g_pMemoryManager->spawn<INNO_GAME_MANAGER>();
+	g_pGameManager->setup();
+	g_pLogManager->printLog("GameManager setup finished.");
+	if (g_pGameManager->getStatus() == objectStatus::ALIVE)
 	{
-		g_pLogManager->printLog("Game loaded.");
-		std::string l_gameName;
-		g_pGame->getGameName(l_gameName);
-		GLWindowManager::getInstance().setWindowName(l_gameName);
-		g_pGame->setup();
-		g_pLogManager->printLog("Game setup finished.");
+		GLWindowManager::getInstance().setWindowName(g_pGameManager->getGameName());
 		this->setStatus(objectStatus::ALIVE);
 		g_pLogManager->printLog("CoreManager setup finished.");
 	}
 	else
 	{
-		g_pLogManager->printLog("No game loaded! Engine shut down now.");
 		this->setStatus(objectStatus::STANDBY);
 		g_pLogManager->printLog("CoreManager stand-by.");
 	}
@@ -45,8 +41,7 @@ void CoreManager::initialize()
 	g_pTimeManager->initialize();
 	g_pRenderingManager->initialize();
 	g_pAssetManager->initialize();
-
-	g_pGame->initialize();
+	g_pGameManager->initialize();
 
 	g_pLogManager->printLog("CoreManager has been initialized.");
 }
@@ -55,17 +50,18 @@ void CoreManager::update()
 {
 	// time manager should update without any limitation.
 	g_pTimeManager->update();
+	// game simulation
+	g_pGameManager->update();
 
-	// when time manager's status was objectStatus::ALIVE, that means we can update other managers, a frame counter occurred.
+	// a frame counter occurred.
+	// @TODO: Async rendering
 	if (g_pTimeManager->getStatus() == objectStatus::ALIVE)
 	{
-
 		if (g_pRenderingManager->getStatus() == objectStatus::ALIVE)
 		{
 			auto l_tickTime = g_pTimeManager->getcurrentTime();
-			// game data update
-			g_pGame->update();
-			if (g_pGame->needRender)
+
+			if (g_pGameManager->needRender())
 			{
 				g_pRenderingManager->render();
 			}
@@ -85,6 +81,7 @@ void CoreManager::update()
 
 void CoreManager::shutdown()
 {
+	g_pGameManager->shutdown();
 	g_pAssetManager->shutdown();
 	g_pRenderingManager->shutdown();
 	g_pTimeManager->shutdown();

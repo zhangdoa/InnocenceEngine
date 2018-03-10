@@ -7,3 +7,4 @@
 #include "interface/ITimeManager.h"
 #include "interface/IRenderingManager.h"
 #include "interface/IAssetManager.h"
+#include "interface/IGameManager.h"

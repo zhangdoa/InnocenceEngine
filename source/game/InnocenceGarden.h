@@ -15,7 +15,7 @@ public:
 	void shutdown() override;
 	const objectStatus& getStatus() const;
 
-	void getGameName(std::string & gameName) const override;
+	std::string getGameName() const override;
 
 protected:
 	void setStatus(objectStatus objectStatus);
@@ -29,7 +29,7 @@ private:
 
 	BaseActor rootActor;
 
-	PlayerCharacter playCharacter;
+	PlayerCharacter m_playCharacter;
 	BaseActor skyboxActor;
 	BaseActor directionalLightActor;
 

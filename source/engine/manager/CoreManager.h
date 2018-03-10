@@ -7,16 +7,13 @@
 #include "platform/InnoManagerHeaderWin32.h"
 #endif
 
-#include "interface/IGame.h"
-
 IMemoryManager* g_pMemoryManager;
+ILogManager* g_pLogManager;
+ITaskManager* g_pTaskManager;
+ITimeManager* g_pTimeManager;
 IRenderingManager* g_pRenderingManager;
 IAssetManager* g_pAssetManager;
-ITaskManager* g_pTaskManager;
-ILogManager* g_pLogManager;
-ITimeManager* g_pTimeManager;
-
-extern IGame* g_pGame;
+IGameManager* g_pGameManager;
 
 class CoreManager : public ICoreManager
 {
