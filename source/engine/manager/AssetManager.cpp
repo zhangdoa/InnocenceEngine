@@ -324,6 +324,7 @@ void AssetManager::loadTextureFromDisk(const std::vector<std::string>& fileName,
 	}
 }
 
+// @TODO: impl
 int assimpMeshRawData::getNumVertices() const
 {
 	return 0;

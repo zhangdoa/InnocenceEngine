@@ -32,11 +32,11 @@ void RenderingManager::initialize()
 		m_childManager[i].get()->initialize();
 	}
 
-	for (size_t i = 0; i < m_InputComponents.size(); i++)
+	for (size_t i = 0; i < g_pGameManager->getInputComponents().size(); i++)
 	{
 		// @TODO: multi input components need to register to multi map
-		GLInputManager::getInstance().addKeyboardInputCallback(m_InputComponents[i]->getKeyboardInputCallbackImpl());
-		GLInputManager::getInstance().addMouseMovementCallback(m_InputComponents[i]->getMouseInputCallbackImpl());
+		GLInputManager::getInstance().addKeyboardInputCallback(g_pGameManager->getInputComponents()[i]->getKeyboardInputCallbackImpl());
+		GLInputManager::getInstance().addMouseMovementCallback(g_pGameManager->getInputComponents()[i]->getMouseInputCallbackImpl());
 	}
 
 	GLInputManager::getInstance().addKeyboardInputCallback(GLFW_KEY_Q, &f_changeDrawPolygonMode);
@@ -72,6 +72,20 @@ void RenderingManager::initialize()
 	lastSphereMeshData->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
 	lastSphereMeshData->initialize();
 
+	for (auto i : g_pGameManager->getVisibleComponents())
+	{
+		if (i->m_modelFileName != "")
+		{
+			loadModel(i->m_modelFileName, *i);
+		}
+		if (i->m_textureFileNameMap.size() != 0)
+		{
+			for (auto& j : i->m_textureFileNameMap)
+			{
+				loadTexture({ j.second }, j.first, *i);
+			}
+		}
+	}
 	this->setStatus(objectStatus::ALIVE);
 	g_pLogManager->printLog("RenderingManager has been initialized.");
 }
@@ -121,7 +135,7 @@ void RenderingManager::render()
 	GLRenderingManager::getInstance().update();
 	
 	//defer render
-	GLRenderingManager::getInstance().render(m_CameraComponents, m_LightComponents, m_VisibleComponents);
+	GLRenderingManager::getInstance().render(g_pGameManager->getCameraComponents(), g_pGameManager->getLightComponents(), g_pGameManager->getVisibleComponents());
 }
 
 void RenderingManager::assignUnitMesh(VisibleComponent & visibleComponent, meshType unitMeshType)
