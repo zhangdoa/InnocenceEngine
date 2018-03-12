@@ -23,6 +23,13 @@ public:
 	virtual int getIndices(int faceIndex, int index) const = 0;
 };
 
+class IScene
+{
+public:
+	IScene() {};
+	virtual ~IScene() {};
+};
+
 typedef EntityID textureID;
 typedef EntityID meshID;
 typedef std::pair<textureType, textureID> texturePair;

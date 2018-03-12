@@ -40,7 +40,6 @@ void MemoryManager::update()
 void MemoryManager::shutdown()
 {
 	::delete[] m_poolMemory;
-	g_pLogManager->printLog("MemoryManager has been shutdown.");
 }
 
 void * MemoryManager::allocate(unsigned long size)

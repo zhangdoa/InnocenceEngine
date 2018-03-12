@@ -24,8 +24,14 @@ public:
 	void setup() override;
 	void initialize() override;
 	void update() override;
-	void render() override;
 	void shutdown() override;
+
+	void render() override;
+	meshID addMesh() override;
+	textureID addTexture(textureType textureType) override;
+	BaseMesh* getMesh(meshID meshID) override;
+	BaseTexture* getTexture(textureType textureType, textureID textureID) override;
+
 	const objectStatus& getStatus() const override;
 
 protected:
