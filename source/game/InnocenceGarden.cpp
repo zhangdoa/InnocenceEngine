@@ -54,21 +54,20 @@ void InnocenceGarden::setup()
 	m_visibleComponents.emplace_back(&pawnMeshComponent1);
 
 	pawnMeshComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
-	pawnMeshComponent1.m_meshType = meshType::CUSTOM;
-	/*pawnMeshComponent2.m_modelFileName = "lantern/lantern.obj";
+	pawnMeshComponent2.m_meshType = meshType::CUSTOM;
+	pawnMeshComponent2.m_modelFileName = "lantern/lantern.obj";
 	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "lantern/lantern_Normal_OpenGL.jpg"));
 	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lantern/lantern_Base_Color.jpg"));
 	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "lantern/lantern_Metallic.jpg"));
 	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "lantern/lantern_Roughness.jpg"));
-	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "lantern/lantern_Mixed_AO.jpg"));*/
+	pawnMeshComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "lantern/lantern_Mixed_AO.jpg"));
 	pawnActor2.addChildComponent(&pawnMeshComponent2);
 	pawnActor2.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
 	pawnActor2.getTransform()->setPos(vec3(0.0, 0.2, 3.5));
 	m_visibleComponents.emplace_back(&pawnMeshComponent2);
 
-	// @TODO: bug fix
-	//setupLights();
-	//setupSpheres();
+	setupLights();
+	setupSpheres();
 
 	rootActor.setup();
 }
@@ -133,16 +132,18 @@ void InnocenceGarden::setupSpheres()
 	double sphereBreadthInterval = 4.0;
 	for (auto i = (unsigned int)0; i < sphereMatrixDim * sphereMatrixDim; i++)
 	{
-		sphereActors.emplace_back();
 		sphereComponents.emplace_back();
+		sphereActors.emplace_back();
+	}
+	for (auto i = (unsigned int)0; i < sphereComponents.size(); i++)
+	{
 		sphereComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
 		sphereComponents[i].m_meshType = meshType::SPHERE;
 		sphereComponents[i].m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 		sphereComponents[i].m_useTexture = false;
 		rootActor.addChildActor(&sphereActors[i]);
 		sphereActors[i].addChildComponent(&sphereComponents[i]);
-		auto l_p = &sphereComponents[i];
-		m_visibleComponents.emplace_back(l_p);
+		m_visibleComponents.emplace_back(&sphereComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < sphereComponents.size(); i += 4)
 	{
@@ -188,16 +189,14 @@ void InnocenceGarden::setupLights()
 	double pointLightBreadthInterval = 4.0;
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim * pointLightMatrixDim; i++)
 	{
-		pointLightActors.emplace_back();
 		pointLightComponents.emplace_back();
+		pointLightActors.emplace_back();
 	}
 	for (auto i = (unsigned int)0; i < pointLightComponents.size(); i++)
 	{
 		rootActor.addChildActor(&pointLightActors[i]);
 		pointLightActors[i].addChildComponent(&pointLightComponents[i]);
-		auto l_p = &pointLightComponents[i];
-		m_lightComponents.emplace_back(l_p);
-		
+		m_lightComponents.emplace_back(&pointLightComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim; i++)
 	{

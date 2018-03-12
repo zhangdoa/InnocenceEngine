@@ -8,7 +8,6 @@ class IAssetManager : public IManager
 public:
 	virtual ~IAssetManager() {};
 	virtual void loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod, BaseTexture* baseDexture) const = 0;
-	virtual void loadModelFromDisk(const std::string & fileName, modelPointerMap& modelPointerMap) const = 0;
-	virtual void parseloadRawModelData(const modelPointerMap & modelPointerMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, std::vector<BaseMesh*>& baseMesh, std::vector<BaseTexture*>& baseTexture) const = 0;
+	virtual void loadModelFromDisk(const std::string & fileName, modelMap& modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod) = 0;
 	virtual std::string loadShader(const std::string& fileName) const = 0;
 };

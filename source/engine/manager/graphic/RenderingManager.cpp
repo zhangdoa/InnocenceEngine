@@ -145,6 +145,26 @@ void RenderingManager::render()
 	GLRenderingManager::getInstance().render(g_pGameManager->getCameraComponents(), g_pGameManager->getLightComponents(), g_pGameManager->getVisibleComponents());
 }
 
+meshID RenderingManager::addMesh()
+{
+	return GLRenderingManager::getInstance().addMesh();
+}
+
+textureID RenderingManager::addTexture(textureType textureType)
+{
+	return GLRenderingManager::getInstance().addTexture(textureType);
+}
+
+BaseMesh * RenderingManager::getMesh(meshID meshID)
+{
+	return GLRenderingManager::getInstance().getMesh(meshID);
+}
+
+BaseTexture * RenderingManager::getTexture(textureType textureType, textureID textureID)
+{
+	return GLRenderingManager::getInstance().getTexture(textureType, textureID);
+}
+
 void RenderingManager::assignUnitMesh(VisibleComponent & visibleComponent, meshType meshType)
 {
 	meshID l_UnitMeshTemplate;
@@ -224,33 +244,9 @@ void RenderingManager::loadModel(const std::string & fileName, VisibleComponent 
 	}
 	else
 	{
-		modelPointerMap l_modelPointerMap; 
-		g_pAssetManager->loadModelFromDisk(fileName, l_modelPointerMap);
-		
-		std::vector<BaseMesh*> l_baseMesh;
-		std::vector<BaseTexture*> l_baseTexture;
 		modelMap l_modelMap;
+		g_pAssetManager->loadModelFromDisk(fileName, l_modelMap, visibleComponent.m_meshDrawMethod, visibleComponent.m_textureWrapMethod);
 
-		//construct model data redirector
-		for (auto & l_meshRawDataPair : l_modelPointerMap)
-		{
-			auto l_meshID = GLRenderingManager::getInstance().addMesh();
-			l_baseMesh.emplace_back(GLRenderingManager::getInstance().getMesh(l_meshID));
-
-			textureMap l_textureMap;
-			for (auto & l_textureFileNamePair : l_meshRawDataPair.second)
-			{
-				auto l_textureID = GLRenderingManager::getInstance().addTexture(l_textureFileNamePair.first);
-				l_baseTexture.emplace_back(GLRenderingManager::getInstance().getTexture(l_textureFileNamePair.first, l_textureID));
-				l_textureMap.emplace(l_textureFileNamePair.first, l_textureID);
-			}
-
-			l_modelMap.emplace(l_meshID, l_textureMap);
-		}
-
-		//then set all of the raw data to the inno version one
-		g_pAssetManager->parseloadRawModelData(l_modelPointerMap, visibleComponent.m_meshDrawMethod, visibleComponent.m_textureWrapMethod, l_baseMesh, l_baseTexture);
-		
 		//mark as loaded
 		m_loadedModelMap.emplace(l_convertedFilePath, l_modelMap);
 		assignloadedModel(l_modelMap, visibleComponent);
