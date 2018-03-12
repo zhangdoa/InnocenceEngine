@@ -1,8 +1,10 @@
 #pragma once
 #include "interface/IMemoryManager.h"
 #include "interface/ILogManager.h"
+#include "interface/ITimeManager.h"
 
 extern ILogManager* g_pLogManager;
+extern ITimeManager* g_pTimeManager;
 
 static const uint32_t s_BlockSizes[] = {
 	// 4-increments
@@ -48,7 +50,7 @@ protected:
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	const unsigned long  m_maxPoolSize = 1024;
+	const unsigned long  m_maxPoolSize = 1024 * 1024;
 	static const unsigned char m_minFreeBlockSize = 16;
 	unsigned long  m_totalPoolSize;
 	unsigned long  m_freePoolSize;

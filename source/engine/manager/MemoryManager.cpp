@@ -29,6 +29,12 @@ void MemoryManager::initialize()
 
 void MemoryManager::update()
 {
+#ifdef DEBUG
+	if (g_pTimeManager)
+	{
+		dumpToFile("../" + g_pTimeManager->getCurrentTimeInLocal() + ".innoMemoryDump");
+	}
+#endif // DEBUG
 }
 
 void MemoryManager::shutdown()

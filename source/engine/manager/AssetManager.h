@@ -1,6 +1,7 @@
 #pragma once
 #include "interface/IAssetManager.h"
 #include "interface/ILogManager.h"
+#include "interface/IMemoryManager.h"
 
 #include "entity/BaseGraphicPrimitive.h"
 
@@ -10,6 +11,7 @@
 #include "assimp/postprocess.h"
 
 extern ILogManager* g_pLogManager;
+extern IMemoryManager* g_pMemoryManager;
 
 class assimpMeshRawData : public IMeshRawData
 {
@@ -39,7 +41,7 @@ public:
 	void shutdown() override;
 
 	void loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod, BaseTexture* baseDexture) const override;
-	modelPointerMap loadModelFromDisk(const std::string & fileName) const override;
+	void loadModelFromDisk(const std::string & fileName, modelPointerMap& modelPointerMap) const override;
 	void parseloadRawModelData(const modelPointerMap & modelPointerMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, std::vector<BaseMesh*>& baseMesh, std::vector<BaseTexture*>& baseTexture)const override;
 	std::string loadShader(const std::string& fileName) const override;
 
@@ -51,9 +53,8 @@ protected:
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	modelPointerMap processAssimpScene(const std::string& fileName, const aiScene* aiScene) const;
-	modelPointerMap processAssimpNode(const std::string& fileName, aiNode* node, const aiScene* scene) const;
-	textureFileNameMap processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial) const;
+	void processAssimpScene(const std::string& fileName, modelPointerMap& modelPointerMap, const aiScene* aiScene) const;
+	void processSingleAssimpMaterial(const std::string& fileName, textureFileNameMap& textureFileNameMap, aiMaterial * aiMaterial) const;
 
 	std::unordered_map<std::string, int> m_supportedTextureType = { std::pair<std::string, int>("png", 0) };
 	std::unordered_map<std::string, int> m_supportedModelType = { std::pair<std::string, int>("obj",0), std::pair<std::string, int>("innoModel", 0) };

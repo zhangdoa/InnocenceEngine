@@ -38,7 +38,7 @@ private:
 
 	void changeDrawPolygonMode();
 	void changeDrawTextureMode();
-	void assignUnitMesh(VisibleComponent& visibleComponent, meshType unitMeshType);
+	void assignUnitMesh(VisibleComponent& visibleComponent, meshType meshType);
 	void assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
 	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
 	void loadTexture(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent& visibleComponent);
