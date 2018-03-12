@@ -40,11 +40,12 @@ void AssetManager::setStatus(objectStatus objectStatus)
 	m_objectStatus = objectStatus;
 }
 
-modelPointerMap AssetManager::loadModelFromDisk(const std::string & fileName) const
+void AssetManager::loadModelFromDisk(const std::string & fileName, modelPointerMap& modelPointerMap) const
 {
 	// read file via ASSIMP
+	auto l_convertedFilePath = fileName.substr(0, fileName.find(".")) + ".innoModel";
 	Assimp::Importer l_assImporter;
-	auto l_assScene = l_assImporter.ReadFile(m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	auto l_assScene = l_assImporter.ReadFile(m_modelRelativePath + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 	if (l_assScene == nullptr)
 	{
 		l_assScene = l_assImporter.ReadFile(m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
@@ -56,58 +57,61 @@ modelPointerMap AssetManager::loadModelFromDisk(const std::string & fileName) co
 	if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 	{
 		g_pLogManager->printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
-		return modelPointerMap();
+		return;
 	}
 	// only need last part of file name without subfix as material's subfolder name
 	auto& l_fileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
-	auto& l_modelPointerMap = processAssimpScene(l_fileName, l_assScene);
+	processAssimpScene(l_fileName, modelPointerMap, l_assScene);
 	
 	g_pLogManager->printLog("AssetManager: " + fileName + " is loaded for the first time, successfully assigned modelMap IDs.");
-	return l_modelPointerMap;
 }
 
-modelPointerMap AssetManager::processAssimpScene(const std::string& fileName, const aiScene* aiScene) const
+void AssetManager::processAssimpScene(const std::string& fileName, modelPointerMap& modelPointerMap, const aiScene* aiScene) const
 {
-	auto l_modelPointerMap = modelPointerMap();
-
 	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
 	if (aiScene->mRootNode->mNumMeshes > 0)
 	{
-		auto& l_loadedmodelMap = processAssimpNode(fileName, aiScene->mRootNode, aiScene);
-		l_modelPointerMap.insert(l_loadedmodelMap.begin(), l_loadedmodelMap.end());
+		for (auto i = (unsigned int)0; i < aiScene->mRootNode->mNumMeshes; i++)
+		{
+			modelPointerPair l_modelPointerPair;;
+			auto l_assimpMeshData = g_pMemoryManager->spawn<assimpMeshRawData>();
+			l_assimpMeshData->m_aiMesh = aiScene->mMeshes[aiScene->mRootNode->mMeshes[i]];
+			l_modelPointerPair.first = l_assimpMeshData;
+
+			// process material if there was anyone
+			if (aiScene->mMeshes[aiScene->mRootNode->mMeshes[i]]->mMaterialIndex > 0)
+			{
+				textureFileNameMap l_textureFileNameMap;
+				processSingleAssimpMaterial(fileName, l_textureFileNameMap, aiScene->mMaterials[aiScene->mMeshes[aiScene->mRootNode->mMeshes[i]]->mMaterialIndex]);
+				l_modelPointerPair.second = l_textureFileNameMap;
+			}
+
+			modelPointerMap.emplace(l_modelPointerPair);
+		}
 	}
 	for (auto i = (unsigned int)0; i < aiScene->mRootNode->mNumChildren; i++)
 	{
 		if (aiScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
-			auto& l_loadedModelPointerMap = processAssimpNode(fileName, aiScene->mRootNode->mChildren[i], aiScene);
-			l_modelPointerMap.insert(l_loadedModelPointerMap.begin(), l_loadedModelPointerMap.end());
+			for (auto j = (unsigned int)0; j < aiScene->mRootNode->mChildren[i]->mNumMeshes; j++)
+			{
+				modelPointerPair l_modelPointerPair;
+				auto l_assimpMeshData = g_pMemoryManager->spawn<assimpMeshRawData>();
+				l_assimpMeshData->m_aiMesh = aiScene->mMeshes[aiScene->mRootNode->mChildren[i]->mMeshes[j]];
+				l_modelPointerPair.first = l_assimpMeshData;
+
+				// process material if there was anyone
+				if (aiScene->mMeshes[aiScene->mRootNode->mChildren[i]->mMeshes[j]]->mMaterialIndex > 0)
+				{
+					textureFileNameMap l_textureFileNameMap;
+					processSingleAssimpMaterial(fileName, l_textureFileNameMap, aiScene->mMaterials[aiScene->mMeshes[aiScene->mRootNode->mChildren[i]->mMeshes[j]]->mMaterialIndex]);
+					l_modelPointerPair.second = l_textureFileNameMap;
+				}
+
+				modelPointerMap.emplace(l_modelPointerPair);
+			}
 		}
 	}
-
-	return l_modelPointerMap;
-}
-
-
-modelPointerMap AssetManager::processAssimpNode(const std::string& fileName, aiNode * node, const aiScene * scene) const
-{
-	auto l_modelPointerMap = modelPointerMap();
-	// process each mesh located at the current node
-	for (auto i = (unsigned int)0; i < node->mNumMeshes; i++)
-	{
-		auto l_modelPointerPair = modelPointerPair();
-		auto l_assimpMeshData = new assimpMeshRawData();
-		l_assimpMeshData->m_aiMesh = scene->mMeshes[node->mMeshes[i]];
-		l_modelPointerPair.first = l_assimpMeshData;
-
-		// process material if there was anyone
-		if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
-		{
-			l_modelPointerPair.second = processSingleAssimpMaterial(fileName, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex]);
-		}
-		l_modelPointerMap.emplace(l_modelPointerPair);
-	}
-	return l_modelPointerMap;
 }
 
 void AssetManager::parseloadRawModelData(const modelPointerMap & modelPointerMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, std::vector<BaseMesh*>& baseMesh, std::vector<BaseTexture*>& baseTexture) const
@@ -188,9 +192,8 @@ void AssetManager::parseloadRawModelData(const modelPointerMap & modelPointerMap
 
 }
 
-textureFileNameMap AssetManager::processSingleAssimpMaterial(const std::string& fileName, aiMaterial * aiMaterial) const
+void AssetManager::processSingleAssimpMaterial(const std::string& fileName, textureFileNameMap& textureFileNameMap, aiMaterial * aiMaterial) const
 {
-	auto l_textureMap = textureFileNameMap();
 	for (auto i = (unsigned int)0; i < aiTextureType_UNKNOWN; i++)
 	{
 		if (aiMaterial->GetTextureCount(aiTextureType(i)) > 0)
@@ -219,7 +222,7 @@ textureFileNameMap AssetManager::processSingleAssimpMaterial(const std::string& 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
 				g_pLogManager->printLog("inno2DTexture: " + fileName + " is unknown type!");
-				return textureFileNameMap();
+				return;
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
 			{
@@ -244,16 +247,15 @@ textureFileNameMap AssetManager::processSingleAssimpMaterial(const std::string& 
 			else
 			{
 				g_pLogManager->printLog("inno2DTexture: " + fileName + " is unsupported type!");
-				return textureFileNameMap();
+				return;
 			}
 			// load image
 			l_texturePair.first = l_textureType;
 			l_texturePair.second = fileName + "//" + l_localPath;
 
-			l_textureMap.emplace(l_texturePair);
+			textureFileNameMap.emplace(l_texturePair);
 		}
 	}
-	return l_textureMap;
 }
 
 void AssetManager::loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod, BaseTexture* baseDexture) const
@@ -324,38 +326,37 @@ void AssetManager::loadTextureFromDisk(const std::vector<std::string>& fileName,
 	}
 }
 
-// @TODO: impl
 int assimpMeshRawData::getNumVertices() const
 {
-	return 0;
+	return m_aiMesh->mNumVertices;
 }
 
 int assimpMeshRawData::getNumFaces() const
 {
-	return 0;
+	return m_aiMesh->mNumFaces;
 }
 
 int assimpMeshRawData::getNumIndicesInFace(int faceIndex) const
 {
-	return 0;
+	return m_aiMesh->mFaces[faceIndex].mNumIndices;
 }
 
 vec3 assimpMeshRawData::getVertices(unsigned int index) const
 {
-	return vec3();
+	return vec3(m_aiMesh->mVertices[index].x, m_aiMesh->mVertices[index].y, m_aiMesh->mVertices[index].z);
 }
 
 vec2 assimpMeshRawData::getTextureCoords(unsigned int index) const
 {
-	return vec2();
+	return vec2(m_aiMesh->mTextureCoords[0][index].x, m_aiMesh->mTextureCoords[0][index].y);
 }
 
 vec3 assimpMeshRawData::getNormals(unsigned int index) const
 {
-	return vec3();
+	return vec3(m_aiMesh->mNormals[index].x, m_aiMesh->mNormals[index].y, m_aiMesh->mNormals[index].z);
 }
 
 int assimpMeshRawData::getIndices(int faceIndex, int index) const
 {
-	return 0;
+	return m_aiMesh->mFaces[faceIndex].mIndices[index];
 }

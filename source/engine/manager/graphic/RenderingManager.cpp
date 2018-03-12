@@ -74,9 +74,16 @@ void RenderingManager::initialize()
 
 	for (auto i : g_pGameManager->getVisibleComponents())
 	{
-		if (i->m_modelFileName != "")
+		if (i->m_meshType == meshType::CUSTOM)
 		{
-			loadModel(i->m_modelFileName, *i);
+			if (i->m_modelFileName != "")
+			{
+				loadModel(i->m_modelFileName, *i);
+			}
+		}
+		else
+		{
+			assignUnitMesh(*i, i->m_meshType);
 		}
 		if (i->m_textureFileNameMap.size() != 0)
 		{
@@ -138,10 +145,10 @@ void RenderingManager::render()
 	GLRenderingManager::getInstance().render(g_pGameManager->getCameraComponents(), g_pGameManager->getLightComponents(), g_pGameManager->getVisibleComponents());
 }
 
-void RenderingManager::assignUnitMesh(VisibleComponent & visibleComponent, meshType unitMeshType)
+void RenderingManager::assignUnitMesh(VisibleComponent & visibleComponent, meshType meshType)
 {
 	meshID l_UnitMeshTemplate;
-	switch (unitMeshType)
+	switch (meshType)
 	{
 	case meshType::QUAD: l_UnitMeshTemplate = m_UnitQuadTemplate; break;
 	case meshType::CUBE: l_UnitMeshTemplate = m_UnitCubeTemplate; break;
@@ -217,7 +224,8 @@ void RenderingManager::loadModel(const std::string & fileName, VisibleComponent 
 	}
 	else
 	{
-		auto l_modelPointerMap = g_pAssetManager->loadModelFromDisk(l_convertedFilePath);
+		modelPointerMap l_modelPointerMap; 
+		g_pAssetManager->loadModelFromDisk(fileName, l_modelPointerMap);
 		
 		std::vector<BaseMesh*> l_baseMesh;
 		std::vector<BaseTexture*> l_baseTexture;

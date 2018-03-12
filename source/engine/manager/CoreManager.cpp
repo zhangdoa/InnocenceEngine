@@ -5,7 +5,7 @@ void CoreManager::setup()
 	g_pMemoryManager = new INNO_MEMORY_MANAGER;
 	g_pMemoryManager->setup();
 	g_pLogManager = g_pMemoryManager->spawn<INNO_LOG_MANAGER>();
-	g_pLogManager->setup();	
+	g_pLogManager->setup();
 	//g_pTaskManager = g_pMemoryManager->spawn<INNO_TASK_MANAGER>();
 	g_pTimeManager = g_pMemoryManager->spawn<INNO_TIME_MANAGER>();
 	g_pTimeManager->setup();
@@ -67,7 +67,9 @@ void CoreManager::update()
 			}
 			g_pRenderingManager->update();
 			l_tickTime = g_pTimeManager->getcurrentTime() - l_tickTime;
-			//LogManager::getInstance().printLog(l_tickTime);
+#ifdef DEBUG
+			//g_pMemoryManager->dumpToFile("../" + g_pTimeManager->getCurrentTimeInLocal() + ".innoMemoryDump");
+#endif // DEBUG
 		}
 		else
 		{
