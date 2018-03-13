@@ -57,9 +57,6 @@ public:
 
 	const objectStatus& getStatus() const override;
 
-protected:
-	void setStatus(objectStatus objectStatus) override;
-
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 

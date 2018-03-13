@@ -2,8 +2,9 @@
 #include "component/CameraComponent.h"
 #include "component/InputComponent.h"
 #include "component/VisibleComponent.h"
+#include "entity/BaseEntity.h"
 
-class PlayerCharacter : public BaseActor
+class PlayerCharacter : public BaseEntity
 {
 public:
 	PlayerCharacter();

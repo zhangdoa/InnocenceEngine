@@ -93,7 +93,7 @@ void RenderingManager::initialize()
 			}
 		}
 	}
-	this->setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 	g_pLogManager->printLog("RenderingManager has been initialized.");
 }
 
@@ -105,7 +105,7 @@ void RenderingManager::update()
 
 if (GLWindowManager::getInstance().getStatus() == objectStatus::STANDBY)
 	{
-		this->setStatus(objectStatus::STANDBY);
+		m_objectStatus = objectStatus::STANDBY;
 		g_pLogManager->printLog("RenderingManager is stand-by.");
 	}
 }
@@ -122,18 +122,13 @@ void RenderingManager::shutdown()
 		// reverse 'destructor'
 		m_childManager[m_childManager.size() - 1 - i].release();
 	}
-	this->setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 	g_pLogManager->printLog("RenderingManager has been shutdown.");
 }
 
 const objectStatus & RenderingManager::getStatus() const
 {
 	return m_objectStatus;
-}
-
-void RenderingManager::setStatus(objectStatus objectStatus)
-{
-	m_objectStatus = objectStatus;
 }
 
 void RenderingManager::render()

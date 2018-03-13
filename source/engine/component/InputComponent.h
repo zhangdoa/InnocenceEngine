@@ -1,5 +1,5 @@
 #pragma once
-#include "entity/BaseEntity.h"
+#include "BaseComponent.h"
 
 class InputComponent : public BaseComponent
 {

@@ -23,7 +23,7 @@ void MemoryManager::setup(unsigned long  memoryPoolSize)
 
 void MemoryManager::initialize()
 {
-	this->setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 	g_pLogManager->printLog("MemoryManager has been initialized.");
 }
 
@@ -253,9 +253,4 @@ void MemoryManager::dumpToFile(const std::string & fileName) const
 const objectStatus & MemoryManager::getStatus() const
 {
 	return m_objectStatus;
-}
-
-void MemoryManager::setStatus(objectStatus objectStatus)
-{
-	m_objectStatus = objectStatus;
 }

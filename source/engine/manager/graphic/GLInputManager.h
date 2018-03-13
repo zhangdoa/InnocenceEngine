@@ -1,11 +1,11 @@
 #pragma once
-#include "manager/BaseManager.h"
+#include "interface/IManager.h"
 #include "interface/ILogManager.h"
 #include "GLWindowManager.h"
 
 extern ILogManager* g_pLogManager;
 
-class GLInputManager : public BaseManager
+class GLInputManager : public IManager
 {
 public:
 	~GLInputManager() {};
@@ -14,6 +14,7 @@ public:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
+	const objectStatus& getStatus() const override;
 
 	static GLInputManager& getInstance()
 	{
@@ -29,6 +30,8 @@ public:
 
 private:
 	GLInputManager() {};
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void mousePositionCallback(GLFWwindow* window, double mouseXPos, double mouseYPos);

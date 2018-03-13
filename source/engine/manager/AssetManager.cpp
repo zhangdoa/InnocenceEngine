@@ -35,11 +35,6 @@ const objectStatus & AssetManager::getStatus() const
 	return m_objectStatus;
 }
 
-void AssetManager::setStatus(objectStatus objectStatus)
-{
-	m_objectStatus = objectStatus;
-}
-
 void AssetManager::loadModelFromDisk(const std::string & fileName, modelMap & modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod)
 {
 	// read file via ASSIMP

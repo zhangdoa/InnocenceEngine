@@ -31,27 +31,25 @@ void InputComponent::move(moveDirection moveDirection)
 	switch (moveDirection)
 	{
 		// opengl use right-hand-coordinate, so go foward means get into the negative z-axis
-	case FORWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::BACKWARD).mul(moveSpeed)); break;
-	case BACKWARD:  getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::FORWARD).mul(moveSpeed));  break;
-	case LEFT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::LEFT).mul(moveSpeed));  break;
-	case RIGHT:   getTransform()->setPos(getTransform()->getPos() + getTransform()->getDirection(Transform::RIGHT).mul(moveSpeed));  break;
+	case FORWARD:  getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::BACKWARD).mul(moveSpeed)); break;
+	case BACKWARD:  getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::FORWARD).mul(moveSpeed));  break;
+	case LEFT:   getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::LEFT).mul(moveSpeed));  break;
+	case RIGHT:   getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::RIGHT).mul(moveSpeed));  break;
 	}
 }
 
 void InputComponent::rotateAroundXAxis(double offset)
 {
-	getTransform()->rotate(vec3(0.0, 1.0, 0.0), ((-offset * rotateSpeed) / 180.0)* PI);
+	getParentEntity()->getTransform()->rotate(vec3(0.0, 1.0, 0.0), ((-offset * rotateSpeed) / 180.0)* PI);
 }
 
 void InputComponent::rotateAroundYAxis(double offset)
 {
-	getTransform()->rotate(getTransform()->getDirection(Transform::RIGHT), ((offset * rotateSpeed) / 180.0)* PI);
+	getParentEntity()->getTransform()->rotate(getParentEntity()->getTransform()->getDirection(Transform::RIGHT), ((offset * rotateSpeed) / 180.0)* PI);
 }
 
 void InputComponent::setup()
 {
-	BaseEntity::setup();
-
 	f_moveForward = std::bind(&InputComponent::moveForward, this);
 	f_moveBackward = std::bind(&InputComponent::moveBackward, this);
 	f_moveLeft = std::bind(&InputComponent::moveLeft, this);

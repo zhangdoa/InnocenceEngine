@@ -20,6 +20,16 @@ void BaseMesh::setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool 
 	}
 }
 
+const objectStatus & BaseMesh::getStatus() const
+{
+	return m_objectStatus;
+}
+
+meshID BaseMesh::getMeshID()
+{
+	return m_meshID;
+}
+
 void BaseMesh::addVertices(const Vertex & Vertex)
 {
 	m_vertices.emplace_back(Vertex);
@@ -27,7 +37,7 @@ void BaseMesh::addVertices(const Vertex & Vertex)
 
 void BaseMesh::addVertices(const vec3 & pos, const vec2 & texCoord, const vec3 & normal)
 {
-
+	m_vertices.emplace_back(Vertex(pos, texCoord, normal));
 }
 
 void BaseMesh::addVertices(double pos_x, double pos_y, double pos_z, double texCoord_x, double texCoord_y, double normal_x, double normal_y, double normal_z)
@@ -175,6 +185,16 @@ void BaseTexture::setup(textureType textureType, textureWrapMethod textureWrapMe
 	m_generateMipMap = generateMipMap;
 }
 
+const objectStatus & BaseTexture::getStatus() const
+{
+	return m_objectStatus;
+}
+
+textureID BaseTexture::getTextureID()
+{
+	return m_textureID;
+}
+
 void BaseFrameBuffer::setup()
 {
 }
@@ -184,5 +204,10 @@ void BaseFrameBuffer::setup(vec2 renderBufferStorageResolution, bool isDeferPass
 	m_renderBufferStorageResolution = renderBufferStorageResolution;
 	m_isDeferPass = isDeferPass;
 	m_renderTargetTextureNumber = renderTargetTextureNumber;
+}
+
+const objectStatus & BaseFrameBuffer::getStatus() const
+{
+	return m_objectStatus;
 }
 

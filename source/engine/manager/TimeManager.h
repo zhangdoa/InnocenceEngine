@@ -19,9 +19,6 @@ public:
 	const std::string getCurrentTimeInLocal(std::chrono::hours timezone_adjustment = std::chrono::hours(8)) const override;
 	const objectStatus& getStatus() const override;
 
-protected:
-	void setStatus(objectStatus objectStatus) override;
-
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 

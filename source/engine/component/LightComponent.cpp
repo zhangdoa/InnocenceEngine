@@ -33,12 +33,12 @@ void LightComponent::setColor(const vec3& color)
 
 void LightComponent::getLightPosMatrix(mat4 & lightPosMatrix)
 {
-	lightPosMatrix = getParentActor()->caclWorldPosMatrix();
+	lightPosMatrix = getParentEntity()->caclWorldPosMatrix();
 }
 
 void LightComponent::getLightRotMatrix(mat4 & lightRotMatrix)
 {
-	lightRotMatrix = getParentActor()->caclWorldRotMatrix();
+	lightRotMatrix = getParentEntity()->caclWorldRotMatrix();
 }
 
 const lightType LightComponent::getLightType()
@@ -64,7 +64,6 @@ vec3 LightComponent::getColor() const
 
 void LightComponent::setup()
 {
-	BaseEntity::setup();
 }
 
 void LightComponent::initialize()

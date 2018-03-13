@@ -24,12 +24,12 @@ void CoreManager::setup()
 	if (g_pGameManager->getStatus() == objectStatus::ALIVE)
 	{
 		GLWindowManager::getInstance().setWindowName(g_pGameManager->getGameName());
-		this->setStatus(objectStatus::ALIVE);
+		m_objectStatus = objectStatus::ALIVE;
 		g_pLogManager->printLog("CoreManager setup finished.");
 	}
 	else
 	{
-		this->setStatus(objectStatus::STANDBY);
+		m_objectStatus = objectStatus::STANDBY;
 		g_pLogManager->printLog("CoreManager stand-by.");
 	}
 }
@@ -74,7 +74,7 @@ void CoreManager::update()
 		}
 		else
 		{
-			this->setStatus(objectStatus::STANDBY);
+			m_objectStatus = objectStatus::STANDBY;
 			g_pLogManager->printLog("CoreManager is stand-by.");
 		}
 
@@ -88,7 +88,7 @@ void CoreManager::shutdown()
 	g_pAssetManager->shutdown();
 	g_pRenderingManager->shutdown();
 	g_pTimeManager->shutdown();
-	this->setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 	g_pLogManager->printLog("CoreManager has been shutdown.");
 	//@TODO: dangerous
 	g_pLogManager->shutdown();
@@ -100,9 +100,4 @@ void CoreManager::shutdown()
 const objectStatus & CoreManager::getStatus() const
 {
 	return m_objectStatus;
-}
-
-void CoreManager::setStatus(objectStatus objectStatus)
-{
-	m_objectStatus = objectStatus;
 }

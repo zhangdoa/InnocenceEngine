@@ -179,7 +179,7 @@ void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraCompon
 	{
 		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 		{
-			updateUniform(m_uni_m, l_visibleComponent->getParentActor()->caclTransformationMatrix());
+			updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
 
 			// draw each graphic data of visibleComponent
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
@@ -260,7 +260,7 @@ void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cam
 	{
 		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 		{
-			updateUniform(m_uni_m, l_visibleComponent->getParentActor()->caclTransformationMatrix());
+			updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
 
 			// draw each graphic data of visibleComponent
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
@@ -354,7 +354,7 @@ void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& camera
 	{
 		//@TODO: generalization
 
-		updateUniform(m_uni_viewPos, cameraComponents[0]->getParentActor()->getTransform()->getPos().x, cameraComponents[0]->getParentActor()->getTransform()->getPos().y, cameraComponents[0]->getParentActor()->getTransform()->getPos().z);
+		updateUniform(m_uni_viewPos, cameraComponents[0]->getParentEntity()->getTransform()->getPos().x, cameraComponents[0]->getParentEntity()->getTransform()->getPos().y, cameraComponents[0]->getParentEntity()->getTransform()->getPos().z);
 
 		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
 		{
@@ -364,7 +364,7 @@ void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& camera
 		}
 		else if (lightComponents[i]->getLightType() == lightType::POINT)
 		{
-			updateUniform(m_uni_pointLights_position[i + l_pointLightIndexOffset], lightComponents[i]->getParentActor()->getTransform()->getPos().x, lightComponents[i]->getParentActor()->getTransform()->getPos().y, lightComponents[i]->getParentActor()->getTransform()->getPos().z);
+			updateUniform(m_uni_pointLights_position[i + l_pointLightIndexOffset], lightComponents[i]->getParentEntity()->getTransform()->getPos().x, lightComponents[i]->getParentEntity()->getTransform()->getPos().y, lightComponents[i]->getParentEntity()->getTransform()->getPos().z);
 			updateUniform(m_uni_pointLights_radius[i + l_pointLightIndexOffset], lightComponents[i]->getRadius());
 			updateUniform(m_uni_pointLights_color[i + l_pointLightIndexOffset], lightComponents[i]->getColor().x, lightComponents[i]->getColor().y, lightComponents[i]->getColor().z);
 		}
@@ -420,7 +420,7 @@ void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComp
 	{
 		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 		{
-			updateUniform(m_uni_m, l_visibleComponent->getParentActor()->caclTransformationMatrix());
+			updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
 
 			// draw each graphic data of visibleComponent
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
@@ -537,7 +537,7 @@ void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraCompone
 	{
 		//@TODO: generalization
 
-		updateUniform(m_uni_viewPos, cameraComponents[0]->getParentActor()->getTransform()->getPos().x, cameraComponents[0]->getParentActor()->getTransform()->getPos().y, cameraComponents[0]->getParentActor()->getTransform()->getPos().z);
+		updateUniform(m_uni_viewPos, cameraComponents[0]->getParentEntity()->getTransform()->getPos().x, cameraComponents[0]->getParentEntity()->getTransform()->getPos().y, cameraComponents[0]->getParentEntity()->getTransform()->getPos().z);
 
 		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
 		{
@@ -547,7 +547,7 @@ void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraCompone
 		}
 		else if (lightComponents[i]->getLightType() == lightType::POINT)
 		{
-			updateUniform(m_uni_pointLights_position[i + l_pointLightIndexOffset], lightComponents[i]->getParentActor()->getTransform()->getPos().x, lightComponents[i]->getParentActor()->getTransform()->getPos().y, lightComponents[i]->getParentActor()->getTransform()->getPos().z);
+			updateUniform(m_uni_pointLights_position[i + l_pointLightIndexOffset], lightComponents[i]->getParentEntity()->getTransform()->getPos().x, lightComponents[i]->getParentEntity()->getTransform()->getPos().y, lightComponents[i]->getParentEntity()->getTransform()->getPos().z);
 			updateUniform(m_uni_pointLights_radius[i + l_pointLightIndexOffset], lightComponents[i]->getRadius());
 			updateUniform(m_uni_pointLights_color[i + l_pointLightIndexOffset], lightComponents[i]->getColor().x, lightComponents[i]->getColor().y, lightComponents[i]->getColor().z);
 		}
@@ -830,7 +830,7 @@ void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents,
 	{
 		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 		{
-			updateUniform(m_uni_m, l_visibleComponent->getParentActor()->caclTransformationMatrix());
+			updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
 
 			// draw each graphic data of visibleComponent
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
@@ -889,8 +889,8 @@ void FinalPassShader::shaderDraw()
 meshID GLRenderingManager::addMesh()
 {
 	GLMesh newMesh;
-	m_meshMap.emplace(std::pair<meshID, GLMesh>(newMesh.getEntityID(), newMesh));
-	return newMesh.getEntityID();
+	m_meshMap.emplace(std::pair<meshID, GLMesh>(newMesh.getMeshID(), newMesh));
+	return newMesh.getMeshID();
 }
 
 textureID GLRenderingManager::addTexture(textureType textureType)
@@ -898,26 +898,26 @@ textureID GLRenderingManager::addTexture(textureType textureType)
 	if (textureType == textureType::CUBEMAP)
 	{
 		GL3DTexture new3DTexture;
-		m_3DTextureMap.emplace(std::pair<textureID, GL3DTexture>(new3DTexture.getEntityID(), new3DTexture));
-		return new3DTexture.getEntityID();
+		m_3DTextureMap.emplace(std::pair<textureID, GL3DTexture>(new3DTexture.getTextureID(), new3DTexture));
+		return new3DTexture.getTextureID();
 	}
 	else if (textureType == textureType::CUBEMAP_HDR)
 	{
 		GL3DHDRTexture new3DHDRTexture;
-		m_3DHDRTextureMap.emplace(std::pair<textureID, GL3DHDRTexture>(new3DHDRTexture.getEntityID(), new3DHDRTexture));
-		return new3DHDRTexture.getEntityID();
+		m_3DHDRTextureMap.emplace(std::pair<textureID, GL3DHDRTexture>(new3DHDRTexture.getTextureID(), new3DHDRTexture));
+		return new3DHDRTexture.getTextureID();
 	}
 	else if (textureType == textureType::EQUIRETANGULAR)
 	{
 		GL2DHDRTexture new2DHDRTexture;
-		m_2DHDRTextureMap.emplace(std::pair<textureID, GL2DHDRTexture>(new2DHDRTexture.getEntityID(), new2DHDRTexture));
-		return new2DHDRTexture.getEntityID();
+		m_2DHDRTextureMap.emplace(std::pair<textureID, GL2DHDRTexture>(new2DHDRTexture.getTextureID(), new2DHDRTexture));
+		return new2DHDRTexture.getTextureID();
 	}
 	else
 	{
 		GL2DTexture new2DTexture;
-		m_2DTextureMap.emplace(std::pair<textureID, GL2DTexture>(new2DTexture.getEntityID(), new2DTexture));
-		return new2DTexture.getEntityID();
+		m_2DTextureMap.emplace(std::pair<textureID, GL2DTexture>(new2DTexture.getTextureID(), new2DTexture));
+		return new2DTexture.getTextureID();
 	}
 }
 
@@ -1237,6 +1237,10 @@ void GLRenderingManager::changeDrawTextureMode()
 	}
 }
 
+const objectStatus & GLRenderingManager::getStatus() const
+{
+	return m_objectStatus;
+}
 
 void GLRenderingManager::setup()
 {
@@ -1272,7 +1276,7 @@ void GLRenderingManager::initialize()
 
 	initializeFinalPass();
 
-	this->setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 	g_pLogManager->printLog("GLRenderingManager has been initialized.");
 }
 
@@ -1282,7 +1286,7 @@ void GLRenderingManager::update()
 
 void GLRenderingManager::shutdown()
 {
-	this->setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 	g_pLogManager->printLog("GLRenderingManager has been shutdown.");
 }
 

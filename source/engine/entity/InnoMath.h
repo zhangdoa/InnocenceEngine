@@ -126,3 +126,37 @@ public:
 	vec2 m_texCoord;
 	vec3 m_normal;
 };
+
+class Transform
+{
+public:
+	Transform();
+	~Transform();
+
+	enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
+	void update();
+	void rotate(const vec3 & axis, double angle);
+
+	vec3& getPos();
+	quat& getRot();
+	vec3& getScale();
+
+	void setPos(const vec3& pos);
+	void setRot(const quat& rot);
+	void setScale(const vec3& scale);
+
+	vec3& getOldPos();
+	quat& getOldRot();
+	vec3& getOldScale();
+
+	vec3 getDirection(direction direction) const;
+
+private:
+	vec3 m_pos;
+	quat m_rot;
+	vec3 m_scale;
+
+	vec3 m_oldPos;
+	quat m_oldRot;
+	vec3 m_oldScale;
+};

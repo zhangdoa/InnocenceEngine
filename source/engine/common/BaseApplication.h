@@ -15,10 +15,7 @@ public:
 	virtual void update() override;
 	virtual void shutdown() override;
 
-	const objectStatus& getStatus() const;
-
-protected:
-	void setStatus(objectStatus objectStatus);
+	const objectStatus& getStatus() const override;
 
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;

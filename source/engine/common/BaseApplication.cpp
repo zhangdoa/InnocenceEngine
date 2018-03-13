@@ -3,7 +3,7 @@
 void BaseApplication::setup()
 {
 	g_pCoreManager->setup();
-	setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 }
 
 void BaseApplication::initialize()
@@ -14,7 +14,7 @@ void BaseApplication::initialize()
 	}
 	else
 	{
-		setStatus(objectStatus::STANDBY);
+		m_objectStatus = objectStatus::STANDBY;
 	}
 }
 
@@ -26,22 +26,17 @@ void BaseApplication::update()
 	}
 	else
 	{
-		setStatus(objectStatus::STANDBY);
+		m_objectStatus = objectStatus::STANDBY;
 	}
 }
 
 void BaseApplication::shutdown()
 {
 	g_pCoreManager->shutdown();
-	setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 }
 
 const objectStatus & BaseApplication::getStatus() const
 {
 	return m_objectStatus;
-}
-
-void BaseApplication::setStatus(objectStatus objectStatus)
-{
-	m_objectStatus = objectStatus;
 }
