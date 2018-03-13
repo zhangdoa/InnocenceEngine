@@ -21,3 +21,8 @@ InputComponent & PlayerCharacter::getInputComponent()
 {
 	return m_inputComponent;
 }
+
+VisibleComponent & PlayerCharacter::getVisibleComponent()
+{
+	return m_visibleComponent;
+}

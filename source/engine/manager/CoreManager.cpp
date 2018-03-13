@@ -50,8 +50,6 @@ void CoreManager::update()
 {
 	// time manager should update without any limitation.
 	g_pTimeManager->update();
-	// game simulation
-	g_pGameManager->update();
 
 	// a frame counter occurred.
 	// @TODO: Async rendering
@@ -60,11 +58,14 @@ void CoreManager::update()
 		if (g_pRenderingManager->getStatus() == objectStatus::ALIVE)
 		{
 			auto l_tickTime = g_pTimeManager->getcurrentTime();
+			// game simulation
+			g_pGameManager->update();
 
 			if (g_pGameManager->needRender())
 			{
 				g_pRenderingManager->render();
 			}
+
 			g_pRenderingManager->update();
 			l_tickTime = g_pTimeManager->getcurrentTime() - l_tickTime;
 #ifdef DEBUG
