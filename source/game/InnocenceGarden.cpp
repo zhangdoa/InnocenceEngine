@@ -140,7 +140,7 @@ void InnocenceGarden::setupSpheres()
 		sphereComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
 		sphereComponents[i].m_meshType = meshType::SPHERE;
 		sphereComponents[i].m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
-		sphereComponents[i].m_useTexture = false;
+		sphereComponents[i].m_useTexture = true;
 		rootActor.addChildActor(&sphereActors[i]);
 		sphereActors[i].addChildComponent(&sphereComponents[i]);
 		m_visibleComponents.emplace_back(&sphereComponents[i]);
@@ -149,29 +149,29 @@ void InnocenceGarden::setupSpheres()
 	{
 		////Copper
 		sphereComponents[i].m_albedo = vec3(0.95, 0.64, 0.54);
-		//AssetManager::getInstance().loadAsset("PBS/rustediron2_basecolor.png", textureType::ALBEDO, sphereComponents[i]);
-		//AssetManager::getInstance().loadAsset("PBS/rustediron2_metallic.png", textureType::METALLIC, sphereComponents[i]);
-		//AssetManager::getInstance().loadAsset("PBS/rustediron2_normal.png", textureType::NORMAL, sphereComponents[i]);
-		//AssetManager::getInstance().loadAsset("PBS/rustediron2_roughness.png", textureType::ROUGHNESS, sphereComponents[i]);
+		sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/rustediron2_normal.png"));
+		sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/rustediron2_basecolor.png"));
+		sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/rustediron2_metallic.png"));
+		sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/rustediron2_roughness.png"));
 		////Gold
 		sphereComponents[i + 1].m_albedo = vec3(1.00, 0.71, 0.29);
-		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-albedo.png", textureType::ALBEDO, sphereComponents[i + 1]);
-		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-metal.png", textureType::METALLIC, sphereComponents[i + 1]);
-		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-normal.png", textureType::NORMAL, sphereComponents[i + 1]);
-		//AssetManager::getInstance().loadAsset("PBS/bamboo-wood-semigloss-ao.png", textureType::AMBIENT_OCCLUSION, sphereComponents[i + 1]);
+		sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/bamboo-wood-semigloss-normal.png"));
+		sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/bamboo-wood-semigloss-albedo.png"));
+		sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/bamboo-wood-semigloss-metal.png"));
+		sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "PBS/bamboo-wood-semigloss-ao.png"));
 		////Iron
 		sphereComponents[i + 2].m_albedo = vec3(0.56, 0.57, 0.58);
-		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-albedo.png", textureType::ALBEDO, sphereComponents[i + 2]);
-		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-metal.png", textureType::METALLIC, sphereComponents[i + 2]);
-		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-normal.png", textureType::NORMAL, sphereComponents[i + 2]);
-		//AssetManager::getInstance().loadAsset("PBS/greasy-metal-pan1-roughness.png", textureType::ROUGHNESS, sphereComponents[i + 2]);
+		sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/greasy-metal-pan1-normal.png"));
+		sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/greasy-metal-pan1-albedo.png"));
+		sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/greasy-metal-pan1-metal.png"));
+		sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/greasy-metal-pan1-roughness.png"));
 		////Silver
 		sphereComponents[i + 3].m_albedo = vec3(0.95, 0.93, 0.88);
-		//AssetManager::getInstance().loadAsset("PBS/roughrock1-albedo.png", textureType::ALBEDO, sphereComponents[i + 3]);
-		//AssetManager::getInstance().loadAsset("PBS/roughrock1-metalness.png", textureType::METALLIC, sphereComponents[i + 3]);
-		//AssetManager::getInstance().loadAsset("PBS/roughrock1-normal.png", textureType::NORMAL, sphereComponents[i + 3]);
-		//AssetManager::getInstance().loadAsset("PBS/roughrock1-roughness.png", textureType::ROUGHNESS, sphereComponents[i + 3]);
-		//AssetManager::getInstance().loadAsset("PBS/roughrock1-ao.png", textureType::AMBIENT_OCCLUSION, sphereComponents[i + 3]);
+		sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/roughrock1-normal.png"));
+		sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/roughrock1-albedo.png"));
+		sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/roughrock1-metalness.png"));
+		sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/roughrock1-roughness.png"));
+		sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "PBS/roughrock1-ao.png"));
 	}
 	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
 	{
@@ -209,6 +209,7 @@ void InnocenceGarden::setupLights()
 
 void InnocenceGarden::updateLights(double seed)
 {
+	directionalLightComponent.setDirection(vec3(0.0, cos(seed), (sin(seed) + 1.0) / 2.0));
 	for (auto i = (unsigned int)0; i < pointLightComponents.size(); i+=4)
 	{
 		pointLightComponents[i].setColor(vec3((sin(seed + i) + 1.0) * 10.0 / 2.0, 0.2f * 10.0, 0.4f * 10.0));
@@ -220,9 +221,10 @@ void InnocenceGarden::updateLights(double seed)
 
 void InnocenceGarden::updateSpheres(double seed)
 {
+	pawnActor2.getTransform()->rotate(vec3(0.0, 1.0, 0.0), 0.05);
 	for (auto i = (unsigned int)0; i < sphereActors.size(); i++)
 	{
-		//sphereActors[i].getTransform()->rotate(vec3(0.0, 1.0, 0.0), 0.1 * i);
-		//sphereActors[i].getTransform()->setPos(sphereActors[i].getTransform()->getPos() + vec3(cos(seed) * 0.1, 0.0, 0.0));
+		sphereActors[i].getTransform()->rotate(vec3(0.0, 1.0, 0.0), 0.01 * i);
+		sphereActors[i].getTransform()->setPos(sphereActors[i].getTransform()->getPos() + vec3(cos(seed) * 0.01, 0.0, 0.0));
 	}
 }
