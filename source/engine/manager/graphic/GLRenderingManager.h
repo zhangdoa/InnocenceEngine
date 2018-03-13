@@ -1,5 +1,5 @@
 #pragma once
-#include "manager/BaseManager.h"
+#include "interface/IManager.h"
 #include "interface/IAssetManager.h"
 #include "interface/ILogManager.h"
 #include "component/VisibleComponent.h"
@@ -391,7 +391,7 @@ private:
 	GLint m_uni_m;
 };
 
-class GLRenderingManager : public BaseManager
+class GLRenderingManager : public IManager
 {
 public:
 	~GLRenderingManager() {};
@@ -400,6 +400,7 @@ public:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
+	const objectStatus& getStatus() const override;
 
 	static GLRenderingManager& getInstance()
 	{
@@ -421,6 +422,8 @@ public:
 
 private:
 	GLRenderingManager() {};
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
 	vec2 m_screenResolution = vec2();
 

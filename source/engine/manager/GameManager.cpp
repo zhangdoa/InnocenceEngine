@@ -13,12 +13,12 @@ void GameManager::setup()
 		m_VisibleComponents = g_pGame->getVisibleComponents();
 
 		g_pLogManager->printLog("Game setup finished.");
-		this->setStatus(objectStatus::ALIVE);
+		m_objectStatus = objectStatus::ALIVE;
 	}
 	else
 	{
 		g_pLogManager->printLog("No game loaded!");
-		this->setStatus(objectStatus::STANDBY);
+		m_objectStatus = objectStatus::STANDBY;
 	}
 }
 
@@ -69,9 +69,4 @@ bool GameManager::needRender()
 const objectStatus & GameManager::getStatus() const
 {
 	return m_objectStatus;
-}
-
-void GameManager::setStatus(objectStatus objectStatus)
-{
-	m_objectStatus = objectStatus;
 }

@@ -1,10 +1,10 @@
 #pragma once
-#include "BaseManager.h"
+#include "interface/ITaskManager.h"
 #include "interface/ILogManager.h"
 
 extern ILogManager* g_pLogManager;
 
-class TaskManager : public BaseManager
+class TaskManager : public ITaskManager
 {
 public:
 	TaskManager() {};
@@ -14,10 +14,13 @@ public:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
+	const objectStatus& getStatus() const override;
 
 	void addTask(std::function<void()>& task);
 
 private:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+
 	void m_threadHolder();
 
 	unsigned int m_hardwareConcurrency;

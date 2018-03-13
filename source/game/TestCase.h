@@ -1,11 +1,11 @@
 #pragma once
 #include "common/stdafx.h"
-#include "common/BaseGame.hpp"
+#include "interface/IGame.h"
 #include "entity/BaseEntity.h"
 #include "manager/CoreManager.h"
 
 #include "PlayerCharacter.h"
-class TestCase : public BaseGame
+class TestCase : public IGame
 {
 public:
 	TestCase();
@@ -18,7 +18,7 @@ public:
 	void testMath();
 	void testMemory();
 private:
-	BaseActor rootActor;
+	BaseEntity rootActor;
 
 	PlayerCharacter playCharacter;
 };

@@ -1,5 +1,6 @@
 #pragma once
-#include "BaseEntity.h"
+#include "interface/IObject.hpp"
+#include "innoMath.h"
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
 enum class meshType { QUAD, CUBE, SPHERE, CUSTOM };
@@ -30,8 +31,8 @@ public:
 	virtual ~IScene() {};
 };
 
-typedef EntityID textureID;
-typedef EntityID meshID;
+typedef unsigned long int textureID;
+typedef unsigned long int meshID;
 typedef std::pair<textureType, textureID> texturePair;
 typedef std::unordered_map<textureType, textureID> textureMap;
 typedef std::pair<meshID, textureMap> modelPair;
@@ -43,14 +44,16 @@ typedef std::pair<IMeshRawData*, textureFileNameMap> modelPointerPair;
 typedef std::unordered_map<IMeshRawData*, textureFileNameMap> modelPointerMap;
 
 
-class BaseMesh : public BaseEntity
+class BaseMesh : public IObject
 {
 public:
-	BaseMesh() {};
+	BaseMesh() { m_meshID = std::rand(); };
 	virtual ~BaseMesh() {};
 
 	void setup() override;
 	void setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents);
+	const objectStatus& getStatus() const override;
+	meshID getMeshID();
 
 	void addVertices(const Vertex& Vertex);
 	void addVertices(const vec3 & pos, const vec2 & texCoord, const vec3 & normal);
@@ -62,6 +65,9 @@ public:
 	void addUnitQuad();
 
 protected:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	meshID m_meshID;
+
 	std::vector<Vertex> m_vertices;
 	std::vector<unsigned int> m_indices;
 
@@ -70,16 +76,20 @@ protected:
 	bool m_calculateTangents;
 };
 
-class BaseTexture : public BaseEntity
+class BaseTexture : public IObject
 {
 public:
-	BaseTexture() {};
+	BaseTexture() { m_textureID = std::rand(); };
 	virtual ~BaseTexture() {};
 
 	void setup() override;
 	void setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData, bool generateMipMap);
+	const objectStatus& getStatus() const override;
+	textureID getTextureID();
 
 protected:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	textureID m_textureID;
 	textureType m_textureType;
 	textureWrapMethod m_textureWrapMethod;
 	int m_textureFormat;
@@ -89,7 +99,7 @@ protected:
 	bool m_generateMipMap;
 };
 
-class BaseFrameBuffer : public BaseEntity
+class BaseFrameBuffer : public IObject
 {
 public:
 	BaseFrameBuffer() {};
@@ -97,8 +107,10 @@ public:
 
 	void setup() override;
 	void setup(vec2 renderBufferStorageResolution, bool isDeferPass, unsigned int renderTargetTextureNumber);
+	const objectStatus& getStatus() const override;
 
 protected:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	vec2 m_renderBufferStorageResolution;
 	bool m_isDeferPass = false;
 	unsigned int m_renderTargetTextureNumber = 0;

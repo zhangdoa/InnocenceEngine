@@ -1,5 +1,5 @@
 #pragma once
-#include "entity/BaseEntity.h"
+#include "BaseComponent.h"
 #include "entity/BaseGraphicPrimitive.h"
 
 enum class lightType {DIRECTIONAL, POINT, SPOT};

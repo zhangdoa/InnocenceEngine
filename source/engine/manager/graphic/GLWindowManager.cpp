@@ -30,6 +30,11 @@ void GLWindowManager::showMouseCursor() const
 	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
+const objectStatus & GLWindowManager::getStatus() const
+{
+	return m_objectStatus;
+}
+
 void GLWindowManager::setup()
 {
 }
@@ -38,7 +43,7 @@ void GLWindowManager::initialize()
 {
 	if (glfwInit() != GL_TRUE)
 	{
-		this->setStatus(objectStatus::STANDBY);
+		m_objectStatus = objectStatus::STANDBY;
 		g_pLogManager->printLog("Failed to initialize GLFW.");
 	}
 
@@ -52,7 +57,7 @@ void GLWindowManager::initialize()
 	m_window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, m_windowName.c_str(), NULL, NULL);
 	glfwMakeContextCurrent(m_window);
 	if (m_window == nullptr) {
-		this->setStatus(objectStatus::STANDBY);
+		m_objectStatus = objectStatus::STANDBY;
 		g_pLogManager->printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
 		glfwTerminate();
 	}
@@ -60,10 +65,10 @@ void GLWindowManager::initialize()
 	// ---------------------------------------
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
-		this->setStatus(objectStatus::STANDBY);
+		m_objectStatus = objectStatus::STANDBY;
 		g_pLogManager->printLog("Failed to initialize GLAD.");
 	}
-	this->setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 	g_pLogManager->printLog("GLWindowManager has been initialized.");
 }
 
@@ -75,7 +80,7 @@ void GLWindowManager::update()
 	}
 	else
 	{
-		this->setStatus(objectStatus::STANDBY);
+		m_objectStatus = objectStatus::STANDBY;
 		g_pLogManager->printLog("GLWindowManager is stand-by.");
 	}
 }
@@ -86,7 +91,7 @@ void GLWindowManager::shutdown()
 	{
 		glfwDestroyWindow(m_window);
 		glfwTerminate();
-		this->setStatus(objectStatus::SHUTDOWN);
+		m_objectStatus = objectStatus::SHUTDOWN;
 		g_pLogManager->printLog("GLWindowManager has been shutdown.");
 	}
 }

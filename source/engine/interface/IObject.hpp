@@ -21,6 +21,8 @@ public:
 	virtual void initialize() = 0;
 	virtual void update() = 0;
 	virtual void shutdown() = 0;
+
+	virtual const objectStatus& getStatus() const = 0;
 };
 
 #endif // !_I_BASE_OBJECT_HPP_

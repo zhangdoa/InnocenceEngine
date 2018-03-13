@@ -43,7 +43,7 @@ void GLMesh::initialize()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 }
 
 void GLMesh::update()
@@ -63,7 +63,7 @@ void GLMesh::shutdown()
 	glDeleteBuffers(1, &m_VBO);
 	glDeleteBuffers(1, &m_IBO);
 
-	setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 }
 
 void GL2DTexture::initialize()
@@ -133,7 +133,7 @@ void GL2DTexture::initialize()
 		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, l_dataFormat, GL_UNSIGNED_BYTE, m_textureData[0]);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-		setStatus(objectStatus::ALIVE);
+		m_objectStatus = objectStatus::ALIVE;
 	}	
 }
 
@@ -152,7 +152,7 @@ void GL2DTexture::shutdown()
 {
 	glDeleteTextures(1, &m_textureID);
 
-	setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 }
 
 void GL2DHDRTexture::initialize()
@@ -167,7 +167,7 @@ void GL2DHDRTexture::initialize()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_textureWidth, m_textureHeight, 0, GL_RGB, GL_FLOAT, m_textureData[0]);
 
-	setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 }
 
 void GL2DHDRTexture::update()
@@ -185,7 +185,7 @@ void GL2DHDRTexture::shutdown()
 {
 	glDeleteTextures(1, &m_textureID);
 
-	setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 }
 
 void GL3DTexture::initialize()
@@ -235,7 +235,7 @@ void GL3DTexture::initialize()
 		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 	}
 
-	setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 }
 
 void GL3DTexture::update()
@@ -253,7 +253,7 @@ void GL3DTexture::shutdown()
 {
 	glDeleteTextures(1, &m_textureID);
 
-	setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 }
 
 void GL3DHDRTexture::initialize()
@@ -288,7 +288,7 @@ void GL3DHDRTexture::initialize()
 		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 	}
 
-	setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 }
 
 void GL3DHDRTexture::update()
@@ -306,7 +306,7 @@ void GL3DHDRTexture::shutdown()
 {
 	glDeleteTextures(1, &m_textureID);
 
-	setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 }
 
 void GL3DHDRTexture::updateFramebuffer(int index, int mipLevel)

@@ -3,7 +3,7 @@
 void TaskManager::setup()
 {
 	m_hardwareConcurrency =	std::thread::hardware_concurrency();
-	this->setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 }
 
 void TaskManager::initialize()
@@ -23,7 +23,7 @@ void TaskManager::update()
 
 void TaskManager::shutdown()
 {
-	this->setStatus(objectStatus::STANDBY);
+	m_objectStatus = objectStatus::STANDBY;
 	for (auto& i : m_threadPool)
 	{
 		if (i.joinable())
@@ -31,8 +31,13 @@ void TaskManager::shutdown()
 			i.join();
 		}
 	}
-	this->setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 	g_pLogManager->printLog("TaskManager has been shutdown.");
+}
+
+const objectStatus & TaskManager::getStatus() const
+{
+	return m_objectStatus;
 }
 
 void TaskManager::addTask(std::function<void()>& task)
@@ -51,5 +56,5 @@ void TaskManager::m_threadHolder()
 		//	(*m_taskQueue[0])();
 		//}
 	} 
-	while (this->getStatus() == objectStatus::ALIVE);
+	while (m_objectStatus == objectStatus::ALIVE);
 }

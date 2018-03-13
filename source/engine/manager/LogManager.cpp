@@ -116,18 +116,13 @@ const objectStatus & LogManager::getStatus() const
 	return m_objectStatus;
 }
 
-void LogManager::setStatus(objectStatus objectStatus)
-{
-	m_objectStatus = objectStatus;
-}
-
 void LogManager::setup()
 {	
 }
 
 void LogManager::initialize()
 {
-	this->setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 	printLog("LogManager has been initialized.");
 }
 
@@ -137,6 +132,6 @@ void LogManager::update()
 
 void LogManager::shutdown()
 {
-	this->setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 	printLog("LogManager has been shutdown.");
 }

@@ -91,6 +91,11 @@ void GLInputManager::scrollCallbackImpl(GLFWwindow * window, double xoffset, dou
 {
 }
 
+const objectStatus & GLInputManager::getStatus() const
+{
+	return m_objectStatus;
+}
+
 void GLInputManager::setup()
 {
 }
@@ -102,7 +107,7 @@ void GLInputManager::initialize()
 	glfwSetScrollCallback(GLWindowManager::getInstance().getWindow(), &scrollCallback);
 	glfwSetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_STICKY_KEYS, GL_TRUE);
 
-	this->setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 	g_pLogManager->printLog("GLInputManager has been initialized.");
 }
 
@@ -163,7 +168,7 @@ void GLInputManager::update()
 	}
 	else
 	{
-		this->setStatus(objectStatus::STANDBY);
+		m_objectStatus = objectStatus::STANDBY;
 		g_pLogManager->printLog("GLInputManager is stand-by.");
 	}
 }
@@ -171,7 +176,7 @@ void GLInputManager::update()
 void GLInputManager::shutdown()
 {
 	glfwSetInputMode(GLWindowManager::getInstance().getWindow(), GLFW_STICKY_KEYS, GL_FALSE);
-	this->setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 	g_pLogManager->printLog("GLInputManager has been shutdown.");
 }
 

@@ -13,12 +13,9 @@ public:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
-	const objectStatus& getStatus() const;
+	const objectStatus& getStatus() const override;
 
 	std::string getGameName() const override;
-
-protected:
-	void setStatus(objectStatus objectStatus);
 
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
@@ -27,31 +24,31 @@ private:
 	std::vector<LightComponent*>& getLightComponents() override;
 	std::vector<VisibleComponent*>& getVisibleComponents() override;
 
-	BaseActor rootActor;
+	BaseEntity m_rootEntity;
 
 	PlayerCharacter m_playCharacter;
-	BaseActor skyboxActor;
-	BaseActor directionalLightActor;
+	BaseEntity m_skyboxEntity;
+	BaseEntity m_directionalLightEntity;
 
-	BaseActor landscapeActor;
-	BaseActor pawnActor1;
-	BaseActor pawnActor2;
+	BaseEntity m_landscapeEntity;
+	BaseEntity m_pawnEntity1;
+	BaseEntity m_pawnEntity2;
 
-	std::vector<BaseActor> sphereActors;
+	std::vector<BaseEntity> m_hereEntitys;
 
-	std::vector<BaseActor> pointLightActors;
+	std::vector<BaseEntity> m_pointLightEntitys;
 
-	VisibleComponent skyboxComponent;
+	VisibleComponent m_skyboxComponent;
 
-	LightComponent directionalLightComponent;
+	LightComponent m_directionalLightComponent;
 
-	VisibleComponent landscapeStaticMeshComponent;
-	VisibleComponent pawnMeshComponent1;
-	VisibleComponent pawnMeshComponent2;
+	VisibleComponent m_landscapeComponent;
+	VisibleComponent m_pawnComponent1;
+	VisibleComponent m_pawnComponent2;
 
-	std::vector<VisibleComponent> sphereComponents;
+	std::vector<VisibleComponent> m_sphereComponents;
 
-	std::vector<LightComponent> pointLightComponents;
+	std::vector<LightComponent> m_pointLightComponents;
 
 	std::vector<CameraComponent*> m_cameraComponents;
 	std::vector<InputComponent*> m_inputComponents;

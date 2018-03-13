@@ -7,7 +7,7 @@ void TimeManager::setup()
 void TimeManager::initialize()
 {
 	m_gameStartTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 }
 
 void TimeManager::update()
@@ -19,17 +19,17 @@ void TimeManager::update()
 	if (m_unprocessedTime >= m_frameTime)
 	{
 		m_unprocessedTime -= m_frameTime;
-		setStatus(objectStatus::ALIVE);
+		m_objectStatus = objectStatus::ALIVE;
 	}
 	else
 	{
-		setStatus(objectStatus::STANDBY);
+		m_objectStatus = objectStatus::STANDBY;
 	}
 }
 
 void TimeManager::shutdown()
 {
-	setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 }
 
 const std::tuple<int, unsigned, unsigned> TimeManager::getCivilFromDays(int z) const
@@ -80,11 +80,6 @@ const std::string TimeManager::getCurrentTimeInLocal(std::chrono::hours timezone
 const objectStatus & TimeManager::getStatus() const
 {
 	return m_objectStatus;
-}
-
-void TimeManager::setStatus(objectStatus objectStatus)
-{
-	m_objectStatus = objectStatus;
 }
 
 const __time64_t TimeManager::getGameStartTime() const

@@ -76,7 +76,6 @@ public:
 	void update(int textureIndex);
 	void shutdown() override;
 
-	// @TODO: need a FBO class
 	void updateFramebuffer(int index, int mipLevel);
 
 private:

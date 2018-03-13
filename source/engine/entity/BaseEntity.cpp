@@ -1,131 +1,5 @@
 #include "BaseEntity.h"
 
-Transform::Transform()
-{
-	m_pos = vec3(0.0f, 0.0f, 0.0f);
-	m_rot = quat(0.0f, 0.0f, 0.0f, 1.0f);
-	m_scale = vec3(1.0f, 1.0f, 1.0f);
-	m_oldPos = m_pos + (1.0f);
-	m_oldRot = m_rot.mul(0.5f);
-	m_oldScale = m_scale + (1.0f);
-}
-
-Transform::~Transform()
-{
-}
-
-void Transform::update()
-{
-	m_oldPos = m_pos;
-	m_oldRot = m_rot;
-	m_oldScale = m_scale;
-}
-
-void Transform::rotate(const vec3 & axis, double angle)
-{
-	double sinHalfAngle = sin((angle * PI / 180.0) / 2.0);
-	double cosHalfAngle = cos((angle * PI / 180.0) / 2.0);
-	// get final rotation
-	m_rot = quat(axis.x * sinHalfAngle, axis.y * sinHalfAngle, axis.z * sinHalfAngle, cosHalfAngle).mul(m_rot);
-}
-
-vec3 & Transform::getPos()
-{
-	return m_pos;
-}
-
-quat & Transform::getRot()
-{
-	return m_rot;
-}
-
-vec3 & Transform::getScale()
-{
-	return m_scale;
-}
-
-void Transform::setPos(const vec3 & pos)
-{
-	m_pos = pos;
-}
-
-void Transform::setRot(const quat & rot)
-{
-	m_rot = rot;
-}
-
-void Transform::setScale(const vec3 & scale)
-{
-	m_scale = scale;
-}
-
-vec3 & Transform::getOldPos()
-{
-	return m_oldPos;
-}
-quat & Transform::getOldRot()
-{
-	return m_oldRot;
-}
-
-vec3 & Transform::getOldScale()
-{
-	return m_oldScale;
-}
-
-vec3 Transform::getDirection(direction direction) const
-{
-	vec3 l_directionVec3;
-
-	switch (direction)
-	{
-	case FORWARD: l_directionVec3 = vec3(0.0f, 0.0f, 1.0f); break;
-	case BACKWARD:l_directionVec3 = vec3(0.0f, 0.0f, -1.0f); break;
-	case UP:l_directionVec3 = vec3(0.0f, 1.0f, 0.0f); break;
-	case DOWN:l_directionVec3 = vec3(0.0f, -1.0f, 0.0f); break;
-	case RIGHT:l_directionVec3 = vec3(1.0f, 0.0f, 0.0f); break;
-	case LEFT:l_directionVec3 = vec3(-1.0f, 0.0f, 0.0f); break;
-	}
-
-	// V' = QVQ^-1, for unit quaternion, conjugated quaternion is same as inverse quatertion
-
-	// naive version
-
-	//// get Q * V by hand
-	////glm::quat l_hiddenRotatedQuat;
-	////l_hiddenRotatedQuat.w = -m_rot.x * l_directionVec3.x - m_rot.y * l_directionVec3.y - m_rot.z * l_directionVec3.z;
-	////l_hiddenRotatedQuat.x = m_rot.w * l_directionVec3.x + m_rot.y * l_directionVec3.z - m_rot.z * l_directionVec3.y;
-	////l_hiddenRotatedQuat.y = m_rot.w * l_directionVec3.y + m_rot.z * l_directionVec3.x - m_rot.x * l_directionVec3.z;
-	////l_hiddenRotatedQuat.z = m_rot.w * l_directionVec3.z + m_rot.x * l_directionVec3.y - m_rot.y * l_directionVec3.x;
-
-	//// get conjugate quaternion
-	////glm::quat l_conjugateQuat;
-	////l_conjugateQuat = glm::conjugate(m_rot);
-
-	//// then QV * Q^-1 
-	////glm::quat l_directionQuat;
-	////l_directionQuat = l_hiddenRotatedQuat * l_conjugateQuat;
-	////l_directionVec3.x = l_directionQuat.x;
-	////l_directionVec3.y = l_directionQuat.y;
-	////l_directionVec3.z = l_directionQuat.z;
-
-	// traditional version, change direction vector to quaternion representation
-
-	////glm::quat l_directionQuat = glm::quat(0.0, l_directionVec3);
-	////l_directionQuat = m_rot * l_directionQuat * glm::conjugate(m_rot);
-	////l_directionVec3.x = l_directionQuat.x;
-	////l_directionVec3.y = l_directionQuat.y;
-	////l_directionVec3.z = l_directionQuat.z;
-
-	// optimized version ([Kavan et al. ] Lemma 4)
-	//V' = V + 2 * Qv x (Qv x V + Qs * V)
-	vec3 l_Qv = vec3(m_rot.x, m_rot.y, m_rot.z);
-	l_directionVec3 = l_directionVec3 + l_Qv.cross((l_Qv.cross(l_directionVec3) + l_directionVec3.mul(m_rot.w))).mul(2.0f);
-
-	return l_directionVec3;
-}
-
-
 BaseEntity::BaseEntity()
 {
 	m_entityID = std::rand();
@@ -135,88 +9,53 @@ BaseEntity::~BaseEntity()
 {
 }
 
-void BaseEntity::setup()
+void BaseEntity::addChildEntity(IEntity* childEntity)
 {
-	m_className = std::string{ typeid(*this).name() };
-	m_className = m_className.substr(m_className.find("class"), std::string::npos);
+	m_childEntitys.emplace_back(childEntity);
+	childEntity->setParentEntity(this);
 }
 
-const EntityID & BaseEntity::getEntityID() const
+const std::vector<IEntity*>& BaseEntity::getChildrenEntitys() const
 {
-	return m_entityID;
+	return m_childEntitys;
 }
 
-const std::string & BaseEntity::getClassName() const
+IEntity* BaseEntity::getParentEntity() const
 {
-	return m_className;
+	return m_parentEntity;
 }
 
-const objectStatus & BaseEntity::getStatus() const
+void BaseEntity::setParentEntity(IEntity* parentActor)
 {
-	return m_objectStatus;
+	m_parentEntity = parentActor;
 }
 
-void BaseEntity::setStatus(objectStatus objectStatus)
-{
-	m_objectStatus = objectStatus;
-}
-
-BaseActor::BaseActor()
-{
-}
-
-
-BaseActor::~BaseActor()
-{
-}
-
-void BaseActor::addChildActor(BaseActor* childActor)
-{
-	m_childActors.emplace_back(childActor);
-	childActor->setParentActor(this);
-}
-
-const std::vector<BaseActor*>& BaseActor::getChildrenActors() const
-{
-	return m_childActors;
-}
-
-BaseActor* BaseActor::getParentActor() const
-{
-	return m_parentActor;
-}
-
-void BaseActor::setParentActor(BaseActor* parentActor)
-{
-	m_parentActor = parentActor;
-}
-
-void BaseActor::addChildComponent(BaseComponent * childComponent)
+void BaseEntity::addChildComponent(IComponent * childComponent)
 {
 	m_childComponents.emplace_back(childComponent);
-	childComponent->setParentActor(this);
+	childComponent->setParentEntity(this);
 }
 
-const std::vector<BaseComponent*>& BaseActor::getChildrenComponents() const
+const std::vector<IComponent*>& BaseEntity::getChildrenComponents() const
 {
 	return m_childComponents;
 }
 
-Transform* BaseActor::getTransform()
+Transform* BaseEntity::getTransform()
 {
 	return &m_transform;
 }
 
-bool BaseActor::hasTransformChanged()
+bool BaseEntity::hasTransformChanged()
 {
 	if (m_transform.getPos() != m_transform.getOldPos() || m_transform.getRot() != m_transform.getOldRot() || m_transform.getScale() != m_transform.getOldScale())
 	{
 		return true;
 	}
 
-	if (getParentActor() != nullptr)
+	if (m_parentEntity != nullptr)
 	{
-		if (getParentActor()->hasTransformChanged())
+		if (m_parentEntity->hasTransformChanged())
 		{
 			return true;
 		}
@@ -224,22 +63,22 @@ bool BaseActor::hasTransformChanged()
 	return false;
 }
 
-mat4 BaseActor::caclLocalPosMatrix()
+mat4 BaseEntity::caclLocalPosMatrix()
 {
 	return m_transform.getPos().toTranslationMartix();
 }
 
-mat4 BaseActor::caclLocalRotMatrix()
+mat4 BaseEntity::caclLocalRotMatrix()
 {
 	return m_transform.getRot().toRotationMartix();
 }
 
-mat4 BaseActor::caclLocalScaleMatrix()
+mat4 BaseEntity::caclLocalScaleMatrix()
 {
 	return m_transform.getScale().toScaleMartix();
 }
 
-vec3 BaseActor::caclWorldPos()
+vec3 BaseEntity::caclWorldPos()
 {
 	mat4 l_parentTransformationMatrix;
 	l_parentTransformationMatrix.m[0][0] = 1.0f;
@@ -247,9 +86,9 @@ vec3 BaseActor::caclWorldPos()
 	l_parentTransformationMatrix.m[2][2] = 1.0f;
 	l_parentTransformationMatrix.m[3][3] = 1.0f;
 
-	if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
+	if (m_parentEntity != nullptr && m_parentEntity->hasTransformChanged())
 	{
-		l_parentTransformationMatrix = getParentActor()->caclTransformationMatrix();
+		l_parentTransformationMatrix = m_parentEntity->caclTransformationMatrix();
 	}
 
 	return vec3(l_parentTransformationMatrix.m[0][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][0] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][0] * m_transform.getPos().z,
@@ -257,46 +96,46 @@ vec3 BaseActor::caclWorldPos()
 		l_parentTransformationMatrix.m[0][2] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][2] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][2] * m_transform.getPos().z);
 }
 
-quat BaseActor::caclWorldRot()
+quat BaseEntity::caclWorldRot()
 {
 	quat l_parentRotationQuat = quat(0, 0, 0, 1);
 
-	if (getParentActor() != nullptr)
+	if (m_parentEntity != nullptr)
 	{
-		l_parentRotationQuat = getParentActor()->caclWorldRot();
+		l_parentRotationQuat = m_parentEntity->caclWorldRot();
 	}
 
 	return l_parentRotationQuat.mul(m_transform.getRot());
 }
 
-vec3 BaseActor::caclWorldScale()
+vec3 BaseEntity::caclWorldScale()
 {
 	vec3 l_parentScale = vec3(1.0, 1.0, 1.0);
 
-	if (getParentActor() != nullptr)
+	if (m_parentEntity != nullptr)
 	{
-		l_parentScale = getParentActor()->caclWorldScale();
+		l_parentScale = m_parentEntity->caclWorldScale();
 	}
 
 	return l_parentScale.mul(m_transform.getScale());
 }
 
-mat4 BaseActor::caclWorldPosMatrix()
+mat4 BaseEntity::caclWorldPosMatrix()
 {
 	return caclWorldPos().toTranslationMartix();
 }
 
-mat4 BaseActor::caclWorldRotMatrix()
+mat4 BaseEntity::caclWorldRotMatrix()
 {
 	return caclWorldRot().toRotationMartix();
 }
 
-mat4 BaseActor::caclWorldScaleMatrix()
+mat4 BaseEntity::caclWorldScaleMatrix()
 {
 	return caclWorldScale().toScaleMartix();
 }
 
-mat4 BaseActor::caclTransformationMatrix()
+mat4 BaseEntity::caclTransformationMatrix()
 {
 	mat4 l_parentTransformationMatrix;
 
@@ -305,52 +144,51 @@ mat4 BaseActor::caclTransformationMatrix()
 	l_parentTransformationMatrix.m[2][2] = 1.0f;
 	l_parentTransformationMatrix.m[3][3] = 1.0f;
 
-	if (getParentActor() != nullptr && getParentActor()->hasTransformChanged())
+	if (m_parentEntity != nullptr && m_parentEntity->hasTransformChanged())
 	{
-		l_parentTransformationMatrix = getParentActor()->caclTransformationMatrix();
+		l_parentTransformationMatrix = m_parentEntity->caclTransformationMatrix();
 	}
 
 	return l_parentTransformationMatrix * caclLocalPosMatrix() * caclLocalRotMatrix() * caclLocalScaleMatrix();
 }
 
-void BaseActor::setup()
+void BaseEntity::setup()
 {
-	BaseEntity::setup();
 	for (auto l_childComponent : m_childComponents)
 	{
 		l_childComponent->setup();
 	}
-	for (auto l_childActor : m_childActors)
+	for (auto l_childActor : m_childEntitys)
 	{
 		l_childActor->setup();
 	}
 }
 
-void BaseActor::initialize()
+void BaseEntity::initialize()
 {
 	for (auto l_childComponent : m_childComponents)
 	{
 		l_childComponent->initialize();
 	}
-	for (auto l_childActor : m_childActors)
+	for (auto l_childActor : m_childEntitys)
 	{
 		l_childActor->initialize();
 	}
-	this->setStatus(objectStatus::ALIVE);
+	m_objectStatus = objectStatus::ALIVE;
 }
 
-void BaseActor::update()
+void BaseEntity::update()
 {
 	m_transform.update();
-	for (auto l_childActor : m_childActors)
+	for (auto l_childActor : m_childEntitys)
 	{
 		l_childActor->update();
 	}
 }
 
-void BaseActor::shutdown()
+void BaseEntity::shutdown()
 {
-	for (auto& l_childActor : m_childActors)
+	for (auto& l_childActor : m_childEntitys)
 	{
 		l_childActor->shutdown();
 	}
@@ -358,28 +196,15 @@ void BaseActor::shutdown()
 	{
 		l_childComponent->shutdown();
 	}
-	this->setStatus(objectStatus::SHUTDOWN);
+	m_objectStatus = objectStatus::SHUTDOWN;
 }
 
-BaseComponent::BaseComponent()
+const EntityID & BaseEntity::getEntityID() const
 {
+	return m_entityID;
 }
 
-BaseComponent::~BaseComponent()
+const objectStatus & BaseEntity::getStatus() const
 {
-}
-
-BaseActor* BaseComponent::getParentActor() const
-{
-	return m_parentActor;
-}
-
-void BaseComponent::setParentActor(BaseActor * parentActor)
-{
-	m_parentActor = parentActor;
-}
-
-Transform* BaseComponent::getTransform()
-{
-	return m_parentActor->getTransform();
+	return m_objectStatus;
 }

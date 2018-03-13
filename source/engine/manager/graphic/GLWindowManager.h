@@ -1,11 +1,11 @@
 #pragma once
-#include "manager/BaseManager.h"
+#include "interface/IManager.h"
 #include "interface/ILogManager.h"
 #include "entity/InnoMath.h"
 
 extern ILogManager* g_pLogManager;
 
-class GLWindowManager : public BaseManager
+class GLWindowManager : public IManager
 {
 public:
 	~GLWindowManager() {};
@@ -14,6 +14,7 @@ public:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
+	const objectStatus& getStatus() const override;
 
 	static GLWindowManager& getInstance()
 	{
@@ -30,6 +31,7 @@ public:
 
 private:
 	GLWindowManager() {};
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
 	unsigned int SCR_WIDTH = 1280;
 	unsigned int SCR_HEIGHT = 720;
