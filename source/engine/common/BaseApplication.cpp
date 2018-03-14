@@ -2,15 +2,15 @@
 
 void BaseApplication::setup()
 {
-	g_pCoreManager->setup();
+	g_pCoreSystem->setup();
 	m_objectStatus = objectStatus::ALIVE;
 }
 
 void BaseApplication::initialize()
 {
-	if (g_pCoreManager->getStatus() == objectStatus::ALIVE)
+	if (g_pCoreSystem->getStatus() == objectStatus::ALIVE)
 	{
-		g_pCoreManager->initialize();
+		g_pCoreSystem->initialize();
 	}
 	else
 	{
@@ -20,9 +20,9 @@ void BaseApplication::initialize()
 
 void BaseApplication::update()
 {
-	if (g_pCoreManager->getStatus() == objectStatus::ALIVE)
+	if (g_pCoreSystem->getStatus() == objectStatus::ALIVE)
 	{
-		g_pCoreManager->update();
+		g_pCoreSystem->update();
 	}
 	else
 	{
@@ -32,7 +32,7 @@ void BaseApplication::update()
 
 void BaseApplication::shutdown()
 {
-	g_pCoreManager->shutdown();
+	g_pCoreSystem->shutdown();
 	m_objectStatus = objectStatus::SHUTDOWN;
 }
 

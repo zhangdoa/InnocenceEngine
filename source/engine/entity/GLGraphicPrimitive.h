@@ -1,8 +1,8 @@
 #pragma once
-#include "interface/ILogManager.h"
+#include "interface/ILogSystem.h"
 #include "entity/BaseGraphicPrimitive.h"
 
-extern ILogManager* g_pLogManager;
+extern ILogSystem* g_pLogSystem;
 
 class GLMesh : public BaseMesh
 {

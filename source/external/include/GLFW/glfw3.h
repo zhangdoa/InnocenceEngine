@@ -1812,7 +1812,7 @@ GLFWAPI void glfwWindowHint(int hint, int value);
  *  a custom `Info.plist` template for this, which can be found as
  *  `CMake/MacOSXBundleInfo.plist.in` in the source tree.
  *
- *  @remark @x11 Some window managers will not respect the placement of
+ *  @remark @x11 Some window Systems will not respect the placement of
  *  initially hidden windows.
  *
  *  @remark @x11 Due to the asynchronous nature of X11, it may take a moment for
@@ -2005,7 +2005,7 @@ GLFWAPI void glfwGetWindowPos(GLFWwindow* window, int* xpos, int* ypos);
  *  __Do not use this function__ to move an already visible window unless you
  *  have very good reasons for doing so, as it will confuse and annoy the user.
  *
- *  The window manager may put limits on what positions are allowed.  GLFW
+ *  The window System may put limits on what positions are allowed.  GLFW
  *  cannot and should not override these limits.
  *
  *  @param[in] window The window to query.
@@ -2150,7 +2150,7 @@ GLFWAPI void glfwSetWindowAspectRatio(GLFWwindow* window, int numer, int denom);
  *  If you wish to update the refresh rate of the desired video mode in addition
  *  to its resolution, see @ref glfwSetWindowMonitor.
  *
- *  The window manager may put limits on what sizes are allowed.  GLFW cannot
+ *  The window System may put limits on what sizes are allowed.  GLFW cannot
  *  and should not override these limits.
  *
  *  @param[in] window The window to resize.

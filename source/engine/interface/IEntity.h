@@ -9,8 +9,7 @@ class IComponent;
 class IEntity : public IObject
 {
 public:
-	IEntity();
-	virtual ~IEntity();
+	virtual ~IEntity() {};
 
 	virtual const EntityID& getEntityID() const = 0;
 
