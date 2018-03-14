@@ -1,1 +1,1 @@
-/* #undef USE_CLANG */
+#define USE_CLANG
