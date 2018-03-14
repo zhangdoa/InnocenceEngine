@@ -324,7 +324,7 @@ void LightPassBlinnPhongShader::init()
 	m_uni_dirLight_color = getUniformLocation("uni_dirLight.color");
 }
 
-void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents)
+void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode)
 {
 	bindShader();
 
@@ -501,13 +501,15 @@ void LightPassPBSShader::init()
 	m_uni_brdfLUT = getUniformLocation("uni_brdfLUT");
 	updateUniform(m_uni_brdfLUT, 6);
 
+	m_uni_textureMode = getUniformLocation("uni_textureMode");
+
 	m_uni_viewPos = getUniformLocation("uni_viewPos");
 
 	m_uni_dirLight_direction = getUniformLocation("uni_dirLight.direction");
 	m_uni_dirLight_color = getUniformLocation("uni_dirLight.color");
 }
 
-void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents)
+void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode)
 {
 	bindShader();
 
@@ -538,6 +540,7 @@ void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraCompone
 		//@TODO: generalization
 
 		updateUniform(m_uni_viewPos, cameraComponents[0]->getParentEntity()->getTransform()->getPos().x, cameraComponents[0]->getParentEntity()->getTransform()->getPos().y, cameraComponents[0]->getParentEntity()->getTransform()->getPos().z);
+		updateUniform(m_uni_textureMode, textureMode);
 
 		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
 		{
@@ -919,28 +922,32 @@ void RenderingSystem::setup()
 	}
 
 	//setup input
+	for (int i = 0; i < NUM_KEYCODES; i++)
+	{
+		m_keyButtonMap.emplace(i, keyButton());
+	}
 	f_changeDrawPolygonMode = std::bind(&RenderingSystem::changeDrawPolygonMode, this);
 	f_changeDrawTextureMode = std::bind(&RenderingSystem::changeDrawTextureMode, this);
 
 	//setup rendering
 	//@TODO: add a switch for different shader model
-	//m_geometryPassShader = &GeometryPassBlinnPhongShader::getInstance();
-	m_geometryPassShader = &GeometryPassPBSShader::getInstance();
+	//m_geometryPassShader = g_pMemorySystem->spawn<GeometryPassBlinnPhongShader>();
+	m_geometryPassShader = g_pMemorySystem->spawn<GeometryPassPBSShader>();
 
-	//m_lightPassShader = &LightPassBlinnPhongShader::getInstance();
-	m_lightPassShader = &LightPassPBSShader::getInstance();
+	//m_lightPassShader = g_pMemorySystem->spawn<LightPassBlinnPhongShader>();
+	m_lightPassShader = g_pMemorySystem->spawn<LightPassPBSShader>();
 
-	m_environmentCapturePassShader = &EnvironmentCapturePassPBSShader::getInstance();
-	m_environmentConvolutionPassShader = &EnvironmentConvolutionPassPBSShader::getInstance();
-	m_environmentPreFilterPassShader = &EnvironmentPreFilterPassPBSShader::getInstance();
-	m_environmentBRDFLUTPassShader = &EnvironmentBRDFLUTPassPBSShader::getInstance();
+	m_environmentCapturePassShader = g_pMemorySystem->spawn<EnvironmentCapturePassPBSShader>();
+	m_environmentConvolutionPassShader = g_pMemorySystem->spawn<EnvironmentConvolutionPassPBSShader>();
+	m_environmentPreFilterPassShader = g_pMemorySystem->spawn<EnvironmentPreFilterPassPBSShader>();
+	m_environmentBRDFLUTPassShader = g_pMemorySystem->spawn<EnvironmentBRDFLUTPassPBSShader>();
 
-	m_skyForwardPassShader = &SkyForwardPassPBSShader::getInstance();
-	m_skyDeferPassShader = &SkyDeferPassPBSShader::getInstance();
+	m_skyForwardPassShader = g_pMemorySystem->spawn<SkyForwardPassPBSShader>();
+	m_skyDeferPassShader = g_pMemorySystem->spawn<SkyDeferPassPBSShader>();
 
-	m_debuggerPassShader = &DebuggerShader::getInstance();
+	m_debuggerPassShader = g_pMemorySystem->spawn<DebuggerShader>();
 
-	m_finalPassShader = &FinalPassShader::getInstance();
+	m_finalPassShader = g_pMemorySystem->spawn<FinalPassShader>();
 
 	m_objectStatus = objectStatus::ALIVE;
 }
@@ -961,8 +968,11 @@ void RenderingSystem::initialize()
 		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->getMouseInputCallbackImpl());
 	}
 
+	// @TODO: debt I owe
 	addKeyboardInputCallback(GLFW_KEY_Q, &f_changeDrawPolygonMode);
+	m_keyButtonMap.find(GLFW_KEY_Q)->second.m_keyPressType = keyPressType::ONCE;
 	addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
+	m_keyButtonMap.find(GLFW_KEY_E)->second.m_keyPressType = keyPressType::ONCE;
 
 	//initialize rendering
 	glEnable(GL_TEXTURE_2D);
@@ -980,7 +990,7 @@ void RenderingSystem::initialize()
 
 	g_pAssetSystem->loadTextureFromDisk({ "basic_normal.png" }, textureType::NORMAL, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicNormalTemplate));
 	g_pAssetSystem->loadTextureFromDisk({ "basic_albedo.png" }, textureType::ALBEDO, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicAlbedoTemplate));
-	g_pAssetSystem->loadTextureFromDisk({"basic_metallic.png"}, textureType::METALLIC, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicMetallicTemplate));
+	g_pAssetSystem->loadTextureFromDisk({ "basic_metallic.png" }, textureType::METALLIC, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicMetallicTemplate));
 	g_pAssetSystem->loadTextureFromDisk({ "basic_roughness.png" }, textureType::ROUGHNESS, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicRoughnessTemplate));
 	g_pAssetSystem->loadTextureFromDisk({ "basic_ao.png" }, textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicAOTemplate));
 
@@ -1029,41 +1039,53 @@ void RenderingSystem::initialize()
 
 void RenderingSystem::update()
 {
-	//Window update
-	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0) {
+	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0)
+	{
 		glfwPollEvents();
-		glfwSwapBuffers(m_window);
-	}
-	else
-	{
-		g_pLogSystem->printLog("Window error!");
-		g_pLogSystem->printLog("RenderingSystem is stand-by.");
-		m_objectStatus = objectStatus::STANDBY;
-	}
 
-	//Input update
-	if (m_window != nullptr)
-	{
-
+		//Input update
 		for (int i = 0; i < NUM_KEYCODES; i++)
 		{
+			//if key pressed
 			if (glfwGetKey(m_window, i) == GLFW_PRESS)
 			{
-				auto l_keybinding = m_keyboardInputCallback.find(i);
-				if (l_keybinding != m_keyboardInputCallback.end())
+				auto l_keyButton = m_keyButtonMap.find(i);
+				if (l_keyButton != m_keyButtonMap.end())
 				{
-					for (auto j : l_keybinding->second)
+					//check whether it's still pressed/ the bound functions has been invoked
+					if (l_keyButton->second.m_allowCallback)
 					{
-						if (j)
+						auto l_keybinding = m_keyboardInputCallback.find(i);
+						if (l_keybinding != m_keyboardInputCallback.end())
 						{
-							(*j)();
+							for (auto j : l_keybinding->second)
+							{
+								if (j)
+								{
+									(*j)();
+								}
+							}
 						}
+						if (l_keyButton->second.m_keyPressType == keyPressType::ONCE)
+						{
+							l_keyButton->second.m_allowCallback = false;
+						}
+					}
+
+				}
+			}
+			else
+			{
+				auto l_keyButton = m_keyButtonMap.find(i);
+				if (l_keyButton != m_keyButtonMap.end())
+				{
+					if (l_keyButton->second.m_keyPressType == keyPressType::ONCE)
+					{
+						l_keyButton->second.m_allowCallback = true;
 					}
 				}
 			}
 		}
-
-
 		if (glfwGetMouseButton(m_window, 1) == GLFW_PRESS)
 		{
 			hideMouseCursor();
@@ -1114,6 +1136,11 @@ void RenderingSystem::shutdown()
 	}
 	m_objectStatus = objectStatus::SHUTDOWN;
 	g_pLogSystem->printLog("RenderingSystem has been shutdown.");
+}
+
+bool RenderingSystem::canRender()
+{
+	return m_canRender;
 }
 
 const objectStatus & RenderingSystem::getStatus() const
@@ -1373,13 +1400,13 @@ void RenderingSystem::loadTexture(const std::vector<std::string> &fileName, text
 		else
 		{
 			auto l_textureID = addTexture(textureType);
-			auto l_baseTexture = getTexture(textureType,l_textureID);
+			auto l_baseTexture = getTexture(textureType, l_textureID);
 			g_pAssetSystem->loadTextureFromDisk({ i }, textureType, visibleComponent.m_textureWrapMethod, l_baseTexture);
 			m_loadedTextureMap.emplace(i, texturePair(textureType, l_textureID));
 			assignLoadedTexture(textureAssignType::OVERWRITE, texturePair(textureType, l_textureID), visibleComponent);
 		}
 	}
-	
+
 }
 
 void RenderingSystem::loadModel(const std::string & fileName, VisibleComponent & visibleComponent)
@@ -1406,12 +1433,24 @@ void RenderingSystem::loadModel(const std::string & fileName, VisibleComponent &
 
 void RenderingSystem::render()
 {
-
 	//defer render
+	m_canRender = false;
 	renderBackgroundPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
 	renderGeometryPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
 	renderLightPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
 	renderFinalPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
+	//swap framebuffers
+	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0)
+	{
+		glfwSwapBuffers(m_window);
+		m_canRender = true;
+	}
+	else
+	{
+		g_pLogSystem->printLog("Window error!");
+		g_pLogSystem->printLog("RenderingSystem is stand-by.");
+		m_objectStatus = objectStatus::STANDBY;
+	}
 }
 
 void RenderingSystem::initializeGeometryPass()
@@ -1618,7 +1657,7 @@ void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraCompo
 	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_2D, m_environmentBRDFLUTTexture);
 
-	m_lightPassShader->shaderDraw(cameraComponents, lightComponents);
+	m_lightPassShader->shaderDraw(cameraComponents, lightComponents, m_textureMode);
 
 	// draw light pass rectangle
 	m_lightPassFrameBuffer.drawMesh();
@@ -1682,7 +1721,7 @@ void RenderingSystem::changeDrawPolygonMode()
 
 void RenderingSystem::changeDrawTextureMode()
 {
-	if (m_textureMode == 3)
+	if (m_textureMode == 4)
 	{
 		m_textureMode = 0;
 	}

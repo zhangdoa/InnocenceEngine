@@ -55,34 +55,36 @@ void CoreSystem::update()
 
 	// a frame counter occurred.
 	// @TODO: Async rendering
-	if (g_pTimeSystem->getStatus() == objectStatus::ALIVE)
+	//if (g_pTimeSystem->getStatus() == objectStatus::ALIVE)
+	//{
+
+	auto l_tickTime = g_pTimeSystem->getcurrentTime();
+	// game simulation
+	std::async(&IGameSystem::update, g_pGameSystem);
+
+	if (g_pRenderingSystem->getStatus() == objectStatus::ALIVE)
 	{
-		if (g_pRenderingSystem->getStatus() == objectStatus::ALIVE)
+		if (g_pGameSystem->needRender() && g_pRenderingSystem->canRender())
 		{
-			auto l_tickTime = g_pTimeSystem->getcurrentTime();
-			// game simulation
-			g_pGameSystem->update();
-
-			if (g_pGameSystem->needRender())
-			{
-				//auto fut = std::async(&IRenderingSystem::render, g_pRenderingSystem);
-				g_pRenderingSystem->render();
-			}
-
+			//std::async(&IRenderingSystem::render, g_pRenderingSystem);
+			g_pRenderingSystem->render();
 			g_pRenderingSystem->update();
-			l_tickTime = g_pTimeSystem->getcurrentTime() - l_tickTime;
-#ifdef DEBUG
-			//g_pMemorySystem->dumpToFile("../" + g_pTimeSystem->getCurrentTimeInLocal() + ".innoMemoryDump");
-#endif // DEBUG
 		}
-		else
-		{
-			m_objectStatus = objectStatus::STANDBY;
-			g_pLogSystem->printLog("CoreSystem is stand-by.");
-		}
-
+		l_tickTime = g_pTimeSystem->getcurrentTime() - l_tickTime;
 	}
+	else
+	{
+		m_objectStatus = objectStatus::STANDBY;
+		g_pLogSystem->printLog("CoreSystem is stand-by.");
+	}
+#ifdef DEBUG
+	//g_pMemorySystem->dumpToFile("../" + g_pTimeSystem->getCurrentTimeInLocal() + ".innoMemoryDump");
+#endif // DEBUG
+
+
+
 }
+//}
 
 
 void CoreSystem::shutdown()

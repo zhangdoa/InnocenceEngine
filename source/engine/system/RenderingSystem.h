@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interface/IRenderingSystem.h"
+#include "interface/IMemorySystem.h"
 #include "interface/IAssetSystem.h"
 #include "interface/IGameSystem.h"
 #include "interface/ILogSystem.h"
@@ -8,6 +9,7 @@
 #include "entity/ComponentHeaders.h"
 #include "entity/GLGraphicPrimitive.h"
 
+extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;
 extern IAssetSystem* g_pAssetSystem;
 extern IGameSystem* g_pGameSystem;
@@ -25,7 +27,7 @@ public:
 	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDTexture) {};
 	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) {};
 
-	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents) {};
+	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode) {};
 	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) {};
 
 	virtual void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, GL3DHDRTexture& threeDTexture) {};
@@ -68,20 +70,13 @@ private:
 class GeometryPassBlinnPhongShader : public GLShader
 {
 public:
+	GeometryPassBlinnPhongShader() {};
 	~GeometryPassBlinnPhongShader() {};
-
-	static GeometryPassBlinnPhongShader& getInstance()
-	{
-		static GeometryPassBlinnPhongShader instance;
-		return instance;
-	}
 
 	void init() override;
 	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) override;
 
 private:
-	GeometryPassBlinnPhongShader() {};
-
 	GLint m_uni_normalTexture;
 	GLint m_uni_diffuseTexture;
 	GLint m_uni_specularTexture;
@@ -94,20 +89,13 @@ private:
 class LightPassBlinnPhongShader : public GLShader
 {
 public:
+	LightPassBlinnPhongShader() {};
 	~LightPassBlinnPhongShader() {};
 
-	static LightPassBlinnPhongShader& getInstance()
-	{
-		static LightPassBlinnPhongShader instance;
-		return instance;
-	}
-
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode) override;
 
 private:
-	LightPassBlinnPhongShader() {};
-
 	GLint m_uni_RT0;
 	GLint m_uni_RT1;
 	GLint m_uni_RT2;
@@ -127,20 +115,13 @@ private:
 class GeometryPassPBSShader : public GLShader
 {
 public:
+	GeometryPassPBSShader() {};
 	~GeometryPassPBSShader() {};
-
-	static GeometryPassPBSShader& getInstance()
-	{
-		static GeometryPassPBSShader instance;
-		return instance;
-	}
 
 	void init() override;
 	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) override;
 
 private:
-	GeometryPassPBSShader() {};
-
 	GLint m_uni_normalTexture;
 	GLint m_uni_albedoTexture;
 	GLint m_uni_metallicTexture;
@@ -159,21 +140,14 @@ private:
 
 class LightPassPBSShader : public GLShader
 {
-public:
+public:	
+	LightPassPBSShader() {};
 	~LightPassPBSShader() {};
 
-	static LightPassPBSShader& getInstance()
-	{
-		static LightPassPBSShader instance;
-		return instance;
-	}
-
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode) override;
 
 private:
-	LightPassPBSShader() {};
-
 	GLint m_uni_geometryPassRT0;
 	GLint m_uni_geometryPassRT1;
 	GLint m_uni_geometryPassRT2;
@@ -181,6 +155,7 @@ private:
 	GLint m_uni_irradianceMap;
 	GLint m_uni_preFiltedMap;
 	GLint m_uni_brdfLUT;
+	GLint m_uni_textureMode;
 
 	GLint m_uni_viewPos;
 	GLint m_uni_dirLight_direction;
@@ -191,26 +166,18 @@ private:
 	std::vector<GLint> m_uni_pointLights_color;
 
 	bool isPointLightUniformAdded = false;
-
 };
 
 class EnvironmentCapturePassPBSShader : public GLShader
 {
 public:
+	EnvironmentCapturePassPBSShader() {};
 	~EnvironmentCapturePassPBSShader() {};
-
-	static EnvironmentCapturePassPBSShader& getInstance()
-	{
-		static EnvironmentCapturePassPBSShader instance;
-		return instance;
-	}
 
 	void init() override;
 	void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, GL3DHDRTexture& threeDTexture);
 
 private:
-	EnvironmentCapturePassPBSShader() {};
-
 	GLint m_uni_equirectangularMap;
 
 	GLint m_uni_p;
@@ -220,20 +187,13 @@ private:
 class EnvironmentConvolutionPassPBSShader : public GLShader
 {
 public:
+	EnvironmentConvolutionPassPBSShader() {};
 	~EnvironmentConvolutionPassPBSShader() {};
-
-	static EnvironmentConvolutionPassPBSShader& getInstance()
-	{
-		static EnvironmentConvolutionPassPBSShader instance;
-		return instance;
-	}
 
 	void init() override;
 	void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDCapturedTexture, GL3DHDRTexture& threeDConvolutedTexture);
 
 private:
-	EnvironmentConvolutionPassPBSShader() {};
-
 	GLint m_uni_capturedCubeMap;
 
 	GLint m_uni_p;
@@ -243,20 +203,13 @@ private:
 class EnvironmentPreFilterPassPBSShader : public GLShader
 {
 public:
+	EnvironmentPreFilterPassPBSShader() {};
 	~EnvironmentPreFilterPassPBSShader() {};
-
-	static EnvironmentPreFilterPassPBSShader& getInstance()
-	{
-		static EnvironmentPreFilterPassPBSShader instance;
-		return instance;
-	}
 
 	void init() override;
 	void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDCapturedTexture, GL3DHDRTexture& threeDPreFiltedTexture);
 
 private:
-	EnvironmentPreFilterPassPBSShader() {};
-
 	GLint m_uni_capturedCubeMap;
 
 	GLint m_uni_p;
@@ -268,6 +221,7 @@ private:
 class EnvironmentBRDFLUTPassPBSShader : public GLShader
 {
 public:
+	EnvironmentBRDFLUTPassPBSShader() {};
 	~EnvironmentBRDFLUTPassPBSShader() {};
 
 	static EnvironmentBRDFLUTPassPBSShader& getInstance()
@@ -278,14 +232,12 @@ public:
 
 	void init() override;
 	void shaderDraw();
-
-private:
-	EnvironmentBRDFLUTPassPBSShader() {};
 };
 
 class SkyForwardPassPBSShader : public GLShader
 {
 public:
+	SkyForwardPassPBSShader() {};
 	~SkyForwardPassPBSShader() {};
 
 	static SkyForwardPassPBSShader& getInstance()
@@ -298,8 +250,6 @@ public:
 	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDTexture);
 
 private:
-	SkyForwardPassPBSShader() {};
-
 	GLint m_uni_skybox;
 
 	GLint m_uni_p;
@@ -309,6 +259,7 @@ private:
 class DebuggerShader : public GLShader
 {
 public:
+	DebuggerShader() {};
 	~DebuggerShader() {};
 
 	static DebuggerShader& getInstance()
@@ -321,8 +272,6 @@ public:
 	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap) override;
 
 private:
-	DebuggerShader() {};
-
 	GLint m_uni_p;
 	GLint m_uni_r;
 	GLint m_uni_t;
@@ -332,6 +281,7 @@ private:
 class SkyDeferPassPBSShader : public GLShader
 {
 public:
+	SkyDeferPassPBSShader() {};
 	~SkyDeferPassPBSShader() {};
 
 	static SkyDeferPassPBSShader& getInstance()
@@ -344,8 +294,6 @@ public:
 	void shaderDraw();
 
 private:
-	SkyDeferPassPBSShader() {};
-
 	GLint m_uni_lightPassRT0;
 	GLint m_uni_skyForwardPassRT0;
 	GLint m_uni_debuggerPassRT0;
@@ -354,6 +302,7 @@ private:
 class FinalPassShader : public GLShader
 {
 public:
+	FinalPassShader() {};
 	~FinalPassShader() {};
 
 	static FinalPassShader& getInstance()
@@ -366,14 +315,13 @@ public:
 	void shaderDraw() override;
 
 private:
-	FinalPassShader() {};
-
 	GLint m_uni_skyDeferPassRT0;
 };
 
 class BillboardPassShader : public GLShader
 {
 public:
+	BillboardPassShader() {};
 	~BillboardPassShader() {};
 
 	static BillboardPassShader& getInstance()
@@ -386,12 +334,22 @@ public:
 	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) override;
 
 private:
-	BillboardPassShader() {};
 	GLint m_uni_texture;
 	GLint m_uni_p;
 	GLint m_uni_r;
 	GLint m_uni_t;
 	GLint m_uni_m;
+};
+
+enum class keyPressType { CONTINUOUS, ONCE };
+class keyButton
+{
+public:
+	keyButton() {};
+	~keyButton() {};
+
+	keyPressType m_keyPressType = keyPressType::CONTINUOUS;
+	bool m_allowCallback = true;
 };
 
 class RenderingSystem : public IRenderingSystem
@@ -404,6 +362,7 @@ public:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
+	bool canRender() override;
 
 	friend class windowCallbackWrapper;
 
@@ -440,11 +399,11 @@ private:
 	void hideMouseCursor() const;
 	void showMouseCursor() const;
 
-
 	//Input data
 	const int NUM_KEYCODES = 256;
 	const int NUM_MOUSEBUTTONS = 5;
 
+	std::unordered_map<int, keyButton> m_keyButtonMap;
 	std::multimap<int, std::vector<std::function<void()>*>> m_keyboardInputCallback;
 	std::multimap<int, std::vector<std::function<void(double)>*>> m_mouseMovementCallback;
 
@@ -482,6 +441,7 @@ private:
 	std::unordered_map<std::string, texturePair> m_loadedTextureMap;
 
 	//Rendering Data
+	std::atomic<bool> m_canRender = true;
 	void changeDrawPolygonMode();
 	void changeDrawTextureMode();
 	std::function<void()> f_changeDrawPolygonMode;

@@ -10,6 +10,7 @@ public:
 
 	virtual void setWindowName(const std::string& windowName) = 0;
 	virtual void render() = 0;
+	virtual bool canRender() = 0;
 	virtual meshID addMesh() = 0;
 	virtual textureID addTexture(textureType textureType) = 0;
 	virtual BaseMesh* getMesh(meshID meshID) = 0;
