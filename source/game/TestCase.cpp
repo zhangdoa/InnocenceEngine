@@ -29,7 +29,7 @@ void TestCase::shutdown()
 
 void TestCase::testMath()
 {
-	//LogManager::getInstance().printLog(vec3(1.0, 0.0, 0.0).cross(vec3(0.0, 1.0, 0.0)));
+	//LogSystem::getInstance().printLog(vec3(1.0, 0.0, 0.0).cross(vec3(0.0, 1.0, 0.0)));
 }
 
 void TestCase::testMemory()

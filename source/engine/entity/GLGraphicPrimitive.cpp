@@ -347,7 +347,7 @@ void GLFrameBuffer::initialize()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogManager->printLog("Framebuffer is not completed!");
+		g_pLogSystem->printLog("Framebuffer is not completed!");
 	}
 
 	if (m_isDeferPass)

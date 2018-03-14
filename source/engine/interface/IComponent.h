@@ -7,8 +7,7 @@ class IEntity;
 class IComponent : public IObject
 {
 public:
-	IComponent();
-	virtual ~IComponent();
+	virtual ~IComponent() {};
 
 	virtual IEntity* getParentEntity() const = 0;
 	virtual void setParentEntity(IEntity* parentEntity) = 0;

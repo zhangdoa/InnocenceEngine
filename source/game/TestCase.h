@@ -2,7 +2,7 @@
 #include "common/stdafx.h"
 #include "interface/IGame.h"
 #include "entity/BaseEntity.h"
-#include "manager/CoreManager.h"
+#include "System/CoreSystem.h"
 
 #include "PlayerCharacter.h"
 class TestCase : public IGame

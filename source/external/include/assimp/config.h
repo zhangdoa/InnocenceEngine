@@ -855,9 +855,9 @@ enum aiComponent
   *
   * Turn on this option if you want to manage assets in native
   * Android application without having to keep the internal directory and asset
-  * manager pointer.
+  * System pointer.
   */
- #define AI_CONFIG_ANDROID_JNI_ASSIMP_MANAGER_SUPPORT "AI_CONFIG_ANDROID_JNI_ASSIMP_MANAGER_SUPPORT"
+ #define AI_CONFIG_ANDROID_JNI_ASSIMP_System_SUPPORT "AI_CONFIG_ANDROID_JNI_ASSIMP_System_SUPPORT"
 
 // ---------------------------------------------------------------------------
 /** @brief Specifies whether the IFC loader skips over IfcSpace elements.

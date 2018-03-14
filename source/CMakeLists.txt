@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 
-# for different compiler
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+# compiler config file
 configure_file ("${CMAKE_SOURCE_DIR}/engine/common/config.h.in" "${CMAKE_SOURCE_DIR}/engine/common/config.h")
+
 # Use Clang?
 option (USE_CLANG "Use Clang as the default compiler" ON)
 if (USE_CLANG)
