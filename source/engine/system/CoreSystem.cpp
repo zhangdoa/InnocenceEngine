@@ -2,28 +2,30 @@
 
 void CoreSystem::setup()
 {
-	g_pMemorySystem = new INNO_MEMORY_System;
+	g_pMemorySystem = new INNO_MEMORY_SYSTEM;
 	g_pMemorySystem->setup();
-	g_pLogSystem = g_pMemorySystem->spawn<INNO_LOG_System>();
+	g_pLogSystem = g_pMemorySystem->spawn<INNO_LOG_SYSTEM>();
 	g_pLogSystem->setup();
-	//g_pTaskSystem = g_pMemorySystem->spawn<INNO_TASK_System>();
-	g_pTimeSystem = g_pMemorySystem->spawn<INNO_TIME_System>();
+	g_pTaskSystem = g_pMemorySystem->spawn<INNO_TASK_SYSTEM>();
+	g_pTaskSystem->setup();
+	g_pTimeSystem = g_pMemorySystem->spawn<INNO_TIME_SYSTEM>();
 	g_pTimeSystem->setup();
 	g_pLogSystem->printLog("MemorySystem setup finished.");
 	g_pLogSystem->printLog("LogSystem setup finished.");
+	g_pLogSystem->printLog("TaskSystem setup finished.");
 	g_pLogSystem->printLog("TimeSystem setup finished.");
-	g_pRenderingSystem = g_pMemorySystem->spawn<INNO_RENDERING_System>();
+	g_pRenderingSystem = g_pMemorySystem->spawn<INNO_RENDERING_SYSTEM>();
 	g_pRenderingSystem->setup();
 	g_pLogSystem->printLog("RenderingSystem setup finished.");
-	g_pAssetSystem = g_pMemorySystem->spawn<INNO_ASSET_System>();
+	g_pAssetSystem = g_pMemorySystem->spawn<INNO_ASSET_SYSTEM>();
 	g_pAssetSystem->setup();
 	g_pLogSystem->printLog("AssetSystem setup finished.");
-	g_pGameSystem = g_pMemorySystem->spawn<INNO_GAME_System>();
+	g_pGameSystem = g_pMemorySystem->spawn<INNO_GAME_SYSTEM>();
 	g_pGameSystem->setup();
 	g_pLogSystem->printLog("GameSystem setup finished.");
 	if (g_pGameSystem->getStatus() == objectStatus::ALIVE)
 	{
-		GLWindowSystem::getInstance().setWindowName(g_pGameSystem->getGameName());
+		g_pRenderingSystem->setWindowName(g_pGameSystem->getGameName());
 		m_objectStatus = objectStatus::ALIVE;
 		g_pLogSystem->printLog("CoreSystem setup finished.");
 	}
@@ -38,11 +40,11 @@ void CoreSystem::initialize()
 {
 	g_pMemorySystem->initialize();
 	g_pLogSystem->initialize();
+	g_pTaskSystem->initialize();
 	g_pTimeSystem->initialize();
 	g_pRenderingSystem->initialize();
 	g_pAssetSystem->initialize();
 	g_pGameSystem->initialize();
-
 	g_pLogSystem->printLog("CoreSystem has been initialized.");
 }
 
@@ -63,6 +65,7 @@ void CoreSystem::update()
 
 			if (g_pGameSystem->needRender())
 			{
+				//auto fut = std::async(&IRenderingSystem::render, g_pRenderingSystem);
 				g_pRenderingSystem->render();
 			}
 
@@ -100,4 +103,9 @@ void CoreSystem::shutdown()
 const objectStatus & CoreSystem::getStatus() const
 {
 	return m_objectStatus;
+}
+
+void CoreSystem::taskTest()
+{
+	g_pLogSystem->printLog("task");
 }

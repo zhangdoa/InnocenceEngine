@@ -10,13 +10,13 @@
 #include "System/GameSystem.h"
 
 #ifdef INNO_PLATFORM_WIN32
-#define INNO_MEMORY_System MemorySystem
-#define INNO_LOG_System LogSystem
-#define INNO_TASK_System TaskSystem
-#define INNO_TIME_System TimeSystem
-#define INNO_RENDERING_System RenderingSystem
-#define INNO_ASSET_System AssetSystem
-#define INNO_GAME_System GameSystem
+#define INNO_MEMORY_SYSTEM MemorySystem
+#define INNO_LOG_SYSTEM LogSystem
+#define INNO_TASK_SYSTEM TaskSystem
+#define INNO_TIME_SYSTEM TimeSystem
+#define INNO_RENDERING_SYSTEM RenderingSystem
+#define INNO_ASSET_SYSTEM AssetSystem
+#define INNO_GAME_SYSTEM GameSystem
 #endif
 
 

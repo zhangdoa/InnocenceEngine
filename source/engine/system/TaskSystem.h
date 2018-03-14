@@ -16,17 +16,13 @@ public:
 	void shutdown() override;
 	const objectStatus& getStatus() const override;
 
-	void addTask(std::function<void()>& task);
+	void addTask(void* task) override;
 
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	void m_threadHolder();
-
-	unsigned int m_hardwareConcurrency;
-	std::vector<std::thread> m_threadPool;
 	std::mutex m_mtx;
 	std::condition_variable m_cv;
-	std::vector<std::function<void()>*> m_taskQueue;
+	std::vector<void*> m_taskQueue;
 };
 

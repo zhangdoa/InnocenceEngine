@@ -6,6 +6,7 @@ void AssetSystem::setup()
 
 void AssetSystem::initialize()
 {
+	g_pLogSystem->printLog("AssetSystem has been initialized.");
 }
 
 void AssetSystem::update()
@@ -14,6 +15,7 @@ void AssetSystem::update()
 
 void AssetSystem::shutdown()
 {
+	g_pLogSystem->printLog("AssetSystem has been shutdown.");
 }
 
 std::string AssetSystem::loadShader(const std::string & fileName) const

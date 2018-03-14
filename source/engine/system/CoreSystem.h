@@ -28,6 +28,8 @@ public:
 
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+
+	void taskTest();
 };
 
 CoreSystem g_CoreSystem;
