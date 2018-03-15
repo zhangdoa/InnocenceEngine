@@ -900,7 +900,7 @@ void RenderingSystem::setup()
 		g_pLogSystem->printLog("Failed to initialize GLFW.");
 	}
 
-	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
+	glfwWindowHint(GLFW_SAMPLES, 16); // 16x antialiasing
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #ifdef INNO_PLATFORM_MACOS
@@ -923,6 +923,9 @@ void RenderingSystem::setup()
 		m_objectStatus = objectStatus::STANDBY;
 		g_pLogSystem->printLog("Failed to initialize GLAD.");
 	}
+	
+	// MSAA
+	glEnable(GL_MULTISAMPLE);
 
 	//setup input
 	for (int i = 0; i < NUM_KEYCODES; i++)

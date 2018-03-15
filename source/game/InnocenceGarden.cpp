@@ -34,7 +34,6 @@ void InnocenceGarden::setup()
 
 	m_directionalLightComponent.setColor(vec3(1.0, 1.0, 1.0));
 	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
-	m_directionalLightComponent.setDirection(vec3(0.0, 0.0, -0.85));
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
@@ -128,7 +127,7 @@ void InnocenceGarden::setupSpheres()
 	for (auto i = (unsigned int)0; i < sphereMatrixDim * sphereMatrixDim; i++)
 	{
 		m_sphereComponents.emplace_back();
-		m_hereEntitys.emplace_back();
+		m_sphereEntitys.emplace_back();
 	}
 	for (auto i = (unsigned int)0; i < m_sphereComponents.size(); i++)
 	{
@@ -136,8 +135,8 @@ void InnocenceGarden::setupSpheres()
 		m_sphereComponents[i].m_meshType = meshType::SPHERE;
 		m_sphereComponents[i].m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 		m_sphereComponents[i].m_useTexture = false;
-		m_rootEntity.addChildEntity(&m_hereEntitys[i]);
-		m_hereEntitys[i].addChildComponent(&m_sphereComponents[i]);
+		m_rootEntity.addChildEntity(&m_sphereEntitys[i]);
+		m_sphereEntitys[i].addChildComponent(&m_sphereComponents[i]);
 		m_visibleComponents.emplace_back(&m_sphereComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < m_sphereComponents.size(); i += 4)
@@ -172,7 +171,7 @@ void InnocenceGarden::setupSpheres()
 	{
 		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 		{
-			m_hereEntitys[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0, (j * sphereBreadthInterval) - 2.0 * (sphereMatrixDim - 1)));
+			m_sphereEntitys[i * sphereMatrixDim + j].getTransform()->setPos(vec3((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0, (j * sphereBreadthInterval) - 2.0 * (sphereMatrixDim - 1)));
 			m_sphereComponents[i * sphereMatrixDim + j].m_MRA = vec3((double)(i) / (double)(sphereMatrixDim), (double)(j) / (double)(sphereMatrixDim), 1.0);
 		}
 	}	
@@ -204,7 +203,7 @@ void InnocenceGarden::setupLights()
 
 void InnocenceGarden::updateLights(double seed)
 {
-	m_directionalLightComponent.setDirection(vec3(0.0, cos(seed), (sin(seed) + 1.0) / 2.0));
+	m_directionalLightEntity.getTransform()->rotate(vec3(1.0, 0.0, 0.0), 0.5);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
 		m_pointLightComponents[i].setColor(vec3((sin(seed + i) + 1.0) * 10.0 / 2.0, 0.2f * 10.0, 0.4f * 10.0));
@@ -217,9 +216,9 @@ void InnocenceGarden::updateLights(double seed)
 void InnocenceGarden::updateSpheres(double seed)
 {
 	m_pawnEntity2.getTransform()->rotate(vec3(0.0, 1.0, 0.0), 0.05);
-	for (auto i = (unsigned int)0; i < m_hereEntitys.size(); i++)
+	for (auto i = (unsigned int)0; i < m_sphereEntitys.size(); i++)
 	{
-		m_hereEntitys[i].getTransform()->rotate(vec3(0.0, 1.0, 0.0), 0.01 * i);
-		m_hereEntitys[i].getTransform()->setPos(m_hereEntitys[i].getTransform()->getPos() + vec3(cos(seed) * 0.01, 0.0, 0.0));
+		m_sphereEntitys[i].getTransform()->rotate(vec3(0.0, 1.0, 0.0), 0.01 * i);
+		m_sphereEntitys[i].getTransform()->setPos(m_sphereEntitys[i].getTransform()->getPos() + vec3(cos(seed) * 0.01, 0.0, 0.0));
 	}
 }

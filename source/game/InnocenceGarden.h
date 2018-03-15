@@ -34,7 +34,7 @@ private:
 	BaseEntity m_pawnEntity1;
 	BaseEntity m_pawnEntity2;
 
-	std::vector<BaseEntity> m_hereEntitys;
+	std::vector<BaseEntity> m_sphereEntitys;
 
 	std::vector<BaseEntity> m_pointLightEntitys;
 

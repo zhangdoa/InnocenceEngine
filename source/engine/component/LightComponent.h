@@ -22,7 +22,6 @@ public:
 	vec3 getColor() const;
 
 	void setlightType(lightType lightType);
-	void setDirection(vec3 direction);
 	void setRadius(double radius);
 	void setColor(const vec3& color);
 
