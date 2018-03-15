@@ -15,11 +15,6 @@ void LightComponent::setlightType(lightType lightType)
 	m_lightType = lightType;
 }
 
-void LightComponent::setDirection(vec3 direction)
-{
-	m_direction = direction;
-}
-
 void LightComponent::setRadius(double radius)
 {
 	m_radius = radius;
@@ -29,7 +24,6 @@ void LightComponent::setColor(const vec3& color)
 {
 	m_color = color;
 }
-
 
 void LightComponent::getLightPosMatrix(mat4 & lightPosMatrix)
 {
@@ -48,7 +42,7 @@ const lightType LightComponent::getLightType()
 
 vec3 LightComponent::getDirection() const
 {
-	return m_direction;
+	return  getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
 }
 
 double LightComponent::getRadius() const
