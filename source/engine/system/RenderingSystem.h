@@ -27,7 +27,7 @@ public:
 	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDTexture) {};
 	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) {};
 
-	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode) {};
+	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode, int shadingMode) {};
 	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) {};
 
 	virtual void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, GL3DHDRTexture& threeDTexture) {};
@@ -93,7 +93,7 @@ public:
 	~LightPassBlinnPhongShader() {};
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode, int shadingMode) override;
 
 private:
 	GLint m_uni_RT0;
@@ -145,7 +145,7 @@ public:
 	~LightPassPBSShader() {};
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode, int shadingMode) override;
 
 private:
 	GLint m_uni_geometryPassRT0;
@@ -156,6 +156,7 @@ private:
 	GLint m_uni_preFiltedMap;
 	GLint m_uni_brdfLUT;
 	GLint m_uni_textureMode;
+	GLint m_uni_shadingMode;
 
 	GLint m_uni_viewPos;
 	GLint m_uni_dirLight_direction;
@@ -444,8 +445,10 @@ private:
 	std::atomic<bool> m_canRender = true;
 	void changeDrawPolygonMode();
 	void changeDrawTextureMode();
+	void changeShadingMode();
 	std::function<void()> f_changeDrawPolygonMode;
 	std::function<void()> f_changeDrawTextureMode;
+	std::function<void()> f_changeShadingMode;
 
 	GLFrameBuffer m_geometryPassFrameBuffer;
 	GLShader* m_geometryPassShader;
@@ -485,6 +488,8 @@ private:
 
 	int m_polygonMode = 0;
 	int m_textureMode = 0;
+	int m_shadingMode = 0;
+
 	bool m_shouldUpdateEnvironmentMap = true;
 	void initializeGeometryPass();
 	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);

@@ -324,7 +324,7 @@ void LightPassBlinnPhongShader::init()
 	m_uni_dirLight_color = getUniformLocation("uni_dirLight.color");
 }
 
-void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode)
+void LightPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode, int shadingMode)
 {
 	bindShader();
 
@@ -502,6 +502,8 @@ void LightPassPBSShader::init()
 	updateUniform(m_uni_brdfLUT, 6);
 
 	m_uni_textureMode = getUniformLocation("uni_textureMode");
+	
+	m_uni_shadingMode = getUniformLocation("uni_shadingMode");
 
 	m_uni_viewPos = getUniformLocation("uni_viewPos");
 
@@ -509,7 +511,7 @@ void LightPassPBSShader::init()
 	m_uni_dirLight_color = getUniformLocation("uni_dirLight.color");
 }
 
-void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode)
+void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode, int shadingMode)
 {
 	bindShader();
 
@@ -541,6 +543,7 @@ void LightPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraCompone
 
 		updateUniform(m_uni_viewPos, cameraComponents[0]->getParentEntity()->getTransform()->getPos().x, cameraComponents[0]->getParentEntity()->getTransform()->getPos().y, cameraComponents[0]->getParentEntity()->getTransform()->getPos().z);
 		updateUniform(m_uni_textureMode, textureMode);
+		updateUniform(m_uni_shadingMode, shadingMode);
 
 		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
 		{
@@ -928,6 +931,7 @@ void RenderingSystem::setup()
 	}
 	f_changeDrawPolygonMode = std::bind(&RenderingSystem::changeDrawPolygonMode, this);
 	f_changeDrawTextureMode = std::bind(&RenderingSystem::changeDrawTextureMode, this);
+	f_changeShadingMode = std::bind(&RenderingSystem::changeShadingMode, this);
 
 	//setup rendering
 	//@TODO: add a switch for different shader model
@@ -973,7 +977,8 @@ void RenderingSystem::initialize()
 	m_keyButtonMap.find(GLFW_KEY_Q)->second.m_keyPressType = keyPressType::ONCE;
 	addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
 	m_keyButtonMap.find(GLFW_KEY_E)->second.m_keyPressType = keyPressType::ONCE;
-
+	addKeyboardInputCallback(GLFW_KEY_R, &f_changeShadingMode);
+	m_keyButtonMap.find(GLFW_KEY_R)->second.m_keyPressType = keyPressType::ONCE;
 	//initialize rendering
 	glEnable(GL_TEXTURE_2D);
 	initializeGeometryPass();
@@ -1657,7 +1662,7 @@ void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraCompo
 	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_2D, m_environmentBRDFLUTTexture);
 
-	m_lightPassShader->shaderDraw(cameraComponents, lightComponents, m_textureMode);
+	m_lightPassShader->shaderDraw(cameraComponents, lightComponents, m_textureMode, m_shadingMode);
 
 	// draw light pass rectangle
 	m_lightPassFrameBuffer.drawMesh();
@@ -1728,5 +1733,17 @@ void RenderingSystem::changeDrawTextureMode()
 	else
 	{
 		m_textureMode += 1;
+	}
+}
+
+void RenderingSystem::changeShadingMode()
+{
+	if (m_shadingMode == 1)
+	{
+		m_shadingMode = 0;
+	}
+	else
+	{
+		m_shadingMode += 1;
 	}
 }
