@@ -3,11 +3,15 @@
 #include "innoMath.h"
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
-enum class meshType { QUAD, CUBE, SPHERE, CUSTOM };
+enum class meshType { TWO_DIMENSION, THREE_DIMENSION };
+enum class meshShapeType { QUAD, CUBE, SPHERE, CUSTOM };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, CUBEMAP_HDR, EQUIRETANGULAR };
+enum class textureInternalFormat { RED, RG, RGB, RGBA };
 enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
 enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
+enum class frameBufferType { FORWARD, SHADOW, DEFER };
+enum class renderBufferType {DEPTH, STENCIL, DEPTH_AND_STENCIL};
 
 class IMeshRawData
 {
@@ -83,7 +87,7 @@ public:
 	virtual ~BaseTexture() {};
 
 	void setup() override;
-	void setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureFormat, int textureWidth, int textureHeight, const std::vector<void *>& textureData, bool generateMipMap);
+	void setup(textureType textureType, textureInternalFormat textureInternalFormat, textureWrapMethod textureWrapMethod, textureFilterMethod textureMinFilterMethod, textureFilterMethod textureMagFilterMethod, int textureWidth, int textureHeight, const std::vector<void *>& textureData);
 	const objectStatus& getStatus() const override;
 	textureID getTextureID();
 
@@ -91,12 +95,13 @@ protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	textureID m_textureID;
 	textureType m_textureType;
+	textureInternalFormat m_textureInternalFormat;
+	textureFilterMethod m_textureMinFilterMethod;
+	textureFilterMethod m_textureMagFilterMethod;
 	textureWrapMethod m_textureWrapMethod;
-	int m_textureFormat;
 	int m_textureWidth;
 	int m_textureHeight;	
 	std::vector<void *> m_textureData;
-	bool m_generateMipMap;
 };
 
 class BaseFrameBuffer : public IObject
@@ -106,13 +111,14 @@ public:
 	virtual ~BaseFrameBuffer() {};
 
 	void setup() override;
-	void setup(vec2 renderBufferStorageResolution, bool isDeferPass, unsigned int renderTargetTextureNumber);
+	void setup(vec2 renderBufferStorageResolution, frameBufferType frameBufferType, renderBufferType renderBufferType, unsigned int renderTargetTextureNumber);
 	const objectStatus& getStatus() const override;
 
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	vec2 m_renderBufferStorageResolution;
-	bool m_isDeferPass = false;
+	frameBufferType m_frameBufferType = frameBufferType::FORWARD;
+	renderBufferType m_renderBufferType = renderBufferType::DEPTH;
 	unsigned int m_renderTargetTextureNumber = 0;
 };
 

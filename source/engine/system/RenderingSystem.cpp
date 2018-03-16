@@ -161,7 +161,7 @@ void BillboardPassShader::init()
 
 }
 
-void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
+void BillboardPassShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
 {
 	bindShader();
 
@@ -243,7 +243,7 @@ void GeometryPassBlinnPhongShader::init()
 
 }
 
-void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
+void GeometryPassBlinnPhongShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
 {
 	bindShader();
 
@@ -403,7 +403,7 @@ void GeometryPassPBSShader::init()
 	m_uni_MRA = getUniformLocation("uni_MRA");
 }
 
-void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
+void GeometryPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
 {
 	bindShader();
 
@@ -575,7 +575,7 @@ void EnvironmentCapturePassPBSShader::init()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void EnvironmentCapturePassPBSShader::shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, GL3DHDRTexture& threeDTexture)
+void EnvironmentCapturePassPBSShader::shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, GL3DHDRTexture& threeDTexture)
 {
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
@@ -629,7 +629,7 @@ void EnvironmentConvolutionPassPBSShader::init()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void EnvironmentConvolutionPassPBSShader::shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture & threeDCapturedTexture, GL3DHDRTexture & threeDConvolutedTexture)
+void EnvironmentConvolutionPassPBSShader::shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, GL3DHDRTexture & threeDCapturedTexture, GL3DHDRTexture & threeDConvolutedTexture)
 {
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
@@ -684,7 +684,7 @@ void EnvironmentPreFilterPassPBSShader::init()
 	m_uni_roughness = getUniformLocation("uni_roughness");
 }
 
-void EnvironmentPreFilterPassPBSShader::shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture & threeDCapturedTexture, GL3DHDRTexture & threeDPreFiltedTexture)
+void EnvironmentPreFilterPassPBSShader::shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, GL3DHDRTexture & threeDCapturedTexture, GL3DHDRTexture & threeDPreFiltedTexture)
 {
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
@@ -765,7 +765,7 @@ void SkyForwardPassPBSShader::init()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void SkyForwardPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDTexture)
+void SkyForwardPassPBSShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, GL3DHDRTexture& threeDTexture)
 {
 	glDepthFunc(GL_LEQUAL);
 
@@ -819,7 +819,7 @@ void DebuggerShader::init()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap)
+void DebuggerShader::shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap)
 {
 	bindShader();
 
@@ -1002,27 +1002,27 @@ void RenderingSystem::initialize()
 	g_pAssetSystem->loadTextureFromDisk({ "basic_roughness.png" }, textureType::ROUGHNESS, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicRoughnessTemplate));
 	g_pAssetSystem->loadTextureFromDisk({ "basic_ao.png" }, textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicAOTemplate));
 
-	m_UnitQuadTemplate = addMesh();
-	auto lastQuadMeshData = getMesh(m_UnitQuadTemplate);
+	m_UnitQuadTemplate = addMesh(meshType::THREE_DIMENSION);
+	auto lastQuadMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitQuadTemplate);
 	lastQuadMeshData->addUnitQuad();
 	lastQuadMeshData->setup(meshDrawMethod::TRIANGLE, true, true);
 	lastQuadMeshData->initialize();
 
-	m_UnitCubeTemplate = addMesh();
-	auto lastCubeMeshData = getMesh(m_UnitCubeTemplate);
+	m_UnitCubeTemplate = addMesh(meshType::THREE_DIMENSION);
+	auto lastCubeMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitCubeTemplate);
 	lastCubeMeshData->addUnitCube();
 	lastCubeMeshData->setup(meshDrawMethod::TRIANGLE, false, false);
 	lastCubeMeshData->initialize();
 
-	m_UnitSphereTemplate = addMesh();
-	auto lastSphereMeshData = getMesh(m_UnitSphereTemplate);
+	m_UnitSphereTemplate = addMesh(meshType::THREE_DIMENSION);
+	auto lastSphereMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitSphereTemplate);
 	lastSphereMeshData->addUnitSphere();
 	lastSphereMeshData->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
 	lastSphereMeshData->initialize();
 
 	for (auto i : g_pGameSystem->getVisibleComponents())
 	{
-		if (i->m_meshType == meshType::CUSTOM)
+		if (i->m_meshType == meshShapeType::CUSTOM)
 		{
 			if (i->m_modelFileName != "")
 			{
@@ -1291,11 +1291,20 @@ void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, double xoffs
 {
 }
 
-meshID RenderingSystem::addMesh()
+meshID RenderingSystem::addMesh(meshType meshType)
 {
-	GLMesh newMesh;
-	m_meshMap.emplace(std::pair<meshID, GLMesh>(newMesh.getMeshID(), newMesh));
-	return newMesh.getMeshID();
+	if (meshType == meshType::TWO_DIMENSION)
+	{
+		GL2DMesh newMesh;
+		m_2DMeshMap.emplace(std::pair<meshID, GL2DMesh>(newMesh.getMeshID(), newMesh));
+		return newMesh.getMeshID();
+	}
+	else if (meshType == meshType::THREE_DIMENSION)
+	{
+		GL3DMesh newMesh;
+		m_3DMeshMap.emplace(std::pair<meshID, GL3DMesh>(newMesh.getMeshID(), newMesh));
+		return newMesh.getMeshID();
+	}
 }
 
 textureID RenderingSystem::addTexture(textureType textureType)
@@ -1326,9 +1335,17 @@ textureID RenderingSystem::addTexture(textureType textureType)
 	}
 }
 
-BaseMesh* RenderingSystem::getMesh(meshID meshID)
+BaseMesh* RenderingSystem::getMesh(meshType meshType, meshID meshID)
 {
-	return &m_meshMap.find(meshID)->second;
+	if (meshType == meshType::TWO_DIMENSION)
+	{
+		return &m_2DMeshMap.find(meshID)->second;
+	}
+	else if (meshType == meshType::THREE_DIMENSION)
+	{
+		return &m_3DMeshMap.find(meshID)->second;
+	}
+
 }
 
 BaseTexture * RenderingSystem::getTexture(textureType textureType, textureID textureID)
@@ -1351,14 +1368,14 @@ BaseTexture * RenderingSystem::getTexture(textureType textureType, textureID tex
 	}
 }
 
-void RenderingSystem::assignUnitMesh(VisibleComponent & visibleComponent, meshType meshType)
+void RenderingSystem::assignUnitMesh(VisibleComponent & visibleComponent, meshShapeType meshType)
 {
 	meshID l_UnitMeshTemplate;
 	switch (meshType)
 	{
-	case meshType::QUAD: l_UnitMeshTemplate = m_UnitQuadTemplate; break;
-	case meshType::CUBE: l_UnitMeshTemplate = m_UnitCubeTemplate; break;
-	case meshType::SPHERE: l_UnitMeshTemplate = m_UnitSphereTemplate; break;
+	case meshShapeType::QUAD: l_UnitMeshTemplate = m_UnitQuadTemplate; break;
+	case meshShapeType::CUBE: l_UnitMeshTemplate = m_UnitCubeTemplate; break;
+	case meshShapeType::SPHERE: l_UnitMeshTemplate = m_UnitSphereTemplate; break;
 	}
 	visibleComponent.addMeshData(l_UnitMeshTemplate);
 	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
@@ -1465,7 +1482,7 @@ void RenderingSystem::initializeGeometryPass()
 {
 	// initialize shader
 	m_geometryPassShader->init();
-	m_geometryPassFrameBuffer.setup(m_screenResolution, false, 4);
+	m_geometryPassFrameBuffer.setup(m_screenResolution, frameBufferType::FORWARD, renderBufferType::DEPTH_AND_STENCIL, 4);
 	m_geometryPassFrameBuffer.initialize();
 }
 
@@ -1477,7 +1494,7 @@ void RenderingSystem::renderGeometryPass(std::vector<CameraComponent*>& cameraCo
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL - m_polygonMode);
-	m_geometryPassShader->shaderDraw(cameraComponents, visibleComponents, m_meshMap, m_2DTextureMap);
+	m_geometryPassShader->shaderDraw(cameraComponents, visibleComponents, m_3DMeshMap, m_2DTextureMap);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
@@ -1495,25 +1512,25 @@ void RenderingSystem::initializeBackgroundPass()
 
 	// @TODO: add a capturer class
 	m_environmentCapturePassTextureID = this->addTexture(textureType::CUBEMAP_HDR);
-	auto environmentCapturePassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentCapturePassTextureID);
-	environmentCapturePassTextureData->setup(textureType::CUBEMAP_HDR, textureWrapMethod::CLAMP_TO_EDGE, 3, 2048, 2048, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, false);
-	environmentCapturePassTextureData->initialize();
+	auto l_environmentCapturePassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentCapturePassTextureID);
+	l_environmentCapturePassTextureData->setup(textureType::CUBEMAP_HDR, textureInternalFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, 2048, 2048, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
+	l_environmentCapturePassTextureData->initialize();
 
 	// environment convolution pass
 	m_environmentConvolutionPassShader->init();
 
 	m_environmentConvolutionPassTextureID = this->addTexture(textureType::CUBEMAP_HDR);
-	auto environmentConvolutionPassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentConvolutionPassTextureID);
-	environmentConvolutionPassTextureData->setup(textureType::CUBEMAP_HDR, textureWrapMethod::CLAMP_TO_EDGE, 3, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, false);
-	environmentConvolutionPassTextureData->initialize();
+	auto l_environmentConvolutionPassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentConvolutionPassTextureID);
+	l_environmentConvolutionPassTextureData->setup(textureType::CUBEMAP_HDR, textureInternalFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
+	l_environmentConvolutionPassTextureData->initialize();
 
 	// environment pre-filter pass
 	m_environmentPreFilterPassShader->init();
 
 	m_environmentPreFilterPassTextureID = this->addTexture(textureType::CUBEMAP_HDR);
-	auto environmentPreFilterPassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentPreFilterPassTextureID);
-	environmentPreFilterPassTextureData->setup(textureType::CUBEMAP_HDR, textureWrapMethod::CLAMP_TO_EDGE, 3, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}, true);
-	environmentPreFilterPassTextureData->initialize();
+	auto l_environmentPreFilterPassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentPreFilterPassTextureID);
+	l_environmentPreFilterPassTextureData->setup(textureType::CUBEMAP_HDR, textureInternalFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR_MIPMAP_LINEAR, textureFilterMethod::LINEAR, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
+	l_environmentPreFilterPassTextureData->initialize();
 
 	// environment brdf LUT pass
 	m_environmentBRDFLUTPassShader->init();
@@ -1526,39 +1543,25 @@ void RenderingSystem::initializeBackgroundPass()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	// initialize background defer pass rectangle
-	m_environmentBRDFLUTPassVertices = {
-		-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-		1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-		1.0f, -1.0f, 0.0f, 1.0f, 0.0f, };
-
-	glGenVertexArrays(1, &m_environmentBRDFLUTPassVAO);
-	glGenBuffers(1, &m_environmentBRDFLUTPassVBO);
-	glBindVertexArray(m_environmentBRDFLUTPassVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, m_environmentBRDFLUTPassVBO);
-	// take care of std::vector's size and pointer of first element!!!
-	glBufferData(GL_ARRAY_BUFFER, m_environmentBRDFLUTPassVertices.size() * sizeof(float), &m_environmentBRDFLUTPassVertices[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	// initialize background defer pass mesh
+	m_environmentBRDFLUTMesh = this->getMesh(meshType::TWO_DIMENSION, this->addMesh(meshType::TWO_DIMENSION));
+	m_environmentBRDFLUTMesh->addUnitQuad();
+	m_environmentBRDFLUTMesh->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
+	m_environmentBRDFLUTMesh->initialize();
 
 	// background forward pass
 	m_skyForwardPassShader->init();
-	m_skyForwardPassFrameBuffer.setup(m_screenResolution, false, 1);
+	m_skyForwardPassFrameBuffer.setup(m_screenResolution, frameBufferType::FORWARD, renderBufferType::DEPTH_AND_STENCIL, 1);
 	m_skyForwardPassFrameBuffer.initialize();
 
 	// initialize Debugger Pass shader
 	m_debuggerPassShader->init();
-	m_debuggerPassFrameBuffer.setup(m_screenResolution, true, 1);
+	m_debuggerPassFrameBuffer.setup(m_screenResolution, frameBufferType::DEFER, renderBufferType::DEPTH_AND_STENCIL, 1);
 	m_debuggerPassFrameBuffer.initialize();
 
 	// background defer pass
 	m_skyDeferPassShader->init();
-	m_skyDeferPassFrameBuffer.setup(m_screenResolution, true, 1);
+	m_skyDeferPassFrameBuffer.setup(m_screenResolution, frameBufferType::DEFER, renderBufferType::DEPTH_AND_STENCIL, 1);
 	m_skyDeferPassFrameBuffer.initialize();
 }
 
@@ -1577,16 +1580,16 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 
 		glViewport(0, 0, 2048, 2048);
 
-		m_environmentCapturePassShader->shaderDraw(visibleComponents, m_meshMap, m_2DHDRTextureMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second);
+		m_environmentCapturePassShader->shaderDraw(visibleComponents, m_3DMeshMap, m_2DHDRTextureMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second);
 
 		// draw environment map convolution pass
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 128, 128);
 		glViewport(0, 0, 128, 128);
 
-		m_environmentConvolutionPassShader->shaderDraw(visibleComponents, m_meshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second, m_3DHDRTextureMap.find(m_environmentConvolutionPassTextureID)->second);
+		m_environmentConvolutionPassShader->shaderDraw(visibleComponents, m_3DMeshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second, m_3DHDRTextureMap.find(m_environmentConvolutionPassTextureID)->second);
 
 		// draw environment map pre-filter pass
-		m_environmentPreFilterPassShader->shaderDraw(visibleComponents, m_meshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second, m_3DHDRTextureMap.find(m_environmentPreFilterPassTextureID)->second);
+		m_environmentPreFilterPassShader->shaderDraw(visibleComponents, m_3DMeshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second, m_3DHDRTextureMap.find(m_environmentPreFilterPassTextureID)->second);
 
 		// draw environment map BRDF LUT pass
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
@@ -1597,10 +1600,7 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// draw environment map BRDF LUT rectangle
-		glBindVertexArray(m_environmentBRDFLUTPassVAO);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glBindVertexArray(0);
-
+		m_environmentBRDFLUTMesh->update();
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, (int)m_screenResolution.x, (int)m_screenResolution.x);
 		glViewport(0, 0, (int)m_screenResolution.x, (int)m_screenResolution.y);
 
@@ -1613,7 +1613,7 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	m_skyForwardPassShader->shaderDraw(cameraComponents, visibleComponents, m_meshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second);
+	m_skyForwardPassShader->shaderDraw(cameraComponents, visibleComponents, m_3DMeshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second);
 
 	// draw debugger pass
 	m_debuggerPassFrameBuffer.update();
@@ -1621,7 +1621,7 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	m_debuggerPassShader->shaderDraw(cameraComponents, visibleComponents, m_meshMap);
+	m_debuggerPassShader->shaderDraw(cameraComponents, visibleComponents, m_3DMeshMap);
 
 	// draw background defer pass
 	m_skyDeferPassFrameBuffer.update();
@@ -1643,7 +1643,7 @@ void RenderingSystem::initializeLightPass()
 {
 	// initialize shader
 	m_lightPassShader->init();
-	m_lightPassFrameBuffer.setup(m_screenResolution, true, 1);
+	m_lightPassFrameBuffer.setup(m_screenResolution, frameBufferType::DEFER, renderBufferType::DEPTH_AND_STENCIL, 1);
 	m_lightPassFrameBuffer.initialize();
 }
 
@@ -1675,25 +1675,11 @@ void RenderingSystem::initializeFinalPass()
 {
 	// initialize Final Pass shader
 	m_finalPassShader->init();
-	// initialize screen rectangle
-	m_screenVertices = {
-		-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-		1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-		1.0f, -1.0f, 0.0f, 1.0f, 0.0f, };
-
-	glGenVertexArrays(1, &m_finalPassVAO);
-	glGenBuffers(1, &m_finalPassVBO);
-	glBindVertexArray(m_finalPassVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, m_finalPassVBO);
-	// take care of std::vector's size and pointer of first element!!!
-	glBufferData(GL_ARRAY_BUFFER, m_screenVertices.size() * sizeof(float), &m_screenVertices[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	// initialize final pass mesh
+	m_finalPassMesh = this->getMesh(meshType::TWO_DIMENSION, this->addMesh(meshType::TWO_DIMENSION));
+	m_finalPassMesh->addUnitQuad();
+	m_finalPassMesh->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
+	m_finalPassMesh->initialize();
 }
 
 void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
@@ -1710,9 +1696,7 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	m_finalPassShader->shaderDraw();
 
 	// draw screen rectangle
-	glBindVertexArray(m_finalPassVAO);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	glBindVertexArray(0);
+	m_finalPassMesh->update();
 }
 
 void RenderingSystem::changeDrawPolygonMode()

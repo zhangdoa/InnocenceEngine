@@ -23,15 +23,15 @@ public:
 
 	virtual void shaderDraw() {};
 
-	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap) {};
-	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDTexture) {};
-	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) {};
+	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap) {};
+	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, GL3DHDRTexture& threeDTexture) {};
+	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) {};
 
 	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode, int shadingMode) {};
-	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) {};
+	virtual void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) {};
 
-	virtual void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, GL3DHDRTexture& threeDTexture) {};
-	virtual void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDCapturedTexture, GL3DHDRTexture& threeDConvolutedTexture) {};
+	virtual void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, GL3DHDRTexture& threeDTexture) {};
+	virtual void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, GL3DHDRTexture& threeDCapturedTexture, GL3DHDRTexture& threeDConvolutedTexture) {};
 
 
 protected:
@@ -74,7 +74,7 @@ public:
 	~GeometryPassBlinnPhongShader() {};
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) override;
 
 private:
 	GLint m_uni_normalTexture;
@@ -119,7 +119,7 @@ public:
 	~GeometryPassPBSShader() {};
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) override;
 
 private:
 	GLint m_uni_normalTexture;
@@ -176,7 +176,7 @@ public:
 	~EnvironmentCapturePassPBSShader() {};
 
 	void init() override;
-	void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, GL3DHDRTexture& threeDTexture);
+	void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, GL3DHDRTexture& threeDTexture);
 
 private:
 	GLint m_uni_equirectangularMap;
@@ -192,7 +192,7 @@ public:
 	~EnvironmentConvolutionPassPBSShader() {};
 
 	void init() override;
-	void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDCapturedTexture, GL3DHDRTexture& threeDConvolutedTexture);
+	void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, GL3DHDRTexture& threeDCapturedTexture, GL3DHDRTexture& threeDConvolutedTexture);
 
 private:
 	GLint m_uni_capturedCubeMap;
@@ -208,7 +208,7 @@ public:
 	~EnvironmentPreFilterPassPBSShader() {};
 
 	void init() override;
-	void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDCapturedTexture, GL3DHDRTexture& threeDPreFiltedTexture);
+	void shaderDraw(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, GL3DHDRTexture& threeDCapturedTexture, GL3DHDRTexture& threeDPreFiltedTexture);
 
 private:
 	GLint m_uni_capturedCubeMap;
@@ -248,7 +248,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GL3DHDRTexture& threeDTexture);
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, GL3DHDRTexture& threeDTexture);
 
 private:
 	GLint m_uni_skybox;
@@ -270,7 +270,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap) override;
 
 private:
 	GLint m_uni_p;
@@ -332,7 +332,7 @@ public:
 	}
 
 	void init() override;
-	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) override;
+	void shaderDraw(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap) override;
 
 private:
 	GLint m_uni_texture;
@@ -377,9 +377,9 @@ public:
 	void setWindowName(const std::string& windowName) override;
 
 	void render() override;
-	meshID addMesh() override;
+	meshID addMesh(meshType meshType) override;
 	textureID addTexture(textureType textureType) override;
-	BaseMesh* getMesh(meshID meshID) override;
+	BaseMesh* getMesh(meshType meshType, meshID meshID) override;
 	BaseTexture* getTexture(textureType textureType, textureID textureID) override;
 
 	const objectStatus& getStatus() const override;
@@ -416,13 +416,14 @@ private:
 	//Asset data
 	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
 
-	std::unordered_map<meshID, GLMesh> m_meshMap;
+	std::unordered_map<meshID, GL2DMesh> m_2DMeshMap;
+	std::unordered_map<meshID, GL3DMesh> m_3DMeshMap;
 	std::unordered_map<textureID, GL2DTexture> m_2DTextureMap;
 	std::unordered_map<textureID, GL2DHDRTexture> m_2DHDRTextureMap;
 	std::unordered_map<textureID, GL3DTexture> m_3DTextureMap;
 	std::unordered_map<textureID, GL3DHDRTexture> m_3DHDRTextureMap;
 
-	void assignUnitMesh(VisibleComponent& visibleComponent, meshType meshType);
+	void assignUnitMesh(VisibleComponent& visibleComponent, meshShapeType meshType);
 	void assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
 	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
 	void loadTexture(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent& visibleComponent);
@@ -461,10 +462,9 @@ private:
 	textureID m_environmentCapturePassTextureID;
 	textureID m_environmentConvolutionPassTextureID;
 	textureID m_environmentPreFilterPassTextureID;
+
 	GLuint m_environmentBRDFLUTTexture;
-	GLuint m_environmentBRDFLUTPassVAO;
-	GLuint m_environmentBRDFLUTPassVBO;
-	std::vector<float> m_environmentBRDFLUTPassVertices;
+	BaseMesh* m_environmentBRDFLUTMesh;
 
 	GLShader* m_environmentCapturePassShader;
 	GLShader* m_environmentConvolutionPassShader;
@@ -480,9 +480,7 @@ private:
 	GLFrameBuffer m_debuggerPassFrameBuffer;
 	GLShader* m_debuggerPassShader;
 
-	GLuint m_finalPassVAO;
-	GLuint m_finalPassVBO;
-	std::vector<float> m_screenVertices;
+	BaseMesh* m_finalPassMesh;
 	GLFrameBuffer m_finalPassFrameBuffer;
 	GLShader* m_finalPassShader;
 
