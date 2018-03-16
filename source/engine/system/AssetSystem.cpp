@@ -87,7 +87,7 @@ void AssetSystem::processAssimpNode(const std::string& fileName, modelMap & mode
 	{
 		auto l_modelPair = modelPair();
 
-		processSingleAssimpMesh(l_modelPair.first, scene->mMeshes[node->mMeshes[i]], meshDrawMethod);
+		processSingleAssimpMesh(fileName, l_modelPair.first, scene->mMeshes[node->mMeshes[i]], meshDrawMethod);
 
 		// process material if there was anyone
 		if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
@@ -99,7 +99,7 @@ void AssetSystem::processAssimpNode(const std::string& fileName, modelMap & mode
 }
 
 
-void AssetSystem::processSingleAssimpMesh(meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod) const
+void AssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod) const
 {
 	meshID = g_pRenderingSystem->addMesh(meshType::THREE_DIMENSION);
 	auto l_meshData = g_pRenderingSystem->getMesh(meshType::THREE_DIMENSION, meshID);
@@ -166,7 +166,7 @@ void AssetSystem::processSingleAssimpMesh(meshID& meshID, aiMesh * aiMesh, meshD
 	l_meshData->setup(meshDrawMethod, false, false);
 	l_meshData->initialize();
 
-	g_pLogSystem->printLog("innoMesh is loaded.");
+	g_pLogSystem->printLog("innoMesh: mesh of model " + fileName + " is loaded.");
 }
 
 void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textureMap & textureMap, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod) const
