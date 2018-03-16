@@ -5,4 +5,13 @@ target_link_libraries(InnoMain InnoComponent)
 target_link_libraries(InnoMain InnoSystem)
 
 link_directories(${CMAKE_SOURCE_DIR}/game/)
+
+if (BUILD_EDITOR)
+target_link_libraries(InnoMain InnoEditor)
+endif (BUILD_EDITOR)
+
+if(BUILD_GAME)
 target_link_libraries(InnoMain InnoGame)
+endif (BUILD_GAME)
+
+

@@ -4,11 +4,27 @@
 
 extern ILogSystem* g_pLogSystem;
 
-class GLMesh : public BaseMesh
+class GL2DMesh : public BaseMesh
 {
 public:
-	GLMesh() {};
-	~GLMesh() {};
+	GL2DMesh() {};
+	~GL2DMesh() {};
+
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
+private:
+	GLuint m_VAO = 0;
+	GLuint m_VBO = 0;
+	GLuint m_IBO = 0;
+};
+
+class GL3DMesh : public BaseMesh
+{
+public:
+	GL3DMesh() {};
+	~GL3DMesh() {};
 
 	void initialize() override;
 	void update() override;

@@ -15,7 +15,7 @@ public:
 	void shutdown() override;
 
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
-	meshType m_meshType = meshType::QUAD;
+	meshShapeType m_meshType = meshShapeType::QUAD;
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
 	

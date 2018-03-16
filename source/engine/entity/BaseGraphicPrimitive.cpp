@@ -174,15 +174,16 @@ void BaseTexture::setup()
 {
 }
 
-void BaseTexture::setup(textureType textureType, textureWrapMethod textureWrapMethod, int textureFormat, int textureWidth, int textureHeight, const std::vector<void*>& textureData, bool generateMipMap)
+void BaseTexture::setup(textureType textureType, textureInternalFormat textureInternalFormat, textureWrapMethod textureWrapMethod, textureFilterMethod textureMinFilterMethod, textureFilterMethod textureMagFilterMethod, int textureWidth, int textureHeight, const std::vector<void*>& textureData)
 {
 	m_textureType = textureType;
+	m_textureInternalFormat = textureInternalFormat;
 	m_textureWrapMethod = textureWrapMethod;
-	m_textureFormat = textureFormat;
+	m_textureMinFilterMethod = textureMinFilterMethod;
+	m_textureMagFilterMethod = textureMagFilterMethod;
 	m_textureWidth = textureWidth;
 	m_textureHeight = textureHeight;
 	m_textureData = textureData;
-	m_generateMipMap = generateMipMap;
 }
 
 const objectStatus & BaseTexture::getStatus() const
@@ -199,10 +200,11 @@ void BaseFrameBuffer::setup()
 {
 }
 
-void BaseFrameBuffer::setup(vec2 renderBufferStorageResolution, bool isDeferPass, unsigned int renderTargetTextureNumber)
+void BaseFrameBuffer::setup(vec2 renderBufferStorageResolution, frameBufferType frameBufferType, renderBufferType renderBufferType, unsigned int renderTargetTextureNumber)
 {
 	m_renderBufferStorageResolution = renderBufferStorageResolution;
-	m_isDeferPass = isDeferPass;
+	m_frameBufferType = frameBufferType;
+	m_renderBufferType = renderBufferType;
 	m_renderTargetTextureNumber = renderTargetTextureNumber;
 }
 

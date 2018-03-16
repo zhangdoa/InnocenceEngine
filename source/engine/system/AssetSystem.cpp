@@ -101,8 +101,8 @@ void AssetSystem::processAssimpNode(const std::string& fileName, modelMap & mode
 
 void AssetSystem::processSingleAssimpMesh(meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod) const
 {
-	meshID = g_pRenderingSystem->addMesh();
-	auto l_meshData = g_pRenderingSystem->getMesh(meshID);
+	meshID = g_pRenderingSystem->addMesh(meshType::THREE_DIMENSION);
+	auto l_meshData = g_pRenderingSystem->getMesh(meshType::THREE_DIMENSION, meshID);
 
 	for (auto i = (unsigned int)0; i < aiMesh->mNumVertices; i++)
 	{
@@ -241,7 +241,7 @@ void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textu
 	}
 }
 
-void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod, BaseTexture* baseDexture) const
+void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod, BaseTexture* baseTexture) const
 {
 	if (textureType == textureType::CUBEMAP)
 	{
@@ -266,8 +266,8 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 			}
 			//stbi_image_free(data);
 		}
-		baseDexture->setup(textureType::CUBEMAP, textureWrapMethod::CLAMP_TO_EDGE, nrChannels, width, height, l_3DTextureRawData, false);
-		baseDexture->initialize();
+		baseTexture->setup(textureType::CUBEMAP, textureInternalFormat(nrChannels - 1), textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, width, height, l_3DTextureRawData);
+		baseTexture->initialize();
 		g_pLogSystem->printLog("inno3DTexture is fully loaded.");
 	}
 	else if(textureType == textureType::EQUIRETANGULAR)
@@ -278,8 +278,8 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 		auto *data = stbi_loadf((m_textureRelativePath + fileName[0]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			baseDexture->setup(textureType::EQUIRETANGULAR, textureWrapMethod::CLAMP_TO_EDGE, nrChannels, width, height, { data }, false);
-			baseDexture->initialize();
+			baseTexture->setup(textureType::EQUIRETANGULAR, textureInternalFormat(nrChannels - 1), textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, width, height, { data });
+			baseTexture->initialize();
 		g_pLogSystem->printLog("inno2DHDRTexture: " + fileName[0] + " is loaded.");
 		}
 		else
@@ -297,8 +297,8 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 		auto *data = stbi_load((m_textureRelativePath + fileName[0]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			baseDexture->setup(textureType, textureWrapMethod, nrChannels, width, height, { data }, true);
-			baseDexture->initialize();
+			baseTexture->setup(textureType, textureInternalFormat(nrChannels - 1), textureWrapMethod, textureFilterMethod::LINEAR_MIPMAP_LINEAR, textureFilterMethod::LINEAR, width, height, { data });
+			baseTexture->initialize();
 			g_pLogSystem->printLog("inno2DTexture: " + fileName[0] + " is loaded.");
 		}
 		else

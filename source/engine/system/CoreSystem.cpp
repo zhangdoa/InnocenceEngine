@@ -67,8 +67,8 @@ void CoreSystem::update()
 		if (g_pGameSystem->needRender() && g_pRenderingSystem->canRender())
 		{
 			//std::async(&IRenderingSystem::render, g_pRenderingSystem);
-			g_pRenderingSystem->render();
 			g_pRenderingSystem->update();
+			g_pRenderingSystem->render();
 		}
 		l_tickTime = g_pTimeSystem->getcurrentTime() - l_tickTime;
 	}

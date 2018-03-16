@@ -26,7 +26,7 @@ void InnocenceGarden::setup()
 	m_inputComponents.emplace_back(&m_playCharacter.getInputComponent());
 
 	m_skyboxComponent.m_visiblilityType = visiblilityType::SKYBOX;
-	m_skyboxComponent.m_meshType = meshType::CUBE;
+	m_skyboxComponent.m_meshType = meshShapeType::CUBE;
 	m_skyboxComponent.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
 	m_skyboxComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl/Brooklyn_Bridge_Planks_2k.hdr"));
 	m_skyboxEntity.addChildComponent(&m_skyboxComponent);
@@ -38,7 +38,7 @@ void InnocenceGarden::setup()
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
 	m_landscapeComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
-	m_landscapeComponent.m_meshType = meshType::CUBE;
+	m_landscapeComponent.m_meshType = meshShapeType::CUBE;
 	m_landscapeEntity.addChildComponent(&m_landscapeComponent);
 	m_landscapeEntity.getTransform()->setScale(vec3(20.0, 20.0, 0.1f));
 	m_landscapeEntity.getTransform()->rotate(vec3(1.0, 0.0, 0.0), 90.0);
@@ -46,14 +46,14 @@ void InnocenceGarden::setup()
 	m_visibleComponents.emplace_back(&m_landscapeComponent);
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
-	m_pawnComponent1.m_meshType = meshType::CUSTOM;
+	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
 	m_pawnEntity1.addChildComponent(&m_pawnComponent1);
 	m_pawnEntity1.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
 	m_pawnEntity1.getTransform()->setPos(vec3(0.0, 0.2, -1.5));
 	m_visibleComponents.emplace_back(&m_pawnComponent1);
 
 	m_pawnComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
-	m_pawnComponent2.m_meshType = meshType::CUSTOM;
+	m_pawnComponent2.m_meshType = meshShapeType::CUSTOM;
 	m_pawnComponent2.m_modelFileName = "lantern/lantern.obj";
 	m_pawnComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "lantern/lantern_Normal_OpenGL.jpg"));
 	m_pawnComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lantern/lantern_Base_Color.jpg"));
@@ -132,7 +132,7 @@ void InnocenceGarden::setupSpheres()
 	for (auto i = (unsigned int)0; i < m_sphereComponents.size(); i++)
 	{
 		m_sphereComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
-		m_sphereComponents[i].m_meshType = meshType::SPHERE;
+		m_sphereComponents[i].m_meshType = meshShapeType::SPHERE;
 		m_sphereComponents[i].m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 		m_sphereComponents[i].m_useTexture = false;
 		m_rootEntity.addChildEntity(&m_sphereEntitys[i]);
