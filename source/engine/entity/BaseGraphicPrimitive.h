@@ -6,11 +6,12 @@ enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWAR
 enum class meshType { TWO_DIMENSION, THREE_DIMENSION };
 enum class meshShapeType { QUAD, CUBE, SPHERE, CUSTOM };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
-enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, CUBEMAP_HDR, EQUIRETANGULAR };
-enum class textureInternalFormat { RED, RG, RGB, RGBA };
+enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, CUBEMAP_HDR, EQUIRETANGULAR, LUT };
+enum class textureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8};
+enum class texturePixelDataFormat { RED, RG, RGB, RGBA };
 enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
 enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
-enum class frameBufferType { FORWARD, SHADOW, DEFER };
+enum class frameBufferType { FORWARD, DEFER, SHADOWMAP, CUBEMAP};
 enum class renderBufferType {DEPTH, STENCIL, DEPTH_AND_STENCIL};
 
 class IMeshRawData
@@ -87,7 +88,7 @@ public:
 	virtual ~BaseTexture() {};
 
 	void setup() override;
-	void setup(textureType textureType, textureInternalFormat textureInternalFormat, textureWrapMethod textureWrapMethod, textureFilterMethod textureMinFilterMethod, textureFilterMethod textureMagFilterMethod, int textureWidth, int textureHeight, const std::vector<void *>& textureData);
+	void setup(textureType textureType, texturePixelDataFormat texturePixelDataFormat, textureWrapMethod textureWrapMethod, textureFilterMethod textureMinFilterMethod, textureFilterMethod textureMagFilterMethod, int textureWidth, int textureHeight, const std::vector<void *>& textureData);
 	const objectStatus& getStatus() const override;
 	textureID getTextureID();
 
@@ -95,7 +96,8 @@ protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	textureID m_textureID;
 	textureType m_textureType;
-	textureInternalFormat m_textureInternalFormat;
+	textureColorComponentsFormat m_textureColorComponentsFormat;
+	texturePixelDataFormat m_texturePixelDataFormat;
 	textureFilterMethod m_textureMinFilterMethod;
 	textureFilterMethod m_textureMagFilterMethod;
 	textureWrapMethod m_textureWrapMethod;
