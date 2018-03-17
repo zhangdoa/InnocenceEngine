@@ -137,6 +137,7 @@ private:
 	textureID m_environmentConvolutionPassTextureID;
 	textureID m_environmentPreFilterPassTextureID;
 
+	textureID m_environmentBRDFLUTTextureID;
 	GLuint m_environmentBRDFLUTTexture;
 	BaseMesh* m_environmentBRDFLUTMesh;
 

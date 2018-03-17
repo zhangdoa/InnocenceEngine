@@ -119,4 +119,5 @@ private:
 	GLuint m_VAO;
 	GLuint m_VBO;
 	std::vector<float> m_Vertices;
+	BaseMesh* m_frameBufferMesh;
 };

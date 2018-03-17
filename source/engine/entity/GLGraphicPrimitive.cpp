@@ -175,24 +175,24 @@ void GL2DTexture::initialize()
 		GLenum l_dataFormat;
 		if (m_textureType == textureType::ALBEDO)
 		{
-			if (m_textureInternalFormat == textureInternalFormat::RED)
+			if (m_texturePixelDataFormat == texturePixelDataFormat::RED)
 			{
 				l_internalFormat = GL_RED;
 				l_dataFormat = GL_RED;
 			}
-			else if (m_textureInternalFormat == textureInternalFormat::RG)
+			else if (m_texturePixelDataFormat == texturePixelDataFormat::RG)
 			{
 
 				l_internalFormat = GL_RG;
 				l_dataFormat = GL_RG;
 			}
-			else if (m_textureInternalFormat == textureInternalFormat::RGB)
+			else if (m_texturePixelDataFormat == texturePixelDataFormat::RGB)
 			{
 
 				l_internalFormat = GL_SRGB;
 				l_dataFormat = GL_RGB;
 			}
-			else if (m_textureInternalFormat == textureInternalFormat::RGBA)
+			else if (m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
 			{
 				l_internalFormat = GL_SRGB_ALPHA;
 				l_dataFormat = GL_RGBA;
@@ -200,22 +200,22 @@ void GL2DTexture::initialize()
 		}
 		else 
 		{
-			if (m_textureInternalFormat == textureInternalFormat::RED)
+			if (m_texturePixelDataFormat == texturePixelDataFormat::RED)
 			{
 				l_internalFormat = GL_RED;
 				l_dataFormat = GL_RED;
 			}
-			else if (m_textureInternalFormat == textureInternalFormat::RG)
+			else if (m_texturePixelDataFormat == texturePixelDataFormat::RG)
 			{
 				l_internalFormat = GL_RG;
 				l_dataFormat = GL_RG;
 			}
-			else if (m_textureInternalFormat == textureInternalFormat::RGB)
+			else if (m_texturePixelDataFormat == texturePixelDataFormat::RGB)
 			{
 				l_internalFormat = GL_RGB;
 				l_dataFormat = GL_RGB;
 			}
-			else if (m_textureInternalFormat == textureInternalFormat::RGBA)
+			else if (m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
 			{
 				l_internalFormat = GL_RGBA;
 				l_dataFormat = GL_RGBA;
@@ -359,21 +359,21 @@ void GL3DTexture::initialize()
 
 	// set texture formats
 	GLenum l_internalFormat;
-	if (m_textureInternalFormat == textureInternalFormat::RED)
+	if (m_textureColorComponentsFormat == textureColorComponentsFormat::RED)
 	{
 		l_internalFormat = GL_RED;
 	}
-	else if (m_textureInternalFormat == textureInternalFormat::RG)
+	else if (m_textureColorComponentsFormat == textureColorComponentsFormat::RG)
 	{
 
 		l_internalFormat = GL_RG;
 	}
-	else if (m_textureInternalFormat == textureInternalFormat::RGB)
+	else if (m_textureColorComponentsFormat == textureColorComponentsFormat::RGB)
 	{
 
 		l_internalFormat = GL_SRGB;
 	}
-	else if (m_textureInternalFormat == textureInternalFormat::RGBA)
+	else if (m_textureColorComponentsFormat == textureColorComponentsFormat::RGBA)
 	{
 		l_internalFormat = GL_SRGB_ALPHA;
 	}
@@ -566,6 +566,11 @@ void GLFrameBuffer::initialize()
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
+
+		//m_frameBufferMesh = this->getMesh(meshType::TWO_DIMENSION, this->addMesh(meshType::TWO_DIMENSION));
+		//m_frameBufferMesh->addUnitQuad();
+		//m_frameBufferMesh->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
+		//m_frameBufferMesh->initialize();
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
