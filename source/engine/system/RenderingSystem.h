@@ -89,12 +89,8 @@ private:
 	//Asset data
 	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
 
-	std::unordered_map<meshID, GL2DMesh> m_2DMeshMap;
-	std::unordered_map<meshID, GL3DMesh> m_3DMeshMap;
-	std::unordered_map<textureID, GL2DTexture> m_2DTextureMap;
-	std::unordered_map<textureID, GL2DHDRTexture> m_2DHDRTextureMap;
-	std::unordered_map<textureID, GL3DTexture> m_3DTextureMap;
-	std::unordered_map<textureID, GL3DHDRTexture> m_3DHDRTextureMap;
+	std::unordered_map<meshID, GLMesh> m_meshMap;
+	std::unordered_map<textureID, GLTexture> m_textureMap;
 
 	void assignUnitMesh(VisibleComponent& visibleComponent, meshShapeType meshType);
 	void assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
@@ -105,7 +101,8 @@ private:
 
 	meshID m_UnitCubeTemplate;
 	meshID m_UnitSphereTemplate;
-	meshID m_UnitQuadTemplate;
+	meshID m_Unit3DQuadTemplate;
+	meshID m_Unit2DQuadTemplate;
 	textureID m_basicNormalTemplate;
 	textureID m_basicAlbedoTemplate;
 	textureID m_basicMetallicTemplate;
@@ -136,10 +133,7 @@ private:
 	textureID m_environmentCapturePassTextureID;
 	textureID m_environmentConvolutionPassTextureID;
 	textureID m_environmentPreFilterPassTextureID;
-
 	textureID m_environmentBRDFLUTTextureID;
-	GLuint m_environmentBRDFLUTTexture;
-	BaseMesh* m_environmentBRDFLUTMesh;
 
 	GLShaderProgram* m_environmentCapturePassShader;
 	GLShaderProgram* m_environmentConvolutionPassShader;
@@ -155,7 +149,6 @@ private:
 	GLFrameBuffer m_debuggerPassFrameBuffer;
 	GLShaderProgram* m_debuggerPassShader;
 
-	BaseMesh* m_finalPassMesh;
 	GLFrameBuffer m_finalPassFrameBuffer;
 	GLShaderProgram* m_finalPassShader;
 

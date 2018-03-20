@@ -4,11 +4,11 @@
 
 extern ILogSystem* g_pLogSystem;
 
-class GL2DMesh : public BaseMesh
+class GLMesh : public BaseMesh
 {
 public:
-	GL2DMesh() {};
-	~GL2DMesh() {};
+	GLMesh() {};
+	~GLMesh() {};
 
 	void initialize() override;
 	void update() override;
@@ -20,80 +20,17 @@ private:
 	GLuint m_IBO = 0;
 };
 
-class GL3DMesh : public BaseMesh
+class GLTexture : public BaseTexture
 {
 public:
-	GL3DMesh() {};
-	~GL3DMesh() {};
+	GLTexture() {};
+	~GLTexture() {};
 
 	void initialize() override;
 	void update() override;
+	void update(int textureIndex) override;
 	void shutdown() override;
-
-private:
-	GLuint m_VAO = 0;
-	GLuint m_VBO = 0;
-	GLuint m_IBO = 0;
-};
-
-class GL2DTexture : public BaseTexture
-{
-public:
-	GL2DTexture() {};
-	~GL2DTexture() {};
-
-	void initialize() override;
-	void update() override;
-	void update(int textureIndex);
-	void shutdown() override;
-
-private:
-	GLuint m_textureID = 0;
-};
-
-class GL2DHDRTexture : public BaseTexture
-{
-public:
-	GL2DHDRTexture() {};
-	~GL2DHDRTexture() {};
-
-	void initialize() override;
-	void update() override;
-	void update(int textureIndex);
-	void shutdown() override;
-
-private:
-	GLuint m_textureID = 0;
-};
-
-class GL3DTexture : public BaseTexture
-{
-public:
-	GL3DTexture() {};
-	~GL3DTexture() {};
-
-	void initialize() override;
-	void update() override;
-	void update(int textureIndex);
-	void shutdown() override;
-
-private:
-	GLuint m_textureID = 0;
-};
-
-class GL3DHDRTexture : public BaseTexture
-{
-public:
-	GL3DHDRTexture() {};
-	~GL3DHDRTexture() {};
-
-	void initialize() override;
-	void update() override;
-	void update(int textureIndex);
-	void shutdown() override;
-
-	void updateFramebuffer(int index, int mipLevel);
-
+	void updateFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel) override;
 private:
 	GLuint m_textureID = 0;
 };
@@ -107,7 +44,6 @@ public:
 	void initialize() override;
 	void update() override;
 	void activeTexture(int textureLevel, int textureIndex);
-	void drawMesh();
 	void shutdown() override;
 
 private:
@@ -115,9 +51,4 @@ private:
 	GLuint m_RBO;
 
 	std::vector<GLuint> m_textures;
-
-	GLuint m_VAO;
-	GLuint m_VBO;
-	std::vector<float> m_Vertices;
-	BaseMesh* m_frameBufferMesh;
 };

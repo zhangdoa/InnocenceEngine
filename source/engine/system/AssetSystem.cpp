@@ -163,7 +163,7 @@ void AssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& m
 			l_meshData->addIndices(face.mIndices[j]);
 		}
 	}
-	l_meshData->setup(meshDrawMethod, false, false);
+	l_meshData->setup(meshType::THREE_DIMENSION, meshDrawMethod, false, false);
 	l_meshData->initialize();
 
 	g_pLogSystem->printLog("innoMesh: mesh of model " + fileName + " is loaded.");
