@@ -174,17 +174,18 @@ void BaseTexture::setup()
 {
 }
 
-void BaseTexture::setup(textureType textureType, texturePixelDataFormat texturePixelDataFormat, textureWrapMethod textureWrapMethod, textureFilterMethod textureMinFilterMethod, textureFilterMethod textureMagFilterMethod, int textureWidth, int textureHeight, const std::vector<void*>& textureData)
+
+void BaseTexture::setup(textureType textureType, textureColorComponentsFormat textureColorComponentsFormat, texturePixelDataFormat texturePixelDataFormat, textureWrapMethod textureWrapMethod, textureFilterMethod textureMinFilterMethod, textureFilterMethod textureMagFilterMethod, int textureWidth, int textureHeight, texturePixelDataType texturePixelDataType, const std::vector<void*>& textureData)
 {
 	m_textureType = textureType;
-	// @TODO: how to know a texture's color components format? User-defined?
-	//m_textureColorComponentsFormat = textureColorComponentsFormat;
+	m_textureColorComponentsFormat = textureColorComponentsFormat;
 	m_texturePixelDataFormat = texturePixelDataFormat;
 	m_textureWrapMethod = textureWrapMethod;
 	m_textureMinFilterMethod = textureMinFilterMethod;
 	m_textureMagFilterMethod = textureMagFilterMethod;
 	m_textureWidth = textureWidth;
 	m_textureHeight = textureHeight;
+	m_texturePixelDataType = texturePixelDataType;
 	m_textureData = textureData;
 }
 

@@ -622,7 +622,7 @@ void RenderingSystem::initializeBackgroundPass()
 
 	m_environmentCapturePassTextureID = this->addTexture(textureType::CUBEMAP_HDR);
 	auto l_environmentCapturePassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentCapturePassTextureID);
-	l_environmentCapturePassTextureData->setup(textureType::CUBEMAP_HDR, texturePixelDataFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, 2048, 2048, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
+	l_environmentCapturePassTextureData->setup(textureType::CUBEMAP_HDR, textureColorComponentsFormat::RGB16F, texturePixelDataFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, 2048, 2048, texturePixelDataType::FLOAT, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
 	l_environmentCapturePassTextureData->initialize();
 
 	// environment convolution pass
@@ -630,7 +630,7 @@ void RenderingSystem::initializeBackgroundPass()
 
 	m_environmentConvolutionPassTextureID = this->addTexture(textureType::CUBEMAP_HDR);
 	auto l_environmentConvolutionPassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentConvolutionPassTextureID);
-	l_environmentConvolutionPassTextureData->setup(textureType::CUBEMAP_HDR, texturePixelDataFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
+	l_environmentConvolutionPassTextureData->setup(textureType::CUBEMAP_HDR, textureColorComponentsFormat::RGB16F, texturePixelDataFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, 128, 128, texturePixelDataType::FLOAT, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
 	l_environmentConvolutionPassTextureData->initialize();
 
 	// environment pre-filter pass
@@ -638,7 +638,7 @@ void RenderingSystem::initializeBackgroundPass()
 
 	m_environmentPreFilterPassTextureID = this->addTexture(textureType::CUBEMAP_HDR);
 	auto l_environmentPreFilterPassTextureData = this->getTexture(textureType::CUBEMAP_HDR, m_environmentPreFilterPassTextureID);
-	l_environmentPreFilterPassTextureData->setup(textureType::CUBEMAP_HDR, texturePixelDataFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR_MIPMAP_LINEAR, textureFilterMethod::LINEAR, 128, 128, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
+	l_environmentPreFilterPassTextureData->setup(textureType::CUBEMAP_HDR, textureColorComponentsFormat::RGB16F, texturePixelDataFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR_MIPMAP_LINEAR, textureFilterMethod::LINEAR, 128, 128, texturePixelDataType::FLOAT, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
 	l_environmentPreFilterPassTextureData->initialize();
 
 	// environment brdf LUT pass
@@ -646,7 +646,7 @@ void RenderingSystem::initializeBackgroundPass()
 
 	m_environmentBRDFLUTTextureID = this->addTexture(textureType::LUT);
 	auto l_environmentBRDFLUTTextureData = this->getTexture(textureType::LUT, m_environmentBRDFLUTTextureID);
-	l_environmentBRDFLUTTextureData->setup(textureType::LUT, texturePixelDataFormat::RG, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, 512, 512, std::vector<void*>{nullptr});
+	l_environmentBRDFLUTTextureData->setup(textureType::LUT, textureColorComponentsFormat::RG16F, texturePixelDataFormat::RG, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, 512, 512, texturePixelDataType::FLOAT, std::vector<void*>{nullptr});
 	l_environmentBRDFLUTTextureData->initialize();
 
 	glGenTextures(1, &m_environmentBRDFLUTTexture);
