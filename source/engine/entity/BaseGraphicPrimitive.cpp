@@ -2,11 +2,11 @@
 
 void BaseMesh::setup()
 {
-	this->setup(meshDrawMethod::TRIANGLE, false, false);
 }
 
-void BaseMesh::setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents)
+void BaseMesh::setup(meshType meshType, meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents)
 {
+	m_meshType = meshType;
 	m_meshDrawMethod = meshDrawMethod;
 	m_calculateNormals = calculateNormals;
 	m_calculateTangents = calculateTangents;

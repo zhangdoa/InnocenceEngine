@@ -111,22 +111,28 @@ void RenderingSystem::initialize()
 	g_pAssetSystem->loadTextureFromDisk({ "basic_roughness.png" }, textureType::ROUGHNESS, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicRoughnessTemplate));
 	g_pAssetSystem->loadTextureFromDisk({ "basic_ao.png" }, textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicAOTemplate));
 
-	m_UnitQuadTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto lastQuadMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitQuadTemplate);
-	lastQuadMeshData->addUnitQuad();
-	lastQuadMeshData->setup(meshDrawMethod::TRIANGLE, true, true);
-	lastQuadMeshData->initialize();
+	m_Unit3DQuadTemplate = addMesh(meshType::THREE_DIMENSION);
+	auto last3DQuadMeshData = getMesh(meshType::THREE_DIMENSION, m_Unit3DQuadTemplate);
+	last3DQuadMeshData->addUnitQuad();
+	last3DQuadMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE, true, true);
+	last3DQuadMeshData->initialize();
+	
+	m_Unit2DQuadTemplate = addMesh(meshType::TWO_DIMENSION);
+	auto last2DQuadMeshData = getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate);
+	last2DQuadMeshData->addUnitQuad();
+	last2DQuadMeshData->setup(meshType::TWO_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
+	last2DQuadMeshData->initialize();
 
 	m_UnitCubeTemplate = addMesh(meshType::THREE_DIMENSION);
 	auto lastCubeMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitCubeTemplate);
 	lastCubeMeshData->addUnitCube();
-	lastCubeMeshData->setup(meshDrawMethod::TRIANGLE, false, false);
+	lastCubeMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE, false, false);
 	lastCubeMeshData->initialize();
 
 	m_UnitSphereTemplate = addMesh(meshType::THREE_DIMENSION);
 	auto lastSphereMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitSphereTemplate);
 	lastSphereMeshData->addUnitSphere();
-	lastSphereMeshData->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
+	lastSphereMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
 	lastSphereMeshData->initialize();
 
 	for (auto i : g_pGameSystem->getVisibleComponents())
@@ -402,79 +408,26 @@ void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, double xoffs
 
 meshID RenderingSystem::addMesh(meshType meshType)
 {
-	if (meshType == meshType::TWO_DIMENSION)
-	{
-		GL2DMesh newMesh;
-		m_2DMeshMap.emplace(std::pair<meshID, GL2DMesh>(newMesh.getMeshID(), newMesh));
+		GLMesh newMesh;
+		m_meshMap.emplace(std::pair<meshID, GLMesh>(newMesh.getMeshID(), newMesh));
 		return newMesh.getMeshID();
-	}
-	else if (meshType == meshType::THREE_DIMENSION)
-	{
-		GL3DMesh newMesh;
-		m_3DMeshMap.emplace(std::pair<meshID, GL3DMesh>(newMesh.getMeshID(), newMesh));
-		return newMesh.getMeshID();
-	}
 }
 
 textureID RenderingSystem::addTexture(textureType textureType)
 {
-	if (textureType == textureType::CUBEMAP)
-	{
-		GL3DTexture new3DTexture;
-		m_3DTextureMap.emplace(std::pair<textureID, GL3DTexture>(new3DTexture.getTextureID(), new3DTexture));
-		return new3DTexture.getTextureID();
-	}
-	else if (textureType == textureType::CUBEMAP_HDR)
-	{
-		GL3DHDRTexture new3DHDRTexture;
-		m_3DHDRTextureMap.emplace(std::pair<textureID, GL3DHDRTexture>(new3DHDRTexture.getTextureID(), new3DHDRTexture));
-		return new3DHDRTexture.getTextureID();
-	}
-	else if (textureType == textureType::EQUIRETANGULAR)
-	{
-		GL2DHDRTexture new2DHDRTexture;
-		m_2DHDRTextureMap.emplace(std::pair<textureID, GL2DHDRTexture>(new2DHDRTexture.getTextureID(), new2DHDRTexture));
-		return new2DHDRTexture.getTextureID();
-	}
-	else
-	{
-		GL2DTexture new2DTexture;
-		m_2DTextureMap.emplace(std::pair<textureID, GL2DTexture>(new2DTexture.getTextureID(), new2DTexture));
-		return new2DTexture.getTextureID();
-	}
+	GLTexture newTexture;
+	m_textureMap.emplace(std::pair<textureID, GLTexture>(newTexture.getTextureID(), newTexture));
+	return newTexture.getTextureID();
 }
 
 BaseMesh* RenderingSystem::getMesh(meshType meshType, meshID meshID)
 {
-	if (meshType == meshType::TWO_DIMENSION)
-	{
-		return &m_2DMeshMap.find(meshID)->second;
-	}
-	else if (meshType == meshType::THREE_DIMENSION)
-	{
-		return &m_3DMeshMap.find(meshID)->second;
-	}
-
+		return &m_meshMap.find(meshID)->second;
 }
 
 BaseTexture * RenderingSystem::getTexture(textureType textureType, textureID textureID)
 {
-	if (textureType == textureType::CUBEMAP)
-	{
-		return &m_3DTextureMap.find(textureID)->second;
-	}
-	else if (textureType == textureType::CUBEMAP_HDR)
-	{
-		return &m_3DHDRTextureMap.find(textureID)->second;
-	}
-	else if (textureType == textureType::EQUIRETANGULAR)
-	{
-		return &m_2DHDRTextureMap.find(textureID)->second;
-	}
-	else
-	{
-		return &m_2DTextureMap.find(textureID)->second;
-	}
+	return &m_textureMap.find(textureID)->second;
 }
 
 void RenderingSystem::assignUnitMesh(VisibleComponent & visibleComponent, meshShapeType meshType)
@@ -482,7 +435,7 @@ void RenderingSystem::assignUnitMesh(VisibleComponent & visibleComponent, meshSh
 	meshID l_UnitMeshTemplate;
 	switch (meshType)
 	{
-	case meshShapeType::QUAD: l_UnitMeshTemplate = m_UnitQuadTemplate; break;
+	case meshShapeType::QUAD: l_UnitMeshTemplate = m_Unit3DQuadTemplate; break;
 	case meshShapeType::CUBE: l_UnitMeshTemplate = m_UnitCubeTemplate; break;
 	case meshShapeType::SPHERE: l_UnitMeshTemplate = m_UnitSphereTemplate; break;
 	}
@@ -603,7 +556,7 @@ void RenderingSystem::renderGeometryPass(std::vector<CameraComponent*>& cameraCo
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL - m_polygonMode);
-	m_geometryPassShader->update(cameraComponents, visibleComponents, m_3DMeshMap, m_2DTextureMap);
+	m_geometryPassShader->update(cameraComponents, visibleComponents, m_meshMap, m_textureMap);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
@@ -649,20 +602,6 @@ void RenderingSystem::initializeBackgroundPass()
 	l_environmentBRDFLUTTextureData->setup(textureType::LUT, textureColorComponentsFormat::RG16F, texturePixelDataFormat::RG, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, 512, 512, texturePixelDataType::FLOAT, std::vector<void*>{nullptr});
 	l_environmentBRDFLUTTextureData->initialize();
 
-	glGenTextures(1, &m_environmentBRDFLUTTexture);
-	glBindTexture(GL_TEXTURE_2D, m_environmentBRDFLUTTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	// initialize background defer pass mesh
-	m_environmentBRDFLUTMesh = this->getMesh(meshType::TWO_DIMENSION, this->addMesh(meshType::TWO_DIMENSION));
-	m_environmentBRDFLUTMesh->addUnitQuad();
-	m_environmentBRDFLUTMesh->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
-	m_environmentBRDFLUTMesh->initialize();
-
 	// background forward pass
 	m_skyForwardPassShader->initialize();
 	m_skyForwardPassFrameBuffer.setup(m_screenResolution, frameBufferType::FORWARD, renderBufferType::DEPTH_AND_STENCIL, 1);
@@ -683,39 +622,39 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 {
 	if (m_shouldUpdateEnvironmentMap)
 	{
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_CULL_FACE);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		// draw environment map capture pass
 		glBindFramebuffer(GL_FRAMEBUFFER, m_environmentPassFBO);
 		glBindRenderbuffer(GL_RENDERBUFFER, m_environmentPassRBO);
+
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_CULL_FACE);
-
 		glViewport(0, 0, 2048, 2048);
 
-		m_environmentCapturePassShader->update(visibleComponents, m_3DMeshMap, m_2DHDRTextureMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second);
+		m_environmentCapturePassShader->update(visibleComponents, m_meshMap, m_textureMap, m_textureMap.find(m_environmentCapturePassTextureID)->second);
 
 		// draw environment map convolution pass
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 128, 128);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
 		glViewport(0, 0, 128, 128);
 
-		m_environmentConvolutionPassShader->update(visibleComponents, m_3DMeshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second, m_3DHDRTextureMap.find(m_environmentConvolutionPassTextureID)->second);
+		m_environmentConvolutionPassShader->update(visibleComponents, m_meshMap, m_textureMap.find(m_environmentCapturePassTextureID)->second, m_textureMap.find(m_environmentConvolutionPassTextureID)->second);
 
 		// draw environment map pre-filter pass
-		m_environmentPreFilterPassShader->update(visibleComponents, m_3DMeshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second, m_3DHDRTextureMap.find(m_environmentPreFilterPassTextureID)->second);
+		m_environmentPreFilterPassShader->update(visibleComponents, m_meshMap, m_textureMap.find(m_environmentCapturePassTextureID)->second, m_textureMap.find(m_environmentPreFilterPassTextureID)->second);
 
 		// draw environment map BRDF LUT pass
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
 		glViewport(0, 0, 512, 512);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_environmentBRDFLUTTexture, 0);
+		this->getTexture(textureType::LUT, m_environmentBRDFLUTTextureID)->updateFramebuffer(0, 0, 0);
 
 		m_environmentBRDFLUTPassShader->update();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// draw environment map BRDF LUT rectangle
-		m_environmentBRDFLUTMesh->update();
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, (int)m_screenResolution.x, (int)m_screenResolution.x);
+		this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, (int)m_screenResolution.x, (int)m_screenResolution.x);
 		glViewport(0, 0, (int)m_screenResolution.x, (int)m_screenResolution.y);
 
 		m_shouldUpdateEnvironmentMap = false;
@@ -723,11 +662,11 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 
 	// draw background forward pass
 	m_skyForwardPassFrameBuffer.update();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	m_skyForwardPassShader->update(cameraComponents, visibleComponents, m_3DMeshMap, m_3DHDRTextureMap.find(m_environmentCapturePassTextureID)->second);
+	m_skyForwardPassShader->update(cameraComponents, visibleComponents, m_meshMap, m_textureMap.find(m_environmentCapturePassTextureID)->second);
 
 	// draw debugger pass
 	m_debuggerPassFrameBuffer.update();
@@ -735,7 +674,7 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	m_debuggerPassShader->update(cameraComponents, visibleComponents, m_3DMeshMap);
+	m_debuggerPassShader->update(cameraComponents, visibleComponents, m_meshMap);
 
 	// draw background defer pass
 	m_skyDeferPassFrameBuffer.update();
@@ -750,7 +689,7 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 	m_skyDeferPassShader->update();
 
 	// draw background defer pass rectangle
-	m_skyDeferPassFrameBuffer.drawMesh();
+	this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
 }
 
 void RenderingSystem::initializeLightPass()
@@ -773,27 +712,21 @@ void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraCompo
 	m_geometryPassFrameBuffer.activeTexture(2, 2);
 	m_geometryPassFrameBuffer.activeTexture(3, 3);
 
-	m_3DHDRTextureMap.find(m_environmentConvolutionPassTextureID)->second.update(4);
-	m_3DHDRTextureMap.find(m_environmentPreFilterPassTextureID)->second.update(5);
+	m_textureMap.find(m_environmentConvolutionPassTextureID)->second.update(4);
+	m_textureMap.find(m_environmentPreFilterPassTextureID)->second.update(5);
 
-	glActiveTexture(GL_TEXTURE6);
-	glBindTexture(GL_TEXTURE_2D, m_environmentBRDFLUTTexture);
+	this->getTexture(textureType::LUT, m_environmentBRDFLUTTextureID)->update(6);
 
 	m_lightPassShader->update(cameraComponents, lightComponents, m_textureMode, m_shadingMode);
 
 	// draw light pass rectangle
-	m_lightPassFrameBuffer.drawMesh();
+	this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
 }
 
 void RenderingSystem::initializeFinalPass()
 {
-	// initialize Final Pass shader
+	// initialize final Pass shader
 	m_finalPassShader->initialize();
-	// initialize final pass mesh
-	m_finalPassMesh = this->getMesh(meshType::TWO_DIMENSION, this->addMesh(meshType::TWO_DIMENSION));
-	m_finalPassMesh->addUnitQuad();
-	m_finalPassMesh->setup(meshDrawMethod::TRIANGLE_STRIP, false, false);
-	m_finalPassMesh->initialize();
 }
 
 void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
@@ -809,8 +742,8 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 
 	m_finalPassShader->update();
 
-	// draw screen rectangle
-	m_finalPassMesh->update();
+	// draw final pass rectangle
+	this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
 }
 
 void RenderingSystem::changeDrawPolygonMode()

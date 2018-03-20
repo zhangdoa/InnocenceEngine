@@ -57,7 +57,7 @@ public:
 	virtual ~BaseMesh() {};
 
 	void setup() override;
-	void setup(meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents);
+	void setup(meshType meshType, meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents);
 	const objectStatus& getStatus() const override;
 	meshID getMeshID();
 
@@ -73,7 +73,7 @@ public:
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	meshID m_meshID;
-
+	meshType m_meshType;
 	std::vector<Vertex> m_vertices;
 	std::vector<unsigned int> m_indices;
 
@@ -90,6 +90,8 @@ public:
 
 	void setup() override;
 	void setup(textureType textureType, textureColorComponentsFormat textureColorComponentsFormat, texturePixelDataFormat texturePixelDataFormat, textureWrapMethod textureWrapMethod, textureFilterMethod textureMinFilterMethod, textureFilterMethod textureMagFilterMethod, int textureWidth, int textureHeight, texturePixelDataType texturePixelDataType, const std::vector<void *>& textureData);
+	virtual void update(int textureIndex) = 0;
+	virtual void updateFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel) = 0;
 	const objectStatus& getStatus() const override;
 	textureID getTextureID();
 

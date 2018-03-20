@@ -265,7 +265,7 @@ void BillboardPassShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
+void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap)
 {
 	useProgram();
 
@@ -341,7 +341,7 @@ void GeometryPassBlinnPhongShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
+void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap)
 {
 	useProgram();
 
@@ -492,7 +492,7 @@ void GeometryPassPBSShaderProgram::initialize()
 	m_uni_MRA = getUniformLocation("uni_MRA");
 }
 
-void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DTexture>& textureMap)
+void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap)
 {
 	useProgram();
 
@@ -658,7 +658,7 @@ void EnvironmentCapturePassPBSShaderProgram::initialize()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void EnvironmentCapturePassPBSShaderProgram::update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, std::unordered_map<EntityID, GL2DHDRTexture>& twoDTextureMap, GL3DHDRTexture& threeDTexture)
+void EnvironmentCapturePassPBSShaderProgram::update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& twoDTextureMap, GLTexture& threeDTexture)
 {
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
@@ -686,7 +686,7 @@ void EnvironmentCapturePassPBSShaderProgram::update(std::vector<VisibleComponent
 				for (unsigned int i = 0; i < 6; ++i)
 				{
 					updateUniform(m_uni_r, captureViews[i]);
-					threeDTexture.updateFramebuffer(i, 0);
+					threeDTexture.updateFramebuffer(0, i, 0);
 					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 					meshMap.find(l_graphicData.first)->second.update();
 					threeDTexture.update(0);
@@ -710,7 +710,7 @@ void EnvironmentConvolutionPassPBSShaderProgram::initialize()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, GL3DHDRTexture & threeDCapturedTexture, GL3DHDRTexture & threeDConvolutedTexture)
+void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture & threeDCapturedTexture, GLTexture & threeDConvolutedTexture)
 {
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
@@ -739,7 +739,7 @@ void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<VisibleCompo
 				for (unsigned int i = 0; i < 6; ++i)
 				{
 					updateUniform(m_uni_r, captureViews[i]);
-					threeDConvolutedTexture.updateFramebuffer(i, 0);
+					threeDConvolutedTexture.updateFramebuffer(0, i, 0);
 					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 					meshMap.find(l_graphicData.first)->second.update();
 				}
@@ -763,7 +763,7 @@ void EnvironmentPreFilterPassPBSShaderProgram::initialize()
 	m_uni_roughness = getUniformLocation("uni_roughness");
 }
 
-void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, GL3DHDRTexture & threeDCapturedTexture, GL3DHDRTexture & threeDPreFiltedTexture)
+void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture & threeDCapturedTexture, GLTexture & threeDPreFiltedTexture)
 {
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
@@ -804,7 +804,7 @@ void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<VisibleCompone
 					for (unsigned int i = 0; i < 6; ++i)
 					{
 						updateUniform(m_uni_r, captureViews[i]);
-						threeDPreFiltedTexture.updateFramebuffer(i, mip);
+						threeDPreFiltedTexture.updateFramebuffer(0, i, mip);
 						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 						meshMap.find(l_graphicData.first)->second.update();
 					}
@@ -839,7 +839,7 @@ void SkyForwardPassPBSShaderProgram::initialize()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap, GL3DHDRTexture& threeDTexture)
+void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture& threeDTexture)
 {
 	glDepthFunc(GL_LEQUAL);
 
@@ -888,7 +888,7 @@ void DebuggerShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GL3DMesh>& meshMap)
+void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap)
 {
 	useProgram();
 
