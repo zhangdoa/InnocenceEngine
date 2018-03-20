@@ -7,12 +7,13 @@ enum class meshType { TWO_DIMENSION, THREE_DIMENSION };
 enum class meshShapeType { QUAD, CUBE, SPHERE, CUSTOM };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, CUBEMAP_HDR, EQUIRETANGULAR, LUT };
-enum class textureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8};
+enum class textureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8 };
 enum class texturePixelDataFormat { RED, RG, RGB, RGBA };
+enum class texturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, FLOAT };
 enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
 enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
-enum class frameBufferType { FORWARD, DEFER, SHADOWMAP, CUBEMAP};
-enum class renderBufferType {DEPTH, STENCIL, DEPTH_AND_STENCIL};
+enum class frameBufferType { FORWARD, DEFER, SHADOWMAP, CUBEMAP };
+enum class renderBufferType { DEPTH, STENCIL, DEPTH_AND_STENCIL };
 
 class IMeshRawData
 {
@@ -88,7 +89,7 @@ public:
 	virtual ~BaseTexture() {};
 
 	void setup() override;
-	void setup(textureType textureType, texturePixelDataFormat texturePixelDataFormat, textureWrapMethod textureWrapMethod, textureFilterMethod textureMinFilterMethod, textureFilterMethod textureMagFilterMethod, int textureWidth, int textureHeight, const std::vector<void *>& textureData);
+	void setup(textureType textureType, textureColorComponentsFormat textureColorComponentsFormat, texturePixelDataFormat texturePixelDataFormat, textureWrapMethod textureWrapMethod, textureFilterMethod textureMinFilterMethod, textureFilterMethod textureMagFilterMethod, int textureWidth, int textureHeight, texturePixelDataType texturePixelDataType, const std::vector<void *>& textureData);
 	const objectStatus& getStatus() const override;
 	textureID getTextureID();
 
@@ -102,7 +103,8 @@ protected:
 	textureFilterMethod m_textureMagFilterMethod;
 	textureWrapMethod m_textureWrapMethod;
 	int m_textureWidth;
-	int m_textureHeight;	
+	int m_textureHeight;
+	texturePixelDataType m_texturePixelDataType;
 	std::vector<void *> m_textureData;
 };
 

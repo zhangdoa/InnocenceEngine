@@ -266,7 +266,7 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 			}
 			//stbi_image_free(data);
 		}
-		baseTexture->setup(textureType::CUBEMAP, texturePixelDataFormat(nrChannels - 1), textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, width, height, l_3DTextureRawData);
+		baseTexture->setup(textureType::CUBEMAP, textureColorComponentsFormat::SRGB, texturePixelDataFormat(nrChannels - 1), textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, width, height, texturePixelDataType::UNSIGNED_BYTE, l_3DTextureRawData);
 		baseTexture->initialize();
 		g_pLogSystem->printLog("inno3DTexture is fully loaded.");
 	}
@@ -278,7 +278,7 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 		auto *data = stbi_loadf((m_textureRelativePath + fileName[0]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			baseTexture->setup(textureType::EQUIRETANGULAR, texturePixelDataFormat(nrChannels - 1), textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, width, height, { data });
+			baseTexture->setup(textureType::EQUIRETANGULAR, textureColorComponentsFormat::RGB16F, texturePixelDataFormat(nrChannels - 1), textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, width, height, texturePixelDataType::FLOAT, { data });
 			baseTexture->initialize();
 		g_pLogSystem->printLog("inno2DHDRTexture: " + fileName[0] + " is loaded.");
 		}
@@ -297,7 +297,7 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 		auto *data = stbi_load((m_textureRelativePath + fileName[0]).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			baseTexture->setup(textureType, texturePixelDataFormat(nrChannels - 1), textureWrapMethod, textureFilterMethod::LINEAR_MIPMAP_LINEAR, textureFilterMethod::LINEAR, width, height, { data });
+			baseTexture->setup(textureType, textureColorComponentsFormat::RGB, texturePixelDataFormat(nrChannels - 1), textureWrapMethod, textureFilterMethod::LINEAR_MIPMAP_LINEAR, textureFilterMethod::LINEAR, width, height, texturePixelDataType::UNSIGNED_BYTE, { data });
 			baseTexture->initialize();
 			g_pLogSystem->printLog("inno2DTexture: " + fileName[0] + " is loaded.");
 		}
