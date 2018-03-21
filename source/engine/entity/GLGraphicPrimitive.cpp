@@ -136,7 +136,7 @@ void GLTexture::initialize()
 
 		}
 		GLenum l_magFilterParam;
-		switch (m_textureMinFilterMethod)
+		switch (m_textureMagFilterMethod)
 		{
 		case textureFilterMethod::NEAREST: l_magFilterParam = GL_NEAREST; break;
 		case textureFilterMethod::LINEAR: l_magFilterParam = GL_LINEAR; break;

@@ -46,10 +46,11 @@ void InnocenceGarden::setup()
 	m_visibleComponents.emplace_back(&m_landscapeComponent);
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
-	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
+	m_pawnComponent1.m_meshType = meshShapeType::SPHERE;
+	
 	m_pawnEntity1.addChildComponent(&m_pawnComponent1);
 	m_pawnEntity1.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
-	m_pawnEntity1.getTransform()->setPos(vec3(0.0, 0.2, -1.5));
+	m_pawnEntity1.getTransform()->setPos(vec3(0.0, 2.0, -1.5));
 	m_visibleComponents.emplace_back(&m_pawnComponent1);
 
 	m_pawnComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
@@ -206,15 +207,16 @@ void InnocenceGarden::updateLights(double seed)
 	m_directionalLightEntity.getTransform()->rotate(vec3(1.0, 0.0, 0.0), 0.5);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
-		m_pointLightComponents[i].setColor(vec3((sin(seed + i) + 1.0) * 10.0 / 2.0, 0.2f * 10.0, 0.4f * 10.0));
-		m_pointLightComponents[i + 1].setColor(vec3(0.2f * 10.0, (sin(seed + i) + 1.0) * 10.0 / 2.0, 0.4f * 10.0));
-		m_pointLightComponents[i + 2].setColor(vec3(0.2f * 10.0, 0.4f * 10.0, (sin(seed + i) + 1.0) * 10.0 / 2.0));
-		m_pointLightComponents[i + 3].setColor(vec3((sin(seed + i * 2.0 ) + 1.0) * 10.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 10.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 10.0 / 2.0));
+		m_pointLightComponents[i].setColor(vec3((sin(seed + i) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0));
+		m_pointLightComponents[i + 1].setColor(vec3(0.2f * 25.0, (sin(seed + i) + 1.0) * 25.0 / 2.0, 0.4f * 25.0));
+		m_pointLightComponents[i + 2].setColor(vec3(0.2f * 25.0, 0.4f * 25.0, (sin(seed + i) + 1.0) * 25.0 / 2.0));
+		m_pointLightComponents[i + 3].setColor(vec3((sin(seed + i * 2.0 ) + 1.0) * 25.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 25.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 25.0 / 2.0));
 	}
 }
 
 void InnocenceGarden::updateSpheres(double seed)
 {
+	m_pawnEntity1.getTransform()->rotate(vec3(0.0, 1.0, 0.0), 0.1);
 	m_pawnEntity2.getTransform()->rotate(vec3(0.0, 1.0, 0.0), 0.05);
 	for (auto i = (unsigned int)0; i < m_sphereEntitys.size(); i++)
 	{
