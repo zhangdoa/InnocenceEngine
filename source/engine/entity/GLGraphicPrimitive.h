@@ -35,6 +35,35 @@ private:
 	GLuint m_textureID = 0;
 };
 
+class GLRenderBufferWIP : public BaseRenderBuffer
+{
+public:
+	GLRenderBufferWIP() {};
+	virtual ~GLRenderBufferWIP() {};
+
+	void initialize() override;
+	void update() override;
+	void shutdown() override;
+
+private:
+	GLuint m_RBO;
+};
+
+class GLFrameBufferWIP : public BaseFrameBufferWIP
+{
+public:
+	GLFrameBufferWIP() {};
+	virtual ~GLFrameBufferWIP() {};
+
+	void initialize() override;
+	void update() override;
+	void activeTexture(int textureLevel, int textureIndex);
+	void shutdown() override;
+
+private:
+	GLuint m_FBO;
+};
+
 class GLFrameBuffer : public BaseFrameBuffer
 {
 public:
