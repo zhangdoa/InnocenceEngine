@@ -216,3 +216,32 @@ const objectStatus & BaseFrameBuffer::getStatus() const
 	return m_objectStatus;
 }
 
+void BaseRenderBuffer::setup()
+{
+}
+
+void BaseRenderBuffer::setup(vec2 renderBufferStorageResolution, renderBufferType renderBufferType)
+{
+	m_renderBufferStorageResolution = renderBufferStorageResolution;
+	m_renderBufferType = renderBufferType;
+}
+
+const objectStatus & BaseRenderBuffer::getStatus() const
+{
+	return m_objectStatus;
+}
+
+void BaseFrameBufferWIP::setup()
+{
+}
+
+void BaseFrameBufferWIP::setup(frameBufferType frameBufferType, const std::vector<textureID>& renderTargetTextureID)
+{
+	m_frameBufferType = frameBufferType;
+	m_renderTargetTextureID = renderTargetTextureID;
+}
+
+const objectStatus & BaseFrameBufferWIP::getStatus() const
+{
+	return m_objectStatus;
+}

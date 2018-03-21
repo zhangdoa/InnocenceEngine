@@ -110,6 +110,40 @@ protected:
 	std::vector<void *> m_textureData;
 };
 
+class BaseRenderBuffer : public IObject
+{
+public:
+	BaseRenderBuffer() {};
+	virtual ~BaseRenderBuffer() {};
+
+	void setup() override;
+	void setup(vec2 renderBufferStorageResolution, renderBufferType renderBufferType);
+	const objectStatus& getStatus() const override;
+
+protected:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	vec2 m_renderBufferStorageResolution;
+	renderBufferType m_renderBufferType = renderBufferType::DEPTH;
+};
+
+class BaseFrameBufferWIP : public IObject
+{
+public:
+	BaseFrameBufferWIP() {};
+	virtual ~BaseFrameBufferWIP() {};
+
+	void setup() override;
+	void setup(frameBufferType frameBufferType, const std::vector<textureID>& renderTargetTextureID);
+	const objectStatus& getStatus() const override;
+
+protected:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	frameBufferType m_frameBufferType = frameBufferType::FORWARD;
+
+	std::vector<BaseRenderBuffer*> m_renderBuffers;
+	std::vector<textureID> m_renderTargetTextureID;
+};
+
 class BaseFrameBuffer : public IObject
 {
 public:
