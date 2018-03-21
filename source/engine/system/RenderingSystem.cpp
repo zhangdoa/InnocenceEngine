@@ -106,10 +106,10 @@ void RenderingSystem::initialize()
 	m_basicAOTemplate = addTexture(textureType::AMBIENT_OCCLUSION);
 
 	g_pAssetSystem->loadTextureFromDisk({ "basic_normal.png" }, textureType::NORMAL, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicNormalTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_albedo.png" }, textureType::ALBEDO, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicAlbedoTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_metallic.png" }, textureType::METALLIC, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicMetallicTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_roughness.png" }, textureType::ROUGHNESS, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicRoughnessTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_ao.png" }, textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicAOTemplate));
+	g_pAssetSystem->loadTextureFromDisk({ "basic_albedo.png" }, textureType::ALBEDO, textureWrapMethod::REPEAT, getTexture(textureType::ALBEDO, m_basicAlbedoTemplate));
+	g_pAssetSystem->loadTextureFromDisk({ "basic_metallic.png" }, textureType::METALLIC, textureWrapMethod::REPEAT, getTexture(textureType::METALLIC, m_basicMetallicTemplate));
+	g_pAssetSystem->loadTextureFromDisk({ "basic_roughness.png" }, textureType::ROUGHNESS, textureWrapMethod::REPEAT, getTexture(textureType::ROUGHNESS, m_basicRoughnessTemplate));
+	g_pAssetSystem->loadTextureFromDisk({ "basic_ao.png" }, textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT, getTexture(textureType::AMBIENT_OCCLUSION, m_basicAOTemplate));
 
 	m_Unit3DQuadTemplate = addMesh(meshType::THREE_DIMENSION);
 	auto last3DQuadMeshData = getMesh(meshType::THREE_DIMENSION, m_Unit3DQuadTemplate);
@@ -632,7 +632,6 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
 		glViewport(0, 0, 2048, 2048);
-
 		m_environmentCapturePassShader->update(visibleComponents, m_meshMap, m_textureMap, m_textureMap.find(m_environmentCapturePassTextureID)->second);
 
 		// draw environment map convolution pass
@@ -642,6 +641,8 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 		m_environmentConvolutionPassShader->update(visibleComponents, m_meshMap, m_textureMap.find(m_environmentCapturePassTextureID)->second, m_textureMap.find(m_environmentConvolutionPassTextureID)->second);
 
 		// draw environment map pre-filter pass
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
+		glViewport(0, 0, 128, 128);
 		m_environmentPreFilterPassShader->update(visibleComponents, m_meshMap, m_textureMap.find(m_environmentCapturePassTextureID)->second, m_textureMap.find(m_environmentPreFilterPassTextureID)->second);
 
 		// draw environment map BRDF LUT pass
@@ -661,20 +662,22 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 	}
 
 	// draw background forward pass
+
 	m_skyForwardPassFrameBuffer.update();
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
+	glDepthFunc(GL_LEQUAL);
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CW);
+	glCullFace(GL_BACK);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	m_skyForwardPassShader->update(cameraComponents, visibleComponents, m_meshMap, m_textureMap.find(m_environmentCapturePassTextureID)->second);
+	glDepthFunc(GL_LESS);
 
 	// draw debugger pass
 	m_debuggerPassFrameBuffer.update();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
 
-	m_debuggerPassShader->update(cameraComponents, visibleComponents, m_meshMap);
+	m_debuggerPassShader->update(cameraComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw background defer pass
 	m_skyDeferPassFrameBuffer.update();
@@ -712,9 +715,8 @@ void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraCompo
 	m_geometryPassFrameBuffer.activeTexture(2, 2);
 	m_geometryPassFrameBuffer.activeTexture(3, 3);
 
-	m_textureMap.find(m_environmentConvolutionPassTextureID)->second.update(4);
-	m_textureMap.find(m_environmentPreFilterPassTextureID)->second.update(5);
-
+	this->getTexture(textureType::CUBEMAP_HDR, m_environmentConvolutionPassTextureID)->update(4);
+	this->getTexture(textureType::CUBEMAP_HDR, m_environmentPreFilterPassTextureID)->update(5);
 	this->getTexture(textureType::LUT, m_environmentBRDFLUTTextureID)->update(6);
 
 	m_lightPassShader->update(cameraComponents, lightComponents, m_textureMode, m_shadingMode);

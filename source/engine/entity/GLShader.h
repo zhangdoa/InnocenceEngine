@@ -296,9 +296,11 @@ public:
 	}
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
 
 private:
+	GLint m_uni_normalTexture;
+
 	GLint m_uni_p;
 	GLint m_uni_r;
 	GLint m_uni_t;

@@ -841,12 +841,6 @@ void SkyForwardPassPBSShaderProgram::initialize()
 
 void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture& threeDTexture)
 {
-	glDepthFunc(GL_LEQUAL);
-
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CW);
-	glCullFace(GL_BACK);
-
 	useProgram();
 
 	// TODO: fix "looking outside" problem// almost there
@@ -867,10 +861,6 @@ void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& camer
 			}
 		}
 	}
-
-	glDisable(GL_CULL_FACE);
-
-	glDepthFunc(GL_LESS);
 }
 
 void DebuggerShaderProgram::initialize()
@@ -882,13 +872,16 @@ void DebuggerShaderProgram::initialize()
 	GLShaderProgram::initialize();
 	useProgram();
 
+	m_uni_normalTexture = getUniformLocation("uni_normalTexture");
+	updateUniform(m_uni_normalTexture, 0);
+
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_r = getUniformLocation("uni_r");
 	m_uni_t = getUniformLocation("uni_t");
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap)
+void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap)
 {
 	useProgram();
 
@@ -910,6 +903,19 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 			// draw each graphic data of visibleComponent
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
+				//active and bind textures
+				// is there any texture?
+				auto& l_textureMap = l_graphicData.second;
+				if (&l_textureMap != nullptr)
+				{
+					// any normal?
+					auto& l_normalTextureID = l_textureMap.find(textureType::NORMAL);
+					if (l_normalTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
+						l_textureData.update(0);
+					}				
+				}
 				// draw meshes
 				meshMap.find(l_graphicData.first)->second.update();
 			}
