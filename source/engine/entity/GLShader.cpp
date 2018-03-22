@@ -405,7 +405,6 @@ void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComp
 
 void EnvironmentCapturePassPBSShaderProgram::initialize()
 {
-	this->setup({ std::make_tuple(shaderType::VERTEX, std::string("GL3.3/environmentCapturePassPBSVertex.sf"), std::vector<std::string>{ "in_Position"}), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/environmentCapturePassPBSFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 
@@ -471,7 +470,6 @@ void EnvironmentCapturePassPBSShaderProgram::update(std::vector<CameraComponent*
 
 void EnvironmentConvolutionPassPBSShaderProgram::initialize()
 {
-	this->setup({ std::make_tuple(shaderType::VERTEX, std::string("GL3.3/environmentConvolutionPassPBSVertex.sf"), std::vector<std::string>{ "in_Position"}), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/environmentConvolutionPassPBSFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 
@@ -526,7 +524,6 @@ void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<CameraCompon
 
 void EnvironmentPreFilterPassPBSShaderProgram::initialize()
 {
-	this->setup({ std::make_tuple(shaderType::VERTEX, std::string("GL3.3/environmentPreFilterPassPBSVertex.sf"), std::vector<std::string>{ "in_Position"}), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/environmentPreFilterPassPBSFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 
@@ -563,7 +560,7 @@ void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponen
 		{
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
-				auto l_environmentPrefilterTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_PREFILTER)->second);
+				auto l_environmentPrefilterTexture = textureMap.find(l_graphicData.second.find(textureType::RENDER_BUFFER_SAMPLER)->second);
 				if (l_environmentPrefilterTexture != textureMap.end())
 				{
 					l_environmentPrefilterTexture->second->update(0);
@@ -596,13 +593,26 @@ void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponen
 
 void EnvironmentBRDFLUTPassPBSShaderProgram::initialize()
 {
-	this->setup({ std::make_tuple(shaderType::VERTEX, std::string("GL3.3/environmentBRDFLUTPassPBSVertex.sf"), std::vector<std::string>{ "in_Position", "in_TexCoord"}), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/environmentBRDFLUTPassPBSFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 }
 
 void EnvironmentBRDFLUTPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	for (auto& l_visibleComponent : visibleComponents)
+	{
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
+		{
+			for (auto& l_graphicData : l_visibleComponent->getModelMap())
+			{
+				auto l_environmentPrefilterTexture = textureMap.find(l_graphicData.second.find(textureType::RENDER_BUFFER_SAMPLER)->second);
+				if (l_environmentPrefilterTexture != textureMap.end())
+				{
+					l_environmentPrefilterTexture->second->updateFramebuffer(0, 0, 0);
+				}
+			}
+		}
+	}
 
 	useProgram();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -610,7 +620,6 @@ void EnvironmentBRDFLUTPassPBSShaderProgram::update(std::vector<CameraComponent*
 
 void SkyForwardPassPBSShaderProgram::initialize()
 {
-	this->setup({ std::make_tuple(shaderType::VERTEX, std::string("GL3.3/skyForwardPassPBSVertex.sf"), std::vector<std::string>{ "in_Position"}), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/skyForwardPassPBSFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 
@@ -658,10 +667,6 @@ void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& camer
 
 void DebuggerShaderProgram::initialize()
 {
-	this->setup({	std::make_tuple(shaderType::VERTEX, std::string("GL3.3/debuggerVertex.sf"), std::vector<std::string>{ "in_Position", "in_TexCoord", "in_Normal"}),
-					std::make_tuple(shaderType::GEOMETRY, std::string("GL3.3/debuggerGeometry.sf"), std::vector<std::string>{}),
-					std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/debuggerFragment.sf"), std::vector<std::string>{}),
-				});
 	GLShaderProgram::initialize();
 	useProgram();
 
@@ -720,7 +725,6 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 
 void SkyDeferPassPBSShaderProgram::initialize()
 {
-	this->setup({ std::make_tuple(shaderType::VERTEX, std::string("GL3.3/skyDeferPassPBSVertex.sf"), std::vector<std::string>{ "in_Position",  "in_TexCoord"}), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/skyDeferPassPBSFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 

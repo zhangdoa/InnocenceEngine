@@ -128,37 +128,43 @@ private:
 	std::function<void()> f_changeDrawTextureMode;
 	std::function<void()> f_changeShadingMode;
 
-	GLFrameBuffer m_geometryPassFrameBuffer;
-	BaseFrameBufferWIP* m_geometryPassFrameBufferWIP;
-	GLShaderProgram* m_geometryPassShaderProgram;
+	BaseFrameBufferWIP* m_geometryPassFrameBuffer;
+	BaseShaderProgram* m_geometryPassShaderProgram;
+	textureID m_geometryPassRT0TextureID;
+	textureID m_geometryPassRT1TextureID;
+	textureID m_geometryPassRT2TextureID;
+	textureID m_geometryPassRT3TextureID;
 
-	GLFrameBuffer m_lightPassFrameBuffer;
-	GLShaderProgram* m_lightPassShaderProgram;
+	BaseFrameBufferWIP* m_lightPassFrameBuffer;
+	BaseShaderProgram* m_lightPassShaderProgram;
+	textureID m_lightPassTextureID;
 
 	BaseFrameBufferWIP* m_environmentPassFrameBuffer;
-	GLuint m_environmentPassFBO;
-	GLuint m_environmentPassRBO;
+	BaseShaderProgram* m_environmentCapturePassShaderProgram;
+	BaseShaderProgram* m_environmentConvolutionPassShaderProgram;
+	BaseShaderProgram* m_environmentPreFilterPassShaderProgram;
+	BaseShaderProgram* m_environmentBRDFLUTPassShaderProgram;
 	textureID m_environmentCapturePassTextureID;
 	textureID m_environmentConvolutionPassTextureID;
 	textureID m_environmentPreFilterPassTextureID;
 	textureID m_environmentBRDFLUTTextureID;
 
-	BaseShaderProgram* m_environmentCapturePassShaderProgram;
-	BaseShaderProgram* m_environmentConvolutionPassShaderProgram;
-	BaseShaderProgram* m_environmentPreFilterPassShaderProgram;
-	BaseShaderProgram* m_environmentBRDFLUTPassShaderProgram;
 
-	GLFrameBuffer m_skyForwardPassFrameBuffer;
+
+	BaseFrameBufferWIP* m_skyForwardPassFrameBuffer;
 	BaseShaderProgram* m_skyForwardPassShaderProgram;
 
-	GLFrameBuffer m_skyDeferPassFrameBuffer;
+	BaseFrameBufferWIP* m_skyDeferPassFrameBuffer;
 	BaseShaderProgram* m_skyDeferPassShaderProgram;
+	textureID m_skyDeferPassTextureID;
 
-	GLFrameBuffer m_debuggerPassFrameBuffer;
+	BaseFrameBufferWIP* m_debuggerPassFrameBuffer;
 	BaseShaderProgram* m_debuggerPassShaderProgram;
+	textureID m_debuggerPassTextureID;
 
-	GLFrameBuffer m_finalPassFrameBuffer;
+	BaseFrameBufferWIP* m_finalPassFrameBuffer;
 	BaseShaderProgram* m_finalPassShaderProgram;
+	textureID m_finalPassTextureID;
 
 	int m_polygonMode = 0;
 	int m_textureMode = 0;

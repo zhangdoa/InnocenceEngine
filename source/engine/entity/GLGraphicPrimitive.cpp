@@ -298,7 +298,7 @@ void GLShader::initialize()
 {
 	int l_glShaderType = 0;
 
-	switch (m_shaderType)
+	switch (std::get<shaderType>(m_shaderData))
 	{
 	case shaderType::VERTEX: l_glShaderType = GL_VERTEX_SHADER;  break;
 	case shaderType::GEOMETRY: l_glShaderType = GL_GEOMETRY_SHADER;  break;
@@ -313,7 +313,7 @@ void GLShader::initialize()
 		m_objectStatus = objectStatus::STANDBY;
 	}
 
-	char const * l_sourcePointer = m_shaderCode.c_str();
+	char const * l_sourcePointer = std::get<shaderCodeContent>(m_shaderData).c_str();
 	glShaderSource(m_shaderID, 1, &l_sourcePointer, NULL);
 }
 
@@ -348,9 +348,9 @@ void GLShaderProgram::initialize()
 	{
 		m_vertexShader.initialize();
 		attachShader(&m_vertexShader);
-		for (unsigned int i = 0; i < m_vertexShader.getAttributions().size(); i++)
+		for (unsigned int i = 0; i < std::get<shaderAttributions>(m_vertexShader.getShaderData()).size(); i++)
 		{
-			setAttributeLocation(i, m_vertexShader.getAttributions()[i]);
+			setAttributeLocation(i, std::get<shaderAttributions>(m_vertexShader.getShaderData())[i]);
 		}
 	}
 	if (m_geometryShader.getStatus() == objectStatus::ALIVE)
@@ -404,7 +404,7 @@ void GLShaderProgram::attachShader(const GLShader* GLShader) const
 	glLinkProgram(m_program);
 	glValidateProgram(m_program);
 
-	g_pLogSystem->printLog("innoShader: " + GLShader->getShaderFilePath() + " Shader is compiled.");
+	g_pLogSystem->printLog("innoShader: " + std::get<shaderFilePath>(GLShader->getShaderData()) + " Shader is compiled.");
 
 	GLint success;
 	GLchar infoLog[1024];
@@ -593,32 +593,25 @@ void GLFrameBufferWIP::initialize()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLFrameBufferWIP::update()
+void GLFrameBufferWIP::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
 
-	if (m_previousBaseFrameBuffer)
-	{
-		for (auto i = (unsigned int)0; i < m_previousBaseFrameBuffer->getRenderTargetNumber(); i++)
-		{
-			m_previousBaseFrameBuffer->activeTexture(i, i, 0);
-		}
-	}
 	for (auto i = (unsigned int)0; i < m_shaderPrograms.size(); i++)
 	{
 		glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, m_renderBufferStorageSize[i].x, m_renderBufferStorageSize[i].y);
 		glViewport(0, 0, m_renderBufferStorageSize[i].x, m_renderBufferStorageSize[i].y);
-		m_shaderPrograms[i]->update();
+		m_shaderPrograms[i]->update(cameraComponents, lightComponents, visibleComponents, meshMap, textureMap);
 	}
 }
 
-void GLFrameBufferWIP::activeTexture(int colorAttachmentIndex, int textureIndex, int textureMipMapLevel)
+void GLFrameBufferWIP::activeTexture(int colorAttachmentIndex, int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer, int textureMipMapLevel)
 {
-	glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, m_renderTargetTextures[textureIndex]->getTextureWidth(), m_renderTargetTextures[textureIndex]->getTextureHeight());
-	glViewport(0, 0, m_renderTargetTextures[textureIndex]->getTextureWidth(), m_renderTargetTextures[textureIndex]->getTextureHeight());
-	m_renderTargetTextures[textureIndex]->updateFramebuffer(colorAttachmentIndex, textureIndex, textureMipMapLevel);
-	m_renderTargetTextures[textureIndex]->update(textureIndex);
+	glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, m_renderTargetTextures[textureIndexInOwnerFrameBuffer]->getTextureWidth(), m_renderTargetTextures[textureIndexInOwnerFrameBuffer]->getTextureHeight());
+	glViewport(0, 0, m_renderTargetTextures[textureIndexInOwnerFrameBuffer]->getTextureWidth(), m_renderTargetTextures[textureIndexInOwnerFrameBuffer]->getTextureHeight());
+	m_renderTargetTextures[textureIndexInOwnerFrameBuffer]->updateFramebuffer(colorAttachmentIndex, textureIndexInUserFrameBuffer, textureMipMapLevel);
+	m_renderTargetTextures[textureIndexInOwnerFrameBuffer]->update(textureIndexInUserFrameBuffer);
 }
 
 void GLFrameBufferWIP::shutdown()
