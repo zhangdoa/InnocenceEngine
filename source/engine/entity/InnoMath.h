@@ -160,3 +160,19 @@ private:
 	quat m_oldRot;
 	vec3 m_oldScale;
 };
+
+enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
+enum class meshType { TWO_DIMENSION, THREE_DIMENSION };
+enum class meshShapeType { QUAD, CUBE, SPHERE, CUSTOM };
+enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
+enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, ENVIRONMENT_CAPTURE, ENVIRONMENT_CONVOLUTION, ENVIRONMENT_PREFILTER, EQUIRETANGULAR, RENDER_BUFFER_SAMPLER };
+enum class textureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8 };
+enum class texturePixelDataFormat { RED, RG, RGB, RGBA };
+enum class texturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, FLOAT };
+enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
+enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
+enum class shaderType { VERTEX, GEOMETRY, FRAGMENT };
+// @TODO: ugly as ugly itself
+typedef std::vector<std::tuple<shaderType, std::string, std::vector<std::string>>> shaderTuple;
+enum class frameBufferType { FORWARD, DEFER, SHADOWMAP, CUBEMAP };
+enum class renderBufferType { DEPTH, STENCIL, DEPTH_AND_STENCIL };

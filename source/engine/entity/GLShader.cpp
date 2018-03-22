@@ -1,256 +1,5 @@
 #include "GLShader.h"
 
-GLShader::GLShader()
-{
-}
-
-GLShader::~GLShader()
-{
-}
-
-void GLShader::setup()
-{
-}
-
-void GLShader::setup(shaderType shaderType, const std::string& shaderFilePath, const std::vector<std::string>& attributions)
-{
-	m_shaderType = shaderType;
-	m_shaderFilePath = shaderFilePath;
-	m_attributions = attributions;
-
-	m_objectStatus = objectStatus::ALIVE;
-}
-
-void GLShader::initialize()
-{
-	// @TODO: shouldn't we try to avoid to use this kind of ugly coupling impl???
-	m_shaderCode = g_pAssetSystem->loadShader(m_shaderFilePath);
-
-	int l_glShaderType = 0;
-
-	switch (m_shaderType)
-	{
-	case shaderType::VERTEX: l_glShaderType = GL_VERTEX_SHADER;  break;
-	case shaderType::GEOMETRY: l_glShaderType = GL_GEOMETRY_SHADER;  break;
-	case shaderType::FRAGMENT: l_glShaderType = GL_FRAGMENT_SHADER;  break;
-	default: g_pLogSystem->printLog("Error: Unknown shader type, cannot create shader!"); m_objectStatus = objectStatus::STANDBY; break;
-	}
-
-	m_shaderID = glCreateShader(l_glShaderType);
-
-	if (m_shaderID == 0) {
-		g_pLogSystem->printLog("Error: Shader creation failed: memory location invaild when adding shader!");
-		m_objectStatus = objectStatus::STANDBY;
-	}
-
-	char const * l_sourcePointer = m_shaderCode.c_str();
-	glShaderSource(m_shaderID, 1, &l_sourcePointer, NULL);
-}
-
-void GLShader::update()
-{
-}
-
-void GLShader::shutdown()
-{
-	glDeleteShader(m_shaderID);
-	m_objectStatus = objectStatus::SHUTDOWN;
-}
-
-const objectStatus & GLShader::getStatus() const
-{
-	return m_objectStatus;
-}
-
-const GLint & GLShader::getShaderID() const
-{
-	return m_shaderID;
-}
-
-const std::string & GLShader::getShaderFilePath() const
-{
-	return m_shaderFilePath;
-}
-
-const std::vector<std::string> & GLShader::getAttributions() const
-{
-	return m_attributions;
-}
-
-void GLShader::parseAttribution()
-{
-}
-
-GLShaderProgram::GLShaderProgram()
-{
-}
-
-GLShaderProgram::~GLShaderProgram()
-{
-}
-
-void GLShaderProgram::setup()
-{
-}
-
-void GLShaderProgram::setup(shaderTuple GLShaders)
-{
-	for (auto& i : GLShaders)
-	{
-		if (std::get<0>(i) == shaderType::VERTEX)
-		{
-			m_vertexShader.setup(std::get<0>(i), std::get<1>(i), std::get<2>(i));
-		}
-		else if (std::get<0>(i) == shaderType::GEOMETRY)
-		{
-			m_geometryShader.setup(std::get<0>(i), std::get<1>(i), std::get<2>(i));
-		}
-		else if (std::get<0>(i) == shaderType::FRAGMENT)
-		{
-			m_fragmentShader.setup(std::get<0>(i), std::get<1>(i), std::get<2>(i));
-		}
-	}
-}
-
-void GLShaderProgram::initialize()
-{
-	m_program = glCreateProgram();
-
-	if (m_vertexShader.getStatus() == objectStatus::ALIVE)
-	{
-		m_vertexShader.initialize();
-		attachShader(&m_vertexShader);
-		for (unsigned int i = 0; i < m_vertexShader.getAttributions().size(); i++)
-		{
-			setAttributeLocation(i, m_vertexShader.getAttributions()[i]);
-		}
-	}
-	if (m_geometryShader.getStatus() == objectStatus::ALIVE)
-	{
-		m_geometryShader.initialize();
-		attachShader(&m_geometryShader);
-	}
-	if (m_fragmentShader.getStatus() == objectStatus::ALIVE)
-	{
-		m_fragmentShader.initialize();
-		attachShader(&m_fragmentShader);
-	}
-}
-
-void GLShaderProgram::shutdown()
-{
-	if (m_vertexShader.getStatus() == objectStatus::ALIVE)
-	{
-		m_vertexShader.shutdown();
-		glDetachShader(m_program, m_vertexShader.getShaderID());
-	}
-	if (m_geometryShader.getStatus() == objectStatus::ALIVE)
-	{
-		m_geometryShader.shutdown();
-		glDetachShader(m_program, m_geometryShader.getShaderID());
-	}
-	if (m_fragmentShader.getStatus() == objectStatus::ALIVE)
-	{
-		m_fragmentShader.shutdown();
-		glDetachShader(m_program, m_fragmentShader.getShaderID());
-	}
-}
-
-void GLShaderProgram::attachShader(const GLShader* GLShader) const
-{
-	GLint Result = GL_FALSE;
-	int l_infoLogLength = 0;
-
-	glGetShaderiv(m_program, GL_COMPILE_STATUS, &Result);
-	glGetShaderiv(m_program, GL_INFO_LOG_LENGTH, &l_infoLogLength);
-
-	if (l_infoLogLength > 0) {
-		std::vector<char> ShaderErrorMessage(l_infoLogLength + 1);
-		glGetShaderInfoLog(m_program, l_infoLogLength, NULL, &ShaderErrorMessage[0]);
-		g_pLogSystem->printLog(&ShaderErrorMessage[0]);
-	}
-
-	const GLint l_shaderID = GLShader->getShaderID();
-
-	glAttachShader(m_program, l_shaderID);
-	glLinkProgram(m_program);
-	glValidateProgram(m_program);
-
-	g_pLogSystem->printLog("innoShader: " + GLShader->getShaderFilePath() + " Shader is compiled.");
-
-	GLint success;
-	GLchar infoLog[1024];
-	glGetShaderiv(l_shaderID, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(l_shaderID, 1024, NULL, infoLog);
-		g_pLogSystem->printLog("innoShader: Error: Shader compile error: " + std::string(infoLog) + "\n -- --------------------------------------------------- -- ");
-	}
-}
-
-void GLShaderProgram::setAttributeLocation(int arrtributeLocation, const std::string & arrtributeName) const
-{
-	glBindAttribLocation(m_program, arrtributeLocation, arrtributeName.c_str());
-	if (glGetAttribLocation(m_program, arrtributeName.c_str()) == 0xFFFFFFFF)
-	{
-		g_pLogSystem->printLog("innoShader: Error: Attribute lost: " + arrtributeName);
-	}
-}
-
-inline void GLShaderProgram::useProgram() const
-{
-	glUseProgram(m_program);
-}
-
-inline void GLShaderProgram::addUniform(std::string uniform) const
-{
-	int uniformLocation = glGetUniformLocation(m_program, uniform.c_str());
-	if (uniformLocation == 0xFFFFFFFF)
-	{
-		g_pLogSystem->printLog("innoShader: Error: Uniform lost: " + uniform);
-	}
-}
-
-inline GLint GLShaderProgram::getUniformLocation(const std::string & uniformName) const
-{
-	return glGetUniformLocation(m_program, uniformName.c_str());
-}
-
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, bool uniformValue) const
-{
-	glUniform1i(uniformLocation, (int)uniformValue);
-}
-
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, int uniformValue) const
-{
-	glUniform1i(uniformLocation, uniformValue);
-}
-
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double uniformValue) const
-{
-	glUniform1f(uniformLocation, uniformValue);
-}
-
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y) const
-{
-	glUniform2f(uniformLocation, x, y);
-}
-
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y, double z) const
-{
-	glUniform3f(uniformLocation, x, y, z);
-}
-
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y, double z, double w)
-{
-	glUniform4f(uniformLocation, x, y, z, w);
-}
-
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, const mat4 & mat) const
-{
-	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat.m[0][0]);
-}
-
 void BillboardPassShaderProgram::initialize()
 {
 	this->setup({std::make_tuple(shaderType::VERTEX, std::string("GL3.3/billboardPassVertex.sf"), std::vector<std::string>{ "in_Position" , "in_TexCoord" }), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/billboardPassFragment.sf"), std::vector<std::string>{}) });
@@ -265,7 +14,7 @@ void BillboardPassShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap)
+void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	useProgram();
 
@@ -298,25 +47,25 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
-						l_textureData.update(0);
+						l_textureData->update(0);
 					}
 					// any albedo?
 					auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
 					if (l_diffuseTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
-						l_textureData.update(1);
+						l_textureData->update(1);
 					}
 					// any metallic?
 					auto l_specularTextureID = l_textureMap.find(textureType::METALLIC);
 					if (l_specularTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_specularTextureID->second)->second;
-						l_textureData.update(2);
+						l_textureData->update(2);
 					}
 				}
 				// draw meshes
-				meshMap.find(l_graphicData.first)->second.update();
+				meshMap.find(l_graphicData.first)->second->update();
 			}
 		}
 	}
@@ -341,7 +90,8 @@ void GeometryPassBlinnPhongShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap)
+void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
+
 {
 	useProgram();
 
@@ -373,25 +123,25 @@ void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& 
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
-						l_textureData.update(0);
+						l_textureData->update(0);
 					}
 					// any diffuse?
 					auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
 					if (l_diffuseTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
-						l_textureData.update(1);
+						l_textureData->update(1);
 					}
 					// any specular?
 					auto l_specularTextureID = l_textureMap.find(textureType::METALLIC);
 					if (l_specularTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_specularTextureID->second)->second;
-						l_textureData.update(2);
+						l_textureData->update(2);
 					}
 				}
 				// draw meshes
-				meshMap.find(l_graphicData.first)->second.update();
+				meshMap.find(l_graphicData.first)->second->update();
 			}
 		}
 	}
@@ -418,7 +168,7 @@ void LightPassBlinnPhongShaderProgram::initialize()
 	m_uni_dirLight_color = getUniformLocation("uni_dirLight.color");
 }
 
-void LightPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode, int shadingMode)
+void LightPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	useProgram();
 
@@ -492,7 +242,7 @@ void GeometryPassPBSShaderProgram::initialize()
 	m_uni_MRA = getUniformLocation("uni_MRA");
 }
 
-void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap)
+void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	useProgram();
 
@@ -524,42 +274,42 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
-						l_textureData.update(0);
+						l_textureData->update(0);
 					}
 					// any albedo?
 					auto& l_albedoTextureID = l_textureMap.find(textureType::ALBEDO);
 					if (l_albedoTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_albedoTextureID->second)->second;
-						l_textureData.update(1);
+						l_textureData->update(1);
 					}
 					// any metallic?
 					auto& l_metallicTextureID = l_textureMap.find(textureType::METALLIC);
 					if (l_metallicTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_metallicTextureID->second)->second;
-						l_textureData.update(2);
+						l_textureData->update(2);
 					}
 					// any roughness?
 					auto& l_roughnessTextureID = l_textureMap.find(textureType::ROUGHNESS);
 					if (l_roughnessTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_roughnessTextureID->second)->second;
-						l_textureData.update(3);
+						l_textureData->update(3);
 					}
 					// any ao?
 					auto& l_aoTextureID = l_textureMap.find(textureType::AMBIENT_OCCLUSION);
 					if (l_aoTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_aoTextureID->second)->second;
-						l_textureData.update(4);
+						l_textureData->update(4);
 					}
 				}
 				updateUniform(m_uni_useTexture, l_visibleComponent->m_useTexture);
 				updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
 				updateUniform(m_uni_MRA, l_visibleComponent->m_MRA.x, l_visibleComponent->m_MRA.y, l_visibleComponent->m_MRA.z);
 				// draw meshes
-				meshMap.find(l_graphicData.first)->second.update();
+				meshMap.find(l_graphicData.first)->second->update();
 			}
 		}
 	}
@@ -596,7 +346,7 @@ void LightPassPBSShaderProgram::initialize()
 	m_uni_dirLight_color = getUniformLocation("uni_dirLight.color");
 }
 
-void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode, int shadingMode)
+void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	useProgram();
 
@@ -627,8 +377,8 @@ void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComp
 		//@TODO: generalization
 
 		updateUniform(m_uni_viewPos, cameraComponents[0]->getParentEntity()->getTransform()->getPos().x, cameraComponents[0]->getParentEntity()->getTransform()->getPos().y, cameraComponents[0]->getParentEntity()->getTransform()->getPos().z);
-		updateUniform(m_uni_textureMode, textureMode);
-		updateUniform(m_uni_shadingMode, shadingMode);
+		//updateUniform(m_uni_textureMode, textureMode);
+		//updateUniform(m_uni_shadingMode, shadingMode);
 
 		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
 		{
@@ -658,7 +408,7 @@ void EnvironmentCapturePassPBSShaderProgram::initialize()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void EnvironmentCapturePassPBSShaderProgram::update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& twoDTextureMap, GLTexture& threeDTexture)
+void EnvironmentCapturePassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
@@ -682,15 +432,25 @@ void EnvironmentCapturePassPBSShaderProgram::update(std::vector<VisibleComponent
 
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
-				twoDTextureMap.find(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second)->second.update();
-				for (unsigned int i = 0; i < 6; ++i)
+				// activate equiretangular texture
+				auto l_equiretangularTexture = textureMap.find(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);
+				if (l_equiretangularTexture != textureMap.end())
 				{
-					updateUniform(m_uni_r, captureViews[i]);
-					threeDTexture.updateFramebuffer(0, i, 0);
-					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-					meshMap.find(l_graphicData.first)->second.update();
-					threeDTexture.update(0);
-					glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+					l_equiretangularTexture->second->update(0);
+				}			
+				// remapping equiretangular texture to cubemap
+				auto l_environmentCaptureTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CAPTURE)->second);
+				if (l_environmentCaptureTexture != textureMap.end())
+				{
+					for (unsigned int i = 0; i < 6; ++i)
+					{
+						updateUniform(m_uni_r, captureViews[i]);
+						l_environmentCaptureTexture->second->updateFramebuffer(0, i, 0);
+						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+						meshMap.find(l_graphicData.first)->second->update();
+						l_environmentCaptureTexture->second->update(0);
+						glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+					}
 				}
 			}
 		}
@@ -710,7 +470,7 @@ void EnvironmentConvolutionPassPBSShaderProgram::initialize()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture & threeDCapturedTexture, GLTexture & threeDConvolutedTexture)
+void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
@@ -732,18 +492,22 @@ void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<VisibleCompo
 	{
 		if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
 		{
-
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
-				threeDCapturedTexture.update();
-				for (unsigned int i = 0; i < 6; ++i)
+				auto l_environmentConvolutionTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CONVOLUTION)->second);
+				if (l_environmentConvolutionTexture != textureMap.end())
 				{
-					updateUniform(m_uni_r, captureViews[i]);
-					threeDConvolutedTexture.updateFramebuffer(0, i, 0);
-					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-					meshMap.find(l_graphicData.first)->second.update();
+					l_environmentConvolutionTexture->second->update(0);
+					for (unsigned int i = 0; i < 6; ++i)
+					{
+						updateUniform(m_uni_r, captureViews[i]);
+						l_environmentConvolutionTexture->second->updateFramebuffer(0, i, 0);
+						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+						meshMap.find(l_graphicData.first)->second->update();
+					}
 				}
 			}
+
 		}
 	}
 }
@@ -763,7 +527,7 @@ void EnvironmentPreFilterPassPBSShaderProgram::initialize()
 	m_uni_roughness = getUniformLocation("uni_roughness");
 }
 
-void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture & threeDCapturedTexture, GLTexture & threeDPreFiltedTexture)
+void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
@@ -785,28 +549,31 @@ void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<VisibleCompone
 	{
 		if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
 		{
-
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
-				threeDCapturedTexture.update();
-				unsigned int maxMipLevels = 5;
-				for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
+				auto l_environmentPrefilterTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_PREFILTER)->second);
+				if (l_environmentPrefilterTexture != textureMap.end())
 				{
-					// reisze framebuffer according to mip-level size.
-					unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
-					unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
-
-					glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
-					glViewport(0, 0, mipWidth, mipHeight);
-
-					double roughness = (double)mip / (double)(maxMipLevels - 1);
-					updateUniform(m_uni_roughness, roughness);
-					for (unsigned int i = 0; i < 6; ++i)
+					l_environmentPrefilterTexture->second->update(0);
+					unsigned int maxMipLevels = 5;
+					for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
 					{
-						updateUniform(m_uni_r, captureViews[i]);
-						threeDPreFiltedTexture.updateFramebuffer(0, i, mip);
-						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-						meshMap.find(l_graphicData.first)->second.update();
+						// reisze framebuffer according to mip-level size.
+						unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
+						unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
+
+						glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
+						glViewport(0, 0, mipWidth, mipHeight);
+
+						double roughness = (double)mip / (double)(maxMipLevels - 1);
+						updateUniform(m_uni_roughness, roughness);
+						for (unsigned int i = 0; i < 6; ++i)
+						{
+							updateUniform(m_uni_r, captureViews[i]);
+							l_environmentPrefilterTexture->second->updateFramebuffer(0, i, mip);
+							glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+							meshMap.find(l_graphicData.first)->second->update();
+						}
 					}
 				}
 			}
@@ -821,8 +588,9 @@ void EnvironmentBRDFLUTPassPBSShaderProgram::initialize()
 	useProgram();
 }
 
-void EnvironmentBRDFLUTPassPBSShaderProgram::update()
+void EnvironmentBRDFLUTPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+
 	useProgram();
 }
 
@@ -839,7 +607,7 @@ void SkyForwardPassPBSShaderProgram::initialize()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture& threeDTexture)
+void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	useProgram();
 
@@ -856,8 +624,12 @@ void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& camer
 		{
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
-				threeDTexture.update();
-				meshMap.find(l_graphicData.first)->second.update();
+				auto l_cubeMapTexture = textureMap.find(l_graphicData.second.find(textureType::CUBEMAP)->second);
+				if (l_cubeMapTexture != textureMap.end())
+				{
+					l_cubeMapTexture->second->update(0);
+					meshMap.find(l_graphicData.first)->second->update();
+				}
 			}
 		}
 	}
@@ -881,7 +653,7 @@ void DebuggerShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap)
+void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	useProgram();
 
@@ -913,11 +685,11 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 					if (l_normalTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
-						l_textureData.update(0);
+						l_textureData->update(0);
 					}				
 				}
 				// draw meshes
-				meshMap.find(l_graphicData.first)->second.update();
+				meshMap.find(l_graphicData.first)->second->update();
 			}
 		}
 	}
@@ -938,7 +710,7 @@ void SkyDeferPassPBSShaderProgram::initialize()
 	updateUniform(m_uni_debuggerPassRT0, 2);
 }
 
-void SkyDeferPassPBSShaderProgram::update()
+void SkyDeferPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	useProgram();
 }
@@ -954,7 +726,7 @@ void FinalPassShaderProgram::initialize()
 	updateUniform(m_uni_skyDeferPassRT0, 0);
 }
 
-void FinalPassShaderProgram::update()
+void FinalPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	useProgram();
 }

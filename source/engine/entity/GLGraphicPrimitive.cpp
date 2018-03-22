@@ -98,7 +98,7 @@ void GLTexture::initialize()
 	{
 		//generate and bind texture object
 		glGenTextures(1, &m_textureID);
-		if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::CUBEMAP_HDR)
+		if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::ENVIRONMENT_CAPTURE || m_textureType == textureType::ENVIRONMENT_CONVOLUTION || m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 		}
@@ -114,7 +114,7 @@ void GLTexture::initialize()
 		case textureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
 		case textureWrapMethod::CLAMP_TO_EDGE: l_textureWrapMethod = GL_CLAMP_TO_EDGE; break;
 		}
-		if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::CUBEMAP_HDR)
+		if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::ENVIRONMENT_CAPTURE || m_textureType == textureType::ENVIRONMENT_CONVOLUTION || m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
@@ -143,7 +143,7 @@ void GLTexture::initialize()
 		case textureFilterMethod::LINEAR_MIPMAP_LINEAR: l_magFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
 
 		}
-		if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::CUBEMAP_HDR)
+		if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::ENVIRONMENT_CAPTURE || m_textureType == textureType::ENVIRONMENT_CONVOLUTION || m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, l_minFilterParam);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, l_magFilterParam);
@@ -218,7 +218,7 @@ void GLTexture::initialize()
 		case texturePixelDataType::FLOAT:l_type = GL_FLOAT; break;
 		}
 		
-		if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::CUBEMAP_HDR)
+		if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::ENVIRONMENT_CAPTURE || m_textureType == textureType::ENVIRONMENT_CONVOLUTION || m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, l_dataFormat, l_type, m_textureData[0]);
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, m_textureWidth, m_textureHeight, 0, l_dataFormat, l_type, m_textureData[1]);
@@ -235,7 +235,7 @@ void GLTexture::initialize()
 		// should generate mipmap or not
 		if (m_textureMinFilterMethod == textureFilterMethod::LINEAR_MIPMAP_LINEAR)
 		{
-			if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::CUBEMAP_HDR)
+			if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::ENVIRONMENT_CAPTURE || m_textureType == textureType::ENVIRONMENT_CONVOLUTION || m_textureType == textureType::ENVIRONMENT_PREFILTER)
 			{
 				glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 			}
@@ -257,7 +257,7 @@ void GLTexture::update()
 void GLTexture::update(int textureIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + textureIndex);
-	if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::CUBEMAP_HDR)
+	if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::ENVIRONMENT_CAPTURE || m_textureType == textureType::ENVIRONMENT_CONVOLUTION || m_textureType == textureType::ENVIRONMENT_PREFILTER)
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 	}
@@ -276,15 +276,210 @@ void GLTexture::shutdown()
 
 void GLTexture::updateFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel)
 {
-	if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::CUBEMAP_HDR)
+	if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::ENVIRONMENT_CAPTURE || m_textureType == textureType::ENVIRONMENT_CONVOLUTION || m_textureType == textureType::ENVIRONMENT_PREFILTER)
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, m_textureID, mipLevel);
-
 	}
 	else
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, m_textureID, mipLevel);
 	}
+}
+
+GLShader::GLShader()
+{
+}
+
+GLShader::~GLShader()
+{
+}
+
+void GLShader::initialize()
+{
+	// @TODO: shouldn't we try to avoid to use this kind of ugly coupling impl???
+	m_shaderCode = g_pAssetSystem->loadShader(m_shaderFilePath);
+
+	int l_glShaderType = 0;
+
+	switch (m_shaderType)
+	{
+	case shaderType::VERTEX: l_glShaderType = GL_VERTEX_SHADER;  break;
+	case shaderType::GEOMETRY: l_glShaderType = GL_GEOMETRY_SHADER;  break;
+	case shaderType::FRAGMENT: l_glShaderType = GL_FRAGMENT_SHADER;  break;
+	default: g_pLogSystem->printLog("Error: Unknown shader type, cannot create shader!"); m_objectStatus = objectStatus::STANDBY; break;
+	}
+
+	m_shaderID = glCreateShader(l_glShaderType);
+
+	if (m_shaderID == 0) {
+		g_pLogSystem->printLog("Error: Shader creation failed: memory location invaild when adding shader!");
+		m_objectStatus = objectStatus::STANDBY;
+	}
+
+	char const * l_sourcePointer = m_shaderCode.c_str();
+	glShaderSource(m_shaderID, 1, &l_sourcePointer, NULL);
+}
+
+void GLShader::update()
+{
+}
+
+void GLShader::shutdown()
+{
+	glDeleteShader(m_shaderID);
+	m_objectStatus = objectStatus::SHUTDOWN;
+}
+
+const GLint & GLShader::getShaderID() const
+{
+	return m_shaderID;
+}
+
+GLShaderProgram::GLShaderProgram()
+{
+}
+
+GLShaderProgram::~GLShaderProgram()
+{
+}
+
+void GLShaderProgram::initialize()
+{
+	m_program = glCreateProgram();
+
+	if (m_vertexShader.getStatus() == objectStatus::ALIVE)
+	{
+		m_vertexShader.initialize();
+		attachShader(&m_vertexShader);
+		for (unsigned int i = 0; i < m_vertexShader.getAttributions().size(); i++)
+		{
+			setAttributeLocation(i, m_vertexShader.getAttributions()[i]);
+		}
+	}
+	if (m_geometryShader.getStatus() == objectStatus::ALIVE)
+	{
+		m_geometryShader.initialize();
+		attachShader(&m_geometryShader);
+	}
+	if (m_fragmentShader.getStatus() == objectStatus::ALIVE)
+	{
+		m_fragmentShader.initialize();
+		attachShader(&m_fragmentShader);
+	}
+}
+
+void GLShaderProgram::shutdown()
+{
+	if (m_vertexShader.getStatus() == objectStatus::ALIVE)
+	{
+		m_vertexShader.shutdown();
+		glDetachShader(m_program, m_vertexShader.getShaderID());
+	}
+	if (m_geometryShader.getStatus() == objectStatus::ALIVE)
+	{
+		m_geometryShader.shutdown();
+		glDetachShader(m_program, m_geometryShader.getShaderID());
+	}
+	if (m_fragmentShader.getStatus() == objectStatus::ALIVE)
+	{
+		m_fragmentShader.shutdown();
+		glDetachShader(m_program, m_fragmentShader.getShaderID());
+	}
+}
+
+void GLShaderProgram::attachShader(const GLShader* GLShader) const
+{
+	GLint Result = GL_FALSE;
+	int l_infoLogLength = 0;
+
+	glGetShaderiv(m_program, GL_COMPILE_STATUS, &Result);
+	glGetShaderiv(m_program, GL_INFO_LOG_LENGTH, &l_infoLogLength);
+
+	if (l_infoLogLength > 0) {
+		std::vector<char> ShaderErrorMessage(l_infoLogLength + 1);
+		glGetShaderInfoLog(m_program, l_infoLogLength, NULL, &ShaderErrorMessage[0]);
+		g_pLogSystem->printLog(&ShaderErrorMessage[0]);
+	}
+
+	const GLint l_shaderID = GLShader->getShaderID();
+
+	glAttachShader(m_program, l_shaderID);
+	glLinkProgram(m_program);
+	glValidateProgram(m_program);
+
+	g_pLogSystem->printLog("innoShader: " + GLShader->getShaderFilePath() + " Shader is compiled.");
+
+	GLint success;
+	GLchar infoLog[1024];
+	glGetShaderiv(l_shaderID, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(l_shaderID, 1024, NULL, infoLog);
+		g_pLogSystem->printLog("innoShader: Error: Shader compile error: " + std::string(infoLog) + "\n -- --------------------------------------------------- -- ");
+	}
+}
+
+void GLShaderProgram::setAttributeLocation(int arrtributeLocation, const std::string & arrtributeName) const
+{
+	glBindAttribLocation(m_program, arrtributeLocation, arrtributeName.c_str());
+	if (glGetAttribLocation(m_program, arrtributeName.c_str()) == 0xFFFFFFFF)
+	{
+		g_pLogSystem->printLog("innoShader: Error: Attribute lost: " + arrtributeName);
+	}
+}
+
+inline void GLShaderProgram::useProgram() const
+{
+	glUseProgram(m_program);
+}
+
+inline void GLShaderProgram::addUniform(std::string uniform) const
+{
+	int uniformLocation = glGetUniformLocation(m_program, uniform.c_str());
+	if (uniformLocation == 0xFFFFFFFF)
+	{
+		g_pLogSystem->printLog("innoShader: Error: Uniform lost: " + uniform);
+	}
+}
+
+inline GLint GLShaderProgram::getUniformLocation(const std::string & uniformName) const
+{
+	return glGetUniformLocation(m_program, uniformName.c_str());
+}
+
+inline void GLShaderProgram::updateUniform(const GLint uniformLocation, bool uniformValue) const
+{
+	glUniform1i(uniformLocation, (int)uniformValue);
+}
+
+inline void GLShaderProgram::updateUniform(const GLint uniformLocation, int uniformValue) const
+{
+	glUniform1i(uniformLocation, uniformValue);
+}
+
+inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double uniformValue) const
+{
+	glUniform1f(uniformLocation, uniformValue);
+}
+
+inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y) const
+{
+	glUniform2f(uniformLocation, x, y);
+}
+
+inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y, double z) const
+{
+	glUniform3f(uniformLocation, x, y, z);
+}
+
+inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y, double z, double w)
+{
+	glUniform4f(uniformLocation, x, y, z, w);
+}
+
+inline void GLShaderProgram::updateUniform(const GLint uniformLocation, const mat4 & mat) const
+{
+	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat.m[0][0]);
 }
 
 void GLFrameBuffer::initialize()
@@ -337,8 +532,8 @@ void GLFrameBuffer::initialize()
 
 void GLFrameBuffer::update()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, m_RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
 }
 
 void GLFrameBuffer::activeTexture(int textureLevel, int textureIndex)
@@ -349,6 +544,92 @@ void GLFrameBuffer::activeTexture(int textureLevel, int textureIndex)
 
 void GLFrameBuffer::shutdown()
 {
+	glDeleteFramebuffers(1, &m_FBO);
+	glDeleteRenderbuffers(1, &m_RBO);
+}
+
+void GLFrameBufferWIP::initialize()
+{
+	//generate and bind frame buffer
+	glGenFramebuffers(1, &m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
+
+	// generate and bind render buffer
+	glGenRenderbuffers(1, &m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
+
+	switch (m_renderBufferType)
+	{
+	case renderBufferType::DEPTH:m_internalformat = GL_DEPTH_COMPONENT32; m_attachment = GL_DEPTH_ATTACHMENT; break;
+	case renderBufferType::STENCIL:m_internalformat = GL_STENCIL_INDEX16; m_attachment = GL_STENCIL_ATTACHMENT; break;
+	case renderBufferType::DEPTH_AND_STENCIL: m_internalformat = GL_DEPTH24_STENCIL8; m_attachment = GL_DEPTH_STENCIL_ATTACHMENT; break;
+	}
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, m_attachment, GL_RENDERBUFFER, m_RBO);
+
+	for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); i++)
+	{
+		m_renderTargetTextures[i]->initialize();
+		m_renderTargetTextures[i]->updateFramebuffer(i, 0, 0);
+	}
+
+	for (auto i = (unsigned int)0; i < m_shaderPrograms.size(); i++)
+	{
+		m_shaderPrograms[i]->initialize();
+	}
+
+	std::vector<unsigned int> attachments;
+	for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); i++)
+	{
+		attachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
+	}
+	
+	glDrawBuffers(attachments.size(), &attachments[0]);
+
+	// finally check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		g_pLogSystem->printLog("Framebuffer is not completed!");
+	}
+
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void GLFrameBufferWIP::update()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
+
+	if (m_previousBaseFrameBuffer)
+	{
+		for (auto i = (unsigned int)0; i < m_previousBaseFrameBuffer->getRenderTargetNumber(); i++)
+		{
+			m_previousBaseFrameBuffer->activeTexture(i, i, 0);
+		}
+	}
+	for (auto i = (unsigned int)0; i < m_shaderPrograms.size(); i++)
+	{
+		glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, m_renderBufferStorageSize[i].x, m_renderBufferStorageSize[i].y);
+		glViewport(0, 0, m_renderBufferStorageSize[i].x, m_renderBufferStorageSize[i].y);
+		m_shaderPrograms[i]->update();
+	}
+}
+
+void GLFrameBufferWIP::activeTexture(int colorAttachmentIndex, int textureIndex, int textureMipMapLevel)
+{
+	glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, m_renderTargetTextures[textureIndex]->getTextureWidth(), m_renderTargetTextures[textureIndex]->getTextureHeight());
+	glViewport(0, 0, m_renderTargetTextures[textureIndex]->getTextureWidth(), m_renderTargetTextures[textureIndex]->getTextureHeight());
+	m_renderTargetTextures[textureIndex]->updateFramebuffer(colorAttachmentIndex, textureIndex, textureMipMapLevel);
+	m_renderTargetTextures[textureIndex]->update(textureIndex);
+}
+
+void GLFrameBufferWIP::shutdown()
+{
+	for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); i++)
+	{
+		m_renderTargetTextures[i]->shutdown();
+	}
 	glDeleteFramebuffers(1, &m_FBO);
 	glDeleteRenderbuffers(1, &m_RBO);
 }
