@@ -16,6 +16,7 @@ extern IAssetSystem* g_pAssetSystem;
 extern IGameSystem* g_pGameSystem;
 
 enum class keyPressType { CONTINUOUS, ONCE };
+
 class keyButton
 {
 public:
@@ -25,6 +26,12 @@ public:
 	keyPressType m_keyPressType = keyPressType::CONTINUOUS;
 	bool m_allowCallback = true;
 };
+
+#ifdef USE_OPENGL
+#define MESH_CLASS GLMesh
+#define TEXTURE_CLASS GLTexture
+#define FRAMEBUFFER_CLASS GLFrameBufferWIP
+#endif
 
 class RenderingSystem : public IRenderingSystem
 {
@@ -89,8 +96,8 @@ private:
 	//Asset data
 	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
 
-	std::unordered_map<meshID, GLMesh> m_meshMap;
-	std::unordered_map<textureID, GLTexture> m_textureMap;
+	std::unordered_map<meshID, BaseMesh*> m_meshMap;
+	std::unordered_map<textureID, BaseTexture*> m_textureMap;
 
 	void assignUnitMesh(VisibleComponent& visibleComponent, meshShapeType meshType);
 	void assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
@@ -122,12 +129,13 @@ private:
 	std::function<void()> f_changeShadingMode;
 
 	GLFrameBuffer m_geometryPassFrameBuffer;
-	GLShaderProgram* m_geometryPassShader;
+	BaseFrameBufferWIP* m_geometryPassFrameBufferWIP;
+	GLShaderProgram* m_geometryPassShaderProgram;
 
 	GLFrameBuffer m_lightPassFrameBuffer;
-	GLShaderProgram* m_lightPassShader;
+	GLShaderProgram* m_lightPassShaderProgram;
 
-	GLFrameBuffer m_environmentPassFrameBuffer;
+	BaseFrameBufferWIP* m_environmentPassFrameBuffer;
 	GLuint m_environmentPassFBO;
 	GLuint m_environmentPassRBO;
 	textureID m_environmentCapturePassTextureID;
@@ -135,22 +143,22 @@ private:
 	textureID m_environmentPreFilterPassTextureID;
 	textureID m_environmentBRDFLUTTextureID;
 
-	GLShaderProgram* m_environmentCapturePassShader;
-	GLShaderProgram* m_environmentConvolutionPassShader;
-	GLShaderProgram* m_environmentPreFilterPassShader;
-	GLShaderProgram* m_environmentBRDFLUTPassShader;
+	BaseShaderProgram* m_environmentCapturePassShaderProgram;
+	BaseShaderProgram* m_environmentConvolutionPassShaderProgram;
+	BaseShaderProgram* m_environmentPreFilterPassShaderProgram;
+	BaseShaderProgram* m_environmentBRDFLUTPassShaderProgram;
 
 	GLFrameBuffer m_skyForwardPassFrameBuffer;
-	GLShaderProgram* m_skyForwardPassShader;
+	BaseShaderProgram* m_skyForwardPassShaderProgram;
 
 	GLFrameBuffer m_skyDeferPassFrameBuffer;
-	GLShaderProgram* m_skyDeferPassShader;
+	BaseShaderProgram* m_skyDeferPassShaderProgram;
 
 	GLFrameBuffer m_debuggerPassFrameBuffer;
-	GLShaderProgram* m_debuggerPassShader;
+	BaseShaderProgram* m_debuggerPassShaderProgram;
 
 	GLFrameBuffer m_finalPassFrameBuffer;
-	GLShaderProgram* m_finalPassShader;
+	BaseShaderProgram* m_finalPassShaderProgram;
 
 	int m_polygonMode = 0;
 	int m_textureMode = 0;

@@ -1,97 +1,5 @@
 #pragma once
-
-#include "entity/ComponentHeaders.h"
 #include "entity/GLGraphicPrimitive.h"
-
-#include "interface/IAssetSystem.h"
-extern IAssetSystem* g_pAssetSystem;
-
-enum class shaderType { VERTEX, GEOMETRY, FRAGMENT };
-
-class GLShader : public IObject
-{
-public:
-	GLShader();
-	~GLShader();
-
-	void setup() override;
-	void setup(shaderType shaderType, const std::string& shaderFilePath, const std::vector<std::string>& attributions);
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
-
-	const objectStatus& getStatus() const override;
-
-
-	const GLint& getShaderID() const;
-	const std::string& getShaderFilePath() const;
-	const std::vector<std::string>& getAttributions() const;
-
-private:
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-
-	shaderType m_shaderType;
-	std::string m_shaderFilePath;
-	std::vector<std::string> m_attributions;
-	std::string m_shaderCode;
-
-	GLint m_shaderID;
-
-	void parseAttribution();
-};
-
-// @TODO: ugly as ugly itself
-typedef std::vector<std::tuple<shaderType, std::string, std::vector<std::string>>> shaderTuple;
-
-class GLShaderProgram
-{
-public:
-	virtual ~GLShaderProgram();
-
-	void setup();
-	void setup(shaderTuple GLShaders);
-
-	virtual void initialize();
-	void shutdown();
-
-	virtual void update() {};
-
-	virtual void update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap) {};
-	virtual void update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture& threeDTexture) {};
-	virtual void update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) {};
-
-	virtual void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode, int shadingMode) {};
-	virtual void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) {};
-
-	virtual void update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& twoDTextureMap, GLTexture& threeDTexture) {};
-	virtual void update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture& threeDCapturedTexture, GLTexture& threeDConvolutedTexture) {};
-
-
-protected:
-	GLShaderProgram();
-
-	void attachShader(const GLShader* GLShader) const;
-	void setAttributeLocation(int arrtributeLocation, const std::string& arrtributeName) const;
-
-	inline void useProgram() const;
-
-	inline void addUniform(std::string uniform) const;
-	inline GLint getUniformLocation(const std::string &uniformName) const;
-
-	inline void updateUniform(const GLint uniformLocation, bool uniformValue) const;
-	inline void updateUniform(const GLint uniformLocation, int uniformValue) const;
-	inline void updateUniform(const GLint uniformLocation, double uniformValue) const;
-	inline void updateUniform(const GLint uniformLocation, double x, double y) const;
-	inline void updateUniform(const GLint uniformLocation, double x, double y, double z) const;
-	inline void updateUniform(const GLint uniformLocation, double x, double y, double z, double w);
-	inline void updateUniform(const GLint uniformLocation, const mat4& mat) const;
-
-	GLShader m_vertexShader;
-	GLShader m_geometryShader;
-	GLShader m_fragmentShader;
-
-	unsigned int m_program;
-};
 
 class GeometryPassBlinnPhongShaderProgram : public GLShaderProgram
 {
@@ -100,7 +8,7 @@ public:
 	~GeometryPassBlinnPhongShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_normalTexture;
@@ -119,7 +27,7 @@ public:
 	~LightPassBlinnPhongShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode, int shadingMode) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_RT0;
@@ -145,7 +53,7 @@ public:
 	~GeometryPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_normalTexture;
@@ -171,7 +79,7 @@ public:
 	~LightPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, int textureMode, int shadingMode) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_geometryPassRT0;
@@ -202,7 +110,7 @@ public:
 	~EnvironmentCapturePassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& twoDTextureMap, GLTexture& threeDTexture);
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_equirectangularMap;
@@ -218,7 +126,7 @@ public:
 	~EnvironmentConvolutionPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture& threeDCapturedTexture, GLTexture& threeDConvolutedTexture);
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_capturedCubeMap;
@@ -234,7 +142,7 @@ public:
 	~EnvironmentPreFilterPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture& threeDCapturedTexture, GLTexture& threeDPreFiltedTexture);
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_capturedCubeMap;
@@ -251,14 +159,9 @@ public:
 	EnvironmentBRDFLUTPassPBSShaderProgram() {};
 	~EnvironmentBRDFLUTPassPBSShaderProgram() {};
 
-	static EnvironmentBRDFLUTPassPBSShaderProgram& getInstance()
-	{
-		static EnvironmentBRDFLUTPassPBSShaderProgram instance;
-		return instance;
-	}
 
 	void initialize() override;
-	void update();
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 };
 
 class SkyForwardPassPBSShaderProgram : public GLShaderProgram
@@ -267,14 +170,8 @@ public:
 	SkyForwardPassPBSShaderProgram() {};
 	~SkyForwardPassPBSShaderProgram() {};
 
-	static SkyForwardPassPBSShaderProgram& getInstance()
-	{
-		static SkyForwardPassPBSShaderProgram instance;
-		return instance;
-	}
-
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, GLTexture& threeDTexture);
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_skybox;
@@ -289,14 +186,8 @@ public:
 	DebuggerShaderProgram() {};
 	~DebuggerShaderProgram() {};
 
-	static DebuggerShaderProgram& getInstance()
-	{
-		static DebuggerShaderProgram instance;
-		return instance;
-	}
-
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_normalTexture;
@@ -313,14 +204,8 @@ public:
 	SkyDeferPassPBSShaderProgram() {};
 	~SkyDeferPassPBSShaderProgram() {};
 
-	static SkyDeferPassPBSShaderProgram& getInstance()
-	{
-		static SkyDeferPassPBSShaderProgram instance;
-		return instance;
-	}
-
 	void initialize() override;
-	void update();
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_lightPassRT0;
@@ -334,14 +219,8 @@ public:
 	FinalPassShaderProgram() {};
 	~FinalPassShaderProgram() {};
 
-	static FinalPassShaderProgram& getInstance()
-	{
-		static FinalPassShaderProgram instance;
-		return instance;
-	}
-
 	void initialize() override;
-	void update() override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_skyDeferPassRT0;
@@ -353,14 +232,8 @@ public:
 	BillboardPassShaderProgram() {};
 	~BillboardPassShaderProgram() {};
 
-	static BillboardPassShaderProgram& getInstance()
-	{
-		static BillboardPassShaderProgram instance;
-		return instance;
-	}
-
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, GLMesh>& meshMap, std::unordered_map<EntityID, GLTexture>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
 	GLint m_uni_texture;

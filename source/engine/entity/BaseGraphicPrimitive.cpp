@@ -199,6 +199,83 @@ textureID BaseTexture::getTextureID()
 	return m_textureID;
 }
 
+int BaseTexture::getTextureWidth() const
+{
+	return m_textureWidth;
+}
+
+int BaseTexture::getTextureHeight() const
+{
+	return m_textureHeight;
+}
+
+void BaseShader::setup()
+{
+}
+
+void BaseShader::setup(shaderType shaderType, const std::string& shaderFilePath, const std::vector<std::string>& attributions)
+{
+	m_shaderType = shaderType;
+	m_shaderFilePath = shaderFilePath;
+	m_attributions = attributions;
+
+	m_objectStatus = objectStatus::ALIVE;
+}
+
+const objectStatus & BaseShader::getStatus() const
+{
+	return m_objectStatus;
+}
+
+const std::string & BaseShader::getShaderFilePath() const
+{
+	return m_shaderFilePath;
+}
+
+const std::vector<std::string> & BaseShader::getAttributions() const
+{
+	return m_attributions;
+}
+
+void BaseShader::parseAttribution()
+{
+}
+
+void BaseShaderProgram::setup()
+{
+}
+
+void BaseShaderProgram::setup(shaderTuple GLShaders)
+{
+	for (auto& i : GLShaders)
+	{
+		if (std::get<0>(i) == shaderType::VERTEX)
+		{
+			m_vertexShader->setup(std::get<0>(i), std::get<1>(i), std::get<2>(i));
+		}
+		else if (std::get<0>(i) == shaderType::GEOMETRY)
+		{
+			m_geometryShader->setup(std::get<0>(i), std::get<1>(i), std::get<2>(i));
+		}
+		else if (std::get<0>(i) == shaderType::FRAGMENT)
+		{
+			m_fragmentShader->setup(std::get<0>(i), std::get<1>(i), std::get<2>(i));
+		}
+	}
+
+	m_objectStatus = objectStatus::ALIVE;
+}
+
+void BaseShaderProgram::update()
+{
+	g_pLogSystem->printLog("BaseShaderProgram: Warning: use the update() with parameter!");
+}
+
+const objectStatus & BaseShaderProgram::getStatus() const
+{
+	return m_objectStatus;
+}
+
 void BaseFrameBuffer::setup()
 {
 }
@@ -216,29 +293,23 @@ const objectStatus & BaseFrameBuffer::getStatus() const
 	return m_objectStatus;
 }
 
-void BaseRenderBuffer::setup()
-{
-}
-
-void BaseRenderBuffer::setup(vec2 renderBufferStorageResolution, renderBufferType renderBufferType)
-{
-	m_renderBufferStorageResolution = renderBufferStorageResolution;
-	m_renderBufferType = renderBufferType;
-}
-
-const objectStatus & BaseRenderBuffer::getStatus() const
-{
-	return m_objectStatus;
-}
-
 void BaseFrameBufferWIP::setup()
 {
 }
 
-void BaseFrameBufferWIP::setup(frameBufferType frameBufferType, const std::vector<textureID>& renderTargetTextureID)
+void BaseFrameBufferWIP::setup(frameBufferType frameBufferType, renderBufferType renderBufferType, const std::vector<vec2>& renderBufferStorageSize, const std::vector<BaseTexture*>& renderTargetTextures, const std::vector<BaseShaderProgram*>& shaderPrograms, BaseFrameBufferWIP* previousBaseFrameBuffer)
 {
 	m_frameBufferType = frameBufferType;
-	m_renderTargetTextureID = renderTargetTextureID;
+	m_renderBufferType = renderBufferType;
+	m_renderBufferStorageSize = renderBufferStorageSize;
+	m_renderTargetTextures = renderTargetTextures;
+	m_shaderPrograms = shaderPrograms;
+	m_previousBaseFrameBuffer = previousBaseFrameBuffer;
+}
+
+const unsigned int BaseFrameBufferWIP::getRenderTargetNumber() const
+{
+	return m_renderTargetTextures.size();
 }
 
 const objectStatus & BaseFrameBufferWIP::getStatus() const

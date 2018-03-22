@@ -1,19 +1,16 @@
 #pragma once
 #include "interface/IObject.hpp"
 #include "innoMath.h"
+#include "entity/ComponentHeaders.h""
+#include "interface/IMemorySystem.h"
+#include "interface/ILogSystem.h"
+#include "interface/IAssetSystem.h"
 
-enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
-enum class meshType { TWO_DIMENSION, THREE_DIMENSION };
-enum class meshShapeType { QUAD, CUBE, SPHERE, CUSTOM };
-enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
-enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, CUBEMAP_HDR, EQUIRETANGULAR, LUT };
-enum class textureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8 };
-enum class texturePixelDataFormat { RED, RG, RGB, RGBA };
-enum class texturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, FLOAT };
-enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
-enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
-enum class frameBufferType { FORWARD, DEFER, SHADOWMAP, CUBEMAP };
-enum class renderBufferType { DEPTH, STENCIL, DEPTH_AND_STENCIL };
+#define USE_OPENGL
+
+extern IMemorySystem* g_pMemorySystem;
+extern ILogSystem* g_pLogSystem;
+extern IAssetSystem* g_pAssetSystem;
 
 class IMeshRawData
 {
@@ -94,6 +91,8 @@ public:
 	virtual void updateFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel) = 0;
 	const objectStatus& getStatus() const override;
 	textureID getTextureID();
+	int getTextureWidth() const;
+	int getTextureHeight() const;
 
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
@@ -110,20 +109,50 @@ protected:
 	std::vector<void *> m_textureData;
 };
 
-class BaseRenderBuffer : public IObject
+class BaseShader : public IObject
 {
 public:
-	BaseRenderBuffer() {};
-	virtual ~BaseRenderBuffer() {};
+	BaseShader() {};
+	virtual ~BaseShader() {};
 
 	void setup() override;
-	void setup(vec2 renderBufferStorageResolution, renderBufferType renderBufferType);
+	void setup(shaderType shaderType, const std::string& shaderFilePath, const std::vector<std::string>& attributions);
+
+	const objectStatus& getStatus() const override;
+
+	const std::string& getShaderFilePath() const;
+	const std::vector<std::string>& getAttributions() const;
+
+protected:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+
+	shaderType m_shaderType;
+	std::string m_shaderFilePath;
+	std::vector<std::string> m_attributions;
+	std::string m_shaderCode;
+
+	void parseAttribution();
+};
+
+class BaseShaderProgram : public IObject
+{
+public:
+	BaseShaderProgram() {};
+	virtual ~BaseShaderProgram() {};
+
+	void setup() override;
+	void setup(shaderTuple BaseShaders);
+	void update() override;
+	virtual void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) = 0;
+	
 	const objectStatus& getStatus() const override;
 
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-	vec2 m_renderBufferStorageResolution;
-	renderBufferType m_renderBufferType = renderBufferType::DEPTH;
+
+	BaseShader* m_vertexShader;
+	BaseShader* m_geometryShader;
+	BaseShader* m_fragmentShader;
 };
 
 class BaseFrameBufferWIP : public IObject
@@ -133,15 +162,20 @@ public:
 	virtual ~BaseFrameBufferWIP() {};
 
 	void setup() override;
-	void setup(frameBufferType frameBufferType, const std::vector<textureID>& renderTargetTextureID);
+	void setup(frameBufferType frameBufferType, renderBufferType renderBufferType, const std::vector<vec2>& renderBufferStorageSize, const std::vector<BaseTexture*>& renderTargetTextures, const std::vector<BaseShaderProgram*>& renderTargetShaderPrograms, BaseFrameBufferWIP* previousBaseFrameBuffer);
+	virtual void activeTexture(int colorAttachmentIndex, int textureIndex, int textureMipMapLevel) = 0;
+	const unsigned int getRenderTargetNumber() const;
 	const objectStatus& getStatus() const override;
 
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	
 	frameBufferType m_frameBufferType = frameBufferType::FORWARD;
-
-	std::vector<BaseRenderBuffer*> m_renderBuffers;
-	std::vector<textureID> m_renderTargetTextureID;
+	renderBufferType m_renderBufferType = renderBufferType::DEPTH;
+	std::vector<vec2> m_renderBufferStorageSize;
+	std::vector<BaseTexture*> m_renderTargetTextures;
+	std::vector<BaseShaderProgram*> m_shaderPrograms;
+	BaseFrameBufferWIP* m_previousBaseFrameBuffer;
 };
 
 class BaseFrameBuffer : public IObject

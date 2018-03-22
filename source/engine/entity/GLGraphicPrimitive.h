@@ -1,8 +1,5 @@
 #pragma once
-#include "interface/ILogSystem.h"
 #include "entity/BaseGraphicPrimitive.h"
-
-extern ILogSystem* g_pLogSystem;
 
 class GLMesh : public BaseMesh
 {
@@ -35,18 +32,54 @@ private:
 	GLuint m_textureID = 0;
 };
 
-class GLRenderBufferWIP : public BaseRenderBuffer
+class GLShader : public BaseShader
 {
 public:
-	GLRenderBufferWIP() {};
-	virtual ~GLRenderBufferWIP() {};
+	GLShader();
+	~GLShader();
 
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
 
+	const GLint & getShaderID() const;
+
 private:
-	GLuint m_RBO;
+	GLint m_shaderID;
+};
+
+
+class GLShaderProgram : public BaseShaderProgram
+{
+public:
+	GLShaderProgram();
+	virtual ~GLShaderProgram();
+
+	void initialize() override;
+	void shutdown() override;
+
+protected:
+	void attachShader(const GLShader* GLShader) const;
+	void setAttributeLocation(int arrtributeLocation, const std::string& arrtributeName) const;
+
+	inline void useProgram() const;
+
+	inline void addUniform(std::string uniform) const;
+	inline GLint getUniformLocation(const std::string &uniformName) const;
+
+	inline void updateUniform(const GLint uniformLocation, bool uniformValue) const;
+	inline void updateUniform(const GLint uniformLocation, int uniformValue) const;
+	inline void updateUniform(const GLint uniformLocation, double uniformValue) const;
+	inline void updateUniform(const GLint uniformLocation, double x, double y) const;
+	inline void updateUniform(const GLint uniformLocation, double x, double y, double z) const;
+	inline void updateUniform(const GLint uniformLocation, double x, double y, double z, double w);
+	inline void updateUniform(const GLint uniformLocation, const mat4& mat) const;
+
+	GLShader m_vertexShader;
+	GLShader m_geometryShader;
+	GLShader m_fragmentShader;
+
+	unsigned int m_program;
 };
 
 class GLFrameBufferWIP : public BaseFrameBufferWIP
@@ -57,11 +90,14 @@ public:
 
 	void initialize() override;
 	void update() override;
-	void activeTexture(int textureLevel, int textureIndex);
+	void activeTexture(int colorAttachmentIndex, int textureIndex, int textureMipMapLevel) override;
 	void shutdown() override;
 
 private:
 	GLuint m_FBO;
+	GLuint m_RBO;
+	GLenum m_internalformat;
+	GLenum m_attachment;
 };
 
 class GLFrameBuffer : public BaseFrameBuffer
