@@ -213,12 +213,9 @@ void BaseShader::setup()
 {
 }
 
-void BaseShader::setup(shaderType shaderType, const std::string& shaderFilePath, const std::vector<std::string>& attributions)
+void BaseShader::setup(shaderData shaderData)
 {
-	m_shaderType = shaderType;
-	m_shaderFilePath = shaderFilePath;
-	m_attributions = attributions;
-
+	m_shaderData = shaderData;
 	m_objectStatus = objectStatus::ALIVE;
 }
 
@@ -227,39 +224,25 @@ const objectStatus & BaseShader::getStatus() const
 	return m_objectStatus;
 }
 
-const std::string & BaseShader::getShaderFilePath() const
-{
-	return m_shaderFilePath;
-}
-
-const std::vector<std::string> & BaseShader::getAttributions() const
-{
-	return m_attributions;
-}
-
-void BaseShader::parseAttribution()
-{
-}
-
 void BaseShaderProgram::setup()
 {
 }
 
-void BaseShaderProgram::setup(shaderTuple GLShaders)
+void BaseShaderProgram::setup(const std::vector<shaderData>& shaderDatas)
 {
-	for (auto& i : GLShaders)
+	for (auto& i : shaderDatas)
 	{
-		if (std::get<0>(i) == shaderType::VERTEX)
+		if (std::get<shaderType>(i) == shaderType::VERTEX)
 		{
-			m_vertexShader->setup(std::get<0>(i), std::get<1>(i), std::get<2>(i));
+			m_vertexShader->setup(i);
 		}
-		else if (std::get<0>(i) == shaderType::GEOMETRY)
+		else if (std::get<shaderType>(i) == shaderType::GEOMETRY)
 		{
-			m_geometryShader->setup(std::get<0>(i), std::get<1>(i), std::get<2>(i));
+			m_geometryShader->setup(i);
 		}
-		else if (std::get<0>(i) == shaderType::FRAGMENT)
+		else if (std::get<shaderType>(i) == shaderType::FRAGMENT)
 		{
-			m_fragmentShader->setup(std::get<0>(i), std::get<1>(i), std::get<2>(i));
+			m_fragmentShader->setup(i);
 		}
 	}
 
@@ -297,14 +280,13 @@ void BaseFrameBufferWIP::setup()
 {
 }
 
-void BaseFrameBufferWIP::setup(frameBufferType frameBufferType, renderBufferType renderBufferType, const std::vector<vec2>& renderBufferStorageSize, const std::vector<BaseTexture*>& renderTargetTextures, const std::vector<BaseShaderProgram*>& shaderPrograms, BaseFrameBufferWIP* previousBaseFrameBuffer)
+void BaseFrameBufferWIP::setup(frameBufferType frameBufferType, renderBufferType renderBufferType, const std::vector<vec2>& renderBufferStorageSize, const std::vector<BaseTexture*>& renderTargetTextures, const std::vector<BaseShaderProgram*>& shaderPrograms)
 {
 	m_frameBufferType = frameBufferType;
 	m_renderBufferType = renderBufferType;
 	m_renderBufferStorageSize = renderBufferStorageSize;
 	m_renderTargetTextures = renderTargetTextures;
 	m_shaderPrograms = shaderPrograms;
-	m_previousBaseFrameBuffer = previousBaseFrameBuffer;
 }
 
 const unsigned int BaseFrameBufferWIP::getRenderTargetNumber() const

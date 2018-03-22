@@ -296,9 +296,6 @@ GLShader::~GLShader()
 
 void GLShader::initialize()
 {
-	// @TODO: shouldn't we try to avoid to use this kind of ugly coupling impl???
-	m_shaderCode = g_pAssetSystem->loadShader(m_shaderFilePath);
-
 	int l_glShaderType = 0;
 
 	switch (m_shaderType)

@@ -162,17 +162,33 @@ private:
 };
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
+// mesh custom types
 enum class meshType { TWO_DIMENSION, THREE_DIMENSION };
 enum class meshShapeType { QUAD, CUBE, SPHERE, CUSTOM };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
+// texture custom types
 enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, ENVIRONMENT_CAPTURE, ENVIRONMENT_CONVOLUTION, ENVIRONMENT_PREFILTER, EQUIRETANGULAR, RENDER_BUFFER_SAMPLER };
 enum class textureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8 };
 enum class texturePixelDataFormat { RED, RG, RGB, RGBA };
 enum class texturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, FLOAT };
 enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
 enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
+// shader custom types
 enum class shaderType { VERTEX, GEOMETRY, FRAGMENT };
-// @TODO: ugly as ugly itself
-typedef std::vector<std::tuple<shaderType, std::string, std::vector<std::string>>> shaderTuple;
+using shaderFilePath = std::string;
+using shaderCodeContent = std::string;
+using shaderAttributions = std::vector<std::string>;
+using shaderData = std::tuple<shaderType, shaderFilePath, shaderCodeContent, shaderAttributions>;
+// frame and render buffer custom types
 enum class frameBufferType { FORWARD, DEFER, SHADOWMAP, CUBEMAP };
 enum class renderBufferType { DEPTH, STENCIL, DEPTH_AND_STENCIL };
+
+using textureID = unsigned long int;
+using meshID = unsigned long int;
+using texturePair = std::pair<textureType, textureID>;
+using textureMap = std::unordered_map<textureType, textureID>;
+using modelPair = std::pair<meshID, textureMap>;
+using modelMap = std::unordered_map<meshID, textureMap>;
+
+using textureFileNamePair = std::pair<textureType, std::string>;
+using textureFileNameMap = std::unordered_map<textureType, std::string>;

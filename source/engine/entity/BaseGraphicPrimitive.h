@@ -1,16 +1,14 @@
 #pragma once
 #include "interface/IObject.hpp"
 #include "innoMath.h"
-#include "entity/ComponentHeaders.h""
+#include "entity/ComponentHeaders.h"
 #include "interface/IMemorySystem.h"
 #include "interface/ILogSystem.h"
-#include "interface/IAssetSystem.h"
 
 #define USE_OPENGL
 
 extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;
-extern IAssetSystem* g_pAssetSystem;
 
 class IMeshRawData
 {
@@ -33,19 +31,6 @@ public:
 	IScene() {};
 	virtual ~IScene() {};
 };
-
-typedef unsigned long int textureID;
-typedef unsigned long int meshID;
-typedef std::pair<textureType, textureID> texturePair;
-typedef std::unordered_map<textureType, textureID> textureMap;
-typedef std::pair<meshID, textureMap> modelPair;
-typedef std::unordered_map<meshID, textureMap> modelMap;
-
-typedef std::pair<textureType, std::string> textureFileNamePair;
-typedef std::unordered_map<textureType, std::string> textureFileNameMap;
-typedef std::pair<IMeshRawData*, textureFileNameMap> modelPointerPair;
-typedef std::unordered_map<IMeshRawData*, textureFileNameMap> modelPointerMap;
-
 
 class BaseMesh : public IObject
 {
@@ -116,22 +101,16 @@ public:
 	virtual ~BaseShader() {};
 
 	void setup() override;
-	void setup(shaderType shaderType, const std::string& shaderFilePath, const std::vector<std::string>& attributions);
+	void setup(shaderData shaderData);
 
 	const objectStatus& getStatus() const override;
 
-	const std::string& getShaderFilePath() const;
 	const std::vector<std::string>& getAttributions() const;
 
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	shaderType m_shaderType;
-	std::string m_shaderFilePath;
-	std::vector<std::string> m_attributions;
-	std::string m_shaderCode;
-
-	void parseAttribution();
+	shaderData m_shaderData;
 };
 
 class BaseShaderProgram : public IObject
@@ -141,7 +120,7 @@ public:
 	virtual ~BaseShaderProgram() {};
 
 	void setup() override;
-	void setup(shaderTuple BaseShaders);
+	void setup(const std::vector<shaderData>& shaderDatas);
 	void update() override;
 	virtual void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) = 0;
 	
@@ -162,7 +141,7 @@ public:
 	virtual ~BaseFrameBufferWIP() {};
 
 	void setup() override;
-	void setup(frameBufferType frameBufferType, renderBufferType renderBufferType, const std::vector<vec2>& renderBufferStorageSize, const std::vector<BaseTexture*>& renderTargetTextures, const std::vector<BaseShaderProgram*>& renderTargetShaderPrograms, BaseFrameBufferWIP* previousBaseFrameBuffer);
+	void setup(frameBufferType frameBufferType, renderBufferType renderBufferType, const std::vector<vec2>& renderBufferStorageSize, const std::vector<BaseTexture*>& renderTargetTextures, const std::vector<BaseShaderProgram*>& renderTargetShaderPrograms);
 	virtual void activeTexture(int colorAttachmentIndex, int textureIndex, int textureMipMapLevel) = 0;
 	const unsigned int getRenderTargetNumber() const;
 	const objectStatus& getStatus() const override;
@@ -175,7 +154,6 @@ protected:
 	std::vector<vec2> m_renderBufferStorageSize;
 	std::vector<BaseTexture*> m_renderTargetTextures;
 	std::vector<BaseShaderProgram*> m_shaderPrograms;
-	BaseFrameBufferWIP* m_previousBaseFrameBuffer;
 };
 
 class BaseFrameBuffer : public IObject
