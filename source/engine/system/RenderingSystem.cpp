@@ -91,6 +91,7 @@ void RenderingSystem::initialize()
 	m_keyButtonMap.find(GLFW_KEY_E)->second.m_keyPressType = keyPressType::ONCE;
 	addKeyboardInputCallback(GLFW_KEY_R, &f_changeShadingMode);
 	m_keyButtonMap.find(GLFW_KEY_R)->second.m_keyPressType = keyPressType::ONCE;
+
 	//initialize rendering
 	glEnable(GL_TEXTURE_2D);
 	initializeGeometryPass();
@@ -493,7 +494,6 @@ void RenderingSystem::loadTexture(const std::vector<std::string> &fileName, text
 			assignLoadedTexture(textureAssignType::OVERWRITE, texturePair(textureType, l_textureID), visibleComponent);
 		}
 	}
-
 }
 
 void RenderingSystem::loadModel(const std::string & fileName, VisibleComponent & visibleComponent)
@@ -540,34 +540,6 @@ void RenderingSystem::render()
 	}
 }
 
-void RenderingSystem::initializeGeometryPass()
-{
-	// initialize shader
-	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
-	auto l_renderTargetTextures = std::vector<BaseTexture*>{ };
-	auto l_shaderPrograms = std::vector<BaseShaderProgram*>{ m_geometryPassShaderProgram };
-	m_geometryPassFrameBufferWIP = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_geometryPassFrameBufferWIP->setup(frameBufferType::FORWARD, renderBufferType::DEPTH_AND_STENCIL, l_renderBufferStorageSizes, l_renderTargetTextures, l_shaderPrograms, nullptr);
-	m_geometryPassFrameBufferWIP->initialize();
-
-
-	m_geometryPassShaderProgram->initialize();
-	m_geometryPassFrameBuffer.setup(m_screenResolution, frameBufferType::FORWARD, renderBufferType::DEPTH_AND_STENCIL, 4);
-	m_geometryPassFrameBuffer.initialize();
-}
-
-void RenderingSystem::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
-{
-	m_geometryPassFrameBuffer.update();
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_DEPTH_CLAMP);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL - m_polygonMode);
-	m_geometryPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-}
-
 void RenderingSystem::initializeBackgroundPass()
 {
 	// environment capture pass
@@ -585,6 +557,8 @@ void RenderingSystem::initializeBackgroundPass()
 	auto l_environmentPreFilterPassTextureData = this->getTexture(textureType::ENVIRONMENT_PREFILTER, m_environmentPreFilterPassTextureID);
 	l_environmentPreFilterPassTextureData->setup(textureType::ENVIRONMENT_PREFILTER, textureColorComponentsFormat::RGB16F, texturePixelDataFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR_MIPMAP_LINEAR, textureFilterMethod::LINEAR, 128, 128, texturePixelDataType::FLOAT, std::vector<void*>{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr});
 
+	//assign the textures to Skybox visibleComponent
+	// @TODO: multi CaptureRRRRRRRRR
 	for (auto i : g_pGameSystem->getVisibleComponents())
 	{
 		if (i->m_visiblilityType == visiblilityType::SKYBOX)
@@ -596,7 +570,7 @@ void RenderingSystem::initializeBackgroundPass()
 		}
 	}
 
-	// environment brdf LUT pass
+	// environment BRDF LUT pass
 	m_environmentBRDFLUTTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
 	auto l_environmentBRDFLUTTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_environmentBRDFLUTTextureID);
 	l_environmentBRDFLUTTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RG16F, texturePixelDataFormat::RG, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, 512, 512, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
@@ -629,10 +603,6 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 {
 	if (m_shouldUpdateEnvironmentMap)
 	{
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_CULL_FACE);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		// draw environment map capture pass
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
 		glViewport(0, 0, 2048, 2048);
@@ -652,10 +622,10 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 		// draw environment map BRDF LUT pass
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
 		glViewport(0, 0, 512, 512);
+		
 		this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_environmentBRDFLUTTextureID)->updateFramebuffer(0, 0, 0);
 
-		m_environmentBRDFLUTPassShaderProgram->update();
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		m_environmentBRDFLUTPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 		// draw environment map BRDF LUT rectangle
 		this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
@@ -667,28 +637,17 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 	}
 
 	// draw background forward pass
-
 	m_skyForwardPassFrameBuffer.update();
-	glDepthFunc(GL_LEQUAL);
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CW);
-	glCullFace(GL_BACK);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	m_skyForwardPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
-	glDepthFunc(GL_LESS);
 
 	// draw debugger pass
 	m_debuggerPassFrameBuffer.update();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	
 	m_debuggerPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw background defer pass
 	m_skyDeferPassFrameBuffer.update();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
 
 	m_lightPassFrameBuffer.activeTexture(0, 0);
 	m_skyForwardPassFrameBuffer.activeTexture(1, 0);
@@ -700,10 +659,47 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 	this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
 }
 
+void RenderingSystem::initializeGeometryPass()
+{
+	// initialize shader
+	auto l_vertexShaderFilePath = "GL3.3/geometryPassPBSVertex.sf";
+	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position" , "in_TexCoord",  "in_Normal" });
+	auto l_fragmentShaderFilePath = "GL3.3/geometryPassPBSFragment.sf";
+	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
+	m_geometryPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
+	m_geometryPassShaderProgram->initialize();
+
+	// initialize frame buffer
+	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
+	// @TODO: spawn textures
+	auto l_renderTargetTextures = std::vector<BaseTexture*>{ };
+	auto l_shaderPrograms = std::vector<BaseShaderProgram*>{ m_geometryPassShaderProgram };
+
+	m_geometryPassFrameBufferWIP = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
+	m_geometryPassFrameBufferWIP->setup(frameBufferType::FORWARD, renderBufferType::DEPTH_AND_STENCIL, l_renderBufferStorageSizes, l_renderTargetTextures, l_shaderPrograms, nullptr);
+	m_geometryPassFrameBufferWIP->initialize();
+}
+
+void RenderingSystem::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	m_geometryPassFrameBufferWIP->update();
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL - m_polygonMode);
+	m_geometryPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
 void RenderingSystem::initializeLightPass()
 {
 	// initialize shader
+	auto l_vertexShaderFilePath = "GL3.3/lightPassPBSVertex.sf";
+	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position" , "in_TexCoord" });
+	auto l_fragmentShaderFilePath = "GL3.3/lightPassPBSFragment.sf";
+	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
+	m_lightPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
 	m_lightPassShaderProgram->initialize();
+
+	// initialize frame buffer
 	m_lightPassFrameBuffer.setup(m_screenResolution, frameBufferType::DEFER, renderBufferType::DEPTH_AND_STENCIL, 1);
 	m_lightPassFrameBuffer.initialize();
 }
@@ -711,9 +707,6 @@ void RenderingSystem::initializeLightPass()
 void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	m_lightPassFrameBuffer.update();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
 
 	m_geometryPassFrameBuffer.activeTexture(0, 0);
 	m_geometryPassFrameBuffer.activeTexture(1, 1);
@@ -732,7 +725,12 @@ void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraCompo
 
 void RenderingSystem::initializeFinalPass()
 {
-	// initialize final Pass shader
+	// initialize shader
+	auto l_vertexShaderFilePath = "GL3.3/finalPassVertex.sf";
+	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position" , "in_TexCoord" });
+	auto l_fragmentShaderFilePath = "GL3.3/finalPassFragment.sf";
+	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
+	m_finalPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
 	m_finalPassShaderProgram->initialize();
 }
 
@@ -741,9 +739,6 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	// draw final pass
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
 
 	m_skyDeferPassFrameBuffer.activeTexture(0, 0);
 

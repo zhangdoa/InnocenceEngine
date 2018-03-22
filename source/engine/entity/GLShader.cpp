@@ -2,7 +2,6 @@
 
 void BillboardPassShaderProgram::initialize()
 {
-	this->setup({std::make_tuple(shaderType::VERTEX, std::string("GL3.3/billboardPassVertex.sf"), std::vector<std::string>{ "in_Position" , "in_TexCoord" }), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/billboardPassFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 
@@ -69,11 +68,11 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 			}
 		}
 	}
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void GeometryPassBlinnPhongShaderProgram::initialize()
 {
-	this->setup({ std::make_tuple(shaderType::VERTEX, std::string("GL3.3/geometryPassBlinnPhongVertex.sf"), std::vector<std::string>{ "in_Position" , "in_TexCoord",  "in_Normal"}), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/geometryPassBlinnPhongFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 
@@ -145,11 +144,11 @@ void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& 
 			}
 		}
 	}
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void LightPassBlinnPhongShaderProgram::initialize()
 {
-	this->setup({ std::make_tuple(shaderType::VERTEX, std::string("GL3.3/lightPassBlinnPhongVertex.sf"), std::vector<std::string>{ "in_Position" , "in_TexCoord"}), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/lightPassBlinnPhongFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 
@@ -213,11 +212,11 @@ void LightPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cam
 			updateUniform(m_uni_pointLights_color[i + l_pointLightIndexOffset], lightComponents[i]->getColor().x, lightComponents[i]->getColor().y, lightComponents[i]->getColor().z);
 		}
 	}
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void GeometryPassPBSShaderProgram::initialize()
 {
-	this->setup({ std::make_tuple(shaderType::VERTEX, std::string("GL3.3/geometryPassPBSVertex.sf"), std::vector<std::string>{ "in_Position" , "in_TexCoord",  "in_Normal"}), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/geometryPassPBSFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 
@@ -244,6 +243,11 @@ void GeometryPassPBSShaderProgram::initialize()
 
 void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_CLAMP);
+
 	useProgram();
 
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
@@ -313,11 +317,11 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 			}
 		}
 	}
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void LightPassPBSShaderProgram::initialize()
 {
-	this->setup({ std::make_tuple(shaderType::VERTEX, std::string("GL3.3/lightPassPBSVertex.sf"), std::vector<std::string>{ "in_Position" , "in_TexCoord"}), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/lightPassPBSFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 
@@ -348,6 +352,9 @@ void LightPassPBSShaderProgram::initialize()
 
 void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
 	useProgram();
 
 	if (!isPointLightUniformAdded)
@@ -393,6 +400,7 @@ void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComp
 			updateUniform(m_uni_pointLights_color[i + l_pointLightIndexOffset], lightComponents[i]->getColor().x, lightComponents[i]->getColor().y, lightComponents[i]->getColor().z);
 		}
 	}
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void EnvironmentCapturePassPBSShaderProgram::initialize()
@@ -410,6 +418,9 @@ void EnvironmentCapturePassPBSShaderProgram::initialize()
 
 void EnvironmentCapturePassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
 	std::vector<mat4> captureViews =
@@ -455,6 +466,7 @@ void EnvironmentCapturePassPBSShaderProgram::update(std::vector<CameraComponent*
 			}
 		}
 	}
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void EnvironmentConvolutionPassPBSShaderProgram::initialize()
@@ -507,9 +519,9 @@ void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<CameraCompon
 					}
 				}
 			}
-
 		}
 	}
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void EnvironmentPreFilterPassPBSShaderProgram::initialize()
@@ -579,6 +591,7 @@ void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponen
 			}
 		}
 	}
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void EnvironmentBRDFLUTPassPBSShaderProgram::initialize()
@@ -592,6 +605,7 @@ void EnvironmentBRDFLUTPassPBSShaderProgram::update(std::vector<CameraComponent*
 {
 
 	useProgram();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void SkyForwardPassPBSShaderProgram::initialize()
@@ -609,6 +623,11 @@ void SkyForwardPassPBSShaderProgram::initialize()
 
 void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glDepthFunc(GL_LEQUAL);
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CW);
+	glCullFace(GL_BACK);
+
 	useProgram();
 
 	// TODO: fix "looking outside" problem// almost there
@@ -633,6 +652,8 @@ void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& camer
 			}
 		}
 	}
+	glDepthFunc(GL_LESS);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void DebuggerShaderProgram::initialize()
@@ -693,6 +714,7 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 			}
 		}
 	}
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 
@@ -712,13 +734,16 @@ void SkyDeferPassPBSShaderProgram::initialize()
 
 void SkyDeferPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
 	useProgram();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 
 void FinalPassShaderProgram::initialize()
 {
-	this->setup({ std::make_tuple(shaderType::VERTEX, std::string("GL3.3/finalPassVertex.sf"), std::vector<std::string>{ "in_Position",  "in_TexCoord"}), std::make_tuple(shaderType::FRAGMENT, std::string("GL3.3/finalPassFragment.sf"), std::vector<std::string>{}) });
 	GLShaderProgram::initialize();
 	useProgram();
 
@@ -728,5 +753,10 @@ void FinalPassShaderProgram::initialize()
 
 void FinalPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
 	useProgram();
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

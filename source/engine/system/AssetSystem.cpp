@@ -21,7 +21,7 @@ void AssetSystem::shutdown()
 std::string AssetSystem::loadShader(const std::string & fileName) const
 {
 	std::ifstream file;
-	file.open(("../res/shaders/" + fileName).c_str());
+	file.open((m_shaderRelativePath + fileName).c_str());
 	std::stringstream shaderStream;
 	std::string output;
 
