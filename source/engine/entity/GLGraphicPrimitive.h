@@ -90,8 +90,8 @@ public:
 	virtual ~GLFrameBufferWIP() {};
 
 	void initialize() override;
-	void update() override;
-	void activeTexture(int colorAttachmentIndex, int textureIndex, int textureMipMapLevel) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void activeTexture(int colorAttachmentIndex, int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer, int textureMipMapLevel) override;
 	void shutdown() override;
 
 private:

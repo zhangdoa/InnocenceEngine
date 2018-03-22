@@ -104,8 +104,7 @@ public:
 	void setup(shaderData shaderData);
 
 	const objectStatus& getStatus() const override;
-
-	const std::vector<std::string>& getAttributions() const;
+	const shaderData& getShaderData() const;
 
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
@@ -142,7 +141,9 @@ public:
 
 	void setup() override;
 	void setup(frameBufferType frameBufferType, renderBufferType renderBufferType, const std::vector<vec2>& renderBufferStorageSize, const std::vector<BaseTexture*>& renderTargetTextures, const std::vector<BaseShaderProgram*>& renderTargetShaderPrograms);
-	virtual void activeTexture(int colorAttachmentIndex, int textureIndex, int textureMipMapLevel) = 0;
+	void update() override;
+	virtual void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) = 0;
+	virtual void activeTexture(int colorAttachmentIndex, int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer, int textureMipMapLevel) = 0;
 	const unsigned int getRenderTargetNumber() const;
 	const objectStatus& getStatus() const override;
 

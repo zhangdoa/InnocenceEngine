@@ -224,6 +224,11 @@ const objectStatus & BaseShader::getStatus() const
 	return m_objectStatus;
 }
 
+const shaderData & BaseShader::getShaderData() const
+{
+	return m_shaderData;
+}
+
 void BaseShaderProgram::setup()
 {
 }
@@ -287,6 +292,11 @@ void BaseFrameBufferWIP::setup(frameBufferType frameBufferType, renderBufferType
 	m_renderBufferStorageSize = renderBufferStorageSize;
 	m_renderTargetTextures = renderTargetTextures;
 	m_shaderPrograms = shaderPrograms;
+}
+
+void BaseFrameBufferWIP::update()
+{
+	g_pLogSystem->printLog("BaseFrameBuffer: Warning: use the update() with parameter!");
 }
 
 const unsigned int BaseFrameBufferWIP::getRenderTargetNumber() const
