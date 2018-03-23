@@ -16,7 +16,7 @@ public:
 	void setup() override;
 	void setup(textureType textureType, textureColorComponentsFormat textureColorComponentsFormat, texturePixelDataFormat texturePixelDataFormat, textureWrapMethod textureWrapMethod, textureFilterMethod textureMinFilterMethod, textureFilterMethod textureMagFilterMethod, int textureWidth, int textureHeight, texturePixelDataType texturePixelDataType, const std::vector<void *>& textureData);
 	virtual void update(int textureIndex) = 0;
-	virtual void updateFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel) = 0;
+	virtual void attachToFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel) = 0;
 	const objectStatus& getStatus() const override;
 	textureID getTextureID();
 	int getTextureWidth() const;

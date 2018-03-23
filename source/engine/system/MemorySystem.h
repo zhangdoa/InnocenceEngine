@@ -47,7 +47,7 @@ public:
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	const unsigned long  m_maxPoolSize = 1024 * 1024;
+	const unsigned long  m_maxPoolSize = 1024 * 1024 * 512;
 	static const unsigned char m_minFreeBlockSize = 16;
 	unsigned long  m_totalPoolSize;
 	unsigned long  m_freePoolSize;

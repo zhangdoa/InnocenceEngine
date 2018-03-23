@@ -166,6 +166,7 @@ void BillboardPassShaderProgram::initialize()
 
 void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	useProgram();
 
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
@@ -219,7 +220,6 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 			}
 		}
 	}
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void GeometryPassBlinnPhongShaderProgram::initialize()
@@ -241,8 +241,8 @@ void GeometryPassBlinnPhongShaderProgram::initialize()
 }
 
 void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
-
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	useProgram();
 
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
@@ -295,7 +295,6 @@ void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& 
 			}
 		}
 	}
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void LightPassBlinnPhongShaderProgram::initialize()
@@ -320,6 +319,7 @@ void LightPassBlinnPhongShaderProgram::initialize()
 
 void LightPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	useProgram();
 
 	if (!isPointLightUniformAdded)
@@ -363,7 +363,6 @@ void LightPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cam
 			updateUniform(m_uni_pointLights_color[i + l_pointLightIndexOffset], lightComponents[i]->getColor().x, lightComponents[i]->getColor().y, lightComponents[i]->getColor().z);
 		}
 	}
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void GeometryPassPBSShaderProgram::initialize()
@@ -398,6 +397,7 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL - m_polygonMode);
 
 	useProgram();
 
@@ -468,7 +468,7 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 			}
 		}
 	}
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void LightPassPBSShaderProgram::initialize()
@@ -503,6 +503,7 @@ void LightPassPBSShaderProgram::initialize()
 
 void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
@@ -551,7 +552,6 @@ void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComp
 			updateUniform(m_uni_pointLights_color[i + l_pointLightIndexOffset], lightComponents[i]->getColor().x, lightComponents[i]->getColor().y, lightComponents[i]->getColor().z);
 		}
 	}
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void EnvironmentCapturePassPBSShaderProgram::initialize()
@@ -593,30 +593,25 @@ void EnvironmentCapturePassPBSShaderProgram::update(std::vector<CameraComponent*
 
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
-				// activate equiretangular texture
-				auto l_equiretangularTexture = textureMap.find(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);
-				if (l_equiretangularTexture != textureMap.end())
+				// activate equiretangular texture and remapping equiretangular texture to cubemap
+				auto l_equiretangularTexture = textureMap.find(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);			
+				auto l_environmentCaptureTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CAPTURE)->second);
+				if (l_equiretangularTexture != textureMap.end() && l_environmentCaptureTexture != textureMap.end())
 				{
 					l_equiretangularTexture->second->update(0);
-				}			
-				// remapping equiretangular texture to cubemap
-				auto l_environmentCaptureTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CAPTURE)->second);
-				if (l_environmentCaptureTexture != textureMap.end())
-				{
 					for (unsigned int i = 0; i < 6; ++i)
 					{
 						updateUniform(m_uni_r, captureViews[i]);
-						l_environmentCaptureTexture->second->updateFramebuffer(0, i, 0);
+						l_environmentCaptureTexture->second->attachToFramebuffer(0, i, 0);
 						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 						meshMap.find(l_graphicData.first)->second->update();
-						l_environmentCaptureTexture->second->update(0);
-						glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 					}
+					l_environmentCaptureTexture->second->update(0);
+					glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 				}
 			}
 		}
 	}
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void EnvironmentConvolutionPassPBSShaderProgram::initialize()
@@ -655,14 +650,16 @@ void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<CameraCompon
 		{
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
+				auto l_environmentCaptureTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CAPTURE)->second);
 				auto l_environmentConvolutionTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CONVOLUTION)->second);
-				if (l_environmentConvolutionTexture != textureMap.end())
+				if (l_environmentCaptureTexture != textureMap.end() && l_environmentConvolutionTexture != textureMap.end())
 				{
-					l_environmentConvolutionTexture->second->update(0);
+					// @TODO: it should be update(0)?
+					l_environmentCaptureTexture->second->update(1);
 					for (unsigned int i = 0; i < 6; ++i)
 					{
 						updateUniform(m_uni_r, captureViews[i]);
-						l_environmentConvolutionTexture->second->updateFramebuffer(0, i, 0);
+						l_environmentConvolutionTexture->second->attachToFramebuffer(0, i, 0);
 						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 						meshMap.find(l_graphicData.first)->second->update();
 					}
@@ -670,7 +667,6 @@ void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<CameraCompon
 			}
 		}
 	}
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void EnvironmentPreFilterPassPBSShaderProgram::initialize()
@@ -711,10 +707,12 @@ void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponen
 		{
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
-				auto l_environmentPrefilterTexture = textureMap.find(l_graphicData.second.find(textureType::RENDER_BUFFER_SAMPLER)->second);
-				if (l_environmentPrefilterTexture != textureMap.end())
+				auto l_environmentCaptureTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CAPTURE)->second);
+				auto l_environmentPrefilterTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_PREFILTER)->second);
+				if (l_environmentCaptureTexture != textureMap.end() && l_environmentPrefilterTexture != textureMap.end())
 				{
-					l_environmentPrefilterTexture->second->update(0);
+					// @TODO: it should be update(0)?
+					l_environmentCaptureTexture->second->update(2);
 					unsigned int maxMipLevels = 5;
 					for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
 					{
@@ -722,7 +720,7 @@ void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponen
 						unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
 						unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
 
-						glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
+						glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, mipWidth, mipHeight);
 						glViewport(0, 0, mipWidth, mipHeight);
 
 						double roughness = (double)mip / (double)(maxMipLevels - 1);
@@ -730,7 +728,7 @@ void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponen
 						for (unsigned int i = 0; i < 6; ++i)
 						{
 							updateUniform(m_uni_r, captureViews[i]);
-							l_environmentPrefilterTexture->second->updateFramebuffer(0, i, mip);
+							l_environmentPrefilterTexture->second->attachToFramebuffer(0, i, mip);
 							glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 							meshMap.find(l_graphicData.first)->second->update();
 						}
@@ -739,7 +737,6 @@ void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponen
 			}
 		}
 	}
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void EnvironmentBRDFLUTPassPBSShaderProgram::initialize()
@@ -750,23 +747,23 @@ void EnvironmentBRDFLUTPassPBSShaderProgram::initialize()
 
 void EnvironmentBRDFLUTPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	useProgram();
+
 	for (auto& l_visibleComponent : visibleComponents)
 	{
 		if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
 		{
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
-				auto l_environmentPrefilterTexture = textureMap.find(l_graphicData.second.find(textureType::RENDER_BUFFER_SAMPLER)->second);
-				if (l_environmentPrefilterTexture != textureMap.end())
+				auto l_environmentBRDFLUTTexture = textureMap.find(l_graphicData.second.find(textureType::RENDER_BUFFER_SAMPLER)->second);
+				if (l_environmentBRDFLUTTexture != textureMap.end())
 				{
-					l_environmentPrefilterTexture->second->updateFramebuffer(0, 0, 0);
+					l_environmentBRDFLUTTexture->second->attachToFramebuffer(0, 0, 0);
 				}
 			}
 		}
 	}
-
-	useProgram();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void SkyForwardPassPBSShaderProgram::initialize()
@@ -813,7 +810,6 @@ void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& camer
 		}
 	}
 	glDepthFunc(GL_LESS);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void DebuggerShaderProgram::initialize()
@@ -870,7 +866,6 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 			}
 		}
 	}
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 
@@ -893,7 +888,6 @@ void SkyDeferPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 	glDisable(GL_CULL_FACE);
 
 	useProgram();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 
@@ -912,6 +906,4 @@ void FinalPassShaderProgram::update(std::vector<CameraComponent*>& cameraCompone
 	glDisable(GL_CULL_FACE);
 
 	useProgram();
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

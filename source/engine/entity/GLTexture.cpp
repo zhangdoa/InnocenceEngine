@@ -74,7 +74,6 @@ void GLTexture::initialize()
 		{
 			if (m_texturePixelDataFormat == texturePixelDataFormat::RGB)
 			{
-
 				l_internalFormat = GL_SRGB;
 			}
 			else if (m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
@@ -147,14 +146,16 @@ void GLTexture::initialize()
 		// should generate mipmap or not
 		if (m_textureMinFilterMethod == textureFilterMethod::LINEAR_MIPMAP_LINEAR)
 		{
-			if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::ENVIRONMENT_CAPTURE || m_textureType == textureType::ENVIRONMENT_CONVOLUTION || m_textureType == textureType::ENVIRONMENT_PREFILTER)
+			// @TODO: generalization...
+			if (m_textureType == textureType::ENVIRONMENT_PREFILTER)
 			{
 				glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 			}
-			else
+			else if (m_textureType != textureType::CUBEMAP || m_textureType != textureType::ENVIRONMENT_CAPTURE || m_textureType != textureType::ENVIRONMENT_CONVOLUTION || m_textureType != textureType::RENDER_BUFFER_SAMPLER)
 			{
 				glGenerateMipmap(GL_TEXTURE_2D);
 			}
+			
 		}
 
 		m_objectStatus = objectStatus::ALIVE;
@@ -186,14 +187,17 @@ void GLTexture::shutdown()
 	m_objectStatus = objectStatus::SHUTDOWN;
 }
 
-void GLTexture::updateFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel)
+void GLTexture::attachToFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel)
 {
+
 	if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::ENVIRONMENT_CAPTURE || m_textureType == textureType::ENVIRONMENT_CONVOLUTION || m_textureType == textureType::ENVIRONMENT_PREFILTER)
 	{
+		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, m_textureID, mipLevel);
 	}
 	else
 	{
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, m_textureID, mipLevel);
 	}
 }

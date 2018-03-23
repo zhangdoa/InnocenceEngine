@@ -18,31 +18,39 @@ void GLFrameBuffer::initialize()
 	}
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, m_attachment, GL_RENDERBUFFER, m_RBO);
-
+	glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, (int)m_renderTargetTextures[0]->getTextureWidth(), (int)m_renderTargetTextures[0]->getTextureHeight());
+	
 	if (m_renderTargetTextures.size() > 0)
 	{
-		for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); i++)
+		if (m_frameBufferType != frameBufferType::CUBEMAP)
 		{
-			m_renderTargetTextures[i]->initialize();
-			m_renderTargetTextures[i]->updateFramebuffer(i, 0, 0);
+			for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); ++i)
+			{
+				m_renderTargetTextures[i]->initialize();
+				m_renderTargetTextures[i]->attachToFramebuffer(i, 0, 0);
+			}
+			std::vector<unsigned int> colorAttachments;
+			for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); ++i)
+			{
+				colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
+			}
+			glDrawBuffers(colorAttachments.size(), &colorAttachments[0]);
 		}
-		std::vector<unsigned int> attachments;
-		for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); i++)
+		else
 		{
-			attachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
+			for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); ++i)
+			{
+				m_renderTargetTextures[i]->initialize();
+			}
 		}
-
-		glDrawBuffers(attachments.size(), &attachments[0]);
 	}
 	else
 	{
-		std::vector<unsigned int> attachments;
-		attachments.emplace_back(GL_COLOR_ATTACHMENT0);
-		glDrawBuffers(attachments.size(), &attachments[0]);
+		g_pLogSystem->printLog("GLFrameBuffer: Error: No render target textures added!");
+		return;
 	}
 
-
-	for (auto i = (unsigned int)0; i < m_shaderPrograms.size(); i++)
+	for (auto i = (unsigned int)0; i < m_shaderPrograms.size(); ++i)
 	{
 		m_shaderPrograms[i]->initialize();
 	}
@@ -50,7 +58,7 @@ void GLFrameBuffer::initialize()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("Framebuffer is not completed!");
+		g_pLogSystem->printLog("GLFrameBuffer: Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -61,23 +69,23 @@ void GLFrameBuffer::update(std::vector<CameraComponent*>& cameraComponents, std:
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
-
-	for (auto i = (unsigned int)0; i < m_shaderPrograms.size(); i++)
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	for (auto i = (unsigned int)0; i < m_shaderPrograms.size(); ++i)
 	{
-		glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, m_renderBufferStorageSize[i].x, m_renderBufferStorageSize[i].y);
-		glViewport(0, 0, m_renderBufferStorageSize[i].x, m_renderBufferStorageSize[i].y);
+		glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, (int)m_renderBufferStorageSize[i].x, (int)m_renderBufferStorageSize[i].y);
+		glViewport(0, 0, (int)m_renderBufferStorageSize[i].x, (int)m_renderBufferStorageSize[i].y);
 		m_shaderPrograms[i]->update(cameraComponents, lightComponents, visibleComponents, meshMap, textureMap);
 	}
 }
 
-void GLFrameBuffer::activeTexture(int colorAttachmentIndex, int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer, int textureMipMapLevel)
+void GLFrameBuffer::activeTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer)
 {
 	m_renderTargetTextures[textureIndexInOwnerFrameBuffer]->update(textureIndexInUserFrameBuffer);
 }
 
 void GLFrameBuffer::shutdown()
 {
-	for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); i++)
+	for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); ++i)
 	{
 		m_renderTargetTextures[i]->shutdown();
 	}
