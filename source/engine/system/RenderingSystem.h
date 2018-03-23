@@ -142,8 +142,9 @@ private:
 	textureID m_environmentConvolutionPassTextureID;
 	textureID m_environmentPreFilterPassTextureID;
 	textureID m_environmentBRDFLUTTextureID;
-
-
+	
+	GLuint m_environmentPassFBO;
+	GLuint m_environmentPassRBO;
 
 	BaseFrameBuffer* m_skyForwardPassFrameBuffer;
 	BaseShaderProgram* m_skyForwardPassShaderProgram;

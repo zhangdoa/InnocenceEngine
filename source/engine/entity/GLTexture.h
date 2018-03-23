@@ -11,7 +11,7 @@ public:
 	void update() override;
 	void update(int textureIndex) override;
 	void shutdown() override;
-	void updateFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel) override;
+	void attachToFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel) override;
 
 private:
 	GLuint m_textureID = 0;

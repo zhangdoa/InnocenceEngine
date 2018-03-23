@@ -19,7 +19,7 @@ public:
 	void setup(frameBufferType frameBufferType, renderBufferType renderBufferType, const std::vector<vec2>& renderBufferStorageSize, const std::vector<BaseTexture*>& renderTargetTextures, const std::vector<BaseShaderProgram*>& renderTargetShaderPrograms);
 	void update() override;
 	virtual void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) = 0;
-	virtual void activeTexture(int colorAttachmentIndex, int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer, int textureMipMapLevel) = 0;
+	virtual void activeTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer) = 0;
 	const unsigned int getRenderTargetNumber() const;
 	const objectStatus& getStatus() const override;
 
