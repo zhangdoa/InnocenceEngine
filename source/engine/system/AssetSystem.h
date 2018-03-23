@@ -4,8 +4,6 @@
 #include "interface/IMemorySystem.h"
 #include "interface/IRenderingSystem.h"
 
-#include "entity/BaseGraphicPrimitive.h"
-
 #include "assimp/Importer.hpp"
 #include "assimp/Exporter.hpp"
 #include "assimp/scene.h"
@@ -29,15 +27,6 @@ public:
 	vec3 getNormals(unsigned int index) const override;
 	int getIndices(int faceIndex, int index) const override;
 	aiMesh* m_aiMesh;
-};
-
-class assimpScene : public IScene
-{
-public:
-	assimpScene() {};
-	~assimpScene() {};
-
-	aiScene* m_aiScene;
 };
 
 class AssetSystem : public IAssetSystem

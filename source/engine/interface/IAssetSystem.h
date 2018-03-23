@@ -1,7 +1,7 @@
 #pragma once
 #include "common/stdafx.h"
 #include "ISystem.h"
-#include "entity/BaseGraphicPrimitive.h"
+#include "entity/BaseGraphicPrimitiveHeader.h"
 
 class IAssetSystem : public ISystem
 {

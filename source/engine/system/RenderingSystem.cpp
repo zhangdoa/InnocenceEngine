@@ -92,13 +92,6 @@ void RenderingSystem::initialize()
 	addKeyboardInputCallback(GLFW_KEY_R, &f_changeShadingMode);
 	m_keyButtonMap.find(GLFW_KEY_R)->second.m_keyPressType = keyPressType::ONCE;
 
-	//initialize rendering
-	glEnable(GL_TEXTURE_2D);
-	initializeGeometryPass();
-	initializeLightPass();
-	initializeBackgroundPass();
-	initializeFinalPass();
-
 	//load assets
 	m_basicNormalTemplate = addTexture(textureType::NORMAL);
 	m_basicAlbedoTemplate = addTexture(textureType::ALBEDO);
@@ -157,6 +150,14 @@ void RenderingSystem::initialize()
 			}
 		}
 	}
+
+	//initialize rendering
+	glEnable(GL_TEXTURE_2D);
+	initializeGeometryPass();
+	initializeLightPass();
+	initializeBackgroundPass();
+	initializeFinalPass();
+
 	m_objectStatus = objectStatus::ALIVE;
 	g_pLogSystem->printLog("RenderingSystem has been initialized.");
 }
@@ -544,12 +545,11 @@ void RenderingSystem::initializeBackgroundPass()
 {
 	// environment capture pass
 	// initialize shader
-	auto l_vertexShaderFilePath = "GL3.3/environmentCapturePassPBSVertex.sf";
-	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position" });
-	auto l_fragmentShaderFilePath = "GL3.3/environmentCapturePassPBSFragment.sf";
-	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
-	m_environmentCapturePassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
-	m_environmentCapturePassShaderProgram->initialize();
+	auto l_environmentCapturePassVertexShaderFilePath = "GL3.3/environmentCapturePassPBSVertex.sf";
+	auto l_environmentCapturePassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_environmentCapturePassVertexShaderFilePath, g_pAssetSystem->loadShader(l_environmentCapturePassVertexShaderFilePath)));
+	auto l_environmentCapturePassFragmentShaderFilePath = "GL3.3/environmentCapturePassPBSFragment.sf";
+	auto l_environmentCapturePassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_environmentCapturePassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_environmentCapturePassFragmentShaderFilePath)));
+	m_environmentCapturePassShaderProgram->setup({ l_environmentCapturePassVertexShaderData , l_environmentCapturePassFragmentShaderData });
 
 	// initialize texture
 	m_environmentCapturePassTextureID = this->addTexture(textureType::ENVIRONMENT_CAPTURE);
@@ -558,12 +558,11 @@ void RenderingSystem::initializeBackgroundPass()
 
 	// environment convolution pass
 	// initialize shader
-	auto l_vertexShaderFilePath = "GL3.3/environmentConvolutionPassPBSVertex.sf";
-	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position" });
-	auto l_fragmentShaderFilePath = "GL3.3/environmentConvolutionPassPBSFragment.sf";
-	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
-	m_environmentConvolutionPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
-	m_environmentConvolutionPassShaderProgram->initialize();
+	auto l_environmentConvolutionPassVertexShaderFilePath = "GL3.3/environmentConvolutionPassPBSVertex.sf";
+	auto l_environmentConvolutionPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_environmentConvolutionPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_environmentConvolutionPassVertexShaderFilePath)));
+	auto l_environmentConvolutionPassFragmentShaderFilePath = "GL3.3/environmentConvolutionPassPBSFragment.sf";
+	auto l_environmentConvolutionPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_environmentConvolutionPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_environmentConvolutionPassFragmentShaderFilePath)));
+	m_environmentConvolutionPassShaderProgram->setup({ l_environmentConvolutionPassVertexShaderData , l_environmentConvolutionPassFragmentShaderData });
 
 	// initialize texture
 	m_environmentConvolutionPassTextureID = this->addTexture(textureType::ENVIRONMENT_CONVOLUTION);
@@ -572,12 +571,11 @@ void RenderingSystem::initializeBackgroundPass()
 
 	// environment pre-filter pass
 	// initialize shader
-	auto l_vertexShaderFilePath = "GL3.3/environmentPreFilterPassPBSVertex.sf";
-	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position" });
-	auto l_fragmentShaderFilePath = "GL3.3/environmentPreFilterPassPBSFragment.sf";
-	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
-	m_environmentPreFilterPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
-	m_environmentPreFilterPassShaderProgram->initialize();
+	auto l_environmentPreFilterPassVertexShaderFilePath = "GL3.3/environmentPreFilterPassPBSVertex.sf";
+	auto l_environmentPreFilterPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_environmentPreFilterPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_environmentPreFilterPassVertexShaderFilePath)));
+	auto l_environmentPreFilterPassFragmentShaderFilePath = "GL3.3/environmentPreFilterPassPBSFragment.sf";
+	auto l_environmentPreFilterPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_environmentPreFilterPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_environmentPreFilterPassFragmentShaderFilePath)));
+	m_environmentPreFilterPassShaderProgram->setup({ l_environmentPreFilterPassVertexShaderData , l_environmentPreFilterPassFragmentShaderData });
 
 	// initialize texture
 	m_environmentPreFilterPassTextureID = this->addTexture(textureType::ENVIRONMENT_PREFILTER);
@@ -586,12 +584,11 @@ void RenderingSystem::initializeBackgroundPass()
 
 	// environment BRDF LUT pass
 	// initialize shader
-	auto l_vertexShaderFilePath = "GL3.3/environmentBRDFLUTPassPBSVertex.sf";
-	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position" , "in_TexCoord" });
-	auto l_fragmentShaderFilePath = "GL3.3/environmentBRDFLUTPassPBSFragment.sf";
-	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
-	m_environmentBRDFLUTPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
-	m_environmentBRDFLUTPassShaderProgram->initialize();
+	auto l_environmentBRDFLUTPassVertexShaderFilePath = "GL3.3/environmentBRDFLUTPassPBSVertex.sf";
+	auto l_environmentBRDFLUTPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_environmentBRDFLUTPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_environmentBRDFLUTPassVertexShaderFilePath)));
+	auto l_environmentBRDFLUTPassFragmentShaderFilePath = "GL3.3/environmentBRDFLUTPassPBSFragment.sf";
+	auto l_environmentBRDFLUTPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_environmentBRDFLUTPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_environmentBRDFLUTPassFragmentShaderFilePath)));
+	m_environmentBRDFLUTPassShaderProgram->setup({ l_environmentBRDFLUTPassVertexShaderData , l_environmentBRDFLUTPassFragmentShaderData });
 
 	// initialize texture
 	m_environmentBRDFLUTTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
@@ -599,40 +596,43 @@ void RenderingSystem::initializeBackgroundPass()
 	l_environmentBRDFLUTTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RG16F, texturePixelDataFormat::RG, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, 512, 512, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize environment pass framebuffer
-	auto l_renderBufferStorageSizes = std::vector<vec2>{ vec2(2048, 2048), vec2(128, 128), vec2(128, 128), vec2(512, 512) };
-	auto l_renderTargetTextures = std::vector<BaseTexture*>{ l_environmentCapturePassTextureData, l_environmentConvolutionPassTextureData, l_environmentPreFilterPassTextureData, l_environmentBRDFLUTTextureData };
-	auto l_shaderPrograms = std::vector<BaseShaderProgram*>{ m_environmentCapturePassShaderProgram,  m_environmentConvolutionPassShaderProgram, m_environmentPreFilterPassShaderProgram, m_environmentBRDFLUTPassShaderProgram };
+	auto l_environmentPassRenderBufferStorageSizes = std::vector<vec2>{ vec2(2048, 2048), vec2(128, 128), vec2(128, 128), vec2(512, 512) };
+	auto l_environmentPassRenderTargetTextures = std::vector<BaseTexture*>{ l_environmentCapturePassTextureData, l_environmentConvolutionPassTextureData, l_environmentPreFilterPassTextureData, l_environmentBRDFLUTTextureData };
+	auto l_environmentPassShaderPrograms = std::vector<BaseShaderProgram*>{ m_environmentCapturePassShaderProgram,  m_environmentConvolutionPassShaderProgram, m_environmentPreFilterPassShaderProgram, m_environmentBRDFLUTPassShaderProgram };
 	m_environmentPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_environmentPassFrameBuffer->setup(frameBufferType::CUBEMAP, renderBufferType::DEPTH, l_renderBufferStorageSizes, l_renderTargetTextures, l_shaderPrograms);
+	m_environmentPassFrameBuffer->setup(frameBufferType::CUBEMAP, renderBufferType::DEPTH, l_environmentPassRenderBufferStorageSizes, l_environmentPassRenderTargetTextures, l_environmentPassShaderPrograms);
 	m_environmentPassFrameBuffer->initialize();
 
 	// sky forward pass
 	// initialize shader
-	auto l_vertexShaderFilePath = "GL3.3/skyForwardPassPBSVertex.sf";
-	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position" });
-	auto l_fragmentShaderFilePath = "GL3.3/skyForwardPassPBSFragment.sf";
-	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
-	m_skyForwardPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
-	m_skyForwardPassShaderProgram->initialize();
+	auto l_skyForwardPassVertexShaderFilePath = "GL3.3/skyForwardPassPBSVertex.sf";
+	auto l_skyForwardPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_skyForwardPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_skyForwardPassVertexShaderFilePath)));
+	auto l_skyForwardPassFragmentShaderFilePath = "GL3.3/skyForwardPassPBSFragment.sf";
+	auto l_skyForwardPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_skyForwardPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_skyForwardPassFragmentShaderFilePath)));
+	m_skyForwardPassShaderProgram->setup({ l_skyForwardPassVertexShaderData , l_skyForwardPassFragmentShaderData });
+
+	// initialize texture
+	m_skyForwardPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
+	auto l_skyForwardPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_skyForwardPassTextureID);
+	l_skyForwardPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGB, texturePixelDataFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::UNSIGNED_BYTE, std::vector<void*>{ nullptr });
 
 	// initialize framebuffer
-	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
-	auto l_renderTargetTextures = std::vector<BaseTexture*>{};
-	auto l_shaderPrograms = std::vector<BaseShaderProgram*>{ m_skyForwardPassShaderProgram };
+	auto l_skyForwardPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
+	auto l_skyForwardPassRenderTargetTextures = std::vector<BaseTexture*>{ l_skyForwardPassTextureData };
+	auto l_skyForwardPassShaderPrograms = std::vector<BaseShaderProgram*>{ m_skyForwardPassShaderProgram };
 	m_skyForwardPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_skyForwardPassFrameBuffer->setup(frameBufferType::FORWARD, renderBufferType::DEPTH_AND_STENCIL, l_renderBufferStorageSizes, l_renderTargetTextures, l_shaderPrograms);
+	m_skyForwardPassFrameBuffer->setup(frameBufferType::FORWARD, renderBufferType::DEPTH_AND_STENCIL, l_skyForwardPassRenderBufferStorageSizes, l_skyForwardPassRenderTargetTextures, l_skyForwardPassShaderPrograms);
 	m_skyForwardPassFrameBuffer->initialize();
 
 	// debugger pass
 	// initialize shader
-	auto l_vertexShaderFilePath = "GL3.3/debuggerVertex.sf";
-	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position", "in_TexCoord", "in_Normal" });
-	auto l_geometryShaderFilePath = "GL3.3/debuggerGeometry.sf";
-	auto l_geometryShaderData = shaderData(shaderType::GEOMETRY, l_geometryShaderFilePath, g_pAssetSystem->loadShader(l_geometryShaderFilePath), {});
-	auto l_fragmentShaderFilePath = "GL3.3/debuggerFragment.sf";
-	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
-	m_debuggerPassShaderProgram->setup({ l_vertexShaderData , l_geometryShaderData , l_fragmentShaderData });
-	m_debuggerPassShaderProgram->initialize();
+	auto l_debuggerPassVertexShaderFilePath = "GL3.3/debuggerVertex.sf";
+	auto l_debuggerPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_debuggerPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_debuggerPassVertexShaderFilePath)));
+	auto l_debuggerPassGeometryShaderFilePath = "GL3.3/debuggerGeometry.sf";
+	auto l_debuggerPassGeometryShaderData = shaderData(shaderType::GEOMETRY, shaderCodeContentPair(l_debuggerPassGeometryShaderFilePath, g_pAssetSystem->loadShader(l_debuggerPassGeometryShaderFilePath)));
+	auto l_debuggerPassFragmentShaderFilePath = "GL3.3/debuggerFragment.sf";
+	auto l_debuggerPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_debuggerPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_debuggerPassFragmentShaderFilePath)));
+	m_debuggerPassShaderProgram->setup({ l_debuggerPassVertexShaderData , l_debuggerPassGeometryShaderData , l_debuggerPassFragmentShaderData });
 
 	// initialize texture
 	m_debuggerPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
@@ -640,33 +640,32 @@ void RenderingSystem::initializeBackgroundPass()
 	l_debuggerPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGB, texturePixelDataFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::UNSIGNED_BYTE, std::vector<void*>{ nullptr });
 
 	// initialize framebuffer
-	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
-	auto l_renderTargetTextures = std::vector<BaseTexture*>{ l_debuggerPassTextureData };
-	auto l_shaderPrograms = std::vector<BaseShaderProgram*>{ m_debuggerPassShaderProgram };
+	auto l_debuggerPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
+	auto l_debuggerPassRenderTargetTextures = std::vector<BaseTexture*>{ l_debuggerPassTextureData };
+	auto l_debuggerPassShaderPrograms = std::vector<BaseShaderProgram*>{ m_debuggerPassShaderProgram };
 	m_debuggerPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_debuggerPassFrameBuffer->setup(frameBufferType::DEFER, renderBufferType::DEPTH_AND_STENCIL, l_renderBufferStorageSizes, l_renderTargetTextures, l_shaderPrograms);
+	m_debuggerPassFrameBuffer->setup(frameBufferType::DEFER, renderBufferType::DEPTH_AND_STENCIL, l_debuggerPassRenderBufferStorageSizes, l_debuggerPassRenderTargetTextures, l_debuggerPassShaderPrograms);
 	m_debuggerPassFrameBuffer->initialize();
 
 	// sky defer pass
 	// initialize shader
-	auto l_vertexShaderFilePath = "GL3.3/skyDeferPassPBSVertex.sf";
-	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position",  "in_TexCoord" });
-	auto l_fragmentShaderFilePath = "GL3.3/skyDeferPassPBSFragment.sf";
-	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
-	m_skyDeferPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
-	m_skyDeferPassShaderProgram->initialize();
+	auto l_skyDeferPassVertexShaderFilePath = "GL3.3/skyDeferPassPBSVertex.sf";
+	auto l_skyDeferPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_skyDeferPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_skyDeferPassVertexShaderFilePath)));
+	auto l_skyDeferPassFragmentShaderFilePath = "GL3.3/skyDeferPassPBSFragment.sf";
+	auto l_skyDeferPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_skyDeferPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_skyDeferPassFragmentShaderFilePath)));
+	m_skyDeferPassShaderProgram->setup({ l_skyDeferPassVertexShaderData , l_skyDeferPassFragmentShaderData });
 
 	// initialize texture
 	m_skyDeferPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_skyDeferPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_debuggerPassTextureID);
+	auto l_skyDeferPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_skyDeferPassTextureID);
 	l_skyDeferPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGB, texturePixelDataFormat::RGB, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::UNSIGNED_BYTE, std::vector<void*>{ nullptr });
 
 	// initialize framebuffer
-	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
-	auto l_renderTargetTextures = std::vector<BaseTexture*>{ l_skyDeferPassTextureData };
-	auto l_shaderPrograms = std::vector<BaseShaderProgram*>{ m_skyDeferPassShaderProgram };
+	auto l_skyDeferPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
+	auto l_skyDeferPassRenderTargetTextures = std::vector<BaseTexture*>{ l_skyDeferPassTextureData };
+	auto l_skyDeferPassRhaderPrograms = std::vector<BaseShaderProgram*>{ m_skyDeferPassShaderProgram };
 	m_skyDeferPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_skyDeferPassFrameBuffer->setup(frameBufferType::DEFER, renderBufferType::DEPTH_AND_STENCIL, l_renderBufferStorageSizes, l_renderTargetTextures, l_shaderPrograms);
+	m_skyDeferPassFrameBuffer->setup(frameBufferType::DEFER, renderBufferType::DEPTH_AND_STENCIL, l_skyDeferPassRenderBufferStorageSizes, l_skyDeferPassRenderTargetTextures, l_skyDeferPassRhaderPrograms);
 	m_skyDeferPassFrameBuffer->initialize();
 
 	//assign the textures to Skybox visibleComponent
@@ -720,27 +719,26 @@ void RenderingSystem::initializeGeometryPass()
 {
 	// initialize shader
 	auto l_vertexShaderFilePath = "GL3.3/geometryPassPBSVertex.sf";
-	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position" , "in_TexCoord",  "in_Normal" });
+	auto l_vertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath)));
 	auto l_fragmentShaderFilePath = "GL3.3/geometryPassPBSFragment.sf";
-	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
+	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath)));
 	m_geometryPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
-	m_geometryPassShaderProgram->initialize();
 
 	// initialize texture
 	m_geometryPassRT0TextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_geometryPassRT0TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_debuggerPassTextureID);
+	auto l_geometryPassRT0TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT0TextureID);
 	l_geometryPassRT0TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	m_geometryPassRT1TextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_geometryPassRT1TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_debuggerPassTextureID);
+	auto l_geometryPassRT1TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT1TextureID);
 	l_geometryPassRT1TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	m_geometryPassRT2TextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_geometryPassRT2TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_debuggerPassTextureID);
+	auto l_geometryPassRT2TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT2TextureID);
 	l_geometryPassRT2TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	m_geometryPassRT3TextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_geometryPassRT3TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_debuggerPassTextureID);
+	auto l_geometryPassRT3TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT3TextureID);
 	l_geometryPassRT3TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 
@@ -755,7 +753,7 @@ void RenderingSystem::initializeGeometryPass()
 
 void RenderingSystem::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	m_geometryPassFrameBuffer->update();
+	m_geometryPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL - m_polygonMode);
 	m_geometryPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
@@ -766,21 +764,20 @@ void RenderingSystem::initializeLightPass()
 {
 	// initialize shader
 	auto l_vertexShaderFilePath = "GL3.3/lightPassPBSVertex.sf";
-	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position" , "in_TexCoord" });
+	auto l_vertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath)));
 	auto l_fragmentShaderFilePath = "GL3.3/lightPassPBSFragment.sf";
-	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
+	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath)));
 	m_lightPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
-	m_lightPassShaderProgram->initialize();
 
 	// initialize texture
 	m_lightPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_lightPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_debuggerPassTextureID);
+	auto l_lightPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_lightPassTextureID);
 	l_lightPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize frame buffer
 	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
-	auto l_renderTargetTextures = std::vector<BaseTexture*>{};
-	auto l_shaderPrograms = std::vector<BaseShaderProgram*>{ m_geometryPassShaderProgram };
+	auto l_renderTargetTextures = std::vector<BaseTexture*>{ l_lightPassTextureData };
+	auto l_shaderPrograms = std::vector<BaseShaderProgram*>{ m_lightPassShaderProgram };
 	m_lightPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
 	m_lightPassFrameBuffer->setup(frameBufferType::DEFER, renderBufferType::DEPTH_AND_STENCIL, l_renderBufferStorageSizes, l_renderTargetTextures, l_shaderPrograms);
 	m_lightPassFrameBuffer->initialize();
@@ -807,9 +804,9 @@ void RenderingSystem::initializeFinalPass()
 {
 	// initialize shader
 	auto l_vertexShaderFilePath = "GL3.3/finalPassVertex.sf";
-	auto l_vertexShaderData = shaderData(shaderType::VERTEX, l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath), { "in_Position" , "in_TexCoord" });
+	auto l_vertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath)));
 	auto l_fragmentShaderFilePath = "GL3.3/finalPassFragment.sf";
-	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath), {});
+	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath)));
 	m_finalPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
 	m_finalPassShaderProgram->initialize();
 }
@@ -822,7 +819,7 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 
 	m_skyDeferPassFrameBuffer->activeTexture(0, 0, 0, 0);
 
-	m_finalPassShaderProgram->update();
+	m_finalPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw final pass rectangle
 	this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
