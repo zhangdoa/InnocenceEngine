@@ -177,8 +177,8 @@ enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
 enum class shaderType { VERTEX, GEOMETRY, FRAGMENT };
 using shaderFilePath = std::string;
 using shaderCodeContent = std::string;
-using shaderAttributions = std::vector<std::string>;
-using shaderData = std::tuple<shaderType, shaderFilePath, shaderCodeContent, shaderAttributions>;
+using shaderCodeContentPair = std::pair<shaderFilePath, shaderCodeContent>;
+using shaderData = std::pair<shaderType, shaderCodeContentPair>;
 // frame and render buffer custom types
 enum class frameBufferType { FORWARD, DEFER, SHADOWMAP, CUBEMAP };
 enum class renderBufferType { DEPTH, STENCIL, DEPTH_AND_STENCIL };

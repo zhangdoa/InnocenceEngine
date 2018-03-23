@@ -7,8 +7,8 @@
 #include "interface/ILogSystem.h"
 
 #include "entity/ComponentHeaders.h"
-#include "entity/GLGraphicPrimitive.h"
-#include "entity/GLShader.h"
+#include "entity/BaseGraphicPrimitiveHeader.h"
+#include "entity/GLGraphicPrimitiveHeader.h"
 
 extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;
@@ -26,12 +26,6 @@ public:
 	keyPressType m_keyPressType = keyPressType::CONTINUOUS;
 	bool m_allowCallback = true;
 };
-
-#ifdef USE_OPENGL
-#define MESH_CLASS GLMesh
-#define TEXTURE_CLASS GLTexture
-#define FRAMEBUFFER_CLASS GLFrameBufferWIP
-#endif
 
 class RenderingSystem : public IRenderingSystem
 {
@@ -128,18 +122,18 @@ private:
 	std::function<void()> f_changeDrawTextureMode;
 	std::function<void()> f_changeShadingMode;
 
-	BaseFrameBufferWIP* m_geometryPassFrameBuffer;
+	BaseFrameBuffer* m_geometryPassFrameBuffer;
 	BaseShaderProgram* m_geometryPassShaderProgram;
 	textureID m_geometryPassRT0TextureID;
 	textureID m_geometryPassRT1TextureID;
 	textureID m_geometryPassRT2TextureID;
 	textureID m_geometryPassRT3TextureID;
 
-	BaseFrameBufferWIP* m_lightPassFrameBuffer;
+	BaseFrameBuffer* m_lightPassFrameBuffer;
 	BaseShaderProgram* m_lightPassShaderProgram;
 	textureID m_lightPassTextureID;
 
-	BaseFrameBufferWIP* m_environmentPassFrameBuffer;
+	BaseFrameBuffer* m_environmentPassFrameBuffer;
 	BaseShaderProgram* m_environmentCapturePassShaderProgram;
 	BaseShaderProgram* m_environmentConvolutionPassShaderProgram;
 	BaseShaderProgram* m_environmentPreFilterPassShaderProgram;
@@ -151,18 +145,19 @@ private:
 
 
 
-	BaseFrameBufferWIP* m_skyForwardPassFrameBuffer;
+	BaseFrameBuffer* m_skyForwardPassFrameBuffer;
 	BaseShaderProgram* m_skyForwardPassShaderProgram;
+	textureID m_skyForwardPassTextureID;
 
-	BaseFrameBufferWIP* m_skyDeferPassFrameBuffer;
+	BaseFrameBuffer* m_skyDeferPassFrameBuffer;
 	BaseShaderProgram* m_skyDeferPassShaderProgram;
 	textureID m_skyDeferPassTextureID;
 
-	BaseFrameBufferWIP* m_debuggerPassFrameBuffer;
+	BaseFrameBuffer* m_debuggerPassFrameBuffer;
 	BaseShaderProgram* m_debuggerPassShaderProgram;
 	textureID m_debuggerPassTextureID;
 
-	BaseFrameBufferWIP* m_finalPassFrameBuffer;
+	BaseFrameBuffer* m_finalPassFrameBuffer;
 	BaseShaderProgram* m_finalPassShaderProgram;
 	textureID m_finalPassTextureID;
 
