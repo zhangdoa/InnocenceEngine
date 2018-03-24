@@ -47,6 +47,13 @@ void RenderingSystem::setup()
 	f_changeShadingMode = std::bind(&RenderingSystem::changeShadingMode, this);
 
 	//setup rendering
+	m_shadowForwardPassShaderProgram = g_pMemorySystem->spawn<ShadowForwardPassShaderProgram>();
+	//m_shadowDeferPassShaderProgram = g_pMemorySystem->spawn<ShadowDeferPassShaderProgram>();
+
+	m_environmentCapturePassShaderProgram = g_pMemorySystem->spawn<EnvironmentCapturePassPBSShaderProgram>();
+	m_environmentConvolutionPassShaderProgram = g_pMemorySystem->spawn<EnvironmentConvolutionPassPBSShaderProgram>();
+	m_environmentPreFilterPassShaderProgram = g_pMemorySystem->spawn<EnvironmentPreFilterPassPBSShaderProgram>();
+	m_environmentBRDFLUTPassShaderProgram = g_pMemorySystem->spawn<EnvironmentBRDFLUTPassPBSShaderProgram>();
 	//@TODO: add a switch for different shader model
 	//m_geometryPassShader = g_pMemorySystem->spawn<GeometryPassBlinnPhongShader>();
 	m_geometryPassShaderProgram = g_pMemorySystem->spawn<GeometryPassPBSShaderProgram>();
@@ -54,16 +61,9 @@ void RenderingSystem::setup()
 	//m_lightPassShader = g_pMemorySystem->spawn<LightPassBlinnPhongShader>();
 	m_lightPassShaderProgram = g_pMemorySystem->spawn<LightPassPBSShaderProgram>();
 
-	m_environmentCapturePassShaderProgram = g_pMemorySystem->spawn<EnvironmentCapturePassPBSShaderProgram>();
-	m_environmentConvolutionPassShaderProgram = g_pMemorySystem->spawn<EnvironmentConvolutionPassPBSShaderProgram>();
-	m_environmentPreFilterPassShaderProgram = g_pMemorySystem->spawn<EnvironmentPreFilterPassPBSShaderProgram>();
-	m_environmentBRDFLUTPassShaderProgram = g_pMemorySystem->spawn<EnvironmentBRDFLUTPassPBSShaderProgram>();
-
 	m_skyForwardPassShaderProgram = g_pMemorySystem->spawn<SkyForwardPassPBSShaderProgram>();
 	m_skyDeferPassShaderProgram = g_pMemorySystem->spawn<SkyDeferPassPBSShaderProgram>();
-
 	m_debuggerPassShaderProgram = g_pMemorySystem->spawn<DebuggerShaderProgram>();
-
 	m_finalPassShaderProgram = g_pMemorySystem->spawn<FinalPassShaderProgram>();
 
 	m_objectStatus = objectStatus::ALIVE;
@@ -154,6 +154,7 @@ void RenderingSystem::initialize()
 
 	//initialize rendering
 	glEnable(GL_TEXTURE_2D);
+	initializeShadowPass();
 	initializeBackgroundPass();
 	initializeGeometryPass();
 	initializeLightPass();
@@ -524,6 +525,7 @@ void RenderingSystem::render()
 {
 	//defer render
 	m_canRender = false;
+	renderShadowPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
 	renderBackgroundPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
 	renderGeometryPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
 	renderLightPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
@@ -601,7 +603,7 @@ void RenderingSystem::initializeBackgroundPass()
 	auto l_environmentPassRenderTargetTextures = std::vector<BaseTexture*>{ l_environmentCapturePassTextureData, l_environmentConvolutionPassTextureData, l_environmentPreFilterPassTextureData, l_environmentBRDFLUTTextureData };
 	auto l_environmentPassShaderPrograms = std::vector<BaseShaderProgram*>{ m_environmentCapturePassShaderProgram,  m_environmentConvolutionPassShaderProgram, m_environmentPreFilterPassShaderProgram, m_environmentBRDFLUTPassShaderProgram };
 	m_environmentPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_environmentPassFrameBuffer->setup(frameBufferType::CUBEMAP, renderBufferType::DEPTH, l_environmentPassRenderBufferStorageSizes, l_environmentPassRenderTargetTextures, l_environmentPassShaderPrograms);
+	m_environmentPassFrameBuffer->setup(frameBufferType::ENVIRONMENT_PASS, renderBufferType::DEPTH, l_environmentPassRenderBufferStorageSizes, l_environmentPassRenderTargetTextures, l_environmentPassShaderPrograms);
 	m_environmentPassFrameBuffer->initialize();
 
 	//assign the textures to Skybox visibleComponent
@@ -632,6 +634,66 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 	}
 }
 
+
+void RenderingSystem::initializeShadowPass()
+{
+	// shadow forward pass
+	// initialize shader
+	auto l_shadowForwardPassVertexShaderFilePath = "GL3.3/shadowForwardPassVertex.sf";
+	auto l_shadowForwardPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_shadowForwardPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_shadowForwardPassVertexShaderFilePath)));
+	auto l_shadowForwardPassFragmentShaderFilePath = "GL3.3/shadowForwardPassFragment.sf";
+	auto l_shadowForwardPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_shadowForwardPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_shadowForwardPassFragmentShaderFilePath)));
+	m_shadowForwardPassShaderProgram->setup({ l_shadowForwardPassVertexShaderData , l_shadowForwardPassFragmentShaderData });
+
+	// initialize texture
+	m_shadowForwardPassTextureID = this->addTexture(textureType::SHADOWMAP);
+	auto l_shadowForwardPassTextureData = this->getTexture(textureType::SHADOWMAP, m_shadowForwardPassTextureID);
+	l_shadowForwardPassTextureData->setup(textureType::SHADOWMAP, textureColorComponentsFormat::DEPTH_COMPONENT, texturePixelDataFormat::DEPTH_COMPONENT, textureWrapMethod::CLAMP_TO_BORDER, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, 1024, 1024, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+
+	// initialize framebuffer
+	auto l_shadowForwardPassRenderBufferStorageSizes = std::vector<vec2>{ vec2(1024, 1024) };
+	auto l_shadowForwardPassRenderTargetTextures = std::vector<BaseTexture*>{ l_shadowForwardPassTextureData };
+	auto l_shadowForwardPassShaderPrograms = std::vector<BaseShaderProgram*>{ m_shadowForwardPassShaderProgram };
+	m_shadowForwardPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
+	m_shadowForwardPassFrameBuffer->setup(frameBufferType::SHADOW_PASS, renderBufferType::DEPTH, l_shadowForwardPassRenderBufferStorageSizes, l_shadowForwardPassRenderTargetTextures, l_shadowForwardPassShaderPrograms);
+	m_shadowForwardPassFrameBuffer->initialize();
+
+	//// shadow defer pass
+	//// initialize shader
+	//auto l_shadowDeferPassVertexShaderFilePath = "GL3.3/shadowDeferPassVertex.sf";
+	//auto l_shadowDeferPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_shadowDeferPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_shadowDeferPassVertexShaderFilePath)));
+	//auto l_shadowDeferPassFragmentShaderFilePath = "GL3.3/shadowDeferPassFragment.sf";
+	//auto l_shadowDeferPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_shadowDeferPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_shadowDeferPassFragmentShaderFilePath)));
+	//m_shadowDeferPassShaderProgram->setup({ l_shadowDeferPassVertexShaderData , l_shadowDeferPassFragmentShaderData });
+
+	//// initialize texture
+	//m_shadowDeferPassTextureID = this->addTexture(textureType::SHADOWMAP);
+	//auto l_shadowDeferPassTextureData = this->getTexture(textureType::SHADOWMAP, m_shadowDeferPassTextureID);
+	//l_shadowDeferPassTextureData->setup(textureType::SHADOWMAP, textureColorComponentsFormat::DEPTH_COMPONENT, texturePixelDataFormat::DEPTH_COMPONENT, textureWrapMethod::CLAMP_TO_BORDER, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+
+	//// initialize framebuffer
+	//auto l_shadowDeferPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
+	//auto l_shadowDeferPassRenderTargetTextures = std::vector<BaseTexture*>{ l_shadowDeferPassTextureData };
+	//auto l_shadowDeferPassRhaderPrograms = std::vector<BaseShaderProgram*>{ m_shadowDeferPassShaderProgram };
+	//m_shadowDeferPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
+	//m_shadowDeferPassFrameBuffer->setup(frameBufferType::SHADOW_PASS, renderBufferType::DEPTH, l_shadowDeferPassRenderBufferStorageSizes, l_shadowDeferPassRenderTargetTextures, l_shadowDeferPassRhaderPrograms);
+	//m_shadowDeferPassFrameBuffer->initialize();
+}
+
+void RenderingSystem::renderShadowPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
+{
+	// draw shadow forward pass
+	m_shadowForwardPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
+
+	//// draw shadow defer pass
+	//m_shadowForwardPassFrameBuffer->activeTexture(0, 0);
+
+	//m_shadowDeferPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
+
+	//// draw background defer pass rectangle
+	//this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
+}
+
 void RenderingSystem::initializeGeometryPass()
 {
 	// initialize shader
@@ -658,10 +720,13 @@ void RenderingSystem::initializeGeometryPass()
 	auto l_geometryPassRT3TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT3TextureID);
 	l_geometryPassRT3TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
+	m_geometryPassRT4TextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
+	auto l_geometryPassRT4TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT4TextureID);
+	l_geometryPassRT4TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize frame buffer
 	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
-	auto l_renderTargetTextures = std::vector<BaseTexture*>{ l_geometryPassRT0TextureData , l_geometryPassRT1TextureData  ,l_geometryPassRT2TextureData  ,l_geometryPassRT3TextureData };
+	auto l_renderTargetTextures = std::vector<BaseTexture*>{ l_geometryPassRT0TextureData , l_geometryPassRT1TextureData  ,l_geometryPassRT2TextureData  ,l_geometryPassRT3TextureData, l_geometryPassRT4TextureData };
 	auto l_shaderPrograms = std::vector<BaseShaderProgram*>{ m_geometryPassShaderProgram };
 	m_geometryPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
 	m_geometryPassFrameBuffer->setup(frameBufferType::FORWARD, renderBufferType::DEPTH_AND_STENCIL, l_renderBufferStorageSizes, l_renderTargetTextures, l_shaderPrograms);
@@ -698,7 +763,7 @@ void RenderingSystem::initializeLightPass()
 
 void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	// position 
+	// world space position 
 	m_geometryPassFrameBuffer->activeTexture(0, 0);
 	// normal
 	m_geometryPassFrameBuffer->activeTexture(1, 1);
@@ -706,12 +771,16 @@ void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraCompo
 	m_geometryPassFrameBuffer->activeTexture(2, 2);
 	// metallic, roughness and ambient occlusion
 	m_geometryPassFrameBuffer->activeTexture(3, 3);
+	// light space position
+	m_geometryPassFrameBuffer->activeTexture(4, 4);
+	// shadow map
+	m_shadowForwardPassFrameBuffer->activeTexture(0, 5);
 	// irradiance environment map
-	m_environmentPassFrameBuffer->activeTexture(1, 4);
+	m_environmentPassFrameBuffer->activeTexture(1, 6);
 	// pre-filter specular environment map
-	m_environmentPassFrameBuffer->activeTexture(2, 5);
+	m_environmentPassFrameBuffer->activeTexture(2, 7);
 	// BRDF look-up table
-	m_environmentPassFrameBuffer->activeTexture(3, 6);
+	m_environmentPassFrameBuffer->activeTexture(3, 8);
 
 	m_lightPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
@@ -798,7 +867,7 @@ void RenderingSystem::initializeFinalPass()
 
 void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	// draw background forward pass
+	// draw sky forward pass
 	m_skyForwardPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw debugger pass
@@ -811,7 +880,7 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 
 	m_skyDeferPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
-	// draw background defer pass rectangle
+	// draw sky defer pass rectangle
 	this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
 
 	// draw final pass

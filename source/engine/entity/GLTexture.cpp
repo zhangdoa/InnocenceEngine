@@ -23,14 +23,22 @@ void GLTexture::initialize()
 		GLenum l_textureWrapMethod;
 		switch (m_textureWrapMethod)
 		{
-		case textureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
 		case textureWrapMethod::CLAMP_TO_EDGE: l_textureWrapMethod = GL_CLAMP_TO_EDGE; break;
+		case textureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
+		case textureWrapMethod::CLAMP_TO_BORDER: l_textureWrapMethod = GL_CLAMP_TO_BORDER; break;
 		}
 		if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::ENVIRONMENT_CAPTURE || m_textureType == textureType::ENVIRONMENT_CONVOLUTION || m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
+		}
+		else if (m_textureType == textureType::SHADOWMAP)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
+			float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 		}
 		else
 		{
@@ -84,7 +92,7 @@ void GLTexture::initialize()
 		else
 		{
 			switch (m_textureColorComponentsFormat)
-			{
+			{			
 			case textureColorComponentsFormat::RED: l_internalFormat = GL_RED; break;
 			case textureColorComponentsFormat::RG: l_internalFormat = GL_RG; break;
 			case textureColorComponentsFormat::RGB: l_internalFormat = GL_RGB; break;
@@ -109,14 +117,16 @@ void GLTexture::initialize()
 			case textureColorComponentsFormat::SRGBA: l_internalFormat = GL_SRGB_ALPHA; break;
 			case textureColorComponentsFormat::SRGB8: l_internalFormat = GL_SRGB8; break;
 			case textureColorComponentsFormat::SRGBA8: l_internalFormat = GL_SRGB8_ALPHA8; break;
+			case textureColorComponentsFormat::DEPTH_COMPONENT: l_internalFormat = GL_DEPTH_COMPONENT; break;
 			}
 		}
 		switch (m_texturePixelDataFormat)
-		{
+		{		
 		case texturePixelDataFormat::RED:l_dataFormat = GL_RED; break;
 		case texturePixelDataFormat::RG:l_dataFormat = GL_RG; break;
 		case texturePixelDataFormat::RGB:l_dataFormat = GL_RGB; break;
 		case texturePixelDataFormat::RGBA:l_dataFormat = GL_RGBA; break;
+		case texturePixelDataFormat::DEPTH_COMPONENT:l_dataFormat = GL_DEPTH_COMPONENT; break;
 		}
 		switch (m_texturePixelDataType)
 		{
@@ -194,6 +204,12 @@ void GLTexture::attachToFramebuffer(int colorAttachmentIndex, int textureIndex, 
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, m_textureID, mipLevel);
+	}
+	else if (m_textureType == textureType::SHADOWMAP)
+	{
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_textureID, mipLevel);
+
 	}
 	else
 	{

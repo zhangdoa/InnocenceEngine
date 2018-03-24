@@ -1,5 +1,6 @@
 #pragma once
 #include "common/stdafx.h"
+#include "common/config.h"
 //typedef __m128 __vec4;
 //typedef __vec4 __vec3;
 //typedef __vec4 __vec2;
@@ -55,7 +56,7 @@ vector4 * matrix4x4 :
 
 */
 
-/* Column-Major memory layout
+/* Column-Major memory layout (in C/C++)
 [columnIndex][rowIndex]
 | m[0][0] <-> a00 m[1][0] <-> a01 m[2][0] <-> a02 m[3][0] <-> a03 |
 | m[0][1] <-> a10 m[1][1] <-> a11 m[2][1] <-> a12 m[3][1] <-> a13 |
@@ -63,7 +64,7 @@ vector4 * matrix4x4 :
 | m[0][3] <-> a30 m[1][3] <-> a31 m[2][3] <-> a32 m[3][3] <-> a33 |
 */
 
-/* Row-Major memory layout
+/* Row-Major memory layout (in C/C++)
 [rowIndex][columnIndex]
 | m[0][0] <-> a00 m[0][1] <-> a01 m[0][2] <-> a02 m[0][3] <-> a03 |
 | m[1][0] <-> a10 m[1][1] <-> a11 m[1][2] <-> a12 m[1][3] <-> a13 |
@@ -231,11 +232,11 @@ enum class meshType { TWO_DIMENSION, THREE_DIMENSION };
 enum class meshShapeType { QUAD, CUBE, SPHERE, CUSTOM };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 // texture custom types
-enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, ENVIRONMENT_CAPTURE, ENVIRONMENT_CONVOLUTION, ENVIRONMENT_PREFILTER, EQUIRETANGULAR, RENDER_BUFFER_SAMPLER };
-enum class textureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8 };
-enum class texturePixelDataFormat { RED, RG, RGB, RGBA };
+enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, ENVIRONMENT_CAPTURE, ENVIRONMENT_CONVOLUTION, ENVIRONMENT_PREFILTER, EQUIRETANGULAR, RENDER_BUFFER_SAMPLER, SHADOWMAP};
+enum class textureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8, DEPTH_COMPONENT};
+enum class texturePixelDataFormat { RED, RG, RGB, RGBA, DEPTH_COMPONENT};
 enum class texturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, FLOAT };
-enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT };
+enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER};
 enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
 // shader custom types
 enum class shaderType { VERTEX, GEOMETRY, FRAGMENT };
@@ -244,7 +245,7 @@ using shaderCodeContent = std::string;
 using shaderCodeContentPair = std::pair<shaderFilePath, shaderCodeContent>;
 using shaderData = std::pair<shaderType, shaderCodeContentPair>;
 // frame and render buffer custom types
-enum class frameBufferType { FORWARD, DEFER, SHADOWMAP, CUBEMAP };
+enum class frameBufferType { FORWARD, DEFER, SHADOW_PASS, ENVIRONMENT_PASS };
 enum class renderBufferType { DEPTH, STENCIL, DEPTH_AND_STENCIL };
 
 using textureID = unsigned long int;

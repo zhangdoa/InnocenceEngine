@@ -1,3 +1,5 @@
 #cmakedefine USE_CLANG
 #cmakedefine BUILD_GAME
 #cmakedefine BUILD_EDITOR
+#cmakedefine USE_ROW_MAJOR_MEMORY_LAYOUT
+#cmakedefine USE_COLUMN_MAJOR_MEMORY_LAYOUT

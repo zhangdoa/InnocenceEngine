@@ -25,14 +25,20 @@ void LightComponent::setColor(const vec3& color)
 	m_color = color;
 }
 
-void LightComponent::getLightPosMatrix(mat4 & lightPosMatrix)
+mat4 LightComponent::getLightPosMatrix()
 {
-	lightPosMatrix = getParentEntity()->caclWorldPosMatrix();
+	return getParentEntity()->caclWorldPos().mul(-1.0).toTranslationMartix();
 }
 
-void LightComponent::getLightRotMatrix(mat4 & lightRotMatrix)
+mat4 LightComponent::getLightRotMatrix()
 {
-	lightRotMatrix = getParentEntity()->caclWorldRotMatrix();
+	// quaternion rotation
+	quat conjugateRotQuat = getParentEntity()->caclWorldRot();
+	conjugateRotQuat.x = -conjugateRotQuat.x;
+	conjugateRotQuat.y = -conjugateRotQuat.y;
+	conjugateRotQuat.z = -conjugateRotQuat.z;
+
+	return conjugateRotQuat.toRotationMartix();
 }
 
 const lightType LightComponent::getLightType()

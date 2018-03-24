@@ -30,11 +30,11 @@ protected:
 	GLShader* m_fragmentShader;
 };
 
-class ShadowPassShaderProgram : public GLShaderProgram
+class ShadowForwardPassShaderProgram : public GLShaderProgram
 {
 public:
-	ShadowPassShaderProgram() {};
-	~ShadowPassShaderProgram() {};
+	ShadowForwardPassShaderProgram() {};
+	~ShadowForwardPassShaderProgram() {};
 
 	void initialize() override;
 	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
@@ -43,6 +43,19 @@ private:
 	GLint m_uni_p;
 	GLint m_uni_v;
 	GLint m_uni_m;
+};
+
+class ShadowDeferPassShaderProgram : public GLShaderProgram
+{
+public:
+	ShadowDeferPassShaderProgram() {};
+	~ShadowDeferPassShaderProgram() {};
+
+	void initialize() override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+
+private:
+	GLint m_uni_shadowForwardPassRT0;
 };
 
 class GeometryPassBlinnPhongShaderProgram : public GLShaderProgram
@@ -110,6 +123,8 @@ private:
 	GLint m_uni_r;
 	GLint m_uni_t;
 	GLint m_uni_m;
+	GLint m_uni_p_light;
+	GLint m_uni_v_light;
 
 	GLint m_uni_useTexture;
 	GLint m_uni_albedo;
@@ -130,6 +145,8 @@ private:
 	GLint m_uni_geometryPassRT1;
 	GLint m_uni_geometryPassRT2;
 	GLint m_uni_geometryPassRT3;
+	GLint m_uni_geometryPassRT4;
+	GLint m_uni_shadowMap;
 	GLint m_uni_irradianceMap;
 	GLint m_uni_preFiltedMap;
 	GLint m_uni_brdfLUT;
@@ -137,6 +154,7 @@ private:
 	GLint m_uni_shadingMode;
 
 	GLint m_uni_viewPos;
+	GLint m_uni_dirLight_position;
 	GLint m_uni_dirLight_direction;
 	GLint m_uni_dirLight_color;
 
