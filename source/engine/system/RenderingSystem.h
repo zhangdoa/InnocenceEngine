@@ -122,6 +122,20 @@ private:
 	std::function<void()> f_changeDrawTextureMode;
 	std::function<void()> f_changeShadingMode;
 
+	BaseFrameBuffer* m_environmentPassFrameBuffer;
+	BaseShaderProgram* m_environmentCapturePassShaderProgram;
+	BaseShaderProgram* m_environmentConvolutionPassShaderProgram;
+	BaseShaderProgram* m_environmentPreFilterPassShaderProgram;
+	BaseShaderProgram* m_environmentBRDFLUTPassShaderProgram;
+	textureID m_environmentCapturePassTextureID;
+	textureID m_environmentConvolutionPassTextureID;
+	textureID m_environmentPreFilterPassTextureID;
+	textureID m_environmentBRDFLUTTextureID;
+
+	BaseFrameBuffer* m_shadowPassFrameBuffer;
+	BaseShaderProgram* m_shadowPassShaderProgram;
+	textureID m_shadowPassRT0TextureID;
+
 	BaseFrameBuffer* m_geometryPassFrameBuffer;
 	BaseShaderProgram* m_geometryPassShaderProgram;
 	textureID m_geometryPassRT0TextureID;
@@ -132,19 +146,6 @@ private:
 	BaseFrameBuffer* m_lightPassFrameBuffer;
 	BaseShaderProgram* m_lightPassShaderProgram;
 	textureID m_lightPassTextureID;
-
-	BaseFrameBuffer* m_environmentPassFrameBuffer;
-	BaseShaderProgram* m_environmentCapturePassShaderProgram;
-	BaseShaderProgram* m_environmentConvolutionPassShaderProgram;
-	BaseShaderProgram* m_environmentPreFilterPassShaderProgram;
-	BaseShaderProgram* m_environmentBRDFLUTPassShaderProgram;
-	textureID m_environmentCapturePassTextureID;
-	textureID m_environmentConvolutionPassTextureID;
-	textureID m_environmentPreFilterPassTextureID;
-	textureID m_environmentBRDFLUTTextureID;
-	
-	GLuint m_environmentPassFBO;
-	GLuint m_environmentPassRBO;
 
 	BaseFrameBuffer* m_skyForwardPassFrameBuffer;
 	BaseShaderProgram* m_skyForwardPassShaderProgram;

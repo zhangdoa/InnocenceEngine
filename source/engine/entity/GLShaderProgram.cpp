@@ -151,75 +151,37 @@ inline void GLShaderProgram::updateUniform(const GLint uniformLocation, const ma
 	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat.m[0][0]);
 
 }
-void BillboardPassShaderProgram::initialize()
+
+void ShadowPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
 	useProgram();
 
-	m_uni_texture = getUniformLocation("uni_texture");
-	updateUniform(m_uni_texture, 0);
 	m_uni_p = getUniformLocation("uni_p");
-	m_uni_r = getUniformLocation("uni_r");
-	m_uni_t = getUniformLocation("uni_t");
+	m_uni_v = getUniformLocation("uni_v");
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
+void ShadowPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	useProgram();
 
-	mat4 p = cameraComponents[0]->getProjectionMatrix();
-	mat4 r = cameraComponents[0]->getRotMatrix();
-	mat4 t = cameraComponents[0]->getPosMatrix();
-
-	// @TODO: multiply with inverse of camera rotation matrix
-	updateUniform(m_uni_p, p);
-	updateUniform(m_uni_r, r);
-	updateUniform(m_uni_t, t);
-
-	// draw each visibleComponent
-	for (auto& l_visibleComponent : visibleComponents)
+	// draw each lightComponent's shadowmap
+	for (auto& l_lightComponent : lightComponents)
 	{
-		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
+		if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
 		{
-			updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
-
-			// draw each graphic data of visibleComponent
-			for (auto& l_graphicData : l_visibleComponent->getModelMap())
-			{
-				//active and bind textures
-				// is there any texture?
-				auto l_textureMap = l_graphicData.second;
-				if (&l_textureMap != nullptr)
-				{
-					// any normal?
-					auto l_normalTextureID = l_textureMap.find(textureType::NORMAL);
-					if (l_normalTextureID != l_textureMap.end())
-					{
-						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
-						l_textureData->update(0);
-					}
-					// any albedo?
-					auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
-					if (l_diffuseTextureID != l_textureMap.end())
-					{
-						auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
-						l_textureData->update(1);
-					}
-					// any metallic?
-					auto l_specularTextureID = l_textureMap.find(textureType::METALLIC);
-					if (l_specularTextureID != l_textureMap.end())
-					{
-						auto& l_textureData = textureMap.find(l_specularTextureID->second)->second;
-						l_textureData->update(2);
-					}
-				}
-				// draw meshes
-				meshMap.find(l_graphicData.first)->second->update();
-			}
+			float near_plane = 1.0f, far_plane = 7.5f;
+			//mat4 p = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+			mat4 v = mat4().lookAt(l_lightComponent->getParentEntity()->getTransform()->getPos(), vec3(0.0f, 0.0f, 0.0f), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+			//updateUniform(m_uni_p, p);
+			updateUniform(m_uni_v, v);
+			updateUniform(m_uni_m, l_lightComponent->getParentEntity()->caclTransformationMatrix());
 		}
 	}
+
+
 }
 
 void GeometryPassBlinnPhongShaderProgram::initialize()
@@ -906,4 +868,75 @@ void FinalPassShaderProgram::update(std::vector<CameraComponent*>& cameraCompone
 	glDisable(GL_CULL_FACE);
 
 	useProgram();
+}
+
+void BillboardPassShaderProgram::initialize()
+{
+	GLShaderProgram::initialize();
+	useProgram();
+
+	m_uni_texture = getUniformLocation("uni_texture");
+	updateUniform(m_uni_texture, 0);
+	m_uni_p = getUniformLocation("uni_p");
+	m_uni_r = getUniformLocation("uni_r");
+	m_uni_t = getUniformLocation("uni_t");
+	m_uni_m = getUniformLocation("uni_m");
+}
+
+void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	useProgram();
+
+	mat4 p = cameraComponents[0]->getProjectionMatrix();
+	mat4 r = cameraComponents[0]->getRotMatrix();
+	mat4 t = cameraComponents[0]->getPosMatrix();
+
+	// @TODO: multiply with inverse of camera rotation matrix
+	updateUniform(m_uni_p, p);
+	updateUniform(m_uni_r, r);
+	updateUniform(m_uni_t, t);
+
+	// draw each visibleComponent
+	for (auto& l_visibleComponent : visibleComponents)
+	{
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
+		{
+			updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+
+			// draw each graphic data of visibleComponent
+			for (auto& l_graphicData : l_visibleComponent->getModelMap())
+			{
+				//active and bind textures
+				// is there any texture?
+				auto l_textureMap = l_graphicData.second;
+				if (&l_textureMap != nullptr)
+				{
+					// any normal?
+					auto l_normalTextureID = l_textureMap.find(textureType::NORMAL);
+					if (l_normalTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
+						l_textureData->update(0);
+					}
+					// any albedo?
+					auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
+					if (l_diffuseTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
+						l_textureData->update(1);
+					}
+					// any metallic?
+					auto l_specularTextureID = l_textureMap.find(textureType::METALLIC);
+					if (l_specularTextureID != l_textureMap.end())
+					{
+						auto& l_textureData = textureMap.find(l_specularTextureID->second)->second;
+						l_textureData->update(2);
+					}
+				}
+				// draw meshes
+				meshMap.find(l_graphicData.first)->second->update();
+			}
+		}
+	}
 }
