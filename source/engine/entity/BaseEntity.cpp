@@ -93,22 +93,15 @@ vec3 BaseEntity::caclWorldPos()
 
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	//return vec3(l_parentTransformationMatrix.m[0][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[0][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[0][2] * m_transform.getPos().z,
-	//	l_parentTransformationMatrix.m[1][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[1][2] * m_transform.getPos().z,
-	//	l_parentTransformationMatrix.m[2][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[2][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][2] * m_transform.getPos().z);
-	return vec3(l_parentTransformationMatrix.m[0][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][0] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][0] * m_transform.getPos().z,
-		l_parentTransformationMatrix.m[0][1] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][1] * m_transform.getPos().z,
-		l_parentTransformationMatrix.m[0][2] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][2] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][2] * m_transform.getPos().z);
+	return vec3(l_parentTransformationMatrix.m[0][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[0][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[0][2] * m_transform.getPos().z,
+		l_parentTransformationMatrix.m[1][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[1][2] * m_transform.getPos().z,
+		l_parentTransformationMatrix.m[2][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[2][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][2] * m_transform.getPos().z);
 #endif
 	//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 	return vec3(l_parentTransformationMatrix.m[0][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[0][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[0][2] * m_transform.getPos().z,
 		l_parentTransformationMatrix.m[1][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[1][2] * m_transform.getPos().z,
 		l_parentTransformationMatrix.m[2][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[2][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][2] * m_transform.getPos().z);
-	//return vec3(l_parentTransformationMatrix.m[0][0] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][0] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][0] * m_transform.getPos().z,
-	//	l_parentTransformationMatrix.m[0][1] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][1] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][1] * m_transform.getPos().z,
-	//	l_parentTransformationMatrix.m[0][2] * m_transform.getPos().x + l_parentTransformationMatrix.m[1][2] * m_transform.getPos().y + l_parentTransformationMatrix.m[2][2] * m_transform.getPos().z);
-
 #endif
 }
 
