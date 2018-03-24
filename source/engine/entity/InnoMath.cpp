@@ -105,19 +105,19 @@ vec3 vec3::operator*(double rhs)
 
 double vec3::length()
 {
-	// @TODO: replace with override impl
+	// @TODO: replace with SIMD impl
 	return sqrt(x * x + y * y + z * z);
 }
 
 vec3 vec3::normalize()
 {
-	// @TODO: optimaze
+	// @TODO: replace with SIMD impl
 	return vec3(x / length(), y / length(), z / length());
 }
 
 bool vec3::operator!=(const vec3 & rhs)
 {
-	//@TODO: optimize
+	// @TODO: replace with SIMD impl
 	if (x != rhs.x)
 	{
 		return true;
@@ -138,7 +138,7 @@ bool vec3::operator!=(const vec3 & rhs)
 
 bool vec3::operator==(const vec3 & rhs)
 {
-	//@TODO: optimize
+	// @TODO: replace with SIMD impl
 	return !(*this != rhs);
 }
 
@@ -146,6 +146,7 @@ bool vec3::operator==(const vec3 & rhs)
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 mat4 vec3::toTranslationMartix()
 {
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
 	l_m.m[0][0] = (float)1;
@@ -164,6 +165,7 @@ mat4 vec3::toTranslationMartix()
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 mat4 vec3::toTranslationMartix()
 {
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
 	l_m.m[0][0] = (float)1;
@@ -180,6 +182,7 @@ mat4 vec3::toTranslationMartix()
 
 mat4 vec3::toScaleMartix()
 {
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 	l_m.m[0][0] = (float)x;
 	l_m.m[1][1] = (float)y;
@@ -308,13 +311,13 @@ double quat::length()
 
 quat quat::normalize()
 {	
-	// @TODO: optimaze
+	// @TODO: replace with SIMD impl
 	return quat(x / length(), y / length(), z / length(), w / length());
 }
 
 bool quat::operator!=(const quat & rhs)
 {
-	//@TODO: optimize
+	// @TODO: replace with SIMD impl
 	if (x != rhs.x)
 	{
 		return true;
@@ -339,7 +342,7 @@ bool quat::operator!=(const quat & rhs)
 
 bool quat::operator==(const quat & rhs)
 {
-	//@TODO: optimize
+	// @TODO: replace with SIMD impl
 	return !(*this != rhs);
 }
 
@@ -347,7 +350,7 @@ bool quat::operator==(const quat & rhs)
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 mat4 quat::toRotationMartix()
 {
-	//@TODO:optimize
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
 	l_m.m[0][0] = (float)(1 - 2 * y * y - 2 * z * z);
@@ -378,7 +381,7 @@ mat4 quat::toRotationMartix()
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 mat4 quat::toRotationMartix()
 {
-	//@TODO:optimize
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
 	l_m.m[0][0] = (float)(1 - 2 * y * y - 2 * z * z);
@@ -471,7 +474,7 @@ mat4 & mat4::operator=(const mat4 & rhs)
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 mat4 mat4::operator*(const mat4 & rhs)
 {
-	//@TODO:optimize
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
 	l_m.m[0][0] = m[0][0] * rhs.m[0][0] + m[1][0] * rhs.m[0][1] + m[2][0] * rhs.m[0][2] + m[3][0] * rhs.m[0][3];
@@ -502,7 +505,7 @@ mat4 mat4::operator*(const mat4 & rhs)
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 mat4 mat4::operator*(const mat4 & rhs)
 {
-	//@TODO:optimize
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
 	l_m.m[0][0] = m[0][0] * rhs.m[0][0] + m[0][1] * rhs.m[1][0] + m[0][2] * rhs.m[2][0] + m[0][3] * rhs.m[3][0];
@@ -531,7 +534,7 @@ mat4 mat4::operator*(const mat4 & rhs)
 
 mat4 mat4::operator*(double rhs)
 {
-	//@TODO:optimize
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
 	l_m.m[0][0] = (float)rhs * m[0][0];
@@ -558,7 +561,7 @@ mat4 mat4::operator*(double rhs)
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 mat4 mat4::mul(const mat4 & rhs)
 {
-	//@TODO:optimize
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
 	l_m.m[0][0] = m[0][0] * rhs.m[0][0] + m[1][0] * rhs.m[0][1] + m[2][0] * rhs.m[0][2] + m[3][0] * rhs.m[0][3];
@@ -589,7 +592,7 @@ mat4 mat4::mul(const mat4 & rhs)
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 mat4 mat4::mul(const mat4 & rhs)
 {
-	//@TODO:optimize
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
 	l_m.m[0][0] = m[0][0] * rhs.m[0][0] + m[0][1] * rhs.m[1][0] + m[0][2] * rhs.m[2][0] + m[0][3] * rhs.m[3][0];
@@ -618,7 +621,7 @@ mat4 mat4::mul(const mat4 & rhs)
 
 mat4 mat4::mul(double rhs)
 {
-	//@TODO:optimize
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
 	l_m.m[0][0] = (float)rhs * m[0][0];
@@ -697,6 +700,7 @@ void mat4::initializeToOrthographicMatrix(double left, double right, double bott
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDir)
 {
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 	vec3 l_X;
 	vec3 l_Y;
@@ -739,6 +743,7 @@ mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDi
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDir)
 {
+	// @TODO: replace with SIMD impl
 	mat4 l_m;
 	vec3 l_X;
 	vec3 l_Y;
@@ -894,35 +899,34 @@ vec3 Transform::getDirection(direction direction) const
 	case LEFT:l_directionVec3 = vec3(-1.0f, 0.0f, 0.0f); break;
 	}
 
-	// V' = QVQ^-1, for unit quaternion, conjugated quaternion is same as inverse quatertion
+	// V' = QVQ^-1, for unit quaternion, the conjugated quaternion is as same as the inverse quaternion
 
 	// naive version
+	// get Q * V by hand
+	//quat l_hiddenRotatedQuat;
+	//l_hiddenRotatedQuat.w = -m_rot.x * l_directionVec3.x - m_rot.y * l_directionVec3.y - m_rot.z * l_directionVec3.z;
+	//l_hiddenRotatedQuat.x = m_rot.w * l_directionVec3.x + m_rot.y * l_directionVec3.z - m_rot.z * l_directionVec3.y;
+	//l_hiddenRotatedQuat.y = m_rot.w * l_directionVec3.y + m_rot.z * l_directionVec3.x - m_rot.x * l_directionVec3.z;
+	//l_hiddenRotatedQuat.z = m_rot.w * l_directionVec3.z + m_rot.x * l_directionVec3.y - m_rot.y * l_directionVec3.x;
 
-	//// get Q * V by hand
-	////glm::quat l_hiddenRotatedQuat;
-	////l_hiddenRotatedQuat.w = -m_rot.x * l_directionVec3.x - m_rot.y * l_directionVec3.y - m_rot.z * l_directionVec3.z;
-	////l_hiddenRotatedQuat.x = m_rot.w * l_directionVec3.x + m_rot.y * l_directionVec3.z - m_rot.z * l_directionVec3.y;
-	////l_hiddenRotatedQuat.y = m_rot.w * l_directionVec3.y + m_rot.z * l_directionVec3.x - m_rot.x * l_directionVec3.z;
-	////l_hiddenRotatedQuat.z = m_rot.w * l_directionVec3.z + m_rot.x * l_directionVec3.y - m_rot.y * l_directionVec3.x;
+	// get conjugated quaternion
+	//quat l_conjugatedQuat;
+	//l_conjugatedQuat = conjugate(m_rot);
 
-	//// get conjugate quaternion
-	////glm::quat l_conjugateQuat;
-	////l_conjugateQuat = glm::conjugate(m_rot);
-
-	//// then QV * Q^-1 
-	////glm::quat l_directionQuat;
-	////l_directionQuat = l_hiddenRotatedQuat * l_conjugateQuat;
-	////l_directionVec3.x = l_directionQuat.x;
-	////l_directionVec3.y = l_directionQuat.y;
-	////l_directionVec3.z = l_directionQuat.z;
+	// then QV * Q^-1 
+	//quat l_directionQuat;
+	//l_directionQuat = l_hiddenRotatedQuat * l_conjugatedQuat;
+	//l_directionVec3.x = l_directionQuat.x;
+	//l_directionVec3.y = l_directionQuat.y;
+	//l_directionVec3.z = l_directionQuat.z;
 
 	// traditional version, change direction vector to quaternion representation
 
-	////glm::quat l_directionQuat = glm::quat(0.0, l_directionVec3);
-	////l_directionQuat = m_rot * l_directionQuat * glm::conjugate(m_rot);
-	////l_directionVec3.x = l_directionQuat.x;
-	////l_directionVec3.y = l_directionQuat.y;
-	////l_directionVec3.z = l_directionQuat.z;
+	//quat l_directionQuat = quat(0.0, l_directionVec3);
+	//l_directionQuat = m_rot * l_directionQuat * conjugate(m_rot);
+	//l_directionVec3.x = l_directionQuat.x;
+	//l_directionVec3.y = l_directionQuat.y;
+	//l_directionVec3.z = l_directionQuat.z;
 
 	// optimized version ([Kavan et al. ] Lemma 4)
 	//V' = V + 2 * Qv x (Qv x V + Qs * V)
