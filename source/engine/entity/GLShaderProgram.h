@@ -30,6 +30,21 @@ protected:
 	GLShader* m_fragmentShader;
 };
 
+class ShadowPassShaderProgram : public GLShaderProgram
+{
+public:
+	ShadowPassShaderProgram() {};
+	~ShadowPassShaderProgram() {};
+
+	void initialize() override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+
+private:
+	GLint m_uni_p;
+	GLint m_uni_v;
+	GLint m_uni_m;
+};
+
 class GeometryPassBlinnPhongShaderProgram : public GLShaderProgram
 {
 public:

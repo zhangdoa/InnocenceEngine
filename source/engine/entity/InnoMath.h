@@ -7,8 +7,71 @@
 const static double PI = 3.14159265358979323846264338327950288;
 
 class vec3;
-// [rowIndex][columnIndex]
-// Column-major order
+
+/*
+
+matrix4x4 mathematical convention :
+| a00 a01 a02 a03 |
+| a10 a11 a12 a13 |
+| a20 a21 a22 a23 |
+| a30 a31 a32 a33 |
+
+*/
+
+/* Column-Major vector4 mathematical convention
+
+vector4 :
+| x |
+| y |
+| z |
+| w |
+
+use right/post-multiplication, need to access each rows of the matrix then each elements,
+for C/C++, it's cache-friendly with Row-Major memory layout; 
+for Fortan/Matlab, it's cache-friendly with Column-Major memory layout.
+
+matrix4x4 * vector4 :
+| x' = a00 * x  + a01 * y + a02 * z + a03 * w |
+| y' = a10 * x  + a11 * y + a12 * z + a13 * w |
+| z' = a20 * x  + a21 * y + a22 * z + a23 * w |
+| w' = a30 * x  + a31 * y + a32 * z + a33 * w |
+
+*/
+
+/* Row-Major vector4 mathematical convention
+
+vector4 :
+| x y z w |
+
+use left/pre-multiplication, need to access each columns of the matrix then each elements,
+for C/C++, it's cache-friendly with Column-Major memory layout;
+for Fortan/Matlab, it's cache-friendly with Row-Major memory layout.
+
+vector4 * matrix4x4 :
+| x' = x * a00 + y * a10 + z * a20 + w * a30 |
+| y' = x * a01 + y * a11 + z * a21 + w * a31 |
+| z' = x * a02 + y * a12 + z * a22 + w * a32 |
+| w' = x * a03 + y * a13 + z * a23 + w * a33 |
+
+*/
+
+/* Column-Major memory layout
+[columnIndex][rowIndex]
+| m[0][0] <-> a00 m[1][0] <-> a01 m[2][0] <-> a02 m[3][0] <-> a03 |
+| m[0][1] <-> a10 m[1][1] <-> a11 m[2][1] <-> a12 m[3][1] <-> a13 |
+| m[0][2] <-> a20 m[1][2] <-> a21 m[2][2] <-> a22 m[3][2] <-> a23 |
+| m[0][3] <-> a30 m[1][3] <-> a31 m[2][3] <-> a32 m[3][3] <-> a33 |
+*/
+
+/* Row-Major memory layout
+[rowIndex][columnIndex]
+| m[0][0] <-> a00 m[0][1] <-> a01 m[0][2] <-> a02 m[0][3] <-> a03 |
+| m[1][0] <-> a10 m[1][1] <-> a11 m[1][2] <-> a12 m[1][3] <-> a13 |
+| m[2][0] <-> a20 m[2][1] <-> a21 m[2][2] <-> a22 m[2][3] <-> a23 |
+| m[3][0] <-> a30 m[3][1] <-> a31 m[3][2] <-> a32 m[3][3] <-> a33 |
+*/
+
+// chose Row-Major vector4 mathematical convention and Column-Major memory layout in C/C++
 class mat4
 {
 public:
@@ -23,6 +86,7 @@ public:
 	mat4 mul(double rhs);
 	 
 	void initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar);
+	void initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar);
 	mat4 lookAt(const vec3& eyePos, const vec3& centerPos, const vec3& upDir);
 	float m[4][4];
 };

@@ -528,6 +528,14 @@ void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNea
 	m[2][3] = -1.0f;
 }
 
+void mat4::initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar)
+{
+	m[0][0] = (float)(2 / (right - left));
+	m[1][1] = (float)(2 / (up - bottom));
+	m[2][2] = (float)(-2 / (zFar - zNear));
+	m[3][3] = 1.0f;
+}
+
 mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDir)
 {
 	mat4 l_m;

@@ -66,8 +66,8 @@ void InnocenceGarden::setup()
 	m_pawnEntity2.getTransform()->setPos(vec3(0.0, 0.2, 3.5));
 	m_visibleComponents.emplace_back(&m_pawnComponent2);
 
-	setupLights();
-	setupSpheres();
+	//setupLights();
+	//setupSpheres();
 
 	m_rootEntity.setup();
 }
