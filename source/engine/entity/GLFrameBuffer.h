@@ -1,4 +1,5 @@
 #pragma once
+#include "common/GLHeaders.h"
 #include "BaseFrameBuffer.h"
 #include "ComponentHeaders.h"
 
