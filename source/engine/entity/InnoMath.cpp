@@ -142,6 +142,8 @@ bool vec3::operator==(const vec3 & rhs)
 	return !(*this != rhs);
 }
 
+//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 mat4 vec3::toTranslationMartix()
 {
 	mat4 l_m;
@@ -149,14 +151,32 @@ mat4 vec3::toTranslationMartix()
 	l_m.m[0][0] = (float)1;
 	l_m.m[1][1] = (float)1;
 	l_m.m[2][2] = (float)1;
-	l_m.m[3][3] = (float)1;
-
 	l_m.m[3][0] = (float)x;
 	l_m.m[3][1] = (float)y;
 	l_m.m[3][2] = (float)z;
+	l_m.m[3][3] = (float)1;
 
 	return l_m;
 }
+#endif
+
+//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+mat4 vec3::toTranslationMartix()
+{
+	mat4 l_m;
+
+	l_m.m[0][0] = (float)1;
+	l_m.m[0][3] = (float)x;
+	l_m.m[1][1] = (float)1;
+	l_m.m[1][3] = (float)y;
+	l_m.m[2][2] = (float)1;
+	l_m.m[2][3] = (float)z;
+	l_m.m[3][3] = (float)1;
+
+	return l_m;
+}
+#endif
 
 mat4 vec3::toScaleMartix()
 {
@@ -323,33 +343,67 @@ bool quat::operator==(const quat & rhs)
 	return !(*this != rhs);
 }
 
+//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 mat4 quat::toRotationMartix()
 {
 	//@TODO:optimize
 	mat4 l_m;
 
 	l_m.m[0][0] = (float)(1 - 2 * y * y - 2 * z * z);
-	l_m.m[1][0] = (float)(2 * x * y - 2 * z * w);
-	l_m.m[2][0] = (float)(2 * x * z + 2 * y * w);
-	l_m.m[3][0] = (float)(0);
-
 	l_m.m[0][1] = (float)(2 * x * y + 2 * z * w);
-	l_m.m[1][1] = (float)(1 - 2 * x * x - 2 * z * z);
-	l_m.m[2][1] = (float)(2 * y * z - 2 * x * w);
-	l_m.m[3][1] = (float)(0);
-
 	l_m.m[0][2] = (float)(2 * x * z - 2 * y * w);
-	l_m.m[1][2] = (float)(2 * y * z + 2 * x * w);
-	l_m.m[2][2] = (float)(1 - 2 * x * x - 2 * y * y);
-	l_m.m[3][2] = (float)(0);
-
 	l_m.m[0][3] = (float)(0);
+
+	l_m.m[1][0] = (float)(2 * x * y - 2 * z * w);
+	l_m.m[1][1] = (float)(1 - 2 * x * x - 2 * z * z);
+	l_m.m[1][2] = (float)(2 * y * z + 2 * x * w);
 	l_m.m[1][3] = (float)(0);
+
+	l_m.m[2][0] = (float)(2 * x * z + 2 * y * w);
+	l_m.m[2][1] = (float)(2 * y * z - 2 * x * w);
+	l_m.m[2][2] = (float)(1 - 2 * x * x - 2 * y * y);
 	l_m.m[2][3] = (float)(0);
+
+	l_m.m[3][0] = (float)(0);
+	l_m.m[3][1] = (float)(0);	
+	l_m.m[3][2] = (float)(0);
 	l_m.m[3][3] = (float)(1);
 
 	return l_m;
 }
+#endif
+
+//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+mat4 quat::toRotationMartix()
+{
+	//@TODO:optimize
+	mat4 l_m;
+
+	l_m.m[0][0] = (float)(1 - 2 * y * y - 2 * z * z);
+	l_m.m[0][1] = (float)(2 * x * y - 2 * z * w);
+	l_m.m[0][2] = (float)(2 * x * z + 2 * y * w);
+	l_m.m[0][3] = (float)(0);
+
+	l_m.m[1][0] = (float)(2 * x * y + 2 * z * w);
+	l_m.m[1][1] = (float)(1 - 2 * x * x - 2 * z * z);
+	l_m.m[1][2] = (float)(2 * y * z - 2 * x * w);
+	l_m.m[1][3] = (float)(0);
+
+	l_m.m[2][0] = (float)(2 * x * z - 2 * y * w);
+	l_m.m[2][1] = (float)(2 * y * z + 2 * x * w);
+	l_m.m[2][2] = (float)(1 - 2 * x * x - 2 * y * y);
+	l_m.m[2][3] = (float)(0);
+
+	l_m.m[3][0] = (float)(0);
+	l_m.m[3][1] = (float)(0);
+	l_m.m[3][2] = (float)(0);
+	l_m.m[3][3] = (float)(1);
+
+	return l_m;
+}
+#endif
 
 mat4::mat4()
 {
@@ -413,6 +467,8 @@ mat4 & mat4::operator=(const mat4 & rhs)
 	return *this;
 }
 
+//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 mat4 mat4::operator*(const mat4 & rhs)
 {
 	//@TODO:optimize
@@ -440,6 +496,38 @@ mat4 mat4::operator*(const mat4 & rhs)
 
 	return l_m;
 }
+#endif
+
+//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+mat4 mat4::operator*(const mat4 & rhs)
+{
+	//@TODO:optimize
+	mat4 l_m;
+
+	l_m.m[0][0] = m[0][0] * rhs.m[0][0] + m[0][1] * rhs.m[1][0] + m[0][2] * rhs.m[2][0] + m[0][3] * rhs.m[3][0];
+	l_m.m[0][1] = m[1][0] * rhs.m[0][0] + m[1][1] * rhs.m[1][0] + m[1][2] * rhs.m[2][0] + m[1][3] * rhs.m[3][0];
+	l_m.m[0][2] = m[2][0] * rhs.m[0][0] + m[2][1] * rhs.m[1][0] + m[2][2] * rhs.m[2][0] + m[2][3] * rhs.m[3][0];
+	l_m.m[0][3] = m[3][0] * rhs.m[0][0] + m[3][1] * rhs.m[1][0] + m[3][2] * rhs.m[2][0] + m[3][3] * rhs.m[3][0];
+
+	l_m.m[0][0] = m[0][0] * rhs.m[0][1] + m[0][1] * rhs.m[1][1] + m[0][2] * rhs.m[2][1] + m[0][3] * rhs.m[3][1];
+	l_m.m[1][1] = m[1][0] * rhs.m[0][1] + m[1][1] * rhs.m[1][1] + m[1][2] * rhs.m[2][1] + m[1][3] * rhs.m[3][1];
+	l_m.m[1][2] = m[2][0] * rhs.m[0][1] + m[2][1] * rhs.m[1][1] + m[2][2] * rhs.m[2][1] + m[2][3] * rhs.m[3][1];
+	l_m.m[1][3] = m[3][0] * rhs.m[0][1] + m[3][1] * rhs.m[1][1] + m[3][2] * rhs.m[2][1] + m[3][3] * rhs.m[3][1];
+
+	l_m.m[0][0] = m[0][0] * rhs.m[0][2] + m[0][1] * rhs.m[1][2] + m[0][2] * rhs.m[2][2] + m[0][3] * rhs.m[3][2];
+	l_m.m[2][1] = m[1][0] * rhs.m[0][2] + m[1][1] * rhs.m[1][2] + m[1][2] * rhs.m[2][2] + m[1][3] * rhs.m[3][2];
+	l_m.m[2][2] = m[2][0] * rhs.m[0][2] + m[2][1] * rhs.m[1][2] + m[2][2] * rhs.m[2][2] + m[2][3] * rhs.m[3][2];
+	l_m.m[2][3] = m[3][0] * rhs.m[0][2] + m[3][1] * rhs.m[1][2] + m[3][2] * rhs.m[2][2] + m[3][3] * rhs.m[3][2];
+
+	l_m.m[3][0] = m[0][0] * rhs.m[0][3] + m[0][1] * rhs.m[1][3] + m[0][2] * rhs.m[2][3] + m[0][3] * rhs.m[3][3];
+	l_m.m[3][1] = m[1][0] * rhs.m[0][3] + m[1][1] * rhs.m[1][3] + m[1][2] * rhs.m[2][3] + m[1][3] * rhs.m[3][3];
+	l_m.m[3][2] = m[2][0] * rhs.m[0][3] + m[2][1] * rhs.m[1][3] + m[2][2] * rhs.m[2][3] + m[2][3] * rhs.m[3][3];
+	l_m.m[3][3] = m[3][0] * rhs.m[0][3] + m[3][1] * rhs.m[1][3] + m[3][2] * rhs.m[2][3] + m[3][3] * rhs.m[3][3];
+
+	return l_m;
+}
+#endif 
 
 mat4 mat4::operator*(double rhs)
 {
@@ -466,6 +554,8 @@ mat4 mat4::operator*(double rhs)
 	return l_m;
 }
 
+//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 mat4 mat4::mul(const mat4 & rhs)
 {
 	//@TODO:optimize
@@ -493,6 +583,38 @@ mat4 mat4::mul(const mat4 & rhs)
 
 	return l_m;
 }
+#endif
+
+//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+mat4 mat4::mul(const mat4 & rhs)
+{
+	//@TODO:optimize
+	mat4 l_m;
+
+	l_m.m[0][0] = m[0][0] * rhs.m[0][0] + m[0][1] * rhs.m[1][0] + m[0][2] * rhs.m[2][0] + m[0][3] * rhs.m[3][0];
+	l_m.m[0][1] = m[1][0] * rhs.m[0][0] + m[1][1] * rhs.m[1][0] + m[1][2] * rhs.m[2][0] + m[1][3] * rhs.m[3][0];
+	l_m.m[0][2] = m[2][0] * rhs.m[0][0] + m[2][1] * rhs.m[1][0] + m[2][2] * rhs.m[2][0] + m[2][3] * rhs.m[3][0];
+	l_m.m[0][3] = m[3][0] * rhs.m[0][0] + m[3][1] * rhs.m[1][0] + m[3][2] * rhs.m[2][0] + m[3][3] * rhs.m[3][0];
+
+	l_m.m[0][0] = m[0][0] * rhs.m[0][1] + m[0][1] * rhs.m[1][1] + m[0][2] * rhs.m[2][1] + m[0][3] * rhs.m[3][1];
+	l_m.m[1][1] = m[1][0] * rhs.m[0][1] + m[1][1] * rhs.m[1][1] + m[1][2] * rhs.m[2][1] + m[1][3] * rhs.m[3][1];
+	l_m.m[1][2] = m[2][0] * rhs.m[0][1] + m[2][1] * rhs.m[1][1] + m[2][2] * rhs.m[2][1] + m[2][3] * rhs.m[3][1];
+	l_m.m[1][3] = m[3][0] * rhs.m[0][1] + m[3][1] * rhs.m[1][1] + m[3][2] * rhs.m[2][1] + m[3][3] * rhs.m[3][1];
+
+	l_m.m[0][0] = m[0][0] * rhs.m[0][2] + m[0][1] * rhs.m[1][2] + m[0][2] * rhs.m[2][2] + m[0][3] * rhs.m[3][2];
+	l_m.m[2][1] = m[1][0] * rhs.m[0][2] + m[1][1] * rhs.m[1][2] + m[1][2] * rhs.m[2][2] + m[1][3] * rhs.m[3][2];
+	l_m.m[2][2] = m[2][0] * rhs.m[0][2] + m[2][1] * rhs.m[1][2] + m[2][2] * rhs.m[2][2] + m[2][3] * rhs.m[3][2];
+	l_m.m[2][3] = m[3][0] * rhs.m[0][2] + m[3][1] * rhs.m[1][2] + m[3][2] * rhs.m[2][2] + m[3][3] * rhs.m[3][2];
+
+	l_m.m[3][0] = m[0][0] * rhs.m[0][3] + m[0][1] * rhs.m[1][3] + m[0][2] * rhs.m[2][3] + m[0][3] * rhs.m[3][3];
+	l_m.m[3][1] = m[1][0] * rhs.m[0][3] + m[1][1] * rhs.m[1][3] + m[1][2] * rhs.m[2][3] + m[1][3] * rhs.m[3][3];
+	l_m.m[3][2] = m[2][0] * rhs.m[0][3] + m[2][1] * rhs.m[1][3] + m[2][2] * rhs.m[2][3] + m[2][3] * rhs.m[3][3];
+	l_m.m[3][3] = m[3][0] * rhs.m[0][3] + m[3][1] * rhs.m[1][3] + m[3][2] * rhs.m[2][3] + m[3][3] * rhs.m[3][3];
+
+	return l_m;
+}
+#endif
 
 mat4 mat4::mul(double rhs)
 {
@@ -519,23 +641,60 @@ mat4 mat4::mul(double rhs)
 	return l_m;
 }
 
+//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar)
 {
 	m[0][0] = (float)(1 / (tan(FOV / 2) * HWRatio));
 	m[1][1] = (float)(1 / tan(FOV / 2));
 	m[2][2] = (float)(-(zFar + zNear) / ((zFar - zNear)));
-	m[3][2] = (float)(-(2 * zFar *zNear) / ((zFar - zNear)));
 	m[2][3] = -1.0f;
+	m[3][2] = (float)(-(2 * zFar *zNear) / ((zFar - zNear)));
 }
+#endif
 
+//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar)
+{
+	m[0][0] = (float)(1 / (tan(FOV / 2) * HWRatio));
+	m[1][1] = (float)(1 / tan(FOV / 2));
+	m[2][2] = (float)(-(zFar + zNear) / ((zFar - zNear)));
+	m[2][3] = (float)(-(2 * zFar *zNear) / ((zFar - zNear)));
+	m[3][2] = -1.0f;
+}
+#endif
+
+//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 void mat4::initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar)
 {
 	m[0][0] = (float)(2 / (right - left));
 	m[1][1] = (float)(2 / (up - bottom));
 	m[2][2] = (float)(-2 / (zFar - zNear));
+	m[3][0] = (float)(- (left + right) / (left - right));
+	m[3][1] = (float)(- (up + bottom) / (up - bottom));
+	m[3][2] = (float)(- (zFar + zNear) / (zFar - zNear));
 	m[3][3] = 1.0f;
 }
+#endif
 
+//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+void mat4::initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar)
+{
+	m[0][0] = (float)(2 / (right - left));
+	m[0][3] = (float)(-(left + right) / (left - right));
+	m[1][1] = (float)(2 / (up - bottom));
+	m[1][3] = (float)(-(up + bottom) / (up - bottom));
+	m[2][2] = (float)(-2 / (zFar - zNear));
+	m[2][3] = (float)(-(zFar + zNear) / (zFar - zNear));
+	m[3][3] = 1.0f;
+}
+#endif
+
+//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDir)
 {
 	mat4 l_m;
@@ -556,24 +715,67 @@ mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDi
 	l_Y = l_Y.normalize();
 
 	l_m.m[0][0] = (float)l_X.x;
-	l_m.m[1][0] = (float)l_X.y;
-	l_m.m[2][0] = (float)l_X.z;
-	l_m.m[3][0] = (float)-l_X.dot(eyePos);
 	l_m.m[0][1] = (float)l_Y.x;
-	l_m.m[1][1] = (float)l_Y.y;
-	l_m.m[2][1] = (float)l_Y.z;
-	l_m.m[3][1] = (float)-l_Y.dot(eyePos);
 	l_m.m[0][2] = (float)l_Z.x;
-	l_m.m[1][2] = (float)l_Z.y;
-	l_m.m[2][2] = (float)l_Z.z;
-	l_m.m[3][2] = (float)-l_Z.dot(eyePos);
 	l_m.m[0][3] = 0.0f;
+	l_m.m[1][0] = (float)l_X.y;
+	l_m.m[1][1] = (float)l_Y.y;
+	l_m.m[1][2] = (float)l_Z.y;
 	l_m.m[1][3] = 0.0f;
+	l_m.m[2][0] = (float)l_X.z;
+	l_m.m[2][1] = (float)l_Y.z;
+	l_m.m[2][2] = (float)l_Z.z;
 	l_m.m[2][3] = 0.0f;
+	l_m.m[3][0] = (float)-l_X.dot(eyePos);
+	l_m.m[3][1] = (float)-l_Y.dot(eyePos);
+	l_m.m[3][2] = (float)-l_Z.dot(eyePos);
 	l_m.m[3][3] = 1.0f;
-	
+
 	return l_m;
 }
+#endif
+
+//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDir)
+{
+	mat4 l_m;
+	vec3 l_X;
+	vec3 l_Y;
+	vec3 l_Z = eyePos;
+
+	l_Z = l_Z - centerPos;
+	l_Z = l_Z.normalize();
+
+	l_Y = upDir;
+
+	l_X = l_Y.cross(l_Z);
+
+	l_Y = l_Z.cross(l_X);
+
+	l_X = l_X.normalize();
+	l_Y = l_Y.normalize();
+
+	l_m.m[0][0] = (float)l_X.x;
+	l_m.m[0][1] = (float)l_X.y;
+	l_m.m[0][2] = (float)l_X.z;
+	l_m.m[0][3] = (float)-l_X.dot(eyePos);
+	l_m.m[1][0] = (float)l_Y.x;
+	l_m.m[1][1] = (float)l_Y.y;
+	l_m.m[1][2] = (float)l_Y.z;
+	l_m.m[1][3] = (float)-l_Y.dot(eyePos);
+	l_m.m[2][0] = (float)l_Z.x;
+	l_m.m[2][1] = (float)l_Z.y;
+	l_m.m[2][2] = (float)l_Z.z;
+	l_m.m[2][3] = (float)-l_Z.dot(eyePos);
+	l_m.m[3][0] = 0.0f;
+	l_m.m[3][1] = 0.0f;
+	l_m.m[3][2] = 0.0f;
+	l_m.m[3][3] = 1.0f;
+
+	return l_m;
+}
+#endif
 
 Vertex::Vertex()
 {

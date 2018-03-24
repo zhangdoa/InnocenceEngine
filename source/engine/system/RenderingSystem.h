@@ -132,9 +132,13 @@ private:
 	textureID m_environmentPreFilterPassTextureID;
 	textureID m_environmentBRDFLUTTextureID;
 
-	BaseFrameBuffer* m_shadowPassFrameBuffer;
-	BaseShaderProgram* m_shadowPassShaderProgram;
-	textureID m_shadowPassRT0TextureID;
+	BaseFrameBuffer* m_shadowForwardPassFrameBuffer;
+	BaseShaderProgram* m_shadowForwardPassShaderProgram;
+	textureID m_shadowForwardPassTextureID;
+
+	//BaseFrameBuffer* m_shadowDeferPassFrameBuffer;
+	//BaseShaderProgram* m_shadowDeferPassShaderProgram;
+	//textureID m_shadowDeferPassTextureID;
 
 	BaseFrameBuffer* m_geometryPassFrameBuffer;
 	BaseShaderProgram* m_geometryPassShaderProgram;
@@ -142,6 +146,7 @@ private:
 	textureID m_geometryPassRT1TextureID;
 	textureID m_geometryPassRT2TextureID;
 	textureID m_geometryPassRT3TextureID;
+	textureID m_geometryPassRT4TextureID;
 
 	BaseFrameBuffer* m_lightPassFrameBuffer;
 	BaseShaderProgram* m_lightPassShaderProgram;
@@ -168,12 +173,14 @@ private:
 	int m_shadingMode = 0;
 
 	bool m_shouldUpdateEnvironmentMap = true;
+	void initializeBackgroundPass();
+	void renderBackgroundPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+	void initializeShadowPass();
+	void renderShadowPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 	void initializeGeometryPass();
 	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 	void initializeLightPass();
 	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
-	void initializeBackgroundPass();
-	void renderBackgroundPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 	void initializeFinalPass();
 	void renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 };

@@ -1,7 +1,10 @@
 #pragma once
 #include "interface/IGameSystem.h"
+#include "interface/ITimeSystem.h"
 
 #include "entity/ComponentHeaders.h"
+
+extern ITimeSystem* g_pTimeSystem;
 
 class GameSystem : public IGameSystem
 {

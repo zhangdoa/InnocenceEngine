@@ -22,7 +22,7 @@ void GLFrameBuffer::initialize()
 	
 	if (m_renderTargetTextures.size() > 0)
 	{
-		if (m_frameBufferType != frameBufferType::CUBEMAP)
+		if (m_frameBufferType != frameBufferType::ENVIRONMENT_PASS)
 		{
 			for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); ++i)
 			{
@@ -35,6 +35,16 @@ void GLFrameBuffer::initialize()
 				colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 			}
 			glDrawBuffers(colorAttachments.size(), &colorAttachments[0]);
+		}
+		else if (m_frameBufferType == frameBufferType::SHADOW_PASS)
+		{
+			for (auto i = (unsigned int)0; i < m_renderTargetTextures.size(); ++i)
+			{
+				m_renderTargetTextures[i]->initialize();
+				m_renderTargetTextures[i]->attachToFramebuffer(0, 0, 0);
+			}
+			glDrawBuffer(GL_NONE);
+			glReadBuffer(GL_NONE);
 		}
 		else
 		{

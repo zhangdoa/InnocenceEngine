@@ -32,9 +32,10 @@ void InnocenceGarden::setup()
 	m_skyboxEntity.addChildComponent(&m_skyboxComponent);
 	m_visibleComponents.emplace_back(&m_skyboxComponent);
 
-	m_directionalLightComponent.setColor(vec3(1.0, 1.0, 1.0));
+	m_directionalLightComponent.setColor(vec3(0.0, 0.5, 1.0));
 	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
+	m_directionalLightEntity.getTransform()->setPos(vec3(0.0, 5.0, 0.0));
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
 	m_landscapeComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
@@ -67,7 +68,7 @@ void InnocenceGarden::setup()
 	m_visibleComponents.emplace_back(&m_pawnComponent2);
 
 	//setupLights();
-	//setupSpheres();
+	setupSpheres();
 
 	m_rootEntity.setup();
 }
@@ -80,6 +81,12 @@ void InnocenceGarden::initialize()
 void InnocenceGarden::update()
 {
 	temp += 0.02f;
+	//for (size_t i = 0; i < 1000000; i++)
+	//{
+	//	auto a = mat4();
+	//	a.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 1000000.0);
+	//	a = a * a;
+	//}
 	updateLights(temp);
 	updateSpheres(temp);
 	m_rootEntity.update();

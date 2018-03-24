@@ -58,8 +58,7 @@ void CoreSystem::update()
 	//if (g_pTimeSystem->getStatus() == objectStatus::ALIVE)
 	//{
 
-	auto l_tickTime = g_pTimeSystem->getcurrentTime();
-	// game simulation
+	// async game simulation
 	std::async(&IGameSystem::update, g_pGameSystem);
 
 	if (g_pRenderingSystem->getStatus() == objectStatus::ALIVE)
@@ -70,7 +69,6 @@ void CoreSystem::update()
 			g_pRenderingSystem->update();
 			g_pRenderingSystem->render();
 		}
-		l_tickTime = g_pTimeSystem->getcurrentTime() - l_tickTime;
 	}
 	else
 	{

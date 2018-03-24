@@ -29,7 +29,10 @@ void GameSystem::initialize()
 
 void GameSystem::update()
 {
+	auto l_tickTime = g_pTimeSystem->getcurrentTime();
 	g_pGame->update();
+	l_tickTime = g_pTimeSystem->getcurrentTime() - l_tickTime;
+	//g_pLogSystem->printLog(l_tickTime);
 }
 
 void GameSystem::shutdown()

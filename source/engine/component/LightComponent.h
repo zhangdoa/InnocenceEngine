@@ -25,10 +25,8 @@ public:
 	void setRadius(double radius);
 	void setColor(const vec3& color);
 
-	void getLightPosMatrix(mat4 & lightPosMatrix);
-	void getLightRotMatrix(mat4 & lightRotMatrix);
-
-	//ShadowMapData& getShadowMapData();
+	mat4 getLightPosMatrix();
+	mat4 getLightRotMatrix();
 
 private:
 	lightType m_lightType = lightType::POINT;
@@ -38,6 +36,5 @@ private:
 	double m_linearFactor;
 	double m_quadraticFactor;
 	vec3 m_color;
-	//ShadowMapData m_shadowMapData;
 };
 
