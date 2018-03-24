@@ -1,4 +1,5 @@
 #pragma once
+#include "common/GLHeaders.h"
 #include "BaseTexture.h"
 
 class GLTexture : public BaseTexture

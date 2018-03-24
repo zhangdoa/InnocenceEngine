@@ -1,4 +1,5 @@
 #pragma once
+#include "common/GLHeaders.h"
 #include "BaseShader.h"
 
 class GLShader : public BaseShader
