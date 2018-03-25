@@ -6,19 +6,22 @@ void GLFrameBuffer::initialize()
 	glGenFramebuffers(1, &m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
 
-	// generate and bind render buffer
-	glGenRenderbuffers(1, &m_RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
-
-	switch (m_renderBufferType)
+	if (m_renderBufferType != renderBufferType::NONE)
 	{
-	case renderBufferType::DEPTH:m_internalformat = GL_DEPTH_COMPONENT32; m_attachment = GL_DEPTH_ATTACHMENT; break;
-	case renderBufferType::STENCIL:m_internalformat = GL_STENCIL_INDEX16; m_attachment = GL_STENCIL_ATTACHMENT; break;
-	case renderBufferType::DEPTH_AND_STENCIL: m_internalformat = GL_DEPTH24_STENCIL8; m_attachment = GL_DEPTH_STENCIL_ATTACHMENT; break;
-	}
+		// generate and bind render buffer
+		glGenRenderbuffers(1, &m_RBO);
+		glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
 
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, m_attachment, GL_RENDERBUFFER, m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, (int)m_renderTargetTextures[0]->getTextureWidth(), (int)m_renderTargetTextures[0]->getTextureHeight());
+		switch (m_renderBufferType)
+		{
+		case renderBufferType::DEPTH:m_internalformat = GL_DEPTH_COMPONENT32; m_attachment = GL_DEPTH_ATTACHMENT; break;
+		case renderBufferType::STENCIL:m_internalformat = GL_STENCIL_INDEX16; m_attachment = GL_STENCIL_ATTACHMENT; break;
+		case renderBufferType::DEPTH_AND_STENCIL: m_internalformat = GL_DEPTH24_STENCIL8; m_attachment = GL_DEPTH_STENCIL_ATTACHMENT; break;
+		}
+
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, m_attachment, GL_RENDERBUFFER, m_RBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, (int)m_renderTargetTextures[0]->getTextureWidth(), (int)m_renderTargetTextures[0]->getTextureHeight());
+	}
 	
 	if (m_renderTargetTextures.size() > 0)
 	{
@@ -75,15 +78,28 @@ void GLFrameBuffer::initialize()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLFrameBuffer::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
+void GLFrameBuffer::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, bool cleanColorBuffer, bool cleanDepthBuffer)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	if (m_renderBufferType != renderBufferType::NONE)
+	{
+		glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
+	}
+	if (cleanColorBuffer)
+	{
+		glClear(GL_COLOR_BUFFER_BIT);
+	}
+	if (cleanDepthBuffer)
+	{
+		glClear(GL_DEPTH_BUFFER_BIT);
+	}
 	for (auto i = (unsigned int)0; i < m_shaderPrograms.size(); ++i)
 	{
-		glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, (int)m_renderBufferStorageSize[i].x, (int)m_renderBufferStorageSize[i].y);
-		glViewport(0, 0, (int)m_renderBufferStorageSize[i].x, (int)m_renderBufferStorageSize[i].y);
+		if (m_renderBufferType != renderBufferType::NONE)
+		{
+			glRenderbufferStorage(GL_RENDERBUFFER, m_internalformat, (int)m_renderBufferStorageSize[i].x, (int)m_renderBufferStorageSize[i].y);
+			glViewport(0, 0, (int)m_renderBufferStorageSize[i].x, (int)m_renderBufferStorageSize[i].y);
+		}
 		m_shaderPrograms[i]->update(cameraComponents, lightComponents, visibleComponents, meshMap, textureMap);
 	}
 }
@@ -91,6 +107,17 @@ void GLFrameBuffer::update(std::vector<CameraComponent*>& cameraComponents, std:
 void GLFrameBuffer::activeTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer)
 {
 	m_renderTargetTextures[textureIndexInOwnerFrameBuffer]->update(textureIndexInUserFrameBuffer);
+}
+
+void GLFrameBuffer::asReadBuffer()
+{
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_FBO);
+}
+
+void GLFrameBuffer::asWriteBuffer(const vec2& source, const vec2& dest)
+{
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_FBO);
+	glBlitFramebuffer(0, 0, source.x, source.y, 0, 0, dest.x, dest.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 }
 
 void GLFrameBuffer::shutdown()

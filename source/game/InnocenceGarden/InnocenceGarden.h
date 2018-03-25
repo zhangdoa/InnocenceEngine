@@ -41,6 +41,7 @@ private:
 	VisibleComponent m_skyboxComponent;
 
 	LightComponent m_directionalLightComponent;
+	VisibleComponent m_directionalLightBillboardComponent;
 
 	VisibleComponent m_landscapeComponent;
 	VisibleComponent m_pawnComponent1;
@@ -49,6 +50,7 @@ private:
 	std::vector<VisibleComponent> m_sphereComponents;
 
 	std::vector<LightComponent> m_pointLightComponents;
+	std::vector<VisibleComponent> m_pointLightBillboardComponents;
 
 	std::vector<CameraComponent*> m_cameraComponents;
 	std::vector<InputComponent*> m_inputComponents;

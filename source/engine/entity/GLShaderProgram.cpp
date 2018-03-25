@@ -168,7 +168,6 @@ void ShadowForwardPassShaderProgram::initialize()
 
 void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CCW);
@@ -220,7 +219,6 @@ void ShadowDeferPassShaderProgram::update(std::vector<CameraComponent*>& cameraC
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	useProgram();
 }
@@ -245,7 +243,6 @@ void GeometryPassBlinnPhongShaderProgram::initialize()
 
 void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	useProgram();
 
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
@@ -322,7 +319,6 @@ void LightPassBlinnPhongShaderProgram::initialize()
 
 void LightPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	useProgram();
 
 	if (!isPointLightUniformAdded)
@@ -399,7 +395,6 @@ void GeometryPassPBSShaderProgram::initialize()
 void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
 	// @TODO
@@ -530,7 +525,6 @@ void LightPassPBSShaderProgram::initialize()
 
 void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
@@ -775,7 +769,6 @@ void EnvironmentBRDFLUTPassPBSShaderProgram::initialize()
 
 void EnvironmentBRDFLUTPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	useProgram();
 
 	for (auto& l_visibleComponent : visibleComponents)
@@ -808,6 +801,7 @@ void SkyForwardPassPBSShaderProgram::initialize()
 
 void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CW);
@@ -815,7 +809,7 @@ void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& camer
 
 	useProgram();
 
-	// TODO: fix "looking outside" problem// almost there
+	// @TODO: fix "looking outside" problem// almost there
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
 	mat4 r = cameraComponents[0]->getRotMatrix();
 
@@ -918,24 +912,6 @@ void SkyDeferPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 	useProgram();
 }
 
-
-void FinalPassShaderProgram::initialize()
-{
-	GLShaderProgram::initialize();
-	useProgram();
-
-	m_uni_skyDeferPassRT0 = getUniformLocation("uni_skyDeferPassRT0");
-	updateUniform(m_uni_skyDeferPassRT0, 0);
-}
-
-void FinalPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
-{
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-
-	useProgram();
-}
-
 void BillboardPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
@@ -943,6 +919,9 @@ void BillboardPassShaderProgram::initialize()
 
 	m_uni_texture = getUniformLocation("uni_texture");
 	updateUniform(m_uni_texture, 0);
+	m_uni_pos = getUniformLocation("uni_pos");
+	m_uni_albedo = getUniformLocation("uni_albedo");
+	m_uni_size = getUniformLocation("uni_size");
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_r = getUniformLocation("uni_r");
 	m_uni_t = getUniformLocation("uni_t");
@@ -951,14 +930,13 @@ void BillboardPassShaderProgram::initialize()
 
 void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
 	useProgram();
 
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
 	mat4 r = cameraComponents[0]->getRotMatrix();
 	mat4 t = cameraComponents[0]->getPosMatrix();
 
-	// @TODO: multiply with inverse of camera rotation matrix
 	updateUniform(m_uni_p, p);
 	updateUniform(m_uni_r, r);
 	updateUniform(m_uni_t, t);
@@ -966,9 +944,20 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 	// draw each visibleComponent
 	for (auto& l_visibleComponent : visibleComponents)
 	{
-		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::BILLBOARD)
 		{
 			updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+			updateUniform(m_uni_pos, l_visibleComponent->getParentEntity()->getTransform()->getPos().x, l_visibleComponent->getParentEntity()->getTransform()->getPos().y, l_visibleComponent->getParentEntity()->getTransform()->getPos().z);
+			updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
+			auto l_distanceToCamera = (cameraComponents[0]->getParentEntity()->getTransform()->getPos() - l_visibleComponent->getParentEntity()->getTransform()->getPos()).length();
+			if (l_distanceToCamera > 1)
+			{
+				updateUniform(m_uni_size, (vec2(1.0, 1.0) * (1.0 / l_distanceToCamera)).x, (vec2(1.0, 1.0) * (1.0 / l_distanceToCamera)).y);
+			}
+			else
+			{
+				updateUniform(m_uni_size, vec2(1.0, 1.0).x, vec2(1.0, 1.0).y);
+			}
 
 			// draw each graphic data of visibleComponent
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
@@ -978,26 +967,12 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 				auto l_textureMap = l_graphicData.second;
 				if (&l_textureMap != nullptr)
 				{
-					// any normal?
-					auto l_normalTextureID = l_textureMap.find(textureType::NORMAL);
-					if (l_normalTextureID != l_textureMap.end())
-					{
-						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
-						l_textureData->update(0);
-					}
 					// any albedo?
 					auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
 					if (l_diffuseTextureID != l_textureMap.end())
 					{
 						auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
-						l_textureData->update(1);
-					}
-					// any metallic?
-					auto l_specularTextureID = l_textureMap.find(textureType::METALLIC);
-					if (l_specularTextureID != l_textureMap.end())
-					{
-						auto& l_textureData = textureMap.find(l_specularTextureID->second)->second;
-						l_textureData->update(2);
+						l_textureData->update(0);
 					}
 				}
 				// draw meshes
@@ -1005,5 +980,24 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 			}
 		}
 	}
+}
+
+void FinalPassShaderProgram::initialize()
+{
+	GLShaderProgram::initialize();
+	useProgram();
+
+	m_uni_skyDeferPassRT0 = getUniformLocation("uni_skyDeferPassRT0");
+	updateUniform(m_uni_skyDeferPassRT0, 0);
+	m_uni_billboardPassRT0 = getUniformLocation("uni_billboardPassRT0");
+	updateUniform(m_uni_billboardPassRT0, 1);
+}
+
+void FinalPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
+{
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
+	useProgram();
 }
 
