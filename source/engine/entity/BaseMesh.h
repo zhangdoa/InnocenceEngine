@@ -14,6 +14,7 @@ public:
 
 	void setup() override;
 	void setup(meshType meshType, meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents);
+	void initialize() override;
 	const objectStatus& getStatus() const override;
 	meshID getMeshID();
 
@@ -32,7 +33,7 @@ protected:
 	meshType m_meshType;
 	std::vector<Vertex> m_vertices;
 	std::vector<unsigned int> m_indices;
-
+	AABB m_AABB;
 	meshDrawMethod m_meshDrawMethod;
 	bool m_calculateNormals;
 	bool m_calculateTangents;
