@@ -137,10 +137,6 @@ private:
 	BaseShaderProgram* m_shadowForwardPassShaderProgram;
 	textureID m_shadowForwardPassTextureID;
 
-	//BaseFrameBuffer* m_shadowDeferPassFrameBuffer;
-	//BaseShaderProgram* m_shadowDeferPassShaderProgram;
-	//textureID m_shadowDeferPassTextureID;
-
 	BaseFrameBuffer* m_geometryPassFrameBuffer;
 	BaseShaderProgram* m_geometryPassShaderProgram;
 	textureID m_geometryPassRT0TextureID;
@@ -164,6 +160,10 @@ private:
 	BaseFrameBuffer* m_debuggerPassFrameBuffer;
 	BaseShaderProgram* m_debuggerPassShaderProgram;
 	textureID m_debuggerPassTextureID;
+
+	BaseFrameBuffer* m_billboardPassFrameBuffer;
+	BaseShaderProgram* m_billboardPassShaderProgram;
+	textureID m_billboardPassTextureID;
 
 	BaseFrameBuffer* m_finalPassFrameBuffer;
 	BaseShaderProgram* m_finalPassShaderProgram;

@@ -275,19 +275,6 @@ private:
 	GLint m_uni_debuggerPassRT0;
 };
 
-class FinalPassShaderProgram : public GLShaderProgram
-{
-public:
-	FinalPassShaderProgram() {};
-	~FinalPassShaderProgram() {};
-
-	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
-
-private:
-	GLint m_uni_skyDeferPassRT0;
-};
-
 class BillboardPassShaderProgram : public GLShaderProgram
 {
 public:
@@ -299,8 +286,25 @@ public:
 
 private:
 	GLint m_uni_texture;
+	GLint m_uni_pos;
+	GLint m_uni_albedo;
+	GLint m_uni_size;
 	GLint m_uni_p;
 	GLint m_uni_r;
 	GLint m_uni_t;
 	GLint m_uni_m;
+};
+
+class FinalPassShaderProgram : public GLShaderProgram
+{
+public:
+	FinalPassShaderProgram() {};
+	~FinalPassShaderProgram() {};
+
+	void initialize() override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+
+private:
+	GLint m_uni_billboardPassRT0;
+	GLint m_uni_skyDeferPassRT0;
 };

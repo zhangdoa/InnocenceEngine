@@ -225,14 +225,64 @@ vec2 vec2::add(const vec2 & rhs)
 	return vec2(x + rhs.x, y + rhs.y);
 }
 
+vec2 vec2::operator+(const vec2 & rhs)
+{
+	return vec2(x + rhs.x, y + rhs.y);
+}
+
+vec2 vec2::add(double rhs)
+{
+	return vec2(x + rhs, y + rhs);
+}
+
+vec2 vec2::operator+(double rhs)
+{
+	return vec2(x + rhs, y + rhs);
+}
+
 vec2 vec2::sub(const vec2 & rhs)
 {
 	return vec2(x - rhs.x, y - rhs.y);
 }
 
+vec2 vec2::operator-(const vec2 & rhs)
+{
+	return vec2(x - rhs.x, y - rhs.y);
+}
+
+vec2 vec2::sub(double rhs)
+{
+	return vec2(x - rhs, y - rhs);
+}
+
+vec2 vec2::operator-(double rhs)
+{
+	return vec2(x - rhs, y - rhs);
+}
+
 double vec2::dot(const vec2 & rhs)
 {
 	return x * rhs.x + y * rhs.y;
+}
+
+double vec2::operator*(const vec2 & rhs)
+{
+	return x * rhs.x + y * rhs.y;
+}
+
+vec2 vec2::mul(const vec2 & rhs)
+{
+	return vec2(x * rhs.x, y * rhs.y);
+}
+
+vec2 vec2::mul(double rhs)
+{
+	return vec2(x * rhs, y * rhs);
+}
+
+vec2 vec2::operator*(double rhs)
+{
+	return vec2(x * rhs, y * rhs);
 }
 
 double vec2::length()
@@ -812,6 +862,35 @@ Vertex::~Vertex()
 {
 }
 
+AABB::AABB()
+{
+	m_center = vec3(0.0, 0.0, 0.0);
+	m_halfWidths = vec3(1.0, 0.0, 0.0);
+}
+
+AABB::AABB(const AABB & rhs)
+{
+	m_center = rhs.m_center;
+	m_halfWidths = rhs.m_halfWidths;
+}
+
+AABB & AABB::operator=(const AABB & rhs)
+{
+	m_center = rhs.m_center;
+	m_halfWidths = rhs.m_halfWidths;
+	return *this;
+}
+
+AABB::AABB(const vec3 & center, const vec3 & halfWidths)
+{
+	m_center = center;
+	m_halfWidths = halfWidths;
+}
+
+AABB::~AABB()
+{
+}
+
 Transform::Transform()
 {
 	m_pos = vec3(0.0f, 0.0f, 0.0f);
@@ -935,3 +1014,4 @@ vec3 Transform::getDirection(direction direction) const
 
 	return l_directionVec3;
 }
+

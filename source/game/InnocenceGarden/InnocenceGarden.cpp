@@ -38,6 +38,12 @@ void InnocenceGarden::setup()
 	m_directionalLightEntity.getTransform()->setPos(vec3(0.0, 5.0, 0.0));
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
+	m_directionalLightBillboardComponent.m_visiblilityType = visiblilityType::BILLBOARD;
+	m_directionalLightBillboardComponent.m_meshType = meshShapeType::CUBE;
+	m_directionalLightBillboardComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lightbulb.png"));
+	m_directionalLightEntity.addChildComponent(&m_directionalLightBillboardComponent);
+	m_visibleComponents.emplace_back(&m_directionalLightBillboardComponent);
+
 	m_landscapeComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_landscapeComponent.m_meshType = meshShapeType::CUBE;
 	m_landscapeEntity.addChildComponent(&m_landscapeComponent);
@@ -67,7 +73,7 @@ void InnocenceGarden::setup()
 	m_pawnEntity2.getTransform()->setPos(vec3(0.0, 0.2, 3.5));
 	m_visibleComponents.emplace_back(&m_pawnComponent2);
 
-	//setupLights();
+	setupLights();
 	setupSpheres();
 
 	m_rootEntity.setup();
@@ -192,13 +198,22 @@ void InnocenceGarden::setupLights()
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim * pointLightMatrixDim; i++)
 	{
 		m_pointLightComponents.emplace_back();
+		m_pointLightBillboardComponents.emplace_back();
 		m_pointLightEntitys.emplace_back();
+
 	}
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i++)
 	{
+		m_lightComponents.emplace_back(&m_pointLightComponents[i]);
+
+		m_pointLightBillboardComponents[i].m_visiblilityType = visiblilityType::BILLBOARD;
+		m_pointLightBillboardComponents[i].m_meshType = meshShapeType::CUBE;
+		m_pointLightBillboardComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lightbulb.png"));
+		m_visibleComponents.emplace_back(&m_pointLightBillboardComponents[i]);
+
 		m_rootEntity.addChildEntity(&m_pointLightEntitys[i]);
 		m_pointLightEntitys[i].addChildComponent(&m_pointLightComponents[i]);
-		m_lightComponents.emplace_back(&m_pointLightComponents[i]);
+		m_pointLightEntitys[i].addChildComponent(&m_pointLightBillboardComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim; i++)
 	{
@@ -212,11 +227,16 @@ void InnocenceGarden::setupLights()
 void InnocenceGarden::updateLights(double seed)
 {
 	m_directionalLightEntity.getTransform()->rotate(vec3(1.0, 0.0, 0.0), 0.5);
+	m_directionalLightBillboardComponent.m_albedo = vec3(1.0, 1.0, 1.0);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
+		m_pointLightBillboardComponents[i].m_albedo = vec3((sin(seed + i) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0);
 		m_pointLightComponents[i].setColor(vec3((sin(seed + i) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0));
+		m_pointLightBillboardComponents[i + 1].m_albedo = vec3(0.2f * 25.0, (sin(seed + i) + 1.0) * 25.0 / 2.0, 0.4f * 25.0);
 		m_pointLightComponents[i + 1].setColor(vec3(0.2f * 25.0, (sin(seed + i) + 1.0) * 25.0 / 2.0, 0.4f * 25.0));
+		m_pointLightBillboardComponents[i + 2].m_albedo = vec3(0.2f * 25.0, 0.4f * 25.0, (sin(seed + i) + 1.0) * 25.0 / 2.0);
 		m_pointLightComponents[i + 2].setColor(vec3(0.2f * 25.0, 0.4f * 25.0, (sin(seed + i) + 1.0) * 25.0 / 2.0));
+		m_pointLightBillboardComponents[i + 3].m_albedo = vec3((sin(seed + i * 2.0) + 1.0) * 25.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 25.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 25.0 / 2.0);
 		m_pointLightComponents[i + 3].setColor(vec3((sin(seed + i * 2.0 ) + 1.0) * 25.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 25.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 25.0 / 2.0));
 	}
 }

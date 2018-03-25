@@ -169,8 +169,19 @@ public:
 	~vec2();
 
 	vec2 add(const vec2& rhs);
+	vec2 operator+(const vec2& rhs);
+	vec2 add(double rhs);
+	vec2 operator+(double rhs);
 	vec2 sub(const vec2& rhs);
+	vec2 operator-(const vec2& rhs);
+	vec2 sub(double rhs);
+	vec2 operator-(double rhs);
 	double dot(const vec2& rhs);
+	double operator*(const vec2& rhs);
+	vec2 cross(const vec2& rhs);
+	vec2 mul(const vec2& rhs);
+	vec2 mul(double rhs);
+	vec2 operator*(double rhs);
 	double length();
 	vec2 normalize();
 
@@ -190,6 +201,19 @@ public:
 	vec3 m_pos;
 	vec2 m_texCoord;
 	vec3 m_normal;
+};
+
+class AABB
+{
+public:
+	AABB();
+	AABB(const AABB& rhs);
+	AABB& operator=(const AABB& rhs);
+	AABB(const vec3& center, const vec3& halfWidths);
+	~AABB();
+
+	vec3 m_center;
+	vec3 m_halfWidths;
 };
 
 class Transform
@@ -246,7 +270,7 @@ using shaderCodeContentPair = std::pair<shaderFilePath, shaderCodeContent>;
 using shaderData = std::pair<shaderType, shaderCodeContentPair>;
 // frame and render buffer custom types
 enum class frameBufferType { FORWARD, DEFER, SHADOW_PASS, ENVIRONMENT_PASS };
-enum class renderBufferType { DEPTH, STENCIL, DEPTH_AND_STENCIL };
+enum class renderBufferType { NONE, DEPTH, STENCIL, DEPTH_AND_STENCIL };
 
 using textureID = unsigned long int;
 using meshID = unsigned long int;
@@ -254,7 +278,6 @@ using texturePair = std::pair<textureType, textureID>;
 using textureMap = std::unordered_map<textureType, textureID>;
 using modelPair = std::pair<meshID, textureMap>;
 using modelMap = std::unordered_map<meshID, textureMap>;
-
 using textureFileNamePair = std::pair<textureType, std::string>;
 using textureFileNameMap = std::unordered_map<textureType, std::string>;
 
