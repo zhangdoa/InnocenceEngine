@@ -147,13 +147,6 @@ void RenderingSystem::initialize()
 			{
 				assignUnitMesh(*i, i->m_meshType);
 			}
-			// @TODO: generate AABB
-			for (auto& l_graphicData : i->getModelMap())
-			{
-				//i->m_AABB.m_center = m_meshMap.find(l_graphicData.first)->second->calcCenter();
-				//i->m_AABB.m_halfWidths = m_meshMap.find(l_graphicData.first)->second->calcHalfWidths();
-			}
-
 		}
 
 

@@ -178,7 +178,6 @@ public:
 	vec2 operator-(double rhs);
 	double dot(const vec2& rhs);
 	double operator*(const vec2& rhs);
-	vec2 cross(const vec2& rhs);
 	vec2 mul(const vec2& rhs);
 	vec2 mul(double rhs);
 	vec2 operator*(double rhs);
@@ -209,11 +208,15 @@ public:
 	AABB();
 	AABB(const AABB& rhs);
 	AABB& operator=(const AABB& rhs);
-	AABB(const vec3& center, const vec3& halfWidths);
 	~AABB();
 
 	vec3 m_center;
-	vec3 m_halfWidths;
+	double m_sphereRadius;
+	vec3 m_boundMin;
+	vec3 m_boundMax;
+
+	std::vector<Vertex> m_vertices;
+	std::vector<unsigned int> m_indices;
 };
 
 class Transform

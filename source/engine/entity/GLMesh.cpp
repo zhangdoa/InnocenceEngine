@@ -2,6 +2,7 @@
 
 void GLMesh::initialize()
 {
+	BaseMesh::initialize();
 	glGenVertexArrays(1, &m_VAO);
 	glGenBuffers(1, &m_VBO);
 	glGenBuffers(1, &m_IBO);

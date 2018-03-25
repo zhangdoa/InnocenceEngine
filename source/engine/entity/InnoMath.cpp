@@ -865,27 +865,32 @@ Vertex::~Vertex()
 AABB::AABB()
 {
 	m_center = vec3(0.0, 0.0, 0.0);
-	m_halfWidths = vec3(1.0, 0.0, 0.0);
+	m_sphereRadius = 0.0;
+	m_boundMin = vec3(0.0, 0.0, 0.0);
+	m_boundMax = vec3(0.0, 0.0, 0.0);
 }
 
 AABB::AABB(const AABB & rhs)
 {
 	m_center = rhs.m_center;
-	m_halfWidths = rhs.m_halfWidths;
+	m_sphereRadius = rhs.m_sphereRadius;
+	m_boundMin = rhs.m_boundMin;
+	m_boundMax = rhs.m_boundMax;
+	m_vertices = rhs.m_vertices;
+	m_indices = rhs.m_indices;
 }
 
 AABB & AABB::operator=(const AABB & rhs)
 {
 	m_center = rhs.m_center;
-	m_halfWidths = rhs.m_halfWidths;
+	m_sphereRadius = rhs.m_sphereRadius;
+	m_boundMin = rhs.m_boundMin;
+	m_boundMax = rhs.m_boundMax;
+	m_vertices = rhs.m_vertices;
+	m_indices = rhs.m_indices;
 	return *this;
 }
 
-AABB::AABB(const vec3 & center, const vec3 & halfWidths)
-{
-	m_center = center;
-	m_halfWidths = halfWidths;
-}
 
 AABB::~AABB()
 {

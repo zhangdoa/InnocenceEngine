@@ -18,7 +18,6 @@ public:
 	meshShapeType m_meshType = meshShapeType::QUAD;
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
-	AABB m_AABB;
 
 	bool m_useTexture = true;
 	vec3 m_albedo;
