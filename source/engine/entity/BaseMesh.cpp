@@ -16,91 +16,14 @@ void BaseMesh::setup(meshType meshType, meshDrawMethod meshDrawMethod, bool calc
 	{
 		for (auto& l_vertices : m_vertices)
 		{
-			l_vertices.m_normal = l_vertices.m_pos;
+			l_vertices.m_normal = l_vertices.m_pos.normalize();
 		}
 	}
 }
 
 void BaseMesh::initialize()
 {
-	double minX, maxX, minY, maxY, minZ, maxZ = 0;
 
-	std::for_each(m_vertices.begin(), m_vertices.end(), [&](Vertex val)
-	{
-		if (val.m_pos.x > maxX)
-		{
-			maxX = val.m_pos.x;
-		};
-		if (val.m_pos.x < minX)
-		{
-			minX = val.m_pos.x;
-		};
-		if (val.m_pos.y > maxY)
-		{
-			maxY = val.m_pos.y;
-		};
-		if (val.m_pos.y < minY)
-		{
-			minY = val.m_pos.y;
-		};
-		if (val.m_pos.z > maxZ)
-		{
-			maxZ = val.m_pos.z;
-		};
-		if (val.m_pos.z < minZ)
-		{
-			minZ = val.m_pos.z;
-		};
-		m_AABB.m_center = vec3(minX + (maxX - minX) / 2, minY + (maxY - minY) / 2, minZ + (maxZ - minZ) / 2).normalize();
-		m_AABB.m_sphereRadius = std::max(std::max((maxX - minX) / 2, (maxY - minY) / 2), (maxZ - minZ) / 2);
-		m_AABB.m_boundMin = vec3(minX, minY, minZ).normalize();
-		m_AABB.m_boundMax = vec3(maxX, maxY, maxZ).normalize();
-	});
-	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = vec3(maxX, maxY, maxZ);
-	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
-
-	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = vec3(maxX, minY, maxZ);
-	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
-
-	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = vec3(minX, minY, maxZ);
-	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
-
-	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = vec3(minX, maxY, maxZ);
-	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
-
-	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = vec3(maxX, maxY, minZ);
-	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
-
-	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = vec3(maxX, minY, minZ);
-	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
-
-	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = vec3(minX, minY, minZ);
-	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
-
-	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = vec3(minX, maxY, minZ);
-	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
-
-
-	m_AABB.m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
-
-	for (auto& l_vertexData : m_vertices)
-	{
-		l_vertexData.m_normal = l_vertexData.m_pos.normalize();
-	}
-	m_AABB.m_indices = { 0, 1, 3, 1, 2, 3,
-		4, 5, 0, 5, 1, 0,
-		7, 6, 4, 6, 5, 4,
-		3, 2, 7, 2, 6 ,7,
-		4, 0, 7, 0, 3, 7,
-		1, 5, 2, 5, 6, 2 };
 }
 
 const objectStatus & BaseMesh::getStatus() const
@@ -111,6 +34,58 @@ const objectStatus & BaseMesh::getStatus() const
 meshID BaseMesh::getMeshID()
 {
 	return m_meshID;
+}
+
+vec3 BaseMesh::findMaxVertex()
+{
+	double maxX = 0;
+	double maxY = 0;
+	double maxZ = 0;
+
+	std::for_each(m_vertices.begin(), m_vertices.end(), [&](Vertex val)
+	{
+		if (val.m_pos.x >= maxX)
+		{
+			maxX = val.m_pos.x;
+		};
+
+		if (val.m_pos.y >= maxY)
+		{
+			maxY = val.m_pos.y;
+		};
+
+		if (val.m_pos.z >= maxZ)
+		{
+			maxZ = val.m_pos.z;
+		};
+	});
+	return vec3(maxX, maxY, maxZ);
+}
+
+vec3 BaseMesh::findMinVertex()
+{
+	double minX = 0;
+	double minY = 0;
+	double minZ = 0;
+
+	std::for_each(m_vertices.begin(), m_vertices.end(), [&](Vertex val)
+	{
+		if (val.m_pos.x <= minX)
+		{
+			minX = val.m_pos.x;
+		};
+
+		if (val.m_pos.y <= minY)
+		{
+			minY = val.m_pos.y;
+		};
+
+		if (val.m_pos.z <= minZ)
+		{
+			minZ = val.m_pos.z;
+		};
+	});
+	return vec3(minX, minY, minZ);
 }
 
 void BaseMesh::addVertices(const Vertex & Vertex)

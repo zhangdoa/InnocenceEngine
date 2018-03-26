@@ -1,9 +1,7 @@
 #pragma once
 #include "common/stdafx.h"
 #include "common/config.h"
-//typedef __m128 __vec4;
-//typedef __vec4 __vec3;
-//typedef __vec4 __vec2;
+//typedef __m128 vec4;
 
 const static double PI = 3.14159265358979323846264338327950288;
 
@@ -255,7 +253,7 @@ private:
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
 // mesh custom types
-enum class meshType { TWO_DIMENSION, THREE_DIMENSION };
+enum class meshType { TWO_DIMENSION, THREE_DIMENSION, AABB };
 enum class meshShapeType { QUAD, CUBE, SPHERE, CUSTOM };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 // texture custom types

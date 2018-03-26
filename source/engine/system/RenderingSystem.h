@@ -92,6 +92,7 @@ private:
 	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
 
 	std::unordered_map<meshID, BaseMesh*> m_meshMap;
+	std::unordered_map<meshID, BaseMesh*> m_AABBMeshMap;
 	std::unordered_map<textureID, BaseTexture*> m_textureMap;
 
 	void assignUnitMesh(VisibleComponent& visibleComponent, meshShapeType meshType);
@@ -100,6 +101,7 @@ private:
 	void loadTexture(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent& visibleComponent);
 	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
 	void assignloadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
+	void generateAABB(VisibleComponent & visibleComponent);
 
 	meshID m_UnitCubeTemplate;
 	meshID m_UnitSphereTemplate;

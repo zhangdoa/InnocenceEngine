@@ -37,7 +37,7 @@ const objectStatus & AssetSystem::getStatus() const
 	return m_objectStatus;
 }
 
-void AssetSystem::loadModelFromDisk(const std::string & fileName, modelMap & modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod)
+void AssetSystem::loadModelFromDisk(const std::string & fileName, modelMap & modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, bool caclNormal)
 {
 	// read file via ASSIMP
 	auto l_convertedFilePath = fileName.substr(0, fileName.find(".")) + ".innoModel";
@@ -59,35 +59,35 @@ void AssetSystem::loadModelFromDisk(const std::string & fileName, modelMap & mod
 	}
 	// only need last part of file name without subfix as material's subfolder name
 	auto& l_fileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
-	processAssimpScene(l_fileName, modelMap, meshDrawMethod, textureWrapMethod, l_assScene);
+	processAssimpScene(l_fileName, modelMap, meshDrawMethod, textureWrapMethod, l_assScene, caclNormal);
 
 	g_pLogSystem->printLog("AssetSystem: " + fileName + " is loaded for the first time, successfully assigned modelMap IDs.");
 }
 
-void AssetSystem::processAssimpScene(const std::string& fileName, modelMap & modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, const aiScene* aiScene)
+void AssetSystem::processAssimpScene(const std::string& fileName, modelMap & modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, const aiScene* aiScene, bool caclNormal)
 {
 	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
 	if (aiScene->mRootNode->mNumMeshes > 0)
 	{
-		processAssimpNode(fileName, modelMap, aiScene->mRootNode, aiScene, meshDrawMethod, textureWrapMethod);
+		processAssimpNode(fileName, modelMap, aiScene->mRootNode, aiScene, meshDrawMethod, textureWrapMethod, caclNormal);
 	}
 	for (auto i = (unsigned int)0; i < aiScene->mRootNode->mNumChildren; i++)
 	{
 		if (aiScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
-			processAssimpNode(fileName, modelMap, aiScene->mRootNode->mChildren[i], aiScene, meshDrawMethod, textureWrapMethod);
+			processAssimpNode(fileName, modelMap, aiScene->mRootNode->mChildren[i], aiScene, meshDrawMethod, textureWrapMethod, caclNormal);
 		}
 	}
 }
 
-void AssetSystem::processAssimpNode(const std::string& fileName, modelMap & modelMap, aiNode * node, const aiScene * scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod)
+void AssetSystem::processAssimpNode(const std::string& fileName, modelMap & modelMap, aiNode * node, const aiScene * scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod, bool caclNormal)
 {
 	// process each mesh located at the current node
 	for (auto i = (unsigned int)0; i < node->mNumMeshes; i++)
 	{
 		auto l_modelPair = modelPair();
 
-		processSingleAssimpMesh(fileName, l_modelPair.first, scene->mMeshes[node->mMeshes[i]], meshDrawMethod);
+		processSingleAssimpMesh(fileName, l_modelPair.first, scene->mMeshes[node->mMeshes[i]], meshDrawMethod, caclNormal);
 
 		// process material if there was anyone
 		if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
@@ -99,7 +99,7 @@ void AssetSystem::processAssimpNode(const std::string& fileName, modelMap & mode
 }
 
 
-void AssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod) const
+void AssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod, bool caclNormal) const
 {
 	meshID = g_pRenderingSystem->addMesh(meshType::THREE_DIMENSION);
 	auto l_meshData = g_pRenderingSystem->getMesh(meshType::THREE_DIMENSION, meshID);
@@ -163,7 +163,7 @@ void AssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& m
 			l_meshData->addIndices(face.mIndices[j]);
 		}
 	}
-	l_meshData->setup(meshType::THREE_DIMENSION, meshDrawMethod, false, false);
+	l_meshData->setup(meshType::THREE_DIMENSION, meshDrawMethod, caclNormal, false);
 	l_meshData->initialize();
 
 	g_pLogSystem->printLog("innoMesh: mesh of model " + fileName + " is loaded.");

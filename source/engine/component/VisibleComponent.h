@@ -19,9 +19,13 @@ public:
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
 
+	bool m_caclNormal = false;
 	bool m_useTexture = true;
 	vec3 m_albedo;
 	vec3 m_MRA;
+	bool m_drawAABB = false;
+	meshID m_AABBMeshID;
+	AABB m_AABB;
 
 	std::string m_modelFileName;
 	textureFileNameMap m_textureFileNameMap;

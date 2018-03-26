@@ -1,5 +1,0 @@
-/* #undef USE_CLANG */
-#define BUILD_GAME
-/* #undef BUILD_EDITOR */
-/* #undef USE_ROW_MAJOR_MEMORY_LAYOUT */
-#define USE_COLUMN_MAJOR_MEMORY_LAYOUT

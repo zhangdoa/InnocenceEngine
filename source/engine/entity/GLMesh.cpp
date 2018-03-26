@@ -8,10 +8,12 @@ void GLMesh::initialize()
 	glGenBuffers(1, &m_IBO);
 
 	std::vector<float> l_verticesBuffer;
+	auto& l_vertices = m_vertices;
+	auto& l_indices = m_indices;
 
 	if (m_meshType == meshType::TWO_DIMENSION)
 	{
-		std::for_each(m_vertices.begin(), m_vertices.end(), [&](Vertex val)
+		std::for_each(l_vertices.begin(), l_vertices.end(), [&](Vertex val)
 		{
 			l_verticesBuffer.emplace_back((float)val.m_pos.x);
 			l_verticesBuffer.emplace_back((float)val.m_pos.y);
@@ -22,7 +24,7 @@ void GLMesh::initialize()
 	}
 	else
 	{
-		std::for_each(m_vertices.begin(), m_vertices.end(), [&](Vertex val)
+		std::for_each(l_vertices.begin(), l_vertices.end(), [&](Vertex val)
 		{
 			l_verticesBuffer.emplace_back((float)val.m_pos.x);
 			l_verticesBuffer.emplace_back((float)val.m_pos.y);
@@ -41,7 +43,7 @@ void GLMesh::initialize()
 	glBufferData(GL_ARRAY_BUFFER, l_verticesBuffer.size() * sizeof(float), &l_verticesBuffer[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(unsigned int), &m_indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, l_indices.size() * sizeof(unsigned int), &l_indices[0], GL_STATIC_DRAW);
 
 	if (m_meshType == meshType::TWO_DIMENSION)
 	{
@@ -76,6 +78,7 @@ void GLMesh::update()
 	if (getStatus() == objectStatus::ALIVE)
 	{
 		glBindVertexArray(m_VAO);
+
 		glDrawElements(GL_TRIANGLES + (int)m_meshDrawMethod, m_indices.size(), GL_UNSIGNED_INT, 0);
 	}
 }
