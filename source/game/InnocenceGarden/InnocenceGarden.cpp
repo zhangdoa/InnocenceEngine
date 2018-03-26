@@ -53,15 +53,20 @@ void InnocenceGarden::setup()
 	m_visibleComponents.emplace_back(&m_landscapeComponent);
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
-	m_pawnComponent1.m_meshType = meshShapeType::SPHERE;
-	
+	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
+	m_pawnComponent1.m_modelFileName = "cat/cat.obj";
+	m_pawnComponent1.m_drawAABB = false;
+	m_pawnComponent1.m_caclNormal = false;
+	m_pawnComponent1.m_useTexture = false;
+	m_pawnComponent1.m_albedo = vec3(0.95, 0.64, 0.54);
+	m_pawnComponent1.m_MRA = vec3(0.0, 0.5, 1.0);
 	m_pawnEntity1.addChildComponent(&m_pawnComponent1);
-	m_pawnEntity1.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
-	m_pawnEntity1.getTransform()->setPos(vec3(0.0, 2.0, -1.5));
+	m_pawnEntity1.getTransform()->setPos(vec3(0.0, 0.1, -1.5));
 	m_visibleComponents.emplace_back(&m_pawnComponent1);
 
 	m_pawnComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnComponent2.m_meshType = meshShapeType::CUSTOM;
+	m_pawnComponent2.m_drawAABB = true;
 	m_pawnComponent2.m_modelFileName = "lantern/lantern.obj";
 	m_pawnComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "lantern/lantern_Normal_OpenGL.jpg"));
 	m_pawnComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lantern/lantern_Base_Color.jpg"));
@@ -69,7 +74,7 @@ void InnocenceGarden::setup()
 	m_pawnComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "lantern/lantern_Roughness.jpg"));
 	m_pawnComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "lantern/lantern_Mixed_AO.jpg"));
 	m_pawnEntity2.addChildComponent(&m_pawnComponent2);
-	m_pawnEntity2.getTransform()->setScale(vec3(0.02, 0.02, 0.02));
+	m_pawnEntity2.getTransform()->setScale(vec3(0.01, 0.01, 0.01));
 	m_pawnEntity2.getTransform()->setPos(vec3(0.0, 0.2, 3.5));
 	m_visibleComponents.emplace_back(&m_pawnComponent2);
 
@@ -147,6 +152,7 @@ void InnocenceGarden::setupSpheres()
 	{
 		m_sphereComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
 		m_sphereComponents[i].m_meshType = meshShapeType::SPHERE;
+		m_sphereComponents[i].m_drawAABB = false;
 		m_sphereComponents[i].m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 		m_sphereComponents[i].m_useTexture = true;
 		m_rootEntity.addChildEntity(&m_sphereEntitys[i]);

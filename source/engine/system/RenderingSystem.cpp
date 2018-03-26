@@ -420,7 +420,14 @@ void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, double xoffs
 meshID RenderingSystem::addMesh(meshType meshType)
 {
 	BaseMesh* newMesh = g_pMemorySystem->spawn<MESH_CLASS>();
-	m_meshMap.emplace(std::pair<meshID, BaseMesh*>(newMesh->getMeshID(), newMesh));
+	if (meshType == meshType::AABB)
+	{
+		m_AABBMeshMap.emplace(std::pair<meshID, BaseMesh*>(newMesh->getMeshID(), newMesh));
+	}
+	else
+	{
+		m_meshMap.emplace(std::pair<meshID, BaseMesh*>(newMesh->getMeshID(), newMesh));
+	}
 	return newMesh->getMeshID();
 }
 
@@ -433,7 +440,14 @@ textureID RenderingSystem::addTexture(textureType textureType)
 
 BaseMesh* RenderingSystem::getMesh(meshType meshType, meshID meshID)
 {
-	return m_meshMap.find(meshID)->second;
+	if (meshType == meshType::AABB)
+	{
+		return m_AABBMeshMap.find(meshID)->second;
+	}
+	else
+	{
+		return m_meshMap.find(meshID)->second;
+	}
 }
 
 BaseTexture * RenderingSystem::getTexture(textureType textureType, textureID textureID)
@@ -451,6 +465,10 @@ void RenderingSystem::assignUnitMesh(VisibleComponent & visibleComponent, meshSh
 	case meshShapeType::SPHERE: l_UnitMeshTemplate = m_UnitSphereTemplate; break;
 	}
 	visibleComponent.addMeshData(l_UnitMeshTemplate);
+
+	// generate AABB
+	generateAABB(visibleComponent);
+
 	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
 }
 
@@ -482,6 +500,132 @@ void RenderingSystem::assignloadedModel(modelMap& loadedmodelMap, VisibleCompone
 {
 	visibleComponent.setModelMap(loadedmodelMap);
 	assignDefaultTextures(textureAssignType::ADD_DEFAULT, visibleComponent);
+}
+
+void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
+{
+	double maxX = 0;
+	double maxY = 0;
+	double maxZ = 0;
+	double minX = 0;
+	double minY = 0;
+	double minZ = 0;
+
+	std::vector<vec3> l_maxVertices;
+	std::vector<vec3> l_minVertices;
+
+	for (auto& l_graphicData : visibleComponent.getModelMap())
+	{
+		// draw meshes
+		l_maxVertices.emplace_back(m_meshMap.find(l_graphicData.first)->second->findMaxVertex());
+		l_minVertices.emplace_back(m_meshMap.find(l_graphicData.first)->second->findMinVertex());
+	}
+
+	std::for_each(l_maxVertices.begin(), l_maxVertices.end(), [&](vec3 val)
+	{
+		if (val.x >= maxX)
+		{
+			maxX = val.x;
+		};
+		if (val.y >= maxY)
+		{
+			maxY = val.y;
+		};
+		if (val.z >= maxZ)
+		{
+			maxZ = val.z;
+		};
+	});
+
+	std::for_each(l_minVertices.begin(), l_minVertices.end(), [&](vec3 val)
+	{
+		if (val.x <= minX)
+		{
+			minX = val.x;
+		};
+		if (val.y <= minY)
+		{
+			minY = val.y;
+		};
+		if (val.z <= minZ)
+		{
+			minZ = val.z;
+		};
+	});
+
+	AABB l_AABB;
+	l_AABB.m_boundMin = vec3(minX, minY, minZ);
+	l_AABB.m_boundMax = vec3(maxX, maxY, maxZ);
+	l_AABB.m_center = (l_AABB.m_boundMax + l_AABB.m_boundMin) * 0.5;
+	l_AABB.m_sphereRadius = std::max(std::max((l_AABB.m_boundMax.x - l_AABB.m_boundMin.x) / 2, (l_AABB.m_boundMax.y - l_AABB.m_boundMin.y) / 2), (l_AABB.m_boundMax.z - l_AABB.m_boundMin.z) / 2);
+
+	Vertex l_VertexData_1;
+	l_VertexData_1.m_pos = (vec3(l_AABB.m_boundMax.x, l_AABB.m_boundMax.y, l_AABB.m_boundMax.z));
+	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
+
+	Vertex l_VertexData_2;
+	l_VertexData_2.m_pos = (vec3(l_AABB.m_boundMax.x, l_AABB.m_boundMin.y, l_AABB.m_boundMax.z));
+	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
+
+	Vertex l_VertexData_3;
+	l_VertexData_3.m_pos = (vec3(l_AABB.m_boundMin.x, l_AABB.m_boundMin.y, l_AABB.m_boundMax.z));
+	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
+
+	Vertex l_VertexData_4;
+	l_VertexData_4.m_pos = (vec3(l_AABB.m_boundMin.x, l_AABB.m_boundMax.y, l_AABB.m_boundMax.z));
+	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
+
+	Vertex l_VertexData_5;
+	l_VertexData_5.m_pos = (vec3(l_AABB.m_boundMax.x, l_AABB.m_boundMax.y, l_AABB.m_boundMin.z));
+	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
+
+	Vertex l_VertexData_6;
+	l_VertexData_6.m_pos = (vec3(l_AABB.m_boundMax.x, l_AABB.m_boundMin.y, l_AABB.m_boundMin.z));
+	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
+
+	Vertex l_VertexData_7;
+	l_VertexData_7.m_pos = (vec3(l_AABB.m_boundMin.x, l_AABB.m_boundMin.y, l_AABB.m_boundMin.z));
+	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
+
+	Vertex l_VertexData_8;
+	l_VertexData_8.m_pos = (vec3(l_AABB.m_boundMin.x, l_AABB.m_boundMax.y, l_AABB.m_boundMin.z));
+	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
+
+
+	l_AABB.m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
+
+	for (auto& l_vertexData : l_AABB.m_vertices)
+	{
+		l_vertexData.m_normal = l_vertexData.m_pos.normalize();
+	}
+
+	l_AABB.m_indices = { 0, 1, 3, 1, 2, 3,
+		4, 5, 0, 5, 1, 0,
+		7, 6, 4, 6, 5, 4,
+		3, 2, 7, 2, 6 ,7,
+		4, 0, 7, 0, 3, 7,
+		1, 5, 2, 5, 6, 2 };
+
+	visibleComponent.m_AABB = l_AABB;
+	if (visibleComponent.m_drawAABB)
+	{
+		auto l_AABBMeshID = addMesh(meshType::AABB);
+		auto l_AABBMeshData = getMesh(meshType::AABB, l_AABBMeshID);
+
+		std::for_each(l_AABB.m_vertices.begin(), l_AABB.m_vertices.end(), [&](Vertex val)
+		{
+			l_AABBMeshData->addVertices(val);
+		});
+
+		std::for_each(l_AABB.m_indices.begin(), l_AABB.m_indices.end(), [&](unsigned int val)
+		{
+			l_AABBMeshData->addIndices(val);
+		});
+
+		l_AABBMeshData->setup(meshType::AABB, meshDrawMethod::TRIANGLE, false, false);
+		l_AABBMeshData->initialize();
+		visibleComponent.m_AABBMeshID = l_AABBMeshID;
+	}
 }
 
 void RenderingSystem::loadTexture(const std::vector<std::string> &fileName, textureType textureType, VisibleComponent & visibleComponent)
@@ -520,11 +664,15 @@ void RenderingSystem::loadModel(const std::string & fileName, VisibleComponent &
 	else
 	{
 		modelMap l_modelMap;
-		g_pAssetSystem->loadModelFromDisk(fileName, l_modelMap, visibleComponent.m_meshDrawMethod, visibleComponent.m_textureWrapMethod);
+		g_pAssetSystem->loadModelFromDisk(fileName, l_modelMap, visibleComponent.m_meshDrawMethod, visibleComponent.m_textureWrapMethod, visibleComponent.m_caclNormal);
+
+		assignloadedModel(l_modelMap, visibleComponent);
+
+		// generate AABB
+		generateAABB(visibleComponent);
 
 		//mark as loaded
 		m_loadedModelMap.emplace(l_convertedFilePath, l_modelMap);
-		assignloadedModel(l_modelMap, visibleComponent);
 	}
 }
 
@@ -793,11 +941,12 @@ void RenderingSystem::initializeFinalPass()
 	// initialize shader
 	auto l_debuggerPassVertexShaderFilePath = "GL3.3/debuggerVertex.sf";
 	auto l_debuggerPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_debuggerPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_debuggerPassVertexShaderFilePath)));
-	auto l_debuggerPassGeometryShaderFilePath = "GL3.3/debuggerGeometry.sf";
-	auto l_debuggerPassGeometryShaderData = shaderData(shaderType::GEOMETRY, shaderCodeContentPair(l_debuggerPassGeometryShaderFilePath, g_pAssetSystem->loadShader(l_debuggerPassGeometryShaderFilePath)));
+	//auto l_debuggerPassGeometryShaderFilePath = "GL3.3/debuggerGeometry.sf";
+	//auto l_debuggerPassGeometryShaderData = shaderData(shaderType::GEOMETRY, shaderCodeContentPair(l_debuggerPassGeometryShaderFilePath, g_pAssetSystem->loadShader(l_debuggerPassGeometryShaderFilePath)));
 	auto l_debuggerPassFragmentShaderFilePath = "GL3.3/debuggerFragment.sf";
 	auto l_debuggerPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_debuggerPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_debuggerPassFragmentShaderFilePath)));
-	m_debuggerPassShaderProgram->setup({ l_debuggerPassVertexShaderData , l_debuggerPassGeometryShaderData , l_debuggerPassFragmentShaderData });
+	//m_debuggerPassShaderProgram->setup({ l_debuggerPassVertexShaderData , l_debuggerPassGeometryShaderData , l_debuggerPassFragmentShaderData });
+	m_debuggerPassShaderProgram->setup({ l_debuggerPassVertexShaderData , l_debuggerPassFragmentShaderData });
 
 	// initialize texture
 	m_debuggerPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
@@ -870,7 +1019,7 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	m_skyForwardPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, true);
 
 	// draw debugger pass
-	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, true);
+	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_AABBMeshMap, m_textureMap, true, true);
 
 	// draw background defer pass
 	m_lightPassFrameBuffer->activeTexture(0, 0);

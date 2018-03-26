@@ -17,7 +17,8 @@ public:
 	void initialize() override;
 	const objectStatus& getStatus() const override;
 	meshID getMeshID();
-
+	vec3 findMaxVertex();
+	vec3 findMinVertex();
 	void addVertices(const Vertex& Vertex);
 	void addVertices(const vec3 & pos, const vec2 & texCoord, const vec3 & normal);
 	void addVertices(double pos_x, double pos_y, double pos_z, double texCoord_x, double texCoord_y, double normal_x, double normal_y, double normal_z);
@@ -33,7 +34,7 @@ protected:
 	meshType m_meshType;
 	std::vector<Vertex> m_vertices;
 	std::vector<unsigned int> m_indices;
-	AABB m_AABB;
+
 	meshDrawMethod m_meshDrawMethod;
 	bool m_calculateNormals;
 	bool m_calculateTangents;

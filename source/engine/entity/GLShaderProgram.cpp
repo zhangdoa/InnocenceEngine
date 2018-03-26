@@ -616,7 +616,7 @@ void EnvironmentCapturePassPBSShaderProgram::update(std::vector<CameraComponent*
 			for (auto& l_graphicData : l_visibleComponent->getModelMap())
 			{
 				// activate equiretangular texture and remapping equiretangular texture to cubemap
-				auto l_equiretangularTexture = textureMap.find(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);			
+				auto l_equiretangularTexture = textureMap.find(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);
 				auto l_environmentCaptureTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CAPTURE)->second);
 				if (l_equiretangularTexture != textureMap.end() && l_environmentCaptureTexture != textureMap.end())
 				{
@@ -881,10 +881,13 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 					{
 						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
 						l_textureData->update(0);
-					}				
+					}
 				}
 				// draw meshes
-				meshMap.find(l_graphicData.first)->second->update();
+				if (l_visibleComponent->m_drawAABB)
+				{
+					meshMap.find(l_visibleComponent->m_AABBMeshID)->second->update();
+				}
 			}
 		}
 	}
