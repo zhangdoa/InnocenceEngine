@@ -1,7 +1,7 @@
 #pragma once
 #include "common/stdafx.h"
 #include "common/config.h"
-//typedef __m128 vec4;
+typedef __m128 vec4;
 
 const static double PI = 3.14159265358979323846264338327950288;
 
@@ -83,6 +83,9 @@ public:
 	mat4 mul(const mat4& rhs);
 	// only for some semantically or literally usage
 	mat4 mul(double rhs);
+	mat4 transpose();
+	mat4 inverse();
+	double getDeterminant();
 
 	void initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar);
 	void initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar);
