@@ -36,10 +36,14 @@ void CameraComponent::setup()
 void CameraComponent::initialize()
 {
 	m_projectionMatrix.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 1000000.0);
+	m_rayOfEye.m_origin = getParentEntity()->caclWorldPos();
+	m_rayOfEye.m_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
 }
 
 void CameraComponent::update()
 {
+	m_rayOfEye.m_origin = getParentEntity()->caclWorldPos();
+	m_rayOfEye.m_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
 }
 
 void CameraComponent::shutdown()

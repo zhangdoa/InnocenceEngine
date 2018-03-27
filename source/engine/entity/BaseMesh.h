@@ -27,6 +27,7 @@ public:
 	void addUnitCube();
 	void addUnitSphere();
 	void addUnitQuad();
+	void addUnitLine();
 
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;

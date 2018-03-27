@@ -227,3 +227,17 @@ void BaseMesh::addUnitQuad()
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4 };
 	m_indices = { 0, 1, 3, 1, 2, 3 };
 }
+
+void BaseMesh::addUnitLine()
+{
+	Vertex l_VertexData_1;
+	l_VertexData_1.m_pos = vec3(1.0f, 1.0f, 0.0f);
+	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
+
+	Vertex l_VertexData_2;
+	l_VertexData_2.m_pos = vec3(-1.0f, -1.0f, 0.0f);
+	l_VertexData_2.m_texCoord = vec2(0.0f, 0.0f);
+
+	m_vertices = { l_VertexData_1, l_VertexData_2 };
+	m_indices = { 0, 1 };
+}

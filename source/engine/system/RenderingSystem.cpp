@@ -37,6 +37,7 @@ void RenderingSystem::setup()
 	glEnable(GL_MULTISAMPLE);
 	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 	//setup input
 	for (int i = 0; i < NUM_KEYCODES; i++)
 	{
@@ -70,31 +71,8 @@ void RenderingSystem::setup()
 	m_objectStatus = objectStatus::ALIVE;
 }
 
-void RenderingSystem::initialize()
+void RenderingSystem::loadDefaultAssets()
 {
-	//initialize window
-	windowCallbackWrapper::getInstance().setRenderingSystem(this);
-	windowCallbackWrapper::getInstance().initialize();
-
-	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
-
-	//initialize input
-	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
-	{
-		// @TODO: multi input components need to register to multi map
-		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->getKeyboardInputCallbackImpl());
-		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->getMouseInputCallbackImpl());
-	}
-
-	// @TODO: debt I owe
-	addKeyboardInputCallback(GLFW_KEY_Q, &f_changeDrawPolygonMode);
-	m_keyButtonMap.find(GLFW_KEY_Q)->second.m_keyPressType = keyPressType::ONCE;
-	addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
-	m_keyButtonMap.find(GLFW_KEY_E)->second.m_keyPressType = keyPressType::ONCE;
-	addKeyboardInputCallback(GLFW_KEY_R, &f_changeShadingMode);
-	m_keyButtonMap.find(GLFW_KEY_R)->second.m_keyPressType = keyPressType::ONCE;
-
-	//load assets
 	m_basicNormalTemplate = addTexture(textureType::NORMAL);
 	m_basicAlbedoTemplate = addTexture(textureType::ALBEDO);
 	m_basicMetallicTemplate = addTexture(textureType::METALLIC);
@@ -131,6 +109,15 @@ void RenderingSystem::initialize()
 	lastSphereMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
 	lastSphereMeshData->initialize();
 
+	m_UnitLineTemplate = addMesh(meshType::THREE_DIMENSION);
+	auto lastLineMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitLineTemplate);
+	lastLineMeshData->addUnitLine();
+	lastLineMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
+	lastLineMeshData->initialize();
+}
+
+void RenderingSystem::loadAssetsForComponents()
+{
 	for (auto i : g_pGameSystem->getVisibleComponents())
 	{
 		if (i->m_visiblilityType != visiblilityType::INVISIBLE)
@@ -158,6 +145,42 @@ void RenderingSystem::initialize()
 			}
 		}
 	}
+	for (auto i : g_pGameSystem->getCameraComponents())
+	{
+		if (i->m_drawRay)
+		{
+			m_UnitLineTemplate;
+		}
+	}
+}
+
+void RenderingSystem::initialize()
+{
+	//initialize window
+	windowCallbackWrapper::getInstance().setRenderingSystem(this);
+	windowCallbackWrapper::getInstance().initialize();
+
+	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
+
+	//initialize input
+	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
+	{
+		// @TODO: multi input components need to register to multi map
+		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->getKeyboardInputCallbackImpl());
+		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->getMouseInputCallbackImpl());
+	}
+
+	// @TODO: debt I owe
+	addKeyboardInputCallback(INNO_KEY_Q, &f_changeDrawPolygonMode);
+	m_keyButtonMap.find(INNO_KEY_Q)->second.m_keyPressType = keyPressType::ONCE;
+	addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
+	m_keyButtonMap.find(INNO_KEY_E)->second.m_keyPressType = keyPressType::ONCE;
+	addKeyboardInputCallback(INNO_KEY_R, &f_changeShadingMode);
+	m_keyButtonMap.find(INNO_KEY_R)->second.m_keyPressType = keyPressType::ONCE;
+
+	//load assets
+	loadDefaultAssets();
+	loadAssetsForComponents();
 
 	//initialize rendering
 	glEnable(GL_TEXTURE_2D);
@@ -171,85 +194,114 @@ void RenderingSystem::initialize()
 	g_pLogSystem->printLog("RenderingSystem has been initialized.");
 }
 
+
+
+void RenderingSystem::updateInput()
+{
+	for (int i = 0; i < NUM_KEYCODES; i++)
+	{
+		//if key pressed
+		if (glfwGetKey(m_window, i) == GLFW_PRESS)
+		{
+			auto l_keyButton = m_keyButtonMap.find(i);
+			if (l_keyButton != m_keyButtonMap.end())
+			{
+				//check whether it's still pressed/ the bound functions has been invoked
+				if (l_keyButton->second.m_allowCallback)
+				{
+					auto l_keybinding = m_keyboardInputCallback.find(i);
+					if (l_keybinding != m_keyboardInputCallback.end())
+					{
+						for (auto j : l_keybinding->second)
+						{
+							if (j)
+							{
+								(*j)();
+							}
+						}
+					}
+					if (l_keyButton->second.m_keyPressType == keyPressType::ONCE)
+					{
+						l_keyButton->second.m_allowCallback = false;
+					}
+				}
+
+			}
+		}
+		else
+		{
+			auto l_keyButton = m_keyButtonMap.find(i);
+			if (l_keyButton != m_keyButtonMap.end())
+			{
+				if (l_keyButton->second.m_keyPressType == keyPressType::ONCE)
+				{
+					l_keyButton->second.m_allowCallback = true;
+				}
+			}
+		}
+	}
+	if (glfwGetMouseButton(m_window, 1) == GLFW_PRESS)
+	{
+		hideMouseCursor();
+		if (m_mouseMovementCallback.size() != 0)
+		{
+			if (m_mouseXOffset != 0)
+			{
+				for (auto j : m_mouseMovementCallback.find(0)->second)
+				{
+					(*j)(m_mouseXOffset);
+				};
+			}
+			if (m_mouseYOffset != 0)
+			{
+				for (auto j : m_mouseMovementCallback.find(1)->second)
+				{
+					(*j)(m_mouseYOffset);
+				};
+			}
+			if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
+			{
+				m_mouseXOffset = 0;
+				m_mouseYOffset = 0;
+			}
+		}
+	}
+	else
+	{
+		showMouseCursor();
+	}
+}
+
+void RenderingSystem::updatePhysics()
+{
+	m_selectedVisibleComponents.clear();
+	for (auto& i : g_pGameSystem->getCameraComponents())
+	{
+		auto& l_ray = i->m_rayOfEye;
+
+		for (auto& j : g_pGameSystem->getVisibleComponents())
+		{
+			if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
+			{
+				if (j->m_AABB.intersectCheck(l_ray))
+				{
+					m_selectedVisibleComponents.emplace_back(j);
+				}
+			}
+		}
+	}
+}
+
 void RenderingSystem::update()
 {
 	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0)
 	{
 		glfwPollEvents();
 
-		//Input update
-		for (int i = 0; i < NUM_KEYCODES; i++)
-		{
-			//if key pressed
-			if (glfwGetKey(m_window, i) == GLFW_PRESS)
-			{
-				auto l_keyButton = m_keyButtonMap.find(i);
-				if (l_keyButton != m_keyButtonMap.end())
-				{
-					//check whether it's still pressed/ the bound functions has been invoked
-					if (l_keyButton->second.m_allowCallback)
-					{
-						auto l_keybinding = m_keyboardInputCallback.find(i);
-						if (l_keybinding != m_keyboardInputCallback.end())
-						{
-							for (auto j : l_keybinding->second)
-							{
-								if (j)
-								{
-									(*j)();
-								}
-							}
-						}
-						if (l_keyButton->second.m_keyPressType == keyPressType::ONCE)
-						{
-							l_keyButton->second.m_allowCallback = false;
-						}
-					}
-
-				}
-			}
-			else
-			{
-				auto l_keyButton = m_keyButtonMap.find(i);
-				if (l_keyButton != m_keyButtonMap.end())
-				{
-					if (l_keyButton->second.m_keyPressType == keyPressType::ONCE)
-					{
-						l_keyButton->second.m_allowCallback = true;
-					}
-				}
-			}
-		}
-		if (glfwGetMouseButton(m_window, 1) == GLFW_PRESS)
-		{
-			hideMouseCursor();
-			if (m_mouseMovementCallback.size() != 0)
-			{
-				if (m_mouseXOffset != 0)
-				{
-					for (auto j : m_mouseMovementCallback.find(0)->second)
-					{
-						(*j)(m_mouseXOffset);
-					};
-				}
-				if (m_mouseYOffset != 0)
-				{
-					for (auto j : m_mouseMovementCallback.find(1)->second)
-					{
-						(*j)(m_mouseYOffset);
-					};
-				}
-				if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
-				{
-					m_mouseXOffset = 0;
-					m_mouseYOffset = 0;
-				}
-			}
-		}
-		else
-		{
-			showMouseCursor();
-		}
+		// input update
+		updateInput();
+		// physics update
+		updatePhysics();
 	}
 	else
 	{
@@ -401,6 +453,8 @@ void windowCallbackWrapper::framebufferSizeCallbackImpl(GLFWwindow * window, int
 {
 	m_renderingSystem->SCR_WIDTH = width;
 	m_renderingSystem->SCR_HEIGHT = height;
+	m_renderingSystem->m_screenResolution.x = width;
+	m_renderingSystem->m_screenResolution.y = height;
 	glViewport(0, 0, width, height);
 }
 
@@ -504,6 +558,8 @@ void RenderingSystem::assignloadedModel(modelMap& loadedmodelMap, VisibleCompone
 
 void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 {
+	auto l_scale = visibleComponent.getParentEntity()->getTransform()->getScale();
+
 	double maxX = 0;
 	double maxY = 0;
 	double maxZ = 0;
@@ -554,41 +610,47 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 	});
 
 	AABB l_AABB;
-	l_AABB.m_boundMin = vec3(minX, minY, minZ);
-	l_AABB.m_boundMax = vec3(maxX, maxY, maxZ);
+	// unscaled version for visualization
+	auto l_unscaledBoundMin = vec3(minX, minY, minZ);
+	auto l_unscaledBoundMax = vec3(maxX, maxY, maxZ);
+
+	// scaled version for collision calculation
+	l_AABB.m_boundMin = l_unscaledBoundMin.mul(l_scale);
+	l_AABB.m_boundMax = l_unscaledBoundMax.mul(l_scale);
+
 	l_AABB.m_center = (l_AABB.m_boundMax + l_AABB.m_boundMin) * 0.5;
 	l_AABB.m_sphereRadius = std::max(std::max((l_AABB.m_boundMax.x - l_AABB.m_boundMin.x) / 2, (l_AABB.m_boundMax.y - l_AABB.m_boundMin.y) / 2), (l_AABB.m_boundMax.z - l_AABB.m_boundMin.z) / 2);
 
 	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = (vec3(l_AABB.m_boundMax.x, l_AABB.m_boundMax.y, l_AABB.m_boundMax.z));
+	l_VertexData_1.m_pos = (vec3(l_unscaledBoundMax.x, l_unscaledBoundMax.y, l_unscaledBoundMax.z));
 	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = (vec3(l_AABB.m_boundMax.x, l_AABB.m_boundMin.y, l_AABB.m_boundMax.z));
+	l_VertexData_2.m_pos = (vec3(l_unscaledBoundMax.x, l_unscaledBoundMin.y, l_unscaledBoundMax.z));
 	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = (vec3(l_AABB.m_boundMin.x, l_AABB.m_boundMin.y, l_AABB.m_boundMax.z));
+	l_VertexData_3.m_pos = (vec3(l_unscaledBoundMin.x, l_unscaledBoundMin.y, l_unscaledBoundMax.z));
 	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = (vec3(l_AABB.m_boundMin.x, l_AABB.m_boundMax.y, l_AABB.m_boundMax.z));
+	l_VertexData_4.m_pos = (vec3(l_unscaledBoundMin.x, l_unscaledBoundMax.y, l_unscaledBoundMax.z));
 	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 
 	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = (vec3(l_AABB.m_boundMax.x, l_AABB.m_boundMax.y, l_AABB.m_boundMin.z));
+	l_VertexData_5.m_pos = (vec3(l_unscaledBoundMax.x, l_unscaledBoundMax.y, l_unscaledBoundMin.z));
 	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = (vec3(l_AABB.m_boundMax.x, l_AABB.m_boundMin.y, l_AABB.m_boundMin.z));
+	l_VertexData_6.m_pos = (vec3(l_unscaledBoundMax.x, l_unscaledBoundMin.y, l_unscaledBoundMin.z));
 	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = (vec3(l_AABB.m_boundMin.x, l_AABB.m_boundMin.y, l_AABB.m_boundMin.z));
+	l_VertexData_7.m_pos = (vec3(l_unscaledBoundMin.x, l_unscaledBoundMin.y, l_unscaledBoundMin.z));
 	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = (vec3(l_AABB.m_boundMin.x, l_AABB.m_boundMax.y, l_AABB.m_boundMin.z));
+	l_VertexData_8.m_pos = (vec3(l_unscaledBoundMin.x, l_unscaledBoundMax.y, l_unscaledBoundMin.z));
 	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
 
 
@@ -596,6 +658,7 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 
 	for (auto& l_vertexData : l_AABB.m_vertices)
 	{
+
 		l_vertexData.m_normal = l_vertexData.m_pos.normalize();
 	}
 
@@ -1021,7 +1084,8 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	// draw debugger pass
 	m_geometryPassFrameBuffer->asReadBuffer();
 	m_debuggerPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
-	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_AABBMeshMap, m_textureMap, true, false);
+	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, m_selectedVisibleComponents, m_AABBMeshMap, m_textureMap, true, false);
+	//m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_AABBMeshMap, m_textureMap, true, false);
 
 	// draw background defer pass
 	m_lightPassFrameBuffer->activeTexture(0, 0);

@@ -31,6 +31,22 @@ void GameSystem::update()
 {
 	auto l_tickTime = g_pTimeSystem->getcurrentTime();
 	g_pGame->update();
+	std::for_each(m_VisibleComponents.begin(), m_VisibleComponents.end(), [&](VisibleComponent* val)
+	{
+		val->update();
+	});
+	std::for_each(m_LightComponents.begin(), m_LightComponents.end(), [&](LightComponent* val)
+	{
+		val->update();
+	});
+	std::for_each(m_CameraComponents.begin(), m_CameraComponents.end(), [&](CameraComponent* val)
+	{
+		val->update();
+	});
+	std::for_each(m_InputComponents.begin(), m_InputComponents.end(), [&](InputComponent* val)
+	{
+		val->update();
+	});
 	l_tickTime = g_pTimeSystem->getcurrentTime() - l_tickTime;
 	//g_pLogSystem->printLog(l_tickTime);
 }

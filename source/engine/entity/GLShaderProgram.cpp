@@ -850,6 +850,7 @@ void DebuggerShaderProgram::initialize()
 
 void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	useProgram();
 
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
@@ -891,6 +892,7 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 			}
 		}
 	}
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 
