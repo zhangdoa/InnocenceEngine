@@ -2,6 +2,9 @@
 #include "common/stdafx.h"
 #include "IObject.hpp"
 #include "entity/ComponentHeaders.h"
+#include "interface/ILogSystem.h"
+
+extern ILogSystem* g_pLogSystem;
 
 class IGame : public IObject
 {

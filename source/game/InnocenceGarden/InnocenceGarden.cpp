@@ -58,8 +58,8 @@ void InnocenceGarden::setup()
 	m_pawnComponent1.m_drawAABB = true;
 	m_pawnComponent1.m_caclNormal = false;
 	m_pawnComponent1.m_useTexture = false;
-	m_pawnComponent1.m_albedo = vec3(0.95, 0.64, 0.54);
-	m_pawnComponent1.m_MRA = vec3(0.0, 0.5, 1.0);
+	m_pawnComponent1.m_albedo = vec3(0.95, 0.93, 0.88);
+	m_pawnComponent1.m_MRA = vec3(0.0, 0.75, 1.0);
 	m_pawnEntity1.addChildComponent(&m_pawnComponent1);
 	m_pawnEntity1.getTransform()->setPos(vec3(0.0, 0.1, -1.5));
 	m_visibleComponents.emplace_back(&m_pawnComponent1);
@@ -98,6 +98,19 @@ void InnocenceGarden::update()
 	//	a.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 1000000.0);
 	//	a = a * a;
 	//}
+	//mat4 t;
+	//t.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 1000000.0);
+	//g_pLogSystem->printLog("Original: ");
+	//g_pLogSystem->printLog(t);
+	//g_pLogSystem->printLog("Determinant: ");
+	//g_pLogSystem->printLog(t.getDeterminant());
+	//g_pLogSystem->printLog("Transpose: ");
+	//g_pLogSystem->printLog(t.transpose());
+	//g_pLogSystem->printLog("Inverse: ");
+	//g_pLogSystem->printLog(t.inverse());
+	//g_pLogSystem->printLog("Inverse validation: ");
+	//g_pLogSystem->printLog(t.inverse().mul(t));
+
 	updateLights(temp);
 	updateSpheres(temp);
 	m_rootEntity.update();
@@ -233,7 +246,7 @@ void InnocenceGarden::setupLights()
 void InnocenceGarden::updateLights(double seed)
 {
 	m_directionalLightEntity.getTransform()->rotate(vec3(1.0, 0.0, 0.0), 0.5);
-	m_directionalLightBillboardComponent.m_albedo = vec3(1.0, 1.0, 1.0);
+	m_directionalLightBillboardComponent.m_albedo = vec3((sin(seed) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
 		m_pointLightBillboardComponents[i].m_albedo = vec3((sin(seed + i) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0);
