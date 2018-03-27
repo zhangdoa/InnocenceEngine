@@ -60,7 +60,8 @@ void CoreSystem::update()
 
 	// async game simulation
 	std::async(&IGameSystem::update, g_pGameSystem);
-
+	//// sync game simulation
+	//g_pGameSystem->update();
 	if (g_pRenderingSystem->getStatus() == objectStatus::ALIVE)
 	{
 		if (g_pGameSystem->needRender() && g_pRenderingSystem->canRender())

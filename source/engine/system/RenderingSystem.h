@@ -101,12 +101,20 @@ private:
 	void loadTexture(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent& visibleComponent);
 	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
 	void assignloadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
+	
 	void generateAABB(VisibleComponent & visibleComponent);
+	
+	void loadDefaultAssets(); 
+	void loadAssetsForComponents();
+
+	void updateInput();
+	void updatePhysics();
 
 	meshID m_UnitCubeTemplate;
 	meshID m_UnitSphereTemplate;
 	meshID m_Unit3DQuadTemplate;
 	meshID m_Unit2DQuadTemplate;
+	meshID m_UnitLineTemplate;
 	textureID m_basicNormalTemplate;
 	textureID m_basicAlbedoTemplate;
 	textureID m_basicMetallicTemplate;
@@ -124,6 +132,8 @@ private:
 	std::function<void()> f_changeDrawPolygonMode;
 	std::function<void()> f_changeDrawTextureMode;
 	std::function<void()> f_changeShadingMode;
+
+	std::vector<VisibleComponent*> m_selectedVisibleComponents;
 
 	BaseFrameBuffer* m_environmentPassFrameBuffer;
 	BaseShaderProgram* m_environmentCapturePassShaderProgram;

@@ -16,6 +16,9 @@ public:
 	mat4 getRotMatrix() const;
 	mat4 getProjectionMatrix() const;
 
+	Ray m_rayOfEye;
+	bool m_drawRay = false;
+
 private:
 	mat4 m_projectionMatrix;
 };

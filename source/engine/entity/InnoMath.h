@@ -200,6 +200,18 @@ public:
 	vec3 m_normal;
 };
 
+class Ray
+{
+public:
+	Ray();
+	Ray(const Ray& rhs);
+	Ray& operator=(const Ray& rhs);
+	~Ray();
+
+	vec3 m_origin;
+	vec3 m_direction;
+};
+
 class AABB
 {
 public:
@@ -215,6 +227,9 @@ public:
 
 	std::vector<Vertex> m_vertices;
 	std::vector<unsigned int> m_indices;
+
+	bool intersectCheck(const AABB& rhs);
+	bool intersectCheck(const Ray& rhs);
 };
 
 class Transform
@@ -250,6 +265,8 @@ private:
 	quat m_oldRot;
 	vec3 m_oldScale;
 };
+
+
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
 // mesh custom types

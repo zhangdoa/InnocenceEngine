@@ -862,6 +862,28 @@ Vertex::~Vertex()
 {
 }
 
+Ray::Ray()
+{
+}
+
+Ray::Ray(const Ray & rhs)
+{
+	m_origin = rhs.m_origin;
+	m_direction = rhs.m_direction;
+}
+
+Ray & Ray::operator=(const Ray & rhs)
+{
+	m_origin = rhs.m_origin;
+	m_direction = rhs.m_direction;
+
+	return *this;
+}
+
+Ray::~Ray()
+{
+}
+
 AABB::AABB()
 {
 	m_center = vec3(0.0, 0.0, 0.0);
@@ -894,6 +916,57 @@ AABB & AABB::operator=(const AABB & rhs)
 
 AABB::~AABB()
 {
+}
+
+bool AABB::intersectCheck(const AABB & rhs)
+{
+	if (rhs.m_center.x - m_center.x > rhs.m_sphereRadius + m_sphereRadius) return false;
+	if (rhs.m_center.y - m_center.y > rhs.m_sphereRadius + m_sphereRadius) return false;
+	if (rhs.m_center.z - m_center.z > rhs.m_sphereRadius + m_sphereRadius) return false;
+	else return true;
+}
+
+bool AABB::intersectCheck(const Ray & rhs)
+{
+	double txmin, txmax, tymin, tymax, tzmin, tzmax;
+	vec3 l_invDirection = vec3(1 / rhs.m_direction.x, 1 / rhs.m_direction.y, 1 / rhs.m_direction.z);
+	
+	if (l_invDirection.x >= 0.0) {
+		txmin = (m_boundMin.x - rhs.m_origin.x) * l_invDirection.x;
+		txmax = (m_boundMax.x - rhs.m_origin.x) * l_invDirection.x;
+	}
+	else {
+		txmin = (m_boundMax.x - rhs.m_origin.x) * l_invDirection.x;
+		txmax = (m_boundMin.x - rhs.m_origin.x) * l_invDirection.x;
+	}
+	if (l_invDirection.y >= 0.0) {
+		tymin = (m_boundMin.y - rhs.m_origin.y) * l_invDirection.y;
+		tymax = (m_boundMax.y - rhs.m_origin.y) * l_invDirection.y;
+	}
+	else {
+		tymin = (m_boundMax.y - rhs.m_origin.y) * l_invDirection.y;
+		tymax = (m_boundMin.y - rhs.m_origin.y) * l_invDirection.y;
+	}
+	if (txmin > tymax || tymin > txmax)
+		return false;
+	if (l_invDirection.z >= 0.0) {
+		tzmin = (m_boundMin.z - rhs.m_origin.z) * l_invDirection.z;
+		tzmax = (m_boundMax.z - rhs.m_origin.z) * l_invDirection.z;
+	}
+	else {
+		tzmin = (m_boundMax.z - rhs.m_origin.z) * l_invDirection.z;
+		tzmax = (m_boundMin.z - rhs.m_origin.z) * l_invDirection.z;
+	}
+	if (txmin > tzmax || tzmin > txmax)
+		return false;
+	txmin = (tymin > txmin) || std::isinf(txmin) ? tymin : txmin;
+	txmax = (tymax < txmax) || std::isinf(txmax) ? tymax : txmax;
+	txmin = (tzmin > txmin) ? tzmin : txmin;
+	txmax = (tzmax < txmax) ? tzmax : txmax;
+	if (txmin < txmax && txmax >= 0.0f) {
+		return true;
+	}
+	return false;
 }
 
 Transform::Transform()
@@ -1019,4 +1092,5 @@ vec3 Transform::getDirection(direction direction) const
 
 	return l_directionVec3;
 }
+
 

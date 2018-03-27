@@ -55,9 +55,9 @@ void InnocenceGarden::setup()
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
 	m_pawnComponent1.m_modelFileName = "cat/cat.obj";
-	m_pawnComponent1.m_drawAABB = false;
+	m_pawnComponent1.m_drawAABB = true;
 	m_pawnComponent1.m_caclNormal = false;
-	m_pawnComponent1.m_useTexture = true;
+	m_pawnComponent1.m_useTexture = false;
 	m_pawnComponent1.m_albedo = vec3(0.95, 0.64, 0.54);
 	m_pawnComponent1.m_MRA = vec3(0.0, 0.5, 1.0);
 	m_pawnEntity1.addChildComponent(&m_pawnComponent1);
@@ -78,8 +78,8 @@ void InnocenceGarden::setup()
 	m_pawnEntity2.getTransform()->setPos(vec3(0.0, 0.2, 3.5));
 	m_visibleComponents.emplace_back(&m_pawnComponent2);
 
-	setupLights();
-	setupSpheres();
+	//setupLights();
+	//setupSpheres();
 
 	m_rootEntity.setup();
 }
