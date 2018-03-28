@@ -27,7 +27,7 @@ void LightComponent::setColor(const vec3& color)
 
 mat4 LightComponent::getLightPosMatrix()
 {
-	return getParentEntity()->caclWorldPos().mul(-1.0).toTranslationMartix();
+	return getParentEntity()->caclWorldPos().scale(-1.0).toTranslationMartix();
 }
 
 mat4 LightComponent::getLightRotMatrix()

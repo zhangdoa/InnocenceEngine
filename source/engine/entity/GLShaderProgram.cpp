@@ -412,16 +412,42 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 	updateUniform(m_uni_t, t);
 
 	// draw each lightComponent's shadowmap
+	// @TODO: CSM WIP
 	for (auto& l_lightComponent : lightComponents)
 	{
 		if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
 		{
-			float near_plane = 0.1, far_plane = 50;
-			mat4 p;
-			p.initializeToOrthographicMatrix(-10, 10, -30, 30, near_plane, far_plane);
-			mat4 v = mat4().lookAt(l_lightComponent->getParentEntity()->getTransform()->getPos(), l_lightComponent->getParentEntity()->getTransform()->getPos() + l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+			auto l_lightRight = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::RIGHT);
+			auto l_lightUp = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP);
+			auto l_lightForward = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
+
+			double l_right = 0;
+			double l_left = 0;
+			double l_up = 0;
+			double l_bottom = 0;
+			double near_plane = 0;
+			double far_plane = 0;
+
+			for (auto& l_vertex : l_lightComponent->m_AABB.m_vertices)
+			{
+				auto l_RightTemp = l_vertex.m_pos * (l_lightRight);
+				if (l_RightTemp >= l_right) l_right = l_RightTemp;
+				else if (l_RightTemp <= l_left) l_left = l_RightTemp;
+
+				auto l_UpTemp = l_vertex.m_pos * (l_lightUp);
+				if (l_UpTemp >= l_up) l_up = l_UpTemp;
+				else if (l_UpTemp <= l_bottom) l_bottom = l_UpTemp;
+
+				auto l_ForwardTemp = l_vertex.m_pos * (l_lightForward);
+				if (l_ForwardTemp >= far_plane) far_plane = l_ForwardTemp;
+				else if (l_ForwardTemp <= near_plane) near_plane = l_ForwardTemp;
+			}
+
+			mat4 p_light;
+			p_light.initializeToOrthographicMatrix(l_left, l_right, l_bottom, l_up, near_plane, far_plane);
+			mat4 v = mat4().lookAt(l_lightComponent->getParentEntity()->getTransform()->getPos(), l_lightComponent->getParentEntity()->getTransform()->getPos() + l_lightForward, l_lightUp);
 			//mat4 v = l_lightComponent->getLightRotMatrix() * l_lightComponent->getLightPosMatrix();
-			updateUniform(m_uni_p_light, p);
+			updateUniform(m_uni_p_light, p_light);
 			updateUniform(m_uni_v_light, v);
 
 			// draw each visibleComponent
@@ -850,6 +876,7 @@ void DebuggerShaderProgram::initialize()
 
 void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	useProgram();
 
@@ -861,10 +888,20 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 	updateUniform(m_uni_r, r);
 	updateUniform(m_uni_t, t);
 
+	// draw AABB for lightComponent
+	for (auto& l_lightComponent : lightComponents)
+	{
+		if (l_lightComponent->m_drawAABB)
+		{
+			updateUniform(m_uni_m, l_lightComponent->getParentEntity()->caclTransformationMatrix());
+			meshMap.find(l_lightComponent->m_AABBMeshID)->second->update();
+		}
+	}
+
 	// draw each visibleComponent
 	for (auto& l_visibleComponent : visibleComponents)
 	{
-		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH && l_visibleComponent->m_drawAABB)
 		{
 			updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
 
@@ -885,14 +922,12 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 					}
 				}
 				// draw meshes
-				if (l_visibleComponent->m_drawAABB)
-				{
-					meshMap.find(l_visibleComponent->m_AABBMeshID)->second->update();
-				}
+				meshMap.find(l_visibleComponent->m_AABBMeshID)->second->update();
 			}
 		}
 	}
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glEnable(GL_CULL_FACE);
 }
 
 

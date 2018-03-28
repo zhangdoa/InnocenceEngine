@@ -34,6 +34,7 @@ void InnocenceGarden::setup()
 
 	m_directionalLightComponent.setColor(vec3(0.0, 0.5, 1.0));
 	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
+	m_directionalLightComponent.m_drawAABB = false;
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
 	m_directionalLightEntity.getTransform()->setPos(vec3(0.0, 5.0, 0.0));
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
@@ -53,15 +54,17 @@ void InnocenceGarden::setup()
 	m_visibleComponents.emplace_back(&m_landscapeComponent);
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
-	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
-	m_pawnComponent1.m_modelFileName = "cat/cat.obj";
+	//m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
+	//m_pawnComponent1.m_modelFileName = "cat/cat.obj";
+	m_pawnComponent1.m_meshType = meshShapeType::CUBE;
 	m_pawnComponent1.m_drawAABB = true;
 	m_pawnComponent1.m_caclNormal = false;
 	m_pawnComponent1.m_useTexture = false;
 	m_pawnComponent1.m_albedo = vec3(0.95, 0.93, 0.88);
 	m_pawnComponent1.m_MRA = vec3(0.0, 0.75, 1.0);
 	m_pawnEntity1.addChildComponent(&m_pawnComponent1);
-	m_pawnEntity1.getTransform()->setPos(vec3(0.0, 0.1, -1.5));
+	//m_pawnEntity1.getTransform()->setPos(vec3(0.0, 0.1, -1.5));
+	m_pawnEntity1.getTransform()->setPos(vec3(0.0, 1.0, -1.5));
 	m_visibleComponents.emplace_back(&m_pawnComponent1);
 
 	m_pawnComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;

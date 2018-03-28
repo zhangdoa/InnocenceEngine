@@ -88,12 +88,12 @@ vec3 vec3::cross(const vec3 & rhs)
 	return vec3(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x);
 }
 
-vec3 vec3::mul(const vec3 & rhs)
+vec3 vec3::scale(const vec3 & rhs)
 {
 	return vec3(x * rhs.x, y * rhs.y, z * rhs.z);
 }
 
-vec3 vec3::mul(double rhs)
+vec3 vec3::scale(double rhs)
 {
 	return vec3(x * rhs, y * rhs, z * rhs);
 }
@@ -270,12 +270,12 @@ double vec2::operator*(const vec2 & rhs)
 	return x * rhs.x + y * rhs.y;
 }
 
-vec2 vec2::mul(const vec2 & rhs)
+vec2 vec2::scale(const vec2 & rhs)
 {
 	return vec2(x * rhs.x, y * rhs.y);
 }
 
-vec2 vec2::mul(double rhs)
+vec2 vec2::scale(double rhs)
 {
 	return vec2(x * rhs, y * rhs);
 }
@@ -666,6 +666,36 @@ mat4 mat4::mul(const mat4 & rhs)
 	l_m.m[3][3] = m[3][0] * rhs.m[0][3] + m[3][1] * rhs.m[1][3] + m[3][2] * rhs.m[2][3] + m[3][3] * rhs.m[3][3];
 
 	return l_m;
+}
+#endif
+
+//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+vec3 mat4::mul(const vec3 & rhs)
+{
+	// @TODO: replace with SIMD impl
+	vec3 l_vec3;
+
+	l_vec3.x = rhs.x * m[0][0] + rhs.y * m[0][1] + rhs.z * m[0][2] + m[0][3];
+	l_vec3.y = rhs.x * m[1][0] + rhs.y * m[1][1] + rhs.z * m[1][2] + m[1][3];
+	l_vec3.z = rhs.x * m[2][0] + rhs.y * m[2][1] + rhs.z * m[2][2] + m[2][3];
+
+	return l_vec3;
+}
+#endif
+
+//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+vec3 mat4::mul(const vec3 & rhs)
+{
+	// @TODO: replace with SIMD impl
+	vec3 l_vec3;
+
+	l_vec3.x = rhs.x * m[0][0] + rhs.y * m[1][0] + rhs.z * m[2][0] + m[3][0];
+	l_vec3.y = rhs.x * m[0][1] + rhs.y * m[1][1] + rhs.z * m[2][1] + m[3][1];
+	l_vec3.z = rhs.x * m[0][2] + rhs.y * m[1][2] + rhs.z * m[2][2] + m[3][2];
+
+	return l_vec3;
 }
 #endif
 
@@ -1154,7 +1184,7 @@ vec3 Transform::getDirection(direction direction) const
 	// optimized version ([Kavan et al. ] Lemma 4)
 	//V' = V + 2 * Qv x (Qv x V + Qs * V)
 	vec3 l_Qv = vec3(m_rot.x, m_rot.y, m_rot.z);
-	l_directionVec3 = l_directionVec3 + l_Qv.cross((l_Qv.cross(l_directionVec3) + l_directionVec3.mul(m_rot.w))).mul(2.0f);
+	l_directionVec3 = l_directionVec3 + l_Qv.cross((l_Qv.cross(l_directionVec3) + l_directionVec3.scale(m_rot.w))).scale(2.0f);
 
 	return l_directionVec3;
 }

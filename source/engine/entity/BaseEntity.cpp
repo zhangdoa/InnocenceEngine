@@ -126,7 +126,7 @@ vec3 BaseEntity::caclWorldScale()
 		l_parentScale = m_parentEntity->caclWorldScale();
 	}
 
-	return l_parentScale.mul(m_transform.getScale());
+	return l_parentScale.scale(m_transform.getScale());
 }
 
 mat4 BaseEntity::caclWorldPosMatrix()

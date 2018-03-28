@@ -78,10 +78,9 @@ public:
 	mat4(const mat4& rhs);
 	mat4& operator=(const mat4& rhs);
 	mat4 operator*(const mat4& rhs);
-	// only for some semantically or literally usage
 	mat4 operator*(double rhs);
 	mat4 mul(const mat4& rhs);
-	// only for some semantically or literally usage
+	vec3 mul(const vec3& rhs);
 	mat4 mul(double rhs);
 	mat4 transpose();
 	mat4 inverse();
@@ -105,7 +104,6 @@ public:
 	~quat();
 
 	quat mul(const quat& rhs);
-	// only for some semantically or literally usage
 	quat mul(double rhs);
 	double length();
 	quat normalize();
@@ -142,8 +140,8 @@ public:
 	double dot(const vec3& rhs);
 	double operator*(const vec3& rhs);
 	vec3 cross(const vec3& rhs);
-	vec3 mul(const vec3& rhs);
-	vec3 mul(double rhs);
+	vec3 scale(const vec3& rhs);
+	vec3 scale(double rhs);
 	vec3 operator*(double rhs);
 	double length();
 	vec3 normalize();
@@ -179,8 +177,8 @@ public:
 	vec2 operator-(double rhs);
 	double dot(const vec2& rhs);
 	double operator*(const vec2& rhs);
-	vec2 mul(const vec2& rhs);
-	vec2 mul(double rhs);
+	vec2 scale(const vec2& rhs);
+	vec2 scale(double rhs);
 	vec2 operator*(double rhs);
 	double length();
 	vec2 normalize();
