@@ -1,121 +1,146 @@
 #include "InnoMath.h"
 
-vec3::vec3()
+vec4::vec4()
 {
 	x = 0.0;
 	y = 0.0;
 	z = 0.0;
+	w = 1.0;
 }
 
-vec3::vec3(double rhsX, double rhsY, double rhsZ)
+vec4::vec4(double rhsX, double rhsY, double rhsZ, double rhsW)
 {
 	x = rhsX;
 	y = rhsY;
 	z = rhsZ;
+	w = rhsW;
 }
 
-vec3::vec3(const vec3 & rhs)
+vec4::vec4(const vec4 & rhs)
 {
 	x = rhs.x;
 	y = rhs.y;
 	z = rhs.z;
+	w = rhs.w;
 }
 
-vec3& vec3::operator=(const vec3 & rhs)
+vec4& vec4::operator=(const vec4 & rhs)
 {
 	x = rhs.x;
 	y = rhs.y;
 	z = rhs.z;
+	w = rhs.w;
 	return *this;
 }
 
-vec3::~vec3()
+vec4::~vec4()
 {
 }
 
-vec3 vec3::add(const vec3 & rhs)
+vec4 vec4::add(const vec4 & rhs)
 {
-	return vec3(x + rhs.x, y + rhs.y, z + rhs.z);
+	return vec4(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
 }
 
-vec3 vec3::operator+(const vec3 & rhs)
+vec4 vec4::operator+(const vec4 & rhs)
 {
-	return vec3(x + rhs.x, y + rhs.y, z + rhs.z);
+	return vec4(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
 }
 
-vec3 vec3::add(double rhs)
+vec4 vec4::add(double rhs)
 {
-	return vec3(x + rhs, y + rhs, z + rhs);
+	return vec4(x + rhs, y + rhs, z + rhs, w + rhs);
 }
 
-vec3 vec3::operator+(double rhs)
+vec4 vec4::operator+(double rhs)
 {
-	return vec3(x + rhs, y + rhs, z + rhs);
+	return vec4(x + rhs, y + rhs, z + rhs, w + rhs);
 }
 
-vec3 vec3::sub(const vec3 & rhs)
+vec4 vec4::sub(const vec4 & rhs)
 {
-	return vec3(x - rhs.x, y - rhs.y, z - rhs.z);
+	return vec4(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
 }
 
-vec3 vec3::operator-(const vec3 & rhs)
+vec4 vec4::operator-(const vec4 & rhs)
 {
-	return vec3(x - rhs.x, y - rhs.y, z - rhs.z);
+	return vec4(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
 }
 
-vec3 vec3::sub(double rhs)
+vec4 vec4::sub(double rhs)
 {
-	return vec3(x - rhs, y - rhs, z - rhs);
+	return vec4(x - rhs, y - rhs, z - rhs, w - rhs);
 }
 
-vec3 vec3::operator-(double rhs)
+vec4 vec4::operator-(double rhs)
 {
-	return vec3(x - rhs, y - rhs, z - rhs);
+	return vec4(x - rhs, y - rhs, z - rhs, w - rhs);
 }
 
-double vec3::dot(const vec3 & rhs)
+double vec4::dot(const vec4 & rhs)
 {
-	return x * rhs.x + y * rhs.y + z * rhs.z;
+	return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w;
 }
 
-double vec3::operator*(const vec3 & rhs)
+double vec4::operator*(const vec4 & rhs)
 {
-	return x * rhs.x + y * rhs.y + z * rhs.z;
+	return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w;
 }
 
-vec3 vec3::cross(const vec3 & rhs)
+vec4 vec4::cross(const vec4 & rhs)
 {
-	return vec3(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x);
+	return vec4(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x, 0.0);
 }
 
-vec3 vec3::scale(const vec3 & rhs)
+vec4 vec4::scale(const vec4 & rhs)
 {
-	return vec3(x * rhs.x, y * rhs.y, z * rhs.z);
+	return vec4(x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w);
 }
 
-vec3 vec3::scale(double rhs)
+vec4 vec4::scale(double rhs)
 {
-	return vec3(x * rhs, y * rhs, z * rhs);
+	return vec4(x * rhs, y * rhs, z * rhs, w * rhs);
 }
 
-vec3 vec3::operator*(double rhs)
+vec4 vec4::operator*(double rhs)
 {
-	return vec3(x * rhs, y * rhs, z * rhs);
+	return vec4(x * rhs, y * rhs, z * rhs, w * rhs);
 }
 
-double vec3::length()
+vec4 vec4::quatMul(const vec4 & rhs)
+{
+	return vec4(
+		w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y,
+		w * rhs.y - x * rhs.z + y * rhs.w + z * rhs.x,
+		w * rhs.z + x * rhs.y - y * rhs.x + z * rhs.w,
+		w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z
+	);
+}
+
+vec4 vec4::quatMul(double rhs)
+{
+	return vec4(
+		w * rhs + x * rhs + y * rhs - z * rhs,
+		w * rhs - x * rhs + y * rhs + z * rhs,
+		w * rhs + x * rhs - y * rhs + z * rhs,
+		w * rhs - x * rhs - y * rhs - z * rhs
+	);
+}
+
+double vec4::length()
 {
 	// @TODO: replace with SIMD impl
-	return sqrt(x * x + y * y + z * z);
+	return sqrt(x * x + y * y + z * z + w * w);
 }
 
-vec3 vec3::normalize()
+vec4 vec4::normalize()
 {
 	// @TODO: replace with SIMD impl
-	return vec3(x / length(), y / length(), z / length());
+	auto l_length = length();
+	return vec4(x / l_length, y / l_length, z / l_length, w / l_length);
 }
 
-bool vec3::operator!=(const vec3 & rhs)
+bool vec4::operator!=(const vec4 & rhs)
 {
 	// @TODO: replace with SIMD impl
 	if (x != rhs.x)
@@ -130,13 +155,17 @@ bool vec3::operator!=(const vec3 & rhs)
 	{
 		return true;
 	}
+	else if (w != rhs.w)
+	{
+		return true;
+	}
 	else
 	{
 		return false;
 	}
 }
 
-bool vec3::operator==(const vec3 & rhs)
+bool vec4::operator==(const vec4 & rhs)
 {
 	// @TODO: replace with SIMD impl
 	return !(*this != rhs);
@@ -144,7 +173,7 @@ bool vec3::operator==(const vec3 & rhs)
 
 //Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-mat4 vec3::toTranslationMartix()
+mat4 vec4::toTranslationMartix()
 {
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
@@ -163,7 +192,7 @@ mat4 vec3::toTranslationMartix()
 
 //Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-mat4 vec3::toTranslationMartix()
+mat4 vec4::toTranslationMartix()
 {
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
@@ -180,14 +209,76 @@ mat4 vec3::toTranslationMartix()
 }
 #endif
 
-mat4 vec3::toScaleMartix()
+//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+mat4 vec4::toRotationMartix()
+{
+	// @TODO: replace with SIMD impl
+	mat4 l_m;
+
+	l_m.m[0][0] = (float)(1 - 2 * y * y - 2 * z * z);
+	l_m.m[0][1] = (float)(2 * x * y + 2 * z * w);
+	l_m.m[0][2] = (float)(2 * x * z - 2 * y * w);
+	l_m.m[0][3] = (float)(0);
+
+	l_m.m[1][0] = (float)(2 * x * y - 2 * z * w);
+	l_m.m[1][1] = (float)(1 - 2 * x * x - 2 * z * z);
+	l_m.m[1][2] = (float)(2 * y * z + 2 * x * w);
+	l_m.m[1][3] = (float)(0);
+
+	l_m.m[2][0] = (float)(2 * x * z + 2 * y * w);
+	l_m.m[2][1] = (float)(2 * y * z - 2 * x * w);
+	l_m.m[2][2] = (float)(1 - 2 * x * x - 2 * y * y);
+	l_m.m[2][3] = (float)(0);
+
+	l_m.m[3][0] = (float)(0);
+	l_m.m[3][1] = (float)(0);
+	l_m.m[3][2] = (float)(0);
+	l_m.m[3][3] = (float)(1);
+
+	return l_m;
+}
+#endif
+
+//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+mat4 vec4::toRotationMartix()
+{
+	// @TODO: replace with SIMD impl
+	mat4 l_m;
+
+	l_m.m[0][0] = (float)(1 - 2 * y * y - 2 * z * z);
+	l_m.m[0][1] = (float)(2 * x * y - 2 * z * w);
+	l_m.m[0][2] = (float)(2 * x * z + 2 * y * w);
+	l_m.m[0][3] = (float)(0);
+
+	l_m.m[1][0] = (float)(2 * x * y + 2 * z * w);
+	l_m.m[1][1] = (float)(1 - 2 * x * x - 2 * z * z);
+	l_m.m[1][2] = (float)(2 * y * z - 2 * x * w);
+	l_m.m[1][3] = (float)(0);
+
+	l_m.m[2][0] = (float)(2 * x * z - 2 * y * w);
+	l_m.m[2][1] = (float)(2 * y * z + 2 * x * w);
+	l_m.m[2][2] = (float)(1 - 2 * x * x - 2 * y * y);
+	l_m.m[2][3] = (float)(0);
+
+	l_m.m[3][0] = (float)(0);
+	l_m.m[3][1] = (float)(0);
+	l_m.m[3][2] = (float)(0);
+	l_m.m[3][3] = (float)(1);
+
+	return l_m;
+}
+#endif
+
+mat4 vec4::toScaleMartix()
 {
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
 	l_m.m[0][0] = (float)x;
 	l_m.m[1][1] = (float)y;
 	l_m.m[2][2] = (float)z;
-	l_m.m[3][3] = (float)1;
+	l_m.m[3][3] = (float)w;
 	return l_m;
 }
 
@@ -294,169 +385,6 @@ vec2 vec2::normalize()
 {
 	return vec2(x / length(), y / length());
 }
-
-quat::quat()
-{
-	x = 0.0;
-	y = 0.0;
-	z = 0.0;
-	w = 1.0;
-}
-
-quat::quat(double rhsX, double rhsY, double rhsZ, double rhsW)
-{
-	x = rhsX;
-	y = rhsY;
-	z = rhsZ;
-	w = rhsW;
-}
-
-quat::quat(const quat & rhs)
-{
-	x = rhs.x;
-	y = rhs.y;
-	z = rhs.z;
-	w = rhs.w;
-}
-
-quat & quat::operator=(const quat & rhs)
-{
-	x = rhs.x;
-	y = rhs.y;
-	z = rhs.z;
-	w = rhs.w;
-
-	return *this;
-}
-
-quat::~quat()
-{
-}
-
-quat quat::mul(const quat & rhs)
-{
-	return quat(
-		w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y,
-		w * rhs.y - x * rhs.z + y * rhs.w + z * rhs.x,
-		w * rhs.z + x * rhs.y - y * rhs.x + z * rhs.w,
-		w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z
-	);
-}
-
-quat quat::mul(double rhs)
-{
-	return quat(
-		w * rhs + x * rhs + y * rhs - z * rhs,
-		w * rhs - x * rhs + y * rhs + z * rhs,
-		w * rhs + x * rhs - y * rhs + z * rhs,
-		w * rhs - x * rhs - y * rhs - z * rhs
-	);
-}
-
-double quat::length()
-{
-	// @TODO: replace with override impl
-	return sqrt(x * x + y * y + z * z + w * w);
-}
-
-quat quat::normalize()
-{	
-	// @TODO: replace with SIMD impl
-	return quat(x / length(), y / length(), z / length(), w / length());
-}
-
-bool quat::operator!=(const quat & rhs)
-{
-	// @TODO: replace with SIMD impl
-	if (x != rhs.x)
-	{
-		return true;
-	}
-	else if (y != rhs.y)
-	{
-		return true;
-	}
-	else if (z != rhs.z)
-	{
-		return true;
-	}
-	else if (w != rhs.w)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool quat::operator==(const quat & rhs)
-{
-	// @TODO: replace with SIMD impl
-	return !(*this != rhs);
-}
-
-//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-mat4 quat::toRotationMartix()
-{
-	// @TODO: replace with SIMD impl
-	mat4 l_m;
-
-	l_m.m[0][0] = (float)(1 - 2 * y * y - 2 * z * z);
-	l_m.m[0][1] = (float)(2 * x * y + 2 * z * w);
-	l_m.m[0][2] = (float)(2 * x * z - 2 * y * w);
-	l_m.m[0][3] = (float)(0);
-
-	l_m.m[1][0] = (float)(2 * x * y - 2 * z * w);
-	l_m.m[1][1] = (float)(1 - 2 * x * x - 2 * z * z);
-	l_m.m[1][2] = (float)(2 * y * z + 2 * x * w);
-	l_m.m[1][3] = (float)(0);
-
-	l_m.m[2][0] = (float)(2 * x * z + 2 * y * w);
-	l_m.m[2][1] = (float)(2 * y * z - 2 * x * w);
-	l_m.m[2][2] = (float)(1 - 2 * x * x - 2 * y * y);
-	l_m.m[2][3] = (float)(0);
-
-	l_m.m[3][0] = (float)(0);
-	l_m.m[3][1] = (float)(0);	
-	l_m.m[3][2] = (float)(0);
-	l_m.m[3][3] = (float)(1);
-
-	return l_m;
-}
-#endif
-
-//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-mat4 quat::toRotationMartix()
-{
-	// @TODO: replace with SIMD impl
-	mat4 l_m;
-
-	l_m.m[0][0] = (float)(1 - 2 * y * y - 2 * z * z);
-	l_m.m[0][1] = (float)(2 * x * y - 2 * z * w);
-	l_m.m[0][2] = (float)(2 * x * z + 2 * y * w);
-	l_m.m[0][3] = (float)(0);
-
-	l_m.m[1][0] = (float)(2 * x * y + 2 * z * w);
-	l_m.m[1][1] = (float)(1 - 2 * x * x - 2 * z * z);
-	l_m.m[1][2] = (float)(2 * y * z - 2 * x * w);
-	l_m.m[1][3] = (float)(0);
-
-	l_m.m[2][0] = (float)(2 * x * z - 2 * y * w);
-	l_m.m[2][1] = (float)(2 * y * z + 2 * x * w);
-	l_m.m[2][2] = (float)(1 - 2 * x * x - 2 * y * y);
-	l_m.m[2][3] = (float)(0);
-
-	l_m.m[3][0] = (float)(0);
-	l_m.m[3][1] = (float)(0);
-	l_m.m[3][2] = (float)(0);
-	l_m.m[3][3] = (float)(1);
-
-	return l_m;
-}
-#endif
 
 mat4::mat4()
 {
@@ -668,36 +596,19 @@ mat4 mat4::mul(const mat4 & rhs)
 	return l_m;
 }
 #endif
-
-//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-vec3 mat4::mul(const vec3 & rhs)
+// @TODO: check check check!!!
+vec4 mat4::mul(const vec4 & rhs)
 {
 	// @TODO: replace with SIMD impl
-	vec3 l_vec3;
+	vec4 l_vec4;
 
-	l_vec3.x = rhs.x * m[0][0] + rhs.y * m[0][1] + rhs.z * m[0][2] + m[0][3];
-	l_vec3.y = rhs.x * m[1][0] + rhs.y * m[1][1] + rhs.z * m[1][2] + m[1][3];
-	l_vec3.z = rhs.x * m[2][0] + rhs.y * m[2][1] + rhs.z * m[2][2] + m[2][3];
+	l_vec4.x = rhs.x * m[0][0] + rhs.y * m[1][0] + rhs.z * m[2][0] + rhs.w * m[3][0];
+	l_vec4.y = rhs.x * m[0][1] + rhs.y * m[1][1] + rhs.z * m[2][1] + rhs.w * m[3][1];
+	l_vec4.z = rhs.x * m[0][2] + rhs.y * m[1][2] + rhs.z * m[2][2] + rhs.w * m[3][2];
+	l_vec4.w = rhs.x * m[0][3] + rhs.y * m[1][3] + rhs.z * m[2][3] + rhs.w * m[3][3];
 
-	return l_vec3;
+	return l_vec4;
 }
-#endif
-
-//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-vec3 mat4::mul(const vec3 & rhs)
-{
-	// @TODO: replace with SIMD impl
-	vec3 l_vec3;
-
-	l_vec3.x = rhs.x * m[0][0] + rhs.y * m[1][0] + rhs.z * m[2][0] + m[3][0];
-	l_vec3.y = rhs.x * m[0][1] + rhs.y * m[1][1] + rhs.z * m[2][1] + m[3][1];
-	l_vec3.z = rhs.x * m[0][2] + rhs.y * m[1][2] + rhs.z * m[2][2] + m[3][2];
-
-	return l_vec3;
-}
-#endif
 
 mat4 mat4::mul(double rhs)
 {
@@ -794,11 +705,11 @@ double mat4::getDeterminant()
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar)
 {
-	m[0][0] = (float)(1 / (tan(FOV / 2) * HWRatio));
-	m[1][1] = (float)(1 / tan(FOV / 2));
+	m[0][0] = (float)(1.0 / (tan(FOV / 2.0) * HWRatio));
+	m[1][1] = (float)(1.0 / tan(FOV / 2.0));
 	m[2][2] = (float)(-(zFar + zNear) / ((zFar - zNear)));
-	m[2][3] = -1.0f;
-	m[3][2] = (float)(-(2 * zFar *zNear) / ((zFar - zNear)));
+	m[2][3] = (float)-1.0;
+	m[3][2] = (float)(-(2.0 * zFar * zNear) / ((zFar - zNear)));
 }
 #endif
 
@@ -806,11 +717,11 @@ void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNea
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar)
 {
-	m[0][0] = (float)(1 / (tan(FOV / 2) * HWRatio));
-	m[1][1] = (float)(1 / tan(FOV / 2));
+	m[0][0] = (float)(1.0 / (tan(FOV / 2.0) * HWRatio));
+	m[1][1] = (float)(1.0 / tan(FOV / 2.0));
 	m[2][2] = (float)(-(zFar + zNear) / ((zFar - zNear)));
-	m[2][3] = (float)(-(2 * zFar *zNear) / ((zFar - zNear)));
-	m[3][2] = -1.0f;
+	m[2][3] = (float)(-(2.0 * zFar * zNear) / ((zFar - zNear)));
+	m[3][2] = (float)-1.0;
 }
 #endif
 
@@ -818,13 +729,13 @@ void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNea
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 void mat4::initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar)
 {
-	m[0][0] = (float)(2 / (right - left));
-	m[1][1] = (float)(2 / (up - bottom));
-	m[2][2] = (float)(-2 / (zFar - zNear));
+	m[0][0] = (float)(2.0 / (right - left));
+	m[1][1] = (float)(2.0 / (up - bottom));
+	m[2][2] = (float)(-2.0 / (zFar - zNear));
 	m[3][0] = (float)(- (left + right) / (left - right));
 	m[3][1] = (float)(- (up + bottom) / (up - bottom));
 	m[3][2] = (float)(- (zFar + zNear) / (zFar - zNear));
-	m[3][3] = 1.0f;
+	m[3][3] = (float)1.0;
 }
 #endif
 
@@ -832,25 +743,25 @@ void mat4::initializeToOrthographicMatrix(double left, double right, double bott
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 void mat4::initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar)
 {
-	m[0][0] = (float)(2 / (right - left));
+	m[0][0] = (float)(2.0 / (right - left));
 	m[0][3] = (float)(-(left + right) / (left - right));
-	m[1][1] = (float)(2 / (up - bottom));
+	m[1][1] = (float)(2.0 / (up - bottom));
 	m[1][3] = (float)(-(up + bottom) / (up - bottom));
-	m[2][2] = (float)(-2 / (zFar - zNear));
+	m[2][2] = (float)(-2.0 / (zFar - zNear));
 	m[2][3] = (float)(-(zFar + zNear) / (zFar - zNear));
-	m[3][3] = 1.0f;
+	m[3][3] = (float)1.0;
 }
 #endif
 
 //Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDir)
+mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDir)
 {
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
-	vec3 l_X;
-	vec3 l_Y;
-	vec3 l_Z = eyePos;
+	vec4 l_X;
+	vec4 l_Y;
+	vec4 l_Z = eyePos;
 
 	l_Z = l_Z - centerPos;
 	l_Z = l_Z.normalize();
@@ -887,13 +798,13 @@ mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDi
 
 //Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-mat4 mat4::lookAt(const vec3 & eyePos, const vec3 & centerPos, const vec3 & upDir)
+mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDir)
 {
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
-	vec3 l_X;
-	vec3 l_Y;
-	vec3 l_Z = eyePos;
+	vec4 l_X;
+	vec4 l_Y;
+	vec4 l_Z = eyePos;
 
 	l_Z = l_Z - centerPos;
 	l_Z = l_Z.normalize();
@@ -947,7 +858,7 @@ Vertex& Vertex::operator=(const Vertex & rhs)
 	return *this;
 }
 
-Vertex::Vertex(const vec3& pos, const vec2& texCoord, const vec3& normal)
+Vertex::Vertex(const vec4& pos, const vec2& texCoord, const vec4& normal)
 {
 	m_pos = pos;
 	m_texCoord = texCoord;
@@ -982,10 +893,10 @@ Ray::~Ray()
 
 AABB::AABB()
 {
-	m_center = vec3(0.0, 0.0, 0.0);
+	m_center = vec4(0.0, 0.0, 0.0, 1.0);
 	m_sphereRadius = 0.0;
-	m_boundMin = vec3(0.0, 0.0, 0.0);
-	m_boundMax = vec3(0.0, 0.0, 0.0);
+	m_boundMin = vec4(0.0, 0.0, 0.0, 1.0);
+	m_boundMax = vec4(0.0, 0.0, 0.0, 1.0);
 }
 
 AABB::AABB(const AABB & rhs)
@@ -1025,7 +936,7 @@ bool AABB::intersectCheck(const AABB & rhs)
 bool AABB::intersectCheck(const Ray & rhs)
 {
 	double txmin, txmax, tymin, tymax, tzmin, tzmax;
-	vec3 l_invDirection = vec3(1 / rhs.m_direction.x, 1 / rhs.m_direction.y, 1 / rhs.m_direction.z);
+	vec4 l_invDirection = vec4(1 / rhs.m_direction.x, 1 / rhs.m_direction.y, 1 / rhs.m_direction.z, 0.0);
 	
 	if (l_invDirection.x >= 0.0) {
 		txmin = (m_boundMin.x - rhs.m_origin.x) * l_invDirection.x;
@@ -1067,11 +978,11 @@ bool AABB::intersectCheck(const Ray & rhs)
 
 Transform::Transform()
 {
-	m_pos = vec3(0.0f, 0.0f, 0.0f);
-	m_rot = quat(0.0f, 0.0f, 0.0f, 1.0f);
-	m_scale = vec3(1.0f, 1.0f, 1.0f);
+	m_pos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	m_rot = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	m_oldPos = m_pos + (1.0f);
-	m_oldRot = m_rot.mul(0.5f);
+	m_oldRot = m_rot.quatMul(0.5f);
 	m_oldScale = m_scale + (1.0f);
 }
 
@@ -1086,107 +997,107 @@ void Transform::update()
 	m_oldScale = m_scale;
 }
 
-void Transform::rotate(const vec3 & axis, double angle)
+void Transform::rotate(const vec4 & axis, double angle)
 {
 	double sinHalfAngle = sin((angle * PI / 180.0) / 2.0);
 	double cosHalfAngle = cos((angle * PI / 180.0) / 2.0);
 	// get final rotation
-	m_rot = quat(axis.x * sinHalfAngle, axis.y * sinHalfAngle, axis.z * sinHalfAngle, cosHalfAngle).mul(m_rot);
+	m_rot = vec4(axis.x * sinHalfAngle, axis.y * sinHalfAngle, axis.z * sinHalfAngle, cosHalfAngle).quatMul(m_rot);
 }
 
-vec3 & Transform::getPos()
+vec4 & Transform::getPos()
 {
 	return m_pos;
 }
 
-quat & Transform::getRot()
+vec4 & Transform::getRot()
 {
 	return m_rot;
 }
 
-vec3 & Transform::getScale()
+vec4 & Transform::getScale()
 {
 	return m_scale;
 }
 
-void Transform::setPos(const vec3 & pos)
+void Transform::setPos(const vec4 & pos)
 {
 	m_pos = pos;
 }
 
-void Transform::setRot(const quat & rot)
+void Transform::setRot(const vec4 & rot)
 {
 	m_rot = rot;
 }
 
-void Transform::setScale(const vec3 & scale)
+void Transform::setScale(const vec4 & scale)
 {
 	m_scale = scale;
 }
 
-vec3 & Transform::getOldPos()
+vec4 & Transform::getOldPos()
 {
 	return m_oldPos;
 }
-quat & Transform::getOldRot()
+vec4 & Transform::getOldRot()
 {
 	return m_oldRot;
 }
 
-vec3 & Transform::getOldScale()
+vec4 & Transform::getOldScale()
 {
 	return m_oldScale;
 }
 
-vec3 Transform::getDirection(direction direction) const
+vec4 Transform::getDirection(direction direction) const
 {
-	vec3 l_directionVec3;
+	vec4 l_directionVec4;
 
 	switch (direction)
 	{
-	case FORWARD: l_directionVec3 = vec3(0.0f, 0.0f, 1.0f); break;
-	case BACKWARD:l_directionVec3 = vec3(0.0f, 0.0f, -1.0f); break;
-	case UP:l_directionVec3 = vec3(0.0f, 1.0f, 0.0f); break;
-	case DOWN:l_directionVec3 = vec3(0.0f, -1.0f, 0.0f); break;
-	case RIGHT:l_directionVec3 = vec3(1.0f, 0.0f, 0.0f); break;
-	case LEFT:l_directionVec3 = vec3(-1.0f, 0.0f, 0.0f); break;
+	case FORWARD: l_directionVec4 = vec4(0.0f, 0.0f, 1.0f, 0.0f); break;
+	case BACKWARD:l_directionVec4 = vec4(0.0f, 0.0f, -1.0f, 0.0f); break;
+	case UP:l_directionVec4 = vec4(0.0f, 1.0f, 0.0f, 0.0f); break;
+	case DOWN:l_directionVec4 = vec4(0.0f, -1.0f, 0.0f, 0.0f); break;
+	case RIGHT:l_directionVec4 = vec4(1.0f, 0.0f, 0.0f, 0.0f); break;
+	case LEFT:l_directionVec4 = vec4(-1.0f, 0.0f, 0.0f, 0.0f); break;
 	}
 
 	// V' = QVQ^-1, for unit quaternion, the conjugated quaternion is as same as the inverse quaternion
 
 	// naive version
 	// get Q * V by hand
-	//quat l_hiddenRotatedQuat;
-	//l_hiddenRotatedQuat.w = -m_rot.x * l_directionVec3.x - m_rot.y * l_directionVec3.y - m_rot.z * l_directionVec3.z;
-	//l_hiddenRotatedQuat.x = m_rot.w * l_directionVec3.x + m_rot.y * l_directionVec3.z - m_rot.z * l_directionVec3.y;
-	//l_hiddenRotatedQuat.y = m_rot.w * l_directionVec3.y + m_rot.z * l_directionVec3.x - m_rot.x * l_directionVec3.z;
-	//l_hiddenRotatedQuat.z = m_rot.w * l_directionVec3.z + m_rot.x * l_directionVec3.y - m_rot.y * l_directionVec3.x;
+	//vec4 l_hiddenRotatedQuat;
+	//l_hiddenRotatedQuat.w = -m_rot.x * l_directionvec4.x - m_rot.y * l_directionvec4.y - m_rot.z * l_directionvec4.z;
+	//l_hiddenRotatedQuat.x = m_rot.w * l_directionvec4.x + m_rot.y * l_directionvec4.z - m_rot.z * l_directionvec4.y;
+	//l_hiddenRotatedQuat.y = m_rot.w * l_directionvec4.y + m_rot.z * l_directionvec4.x - m_rot.x * l_directionvec4.z;
+	//l_hiddenRotatedQuat.z = m_rot.w * l_directionvec4.z + m_rot.x * l_directionvec4.y - m_rot.y * l_directionvec4.x;
 
 	// get conjugated quaternion
-	//quat l_conjugatedQuat;
+	//vec4 l_conjugatedQuat;
 	//l_conjugatedQuat = conjugate(m_rot);
 
 	// then QV * Q^-1 
-	//quat l_directionQuat;
+	//vec4 l_directionQuat;
 	//l_directionQuat = l_hiddenRotatedQuat * l_conjugatedQuat;
-	//l_directionVec3.x = l_directionQuat.x;
-	//l_directionVec3.y = l_directionQuat.y;
-	//l_directionVec3.z = l_directionQuat.z;
+	//l_directionvec4.x = l_directionQuat.x;
+	//l_directionvec4.y = l_directionQuat.y;
+	//l_directionvec4.z = l_directionQuat.z;
 
 	// traditional version, change direction vector to quaternion representation
 
-	//quat l_directionQuat = quat(0.0, l_directionVec3);
+	//vec4 l_directionQuat = vec4(0.0, l_directionvec4);
 	//l_directionQuat = m_rot * l_directionQuat * conjugate(m_rot);
-	//l_directionVec3.x = l_directionQuat.x;
-	//l_directionVec3.y = l_directionQuat.y;
-	//l_directionVec3.z = l_directionQuat.z;
+	//l_directionvec4.x = l_directionQuat.x;
+	//l_directionvec4.y = l_directionQuat.y;
+	//l_directionvec4.z = l_directionQuat.z;
 
 	// optimized version ([Kavan et al. ] Lemma 4)
 	//V' = V + 2 * Qv x (Qv x V + Qs * V)
-	vec3 l_Qv = vec3(m_rot.x, m_rot.y, m_rot.z);
-	l_directionVec3 = l_directionVec3 + l_Qv.cross((l_Qv.cross(l_directionVec3) + l_directionVec3.scale(m_rot.w))).scale(2.0f);
+	vec4 l_Qv = vec4(m_rot.x, m_rot.y, m_rot.z, m_rot.w);
+	l_directionVec4 = l_directionVec4 + l_Qv.cross((l_Qv.cross(l_directionVec4) + l_directionVec4.scale(m_rot.w))).scale(2.0f);
 
-	return l_directionVec3;
+	return l_directionVec4;
 }
 
 

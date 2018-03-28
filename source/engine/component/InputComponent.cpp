@@ -40,7 +40,7 @@ void InputComponent::move(moveDirection moveDirection)
 
 void InputComponent::rotateAroundXAxis(double offset)
 {
-	getParentEntity()->getTransform()->rotate(vec3(0.0, 1.0, 0.0), ((-offset * rotateSpeed) / 180.0)* PI);
+	getParentEntity()->getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * rotateSpeed) / 180.0)* PI);
 }
 
 void InputComponent::rotateAroundYAxis(double offset)

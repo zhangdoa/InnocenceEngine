@@ -18,8 +18,7 @@ public:
 	void printLog(double logMessage) const override;
 	void printLog(std::string logMessage) const override;
 	void printLog(const vec2& logMessage) const override;
-	void printLog(const vec3& logMessage) const override;
-	void printLog(const quat& logMessage) const override;
+	void printLog(const vec4& logMessage) const override;
 	void printLog(const mat4& logMessage) const override;
 	void printLog(const std::thread::id logMessage) const override;
 

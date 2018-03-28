@@ -103,7 +103,7 @@ private:
 	std::vector<Vertex> generateNDC();
 	void generateAABB(VisibleComponent & visibleComponent);
 	void generateAABB(LightComponent & lightComponent);
-	AABB generateAABB(const vec3& boundMax, const vec3& boundMin, const vec3& scale);
+	AABB generateAABB(const vec4& boundMax, const vec4& boundMin, const vec4& scale);
 	meshID addAABBMesh(const AABB& AABB);
 	void loadDefaultAssets(); 
 	void loadAssetsForComponents();

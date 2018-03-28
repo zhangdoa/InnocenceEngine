@@ -570,35 +570,35 @@ void RenderingSystem::assignloadedModel(modelMap& loadedmodelMap, VisibleCompone
 std::vector<Vertex> RenderingSystem::generateNDC()
 {
 	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = vec3(1.0f, 1.0f, 1.0f);
+	l_VertexData_1.m_pos = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = vec3(1.0f, -1.0f, 1.0f);
+	l_VertexData_2.m_pos = vec4(1.0f, -1.0f, 1.0f, 1.0f);
 	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = vec3(-1.0f, -1.0f, 1.0f);
+	l_VertexData_3.m_pos = vec4(-1.0f, -1.0f, 1.0f, 1.0f);
 	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = vec3(-1.0f, 1.0f, 1.0f);
+	l_VertexData_4.m_pos = vec4(-1.0f, 1.0f, 1.0f, 1.0f);
 	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 
 	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = vec3(1.0f, 1.0f, -1.0f);
+	l_VertexData_5.m_pos = vec4(1.0f, 1.0f, -1.0f, 1.0f);
 	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = vec3(1.0f, -1.0f, -1.0f);
+	l_VertexData_6.m_pos = vec4(1.0f, -1.0f, -1.0f, 1.0f);
 	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = vec3(-1.0f, -1.0f, -1.0f);
+	l_VertexData_7.m_pos = vec4(-1.0f, -1.0f, -1.0f, 1.0f);
 	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = vec3(-1.0f, 1.0f, -1.0f);
+	l_VertexData_8.m_pos = vec4(-1.0f, 1.0f, -1.0f, 1.0f);
 	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
 
 	std::vector<Vertex> l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
@@ -617,8 +617,8 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 	double minY = 0;
 	double minZ = 0;
 
-	std::vector<vec3> l_maxVertices;
-	std::vector<vec3> l_minVertices;
+	std::vector<vec4> l_maxVertices;
+	std::vector<vec4> l_minVertices;
 
 	for (auto& l_graphicData : visibleComponent.getModelMap())
 	{
@@ -627,7 +627,7 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 		l_minVertices.emplace_back(m_meshMap.find(l_graphicData.first)->second->findMinVertex());
 	}
 
-	std::for_each(l_maxVertices.begin(), l_maxVertices.end(), [&](vec3 val)
+	std::for_each(l_maxVertices.begin(), l_maxVertices.end(), [&](vec4 val)
 	{
 		if (val.x >= maxX)
 		{
@@ -643,7 +643,7 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 		};
 	});
 
-	std::for_each(l_minVertices.begin(), l_minVertices.end(), [&](vec3 val)
+	std::for_each(l_minVertices.begin(), l_minVertices.end(), [&](vec4 val)
 	{
 		if (val.x <= minX)
 		{
@@ -659,7 +659,7 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 		};
 	});
 
-	visibleComponent.m_AABB = generateAABB(vec3(maxX, maxY, maxZ), vec3(minX, minY, minZ), l_scale);
+	visibleComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), l_scale);
 
 	if (visibleComponent.m_drawAABB)
 	{
@@ -669,7 +669,6 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 
 void RenderingSystem::generateAABB(LightComponent & lightComponent)
 {
-	// @TODO: CSM WIP
 	double maxX = 0;
 	double maxY = 0;
 	double maxZ = 0;
@@ -677,19 +676,25 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	double minY = 0;
 	double minZ = 0;
 
-	auto p = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
-	//auto p = mat4();
-	//p.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 500.0);
-	auto r = g_pGameSystem->getCameraComponents()[0]->getRotMatrix();
-	auto t = g_pGameSystem->getCameraComponents()[0]->getPosMatrix();
-	auto l_inversePV = (p * r * t).inverse();
+	auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
+	auto rCamera = g_pGameSystem->getCameraComponents()[0]->getRotMatrix();
+	auto tCamera = g_pGameSystem->getCameraComponents()[0]->getPosMatrix();
+	auto l_vLight = mat4().lookAt(lightComponent.getParentEntity()->getTransform()->getPos(), lightComponent.getParentEntity()->getTransform()->getPos() + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 
+	// get view frustrum's corner in world space
 	auto l_vertices = generateNDC();
-
 	for (auto& l_vertexData : l_vertices)
 	{
-		auto l_mulPos = l_inversePV.mul(l_vertexData.m_pos);
+		vec4 l_mulPos = pCamera.inverse().mul(l_vertexData.m_pos);
+		// perspective division
+		l_mulPos = l_mulPos * (1.0 / l_mulPos.w);
+		// to view space
+		l_mulPos = rCamera.inverse().mul(l_mulPos);
+		l_mulPos = tCamera.inverse().mul(l_mulPos);
+		// trasform view frustrum's corner to light space
+		l_mulPos = l_vLight.mul(l_mulPos);
 		l_vertexData.m_pos = l_mulPos;
+
 		if ( l_vertexData.m_pos.x >= maxX)
 		{
 			maxX =  l_vertexData.m_pos.x;
@@ -716,46 +721,8 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 		}
 	}
 
-	lightComponent.m_AABB = generateAABB(vec3(maxX, maxY, maxZ), vec3(minX, minY, minZ), vec3(1.0, 1.0, 1.0));
+	lightComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), vec4(1.0, 1.0, 1.0, 1.0));
 
-	////auto l_lightRight = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::RIGHT);
-	////auto l_lightUp = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP);
-	////auto l_lightForward = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
-
-	////double l_right = 0;
-	////double l_left = 0;
-	////double l_up = 0;
-	////double l_bottom = 0;
-	////double near_plane = 0;
-	////double far_plane = 0;
-
-	////for (auto& l_vertex : lightComponent.m_AABB.m_vertices)
-	////{
-	////	auto l_RightTemp = l_vertex.m_pos * (l_lightRight);
-	////	if (l_RightTemp >= l_right) l_right = l_RightTemp;
-	////	else if (l_RightTemp <= l_left) l_left = l_RightTemp;
-
-	////	auto l_UpTemp = l_vertex.m_pos * (l_lightUp);
-	////	if (l_UpTemp >= l_up) l_up = l_UpTemp;
-	////	else if (l_UpTemp <= l_bottom) l_bottom = l_UpTemp;
-
-	////	auto l_ForwardTemp = l_vertex.m_pos * (l_lightForward);
-	////	if (l_ForwardTemp >= far_plane) far_plane = l_ForwardTemp;
-	////	else if (l_ForwardTemp <= near_plane) near_plane = l_ForwardTemp;
-	////}
-
-	////mat4 p_light;
-	////p_light.initializeToOrthographicMatrix(l_left, l_right, l_bottom, l_up, near_plane, far_plane);
-
-	////l_vertices = generateNDC();
-
-	////for (auto& l_vertexData : l_vertices)
-	////{
-	////	auto l_mulPos = p_light.mul(l_vertexData.m_pos);
-	////	l_vertexData.m_pos = l_mulPos;
-	////}
-
-	////lightComponent.m_AABB.m_vertices = l_vertices;
 
 	//if (lightComponent.m_drawAABB)
 	//{
@@ -763,7 +730,7 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	//}
 }
 
-AABB RenderingSystem::generateAABB(const vec3 & boundMax, const vec3 & boundMin, const vec3& scale)
+AABB RenderingSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin, const vec4& scale)
 {
 	AABB l_AABB;
 	// unscaled version for visualization
@@ -778,35 +745,35 @@ AABB RenderingSystem::generateAABB(const vec3 & boundMax, const vec3 & boundMin,
 	l_AABB.m_sphereRadius = std::max(std::max((l_AABB.m_boundMax.x - l_AABB.m_boundMin.x) / 2, (l_AABB.m_boundMax.y - l_AABB.m_boundMin.y) / 2), (l_AABB.m_boundMax.z - l_AABB.m_boundMin.z) / 2);
 
 	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = (vec3(l_unscaledBoundMax.x, l_unscaledBoundMax.y, l_unscaledBoundMax.z));
+	l_VertexData_1.m_pos = (vec4(l_unscaledBoundMax.x, l_unscaledBoundMax.y, l_unscaledBoundMax.z, 1.0));
 	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = (vec3(l_unscaledBoundMax.x, l_unscaledBoundMin.y, l_unscaledBoundMax.z));
+	l_VertexData_2.m_pos = (vec4(l_unscaledBoundMax.x, l_unscaledBoundMin.y, l_unscaledBoundMax.z, 1.0));
 	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = (vec3(l_unscaledBoundMin.x, l_unscaledBoundMin.y, l_unscaledBoundMax.z));
+	l_VertexData_3.m_pos = (vec4(l_unscaledBoundMin.x, l_unscaledBoundMin.y, l_unscaledBoundMax.z, 1.0));
 	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = (vec3(l_unscaledBoundMin.x, l_unscaledBoundMax.y, l_unscaledBoundMax.z));
+	l_VertexData_4.m_pos = (vec4(l_unscaledBoundMin.x, l_unscaledBoundMax.y, l_unscaledBoundMax.z, 1.0));
 	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 
 	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = (vec3(l_unscaledBoundMax.x, l_unscaledBoundMax.y, l_unscaledBoundMin.z));
+	l_VertexData_5.m_pos = (vec4(l_unscaledBoundMax.x, l_unscaledBoundMax.y, l_unscaledBoundMin.z, 1.0));
 	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = (vec3(l_unscaledBoundMax.x, l_unscaledBoundMin.y, l_unscaledBoundMin.z));
+	l_VertexData_6.m_pos = (vec4(l_unscaledBoundMax.x, l_unscaledBoundMin.y, l_unscaledBoundMin.z, 1.0));
 	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = (vec3(l_unscaledBoundMin.x, l_unscaledBoundMin.y, l_unscaledBoundMin.z));
+	l_VertexData_7.m_pos = (vec4(l_unscaledBoundMin.x, l_unscaledBoundMin.y, l_unscaledBoundMin.z, 1.0));
 	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = (vec3(l_unscaledBoundMin.x, l_unscaledBoundMax.y, l_unscaledBoundMin.z));
+	l_VertexData_8.m_pos = (vec4(l_unscaledBoundMin.x, l_unscaledBoundMax.y, l_unscaledBoundMin.z, 1.0));
 	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
 
 

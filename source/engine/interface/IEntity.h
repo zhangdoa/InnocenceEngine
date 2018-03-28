@@ -25,15 +25,15 @@ public:
 	virtual Transform* getTransform() = 0;
 	virtual bool hasTransformChanged() = 0;
 
-	virtual mat4 caclLocalPosMatrix() = 0;
+	virtual mat4 caclLocalTranslationMatrix() = 0;
 	virtual mat4 caclLocalRotMatrix() = 0;
 	virtual mat4 caclLocalScaleMatrix() = 0;
 
-	virtual vec3 caclWorldPos() = 0;
-	virtual quat caclWorldRot() = 0;
-	virtual vec3 caclWorldScale() = 0;
+	virtual vec4 caclWorldPos() = 0;
+	virtual vec4 caclWorldRot() = 0;
+	virtual vec4 caclWorldScale() = 0;
 
-	virtual mat4 caclWorldPosMatrix() = 0;
+	virtual mat4 caclWorldTranslationMatrix() = 0;
 	virtual mat4 caclWorldRotMatrix() = 0;
 	virtual mat4 caclWorldScaleMatrix() = 0;
 
