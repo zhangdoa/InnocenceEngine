@@ -18,7 +18,7 @@ void RenderingSystem::setup()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL 
 
 	// Open a window and create its OpenGL context
-	m_window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, m_windowName.c_str(), NULL, NULL);
+	m_window = glfwCreateWindow(m_screenResolution.x, m_screenResolution.y, m_windowName.c_str(), NULL, NULL);
 	glfwMakeContextCurrent(m_window);
 	if (m_window == nullptr) {
 		m_objectStatus = objectStatus::STANDBY;
@@ -39,10 +39,13 @@ void RenderingSystem::setup()
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	//setup input
+	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
+
 	for (int i = 0; i < NUM_KEYCODES; i++)
 	{
 		m_keyButtonMap.emplace(i, keyButton());
 	}
+
 	f_changeDrawPolygonMode = std::bind(&RenderingSystem::changeDrawPolygonMode, this);
 	f_changeDrawTextureMode = std::bind(&RenderingSystem::changeDrawTextureMode, this);
 	f_changeShadingMode = std::bind(&RenderingSystem::changeShadingMode, this);
@@ -145,13 +148,16 @@ void RenderingSystem::loadAssetsForComponents()
 			}
 		}
 	}
-	for (auto i : g_pGameSystem->getCameraComponents())
+
+	// generate AABB for CSM
+	for (auto& i : g_pGameSystem->getLightComponents())
 	{
-		if (i->m_drawRay)
+		if (i->getLightType() == lightType::DIRECTIONAL)
 		{
-			m_UnitLineTemplate;
+			generateAABB(*i);
 		}
 	}
+
 }
 
 void RenderingSystem::initialize()
@@ -159,8 +165,6 @@ void RenderingSystem::initialize()
 	//initialize window
 	windowCallbackWrapper::getInstance().setRenderingSystem(this);
 	windowCallbackWrapper::getInstance().initialize();
-
-	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
 	//initialize input
 	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
@@ -274,6 +278,7 @@ void RenderingSystem::updateInput()
 
 void RenderingSystem::updatePhysics()
 {
+	// Raycast from camera
 	m_selectedVisibleComponents.clear();
 	for (auto& i : g_pGameSystem->getCameraComponents())
 	{
@@ -288,6 +293,14 @@ void RenderingSystem::updatePhysics()
 					m_selectedVisibleComponents.emplace_back(j);
 				}
 			}
+		}
+	}
+	// generate AABB for CSM
+	for (auto& i : g_pGameSystem->getLightComponents())
+	{
+		if (i->getLightType() == lightType::DIRECTIONAL)
+		{
+			generateAABB(*i);
 		}
 	}
 }
@@ -341,12 +354,12 @@ GLFWwindow * RenderingSystem::getWindow() const
 
 vec2 RenderingSystem::getScreenCenterPosition() const
 {
-	return vec2(SCR_WIDTH / 2.0f, SCR_HEIGHT / 2.0f);
+	return vec2(m_screenResolution.x / 2, m_screenResolution.y / 2);
 }
 
 vec2 RenderingSystem::getScreenResolution() const
 {
-	return vec2(SCR_WIDTH, SCR_HEIGHT);
+	return m_screenResolution;
 }
 
 void RenderingSystem::setWindowName(const std::string & windowName)
@@ -451,8 +464,6 @@ void windowCallbackWrapper::scrollCallback(GLFWwindow * window, double xoffset, 
 
 void windowCallbackWrapper::framebufferSizeCallbackImpl(GLFWwindow * window, int width, int height)
 {
-	m_renderingSystem->SCR_WIDTH = width;
-	m_renderingSystem->SCR_HEIGHT = height;
 	m_renderingSystem->m_screenResolution.x = width;
 	m_renderingSystem->m_screenResolution.y = height;
 	glViewport(0, 0, width, height);
@@ -556,6 +567,45 @@ void RenderingSystem::assignloadedModel(modelMap& loadedmodelMap, VisibleCompone
 	assignDefaultTextures(textureAssignType::ADD_DEFAULT, visibleComponent);
 }
 
+std::vector<Vertex> RenderingSystem::generateNDC()
+{
+	Vertex l_VertexData_1;
+	l_VertexData_1.m_pos = vec3(1.0f, 1.0f, 1.0f);
+	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
+
+	Vertex l_VertexData_2;
+	l_VertexData_2.m_pos = vec3(1.0f, -1.0f, 1.0f);
+	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
+
+	Vertex l_VertexData_3;
+	l_VertexData_3.m_pos = vec3(-1.0f, -1.0f, 1.0f);
+	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
+
+	Vertex l_VertexData_4;
+	l_VertexData_4.m_pos = vec3(-1.0f, 1.0f, 1.0f);
+	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
+
+	Vertex l_VertexData_5;
+	l_VertexData_5.m_pos = vec3(1.0f, 1.0f, -1.0f);
+	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
+
+	Vertex l_VertexData_6;
+	l_VertexData_6.m_pos = vec3(1.0f, -1.0f, -1.0f);
+	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
+
+	Vertex l_VertexData_7;
+	l_VertexData_7.m_pos = vec3(-1.0f, -1.0f, -1.0f);
+	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
+
+	Vertex l_VertexData_8;
+	l_VertexData_8.m_pos = vec3(-1.0f, 1.0f, -1.0f);
+	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
+
+	std::vector<Vertex> l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
+	
+	return l_vertices;
+}
+
 void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 {
 	auto l_scale = visibleComponent.getParentEntity()->getTransform()->getScale();
@@ -609,14 +659,120 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 		};
 	});
 
+	visibleComponent.m_AABB = generateAABB(vec3(maxX, maxY, maxZ), vec3(minX, minY, minZ), l_scale);
+
+	if (visibleComponent.m_drawAABB)
+	{
+		visibleComponent.m_AABBMeshID = addAABBMesh(visibleComponent.m_AABB);
+	}
+}
+
+void RenderingSystem::generateAABB(LightComponent & lightComponent)
+{
+	// @TODO: CSM WIP
+	double maxX = 0;
+	double maxY = 0;
+	double maxZ = 0;
+	double minX = 0;
+	double minY = 0;
+	double minZ = 0;
+
+	auto p = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
+	//auto p = mat4();
+	//p.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 500.0);
+	auto r = g_pGameSystem->getCameraComponents()[0]->getRotMatrix();
+	auto t = g_pGameSystem->getCameraComponents()[0]->getPosMatrix();
+	auto l_inversePV = (p * r * t).inverse();
+
+	auto l_vertices = generateNDC();
+
+	for (auto& l_vertexData : l_vertices)
+	{
+		auto l_mulPos = l_inversePV.mul(l_vertexData.m_pos);
+		l_vertexData.m_pos = l_mulPos;
+		if ( l_vertexData.m_pos.x >= maxX)
+		{
+			maxX =  l_vertexData.m_pos.x;
+		}
+		if ( l_vertexData.m_pos.y >= maxY)
+		{
+			maxY =  l_vertexData.m_pos.y;
+		}
+		if ( l_vertexData.m_pos.z >= maxZ)
+		{
+			maxZ =  l_vertexData.m_pos.z;
+		}
+		if ( l_vertexData.m_pos.x <= minX)
+		{
+			minX =  l_vertexData.m_pos.x;
+		}
+		if ( l_vertexData.m_pos.y <= minY)
+		{
+			minY =  l_vertexData.m_pos.y;
+		}
+		if ( l_vertexData.m_pos.z <= minZ)
+		{
+			minZ =  l_vertexData.m_pos.z;
+		}
+	}
+
+	lightComponent.m_AABB = generateAABB(vec3(maxX, maxY, maxZ), vec3(minX, minY, minZ), vec3(1.0, 1.0, 1.0));
+
+	////auto l_lightRight = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::RIGHT);
+	////auto l_lightUp = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP);
+	////auto l_lightForward = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
+
+	////double l_right = 0;
+	////double l_left = 0;
+	////double l_up = 0;
+	////double l_bottom = 0;
+	////double near_plane = 0;
+	////double far_plane = 0;
+
+	////for (auto& l_vertex : lightComponent.m_AABB.m_vertices)
+	////{
+	////	auto l_RightTemp = l_vertex.m_pos * (l_lightRight);
+	////	if (l_RightTemp >= l_right) l_right = l_RightTemp;
+	////	else if (l_RightTemp <= l_left) l_left = l_RightTemp;
+
+	////	auto l_UpTemp = l_vertex.m_pos * (l_lightUp);
+	////	if (l_UpTemp >= l_up) l_up = l_UpTemp;
+	////	else if (l_UpTemp <= l_bottom) l_bottom = l_UpTemp;
+
+	////	auto l_ForwardTemp = l_vertex.m_pos * (l_lightForward);
+	////	if (l_ForwardTemp >= far_plane) far_plane = l_ForwardTemp;
+	////	else if (l_ForwardTemp <= near_plane) near_plane = l_ForwardTemp;
+	////}
+
+	////mat4 p_light;
+	////p_light.initializeToOrthographicMatrix(l_left, l_right, l_bottom, l_up, near_plane, far_plane);
+
+	////l_vertices = generateNDC();
+
+	////for (auto& l_vertexData : l_vertices)
+	////{
+	////	auto l_mulPos = p_light.mul(l_vertexData.m_pos);
+	////	l_vertexData.m_pos = l_mulPos;
+	////}
+
+	////lightComponent.m_AABB.m_vertices = l_vertices;
+
+	//if (lightComponent.m_drawAABB)
+	//{
+	//	lightComponent.m_AABBMeshID = addAABBMesh(lightComponent.m_AABB);
+	//}
+}
+
+AABB RenderingSystem::generateAABB(const vec3 & boundMax, const vec3 & boundMin, const vec3& scale)
+{
 	AABB l_AABB;
 	// unscaled version for visualization
-	auto l_unscaledBoundMin = vec3(minX, minY, minZ);
-	auto l_unscaledBoundMax = vec3(maxX, maxY, maxZ);
+	auto l_unscaledBoundMin = boundMin;
+	auto l_unscaledBoundMax = boundMax;
 
 	// scaled version for collision calculation
-	l_AABB.m_boundMin = l_unscaledBoundMin.mul(l_scale);
-	l_AABB.m_boundMax = l_unscaledBoundMax.mul(l_scale);
+	l_AABB.m_boundMin = l_unscaledBoundMin.scale(scale);
+	l_AABB.m_boundMax = l_unscaledBoundMax.scale(scale);
 
 	l_AABB.m_center = (l_AABB.m_boundMax + l_AABB.m_boundMin) * 0.5;
 	l_AABB.m_sphereRadius = std::max(std::max((l_AABB.m_boundMax.x - l_AABB.m_boundMin.x) / 2, (l_AABB.m_boundMax.y - l_AABB.m_boundMin.y) / 2), (l_AABB.m_boundMax.z - l_AABB.m_boundMin.z) / 2);
@@ -658,7 +814,6 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 
 	for (auto& l_vertexData : l_AABB.m_vertices)
 	{
-
 		l_vertexData.m_normal = l_vertexData.m_pos.normalize();
 	}
 
@@ -669,26 +824,27 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 		4, 0, 7, 0, 3, 7,
 		1, 5, 2, 5, 6, 2 };
 
-	visibleComponent.m_AABB = l_AABB;
-	if (visibleComponent.m_drawAABB)
+	return l_AABB;
+}
+
+meshID RenderingSystem::addAABBMesh(const AABB & AABB)
+{
+	auto l_AABBMeshID = addMesh(meshType::AABB);
+	auto l_AABBMeshData = getMesh(meshType::AABB, l_AABBMeshID);
+
+	std::for_each(AABB.m_vertices.begin(), AABB.m_vertices.end(), [&](Vertex val)
 	{
-		auto l_AABBMeshID = addMesh(meshType::AABB);
-		auto l_AABBMeshData = getMesh(meshType::AABB, l_AABBMeshID);
+		l_AABBMeshData->addVertices(val);
+	});
 
-		std::for_each(l_AABB.m_vertices.begin(), l_AABB.m_vertices.end(), [&](Vertex val)
-		{
-			l_AABBMeshData->addVertices(val);
-		});
+	std::for_each(AABB.m_indices.begin(), AABB.m_indices.end(), [&](unsigned int val)
+	{
+		l_AABBMeshData->addIndices(val);
+	});
 
-		std::for_each(l_AABB.m_indices.begin(), l_AABB.m_indices.end(), [&](unsigned int val)
-		{
-			l_AABBMeshData->addIndices(val);
-		});
-
-		l_AABBMeshData->setup(meshType::AABB, meshDrawMethod::TRIANGLE, false, false);
-		l_AABBMeshData->initialize();
-		visibleComponent.m_AABBMeshID = l_AABBMeshID;
-	}
+	l_AABBMeshData->setup(meshType::AABB, meshDrawMethod::TRIANGLE, false, false);
+	l_AABBMeshData->initialize();
+	return l_AABBMeshID;
 }
 
 void RenderingSystem::loadTexture(const std::vector<std::string> &fileName, textureType textureType, VisibleComponent & visibleComponent)
@@ -1084,8 +1240,8 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	// draw debugger pass
 	m_geometryPassFrameBuffer->asReadBuffer();
 	m_debuggerPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
-	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, m_selectedVisibleComponents, m_AABBMeshMap, m_textureMap, true, false);
-	//m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_AABBMeshMap, m_textureMap, true, false);
+	//m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, m_selectedVisibleComponents, m_AABBMeshMap, m_textureMap, true, false);
+	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_AABBMeshMap, m_textureMap, true, false);
 
 	// draw background defer pass
 	m_lightPassFrameBuffer->activeTexture(0, 0);

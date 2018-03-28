@@ -28,6 +28,10 @@ public:
 	mat4 getLightPosMatrix();
 	mat4 getLightRotMatrix();
 
+	bool m_drawAABB = false;
+	meshID m_AABBMeshID;
+	AABB m_AABB;
+
 private:
 	lightType m_lightType = lightType::POINT;
 	vec3 m_direction;

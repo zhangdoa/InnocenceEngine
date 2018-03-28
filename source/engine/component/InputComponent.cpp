@@ -31,10 +31,10 @@ void InputComponent::move(moveDirection moveDirection)
 	switch (moveDirection)
 	{
 		// opengl use right-hand-coordinate, so go foward means get into the negative z-axis
-	case FORWARD:  getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::BACKWARD).mul(moveSpeed)); break;
-	case BACKWARD:  getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::FORWARD).mul(moveSpeed));  break;
-	case LEFT:   getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::LEFT).mul(moveSpeed));  break;
-	case RIGHT:   getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::RIGHT).mul(moveSpeed));  break;
+	case FORWARD:  getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::BACKWARD).scale(moveSpeed)); break;
+	case BACKWARD:  getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::FORWARD).scale(moveSpeed));  break;
+	case LEFT:   getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::LEFT).scale(moveSpeed));  break;
+	case RIGHT:   getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::RIGHT).scale(moveSpeed));  break;
 	}
 }
 

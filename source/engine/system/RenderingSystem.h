@@ -63,9 +63,7 @@ private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
 	//Window data
-	unsigned int SCR_WIDTH = 1280;
-	unsigned int SCR_HEIGHT = 720;
-	vec2 m_screenResolution = vec2(SCR_WIDTH, SCR_HEIGHT);
+	vec2 m_screenResolution = vec2(1280, 720);
 	GLFWwindow* m_window;
 	std::string m_windowName;
 
@@ -102,8 +100,11 @@ private:
 	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
 	void assignloadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
 	
+	std::vector<Vertex> generateNDC();
 	void generateAABB(VisibleComponent & visibleComponent);
-	
+	void generateAABB(LightComponent & lightComponent);
+	AABB generateAABB(const vec3& boundMax, const vec3& boundMin, const vec3& scale);
+	meshID addAABBMesh(const AABB& AABB);
 	void loadDefaultAssets(); 
 	void loadAssetsForComponents();
 
