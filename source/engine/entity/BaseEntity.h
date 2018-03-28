@@ -27,15 +27,15 @@ public:
 	Transform* getTransform() override;
 	bool hasTransformChanged() override;
 
-	mat4 caclLocalPosMatrix() override;
+	mat4 caclLocalTranslationMatrix() override;
 	mat4 caclLocalRotMatrix() override;
 	mat4 caclLocalScaleMatrix() override;
 
-	vec3 caclWorldPos() override;
-	quat caclWorldRot() override;
-	vec3 caclWorldScale() override;
+	vec4 caclWorldPos() override;
+	vec4 caclWorldRot() override;
+	vec4 caclWorldScale() override;
 
-	mat4 caclWorldPosMatrix() override;
+	mat4 caclWorldTranslationMatrix() override;
 	mat4 caclWorldRotMatrix() override;
 	mat4 caclWorldScaleMatrix() override;
 

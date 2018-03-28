@@ -23,9 +23,9 @@ public:
 	int getNumVertices() const override;
 	int getNumFaces() const override;
 	int getNumIndicesInFace(int faceIndex) const override;
-	vec3 getVertices(unsigned int index) const override;
+	vec4 getVertices(unsigned int index) const override;
 	vec2 getTextureCoords(unsigned int index) const override;
-	vec3 getNormals(unsigned int index) const override;
+	vec4 getNormals(unsigned int index) const override;
 	int getIndices(int faceIndex, int index) const override;
 	aiMesh* m_aiMesh;
 };

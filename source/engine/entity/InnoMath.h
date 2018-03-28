@@ -1,11 +1,11 @@
 #pragma once
 #include "common/stdafx.h"
 #include "common/config.h"
-typedef __m128 vec4;
+//typedef __m128 vec4;
 
 const static double PI = 3.14159265358979323846264338327950288;
 
-class vec3;
+class vec4;
 
 /*
 
@@ -55,22 +55,27 @@ vector4 * matrix4x4 :
 */
 
 /* Column-Major memory layout (in C/C++)
+matrix4x4 :
 [columnIndex][rowIndex]
 | m[0][0] <-> a00 m[1][0] <-> a01 m[2][0] <-> a02 m[3][0] <-> a03 |
 | m[0][1] <-> a10 m[1][1] <-> a11 m[2][1] <-> a12 m[3][1] <-> a13 |
 | m[0][2] <-> a20 m[1][2] <-> a21 m[2][2] <-> a22 m[3][2] <-> a23 |
 | m[0][3] <-> a30 m[1][3] <-> a31 m[2][3] <-> a32 m[3][3] <-> a33 |
+vector4 :
+m[0][0] <-> x m[1][0] <-> y m[2][0] <-> z m[3][0] <-> w
 */
 
 /* Row-Major memory layout (in C/C++)
+matrix4x4 :
 [rowIndex][columnIndex]
 | m[0][0] <-> a00 m[0][1] <-> a01 m[0][2] <-> a02 m[0][3] <-> a03 |
 | m[1][0] <-> a10 m[1][1] <-> a11 m[1][2] <-> a12 m[1][3] <-> a13 |
 | m[2][0] <-> a20 m[2][1] <-> a21 m[2][2] <-> a22 m[2][3] <-> a23 |
 | m[3][0] <-> a30 m[3][1] <-> a31 m[3][2] <-> a32 m[3][3] <-> a33 |
+vector4 :
+m[0][0] <-> x m[0][1] <-> y m[0][2] <-> z m[0][3] <-> w  (best choice) 
 */
 
-// chose Row-Major vector4 mathematical convention and Column-Major memory layout in C/C++
 class mat4
 {
 public:
@@ -80,7 +85,7 @@ public:
 	mat4 operator*(const mat4& rhs);
 	mat4 operator*(double rhs);
 	mat4 mul(const mat4& rhs);
-	vec3 mul(const vec3& rhs);
+	vec4 mul(const vec4& rhs);
 	mat4 mul(double rhs);
 	mat4 transpose();
 	mat4 inverse();
@@ -88,73 +93,52 @@ public:
 
 	void initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar);
 	void initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar);
-	mat4 lookAt(const vec3& eyePos, const vec3& centerPos, const vec3& upDir);
+	mat4 lookAt(const vec4& eyePos, const vec4& centerPos, const vec4& upDir);
 	float m[4][4];
 };
 
-//the w component is the last one
-class quat
+// In Homogeneous Coordinates, the w component is a scalar of x, y and z, to represent 3D point vector in 4D, set w to 1.0; to represent 3D direction vector in 4D, set w to 0.0.
+// In Quaternion, the w component is sin(theta / 2).
+class vec4
 {
 public:
-	quat();
-	quat(double rhsX, double rhsY, double rhsZ, double rhsW);
-	quat(const quat& rhs);
-	quat& operator=(const quat& rhs);
+	vec4();
+	vec4(double rhsX, double rhsY, double rhsZ, double rhsW);
+	vec4(const vec4& rhs);
+	vec4& operator=(const vec4& rhs);
 
-	~quat();
+	~vec4();
 
-	quat mul(const quat& rhs);
-	quat mul(double rhs);
+	vec4 add(const vec4& rhs);
+	vec4 operator+(const vec4& rhs);
+	vec4 add(double rhs);
+	vec4 operator+(double rhs);
+	vec4 sub(const vec4& rhs);
+	vec4 operator-(const vec4& rhs);
+	vec4 sub(double rhs);
+	vec4 operator-(double rhs);
+	double dot(const vec4& rhs);
+	double operator*(const vec4& rhs);
+	vec4 cross(const vec4& rhs);
+	vec4 scale(const vec4& rhs);
+	vec4 scale(double rhs);
+	vec4 operator*(double rhs);
+	vec4 quatMul(const vec4& rhs);
+	vec4 quatMul(double rhs);
 	double length();
-	quat normalize();
+	vec4 normalize();
 
-	bool operator!=(const quat& rhs);
-	bool operator==(const quat& rhs);
-
-	mat4 toRotationMartix();
-
-	double x;
-	double y;
-	double z;
-	double w;
-};
-
-class vec3
-{
-public:
-	vec3();
-	vec3(double rhsX, double rhsY, double rhsZ);
-	vec3(const vec3& rhs);
-	vec3& operator=(const vec3& rhs);
-
-	~vec3();
-
-	vec3 add(const vec3& rhs);
-	vec3 operator+(const vec3& rhs);
-	vec3 add(double rhs);
-	vec3 operator+(double rhs);
-	vec3 sub(const vec3& rhs);
-	vec3 operator-(const vec3& rhs);
-	vec3 sub(double rhs);
-	vec3 operator-(double rhs);
-	double dot(const vec3& rhs);
-	double operator*(const vec3& rhs);
-	vec3 cross(const vec3& rhs);
-	vec3 scale(const vec3& rhs);
-	vec3 scale(double rhs);
-	vec3 operator*(double rhs);
-	double length();
-	vec3 normalize();
-
-	bool operator!=(const vec3& rhs);
-	bool operator==(const vec3& rhs);
+	bool operator!=(const vec4& rhs);
+	bool operator==(const vec4& rhs);
 
 	mat4 toTranslationMartix();
+	mat4 toRotationMartix();
 	mat4 toScaleMartix();
 
 	double x;
 	double y;
 	double z;
+	double w;
 };
 
 class vec2
@@ -193,12 +177,12 @@ public:
 	Vertex();
 	Vertex(const Vertex& rhs);
 	Vertex& operator=(const Vertex& rhs);
-	Vertex(const vec3& pos, const vec2& texCoord, const vec3& normal);
+	Vertex(const vec4& pos, const vec2& texCoord, const vec4& normal);
 	~Vertex();
 
-	vec3 m_pos;
+	vec4 m_pos;
 	vec2 m_texCoord;
-	vec3 m_normal;
+	vec4 m_normal;
 };
 
 class Ray
@@ -209,8 +193,8 @@ public:
 	Ray& operator=(const Ray& rhs);
 	~Ray();
 
-	vec3 m_origin;
-	vec3 m_direction;
+	vec4 m_origin;
+	vec4 m_direction;
 };
 
 class AABB
@@ -221,10 +205,10 @@ public:
 	AABB& operator=(const AABB& rhs);
 	~AABB();
 
-	vec3 m_center;
+	vec4 m_center;
 	double m_sphereRadius;
-	vec3 m_boundMin;
-	vec3 m_boundMax;
+	vec4 m_boundMin;
+	vec4 m_boundMax;
 
 	std::vector<Vertex> m_vertices;
 	std::vector<unsigned int> m_indices;
@@ -241,30 +225,30 @@ public:
 
 	enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
 	void update();
-	void rotate(const vec3 & axis, double angle);
+	void rotate(const vec4 & axis, double angle);
 
-	vec3& getPos();
-	quat& getRot();
-	vec3& getScale();
+	vec4& getPos();
+	vec4& getRot();
+	vec4& getScale();
 
-	void setPos(const vec3& pos);
-	void setRot(const quat& rot);
-	void setScale(const vec3& scale);
+	void setPos(const vec4& pos);
+	void setRot(const vec4& rot);
+	void setScale(const vec4& scale);
 
-	vec3& getOldPos();
-	quat& getOldRot();
-	vec3& getOldScale();
+	vec4& getOldPos();
+	vec4& getOldRot();
+	vec4& getOldScale();
 
-	vec3 getDirection(direction direction) const;
+	vec4 getDirection(direction direction) const;
 
 private:
-	vec3 m_pos;
-	quat m_rot;
-	vec3 m_scale;
+	vec4 m_pos;
+	vec4 m_rot;
+	vec4 m_scale;
 
-	vec3 m_oldPos;
-	quat m_oldRot;
-	vec3 m_oldScale;
+	vec4 m_oldPos;
+	vec4 m_oldRot;
+	vec4 m_oldScale;
 };
 
 

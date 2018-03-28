@@ -179,11 +179,11 @@ void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& camer
 	{
 		if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
 		{
-			float near_plane = 0.1, far_plane = 50;
+			auto l_boundMax = l_lightComponent->m_AABB.m_boundMax;
+			auto l_boundMin = l_lightComponent->m_AABB.m_boundMin;
 			mat4 p;
-			p.initializeToOrthographicMatrix(-10, 10, -30, 30, near_plane, far_plane);
+			p.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, l_boundMin.y, l_boundMax.z);
 			mat4 v = mat4().lookAt(l_lightComponent->getParentEntity()->getTransform()->getPos(), l_lightComponent->getParentEntity()->getTransform()->getPos() + l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
-			//mat4 v = l_lightComponent->getLightRotMatrix() * l_lightComponent->getLightPosMatrix();
 			updateUniform(m_uni_p, p);
 			updateUniform(m_uni_v, v);
 
@@ -412,36 +412,19 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 	updateUniform(m_uni_t, t);
 
 	// draw each lightComponent's shadowmap
-	// @TODO: CSM WIP
 	for (auto& l_lightComponent : lightComponents)
 	{
 		if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
 		{
-			auto l_lightRight = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::RIGHT);
 			auto l_lightUp = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP);
 			auto l_lightForward = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
 
-			double l_right = 0;
-			double l_left = 0;
-			double l_up = 0;
-			double l_bottom = 0;
-			double near_plane = 0;
-			double far_plane = 0;
-
-			for (auto& l_vertex : l_lightComponent->m_AABB.m_vertices)
-			{
-				auto l_RightTemp = l_vertex.m_pos * (l_lightRight);
-				if (l_RightTemp >= l_right) l_right = l_RightTemp;
-				else if (l_RightTemp <= l_left) l_left = l_RightTemp;
-
-				auto l_UpTemp = l_vertex.m_pos * (l_lightUp);
-				if (l_UpTemp >= l_up) l_up = l_UpTemp;
-				else if (l_UpTemp <= l_bottom) l_bottom = l_UpTemp;
-
-				auto l_ForwardTemp = l_vertex.m_pos * (l_lightForward);
-				if (l_ForwardTemp >= far_plane) far_plane = l_ForwardTemp;
-				else if (l_ForwardTemp <= near_plane) near_plane = l_ForwardTemp;
-			}
+			double l_right = l_lightComponent->m_AABB.m_boundMax.x;
+			double l_left = l_lightComponent->m_AABB.m_boundMin.x;
+			double l_up = l_lightComponent->m_AABB.m_boundMax.y;
+			double l_bottom = l_lightComponent->m_AABB.m_boundMin.y;
+			double far_plane = l_lightComponent->m_AABB.m_boundMax.z;
+			double near_plane = l_lightComponent->m_AABB.m_boundMin.z;
 
 			mat4 p_light;
 			p_light.initializeToOrthographicMatrix(l_left, l_right, l_bottom, l_up, near_plane, far_plane);
@@ -623,12 +606,12 @@ void EnvironmentCapturePassPBSShaderProgram::update(std::vector<CameraComponent*
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
 	std::vector<mat4> captureViews =
 	{
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  1.0f,  0.0f), vec3(0.0f,  0.0f,  1.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f), vec3(0.0f,  0.0f, -1.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, -1.0f,  0.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f))
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
 	};
 
 	useProgram();
@@ -681,12 +664,12 @@ void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<CameraCompon
 
 	std::vector<mat4> captureViews =
 	{
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  1.0f,  0.0f), vec3(0.0f,  0.0f,  1.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f), vec3(0.0f,  0.0f, -1.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, -1.0f,  0.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f))
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
 	};
 
 	useProgram();
@@ -738,12 +721,12 @@ void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponen
 
 	std::vector<mat4> captureViews =
 	{
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  1.0f,  0.0f), vec3(0.0f,  0.0f,  1.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f), vec3(0.0f,  0.0f, -1.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, -1.0f,  0.0f)),
-		mat4().lookAt(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f))
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
 	};
 
 	useProgram();

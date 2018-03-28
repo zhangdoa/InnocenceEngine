@@ -17,10 +17,10 @@ public:
 	void initialize() override;
 	const objectStatus& getStatus() const override;
 	meshID getMeshID();
-	vec3 findMaxVertex();
-	vec3 findMinVertex();
+	vec4 findMaxVertex();
+	vec4 findMinVertex();
 	void addVertices(const Vertex& Vertex);
-	void addVertices(const vec3 & pos, const vec2 & texCoord, const vec3 & normal);
+	void addVertices(const vec4 & pos, const vec2 & texCoord, const vec4 & normal);
 	void addVertices(double pos_x, double pos_y, double pos_z, double texCoord_x, double texCoord_y, double normal_x, double normal_y, double normal_z);
 	void addIndices(unsigned int index);
 

@@ -15,9 +15,9 @@ public:
 	virtual int getNumVertices() const = 0;
 	virtual int getNumFaces() const = 0;
 	virtual int getNumIndicesInFace(int faceIndex) const = 0;
-	virtual vec3 getVertices(unsigned int index) const = 0;
+	virtual vec4 getVertices(unsigned int index) const = 0;
 	virtual vec2 getTextureCoords(unsigned int index) const = 0;
-	virtual vec3 getNormals(unsigned int index) const = 0;
+	virtual vec4 getNormals(unsigned int index) const = 0;
 	virtual int getIndices(int faceIndex, int index) const = 0;
 };
 

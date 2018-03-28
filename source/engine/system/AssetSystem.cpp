@@ -324,9 +324,9 @@ int assimpMeshRawData::getNumIndicesInFace(int faceIndex) const
 	return m_aiMesh->mFaces[faceIndex].mNumIndices;
 }
 
-vec3 assimpMeshRawData::getVertices(unsigned int index) const
+vec4 assimpMeshRawData::getVertices(unsigned int index) const
 {
-	return vec3(m_aiMesh->mVertices[index].x, m_aiMesh->mVertices[index].y, m_aiMesh->mVertices[index].z);
+	return vec4(m_aiMesh->mVertices[index].x, m_aiMesh->mVertices[index].y, m_aiMesh->mVertices[index].z, 1.0);
 }
 
 vec2 assimpMeshRawData::getTextureCoords(unsigned int index) const
@@ -334,9 +334,9 @@ vec2 assimpMeshRawData::getTextureCoords(unsigned int index) const
 	return vec2(m_aiMesh->mTextureCoords[0][index].x, m_aiMesh->mTextureCoords[0][index].y);
 }
 
-vec3 assimpMeshRawData::getNormals(unsigned int index) const
+vec4 assimpMeshRawData::getNormals(unsigned int index) const
 {
-	return vec3(m_aiMesh->mNormals[index].x, m_aiMesh->mNormals[index].y, m_aiMesh->mNormals[index].z);
+	return vec4(m_aiMesh->mNormals[index].x, m_aiMesh->mNormals[index].y, m_aiMesh->mNormals[index].z, 0.0);
 }
 
 int assimpMeshRawData::getIndices(int faceIndex, int index) const

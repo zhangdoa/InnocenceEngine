@@ -36,7 +36,7 @@ meshID BaseMesh::getMeshID()
 	return m_meshID;
 }
 
-vec3 BaseMesh::findMaxVertex()
+vec4 BaseMesh::findMaxVertex()
 {
 	double maxX = 0;
 	double maxY = 0;
@@ -59,10 +59,10 @@ vec3 BaseMesh::findMaxVertex()
 			maxZ = val.m_pos.z;
 		};
 	});
-	return vec3(maxX, maxY, maxZ);
+	return vec4(maxX, maxY, maxZ, 1.0);
 }
 
-vec3 BaseMesh::findMinVertex()
+vec4 BaseMesh::findMinVertex()
 {
 	double minX = 0;
 	double minY = 0;
@@ -85,7 +85,7 @@ vec3 BaseMesh::findMinVertex()
 			minZ = val.m_pos.z;
 		};
 	});
-	return vec3(minX, minY, minZ);
+	return vec4(minX, minY, minZ, 1.0);
 }
 
 void BaseMesh::addVertices(const Vertex & Vertex)
@@ -93,14 +93,14 @@ void BaseMesh::addVertices(const Vertex & Vertex)
 	m_vertices.emplace_back(Vertex);
 }
 
-void BaseMesh::addVertices(const vec3 & pos, const vec2 & texCoord, const vec3 & normal)
+void BaseMesh::addVertices(const vec4 & pos, const vec2 & texCoord, const vec4 & normal)
 {
 	m_vertices.emplace_back(Vertex(pos, texCoord, normal));
 }
 
 void BaseMesh::addVertices(double pos_x, double pos_y, double pos_z, double texCoord_x, double texCoord_y, double normal_x, double normal_y, double normal_z)
 {
-	m_vertices.emplace_back(Vertex(vec3(pos_x, pos_y, pos_z), vec2(texCoord_x, texCoord_y), vec3(normal_x, normal_y, normal_z)));
+	m_vertices.emplace_back(Vertex(vec4(pos_x, pos_y, pos_z, 1.0), vec2(texCoord_x, texCoord_y), vec4(normal_x, normal_y, normal_z, 0.0)));
 }
 
 void BaseMesh::addIndices(unsigned int index)
@@ -111,35 +111,35 @@ void BaseMesh::addIndices(unsigned int index)
 void BaseMesh::addUnitCube()
 {
 	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = vec3(1.0f, 1.0f, 1.0f);
+	l_VertexData_1.m_pos = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = vec3(1.0f, -1.0f, 1.0f);
+	l_VertexData_2.m_pos = vec4(1.0f, -1.0f, 1.0f, 1.0f);
 	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = vec3(-1.0f, -1.0f, 1.0f);
+	l_VertexData_3.m_pos = vec4(-1.0f, -1.0f, 1.0f, 1.0f);
 	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = vec3(-1.0f, 1.0f, 1.0f);
+	l_VertexData_4.m_pos = vec4(-1.0f, 1.0f, 1.0f, 1.0f);
 	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 
 	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = vec3(1.0f, 1.0f, -1.0f);
+	l_VertexData_5.m_pos = vec4(1.0f, 1.0f, -1.0f, 1.0f);
 	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = vec3(1.0f, -1.0f, -1.0f);
+	l_VertexData_6.m_pos = vec4(1.0f, -1.0f, -1.0f, 1.0f);
 	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = vec3(-1.0f, -1.0f, -1.0f);
+	l_VertexData_7.m_pos = vec4(-1.0f, -1.0f, -1.0f, 1.0f);
 	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = vec3(-1.0f, 1.0f, -1.0f);
+	l_VertexData_8.m_pos = vec4(-1.0f, 1.0f, -1.0f, 1.0f);
 	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
 
 
@@ -174,10 +174,10 @@ void BaseMesh::addUnitSphere()
 			double zPos = sin(xSegment * 2.0 * PI) * sin(ySegment * PI);
 
 			Vertex l_VertexData;
-			l_VertexData.m_pos = vec3(xPos, yPos, zPos);
+			l_VertexData.m_pos = vec4(xPos, yPos, zPos, 1.0);
 			l_VertexData.m_texCoord = vec2(xSegment, ySegment);
-			l_VertexData.m_normal = vec3(xPos, yPos, zPos).normalize();
-			//l_VertexData.m_tangent = glm::normalize(glm::cross(glm::vec3(0.0, 0.0, 1.0), l_VertexData.m_normal));
+			l_VertexData.m_normal = vec4(xPos, yPos, zPos, 0.0).normalize();
+			//l_VertexData.m_tangent = glm::normalize(glm::cross(glm::vec4(0.0, 0.0, 1.0), l_VertexData.m_normal));
 			//l_VertexData.m_bitangent = glm::normalize(glm::cross(l_VertexData.m_tangent, l_VertexData.m_normal));
 			m_vertices.emplace_back(l_VertexData);
 		}
@@ -209,19 +209,19 @@ void BaseMesh::addUnitSphere()
 void BaseMesh::addUnitQuad()
 {
 	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = vec3(1.0f, 1.0f, 0.0f);
+	l_VertexData_1.m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
 	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = vec3(1.0f, -1.0f, 0.0f);
+	l_VertexData_2.m_pos = vec4(1.0f, -1.0f, 0.0f, 1.0f);
 	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = vec3(-1.0f, -1.0f, 0.0f);
+	l_VertexData_3.m_pos = vec4(-1.0f, -1.0f, 0.0f, 1.0f);
 	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = vec3(-1.0f, 1.0f, 0.0f);
+	l_VertexData_4.m_pos = vec4(-1.0f, 1.0f, 0.0f, 1.0f);
 	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 
 	m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4 };
@@ -231,11 +231,11 @@ void BaseMesh::addUnitQuad()
 void BaseMesh::addUnitLine()
 {
 	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = vec3(1.0f, 1.0f, 0.0f);
+	l_VertexData_1.m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
 	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = vec3(-1.0f, -1.0f, 0.0f);
+	l_VertexData_2.m_pos = vec4(-1.0f, -1.0f, 0.0f, 1.0f);
 	l_VertexData_2.m_texCoord = vec2(0.0f, 0.0f);
 
 	m_vertices = { l_VertexData_1, l_VertexData_2 };

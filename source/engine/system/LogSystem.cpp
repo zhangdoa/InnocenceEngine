@@ -24,29 +24,13 @@ void LogSystem::printLog(const vec2 & logMessage) const
 		<< std::endl;
 }
 
-void LogSystem::printLog(const vec3 & logMessage) const
+void LogSystem::printLog(const vec4 & logMessage) const
 {
 	std::cout
 		<< "["
 		<<g_pTimeSystem->getCurrentTimeInLocal()
 		<< "]"
-		<< "vec3(x: "
-		<< logMessage.x
-		<< ", y: "
-		<< logMessage.y
-		<< ", z: "
-		<< logMessage.z
-		<< ")"
-		<< std::endl;
-}
-
-void LogSystem::printLog(const quat & logMessage) const
-{
-	std::cout
-		<< "["
-		<<g_pTimeSystem->getCurrentTimeInLocal()
-		<< "]"
-		<< "quat(x: "
+		<< "vec4(x: "
 		<< logMessage.x
 		<< ", y: "
 		<< logMessage.y
