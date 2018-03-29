@@ -681,18 +681,22 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	double minY = 0;
 	double minZ = 0;
 
-	//auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
-	auto pCamera = mat4();
-	pCamera.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 1.0);
+	auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
+	//auto pCamera = mat4();
+	//pCamera.initializeToPerspectiveMatrix((45.0 / 180.0) * PI, (16.0 / 9.0), 0.001, 7.0);
 	auto rCamera = g_pGameSystem->getCameraComponents()[0]->getRotMatrix();
 	auto tCamera = g_pGameSystem->getCameraComponents()[0]->getPosMatrix();
-	auto l_vLight = mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, 0.0, 0.0, 1.0) + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+	auto l_pos = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (lightComponent.m_AABB.m_boundMax.z - lightComponent.m_AABB.m_boundMin.z) + lightComponent.m_AABB.m_center;
+	//auto l_pos = lightComponent.getParentEntity()->caclWorldPos();
+	auto l_vLight = mat4().lookAt(l_pos, l_pos + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 
 	// get view frustrum's corner in world space
 	auto l_vertices = generateNDC();
 	for (auto& l_vertexData : l_vertices)
 	{
-		vec4 l_mulPos = pCamera.inverse() * l_vertexData.m_pos;
+		vec4 l_mulPos;
+		l_mulPos = l_vertexData.m_pos;
+		l_mulPos = pCamera.inverse() * l_mulPos;
 		// perspective division
 		l_mulPos = l_mulPos * (1.0 / l_mulPos.w);
 		// to view space
@@ -731,7 +735,6 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	}
 	
 	lightComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), vec4(1.0, 1.0, 1.0, 1.0));
-	lightComponent.getParentEntity()->getTransform()->setPos(lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (maxZ - minZ) + lightComponent.m_AABB.m_center);
 
 	//if (lightComponent.m_drawAABB)
 	//{
