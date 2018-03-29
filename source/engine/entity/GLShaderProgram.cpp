@@ -182,7 +182,7 @@ void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& camer
 			auto l_boundMax = l_lightComponent->m_AABB.m_boundMax;
 			auto l_boundMin = l_lightComponent->m_AABB.m_boundMin;
 			mat4 p;
-			p.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, l_boundMin.y, l_boundMax.z);
+			p.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, l_boundMin.z, l_boundMax.z);
 			mat4 v = mat4().lookAt(l_lightComponent->getParentEntity()->getTransform()->getPos(), l_lightComponent->getParentEntity()->getTransform()->getPos() + l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 			updateUniform(m_uni_p, p);
 			updateUniform(m_uni_v, v);
@@ -419,15 +419,10 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 			auto l_lightUp = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP);
 			auto l_lightForward = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
 
-			double l_right = l_lightComponent->m_AABB.m_boundMax.x;
-			double l_left = l_lightComponent->m_AABB.m_boundMin.x;
-			double l_up = l_lightComponent->m_AABB.m_boundMax.y;
-			double l_bottom = l_lightComponent->m_AABB.m_boundMin.y;
-			double far_plane = l_lightComponent->m_AABB.m_boundMax.z;
-			double near_plane = l_lightComponent->m_AABB.m_boundMin.z;
-
+			auto l_boundMax = l_lightComponent->m_AABB.m_boundMax;
+			auto l_boundMin = l_lightComponent->m_AABB.m_boundMin;
 			mat4 p_light;
-			p_light.initializeToOrthographicMatrix(l_left, l_right, l_bottom, l_up, near_plane, far_plane);
+			p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
 			mat4 v = mat4().lookAt(l_lightComponent->getParentEntity()->getTransform()->getPos(), l_lightComponent->getParentEntity()->getTransform()->getPos() + l_lightForward, l_lightUp);
 			//mat4 v = l_lightComponent->getLightRotMatrix() * l_lightComponent->getLightPosMatrix();
 			updateUniform(m_uni_p_light, p_light);
