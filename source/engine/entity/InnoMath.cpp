@@ -37,19 +37,9 @@ vec4::~vec4()
 {
 }
 
-vec4 vec4::add(const vec4 & rhs)
-{
-	return vec4(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
-}
-
 vec4 vec4::operator+(const vec4 & rhs)
 {
 	return vec4(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
-}
-
-vec4 vec4::add(double rhs)
-{
-	return vec4(x + rhs, y + rhs, z + rhs, w + rhs);
 }
 
 vec4 vec4::operator+(double rhs)
@@ -57,29 +47,14 @@ vec4 vec4::operator+(double rhs)
 	return vec4(x + rhs, y + rhs, z + rhs, w + rhs);
 }
 
-vec4 vec4::sub(const vec4 & rhs)
-{
-	return vec4(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
-}
-
 vec4 vec4::operator-(const vec4 & rhs)
 {
 	return vec4(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
 }
 
-vec4 vec4::sub(double rhs)
-{
-	return vec4(x - rhs, y - rhs, z - rhs, w - rhs);
-}
-
 vec4 vec4::operator-(double rhs)
 {
 	return vec4(x - rhs, y - rhs, z - rhs, w - rhs);
-}
-
-double vec4::dot(const vec4 & rhs)
-{
-	return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w;
 }
 
 double vec4::operator*(const vec4 & rhs)
@@ -109,22 +84,24 @@ vec4 vec4::operator*(double rhs)
 
 vec4 vec4::quatMul(const vec4 & rhs)
 {
-	return vec4(
+	vec4 l_result = vec4(
 		w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y,
 		w * rhs.y - x * rhs.z + y * rhs.w + z * rhs.x,
 		w * rhs.z + x * rhs.y - y * rhs.x + z * rhs.w,
 		w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z
 	);
+	return l_result.normalize();
 }
 
 vec4 vec4::quatMul(double rhs)
 {
-	return vec4(
+	vec4 l_result = vec4(
 		w * rhs + x * rhs + y * rhs - z * rhs,
 		w * rhs - x * rhs + y * rhs + z * rhs,
 		w * rhs + x * rhs - y * rhs + z * rhs,
 		w * rhs - x * rhs - y * rhs - z * rhs
 	);
+	return l_result.normalize();
 }
 
 double vec4::length()
@@ -216,25 +193,25 @@ mat4 vec4::toRotationMartix()
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
-	l_m.m[0][0] = (float)(1 - 2 * y * y - 2 * z * z);
-	l_m.m[0][1] = (float)(2 * x * y + 2 * z * w);
-	l_m.m[0][2] = (float)(2 * x * z - 2 * y * w);
-	l_m.m[0][3] = (float)(0);
+	l_m.m[0][0] = (float)(1.0 - 2.0 * y * y - 2.0 * z * z);
+	l_m.m[0][1] = (float)(2.0 * x * y + 2.0 * z * w);
+	l_m.m[0][2] = (float)(2.0 * x * z - 2.0 * y * w);
+	l_m.m[0][3] = (float)(0.0);
 
-	l_m.m[1][0] = (float)(2 * x * y - 2 * z * w);
-	l_m.m[1][1] = (float)(1 - 2 * x * x - 2 * z * z);
-	l_m.m[1][2] = (float)(2 * y * z + 2 * x * w);
-	l_m.m[1][3] = (float)(0);
+	l_m.m[1][0] = (float)(2.0 * x * y - 2.0 * z * w);
+	l_m.m[1][1] = (float)(1.0 - 2.0 * x * x - 2.0 * z * z);
+	l_m.m[1][2] = (float)(2.0 * y * z + 2.0 * x * w);
+	l_m.m[1][3] = (float)(0.0);
 
-	l_m.m[2][0] = (float)(2 * x * z + 2 * y * w);
-	l_m.m[2][1] = (float)(2 * y * z - 2 * x * w);
-	l_m.m[2][2] = (float)(1 - 2 * x * x - 2 * y * y);
-	l_m.m[2][3] = (float)(0);
+	l_m.m[2][0] = (float)(2.0 * x * z + 2.0 * y * w);
+	l_m.m[2][1] = (float)(2.0 * y * z - 2.0 * x * w);
+	l_m.m[2][2] = (float)(1.0 - 2.0 * x * x - 2.0 * y * y);
+	l_m.m[2][3] = (float)(0.0);
 
-	l_m.m[3][0] = (float)(0);
-	l_m.m[3][1] = (float)(0);
-	l_m.m[3][2] = (float)(0);
-	l_m.m[3][3] = (float)(1);
+	l_m.m[3][0] = (float)(0.0);
+	l_m.m[3][1] = (float)(0.0);
+	l_m.m[3][2] = (float)(0.0);
+	l_m.m[3][3] = (float)(1.0);
 
 	return l_m;
 }
@@ -247,25 +224,25 @@ mat4 vec4::toRotationMartix()
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
 
-	l_m.m[0][0] = (float)(1 - 2 * y * y - 2 * z * z);
-	l_m.m[0][1] = (float)(2 * x * y - 2 * z * w);
-	l_m.m[0][2] = (float)(2 * x * z + 2 * y * w);
-	l_m.m[0][3] = (float)(0);
+	l_m.m[0][0] = (float)(1.0 - 2.0 * y * y - 2.0 * z * z);
+	l_m.m[0][1] = (float)(2.0 * x * y - 2.0 * z * w);
+	l_m.m[0][2] = (float)(2.0 * x * z + 2.0 * y * w);
+	l_m.m[0][3] = (float)(0.0);
 
-	l_m.m[1][0] = (float)(2 * x * y + 2 * z * w);
-	l_m.m[1][1] = (float)(1 - 2 * x * x - 2 * z * z);
-	l_m.m[1][2] = (float)(2 * y * z - 2 * x * w);
-	l_m.m[1][3] = (float)(0);
+	l_m.m[1][0] = (float)(2.0 * x * y + 2.0 * z * w);
+	l_m.m[1][1] = (float)(1.0 - 2.0 * x * x - 2.0 * z * z);
+	l_m.m[1][2] = (float)(2.0 * y * z - 2.0 * x * w);
+	l_m.m[1][3] = (float)(0.0);
 
-	l_m.m[2][0] = (float)(2 * x * z - 2 * y * w);
-	l_m.m[2][1] = (float)(2 * y * z + 2 * x * w);
-	l_m.m[2][2] = (float)(1 - 2 * x * x - 2 * y * y);
+	l_m.m[2][0] = (float)(2.0 * x * z - 2.0 * y * w);
+	l_m.m[2][1] = (float)(2.0 * y * z + 2.0 * x * w);
+	l_m.m[2][2] = (float)(1.0 - 2.0 * x * x - 2.0 * y * y);
 	l_m.m[2][3] = (float)(0);
 
-	l_m.m[3][0] = (float)(0);
-	l_m.m[3][1] = (float)(0);
-	l_m.m[3][2] = (float)(0);
-	l_m.m[3][3] = (float)(1);
+	l_m.m[3][0] = (float)(0.0);
+	l_m.m[3][1] = (float)(0.0);
+	l_m.m[3][2] = (float)(0.0);
+	l_m.m[3][3] = (float)(1.0);
 
 	return l_m;
 }
@@ -470,7 +447,7 @@ mat4 mat4::operator*(const mat4 & rhs)
 	l_m.m[2][2] = m[0][2] * rhs.m[2][0] + m[1][2] * rhs.m[2][1] + m[2][2] * rhs.m[2][2] + m[3][2] * rhs.m[2][3];
 	l_m.m[2][3] = m[0][3] * rhs.m[2][0] + m[1][3] * rhs.m[2][1] + m[2][3] * rhs.m[2][2] + m[3][3] * rhs.m[2][3];
 
-	l_m.m[3][0] = m[0][0] * rhs.m[3][0] + m[1][0] * rhs.m[3][1] + m[2][0] * rhs.m[3][2] + m[3][0] * rhs.m[3][3];
+	l_m.m[3][0] = m[0][0] * rhs.m[3][0] + m[1][0] * rhs.m[3][1] + m[2][0] * rhs.m[3][3] + m[3][0] * rhs.m[3][3];
 	l_m.m[3][1] = m[0][1] * rhs.m[3][0] + m[1][1] * rhs.m[3][1] + m[2][1] * rhs.m[3][2] + m[3][1] * rhs.m[3][3];
 	l_m.m[3][2] = m[0][2] * rhs.m[3][0] + m[1][2] * rhs.m[3][1] + m[2][2] * rhs.m[3][2] + m[3][2] * rhs.m[3][3];
 	l_m.m[3][3] = m[0][3] * rhs.m[3][0] + m[1][3] * rhs.m[3][1] + m[2][3] * rhs.m[3][2] + m[3][3] * rhs.m[3][3];
@@ -487,23 +464,23 @@ mat4 mat4::operator*(const mat4 & rhs)
 	mat4 l_m;
 
 	l_m.m[0][0] = m[0][0] * rhs.m[0][0] + m[0][1] * rhs.m[1][0] + m[0][2] * rhs.m[2][0] + m[0][3] * rhs.m[3][0];
-	l_m.m[0][1] = m[1][0] * rhs.m[0][0] + m[1][1] * rhs.m[1][0] + m[1][2] * rhs.m[2][0] + m[1][3] * rhs.m[3][0];
-	l_m.m[0][2] = m[2][0] * rhs.m[0][0] + m[2][1] * rhs.m[1][0] + m[2][2] * rhs.m[2][0] + m[2][3] * rhs.m[3][0];
-	l_m.m[0][3] = m[3][0] * rhs.m[0][0] + m[3][1] * rhs.m[1][0] + m[3][2] * rhs.m[2][0] + m[3][3] * rhs.m[3][0];
+	l_m.m[0][1] = m[0][0] * rhs.m[0][1] + m[0][1] * rhs.m[1][1] + m[0][2] * rhs.m[2][1] + m[0][3] * rhs.m[3][1];
+	l_m.m[0][2] = m[0][0] * rhs.m[0][2] + m[0][1] * rhs.m[1][2] + m[0][2] * rhs.m[2][2] + m[0][3] * rhs.m[3][2];
+	l_m.m[0][3] = m[0][0] * rhs.m[0][3] + m[0][1] * rhs.m[1][3] + m[0][2] * rhs.m[2][3] + m[0][3] * rhs.m[3][3];
 
-	l_m.m[0][0] = m[0][0] * rhs.m[0][1] + m[0][1] * rhs.m[1][1] + m[0][2] * rhs.m[2][1] + m[0][3] * rhs.m[3][1];
+	l_m.m[1][0] = m[1][0] * rhs.m[0][0] + m[1][1] * rhs.m[1][0] + m[1][2] * rhs.m[2][0] + m[1][3] * rhs.m[3][0];
 	l_m.m[1][1] = m[1][0] * rhs.m[0][1] + m[1][1] * rhs.m[1][1] + m[1][2] * rhs.m[2][1] + m[1][3] * rhs.m[3][1];
-	l_m.m[1][2] = m[2][0] * rhs.m[0][1] + m[2][1] * rhs.m[1][1] + m[2][2] * rhs.m[2][1] + m[2][3] * rhs.m[3][1];
-	l_m.m[1][3] = m[3][0] * rhs.m[0][1] + m[3][1] * rhs.m[1][1] + m[3][2] * rhs.m[2][1] + m[3][3] * rhs.m[3][1];
+	l_m.m[1][2] = m[1][0] * rhs.m[0][2] + m[1][1] * rhs.m[1][2] + m[1][2] * rhs.m[2][2] + m[1][3] * rhs.m[3][2];
+	l_m.m[1][3] = m[1][0] * rhs.m[0][3] + m[1][1] * rhs.m[1][3] + m[1][2] * rhs.m[2][3] + m[1][3] * rhs.m[3][3];
 
-	l_m.m[0][0] = m[0][0] * rhs.m[0][2] + m[0][1] * rhs.m[1][2] + m[0][2] * rhs.m[2][2] + m[0][3] * rhs.m[3][2];
-	l_m.m[2][1] = m[1][0] * rhs.m[0][2] + m[1][1] * rhs.m[1][2] + m[1][2] * rhs.m[2][2] + m[1][3] * rhs.m[3][2];
+	l_m.m[2][0] = m[2][0] * rhs.m[0][0] + m[2][1] * rhs.m[1][0] + m[2][2] * rhs.m[2][0] + m[2][3] * rhs.m[3][0];
+	l_m.m[2][1] = m[2][0] * rhs.m[0][1] + m[2][1] * rhs.m[1][1] + m[2][2] * rhs.m[2][1] + m[2][3] * rhs.m[3][1];
 	l_m.m[2][2] = m[2][0] * rhs.m[0][2] + m[2][1] * rhs.m[1][2] + m[2][2] * rhs.m[2][2] + m[2][3] * rhs.m[3][2];
-	l_m.m[2][3] = m[3][0] * rhs.m[0][2] + m[3][1] * rhs.m[1][2] + m[3][2] * rhs.m[2][2] + m[3][3] * rhs.m[3][2];
+	l_m.m[2][3] = m[2][0] * rhs.m[0][3] + m[2][1] * rhs.m[1][3] + m[2][2] * rhs.m[2][3] + m[2][3] * rhs.m[3][3];
 
-	l_m.m[3][0] = m[0][0] * rhs.m[0][3] + m[0][1] * rhs.m[1][3] + m[0][2] * rhs.m[2][3] + m[0][3] * rhs.m[3][3];
-	l_m.m[3][1] = m[1][0] * rhs.m[0][3] + m[1][1] * rhs.m[1][3] + m[1][2] * rhs.m[2][3] + m[1][3] * rhs.m[3][3];
-	l_m.m[3][2] = m[2][0] * rhs.m[0][3] + m[2][1] * rhs.m[1][3] + m[2][2] * rhs.m[2][3] + m[2][3] * rhs.m[3][3];
+	l_m.m[3][0] = m[3][0] * rhs.m[0][0] + m[3][1] * rhs.m[1][0] + m[3][2] * rhs.m[2][0] + m[3][3] * rhs.m[3][0];
+	l_m.m[3][1] = m[3][0] * rhs.m[0][1] + m[3][1] * rhs.m[1][1] + m[3][2] * rhs.m[2][1] + m[3][3] * rhs.m[3][1];
+	l_m.m[3][2] = m[3][0] * rhs.m[0][2] + m[3][1] * rhs.m[1][2] + m[3][2] * rhs.m[2][2] + m[3][3] * rhs.m[3][2];
 	l_m.m[3][3] = m[3][0] * rhs.m[0][3] + m[3][1] * rhs.m[1][3] + m[3][2] * rhs.m[2][3] + m[3][3] * rhs.m[3][3];
 
 	return l_m;
@@ -537,103 +514,35 @@ mat4 mat4::operator*(double rhs)
 
 //Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-mat4 mat4::mul(const mat4 & rhs)
+vec4 mat4::operator*(const vec4 & rhs)
 {
 	// @TODO: replace with SIMD impl
-	mat4 l_m;
+	vec4 l_vec4;
 
-	l_m.m[0][0] = m[0][0] * rhs.m[0][0] + m[1][0] * rhs.m[0][1] + m[2][0] * rhs.m[0][2] + m[3][0] * rhs.m[0][3];
-	l_m.m[0][1] = m[0][1] * rhs.m[0][0] + m[1][1] * rhs.m[0][1] + m[2][1] * rhs.m[0][2] + m[3][1] * rhs.m[0][3];
-	l_m.m[0][2] = m[0][2] * rhs.m[0][0] + m[1][2] * rhs.m[0][1] + m[2][2] * rhs.m[0][2] + m[3][2] * rhs.m[0][3];
-	l_m.m[0][3] = m[0][3] * rhs.m[0][0] + m[1][3] * rhs.m[0][1] + m[2][3] * rhs.m[0][2] + m[3][3] * rhs.m[0][3];
+	l_vec4.x = rhs.x * m[0][0] + rhs.y * m[0][1] + rhs.z * m[0][2] + rhs.w * m[0][3];
+	l_vec4.y = rhs.x * m[1][0] + rhs.y * m[1][1] + rhs.z * m[1][2] + rhs.w * m[1][3];
+	l_vec4.z = rhs.x * m[2][0] + rhs.y * m[2][1] + rhs.z * m[2][2] + rhs.w * m[2][3];
+	l_vec4.w = rhs.x * m[3][0] + rhs.y * m[3][1] + rhs.z * m[3][2] + rhs.w * m[3][3];
 
-	l_m.m[1][0] = m[0][0] * rhs.m[1][0] + m[1][0] * rhs.m[1][1] + m[2][0] * rhs.m[1][2] + m[3][0] * rhs.m[1][3];
-	l_m.m[1][1] = m[0][1] * rhs.m[1][0] + m[1][1] * rhs.m[1][1] + m[2][1] * rhs.m[1][2] + m[3][1] * rhs.m[1][3];
-	l_m.m[1][2] = m[0][2] * rhs.m[1][0] + m[1][2] * rhs.m[1][1] + m[2][2] * rhs.m[1][2] + m[3][2] * rhs.m[1][3];
-	l_m.m[1][3] = m[0][3] * rhs.m[1][0] + m[1][3] * rhs.m[1][1] + m[2][3] * rhs.m[1][2] + m[3][3] * rhs.m[1][3];
-
-	l_m.m[2][0] = m[0][0] * rhs.m[2][0] + m[1][0] * rhs.m[2][1] + m[2][0] * rhs.m[2][2] + m[3][0] * rhs.m[2][3];
-	l_m.m[2][1] = m[0][1] * rhs.m[2][0] + m[1][1] * rhs.m[2][1] + m[2][1] * rhs.m[2][2] + m[3][1] * rhs.m[2][3];
-	l_m.m[2][2] = m[0][2] * rhs.m[2][0] + m[1][2] * rhs.m[2][1] + m[2][2] * rhs.m[2][2] + m[3][2] * rhs.m[2][3];
-	l_m.m[2][3] = m[0][3] * rhs.m[2][0] + m[1][3] * rhs.m[2][1] + m[2][3] * rhs.m[2][2] + m[3][3] * rhs.m[2][3];
-
-	l_m.m[3][0] = m[0][0] * rhs.m[3][0] + m[1][0] * rhs.m[3][1] + m[2][0] * rhs.m[3][2] + m[3][0] * rhs.m[3][3];
-	l_m.m[3][1] = m[0][1] * rhs.m[3][0] + m[1][1] * rhs.m[3][1] + m[2][1] * rhs.m[3][2] + m[3][1] * rhs.m[3][3];
-	l_m.m[3][2] = m[0][2] * rhs.m[3][0] + m[1][2] * rhs.m[3][1] + m[2][2] * rhs.m[3][2] + m[3][2] * rhs.m[3][3];
-	l_m.m[3][3] = m[0][3] * rhs.m[3][0] + m[1][3] * rhs.m[3][1] + m[2][3] * rhs.m[3][2] + m[3][3] * rhs.m[3][3];
-
-	return l_m;
+	return l_vec4;
 }
 #endif
 
 //Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-mat4 mat4::mul(const mat4 & rhs)
-{
-	// @TODO: replace with SIMD impl
-	mat4 l_m;
-
-	l_m.m[0][0] = m[0][0] * rhs.m[0][0] + m[0][1] * rhs.m[1][0] + m[0][2] * rhs.m[2][0] + m[0][3] * rhs.m[3][0];
-	l_m.m[0][1] = m[1][0] * rhs.m[0][0] + m[1][1] * rhs.m[1][0] + m[1][2] * rhs.m[2][0] + m[1][3] * rhs.m[3][0];
-	l_m.m[0][2] = m[2][0] * rhs.m[0][0] + m[2][1] * rhs.m[1][0] + m[2][2] * rhs.m[2][0] + m[2][3] * rhs.m[3][0];
-	l_m.m[0][3] = m[3][0] * rhs.m[0][0] + m[3][1] * rhs.m[1][0] + m[3][2] * rhs.m[2][0] + m[3][3] * rhs.m[3][0];
-
-	l_m.m[0][0] = m[0][0] * rhs.m[0][1] + m[0][1] * rhs.m[1][1] + m[0][2] * rhs.m[2][1] + m[0][3] * rhs.m[3][1];
-	l_m.m[1][1] = m[1][0] * rhs.m[0][1] + m[1][1] * rhs.m[1][1] + m[1][2] * rhs.m[2][1] + m[1][3] * rhs.m[3][1];
-	l_m.m[1][2] = m[2][0] * rhs.m[0][1] + m[2][1] * rhs.m[1][1] + m[2][2] * rhs.m[2][1] + m[2][3] * rhs.m[3][1];
-	l_m.m[1][3] = m[3][0] * rhs.m[0][1] + m[3][1] * rhs.m[1][1] + m[3][2] * rhs.m[2][1] + m[3][3] * rhs.m[3][1];
-
-	l_m.m[0][0] = m[0][0] * rhs.m[0][2] + m[0][1] * rhs.m[1][2] + m[0][2] * rhs.m[2][2] + m[0][3] * rhs.m[3][2];
-	l_m.m[2][1] = m[1][0] * rhs.m[0][2] + m[1][1] * rhs.m[1][2] + m[1][2] * rhs.m[2][2] + m[1][3] * rhs.m[3][2];
-	l_m.m[2][2] = m[2][0] * rhs.m[0][2] + m[2][1] * rhs.m[1][2] + m[2][2] * rhs.m[2][2] + m[2][3] * rhs.m[3][2];
-	l_m.m[2][3] = m[3][0] * rhs.m[0][2] + m[3][1] * rhs.m[1][2] + m[3][2] * rhs.m[2][2] + m[3][3] * rhs.m[3][2];
-
-	l_m.m[3][0] = m[0][0] * rhs.m[0][3] + m[0][1] * rhs.m[1][3] + m[0][2] * rhs.m[2][3] + m[0][3] * rhs.m[3][3];
-	l_m.m[3][1] = m[1][0] * rhs.m[0][3] + m[1][1] * rhs.m[1][3] + m[1][2] * rhs.m[2][3] + m[1][3] * rhs.m[3][3];
-	l_m.m[3][2] = m[2][0] * rhs.m[0][3] + m[2][1] * rhs.m[1][3] + m[2][2] * rhs.m[2][3] + m[2][3] * rhs.m[3][3];
-	l_m.m[3][3] = m[3][0] * rhs.m[0][3] + m[3][1] * rhs.m[1][3] + m[3][2] * rhs.m[2][3] + m[3][3] * rhs.m[3][3];
-
-	return l_m;
-}
-#endif
-// @TODO: check check check!!!
-vec4 mat4::mul(const vec4 & rhs)
+vec4 mat4::operator*(const vec4 & rhs)
 {
 	// @TODO: replace with SIMD impl
 	vec4 l_vec4;
 
-	l_vec4.x = rhs.x * m[0][0] + rhs.y * m[1][0] + rhs.z * m[2][0] + rhs.w * m[3][0];
-	l_vec4.y = rhs.x * m[0][1] + rhs.y * m[1][1] + rhs.z * m[2][1] + rhs.w * m[3][1];
-	l_vec4.z = rhs.x * m[0][2] + rhs.y * m[1][2] + rhs.z * m[2][2] + rhs.w * m[3][2];
-	l_vec4.w = rhs.x * m[0][3] + rhs.y * m[1][3] + rhs.z * m[2][3] + rhs.w * m[3][3];
+	l_vec4.x = m[0][0] * rhs.x + m[0][1] * rhs.y + m[0][2] * rhs.z + m[0][3] * rhs.w;
+	l_vec4.y = m[1][0] * rhs.x + m[1][1] * rhs.y + m[1][2] * rhs.z + m[1][3] * rhs.w;
+	l_vec4.z = m[2][0] * rhs.x + m[2][1] * rhs.y + m[2][2] * rhs.z + m[2][3] * rhs.w;
+	l_vec4.w = m[3][0] * rhs.x + m[3][1] * rhs.y + m[3][2] * rhs.z + m[3][3] * rhs.w;
 
 	return l_vec4;
 }
-
-mat4 mat4::mul(double rhs)
-{
-	// @TODO: replace with SIMD impl
-	mat4 l_m;
-
-	l_m.m[0][0] = (float)rhs * m[0][0];
-	l_m.m[0][1] = (float)rhs * m[0][1];
-	l_m.m[0][2] = (float)rhs * m[0][2];
-	l_m.m[0][3] = (float)rhs * m[0][3];
-	l_m.m[1][0] = (float)rhs * m[1][0];
-	l_m.m[1][1] = (float)rhs * m[1][1];
-	l_m.m[1][2] = (float)rhs * m[1][2];
-	l_m.m[1][3] = (float)rhs * m[1][3];
-	l_m.m[2][0] = (float)rhs * m[2][0];
-	l_m.m[2][1] = (float)rhs * m[2][1];
-	l_m.m[2][2] = (float)rhs * m[2][2];
-	l_m.m[2][3] = (float)rhs * m[2][3];
-	l_m.m[3][0] = (float)rhs * m[3][0];
-	l_m.m[3][1] = (float)rhs * m[3][1];
-	l_m.m[3][2] = (float)rhs * m[3][2];
-	l_m.m[3][3] = (float)rhs * m[3][3];
-
-	return l_m;
-}
+#endif
 
 mat4 mat4::transpose()
 {
@@ -682,7 +591,7 @@ mat4 mat4::inverse()
 	l_m.m[2][3] = m[2][0]*m[1][1]*m[0][3] - m[1][0]*m[2][1]*m[0][3] - m[2][0]*m[0][1]*m[1][3] + m[0][0]*m[2][1]*m[1][3] + m[1][0]*m[0][1]*m[2][3] - m[0][0]*m[1][1]*m[2][3];
 	l_m.m[3][3] = m[1][0]*m[2][1]*m[0][2] - m[2][0]*m[1][1]*m[0][2] + m[2][0]*m[0][1]*m[1][2] - m[0][0]*m[2][1]*m[1][2] - m[1][0]*m[0][1]*m[2][2] + m[0][0]*m[1][1]*m[2][2];
 
-	l_m = l_m * (1 / this->getDeterminant());
+	l_m = (l_m * (1 / this->getDeterminant()));
 	return l_m;
 }
 
@@ -730,11 +639,11 @@ void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNea
 void mat4::initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar)
 {
 	m[0][0] = (float)(2.0 / (right - left));
+	m[0][3] = (float)(-(right + left) / (right - left));
 	m[1][1] = (float)(2.0 / (up - bottom));
+	m[1][3] = (float)(-(up + bottom) / (up - bottom));
 	m[2][2] = (float)(-2.0 / (zFar - zNear));
-	m[3][0] = (float)(- (left + right) / (left - right));
-	m[3][1] = (float)(- (up + bottom) / (up - bottom));
-	m[3][2] = (float)(- (zFar + zNear) / (zFar - zNear));
+	m[2][3] = (float)(-(zFar + zNear) / (zFar - zNear));
 	m[3][3] = (float)1.0;
 }
 #endif
@@ -744,11 +653,11 @@ void mat4::initializeToOrthographicMatrix(double left, double right, double bott
 void mat4::initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar)
 {
 	m[0][0] = (float)(2.0 / (right - left));
-	m[0][3] = (float)(-(left + right) / (left - right));
 	m[1][1] = (float)(2.0 / (up - bottom));
-	m[1][3] = (float)(-(up + bottom) / (up - bottom));
 	m[2][2] = (float)(-2.0 / (zFar - zNear));
-	m[2][3] = (float)(-(zFar + zNear) / (zFar - zNear));
+	m[3][0] = (float)(-(right + left) / (right - left));
+	m[3][1] = (float)(-(up + bottom) / (up - bottom));
+	m[3][2] = (float)(-(zFar + zNear) / (zFar - zNear));
 	m[3][3] = (float)1.0;
 }
 #endif
@@ -787,9 +696,9 @@ mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDi
 	l_m.m[2][1] = (float)l_Y.z;
 	l_m.m[2][2] = (float)l_Z.z;
 	l_m.m[2][3] = 0.0f;
-	l_m.m[3][0] = (float)-l_X.dot(eyePos);
-	l_m.m[3][1] = (float)-l_Y.dot(eyePos);
-	l_m.m[3][2] = (float)-l_Z.dot(eyePos);
+	l_m.m[3][0] = (float)-(l_X * eyePos);
+	l_m.m[3][1] = (float)-(l_Y * eyePos);
+	l_m.m[3][2] = (float)-(l_Z * eyePos);
 	l_m.m[3][3] = 1.0f;
 
 	return l_m;
@@ -803,16 +712,10 @@ mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDi
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
 	vec4 l_X;
-	vec4 l_Y;
-	vec4 l_Z = eyePos;
-
-	l_Z = l_Z - centerPos;
-	l_Z = l_Z.normalize();
-
-	l_Y = upDir;
+	vec4 l_Y = upDir;
+	vec4 l_Z = vec4(eyePos.x - centerPos.x, eyePos.y - centerPos.y, eyePos.z - centerPos.z, 0.0).normalize();
 
 	l_X = l_Y.cross(l_Z);
-
 	l_Y = l_Z.cross(l_X);
 
 	l_X = l_X.normalize();
@@ -821,15 +724,15 @@ mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDi
 	l_m.m[0][0] = (float)l_X.x;
 	l_m.m[0][1] = (float)l_X.y;
 	l_m.m[0][2] = (float)l_X.z;
-	l_m.m[0][3] = (float)-l_X.dot(eyePos);
+	l_m.m[0][3] = (float)-eyePos.x;
 	l_m.m[1][0] = (float)l_Y.x;
 	l_m.m[1][1] = (float)l_Y.y;
 	l_m.m[1][2] = (float)l_Y.z;
-	l_m.m[1][3] = (float)-l_Y.dot(eyePos);
+	l_m.m[1][3] = (float)-eyePos.y;
 	l_m.m[2][0] = (float)l_Z.x;
 	l_m.m[2][1] = (float)l_Z.y;
 	l_m.m[2][2] = (float)l_Z.z;
-	l_m.m[2][3] = (float)-l_Z.dot(eyePos);
+	l_m.m[2][3] = (float)-eyePos.z;
 	l_m.m[3][0] = 0.0f;
 	l_m.m[3][1] = 0.0f;
 	l_m.m[3][2] = 0.0f;
@@ -841,6 +744,9 @@ mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDi
 
 Vertex::Vertex()
 {
+	m_pos = vec4(0.0, 0.0, 0.0, 1.0);
+	m_texCoord = vec2(0.0, 0.0);
+	m_normal = vec4(0.0, 0.0, 1.0, 0.0);
 }
 
 Vertex::Vertex(const Vertex & rhs)
@@ -1097,7 +1003,7 @@ vec4 Transform::getDirection(direction direction) const
 	vec4 l_Qv = vec4(m_rot.x, m_rot.y, m_rot.z, m_rot.w);
 	l_directionVec4 = l_directionVec4 + l_Qv.cross((l_Qv.cross(l_directionVec4) + l_directionVec4.scale(m_rot.w))).scale(2.0f);
 
-	return l_directionVec4;
+	return l_directionVec4.normalize();
 }
 
 

@@ -147,8 +147,9 @@ void BaseMesh::addUnitCube()
 
 	for (auto& l_vertexData : m_vertices)
 	{
-		l_vertexData.m_normal = l_vertexData.m_pos.normalize();
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
 	}
+
 	m_indices = { 0, 1, 3, 1, 2, 3,
 		4, 5, 0, 5, 1, 0,
 		7, 6, 4, 6, 5, 4,

@@ -603,6 +603,11 @@ std::vector<Vertex> RenderingSystem::generateNDC()
 
 	std::vector<Vertex> l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 	
+	for (auto& l_vertexData : l_vertices)
+	{
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
+	}
+
 	return l_vertices;
 }
 
@@ -676,53 +681,57 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	double minY = 0;
 	double minZ = 0;
 
-	auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
+	//auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
+	auto pCamera = mat4();
+	pCamera.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 1.0);
 	auto rCamera = g_pGameSystem->getCameraComponents()[0]->getRotMatrix();
 	auto tCamera = g_pGameSystem->getCameraComponents()[0]->getPosMatrix();
-	auto l_vLight = mat4().lookAt(lightComponent.getParentEntity()->getTransform()->getPos(), lightComponent.getParentEntity()->getTransform()->getPos() + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+	auto l_vLight = mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, 0.0, 0.0, 1.0) + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 
 	// get view frustrum's corner in world space
 	auto l_vertices = generateNDC();
 	for (auto& l_vertexData : l_vertices)
 	{
-		vec4 l_mulPos = pCamera.inverse().mul(l_vertexData.m_pos);
+		vec4 l_mulPos = pCamera.inverse() * l_vertexData.m_pos;
 		// perspective division
 		l_mulPos = l_mulPos * (1.0 / l_mulPos.w);
 		// to view space
-		l_mulPos = rCamera.inverse().mul(l_mulPos);
-		l_mulPos = tCamera.inverse().mul(l_mulPos);
+		l_mulPos = rCamera.inverse() * l_mulPos;
+		l_mulPos = tCamera.inverse() * l_mulPos;
 		// trasform view frustrum's corner to light space
-		l_mulPos = l_vLight.mul(l_mulPos);
-		l_vertexData.m_pos = l_mulPos;
-
-		if ( l_vertexData.m_pos.x >= maxX)
+		l_mulPos = l_vLight * l_mulPos;
+		l_vertexData.m_pos = l_mulPos;	
+	}
+	for (auto& l_vertexData : l_vertices)
+	{
+		if (l_vertexData.m_pos.x >= maxX)
 		{
-			maxX =  l_vertexData.m_pos.x;
+			maxX = l_vertexData.m_pos.x;
 		}
-		if ( l_vertexData.m_pos.y >= maxY)
+		if (l_vertexData.m_pos.y >= maxY)
 		{
-			maxY =  l_vertexData.m_pos.y;
+			maxY = l_vertexData.m_pos.y;
 		}
-		if ( l_vertexData.m_pos.z >= maxZ)
+		if (l_vertexData.m_pos.z >= maxZ)
 		{
-			maxZ =  l_vertexData.m_pos.z;
+			maxZ = l_vertexData.m_pos.z;
 		}
-		if ( l_vertexData.m_pos.x <= minX)
+		if (l_vertexData.m_pos.x <= minX)
 		{
-			minX =  l_vertexData.m_pos.x;
+			minX = l_vertexData.m_pos.x;
 		}
-		if ( l_vertexData.m_pos.y <= minY)
+		if (l_vertexData.m_pos.y <= minY)
 		{
-			minY =  l_vertexData.m_pos.y;
+			minY = l_vertexData.m_pos.y;
 		}
-		if ( l_vertexData.m_pos.z <= minZ)
+		if (l_vertexData.m_pos.z <= minZ)
 		{
-			minZ =  l_vertexData.m_pos.z;
+			minZ = l_vertexData.m_pos.z;
 		}
 	}
-
+	
 	lightComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), vec4(1.0, 1.0, 1.0, 1.0));
-
+	lightComponent.getParentEntity()->getTransform()->setPos(lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (maxZ - minZ) + lightComponent.m_AABB.m_center);
 
 	//if (lightComponent.m_drawAABB)
 	//{
@@ -781,7 +790,7 @@ AABB RenderingSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin,
 
 	for (auto& l_vertexData : l_AABB.m_vertices)
 	{
-		l_vertexData.m_normal = l_vertexData.m_pos.normalize();
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
 	}
 
 	l_AABB.m_indices = { 0, 1, 3, 1, 2, 3,

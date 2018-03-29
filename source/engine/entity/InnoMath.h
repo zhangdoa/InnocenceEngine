@@ -19,7 +19,7 @@ matrix4x4 mathematical convention :
 
 /* Column-Major vector4 mathematical convention
 
-vector4 :
+vector4(a matrix4x1) :
 | x |
 | y |
 | z |
@@ -39,7 +39,7 @@ matrix4x4 * vector4 :
 
 /* Row-Major vector4 mathematical convention
 
-vector4 :
+vector4(a matrix1x4) :
 | x y z w |
 
 use left/pre-multiplication, need to access each columns of the matrix then each elements,
@@ -73,7 +73,7 @@ matrix4x4 :
 | m[2][0] <-> a20 m[2][1] <-> a21 m[2][2] <-> a22 m[2][3] <-> a23 |
 | m[3][0] <-> a30 m[3][1] <-> a31 m[3][2] <-> a32 m[3][3] <-> a33 |
 vector4 :
-m[0][0] <-> x m[0][1] <-> y m[0][2] <-> z m[0][3] <-> w  (best choice) 
+m[0][0] <-> x m[0][1] <-> y m[0][2] <-> z m[0][3] <-> w  (best choice)
 */
 
 class mat4
@@ -83,14 +83,51 @@ public:
 	mat4(const mat4& rhs);
 	mat4& operator=(const mat4& rhs);
 	mat4 operator*(const mat4& rhs);
+	vec4 operator*(const vec4& rhs);
 	mat4 operator*(double rhs);
-	mat4 mul(const mat4& rhs);
-	vec4 mul(const vec4& rhs);
-	mat4 mul(double rhs);
 	mat4 transpose();
 	mat4 inverse();
 	double getDeterminant();
+	/*
+	Column-Major memory layout and
+	Row-Major vector4 mathematical convention
 
+	vector4(a matrix1x4) :
+	| x y z w |
+
+	matrix4x4 £º
+	[columnIndex][rowIndex]
+	| m[0][0] <-> a00(1.0 / (tan(FOV / 2.0) * HWRatio)) m[1][0] <->  a01(         0.0         ) m[2][0] <->  a02(                   0.0                  ) m[3][0] <->  a03(                   0.0                  ) |
+	| m[0][1] <-> a10(               0.0              ) m[1][1] <->  a11(1.0 / (tan(FOV / 2.0)) m[2][1] <->  a12(                   0.0                  ) m[3][1] <->  a13(                   0.0                  ) |
+	| m[0][2] <-> a20(               0.0              ) m[1][2] <->  a21(         0.0         ) m[2][2] <->  a22(   -(zFar + zNear) / ((zFar - zNear))   ) m[3][2] <->  a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) |
+	| m[0][3] <-> a30(               0.0              ) m[1][3] <->  a31(         0.0         ) m[2][3] <->  a32(                  -1.0                  ) m[3][3] <->  a33(                   1.0                  ) |
+
+	in
+
+	vector4 * matrix4x4 :
+
+	--------------------------------------------
+
+	Row-Major memory layout and
+	Column-Major vector4 mathematical convention
+
+	vector4(a matrix4x1) :
+	| x |
+	| y |
+	| z |
+	| w |
+
+	matrix4x4 £º
+	[rowIndex][columnIndex]
+	| m[0][0] <-> a00(1.0 / (tan(FOV / 2.0) * HWRatio)) m[1][0] <->  a01(         0.0         ) m[2][0] <->  a02(                   0.0                  ) m[3][0] <->  a03( 0.0) |
+	| m[0][1] <-> a01(               0.0              ) m[1][1] <->  a11(1.0 / (tan(FOV / 2.0)) m[2][1] <->  a21(                   0.0                  ) m[3][1] <->  a31( 0.0) |
+	| m[0][2] <-> a02(               0.0              ) m[1][2] <->  a12(         0.0         ) m[2][2] <->  a22(   -(zFar + zNear) / ((zFar - zNear))   ) m[3][2] <->  a32(-1.0) |
+	| m[0][3] <-> a03(               0.0              ) m[1][3] <->  a13(         0.0         ) m[2][3] <->  a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) m[3][3] <->  a33( 1.0) |
+
+	in
+
+	matrix4x4 * vector4 :
+	*/
 	void initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar);
 	void initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar);
 	mat4 lookAt(const vec4& eyePos, const vec4& centerPos, const vec4& upDir);
@@ -109,15 +146,10 @@ public:
 
 	~vec4();
 
-	vec4 add(const vec4& rhs);
 	vec4 operator+(const vec4& rhs);
-	vec4 add(double rhs);
 	vec4 operator+(double rhs);
-	vec4 sub(const vec4& rhs);
 	vec4 operator-(const vec4& rhs);
-	vec4 sub(double rhs);
 	vec4 operator-(double rhs);
-	double dot(const vec4& rhs);
 	double operator*(const vec4& rhs);
 	vec4 cross(const vec4& rhs);
 	vec4 scale(const vec4& rhs);
@@ -131,7 +163,103 @@ public:
 	bool operator!=(const vec4& rhs);
 	bool operator==(const vec4& rhs);
 
+	/*
+	Column-Major memory layout and
+	Row-Major vector4 mathematical convention
+
+	vector4(a matrix1x4) :
+	| x y z w |
+
+	matrix4x4 £º
+	[columnIndex][rowIndex]
+	| m[0][0] <-> a00(1.0) m[1][0] <->  a01(0.0) m[2][0] <->  a02(0.0) m[3][0] <->  a03(0.0) |
+	| m[0][1] <-> a10(0.0) m[1][1] <->  a11(1.0) m[2][1] <->  a12(0.0) m[3][1] <->  a13(0.0) |
+	| m[0][2] <-> a20(0.0) m[1][2] <->  a21(0.0) m[2][2] <->  a22(1.0) m[3][2] <->  a23(0.0) |
+	| m[0][3] <-> a30(Tx ) m[1][3] <->  a31(Ty ) m[2][3] <->  a32(Tz ) m[3][3] <->  a33(1.0) |
+
+	in
+
+	vector4 * matrix4x4 :
+	| x' = x * a00(1.0) + y * a10(0.0) + z * a20(0.0) + w * a30 (Tx) |
+	| y' = x * a01(0.0) + y * a11(1.0) + z * a21(0.0) + w * a31 (Ty) |
+	| z' = x * a02(0.0) + y * a12(0.0) + z * a22(1.0) + w * a32 (Tz) |
+	| w' = x * a03(0.0) + y * a13(0.0) + z * a23(0.0) + w * a33(1.0) |
+
+	--------------------------------------------
+
+	Row-Major memory layout and
+	Column-Major vector4 mathematical convention
+
+	vector4(a matrix4x1) :
+	| x |
+	| y |
+	| z |
+	| w |
+
+	matrix4x4 £º
+	[rowIndex][columnIndex]
+	| m[0][0] <-> a00(1.0) m[0][1] <->  a01(0.0) m[0][2] <->  a02(0.0) m[0][3] <->  a03(Tx ) |
+	| m[1][0] <-> a10(0.0) m[1][1] <->  a11(1.0) m[1][2] <->  a12(0.0) m[1][3] <->  a13(Ty ) |
+	| m[2][0] <-> a20(0.0) m[2][1] <->  a21(0.0) m[2][2] <->  a22(1.0) m[2][3] <->  a23(Tz ) |
+	| m[3][0] <-> a30(0.0) m[3][1] <->  a31(0.0) m[3][2] <->  a32(0.0) m[3][3] <->  a33(1.0) |
+
+	in
+
+	matrix4x4 * vector4 :
+	| x' = a00(1.0) * x  + a01(0.0) * y + a02(0.0) * z + a03(Tx ) * w |
+	| y' = a10(0.0) * x  + a11(1.0) * y + a12(0.0) * z + a13(Ty ) * w |
+	| z' = a20(0.0) * x  + a21(0.0) * y + a22(1.0) * z + a23(Tz ) * w |
+	| w' = a30(0.0) * x  + a31(0.0) * y + a32(0.0) * z + a33(1.0) * w |
+	*/
 	mat4 toTranslationMartix();
+	/*
+	Column-Major memory layout and
+	Row-Major vector4 mathematical convention
+
+	vector4(a matrix1x4) :
+	| x y z w |
+
+	matrix4x4 £º
+	[columnIndex][rowIndex]
+	| m[0][0] <-> a00(1 - 2*qy2 - 2*qz2) m[1][0] <->  a01(2*qx*qy + 2*qz*qw) m[2][0] <->  a02(2*qx*qz - 2*qy*qw) m[3][0] <->  a03(0.0) |
+	| m[0][1] <-> a10(2*qx*qy - 2*qz*qw) m[1][1] <->  a11(1 - 2*qx2 - 2*qz2) m[2][1] <->  a12(2*qy*qz + 2*qx*qw) m[3][1] <->  a13(0.0) |
+	| m[0][2] <-> a20(2*qx*qz + 2*qy*qw) m[1][2] <->  a21(2*qy*qz - 2*qx*qw) m[2][2] <->  a22(1 - 2*qx2 - 2*qy2) m[3][2] <->  a23(0.0) |
+	| m[0][3] <-> a30(       0.0       ) m[1][3] <->  a31(       0.0       ) m[2][3] <->  a32(       0.0       ) m[3][3] <->  a33(1.0) |
+
+	in
+
+	vector4 * matrix4x4 :
+	| x' = x * a00(1 - 2*qy2 - 2*qz2) + y * a10(2*qx*qy - 2*qz*qw) + z * a20(2*qx*qz + 2*qy*qw) + w * a30(       0.0       ) |
+	| y' = x * a01(2*qx*qy + 2*qz*qw) + y * a11(1 - 2*qx2 - 2*qz2) + z * a21(2*qy*qz - 2*qx*qw) + w * a31(       0.0       ) |
+	| z' = x * a02(2*qx*qz - 2*qy*qw) + y * a12(2*qy*qz + 2*qx*qw) + z * a22(1 - 2*qx2 - 2*qy2) + w * a32(       0.0       ) |
+	| w' = x * a03(       0.0       ) + y * a13(       0.0       ) + z * a23(       0.0       ) + w * a33(       1.0       ) |
+
+	--------------------------------------------
+
+	Row-Major memory layout and
+	Column-Major vector4 mathematical convention
+
+	vector4(a matrix4x1) :
+	| x |
+	| y |
+	| z |
+	| w |
+
+	matrix4x4 £º
+	[rowIndex][columnIndex]
+	| m[0][0] <-> a00(1 - 2*qy2 - 2*qz2) m[0][1] <->  a01(2*qx*qy - 2*qz*qw) m[0][2] <->  a02(2*qx*qz + 2*qy*qw) m[0][3] <->  a03(0.0) |
+	| m[1][0] <-> a10(2*qx*qy + 2*qz*qw) m[1][1] <->  a11(1 - 2*qx2 - 2*qz2) m[1][2] <->  a12(2*qy*qz - 2*qx*qw) m[1][3] <->  a13(0.0) |
+	| m[2][0] <-> a20(2*qx*qz - 2*qy*qw) m[2][1] <->  a21(2*qy*qz + 2*qx*qw) m[2][2] <->  a22(1 - 2*qx2 - 2*qy2) m[2][3] <->  a23(0.0) |
+	| m[3][0] <-> a30(       0.0       ) m[3][1] <->  a31(       0.0       ) m[3][2] <->  a32(       0.0       ) m[3][3] <->  a33(1.0) |
+
+	in
+
+	matrix4x4 * vector4 :
+	| x' = a00(1 - 2*qy2 - 2*qz2) * x  + a01(2*qx*qy - 2*qz*qw) * y + a02(2*qx*qz + 2*qy*qw) * z + a03(       0.0       ) * w |
+	| y' = a10(2*qx*qy + 2*qz*qw) * x  + a11(1 - 2*qx2 - 2*qz2) * y + a12(2*qy*qz - 2*qx*qw) * z + a13(       0.0       ) * w |
+	| z' = a20(2*qx*qz - 2*qy*qw) * x  + a21(2*qy*qz + 2*qx*qw) * y + a22(1 - 2*qx2 - 2*qy2) * z + a23(       0.0       ) * w |
+	| w' = a30(       0.0       ) * x  + a31(       0.0       ) * y + a32(       0.0       ) * z + a33(       1.0       ) * w |
+	*/
 	mat4 toRotationMartix();
 	mat4 toScaleMartix();
 

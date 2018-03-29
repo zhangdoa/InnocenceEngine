@@ -37,7 +37,7 @@ void InnocenceGarden::setup()
 	m_directionalLightComponent.m_drawAABB = false;
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
 	m_directionalLightEntity.getTransform()->setPos(vec4(0.0, 5.0, 0.0, 1.0));
-	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 45);
+	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 90);
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
 	m_directionalLightBillboardComponent.m_visiblilityType = visiblilityType::BILLBOARD;
@@ -266,8 +266,8 @@ void InnocenceGarden::updateLights(double seed)
 
 void InnocenceGarden::updateSpheres(double seed)
 {
-	m_pawnEntity1.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.1);
-	m_pawnEntity2.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.05);
+	m_pawnEntity1.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 1);
+	m_pawnEntity2.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.5);
 	for (auto i = (unsigned int)0; i < m_sphereEntitys.size(); i++)
 	{
 		m_sphereEntitys[i].getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.01 * i);

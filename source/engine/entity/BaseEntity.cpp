@@ -91,12 +91,12 @@ vec4 BaseEntity::caclWorldPos()
 		l_parentTransformationMatrix = m_parentEntity->caclTransformationMatrix();
 	}
 
-	return l_parentTransformationMatrix.mul(m_transform.getPos());
+	return l_parentTransformationMatrix * m_transform.getPos();
 }
 
 vec4 BaseEntity::caclWorldRot()
 {
-	vec4 l_parentRot = vec4(0, 0, 0, 1);
+	vec4 l_parentRot = vec4(0.0, 0.0, 0.0, 1.0);
 
 	if (m_parentEntity != nullptr)
 	{
@@ -153,7 +153,7 @@ mat4 BaseEntity::caclTransformationMatrix()
 #endif
 	//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-	return caclLocalScaleMatrix() * caclLocalRotMatrix() * caclLocalTranslationMatrix() * l_parentTransformationMatrix;
+	return l_parentTransformationMatrix * caclLocalTranslationMatrix() * caclLocalRotMatrix() * caclLocalScaleMatrix();
 #endif
 }
 
