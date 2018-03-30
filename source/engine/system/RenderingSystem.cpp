@@ -187,6 +187,7 @@ void RenderingSystem::initialize()
 	loadAssetsForComponents();
 
 	//initialize rendering
+	glEnable(GL_PROGRAM_POINT_SIZE);
 	glEnable(GL_TEXTURE_2D);
 	initializeShadowPass();
 	initializeBackgroundPass();
