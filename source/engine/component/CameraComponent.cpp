@@ -31,8 +31,7 @@ mat4 CameraComponent::getProjectionMatrix() const
 
 void CameraComponent::setup()
 {
-	m_projectionMatrix.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 100.0);
-	//m_projectionMatrix.initializeToOrthographicMatrix(-50.0, 50.0, -100.0, 100.0, -10.0, 10.0);
+	m_projectionMatrix.initializeToPerspectiveMatrix((45.0 / 180.0) * PI, (16.0 / 9.0), 0.01, 100.0);
 	m_rayOfEye.m_origin = getParentEntity()->caclWorldPos();
 	m_rayOfEye.m_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
 }

@@ -36,8 +36,8 @@ void InnocenceGarden::setup()
 	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
 	m_directionalLightComponent.m_drawAABB = false;
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
-	m_directionalLightEntity.getTransform()->setPos(vec4(0.0, 5.0, 0.0, 1.0));
-	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 90);
+	m_directionalLightEntity.getTransform()->setPos(vec4(2.0, 5.0, -2.0, 1.0));
+	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 45);
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
 	m_directionalLightBillboardComponent.m_visiblilityType = visiblilityType::BILLBOARD;
@@ -249,7 +249,7 @@ void InnocenceGarden::setupLights()
 
 void InnocenceGarden::updateLights(double seed)
 {
-	//m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 0.5);
+	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 0.5);
 	m_directionalLightBillboardComponent.m_albedo = vec4((sin(seed) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0, 1.0);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
