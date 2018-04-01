@@ -194,9 +194,9 @@ void MemorySystem::dumpToFile(const std::string & fileName) const
 		while (block)
 		{
 			if (block->m_free)
-				fprintf(f, "Free:\t0x%08x [Bytes:%d]\n", block, block->m_chuckSize);
+				fprintf(f, "Free:\t0x%08x [Bytes:%d]\n", (unsigned int)block, block->m_chuckSize);
 			else
-				fprintf(f, "Used:\t0x%08x [Bytes:%d]\n", block, block->m_chuckSize);
+				fprintf(f, "Used:\t0x%08x [Bytes:%d]\n", (unsigned int)block, block->m_chuckSize);
 			block = block->m_next;
 		}
 
@@ -204,13 +204,13 @@ void MemorySystem::dumpToFile(const std::string & fileName) const
 		unsigned char* ptr = m_poolMemory;
 		unsigned char* charPtr = m_poolMemory;
 
-		fprintf(f, "Start: 0x%08x\n", ptr);
+		fprintf(f, "Start: 0x%08x\n", (unsigned int)ptr);
 		unsigned char i = 0;
 
 		// Write the hex memory data
 		unsigned long bytesPerLine = 4 * 4;
 
-		fprintf(f, "\n0x%08x: ", ptr);
+		fprintf(f, "\n0x%08x: ", (unsigned int)ptr);
 		fprintf(f, "%02x", *(ptr));
 		++ptr;
 		for (i = 1; ((unsigned long)(ptr - m_poolMemory) < m_totalPoolSize); ++i, ++ptr)
@@ -218,13 +218,13 @@ void MemorySystem::dumpToFile(const std::string & fileName) const
 			if (i == bytesPerLine)
 			{
 				// Write all the chars for this line now
-				fprintf(f, "  ", charPtr);
+				fprintf(f , "  ", charPtr);
 				for (unsigned long charI = 0; charI < bytesPerLine; ++charI, ++charPtr)
 					fprintf(f, "%c", *charPtr);
 				charPtr = ptr;
 
 				// Write the new line memory data
-				fprintf(f, "\n0x%08x: ", ptr);
+				fprintf(f, "\n0x%08x: ", (unsigned int)ptr);
 				fprintf(f, "%02x", *(ptr));
 				i = 0;
 			}

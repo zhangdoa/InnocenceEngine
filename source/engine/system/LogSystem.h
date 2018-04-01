@@ -1,4 +1,6 @@
 #pragma once
+#include <sstream>
+#include <iostream>
 #include "interface/ILogSystem.h"
 #include "interface/ITimeSystem.h"
 
@@ -20,7 +22,6 @@ public:
 	void printLog(const vec2& logMessage) const override;
 	void printLog(const vec4& logMessage) const override;
 	void printLog(const mat4& logMessage) const override;
-	void printLog(const std::thread::id logMessage) const override;
 
 	const objectStatus& getStatus() const override;
 

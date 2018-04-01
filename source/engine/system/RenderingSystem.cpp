@@ -1,6 +1,6 @@
 #include "RenderingSystem.h"
 
-void RenderingSystem::setup()
+void RenderingSystem::setupWindow()
 {
 	//setup window
 	if (glfwInit() != GL_TRUE)
@@ -9,7 +9,6 @@ void RenderingSystem::setup()
 		g_pLogSystem->printLog("Failed to initialize GLFW.");
 	}
 
-	glfwWindowHint(GLFW_SAMPLES, 16); // 16x antialiasing
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #ifdef INNO_PLATFORM_MACOS
@@ -17,8 +16,8 @@ void RenderingSystem::setup()
 #endif
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL 
 
-	// Open a window and create its OpenGL context
-	m_window = glfwCreateWindow(m_screenResolution.x, m_screenResolution.y, m_windowName.c_str(), NULL, NULL);
+																   // Open a window and create its OpenGL context
+	m_window = glfwCreateWindow((int)m_screenResolution.x, (int)m_screenResolution.y, m_windowName.c_str(), NULL, NULL);
 	glfwMakeContextCurrent(m_window);
 	if (m_window == nullptr) {
 		m_objectStatus = objectStatus::STANDBY;
@@ -32,12 +31,10 @@ void RenderingSystem::setup()
 		m_objectStatus = objectStatus::STANDBY;
 		g_pLogSystem->printLog("Failed to initialize GLAD.");
 	}
+}
 
-	// MSAA
-	glEnable(GL_MULTISAMPLE);
-	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
+void RenderingSystem::setupInput()
+{
 	//setup input
 	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
@@ -49,8 +46,18 @@ void RenderingSystem::setup()
 	f_changeDrawPolygonMode = std::bind(&RenderingSystem::changeDrawPolygonMode, this);
 	f_changeDrawTextureMode = std::bind(&RenderingSystem::changeDrawTextureMode, this);
 	f_changeShadingMode = std::bind(&RenderingSystem::changeShadingMode, this);
+}
 
+void RenderingSystem::setupRendering()
+{
 	//setup rendering
+	// 16x antialiasing
+	glfwWindowHint(GLFW_SAMPLES, 16);
+	// MSAA
+	glEnable(GL_MULTISAMPLE);
+	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 	m_shadowForwardPassShaderProgram = g_pMemorySystem->spawn<ShadowForwardPassShaderProgram>();
 	//m_shadowDeferPassShaderProgram = g_pMemorySystem->spawn<ShadowDeferPassShaderProgram>();
 
@@ -70,8 +77,41 @@ void RenderingSystem::setup()
 	m_debuggerPassShaderProgram = g_pMemorySystem->spawn<DebuggerShaderProgram>();
 	m_billboardPassShaderProgram = g_pMemorySystem->spawn<BillboardPassShaderProgram>();
 	m_finalPassShaderProgram = g_pMemorySystem->spawn<FinalPassShaderProgram>();
+}
+
+void RenderingSystem::setup()
+{
+	setupWindow();
+	setupInput();
+	setupRendering();
 
 	m_objectStatus = objectStatus::ALIVE;
+}
+
+void RenderingSystem::initializeWindow()
+{
+	//initialize window
+	windowCallbackWrapper::getInstance().setRenderingSystem(this);
+	windowCallbackWrapper::getInstance().initialize();
+}
+
+void RenderingSystem::initializeInput()
+{
+	//initialize input
+	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
+	{
+		// @TODO: multi input components need to register to multi map
+		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->getKeyboardInputCallbackImpl());
+		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->getMouseInputCallbackImpl());
+	}
+
+	// @TODO: debt I owe
+	addKeyboardInputCallback(INNO_KEY_Q, &f_changeDrawPolygonMode);
+	m_keyButtonMap.find(INNO_KEY_Q)->second.m_keyPressType = keyPressType::ONCE;
+	addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
+	m_keyButtonMap.find(INNO_KEY_E)->second.m_keyPressType = keyPressType::ONCE;
+	addKeyboardInputCallback(INNO_KEY_R, &f_changeShadingMode);
+	m_keyButtonMap.find(INNO_KEY_R)->second.m_keyPressType = keyPressType::ONCE;
 }
 
 void RenderingSystem::loadDefaultAssets()
@@ -160,32 +200,8 @@ void RenderingSystem::loadAssetsForComponents()
 
 }
 
-void RenderingSystem::initialize()
-{
-	//initialize window
-	windowCallbackWrapper::getInstance().setRenderingSystem(this);
-	windowCallbackWrapper::getInstance().initialize();
-
-	//initialize input
-	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
-	{
-		// @TODO: multi input components need to register to multi map
-		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->getKeyboardInputCallbackImpl());
-		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->getMouseInputCallbackImpl());
-	}
-
-	// @TODO: debt I owe
-	addKeyboardInputCallback(INNO_KEY_Q, &f_changeDrawPolygonMode);
-	m_keyButtonMap.find(INNO_KEY_Q)->second.m_keyPressType = keyPressType::ONCE;
-	addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
-	m_keyButtonMap.find(INNO_KEY_E)->second.m_keyPressType = keyPressType::ONCE;
-	addKeyboardInputCallback(INNO_KEY_R, &f_changeShadingMode);
-	m_keyButtonMap.find(INNO_KEY_R)->second.m_keyPressType = keyPressType::ONCE;
-
-	//load assets
-	loadDefaultAssets();
-	loadAssetsForComponents();
-
+void RenderingSystem::initializeRendering() 
+{	
 	//initialize rendering
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	glEnable(GL_TEXTURE_2D);
@@ -194,12 +210,20 @@ void RenderingSystem::initialize()
 	initializeGeometryPass();
 	initializeLightPass();
 	initializeFinalPass();
-
-	m_objectStatus = objectStatus::ALIVE;
-	g_pLogSystem->printLog("RenderingSystem has been initialized.");
 }
 
+void RenderingSystem::initialize()
+{
+	initializeWindow();
+	initializeInput();
 
+	loadDefaultAssets();
+	loadAssetsForComponents();
+
+	initializeRendering();
+
+	g_pLogSystem->printLog("RenderingSystem has been initialized.");
+}
 
 void RenderingSystem::updateInput()
 {
@@ -346,21 +370,6 @@ bool RenderingSystem::canRender()
 const objectStatus & RenderingSystem::getStatus() const
 {
 	return m_objectStatus;
-}
-
-GLFWwindow * RenderingSystem::getWindow() const
-{
-	return m_window;
-}
-
-vec2 RenderingSystem::getScreenCenterPosition() const
-{
-	return vec2(m_screenResolution.x / 2, m_screenResolution.y / 2);
-}
-
-vec2 RenderingSystem::getScreenResolution() const
-{
-	return m_screenResolution;
 }
 
 void RenderingSystem::setWindowName(const std::string & windowName)
@@ -842,6 +851,7 @@ void RenderingSystem::loadTexture(const std::vector<std::string> &fileName, text
 		{
 			auto l_textureID = addTexture(textureType);
 			auto l_baseTexture = getTexture(textureType, l_textureID);
+			//auto f = std::async(std::launch::async, &IAssetSystem::loadTextureFromDisk, g_pAssetSystem, { i }, textureType, visibleComponent.m_textureWrapMethod, l_baseTexture);
 			g_pAssetSystem->loadTextureFromDisk({ i }, textureType, visibleComponent.m_textureWrapMethod, l_baseTexture);
 			m_loadedTextureMap.emplace(i, texturePair(textureType, l_textureID));
 			assignLoadedTexture(textureAssignType::OVERWRITE, texturePair(textureType, l_textureID), visibleComponent);
@@ -988,7 +998,6 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 	}
 }
 
-
 void RenderingSystem::initializeShadowPass()
 {
 	// shadow forward pass
@@ -1031,23 +1040,23 @@ void RenderingSystem::initializeGeometryPass()
 	// initialize texture
 	m_geometryPassRT0TextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
 	auto l_geometryPassRT0TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT0TextureID);
-	l_geometryPassRT0TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+	l_geometryPassRT0TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	m_geometryPassRT1TextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
 	auto l_geometryPassRT1TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT1TextureID);
-	l_geometryPassRT1TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+	l_geometryPassRT1TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	m_geometryPassRT2TextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
 	auto l_geometryPassRT2TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT2TextureID);
-	l_geometryPassRT2TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+	l_geometryPassRT2TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	m_geometryPassRT3TextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
 	auto l_geometryPassRT3TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT3TextureID);
-	l_geometryPassRT3TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+	l_geometryPassRT3TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	m_geometryPassRT4TextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
 	auto l_geometryPassRT4TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT4TextureID);
-	l_geometryPassRT4TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+	l_geometryPassRT4TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize frame buffer
 	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
@@ -1075,7 +1084,7 @@ void RenderingSystem::initializeLightPass()
 	// initialize texture
 	m_lightPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
 	auto l_lightPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_lightPassTextureID);
-	l_lightPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+	l_lightPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize frame buffer
 	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
@@ -1126,7 +1135,7 @@ void RenderingSystem::initializeFinalPass()
 	// initialize texture
 	m_skyForwardPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
 	auto l_skyForwardPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_skyForwardPassTextureID);
-	l_skyForwardPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+	l_skyForwardPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize framebuffer
 	auto l_skyForwardPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
@@ -1150,7 +1159,7 @@ void RenderingSystem::initializeFinalPass()
 	// initialize texture
 	m_debuggerPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
 	auto l_debuggerPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_debuggerPassTextureID);
-	l_debuggerPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+	l_debuggerPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize framebuffer
 	auto l_debuggerPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
@@ -1171,7 +1180,7 @@ void RenderingSystem::initializeFinalPass()
 	// initialize texture
 	m_skyDeferPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
 	auto l_skyDeferPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_skyDeferPassTextureID);
-	l_skyDeferPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+	l_skyDeferPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize framebuffer
 	auto l_skyDeferPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
@@ -1192,7 +1201,7 @@ void RenderingSystem::initializeFinalPass()
 	// initialize texture
 	m_billboardPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
 	auto l_billboardPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_billboardPassTextureID);
-	l_billboardPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, m_screenResolution.x, m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+	l_billboardPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize framebuffer
 	auto l_billboardPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };

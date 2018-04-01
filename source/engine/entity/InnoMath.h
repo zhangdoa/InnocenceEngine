@@ -279,15 +279,10 @@ public:
 
 	~vec2();
 
-	vec2 add(const vec2& rhs);
 	vec2 operator+(const vec2& rhs);
-	vec2 add(double rhs);
 	vec2 operator+(double rhs);
-	vec2 sub(const vec2& rhs);
 	vec2 operator-(const vec2& rhs);
-	vec2 sub(double rhs);
 	vec2 operator-(double rhs);
-	double dot(const vec2& rhs);
 	double operator*(const vec2& rhs);
 	vec2 scale(const vec2& rhs);
 	vec2 scale(double rhs);

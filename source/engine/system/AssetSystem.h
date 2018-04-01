@@ -1,4 +1,8 @@
 #pragma once
+#include <fstream>
+#include <sstream>
+#include <iostream>
+
 #include "common/UltiHeaders.h"
 #include "interface/IAssetSystem.h"
 #include "interface/ILogSystem.h"
