@@ -1,4 +1,5 @@
 #pragma once
+#include <sstream>
 #include "interface/ITimeSystem.h"
 
 class TimeSystem : public ITimeSystem
@@ -23,8 +24,8 @@ private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
 	const double m_frameTime = (1.0 / 120.0) * 1000.0 * 1000.0;
-	double m_gameStartTime;
+	__time64_t m_gameStartTime;
 	std::chrono::high_resolution_clock::time_point m_updateStartTime;
-	double m_deltaTime;
+	__int64 m_deltaTime;
 	double m_unprocessedTime;
 };

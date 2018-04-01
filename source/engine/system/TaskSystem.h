@@ -1,4 +1,7 @@
 #pragma once
+#include <condition_variable>
+#include <thread>
+#include <future>
 #include "interface/ITaskSystem.h"
 #include "interface/ILogSystem.h"
 

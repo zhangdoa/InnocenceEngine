@@ -128,22 +128,22 @@ inline void GLShaderProgram::updateUniform(const GLint uniformLocation, int unif
 
 inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double uniformValue) const
 {
-	glUniform1f(uniformLocation, uniformValue);
+	glUniform1f(uniformLocation, (GLfloat)uniformValue);
 }
 
 inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y) const
 {
-	glUniform2f(uniformLocation, x, y);
+	glUniform2f(uniformLocation, (GLfloat)x, (GLfloat)y);
 }
 
 inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y, double z) const
 {
-	glUniform3f(uniformLocation, x, y, z);
+	glUniform3f(uniformLocation, (GLfloat)x, (GLfloat)y, (GLfloat)z);
 }
 
 inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y, double z, double w) const
 {
-	glUniform4f(uniformLocation, x, y, z, w);
+	glUniform4f(uniformLocation, (GLfloat)x, (GLfloat)y, (GLfloat)z, (GLfloat)w);
 }
 
 inline void GLShaderProgram::updateUniform(const GLint uniformLocation, const mat4 & mat) const

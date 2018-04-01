@@ -1,4 +1,6 @@
 #pragma once
+#include<atomic>
+
 #include "common/GLHeaders.h"
 
 #include "interface/IRenderingSystem.h"
@@ -60,18 +62,53 @@ public:
 	const objectStatus& getStatus() const override;
 
 private:
+	void setupWindow();
+	void setupInput();
+	void setupRendering();
+
+	void initializeWindow();
+	void initializeInput();
+	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
+	void assignUnitMesh(VisibleComponent& visibleComponent, meshShapeType meshType);
+	void assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
+	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
+	void loadTexture(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent& visibleComponent);
+	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
+	void assignloadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
+	std::vector<Vertex> generateNDC();
+	void generateAABB(VisibleComponent & visibleComponent);
+	void generateAABB(LightComponent & lightComponent);
+	AABB generateAABB(const vec4& boundMax, const vec4& boundMin, const vec4& scale);
+	meshID addAABBMesh(const AABB& AABB);
+	void loadDefaultAssets();
+	void loadAssetsForComponents();
+	void initializeRendering();
+
+	void updateInput();
+	void updatePhysics();
+
+	void initializeBackgroundPass();
+	void renderBackgroundPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+	void initializeShadowPass();
+	void renderShadowPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+	void initializeGeometryPass();
+	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+	void initializeLightPass();
+	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+	void initializeFinalPass();
+	void renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
+	void changeDrawPolygonMode();
+	void changeDrawTextureMode();
+	void changeShadingMode();
+	void hideMouseCursor() const;
+	void showMouseCursor() const;
+
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
 	//Window data
 	vec2 m_screenResolution = vec2(1280, 720);
 	GLFWwindow* m_window;
 	std::string m_windowName;
-
-	GLFWwindow* getWindow() const;
-	vec2 getScreenCenterPosition() const;
-	vec2 getScreenResolution() const;
-	void hideMouseCursor() const;
-	void showMouseCursor() const;
 
 	//Input data
 	const int NUM_KEYCODES = 256;
@@ -87,29 +124,9 @@ private:
 	double m_mouseLastY;
 
 	//Asset data
-	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
-
 	std::unordered_map<meshID, BaseMesh*> m_meshMap;
 	std::unordered_map<meshID, BaseMesh*> m_AABBMeshMap;
 	std::unordered_map<textureID, BaseTexture*> m_textureMap;
-
-	void assignUnitMesh(VisibleComponent& visibleComponent, meshShapeType meshType);
-	void assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
-	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
-	void loadTexture(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent& visibleComponent);
-	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
-	void assignloadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
-	
-	std::vector<Vertex> generateNDC();
-	void generateAABB(VisibleComponent & visibleComponent);
-	void generateAABB(LightComponent & lightComponent);
-	AABB generateAABB(const vec4& boundMax, const vec4& boundMin, const vec4& scale);
-	meshID addAABBMesh(const AABB& AABB);
-	void loadDefaultAssets(); 
-	void loadAssetsForComponents();
-
-	void updateInput();
-	void updatePhysics();
 
 	meshID m_UnitCubeTemplate;
 	meshID m_UnitSphereTemplate;
@@ -127,9 +144,6 @@ private:
 
 	//Rendering Data
 	std::atomic<bool> m_canRender = true;
-	void changeDrawPolygonMode();
-	void changeDrawTextureMode();
-	void changeShadingMode();
 	std::function<void()> f_changeDrawPolygonMode;
 	std::function<void()> f_changeDrawTextureMode;
 	std::function<void()> f_changeShadingMode;
@@ -187,16 +201,6 @@ private:
 	int m_shadingMode = 0;
 
 	bool m_shouldUpdateEnvironmentMap = true;
-	void initializeBackgroundPass();
-	void renderBackgroundPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
-	void initializeShadowPass();
-	void renderShadowPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
-	void initializeGeometryPass();
-	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
-	void initializeLightPass();
-	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
-	void initializeFinalPass();
-	void renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 };
 
 class windowCallbackWrapper

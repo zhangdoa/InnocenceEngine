@@ -1,5 +1,7 @@
 #pragma once
 #include "common/stdafx.h"
+#include <chrono>
+#include <ctime>
 #include "ISystem.h"
 
 class ITimeSystem : public ISystem

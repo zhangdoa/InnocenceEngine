@@ -288,19 +288,9 @@ vec2::~vec2()
 {
 }
 
-vec2 vec2::add(const vec2 & rhs)
-{
-	return vec2(x + rhs.x, y + rhs.y);
-}
-
 vec2 vec2::operator+(const vec2 & rhs)
 {
 	return vec2(x + rhs.x, y + rhs.y);
-}
-
-vec2 vec2::add(double rhs)
-{
-	return vec2(x + rhs, y + rhs);
 }
 
 vec2 vec2::operator+(double rhs)
@@ -308,29 +298,14 @@ vec2 vec2::operator+(double rhs)
 	return vec2(x + rhs, y + rhs);
 }
 
-vec2 vec2::sub(const vec2 & rhs)
-{
-	return vec2(x - rhs.x, y - rhs.y);
-}
-
 vec2 vec2::operator-(const vec2 & rhs)
 {
 	return vec2(x - rhs.x, y - rhs.y);
 }
 
-vec2 vec2::sub(double rhs)
-{
-	return vec2(x - rhs, y - rhs);
-}
-
 vec2 vec2::operator-(double rhs)
 {
 	return vec2(x - rhs, y - rhs);
-}
-
-double vec2::dot(const vec2 & rhs)
-{
-	return x * rhs.x + y * rhs.y;
 }
 
 double vec2::operator*(const vec2 & rhs)

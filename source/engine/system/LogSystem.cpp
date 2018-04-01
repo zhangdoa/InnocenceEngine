@@ -90,10 +90,6 @@ void LogSystem::printLog(const mat4 & logMessage) const
 		<< "|"
 		<< std::endl;
 }
-void LogSystem::printLog(const std::thread::id logMessage) const
-{
-	std::cout << "[" <<g_pTimeSystem->getCurrentTimeInLocal() << "]"<< "Thread: " << logMessage << std::endl;
-}
 
 const objectStatus & LogSystem::getStatus() const
 {
