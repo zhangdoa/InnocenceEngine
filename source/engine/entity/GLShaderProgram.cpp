@@ -182,11 +182,10 @@ void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& camer
 			auto l_boundMax = l_lightComponent->m_AABB.m_boundMax;
 			auto l_boundMin = l_lightComponent->m_AABB.m_boundMin;
 			auto l_pos = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (l_lightComponent->m_AABB.m_boundMax.z - l_lightComponent->m_AABB.m_boundMin.z) + l_lightComponent->m_AABB.m_center;
-			//auto l_pos = l_lightComponent->getParentEntity()->caclWorldPos();
 			mat4 p_light;
 			p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
-			//p_light.initializeToOrthographicMatrix(-10.0, 10.0, -10.0, 10.0, 1.0, 15);
-			mat4 v = mat4().lookAt(l_pos, l_pos + l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+			//mat4 v = mat4().lookAt(l_pos, l_pos + l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+			mat4 v = l_pos.scale(-1.0).toTranslationMartix() * l_lightComponent->getParentEntity()->getTransform()->getRot().quatConjugate().toRotationMartix();
 			updateUniform(m_uni_p, p_light);
 			updateUniform(m_uni_v, v);
 
@@ -422,12 +421,11 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 			auto l_boundMax = l_lightComponent->m_AABB.m_boundMax;
 			auto l_boundMin = l_lightComponent->m_AABB.m_boundMin;
 			auto l_pos = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (l_lightComponent->m_AABB.m_boundMax.z - l_lightComponent->m_AABB.m_boundMin.z) + l_lightComponent->m_AABB.m_center;
-			//auto l_pos = l_lightComponent->getParentEntity()->caclWorldPos();
 			mat4 p_light;
 			p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
-			//p_light.initializeToOrthographicMatrix(-10.0, 10.0, -10.0, 10.0, 1.0, 15);
+			//mat4 v = mat4().lookAt(l_pos, l_pos + l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+			mat4 v = l_pos.scale(-1.0).toTranslationMartix() * l_lightComponent->getParentEntity()->getTransform()->getRot().quatConjugate().toRotationMartix();
 
-			mat4 v = mat4().lookAt(l_pos, l_pos + l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 			updateUniform(m_uni_p_light, p_light);
 			updateUniform(m_uni_v_light, v);
 
