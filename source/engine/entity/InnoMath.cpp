@@ -104,6 +104,11 @@ vec4 vec4::quatMul(double rhs)
 	return l_result.normalize();
 }
 
+vec4 vec4::quatConjugate()
+{
+	return vec4(-x, -y, -z, w);
+}
+
 double vec4::length()
 {
 	// @TODO: replace with SIMD impl
@@ -817,7 +822,10 @@ bool AABB::intersectCheck(const AABB & rhs)
 bool AABB::intersectCheck(const Ray & rhs)
 {
 	double txmin, txmax, tymin, tymax, tzmin, tzmax;
-	vec4 l_invDirection = vec4(1 / rhs.m_direction.x, 1 / rhs.m_direction.y, 1 / rhs.m_direction.z, 0.0);
+	double l_invDirectionX = std::isinf(1.0 / rhs.m_direction.x) ? 0.0 : 1.0 / rhs.m_direction.x;
+	double l_invDirectionY = std::isinf(1.0 / rhs.m_direction.y) ? 0.0 : 1.0 / rhs.m_direction.y;
+	double l_invDirectionZ = std::isinf(1.0 / rhs.m_direction.z) ? 0.0 : 1.0 / rhs.m_direction.z;
+	vec4 l_invDirection = vec4(l_invDirectionX, l_invDirectionY, l_invDirectionZ, 0.0).normalize();
 	
 	if (l_invDirection.x >= 0.0) {
 		txmin = (m_boundMin.x - rhs.m_origin.x) * l_invDirection.x;
@@ -851,7 +859,7 @@ bool AABB::intersectCheck(const Ray & rhs)
 	txmax = (tymax < txmax) || std::isinf(txmax) ? tymax : txmax;
 	txmin = (tzmin > txmin) ? tzmin : txmin;
 	txmax = (tzmax < txmax) ? tzmax : txmax;
-	if (txmin < txmax && txmax >= 0.0f) {
+	if (txmin < txmax && txmax >= 0.0) {
 		return true;
 	}
 	return false;

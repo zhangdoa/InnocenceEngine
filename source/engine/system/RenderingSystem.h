@@ -84,6 +84,7 @@ private:
 	void loadAssetsForComponents();
 	void initializeRendering();
 
+	vec4 checkPicking();
 	void updateInput();
 	void updatePhysics();
 
@@ -122,6 +123,8 @@ private:
 	double m_mouseYOffset;
 	double m_mouseLastX;
 	double m_mouseLastY;
+
+	Ray m_mouseRay;
 
 	//Asset data
 	std::unordered_map<meshID, BaseMesh*> m_meshMap;

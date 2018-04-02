@@ -15,13 +15,7 @@ mat4 CameraComponent::getPosMatrix() const
 
 mat4 CameraComponent::getRotMatrix() const
 {
-	// quaternion rotation
-	vec4 conjugateRotQuat = getParentEntity()->caclWorldRot();
-	conjugateRotQuat.x = -conjugateRotQuat.x;
-	conjugateRotQuat.y = -conjugateRotQuat.y;
-	conjugateRotQuat.z = -conjugateRotQuat.z;
-
-	return conjugateRotQuat.toRotationMartix();
+	return getParentEntity()->caclWorldRot().quatConjugate().toRotationMartix();
 }
 
 mat4 CameraComponent::getProjectionMatrix() const
@@ -31,9 +25,9 @@ mat4 CameraComponent::getProjectionMatrix() const
 
 void CameraComponent::setup()
 {
-	m_projectionMatrix.initializeToPerspectiveMatrix((45.0 / 180.0) * PI, (16.0 / 9.0), 0.01, 100.0);
+	m_projectionMatrix.initializeToPerspectiveMatrix((60.0 / 180.0) * PI, (16.0 / 9.0), 0.01, 100.0);
 	m_rayOfEye.m_origin = getParentEntity()->caclWorldPos();
-	m_rayOfEye.m_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
+	m_rayOfEye.m_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
 }
 
 void CameraComponent::initialize()
@@ -43,7 +37,7 @@ void CameraComponent::initialize()
 void CameraComponent::update()
 {
 	m_rayOfEye.m_origin = getParentEntity()->caclWorldPos();
-	m_rayOfEye.m_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
+	m_rayOfEye.m_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
 }
 
 void CameraComponent::shutdown()

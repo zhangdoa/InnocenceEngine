@@ -225,6 +225,29 @@ void RenderingSystem::initialize()
 	g_pLogSystem->printLog("RenderingSystem has been initialized.");
 }
 
+vec4 RenderingSystem::checkPicking()
+{
+	auto l_x = 2.0 * m_mouseLastX / m_screenResolution.x - 1.0;
+	auto l_y = 1.0 - 2.0 * m_mouseLastY / m_screenResolution.y;
+	auto l_z = -1.0;
+	auto l_w = 1.0;
+	vec4 l_ndcSpace = vec4(l_x, l_y, l_z, l_w);
+
+	auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
+	auto rCamera = g_pGameSystem->getCameraComponents()[0]->getRotMatrix();
+	auto tCamera = g_pGameSystem->getCameraComponents()[0]->getPosMatrix();
+
+	l_ndcSpace = pCamera.inverse() * l_ndcSpace;
+	l_ndcSpace = rCamera.inverse() * l_ndcSpace;
+	l_ndcSpace = tCamera.inverse() * l_ndcSpace;
+	l_ndcSpace.w = 0.0;
+	l_ndcSpace = l_ndcSpace.normalize();
+	l_ndcSpace.z = -1.0;
+
+
+	return l_ndcSpace;
+}
+
 void RenderingSystem::updateInput()
 {
 	for (int i = 0; i < NUM_KEYCODES; i++)
@@ -303,20 +326,19 @@ void RenderingSystem::updateInput()
 
 void RenderingSystem::updatePhysics()
 {
-	// Raycast from camera
 	m_selectedVisibleComponents.clear();
-	for (auto& i : g_pGameSystem->getCameraComponents())
-	{
-		auto& l_ray = i->m_rayOfEye;
 
-		for (auto& j : g_pGameSystem->getVisibleComponents())
+	m_mouseRay.m_origin = g_pGameSystem->getCameraComponents()[0]->getParentEntity()->caclWorldPos();
+	m_mouseRay.m_direction = checkPicking();
+
+	auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
+	for (auto& j : g_pGameSystem->getVisibleComponents())
+	{
+		if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
 		{
-			if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
+			if (j->m_AABB.intersectCheck(m_mouseRay))
 			{
-				if (j->m_AABB.intersectCheck(l_ray))
-				{
-					m_selectedVisibleComponents.emplace_back(j);
-				}
+				m_selectedVisibleComponents.emplace_back(j);
 			}
 		}
 	}
@@ -696,9 +718,6 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	//pCamera.initializeToPerspectiveMatrix((45.0 / 180.0) * PI, (16.0 / 9.0), 0.001, 7.0);
 	auto rCamera = g_pGameSystem->getCameraComponents()[0]->getRotMatrix();
 	auto tCamera = g_pGameSystem->getCameraComponents()[0]->getPosMatrix();
-	auto l_pos = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (lightComponent.m_AABB.m_boundMax.z - lightComponent.m_AABB.m_boundMin.z) + lightComponent.m_AABB.m_center;
-	//auto l_pos = lightComponent.getParentEntity()->caclWorldPos();
-	auto l_vLight = mat4().lookAt(l_pos, l_pos + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 
 	// get view frustrum's corner in world space
 	auto l_vertices = generateNDC();
@@ -712,10 +731,20 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 		// to view space
 		l_mulPos = rCamera.inverse() * l_mulPos;
 		l_mulPos = tCamera.inverse() * l_mulPos;
-		// trasform view frustrum's corner to light space
-		l_mulPos = l_vLight * l_mulPos;
-		l_vertexData.m_pos = l_mulPos;	
 	}
+
+	auto l_pos = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (lightComponent.m_AABB.m_boundMax.z - lightComponent.m_AABB.m_boundMin.z) + lightComponent.m_AABB.m_center;
+	//auto l_vLight = mat4().lookAt(l_pos, l_pos + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+	mat4 l_vLight = l_pos.scale(-1.0).toTranslationMartix() * lightComponent.getParentEntity()->getTransform()->getRot().quatConjugate().toRotationMartix();
+
+	for (auto& l_vertexData : l_vertices)
+	{
+		vec4 l_mulPos;
+		// transform view frustrum's corner to light space
+		l_mulPos = l_vLight * l_vertexData.m_pos;
+		l_vertexData.m_pos = l_mulPos;
+	}
+
 	for (auto& l_vertexData : l_vertices)
 	{
 		if (l_vertexData.m_pos.x >= maxX)
@@ -745,6 +774,7 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	}
 	
 	lightComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), vec4(1.0, 1.0, 1.0, 1.0));
+
 
 	//if (lightComponent.m_drawAABB)
 	//{
@@ -1229,8 +1259,8 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	// draw debugger pass
 	m_geometryPassFrameBuffer->asReadBuffer();
 	m_debuggerPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
-	//m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, m_selectedVisibleComponents, m_AABBMeshMap, m_textureMap, true, false);
-	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_AABBMeshMap, m_textureMap, true, false);
+	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, m_selectedVisibleComponents, m_AABBMeshMap, m_textureMap, true, false);
+	//m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_AABBMeshMap, m_textureMap, true, false);
 
 	// draw background defer pass
 	m_lightPassFrameBuffer->activeTexture(0, 0);

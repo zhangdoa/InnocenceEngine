@@ -157,6 +157,7 @@ public:
 	vec4 operator*(double rhs);
 	vec4 quatMul(const vec4& rhs);
 	vec4 quatMul(double rhs);
+	vec4 quatConjugate();
 	double length();
 	vec4 normalize();
 
