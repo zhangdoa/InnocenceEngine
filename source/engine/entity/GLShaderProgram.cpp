@@ -1001,6 +1001,49 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 	}
 }
 
+void EmissivePassShaderProgram::initialize()
+{
+	GLShaderProgram::initialize();
+	useProgram();
+
+	m_uni_albedo = getUniformLocation("uni_albedo");
+	m_uni_p = getUniformLocation("uni_p");
+	m_uni_r = getUniformLocation("uni_r");
+	m_uni_t = getUniformLocation("uni_t");
+	m_uni_m = getUniformLocation("uni_m");
+}
+
+void EmissivePassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
+{
+	glEnable(GL_DEPTH_TEST);
+	useProgram();
+
+	mat4 p = cameraComponents[0]->getProjectionMatrix();
+	mat4 r = cameraComponents[0]->getRotMatrix();
+	mat4 t = cameraComponents[0]->getPosMatrix();
+
+	updateUniform(m_uni_p, p);
+	updateUniform(m_uni_r, r);
+	updateUniform(m_uni_t, t);
+
+	// draw each visibleComponent
+	for (auto& l_visibleComponent : visibleComponents)
+	{
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::EMISSIVE)
+		{
+			updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+			updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
+
+			// draw each graphic data of visibleComponent
+			for (auto& l_graphicData : l_visibleComponent->getModelMap())
+			{
+				// draw meshes
+				meshMap.find(l_graphicData.first)->second->update();
+			}
+		}
+	}
+}
+
 void FinalPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
@@ -1010,6 +1053,9 @@ void FinalPassShaderProgram::initialize()
 	updateUniform(m_uni_skyDeferPassRT0, 0);
 	m_uni_billboardPassRT0 = getUniformLocation("uni_billboardPassRT0");
 	updateUniform(m_uni_billboardPassRT0, 1);
+	m_uni_emissivePassRT0 = getUniformLocation("uni_emissivePassRT0");
+	updateUniform(m_uni_emissivePassRT0, 2);
+	
 }
 
 void FinalPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)

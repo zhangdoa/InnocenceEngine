@@ -195,6 +195,10 @@ private:
 	BaseShaderProgram* m_billboardPassShaderProgram;
 	textureID m_billboardPassTextureID;
 
+	BaseFrameBuffer* m_emissivePassFrameBuffer;
+	BaseShaderProgram* m_emissivePassShaderProgram;
+	textureID m_emissivePassTextureID;
+
 	BaseFrameBuffer* m_finalPassFrameBuffer;
 	BaseShaderProgram* m_finalPassShaderProgram;
 	textureID m_finalPassTextureID;
