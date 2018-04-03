@@ -377,7 +377,7 @@ private:
 
 
 
-enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE };
+enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
 // mesh custom types
 enum class meshType { TWO_DIMENSION, THREE_DIMENSION, AABB };
 enum class meshShapeType { QUAD, CUBE, SPHERE, CUSTOM };

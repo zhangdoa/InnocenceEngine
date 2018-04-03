@@ -76,6 +76,7 @@ void RenderingSystem::setupRendering()
 	m_skyDeferPassShaderProgram = g_pMemorySystem->spawn<SkyDeferPassPBSShaderProgram>();
 	m_debuggerPassShaderProgram = g_pMemorySystem->spawn<DebuggerShaderProgram>();
 	m_billboardPassShaderProgram = g_pMemorySystem->spawn<BillboardPassShaderProgram>();
+	m_emissivePassShaderProgram = g_pMemorySystem->spawn<EmissivePassShaderProgram>();
 	m_finalPassShaderProgram = g_pMemorySystem->spawn<FinalPassShaderProgram>();
 }
 
@@ -733,17 +734,17 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 		l_mulPos = tCamera.inverse() * l_mulPos;
 	}
 
-	auto l_pos = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (lightComponent.m_AABB.m_boundMax.z - lightComponent.m_AABB.m_boundMin.z) + lightComponent.m_AABB.m_center;
-	//auto l_vLight = mat4().lookAt(l_pos, l_pos + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
-	mat4 l_vLight = l_pos.scale(-1.0).toTranslationMartix() * lightComponent.getParentEntity()->getTransform()->getRot().quatConjugate().toRotationMartix();
+	//auto l_pos = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (lightComponent.m_AABB.m_boundMax.z - lightComponent.m_AABB.m_boundMin.z) + lightComponent.m_AABB.m_center;
+	////auto l_vLight = mat4().lookAt(l_pos, l_pos + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+	//mat4 l_vLight = l_pos.scale(-1.0).toTranslationMartix() * lightComponent.getParentEntity()->getTransform()->getRot().quatConjugate().toRotationMartix();
 
-	for (auto& l_vertexData : l_vertices)
-	{
-		vec4 l_mulPos;
-		// transform view frustrum's corner to light space
-		l_mulPos = l_vLight * l_vertexData.m_pos;
-		l_vertexData.m_pos = l_mulPos;
-	}
+	//for (auto& l_vertexData : l_vertices)
+	//{
+	//	vec4 l_mulPos;
+	//	// transform view frustrum's corner to light space
+	//	l_mulPos = l_vLight * l_vertexData.m_pos;
+	//	l_vertexData.m_pos = l_mulPos;
+	//}
 
 	for (auto& l_vertexData : l_vertices)
 	{
@@ -881,7 +882,6 @@ void RenderingSystem::loadTexture(const std::vector<std::string> &fileName, text
 		{
 			auto l_textureID = addTexture(textureType);
 			auto l_baseTexture = getTexture(textureType, l_textureID);
-			//auto f = std::async(std::launch::async, &IAssetSystem::loadTextureFromDisk, g_pAssetSystem, { i }, textureType, visibleComponent.m_textureWrapMethod, l_baseTexture);
 			g_pAssetSystem->loadTextureFromDisk({ i }, textureType, visibleComponent.m_textureWrapMethod, l_baseTexture);
 			m_loadedTextureMap.emplace(i, texturePair(textureType, l_textureID));
 			assignLoadedTexture(textureAssignType::OVERWRITE, texturePair(textureType, l_textureID), visibleComponent);
@@ -1241,6 +1241,27 @@ void RenderingSystem::initializeFinalPass()
 	m_billboardPassFrameBuffer->setup(frameBufferType::FORWARD, renderBufferType::DEPTH, l_billboardPassRenderBufferStorageSizes, l_billboardPassRenderTargetTextures, l_billboardPassRhaderPrograms);
 	m_billboardPassFrameBuffer->initialize();
 
+	// emissive pass
+	// initialize shader
+	auto l_emissivePassVertexShaderFilePath = "GL3.3/emissivePassVertex.sf";
+	auto l_emissivePassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_emissivePassVertexShaderFilePath, g_pAssetSystem->loadShader(l_emissivePassVertexShaderFilePath)));
+	auto l_emissivePassFragmentShaderFilePath = "GL3.3/emissivePassFragment.sf";
+	auto l_emissivePassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_emissivePassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_emissivePassFragmentShaderFilePath)));
+	m_emissivePassShaderProgram->setup({ l_emissivePassVertexShaderData , l_emissivePassFragmentShaderData });
+
+	// initialize texture
+	m_emissivePassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
+	auto l_emissivePassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_emissivePassTextureID);
+	l_emissivePassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+
+	// initialize framebuffer
+	auto l_emissivePassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
+	auto l_emissivePassRenderTargetTextures = std::vector<BaseTexture*>{ l_emissivePassTextureData };
+	auto l_emissivePassRhaderPrograms = std::vector<BaseShaderProgram*>{ m_emissivePassShaderProgram };
+	m_emissivePassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
+	m_emissivePassFrameBuffer->setup(frameBufferType::FORWARD, renderBufferType::DEPTH, l_emissivePassRenderBufferStorageSizes, l_emissivePassRenderTargetTextures, l_emissivePassRhaderPrograms);
+	m_emissivePassFrameBuffer->initialize();	
+	
 	//post-process pass
 	// initialize shader
 	auto l_vertexShaderFilePath = "GL3.3/finalPassVertex.sf";
@@ -1277,13 +1298,18 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	m_billboardPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
 	m_billboardPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, false);
 
+	// draw emissive pass
+	m_geometryPassFrameBuffer->asReadBuffer();
+	m_emissivePassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
+	m_emissivePassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, false);
+
 	// draw final pass
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 	m_skyDeferPassFrameBuffer->activeTexture(0, 0);
 	m_billboardPassFrameBuffer->activeTexture(0, 1);
-
+	m_emissivePassFrameBuffer->activeTexture(0, 2);
 	m_finalPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw final pass rectangle
