@@ -1,5 +1,9 @@
 #cmakedefine USE_CLANG
 #cmakedefine BUILD_GAME
 #cmakedefine BUILD_EDITOR
+#cmakedefine BUILD_TEST
 #cmakedefine USE_ROW_MAJOR_MEMORY_LAYOUT
 #cmakedefine USE_COLUMN_MAJOR_MEMORY_LAYOUT
+
+#cmakedefine INNO_PLATFORM_WIN32
+#cmakedefine INNO_PLATFORM_WIN64

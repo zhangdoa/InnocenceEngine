@@ -1,4 +1,5 @@
 #pragma once
+#include "common/config.h"
 #include "interface/ICoreSystem.h"
 
 #include "platform/InnoSystemHeader.h"
