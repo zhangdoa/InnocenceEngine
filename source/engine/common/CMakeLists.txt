@@ -14,4 +14,7 @@ if(BUILD_GAME)
 target_link_libraries(InnoMain InnoGame)
 endif (BUILD_GAME)
 
+if(BUILD_TEST)
+target_link_libraries(InnoMain InnoTest)
+endif (BUILD_TEST)
 

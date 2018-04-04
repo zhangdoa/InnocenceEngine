@@ -329,29 +329,36 @@ void RenderingSystem::updatePhysics()
 {
 	m_selectedVisibleComponents.clear();
 
-	m_mouseRay.m_origin = g_pGameSystem->getCameraComponents()[0]->getParentEntity()->caclWorldPos();
-	m_mouseRay.m_direction = checkPicking();
-
-	auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
-	for (auto& j : g_pGameSystem->getVisibleComponents())
+	if (g_pGameSystem->getCameraComponents().size() > 0)
 	{
-		if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
+		m_mouseRay.m_origin = g_pGameSystem->getCameraComponents()[0]->getParentEntity()->caclWorldPos();
+		m_mouseRay.m_direction = checkPicking();
+
+		auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
+		for (auto& j : g_pGameSystem->getVisibleComponents())
 		{
-			if (j->m_AABB.intersectCheck(m_mouseRay))
+			if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
 			{
-				m_selectedVisibleComponents.emplace_back(j);
+				if (j->m_AABB.intersectCheck(m_mouseRay))
+				{
+					m_selectedVisibleComponents.emplace_back(j);
+				}
 			}
 		}
 	}
-	// generate AABB for CSM
-	for (auto& i : g_pGameSystem->getLightComponents())
+	if (g_pGameSystem->getLightComponents().size() > 0)
 	{
-		if (i->getLightType() == lightType::DIRECTIONAL)
+		// generate AABB for CSM
+		for (auto& i : g_pGameSystem->getLightComponents())
 		{
-			generateAABB(*i);
+			if (i->getLightType() == lightType::DIRECTIONAL)
+			{
+				generateAABB(*i);
+			}
 		}
 	}
 }
+
 
 void RenderingSystem::update()
 {
