@@ -1,5 +1,4 @@
 #pragma once
-#define INNO_PLATFORM_WIN32
 
 #include "interface/IMemorySystem.h"
 #include "interface/ILogSystem.h"
