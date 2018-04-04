@@ -16,13 +16,13 @@ public:
 	const objectStatus& getStatus() const override;
 
 	std::string getGameName() const override;
-
-private:
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	std::vector<CameraComponent*>& getCameraComponents() override;
 	std::vector<InputComponent*>& getInputComponents() override;
 	std::vector<LightComponent*>& getLightComponents() override;
 	std::vector<VisibleComponent*>& getVisibleComponents() override;
+
+private:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
 	BaseEntity m_rootEntity;
 

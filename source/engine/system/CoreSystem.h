@@ -7,6 +7,10 @@
 #include "platform/InnoSystemHeaderWin32.h"
 #endif
 
+#ifdef INNO_PLATFORM_WIN64
+#include "platform/InnoSystemHeaderWin64.h"
+#endif
+
 IMemorySystem* g_pMemorySystem;
 ILogSystem* g_pLogSystem;
 ITaskSystem* g_pTaskSystem;
