@@ -23,6 +23,15 @@ set (CMAKE_CXX_FLAGS_RELEASE        "-O4 -DNDEBUG")
 set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 /Debug")
 endif (USE_CLANG)
 
+option (USE_ROW_MAJOR_MEMORY_LAYOUT "use Row-Major memory layout" ON)
+option (USE_COLUMN_MAJOR_MEMORY_LAYOUT "use Column-Major memory layout" OFF)
+option (INNO_PLATFORM_WIN32 "Windows x86 32-bit" OFF)
+option (INNO_PLATFORM_WIN64 "Windows x86-64 64-bit" ON)
+
+option (BUILD_EDITOR "Build editor" OFF)
+option (BUILD_GAME "Build game" OFF)
+option (BUILD_TEST "Build test" ON)
+
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 11)
 
