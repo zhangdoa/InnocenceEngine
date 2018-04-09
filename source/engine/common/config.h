@@ -1,7 +1,7 @@
 /* #undef USE_CLANG */
-/* #undef BUILD_GAME */
+#define BUILD_GAME
 /* #undef BUILD_EDITOR */
-#define BUILD_TEST
+/* #undef BUILD_TEST */
 #define USE_ROW_MAJOR_MEMORY_LAYOUT
 /* #undef USE_COLUMN_MAJOR_MEMORY_LAYOUT */
 
