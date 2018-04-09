@@ -55,9 +55,9 @@ void InnocenceGarden::setup()
 	m_visibleComponents.emplace_back(&m_landscapeComponent);
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
-	//m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
-	//m_pawnComponent1.m_modelFileName = "cat/cat.obj";
-	m_pawnComponent1.m_meshType = meshShapeType::SPHERE;
+	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
+	m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
+	//m_pawnComponent1.m_meshType = meshShapeType::SPHERE;
 	m_pawnComponent1.m_drawAABB = true;
 	m_pawnComponent1.m_caclNormal = false;
 	m_pawnComponent1.m_useTexture = false;
