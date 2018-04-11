@@ -169,7 +169,7 @@ void AssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& m
 	g_pLogSystem->printLog("innoMesh: mesh of model " + fileName + " is loaded.");
 }
 
-void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textureMap & textureMap, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod) const
+void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textureMap & textureMap, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod)
 {
 	for (auto i = (unsigned int)0; i < aiTextureType_UNKNOWN; i++)
 	{
@@ -198,7 +198,7 @@ void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textu
 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
-				g_pLogSystem->printLog("inno2DTexture: " + fileName + " is unknown type!");
+				g_pLogSystem->printLog("innoTexture: " + fileName + " is unknown type!");
 				return;
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
@@ -223,20 +223,29 @@ void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textu
 			}
 			else
 			{
-				g_pLogSystem->printLog("inno2DTexture: " + fileName + " is unsupported type!");
+				g_pLogSystem->printLog("innoTexture: " + fileName + " is unsupported type!");
 				return;
 			}
 			// load image
+			auto l_loadedTexturePair = m_loadedTexture.find(fileName + "//" + l_localPath);
+			if (l_loadedTexturePair != m_loadedTexture.end())
+			{
+				textureMap.emplace(l_loadedTexturePair->second);
+				g_pLogSystem->printLog("innoTexture: " + fileName + " is already loaded.");
+			}
+			else
+			{
+				auto l_textureDataID = g_pRenderingSystem->addTexture(l_textureType);
+				auto l_textureData = g_pRenderingSystem->getTexture(l_textureType, l_textureDataID);
 
-			auto l_textureDataID = g_pRenderingSystem->addTexture(l_textureType);
-			auto l_textureData = g_pRenderingSystem->getTexture(l_textureType, l_textureDataID);
+				l_texturePair.first = l_textureType;
+				l_texturePair.second = l_textureDataID;
 
-			l_texturePair.first = l_textureType;
-			l_texturePair.second = l_textureDataID;
-			
-			loadTextureFromDisk({ fileName + "//" + l_localPath }, l_textureType, textureWrapMethod, l_textureData);
+				loadTextureFromDisk({ fileName + "//" + l_localPath }, l_textureType, textureWrapMethod, l_textureData);
 
-			textureMap.emplace(l_texturePair);
+				textureMap.emplace(l_texturePair);
+				m_loadedTexture.emplace(fileName + "//" + l_localPath, l_texturePair);
+			}
 		}
 	}
 }
