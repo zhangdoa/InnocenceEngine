@@ -60,12 +60,12 @@ void InnocenceGarden::setup()
 	//m_pawnComponent1.m_meshType = meshShapeType::SPHERE;
 	m_pawnComponent1.m_drawAABB = true;
 	m_pawnComponent1.m_caclNormal = false;
-	m_pawnComponent1.m_useTexture = false;
+	m_pawnComponent1.m_useTexture = true;
 	m_pawnComponent1.m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
-	m_pawnComponent1.m_MRA = vec4(1.0, 0.35, 1.0, 1.0);
+	m_pawnComponent1.m_MRA = vec4(0.0, 0.35, 1.0, 1.0);
 	m_pawnEntity1.addChildComponent(&m_pawnComponent1);
-	//m_pawnEntity1.getTransform()->setPos(vec4(0.0, 0.1, -1.5));
-	m_pawnEntity1.getTransform()->setPos(vec4(0.0, 1.0, -1.5, 1.0));
+	m_pawnEntity1.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 90.0);
+	m_pawnEntity1.getTransform()->setScale(vec4(0.1, 0.1, 0.1, 1.0));
 	m_visibleComponents.emplace_back(&m_pawnComponent1);
 
 	m_pawnComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
@@ -269,7 +269,6 @@ void InnocenceGarden::updateLights(double seed)
 
 void InnocenceGarden::updateSpheres(double seed)
 {
-	m_pawnEntity1.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 1);
 	m_pawnEntity2.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.5);
 	for (auto i = (unsigned int)0; i < m_sphereEntitys.size(); i++)
 	{
