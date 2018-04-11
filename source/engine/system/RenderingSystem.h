@@ -58,6 +58,8 @@ public:
 	textureID addTexture(textureType textureType) override;
 	BaseMesh* getMesh(meshType meshType, meshID meshID) override;
 	BaseTexture* getTexture(textureType textureType, textureID textureID) override;
+	void removeMesh(meshType meshType, meshID meshID) override;
+	void removeTexture(textureID textureID) override;
 
 	const objectStatus& getStatus() const override;
 
@@ -80,6 +82,7 @@ private:
 	void generateAABB(LightComponent & lightComponent);
 	AABB generateAABB(const vec4& boundMax, const vec4& boundMin, const vec4& scale);
 	meshID addAABBMesh(const AABB& AABB);
+	void removeMesh(meshID meshID);
 	void loadDefaultAssets();
 	void loadAssetsForComponents();
 	void initializeRendering();
