@@ -353,7 +353,7 @@ void RenderingSystem::updatePhysics()
 		{
 			if (i->getLightType() == lightType::DIRECTIONAL)
 			{
-				generateAABB(*i);
+				//generateAABB(*i);
 			}
 		}
 	}
@@ -564,20 +564,32 @@ void RenderingSystem::removeMesh(meshType meshType, meshID meshID)
 {
 	if (meshType == meshType::AABB)
 	{
-		m_AABBMeshMap.find(meshID)->second->shutdown();
-		m_AABBMeshMap.erase(meshID);
+		auto l_mesh = m_AABBMeshMap.find(meshID);
+		if (l_mesh != m_AABBMeshMap.end())
+		{
+			l_mesh->second->shutdown();
+			m_AABBMeshMap.erase(meshID);
+		}
 	}
 	else
 	{
-		m_meshMap.find(meshID)->second->shutdown();
-		m_meshMap.erase(meshID);
+		auto l_mesh = m_meshMap.find(meshID);
+		if (l_mesh != m_meshMap.end())
+		{
+			l_mesh->second->shutdown();
+			m_meshMap.erase(meshID);
+		}
 	}
 }
 
 void RenderingSystem::removeTexture(textureID textureID)
 {
-	m_textureMap.find(textureID)->second->shutdown();
-	m_textureMap.erase(textureID);
+	auto l_texture = m_textureMap.find(textureID);
+	if (l_texture != m_textureMap.end())
+	{
+		l_texture->second->shutdown();
+		m_textureMap.erase(textureID);
+	}
 }
 
 void RenderingSystem::assignUnitMesh(VisibleComponent & visibleComponent, meshShapeType meshType)
@@ -741,9 +753,9 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	double minY = 0;
 	double minZ = 0;
 
-	auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
-	//auto pCamera = mat4();
-	//pCamera.initializeToPerspectiveMatrix((45.0 / 180.0) * PI, (16.0 / 9.0), 0.001, 7.0);
+	//auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
+	auto pCamera = mat4();
+	pCamera.initializeToPerspectiveMatrix((45.0 / 180.0) * PI, (16.0 / 9.0), 0.001, 10.0);
 	auto rCamera = g_pGameSystem->getCameraComponents()[0]->getRotMatrix();
 	auto tCamera = g_pGameSystem->getCameraComponents()[0]->getPosMatrix();
 
@@ -753,25 +765,25 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	{
 		vec4 l_mulPos;
 		l_mulPos = l_vertexData.m_pos;
+		// from projection space to view space
 		l_mulPos = pCamera.inverse() * l_mulPos;
 		// perspective division
 		l_mulPos = l_mulPos * (1.0 / l_mulPos.w);
-		// to view space
+		// from view space to world space
 		l_mulPos = rCamera.inverse() * l_mulPos;
 		l_mulPos = tCamera.inverse() * l_mulPos;
+		l_vertexData.m_pos = l_mulPos;
 	}
 
-	//auto l_pos = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (lightComponent.m_AABB.m_boundMax.z - lightComponent.m_AABB.m_boundMin.z) + lightComponent.m_AABB.m_center;
-	////auto l_vLight = mat4().lookAt(l_pos, l_pos + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
-	//mat4 l_vLight = l_pos.scale(-1.0).toTranslationMartix() * lightComponent.getParentEntity()->getTransform()->getRot().quatConjugate().toRotationMartix();
-
-	//for (auto& l_vertexData : l_vertices)
-	//{
-	//	vec4 l_mulPos;
-	//	// transform view frustrum's corner to light space
-	//	l_mulPos = l_vLight * l_vertexData.m_pos;
-	//	l_vertexData.m_pos = l_mulPos;
-	//}
+	auto l_pos = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (lightComponent.m_AABB.m_boundMax.z - lightComponent.m_AABB.m_boundMin.z) + lightComponent.m_AABB.m_center;
+	mat4 l_vLight = l_pos.scale(-1.0).toTranslationMartix() * lightComponent.getParentEntity()->getTransform()->getRot().quatConjugate().toRotationMartix();
+	for (auto& l_vertexData : l_vertices)
+	{
+		vec4 l_mulPos;
+		// transform view frustrum's corner to light space
+		l_mulPos = l_vLight * l_vertexData.m_pos;
+		l_vertexData.m_pos = l_mulPos;
+	}
 
 	for (auto& l_vertexData : l_vertices)
 	{
@@ -806,7 +818,7 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 
 	if (lightComponent.m_drawAABB)
 	{
-		removeMesh(lightComponent.m_AABBMeshID);
+		removeMesh(meshType::AABB, lightComponent.m_AABBMeshID);
 		lightComponent.m_AABBMeshID = addAABBMesh(lightComponent.m_AABB);
 	}
 }

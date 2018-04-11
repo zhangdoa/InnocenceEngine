@@ -266,7 +266,7 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 			if (data)
 			{
 				l_3DTextureRawData.emplace_back(data);
-				g_pLogSystem->printLog("inno3DTexture: " + fileName[i] + " is loaded.");
+				g_pLogSystem->printLog("innoTexture: " + fileName[i] + " is loaded.");
 			}
 			else
 			{
@@ -277,7 +277,7 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 		}
 		baseTexture->setup(textureType::CUBEMAP, textureColorComponentsFormat::SRGB, texturePixelDataFormat(nrChannels - 1), textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, width, height, texturePixelDataType::UNSIGNED_BYTE, l_3DTextureRawData);
 		baseTexture->initialize();
-		g_pLogSystem->printLog("inno3DTexture is fully loaded.");
+		g_pLogSystem->printLog("innoTexture: cubemap texture is fully loaded.");
 	}
 	else if(textureType == textureType::EQUIRETANGULAR)
 	{
@@ -289,7 +289,7 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 		{
 			baseTexture->setup(textureType::EQUIRETANGULAR, textureColorComponentsFormat::RGB16F, texturePixelDataFormat(nrChannels - 1), textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::LINEAR, textureFilterMethod::LINEAR, width, height, texturePixelDataType::FLOAT, { data });
 			baseTexture->initialize();
-		g_pLogSystem->printLog("inno2DHDRTexture: " + fileName[0] + " is loaded.");
+		g_pLogSystem->printLog("innoTexture: " + fileName[0] + " is loaded.");
 		}
 		else
 		{
@@ -308,7 +308,7 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 		{
 			baseTexture->setup(textureType, textureColorComponentsFormat::RGB, texturePixelDataFormat(nrChannels - 1), textureWrapMethod, textureFilterMethod::LINEAR_MIPMAP_LINEAR, textureFilterMethod::LINEAR, width, height, texturePixelDataType::UNSIGNED_BYTE, { data });
 			baseTexture->initialize();
-			g_pLogSystem->printLog("inno2DTexture: " + fileName[0] + " is loaded.");
+			g_pLogSystem->printLog("innoTexture: " + fileName[0] + " is loaded.");
 		}
 		else
 		{

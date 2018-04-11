@@ -82,7 +82,6 @@ private:
 	void generateAABB(LightComponent & lightComponent);
 	AABB generateAABB(const vec4& boundMax, const vec4& boundMin, const vec4& scale);
 	meshID addAABBMesh(const AABB& AABB);
-	void removeMesh(meshID meshID);
 	void loadDefaultAssets();
 	void loadAssetsForComponents();
 	void initializeRendering();
