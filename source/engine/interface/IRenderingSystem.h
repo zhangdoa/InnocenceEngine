@@ -15,4 +15,6 @@ public:
 	virtual textureID addTexture(textureType textureType) = 0;
 	virtual BaseMesh* getMesh(meshType meshType, meshID meshID) = 0;
 	virtual BaseTexture* getTexture(textureType textureType, textureID textureID) = 0;
+	virtual void removeMesh(meshType meshType, meshID meshID) = 0;
+	virtual void removeTexture(textureID textureID) = 0;
 };

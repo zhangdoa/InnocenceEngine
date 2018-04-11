@@ -40,7 +40,7 @@ private:
 	std::function<void(double)> f_rotateAroundXAxis;
 	std::function<void(double)> f_rotateAroundYAxis;
 
-	double moveSpeed = 0.05f;
+	double moveSpeed = 0.5f;
 	double rotateSpeed = 2.0f;
 
 };

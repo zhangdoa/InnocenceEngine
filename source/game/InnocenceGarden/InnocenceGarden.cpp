@@ -21,7 +21,7 @@ void InnocenceGarden::setup()
 	m_rootEntity.addChildEntity(&m_pawnEntity1);
 	m_rootEntity.addChildEntity(&m_pawnEntity2);
 
-	m_playCharacter.getTransform()->setPos(vec4(0.0, 2.0, 5.0, 1.0));
+	m_playCharacter.getTransform()->setPos(vec4(0.0, 10.0, 15.0, 1.0));
 	m_cameraComponents.emplace_back(&m_playCharacter.getCameraComponent());
 	m_inputComponents.emplace_back(&m_playCharacter.getInputComponent());
 
@@ -32,11 +32,11 @@ void InnocenceGarden::setup()
 	m_skyboxEntity.addChildComponent(&m_skyboxComponent);
 	m_visibleComponents.emplace_back(&m_skyboxComponent);
 
-	m_directionalLightComponent.setColor(vec4(0.0, 0.5, 1.0, 1.0));
+	m_directionalLightComponent.setColor(vec4(0.5, 0.3, 0.0, 1.0));
 	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
 	m_directionalLightComponent.m_drawAABB = false;
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
-	m_directionalLightEntity.getTransform()->setPos(vec4(2.0, 5.0, -2.0, 1.0));
+	m_directionalLightEntity.getTransform()->setPos(vec4(0.0, 0.0, 0.0, 1.0));
 	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 45);
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
@@ -51,13 +51,12 @@ void InnocenceGarden::setup()
 	m_landscapeEntity.addChildComponent(&m_landscapeComponent);
 	m_landscapeEntity.getTransform()->setScale(vec4(20.0, 20.0, 0.1, 1.0));
 	m_landscapeEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 90.0);
-	m_landscapeEntity.getTransform()->setPos(vec4(0.0, 0.0, 0.0, 1.0));
 	m_visibleComponents.emplace_back(&m_landscapeComponent);
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
 	m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
-	//m_pawnComponent1.m_meshType = meshShapeType::SPHERE;
+	m_pawnComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnComponent1.m_drawAABB = true;
 	m_pawnComponent1.m_caclNormal = false;
 	m_pawnComponent1.m_useTexture = true;
@@ -252,8 +251,9 @@ void InnocenceGarden::setupLights()
 
 void InnocenceGarden::updateLights(double seed)
 {
-	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 0.5);
-	m_directionalLightBillboardComponent.m_albedo = vec4((sin(seed) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0, 1.0);
+	//m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 0.5);
+	//m_directionalLightBillboardComponent.m_albedo = vec4((sin(seed) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0, 1.0);
+	//m_directionalLightComponent.setColor(vec4((sin(seed) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0, 1.0));
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
 		m_pointLightBillboardComponents[i].m_albedo = vec4((sin(seed + i) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0, 1.0);

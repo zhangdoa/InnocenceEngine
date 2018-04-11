@@ -560,6 +560,26 @@ BaseTexture * RenderingSystem::getTexture(textureType textureType, textureID tex
 	return m_textureMap.find(textureID)->second;
 }
 
+void RenderingSystem::removeMesh(meshType meshType, meshID meshID)
+{
+	if (meshType == meshType::AABB)
+	{
+		m_AABBMeshMap.find(meshID)->second->shutdown();
+		m_AABBMeshMap.erase(meshID);
+	}
+	else
+	{
+		m_meshMap.find(meshID)->second->shutdown();
+		m_meshMap.erase(meshID);
+	}
+}
+
+void RenderingSystem::removeTexture(textureID textureID)
+{
+	m_textureMap.find(textureID)->second->shutdown();
+	m_textureMap.erase(textureID);
+}
+
 void RenderingSystem::assignUnitMesh(VisibleComponent & visibleComponent, meshShapeType meshType)
 {
 	meshID l_UnitMeshTemplate;
@@ -784,10 +804,11 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	lightComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), vec4(1.0, 1.0, 1.0, 1.0));
 
 
-	//if (lightComponent.m_drawAABB)
-	//{
-	//	lightComponent.m_AABBMeshID = addAABBMesh(lightComponent.m_AABB);
-	//}
+	if (lightComponent.m_drawAABB)
+	{
+		removeMesh(lightComponent.m_AABBMeshID);
+		lightComponent.m_AABBMeshID = addAABBMesh(lightComponent.m_AABB);
+	}
 }
 
 AABB RenderingSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin, const vec4& scale)
