@@ -27,8 +27,8 @@ private:
 
 	void move(moveDirection moveDirection);
 
-	void rotateAroundXAxis(double offset);
-	void rotateAroundYAxis(double offset);
+	void rotateAroundPositiveYAxis(double offset);
+	void rotateAroundRightAxis(double offset);
 
 	std::multimap<int, std::vector<std::function<void()>*>> m_keyboardInputCallbackImpl;
 	std::multimap<int, std::vector<std::function<void(double)>*>> m_mouseMovementCallbackImpl;
@@ -37,8 +37,8 @@ private:
 	std::function<void()> f_moveBackward;
 	std::function<void()> f_moveLeft;
 	std::function<void()> f_moveRight;
-	std::function<void(double)> f_rotateAroundXAxis;
-	std::function<void(double)> f_rotateAroundYAxis;
+	std::function<void(double)> f_rotateAroundPositiveYAxis;
+	std::function<void(double)> f_rotateAroundRightAxis;
 
 	double moveSpeed = 0.5f;
 	double rotateSpeed = 2.0f;

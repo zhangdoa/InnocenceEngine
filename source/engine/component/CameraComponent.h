@@ -15,10 +15,12 @@ public:
 	mat4 getPosMatrix() const;
 	mat4 getRotMatrix() const;
 	mat4 getProjectionMatrix() const;
+	std::vector<Vertex>* getFrustumCorners();
 
 	Ray m_rayOfEye;
 	bool m_drawRay = false;
 
 private:
 	mat4 m_projectionMatrix;
+	std::vector<Vertex> m_frustumCorners;
 };

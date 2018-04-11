@@ -34,9 +34,9 @@ void InnocenceGarden::setup()
 
 	m_directionalLightComponent.setColor(vec4(0.5, 0.3, 0.0, 1.0));
 	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
-	m_directionalLightComponent.m_drawAABB = false;
+	m_directionalLightComponent.m_drawAABB = true;
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
-	m_directionalLightEntity.getTransform()->setPos(vec4(0.0, 0.0, 0.0, 1.0));
+	m_directionalLightEntity.getTransform()->setPos(vec4(0.0, 4.0, 0.0, 1.0));
 	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 45);
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
@@ -55,10 +55,9 @@ void InnocenceGarden::setup()
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
-	m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
+	//m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
 	m_pawnComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnComponent1.m_drawAABB = true;
-	m_pawnComponent1.m_caclNormal = false;
 	m_pawnComponent1.m_useTexture = true;
 	m_pawnComponent1.m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
 	m_pawnComponent1.m_MRA = vec4(0.0, 0.35, 1.0, 1.0);
@@ -81,7 +80,7 @@ void InnocenceGarden::setup()
 	m_pawnEntity2.getTransform()->setPos(vec4(0.0, 0.2, 3.5, 1.0));
 	m_visibleComponents.emplace_back(&m_pawnComponent2);
 
-	setupLights();
+	//setupLights();
 	setupSpheres();
 
 	m_rootEntity.setup();
