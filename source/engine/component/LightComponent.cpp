@@ -25,12 +25,17 @@ void LightComponent::setColor(const vec4& color)
 	m_color = color;
 }
 
-mat4 LightComponent::getLightPosMatrix()
+mat4 LightComponent::getProjectionMatrix()
 {
-	return getParentEntity()->caclWorldPos().scale(-1.0).toTranslationMartix();
+	return mat4();
 }
 
-mat4 LightComponent::getLightRotMatrix()
+mat4 LightComponent::getInvertTranslationMatrix()
+{
+	return getParentEntity()->caclWorldPos().scale(-1.0).toTranslationMatrix();
+}
+
+mat4 LightComponent::getInvertRotationMatrix()
 {
 	// quaternion rotation
 	vec4 conjugateRotQuat = getParentEntity()->caclWorldRot();
@@ -38,7 +43,7 @@ mat4 LightComponent::getLightRotMatrix()
 	conjugateRotQuat.y = -conjugateRotQuat.y;
 	conjugateRotQuat.z = -conjugateRotQuat.z;
 
-	return conjugateRotQuat.toRotationMartix();
+	return conjugateRotQuat.toRotationMatrix();
 }
 
 const lightType LightComponent::getLightType()

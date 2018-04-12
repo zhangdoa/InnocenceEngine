@@ -190,7 +190,13 @@ void RenderingSystem::loadAssetsForComponents()
 		}
 	}
 
-	// generate AABB for CSM
+	// generate AABB for camera
+	for (auto& i : g_pGameSystem->getCameraComponents())
+	{
+			generateAABB(*i);
+	}
+
+	// generate AABB for light
 	for (auto& i : g_pGameSystem->getLightComponents())
 	{
 		if (i->getLightType() == lightType::DIRECTIONAL)
@@ -235,8 +241,8 @@ vec4 RenderingSystem::checkPicking()
 	vec4 l_ndcSpace = vec4(l_x, l_y, l_z, l_w);
 
 	auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
-	auto rCamera = g_pGameSystem->getCameraComponents()[0]->getRotMatrix();
-	auto tCamera = g_pGameSystem->getCameraComponents()[0]->getPosMatrix();
+	auto rCamera = g_pGameSystem->getCameraComponents()[0]->getInvertRotationMatrix();
+	auto tCamera = g_pGameSystem->getCameraComponents()[0]->getInvertTranslationMatrix();
 
 	l_ndcSpace = pCamera.inverse() * l_ndcSpace;
 	l_ndcSpace = rCamera.inverse() * l_ndcSpace;
@@ -331,6 +337,7 @@ void RenderingSystem::updatePhysics()
 
 	if (g_pGameSystem->getCameraComponents().size() > 0)
 	{
+		//generateAABB(*g_pGameSystem->getCameraComponents()[0]);
 		m_mouseRay.m_origin = g_pGameSystem->getCameraComponents()[0]->getParentEntity()->caclWorldPos();
 		m_mouseRay.m_direction = checkPicking();
 
@@ -525,9 +532,9 @@ void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, double xoffs
 meshID RenderingSystem::addMesh(meshType meshType)
 {
 	BaseMesh* newMesh = g_pMemorySystem->spawn<MESH_CLASS>();
-	if (meshType == meshType::AABB)
+	if (meshType == meshType::BOUNDING_BOX)
 	{
-		m_AABBMeshMap.emplace(std::pair<meshID, BaseMesh*>(newMesh->getMeshID(), newMesh));
+		m_BBMeshMap.emplace(std::pair<meshID, BaseMesh*>(newMesh->getMeshID(), newMesh));
 	}
 	else
 	{
@@ -545,9 +552,9 @@ textureID RenderingSystem::addTexture(textureType textureType)
 
 BaseMesh* RenderingSystem::getMesh(meshType meshType, meshID meshID)
 {
-	if (meshType == meshType::AABB)
+	if (meshType == meshType::BOUNDING_BOX)
 	{
-		return m_AABBMeshMap.find(meshID)->second;
+		return m_BBMeshMap.find(meshID)->second;
 	}
 	else
 	{
@@ -562,13 +569,13 @@ BaseTexture * RenderingSystem::getTexture(textureType textureType, textureID tex
 
 void RenderingSystem::removeMesh(meshType meshType, meshID meshID)
 {
-	if (meshType == meshType::AABB)
+	if (meshType == meshType::BOUNDING_BOX)
 	{
-		auto l_mesh = m_AABBMeshMap.find(meshID);
-		if (l_mesh != m_AABBMeshMap.end())
+		auto l_mesh = m_BBMeshMap.find(meshID);
+		if (l_mesh != m_BBMeshMap.end())
 		{
 			l_mesh->second->shutdown();
-			m_AABBMeshMap.erase(meshID);
+			m_BBMeshMap.erase(meshID);
 		}
 	}
 	else
@@ -740,44 +747,21 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 
 	if (visibleComponent.m_drawAABB)
 	{
-		visibleComponent.m_AABBMeshID = addAABBMesh(visibleComponent.m_AABB);
+		visibleComponent.m_AABBMeshID = addMesh(visibleComponent.m_AABB.m_vertices, visibleComponent.m_AABB.m_indices);
 	}
 }
 
 void RenderingSystem::generateAABB(LightComponent & lightComponent)
-{
-	double maxX = 0;
-	double maxY = 0;
-	double maxZ = 0;
-	double minX = 0;
-	double minY = 0;
-	double minZ = 0;
+{	
+	auto l_camera = g_pGameSystem->getCameraComponents()[0];
+	auto l_frustumVertices = l_camera->m_frustumVertices;
 
-	//auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
-	auto pCamera = mat4();
-	pCamera.initializeToPerspectiveMatrix((45.0 / 180.0) * PI, (16.0 / 9.0), 0.001, 10.0);
-	auto rCamera = g_pGameSystem->getCameraComponents()[0]->getRotMatrix();
-	auto tCamera = g_pGameSystem->getCameraComponents()[0]->getPosMatrix();
+	auto l_direction = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
+	auto l_frustumCenter = l_camera->m_AABB.m_center;
+	auto l_pos = l_direction * (l_camera->m_AABB.m_boundMax.z - l_camera->m_AABB.m_boundMin.z) + l_frustumCenter;
+	auto l_vLight = mat4().lookAt(l_pos, l_pos + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 
-	// get view frustrum's corner in world space
-	auto l_vertices = generateNDC();
-	for (auto& l_vertexData : l_vertices)
-	{
-		vec4 l_mulPos;
-		l_mulPos = l_vertexData.m_pos;
-		// from projection space to view space
-		l_mulPos = pCamera.inverse() * l_mulPos;
-		// perspective division
-		l_mulPos = l_mulPos * (1.0 / l_mulPos.w);
-		// from view space to world space
-		l_mulPos = rCamera.inverse() * l_mulPos;
-		l_mulPos = tCamera.inverse() * l_mulPos;
-		l_vertexData.m_pos = l_mulPos;
-	}
-
-	auto l_pos = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (lightComponent.m_AABB.m_boundMax.z - lightComponent.m_AABB.m_boundMin.z) + lightComponent.m_AABB.m_center;
-	mat4 l_vLight = l_pos.scale(-1.0).toTranslationMartix() * lightComponent.getParentEntity()->getTransform()->getRot().quatConjugate().toRotationMartix();
-	for (auto& l_vertexData : l_vertices)
+	for (auto& l_vertexData : l_frustumVertices)
 	{
 		vec4 l_mulPos;
 		// transform view frustrum's corner to light space
@@ -785,7 +769,14 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 		l_vertexData.m_pos = l_mulPos;
 	}
 
-	for (auto& l_vertexData : l_vertices)
+	double maxX = l_frustumVertices[0].m_pos.x;
+	double maxY = l_frustumVertices[0].m_pos.y;
+	double maxZ = l_frustumVertices[0].m_pos.z;
+	double minX = l_frustumVertices[0].m_pos.x;
+	double minY = l_frustumVertices[0].m_pos.y;
+	double minZ = l_frustumVertices[0].m_pos.z;
+
+	for (auto& l_vertexData : l_frustumVertices)
 	{
 		if (l_vertexData.m_pos.x >= maxX)
 		{
@@ -812,14 +803,68 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 			minZ = l_vertexData.m_pos.z;
 		}
 	}
-	
-	lightComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), vec4(1.0, 1.0, 1.0, 1.0));
 
+	lightComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), vec4(1.0, 1.0, 1.0, 1.0));
 
 	if (lightComponent.m_drawAABB)
 	{
-		removeMesh(meshType::AABB, lightComponent.m_AABBMeshID);
-		lightComponent.m_AABBMeshID = addAABBMesh(lightComponent.m_AABB);
+		removeMesh(meshType::BOUNDING_BOX, lightComponent.m_AABBMeshID);
+		lightComponent.m_AABBMeshID = addMesh(lightComponent.m_AABB.m_vertices, lightComponent.m_AABB.m_indices);
+	}
+}
+
+void RenderingSystem::generateAABB(CameraComponent & cameraComponent)
+{
+	auto l_frustumCorners = *cameraComponent.getFrustumCorners();
+
+	double maxX = l_frustumCorners[0].m_pos.x;
+	double maxY = l_frustumCorners[0].m_pos.y;
+	double maxZ = l_frustumCorners[0].m_pos.z;
+	double minX = l_frustumCorners[0].m_pos.x;
+	double minY = l_frustumCorners[0].m_pos.y;
+	double minZ = l_frustumCorners[0].m_pos.z;
+
+	for (auto& l_vertexData : l_frustumCorners)
+	{
+		if (l_vertexData.m_pos.x >= maxX)
+		{
+			maxX = l_vertexData.m_pos.x;
+		}
+		if (l_vertexData.m_pos.y >= maxY)
+		{
+			maxY = l_vertexData.m_pos.y;
+		}
+		if (l_vertexData.m_pos.z >= maxZ)
+		{
+			maxZ = l_vertexData.m_pos.z;
+		}
+		if (l_vertexData.m_pos.x <= minX)
+		{
+			minX = l_vertexData.m_pos.x;
+		}
+		if (l_vertexData.m_pos.y <= minY)
+		{
+			minY = l_vertexData.m_pos.y;
+		}
+		if (l_vertexData.m_pos.z <= minZ)
+		{
+			minZ = l_vertexData.m_pos.z;
+		}
+	}
+
+	cameraComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), vec4(1.0, 1.0, 1.0, 1.0));
+
+
+	if (cameraComponent.m_drawFrustum)
+	{
+		removeMesh(meshType::BOUNDING_BOX, cameraComponent.m_FrustumMeshID);
+		cameraComponent.m_FrustumMeshID = addMesh(cameraComponent.m_frustumVertices, cameraComponent.m_frustumIndices);
+	}
+
+	if (cameraComponent.m_drawAABB)
+	{
+		removeMesh(meshType::BOUNDING_BOX, cameraComponent.m_AABBMeshID);
+		cameraComponent.m_AABBMeshID = addMesh(cameraComponent.m_AABB.m_vertices, cameraComponent.m_AABB.m_indices);
 	}
 }
 
@@ -887,24 +932,24 @@ AABB RenderingSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin,
 	return l_AABB;
 }
 
-meshID RenderingSystem::addAABBMesh(const AABB & AABB)
+meshID RenderingSystem::addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
 {
-	auto l_AABBMeshID = addMesh(meshType::AABB);
-	auto l_AABBMeshData = getMesh(meshType::AABB, l_AABBMeshID);
+	auto l_BBMeshID = addMesh(meshType::BOUNDING_BOX);
+	auto l_BBMeshData = getMesh(meshType::BOUNDING_BOX, l_BBMeshID);
 
-	std::for_each(AABB.m_vertices.begin(), AABB.m_vertices.end(), [&](Vertex val)
+	std::for_each(vertices.begin(), vertices.end(), [&](Vertex val)
 	{
-		l_AABBMeshData->addVertices(val);
+		l_BBMeshData->addVertices(val);
 	});
 
-	std::for_each(AABB.m_indices.begin(), AABB.m_indices.end(), [&](unsigned int val)
+	std::for_each(indices.begin(), indices.end(), [&](unsigned int val)
 	{
-		l_AABBMeshData->addIndices(val);
+		l_BBMeshData->addIndices(val);
 	});
 
-	l_AABBMeshData->setup(meshType::AABB, meshDrawMethod::TRIANGLE, false, false);
-	l_AABBMeshData->initialize();
-	return l_AABBMeshID;
+	l_BBMeshData->setup(meshType::BOUNDING_BOX, meshDrawMethod::TRIANGLE, false, false);
+	l_BBMeshData->initialize();
+	return l_BBMeshID;
 }
 
 void RenderingSystem::loadTexture(const std::vector<std::string> &fileName, textureType textureType, VisibleComponent & visibleComponent)
@@ -1320,8 +1365,8 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	// draw debugger pass
 	m_geometryPassFrameBuffer->asReadBuffer();
 	m_debuggerPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
-	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, m_selectedVisibleComponents, m_AABBMeshMap, m_textureMap, true, false);
-	//m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_AABBMeshMap, m_textureMap, true, false);
+	//m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, m_selectedVisibleComponents, m_BBMeshMap, m_textureMap, true, false);
+	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_BBMeshMap, m_textureMap, true, false);
 
 	// draw background defer pass
 	m_lightPassFrameBuffer->activeTexture(0, 0);

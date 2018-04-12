@@ -25,8 +25,9 @@ public:
 	void setRadius(double radius);
 	void setColor(const vec4& color);
 
-	mat4 getLightPosMatrix();
-	mat4 getLightRotMatrix();
+	mat4 getProjectionMatrix();
+	mat4 getInvertTranslationMatrix();
+	mat4 getInvertRotationMatrix();
 
 	bool m_drawAABB = false;
 	meshID m_AABBMeshID;

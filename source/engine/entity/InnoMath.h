@@ -128,6 +128,7 @@ public:
 
 	matrix4x4 * vector4 :
 	*/
+	void initializeToIdentityMatrix();
 	void initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar);
 	void initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar);
 	mat4 lookAt(const vec4& eyePos, const vec4& centerPos, const vec4& upDir);
@@ -212,7 +213,7 @@ public:
 	| z' = a20(0.0) * x  + a21(0.0) * y + a22(1.0) * z + a23(Tz ) * w |
 	| w' = a30(0.0) * x  + a31(0.0) * y + a32(0.0) * z + a33(1.0) * w |
 	*/
-	mat4 toTranslationMartix();
+	mat4 toTranslationMatrix();
 	/*
 	Column-Major memory layout and
 	Row-Major vector4 mathematical convention
@@ -261,8 +262,8 @@ public:
 	| z' = a20(2*qx*qz - 2*qy*qw) * x  + a21(2*qy*qz + 2*qx*qw) * y + a22(1 - 2*qx2 - 2*qy2) * z + a23(       0.0       ) * w |
 	| w' = a30(       0.0       ) * x  + a31(       0.0       ) * y + a32(       0.0       ) * z + a33(       1.0       ) * w |
 	*/
-	mat4 toRotationMartix();
-	mat4 toScaleMartix();
+	mat4 toRotationMatrix();
+	mat4 toScaleMatrix();
 
 	double x;
 	double y;
@@ -379,7 +380,7 @@ private:
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
 // mesh custom types
-enum class meshType { TWO_DIMENSION, THREE_DIMENSION, AABB };
+enum class meshType { TWO_DIMENSION, THREE_DIMENSION, BOUNDING_BOX};
 enum class meshShapeType { QUAD, CUBE, SPHERE, CUSTOM };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 // texture custom types
