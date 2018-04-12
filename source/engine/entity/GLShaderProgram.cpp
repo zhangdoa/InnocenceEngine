@@ -181,10 +181,14 @@ void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& camer
 		{
 			auto l_boundMax = l_lightComponent->m_AABB.m_boundMax;
 			auto l_boundMin = l_lightComponent->m_AABB.m_boundMin;
-			auto l_pos = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (l_lightComponent->m_AABB.m_boundMax.z - l_lightComponent->m_AABB.m_boundMin.z) + l_lightComponent->m_AABB.m_center;
+			//auto l_pos = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD) * (l_lightComponent->m_AABB.m_boundMax.z - l_lightComponent->m_AABB.m_boundMin.z) + l_lightComponent->m_AABB.m_center;
+			auto l_pos = l_lightComponent->getParentEntity()->caclWorldPos();
 			mat4 p_light;
-			p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
-			mat4 v = l_pos.scale(-1.0).toTranslationMartix() * l_lightComponent->getParentEntity()->getTransform()->getRot().quatConjugate().toRotationMartix();
+			//p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
+			p_light.initializeToOrthographicMatrix(-10, 10, -10, 10, 0.0, 7.5);
+			//mat4 v = l_pos.toTranslationMatrix() * l_lightComponent->getParentEntity()->getTransform()->getRot().toRotationMatrix();
+			//mat4 v = l_lightComponent->getInvertTranslationMatrix() * l_lightComponent->getInvertRotationMatrix();
+			mat4 v = mat4().lookAt(l_pos, l_pos + l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 			updateUniform(m_uni_p, p_light);
 			updateUniform(m_uni_v, v);
 
@@ -247,8 +251,8 @@ void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& 
 	useProgram();
 
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
-	mat4 r = cameraComponents[0]->getRotMatrix();
-	mat4 t = cameraComponents[0]->getPosMatrix();
+	mat4 r = cameraComponents[0]->getInvertRotationMatrix();
+	mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
 
 	updateUniform(m_uni_p, p);
 	updateUniform(m_uni_r, r);
@@ -407,8 +411,8 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 	if (cameraComponents.size() > 0)
 	{
 		mat4 p = cameraComponents[0]->getProjectionMatrix();
-		mat4 r = cameraComponents[0]->getRotMatrix();
-		mat4 t = cameraComponents[0]->getPosMatrix();
+		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
+		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
 
 		updateUniform(m_uni_p, p);
 		updateUniform(m_uni_r, r);
@@ -424,10 +428,14 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 			{
 				auto l_boundMax = l_lightComponent->m_AABB.m_boundMax;
 				auto l_boundMin = l_lightComponent->m_AABB.m_boundMin;
-				auto l_pos = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD) * (l_lightComponent->m_AABB.m_boundMax.z - l_lightComponent->m_AABB.m_boundMin.z) + l_lightComponent->m_AABB.m_center;
+				//auto l_pos = l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD) * (l_lightComponent->m_AABB.m_boundMax.z - l_lightComponent->m_AABB.m_boundMin.z) + l_lightComponent->m_AABB.m_center;
+				auto l_pos = l_lightComponent->getParentEntity()->caclWorldPos();
 				mat4 p_light;
-				p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
-				mat4 v = l_pos.scale(-1.0).toTranslationMartix() * l_lightComponent->getParentEntity()->getTransform()->getRot().quatConjugate().toRotationMartix();
+				//p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
+				p_light.initializeToOrthographicMatrix(-10, 10, -10, 10, 0.0, 7.5);
+				//mat4 v = l_pos.toTranslationMatrix() * l_lightComponent->getParentEntity()->getTransform()->getRot().toRotationMatrix();
+				//mat4 v = l_lightComponent->getInvertTranslationMatrix() * l_lightComponent->getInvertRotationMatrix();
+				mat4 v = mat4().lookAt(l_pos, l_pos + l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 
 				updateUniform(m_uni_p_light, p_light);
 				updateUniform(m_uni_v_light, v);
@@ -836,7 +844,7 @@ void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& camer
 	if (cameraComponents.size() > 0)
 	{
 		mat4 p = cameraComponents[0]->getProjectionMatrix();
-		mat4 r = cameraComponents[0]->getRotMatrix();
+		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
 
 		updateUniform(m_uni_p, p);
 		updateUniform(m_uni_r, r);
@@ -886,12 +894,35 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 	if (cameraComponents.size() > 0)
 	{
 		mat4 p = cameraComponents[0]->getProjectionMatrix();
-		mat4 r = cameraComponents[0]->getRotMatrix();
-		mat4 t = cameraComponents[0]->getPosMatrix();
+		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
+		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
 
 		updateUniform(m_uni_p, p);
 		updateUniform(m_uni_r, r);
 		updateUniform(m_uni_t, t);
+	}
+
+	if (cameraComponents.size() > 0)
+	{
+		for (auto& l_cameraComponent : cameraComponents)
+		{
+			// draw frustum for cameraComponent
+			if (l_cameraComponent->m_drawFrustum)
+			{
+				auto l_cameraLocalMat = mat4();
+				l_cameraLocalMat.initializeToIdentityMatrix();
+				updateUniform(m_uni_m, l_cameraLocalMat);
+				meshMap.find(l_cameraComponent->m_FrustumMeshID)->second->update();
+			}
+			// draw AABB of frustum for cameraComponent
+			if (l_cameraComponent->m_drawAABB)
+			{
+				auto l_cameraLocalMat = mat4();
+				l_cameraLocalMat.initializeToIdentityMatrix();
+				updateUniform(m_uni_m, l_cameraLocalMat);
+				meshMap.find(l_cameraComponent->m_AABBMeshID)->second->update();
+			}
+		}
 	}
 
 	if (lightComponents.size() > 0)
@@ -901,7 +932,10 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 		{
 			if (l_lightComponent->m_drawAABB)
 			{
-				updateUniform(m_uni_m, l_lightComponent->getParentEntity()->caclTransformationMatrix());
+				auto l_cameraLocalMat = mat4();
+				l_cameraLocalMat.initializeToIdentityMatrix();
+				updateUniform(m_uni_m, l_cameraLocalMat);
+				//updateUniform(m_uni_m, l_lightComponent->getParentEntity()->caclTransformationMatrix());
 				meshMap.find(l_lightComponent->m_AABBMeshID)->second->update();
 			}
 		}
@@ -989,8 +1023,8 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 	if (cameraComponents.size() > 0)
 	{
 		mat4 p = cameraComponents[0]->getProjectionMatrix();
-		mat4 r = cameraComponents[0]->getRotMatrix();
-		mat4 t = cameraComponents[0]->getPosMatrix();
+		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
+		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
 
 		updateUniform(m_uni_p, p);
 		updateUniform(m_uni_r, r);
@@ -1061,8 +1095,8 @@ void EmissivePassShaderProgram::update(std::vector<CameraComponent*>& cameraComp
 	if (cameraComponents.size() > 0)
 	{
 		mat4 p = cameraComponents[0]->getProjectionMatrix();
-		mat4 r = cameraComponents[0]->getRotMatrix();
-		mat4 t = cameraComponents[0]->getPosMatrix();
+		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
+		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
 
 		updateUniform(m_uni_p, p);
 		updateUniform(m_uni_r, r);

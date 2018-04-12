@@ -155,7 +155,7 @@ bool vec4::operator==(const vec4 & rhs)
 
 //Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-mat4 vec4::toTranslationMartix()
+mat4 vec4::toTranslationMatrix()
 {
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
@@ -174,7 +174,7 @@ mat4 vec4::toTranslationMartix()
 
 //Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-mat4 vec4::toTranslationMartix()
+mat4 vec4::toTranslationMatrix()
 {
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
@@ -193,7 +193,7 @@ mat4 vec4::toTranslationMartix()
 
 //Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-mat4 vec4::toRotationMartix()
+mat4 vec4::toRotationMatrix()
 {
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
@@ -224,7 +224,7 @@ mat4 vec4::toRotationMartix()
 
 //Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-mat4 vec4::toRotationMartix()
+mat4 vec4::toRotationMatrix()
 {
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
@@ -253,7 +253,7 @@ mat4 vec4::toRotationMartix()
 }
 #endif
 
-mat4 vec4::toScaleMartix()
+mat4 vec4::toScaleMatrix()
 {
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
@@ -590,6 +590,14 @@ double mat4::getDeterminant()
 	return value;
 }
 
+void mat4::initializeToIdentityMatrix()
+{
+	m[0][0] = 1.0;
+	m[1][1] = 1.0;
+	m[2][2] = 1.0;
+	m[3][3] = 1.0;
+}
+
 //Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar)
@@ -649,36 +657,30 @@ mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDi
 	// @TODO: replace with SIMD impl
 	mat4 l_m;
 	vec4 l_X;
-	vec4 l_Y;
-	vec4 l_Z = eyePos;
+	vec4 l_Y = upDir;
+	vec4 l_Z = vec4(centerPos.x - eyePos.x, centerPos.y - eyePos.y, centerPos.z - eyePos.z, 0.0).normalize();
 
-	l_Z = l_Z - centerPos;
-	l_Z = l_Z.normalize();
-
-	l_Y = upDir;
-
-	l_X = l_Y.cross(l_Z);
-
-	l_Y = l_Z.cross(l_X);
+	l_X = l_Z.cross(l_Y);
+	l_Y = l_X.cross(l_Z);
 
 	l_X = l_X.normalize();
 	l_Y = l_Y.normalize();
 
 	l_m.m[0][0] = (float)l_X.x;
 	l_m.m[0][1] = (float)l_Y.x;
-	l_m.m[0][2] = (float)l_Z.x;
+	l_m.m[0][2] = (float)-l_Z.x;
 	l_m.m[0][3] = 0.0f;
 	l_m.m[1][0] = (float)l_X.y;
 	l_m.m[1][1] = (float)l_Y.y;
-	l_m.m[1][2] = (float)l_Z.y;
+	l_m.m[1][2] = (float)-l_Z.y;
 	l_m.m[1][3] = 0.0f;
 	l_m.m[2][0] = (float)l_X.z;
 	l_m.m[2][1] = (float)l_Y.z;
-	l_m.m[2][2] = (float)l_Z.z;
+	l_m.m[2][2] = (float)-l_Z.z;
 	l_m.m[2][3] = 0.0f;
-	l_m.m[3][0] = (float)-(l_X * eyePos);
-	l_m.m[3][1] = (float)-(l_Y * eyePos);
-	l_m.m[3][2] = (float)-(l_Z * eyePos);
+	l_m.m[3][0] = (float)-(l_X * vec4(eyePos.x, eyePos.y, eyePos.z, 0.0));
+	l_m.m[3][1] = (float)-(l_Y * vec4(eyePos.x, eyePos.y, eyePos.z, 0.0));
+	l_m.m[3][2] = (float)(l_Z * vec4(eyePos.x, eyePos.y, eyePos.z, 0.0));
 	l_m.m[3][3] = 1.0f;
 
 	return l_m;
@@ -693,10 +695,10 @@ mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDi
 	mat4 l_m;
 	vec4 l_X;
 	vec4 l_Y = upDir;
-	vec4 l_Z = vec4(eyePos.x - centerPos.x, eyePos.y - centerPos.y, eyePos.z - centerPos.z, 0.0).normalize();
+	vec4 l_Z = vec4(centerPos.x - eyePos.x, centerPos.y - eyePos.y, centerPos.z - eyePos.z, 0.0).normalize();
 
-	l_X = l_Y.cross(l_Z);
-	l_Y = l_Z.cross(l_X);
+	l_X = l_Z.cross(l_Y);
+	l_Y = l_X.cross(l_Z);
 
 	l_X = l_X.normalize();
 	l_Y = l_Y.normalize();
@@ -704,15 +706,15 @@ mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDi
 	l_m.m[0][0] = (float)l_X.x;
 	l_m.m[0][1] = (float)l_X.y;
 	l_m.m[0][2] = (float)l_X.z;
-	l_m.m[0][3] = (float)-eyePos.x;
+	l_m.m[0][3] = (float)-(l_X * vec4(eyePos.x, eyePos.y, eyePos.z, 0.0));
 	l_m.m[1][0] = (float)l_Y.x;
 	l_m.m[1][1] = (float)l_Y.y;
 	l_m.m[1][2] = (float)l_Y.z;
-	l_m.m[1][3] = (float)-eyePos.y;
-	l_m.m[2][0] = (float)l_Z.x;
-	l_m.m[2][1] = (float)l_Z.y;
-	l_m.m[2][2] = (float)l_Z.z;
-	l_m.m[2][3] = (float)-eyePos.z;
+	l_m.m[1][3] = (float)-(l_Y * vec4(eyePos.x, eyePos.y, eyePos.z, 0.0));
+	l_m.m[2][0] = (float)-l_Z.x;
+	l_m.m[2][1] = (float)-l_Z.y;
+	l_m.m[2][2] = (float)-l_Z.z;
+	l_m.m[2][3] = (float)(l_Z * vec4(eyePos.x, eyePos.y, eyePos.z, 0.0));
 	l_m.m[3][0] = 0.0f;
 	l_m.m[3][1] = 0.0f;
 	l_m.m[3][2] = 0.0f;

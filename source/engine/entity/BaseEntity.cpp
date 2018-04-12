@@ -65,26 +65,23 @@ bool BaseEntity::hasTransformChanged()
 
 mat4 BaseEntity::caclLocalTranslationMatrix()
 {
-	return m_transform.getPos().toTranslationMartix();
+	return m_transform.getPos().toTranslationMatrix();
 }
 
 mat4 BaseEntity::caclLocalRotMatrix()
 {
-	return m_transform.getRot().toRotationMartix();
+	return m_transform.getRot().toRotationMatrix();
 }
 
 mat4 BaseEntity::caclLocalScaleMatrix()
 {
-	return m_transform.getScale().toScaleMartix();
+	return m_transform.getScale().toScaleMatrix();
 }
 
 vec4 BaseEntity::caclWorldPos()
 {
 	mat4 l_parentTransformationMatrix;
-	l_parentTransformationMatrix.m[0][0] = 1.0f;
-	l_parentTransformationMatrix.m[1][1] = 1.0f;
-	l_parentTransformationMatrix.m[2][2] = 1.0f;
-	l_parentTransformationMatrix.m[3][3] = 1.0f;
+	l_parentTransformationMatrix.initializeToIdentityMatrix();
 
 	if (m_parentEntity != nullptr && m_parentEntity->hasTransformChanged())
 	{
@@ -120,27 +117,23 @@ vec4 BaseEntity::caclWorldScale()
 
 mat4 BaseEntity::caclWorldTranslationMatrix()
 {
-	return caclWorldPos().toTranslationMartix();
+	return caclWorldPos().toTranslationMatrix();
 }
 
 mat4 BaseEntity::caclWorldRotMatrix()
 {
-	return caclWorldRot().toRotationMartix();
+	return caclWorldRot().toRotationMatrix();
 }
 
 mat4 BaseEntity::caclWorldScaleMatrix()
 {
-	return caclWorldScale().toScaleMartix();
+	return caclWorldScale().toScaleMatrix();
 }
 
 mat4 BaseEntity::caclTransformationMatrix()
 {
 	mat4 l_parentTransformationMatrix;
-
-	l_parentTransformationMatrix.m[0][0] = 1.0f;
-	l_parentTransformationMatrix.m[1][1] = 1.0f;
-	l_parentTransformationMatrix.m[2][2] = 1.0f;
-	l_parentTransformationMatrix.m[3][3] = 1.0f;
+	l_parentTransformationMatrix.initializeToIdentityMatrix();
 
 	if (m_parentEntity != nullptr && m_parentEntity->hasTransformChanged())
 	{

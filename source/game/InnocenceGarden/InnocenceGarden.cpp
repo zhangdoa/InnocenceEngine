@@ -21,7 +21,10 @@ void InnocenceGarden::setup()
 	m_rootEntity.addChildEntity(&m_pawnEntity1);
 	m_rootEntity.addChildEntity(&m_pawnEntity2);
 
-	m_playCharacter.getTransform()->setPos(vec4(0.0, 10.0, 15.0, 1.0));
+	m_playCharacter.getTransform()->setPos(vec4(0.0, 2.0, 2.0, 1.0));
+	m_playCharacter.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 60.0);
+	m_playCharacter.getCameraComponent().m_drawFrustum = true;
+	m_playCharacter.getCameraComponent().m_drawAABB = true;
 	m_cameraComponents.emplace_back(&m_playCharacter.getCameraComponent());
 	m_inputComponents.emplace_back(&m_playCharacter.getInputComponent());
 

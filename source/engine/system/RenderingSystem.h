@@ -80,8 +80,9 @@ private:
 	std::vector<Vertex> generateNDC();
 	void generateAABB(VisibleComponent & visibleComponent);
 	void generateAABB(LightComponent & lightComponent);
+	void generateAABB(CameraComponent & cameraComponent);
 	AABB generateAABB(const vec4& boundMax, const vec4& boundMin, const vec4& scale);
-	meshID addAABBMesh(const AABB& AABB);
+	meshID addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 	void loadDefaultAssets();
 	void loadAssetsForComponents();
 	void initializeRendering();
@@ -130,7 +131,7 @@ private:
 
 	//Asset data
 	std::unordered_map<meshID, BaseMesh*> m_meshMap;
-	std::unordered_map<meshID, BaseMesh*> m_AABBMeshMap;
+	std::unordered_map<meshID, BaseMesh*> m_BBMeshMap;
 	std::unordered_map<textureID, BaseTexture*> m_textureMap;
 
 	meshID m_UnitCubeTemplate;
