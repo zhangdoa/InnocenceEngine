@@ -21,10 +21,10 @@ void InnocenceGarden::setup()
 	m_rootEntity.addChildEntity(&m_pawnEntity1);
 	m_rootEntity.addChildEntity(&m_pawnEntity2);
 
-	m_playCharacter.getTransform()->setPos(vec4(0.0, 2.0, 2.0, 1.0));
+	m_playCharacter.getTransform()->setPos(vec4(1.0, 2.0, 3.0, 1.0));
 	m_playCharacter.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 60.0);
-	m_playCharacter.getCameraComponent().m_drawFrustum = true;
-	m_playCharacter.getCameraComponent().m_drawAABB = true;
+	m_playCharacter.getCameraComponent().m_drawFrustum = false;
+	m_playCharacter.getCameraComponent().m_drawAABB = false;
 	m_cameraComponents.emplace_back(&m_playCharacter.getCameraComponent());
 	m_inputComponents.emplace_back(&m_playCharacter.getInputComponent());
 
@@ -37,7 +37,7 @@ void InnocenceGarden::setup()
 
 	m_directionalLightComponent.setColor(vec4(0.5, 0.3, 0.0, 1.0));
 	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
-	m_directionalLightComponent.m_drawAABB = true;
+	m_directionalLightComponent.m_drawAABB = false;
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
 	m_directionalLightEntity.getTransform()->setPos(vec4(0.0, 4.0, 0.0, 1.0));
 	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 45);
@@ -58,7 +58,7 @@ void InnocenceGarden::setup()
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
-	//m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
+	m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
 	m_pawnComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnComponent1.m_drawAABB = true;
 	m_pawnComponent1.m_useTexture = true;
@@ -83,7 +83,7 @@ void InnocenceGarden::setup()
 	m_pawnEntity2.getTransform()->setPos(vec4(0.0, 0.2, 3.5, 1.0));
 	m_visibleComponents.emplace_back(&m_pawnComponent2);
 
-	//setupLights();
+	setupLights();
 	setupSpheres();
 
 	m_rootEntity.setup();
@@ -96,7 +96,6 @@ void InnocenceGarden::initialize()
 
 void InnocenceGarden::update()
 {
-	temp += 0.02f;
 	//for (size_t i = 0; i < 1000000; i++)
 	//{
 	//	auto a = mat4();
@@ -115,7 +114,7 @@ void InnocenceGarden::update()
 	//g_pLogSystem->printLog(t.inverse());
 	//g_pLogSystem->printLog("Inverse validation: ");
 	//g_pLogSystem->printLog(t.inverse().mul(t));
-
+	temp += 0.02f;
 	updateLights(temp);
 	updateSpheres(temp);
 	m_rootEntity.update();

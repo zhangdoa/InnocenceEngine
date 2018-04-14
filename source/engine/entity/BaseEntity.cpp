@@ -87,8 +87,20 @@ vec4 BaseEntity::caclWorldPos()
 	{
 		l_parentTransformationMatrix = m_parentEntity->caclTransformationMatrix();
 	}
-
-	return l_parentTransformationMatrix * m_transform.getPos();
+	//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+	auto result = vec4();
+	result = m_transform.getPos() * l_parentTransformationMatrix;
+	result = result * (1 / result.w);
+	return result;
+#endif
+	//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+	auto result = vec4();
+	result = l_parentTransformationMatrix * m_transform.getPos();
+	result = result * (1 / result.w);
+	return result;
+#endif
 }
 
 vec4 BaseEntity::caclWorldRot()
