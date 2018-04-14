@@ -83,7 +83,10 @@ public:
 	mat4(const mat4& rhs);
 	mat4& operator=(const mat4& rhs);
 	mat4 operator*(const mat4& rhs);
+	//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 	vec4 operator*(const vec4& rhs);
+#endif
 	mat4 operator*(double rhs);
 	mat4 transpose();
 	mat4 inverse();
@@ -152,6 +155,9 @@ public:
 	vec4 operator-(const vec4& rhs);
 	vec4 operator-(double rhs);
 	double operator*(const vec4& rhs);
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+	vec4 operator*(const mat4 & rhs);
+#endif
 	vec4 cross(const vec4& rhs);
 	vec4 scale(const vec4& rhs);
 	vec4 scale(double rhs);

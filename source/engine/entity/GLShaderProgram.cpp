@@ -185,7 +185,7 @@ void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& camer
 			auto l_pos = l_lightComponent->getParentEntity()->caclWorldPos();
 			mat4 p_light;
 			//p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
-			p_light.initializeToOrthographicMatrix(-10, 10, -10, 10, 0.0, 7.5);
+			p_light.initializeToOrthographicMatrix(-50, 50, -50, 50, 0.1, 10.5);
 			//mat4 v = l_pos.toTranslationMatrix() * l_lightComponent->getParentEntity()->getTransform()->getRot().toRotationMatrix();
 			//mat4 v = l_lightComponent->getInvertTranslationMatrix() * l_lightComponent->getInvertRotationMatrix();
 			mat4 v = mat4().lookAt(l_pos, l_pos + l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
@@ -248,6 +248,11 @@ void GeometryPassBlinnPhongShaderProgram::initialize()
 
 void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_CLAMP);
+	// @TODO
+	glDisable(GL_CULL_FACE);
 	useProgram();
 
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
@@ -432,7 +437,7 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 				auto l_pos = l_lightComponent->getParentEntity()->caclWorldPos();
 				mat4 p_light;
 				//p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
-				p_light.initializeToOrthographicMatrix(-10, 10, -10, 10, 0.0, 7.5);
+				p_light.initializeToOrthographicMatrix(-50, 50, -50, 50, 0.1, 10.5);
 				//mat4 v = l_pos.toTranslationMatrix() * l_lightComponent->getParentEntity()->getTransform()->getRot().toRotationMatrix();
 				//mat4 v = l_lightComponent->getInvertTranslationMatrix() * l_lightComponent->getInvertRotationMatrix();
 				mat4 v = mat4().lookAt(l_pos, l_pos + l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));

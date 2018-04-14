@@ -56,6 +56,7 @@ void InputComponent::setup()
 	f_rotateAroundPositiveYAxis = std::bind(&InputComponent::rotateAroundPositiveYAxis, this, std::placeholders::_1);
 	f_rotateAroundRightAxis = std::bind(&InputComponent::rotateAroundRightAxis, this, std::placeholders::_1);
 
+	// len's forward is camera's backward
 	m_keyboardInputCallbackImpl.emplace(INNO_KEY_S, std::vector<std::function<void()>*>{&f_moveForward});
 	m_keyboardInputCallbackImpl.emplace(INNO_KEY_W, std::vector<std::function<void()>*>{&f_moveBackward});
 	m_keyboardInputCallbackImpl.emplace(INNO_KEY_A, std::vector<std::function<void()>*>{&f_moveLeft});

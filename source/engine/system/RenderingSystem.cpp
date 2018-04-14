@@ -66,10 +66,10 @@ void RenderingSystem::setupRendering()
 	m_environmentPreFilterPassShaderProgram = g_pMemorySystem->spawn<EnvironmentPreFilterPassPBSShaderProgram>();
 	m_environmentBRDFLUTPassShaderProgram = g_pMemorySystem->spawn<EnvironmentBRDFLUTPassPBSShaderProgram>();
 	//@TODO: add a switch for different shader model
-	//m_geometryPassShader = g_pMemorySystem->spawn<GeometryPassBlinnPhongShader>();
+	//m_geometryPassShaderProgram = g_pMemorySystem->spawn<GeometryPassBlinnPhongShaderProgram>();
 	m_geometryPassShaderProgram = g_pMemorySystem->spawn<GeometryPassPBSShaderProgram>();
 
-	//m_lightPassShader = g_pMemorySystem->spawn<LightPassBlinnPhongShader>();
+	//m_lightPassShaderProgram = g_pMemorySystem->spawn<LightPassBlinnPhongShaderProgram>();
 	m_lightPassShaderProgram = g_pMemorySystem->spawn<LightPassPBSShaderProgram>();
 
 	m_skyForwardPassShaderProgram = g_pMemorySystem->spawn<SkyForwardPassPBSShaderProgram>();
@@ -243,10 +243,18 @@ vec4 RenderingSystem::checkPicking()
 	auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
 	auto rCamera = g_pGameSystem->getCameraComponents()[0]->getInvertRotationMatrix();
 	auto tCamera = g_pGameSystem->getCameraComponents()[0]->getInvertTranslationMatrix();
-
+	//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+	l_ndcSpace = l_ndcSpace * pCamera.inverse();
+	l_ndcSpace = l_ndcSpace * rCamera.inverse();
+	l_ndcSpace = l_ndcSpace * tCamera.inverse();
+#endif
+	//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 	l_ndcSpace = pCamera.inverse() * l_ndcSpace;
 	l_ndcSpace = rCamera.inverse() * l_ndcSpace;
 	l_ndcSpace = tCamera.inverse() * l_ndcSpace;
+#endif
 	l_ndcSpace.w = 0.0;
 	l_ndcSpace = l_ndcSpace.normalize();
 	l_ndcSpace.z = -1.0;
@@ -759,15 +767,6 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	auto l_direction = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
 	auto l_frustumCenter = l_camera->m_AABB.m_center;
 	auto l_pos = l_direction * (l_camera->m_AABB.m_boundMax.z - l_camera->m_AABB.m_boundMin.z) + l_frustumCenter;
-	auto l_vLight = mat4().lookAt(l_pos, l_pos + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
-
-	for (auto& l_vertexData : l_frustumVertices)
-	{
-		vec4 l_mulPos;
-		// transform view frustrum's corner to light space
-		l_mulPos = l_vLight * l_vertexData.m_pos;
-		l_vertexData.m_pos = l_mulPos;
-	}
 
 	double maxX = l_frustumVertices[0].m_pos.x;
 	double maxY = l_frustumVertices[0].m_pos.y;
@@ -804,7 +803,28 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 		}
 	}
 
-	lightComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), vec4(1.0, 1.0, 1.0, 1.0));
+	auto l_boundMax = vec4(maxX, maxY, maxZ, 1.0);
+	auto l_boundMin = vec4(minX, minY, minZ, 1.0);
+	auto l_frustumCenterTm = l_frustumCenter.toTranslationMatrix();
+	l_boundMax = l_frustumCenterTm * l_boundMax;
+	l_boundMin = l_frustumCenterTm * l_boundMin;
+
+
+	auto l_vLight = mat4().lookAt(l_pos, l_pos + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+
+	// transform view frustrum's corner to light space
+	//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+	l_boundMax = l_boundMax * l_vLight;
+	l_boundMin = l_boundMax * l_vLight;
+#endif
+	//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+	l_boundMax = l_vLight * l_boundMax;
+	l_boundMin = l_vLight * l_boundMax;
+#endif
+
+	lightComponent.m_AABB = generateAABB(l_boundMax, l_boundMin, vec4(1.0, 1.0, 1.0, 1.0));
 
 	if (lightComponent.m_drawAABB)
 	{
@@ -1146,8 +1166,10 @@ void RenderingSystem::renderShadowPass(std::vector<CameraComponent*>& cameraComp
 void RenderingSystem::initializeGeometryPass()
 {
 	// initialize shader
+	//auto l_vertexShaderFilePath = "GL3.3/geometryPassBlinnPhongVertex.sf";
 	auto l_vertexShaderFilePath = "GL3.3/geometryPassPBSVertex.sf";
 	auto l_vertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath)));
+	//auto l_fragmentShaderFilePath = "GL3.3/geometryPassBlinnPhongFragment.sf";
 	auto l_fragmentShaderFilePath = "GL3.3/geometryPassPBSFragment.sf";
 	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath)));
 	m_geometryPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });
@@ -1190,8 +1212,11 @@ void RenderingSystem::renderGeometryPass(std::vector<CameraComponent*>& cameraCo
 void RenderingSystem::initializeLightPass()
 {
 	// initialize shader
+	//auto l_vertexShaderFilePath = "GL3.3/lightPassBlinnPhongVertex.sf";
 	auto l_vertexShaderFilePath = "GL3.3/lightPassPBSVertex.sf";
 	auto l_vertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_vertexShaderFilePath, g_pAssetSystem->loadShader(l_vertexShaderFilePath)));
+	//auto l_fragmentShaderFilePath = "GL3.3/lightPassNormalizedBlinnPhongFragment.sf";
+	//auto l_fragmentShaderFilePath = "GL3.3/lightPassBlinnPhongFragment.sf";
 	auto l_fragmentShaderFilePath = "GL3.3/lightPassPBSFragment.sf";
 	auto l_fragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_fragmentShaderFilePath, g_pAssetSystem->loadShader(l_fragmentShaderFilePath)));
 	m_lightPassShaderProgram->setup({ l_vertexShaderData , l_fragmentShaderData });

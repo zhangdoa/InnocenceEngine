@@ -74,12 +74,27 @@ void CameraComponent::caclFrustumVertices()
 		vec4 l_mulPos;
 		l_mulPos = l_vertexData.m_pos;
 		// from projection space to view space
+		//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = l_mulPos * pCamera.inverse();
+#endif
+		//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 		l_mulPos = pCamera.inverse() * l_mulPos;
+#endif
 		// perspective division
 		l_mulPos = l_mulPos * (1.0 / l_mulPos.w);
 		// from view space to world space
+		//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = l_mulPos  * getParentEntity()->caclWorldRot().toRotationMatrix();
+		l_mulPos = l_mulPos * getParentEntity()->caclWorldPos().toTranslationMatrix();
+#endif
+		//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 		l_mulPos = getParentEntity()->caclWorldRot().toRotationMatrix() * l_mulPos;
 		l_mulPos = getParentEntity()->caclWorldPos().toTranslationMatrix() * l_mulPos;
+#endif
 		l_vertexData.m_pos = l_mulPos;
 	}
 

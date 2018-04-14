@@ -62,6 +62,22 @@ double vec4::operator*(const vec4 & rhs)
 	return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w;
 }
 
+//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+vec4 vec4::operator*(const mat4 & rhs)
+{
+	// @TODO: replace with SIMD impl
+	vec4 l_vec4;
+
+	l_vec4.x = x * rhs.m[0][0] + y * rhs.m[0][1] + z * rhs.m[0][2] + w * rhs.m[0][3];
+	l_vec4.y = x * rhs.m[1][0] + y * rhs.m[1][1] + z * rhs.m[1][2] + w * rhs.m[1][3];
+	l_vec4.z = x * rhs.m[2][0] + y * rhs.m[2][1] + z * rhs.m[2][2] + w * rhs.m[2][3];
+	l_vec4.w = x * rhs.m[3][0] + y * rhs.m[3][1] + z * rhs.m[3][2] + w * rhs.m[3][3];
+
+	return l_vec4;
+}
+#endif
+
 vec4 vec4::cross(const vec4 & rhs)
 {
 	return vec4(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x, 0.0);
@@ -491,22 +507,6 @@ mat4 mat4::operator*(double rhs)
 
 	return l_m;
 }
-
-//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-vec4 mat4::operator*(const vec4 & rhs)
-{
-	// @TODO: replace with SIMD impl
-	vec4 l_vec4;
-
-	l_vec4.x = rhs.x * m[0][0] + rhs.y * m[0][1] + rhs.z * m[0][2] + rhs.w * m[0][3];
-	l_vec4.y = rhs.x * m[1][0] + rhs.y * m[1][1] + rhs.z * m[1][2] + rhs.w * m[1][3];
-	l_vec4.z = rhs.x * m[2][0] + rhs.y * m[2][1] + rhs.z * m[2][2] + rhs.w * m[2][3];
-	l_vec4.w = rhs.x * m[3][0] + rhs.y * m[3][1] + rhs.z * m[3][2] + rhs.w * m[3][3];
-
-	return l_vec4;
-}
-#endif
 
 //Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
