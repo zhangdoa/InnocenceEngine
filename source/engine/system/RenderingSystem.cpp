@@ -773,9 +773,9 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	auto l_camera = g_pGameSystem->getCameraComponents()[0];
 	auto l_frustumVertices = l_camera->m_frustumVertices;
 
-	auto l_direction = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
-	auto l_frustumCenter = l_camera->m_AABB.m_center;
-	auto l_pos = l_direction * (l_camera->m_AABB.m_boundMax.z - l_camera->m_AABB.m_boundMin.z) + l_frustumCenter;
+	auto l_lightInvertDirection = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
+	auto l_cameraFrustumCenter = l_camera->m_AABB.m_center;
+	auto l_lightFrustumCenter = l_lightInvertDirection * (l_camera->m_AABB.m_boundMax.z - l_camera->m_AABB.m_boundMin.z) + l_cameraFrustumCenter;
 
 	double maxX = l_frustumVertices[0].m_pos.x;
 	double maxY = l_frustumVertices[0].m_pos.y;
@@ -814,23 +814,29 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 
 	auto l_boundMax = vec4(maxX, maxY, maxZ, 1.0);
 	auto l_boundMin = vec4(minX, minY, minZ, 1.0);
-	auto l_frustumCenterTm = l_frustumCenter.toTranslationMatrix();
-	l_boundMax = l_frustumCenterTm * l_boundMax;
-	l_boundMin = l_frustumCenterTm * l_boundMin;
 
+	auto l_lightFrustumCenterTm = l_lightFrustumCenter.toTranslationMatrix();
+	auto l_tLight = lightComponent.getInvertTranslationMatrix();
+	auto l_rLight = lightComponent.getInvertRotationMatrix();
 
-	auto l_vLight = mat4().lookAt(l_pos, l_pos + lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD), lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
-
-	// transform view frustrum's corner to light space
+	//transform view frustrum's corner to light space
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	l_boundMax = l_boundMax * l_vLight;
-	l_boundMin = l_boundMax * l_vLight;
+	l_boundMax = l_boundMax * l_lightFrustumCenterTm;
+	l_boundMin = l_boundMin * l_lightFrustumCenterTm;
+	l_boundMax = l_boundMax * l_rLight;
+	l_boundMin = l_boundMax * l_rLight;
+	l_boundMax = l_boundMax * l_tLight;
+	l_boundMin = l_boundMax * l_tLight;
 #endif
 	//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-	l_boundMax = l_vLight * l_boundMax;
-	l_boundMin = l_vLight * l_boundMax;
+	l_boundMax = l_lightFrustumCenterTm * l_boundMax;
+	l_boundMin = l_lightFrustumCenterTm * l_boundMin;
+	l_boundMax = l_rLight * l_boundMax;
+	l_boundMin = l_rLight * l_boundMax;
+	l_boundMax = l_tLight * l_boundMax;
+	l_boundMin = l_tLight * l_boundMax;
 #endif
 
 	lightComponent.m_AABB = generateAABB(l_boundMax, l_boundMin);
