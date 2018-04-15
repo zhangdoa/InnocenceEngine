@@ -232,7 +232,7 @@ void RenderingSystem::initialize()
 	g_pLogSystem->printLog("RenderingSystem has been initialized.");
 }
 
-vec4 RenderingSystem::checkPicking()
+vec4 RenderingSystem::calcMousePositionInWorldSpace()
 {
 	auto l_x = 2.0 * m_mouseLastX / m_screenResolution.x - 1.0;
 	auto l_y = 1.0 - 2.0 * m_mouseLastY / m_screenResolution.y;
@@ -246,20 +246,21 @@ vec4 RenderingSystem::checkPicking()
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 	l_ndcSpace = l_ndcSpace * pCamera.inverse();
-	l_ndcSpace = l_ndcSpace * rCamera.inverse();
+	l_ndcSpace.z = -1.0;
+	l_ndcSpace.w = 0.0;
 	l_ndcSpace = l_ndcSpace * tCamera.inverse();
+	l_ndcSpace = l_ndcSpace * rCamera.inverse();
 #endif
 	//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+
 	l_ndcSpace = pCamera.inverse() * l_ndcSpace;
-	l_ndcSpace = rCamera.inverse() * l_ndcSpace;
-	l_ndcSpace = tCamera.inverse() * l_ndcSpace;
-#endif
-	l_ndcSpace.w = 0.0;
-	l_ndcSpace = l_ndcSpace.normalize();
 	l_ndcSpace.z = -1.0;
-
-
+	l_ndcSpace.w = 0.0;
+	l_ndcSpace = tCamera.inverse() * l_ndcSpace;
+	l_ndcSpace = rCamera.inverse() * l_ndcSpace;
+#endif
+	l_ndcSpace = l_ndcSpace.normalize();
 	return l_ndcSpace;
 }
 
@@ -347,13 +348,14 @@ void RenderingSystem::updatePhysics()
 	{
 		//generateAABB(*g_pGameSystem->getCameraComponents()[0]);
 		m_mouseRay.m_origin = g_pGameSystem->getCameraComponents()[0]->getParentEntity()->caclWorldPos();
-		m_mouseRay.m_direction = checkPicking();
+		m_mouseRay.m_direction = calcMousePositionInWorldSpace();
 
 		auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
 		for (auto& j : g_pGameSystem->getVisibleComponents())
 		{
 			if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
 			{
+
 				if (j->m_AABB.intersectCheck(m_mouseRay))
 				{
 					m_selectedVisibleComponents.emplace_back(j);
@@ -700,8 +702,6 @@ std::vector<Vertex> RenderingSystem::generateNDC()
 
 void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 {
-	auto l_scale = visibleComponent.getParentEntity()->getTransform()->getScale();
-
 	double maxX = 0;
 	double maxY = 0;
 	double maxZ = 0;
@@ -751,7 +751,16 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 		};
 	});
 
-	visibleComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), l_scale);
+	visibleComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0));
+	auto l_worldTm = visibleComponent.getParentEntity()->caclTransformationMatrix();
+	visibleComponent.m_AABB.m_boundMax = l_worldTm * visibleComponent.m_AABB.m_boundMax;
+	visibleComponent.m_AABB.m_boundMin = l_worldTm * visibleComponent.m_AABB.m_boundMin;
+	visibleComponent.m_AABB.m_center = l_worldTm * visibleComponent.m_AABB.m_center;
+
+	for (auto& l_vertexData : visibleComponent.m_AABB.m_vertices)
+	{
+		l_vertexData.m_pos = l_worldTm * l_vertexData.m_pos;
+	}
 
 	if (visibleComponent.m_drawAABB)
 	{
@@ -824,7 +833,7 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	l_boundMin = l_vLight * l_boundMax;
 #endif
 
-	lightComponent.m_AABB = generateAABB(l_boundMax, l_boundMin, vec4(1.0, 1.0, 1.0, 1.0));
+	lightComponent.m_AABB = generateAABB(l_boundMax, l_boundMin);
 
 	if (lightComponent.m_drawAABB)
 	{
@@ -872,7 +881,7 @@ void RenderingSystem::generateAABB(CameraComponent & cameraComponent)
 		}
 	}
 
-	cameraComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0), vec4(1.0, 1.0, 1.0, 1.0));
+	cameraComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0));
 
 
 	if (cameraComponent.m_drawFrustum)
@@ -888,50 +897,46 @@ void RenderingSystem::generateAABB(CameraComponent & cameraComponent)
 	}
 }
 
-AABB RenderingSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin, const vec4& scale)
+AABB RenderingSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin)
 {
 	AABB l_AABB;
-	// unscaled version for visualization
-	auto l_unscaledBoundMin = boundMin;
-	auto l_unscaledBoundMax = boundMax;
 
-	// scaled version for collision calculation
-	l_AABB.m_boundMin = l_unscaledBoundMin.scale(scale);
-	l_AABB.m_boundMax = l_unscaledBoundMax.scale(scale);
+	l_AABB.m_boundMin = boundMin;
+	l_AABB.m_boundMax = boundMax;
 
 	l_AABB.m_center = (l_AABB.m_boundMax + l_AABB.m_boundMin) * 0.5;
 	l_AABB.m_sphereRadius = std::max(std::max((l_AABB.m_boundMax.x - l_AABB.m_boundMin.x) / 2, (l_AABB.m_boundMax.y - l_AABB.m_boundMin.y) / 2), (l_AABB.m_boundMax.z - l_AABB.m_boundMin.z) / 2);
 
 	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = (vec4(l_unscaledBoundMax.x, l_unscaledBoundMax.y, l_unscaledBoundMax.z, 1.0));
+	l_VertexData_1.m_pos = (vec4(boundMax.x, boundMax.y, boundMax.z, 1.0));
 	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = (vec4(l_unscaledBoundMax.x, l_unscaledBoundMin.y, l_unscaledBoundMax.z, 1.0));
+	l_VertexData_2.m_pos = (vec4(boundMax.x, boundMin.y, boundMax.z, 1.0));
 	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = (vec4(l_unscaledBoundMin.x, l_unscaledBoundMin.y, l_unscaledBoundMax.z, 1.0));
+	l_VertexData_3.m_pos = (vec4(boundMin.x, boundMin.y, boundMax.z, 1.0));
 	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = (vec4(l_unscaledBoundMin.x, l_unscaledBoundMax.y, l_unscaledBoundMax.z, 1.0));
+	l_VertexData_4.m_pos = (vec4(boundMin.x, boundMax.y, boundMax.z, 1.0));
 	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 
 	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = (vec4(l_unscaledBoundMax.x, l_unscaledBoundMax.y, l_unscaledBoundMin.z, 1.0));
+	l_VertexData_5.m_pos = (vec4(boundMax.x, boundMax.y, boundMin.z, 1.0));
 	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = (vec4(l_unscaledBoundMax.x, l_unscaledBoundMin.y, l_unscaledBoundMin.z, 1.0));
+	l_VertexData_6.m_pos = (vec4(boundMax.x, boundMin.y, boundMin.z, 1.0));
 	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = (vec4(l_unscaledBoundMin.x, l_unscaledBoundMin.y, l_unscaledBoundMin.z, 1.0));
+	l_VertexData_7.m_pos = (vec4(boundMin.x, boundMin.y, boundMin.z, 1.0));
 	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = (vec4(l_unscaledBoundMin.x, l_unscaledBoundMax.y, l_unscaledBoundMin.z, 1.0));
+	l_VertexData_8.m_pos = (vec4(boundMin.x, boundMax.y, boundMin.z, 1.0));
 	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
 
 
@@ -1390,8 +1395,8 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	// draw debugger pass
 	m_geometryPassFrameBuffer->asReadBuffer();
 	m_debuggerPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
-	//m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, m_selectedVisibleComponents, m_BBMeshMap, m_textureMap, true, false);
-	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_BBMeshMap, m_textureMap, true, false);
+	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, m_selectedVisibleComponents, m_BBMeshMap, m_textureMap, true, false);
+	//m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_BBMeshMap, m_textureMap, true, false);
 
 	// draw background defer pass
 	m_lightPassFrameBuffer->activeTexture(0, 0);

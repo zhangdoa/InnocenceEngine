@@ -58,7 +58,7 @@ void InnocenceGarden::setup()
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
-	m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
+	//m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
 	m_pawnComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnComponent1.m_drawAABB = true;
 	m_pawnComponent1.m_useTexture = true;
@@ -169,7 +169,7 @@ void InnocenceGarden::setupSpheres()
 	{
 		m_sphereComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
 		m_sphereComponents[i].m_meshType = meshShapeType::SPHERE;
-		m_sphereComponents[i].m_drawAABB = false;
+		m_sphereComponents[i].m_drawAABB = true;
 		m_sphereComponents[i].m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 		m_sphereComponents[i].m_useTexture = false;
 		m_rootEntity.addChildEntity(&m_sphereEntitys[i]);
