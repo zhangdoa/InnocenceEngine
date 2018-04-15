@@ -81,13 +81,13 @@ private:
 	void generateAABB(VisibleComponent & visibleComponent);
 	void generateAABB(LightComponent & lightComponent);
 	void generateAABB(CameraComponent & cameraComponent);
-	AABB generateAABB(const vec4& boundMax, const vec4& boundMin, const vec4& scale);
+	AABB generateAABB(const vec4& boundMax, const vec4& boundMin);
 	meshID addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 	void loadDefaultAssets();
 	void loadAssetsForComponents();
 	void initializeRendering();
 
-	vec4 checkPicking();
+	vec4 calcMousePositionInWorldSpace();
 	void updateInput();
 	void updatePhysics();
 

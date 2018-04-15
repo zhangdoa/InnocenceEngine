@@ -953,7 +953,9 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 		{
 			if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH && l_visibleComponent->m_drawAABB)
 			{
-				updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+				auto l_m = mat4();
+				l_m.initializeToIdentityMatrix();
+				updateUniform(m_uni_m, l_m);
 
 				// draw each graphic data of visibleComponent
 				for (auto& l_graphicData : l_visibleComponent->getModelMap())
