@@ -67,7 +67,8 @@ void CameraComponent::caclFrustumVertices()
 		1, 5, 2, 5, 6, 2 };
 
 	auto pCamera = mat4();
-	pCamera.initializeToPerspectiveMatrix((45.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 10.0);
+	pCamera.initializeToPerspectiveMatrix((60.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 10.0);
+	//auto pCamera = m_projectionMatrix;
 
 	for (auto& l_vertexData : m_frustumVertices)
 	{
@@ -111,7 +112,7 @@ std::vector<Vertex>* CameraComponent::getFrustumCorners()
 
 void CameraComponent::setup()
 {
-	m_projectionMatrix.initializeToPerspectiveMatrix((60.0 / 180.0) * PI, (16.0 / 9.0), 0.01, 10000.0);
+	m_projectionMatrix.initializeToPerspectiveMatrix((m_FOV / 180.0) * PI, m_WHRatio, m_zNear, m_zFar);
 	m_rayOfEye.m_origin = getParentEntity()->caclWorldPos();
 	m_rayOfEye.m_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
 	caclFrustumVertices();

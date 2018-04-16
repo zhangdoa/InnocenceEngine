@@ -661,9 +661,8 @@ mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDi
 	vec4 l_Z = vec4(centerPos.x - eyePos.x, centerPos.y - eyePos.y, centerPos.z - eyePos.z, 0.0).normalize();
 
 	l_X = l_Z.cross(l_Y);
-	l_Y = l_X.cross(l_Z);
-
 	l_X = l_X.normalize();
+	l_Y = l_X.cross(l_Z);
 	l_Y = l_Y.normalize();
 
 	l_m.m[0][0] = (float)l_X.x;
@@ -698,9 +697,8 @@ mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDi
 	vec4 l_Z = vec4(centerPos.x - eyePos.x, centerPos.y - eyePos.y, centerPos.z - eyePos.z, 0.0).normalize();
 
 	l_X = l_Z.cross(l_Y);
-	l_Y = l_X.cross(l_Z);
-
 	l_X = l_X.normalize();
+	l_Y = l_X.cross(l_Z);
 	l_Y = l_Y.normalize();
 
 	l_m.m[0][0] = (float)l_X.x;
