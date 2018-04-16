@@ -1006,6 +1006,9 @@ void RenderingSystem::loadModel(const std::string & fileName, VisibleComponent &
 	if (l_loadedmodelMap != m_loadedModelMap.end())
 	{
 		assignloadedModel(l_loadedmodelMap->second, visibleComponent);
+		// generate AABB
+		generateAABB(visibleComponent);
+
 		g_pLogSystem->printLog("innoMesh: " + l_convertedFilePath + " is already loaded, successfully assigned loaded modelMap.");
 	}
 	else
@@ -1128,7 +1131,7 @@ void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& camera
 	if (m_shouldUpdateEnvironmentMap)
 	{
 		m_environmentPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, true);
-
+		m_environmentPassFrameBuffer->setRenderBufferStorageSize(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 		// draw environment map BRDF LUT rectangle
 		this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
 
@@ -1164,6 +1167,7 @@ void RenderingSystem::renderShadowPass(std::vector<CameraComponent*>& cameraComp
 {
 	// draw shadow forward pass
 	m_shadowForwardPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, true);
+	m_shadowForwardPassFrameBuffer->setRenderBufferStorageSize(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 }
 
 void RenderingSystem::initializeGeometryPass()
@@ -1210,6 +1214,7 @@ void RenderingSystem::initializeGeometryPass()
 void RenderingSystem::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
 	m_geometryPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, true);
+	m_geometryPassFrameBuffer->setRenderBufferStorageSize(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 }
 
 void RenderingSystem::initializeLightPass()
@@ -1260,6 +1265,7 @@ void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraCompo
 	m_environmentPassFrameBuffer->activeTexture(3, 8);
 
 	m_lightPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, true);
+	m_lightPassFrameBuffer->setRenderBufferStorageSize(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw light pass rectangle
 	this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
@@ -1372,7 +1378,7 @@ void RenderingSystem::initializeFinalPass()
 	auto l_emissivePassRenderTargetTextures = std::vector<BaseTexture*>{ l_emissivePassTextureData };
 	auto l_emissivePassRhaderPrograms = std::vector<BaseShaderProgram*>{ m_emissivePassShaderProgram };
 	m_emissivePassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_emissivePassFrameBuffer->setup(frameBufferType::FORWARD, renderBufferType::DEPTH, l_emissivePassRenderBufferStorageSizes, l_emissivePassRenderTargetTextures, l_emissivePassRhaderPrograms);
+	m_emissivePassFrameBuffer->setup(frameBufferType::PINGPONG, renderBufferType::DEPTH, l_emissivePassRenderBufferStorageSizes, l_emissivePassRenderTargetTextures, l_emissivePassRhaderPrograms);
 	m_emissivePassFrameBuffer->initialize();	
 	
 	//post-process pass
@@ -1389,12 +1395,14 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 {
 	// draw sky forward pass
 	m_skyForwardPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, true);
+	m_skyForwardPassFrameBuffer->setRenderBufferStorageSize(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw debugger pass
 	m_geometryPassFrameBuffer->asReadBuffer();
 	m_debuggerPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
 	m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, m_selectedVisibleComponents, m_BBMeshMap, m_textureMap, true, false);
 	//m_debuggerPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_BBMeshMap, m_textureMap, true, false);
+	m_debuggerPassFrameBuffer->setRenderBufferStorageSize(cameraComponents, lightComponents, m_selectedVisibleComponents, m_BBMeshMap, m_textureMap);
 
 	// draw background defer pass
 	m_lightPassFrameBuffer->activeTexture(0, 0);
@@ -1402,6 +1410,7 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	m_debuggerPassFrameBuffer->activeTexture(0, 2);
 
 	m_skyDeferPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, true);
+	m_skyDeferPassFrameBuffer->setRenderBufferStorageSize(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw sky defer pass rectangle
 	this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
@@ -1410,11 +1419,13 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	m_geometryPassFrameBuffer->asReadBuffer();
 	m_billboardPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
 	m_billboardPassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, false);
+	m_billboardPassFrameBuffer->setRenderBufferStorageSize(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw emissive pass
 	m_geometryPassFrameBuffer->asReadBuffer();
 	m_emissivePassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
 	m_emissivePassFrameBuffer->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, true, false);
+	m_emissivePassFrameBuffer->setRenderBufferStorageSize(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw final pass
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
