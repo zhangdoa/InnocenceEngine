@@ -403,7 +403,7 @@ using shaderCodeContent = std::string;
 using shaderCodeContentPair = std::pair<shaderFilePath, shaderCodeContent>;
 using shaderData = std::pair<shaderType, shaderCodeContentPair>;
 // frame and render buffer custom types
-enum class frameBufferType { FORWARD, DEFER, SHADOW_PASS, ENVIRONMENT_PASS };
+enum class frameBufferType { FORWARD, DEFER, SHADOW_PASS, ENVIRONMENT_PASS, PINGPONG };
 enum class renderBufferType { NONE, DEPTH, STENCIL, DEPTH_AND_STENCIL };
 
 using textureID = unsigned long int;

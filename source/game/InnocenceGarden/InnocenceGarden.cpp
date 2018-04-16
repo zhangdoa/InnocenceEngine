@@ -83,7 +83,7 @@ void InnocenceGarden::setup()
 	m_pawnEntity2.getTransform()->setPos(vec4(0.0, 0.2, 3.5, 1.0));
 	m_visibleComponents.emplace_back(&m_pawnComponent2);
 
-//	setupLights();
+	setupLights();
 	setupSpheres();
 
 	m_rootEntity.setup();
@@ -169,38 +169,39 @@ void InnocenceGarden::setupSpheres()
 	for (auto i = (unsigned int)0; i < m_sphereComponents.size(); i++)
 	{
 		m_sphereComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
-		m_sphereComponents[i].m_meshType = meshShapeType::SPHERE;
+		m_sphereComponents[i].m_meshType = meshShapeType::CUSTOM;
 		m_sphereComponents[i].m_drawAABB = true;
-		m_sphereComponents[i].m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
+		m_sphereComponents[i].m_modelFileName = "lteOrb/lteOrb.obj";
 		m_sphereComponents[i].m_useTexture = false;
 		m_rootEntity.addChildEntity(&m_sphereEntitys[i]);
+		m_sphereEntitys[i].getTransform()->setScale(vec4(10.0, 10.0, 10.0, 1.0));
 		m_sphereEntitys[i].addChildComponent(&m_sphereComponents[i]);
 		m_visibleComponents.emplace_back(&m_sphereComponents[i]);
 	}
-	for (auto i = (unsigned int)0; i < m_sphereComponents.size(); i += 2)
+	for (auto i = (unsigned int)0; i < m_sphereComponents.size(); i += 4)
 	{
 		////Copper
-		m_sphereComponents[i].m_albedo = vec4(0.95, 0.93, 0.88 ,1.0);
-		m_sphereComponents[i + 1].m_albedo = vec4(0.0, 0.0, 0.0, 1.0);
-		//m_sphereComponents[i].m_albedo = vec4(0.95, 0.64, 0.54 ,1.0);
+		//m_sphereComponents[i].m_albedo = vec4(0.95, 0.93, 0.88 ,1.0);
+		//m_sphereComponents[i + 1].m_albedo = vec4(0.0, 0.0, 0.0, 1.0);
+		m_sphereComponents[i].m_albedo = vec4(0.95, 0.64, 0.54 ,1.0);
 		//m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/rustediron2_normal.png"));
 		//m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/rustediron2_basecolor.png"));
 		//m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/rustediron2_metallic.png"));
 		//m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/rustediron2_roughness.png"));
 		////Gold
-		//m_sphereComponents[i + 1].m_albedo = vec4(1.00, 0.71, 0.29, 1.0);
+		m_sphereComponents[i + 1].m_albedo = vec4(1.00, 0.71, 0.29, 1.0);
 		//m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/bamboo-wood-semigloss-normal.png"));
 		//m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/bamboo-wood-semigloss-albedo.png"));
 		//m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/bamboo-wood-semigloss-metal.png"));
 		//m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "PBS/bamboo-wood-semigloss-ao.png"));
 		////Iron
-		//m_sphereComponents[i + 2].m_albedo = vec4(0.56, 0.57, 0.58, 1.0);
+		m_sphereComponents[i + 2].m_albedo = vec4(0.56, 0.57, 0.58, 1.0);
 		//m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/greasy-metal-pan1-normal.png"));
 		//m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/greasy-metal-pan1-albedo.png"));
 		//m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/greasy-metal-pan1-metal.png"));
 		//m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/greasy-metal-pan1-roughness.png"));
 		////Silver
-		//m_sphereComponents[i + 3].m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
+		m_sphereComponents[i + 3].m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
 		//m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/roughrock1-normal.png"));
 		//m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/roughrock1-albedo.png"));
 		//m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/roughrock1-metalness.png"));
@@ -211,7 +212,7 @@ void InnocenceGarden::setupSpheres()
 	{
 		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 		{
-			m_sphereEntitys[i * sphereMatrixDim + j].getTransform()->setPos(vec4((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 2.0, (j * sphereBreadthInterval) - 2.0 * (sphereMatrixDim - 1), 1.0));
+			m_sphereEntitys[i * sphereMatrixDim + j].getTransform()->setPos(vec4((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 0.0, (j * sphereBreadthInterval) - 2.0 * (sphereMatrixDim - 1), 1.0));
 			m_sphereComponents[i * sphereMatrixDim + j].m_MRA = vec4((double)(i) / (double)(sphereMatrixDim), (double)(j) / (double)(sphereMatrixDim), 1.0, 1.0);
 		}
 	}	
@@ -274,7 +275,7 @@ void InnocenceGarden::updateSpheres(double seed)
 	m_pawnEntity2.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.5);
 	for (auto i = (unsigned int)0; i < m_sphereEntitys.size(); i++)
 	{
-		m_sphereEntitys[i].getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.01 * i);
-		m_sphereEntitys[i].getTransform()->setPos(m_sphereEntitys[i].getTransform()->getPos() + vec4(cos(seed) * 0.01, 0.0, 0.0, 1.0));
+		//m_sphereEntitys[i].getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.01 * i);
+		//m_sphereEntitys[i].getTransform()->setPos(m_sphereEntitys[i].getTransform()->getPos() + vec4(cos(seed) * 0.01, 0.0, 0.0, 1.0));
 	}
 }
