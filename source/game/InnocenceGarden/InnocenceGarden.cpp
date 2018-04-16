@@ -39,7 +39,7 @@ void InnocenceGarden::setup()
 	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
 	m_directionalLightComponent.m_drawAABB = false;
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
-	m_directionalLightEntity.getTransform()->setPos(vec4(0.0, 4.0, 0.0, 1.0));
+	m_directionalLightEntity.getTransform()->setPos(vec4(-2.0, 4.0, -1.0, 1.0));
 	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 45);
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
@@ -83,7 +83,7 @@ void InnocenceGarden::setup()
 	m_pawnEntity2.getTransform()->setPos(vec4(0.0, 0.2, 3.5, 1.0));
 	m_visibleComponents.emplace_back(&m_pawnComponent2);
 
-	setupLights();
+//	setupLights();
 	setupSpheres();
 
 	m_rootEntity.setup();
@@ -114,6 +114,7 @@ void InnocenceGarden::update()
 	//g_pLogSystem->printLog(t.inverse());
 	//g_pLogSystem->printLog("Inverse validation: ");
 	//g_pLogSystem->printLog(t.inverse().mul(t));
+	//auto v = vec4(0.0, 1.0, 0.0, 0.0).cross(vec4(0.0, 0.0, 1.0, 0.0));
 	temp += 0.02f;
 	updateLights(temp);
 	updateSpheres(temp);

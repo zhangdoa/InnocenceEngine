@@ -18,6 +18,11 @@ public:
 	mat4 m_initTransMat;
 	std::vector<Vertex>* getFrustumCorners();
 
+	double m_FOV = 60.0;
+	double m_WHRatio = 16.0 / 9.0;
+	double m_zNear = 0.1;
+	double m_zFar = 1000.0;
+
 	Ray m_rayOfEye;
 	bool m_drawRay = false;
 	bool m_drawFrustum = false;

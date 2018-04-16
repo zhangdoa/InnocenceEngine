@@ -347,6 +347,7 @@ void RenderingSystem::updatePhysics()
 	if (g_pGameSystem->getCameraComponents().size() > 0)
 	{
 		//generateAABB(*g_pGameSystem->getCameraComponents()[0]);
+
 		m_mouseRay.m_origin = g_pGameSystem->getCameraComponents()[0]->getParentEntity()->caclWorldPos();
 		m_mouseRay.m_direction = calcMousePositionInWorldSpace();
 
@@ -775,7 +776,8 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 
 	auto l_lightInvertDirection = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
 	auto l_cameraFrustumCenter = l_camera->m_AABB.m_center;
-	auto l_lightFrustumCenter = l_lightInvertDirection * (l_camera->m_AABB.m_boundMax.z - l_camera->m_AABB.m_boundMin.z) + l_cameraFrustumCenter;
+	//auto l_lightFrustumCenter = l_lightInvertDirection * (l_camera->m_zFar - l_camera->m_zNear) + l_cameraFrustumCenter;
+	auto l_lightFrustumCenter = l_lightInvertDirection * (10.0 - 0.1) + l_cameraFrustumCenter;
 
 	double maxX = l_frustumVertices[0].m_pos.x;
 	double maxY = l_frustumVertices[0].m_pos.y;
@@ -816,27 +818,17 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	auto l_boundMin = vec4(minX, minY, minZ, 1.0);
 
 	auto l_lightFrustumCenterTm = l_lightFrustumCenter.toTranslationMatrix();
-	auto l_tLight = lightComponent.getInvertTranslationMatrix();
-	auto l_rLight = lightComponent.getInvertRotationMatrix();
 
-	//transform view frustrum's corner to light space
+	//transform light AABB corners to modified light position in world space
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 	l_boundMax = l_boundMax * l_lightFrustumCenterTm;
 	l_boundMin = l_boundMin * l_lightFrustumCenterTm;
-	l_boundMax = l_boundMax * l_rLight;
-	l_boundMin = l_boundMax * l_rLight;
-	l_boundMax = l_boundMax * l_tLight;
-	l_boundMin = l_boundMax * l_tLight;
 #endif
 	//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 	l_boundMax = l_lightFrustumCenterTm * l_boundMax;
 	l_boundMin = l_lightFrustumCenterTm * l_boundMin;
-	l_boundMax = l_rLight * l_boundMax;
-	l_boundMin = l_rLight * l_boundMax;
-	l_boundMax = l_tLight * l_boundMax;
-	l_boundMin = l_tLight * l_boundMax;
 #endif
 
 	lightComponent.m_AABB = generateAABB(l_boundMax, l_boundMin);

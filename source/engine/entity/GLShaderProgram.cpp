@@ -181,10 +181,37 @@ void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& camer
 		{
 			auto l_boundMax = l_lightComponent->m_AABB.m_boundMax;
 			auto l_boundMin = l_lightComponent->m_AABB.m_boundMin;
-			auto l_pos = l_lightComponent->m_AABB.m_center;
+			//auto l_pos = l_lightComponent->m_AABB.m_center;
+			auto l_pos = l_lightComponent->getParentEntity()->caclWorldPos();
+			//auto l_pos = l_lightComponent->getParentEntity()->getTransform()->getPos();
+			auto l_tLight = l_pos.scale(-1.0).toTranslationMatrix();
+			auto l_rLight = l_lightComponent->getInvertRotationMatrix();
+
+			//transform light AABB corners to light space
+			//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+			l_boundMax = l_boundMax * l_rLight;
+			l_boundMin = l_boundMax * l_rLight;
+			l_boundMax = l_boundMax * l_tLight;
+			l_boundMin = l_boundMax * l_tLight;
+#endif
+			//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+			l_boundMax = l_rLight * l_boundMax;
+			l_boundMin = l_rLight * l_boundMax;
+			l_boundMax = l_tLight * l_boundMax;
+			l_boundMin = l_tLight * l_boundMax;
+#endif
+
 			mat4 p_light;
-			p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
-			mat4 v = l_pos.toTranslationMatrix() * l_lightComponent->getInvertTranslationMatrix() * l_lightComponent->getInvertRotationMatrix();
+			//p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
+			p_light.initializeToOrthographicMatrix(-10.0, 10.0, -10.0, 10.0, 1.0, 7.5);
+			mat4 v;
+			v = v.lookAt(vec4(-2.0, 4.0, -1.0, 1.0), vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, 1.0, 0.0, 0.0));
+			//v = v.lookAt(l_pos, l_pos+l_lightComponent->getDirection(), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+			//v = l_rLight * l_tLight;
+			//v = l_rLight;
+
 			updateUniform(m_uni_p, p_light);
 			updateUniform(m_uni_v, v);
 
@@ -429,10 +456,35 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 			{
 				auto l_boundMax = l_lightComponent->m_AABB.m_boundMax;
 				auto l_boundMin = l_lightComponent->m_AABB.m_boundMin;
-				auto l_pos = l_lightComponent->m_AABB.m_center;
+				//auto l_pos = l_lightComponent->m_AABB.m_center;
+				auto l_pos = l_lightComponent->getParentEntity()->caclWorldPos();
+				//auto l_pos = l_lightComponent->getParentEntity()->getTransform()->getPos();
+				auto l_tLight = l_pos.scale(-1.0).toTranslationMatrix();
+				auto l_rLight = l_lightComponent->getInvertRotationMatrix();
+
+				//transform light AABB corners to light space
+				//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+				l_boundMax = l_boundMax * l_rLight;
+				l_boundMin = l_boundMax * l_rLight;
+				l_boundMax = l_boundMax * l_tLight;
+				l_boundMin = l_boundMax * l_tLight;
+#endif
+				//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+				l_boundMax = l_rLight * l_boundMax;
+				l_boundMin = l_rLight * l_boundMax;
+				l_boundMax = l_tLight * l_boundMax;
+				l_boundMin = l_tLight * l_boundMax;
+#endif
 				mat4 p_light;
-				p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
-				mat4 v = l_pos.toTranslationMatrix() * l_lightComponent->getInvertTranslationMatrix() * l_lightComponent->getInvertRotationMatrix();
+				//p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
+				p_light.initializeToOrthographicMatrix(-10.0, 10.0, -10.0, 10.0, 1.0, 7.5);
+				mat4 v;
+				v = v.lookAt(vec4(-2.0, 4.0,-1.0, 1.0), vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, 1.0, 0.0, 0.0));
+				//v = v.lookAt(l_pos, l_pos + l_lightComponent->getDirection(), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+				//v = l_rLight * l_tLight;
+				//v = l_rLight;
 
 				updateUniform(m_uni_p_light, p_light);
 				updateUniform(m_uni_v_light, v);
