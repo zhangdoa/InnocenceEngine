@@ -16,10 +16,10 @@ public:
 	virtual ~BaseFrameBuffer() {};
 
 	void setup() override;
-	void setup(frameBufferType frameBufferType, renderBufferType renderBufferType, const std::vector<vec2>& renderBufferStorageSize, const std::vector<BaseTexture*>& renderTargetTextures, const std::vector<BaseShaderProgram*>& renderTargetShaderPrograms);
+	void setup(frameBufferType frameBufferType, renderBufferType renderBufferType, const std::vector<vec2>& renderBufferStorageSize, const std::vector<BaseTexture*>& renderTargetTextures);
 	void update() override;
-	virtual void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, bool cleanColorBuffer, bool cleanDepthBuffer) = 0;
-	virtual void setRenderBufferStorageSize(std::vector<CameraComponent *> & cameraComponents, std::vector<LightComponent *> & lightComponents, std::vector<VisibleComponent *> & visibleComponents, std::unordered_map<EntityID, BaseMesh *> & meshMap, std::unordered_map<EntityID, BaseTexture *> & textureMap) = 0;
+	virtual void update(bool cleanColorBuffer, bool cleanDepthBuffer) = 0;
+	virtual void setRenderBufferStorageSize(unsigned int RenderBufferTextureIndex) = 0;	
 	virtual void activeTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer) = 0;
 	const unsigned int getRenderTargetNumber() const;
 	virtual void asReadBuffer() = 0;
@@ -33,5 +33,4 @@ protected:
 	renderBufferType m_renderBufferType = renderBufferType::DEPTH;
 	std::vector<vec2> m_renderBufferStorageSize;
 	std::vector<BaseTexture*> m_renderTargetTextures;
-	std::vector<BaseShaderProgram*> m_shaderPrograms;
 };
