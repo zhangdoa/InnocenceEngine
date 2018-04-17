@@ -1126,7 +1126,7 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 	}
 }
 
-void EmissivePassShaderProgram::initialize()
+void EmissiveNormalPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
 	useProgram();
@@ -1138,7 +1138,7 @@ void EmissivePassShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void EmissivePassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
+void EmissiveNormalPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
 	glEnable(GL_DEPTH_TEST);
 	useProgram();
@@ -1175,6 +1175,34 @@ void EmissivePassShaderProgram::update(std::vector<CameraComponent*>& cameraComp
 	}
 }
 
+void EmissiveBlurPassShaderProgram::initialize()
+{
+	GLShaderProgram::initialize();
+	useProgram();
+
+	m_uni_emissiveNormalPassRT0 = getUniformLocation("uni_emissiveNormalPassRT0");
+	updateUniform(m_uni_emissiveNormalPassRT0, 0);
+	m_uni_horizontal = getUniformLocation("uni_horizontal");
+}
+
+void EmissiveBlurPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
+{
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
+	useProgram();
+	updateUniform(m_uni_horizontal, m_isHorizontal);
+
+	if (m_isHorizontal)
+	{
+		m_isHorizontal = false;
+	}
+	else
+	{
+		m_isHorizontal = true;
+	}
+}
+
 void FinalPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
@@ -1184,8 +1212,8 @@ void FinalPassShaderProgram::initialize()
 	updateUniform(m_uni_skyDeferPassRT0, 0);
 	m_uni_billboardPassRT0 = getUniformLocation("uni_billboardPassRT0");
 	updateUniform(m_uni_billboardPassRT0, 1);
-	m_uni_emissivePassRT0 = getUniformLocation("uni_emissivePassRT0");
-	updateUniform(m_uni_emissivePassRT0, 2);
+	m_uni_emissiveBlurPassRT0 = getUniformLocation("uni_emissiveBlurPassRT0");
+	updateUniform(m_uni_emissiveBlurPassRT0, 2);
 	
 }
 

@@ -296,11 +296,11 @@ private:
 	GLint m_uni_m;
 };
 
-class EmissivePassShaderProgram : public GLShaderProgram
+class EmissiveNormalPassShaderProgram : public GLShaderProgram
 {
 public:
-	EmissivePassShaderProgram() {};
-	~EmissivePassShaderProgram() {};
+	EmissiveNormalPassShaderProgram() {};
+	~EmissiveNormalPassShaderProgram() {};
 
 	void initialize() override;
 	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
@@ -311,6 +311,21 @@ private:
 	GLint m_uni_r;
 	GLint m_uni_t;
 	GLint m_uni_m;
+};
+
+class EmissiveBlurPassShaderProgram : public GLShaderProgram
+{
+public:
+	EmissiveBlurPassShaderProgram() {};
+	~EmissiveBlurPassShaderProgram() {};
+
+	void initialize() override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+
+private:
+	GLint m_uni_emissiveNormalPassRT0;
+	GLint m_uni_horizontal;
+	bool m_isHorizontal = true;
 };
 
 class FinalPassShaderProgram : public GLShaderProgram
@@ -325,5 +340,5 @@ public:
 private:
 	GLint m_uni_billboardPassRT0;
 	GLint m_uni_skyDeferPassRT0;
-	GLint m_uni_emissivePassRT0;
+	GLint m_uni_emissiveBlurPassRT0;
 };
