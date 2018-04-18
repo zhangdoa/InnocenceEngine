@@ -232,6 +232,8 @@ void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& camer
 			}
 		}
 	}
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 }
 
 void ShadowDeferPassShaderProgram::initialize()
@@ -245,9 +247,6 @@ void ShadowDeferPassShaderProgram::initialize()
 
 void ShadowDeferPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-
 	useProgram();
 }
 
@@ -271,11 +270,9 @@ void GeometryPassBlinnPhongShaderProgram::initialize()
 
 void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
-	// @TODO
-	glDisable(GL_CULL_FACE);
 	useProgram();
 
 	mat4 p = cameraComponents[0]->getProjectionMatrix();
@@ -328,6 +325,8 @@ void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& 
 			}
 		}
 	}
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_CLAMP);
 }
 
 void LightPassBlinnPhongShaderProgram::initialize()
@@ -427,11 +426,9 @@ void GeometryPassPBSShaderProgram::initialize()
 
 void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
-	// @TODO
-	glDisable(GL_CULL_FACE);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL - m_polygonMode);
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -498,7 +495,7 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 				{
 					if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 					{
-						glStencilFunc(GL_ALWAYS, 1, 0xFF);
+						glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
 
 						updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
 
@@ -553,28 +550,32 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 							meshMap.find(l_graphicData.first)->second->update();
 						}
 					}
-					//else if (l_visibleComponent->m_visiblilityType == visiblilityType::EMISSIVE)
-					//{
-					//	glStencilFunc(GL_ALWAYS, 2, 0xFF);
+					else if (l_visibleComponent->m_visiblilityType == visiblilityType::EMISSIVE)
+					{
+						glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
 
-					//	updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+						updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
 
-					//	// draw each graphic data of visibleComponent
-					//	for (auto& l_graphicData : l_visibleComponent->getModelMap())
-					//	{
-					//		// draw meshes
-					//		meshMap.find(l_graphicData.first)->second->update();
-					//	}
-					//}
+						// draw each graphic data of visibleComponent
+						for (auto& l_graphicData : l_visibleComponent->getModelMap())
+						{
+							updateUniform(m_uni_useTexture, l_visibleComponent->m_useTexture);
+							updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
+							// draw meshes
+							meshMap.find(l_graphicData.first)->second->update();
+						}
+					}
 					else
 					{
-						glStencilFunc(GL_ALWAYS, 0, 0xFF);
+						glStencilFunc(GL_ALWAYS, 0x00, 0xFF);
 					}
 				}
 			}
 		}
 	}
 
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_CLAMP);
 	glDisable(GL_STENCIL_TEST);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
@@ -618,10 +619,9 @@ void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComp
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
-
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilFunc(GL_EQUAL, 0x01, 0xFF);
 	glStencilMask(0x00);
 
 	useProgram();
@@ -673,7 +673,6 @@ void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComp
 			}
 		}
 	}
-	glDisable(GL_STENCIL_TEST);
 }
 
 void EnvironmentCapturePassPBSShaderProgram::initialize()
@@ -753,6 +752,9 @@ void EnvironmentConvolutionPassPBSShaderProgram::initialize()
 
 void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
 
@@ -813,6 +815,9 @@ void EnvironmentPreFilterPassPBSShaderProgram::initialize()
 
 void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
 	mat4 captureProjection;
 	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
 
@@ -878,6 +883,9 @@ void EnvironmentBRDFLUTPassPBSShaderProgram::initialize()
 
 void EnvironmentBRDFLUTPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
 	useProgram();
 
 	if (visibleComponents.size() > 0)
@@ -948,7 +956,8 @@ void SkyForwardPassPBSShaderProgram::update(std::vector<CameraComponent*>& camer
 			}
 		}
 	}
-	glDepthFunc(GL_LESS);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 }
 
 void DebuggerShaderProgram::initialize()
@@ -967,6 +976,7 @@ void DebuggerShaderProgram::initialize()
 
 void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
 {
+	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	useProgram();
@@ -1054,9 +1064,8 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 			}
 		}
 	}
-
+	glDisable(GL_DEPTH_TEST);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glEnable(GL_CULL_FACE);
 }
 
 
@@ -1155,6 +1164,7 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 			}
 		}
 	}
+	glDisable(GL_DEPTH_TEST);
 }
 
 void EmissiveNormalPassShaderProgram::initialize()
@@ -1204,6 +1214,7 @@ void EmissiveNormalPassShaderProgram::update(std::vector<CameraComponent*>& came
 			}
 		}
 	}
+	glDisable(GL_DEPTH_TEST);
 }
 
 void EmissiveBlurPassShaderProgram::initialize()
@@ -1220,6 +1231,10 @@ void EmissiveBlurPassShaderProgram::update(std::vector<CameraComponent*>& camera
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilFunc(GL_EQUAL, 0x02, 0xFF);
+	glStencilMask(0x00);
 
 	useProgram();
 	updateUniform(m_uni_horizontal, m_isHorizontal);
