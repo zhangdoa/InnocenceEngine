@@ -433,6 +433,10 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 	// @TODO
 	glDisable(GL_CULL_FACE);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL - m_polygonMode);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	glStencilMask(0xFF);
+	glClear(GL_STENCIL_BUFFER_BIT);
 
 	useProgram();
 
@@ -494,6 +498,8 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 				{
 					if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 					{
+						glStencilFunc(GL_ALWAYS, 1, 0xFF);
+
 						updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
 
 						// draw each graphic data of visibleComponent
@@ -547,11 +553,30 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 							meshMap.find(l_graphicData.first)->second->update();
 						}
 					}
+					//else if (l_visibleComponent->m_visiblilityType == visiblilityType::EMISSIVE)
+					//{
+					//	glStencilFunc(GL_ALWAYS, 2, 0xFF);
+
+					//	updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+
+					//	// draw each graphic data of visibleComponent
+					//	for (auto& l_graphicData : l_visibleComponent->getModelMap())
+					//	{
+					//		// draw meshes
+					//		meshMap.find(l_graphicData.first)->second->update();
+					//	}
+					//}
+					else
+					{
+						glStencilFunc(GL_ALWAYS, 0, 0xFF);
+					}
 				}
 			}
 		}
 	}
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+	glDisable(GL_STENCIL_TEST);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void LightPassPBSShaderProgram::initialize()
@@ -593,6 +618,11 @@ void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComp
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilMask(0x00);
 
 	useProgram();
 
@@ -643,6 +673,7 @@ void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComp
 			}
 		}
 	}
+	glDisable(GL_STENCIL_TEST);
 }
 
 void EnvironmentCapturePassPBSShaderProgram::initialize()
@@ -1221,6 +1252,7 @@ void FinalPassShaderProgram::update(std::vector<CameraComponent*>& cameraCompone
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	glDisable(GL_STENCIL_TEST);
 
 	useProgram();
 }
