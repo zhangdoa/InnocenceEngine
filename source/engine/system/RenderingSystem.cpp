@@ -1280,12 +1280,14 @@ void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraCompo
 
 	m_geometryPassFrameBuffer->asReadBuffer();
 	m_lightPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
-	m_lightPassFrameBuffer->update(true, false);
+	m_lightPassFrameBuffer->update(true, true);
 	m_lightPassFrameBuffer->setRenderBufferStorageSize(0);	
 	m_lightPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw light pass rectangle
 	this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
+
+	glDisable(GL_STENCIL_TEST);
 }
 
 void RenderingSystem::initializeFinalPass()
@@ -1395,7 +1397,7 @@ void RenderingSystem::initializeFinalPass()
 	auto l_emissiveNormalPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
 	auto l_emissiveNormalPassRenderTargetTextures = std::vector<BaseTexture*>{ l_emissiveNormalPassTextureData };
 	m_emissiveNormalPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_emissiveNormalPassFrameBuffer->setup(frameBufferType::PINGPONG, renderBufferType::DEPTH, l_emissiveNormalPassRenderBufferStorageSizes, l_emissiveNormalPassRenderTargetTextures);
+	m_emissiveNormalPassFrameBuffer->setup(frameBufferType::PINGPONG, renderBufferType::DEPTH_AND_STENCIL, l_emissiveNormalPassRenderBufferStorageSizes, l_emissiveNormalPassRenderTargetTextures);
 	m_emissiveNormalPassFrameBuffer->initialize();
 
 	// initialize emissive blur pass shader
@@ -1415,7 +1417,7 @@ void RenderingSystem::initializeFinalPass()
 	auto l_emissiveBlurPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
 	auto l_emissiveBlurPassPingRenderTargetTextures = std::vector<BaseTexture*>{ l_emissiveBlurPassPingTextureData };
 	m_emissiveBlurPassPingFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_emissiveBlurPassPingFrameBuffer->setup(frameBufferType::PINGPONG, renderBufferType::DEPTH, l_emissiveNormalPassRenderBufferStorageSizes, l_emissiveBlurPassPingRenderTargetTextures);
+	m_emissiveBlurPassPingFrameBuffer->setup(frameBufferType::PINGPONG, renderBufferType::DEPTH_AND_STENCIL, l_emissiveNormalPassRenderBufferStorageSizes, l_emissiveBlurPassPingRenderTargetTextures);
 	m_emissiveBlurPassPingFrameBuffer->initialize();	
 	
 	// initialize pong texture
@@ -1427,7 +1429,7 @@ void RenderingSystem::initializeFinalPass()
 	auto l_emissiveBlurPassPongRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
 	auto l_emissiveBlurPassPongRenderTargetTextures = std::vector<BaseTexture*>{ l_emissiveBlurPassPongTextureData };
 	m_emissiveBlurPassPongFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_emissiveBlurPassPongFrameBuffer->setup(frameBufferType::PINGPONG, renderBufferType::DEPTH, l_emissiveBlurPassPongRenderBufferStorageSizes, l_emissiveBlurPassPongRenderTargetTextures);
+	m_emissiveBlurPassPongFrameBuffer->setup(frameBufferType::PINGPONG, renderBufferType::DEPTH_AND_STENCIL, l_emissiveBlurPassPongRenderBufferStorageSizes, l_emissiveBlurPassPongRenderTargetTextures);
 	m_emissiveBlurPassPongFrameBuffer->initialize();
 	
 	//post-process pass
@@ -1489,7 +1491,10 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 		{
 			if (l_isFirstIteration)
 			{
-				m_emissiveNormalPassFrameBuffer->activeTexture(0, 0);
+				m_geometryPassFrameBuffer->activeTexture(2, 0);
+				m_geometryPassFrameBuffer->asReadBuffer();
+				m_emissiveBlurPassPingFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
+				m_emissiveBlurPassPongFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
 				l_isFirstIteration = false;
 			}
 			else
@@ -1512,6 +1517,7 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 			l_isPing = true;
 		}
 	}
+	glDisable(GL_STENCIL_TEST);
 
 	// draw final pass
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

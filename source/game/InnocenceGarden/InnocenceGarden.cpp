@@ -235,6 +235,7 @@ void InnocenceGarden::setupLights()
 
 		m_pointLightBillboardComponents[i].m_visiblilityType = visiblilityType::EMISSIVE;
 		m_pointLightBillboardComponents[i].m_meshType = meshShapeType::SPHERE;
+		m_pointLightBillboardComponents[i].m_useTexture = false;
 		//m_pointLightBillboardComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lightbulb.png"));
 		m_visibleComponents.emplace_back(&m_pointLightBillboardComponents[i]);
 
