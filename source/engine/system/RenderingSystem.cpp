@@ -1220,7 +1220,7 @@ void RenderingSystem::initializeGeometryPass()
 	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
 	auto l_renderTargetTextures = std::vector<BaseTexture*>{ l_geometryPassRT0TextureData , l_geometryPassRT1TextureData  ,l_geometryPassRT2TextureData  ,l_geometryPassRT3TextureData, l_geometryPassRT4TextureData };
 	m_geometryPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_geometryPassFrameBuffer->setup(frameBufferType::FORWARD, renderBufferType::DEPTH, l_renderBufferStorageSizes, l_renderTargetTextures);
+	m_geometryPassFrameBuffer->setup(frameBufferType::FORWARD, renderBufferType::DEPTH_AND_STENCIL, l_renderBufferStorageSizes, l_renderTargetTextures);
 	m_geometryPassFrameBuffer->initialize();
 }
 
@@ -1253,7 +1253,7 @@ void RenderingSystem::initializeLightPass()
 	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
 	auto l_renderTargetTextures = std::vector<BaseTexture*>{ l_lightPassTextureData };
 	m_lightPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_lightPassFrameBuffer->setup(frameBufferType::DEFER, renderBufferType::NONE, l_renderBufferStorageSizes, l_renderTargetTextures);
+	m_lightPassFrameBuffer->setup(frameBufferType::DEFER, renderBufferType::DEPTH_AND_STENCIL, l_renderBufferStorageSizes, l_renderTargetTextures);
 	m_lightPassFrameBuffer->initialize();
 }
 
@@ -1278,7 +1278,9 @@ void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraCompo
 	// BRDF look-up table
 	m_environmentPassFrameBuffer->activeTexture(3, 8);
 
-	m_lightPassFrameBuffer->update(true, true);
+	m_geometryPassFrameBuffer->asReadBuffer();
+	m_lightPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
+	m_lightPassFrameBuffer->update(true, false);
 	m_lightPassFrameBuffer->setRenderBufferStorageSize(0);	
 	m_lightPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 

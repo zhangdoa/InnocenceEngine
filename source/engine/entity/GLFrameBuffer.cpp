@@ -113,6 +113,7 @@ void GLFrameBuffer::asWriteBuffer(const vec2& source, const vec2& dest)
 {
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_FBO);
 	glBlitFramebuffer(0, 0, (GLint)source.x, (GLint)source.y, 0, 0, dest.x, dest.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, (GLint)source.x, (GLint)source.y, 0, 0, dest.x, dest.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 }
 
 void GLFrameBuffer::shutdown()
