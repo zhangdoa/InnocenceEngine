@@ -293,24 +293,6 @@ private:
 	GLint m_uni_p;
 	GLint m_uni_r;
 	GLint m_uni_t;
-	GLint m_uni_m;
-};
-
-class EmissiveNormalPassShaderProgram : public GLShaderProgram
-{
-public:
-	EmissiveNormalPassShaderProgram() {};
-	~EmissiveNormalPassShaderProgram() {};
-
-	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
-
-private:
-	GLint m_uni_albedo;
-	GLint m_uni_p;
-	GLint m_uni_r;
-	GLint m_uni_t;
-	GLint m_uni_m;
 };
 
 class EmissiveBlurPassShaderProgram : public GLShaderProgram

@@ -73,10 +73,9 @@ void RenderingSystem::setupRendering()
 	m_lightPassShaderProgram = g_pMemorySystem->spawn<LightPassPBSShaderProgram>();
 
 	m_skyForwardPassShaderProgram = g_pMemorySystem->spawn<SkyForwardPassPBSShaderProgram>();
-	m_skyDeferPassShaderProgram = g_pMemorySystem->spawn<SkyDeferPassPBSShaderProgram>();
 	m_debuggerPassShaderProgram = g_pMemorySystem->spawn<DebuggerShaderProgram>();
+	m_skyDeferPassShaderProgram = g_pMemorySystem->spawn<SkyDeferPassPBSShaderProgram>();
 	m_billboardPassShaderProgram = g_pMemorySystem->spawn<BillboardPassShaderProgram>();
-	m_emissiveNormalPassShaderProgram = g_pMemorySystem->spawn<EmissiveNormalPassShaderProgram>();
 	m_emissiveBlurPassShaderProgram = g_pMemorySystem->spawn<EmissiveBlurPassShaderProgram>();
 	m_finalPassShaderProgram = g_pMemorySystem->spawn<FinalPassShaderProgram>();
 }
@@ -1380,26 +1379,6 @@ void RenderingSystem::initializeFinalPass()
 	m_billboardPassFrameBuffer->initialize();
 
 	// emissive pass
-	// initialize emissive normal pass shader
-	auto l_emissiveNormalPassVertexShaderFilePath = "GL3.3/emissiveNormalPassVertex.sf";
-	auto l_emissiveNormalPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_emissiveNormalPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_emissiveNormalPassVertexShaderFilePath)));
-	auto l_emissiveNormalPassFragmentShaderFilePath = "GL3.3/emissiveNormalPassFragment.sf";
-	auto l_emissiveNormalPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_emissiveNormalPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_emissiveNormalPassFragmentShaderFilePath)));
-	m_emissiveNormalPassShaderProgram->setup({ l_emissiveNormalPassVertexShaderData , l_emissiveNormalPassFragmentShaderData });
-	m_emissiveNormalPassShaderProgram->initialize();
-
-	// initialize emissive normal pass texture
-	m_emissiveNormalPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_emissiveNormalPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_emissiveNormalPassTextureID);
-	l_emissiveNormalPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
-
-	// initialize emissive normal pass framebuffer
-	auto l_emissiveNormalPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
-	auto l_emissiveNormalPassRenderTargetTextures = std::vector<BaseTexture*>{ l_emissiveNormalPassTextureData };
-	m_emissiveNormalPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_emissiveNormalPassFrameBuffer->setup(frameBufferType::PINGPONG, renderBufferType::DEPTH_AND_STENCIL, l_emissiveNormalPassRenderBufferStorageSizes, l_emissiveNormalPassRenderTargetTextures);
-	m_emissiveNormalPassFrameBuffer->initialize();
-
 	// initialize emissive blur pass shader
 	auto l_emissiveBlurPassVertexShaderFilePath = "GL3.3/emissiveBlurPassVertex.sf";
 	auto l_emissiveBlurPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_emissiveBlurPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_emissiveBlurPassVertexShaderFilePath)));
@@ -1417,7 +1396,7 @@ void RenderingSystem::initializeFinalPass()
 	auto l_emissiveBlurPassRenderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
 	auto l_emissiveBlurPassPingRenderTargetTextures = std::vector<BaseTexture*>{ l_emissiveBlurPassPingTextureData };
 	m_emissiveBlurPassPingFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
-	m_emissiveBlurPassPingFrameBuffer->setup(frameBufferType::PINGPONG, renderBufferType::DEPTH_AND_STENCIL, l_emissiveNormalPassRenderBufferStorageSizes, l_emissiveBlurPassPingRenderTargetTextures);
+	m_emissiveBlurPassPingFrameBuffer->setup(frameBufferType::PINGPONG, renderBufferType::DEPTH_AND_STENCIL, l_emissiveBlurPassRenderBufferStorageSizes, l_emissiveBlurPassPingRenderTargetTextures);
 	m_emissiveBlurPassPingFrameBuffer->initialize();	
 	
 	// initialize pong texture
@@ -1474,13 +1453,6 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	m_billboardPassFrameBuffer->update(true, false);
 	m_billboardPassFrameBuffer->setRenderBufferStorageSize(0);
 	m_billboardPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
-
-	// draw emissive normal pass
-	m_geometryPassFrameBuffer->asReadBuffer();
-	m_emissiveNormalPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
-	m_emissiveNormalPassFrameBuffer->update(true, false);
-	m_emissiveNormalPassFrameBuffer->setRenderBufferStorageSize(0);
-	m_emissiveNormalPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 
 	// draw emissive ping-pong pass
 	bool l_isPing = true;
