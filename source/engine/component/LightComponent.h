@@ -16,18 +16,18 @@ public:
 	void update() override;
 	void shutdown() override;
 
-	const lightType getLightType();
-	vec4 getDirection() const;
-	double getRadius() const;
-	vec4 getColor() const;
+	const lightType getLightType() const;
+	const vec4 getDirection() const;
+	const double getRadius() const;
+	const vec4 getColor() const;
 
-	void setlightType(lightType lightType);
-	void setRadius(double radius);
+	void setlightType(const lightType lightType);
+	void setRadius(const double radius);
 	void setColor(const vec4& color);
 
-	mat4 getProjectionMatrix();
-	mat4 getInvertTranslationMatrix();
-	mat4 getInvertRotationMatrix();
+	mat4 getProjectionMatrix() const;
+	mat4 getInvertTranslationMatrix() const;
+	mat4 getInvertRotationMatrix() const;
 
 	bool m_drawAABB = false;
 	meshID m_AABBMeshID;

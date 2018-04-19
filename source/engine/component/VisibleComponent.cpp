@@ -10,12 +10,12 @@ VisibleComponent::~VisibleComponent()
 {
 }
 
-void VisibleComponent::addMeshData(meshID& meshID)
+void VisibleComponent::addMeshData(const meshID & meshID)
 {
 	m_modelMap.emplace(meshID, textureMap());
 }
 
-void VisibleComponent::addTextureData(texturePair & texturePair)
+void VisibleComponent::addTextureData(const texturePair & texturePair)
 {
 	for (auto& l_model : m_modelMap)
 	{
@@ -28,7 +28,7 @@ void VisibleComponent::addTextureData(texturePair & texturePair)
 }
 
 
-void VisibleComponent::overwriteTextureData(texturePair& texturePair)
+void VisibleComponent::overwriteTextureData(const texturePair & texturePair)
 {
 	for (auto& l_model : m_modelMap)
 	{
@@ -44,12 +44,12 @@ void VisibleComponent::overwriteTextureData(texturePair& texturePair)
 	}
 }
 
-modelMap& VisibleComponent::getModelMap()
+const modelMap& VisibleComponent::getModelMap() const
 {
 	return m_modelMap;
 }
 
-void VisibleComponent::setModelMap(modelMap & modelMap)
+void VisibleComponent::setModelMap(const modelMap & modelMap)
 {
 	m_modelMap = modelMap;
 }
