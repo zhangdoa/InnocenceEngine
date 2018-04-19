@@ -1103,7 +1103,6 @@ void BillboardPassShaderProgram::initialize()
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_r = getUniformLocation("uni_r");
 	m_uni_t = getUniformLocation("uni_t");
-	m_uni_m = getUniformLocation("uni_m");
 }
 
 void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
@@ -1129,7 +1128,6 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 		{
 			if (l_visibleComponent->m_visiblilityType == visiblilityType::BILLBOARD)
 			{
-				updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
 				updateUniform(m_uni_pos, l_visibleComponent->getParentEntity()->getTransform()->getPos().x, l_visibleComponent->getParentEntity()->getTransform()->getPos().y, l_visibleComponent->getParentEntity()->getTransform()->getPos().z);
 				updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
 				auto l_distanceToCamera = (cameraComponents[0]->getParentEntity()->getTransform()->getPos() - l_visibleComponent->getParentEntity()->getTransform()->getPos()).length();
@@ -1158,56 +1156,6 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 							l_textureData->update(0);
 						}
 					}
-					// draw meshes
-					meshMap.find(l_graphicData.first)->second->update();
-				}
-			}
-		}
-	}
-	glDisable(GL_DEPTH_TEST);
-}
-
-void EmissiveNormalPassShaderProgram::initialize()
-{
-	GLShaderProgram::initialize();
-	useProgram();
-
-	m_uni_albedo = getUniformLocation("uni_albedo");
-	m_uni_p = getUniformLocation("uni_p");
-	m_uni_r = getUniformLocation("uni_r");
-	m_uni_t = getUniformLocation("uni_t");
-	m_uni_m = getUniformLocation("uni_m");
-}
-
-void EmissiveNormalPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap)
-{
-	glEnable(GL_DEPTH_TEST);
-	useProgram();
-
-	if (cameraComponents.size() > 0)
-	{
-		mat4 p = cameraComponents[0]->getProjectionMatrix();
-		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
-		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
-
-		updateUniform(m_uni_p, p);
-		updateUniform(m_uni_r, r);
-		updateUniform(m_uni_t, t);
-	}
-
-	if (visibleComponents.size() > 0)
-	{
-		// draw each visibleComponent
-		for (auto& l_visibleComponent : visibleComponents)
-		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::EMISSIVE)
-			{
-				updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
-				updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
-
-				// draw each graphic data of visibleComponent
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
-				{
 					// draw meshes
 					meshMap.find(l_graphicData.first)->second->update();
 				}
