@@ -13,7 +13,7 @@ public:
 
 	virtual const EntityID& getEntityID() const = 0;
 
-	virtual IEntity* getParentEntity() const = 0;
+	virtual const IEntity* getParentEntity() const = 0;
 	virtual void setParentEntity(IEntity* parentEntity) = 0;
 
 	virtual void addChildEntity(IEntity* childEntity) = 0;

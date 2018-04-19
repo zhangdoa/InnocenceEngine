@@ -15,7 +15,7 @@ public:
 	const EntityID& getEntityID() const override;
 	const objectStatus& getStatus() const override;
 
-	IEntity* getParentEntity() const override;
+	const IEntity* getParentEntity() const override;
 	void setParentEntity(IEntity* parentEntity) override;
 
 	void addChildEntity(IEntity* childEntity) override;

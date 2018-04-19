@@ -31,12 +31,12 @@ const objectStatus & BaseMesh::getStatus() const
 	return m_objectStatus;
 }
 
-meshID BaseMesh::getMeshID()
+const meshID BaseMesh::getMeshID() const
 {
 	return m_meshID;
 }
 
-vec4 BaseMesh::findMaxVertex()
+const vec4 BaseMesh::findMaxVertex() const
 {
 	double maxX = 0;
 	double maxY = 0;
@@ -62,7 +62,7 @@ vec4 BaseMesh::findMaxVertex()
 	return vec4(maxX, maxY, maxZ, 1.0);
 }
 
-vec4 BaseMesh::findMinVertex()
+const vec4 BaseMesh::findMinVertex() const
 {
 	double minX = 0;
 	double minY = 0;

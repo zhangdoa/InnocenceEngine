@@ -20,7 +20,7 @@ const std::vector<IEntity*>& BaseEntity::getChildrenEntitys() const
 	return m_childEntitys;
 }
 
-IEntity* BaseEntity::getParentEntity() const
+const IEntity* BaseEntity::getParentEntity() const
 {
 	return m_parentEntity;
 }

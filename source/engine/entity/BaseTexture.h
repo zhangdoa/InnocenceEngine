@@ -18,9 +18,9 @@ public:
 	virtual void update(int textureIndex) = 0;
 	virtual void attachToFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel) = 0;
 	const objectStatus& getStatus() const override;
-	textureID getTextureID();
-	int getTextureWidth() const;
-	int getTextureHeight() const;
+	const textureID getTextureID() const;
+	const int getTextureWidth() const;
+	const int getTextureHeight() const;
 
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;

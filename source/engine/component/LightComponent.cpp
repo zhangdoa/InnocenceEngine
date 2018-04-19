@@ -25,17 +25,17 @@ void LightComponent::setColor(const vec4& color)
 	m_color = color;
 }
 
-mat4 LightComponent::getProjectionMatrix()
+mat4 LightComponent::getProjectionMatrix() const
 {
 	return mat4();
 }
 
-mat4 LightComponent::getInvertTranslationMatrix()
+mat4 LightComponent::getInvertTranslationMatrix() const
 {
 	return getParentEntity()->caclWorldPos().scale(-1.0).toTranslationMatrix();
 }
 
-mat4 LightComponent::getInvertRotationMatrix()
+mat4 LightComponent::getInvertRotationMatrix() const
 {
 	// quaternion rotation
 	vec4 conjugateRotQuat = getParentEntity()->caclWorldRot();
@@ -46,23 +46,23 @@ mat4 LightComponent::getInvertRotationMatrix()
 	return conjugateRotQuat.toRotationMatrix();
 }
 
-const lightType LightComponent::getLightType()
+const lightType LightComponent::getLightType() const
 {
 	return m_lightType;
 }
 
-vec4 LightComponent::getDirection() const
+const vec4 LightComponent::getDirection() const
 {
 	return  getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
 }
 
-double LightComponent::getRadius() const
+const double LightComponent::getRadius() const
 {
 	double l_lightMaxIntensity = std::fmax(std::fmax(m_color.x, m_color.y), m_color.z);
 	return 	 (-m_linearFactor + std::sqrt(m_linearFactor * m_linearFactor - 4.0 * m_quadraticFactor * (m_constantFactor - (256.0 / 5.0) * l_lightMaxIntensity))) / (2.0 * m_quadraticFactor);
 }
 
-vec4 LightComponent::getColor() const
+const vec4 LightComponent::getColor() const
 {
 	return m_color;
 }

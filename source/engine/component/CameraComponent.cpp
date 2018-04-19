@@ -8,17 +8,17 @@ CameraComponent::~CameraComponent()
 {
 }
 
-mat4 CameraComponent::getInvertTranslationMatrix() const
+const mat4 CameraComponent::getInvertTranslationMatrix() const
 {
 	return getParentEntity()->caclWorldPos().scale(-1.0).toTranslationMatrix();
 }
 
-mat4 CameraComponent::getInvertRotationMatrix() const
+const mat4 CameraComponent::getInvertRotationMatrix() const
 {
 	return getParentEntity()->caclWorldRot().quatConjugate().toRotationMatrix();
 }
 
-mat4 CameraComponent::getProjectionMatrix() const
+const mat4 CameraComponent::getProjectionMatrix() const
 {
 	return m_projectionMatrix;
 }
@@ -105,7 +105,7 @@ void CameraComponent::caclFrustumVertices()
 	}
 }
 
-std::vector<Vertex>* CameraComponent::getFrustumCorners()
+const std::vector<Vertex>* CameraComponent::getFrustumCorners() const
 {
 	return &m_frustumVertices;
 }

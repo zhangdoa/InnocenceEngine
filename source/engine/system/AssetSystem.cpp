@@ -169,7 +169,7 @@ void AssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& m
 	g_pLogSystem->printLog("innoMesh: mesh of model " + fileName + " is loaded.");
 }
 
-void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textureMap & textureMap, aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod)
+void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textureMap & textureMap, const aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod) 
 {
 	for (auto i = (unsigned int)0; i < aiTextureType_UNKNOWN; i++)
 	{

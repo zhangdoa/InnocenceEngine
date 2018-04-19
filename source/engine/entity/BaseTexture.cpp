@@ -25,17 +25,17 @@ const objectStatus & BaseTexture::getStatus() const
 	return m_objectStatus;
 }
 
-textureID BaseTexture::getTextureID()
+const textureID BaseTexture::getTextureID() const
 {
 	return m_textureID;
 }
 
-int BaseTexture::getTextureWidth() const
+const int BaseTexture::getTextureWidth() const
 {
 	return m_textureWidth;
 }
 
-int BaseTexture::getTextureHeight() const
+const int BaseTexture::getTextureHeight() const
 {
 	return m_textureHeight;
 }

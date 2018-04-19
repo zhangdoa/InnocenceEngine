@@ -12,11 +12,11 @@ public:
 	void update() override;
 	void shutdown() override;
 
-	mat4 getInvertTranslationMatrix() const;
-	mat4 getInvertRotationMatrix() const;
-	mat4 getProjectionMatrix() const;
+	const mat4 getInvertTranslationMatrix() const;
+	const mat4 getInvertRotationMatrix() const;
+	const mat4 getProjectionMatrix() const;
 	mat4 m_initTransMat;
-	std::vector<Vertex>* getFrustumCorners();
+	const std::vector<Vertex>* getFrustumCorners() const;
 
 	double m_FOV = 60.0;
 	double m_WHRatio = 16.0 / 9.0;
