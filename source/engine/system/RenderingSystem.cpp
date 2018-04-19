@@ -1477,6 +1477,7 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 			m_emissiveBlurPassPingFrameBuffer->setRenderBufferStorageSize(0);
 			m_emissiveBlurPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 			this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
+			glDisable(GL_STENCIL_TEST);
 			l_isPing = false;
 		}
 		else
@@ -1486,10 +1487,10 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 			m_emissiveBlurPassPongFrameBuffer->setRenderBufferStorageSize(0);
 			m_emissiveBlurPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
 			this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
+			glDisable(GL_STENCIL_TEST);
 			l_isPing = true;
 		}
 	}
-	glDisable(GL_STENCIL_TEST);
 
 	// draw final pass
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

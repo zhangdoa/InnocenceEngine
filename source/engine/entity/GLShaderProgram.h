@@ -305,7 +305,7 @@ public:
 	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
 
 private:
-	GLint m_uni_emissiveNormalPassRT0;
+	GLint m_uni_geometryPassRT2;
 	GLint m_uni_horizontal;
 	bool m_isHorizontal = true;
 };

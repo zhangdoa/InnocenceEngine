@@ -21,8 +21,7 @@ void InnocenceGarden::setup()
 	m_rootEntity.addChildEntity(&m_pawnEntity1);
 	m_rootEntity.addChildEntity(&m_pawnEntity2);
 
-	m_playCharacter.getTransform()->setPos(vec4(1.0, 2.0, 3.0, 1.0));
-	m_playCharacter.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 60.0);
+	m_playCharacter.getTransform()->setPos(vec4(0.0, 2.0, 3.0, 1.0));
 	m_playCharacter.getCameraComponent().m_drawFrustum = false;
 	m_playCharacter.getCameraComponent().m_drawAABB = false;
 	m_cameraComponents.emplace_back(&m_playCharacter.getCameraComponent());
@@ -31,7 +30,7 @@ void InnocenceGarden::setup()
 	m_skyboxComponent.m_visiblilityType = visiblilityType::SKYBOX;
 	m_skyboxComponent.m_meshType = meshShapeType::CUBE;
 	m_skyboxComponent.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	m_skyboxComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl/GCanyon_C_YumaPoint_3k.hdr"));
+	m_skyboxComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl/Mono_Lake_B_Ref.hdr"));
 	m_skyboxEntity.addChildComponent(&m_skyboxComponent);
 	m_visibleComponents.emplace_back(&m_skyboxComponent);
 
@@ -39,13 +38,14 @@ void InnocenceGarden::setup()
 	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
 	m_directionalLightComponent.m_drawAABB = false;
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
-	m_directionalLightEntity.getTransform()->setPos(vec4(-2.0, 4.0, -1.0, 1.0));
+	m_directionalLightEntity.getTransform()->setPos(vec4(0.0, 4.0, 0.0, 1.0));
 	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 45);
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
 	m_directionalLightBillboardComponent.m_visiblilityType = visiblilityType::BILLBOARD;
 	m_directionalLightBillboardComponent.m_meshType = meshShapeType::CUBE;
 	m_directionalLightBillboardComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lightbulb.png"));
+	m_directionalLightBillboardComponent.m_albedo = vec4(0.5, 0.3, 0.0, 1.0);
 	m_directionalLightEntity.addChildComponent(&m_directionalLightBillboardComponent);
 	m_visibleComponents.emplace_back(&m_directionalLightBillboardComponent);
 
@@ -58,14 +58,13 @@ void InnocenceGarden::setup()
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
-	//m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
+	m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
 	m_pawnComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
-	m_pawnComponent1.m_drawAABB = true;
+	m_pawnComponent1.m_drawAABB = false;
 	m_pawnComponent1.m_useTexture = true;
 	m_pawnComponent1.m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
 	m_pawnComponent1.m_MRA = vec4(0.0, 0.35, 1.0, 1.0);
 	m_pawnEntity1.addChildComponent(&m_pawnComponent1);
-	m_pawnEntity1.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 90.0);
 	m_pawnEntity1.getTransform()->setScale(vec4(0.1, 0.1, 0.1, 1.0));
 	m_visibleComponents.emplace_back(&m_pawnComponent1);
 
@@ -96,25 +95,6 @@ void InnocenceGarden::initialize()
 
 void InnocenceGarden::update()
 {
-	//for (size_t i = 0; i < 1000000; i++)
-	//{
-	//	auto a = mat4();
-	//	a.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 1000000.0);
-	//	a = a * a;
-	//}
-	//mat4 t;
-	//t.initializeToPerspectiveMatrix((70.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 1000000.0);
-	//g_pLogSystem->printLog("Original: ");
-	//g_pLogSystem->printLog(t);
-	//g_pLogSystem->printLog("Determinant: ");
-	//g_pLogSystem->printLog(t.getDeterminant());
-	//g_pLogSystem->printLog("Transpose: ");
-	//g_pLogSystem->printLog(t.transpose());
-	//g_pLogSystem->printLog("Inverse: ");
-	//g_pLogSystem->printLog(t.inverse());
-	//g_pLogSystem->printLog("Inverse validation: ");
-	//g_pLogSystem->printLog(t.inverse().mul(t));
-	//auto v = vec4(0.0, 1.0, 0.0, 0.0).cross(vec4(0.0, 0.0, 1.0, 0.0));
 	temp += 0.02f;
 	updateLights(temp);
 	updateSpheres(temp);
@@ -181,8 +161,6 @@ void InnocenceGarden::setupSpheres()
 	for (auto i = (unsigned int)0; i < m_sphereComponents.size(); i += 4)
 	{
 		////Copper
-		//m_sphereComponents[i].m_albedo = vec4(0.95, 0.93, 0.88 ,1.0);
-		//m_sphereComponents[i + 1].m_albedo = vec4(0.0, 0.0, 0.0, 1.0);
 		m_sphereComponents[i].m_albedo = vec4(0.95, 0.64, 0.54 ,1.0);
 		//m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/rustediron2_normal.png"));
 		//m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/rustediron2_basecolor.png"));
@@ -236,7 +214,6 @@ void InnocenceGarden::setupLights()
 		m_pointLightBillboardComponents[i].m_visiblilityType = visiblilityType::EMISSIVE;
 		m_pointLightBillboardComponents[i].m_meshType = meshShapeType::SPHERE;
 		m_pointLightBillboardComponents[i].m_useTexture = false;
-		//m_pointLightBillboardComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lightbulb.png"));
 		m_visibleComponents.emplace_back(&m_pointLightBillboardComponents[i]);
 
 		m_rootEntity.addChildEntity(&m_pointLightEntitys[i]);
@@ -255,9 +232,6 @@ void InnocenceGarden::setupLights()
 
 void InnocenceGarden::updateLights(double seed)
 {
-	//m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 0.5);
-	//m_directionalLightBillboardComponent.m_albedo = vec4((sin(seed) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0, 1.0);
-	//m_directionalLightComponent.setColor(vec4((sin(seed) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0, 1.0));
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
 		m_pointLightBillboardComponents[i].m_albedo = vec4((sin(seed + i) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0, 1.0);
@@ -274,9 +248,4 @@ void InnocenceGarden::updateLights(double seed)
 void InnocenceGarden::updateSpheres(double seed)
 {
 	m_pawnEntity2.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.5);
-	for (auto i = (unsigned int)0; i < m_sphereEntitys.size(); i++)
-	{
-		//m_sphereEntitys[i].getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.01 * i);
-		//m_sphereEntitys[i].getTransform()->setPos(m_sphereEntitys[i].getTransform()->getPos() + vec4(cos(seed) * 0.01, 0.0, 0.0, 1.0));
-	}
 }
