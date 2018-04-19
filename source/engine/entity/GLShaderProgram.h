@@ -38,7 +38,7 @@ public:
 	~ShadowForwardPassShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_p;
@@ -53,7 +53,7 @@ public:
 	~ShadowDeferPassShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_shadowForwardPassRT0;
@@ -66,7 +66,7 @@ public:
 	~GeometryPassBlinnPhongShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_normalTexture;
@@ -85,7 +85,7 @@ public:
 	~LightPassBlinnPhongShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_RT0;
@@ -111,7 +111,7 @@ public:
 	~GeometryPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_normalTexture;
@@ -139,7 +139,7 @@ public:
 	~LightPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_geometryPassRT0;
@@ -173,7 +173,7 @@ public:
 	~EnvironmentCapturePassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_equirectangularMap;
@@ -189,7 +189,7 @@ public:
 	~EnvironmentConvolutionPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_capturedCubeMap;
@@ -205,7 +205,7 @@ public:
 	~EnvironmentPreFilterPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_capturedCubeMap;
@@ -224,7 +224,7 @@ public:
 
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 };
 
 class SkyForwardPassPBSShaderProgram : public GLShaderProgram
@@ -234,7 +234,7 @@ public:
 	~SkyForwardPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_skybox;
@@ -250,7 +250,7 @@ public:
 	~DebuggerShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_normalTexture;
@@ -268,7 +268,7 @@ public:
 	~SkyDeferPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_lightPassRT0;
@@ -283,7 +283,7 @@ public:
 	~BillboardPassShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_texture;
@@ -302,7 +302,7 @@ public:
 	~EmissiveBlurPassShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_geometryPassRT2;
@@ -317,7 +317,7 @@ public:
 	~FinalPassShaderProgram() {};
 
 	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap) override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_billboardPassRT0;

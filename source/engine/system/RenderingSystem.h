@@ -208,7 +208,7 @@ private:
 	BaseShaderProgram* m_finalPassShaderProgram;
 	textureID m_finalPassTextureID;
 
-	int m_polygonMode = 0;
+	int m_polygonMode = 2;
 	int m_textureMode = 0;
 	int m_shadingMode = 0;
 

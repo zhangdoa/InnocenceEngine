@@ -402,6 +402,9 @@ using shaderFilePath = std::string;
 using shaderCodeContent = std::string;
 using shaderCodeContentPair = std::pair<shaderFilePath, shaderCodeContent>;
 using shaderData = std::pair<shaderType, shaderCodeContentPair>;
+enum class shaderDrawPolygonType { POINT, LINE, FILL };
+enum class shaderDrawTextureType { FULL, POSITION, NORMAL, ALBEDO, MRA };
+using shaderDrawPair = std::pair<shaderDrawPolygonType, shaderDrawTextureType>;
 // frame and render buffer custom types
 enum class frameBufferType { FORWARD, DEFER, SHADOW_PASS, ENVIRONMENT_PASS, PINGPONG };
 enum class renderBufferType { NONE, DEPTH, STENCIL, DEPTH_AND_STENCIL };
