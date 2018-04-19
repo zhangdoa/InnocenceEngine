@@ -1227,7 +1227,7 @@ void RenderingSystem::renderGeometryPass(std::vector<CameraComponent*>& cameraCo
 {
 	m_geometryPassFrameBuffer->update(true, true);
 	m_geometryPassFrameBuffer->setRenderBufferStorageSize(0);
-	m_geometryPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
+	m_geometryPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, shaderDrawPair(shaderDrawPolygonType(m_polygonMode), shaderDrawTextureType(m_textureMode)));
 }
 
 void RenderingSystem::initializeLightPass()
@@ -1281,7 +1281,7 @@ void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraCompo
 	m_lightPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
 	m_lightPassFrameBuffer->update(true, true);
 	m_lightPassFrameBuffer->setRenderBufferStorageSize(0);	
-	m_lightPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
+	m_lightPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, shaderDrawPair(shaderDrawPolygonType(m_polygonMode), shaderDrawTextureType(m_textureMode)));
 
 	// draw light pass rectangle
 	this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
@@ -1426,7 +1426,7 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	// draw sky forward pass
 	m_skyForwardPassFrameBuffer->update(true, true);
 	m_skyForwardPassFrameBuffer->setRenderBufferStorageSize(0);
-	m_skyForwardPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
+	m_skyForwardPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, shaderDrawPair(shaderDrawPolygonType(m_polygonMode), shaderDrawTextureType(m_textureMode)));
 
 	// draw debugger pass
 	m_geometryPassFrameBuffer->asReadBuffer();
@@ -1475,7 +1475,7 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 			}
 			m_emissiveBlurPassPingFrameBuffer->update(true, true);
 			m_emissiveBlurPassPingFrameBuffer->setRenderBufferStorageSize(0);
-			m_emissiveBlurPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
+			m_emissiveBlurPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, shaderDrawPair(shaderDrawPolygonType(m_polygonMode), shaderDrawTextureType(m_textureMode)));
 			this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
 			glDisable(GL_STENCIL_TEST);
 			l_isPing = false;
@@ -1485,7 +1485,7 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 			m_emissiveBlurPassPingFrameBuffer->activeTexture(0, 0);
 			m_emissiveBlurPassPongFrameBuffer->update(true, true);
 			m_emissiveBlurPassPongFrameBuffer->setRenderBufferStorageSize(0);
-			m_emissiveBlurPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
+			m_emissiveBlurPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, shaderDrawPair(shaderDrawPolygonType(m_polygonMode), shaderDrawTextureType(m_textureMode)));
 			this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
 			glDisable(GL_STENCIL_TEST);
 			l_isPing = true;
