@@ -1170,8 +1170,8 @@ void EmissiveBlurPassShaderProgram::initialize()
 	GLShaderProgram::initialize();
 	useProgram();
 
-	m_uni_emissiveNormalPassRT0 = getUniformLocation("uni_emissiveNormalPassRT0");
-	updateUniform(m_uni_emissiveNormalPassRT0, 0);
+	m_uni_geometryPassRT2 = getUniformLocation("uni_geometryPassRT2");
+	updateUniform(m_uni_geometryPassRT2, 0);
 	m_uni_horizontal = getUniformLocation("uni_horizontal");
 }
 
@@ -1181,7 +1181,7 @@ void EmissiveBlurPassShaderProgram::update(std::vector<CameraComponent*>& camera
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	glStencilFunc(GL_EQUAL, 0x02, 0xFF);
+	glStencilFunc(GL_NOTEQUAL, 0x01, 0xFF);
 	glStencilMask(0x00);
 
 	useProgram();
