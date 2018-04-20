@@ -69,10 +69,10 @@ vec4 vec4::operator*(const mat4 & rhs)
 	// @TODO: replace with SIMD impl
 	vec4 l_vec4;
 
-	l_vec4.x = x * rhs.m[0][0] + y * rhs.m[0][1] + z * rhs.m[0][2] + w * rhs.m[0][3];
-	l_vec4.y = x * rhs.m[1][0] + y * rhs.m[1][1] + z * rhs.m[1][2] + w * rhs.m[1][3];
-	l_vec4.z = x * rhs.m[2][0] + y * rhs.m[2][1] + z * rhs.m[2][2] + w * rhs.m[2][3];
-	l_vec4.w = x * rhs.m[3][0] + y * rhs.m[3][1] + z * rhs.m[3][2] + w * rhs.m[3][3];
+	l_vec4.x = x * rhs.m[0][0] + y * rhs.m[1][0] + z * rhs.m[2][0] + w * rhs.m[3][0];
+	l_vec4.y = x * rhs.m[0][1] + y * rhs.m[1][1] + z * rhs.m[2][1] + w * rhs.m[3][1];
+	l_vec4.z = x * rhs.m[0][2] + y * rhs.m[1][2] + z * rhs.m[2][2] + w * rhs.m[3][2];
+	l_vec4.w = x * rhs.m[0][3] + y * rhs.m[1][3] + z * rhs.m[2][3] + w * rhs.m[3][3];
 
 	return l_vec4;
 }
@@ -443,7 +443,7 @@ mat4 mat4::operator*(const mat4 & rhs)
 	l_m.m[2][2] = m[0][2] * rhs.m[2][0] + m[1][2] * rhs.m[2][1] + m[2][2] * rhs.m[2][2] + m[3][2] * rhs.m[2][3];
 	l_m.m[2][3] = m[0][3] * rhs.m[2][0] + m[1][3] * rhs.m[2][1] + m[2][3] * rhs.m[2][2] + m[3][3] * rhs.m[2][3];
 
-	l_m.m[3][0] = m[0][0] * rhs.m[3][0] + m[1][0] * rhs.m[3][1] + m[2][0] * rhs.m[3][3] + m[3][0] * rhs.m[3][3];
+	l_m.m[3][0] = m[0][0] * rhs.m[3][0] + m[1][0] * rhs.m[3][1] + m[2][0] * rhs.m[3][2] + m[3][0] * rhs.m[3][3];
 	l_m.m[3][1] = m[0][1] * rhs.m[3][0] + m[1][1] * rhs.m[3][1] + m[2][1] * rhs.m[3][2] + m[3][1] * rhs.m[3][3];
 	l_m.m[3][2] = m[0][2] * rhs.m[3][0] + m[1][2] * rhs.m[3][1] + m[2][2] * rhs.m[3][2] + m[3][2] * rhs.m[3][3];
 	l_m.m[3][3] = m[0][3] * rhs.m[3][0] + m[1][3] * rhs.m[3][1] + m[2][3] * rhs.m[3][2] + m[3][3] * rhs.m[3][3];
@@ -627,11 +627,11 @@ void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNea
 void mat4::initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar)
 {
 	m[0][0] = (float)(2.0 / (right - left));
-	m[0][3] = (float)(-(right + left) / (right - left));
 	m[1][1] = (float)(2.0 / (up - bottom));
-	m[1][3] = (float)(-(up + bottom) / (up - bottom));
 	m[2][2] = (float)(-2.0 / (zFar - zNear));
-	m[2][3] = (float)(-(zFar + zNear) / (zFar - zNear));
+	m[3][0] = (float)(-(right + left) / (right - left));
+	m[3][1] = (float)(-(up + bottom) / (up - bottom));
+	m[3][2] = (float)(-(zFar + zNear) / (zFar - zNear));
 	m[3][3] = (float)1.0;
 }
 #endif
@@ -641,11 +641,11 @@ void mat4::initializeToOrthographicMatrix(double left, double right, double bott
 void mat4::initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar)
 {
 	m[0][0] = (float)(2.0 / (right - left));
+	m[0][3] = (float)(-(right + left) / (right - left));
 	m[1][1] = (float)(2.0 / (up - bottom));
+	m[1][3] = (float)(-(up + bottom) / (up - bottom));
 	m[2][2] = (float)(-2.0 / (zFar - zNear));
-	m[3][0] = (float)(-(right + left) / (right - left));
-	m[3][1] = (float)(-(up + bottom) / (up - bottom));
-	m[3][2] = (float)(-(zFar + zNear) / (zFar - zNear));
+	m[2][3] = (float)(-(zFar + zNear) / (zFar - zNear));
 	m[3][3] = (float)1.0;
 }
 #endif

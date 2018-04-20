@@ -248,8 +248,8 @@ vec4 RenderingSystem::calcMousePositionInWorldSpace()
 	l_ndcSpace = l_ndcSpace * pCamera.inverse();
 	l_ndcSpace.z = -1.0;
 	l_ndcSpace.w = 0.0;
-	l_ndcSpace = l_ndcSpace * tCamera.inverse();
 	l_ndcSpace = l_ndcSpace * rCamera.inverse();
+	l_ndcSpace = l_ndcSpace * tCamera.inverse();
 #endif
 	//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
@@ -754,14 +754,26 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 
 	visibleComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0));
 	auto l_worldTm = visibleComponent.getParentEntity()->caclTransformationMatrix();
+	//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+	visibleComponent.m_AABB.m_boundMax = visibleComponent.m_AABB.m_boundMax * l_worldTm;
+	visibleComponent.m_AABB.m_boundMin = visibleComponent.m_AABB.m_boundMin *l_worldTm;
+	visibleComponent.m_AABB.m_center =visibleComponent.m_AABB.m_center * l_worldTm;
+	for (auto& l_vertexData : visibleComponent.m_AABB.m_vertices)
+	{
+		l_vertexData.m_pos = l_vertexData.m_pos * l_worldTm;
+	}
+#endif
+	//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 	visibleComponent.m_AABB.m_boundMax = l_worldTm * visibleComponent.m_AABB.m_boundMax;
 	visibleComponent.m_AABB.m_boundMin = l_worldTm * visibleComponent.m_AABB.m_boundMin;
 	visibleComponent.m_AABB.m_center = l_worldTm * visibleComponent.m_AABB.m_center;
-
 	for (auto& l_vertexData : visibleComponent.m_AABB.m_vertices)
 	{
 		l_vertexData.m_pos = l_worldTm * l_vertexData.m_pos;
 	}
+#endif
 
 	if (visibleComponent.m_drawAABB)
 	{
