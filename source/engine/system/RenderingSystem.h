@@ -154,6 +154,8 @@ private:
 	std::function<void()> f_changeDrawTextureMode;
 	std::function<void()> f_changeShadingMode;
 
+	std::vector<VisibleComponent*> m_staticMeshVisibleComponents;
+	std::vector<VisibleComponent*> m_emissiveVisibleComponents;
 	std::vector<VisibleComponent*> m_selectedVisibleComponents;
 
 	BaseFrameBuffer* m_environmentPassFrameBuffer;
@@ -176,7 +178,6 @@ private:
 	textureID m_geometryPassRT1TextureID;
 	textureID m_geometryPassRT2TextureID;
 	textureID m_geometryPassRT3TextureID;
-	textureID m_geometryPassRT4TextureID;
 
 	BaseFrameBuffer* m_lightPassFrameBuffer;
 	BaseShaderProgram* m_lightPassShaderProgram;

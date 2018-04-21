@@ -26,6 +26,7 @@ public:
 	void setColor(const vec4& color);
 
 	mat4 getProjectionMatrix() const;
+	mat4 getViewMatrix() const;
 	mat4 getInvertTranslationMatrix() const;
 	mat4 getInvertRotationMatrix() const;
 

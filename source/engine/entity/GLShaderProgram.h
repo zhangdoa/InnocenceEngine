@@ -146,7 +146,6 @@ private:
 	GLint m_uni_geometryPassRT1;
 	GLint m_uni_geometryPassRT2;
 	GLint m_uni_geometryPassRT3;
-	GLint m_uni_geometryPassRT4;
 	GLint m_uni_shadowMap;
 	GLint m_uni_irradianceMap;
 	GLint m_uni_preFiltedMap;

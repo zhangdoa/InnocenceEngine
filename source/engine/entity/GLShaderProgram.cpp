@@ -179,41 +179,8 @@ void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& camer
 	{
 		if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
 		{
-			auto l_boundMax = l_lightComponent->m_AABB.m_boundMax;
-			auto l_boundMin = l_lightComponent->m_AABB.m_boundMin;
-			//auto l_pos = l_lightComponent->m_AABB.m_center;
-			auto l_pos = l_lightComponent->getParentEntity()->caclWorldPos();
-			//auto l_pos = l_lightComponent->getParentEntity()->getTransform()->getPos();
-			auto l_tLight = l_pos.scale(-1.0).toTranslationMatrix();
-			auto l_rLight = l_lightComponent->getInvertRotationMatrix();
-
-			//transform light AABB corners to light space
-			//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-			l_boundMax = l_boundMax * l_rLight;
-			l_boundMin = l_boundMax * l_rLight;
-			l_boundMax = l_boundMax * l_tLight;
-			l_boundMin = l_boundMax * l_tLight;
-#endif
-			//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-			l_boundMax = l_rLight * l_boundMax;
-			l_boundMin = l_rLight * l_boundMax;
-			l_boundMax = l_tLight * l_boundMax;
-			l_boundMin = l_tLight * l_boundMax;
-#endif
-
-			mat4 p_light;
-			//p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
-			p_light.initializeToOrthographicMatrix(-10.0, 10.0, -10.0, 10.0, 1.0, 7.5);
-			mat4 v;
-			v = v.lookAt(vec4(-2.0, 4.0, -1.0, 1.0), vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, 1.0, 0.0, 0.0));
-			//v = v.lookAt(l_pos, l_pos+l_lightComponent->getDirection(), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
-			//v = l_rLight * l_tLight;
-			//v = l_rLight;
-
-			updateUniform(m_uni_p, p_light);
-			updateUniform(m_uni_v, v);
+			updateUniform(m_uni_p, l_lightComponent->getProjectionMatrix());
+			updateUniform(m_uni_v, l_lightComponent->getViewMatrix());
 
 			// draw each visibleComponent
 			for (auto& l_visibleComponent : visibleComponents)
@@ -455,40 +422,8 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 			// update light space transformation matrices
 			if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
 			{
-				auto l_boundMax = l_lightComponent->m_AABB.m_boundMax;
-				auto l_boundMin = l_lightComponent->m_AABB.m_boundMin;
-				//auto l_pos = l_lightComponent->m_AABB.m_center;
-				auto l_pos = l_lightComponent->getParentEntity()->caclWorldPos();
-				//auto l_pos = l_lightComponent->getParentEntity()->getTransform()->getPos();
-				auto l_tLight = l_pos.scale(-1.0).toTranslationMatrix();
-				auto l_rLight = l_lightComponent->getInvertRotationMatrix();
-
-				//transform light AABB corners to light space
-				//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-				l_boundMax = l_boundMax * l_rLight;
-				l_boundMin = l_boundMax * l_rLight;
-				l_boundMax = l_boundMax * l_tLight;
-				l_boundMin = l_boundMax * l_tLight;
-#endif
-				//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-				l_boundMax = l_rLight * l_boundMax;
-				l_boundMin = l_rLight * l_boundMax;
-				l_boundMax = l_tLight * l_boundMax;
-				l_boundMin = l_tLight * l_boundMax;
-#endif
-				mat4 p_light;
-				//p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
-				p_light.initializeToOrthographicMatrix(-10.0, 10.0, -10.0, 10.0, 1.0, 7.5);
-				mat4 v;
-				v = v.lookAt(vec4(-2.0, 4.0,-1.0, 1.0), vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, 1.0, 0.0, 0.0));
-				//v = v.lookAt(l_pos, l_pos + l_lightComponent->getDirection(), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
-				//v = l_rLight * l_tLight;
-				//v = l_rLight;
-
-				updateUniform(m_uni_p_light, p_light);
-				updateUniform(m_uni_v_light, v);
+				updateUniform(m_uni_p_light, l_lightComponent->getProjectionMatrix());
+				updateUniform(m_uni_v_light, l_lightComponent->getViewMatrix());
 
 				// draw each visibleComponent
 				for (auto& l_visibleComponent : visibleComponents)
@@ -593,16 +528,14 @@ void LightPassPBSShaderProgram::initialize()
 	updateUniform(m_uni_geometryPassRT2, 2);
 	m_uni_geometryPassRT3 = getUniformLocation("uni_geometryPassRT3");
 	updateUniform(m_uni_geometryPassRT3, 3);
-	m_uni_geometryPassRT4 = getUniformLocation("uni_geometryPassRT4");
-	updateUniform(m_uni_geometryPassRT4, 4);
 	m_uni_shadowMap = getUniformLocation("uni_shadowMap");
-	updateUniform(m_uni_shadowMap, 5);
+	updateUniform(m_uni_shadowMap, 4);
 	m_uni_irradianceMap = getUniformLocation("uni_irradianceMap");
-	updateUniform(m_uni_irradianceMap, 6);
+	updateUniform(m_uni_irradianceMap, 5);
 	m_uni_preFiltedMap = getUniformLocation("uni_preFiltedMap");
-	updateUniform(m_uni_preFiltedMap, 7);
+	updateUniform(m_uni_preFiltedMap, 6);
 	m_uni_brdfLUT = getUniformLocation("uni_brdfLUT");
-	updateUniform(m_uni_brdfLUT, 8);
+	updateUniform(m_uni_brdfLUT, 7);
 
 	m_uni_textureMode = getUniformLocation("uni_textureMode");
 

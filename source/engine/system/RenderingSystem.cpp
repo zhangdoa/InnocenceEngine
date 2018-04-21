@@ -166,6 +166,14 @@ void RenderingSystem::loadAssetsForComponents()
 	{
 		if (i->m_visiblilityType != visiblilityType::INVISIBLE)
 		{
+			if (i->m_visiblilityType == visiblilityType::EMISSIVE)
+			{
+				m_emissiveVisibleComponents.emplace_back(i);
+			}
+			else if (i->m_visiblilityType == visiblilityType::STATIC_MESH)
+			{
+				m_staticMeshVisibleComponents.emplace_back(i);
+			}
 			// load or assign mesh data
 			if (i->m_meshType == meshShapeType::CUSTOM)
 			{
@@ -790,6 +798,14 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	auto l_cameraFrustumCenter = l_camera->m_AABB.m_center;
 	//auto l_lightFrustumCenter = l_lightInvertDirection * (l_camera->m_zFar - l_camera->m_zNear) + l_cameraFrustumCenter;
 	auto l_lightFrustumCenter = l_lightInvertDirection * (10.0 - 0.1) + l_cameraFrustumCenter;
+	//auto l_lightFrustumCenterTm = l_lightFrustumCenter.toTranslationMatrix();
+	auto l_lightFrustumCenterTm = lightComponent.getParentEntity()->caclWorldRotMatrix();
+	//auto l_lightFrustumCenterTm = lightComponent.getInvertRotationMatrix();
+
+	for (auto& l_vertexData : l_frustumVertices)
+	{
+		l_vertexData.m_pos = l_lightFrustumCenterTm * l_vertexData.m_pos;
+	}
 
 	double maxX = l_frustumVertices[0].m_pos.x;
 	double maxY = l_frustumVertices[0].m_pos.y;
@@ -829,19 +845,17 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	auto l_boundMax = vec4(maxX, maxY, maxZ, 1.0);
 	auto l_boundMin = vec4(minX, minY, minZ, 1.0);
 
-	auto l_lightFrustumCenterTm = l_lightFrustumCenter.toTranslationMatrix();
-
-	//transform light AABB corners to modified light position in world space
-	//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	l_boundMax = l_boundMax * l_lightFrustumCenterTm;
-	l_boundMin = l_boundMin * l_lightFrustumCenterTm;
-#endif
-	//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-	l_boundMax = l_lightFrustumCenterTm * l_boundMax;
-	l_boundMin = l_lightFrustumCenterTm * l_boundMin;
-#endif
+//	//transform light AABB corners to modified light position in world space
+//	//Column-Major memory layout
+//#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+//	l_boundMax = l_boundMax * l_lightFrustumCenterTm;
+//	l_boundMin = l_boundMin * l_lightFrustumCenterTm;
+//#endif
+//	//Row-Major memory layout
+//#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+//	l_boundMax = l_lightFrustumCenterTm * l_boundMax;
+//	l_boundMin = l_lightFrustumCenterTm * l_boundMin;
+//#endif
 
 	lightComponent.m_AABB = generateAABB(l_boundMax, l_boundMin);
 
@@ -849,6 +863,7 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	{
 		removeMesh(meshType::BOUNDING_BOX, lightComponent.m_AABBMeshID);
 		lightComponent.m_AABBMeshID = addMesh(lightComponent.m_AABB.m_vertices, lightComponent.m_AABB.m_indices);
+		//lightComponent.m_AABBMeshID = addMesh(l_frustumVertices, l_camera->m_frustumIndices);
 	}
 }
 
@@ -1223,13 +1238,9 @@ void RenderingSystem::initializeGeometryPass()
 	auto l_geometryPassRT3TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT3TextureID);
 	l_geometryPassRT3TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
-	m_geometryPassRT4TextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_geometryPassRT4TextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_geometryPassRT4TextureID);
-	l_geometryPassRT4TextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
-
 	// initialize frame buffer
 	auto l_renderBufferStorageSizes = std::vector<vec2>{ m_screenResolution };
-	auto l_renderTargetTextures = std::vector<BaseTexture*>{ l_geometryPassRT0TextureData , l_geometryPassRT1TextureData  ,l_geometryPassRT2TextureData  ,l_geometryPassRT3TextureData, l_geometryPassRT4TextureData };
+	auto l_renderTargetTextures = std::vector<BaseTexture*>{ l_geometryPassRT0TextureData , l_geometryPassRT1TextureData , l_geometryPassRT2TextureData , l_geometryPassRT3TextureData };
 	m_geometryPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
 	m_geometryPassFrameBuffer->setup(frameBufferType::FORWARD, renderBufferType::DEPTH_AND_STENCIL, l_renderBufferStorageSizes, l_renderTargetTextures);
 	m_geometryPassFrameBuffer->initialize();
@@ -1270,24 +1281,22 @@ void RenderingSystem::initializeLightPass()
 
 void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	// world space position 
+	// world space position + metallic
 	m_geometryPassFrameBuffer->activeTexture(0, 0);
-	// normal
+	// normal + roughness
 	m_geometryPassFrameBuffer->activeTexture(1, 1);
-	// albedo
+	// albedo + ambient occlusion
 	m_geometryPassFrameBuffer->activeTexture(2, 2);
-	// metallic, roughness and ambient occlusion
-	m_geometryPassFrameBuffer->activeTexture(3, 3);
 	// light space position
-	m_geometryPassFrameBuffer->activeTexture(4, 4);
+	m_geometryPassFrameBuffer->activeTexture(3, 3);
 	// shadow map
-	m_shadowForwardPassFrameBuffer->activeTexture(0, 5);
+	m_shadowForwardPassFrameBuffer->activeTexture(0, 4);
 	// irradiance environment map
-	m_environmentPassFrameBuffer->activeTexture(1, 6);
+	m_environmentPassFrameBuffer->activeTexture(1, 5);
 	// pre-filter specular environment map
-	m_environmentPassFrameBuffer->activeTexture(2, 7);
+	m_environmentPassFrameBuffer->activeTexture(2, 6);
 	// BRDF look-up table
-	m_environmentPassFrameBuffer->activeTexture(3, 8);
+	m_environmentPassFrameBuffer->activeTexture(3, 7);
 
 	m_geometryPassFrameBuffer->asReadBuffer();
 	m_lightPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
