@@ -152,7 +152,7 @@ void InnocenceGarden::setupSpheres()
 		m_sphereComponents[i].m_meshType = meshShapeType::CUSTOM;
 		m_sphereComponents[i].m_drawAABB = true;
 		m_sphereComponents[i].m_modelFileName = "lteOrb/lteOrb.obj";
-		m_sphereComponents[i].m_useTexture = false;
+		m_sphereComponents[i].m_useTexture = true;
 		m_rootEntity.addChildEntity(&m_sphereEntitys[i]);
 		m_sphereEntitys[i].getTransform()->setScale(vec4(10.0, 10.0, 10.0, 1.0));
 		m_sphereEntitys[i].addChildComponent(&m_sphereComponents[i]);
@@ -160,31 +160,31 @@ void InnocenceGarden::setupSpheres()
 	}
 	for (auto i = (unsigned int)0; i < m_sphereComponents.size(); i += 4)
 	{
-		////Copper
+		//Copper
 		m_sphereComponents[i].m_albedo = vec4(0.95, 0.64, 0.54 ,1.0);
-		//m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/rustediron2_normal.png"));
-		//m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/rustediron2_basecolor.png"));
-		//m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/rustediron2_metallic.png"));
-		//m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/rustediron2_roughness.png"));
-		////Gold
+		m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/rustediron2_normal.png"));
+		m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/rustediron2_basecolor.png"));
+		m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/rustediron2_metallic.png"));
+		m_sphereComponents[i].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/rustediron2_roughness.png"));
+		//Gold
 		m_sphereComponents[i + 1].m_albedo = vec4(1.00, 0.71, 0.29, 1.0);
-		//m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/bamboo-wood-semigloss-normal.png"));
-		//m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/bamboo-wood-semigloss-albedo.png"));
-		//m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/bamboo-wood-semigloss-metal.png"));
-		//m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "PBS/bamboo-wood-semigloss-ao.png"));
-		////Iron
+		m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/bamboo-wood-semigloss-normal.png"));
+		m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/bamboo-wood-semigloss-albedo.png"));
+		m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/bamboo-wood-semigloss-metal.png"));
+		m_sphereComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "PBS/bamboo-wood-semigloss-ao.png"));
+		//Iron
 		m_sphereComponents[i + 2].m_albedo = vec4(0.56, 0.57, 0.58, 1.0);
-		//m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/greasy-metal-pan1-normal.png"));
-		//m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/greasy-metal-pan1-albedo.png"));
-		//m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/greasy-metal-pan1-metal.png"));
-		//m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/greasy-metal-pan1-roughness.png"));
-		////Silver
+		m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/greasy-metal-pan1-normal.png"));
+		m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/greasy-metal-pan1-albedo.png"));
+		m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/greasy-metal-pan1-metal.png"));
+		m_sphereComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/greasy-metal-pan1-roughness.png"));
+		//Silver
 		m_sphereComponents[i + 3].m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
-		//m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/roughrock1-normal.png"));
-		//m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/roughrock1-albedo.png"));
-		//m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/roughrock1-metalness.png"));
-		//m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/roughrock1-roughness.png"));
-		//m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "PBS/roughrock1-ao.png"));
+		m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/roughrock1-normal.png"));
+		m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/roughrock1-albedo.png"));
+		m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/roughrock1-metalness.png"));
+		m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/roughrock1-roughness.png"));
+		m_sphereComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "PBS/roughrock1-ao.png"));
 	}
 	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
 	{
@@ -234,14 +234,14 @@ void InnocenceGarden::updateLights(double seed)
 {
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
-		m_pointLightBillboardComponents[i].m_albedo = vec4((sin(seed + i) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0, 1.0);
-		m_pointLightComponents[i].setColor(vec4((sin(seed + i) + 1.0) * 25.0 / 2.0, 0.2f * 25.0, 0.4f * 25.0, 1.0));
-		m_pointLightBillboardComponents[i + 1].m_albedo = vec4(0.2f * 25.0, (sin(seed + i) + 1.0) * 25.0 / 2.0, 0.4f * 25.0, 1.0);
-		m_pointLightComponents[i + 1].setColor(vec4(0.2f * 25.0, (sin(seed + i) + 1.0) * 25.0 / 2.0, 0.4f * 25.0, 1.0));
-		m_pointLightBillboardComponents[i + 2].m_albedo = vec4(0.2f * 25.0, 0.4f * 25.0, (sin(seed + i) + 1.0) * 25.0 / 2.0, 1.0);
-		m_pointLightComponents[i + 2].setColor(vec4(0.2f * 25.0, 0.4f * 25.0, (sin(seed + i) + 1.0) * 25.0 / 2.0, 1.0));
-		m_pointLightBillboardComponents[i + 3].m_albedo = vec4((sin(seed + i * 2.0) + 1.0) * 25.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 25.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 25.0 / 2.0, 1.0);
-		m_pointLightComponents[i + 3].setColor(vec4((sin(seed + i * 2.0 ) + 1.0) * 25.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 25.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 25.0 / 2.0, 1.0));
+		m_pointLightBillboardComponents[i].m_albedo = vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2f * 5.0, 0.4f * 5.0, 1.0);
+		m_pointLightComponents[i].setColor(vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2f * 5.0, 0.4f * 5.0, 1.0));
+		m_pointLightBillboardComponents[i + 1].m_albedo = vec4(0.2f * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 0.4f * 5.0, 1.0);
+		m_pointLightComponents[i + 1].setColor(vec4(0.2f * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 0.4f * 5.0, 1.0));
+		m_pointLightBillboardComponents[i + 2].m_albedo = vec4(0.2f * 5.0, 0.4f * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 1.0);
+		m_pointLightComponents[i + 2].setColor(vec4(0.2f * 5.0, 0.4f * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 1.0));
+		m_pointLightBillboardComponents[i + 3].m_albedo = vec4((sin(seed + i * 2.0) + 1.0) * 5.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 5.0 / 2.0, 1.0);
+		m_pointLightComponents[i + 3].setColor(vec4((sin(seed + i * 2.0 ) + 1.0) * 5.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 5.0 / 2.0, 1.0));
 	}
 }
 

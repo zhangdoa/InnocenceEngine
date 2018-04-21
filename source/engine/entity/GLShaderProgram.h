@@ -31,6 +31,67 @@ protected:
 	GLShader* m_fragmentShader;
 };
 
+class EnvironmentCapturePassPBSShaderProgram : public GLShaderProgram
+{
+public:
+	EnvironmentCapturePassPBSShaderProgram() {};
+	~EnvironmentCapturePassPBSShaderProgram() {};
+
+	void initialize() override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
+
+private:
+	GLint m_uni_equirectangularMap;
+
+	GLint m_uni_p;
+	GLint m_uni_r;
+};
+
+class EnvironmentConvolutionPassPBSShaderProgram : public GLShaderProgram
+{
+public:
+	EnvironmentConvolutionPassPBSShaderProgram() {};
+	~EnvironmentConvolutionPassPBSShaderProgram() {};
+
+	void initialize() override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
+
+private:
+	GLint m_uni_capturedCubeMap;
+
+	GLint m_uni_p;
+	GLint m_uni_r;
+};
+
+class EnvironmentPreFilterPassPBSShaderProgram : public GLShaderProgram
+{
+public:
+	EnvironmentPreFilterPassPBSShaderProgram() {};
+	~EnvironmentPreFilterPassPBSShaderProgram() {};
+
+	void initialize() override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
+
+private:
+	GLint m_uni_capturedCubeMap;
+
+	GLint m_uni_p;
+	GLint m_uni_r;
+
+	GLint m_uni_roughness;
+};
+
+class EnvironmentBRDFLUTPassPBSShaderProgram : public GLShaderProgram
+{
+public:
+	EnvironmentBRDFLUTPassPBSShaderProgram() {};
+	~EnvironmentBRDFLUTPassPBSShaderProgram() {};
+
+
+	void initialize() override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
+};
+
 class ShadowForwardPassShaderProgram : public GLShaderProgram
 {
 public:
@@ -165,72 +226,11 @@ private:
 	bool isPointLightUniformAdded = false;
 };
 
-class EnvironmentCapturePassPBSShaderProgram : public GLShaderProgram
+class SkyPassShaderProgram : public GLShaderProgram
 {
 public:
-	EnvironmentCapturePassPBSShaderProgram() {};
-	~EnvironmentCapturePassPBSShaderProgram() {};
-
-	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
-
-private:
-	GLint m_uni_equirectangularMap;
-
-	GLint m_uni_p;
-	GLint m_uni_r;
-};
-
-class EnvironmentConvolutionPassPBSShaderProgram : public GLShaderProgram
-{
-public:
-	EnvironmentConvolutionPassPBSShaderProgram() {};
-	~EnvironmentConvolutionPassPBSShaderProgram() {};
-
-	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
-
-private:
-	GLint m_uni_capturedCubeMap;
-
-	GLint m_uni_p;
-	GLint m_uni_r;
-};
-
-class EnvironmentPreFilterPassPBSShaderProgram : public GLShaderProgram
-{
-public:
-	EnvironmentPreFilterPassPBSShaderProgram() {};
-	~EnvironmentPreFilterPassPBSShaderProgram() {};
-
-	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
-
-private:
-	GLint m_uni_capturedCubeMap;
-
-	GLint m_uni_p;
-	GLint m_uni_r;
-
-	GLint m_uni_roughness;
-};
-
-class EnvironmentBRDFLUTPassPBSShaderProgram : public GLShaderProgram
-{
-public:
-	EnvironmentBRDFLUTPassPBSShaderProgram() {};
-	~EnvironmentBRDFLUTPassPBSShaderProgram() {};
-
-
-	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
-};
-
-class SkyForwardPassPBSShaderProgram : public GLShaderProgram
-{
-public:
-	SkyForwardPassPBSShaderProgram() {};
-	~SkyForwardPassPBSShaderProgram() {};
+	SkyPassShaderProgram() {};
+	~SkyPassShaderProgram() {};
 
 	void initialize() override;
 	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
@@ -242,37 +242,32 @@ private:
 	GLint m_uni_r;
 };
 
-class DebuggerShaderProgram : public GLShaderProgram
+class BloomExtractPassShaderProgram : public GLShaderProgram
 {
 public:
-	DebuggerShaderProgram() {};
-	~DebuggerShaderProgram() {};
-
-	void initialize() override;
-	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
-
-private:
-	GLint m_uni_normalTexture;
-
-	GLint m_uni_p;
-	GLint m_uni_r;
-	GLint m_uni_t;
-	GLint m_uni_m;
-};
-
-class SkyDeferPassPBSShaderProgram : public GLShaderProgram
-{
-public:
-	SkyDeferPassPBSShaderProgram() {};
-	~SkyDeferPassPBSShaderProgram() {};
+	BloomExtractPassShaderProgram() {};
+	~BloomExtractPassShaderProgram() {};
 
 	void initialize() override;
 	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
 	GLint m_uni_lightPassRT0;
-	GLint m_uni_skyForwardPassRT0;
-	GLint m_uni_debuggerPassRT0;
+};
+
+class BloomBlurPassShaderProgram : public GLShaderProgram
+{
+public:
+	BloomBlurPassShaderProgram() {};
+	~BloomBlurPassShaderProgram() {};
+
+	void initialize() override;
+	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
+
+private:
+	GLint m_uni_bloomExtractPassRT0;
+	GLint m_uni_horizontal;
+	bool m_isHorizontal = true;
 };
 
 class BillboardPassShaderProgram : public GLShaderProgram
@@ -294,19 +289,22 @@ private:
 	GLint m_uni_t;
 };
 
-class EmissiveBlurPassShaderProgram : public GLShaderProgram
+class DebuggerShaderProgram : public GLShaderProgram
 {
 public:
-	EmissiveBlurPassShaderProgram() {};
-	~EmissiveBlurPassShaderProgram() {};
+	DebuggerShaderProgram() {};
+	~DebuggerShaderProgram() {};
 
 	void initialize() override;
 	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
-	GLint m_uni_geometryPassRT2;
-	GLint m_uni_horizontal;
-	bool m_isHorizontal = true;
+	GLint m_uni_normalTexture;
+
+	GLint m_uni_p;
+	GLint m_uni_r;
+	GLint m_uni_t;
+	GLint m_uni_m;
 };
 
 class FinalPassShaderProgram : public GLShaderProgram
@@ -319,7 +317,9 @@ public:
 	void update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair = shaderDrawPair(shaderDrawPolygonType::FILL, shaderDrawTextureType::FULL)) override;
 
 private:
+	GLint m_uni_lightPassRT0;
+	GLint m_uni_skyPassRT0;
+	GLint m_uni_bloomPassRT0;
 	GLint m_uni_billboardPassRT0;
-	GLint m_uni_skyDeferPassRT0;
-	GLint m_uni_emissiveBlurPassRT0;
+	GLint m_uni_debuggerPassRT0;
 };
