@@ -183,13 +183,9 @@ private:
 	BaseShaderProgram* m_lightPassShaderProgram;
 	textureID m_lightPassTextureID;
 
-	BaseFrameBuffer* m_skyForwardPassFrameBuffer;
-	BaseShaderProgram* m_skyForwardPassShaderProgram;
-	textureID m_skyForwardPassTextureID;
-
-	BaseFrameBuffer* m_skyDeferPassFrameBuffer;
-	BaseShaderProgram* m_skyDeferPassShaderProgram;
-	textureID m_skyDeferPassTextureID;
+	BaseFrameBuffer* m_skyPassFrameBuffer;
+	BaseShaderProgram* m_skyPassShaderProgram;
+	textureID m_skyPassTextureID;
 
 	BaseFrameBuffer* m_debuggerPassFrameBuffer;
 	BaseShaderProgram* m_debuggerPassShaderProgram;
@@ -199,11 +195,15 @@ private:
 	BaseShaderProgram* m_billboardPassShaderProgram;
 	textureID m_billboardPassTextureID;
 
-	BaseFrameBuffer* m_emissiveBlurPassPingFrameBuffer;
-	BaseFrameBuffer* m_emissiveBlurPassPongFrameBuffer;
-	BaseShaderProgram* m_emissiveBlurPassShaderProgram;
-	textureID m_emissiveBlurPassPingTextureID;
-	textureID m_emissiveBlurPassPongTextureID;
+	BaseFrameBuffer* m_bloomExtractPassFrameBuffer;
+	BaseShaderProgram* m_bloomExtractPassShaderProgram;
+	textureID m_bloomExtractPassTextureID;
+
+	BaseFrameBuffer* m_bloomBlurPassPingFrameBuffer;
+	BaseFrameBuffer* m_bloomBlurPassPongFrameBuffer;
+	BaseShaderProgram* m_bloomBlurPassShaderProgram;
+	textureID m_bloomBlurPassPingTextureID;
+	textureID m_bloomBlurPassPongTextureID;
 
 	BaseFrameBuffer* m_finalPassFrameBuffer;
 	BaseShaderProgram* m_finalPassShaderProgram;
