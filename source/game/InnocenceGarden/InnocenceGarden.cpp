@@ -21,7 +21,8 @@ void InnocenceGarden::setup()
 	m_rootEntity.addChildEntity(&m_pawnEntity1);
 	m_rootEntity.addChildEntity(&m_pawnEntity2);
 
-	m_playCharacter.getTransform()->setPos(vec4(0.0, 2.0, 3.0, 1.0));
+	m_playCharacter.getTransform()->setPos(vec4(-2.0, 1.0, 2.0, 1.0));
+	m_playCharacter.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 45);
 	m_playCharacter.getCameraComponent().m_drawFrustum = false;
 	m_playCharacter.getCameraComponent().m_drawAABB = false;
 	m_cameraComponents.emplace_back(&m_playCharacter.getCameraComponent());
@@ -36,7 +37,7 @@ void InnocenceGarden::setup()
 
 	m_directionalLightComponent.setColor(vec4(0.5, 0.3, 0.0, 1.0));
 	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
-	m_directionalLightComponent.m_drawAABB = false;
+	m_directionalLightComponent.m_drawAABB = true;
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
 	m_directionalLightEntity.getTransform()->setPos(vec4(0.0, 4.0, 0.0, 1.0));
 	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 45);
@@ -58,7 +59,7 @@ void InnocenceGarden::setup()
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
-	m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
+	//m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
 	m_pawnComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnComponent1.m_drawAABB = false;
 	m_pawnComponent1.m_useTexture = true;
@@ -82,7 +83,7 @@ void InnocenceGarden::setup()
 	m_pawnEntity2.getTransform()->setPos(vec4(0.0, 0.2, 3.5, 1.0));
 	m_visibleComponents.emplace_back(&m_pawnComponent2);
 
-	setupLights();
+	//setupLights();
 	setupSpheres();
 
 	m_rootEntity.setup();
@@ -232,6 +233,7 @@ void InnocenceGarden::setupLights()
 
 void InnocenceGarden::updateLights(double seed)
 {
+	m_directionalLightEntity.getTransform()->rotate(vec4(1.0, 0.0, 0.0, 0.0), 2.0);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
 		m_pointLightBillboardComponents[i].m_albedo = vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2f * 5.0, 0.4f * 5.0, 1.0);
@@ -247,5 +249,6 @@ void InnocenceGarden::updateLights(double seed)
 
 void InnocenceGarden::updateSpheres(double seed)
 {
-	m_pawnEntity2.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.5);
+	//m_pawnEntity2.getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), 0.5);
+	m_pawnEntity2.getTransform()->setPos(m_directionalLightComponent.m_modifiedWorldPos);
 }

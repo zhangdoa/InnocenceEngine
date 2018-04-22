@@ -1075,10 +1075,8 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 		{
 			if (l_lightComponent->m_drawAABB)
 			{
-				auto l_cameraLocalMat = mat4();
-				l_cameraLocalMat.initializeToIdentityMatrix();
+				auto l_cameraLocalMat = l_lightComponent->getParentEntity()->caclWorldRotMatrix();
 				updateUniform(m_uni_m, l_cameraLocalMat);
-				//updateUniform(m_uni_m, l_lightComponent->getParentEntity()->caclTransformationMatrix());
 				meshMap.find(l_lightComponent->m_AABBMeshID)->second->update();
 			}
 		}
