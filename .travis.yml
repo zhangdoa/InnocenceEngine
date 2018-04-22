@@ -2,6 +2,14 @@ sudo: required
 dist: precise
 language: cpp
 
+addons:
+  apt:
+    sources:
+      - george-edison55-precise-backports
+    packages:
+      - cmake-data
+      - cmake
+      
 matrix:
   include:
     - compiler: gcc
