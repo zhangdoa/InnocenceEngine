@@ -25,14 +25,18 @@ void LightComponent::setColor(const vec4& color)
 	m_color = color;
 }
 
+void LightComponent::setModifiedWorldPos(const vec4 & pos)
+{
+	m_modifiedWorldPos = pos;
+}
+
 mat4 LightComponent::getProjectionMatrix() const
 {
 	auto l_boundMax = m_AABB.m_boundMax;
 	auto l_boundMin = m_AABB.m_boundMin;
 
 	mat4 p;
-	//p_light.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
-	p.initializeToOrthographicMatrix(-10.0, 10.0, -10.0, 10.0, 1.0, 7.5);
+	p.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
 
 	return p;
 }
@@ -40,15 +44,14 @@ mat4 LightComponent::getProjectionMatrix() const
 mat4 LightComponent::getViewMatrix() const
 {
 	mat4 v;
-	v = v.lookAt(vec4(-2.0, 4.0, -1.0, 1.0), vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, 1.0, 0.0, 0.0));
-	//auto l_pos = m_AABB.m_center;
-	auto l_pos = getParentEntity()->caclWorldPos();
-	auto l_tLight = l_pos.scale(-1.0).toTranslationMatrix();
-	auto l_rLight = getInvertRotationMatrix();
-
-	//v = v.lookAt(l_pos, l_pos + l_lightComponent->getDirection(), l_lightComponent->getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
-	//v = l_rLight * l_tLight;
-	//v = l_rLight;
+	auto l_boundMax = m_AABB.m_boundMax;
+	auto l_boundMin = m_AABB.m_boundMin;
+	//auto l_pos = getParentEntity()->caclWorldPos();
+	//auto l_pos = m_modifiedWorldPos;
+	auto l_pos = getParentEntity()->caclWorldRotMatrix() * m_AABB.m_center;
+	auto l_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
+	l_pos = l_pos + l_direction * (l_boundMax.z - l_boundMin.z) * (1.0 / 2.0);
+	v = v.lookAt(l_pos, l_pos + getDirection(), getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 
 	return v;
 }
@@ -105,6 +108,12 @@ void LightComponent::initialize()
 
 void LightComponent::update()
 {
+	auto l_boundMax = m_AABB.m_boundMax;
+	auto l_boundMin = m_AABB.m_boundMin;
+	auto l_pos = getParentEntity()->caclWorldRotMatrix() * m_AABB.m_center;
+	auto l_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
+	l_pos = l_pos + l_direction * (l_boundMax.z - l_boundMin.z) * (1.0 / 2.0);
+	m_modifiedWorldPos = l_pos;
 }
 
 void LightComponent::shutdown()

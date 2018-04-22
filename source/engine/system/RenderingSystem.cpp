@@ -794,17 +794,11 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	auto l_camera = g_pGameSystem->getCameraComponents()[0];
 	auto l_frustumVertices = l_camera->m_frustumVertices;
 
-	auto l_lightInvertDirection = lightComponent.getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
-	auto l_cameraFrustumCenter = l_camera->m_AABB.m_center;
-	//auto l_lightFrustumCenter = l_lightInvertDirection * (l_camera->m_zFar - l_camera->m_zNear) + l_cameraFrustumCenter;
-	auto l_lightFrustumCenter = l_lightInvertDirection * (10.0 - 0.1) + l_cameraFrustumCenter;
-	//auto l_lightFrustumCenterTm = l_lightFrustumCenter.toTranslationMatrix();
-	auto l_lightFrustumCenterTm = lightComponent.getParentEntity()->caclWorldRotMatrix();
-	//auto l_lightFrustumCenterTm = lightComponent.getInvertRotationMatrix();
+	auto l_lightRm = lightComponent.getInvertRotationMatrix();
 
 	for (auto& l_vertexData : l_frustumVertices)
 	{
-		l_vertexData.m_pos = l_lightFrustumCenterTm * l_vertexData.m_pos;
+		l_vertexData.m_pos = l_lightRm * l_vertexData.m_pos;
 	}
 
 	double maxX = l_frustumVertices[0].m_pos.x;
@@ -845,25 +839,12 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	auto l_boundMax = vec4(maxX, maxY, maxZ, 1.0);
 	auto l_boundMin = vec4(minX, minY, minZ, 1.0);
 
-//	//transform light AABB corners to modified light position in world space
-//	//Column-Major memory layout
-//#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-//	l_boundMax = l_boundMax * l_lightFrustumCenterTm;
-//	l_boundMin = l_boundMin * l_lightFrustumCenterTm;
-//#endif
-//	//Row-Major memory layout
-//#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-//	l_boundMax = l_lightFrustumCenterTm * l_boundMax;
-//	l_boundMin = l_lightFrustumCenterTm * l_boundMin;
-//#endif
-
 	lightComponent.m_AABB = generateAABB(l_boundMax, l_boundMin);
 
 	if (lightComponent.m_drawAABB)
 	{
 		removeMesh(meshType::BOUNDING_BOX, lightComponent.m_AABBMeshID);
 		lightComponent.m_AABBMeshID = addMesh(lightComponent.m_AABB.m_vertices, lightComponent.m_AABB.m_indices);
-		//lightComponent.m_AABBMeshID = addMesh(l_frustumVertices, l_camera->m_frustumIndices);
 	}
 }
 
