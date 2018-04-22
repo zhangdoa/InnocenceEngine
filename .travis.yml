@@ -1,4 +1,4 @@
-sudo: true
+sudo: required
 dist: precise
 language: cpp
 
@@ -14,8 +14,8 @@ matrix:
       env: COMPILER=g++-4.9
 			      
 before_install:
-  - apt-get update -qq
-  - apt-get install -y libopencv-dev
+  - sudo apt-get update -qq
+  - sudo apt-get install -y libopencv-dev
         
 script:
   - mkdir build
