@@ -12,13 +12,6 @@ matrix:
           packages:
             - g++-4.9
       env: COMPILER=g++-4.9
-			addons:
-			  apt:
-			    sources:
-			      - george-edison55-precise-backports
-			    packages:
-			      - cmake-data
-			      - cmake
 			      
 before_install:
   - apt-get update -qq
