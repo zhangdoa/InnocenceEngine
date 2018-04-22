@@ -46,8 +46,6 @@ script:
   - mkdir build
   - cd build
   - cmake -DCMAKE_CXX_COMPILER=$COMPILER ../source && make
-  - ./dkm_tests
-  - ./dkm_bench
   
 branches:
   only:
