@@ -4,20 +4,13 @@ language: cpp
 
 matrix:
   include:
-		- compiler: gcc
+    - compiler: gcc
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
             - g++-4.9
-      addons:
-			  apt:
-			    sources:
-			      - george-edison55-precise-backports
-			    packages:
-			      - cmake-data
-			      - cmake
       env: COMPILER=g++-4.9
     - compiler: gcc
       addons:
@@ -26,13 +19,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-      addons:
-			  apt:
-			    sources:
-			      - george-edison55-precise-backports
-			    packages:
-			      - cmake-data
-			      - cmake            
       env: COMPILER=g++-5
     - compiler: clang
       addons:
@@ -42,13 +28,6 @@ matrix:
             - llvm-toolchain-precise-3.6
           packages:
             - clang-3.6
-      addons:
-			  apt:
-			    sources:
-			      - george-edison55-precise-backports
-			    packages:
-			      - cmake-data
-			      - cmake            
       env: COMPILER=clang++-3.6
     - compiler: clang
       addons:
@@ -58,23 +37,17 @@ matrix:
             - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
-	      addons:
-				  apt:
-			    sources:
-			      - george-edison55-precise-backports
-			    packages:
-			      - cmake-data
-			      - cmake            
       env: COMPILER=clang++-3.7
 
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y libopencv-dev
-        
 script:
   - mkdir build
   - cd build
   - cmake -DCMAKE_CXX_COMPILER=$COMPILER ../source && make
+  - ./dkm_tests
+  - ./dkm_bench
   
 branches:
   only:
