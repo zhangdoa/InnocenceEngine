@@ -356,15 +356,15 @@ public:
 
 	enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
 	void update();
-	void rotate(const vec4 & axis, double angle);
+	void rotateInLocal(const vec4 & axis, double angle);
 
 	vec4& getPos();
 	vec4& getRot();
 	vec4& getScale();
 
-	void setPos(const vec4& pos);
-	void setRot(const vec4& rot);
-	void setScale(const vec4& scale);
+	void setLocalPos(const vec4& pos);
+	void setLocalRot(const vec4& rot);
+	void setLocalScale(const vec4& scale);
 
 	vec4& getOldPos();
 	vec4& getOldRot();
