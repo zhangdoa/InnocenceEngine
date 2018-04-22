@@ -4,7 +4,7 @@ language: cpp
 
 matrix:
   include:
-    - compiler: gcc
+		- compiler: gcc
       addons:
         apt:
           sources:
@@ -58,8 +58,8 @@ matrix:
             - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
-      addons:
-			  apt:
+	      addons:
+				  apt:
 			    sources:
 			      - george-edison55-precise-backports
 			    packages:
