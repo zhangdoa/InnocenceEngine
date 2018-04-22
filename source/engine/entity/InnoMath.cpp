@@ -886,7 +886,7 @@ void Transform::update()
 	m_oldScale = m_scale;
 }
 
-void Transform::rotate(const vec4 & axis, double angle)
+void Transform::rotateInLocal(const vec4 & axis, double angle)
 {
 	double sinHalfAngle = sin((angle * PI / 180.0) / 2.0);
 	double cosHalfAngle = cos((angle * PI / 180.0) / 2.0);
@@ -909,17 +909,17 @@ vec4 & Transform::getScale()
 	return m_scale;
 }
 
-void Transform::setPos(const vec4 & pos)
+void Transform::setLocalPos(const vec4 & pos)
 {
 	m_pos = pos;
 }
 
-void Transform::setRot(const vec4 & rot)
+void Transform::setLocalRot(const vec4 & rot)
 {
 	m_rot = rot;
 }
 
-void Transform::setScale(const vec4 & scale)
+void Transform::setLocalScale(const vec4 & scale)
 {
 	m_scale = scale;
 }

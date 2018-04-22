@@ -30,21 +30,21 @@ void InputComponent::move(moveDirection moveDirection)
 {
 	switch (moveDirection)
 	{
-	case FORWARD:  getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::FORWARD).scale(moveSpeed)); break;
-	case BACKWARD:  getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::BACKWARD).scale(moveSpeed));  break;
-	case LEFT:   getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::LEFT).scale(moveSpeed));  break;
-	case RIGHT:   getParentEntity()->getTransform()->setPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::RIGHT).scale(moveSpeed));  break;
+	case FORWARD:  getParentEntity()->getTransform()->setLocalPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::FORWARD).scale(moveSpeed)); break;
+	case BACKWARD:  getParentEntity()->getTransform()->setLocalPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::BACKWARD).scale(moveSpeed));  break;
+	case LEFT:   getParentEntity()->getTransform()->setLocalPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::LEFT).scale(moveSpeed));  break;
+	case RIGHT:   getParentEntity()->getTransform()->setLocalPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::RIGHT).scale(moveSpeed));  break;
 	}
 }
 
 void InputComponent::rotateAroundPositiveYAxis(double offset)
 {
-	getParentEntity()->getTransform()->rotate(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * rotateSpeed) / 180.0)* PI);
+	getParentEntity()->getTransform()->rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * rotateSpeed) / 180.0)* PI);
 }
 
 void InputComponent::rotateAroundRightAxis(double offset)
 {
-	getParentEntity()->getTransform()->rotate(getParentEntity()->getTransform()->getDirection(Transform::RIGHT), ((offset * rotateSpeed) / 180.0)* PI);
+	getParentEntity()->getTransform()->rotateInLocal(getParentEntity()->getTransform()->getDirection(Transform::RIGHT), ((offset * rotateSpeed) / 180.0)* PI);
 }
 
 void InputComponent::setup()
