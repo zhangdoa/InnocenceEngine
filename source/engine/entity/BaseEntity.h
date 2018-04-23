@@ -40,6 +40,7 @@ public:
 	mat4 caclWorldScaleMatrix() override;
 
 	mat4 caclTransformationMatrix() override;
+	mat4 caclLookAtMatrix() override;
 
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;

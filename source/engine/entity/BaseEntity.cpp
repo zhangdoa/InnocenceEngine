@@ -162,6 +162,11 @@ mat4 BaseEntity::caclTransformationMatrix()
 #endif
 }
 
+mat4 BaseEntity::caclLookAtMatrix()
+{
+	return mat4().lookAt(caclWorldPos(), caclWorldPos() + m_transform.getDirection(Transform::direction::BACKWARD), m_transform.getDirection(Transform::direction::UP));
+}
+
 void BaseEntity::setup()
 {
 	for (auto l_childComponent : m_childComponents)
