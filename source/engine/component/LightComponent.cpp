@@ -47,12 +47,10 @@ mat4 LightComponent::getViewMatrix() const
 	auto l_boundMax = m_AABB.m_boundMax;
 	auto l_boundMin = m_AABB.m_boundMin;
 	//auto l_pos = getParentEntity()->caclWorldPos();
-	//auto l_pos = m_modifiedWorldPos;
 	auto l_pos = getParentEntity()->caclWorldRotMatrix() * m_AABB.m_center;
-	auto l_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
-	l_pos = l_pos + l_direction * (l_boundMax.z - l_boundMin.z) * (1.0 / 2.0);
-	v = v.lookAt(l_pos, l_pos + getDirection(), getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
-
+	auto l_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
+	l_pos = l_pos + l_direction * (l_boundMax.z - l_boundMin.z);
+	v = v.lookAt(l_pos, l_pos + getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD), getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 	return v;
 }
 
@@ -63,13 +61,7 @@ mat4 LightComponent::getInvertTranslationMatrix() const
 
 mat4 LightComponent::getInvertRotationMatrix() const
 {
-	// quaternion rotation
-	vec4 conjugateRotQuat = getParentEntity()->caclWorldRot();
-	conjugateRotQuat.x = -conjugateRotQuat.x;
-	conjugateRotQuat.y = -conjugateRotQuat.y;
-	conjugateRotQuat.z = -conjugateRotQuat.z;
-
-	return conjugateRotQuat.toRotationMatrix();
+	return getParentEntity()->caclWorldRot().quatConjugate().toRotationMatrix();
 }
 
 const lightType LightComponent::getLightType() const
@@ -79,7 +71,7 @@ const lightType LightComponent::getLightType() const
 
 const vec4 LightComponent::getDirection() const
 {
-	return  getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
+	return  getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
 }
 
 const double LightComponent::getRadius() const
@@ -111,7 +103,7 @@ void LightComponent::update()
 	auto l_boundMax = m_AABB.m_boundMax;
 	auto l_boundMin = m_AABB.m_boundMin;
 	auto l_pos = getParentEntity()->caclWorldRotMatrix() * m_AABB.m_center;
-	auto l_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
+	auto l_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
 	l_pos = l_pos + l_direction * (l_boundMax.z - l_boundMin.z) * (1.0 / 2.0);
 	m_modifiedWorldPos = l_pos;
 }

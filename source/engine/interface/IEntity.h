@@ -38,5 +38,6 @@ public:
 	virtual mat4 caclWorldScaleMatrix() = 0;
 
 	virtual mat4 caclTransformationMatrix() = 0;
+	virtual mat4 caclLookAtMatrix() = 0;
 };
 
