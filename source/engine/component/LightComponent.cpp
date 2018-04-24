@@ -36,7 +36,7 @@ mat4 LightComponent::getProjectionMatrix() const
 	auto l_boundMin = m_AABB.m_boundMin;
 
 	mat4 p;
-	p.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, 0.0, l_boundMax.z - l_boundMin.z);
+	p.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, l_boundMin.z, l_boundMax.z);
 
 	return p;
 }
@@ -44,13 +44,7 @@ mat4 LightComponent::getProjectionMatrix() const
 mat4 LightComponent::getViewMatrix() const
 {
 	mat4 v;
-	auto l_boundMax = m_AABB.m_boundMax;
-	auto l_boundMin = m_AABB.m_boundMin;
-	//auto l_pos = getParentEntity()->caclWorldPos();
-	auto l_pos = getParentEntity()->caclWorldRotMatrix() * m_AABB.m_center;
-	auto l_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
-	l_pos = l_pos + l_direction * (l_boundMax.z - l_boundMin.z);
-	v = v.lookAt(l_pos, l_pos + getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD), getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+	v = v.lookAt(vec4(0.0, 0.0, 0.0, 1.0), getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD), getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
 	return v;
 }
 
@@ -100,12 +94,6 @@ void LightComponent::initialize()
 
 void LightComponent::update()
 {
-	auto l_boundMax = m_AABB.m_boundMax;
-	auto l_boundMin = m_AABB.m_boundMin;
-	auto l_pos = getParentEntity()->caclWorldRotMatrix() * m_AABB.m_center;
-	auto l_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::FORWARD);
-	l_pos = l_pos + l_direction * (l_boundMax.z - l_boundMin.z) * (1.0 / 2.0);
-	m_modifiedWorldPos = l_pos;
 }
 
 void LightComponent::shutdown()

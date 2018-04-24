@@ -354,7 +354,7 @@ void RenderingSystem::updatePhysics()
 
 	if (g_pGameSystem->getCameraComponents().size() > 0)
 	{
-		//generateAABB(*g_pGameSystem->getCameraComponents()[0]);
+		generateAABB(*g_pGameSystem->getCameraComponents()[0]);
 
 		m_mouseRay.m_origin = g_pGameSystem->getCameraComponents()[0]->getParentEntity()->caclWorldPos();
 		m_mouseRay.m_direction = calcMousePositionInWorldSpace();
@@ -379,7 +379,7 @@ void RenderingSystem::updatePhysics()
 		{
 			if (i->getLightType() == lightType::DIRECTIONAL)
 			{
-				//generateAABB(*i);
+				generateAABB(*i);
 			}
 		}
 	}
