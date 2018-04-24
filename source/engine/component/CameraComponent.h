@@ -21,7 +21,7 @@ public:
 	double m_FOV = 60.0;
 	double m_WHRatio = 16.0 / 9.0;
 	double m_zNear = 0.1;
-	double m_zFar = 1000.0;
+	double m_zFar = 200.0;
 
 	Ray m_rayOfEye;
 	bool m_drawRay = false;

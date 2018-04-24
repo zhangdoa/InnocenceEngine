@@ -37,10 +37,10 @@ void InnocenceGarden::setup()
 
 	m_directionalLightComponent.setColor(vec4(0.5, 0.3, 0.0, 1.0));
 	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
-	m_directionalLightComponent.m_drawAABB = true;
+	m_directionalLightComponent.m_drawAABB = false;
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
 	m_directionalLightEntity.getTransform()->setLocalPos(vec4(0.0, 4.0, 0.0, 1.0));
-	m_directionalLightEntity.getTransform()->rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), -45.0);
+	m_directionalLightEntity.getTransform()->rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), -90.0);
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
 	m_directionalLightBillboardComponent.m_visiblilityType = visiblilityType::BILLBOARD;
@@ -59,15 +59,15 @@ void InnocenceGarden::setup()
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
-	//m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
-	m_pawnComponent1.m_modelFileName = "cat/cat.obj";
+	m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
+	//m_pawnComponent1.m_modelFileName = "cat/cat.obj";
 	m_pawnComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnComponent1.m_drawAABB = false;
 	m_pawnComponent1.m_useTexture = false;
 	m_pawnComponent1.m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
 	m_pawnComponent1.m_MRA = vec4(0.0, 0.35, 1.0, 1.0);
 	m_pawnEntity1.addChildComponent(&m_pawnComponent1);
-	//m_pawnEntity1.getTransform()->setLocalScale(vec4(0.1, 0.1, 0.1, 1.0));
+	m_pawnEntity1.getTransform()->setLocalScale(vec4(0.1, 0.1, 0.1, 1.0));
 	m_visibleComponents.emplace_back(&m_pawnComponent1);
 
 	m_pawnComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
@@ -84,7 +84,7 @@ void InnocenceGarden::setup()
 	m_pawnEntity2.getTransform()->setLocalPos(vec4(0.0, 0.2, 3.5, 1.0));
 	m_visibleComponents.emplace_back(&m_pawnComponent2);
 
-	//setupLights();
+	setupLights();
 	setupSpheres();
 
 	m_rootEntity.setup();
@@ -234,8 +234,7 @@ void InnocenceGarden::setupLights()
 
 void InnocenceGarden::updateLights(double seed)
 {
-	//m_directionalLightEntity.getTransform()->rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), 2.0);
-	m_directionalLightEntity.getTransform()->setLocalPos(vec4(sin(seed) * 2.0, 4.0, 0.0, 1.0));
+	//m_directionalLightEntity.getTransform()->rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), 1.0);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
 		m_pointLightBillboardComponents[i].m_albedo = vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2f * 5.0, 0.4f * 5.0, 1.0);
@@ -251,6 +250,4 @@ void InnocenceGarden::updateLights(double seed)
 
 void InnocenceGarden::updateSpheres(double seed)
 {
-	//m_pawnEntity2.getTransform()->rotateInLocalInLocal(vec4(0.0, 1.0, 0.0, 0.0), 0.5);
-	m_pawnEntity1.getTransform()->setLocalPos(m_directionalLightComponent.m_modifiedWorldPos);
 }

@@ -66,9 +66,9 @@ void CameraComponent::caclFrustumVertices()
 		4, 0, 7, 0, 3, 7,
 		1, 5, 2, 5, 6, 2 };
 
-	auto pCamera = mat4();
-	pCamera.initializeToPerspectiveMatrix((60.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 10.0);
-	//auto pCamera = m_projectionMatrix;
+	//auto pCamera = mat4();
+	//pCamera.initializeToPerspectiveMatrix((60.0 / 180.0) * PI, (16.0 / 9.0), 0.1, 10.0);
+	auto pCamera = m_projectionMatrix;
 
 	for (auto& l_vertexData : m_frustumVertices)
 	{
