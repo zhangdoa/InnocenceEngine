@@ -157,6 +157,7 @@ private:
 	std::vector<VisibleComponent*> m_staticMeshVisibleComponents;
 	std::vector<VisibleComponent*> m_emissiveVisibleComponents;
 	std::vector<VisibleComponent*> m_selectedVisibleComponents;
+	std::vector<VisibleComponent*> m_inFrustumVisibleComponents;
 
 	BaseFrameBuffer* m_environmentPassFrameBuffer;
 	BaseShaderProgram* m_environmentCapturePassShaderProgram;

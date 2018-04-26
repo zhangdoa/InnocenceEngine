@@ -351,23 +351,26 @@ void RenderingSystem::updateInput()
 void RenderingSystem::updatePhysics()
 {
 	m_selectedVisibleComponents.clear();
-
+	m_inFrustumVisibleComponents.clear();
 	if (g_pGameSystem->getCameraComponents().size() > 0)
 	{
 		generateAABB(*g_pGameSystem->getCameraComponents()[0]);
 
 		m_mouseRay.m_origin = g_pGameSystem->getCameraComponents()[0]->getParentEntity()->caclWorldPos();
 		m_mouseRay.m_direction = calcMousePositionInWorldSpace();
-
+		auto l_cameraAABB = g_pGameSystem->getCameraComponents()[0]->m_AABB;
 		auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
 		for (auto& j : g_pGameSystem->getVisibleComponents())
 		{
 			if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
 			{
-
 				if (j->m_AABB.intersectCheck(m_mouseRay))
 				{
 					m_selectedVisibleComponents.emplace_back(j);
+				}
+				if (l_cameraAABB.intersectCheck(j->m_AABB))
+				{
+					m_inFrustumVisibleComponents.emplace_back(j);
 				}
 			}
 		}
@@ -1231,7 +1234,7 @@ void RenderingSystem::renderGeometryPass(std::vector<CameraComponent*>& cameraCo
 {
 	m_geometryPassFrameBuffer->update(true, true);
 	m_geometryPassFrameBuffer->setRenderBufferStorageSize(0);
-	m_geometryPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, shaderDrawPair(shaderDrawPolygonType(m_polygonMode), shaderDrawTextureType(m_textureMode)));
+	m_geometryPassShaderProgram->update(cameraComponents, lightComponents, m_inFrustumVisibleComponents, m_meshMap, m_textureMap, shaderDrawPair(shaderDrawPolygonType(m_polygonMode), shaderDrawTextureType(m_textureMode)));
 }
 
 void RenderingSystem::initializeLightPass()
