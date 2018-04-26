@@ -44,7 +44,7 @@ mat4 LightComponent::getProjectionMatrix() const
 mat4 LightComponent::getViewMatrix() const
 {
 	mat4 v;
-	v = v.lookAt(vec4(0.0, 0.0, 0.0, 1.0), getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD), getParentEntity()->getTransform()->getDirection(Transform::direction::UP));
+	v = getInvertRotationMatrix();
 	return v;
 }
 

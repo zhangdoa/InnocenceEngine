@@ -614,7 +614,6 @@ void GeometryPassPBSShaderProgram::initialize()
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_r = getUniformLocation("uni_r");
 	m_uni_t = getUniformLocation("uni_t");
-	m_uni_v = getUniformLocation("uni_v");
 	m_uni_m = getUniformLocation("uni_m");
 	m_uni_p_light = getUniformLocation("uni_p_light");
 	m_uni_v_light = getUniformLocation("uni_v_light");
@@ -642,11 +641,9 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 		mat4 p = cameraComponents[0]->getProjectionMatrix();
 		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
 		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
-		mat4 v = cameraComponents[0]->getParentEntity()->caclLookAtMatrix();
 		updateUniform(m_uni_p, p);
 		updateUniform(m_uni_r, r);
 		updateUniform(m_uni_t, t);
-		updateUniform(m_uni_v, v);
 	}
 
 	if (lightComponents.size() > 0)

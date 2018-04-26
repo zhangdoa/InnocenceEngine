@@ -184,7 +184,6 @@ private:
 	GLint m_uni_p;
 	GLint m_uni_r;
 	GLint m_uni_t;
-	GLint m_uni_v;
 	GLint m_uni_m;
 	GLint m_uni_p_light;
 	GLint m_uni_v_light;

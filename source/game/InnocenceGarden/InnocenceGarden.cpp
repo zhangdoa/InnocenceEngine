@@ -40,7 +40,8 @@ void InnocenceGarden::setup()
 	m_directionalLightComponent.m_drawAABB = false;
 	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
 	m_directionalLightEntity.getTransform()->setLocalPos(vec4(0.0, 4.0, 0.0, 1.0));
-	m_directionalLightEntity.getTransform()->rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), -90.0);
+	m_directionalLightEntity.getTransform()->rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), -75.0);
+	m_directionalLightEntity.getTransform()->rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), -35.0);
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
 
 	m_directionalLightBillboardComponent.m_visiblilityType = visiblilityType::BILLBOARD;
