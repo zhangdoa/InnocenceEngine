@@ -22,7 +22,7 @@ void InnocenceGarden::setup()
 	m_rootEntity.addChildEntity(&m_pawnEntity2);
 
 	m_playCharacter.getTransform()->setLocalPos(vec4(2.0, 1.0, 2.0, 1.0));
-	m_playCharacter.getTransform()->rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
+	//m_playCharacter.getTransform()->rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
 	m_playCharacter.getCameraComponent().m_drawFrustum = false;
 	m_playCharacter.getCameraComponent().m_drawAABB = false;
 	m_cameraComponents.emplace_back(&m_playCharacter.getCameraComponent());
@@ -60,7 +60,7 @@ void InnocenceGarden::setup()
 
 	m_pawnComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnComponent1.m_meshType = meshShapeType::CUSTOM;
-	m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
+	//m_pawnComponent1.m_modelFileName = "sponza/sponza.obj";
 	//m_pawnComponent1.m_modelFileName = "cat/cat.obj";
 	m_pawnComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnComponent1.m_drawAABB = false;
@@ -98,7 +98,7 @@ void InnocenceGarden::initialize()
 
 void InnocenceGarden::update()
 {
-	temp += 0.02f;
+	temp += 0.02;
 	updateLights(temp);
 	updateSpheres(temp);
 	m_rootEntity.update();
@@ -238,12 +238,12 @@ void InnocenceGarden::updateLights(double seed)
 	//m_directionalLightEntity.getTransform()->rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), 1.0);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
-		m_pointLightBillboardComponents[i].m_albedo = vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2f * 5.0, 0.4f * 5.0, 1.0);
-		m_pointLightComponents[i].setColor(vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2f * 5.0, 0.4f * 5.0, 1.0));
-		m_pointLightBillboardComponents[i + 1].m_albedo = vec4(0.2f * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 0.4f * 5.0, 1.0);
-		m_pointLightComponents[i + 1].setColor(vec4(0.2f * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 0.4f * 5.0, 1.0));
-		m_pointLightBillboardComponents[i + 2].m_albedo = vec4(0.2f * 5.0, 0.4f * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 1.0);
-		m_pointLightComponents[i + 2].setColor(vec4(0.2f * 5.0, 0.4f * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 1.0));
+		m_pointLightBillboardComponents[i].m_albedo = vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2 * 5.0, 0.4 * 5.0, 1.0);
+		m_pointLightComponents[i].setColor(vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2 * 5.0, 0.4 * 5.0, 1.0));
+		m_pointLightBillboardComponents[i + 1].m_albedo = vec4(0.2 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 0.4 * 5.0, 1.0);
+		m_pointLightComponents[i + 1].setColor(vec4(0.2 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 0.4 * 5.0, 1.0));
+		m_pointLightBillboardComponents[i + 2].m_albedo = vec4(0.2 * 5.0, 0.4 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 1.0);
+		m_pointLightComponents[i + 2].setColor(vec4(0.2 * 5.0, 0.4 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 1.0));
 		m_pointLightBillboardComponents[i + 3].m_albedo = vec4((sin(seed + i * 2.0) + 1.0) * 5.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 5.0 / 2.0, 1.0);
 		m_pointLightComponents[i + 3].setColor(vec4((sin(seed + i * 2.0 ) + 1.0) * 5.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 5.0 / 2.0, 1.0));
 	}

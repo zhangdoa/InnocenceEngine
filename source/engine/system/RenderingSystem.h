@@ -78,9 +78,11 @@ private:
 	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
 	void assignloadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
 	std::vector<Vertex> generateNDC();
+	std::vector<Vertex> generateViewFrustum(const mat4& transformMatrix);
 	void generateAABB(VisibleComponent & visibleComponent);
 	void generateAABB(LightComponent & lightComponent);
 	void generateAABB(CameraComponent & cameraComponent);
+	AABB generateAABB(const std::vector<Vertex>& vertices);
 	AABB generateAABB(const vec4& boundMax, const vec4& boundMin);
 	meshID addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 	void loadDefaultAssets();

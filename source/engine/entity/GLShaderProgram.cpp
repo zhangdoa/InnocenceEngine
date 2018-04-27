@@ -174,15 +174,15 @@ void EnvironmentCapturePassPBSShaderProgram::update(std::vector<CameraComponent*
 	glDisable(GL_CULL_FACE);
 
 	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
+	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0, 0.1, 10.0);
 	std::vector<mat4> captureViews =
 	{
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(-1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  1.0,  0.0, 1.0), vec4(0.0,  0.0,  1.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, -1.0,  0.0, 1.0), vec4(0.0,  0.0, -1.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0,  1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0, -1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0))
 	};
 
 	useProgram();
@@ -237,16 +237,16 @@ void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<CameraCompon
 	glDisable(GL_CULL_FACE);
 
 	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
+	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0, 0.1, 10.0);
 
 	std::vector<mat4> captureViews =
 	{
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(-1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  1.0,  0.0, 1.0), vec4(0.0,  0.0,  1.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, -1.0,  0.0, 1.0), vec4(0.0,  0.0, -1.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0,  1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0, -1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0))
 	};
 
 	useProgram();
@@ -300,16 +300,16 @@ void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponen
 	glDisable(GL_CULL_FACE);
 
 	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0f, 0.1f, 10.0f);
+	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0, 0.1, 10.0);
 
 	std::vector<mat4> captureViews =
 	{
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(-1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  1.0,  0.0, 1.0), vec4(0.0,  0.0,  1.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, -1.0,  0.0, 1.0), vec4(0.0,  0.0, -1.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0,  1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0, -1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0))
 	};
 
 	useProgram();
@@ -411,7 +411,7 @@ void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& camer
 	{
 		if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
 		{
-			updateUniform(m_uni_p, l_lightComponent->getProjectionMatrix());
+			updateUniform(m_uni_p, l_lightComponent->getProjectionMatrix(0));
 			updateUniform(m_uni_v, l_lightComponent->getViewMatrix());
 
 			// draw each visibleComponent
@@ -469,7 +469,7 @@ void GeometryPassBlinnPhongShaderProgram::initialize()
 
 void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
 {
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
 	useProgram();
@@ -625,7 +625,7 @@ void GeometryPassPBSShaderProgram::initialize()
 
 void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
 {
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_POINT + (int)in_shaderDrawPair.first);
@@ -653,7 +653,7 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 			// update light space transformation matrices
 			if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
 			{
-				updateUniform(m_uni_p_light, l_lightComponent->getProjectionMatrix());
+				updateUniform(m_uni_p_light, l_lightComponent->getProjectionMatrix(0));
 				updateUniform(m_uni_v_light, l_lightComponent->getViewMatrix());
 
 				// draw each visibleComponent
@@ -1074,9 +1074,12 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 		{
 			if (l_lightComponent->m_drawAABB)
 			{
-				auto l_cameraLocalMat = l_lightComponent->getParentEntity()->caclWorldRotMatrix();
-				updateUniform(m_uni_m, l_cameraLocalMat);
-				meshMap.find(l_lightComponent->m_AABBMeshID)->second->update();
+				auto l_lightLocalMat = l_lightComponent->getParentEntity()->caclWorldRotMatrix();
+				updateUniform(m_uni_m, l_lightLocalMat);
+				for (auto l_AABBMeshID : l_lightComponent->m_AABBMeshIDs)
+				{
+					meshMap.find(l_AABBMeshID)->second->update();
+				}
 			}
 		}
 	}

@@ -98,6 +98,11 @@ vec4 vec4::operator*(double rhs)
 	return vec4(x * rhs, y * rhs, z * rhs, w * rhs);
 }
 
+vec4 vec4::operator/(double rhs)
+{
+	return vec4(x / rhs, y / rhs, z / rhs, w / rhs);
+}
+
 vec4 vec4::quatMul(const vec4 & rhs)
 {
 	vec4 l_result = vec4(
@@ -347,6 +352,11 @@ vec2 vec2::scale(double rhs)
 vec2 vec2::operator*(double rhs)
 {
 	return vec2(x * rhs, y * rhs);
+}
+
+vec2 vec2::operator/(double rhs)
+{
+	return vec2(x / rhs, y / rhs);
 }
 
 double vec2::length()
@@ -600,9 +610,9 @@ void mat4::initializeToIdentityMatrix()
 
 //Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar)
+void mat4::initializeToPerspectiveMatrix(double FOV, double WHRatio, double zNear, double zFar)
 {
-	m[0][0] = (float)(1.0 / (tan(FOV / 2.0) * HWRatio));
+	m[0][0] = (float)(1.0 / (tan(FOV / 2.0) * WHRatio));
 	m[1][1] = (float)(1.0 / tan(FOV / 2.0));
 	m[2][2] = (float)(-(zFar + zNear) / ((zFar - zNear)));
 	m[2][3] = (float)-1.0;
@@ -612,9 +622,9 @@ void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNea
 
 //Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-void mat4::initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar)
+void mat4::initializeToPerspectiveMatrix(double FOV, double WHRatio, double zNear, double zFar)
 {
-	m[0][0] = (float)(1.0 / (tan(FOV / 2.0) * HWRatio));
+	m[0][0] = (float)(1.0 / (tan(FOV / 2.0) * WHRatio));
 	m[1][1] = (float)(1.0 / tan(FOV / 2.0));
 	m[2][2] = (float)(-(zFar + zNear) / ((zFar - zNear)));
 	m[2][3] = (float)(-(2.0 * zFar * zNear) / ((zFar - zNear)));

@@ -132,7 +132,7 @@ public:
 	matrix4x4 * vector4 :
 	*/
 	void initializeToIdentityMatrix();
-	void initializeToPerspectiveMatrix(double FOV, double HWRatio, double zNear, double zFar);
+	void initializeToPerspectiveMatrix(double FOV, double WHRatio, double zNear, double zFar);
 	void initializeToOrthographicMatrix(double left, double right, double bottom, double up, double zNear, double zFar);
 	mat4 lookAt(const vec4& eyePos, const vec4& centerPos, const vec4& upDir);
 	float m[4][4];
@@ -162,6 +162,7 @@ public:
 	vec4 scale(const vec4& rhs);
 	vec4 scale(double rhs);
 	vec4 operator*(double rhs);
+	vec4 operator/(double rhs);
 	vec4 quatMul(const vec4& rhs);
 	vec4 quatMul(double rhs);
 	vec4 quatConjugate();
@@ -295,6 +296,7 @@ public:
 	vec2 scale(const vec2& rhs);
 	vec2 scale(double rhs);
 	vec2 operator*(double rhs);
+	vec2 operator/(double rhs);
 	double length();
 	vec2 normalize();
 

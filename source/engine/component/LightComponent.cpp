@@ -25,15 +25,10 @@ void LightComponent::setColor(const vec4& color)
 	m_color = color;
 }
 
-void LightComponent::setModifiedWorldPos(const vec4 & pos)
+mat4 LightComponent::getProjectionMatrix(unsigned int cascadedLevel) const
 {
-	m_modifiedWorldPos = pos;
-}
-
-mat4 LightComponent::getProjectionMatrix() const
-{
-	auto l_boundMax = m_AABB.m_boundMax;
-	auto l_boundMin = m_AABB.m_boundMin;
+	auto l_boundMax = m_AABBs[cascadedLevel].m_boundMax;
+	auto l_boundMin = m_AABBs[cascadedLevel].m_boundMin;
 
 	mat4 p;
 	p.initializeToOrthographicMatrix(l_boundMin.x, l_boundMax.x, l_boundMin.y, l_boundMax.y, l_boundMin.z, l_boundMax.z);
