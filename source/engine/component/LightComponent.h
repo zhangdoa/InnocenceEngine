@@ -24,8 +24,8 @@ public:
 	void setlightType(const lightType lightType);
 	void setRadius(const double radius);
 	void setColor(const vec4& color);
-	void setModifiedWorldPos(const vec4& pos);
-	mat4 getProjectionMatrix() const;
+
+	mat4 getProjectionMatrix(unsigned int cascadedLevel) const;
 	mat4 getViewMatrix() const;
 	mat4 getInvertTranslationMatrix() const;
 	mat4 getInvertRotationMatrix() const;
@@ -33,7 +33,10 @@ public:
 	bool m_drawAABB = false;
 	meshID m_AABBMeshID;
 	AABB m_AABB;
-	vec4 m_modifiedWorldPos;
+
+	std::vector<AABB> m_AABBs;
+	std::vector<meshID> m_AABBMeshIDs;
+
 private:
 	lightType m_lightType = lightType::POINT;
 	vec4 m_direction;	
