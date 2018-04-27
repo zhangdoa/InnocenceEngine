@@ -1,3 +1,6 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:7ef9d11f1394de30ba459409016893e7543809c8553bd117e091e565e4563630
-size 70
+// shadertype=<glsl>
+#version 330 core
+
+void main()
+{             
+}  

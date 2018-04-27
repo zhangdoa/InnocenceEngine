@@ -1,3 +1,398 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:685a2ffa367cb670693f283020aa7fe26d9c9ab218430a77a46ddfa172631048
-size 13490
+// shadertype=glsl
+#version 330 core
+layout (location = 0) out vec4 uni_lightPassRT0;
+
+in vec2 TexCoords;
+
+struct dirLight {
+	vec3 position;
+	vec3 direction;
+    vec3 color;
+};
+
+struct pointLight {
+	vec3 position;
+	float radius;
+    vec3 color;
+};
+
+const float PI = 3.14159265359;
+const int NR_POINT_LIGHTS = 64;
+const float MAX_REFLECTION_LOD = 4.0;
+
+uniform vec3 uni_viewPos;
+uniform sampler2D uni_geometryPassRT0;
+uniform sampler2D uni_geometryPassRT1;
+uniform sampler2D uni_geometryPassRT2;
+uniform sampler2D uni_geometryPassRT3;
+uniform sampler2D uni_shadowMap;
+uniform samplerCube uni_irradianceMap;
+uniform samplerCube uni_preFiltedMap;
+uniform sampler2D uni_brdfLUT;
+uniform int uni_textureMode;
+uniform int uni_shadingMode;
+
+uniform dirLight uni_dirLight;
+uniform pointLight uni_pointLights[NR_POINT_LIGHTS];
+
+// Oren-Nayar diffuse BRDF
+// ----------------------------------------------------------------------------
+float orenNayarDiffuse(float LdotV,  float NdotL, float NdotV, float roughness) 
+{
+  float s = LdotV - NdotL * NdotV;
+  float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));
+
+  float sigma2 = roughness * roughness;
+  float A = 1.0 - (0.5 * sigma2 / (sigma2 + 0.33));
+  float B = 0.45 * sigma2 / (sigma2 + 0.09);
+
+  return max(0.0, NdotL) * (A + B * s / t);
+}
+
+// Frosbite Engine model
+// ----------------------------------------------------------------------------
+// Specular Fresnel Component
+// ----------------------------------------------------------------------------
+vec3 Frostbite_fresnelSchlick(vec3 f0, float f90, float u)
+{
+	return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
+}
+// Diffuse BRDF
+// ----------------------------------------------------------------------------
+float Frostbite_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
+{	
+	float energyBias = mix(0, 0.5, linearRoughness);
+	float energyFactor = mix(1.0, 1.0/1.51, linearRoughness);
+	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
+	vec3 f0 = vec3 (1.0, 1.0, 1.0);
+	float lightScatter = Frostbite_fresnelSchlick(f0, fd90, NdotL).r;
+	float viewScatter = Frostbite_fresnelSchlick(f0, fd90, NdotV).r;
+	return lightScatter * viewScatter * energyFactor;
+}
+// Specular Geometry Component
+// ----------------------------------------------------------------------------
+float Frostbite_V_SmithGGXCorrelated(float NdotL , float NdotV , float alphaG)
+{
+	float alphaG2 = alphaG * alphaG;
+	float Lambda_GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - alphaG2) + alphaG2);
+	float Lambda_GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - alphaG2) + alphaG2);
+	return 0.5 / max((Lambda_GGXV + Lambda_GGXL), 0.00001);
+}
+// Specular Distribution Component
+// ----------------------------------------------------------------------------
+float Frostbite_D_GGX(float NdotH , float roughness)
+{
+	// remapping to Quadratic curve
+  float a = roughness * roughness;
+	float a2 = a * a;
+	float f = ( NdotH * a2 - NdotH ) * NdotH + 1;
+	return a2 / pow(f, 2.0);
+}
+// ----------------------------------------------------------------------------
+vec3 Frostbite_CalcDirectionalLightRadiance(dirLight light, vec3 albedo, float metallic, float roughness, vec3 normal, vec3 viewPos, vec3 fragPos, vec3 F0)
+{
+	vec3 N = normalize(normal);
+	vec3 L = normalize(-light.direction);
+	vec3 V = normalize(viewPos - fragPos);
+	vec3 H = normalize(V + L);
+
+	float NdotV = max(dot(N , V), 0.0);
+	float LdotH = max(dot(L , H), 0.0);
+	float NdotH = max(dot(N , H), 0.0);
+	float NdotL = max(dot(N , L), 0.0);
+
+	// Specular BRDF
+	float f90 = 1.0;
+	vec3 F = Frostbite_fresnelSchlick(F0, f90, LdotH);
+	float G = Frostbite_V_SmithGGXCorrelated(NdotV, NdotL, roughness);
+	float D = Frostbite_D_GGX (NdotH, roughness);
+	vec3 Fr = F * G * D;
+
+	// Diffuse BRDF
+	float Fd = Frostbite_DisneyDiffuse(NdotV, NdotL, LdotH ,roughness * roughness); 
+
+	return (Fd * albedo + Fr) * light.color * NdotL / PI;		
+}
+// ----------------------------------------------------------------------------
+vec3 Frostbite_CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float roughness, vec3 normal, vec3 viewPos, vec3 fragPos, vec3 F0)
+{
+	if(length(light.position - fragPos) < light.radius)
+	{
+		vec3 N = normalize(normal);
+		vec3 L = normalize(light.position - fragPos);
+		vec3 V = normalize(viewPos - fragPos);
+		vec3 H = normalize(V + L);
+
+		float NdotV = max(dot(N , V), 0.0);
+		float LdotH = max(dot(L , H), 0.0);
+		float NdotH = max(dot(N , H), 0.0);
+		float NdotL = max(dot(N , L), 0.0);
+
+		// Specular BRDF
+		float f90 = 1.0;
+		vec3 F = Frostbite_fresnelSchlick(F0, f90, LdotH);
+		float G = Frostbite_V_SmithGGXCorrelated(NdotV, NdotL, roughness);
+		float D = Frostbite_D_GGX (NdotH, roughness);
+		vec3 Fr = F * G * D;
+
+		// Diffuse BRDF
+		float Fd = Frostbite_DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness);    
+
+		float distance = length(light.position - fragPos);
+    float attenuation = 1.0 / (distance * distance);
+    vec3 radiance = light.color * attenuation;
+  	 
+    return (Fd * albedo + Fr) * radiance * NdotL / PI;
+	}
+	else
+	{
+		return vec3(0.0f, 0.0f, 0.0f);
+	}
+}
+// Unreal Engine model
+// ----------------------------------------------------------------------------
+// Specular Distribution Component
+// ----------------------------------------------------------------------------
+float Unreal_DistributionGGX(float NdotH, float roughness)
+{
+	float a = roughness*roughness;
+	// remapping to Quadratic curve
+	float a2 = a * a;
+	float NdotH2 = NdotH*NdotH;
+
+	float nom   = a2;
+	float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+	denom = denom * denom;
+
+	return nom / denom;
+}
+// Specular Geometry Component
+// ----------------------------------------------------------------------------
+float Unreal_GeometrySchlickGGX(float NdotV, float roughness)
+{
+	float r = (roughness + 1.0);
+	float k = (r*r) / 8.0;
+
+	float nom   = NdotV;
+	float denom = NdotV * (1.0 - k) + k;
+
+	return nom / denom;
+}
+// ----------------------------------------------------------------------------
+float Unreal_GeometrySmith(float NdotV, float NdotL, float roughness)
+{
+	float ggx2 = Unreal_GeometrySchlickGGX(NdotV, roughness);
+	float ggx1 = Unreal_GeometrySchlickGGX(NdotL, roughness);
+
+	return ggx1 * ggx2;
+}
+// Specular Fresnel Component
+// ----------------------------------------------------------------------------
+vec3 Unreal_fresnelSchlick(float cosTheta, vec3 F0)
+{
+	return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+// ----------------------------------------------------------------------------
+vec3 Unreal_CalcDirectionalLightRadiance(dirLight light, vec3 albedo, float metallic, float roughness, vec3 normal, vec3 viewPos, vec3 fragPos, vec3 F0)
+{
+	vec3 N = normalize(normal);
+	vec3 L = normalize(-light.direction);
+	vec3 V = normalize(viewPos - fragPos);
+	vec3 H = normalize(V + L);
+
+	float NdotV = max(dot(N , V), 0.0);
+	float NdotH = max(dot(N,  H), 0.0);
+	float HdotV = max(dot(H , V), 0.0);
+	float NdotL = max(dot(N , L), 0.0);
+		
+	// Specular BRDF
+	vec3 F = Unreal_fresnelSchlick(HdotV, F0);
+	float G = Unreal_GeometrySmith(NdotV, NdotL, roughness);      
+	float D = Unreal_DistributionGGX(NdotH, roughness);  
+           
+	vec3 nominator = D * G * F; 
+	float denominator = 4 * NdotV * NdotL;
+	vec3 specular = nominator / max(denominator, 0.00001);
+	
+  // for energy conservation       
+	vec3 kS = F;
+	vec3 kD = vec3(1.0) - kS;  
+	kD *= 1.0 - metallic;	  
+   
+	return ((kD * albedo + specular) * light.color * NdotL)  / PI;
+}
+// ----------------------------------------------------------------------------
+vec3 Unreal_CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float roughness, vec3 normal, vec3 viewPos, vec3 fragPos, vec3 F0)
+{
+	if(length(light.position - fragPos) < light.radius)
+	{
+		vec3 N = normalize(normal);
+    vec3 L = normalize(light.position - fragPos);
+		vec3 V = normalize(viewPos - fragPos);
+    vec3 H = normalize(V + L);
+
+		float NdotV = max(dot(N , V), 0.0);
+		float NdotH = max(dot(N,  H), 0.0);
+		float HdotV = max(dot(H , V), 0.0);
+		float NdotL = max(dot(N , L), 0.0);
+		
+    // Specular BRDF
+		vec3 F = Unreal_fresnelSchlick(HdotV, F0);
+		float G = Unreal_GeometrySmith(NdotV, NdotL, roughness);      
+		float D = Unreal_DistributionGGX(NdotH, roughness);  
+           
+    vec3 nominator = D * G * F; 
+    float denominator = 4 * NdotV * NdotL;
+    vec3 specular = nominator / max(denominator, 0.00001);
+    
+    // for energy conservation    
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic;
+     	
+		float distance = length(light.position - fragPos);
+    float attenuation = 1.0 / (distance * distance);
+    vec3 radiance = light.color * attenuation;
+
+    return ((kD * albedo + specular) * radiance * NdotL) / PI;
+	}
+	else
+	{
+		return vec3(0.0f, 0.0f, 0.0f);
+	}
+}
+// IBL
+// corrected Fresnel
+// ----------------------------------------------------------------------------
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+} 
+// ----------------------------------------------------------------------------
+vec3 imageBasedLight(vec3 albedo, float metallic, float roughness, vec3 normal, float ao, vec3 viewPos, vec3 fragPos, vec3 F0)
+{
+			//IBL ambient lighting
+			vec3 N = normalize(normal);
+			vec3 V = normalize(viewPos - fragPos);
+			vec3 R = reflect(-V, N);
+
+			float NdotV = max(dot(N, V), 0.0);
+
+			vec3 F = fresnelSchlickRoughness(NdotV, F0, roughness); 
+			vec3 kS = Frostbite_fresnelSchlick(F0, 1.0, NdotV);
+			vec3 kD = 1.0 - kS;
+			kD *= 1.0 - metallic;	  
+			vec3 irradiance = texture(uni_irradianceMap, N).rgb;
+			vec3 diffuse = irradiance * albedo;
+
+			// sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
+			vec3 prefilteredColor = textureLod(uni_preFiltedMap, R, roughness * MAX_REFLECTION_LOD).rgb;    
+			vec2 brdf  = texture(uni_brdfLUT, vec2(NdotV, roughness)).rg;
+			vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+			return (kD * diffuse + specular) * ao;
+}
+// shadow mapping
+// ----------------------------------------------------------------------------
+float ShadowCalculation(dirLight light, vec4 fragPosLightSpace, vec3 normal, vec3 viewPos, vec3 fragPos)
+{
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    // calculate bias (based on depth map resolution and slope)
+    vec3 N = normal;
+    vec3 L = normalize(light.position - fragPos);
+		float NdotL = max(dot(N , L), 0.0);
+
+    float bias = max(0.05 * (1.0 - NdotL), 0.005);
+
+    // PCF
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(uni_shadowMap, 0);
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(uni_shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
+        }    
+    }
+    shadow /= 9.0;
+    
+    // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
+    if(projCoords.z > 1.0)
+        shadow = 0.0;
+        
+    return shadow;
+}
+
+// ----------------------------------------------------------------------------
+void main()
+{
+	vec4 RT0 = texture(uni_geometryPassRT0, TexCoords);
+	vec4 RT1 = texture(uni_geometryPassRT1, TexCoords);
+	vec4 RT2 = texture(uni_geometryPassRT2, TexCoords);
+	vec4 RT3 = texture(uni_geometryPassRT3, TexCoords);
+
+	if(uni_textureMode == 0)
+	{
+		vec3 FragPos	= RT0.rgb;
+		vec3 Normal		= RT1.rgb;
+		vec3 Albedo     = RT2.rgb;
+		vec4 FragPosInLightSpace = RT3;
+		float Metallic  = RT0.a;
+		float Roughness = RT1.a;
+		float AO        = RT2.a;
+		
+		vec3 F0 = vec3(0.04); 
+		F0 = mix(F0, Albedo, Metallic);
+		// reflectance equation
+		vec3 Lo = vec3(0.0);
+		if(uni_shadingMode == 0)
+		{
+			Lo += Frostbite_CalcDirectionalLightRadiance(uni_dirLight, Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
+    		//shadow by directional light
+			Lo *= 1 - ShadowCalculation(uni_dirLight, FragPosInLightSpace, Normal, uni_viewPos, FragPos);
+			for(int i = 0; i < NR_POINT_LIGHTS; ++i) 
+			{
+				Lo += Frostbite_CalcPointLightRadiance(uni_pointLights[i], Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
+			}
+		}
+		else if(uni_shadingMode == 1)
+		{
+			Lo += Unreal_CalcDirectionalLightRadiance(uni_dirLight, Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
+			//shadow by directional light
+			Lo *= 1 - ShadowCalculation(uni_dirLight, FragPosInLightSpace, Normal, uni_viewPos, FragPos);
+			for(int i = 0; i < NR_POINT_LIGHTS; ++i) 
+			{
+				Lo += Unreal_CalcPointLightRadiance(uni_pointLights[i], Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
+			}
+		}
+		//Lo += imageBasedLight(Albedo, Metallic, Roughness, Normal, AO, uni_viewPos, FragPos, F0);
+		uni_lightPassRT0.rgb = Lo;
+		uni_lightPassRT0.a = 1.0;
+	}
+	else if(uni_textureMode == 1)
+	{
+			uni_lightPassRT0.rgb = RT0.rgb;
+			uni_lightPassRT0.a = 1.0;
+	}
+	else if(uni_textureMode == 2)
+	{
+			uni_lightPassRT0.rgb = RT1.rgb;
+			uni_lightPassRT0.a = 1.0;
+	}
+	else if(uni_textureMode == 3)
+	{
+			uni_lightPassRT0.rgb = RT2.rgb;
+			uni_lightPassRT0.a = 1.0;
+	}
+	else if(uni_textureMode == 4)
+	{
+			uni_lightPassRT0.rgb = vec3(RT0.a, RT1.a, RT2.a);
+			uni_lightPassRT0.a = 1.0;
+	}	
+}

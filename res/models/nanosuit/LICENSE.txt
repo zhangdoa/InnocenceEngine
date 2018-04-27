@@ -1,3 +1,6 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:d73871faa06d7fc12cdef1904faca7a4ec89a335b7bfb1097bd855bebfacf9a9
-size 196
+Original Nanosuit model by ForrestPL:
+http://tf3dm.com/3d-model/crysis-2-nanosuit-2-97837.html
+
+Slightly modified for use in the LearnOpenGL.com tutorials (by Joey de Vries)
+
+For personal use only

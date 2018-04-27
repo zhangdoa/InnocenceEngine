@@ -1,3 +1,23 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1b3b60c9226d55053dbf9335f6132526c165f445751328091f1534e604bbb487
-size 609
+// shadertype=glsl
+#version 330 core
+layout (location = 0) in vec3 in_Position;
+layout (location = 1) in vec2 in_TexCoord;
+layout (location = 2) in vec3 in_Normal;
+
+uniform sampler2D uni_normalTexture;
+
+out VS_OUT {
+    vec3 normal;
+} vs_out;
+
+uniform mat4 uni_p;
+uniform mat4 uni_r;
+uniform mat4 uni_t;
+uniform mat4 uni_m;
+
+void main()
+{
+		mat3 normalMatrix = mat3(transpose(inverse(uni_r * uni_t * uni_m)));
+    vs_out.normal = normalize(vec3(uni_p * vec4(normalMatrix * in_Normal, 0.0) * texture(uni_normalTexture, in_TexCoord)));
+    gl_Position = uni_p * uni_r * uni_t * uni_m * vec4(in_Position, 1.0);
+}

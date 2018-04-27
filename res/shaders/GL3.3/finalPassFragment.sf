@@ -1,3 +1,49 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:df71cdd1ccb422993d2a288242d0f50ade87c7ecc17cd11d4305f1590afc20b5
-size 1098
+// shadertype=glsl
+#version 330 core
+
+in vec2 TexCoords;
+out vec4 FragColor;
+
+uniform sampler2D uni_lightPassRT0;
+uniform sampler2D uni_skyPassRT0;
+uniform sampler2D uni_bloomPassRT0;
+uniform sampler2D uni_billboardPassRT0;
+uniform sampler2D uni_debuggerPassRT0;
+
+void main()
+{  
+	vec3 finalColor;
+	vec4 lightPassResult = texture(uni_lightPassRT0, TexCoords);
+	vec4 skyPassResult = texture(uni_skyPassRT0, TexCoords);
+	vec4 bloomPassResult = texture(uni_bloomPassRT0, TexCoords);
+	vec4 billboardPassResult = texture(uni_billboardPassRT0, TexCoords);
+	vec4 debuggerPassResult = texture(uni_debuggerPassRT0, TexCoords);
+
+	if(lightPassResult.a == 1.0)
+	{
+		finalColor = lightPassResult.rgb;
+	}
+	else
+	{
+		finalColor = skyPassResult.rgb;
+	}
+
+	// emissive overlay
+	finalColor += bloomPassResult.rgb;
+
+	// billboard overlay
+	finalColor += billboardPassResult.rgb;
+
+	// debugger overlay
+	finalColor += debuggerPassResult.rgb;
+	
+	//HDR to LDR
+	finalColor = finalColor / (finalColor + vec3(1.0));
+
+	//gamma correction
+	finalColor = pow(finalColor, vec3(1.0 / 2.2));
+
+	FragColor = vec4(finalColor, 1.0);
+}
+
+

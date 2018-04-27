@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:8ca7f4811e297d147b09242dd0d6dad672c326674b77d41ee1d04e01aaa6c672
-size 212
+# 
+# 
+newmtl cat
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kn cat_norm.tga
+map_Kd cat_diff.tga
+map_Ks cat_spec.tga
+

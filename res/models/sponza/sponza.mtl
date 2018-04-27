@@ -1,3 +1,389 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c9e01c79bcb004483d7e3a3b56b1eef7daa3e1916f1a236b994aec8006b7063e
-size 8124
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 20.08.2010 18:13:43
+
+newmtl leaf
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Sponza_Thorn_diffuse.png
+	map_d sponza_thorn_mask.png
+	map_Kn Sponza_Thorn_normal.png
+	map_Ka Sponza_Thorn_roughness.png
+
+newmtl vase_round
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd VaseRound_diffuse.png
+	map_Kn VaseRound_normal.png
+	map_Ka VaseRound_roughness.png
+
+newmtl Material__57
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd VasePlant_diffuse.png
+	map_Kn VasePlant_normal.png
+	map_Ka VasePlant_roughness.png
+	map_d vase_plant_mask.png
+
+newmtl Material__298
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Background_Albedo.png
+	map_Kn Background_Normal.png
+	map_Ka Background_roughness.png
+
+newmtl bricks
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Sponza_Bricks_a_Albedo.png
+	map_Kn Sponza_Bricks_a_Normal.png
+	map_Ka Sponza_Bricks_a_Roughness.png
+
+newmtl arch
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Sponza_Arch_diffuse.png
+	map_Ka Sponza_Arch_roughness.png
+	map_Kn Sponza_Arch_normal.png
+
+newmtl ceiling
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Sponza_Ceiling_diffuse.png
+	map_Ka Sponza_Ceiling_roughness.png
+	map_Kn Sponza_Ceiling_normal.png
+
+newmtl column_a
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Sponza_Column_a_diffuse.png
+	map_Kn Sponza_Column_a_normal.png
+	map_Ka Sponza_Column_a_roughness.png
+
+newmtl floor
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Sponza_Floor_diffuse.png
+	map_Kn Sponza_Floor_normal.png
+	map_Ka Sponza_Floor_roughness.png
+
+newmtl column_c
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Sponza_Column_c_diffuse.png
+	map_Kn Sponza_Column_c_normal.png
+	map_Ka Sponza_Column_c_roughness.png
+
+newmtl details
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Sponza_Details_diffuse.png
+	map_Kn Sponza_Details_normal.png
+	map_Ka Sponza_Details_roughness.png
+
+newmtl column_b
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Sponza_Column_b_diffuse.png
+	map_Kn Sponza_Column_b_normal.png
+	map_Ka Sponza_Column_b_roughness.png
+
+newmtl flagpole
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Metallic_metallic.png
+	map_Kd Sponza_FlagPole_diffuse.png
+	map_Kn Sponza_FlagPole_normal.png
+	map_Ka Sponza_FlagPole_roughness.png
+
+newmtl fabric_e
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Sponza_Fabric_metallic.png
+	map_Kd Sponza_Fabric_Green_diffuse.png
+	map_Kn Sponza_Fabric_Green_normal.png
+	map_Ka Sponza_Fabric_roughness.png
+
+newmtl fabric_d
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Sponza_Fabric_metallic.png
+	map_Kd Sponza_Fabric_Blue_diffuse.png
+	map_Kn Sponza_Fabric_Blue_normal.png
+	map_Ka Sponza_Fabric_roughness.png
+
+newmtl fabric_a
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Sponza_Fabric_metallic.png
+	map_Kd Sponza_Fabric_Red_diffuse.png
+	map_Kn Sponza_Fabric_Red_normal.png
+	map_Ka Sponza_Fabric_roughness.png
+
+newmtl fabric_g
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Sponza_Curtain_metallic.png
+	map_Kd Sponza_Curtain_Blue_diffuse.png
+	map_Kn Sponza_Curtain_Blue_normal.png
+	map_Ka Sponza_Curtain_roughness.png
+
+newmtl fabric_c
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Sponza_Curtain_metallic.png
+	map_Kd Sponza_Curtain_Red_diffuse.png
+	map_Kn Sponza_Curtain_Red_normal.png
+	map_Ka Sponza_Curtain_roughness.png
+
+newmtl fabric_f
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Sponza_Curtain_metallic.png
+	map_Kd Sponza_Curtain_Green_diffuse.png
+	map_Kn Sponza_Curtain_Green_normal.png
+	map_Ka Sponza_Curtain_roughness.png
+
+newmtl chain
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks ChainTexture_Metallic.png
+	map_Kd ChainTexture_Albedo.png
+	map_d chain_texture_mask.png
+	map_Kn ChainTexture_Normal.png
+	map_Ka ChainTexture_Roughness.png
+
+newmtl vase_hanging
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Metallic_metallic.png
+	map_Kd VaseHanging_diffuse.png
+	map_Kn VaseHanging_normal.png
+	map_Ka VaseHanging_roughness.png
+
+newmtl vase
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Vase_diffuse.png
+	map_Kn Vase_normal.png
+	map_Ka Vase_roughness.png
+
+newmtl Material__25
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Lion_Albedo.png
+	map_Kn Lion_Normal.png
+	map_Ka Lion_Roughness.png
+
+newmtl roof
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ks Dielectric_metallic.png
+	map_Kd Sponza_Roof_diffuse.png
+	map_Kn Sponza_Roof_normal.png
+	map_Ka Sponza_Roof_roughness.png
