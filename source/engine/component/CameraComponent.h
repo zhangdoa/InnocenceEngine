@@ -15,6 +15,7 @@ public:
 	const mat4 getInvertTranslationMatrix() const;
 	const mat4 getInvertRotationMatrix() const;
 	const mat4 getProjectionMatrix() const;
+	const void initializeProjectionMatrix();
 	mat4 m_initTransMat;
 	const std::vector<Vertex>* getFrustumCorners() const;
 

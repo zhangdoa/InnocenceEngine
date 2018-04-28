@@ -398,6 +398,7 @@ enum class texturePixelDataFormat { RED, RG, RGB, RGBA, DEPTH_COMPONENT };
 enum class texturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, FLOAT };
 enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER };
 enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
+enum class textureAssignType { ADD, OVERWRITE };
 // shader custom types
 enum class shaderType { VERTEX, GEOMETRY, FRAGMENT };
 using shaderFilePath = std::string;
