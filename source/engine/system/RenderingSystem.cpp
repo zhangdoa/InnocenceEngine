@@ -186,6 +186,7 @@ void RenderingSystem::loadAssetsForComponents()
 			{
 				assignUnitMesh(*i, i->m_meshType);
 			}
+			generateAABB(*i);
 		}
 
 
@@ -217,6 +218,9 @@ void RenderingSystem::loadAssetsForComponents()
 
 void RenderingSystem::initializeRendering() 
 {	
+	loadDefaultAssets();
+	loadAssetsForComponents();
+
 	//initialize rendering
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	glEnable(GL_TEXTURE_2D);
@@ -231,10 +235,6 @@ void RenderingSystem::initialize()
 {
 	initializeWindow();
 	initializeInput();
-
-	loadDefaultAssets();
-	loadAssetsForComponents();
-
 	initializeRendering();
 
 	g_pLogSystem->printLog("RenderingSystem has been initialized.");
@@ -549,19 +549,27 @@ void windowCallbackWrapper::mousePositionCallbackImpl(GLFWwindow * window, doubl
 
 void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, double xoffset, double yoffset)
 {
+	//@TODO: context based binding
+	if (yoffset >= 0.0)
+	{
+		g_pGameSystem->getCameraComponents()[0]->m_FOV+= 1.0;
+	}
+	else
+	{
+		g_pGameSystem->getCameraComponents()[0]->m_FOV-= 1.0;
+	}
+	g_pGameSystem->getCameraComponents()[0]->initializeProjectionMatrix();
 }
 
 meshID RenderingSystem::addMesh(meshType meshType)
 {
 	BaseMesh* newMesh = g_pMemorySystem->spawn<MESH_CLASS>();
+	auto l_meshMap = &m_meshMap;
 	if (meshType == meshType::BOUNDING_BOX)
 	{
-		m_BBMeshMap.emplace(std::pair<meshID, BaseMesh*>(newMesh->getMeshID(), newMesh));
+		l_meshMap = &m_BBMeshMap;
 	}
-	else
-	{
-		m_meshMap.emplace(std::pair<meshID, BaseMesh*>(newMesh->getMeshID(), newMesh));
-	}
+	l_meshMap->emplace(std::pair<meshID, BaseMesh*>(newMesh->getMeshID(), newMesh));
 	return newMesh->getMeshID();
 }
 
@@ -574,14 +582,12 @@ textureID RenderingSystem::addTexture(textureType textureType)
 
 BaseMesh* RenderingSystem::getMesh(meshType meshType, meshID meshID)
 {
+	auto l_meshMap = &m_meshMap;
 	if (meshType == meshType::BOUNDING_BOX)
 	{
-		return m_BBMeshMap.find(meshID)->second;
+		l_meshMap = &m_BBMeshMap;
 	}
-	else
-	{
-		return m_meshMap.find(meshID)->second;
-	}
+	return l_meshMap->find(meshID)->second;
 }
 
 BaseTexture * RenderingSystem::getTexture(textureType textureType, textureID textureID)
@@ -591,23 +597,16 @@ BaseTexture * RenderingSystem::getTexture(textureType textureType, textureID tex
 
 void RenderingSystem::removeMesh(meshType meshType, meshID meshID)
 {
+	auto l_meshMap = &m_meshMap;
 	if (meshType == meshType::BOUNDING_BOX)
 	{
-		auto l_mesh = m_BBMeshMap.find(meshID);
-		if (l_mesh != m_BBMeshMap.end())
-		{
-			l_mesh->second->shutdown();
-			m_BBMeshMap.erase(meshID);
-		}
+		l_meshMap = &m_BBMeshMap;
 	}
-	else
+	auto l_mesh = l_meshMap->find(meshID);
+	if (l_mesh != l_meshMap->end())
 	{
-		auto l_mesh = m_meshMap.find(meshID);
-		if (l_mesh != m_meshMap.end())
-		{
-			l_mesh->second->shutdown();
-			m_meshMap.erase(meshID);
-		}
+		l_mesh->second->shutdown();
+		l_meshMap->erase(meshID);
 	}
 }
 
@@ -640,7 +639,7 @@ void RenderingSystem::assignUnitMesh(VisibleComponent & visibleComponent, meshSh
 
 void RenderingSystem::assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedtexturePair, VisibleComponent & visibleComponent)
 {
-	if (textureAssignType == textureAssignType::ADD_DEFAULT)
+	if (textureAssignType == textureAssignType::ADD)
 	{
 		visibleComponent.addTextureData(loadedtexturePair);
 	}
@@ -665,7 +664,7 @@ void RenderingSystem::assignDefaultTextures(textureAssignType textureAssignType,
 void RenderingSystem::assignloadedModel(modelMap& loadedmodelMap, VisibleComponent & visibleComponent)
 {
 	visibleComponent.setModelMap(loadedmodelMap);
-	assignDefaultTextures(textureAssignType::ADD_DEFAULT, visibleComponent);
+	assignDefaultTextures(textureAssignType::ADD, visibleComponent);
 }
 
 std::vector<Vertex> RenderingSystem::generateNDC()
@@ -832,7 +831,7 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	}
 
 	//@TODO: split correctly in light space
-	auto l_topRightCorner = (l_frustumVertices[i].m_pos + l_frustumVertices[i + 4].m_pos) / 4.0;
+	//auto l_topRightCorner = (l_frustumVertices[i].m_pos + l_frustumVertices[i + 4].m_pos) / 4.0;
 
 	auto l_FOV = l_camera->m_FOV;
 	auto l_WHRatio = l_camera->m_WHRatio;
@@ -1007,6 +1006,7 @@ AABB RenderingSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin)
 
 meshID RenderingSystem::addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
 {
+	//@TODO: generalize
 	auto l_BBMeshID = addMesh(meshType::BOUNDING_BOX);
 	auto l_BBMeshData = getMesh(meshType::BOUNDING_BOX, l_BBMeshID);
 
@@ -1056,8 +1056,6 @@ void RenderingSystem::loadModel(const std::string & fileName, VisibleComponent &
 	if (l_loadedmodelMap != m_loadedModelMap.end())
 	{
 		assignloadedModel(l_loadedmodelMap->second, visibleComponent);
-		// generate AABB
-		generateAABB(visibleComponent);
 
 		g_pLogSystem->printLog("innoMesh: " + l_convertedFilePath + " is already loaded, successfully assigned loaded modelMap.");
 	}
@@ -1068,9 +1066,6 @@ void RenderingSystem::loadModel(const std::string & fileName, VisibleComponent &
 
 		assignloadedModel(l_modelMap, visibleComponent);
 
-		// generate AABB
-		generateAABB(visibleComponent);
-
 		//mark as loaded
 		m_loadedModelMap.emplace(l_convertedFilePath, l_modelMap);
 	}
@@ -1080,11 +1075,14 @@ void RenderingSystem::render()
 {
 	//defer render
 	m_canRender = false;
-	renderBackgroundPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
-	renderShadowPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
-	renderGeometryPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
-	renderLightPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
-	renderFinalPass(g_pGameSystem->getCameraComponents(), g_pGameSystem->getLightComponents(), g_pGameSystem->getVisibleComponents());
+	auto l_cameraComponents = g_pGameSystem->getCameraComponents();
+	auto l_lightComponents = g_pGameSystem->getLightComponents();
+	auto l_visibleComponents = g_pGameSystem->getVisibleComponents();
+	renderBackgroundPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
+	renderShadowPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
+	renderGeometryPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
+	renderLightPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
+	renderFinalPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
 	//swap framebuffers
 	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0)
 	{
@@ -1093,7 +1091,7 @@ void RenderingSystem::render()
 	}
 	else
 	{
-		g_pLogSystem->printLog("Window error!");
+		g_pLogSystem->printLog("Window closed.");
 		g_pLogSystem->printLog("RenderingSystem is stand-by.");
 		m_objectStatus = objectStatus::STANDBY;
 	}

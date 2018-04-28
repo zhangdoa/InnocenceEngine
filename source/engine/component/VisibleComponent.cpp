@@ -27,7 +27,6 @@ void VisibleComponent::addTextureData(const texturePair & texturePair)
 	}
 }
 
-
 void VisibleComponent::overwriteTextureData(const texturePair & texturePair)
 {
 	for (auto& l_model : m_modelMap)

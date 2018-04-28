@@ -70,7 +70,11 @@ private:
 
 	void initializeWindow();
 	void initializeInput();
-	enum class textureAssignType { ADD_DEFAULT, OVERWRITE };
+	void initializeRendering();
+	void loadDefaultAssets();
+	void loadAssetsForComponents();
+
+
 	void assignUnitMesh(VisibleComponent& visibleComponent, meshShapeType meshType);
 	void assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
 	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
@@ -85,11 +89,8 @@ private:
 	AABB generateAABB(const std::vector<Vertex>& vertices);
 	AABB generateAABB(const vec4& boundMax, const vec4& boundMin);
 	meshID addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
-	void loadDefaultAssets();
-	void loadAssetsForComponents();
-	void initializeRendering();
-
 	vec4 calcMousePositionInWorldSpace();
+
 	void updateInput();
 	void updatePhysics();
 
@@ -129,6 +130,7 @@ private:
 	double m_mouseLastX;
 	double m_mouseLastY;
 
+	//Physic data
 	Ray m_mouseRay;
 
 	//Asset data
