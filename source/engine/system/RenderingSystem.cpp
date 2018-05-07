@@ -354,7 +354,7 @@ void RenderingSystem::updatePhysics()
 	m_inFrustumVisibleComponents.clear();
 	if (g_pGameSystem->getCameraComponents().size() > 0)
 	{
-		generateAABB(*g_pGameSystem->getCameraComponents()[0]);
+		//generateAABB(*g_pGameSystem->getCameraComponents()[0]);
 
 		m_mouseRay.m_origin = g_pGameSystem->getCameraComponents()[0]->getParentEntity()->caclWorldPos();
 		m_mouseRay.m_direction = calcMousePositionInWorldSpace();
@@ -382,7 +382,7 @@ void RenderingSystem::updatePhysics()
 		{
 			if (i->getLightType() == lightType::DIRECTIONAL)
 			{
-				generateAABB(*i);
+				//generateAABB(*i);
 			}
 		}
 	}
@@ -819,7 +819,7 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 
 void RenderingSystem::generateAABB(LightComponent & lightComponent)
 {	
-	//calculate splited projection matrices
+	//1.translate the big frustum to light space
 	auto l_camera = g_pGameSystem->getCameraComponents()[0];
 	auto l_frustumVertices = l_camera->m_frustumVertices;
 
@@ -830,53 +830,46 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 		l_vertexData.m_pos = l_lightInvertRotationMatrix * l_vertexData.m_pos;
 	}
 
-	//@TODO: split correctly in light space
-	//auto l_topRightCorner = (l_frustumVertices[i].m_pos + l_frustumVertices[i + 4].m_pos) / 4.0;
-
-	auto l_FOV = l_camera->m_FOV;
-	auto l_WHRatio = l_camera->m_WHRatio;
-	//auto l_zNear = l_camera->m_zNear;
-	//auto l_zFar = l_camera->m_zFar;
-	auto l_zNear = 0.1;
-	auto l_zFar = 10;
-
-	//@TODO: use log split
-	auto l_splitLength = (l_zFar - l_zNear) / 4.0;
-
-	auto l_splitPlanes = std::vector<double>{};
-	for (size_t i = 0; i < 5; i++)
-	{
-		l_splitPlanes.emplace_back(l_zNear + l_splitLength * i);
-	}
-
-	auto l_projectionMatrices = std::vector<mat4>{};
+	//2.calculate splited planes' corners
+	std::vector<vec4> l_frustumsCornerPos;
 	for (size_t i = 0; i < 4; i++)
 	{
-		l_projectionMatrices.emplace_back();
-	}
-	for (size_t i = 0; i < l_projectionMatrices.size(); i++)
-	{
-		l_projectionMatrices[i].initializeToPerspectiveMatrix(l_FOV, l_WHRatio, l_splitPlanes[i], l_splitPlanes[i + 1]);
+		l_frustumsCornerPos.emplace_back(l_frustumVertices[i].m_pos);
 	}
 
-	// generate AABBs for the projection matrices
-	auto l_cameraRotationMatrix = l_camera->getParentEntity()->caclWorldRot().toRotationMatrix();
-	auto l_cameraTranslationMatrix = l_camera->getParentEntity()->caclWorldPos().toTranslationMatrix();
-
-
-	for (size_t i = 0; i < l_projectionMatrices.size(); i++)
+	for (size_t i = 0; i < 4; i++)
 	{
-		auto l_splitedProjectionMatrix = l_projectionMatrices[i];
-		auto l_transformMatrix = l_cameraTranslationMatrix * l_cameraRotationMatrix * l_splitedProjectionMatrix.inverse();
-		
-		auto l_frustumVertices = generateViewFrustum(l_transformMatrix);
-
-		for (auto& l_vertexData : l_frustumVertices)
+		for (size_t j = 0; j < 4; j++)
 		{
-			l_vertexData.m_pos = l_lightInvertRotationMatrix * l_vertexData.m_pos;
+			auto l_splitedPlaneCornerPos = l_frustumVertices[j].m_pos + ((l_frustumVertices[j + 4].m_pos - l_frustumVertices[j].m_pos) * (i + 1.0) / 4.0);
+			l_frustumsCornerPos.emplace_back(l_splitedPlaneCornerPos);
 		}
+	}
 
-		lightComponent.m_AABBs.emplace_back(generateAABB(l_frustumVertices));
+	//3.assemble splited frustums
+	std::vector<Vertex> l_frustumsCornerVertices;
+	auto l_NDC = generateNDC();
+	for (size_t i = 0; i < 4; i++)
+	{
+		l_frustumsCornerVertices.insert(l_frustumsCornerVertices.end(), l_NDC.begin(), l_NDC.end());
+	}
+	for (size_t i = 0; i < 4; i++)
+	{
+		for (size_t j = 0; j < 8; j++)
+		{
+			l_frustumsCornerVertices[i * 8 + j].m_pos = l_frustumsCornerPos[i * 4 + j];
+		}
+	}
+	std::vector<std::vector<Vertex>> l_splitedFrustums;
+	for (size_t i = 0; i < 4; i++)
+	{
+		l_splitedFrustums.emplace_back(std::vector<Vertex>(l_frustumsCornerVertices.begin() + i * 8, l_frustumsCornerVertices.begin() + 8 + i * 8));
+	}
+
+	//4.generate AABBs for the splited frustums
+	for (size_t i = 0; i < 4; i++)
+	{
+		lightComponent.m_AABBs.emplace_back(generateAABB(l_splitedFrustums[i]));
 
 		if (lightComponent.m_drawAABB)
 		{
