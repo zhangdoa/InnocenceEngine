@@ -1,6 +1,7 @@
 mkdir build
 cd build
 cmake -G "Visual Studio 15" ../source
+cmake -G "Visual Studio 15" ../source
 msbuild InnocenceEngine.sln
 
 cd ../
