@@ -1,3 +1,4 @@
-rm -rf bin
-rm -rf build
-rm -rf source\engine\common\config.h
+rd /s /q bin
+rd /s /q build
+rd /s /q source\engine\common\config.h
+pause
