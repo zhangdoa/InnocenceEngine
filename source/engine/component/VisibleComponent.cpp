@@ -19,7 +19,7 @@ void VisibleComponent::addTextureData(const texturePair & texturePair)
 {
 	for (auto& l_model : m_modelMap)
 	{
-		auto& l_texturePair = l_model.second.find(texturePair.first);
+		auto l_texturePair = l_model.second.find(texturePair.first);
 		if (l_texturePair == l_model.second.end())
 		{
 			l_model.second.emplace(texturePair);
@@ -31,7 +31,7 @@ void VisibleComponent::overwriteTextureData(const texturePair & texturePair)
 {
 	for (auto& l_model : m_modelMap)
 	{
-		auto& l_texturePair = l_model.second.find(texturePair.first);
+		auto l_texturePair = l_model.second.find(texturePair.first);
 		if (l_texturePair == l_model.second.end())
 		{
 			l_model.second.emplace(texturePair);

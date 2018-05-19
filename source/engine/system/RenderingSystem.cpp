@@ -14,7 +14,7 @@ void RenderingSystem::setupWindow()
 #ifdef INNO_PLATFORM_MACOS
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 #endif
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL 
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL
 
 																   // Open a window and create its OpenGL context
 	m_window = glfwCreateWindow((int)m_screenResolution.x, (int)m_screenResolution.y, m_windowName.c_str(), NULL, NULL);
@@ -57,6 +57,8 @@ void RenderingSystem::setupRendering()
 	glEnable(GL_MULTISAMPLE);
 	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+	m_canRender = true;
 
 	m_environmentCapturePassShaderProgram = g_pMemorySystem->spawn<EnvironmentCapturePassPBSShaderProgram>();
 	m_environmentConvolutionPassShaderProgram = g_pMemorySystem->spawn<EnvironmentConvolutionPassPBSShaderProgram>();
@@ -202,7 +204,7 @@ void RenderingSystem::loadAssetsForComponents()
 	// generate AABB for camera
 	for (auto& i : g_pGameSystem->getCameraComponents())
 	{
-			generateAABB(*i);
+		generateAABB(*i);
 	}
 
 	// generate AABB for light
@@ -216,8 +218,8 @@ void RenderingSystem::loadAssetsForComponents()
 
 }
 
-void RenderingSystem::initializeRendering() 
-{	
+void RenderingSystem::initializeRendering()
+{
 	loadDefaultAssets();
 	loadAssetsForComponents();
 
@@ -552,11 +554,11 @@ void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, double xoffs
 	//@TODO: context based binding
 	if (yoffset >= 0.0)
 	{
-		g_pGameSystem->getCameraComponents()[0]->m_FOV+= 1.0;
+		g_pGameSystem->getCameraComponents()[0]->m_FOV += 1.0;
 	}
 	else
 	{
-		g_pGameSystem->getCameraComponents()[0]->m_FOV-= 1.0;
+		g_pGameSystem->getCameraComponents()[0]->m_FOV -= 1.0;
 	}
 	g_pGameSystem->getCameraComponents()[0]->initializeProjectionMatrix();
 }
@@ -637,7 +639,7 @@ void RenderingSystem::assignUnitMesh(VisibleComponent & visibleComponent, meshSh
 	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
 }
 
-void RenderingSystem::assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedtexturePair, VisibleComponent & visibleComponent)
+void RenderingSystem::assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedtexturePair, VisibleComponent & visibleComponent)
 {
 	if (textureAssignType == textureAssignType::ADD)
 	{
@@ -702,7 +704,7 @@ std::vector<Vertex> RenderingSystem::generateNDC()
 	l_VertexData_8.m_texCoord = vec2(0.0, 1.0);
 
 	std::vector<Vertex> l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
-	
+
 	for (auto& l_vertexData : l_vertices)
 	{
 		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
@@ -794,7 +796,7 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 	visibleComponent.m_AABB.m_boundMax = visibleComponent.m_AABB.m_boundMax * l_worldTm;
 	visibleComponent.m_AABB.m_boundMin = visibleComponent.m_AABB.m_boundMin *l_worldTm;
-	visibleComponent.m_AABB.m_center =visibleComponent.m_AABB.m_center * l_worldTm;
+	visibleComponent.m_AABB.m_center = visibleComponent.m_AABB.m_center * l_worldTm;
 	for (auto& l_vertexData : visibleComponent.m_AABB.m_vertices)
 	{
 		l_vertexData.m_pos = l_vertexData.m_pos * l_worldTm;
@@ -818,7 +820,7 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 }
 
 void RenderingSystem::generateAABB(LightComponent & lightComponent)
-{	
+{
 	//1.translate the big frustum to light space
 	auto l_camera = g_pGameSystem->getCameraComponents()[0];
 	auto l_frustumVertices = l_camera->m_frustumVertices;
@@ -1315,7 +1317,7 @@ void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraCompo
 	m_geometryPassFrameBuffer->asReadBuffer();
 	m_lightPassFrameBuffer->asWriteBuffer(m_screenResolution, m_screenResolution);
 	m_lightPassFrameBuffer->update(true, true);
-	m_lightPassFrameBuffer->setRenderBufferStorageSize(0);	
+	m_lightPassFrameBuffer->setRenderBufferStorageSize(0);
 	m_lightPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, shaderDrawPair(shaderDrawPolygonType(m_polygonMode), shaderDrawTextureType(m_textureMode)));
 
 	// draw light pass rectangle
@@ -1461,7 +1463,7 @@ void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraCompo
 	m_skyPassFrameBuffer->update(true, true);
 	m_skyPassFrameBuffer->setRenderBufferStorageSize(0);
 	m_skyPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap, shaderDrawPair(shaderDrawPolygonType(m_polygonMode), shaderDrawTextureType(m_textureMode)));
-	
+
 	// draw bloom extract pass
 	m_lightPassFrameBuffer->activeTexture(0, 0);
 	m_bloomExtractPassFrameBuffer->update(true, true);

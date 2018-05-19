@@ -1,6 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
-#include "entity/innoMath.h"
+#include "entity/InnoMath.h"
 
 enum class lightType {DIRECTIONAL, POINT, SPOT};
 

@@ -1,6 +1,6 @@
 #pragma once
 #include "interface/IObject.hpp"
-#include "innoMath.h"
+#include "InnoMath.h"
 #include "interface/IMemorySystem.h"
 #include "interface/ILogSystem.h"
 extern IMemorySystem* g_pMemorySystem;

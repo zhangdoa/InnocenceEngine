@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #include<functional>
 
 #include <tuple>
@@ -10,4 +12,3 @@
 #include <experimental/filesystem>
 
 #define DEBUG
-

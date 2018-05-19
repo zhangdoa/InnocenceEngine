@@ -9,7 +9,7 @@
 #include "system/AssetSystem.h"
 #include "system/GameSystem.h"
 
-#ifdef INNO_PLATFORM_WIN64
+#ifdef INNO_PLATFORM_LINUX64
 #define INNO_MEMORY_SYSTEM MemorySystem
 #define INNO_LOG_SYSTEM LogSystem
 #define INNO_TASK_SYSTEM TaskSystem

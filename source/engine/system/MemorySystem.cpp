@@ -17,8 +17,8 @@ void MemorySystem::setup(unsigned long  memoryPoolSize)
 	// first free chuck
 	Chunk freeChunk(memoryPoolSize - sizeof(Chunk) - m_boundCheckSize * 2);
 	freeChunk.write(m_poolMemory + m_boundCheckSize);
-	memcpy(m_poolMemory, m_startBound, m_boundCheckSize);
-	memcpy(m_poolMemory + memoryPoolSize - m_boundCheckSize, m_endBound, m_boundCheckSize);
+	std::memcpy(m_poolMemory, m_startBound, m_boundCheckSize);
+	std::memcpy(m_poolMemory + memoryPoolSize - m_boundCheckSize, m_endBound, m_boundCheckSize);
 }
 
 void MemorySystem::initialize()
@@ -66,7 +66,7 @@ void * MemorySystem::allocate(unsigned long size)
 	// If no block is found, return NULL
 	if (!l_block) { return NULL; }
 
-	// If the block is valid, create a new free block with 
+	// If the block is valid, create a new free block with
 	// what remains of the block memory
 
 	unsigned char* l_blockData = (unsigned char*)l_block;
@@ -83,7 +83,7 @@ void * MemorySystem::allocate(unsigned long size)
 		freeBlock.m_next->m_prev = (Chunk*)(l_blockData + l_requiredSize);
 	}
 
-	memcpy(l_blockData + l_requiredSize - m_boundCheckSize, m_startBound,
+	std::memcpy(l_blockData + l_requiredSize - m_boundCheckSize, m_startBound,
 		m_boundCheckSize);
 	l_block->m_next = (Chunk*)(l_blockData + l_requiredSize);
 	l_block->m_chuckSize = size;
@@ -95,11 +95,11 @@ void * MemorySystem::allocate(unsigned long size)
 	l_block->m_free = false;
 
 	// Move the memory around
-	memcpy(l_blockData - m_boundCheckSize, m_startBound, m_boundCheckSize);
-	memcpy(l_blockData + sizeof(Chunk) + l_block->m_chuckSize, m_endBound,
+	std::memcpy(l_blockData - m_boundCheckSize, m_startBound, m_boundCheckSize);
+	std::memcpy(l_blockData + sizeof(Chunk) + l_block->m_chuckSize, m_endBound,
 		m_boundCheckSize);
 
-	memset(l_blockData + sizeof(Chunk), 0xAB,
+	std::memset(l_blockData + sizeof(Chunk), 0xAB,
 		l_block->m_chuckSize);
 
 	return (l_blockData + sizeof(Chunk));
@@ -135,7 +135,7 @@ void MemorySystem::free(void * ptr)
 			// We will re point the next
 			block->m_next->m_prev = headBlock;
 
-			// Include the next node in the block size if it is 
+			// Include the next node in the block size if it is
 			// free so we trash it as well
 			if (block->m_next->m_free)
 			{
@@ -173,81 +173,12 @@ void MemorySystem::free(void * ptr)
 	freeBlock.write(freeBlockStart);
 
 	// Move the memory around if guards are needed
-	memcpy(freeBlockStart - m_boundCheckSize, m_startBound, m_boundCheckSize);
-	memcpy(freeBlockStart + sizeof(Chunk) + l_freeUserDataSize, m_endBound, m_boundCheckSize);
+	std::memcpy(freeBlockStart - m_boundCheckSize, m_startBound, m_boundCheckSize);
+	std::memcpy(freeBlockStart + sizeof(Chunk) + l_freeUserDataSize, m_endBound, m_boundCheckSize);
 }
 
 void MemorySystem::dumpToFile(const std::string & fileName) const
 {
-	_iobuf* f = NULL;
-	fopen_s(&f, fileName.c_str(), "w+");
-	if (f)
-	{
-		fprintf(f, "Memory pool ----------------------------------\n");
-		fprintf(f, "Type: Standard Memory\n");
-		fprintf(f, "Total Size: %d\n", m_totalPoolSize);
-		fprintf(f, "Free Size: %d\n", m_freePoolSize);
-
-		// Now search for a block big enough
-		Chunk* block = (Chunk*)(m_poolMemory + m_boundCheckSize);
-
-		while (block)
-		{
-			if (block->m_free)
-				fprintf(f, "Free:\t0x%08x [Bytes:%d]\n", (unsigned int)block, block->m_chuckSize);
-			else
-				fprintf(f, "Used:\t0x%08x [Bytes:%d]\n", (unsigned int)block, block->m_chuckSize);
-			block = block->m_next;
-		}
-
-		fprintf(f, "\n\nMemory Dump:\n");
-		unsigned char* ptr = m_poolMemory;
-		unsigned char* charPtr = m_poolMemory;
-
-		fprintf(f, "Start: 0x%08x\n", (unsigned int)ptr);
-		unsigned char i = 0;
-
-		// Write the hex memory data
-		unsigned long bytesPerLine = 4 * 4;
-
-		fprintf(f, "\n0x%08x: ", (unsigned int)ptr);
-		fprintf(f, "%02x", *(ptr));
-		++ptr;
-		for (i = 1; ((unsigned long)(ptr - m_poolMemory) < m_totalPoolSize); ++i, ++ptr)
-		{
-			if (i == bytesPerLine)
-			{
-				// Write all the chars for this line now
-				fprintf(f , "  ", charPtr);
-				for (unsigned long charI = 0; charI < bytesPerLine; ++charI, ++charPtr)
-					fprintf(f, "%c", *charPtr);
-				charPtr = ptr;
-
-				// Write the new line memory data
-				fprintf(f, "\n0x%08x: ", (unsigned int)ptr);
-				fprintf(f, "%02x", *(ptr));
-				i = 0;
-			}
-			else
-				fprintf(f, ":%02x", *(ptr));
-		}
-
-		// Fill any gaps in the tab
-		if ((unsigned long)(ptr - m_poolMemory) >= m_totalPoolSize)
-		{
-			unsigned long lastLineBytes = i;
-			for (i; i < bytesPerLine; i++)
-				fprintf(f, " --");
-
-			// Write all the chars for this line now
-			fprintf(f, "  ", charPtr);
-			for (unsigned long charI = 0; charI < lastLineBytes; ++charI, ++charPtr)
-				fprintf(f, "%c", *charPtr);
-			charPtr = ptr;
-		}
-	}
-
-	fclose(f);
 }
 
 const objectStatus & MemorySystem::getStatus() const
