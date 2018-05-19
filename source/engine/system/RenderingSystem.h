@@ -76,7 +76,7 @@ private:
 
 
 	void assignUnitMesh(VisibleComponent& visibleComponent, meshShapeType meshType);
-	void assignLoadedTexture(textureAssignType textureAssignType, texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
+	void assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
 	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
 	void loadTexture(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent& visibleComponent);
 	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
@@ -153,7 +153,7 @@ private:
 	std::unordered_map<std::string, texturePair> m_loadedTextureMap;
 
 	//Rendering Data
-	std::atomic<bool> m_canRender = true;
+	std::atomic<bool> m_canRender;
 	std::function<void()> f_changeDrawPolygonMode;
 	std::function<void()> f_changeDrawTextureMode;
 	std::function<void()> f_changeShadingMode;

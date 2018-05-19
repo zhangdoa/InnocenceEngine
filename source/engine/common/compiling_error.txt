@@ -1,0 +1,4 @@
+/home/zhangdoa/GitRepo/InnocenceEngine/source/engine/common/main.cpp:2:10: fatal error: interface/IApplication.h: No such file or directory
+ #include "interface/IApplication.h"
+          ^~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.

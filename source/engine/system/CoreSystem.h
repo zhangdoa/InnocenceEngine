@@ -12,6 +12,10 @@
 #include "platform/InnoSystemHeaderWin64.h"
 #endif
 
+#ifdef INNO_PLATFORM_LINUX64
+#include "platform/InnoSystemHeaderLinux64.h"
+#endif
+
 IMemorySystem* g_pMemorySystem;
 ILogSystem* g_pLogSystem;
 ITaskSystem* g_pTaskSystem;
@@ -39,4 +43,3 @@ private:
 
 CoreSystem g_CoreSystem;
 ICoreSystem* g_pCoreSystem = &g_CoreSystem;
-

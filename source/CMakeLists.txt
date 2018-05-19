@@ -26,7 +26,8 @@ endif (USE_CLANG)
 option (USE_ROW_MAJOR_MEMORY_LAYOUT "use Row-Major memory layout" ON)
 option (USE_COLUMN_MAJOR_MEMORY_LAYOUT "use Column-Major memory layout" OFF)
 option (INNO_PLATFORM_WIN32 "Windows x86 32-bit" OFF)
-option (INNO_PLATFORM_WIN64 "Windows x86-64 64-bit" ON)
+option (INNO_PLATFORM_WIN64 "Windows x86-64 64-bit" OFF)
+option (INNO_PLATFORM_LINUX64 "Linux x86-64 64-bit" ON)
 
 option (BUILD_EDITOR "Build editor" OFF)
 option (BUILD_GAME "Build game" ON)
@@ -46,6 +47,10 @@ endif (INNO_PLATFORM_WIN32)
 if (INNO_PLATFORM_WIN64)
 set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/external/lib/win64)
 endif (INNO_PLATFORM_WIN64)
+
+if (INNO_PLATFORM_LINUX64)
+set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/external/lib/unix)
+endif (INNO_PLATFORM_LINUX64)
 
 project (InnocenceEngine)
 

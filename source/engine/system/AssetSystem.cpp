@@ -57,7 +57,7 @@ void AssetSystem::loadModelFromDisk(const std::string & fileName, modelMap & mod
 		l_assExporter.Export(l_assScene, "assbin", m_modelRelativePath + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
 		g_pLogSystem->printLog("AssetSystem: " + fileName + " is successfully converted.");
 	}
-	else 
+	else
 	{
 		g_pLogSystem->printLog("AssetSystem: " + fileName + " doesn't exist!");
 		return;
@@ -70,7 +70,7 @@ void AssetSystem::loadModelFromDisk(const std::string & fileName, modelMap & mod
 	}
 
 	// only need last part of file name without subfix as material's subfolder name
-	auto& l_fileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
+	auto l_fileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
 	processAssimpScene(l_fileName, modelMap, meshDrawMethod, textureWrapMethod, l_assScene, caclNormal);
 
 	g_pLogSystem->printLog("AssetSystem: " + fileName + " is loaded for the first time, successfully assigned modelMap IDs.");
@@ -137,7 +137,7 @@ void AssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& m
 		// texture coordinates
 		if (aiMesh->mTextureCoords[0])
 		{
-			// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
+			// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
 			// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
 			l_Vertex.m_texCoord.x = aiMesh->mTextureCoords[0][i].x;
 			l_Vertex.m_texCoord.y = aiMesh->mTextureCoords[0][i].y;
@@ -181,7 +181,7 @@ void AssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& m
 	g_pLogSystem->printLog("innoMesh: mesh of model " + fileName + " is loaded.");
 }
 
-void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textureMap & textureMap, const aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod) 
+void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textureMap & textureMap, const aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod)
 {
 	for (auto i = (unsigned int)0; i < aiTextureType_UNKNOWN; i++)
 	{

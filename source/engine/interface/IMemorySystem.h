@@ -1,5 +1,6 @@
 #pragma once
 #include "common/stdafx.h"
+#include <cstring>
 #include "ISystem.h"
 
 class IMemorySystem : public ISystem
