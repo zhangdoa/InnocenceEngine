@@ -1,10 +1,10 @@
 #pragma once
 #include "IObject.hpp"
 
-class ISystem : public IObject
+class IGraphicPrimitive : public IObject
 {
 public:
-	virtual ~ISystem() {};
+	virtual ~IGraphicPrimitive() {};
 
 	virtual void update() = 0;
 };

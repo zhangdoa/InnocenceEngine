@@ -18,16 +18,6 @@ const mat4 CameraComponent::getInvertRotationMatrix() const
 	return getParentEntity()->caclWorldRot().quatConjugate().toRotationMatrix();
 }
 
-const mat4 CameraComponent::getProjectionMatrix() const
-{
-	return m_projectionMatrix;
-}
-
-const void CameraComponent::initializeProjectionMatrix()
-{
-	m_projectionMatrix.initializeToPerspectiveMatrix((m_FOV / 180.0) * PI, m_WHRatio, m_zNear, m_zFar);
-}
-
 void CameraComponent::caclFrustumVertices()
 {
 	Vertex l_VertexData_1;
@@ -108,32 +98,17 @@ void CameraComponent::caclFrustumVertices()
 	}
 }
 
-const std::vector<Vertex>* CameraComponent::getFrustumCorners() const
-{
-	return &m_frustumVertices;
-}
-
 void CameraComponent::setup()
 {
-	initializeProjectionMatrix();
-	m_rayOfEye.m_origin = getParentEntity()->caclWorldPos();
-	m_rayOfEye.m_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
-	caclFrustumVertices();
-	m_initTransMat = getParentEntity()->caclTransformationMatrix();
+	m_objectStatus = objectStatus::ALIVE;
 }
 
 void CameraComponent::initialize()
 {
 }
 
-void CameraComponent::update()
-{
-	m_rayOfEye.m_origin = getParentEntity()->caclWorldPos();
-	m_rayOfEye.m_direction = getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
-	caclFrustumVertices();
-}
-
 void CameraComponent::shutdown()
 {
+	m_objectStatus = objectStatus::SHUTDOWN;
 }
 

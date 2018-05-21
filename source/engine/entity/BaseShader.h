@@ -1,5 +1,5 @@
 #pragma once
-#include "interface/IObject.hpp"
+#include "interface/IGraphicPrimitive.h"
 #include "InnoMath.h"
 #include "interface/IMemorySystem.h"
 #include "interface/ILogSystem.h"
@@ -7,7 +7,7 @@
 extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;
 
-class BaseShader : public IObject
+class BaseShader : public IGraphicPrimitive
 {
 public:
 	BaseShader() {};

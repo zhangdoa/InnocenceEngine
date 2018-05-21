@@ -67,6 +67,8 @@ private:
 	void setupWindow();
 	void setupInput();
 	void setupRendering();
+	void setupCameraComponents();
+	void setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent);
 
 	void initializeWindow();
 	void initializeInput();
@@ -93,6 +95,7 @@ private:
 
 	void updateInput();
 	void updatePhysics();
+	void updateCameraComponents();
 
 	void initializeBackgroundPass();
 	void renderBackgroundPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);

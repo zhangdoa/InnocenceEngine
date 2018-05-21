@@ -10,7 +10,11 @@ class IGame : public IObject
 {
 public:
 	virtual ~IGame() {};
+
+	virtual void update() = 0;
 	virtual std::string getGameName() const = 0;
+
+	virtual std::vector<TransformComponent*>& getTransformComponents() = 0;
 	virtual std::vector<CameraComponent*>& getCameraComponents() = 0;
 	virtual std::vector<InputComponent*>& getInputComponents() = 0;
 	virtual std::vector<LightComponent*>& getLightComponents() = 0;

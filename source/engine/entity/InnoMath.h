@@ -166,6 +166,7 @@ public:
 	vec4 quatMul(const vec4& rhs);
 	vec4 quatMul(double rhs);
 	vec4 quatConjugate();
+	vec4 reciprocal();
 	double length();
 	vec4 normalize();
 
@@ -357,6 +358,7 @@ public:
 	~Transform();
 
 	enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
+	bool hasChanged();
 	void update();
 	void rotateInLocal(const vec4 & axis, double angle);
 
@@ -368,9 +370,28 @@ public:
 	void setLocalRot(const vec4& rot);
 	void setLocalScale(const vec4& scale);
 
-	vec4& getOldPos();
-	vec4& getOldRot();
-	vec4& getOldScale();
+	mat4 caclLocalTranslationMatrix();
+	mat4 caclLocalRotMatrix();
+	mat4 caclLocalScaleMatrix();
+	mat4 caclLocalTransformationMatrix();
+
+	vec4 caclGlobalPos();
+	vec4 caclGlobalRot();
+	vec4 caclGlobalScale();
+
+	mat4 caclGlobalTranslationMatrix();
+	mat4 caclGlobalRotMatrix();
+	mat4 caclGlobalScaleMatrix();
+	mat4 caclGlobalTransformationMatrix();
+	
+	mat4 caclLookAtMatrix();
+
+	mat4 getInvertLocalTranslationMatrix();
+	mat4 getInvertLocalRotMatrix();
+	mat4 getInvertLocalScaleMatrix();
+	mat4 getInvertGlobalTranslationMatrix();
+	mat4 getInvertGlobalRotMatrix();
+	mat4 getInvertGlobalScaleMatrix();
 
 	vec4 getDirection(direction direction) const;
 
@@ -382,6 +403,8 @@ private:
 	vec4 m_oldPos;
 	vec4 m_oldRot;
 	vec4 m_oldScale;
+
+	Transform* m_parentTransform;
 };
 
 
