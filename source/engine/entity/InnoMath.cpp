@@ -130,6 +130,33 @@ vec4 vec4::quatConjugate()
 	return vec4(-x, -y, -z, w);
 }
 
+vec4 vec4::reciprocal()
+{
+	double result_x = 0.0;
+	double result_y = 0.0;
+	double result_z = 0.0;
+	double result_w = 0.0;
+
+	if (x != 0.0)
+	{
+		result_x = 1.0 / x;
+	}
+	if (y != 0.0)
+	{
+		result_y = 1.0 / y;
+	}
+	if (z != 0.0)
+	{
+		result_z = 1.0 / z;
+	}
+	if (w != 0.0)
+	{
+		result_w = 1.0 / w;
+	}
+
+	return vec4(result_x, result_y, result_z, result_w);
+}
+
 double vec4::length()
 {
 	// @TODO: replace with SIMD impl
@@ -889,6 +916,24 @@ Transform::~Transform()
 {
 }
 
+bool Transform::hasChanged()
+{
+	if (m_pos != m_oldPos || m_rot != m_oldRot || m_scale != m_oldScale)
+	{
+		return true;
+	}
+
+	if (m_parentTransform != nullptr)
+	{
+		if (m_parentTransform->hasChanged())
+		{
+			return true;
+		}
+	}
+	return false;
+
+}
+
 void Transform::update()
 {
 	m_oldPos = m_pos;
@@ -934,18 +979,137 @@ void Transform::setLocalScale(const vec4 & scale)
 	m_scale = scale;
 }
 
-vec4 & Transform::getOldPos()
+mat4 Transform::caclLocalTranslationMatrix()
 {
-	return m_oldPos;
-}
-vec4 & Transform::getOldRot()
-{
-	return m_oldRot;
+	return m_pos.toTranslationMatrix();
 }
 
-vec4 & Transform::getOldScale()
+mat4 Transform::caclLocalRotMatrix()
 {
-	return m_oldScale;
+	return m_rot.toRotationMatrix();
+}
+
+mat4 Transform::caclLocalScaleMatrix()
+{
+	return m_scale.toScaleMatrix();
+}
+
+mat4 Transform::caclLocalTransformationMatrix()
+{
+	return caclLocalTranslationMatrix() * caclLocalRotMatrix() * caclLocalScaleMatrix();
+}
+
+vec4 Transform::caclGlobalPos()
+{
+	mat4 l_parentTransformationMatrix;
+	l_parentTransformationMatrix.initializeToIdentityMatrix();
+
+	if (m_parentTransform != nullptr)
+	{
+		l_parentTransformationMatrix = m_parentTransform->caclGlobalTransformationMatrix();
+	}
+
+	//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+	auto result = vec4();
+	result = m_pos * l_parentTransformationMatrix;
+	result = result * (1 / result.w);
+	return result;
+#endif
+	//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+	auto result = vec4();
+	result = l_parentTransformationMatrix * m_pos;
+	result = result * (1 / result.w);
+	return result;
+#endif
+}
+
+vec4 Transform::caclGlobalRot()
+{
+	vec4 l_parentRot = vec4(0.0, 0.0, 0.0, 1.0);
+
+	if (m_parentTransform != nullptr)
+	{
+		l_parentRot = m_parentTransform->caclGlobalRot();
+	}
+
+	return l_parentRot.quatMul(m_rot);
+}
+
+vec4 Transform::caclGlobalScale()
+{
+	vec4 l_parentScale = vec4(1.0, 1.0, 1.0, 1.0);
+
+	if (m_parentTransform != nullptr)
+	{
+		l_parentScale = m_parentTransform->caclGlobalScale();
+	}
+
+	return l_parentScale.scale(m_scale);
+}
+
+mat4 Transform::caclGlobalTranslationMatrix()
+{
+	return caclGlobalPos().toTranslationMatrix();
+}
+
+mat4 Transform::caclGlobalRotMatrix()
+{
+	return caclGlobalRot().toRotationMatrix();
+}
+
+mat4 Transform::caclGlobalScaleMatrix()
+{
+	return caclGlobalScale().toScaleMatrix();
+}
+
+mat4 Transform::caclGlobalTransformationMatrix()
+{
+	mat4 l_parentTransformationMatrix;
+	l_parentTransformationMatrix.initializeToIdentityMatrix();
+
+	if (m_parentTransform != nullptr)
+	{
+		l_parentTransformationMatrix = m_parentTransform->caclGlobalTransformationMatrix();
+	}
+
+	return l_parentTransformationMatrix * caclLocalTransformationMatrix();
+}
+
+mat4 Transform::caclLookAtMatrix()
+{
+	return mat4().lookAt(caclGlobalPos(), caclGlobalPos() + getDirection(Transform::direction::BACKWARD), getDirection(Transform::direction::UP));
+}
+
+mat4 Transform::getInvertLocalTranslationMatrix()
+{
+	return m_pos.scale(-1.0).toTranslationMatrix();
+}
+
+mat4 Transform::getInvertLocalRotMatrix()
+{
+	return m_rot.quatConjugate().toRotationMatrix();
+}
+
+mat4 Transform::getInvertLocalScaleMatrix()
+{
+	return m_scale.reciprocal().toScaleMatrix();
+}
+
+mat4 Transform::getInvertGlobalTranslationMatrix()
+{
+	return caclGlobalPos().scale(-1.0).toTranslationMatrix();
+}
+
+mat4 Transform::getInvertGlobalRotMatrix()
+{
+	return caclGlobalRot().quatConjugate().toRotationMatrix();
+}
+
+mat4 Transform::getInvertGlobalScaleMatrix()
+{
+	return caclGlobalScale().reciprocal().toScaleMatrix();
 }
 
 vec4 Transform::getDirection(direction direction) const

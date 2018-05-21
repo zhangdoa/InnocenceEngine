@@ -11,18 +11,8 @@ InnocenceGarden::~InnocenceGarden()
 
 void InnocenceGarden::setup()
 {
-	m_rootEntity.addChildEntity(&m_playCharacter);
-
-	m_rootEntity.addChildEntity(&m_skyboxEntity);
-
-	m_rootEntity.addChildEntity(&m_directionalLightEntity);
-
-	m_rootEntity.addChildEntity(&m_landscapeEntity);
-	m_rootEntity.addChildEntity(&m_pawnEntity1);
-	m_rootEntity.addChildEntity(&m_pawnEntity2);
-
-	m_playCharacter.getTransform()->setLocalPos(vec4(2.0, 1.0, 2.0, 1.0));
-	//m_playCharacter.getTransform()->rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
+	m_playCharacter.getTransformComponent().m_transform.setLocalPos(vec4(2.0, 1.0, 2.0, 1.0));
+	//m_playCharacter.getTransformComponent().m_transformrotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
 	m_playCharacter.getCameraComponent().m_drawFrustum = false;
 	m_playCharacter.getCameraComponent().m_drawAABB = false;
 	m_cameraComponents.emplace_back(&m_playCharacter.getCameraComponent());
@@ -118,6 +108,11 @@ const objectStatus & InnocenceGarden::getStatus() const
 std::string InnocenceGarden::getGameName() const
 {
 	return std::string{ typeid(*this).name() }.substr(std::string{ typeid(*this).name() }.find("class"), std::string::npos);
+}
+
+std::vector<TransformComponent*>& InnocenceGarden::getTransformComponents()
+{
+	return m_transformComponents;
 }
 
 std::vector<CameraComponent*>& InnocenceGarden::getCameraComponents()

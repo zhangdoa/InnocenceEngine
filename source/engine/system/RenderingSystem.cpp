@@ -82,11 +82,29 @@ void RenderingSystem::setupRendering()
 	m_finalPassShaderProgram = g_pMemorySystem->spawn<FinalPassShaderProgram>();
 }
 
+void RenderingSystem::setupCameraComponents()
+{
+	for (auto& i : g_pGameSystem->getCameraComponents())
+	{
+		setupCameraComponentProjectionMatrix(i);
+		i->m_rayOfEye.m_origin = g_pGameSystem->getTransformComponent(i->getParentEntity())->m_transform.caclGlobalPos();
+		i->m_rayOfEye.m_direction = g_pGameSystem->getTransformComponent(i->getParentEntity())->m_transform.getDirection(Transform::direction::BACKWARD);
+		i->caclFrustumVertices();
+	}
+}
+
+void RenderingSystem::setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent)
+{
+	cameraComponent->m_projectionMatrix.initializeToPerspectiveMatrix((cameraComponent->m_FOV / 180.0) * PI, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
+}
+
 void RenderingSystem::setup()
 {
 	setupWindow();
 	setupInput();
 	setupRendering();
+
+	setupCameraComponents();
 
 	m_objectStatus = objectStatus::ALIVE;
 }
@@ -250,9 +268,9 @@ vec4 RenderingSystem::calcMousePositionInWorldSpace()
 	auto l_w = 1.0;
 	vec4 l_ndcSpace = vec4(l_x, l_y, l_z, l_w);
 
-	auto pCamera = g_pGameSystem->getCameraComponents()[0]->getProjectionMatrix();
-	auto rCamera = g_pGameSystem->getCameraComponents()[0]->getInvertRotationMatrix();
-	auto tCamera = g_pGameSystem->getCameraComponents()[0]->getInvertTranslationMatrix();
+	auto pCamera = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
+	auto rCamera = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
+	auto tCamera = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 	l_ndcSpace = l_ndcSpace * pCamera.inverse();
@@ -358,7 +376,7 @@ void RenderingSystem::updatePhysics()
 	{
 		//generateAABB(*g_pGameSystem->getCameraComponents()[0]);
 
-		m_mouseRay.m_origin = g_pGameSystem->getCameraComponents()[0]->getParentEntity()->caclWorldPos();
+		m_mouseRay.m_origin = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.caclGlobalPos();
 		m_mouseRay.m_direction = calcMousePositionInWorldSpace();
 		auto l_cameraAABB = g_pGameSystem->getCameraComponents()[0]->m_AABB;
 		auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
@@ -390,6 +408,16 @@ void RenderingSystem::updatePhysics()
 	}
 }
 
+void RenderingSystem::updateCameraComponents()
+{
+	for (auto& i : g_pGameSystem->getCameraComponents())
+	{
+		i->m_rayOfEye.m_origin = g_pGameSystem->getTransformComponent(i->getParentEntity())->m_transform.caclGlobalPos();
+		i->m_rayOfEye.m_direction = g_pGameSystem->getTransformComponent(i->getParentEntity())->m_transform.getDirection(Transform::direction::BACKWARD);
+		i->caclFrustumVertices();
+	}
+}
+
 
 void RenderingSystem::update()
 {
@@ -401,6 +429,8 @@ void RenderingSystem::update()
 		updateInput();
 		// physics update
 		updatePhysics();
+		// camera update
+		updateCameraComponents();
 	}
 	else
 	{
@@ -560,7 +590,7 @@ void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, double xoffs
 	{
 		g_pGameSystem->getCameraComponents()[0]->m_FOV -= 1.0;
 	}
-	g_pGameSystem->getCameraComponents()[0]->initializeProjectionMatrix();
+	m_renderingSystem->setupCameraComponentProjectionMatrix(g_pGameSystem->getCameraComponents()[0]);
 }
 
 meshID RenderingSystem::addMesh(meshType meshType)
@@ -791,7 +821,7 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 	});
 
 	visibleComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0));
-	auto l_worldTm = visibleComponent.getParentEntity()->caclTransformationMatrix();
+	auto l_worldTm = g_pGameSystem->getTransformComponent(visibleComponent.getParentEntity())->m_transform.caclGlobalTransformationMatrix();
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 	visibleComponent.m_AABB.m_boundMax = visibleComponent.m_AABB.m_boundMax * l_worldTm;
@@ -883,7 +913,7 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 
 void RenderingSystem::generateAABB(CameraComponent & cameraComponent)
 {
-	auto l_frustumCorners = *cameraComponent.getFrustumCorners();
+	auto l_frustumCorners = cameraComponent.m_frustumVertices;
 	cameraComponent.m_AABB = generateAABB(l_frustumCorners);
 
 	if (cameraComponent.m_drawFrustum)

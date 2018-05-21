@@ -12,10 +12,13 @@ class IGameSystem : public ISystem
 public:
 	virtual ~IGameSystem() {};
 
+	virtual std::vector<TransformComponent*>& getTransformComponents() = 0;
 	virtual std::vector<VisibleComponent*>& getVisibleComponents() = 0;
 	virtual std::vector<LightComponent*>& getLightComponents() = 0;
 	virtual std::vector<CameraComponent*>& getCameraComponents() = 0;
 	virtual std::vector<InputComponent*>& getInputComponents() = 0;
+
+	virtual TransformComponent* getTransformComponent(IEntity* parentEntity) = 0;
 
 	virtual std::string getGameName() const = 0;
 	virtual bool needRender() = 0;
