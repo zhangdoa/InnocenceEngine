@@ -197,7 +197,7 @@ void EnvironmentCapturePassPBSShaderProgram::update(std::vector<CameraComponent*
 
 				for (auto& l_graphicData : l_visibleComponent->getModelMap())
 				{
-					// activate equiretangular texture and remapping equiretangular texture to cubemap
+					// activate equiretangular texture and remap equiretangular texture to cubemap
 					auto l_equiretangularTexture = textureMap.find(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);
 					auto l_environmentCaptureTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CAPTURE)->second);
 					if (l_equiretangularTexture != textureMap.end() && l_environmentCaptureTexture != textureMap.end())
@@ -407,30 +407,34 @@ void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& camer
 	useProgram();
 
 	// draw each lightComponent's shadowmap
-	for (auto& l_lightComponent : lightComponents)
+	for (size_t i = 0; i < 4; i++)
 	{
-		if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
+		for (auto& l_lightComponent : lightComponents)
 		{
-			updateUniform(m_uni_p, l_lightComponent->getProjectionMatrix(0));
-			updateUniform(m_uni_v, l_lightComponent->getViewMatrix());
-
-			// draw each visibleComponent
-			for (auto& l_visibleComponent : visibleComponents)
+			if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
 			{
-				if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
-				{
-					updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+				updateUniform(m_uni_p, l_lightComponent->getProjectionMatrix(i));
+				updateUniform(m_uni_v, l_lightComponent->getViewMatrix());
 
-					// draw each graphic data of visibleComponent
-					for (auto& l_graphicData : l_visibleComponent->getModelMap())
+				// draw each visibleComponent
+				for (auto& l_visibleComponent : visibleComponents)
+				{
+					if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 					{
-						// draw meshes
-						meshMap.find(l_graphicData.first)->second->update();
+						updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+
+						// draw each graphic data of visibleComponent
+						for (auto& l_graphicData : l_visibleComponent->getModelMap())
+						{
+							// draw meshes
+							meshMap.find(l_graphicData.first)->second->update();
+						}
 					}
 				}
 			}
 		}
 	}
+
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 }

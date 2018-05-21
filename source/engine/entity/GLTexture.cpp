@@ -209,7 +209,6 @@ void GLTexture::attachToFramebuffer(int colorAttachmentIndex, int textureIndex, 
 	{
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_textureID, mipLevel);
-
 	}
 	else
 	{
