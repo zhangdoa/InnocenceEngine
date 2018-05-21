@@ -1203,13 +1203,30 @@ void RenderingSystem::initializeShadowPass()
 	m_shadowForwardPassShaderProgram->initialize();
 
 	// initialize texture
-	m_shadowForwardPassTextureID = this->addTexture(textureType::SHADOWMAP);
-	auto l_shadowForwardPassTextureData = this->getTexture(textureType::SHADOWMAP, m_shadowForwardPassTextureID);
-	l_shadowForwardPassTextureData->setup(textureType::SHADOWMAP, textureColorComponentsFormat::DEPTH_COMPONENT, texturePixelDataFormat::DEPTH_COMPONENT, textureWrapMethod::CLAMP_TO_BORDER, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, 2048, 2048, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+	m_shadowForwardPassTextureID_L0 = this->addTexture(textureType::SHADOWMAP);
+	auto l_shadowForwardPassTextureData_L0 = this->getTexture(textureType::SHADOWMAP, m_shadowForwardPassTextureID_L0);
+	l_shadowForwardPassTextureData_L0->setup(textureType::SHADOWMAP, textureColorComponentsFormat::DEPTH_COMPONENT, texturePixelDataFormat::DEPTH_COMPONENT, textureWrapMethod::CLAMP_TO_BORDER, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, 2048, 2048, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+
+	m_shadowForwardPassTextureID_L1 = this->addTexture(textureType::SHADOWMAP);
+	auto l_shadowForwardPassTextureData_L1 = this->getTexture(textureType::SHADOWMAP, m_shadowForwardPassTextureID_L1);
+	l_shadowForwardPassTextureData_L1->setup(textureType::SHADOWMAP, textureColorComponentsFormat::DEPTH_COMPONENT, texturePixelDataFormat::DEPTH_COMPONENT, textureWrapMethod::CLAMP_TO_BORDER, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, 2048, 2048, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+
+	m_shadowForwardPassTextureID_L2 = this->addTexture(textureType::SHADOWMAP);
+	auto l_shadowForwardPassTextureData_L2 = this->getTexture(textureType::SHADOWMAP, m_shadowForwardPassTextureID_L2);
+	l_shadowForwardPassTextureData_L2->setup(textureType::SHADOWMAP, textureColorComponentsFormat::DEPTH_COMPONENT, texturePixelDataFormat::DEPTH_COMPONENT, textureWrapMethod::CLAMP_TO_BORDER, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, 2048, 2048, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+
+	m_shadowForwardPassTextureID_L3 = this->addTexture(textureType::SHADOWMAP);
+	auto l_shadowForwardPassTextureData_L3 = this->getTexture(textureType::SHADOWMAP, m_shadowForwardPassTextureID_L3);
+	l_shadowForwardPassTextureData_L3->setup(textureType::SHADOWMAP, textureColorComponentsFormat::DEPTH_COMPONENT, texturePixelDataFormat::DEPTH_COMPONENT, textureWrapMethod::CLAMP_TO_BORDER, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, 2048, 2048, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
+
+	m_shadowTextureMap.emplace(m_shadowForwardPassTextureID_L0, l_shadowForwardPassTextureData_L0);
+	m_shadowTextureMap.emplace(m_shadowForwardPassTextureID_L1, l_shadowForwardPassTextureData_L1);
+	m_shadowTextureMap.emplace(m_shadowForwardPassTextureID_L2, l_shadowForwardPassTextureData_L2);
+	m_shadowTextureMap.emplace(m_shadowForwardPassTextureID_L3, l_shadowForwardPassTextureData_L3);
 
 	// initialize framebuffer
 	auto l_shadowForwardPassRenderBufferStorageSizes = std::vector<vec2>{ vec2(2048, 2048) };
-	auto l_shadowForwardPassRenderTargetTextures = std::vector<BaseTexture*>{ l_shadowForwardPassTextureData };
+	auto l_shadowForwardPassRenderTargetTextures = std::vector<BaseTexture*>{ l_shadowForwardPassTextureData_L0, l_shadowForwardPassTextureData_L1, l_shadowForwardPassTextureData_L2, l_shadowForwardPassTextureData_L3 };
 	m_shadowForwardPassFrameBuffer = g_pMemorySystem->spawn<FRAMEBUFFER_CLASS>();
 	m_shadowForwardPassFrameBuffer->setup(frameBufferType::SHADOW_PASS, renderBufferType::DEPTH, l_shadowForwardPassRenderBufferStorageSizes, l_shadowForwardPassRenderTargetTextures);
 	m_shadowForwardPassFrameBuffer->initialize();
@@ -1220,7 +1237,7 @@ void RenderingSystem::renderShadowPass(std::vector<CameraComponent*>& cameraComp
 	// draw shadow forward pass
 	m_shadowForwardPassFrameBuffer->update(true, true);
 	m_shadowForwardPassFrameBuffer->setRenderBufferStorageSize(0);
-	m_shadowForwardPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
+	m_shadowForwardPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_shadowTextureMap);
 }
 
 void RenderingSystem::initializeGeometryPass()

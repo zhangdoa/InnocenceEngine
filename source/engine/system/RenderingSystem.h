@@ -137,6 +137,7 @@ private:
 	std::unordered_map<meshID, BaseMesh*> m_meshMap;
 	std::unordered_map<meshID, BaseMesh*> m_BBMeshMap;
 	std::unordered_map<textureID, BaseTexture*> m_textureMap;
+	std::unordered_map<textureID, BaseTexture*> m_shadowTextureMap;
 
 	meshID m_UnitCubeTemplate;
 	meshID m_UnitSphereTemplate;
@@ -175,7 +176,10 @@ private:
 
 	BaseFrameBuffer* m_shadowForwardPassFrameBuffer;
 	BaseShaderProgram* m_shadowForwardPassShaderProgram;
-	textureID m_shadowForwardPassTextureID;
+	textureID m_shadowForwardPassTextureID_L0;
+	textureID m_shadowForwardPassTextureID_L1;
+	textureID m_shadowForwardPassTextureID_L2;
+	textureID m_shadowForwardPassTextureID_L3;
 
 	BaseFrameBuffer* m_geometryPassFrameBuffer;
 	BaseShaderProgram* m_geometryPassShaderProgram;
