@@ -14,7 +14,7 @@ void GLShaderProgram::initialize()
 
 	for (auto& i : m_shaderDatas)
 	{
-		if (std::get<shaderType>(i) == shaderType::VERTEX)
+		if (i.first == shaderType::VERTEX)
 		{
 			m_vertexShader = g_pMemorySystem->spawn<GLShader>();
 			m_vertexShader->setup(i);
@@ -24,7 +24,7 @@ void GLShaderProgram::initialize()
 				attachShader(m_vertexShader);
 			}
 		}
-		else if (std::get<shaderType>(i) == shaderType::GEOMETRY)
+		else if (i.first == shaderType::GEOMETRY)
 		{
 			m_geometryShader = g_pMemorySystem->spawn<GLShader>();
 			m_geometryShader->setup(i);
@@ -35,7 +35,7 @@ void GLShaderProgram::initialize()
 				attachShader(m_geometryShader);
 			}
 		}
-		else if (std::get<shaderType>(i) == shaderType::FRAGMENT)
+		else if (i.first == shaderType::FRAGMENT)
 		{
 			m_fragmentShader = g_pMemorySystem->spawn<GLShader>();
 			m_fragmentShader->setup(i);
@@ -87,7 +87,7 @@ void GLShaderProgram::attachShader(GLShader* GLShader) const
 	glLinkProgram(m_program);
 	glValidateProgram(m_program);
 
-	g_pLogSystem->printLog("innoShader: " + std::get<shaderCodeContentPair>(GLShader->getShaderData()).first + " Shader is compiled.");
+	g_pLogSystem->printLog("innoShader: " + GLShader->getShaderData().second.first + " Shader is compiled.");
 
 	GLint success;
 	GLchar infoLog[1024];
@@ -95,7 +95,7 @@ void GLShaderProgram::attachShader(GLShader* GLShader) const
 	if (!success)
 	{
 		glGetShaderInfoLog(l_shaderID, 1024, NULL, infoLog);
-		g_pLogSystem->printLog("innoShader: " + std::get<shaderCodeContentPair>(GLShader->getShaderData()).first + " compile error: " + std::string(infoLog) + "\n -- --------------------------------------------------- -- ");
+		g_pLogSystem->printLog("innoShader: " + GLShader->getShaderData().second.first + " compile error: " + std::string(infoLog) + "\n -- --------------------------------------------------- -- ");
 	}
 }
 
@@ -498,28 +498,28 @@ void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& 
 			{
 				//active and bind textures
 				// is there any texture?
-				auto l_textureMap = l_graphicData.second;
-				if (&l_textureMap != nullptr)
+				auto l_textureMap = &l_graphicData.second;
+				if (l_textureMap != nullptr)
 				{
 					// any normal?
-					auto l_normalTextureID = l_textureMap.find(textureType::NORMAL);
-					if (l_normalTextureID != l_textureMap.end())
+					auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
+					if (l_normalTextureID != l_textureMap->end())
 					{
-						auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
+						auto l_textureData = textureMap.find(l_normalTextureID->second)->second;
 						l_textureData->update(0);
 					}
 					// any diffuse?
-					auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
-					if (l_diffuseTextureID != l_textureMap.end())
+					auto l_diffuseTextureID = l_textureMap->find(textureType::ALBEDO);
+					if (l_diffuseTextureID != l_textureMap->end())
 					{
-						auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
+						auto l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
 						l_textureData->update(1);
 					}
 					// any specular?
-					auto l_specularTextureID = l_textureMap.find(textureType::METALLIC);
-					if (l_specularTextureID != l_textureMap.end())
+					auto l_specularTextureID = l_textureMap->find(textureType::METALLIC);
+					if (l_specularTextureID != l_textureMap->end())
 					{
-						auto& l_textureData = textureMap.find(l_specularTextureID->second)->second;
+						auto l_textureData = textureMap.find(l_specularTextureID->second)->second;
 						l_textureData->update(2);
 					}
 				}
@@ -674,42 +674,42 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 						{
 							//active and bind textures
 							// is there any texture?
-							auto& l_textureMap = l_graphicData.second;
-							if (&l_textureMap != nullptr)
+							auto l_textureMap = &l_graphicData.second;
+							if (l_textureMap != nullptr)
 							{
 								// any normal?
-								auto& l_normalTextureID = l_textureMap.find(textureType::NORMAL);
-								if (l_normalTextureID != l_textureMap.end())
+								auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
+								if (l_normalTextureID != l_textureMap->end())
 								{
-									auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
+									auto l_textureData = textureMap.find(l_normalTextureID->second)->second;
 									l_textureData->update(0);
 								}
 								// any albedo?
-								auto& l_albedoTextureID = l_textureMap.find(textureType::ALBEDO);
-								if (l_albedoTextureID != l_textureMap.end())
+								auto l_albedoTextureID = l_textureMap->find(textureType::ALBEDO);
+								if (l_albedoTextureID != l_textureMap->end())
 								{
-									auto& l_textureData = textureMap.find(l_albedoTextureID->second)->second;
+									auto l_textureData = textureMap.find(l_albedoTextureID->second)->second;
 									l_textureData->update(1);
 								}
 								// any metallic?
-								auto& l_metallicTextureID = l_textureMap.find(textureType::METALLIC);
-								if (l_metallicTextureID != l_textureMap.end())
+								auto l_metallicTextureID = l_textureMap->find(textureType::METALLIC);
+								if (l_metallicTextureID != l_textureMap->end())
 								{
-									auto& l_textureData = textureMap.find(l_metallicTextureID->second)->second;
+									auto l_textureData = textureMap.find(l_metallicTextureID->second)->second;
 									l_textureData->update(2);
 								}
 								// any roughness?
-								auto& l_roughnessTextureID = l_textureMap.find(textureType::ROUGHNESS);
-								if (l_roughnessTextureID != l_textureMap.end())
+								auto l_roughnessTextureID = l_textureMap->find(textureType::ROUGHNESS);
+								if (l_roughnessTextureID != l_textureMap->end())
 								{
-									auto& l_textureData = textureMap.find(l_roughnessTextureID->second)->second;
+									auto l_textureData = textureMap.find(l_roughnessTextureID->second)->second;
 									l_textureData->update(3);
 								}
 								// any ao?
-								auto& l_aoTextureID = l_textureMap.find(textureType::AMBIENT_OCCLUSION);
-								if (l_aoTextureID != l_textureMap.end())
+								auto l_aoTextureID = l_textureMap->find(textureType::AMBIENT_OCCLUSION);
+								if (l_aoTextureID != l_textureMap->end())
 								{
-									auto& l_textureData = textureMap.find(l_aoTextureID->second)->second;
+									auto l_textureData = textureMap.find(l_aoTextureID->second)->second;
 									l_textureData->update(4);
 								}
 							}
@@ -996,14 +996,14 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 				{
 					//active and bind textures
 					// is there any texture?
-					auto l_textureMap = l_graphicData.second;
-					if (&l_textureMap != nullptr)
+					auto l_textureMap = &l_graphicData.second;
+					if (l_textureMap != nullptr)
 					{
 						// any albedo?
-						auto l_diffuseTextureID = l_textureMap.find(textureType::ALBEDO);
-						if (l_diffuseTextureID != l_textureMap.end())
+						auto l_diffuseTextureID = l_textureMap->find(textureType::ALBEDO);
+						if (l_diffuseTextureID != l_textureMap->end())
 						{
-							auto& l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
+							auto l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
 							l_textureData->update(0);
 						}
 					}
@@ -1104,14 +1104,14 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 				{
 					//active and bind textures
 					// is there any texture?
-					auto& l_textureMap = l_graphicData.second;
-					if (&l_textureMap != nullptr)
+					auto l_textureMap = &l_graphicData.second;
+					if (l_textureMap != nullptr)
 					{
 						// any normal?
-						auto& l_normalTextureID = l_textureMap.find(textureType::NORMAL);
-						if (l_normalTextureID != l_textureMap.end())
+						auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
+						if (l_normalTextureID != l_textureMap->end())
 						{
-							auto& l_textureData = textureMap.find(l_normalTextureID->second)->second;
+							auto l_textureData = textureMap.find(l_normalTextureID->second)->second;
 							l_textureData->update(0);
 						}
 					}
@@ -1139,7 +1139,7 @@ void FinalPassShaderProgram::initialize()
 	m_uni_billboardPassRT0 = getUniformLocation("uni_billboardPassRT0");
 	updateUniform(m_uni_billboardPassRT0, 3);
 	m_uni_debuggerPassRT0 = getUniformLocation("uni_debuggerPassRT0");
-	updateUniform(m_uni_debuggerPassRT0, 4);	
+	updateUniform(m_uni_debuggerPassRT0, 4);
 }
 
 void FinalPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)

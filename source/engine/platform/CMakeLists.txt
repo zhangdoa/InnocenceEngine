@@ -6,3 +6,7 @@ if (INNO_PLATFORM_WIN64)
 include(InnoSystemHeaderWin64.h)
 endif (INNO_PLATFORM_WIN64)
 
+if (INNO_PLATFORM_LINUX64)
+include(InnoSystemHeaderLinux64.h)
+endif (INNO_PLATFORM_LINUX64)
+

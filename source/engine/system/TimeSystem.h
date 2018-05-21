@@ -13,7 +13,7 @@ public:
 	void update() override;
 	void shutdown() override;
 
-	const __time64_t getGameStartTime() const override;
+	const time_t getGameStartTime() const override;
 	const double getDeltaTime() const override;
 	const double getcurrentTime() const override;
 	const std::tuple<int, unsigned, unsigned> getCivilFromDays(int z) const override;
@@ -24,8 +24,8 @@ private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
 	const double m_frameTime = (1.0 / 120.0) * 1000.0 * 1000.0;
-	__time64_t m_gameStartTime;
+	time_t m_gameStartTime;
 	std::chrono::high_resolution_clock::time_point m_updateStartTime;
-	__int64 m_deltaTime;
+	long long m_deltaTime;
 	double m_unprocessedTime;
 };
