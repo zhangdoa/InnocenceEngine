@@ -82,7 +82,7 @@ const objectStatus & TimeSystem::getStatus() const
 	return m_objectStatus;
 }
 
-const __time64_t TimeSystem::getGameStartTime() const
+const time_t TimeSystem::getGameStartTime() const
 {
 	return m_gameStartTime;
 }

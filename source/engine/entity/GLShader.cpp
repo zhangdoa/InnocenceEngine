@@ -4,7 +4,7 @@ void GLShader::initialize()
 {
 	int l_glShaderType = 0;
 
-	switch (std::get<shaderType>(m_shaderData))
+	switch (m_shaderData.first)
 	{
 	case shaderType::VERTEX: l_glShaderType = GL_VERTEX_SHADER;  break;
 	case shaderType::GEOMETRY: l_glShaderType = GL_GEOMETRY_SHADER;  break;
@@ -19,7 +19,7 @@ void GLShader::initialize()
 		m_objectStatus = objectStatus::STANDBY;
 	}
 
-	char const * l_sourcePointer = std::get<shaderCodeContentPair>(m_shaderData).second.c_str();
+	char const * l_sourcePointer = m_shaderData.second.second.c_str();
 	glShaderSource(m_shaderID, 1, &l_sourcePointer, NULL);
 }
 
