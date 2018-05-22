@@ -13,7 +13,6 @@ public:
 
 	void setup() override;
 	void initialize() override;
-	void update() override;
 	void shutdown() override;
 
 	const lightType getLightType() const;
@@ -26,9 +25,6 @@ public:
 	void setColor(const vec4& color);
 
 	mat4 getProjectionMatrix(unsigned int cascadedLevel) const;
-	mat4 getViewMatrix() const;
-	mat4 getInvertTranslationMatrix() const;
-	mat4 getInvertRotationMatrix() const;
 
 	bool m_drawAABB = false;
 	meshID m_AABBMeshID;

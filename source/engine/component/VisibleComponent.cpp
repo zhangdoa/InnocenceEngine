@@ -62,10 +62,6 @@ void VisibleComponent::initialize()
 {
 }
 
-void VisibleComponent::update()
-{
-}
-
 void VisibleComponent::shutdown()
 {
 }

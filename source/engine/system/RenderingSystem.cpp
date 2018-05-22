@@ -87,15 +87,71 @@ void RenderingSystem::setupCameraComponents()
 	for (auto& i : g_pGameSystem->getCameraComponents())
 	{
 		setupCameraComponentProjectionMatrix(i);
-		i->m_rayOfEye.m_origin = g_pGameSystem->getTransformComponent(i->getParentEntity())->m_transform.caclGlobalPos();
-		i->m_rayOfEye.m_direction = g_pGameSystem->getTransformComponent(i->getParentEntity())->m_transform.getDirection(Transform::direction::BACKWARD);
-		i->caclFrustumVertices();
+		setupCameraComponentRayOfEye(i);
+		setupCameraComponentFrustumVertices(i);
 	}
 }
 
 void RenderingSystem::setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent)
 {
 	cameraComponent->m_projectionMatrix.initializeToPerspectiveMatrix((cameraComponent->m_FOV / 180.0) * PI, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
+}
+
+void RenderingSystem::setupCameraComponentRayOfEye(CameraComponent * cameraComponent)
+{
+	cameraComponent->m_rayOfEye.m_origin = g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.caclGlobalPos();
+	cameraComponent->m_rayOfEye.m_direction = g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.getDirection(direction::BACKWARD);
+}
+
+void RenderingSystem::setupCameraComponentFrustumVertices(CameraComponent * cameraComponent)
+{
+	auto l_NDC = generateNDC();
+	auto l_pCamera = cameraComponent->m_projectionMatrix;
+	auto l_rCamera = g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.caclGlobalRot().toRotationMatrix();
+	auto l_tCamera = g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.caclGlobalPos().toTranslationMatrix();
+
+	for (auto& l_vertexData : l_NDC)
+	{
+		vec4 l_mulPos;
+		l_mulPos = l_vertexData.m_pos;
+		// from projection space to view space
+		//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = l_mulPos * l_pCamera.inverse();
+#endif
+		//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_mulPos = l_pCamera.inverse() * l_mulPos;
+#endif
+		// perspective division
+		l_mulPos = l_mulPos * (1.0 / l_mulPos.w);
+		// from view space to world space
+		//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = l_mulPos * l_rCamera;
+		l_mulPos = l_mulPos * l_tCamera;
+#endif
+		//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_mulPos = l_rCamera * l_mulPos;
+		l_mulPos = l_tCamera * l_mulPos;
+#endif
+		l_vertexData.m_pos = l_mulPos;
+	}
+
+	for (auto& l_vertexData : l_NDC)
+	{
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
+	}
+
+	cameraComponent->m_frustumVertices = l_NDC;
+
+	cameraComponent->m_frustumIndices = { 0, 1, 3, 1, 2, 3,
+	4, 5, 0, 5, 1, 0,
+	7, 6, 4, 6, 5, 4,
+	3, 2, 7, 2, 6 ,7,
+	4, 0, 7, 0, 3, 7,
+	1, 5, 2, 5, 6, 2 };
 }
 
 void RenderingSystem::setup()
@@ -412,9 +468,8 @@ void RenderingSystem::updateCameraComponents()
 {
 	for (auto& i : g_pGameSystem->getCameraComponents())
 	{
-		i->m_rayOfEye.m_origin = g_pGameSystem->getTransformComponent(i->getParentEntity())->m_transform.caclGlobalPos();
-		i->m_rayOfEye.m_direction = g_pGameSystem->getTransformComponent(i->getParentEntity())->m_transform.getDirection(Transform::direction::BACKWARD);
-		i->caclFrustumVertices();
+		setupCameraComponentRayOfEye(i);
+		setupCameraComponentFrustumVertices(i);
 	}
 }
 
@@ -855,7 +910,7 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	auto l_camera = g_pGameSystem->getCameraComponents()[0];
 	auto l_frustumVertices = l_camera->m_frustumVertices;
 
-	auto l_lightInvertRotationMatrix = lightComponent.getInvertRotationMatrix();
+	auto l_lightInvertRotationMatrix = g_pGameSystem->getTransformComponent(lightComponent.getParentEntity())->m_transform.getInvertLocalRotMatrix();
 
 	for (auto& l_vertexData : l_frustumVertices)
 	{
@@ -1108,6 +1163,7 @@ void RenderingSystem::render()
 	renderGeometryPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
 	renderLightPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
 	renderFinalPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
+
 	//swap framebuffers
 	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0)
 	{

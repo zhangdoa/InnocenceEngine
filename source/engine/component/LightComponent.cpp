@@ -36,31 +36,9 @@ mat4 LightComponent::getProjectionMatrix(unsigned int cascadedLevel) const
 	return p;
 }
 
-mat4 LightComponent::getViewMatrix() const
-{
-	mat4 v;
-	v = getInvertRotationMatrix();
-	return v;
-}
-
-mat4 LightComponent::getInvertTranslationMatrix() const
-{
-	return getParentEntity()->caclWorldPos().scale(-1.0).toTranslationMatrix();
-}
-
-mat4 LightComponent::getInvertRotationMatrix() const
-{
-	return getParentEntity()->caclWorldRot().quatConjugate().toRotationMatrix();
-}
-
 const lightType LightComponent::getLightType() const
 {
 	return m_lightType;
-}
-
-const vec4 LightComponent::getDirection() const
-{
-	return  getParentEntity()->getTransform()->getDirection(Transform::direction::BACKWARD);
 }
 
 const double LightComponent::getRadius() const
@@ -85,10 +63,6 @@ void LightComponent::initialize()
 	m_linearFactor = 0.14;
 	m_quadraticFactor = 0.07;
 	m_color = vec4(1.0, 1.0, 1.0, 1.0);
-}
-
-void LightComponent::update()
-{
 }
 
 void LightComponent::shutdown()

@@ -5,15 +5,14 @@ InputComponent::InputComponent()
 {
 }
 
-
 InputComponent::~InputComponent()
 {
 }
 
-
-void InputComponent::registerInputCallback(int keyCode, void * function)
+template<typename T>
+inline void InputComponent::registerInputCallback(int keyCode, void* function, T * owner)
 {
-	// @TODO: it seems that there should be a template for unknown member function 
+	m_keyboardInputCallbackImpl.emplace(keyCode, std::vector<std::function<void()>*>{std::bind(&function, owner)});
 }
 
 std::multimap<int, std::vector<std::function<void()>*>>& InputComponent::getKeyboardInputCallbackImpl()
@@ -26,17 +25,6 @@ std::multimap<int, std::vector<std::function<void(double)>*>>& InputComponent::g
 	return m_mouseMovementCallbackImpl;
 }
 
-void InputComponent::move(moveDirection moveDirection)
-{
-	switch (moveDirection)
-	{
-	case FORWARD:  getParentEntity()->getTransform()->setLocalPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::FORWARD).scale(moveSpeed)); break;
-	case BACKWARD:  getParentEntity()->getTransform()->setLocalPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::BACKWARD).scale(moveSpeed));  break;
-	case LEFT:   getParentEntity()->getTransform()->setLocalPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::LEFT).scale(moveSpeed));  break;
-	case RIGHT:   getParentEntity()->getTransform()->setLocalPos(getParentEntity()->getTransform()->getPos() + getParentEntity()->getTransform()->getDirection(Transform::RIGHT).scale(moveSpeed));  break;
-	}
-}
-
 void InputComponent::rotateAroundPositiveYAxis(double offset)
 {
 	getParentEntity()->getTransform()->rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * rotateSpeed) / 180.0)* PI);
@@ -44,23 +32,13 @@ void InputComponent::rotateAroundPositiveYAxis(double offset)
 
 void InputComponent::rotateAroundRightAxis(double offset)
 {
-	getParentEntity()->getTransform()->rotateInLocal(getParentEntity()->getTransform()->getDirection(Transform::RIGHT), ((offset * rotateSpeed) / 180.0)* PI);
+	getParentEntity()->getTransform()->rotateInLocal(getParentEntity()->getTransform()->getDirection(direction::RIGHT), ((offset * rotateSpeed) / 180.0)* PI);
 }
 
 void InputComponent::setup()
 {
-	f_moveForward = std::bind(&InputComponent::moveForward, this);
-	f_moveBackward = std::bind(&InputComponent::moveBackward, this);
-	f_moveLeft = std::bind(&InputComponent::moveLeft, this);
-	f_moveRight = std::bind(&InputComponent::moveRight, this);
 	f_rotateAroundPositiveYAxis = std::bind(&InputComponent::rotateAroundPositiveYAxis, this, std::placeholders::_1);
 	f_rotateAroundRightAxis = std::bind(&InputComponent::rotateAroundRightAxis, this, std::placeholders::_1);
-
-	// len's forward is camera's backward
-	m_keyboardInputCallbackImpl.emplace(INNO_KEY_S, std::vector<std::function<void()>*>{&f_moveForward});
-	m_keyboardInputCallbackImpl.emplace(INNO_KEY_W, std::vector<std::function<void()>*>{&f_moveBackward});
-	m_keyboardInputCallbackImpl.emplace(INNO_KEY_A, std::vector<std::function<void()>*>{&f_moveLeft});
-	m_keyboardInputCallbackImpl.emplace(INNO_KEY_D, std::vector<std::function<void()>*>{&f_moveRight});
 
 	// @TODO: key name binding
 	m_mouseMovementCallbackImpl.emplace(0, std::vector<std::function<void(double)>*>{&f_rotateAroundPositiveYAxis});
@@ -71,31 +49,8 @@ void InputComponent::initialize()
 {
 }
 
-void InputComponent::update()
-{
-}
 
 void InputComponent::shutdown()
 {
-}
-
-void InputComponent::moveForward()
-{
-	move(moveDirection::FORWARD);
-}
-
-void InputComponent::moveBackward()
-{
-	move(moveDirection::BACKWARD);
-}
-
-void InputComponent::moveLeft()
-{
-	move(moveDirection::LEFT);
-}
-
-void InputComponent::moveRight()
-{
-	move(moveDirection::RIGHT);
 }
 

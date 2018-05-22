@@ -351,13 +351,14 @@ public:
 	bool intersectCheck(const Ray& rhs);
 };
 
+enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
+
 class Transform
 {
 public:
 	Transform();
 	~Transform();
 
-	enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
 	bool hasChanged();
 	void update();
 	void rotateInLocal(const vec4 & axis, double angle);
@@ -406,8 +407,6 @@ private:
 
 	Transform* m_parentTransform;
 };
-
-
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
 // mesh custom types

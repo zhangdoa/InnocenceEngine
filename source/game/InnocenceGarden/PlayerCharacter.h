@@ -8,8 +8,10 @@
 class PlayerCharacter : public BaseEntity
 {
 public:
-	PlayerCharacter();
-	~PlayerCharacter();
+	PlayerCharacter() {};
+	~PlayerCharacter() {};
+
+	void setup() override;
 
 	TransformComponent& getTransformComponent();
 	CameraComponent& getCameraComponent();
@@ -21,5 +23,14 @@ private:
 	InputComponent m_inputComponent;
 	CameraComponent m_cameraComponent;
 	VisibleComponent m_visibleComponent;
+
+	double m_moveSpeed;
+	double m_rotateSpeed;
+
+	void move(vec4 direction, double length);
+	void moveForward();
+	void moveBackward();
+	void moveLeft();
+	void moveRight();
 };
 

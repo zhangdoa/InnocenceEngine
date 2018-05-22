@@ -34,37 +34,40 @@ private:
 
 	// skybox entity and its components
 	BaseEntity m_skyboxEntity;
-	VisibleComponent m_skyboxComponent;
+	TransformComponent m_skyboxTransformComponent;
+	VisibleComponent m_skyboxVisibleComponent;
 
 	// directional light/ sun entity and its components
 	BaseEntity m_directionalLightEntity;
 	TransformComponent m_directionalLightTransformComponent;
 	LightComponent m_directionalLightComponent;
-	VisibleComponent m_directionalLightBillboardComponent;
+	VisibleComponent m_directionalLightVisibleComponent;
 
 	// landscape entity and its components
 	BaseEntity m_landscapeEntity;
 	TransformComponent m_landscapeTransformComponent;
-	VisibleComponent m_landscapeComponent;
+	VisibleComponent m_landscapeVisibleComponent;
 	
 	// pawn entity 1 and its components
 	BaseEntity m_pawnEntity1;
 	TransformComponent m_pawnTransformComponent1;
-	VisibleComponent m_pawnComponent1;
+	VisibleComponent m_pawnVisibleComponent1;
 
 	// pawn entity 2 and its components
 	BaseEntity m_pawnEntity2;
 	TransformComponent m_pawnTransformComponent2;
-	VisibleComponent m_pawnComponent2;
+	VisibleComponent m_pawnVisibleComponent2;
 
 	// sphere entities and their components
 	std::vector<BaseEntity> m_sphereEntitys;
-	std::vector<VisibleComponent> m_sphereComponents;
+	std::vector<TransformComponent> m_sphereTransformComponents;
+	std::vector<VisibleComponent> m_sphereVisibleComponents;
 
 	// punctual point light entities and their components
 	std::vector<BaseEntity> m_pointLightEntitys;
+	std::vector<TransformComponent> m_pointLightTransformComponents;
 	std::vector<LightComponent> m_pointLightComponents;
-	std::vector<VisibleComponent> m_pointLightBillboardComponents;
+	std::vector<VisibleComponent> m_pointLightVisibleComponents;
 
 	// the SOA here
 	std::vector<TransformComponent*> m_transformComponents;

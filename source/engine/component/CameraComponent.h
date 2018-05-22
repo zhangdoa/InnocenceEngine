@@ -11,9 +11,6 @@ public:
 	void initialize() override;
 	void shutdown() override;
 
-	const mat4 getInvertTranslationMatrix() const;
-	const mat4 getInvertRotationMatrix() const;
-
 	double m_FOV;
 	double m_WHRatio;
 	double m_zNear;
@@ -29,6 +26,4 @@ public:
 	AABB m_AABB;
 	meshID m_AABBMeshID;
 	mat4 m_projectionMatrix;
-
-	void caclFrustumVertices();
 };
