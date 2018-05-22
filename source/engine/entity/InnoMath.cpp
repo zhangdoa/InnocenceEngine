@@ -1079,7 +1079,7 @@ mat4 Transform::caclGlobalTransformationMatrix()
 
 mat4 Transform::caclLookAtMatrix()
 {
-	return mat4().lookAt(caclGlobalPos(), caclGlobalPos() + getDirection(Transform::direction::BACKWARD), getDirection(Transform::direction::UP));
+	return mat4().lookAt(caclGlobalPos(), caclGlobalPos() + getDirection(direction::BACKWARD), getDirection(direction::UP));
 }
 
 mat4 Transform::getInvertLocalTranslationMatrix()

@@ -69,6 +69,8 @@ private:
 	void setupRendering();
 	void setupCameraComponents();
 	void setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent);
+	void setupCameraComponentRayOfEye(CameraComponent* cameraComponent);
+	void setupCameraComponentFrustumVertices(CameraComponent* cameraComponent);
 
 	void initializeWindow();
 	void initializeInput();

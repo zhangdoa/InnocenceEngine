@@ -478,7 +478,7 @@ void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& 
 	glEnable(GL_DEPTH_CLAMP);
 	useProgram();
 
-	mat4 p = cameraComponents[0]->getProjectionMatrix();
+	mat4 p = cameraComponents[0]->m_projectionMatrix;
 	mat4 r = cameraComponents[0]->getInvertRotationMatrix();
 	mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
 
@@ -642,7 +642,7 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 
 	if (cameraComponents.size() > 0)
 	{
-		mat4 p = cameraComponents[0]->getProjectionMatrix();
+		mat4 p = cameraComponents[0]->m_projectionMatrix;
 		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
 		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
 		updateUniform(m_uni_p, p);
@@ -865,7 +865,7 @@ void SkyPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponent
 
 	if (cameraComponents.size() > 0)
 	{
-		mat4 p = cameraComponents[0]->getProjectionMatrix();
+		mat4 p = cameraComponents[0]->m_projectionMatrix;
 		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
 
 		updateUniform(m_uni_p, p);
@@ -963,7 +963,7 @@ void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraCom
 
 	if (cameraComponents.size() > 0)
 	{
-		mat4 p = cameraComponents[0]->getProjectionMatrix();
+		mat4 p = cameraComponents[0]->m_projectionMatrix;
 		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
 		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
 
@@ -1039,7 +1039,7 @@ void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponen
 
 	if (cameraComponents.size() > 0)
 	{
-		mat4 p = cameraComponents[0]->getProjectionMatrix();
+		mat4 p = cameraComponents[0]->m_projectionMatrix;
 		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
 		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
 
