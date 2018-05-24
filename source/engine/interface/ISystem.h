@@ -1,5 +1,5 @@
 #pragma once
-#include "IObject.hpp"
+#include "IObject.h"
 
 class ISystem : public IObject
 {

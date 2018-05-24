@@ -748,7 +748,7 @@ void RenderingSystem::assignDefaultTextures(textureAssignType textureAssignType,
 	}
 }
 
-void RenderingSystem::assignloadedModel(modelMap& loadedmodelMap, VisibleComponent & visibleComponent)
+void RenderingSystem::assignLoadedModel(modelMap& loadedmodelMap, VisibleComponent & visibleComponent)
 {
 	visibleComponent.setModelMap(loadedmodelMap);
 	assignDefaultTextures(textureAssignType::ADD, visibleComponent);
@@ -1135,7 +1135,7 @@ void RenderingSystem::loadModel(const std::string & fileName, VisibleComponent &
 	auto l_loadedmodelMap = m_loadedModelMap.find(l_convertedFilePath);
 	if (l_loadedmodelMap != m_loadedModelMap.end())
 	{
-		assignloadedModel(l_loadedmodelMap->second, visibleComponent);
+		assignLoadedModel(l_loadedmodelMap->second, visibleComponent);
 
 		g_pLogSystem->printLog("innoMesh: " + l_convertedFilePath + " is already loaded, successfully assigned loaded modelMap.");
 	}
@@ -1144,7 +1144,7 @@ void RenderingSystem::loadModel(const std::string & fileName, VisibleComponent &
 		modelMap l_modelMap;
 		g_pAssetSystem->loadModelFromDisk(fileName, l_modelMap, visibleComponent.m_meshDrawMethod, visibleComponent.m_textureWrapMethod, visibleComponent.m_caclNormal);
 
-		assignloadedModel(l_modelMap, visibleComponent);
+		assignLoadedModel(l_modelMap, visibleComponent);
 
 		//mark as loaded
 		m_loadedModelMap.emplace(l_convertedFilePath, l_modelMap);

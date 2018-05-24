@@ -20,10 +20,10 @@ public:
 	void update() override;
 	virtual void update(bool cleanColorBuffer, bool cleanDepthBuffer) = 0;
 	virtual void setRenderBufferStorageSize(unsigned int RenderBufferTextureIndex) = 0;	
-	virtual void activeTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer) = 0;
+	virtual void activeRenderTargetTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer) = 0;
 	const unsigned int getRenderTargetNumber() const;
-	virtual void asReadBuffer() = 0;
-	virtual void asWriteBuffer(const vec2& source, const vec2& dest) = 0;
+	virtual void bindAsReadBuffer() = 0;
+	virtual void bindAsWriteBuffer(const vec2& source, const vec2& dest) = 0;
 	const objectStatus& getStatus() const override;
 
 protected:

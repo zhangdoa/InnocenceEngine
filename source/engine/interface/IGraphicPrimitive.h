@@ -1,5 +1,5 @@
 #pragma once
-#include "IObject.hpp"
+#include "IObject.h"
 
 class IGraphicPrimitive : public IObject
 {
