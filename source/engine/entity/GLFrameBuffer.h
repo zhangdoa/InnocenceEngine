@@ -12,9 +12,9 @@ public:
 	void initialize() override;
 	void update(bool cleanColorBuffer, bool cleanDepthBuffer) override;
 	void setRenderBufferStorageSize(unsigned int RenderBufferTextureIndex) override;
-	void activeTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer) override;
-	void asReadBuffer() override;
-	void asWriteBuffer(const vec2& source, const vec2& dest) override;
+	void activeRenderTargetTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer) override;
+	void bindAsReadBuffer() override;
+	void bindAsWriteBuffer(const vec2& source, const vec2& dest) override;
 	void shutdown() override;
 
 private:

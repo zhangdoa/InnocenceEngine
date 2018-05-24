@@ -1,6 +1,6 @@
 #pragma once
 #include "common/stdafx.h"
-#include "IObject.hpp"
+#include "IObject.h"
 #include "entity/ComponentHeaders.h"
 #include "interface/ILogSystem.h"
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "interface/IObject.hpp"
+#include "interface/IObject.h"
 #include "BaseMesh.h"
 #include "BaseTexture.h"
 #include "BaseShader.h"

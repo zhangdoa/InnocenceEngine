@@ -99,17 +99,17 @@ void GLFrameBuffer::setRenderBufferStorageSize(unsigned int RenderBufferTextureI
 	}
 }
 
-void GLFrameBuffer::activeTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer)
+void GLFrameBuffer::activeRenderTargetTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer)
 {
 	m_renderTargetTextures[textureIndexInOwnerFrameBuffer]->update(textureIndexInUserFrameBuffer);
 }
 
-void GLFrameBuffer::asReadBuffer()
+void GLFrameBuffer::bindAsReadBuffer()
 {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_FBO);
 }
 
-void GLFrameBuffer::asWriteBuffer(const vec2& source, const vec2& dest)
+void GLFrameBuffer::bindAsWriteBuffer(const vec2& source, const vec2& dest)
 {
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_FBO);
 	glBlitFramebuffer(0, 0, (GLint)source.x, (GLint)source.y, 0, 0, dest.x, dest.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);

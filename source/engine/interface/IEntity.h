@@ -1,8 +1,7 @@
 #pragma once
 #include "common/stdafx.h"
-#include "interface/IObject.hpp"
+#include "interface/IObject.h"
 #include "interface/IComponent.h"
-#include "entity/InnoMath.h"
 
 typedef unsigned long int EntityID;
 

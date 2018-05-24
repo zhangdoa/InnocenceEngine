@@ -84,7 +84,7 @@ private:
 	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
 	void loadTexture(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent& visibleComponent);
 	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
-	void assignloadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
+	void assignLoadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
 	std::vector<Vertex> generateNDC();
 	std::vector<Vertex> generateViewFrustum(const mat4& transformMatrix);
 	void generateAABB(VisibleComponent & visibleComponent);
