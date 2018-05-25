@@ -11,7 +11,7 @@ public:
 	void initialize() override;
 	void shutdown() override;
 
-	const GLint & getShaderID() const;
+	const int getShaderID() const override;
 
 private:
 	GLint m_shaderID = 0;

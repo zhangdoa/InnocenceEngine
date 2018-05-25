@@ -9,40 +9,44 @@ InputComponent::~InputComponent()
 {
 }
 
-template<typename T>
-inline void InputComponent::registerInputCallback(int keyCode, void* function, T * owner)
+void InputComponent::registerKeyboardInputCallback(int keyCode, std::function<void()>* function)
 {
-	m_keyboardInputCallbackImpl.emplace(keyCode, std::vector<std::function<void()>*>{std::bind(&function, owner)});
+	auto l_keyboardInputCallbackVector = m_keyboardInputCallbackImpl.find(keyCode);
+	if (l_keyboardInputCallbackVector != m_keyboardInputCallbackImpl.end())
+	{
+		l_keyboardInputCallbackVector->second.emplace_back(function);
+	}
+	else
+	{
+		m_keyboardInputCallbackImpl.emplace(keyCode, std::vector<std::function<void()>*>{function});
+	}
 }
 
-std::multimap<int, std::vector<std::function<void()>*>>& InputComponent::getKeyboardInputCallbackImpl()
+void InputComponent::registerMouseInputCallback(int mouseCode, std::function<void(double)>* function)
+{
+	auto l_mouseInputCallbackVector = m_mouseMovementCallbackImpl.find(mouseCode);
+	if (l_mouseInputCallbackVector != m_mouseMovementCallbackImpl.end())
+	{
+		l_mouseInputCallbackVector->second.emplace_back(function);
+	}
+	else
+	{
+		m_mouseMovementCallbackImpl.emplace(mouseCode, std::vector<std::function<void(double)>*>{function});
+	}
+}
+
+std::unordered_map<int, std::vector<std::function<void()>*>>& InputComponent::getKeyboardInputCallbackContainer()
 {
 	return m_keyboardInputCallbackImpl;
 }
 
-std::multimap<int, std::vector<std::function<void(double)>*>>& InputComponent::getMouseInputCallbackImpl()
+std::unordered_map<int, std::vector<std::function<void(double)>*>>& InputComponent::getMouseInputCallbackContainer()
 {
 	return m_mouseMovementCallbackImpl;
 }
 
-void InputComponent::rotateAroundPositiveYAxis(double offset)
-{
-	getParentEntity()->getTransform()->rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * rotateSpeed) / 180.0)* PI);
-}
-
-void InputComponent::rotateAroundRightAxis(double offset)
-{
-	getParentEntity()->getTransform()->rotateInLocal(getParentEntity()->getTransform()->getDirection(direction::RIGHT), ((offset * rotateSpeed) / 180.0)* PI);
-}
-
 void InputComponent::setup()
 {
-	f_rotateAroundPositiveYAxis = std::bind(&InputComponent::rotateAroundPositiveYAxis, this, std::placeholders::_1);
-	f_rotateAroundRightAxis = std::bind(&InputComponent::rotateAroundRightAxis, this, std::placeholders::_1);
-
-	// @TODO: key name binding
-	m_mouseMovementCallbackImpl.emplace(0, std::vector<std::function<void(double)>*>{&f_rotateAroundPositiveYAxis});
-	m_mouseMovementCallbackImpl.emplace(1, std::vector<std::function<void(double)>*>{&f_rotateAroundRightAxis});
 }
 
 void InputComponent::initialize()

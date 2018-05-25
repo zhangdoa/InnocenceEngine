@@ -1,5 +1,6 @@
 #pragma once
 #include "interface/IComponent.h"
+#include "entity/InnoMath.h"
 
 class BaseComponent : public IComponent
 {

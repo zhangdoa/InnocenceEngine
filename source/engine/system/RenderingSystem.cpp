@@ -139,8 +139,6 @@ void RenderingSystem::setup()
 	setupInput();
 	setupRendering();
 
-	setupCameraComponents();
-
 	m_objectStatus = objectStatus::ALIVE;
 }
 
@@ -157,8 +155,8 @@ void RenderingSystem::initializeInput()
 	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
 	{
 		// @TODO: multi input components need to register to multi map
-		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->getKeyboardInputCallbackImpl());
-		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->getMouseInputCallbackImpl());
+		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->getKeyboardInputCallbackContainer());
+		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->getMouseInputCallbackContainer());
 	}
 
 	// @TODO: debt I owe
@@ -288,6 +286,8 @@ void RenderingSystem::initializeRendering()
 
 void RenderingSystem::initialize()
 {
+	setupCameraComponents();
+
 	initializeWindow();
 	initializeInput();
 	initializeRendering();
@@ -533,7 +533,7 @@ void RenderingSystem::addKeyboardInputCallback(int keyCode, std::vector<std::fun
 	}
 }
 
-void RenderingSystem::addKeyboardInputCallback(std::multimap<int, std::vector<std::function<void()>*>>& keyboardInputCallback)
+void RenderingSystem::addKeyboardInputCallback(std::unordered_map<int, std::vector<std::function<void()>*>>& keyboardInputCallback)
 {
 	for (auto i : keyboardInputCallback)
 	{
@@ -541,28 +541,28 @@ void RenderingSystem::addKeyboardInputCallback(std::multimap<int, std::vector<st
 	}
 }
 
-void RenderingSystem::addMouseMovementCallback(int keyCode, std::function<void(double)>* mouseMovementCallback)
+void RenderingSystem::addMouseMovementCallback(int mouseCode, std::function<void(double)>* mouseMovementCallback)
 {
-	auto l_mouseMovementCallbackFunctionVector = m_mouseMovementCallback.find(keyCode);
+	auto l_mouseMovementCallbackFunctionVector = m_mouseMovementCallback.find(mouseCode);
 	if (l_mouseMovementCallbackFunctionVector != m_mouseMovementCallback.end())
 	{
 		l_mouseMovementCallbackFunctionVector->second.emplace_back(mouseMovementCallback);
 	}
 	else
 	{
-		m_mouseMovementCallback.emplace(keyCode, std::vector<std::function<void(double)>*>{mouseMovementCallback});
+		m_mouseMovementCallback.emplace(mouseCode, std::vector<std::function<void(double)>*>{mouseMovementCallback});
 	}
 }
 
-void RenderingSystem::addMouseMovementCallback(int keyCode, std::vector<std::function<void(double)>*>& mouseMovementCallback)
+void RenderingSystem::addMouseMovementCallback(int mouseCode, std::vector<std::function<void(double)>*>& mouseMovementCallback)
 {
 	for (auto i : mouseMovementCallback)
 	{
-		addMouseMovementCallback(keyCode, i);
+		addMouseMovementCallback(mouseCode, i);
 	}
 }
 
-void RenderingSystem::addMouseMovementCallback(std::multimap<int, std::vector<std::function<void(double)>*>>& mouseMovementCallback)
+void RenderingSystem::addMouseMovementCallback(std::unordered_map<int, std::vector<std::function<void(double)>*>>& mouseMovementCallback)
 {
 	for (auto i : mouseMovementCallback)
 	{

@@ -51,7 +51,7 @@ void GLShaderProgram::attachShader(BaseShader* GLShader) const
 	glLinkProgram(m_program);
 	glValidateProgram(m_program);
 
-	g_pLogSystem->printLog("innoShader: " + std::get<shaderFilePath>(GLShader->getShaderData()) + " Shader is compiled.");
+	g_pLogSystem->printLog("innoShader: " + std::get<1>(GLShader->getShaderData()) + " Shader is compiled.");
 
 	GLint success;
 	GLchar infoLog[1024];
@@ -59,7 +59,7 @@ void GLShaderProgram::attachShader(BaseShader* GLShader) const
 	if (!success)
 	{
 		glGetShaderInfoLog(l_shaderID, 1024, NULL, infoLog);
-		g_pLogSystem->printLog("innoShader: " + std::get<shaderFilePath>(GLShader->getShaderData()) + " compile error: " + std::string(infoLog) + "\n -- --------------------------------------------------- -- ");
+		g_pLogSystem->printLog("innoShader: " + std::get<1>(GLShader->getShaderData()) + " compile error: " + std::string(infoLog) + "\n -- --------------------------------------------------- -- ");
 	}
 }
 
@@ -313,7 +313,7 @@ void GeometryPassPBSShaderProgram::update()
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_POINT + (int)in_shaderDrawPair.first);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_POINT + (int)in_shaderDrawPair.first);
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 	glStencilMask(0xFF);
@@ -385,7 +385,7 @@ void SkyPassShaderProgram::update()
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CW);
 	glCullFace(GL_BACK);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_POINT + (int)in_shaderDrawPair.first);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_POINT + (int)in_shaderDrawPair.first);
 
 	useProgram();
 }
@@ -421,7 +421,7 @@ void BloomBlurPassShaderProgram::update()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_POINT + (int)in_shaderDrawPair.first);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_POINT + (int)in_shaderDrawPair.first);
 	useProgram();
 }
 

@@ -35,18 +35,10 @@ void BaseEntity::initialize()
 	{
 		l_childComponent->initialize();
 	}
-	for (auto l_childActor : m_childEntitys)
-	{
-		l_childActor->initialize();
-	}
 }
 
 void BaseEntity::shutdown()
 {
-	for (auto& l_childActor : m_childEntitys)
-	{
-		l_childActor->shutdown();
-	}
 	for (auto l_childComponent : m_childComponents)
 	{
 		l_childComponent->shutdown();
