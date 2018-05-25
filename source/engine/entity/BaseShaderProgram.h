@@ -3,7 +3,7 @@
 #include "InnoMath.h"
 #include "interface/IMemorySystem.h"
 #include "interface/ILogSystem.h"
-#include "interface/ILogSystem.h"
+#include "BaseShader.h"
 #include "ComponentHeaders.h"
 #include "BaseMesh.h"
 #include "BaseTexture.h"
@@ -18,11 +18,11 @@ public:
 	virtual ~BaseShaderProgram() {};
 
 	void setup() override;
-	void setup(const std::vector<shaderData>& shaderDatas);
+	void setup(const std::vector<BaseShader*>& baseShaders);
 	const objectStatus& getStatus() const override;
 
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	std::vector<shaderData> m_shaderDatas;
+	std::vector<BaseShader*> m_baseShaders;
 };

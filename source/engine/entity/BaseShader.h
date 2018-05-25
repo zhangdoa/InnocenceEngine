@@ -1,10 +1,8 @@
 #pragma once
 #include "interface/IGraphicPrimitive.h"
 #include "InnoMath.h"
-#include "interface/IMemorySystem.h"
 #include "interface/ILogSystem.h"
 
-extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;
 
 class BaseShader : public IGraphicPrimitive
@@ -19,6 +17,7 @@ public:
 
 	const objectStatus& getStatus() const override;
 	const shaderData& getShaderData() const;
+	virtual const int getShaderID() const = 0;
 
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;

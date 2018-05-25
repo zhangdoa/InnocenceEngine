@@ -11,11 +11,11 @@ void EnvironmentCapturePass::setup()
 void EnvironmentCapturePass::initialize()
 {
 	// initialize shader
-	auto l_environmentCapturePassVertexShaderFilePath = "GL3.3/environmentCapturePassPBSVertex.sf";
-	auto l_environmentCapturePassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_environmentCapturePassVertexShaderFilePath, g_pAssetSystem->loadShader(l_environmentCapturePassVertexShaderFilePath)));
-	auto l_environmentCapturePassFragmentShaderFilePath = "GL3.3/environmentCapturePassPBSFragment.sf";
-	auto l_environmentCapturePassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_environmentCapturePassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_environmentCapturePassFragmentShaderFilePath)));
-	m_environmentCapturePassShaderProgram->setup({ l_environmentCapturePassVertexShaderData , l_environmentCapturePassFragmentShaderData });
+	auto l_environmentCapturePassVertexShader = g_pMemorySystem->spawn<SHADER_CLASS>();
+	l_environmentCapturePassVertexShader->setup(shaderData(shaderType::VERTEX, "GL3.3/environmentCapturePassPBSVertex.sf", g_pAssetSystem->loadShader("GL3.3/environmentCapturePassPBSVertex.sf")));
+	auto l_environmentCapturePassFragmentShader = g_pMemorySystem->spawn<SHADER_CLASS>();
+	l_environmentCapturePassFragmentShader->setup(shaderData(shaderType::FRAGMENT, "GL3.3/environmentCapturePassPBSFragment.sf", g_pAssetSystem->loadShader("GL3.3/environmentCapturePassPBSFragment.sf")));
+	m_environmentCapturePassShaderProgram->setup({ l_environmentCapturePassVertexShader , l_environmentCapturePassFragmentShader });
 	m_environmentCapturePassShaderProgram->initialize();
 
 	// initialize texture
@@ -26,9 +26,9 @@ void EnvironmentCapturePass::initialize()
 	// environment convolution pass
 	// initialize shader
 	auto l_environmentConvolutionPassVertexShaderFilePath = "GL3.3/environmentConvolutionPassPBSVertex.sf";
-	auto l_environmentConvolutionPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_environmentConvolutionPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_environmentConvolutionPassVertexShaderFilePath)));
+	auto l_environmentConvolutionPassVertexShaderData = shaderData(shaderType::VERTEX, l_environmentConvolutionPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_environmentConvolutionPassVertexShaderFilePath));
 	auto l_environmentConvolutionPassFragmentShaderFilePath = "GL3.3/environmentConvolutionPassPBSFragment.sf";
-	auto l_environmentConvolutionPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_environmentConvolutionPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_environmentConvolutionPassFragmentShaderFilePath)));
+	auto l_environmentConvolutionPassFragmentShaderData = shaderData(shaderType::FRAGMENT, l_environmentConvolutionPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_environmentConvolutionPassFragmentShaderFilePath));
 	m_environmentConvolutionPassShaderProgram->setup({ l_environmentConvolutionPassVertexShaderData , l_environmentConvolutionPassFragmentShaderData });
 	m_environmentConvolutionPassShaderProgram->initialize();
 
@@ -40,9 +40,9 @@ void EnvironmentCapturePass::initialize()
 	// environment pre-filter pass
 	// initialize shader
 	auto l_environmentPreFilterPassVertexShaderFilePath = "GL3.3/environmentPreFilterPassPBSVertex.sf";
-	auto l_environmentPreFilterPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_environmentPreFilterPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_environmentPreFilterPassVertexShaderFilePath)));
+	auto l_environmentPreFilterPassVertexShaderData = shaderData(shaderType::VERTEX, l_environmentPreFilterPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_environmentPreFilterPassVertexShaderFilePath));
 	auto l_environmentPreFilterPassFragmentShaderFilePath = "GL3.3/environmentPreFilterPassPBSFragment.sf";
-	auto l_environmentPreFilterPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_environmentPreFilterPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_environmentPreFilterPassFragmentShaderFilePath)));
+	auto l_environmentPreFilterPassFragmentShaderData = shaderData(shaderType::FRAGMENT, l_environmentPreFilterPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_environmentPreFilterPassFragmentShaderFilePath));
 	m_environmentPreFilterPassShaderProgram->setup({ l_environmentPreFilterPassVertexShaderData , l_environmentPreFilterPassFragmentShaderData });
 	m_environmentPreFilterPassShaderProgram->initialize();
 
@@ -54,9 +54,9 @@ void EnvironmentCapturePass::initialize()
 	// environment BRDF LUT pass
 	// initialize shader
 	auto l_environmentBRDFLUTPassVertexShaderFilePath = "GL3.3/environmentBRDFLUTPassPBSVertex.sf";
-	auto l_environmentBRDFLUTPassVertexShaderData = shaderData(shaderType::VERTEX, shaderCodeContentPair(l_environmentBRDFLUTPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_environmentBRDFLUTPassVertexShaderFilePath)));
+	auto l_environmentBRDFLUTPassVertexShaderData = shaderData(shaderType::VERTEX, l_environmentBRDFLUTPassVertexShaderFilePath, g_pAssetSystem->loadShader(l_environmentBRDFLUTPassVertexShaderFilePath));
 	auto l_environmentBRDFLUTPassFragmentShaderFilePath = "GL3.3/environmentBRDFLUTPassPBSFragment.sf";
-	auto l_environmentBRDFLUTPassFragmentShaderData = shaderData(shaderType::FRAGMENT, shaderCodeContentPair(l_environmentBRDFLUTPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_environmentBRDFLUTPassFragmentShaderFilePath)));
+	auto l_environmentBRDFLUTPassFragmentShaderData = shaderData(shaderType::FRAGMENT, l_environmentBRDFLUTPassFragmentShaderFilePath, g_pAssetSystem->loadShader(l_environmentBRDFLUTPassFragmentShaderFilePath));
 	m_environmentBRDFLUTPassShaderProgram->setup({ l_environmentBRDFLUTPassVertexShaderData , l_environmentBRDFLUTPassFragmentShaderData });
 	m_environmentBRDFLUTPassShaderProgram->initialize();
 
