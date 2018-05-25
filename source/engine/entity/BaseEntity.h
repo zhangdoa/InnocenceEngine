@@ -1,5 +1,6 @@
 #pragma once
 #include "interface/IEntity.h"
+#include "entity/InnoMath.h"
 
 class BaseEntity : public IEntity
 {
@@ -21,7 +22,5 @@ private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_entityID = 0;
 
-	std::vector<IEntity*> m_childEntitys;
 	std::vector<IComponent*> m_childComponents;
-	Transform m_transform;
 };

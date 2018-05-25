@@ -12,23 +12,13 @@ public:
 	void initialize() override;
 	void shutdown() override;
 
-	template<typename T>
-	void registerInputCallback(int keyCode, void* function, T* owner);
-
-
-	std::multimap<int, std::vector<std::function<void()>*>>& getKeyboardInputCallbackImpl();
-	std::multimap<int, std::vector<std::function<void(double)>*>>& getMouseInputCallbackImpl();
+	void registerKeyboardInputCallback(int keyCode, std::function<void()>* function);
+	void registerMouseInputCallback(int mouseCode, std::function<void(double)>* function);
+	
+	std::unordered_map<int, std::vector<std::function<void()>*>>& getKeyboardInputCallbackContainer();
+	std::unordered_map<int, std::vector<std::function<void(double)>*>>& getMouseInputCallbackContainer();
 
 private:
-	void rotateAroundPositiveYAxis(double offset);
-	void rotateAroundRightAxis(double offset);
-
-	std::multimap<int, std::vector<std::function<void()>*>> m_keyboardInputCallbackImpl;
-	std::multimap<int, std::vector<std::function<void(double)>*>> m_mouseMovementCallbackImpl;
-
-	std::function<void(double)> f_rotateAroundPositiveYAxis;
-	std::function<void(double)> f_rotateAroundRightAxis;
-
-	double moveSpeed = 0.5f;
-	double rotateSpeed = 2.0f;
+	std::unordered_map<int, std::vector<std::function<void()>*>> m_keyboardInputCallbackImpl;
+	std::unordered_map<int, std::vector<std::function<void(double)>*>> m_mouseMovementCallbackImpl;
 };

@@ -17,10 +17,20 @@ void PlayerCharacter::setup()
 	m_moveSpeed = 0.5;
 	m_rotateSpeed = 2.0;
 
-	m_inputComponent.registerInputCallback<PlayerCharacter>(INNO_KEY_S, &PlayerCharacter::moveForward, this);
-	m_inputComponent.registerInputCallback<PlayerCharacter>(INNO_KEY_W, &PlayerCharacter::moveBackward, this);
-	m_inputComponent.registerInputCallback<PlayerCharacter>(INNO_KEY_A, &PlayerCharacter::moveLeft, this);
-	m_inputComponent.registerInputCallback<PlayerCharacter>(INNO_KEY_D, &PlayerCharacter::moveRight, this);
+	f_moveForward = std::bind(&PlayerCharacter::moveForward, this);
+	f_moveBackward = std::bind(&PlayerCharacter::moveBackward, this);
+	f_moveLeft = std::bind(&PlayerCharacter::moveLeft, this);
+	f_moveRight = std::bind(&PlayerCharacter::moveRight, this);
+	
+	m_inputComponent.registerKeyboardInputCallback(INNO_KEY_S, &f_moveForward);
+	m_inputComponent.registerKeyboardInputCallback(INNO_KEY_W, &f_moveBackward);
+	m_inputComponent.registerKeyboardInputCallback(INNO_KEY_A, &f_moveLeft);
+	m_inputComponent.registerKeyboardInputCallback(INNO_KEY_D, &f_moveRight);
+
+	f_rotateAroundPositiveYAxis = std::bind(&PlayerCharacter::rotateAroundPositiveYAxis, this, std::placeholders::_1);
+	f_rotateAroundRightAxis = std::bind(&PlayerCharacter::rotateAroundRightAxis, this, std::placeholders::_1);
+	m_inputComponent.registerMouseInputCallback(0, &f_rotateAroundPositiveYAxis);
+	m_inputComponent.registerMouseInputCallback(1, &f_rotateAroundRightAxis);
 }
 
 TransformComponent & PlayerCharacter::getTransformComponent()
@@ -66,4 +76,14 @@ void PlayerCharacter::moveLeft()
 void PlayerCharacter::moveRight()
 {
 	move(m_transformCompoent.m_transform.getDirection(direction::RIGHT), m_moveSpeed);
+}
+
+void PlayerCharacter::rotateAroundPositiveYAxis(double offset)
+{
+	m_transformCompoent.m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * m_rotateSpeed) / 180.0)* PI);
+}
+
+void PlayerCharacter::rotateAroundRightAxis(double offset)
+{
+	m_transformCompoent.m_transform.rotateInLocal(m_transformCompoent.m_transform.getDirection(direction::RIGHT), ((offset * m_rotateSpeed) / 180.0)* PI);
 }

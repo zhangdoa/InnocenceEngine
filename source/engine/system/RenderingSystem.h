@@ -46,10 +46,10 @@ public:
 
 	void addKeyboardInputCallback(int keyCode, std::function<void()>* keyboardInputCallback);
 	void addKeyboardInputCallback(int keyCode, std::vector<std::function<void()>*>& keyboardInputCallback);
-	void addKeyboardInputCallback(std::multimap<int, std::vector<std::function<void()>*>>& keyboardInputCallback);
-	void addMouseMovementCallback(int keyCode, std::function<void(double)>* mouseMovementCallback);
-	void addMouseMovementCallback(int keyCode, std::vector<std::function<void(double)>*>& mouseMovementCallback);
-	void addMouseMovementCallback(std::multimap<int, std::vector<std::function<void(double)>*>>& mouseMovementCallback);
+	void addKeyboardInputCallback(std::unordered_map<int,std::vector<std::function<void()>*>>& keyboardInputCallback);
+	void addMouseMovementCallback(int mouseCode, std::function<void(double)>* mouseMovementCallback);
+	void addMouseMovementCallback(int mouseCode, std::vector<std::function<void(double)>*>& mouseMovementCallback);
+	void addMouseMovementCallback(std::unordered_map<int,std::vector<std::function<void(double)>*>>& mouseMovementCallback);
 
 	void setWindowName(const std::string& windowName) override;
 
@@ -127,8 +127,8 @@ private:
 	const int NUM_MOUSEBUTTONS = 5;
 
 	std::unordered_map<int, keyButton> m_keyButtonMap;
-	std::multimap<int, std::vector<std::function<void()>*>> m_keyboardInputCallback;
-	std::multimap<int, std::vector<std::function<void(double)>*>> m_mouseMovementCallback;
+	std::unordered_map<int, std::vector<std::function<void()>*>> m_keyboardInputCallback;
+	std::unordered_map<int, std::vector<std::function<void(double)>*>> m_mouseMovementCallback;
 
 	double m_mouseXOffset;
 	double m_mouseYOffset;
