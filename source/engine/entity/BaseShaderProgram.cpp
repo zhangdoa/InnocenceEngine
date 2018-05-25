@@ -11,11 +11,6 @@ void BaseShaderProgram::setup(const std::vector<shaderData>& shaderDatas)
 	m_objectStatus = objectStatus::ALIVE;
 }
 
-void BaseShaderProgram::update()
-{
-	g_pLogSystem->printLog("BaseShaderProgram: Warning: use the update() with parameter!");
-}
-
 const objectStatus & BaseShaderProgram::getStatus() const
 {
 	return m_objectStatus;
