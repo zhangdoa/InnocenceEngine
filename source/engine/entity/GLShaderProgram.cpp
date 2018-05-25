@@ -12,62 +12,26 @@ void GLShaderProgram::initialize()
 {
 	m_program = glCreateProgram();
 
-	for (auto& i : m_shaderDatas)
+	for (auto i : m_baseShaders)
 	{
-		if (i.first == shaderType::VERTEX)
-		{
-			m_vertexShader = g_pMemorySystem->spawn<GLShader>();
-			m_vertexShader->setup(i);
-			if (m_vertexShader->getStatus() == objectStatus::ALIVE)
-			{
-				m_vertexShader->initialize();
-				attachShader(m_vertexShader);
-			}
-		}
-		else if (i.first == shaderType::GEOMETRY)
-		{
-			m_geometryShader = g_pMemorySystem->spawn<GLShader>();
-			m_geometryShader->setup(i);
-
-			if (m_geometryShader->getStatus() == objectStatus::ALIVE)
-			{
-				m_geometryShader->initialize();
-				attachShader(m_geometryShader);
-			}
-		}
-		else if (i.first == shaderType::FRAGMENT)
-		{
-			m_fragmentShader = g_pMemorySystem->spawn<GLShader>();
-			m_fragmentShader->setup(i);
-			if (m_fragmentShader->getStatus() == objectStatus::ALIVE)
-			{
-				m_fragmentShader->initialize();
-				attachShader(m_fragmentShader);
-			}
-		}
+		i->initialize();
+		attachShader(i);
 	}
 }
 
 void GLShaderProgram::shutdown()
 {
-	if (m_vertexShader->getStatus() == objectStatus::ALIVE)
+	for (auto i : m_baseShaders)
 	{
-		m_vertexShader->shutdown();
-		glDetachShader(m_program, m_vertexShader->getShaderID());
-	}
-	if (m_geometryShader->getStatus() == objectStatus::ALIVE)
-	{
-		m_geometryShader->shutdown();
-		glDetachShader(m_program, m_geometryShader->getShaderID());
-	}
-	if (m_fragmentShader->getStatus() == objectStatus::ALIVE)
-	{
-		m_fragmentShader->shutdown();
-		glDetachShader(m_program, m_fragmentShader->getShaderID());
+		if (i->getStatus() == objectStatus::ALIVE)
+		{
+			i->shutdown();
+			glDetachShader(m_program, i->getShaderID());
+		}
 	}
 }
 
-void GLShaderProgram::attachShader(GLShader* GLShader) const
+void GLShaderProgram::attachShader(BaseShader* GLShader) const
 {
 	GLint Result = GL_FALSE;
 	int l_infoLogLength = 0;
@@ -87,7 +51,7 @@ void GLShaderProgram::attachShader(GLShader* GLShader) const
 	glLinkProgram(m_program);
 	glValidateProgram(m_program);
 
-	g_pLogSystem->printLog("innoShader: " + GLShader->getShaderData().second.first + " Shader is compiled.");
+	g_pLogSystem->printLog("innoShader: " + std::get<shaderFilePath>(GLShader->getShaderData()) + " Shader is compiled.");
 
 	GLint success;
 	GLchar infoLog[1024];
@@ -95,7 +59,7 @@ void GLShaderProgram::attachShader(GLShader* GLShader) const
 	if (!success)
 	{
 		glGetShaderInfoLog(l_shaderID, 1024, NULL, infoLog);
-		g_pLogSystem->printLog("innoShader: " + GLShader->getShaderData().second.first + " compile error: " + std::string(infoLog) + "\n -- --------------------------------------------------- -- ");
+		g_pLogSystem->printLog("innoShader: " + std::get<shaderFilePath>(GLShader->getShaderData()) + " compile error: " + std::string(infoLog) + "\n -- --------------------------------------------------- -- ");
 	}
 }
 

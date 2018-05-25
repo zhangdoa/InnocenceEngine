@@ -12,7 +12,7 @@ public:
 	void initialize() override;
 	void shutdown() override;
 
-	void attachShader(GLShader* GLShader) const;
+	void attachShader(BaseShader* GLShader) const;
 	inline void useProgram() const;
 	inline GLint getUniformLocation(const std::string &uniformName) const;
 	inline void updateUniform(const GLint uniformLocation, bool uniformValue) const;
@@ -25,10 +25,6 @@ public:
 
 protected:
 	GLint m_program = 0;
-
-	GLShader* m_vertexShader;
-	GLShader* m_geometryShader;
-	GLShader* m_fragmentShader;
 };
 
 class EnvironmentCapturePassPBSShaderProgram : public GLShaderProgram

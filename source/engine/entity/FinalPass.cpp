@@ -22,8 +22,8 @@ void FinalPass::initialize()
 	m_skyPassShaderProgram->initialize();
 
 	// initialize texture
-	m_skyPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_skyPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_skyPassTextureID);
+	m_skyPassTextureID = g_pRenderingSystem->addTexture(textureType::RENDER_BUFFER_SAMPLER);
+	auto l_skyPassTextureData = g_pRenderingSystem->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_skyPassTextureID);
 	l_skyPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize framebuffer
@@ -43,8 +43,8 @@ void FinalPass::initialize()
 	m_bloomExtractPassShaderProgram->initialize();
 
 	// initialize texture
-	m_bloomExtractPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_bloomExtractPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_bloomExtractPassTextureID);
+	m_bloomExtractPassTextureID = g_pRenderingSystem->addTexture(textureType::RENDER_BUFFER_SAMPLER);
+	auto l_bloomExtractPassTextureData = g_pRenderingSystem->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_bloomExtractPassTextureID);
 	l_bloomExtractPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize framebuffer
@@ -63,8 +63,8 @@ void FinalPass::initialize()
 	m_bloomBlurPassShaderProgram->initialize();
 
 	// initialize ping texture
-	m_bloomBlurPassPingTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_bloomBlurPassPingTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_bloomBlurPassPingTextureID);
+	m_bloomBlurPassPingTextureID = g_pRenderingSystem->addTexture(textureType::RENDER_BUFFER_SAMPLER);
+	auto l_bloomBlurPassPingTextureData = g_pRenderingSystem->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_bloomBlurPassPingTextureID);
 	l_bloomBlurPassPingTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize ping framebuffer
@@ -75,8 +75,8 @@ void FinalPass::initialize()
 	m_bloomBlurPassPingFrameBuffer->initialize();
 
 	// initialize pong texture
-	m_bloomBlurPassPongTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_bloomBlurPassPongTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_bloomBlurPassPongTextureID);
+	m_bloomBlurPassPongTextureID = g_pRenderingSystem->addTexture(textureType::RENDER_BUFFER_SAMPLER);
+	auto l_bloomBlurPassPongTextureData = g_pRenderingSystem->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_bloomBlurPassPongTextureID);
 	l_bloomBlurPassPongTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize pong framebuffer
@@ -96,8 +96,8 @@ void FinalPass::initialize()
 	m_billboardPassShaderProgram->initialize();
 
 	// initialize texture
-	m_billboardPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_billboardPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_billboardPassTextureID);
+	m_billboardPassTextureID = g_pRenderingSystem->addTexture(textureType::RENDER_BUFFER_SAMPLER);
+	auto l_billboardPassTextureData = g_pRenderingSystem->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_billboardPassTextureID);
 	l_billboardPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize framebuffer
@@ -120,8 +120,8 @@ void FinalPass::initialize()
 	m_debuggerPassShaderProgram->initialize();
 
 	// initialize texture
-	m_debuggerPassTextureID = this->addTexture(textureType::RENDER_BUFFER_SAMPLER);
-	auto l_debuggerPassTextureData = this->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_debuggerPassTextureID);
+	m_debuggerPassTextureID = g_pRenderingSystem->addTexture(textureType::RENDER_BUFFER_SAMPLER);
+	auto l_debuggerPassTextureData = g_pRenderingSystem->getTexture(textureType::RENDER_BUFFER_SAMPLER, m_debuggerPassTextureID);
 	l_debuggerPassTextureData->setup(textureType::RENDER_BUFFER_SAMPLER, textureColorComponentsFormat::RGBA16F, texturePixelDataFormat::RGBA, textureWrapMethod::CLAMP_TO_EDGE, textureFilterMethod::NEAREST, textureFilterMethod::NEAREST, (int)m_screenResolution.x, (int)m_screenResolution.y, texturePixelDataType::FLOAT, std::vector<void*>{ nullptr });
 
 	// initialize framebuffer
@@ -208,7 +208,7 @@ void FinalPass::update()
 			m_bloomBlurPassPingFrameBuffer->setRenderBufferStorageSize(0);
 			m_bloomBlurPassShaderProgram->update();
 
-			updateUniform(m_uni_horizontal, m_isHorizontal);
+			m_bloomBlurPassShaderProgram->updateUniform(m_uni_horizontal, m_isHorizontal);
 
 			if (m_isHorizontal)
 			{

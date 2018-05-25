@@ -5,9 +5,11 @@
 
 #include "interface/IRenderingSystem.h"
 #include "interface/IMemorySystem.h"
+#include "interface/IAssetSystem.h"
 
 extern IMemorySystem* g_pMemorySystem;
 extern IRenderingSystem* g_pRenderingSystem;
+extern IAssetSystem* g_pAssetSystem;
 
 class EnvironmentCapturePass : public IRenderPass
 {
