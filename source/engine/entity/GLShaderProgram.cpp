@@ -168,55 +168,12 @@ void EnvironmentCapturePassPBSShaderProgram::initialize()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void EnvironmentCapturePassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void EnvironmentCapturePassPBSShaderProgram::update()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0, 0.1, 10.0);
-	std::vector<mat4> captureViews =
-	{
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(-1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  1.0,  0.0, 1.0), vec4(0.0,  0.0,  1.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, -1.0,  0.0, 1.0), vec4(0.0,  0.0, -1.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0,  1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0, -1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0))
-	};
-
 	useProgram();
-	updateUniform(m_uni_p, captureProjection);
-
-	if (visibleComponents.size() > 0)
-	{
-		for (auto& l_visibleComponent : visibleComponents)
-		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
-			{
-
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
-				{
-					// activate equiretangular texture and remap equiretangular texture to cubemap
-					auto l_equiretangularTexture = textureMap.find(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);
-					auto l_environmentCaptureTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CAPTURE)->second);
-					if (l_equiretangularTexture != textureMap.end() && l_environmentCaptureTexture != textureMap.end())
-					{
-						l_equiretangularTexture->second->update(0);
-						for (unsigned int i = 0; i < 6; ++i)
-						{
-							updateUniform(m_uni_r, captureViews[i]);
-							l_environmentCaptureTexture->second->attachToFramebuffer(0, i, 0);
-							glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-							meshMap.find(l_graphicData.first)->second->update();
-						}
-						l_environmentCaptureTexture->second->update(0);
-						glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-					}
-				}
-			}
-		}
-	}
 }
 
 void EnvironmentConvolutionPassPBSShaderProgram::initialize()
@@ -231,53 +188,12 @@ void EnvironmentConvolutionPassPBSShaderProgram::initialize()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void EnvironmentConvolutionPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void EnvironmentConvolutionPassPBSShaderProgram::update()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0, 0.1, 10.0);
-
-	std::vector<mat4> captureViews =
-	{
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(-1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  1.0,  0.0, 1.0), vec4(0.0,  0.0,  1.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, -1.0,  0.0, 1.0), vec4(0.0,  0.0, -1.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0,  1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0, -1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0))
-	};
-
 	useProgram();
-	updateUniform(m_uni_p, captureProjection);
-
-	if (visibleComponents.size() > 0)
-	{
-		for (auto& l_visibleComponent : visibleComponents)
-		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
-			{
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
-				{
-					auto l_environmentCaptureTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CAPTURE)->second);
-					auto l_environmentConvolutionTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CONVOLUTION)->second);
-					if (l_environmentCaptureTexture != textureMap.end() && l_environmentConvolutionTexture != textureMap.end())
-					{
-						// @TODO: it should be update(0)?
-						l_environmentCaptureTexture->second->update(1);
-						for (unsigned int i = 0; i < 6; ++i)
-						{
-							updateUniform(m_uni_r, captureViews[i]);
-							l_environmentConvolutionTexture->second->attachToFramebuffer(0, i, 0);
-							glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-							meshMap.find(l_graphicData.first)->second->update();
-						}
-					}
-				}
-			}
-		}
-	}
 }
 
 void EnvironmentPreFilterPassPBSShaderProgram::initialize()
@@ -294,66 +210,12 @@ void EnvironmentPreFilterPassPBSShaderProgram::initialize()
 	m_uni_roughness = getUniformLocation("uni_roughness");
 }
 
-void EnvironmentPreFilterPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void EnvironmentPreFilterPassPBSShaderProgram::update()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0, 0.1, 10.0);
-
-	std::vector<mat4> captureViews =
-	{
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(-1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  1.0,  0.0, 1.0), vec4(0.0,  0.0,  1.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, -1.0,  0.0, 1.0), vec4(0.0,  0.0, -1.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0,  1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0, -1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0))
-	};
-
 	useProgram();
-	updateUniform(m_uni_p, captureProjection);
-
-	if (visibleComponents.size() > 0)
-	{
-		for (auto& l_visibleComponent : visibleComponents)
-		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
-			{
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
-				{
-					auto l_environmentCaptureTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CAPTURE)->second);
-					auto l_environmentPrefilterTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_PREFILTER)->second);
-					if (l_environmentCaptureTexture != textureMap.end() && l_environmentPrefilterTexture != textureMap.end())
-					{
-						// @TODO: it should be update(0)?
-						l_environmentCaptureTexture->second->update(2);
-						unsigned int maxMipLevels = 5;
-						for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
-						{
-							// reisze framebuffer according to mip-level size.
-							unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
-							unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
-
-							glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, mipWidth, mipHeight);
-							glViewport(0, 0, mipWidth, mipHeight);
-
-							double roughness = (double)mip / (double)(maxMipLevels - 1);
-							updateUniform(m_uni_roughness, roughness);
-							for (unsigned int i = 0; i < 6; ++i)
-							{
-								updateUniform(m_uni_r, captureViews[i]);
-								l_environmentPrefilterTexture->second->attachToFramebuffer(0, i, mip);
-								glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-								meshMap.find(l_graphicData.first)->second->update();
-							}
-						}
-					}
-				}
-			}
-		}
-	}
 }
 
 void EnvironmentBRDFLUTPassPBSShaderProgram::initialize()
@@ -362,30 +224,12 @@ void EnvironmentBRDFLUTPassPBSShaderProgram::initialize()
 	useProgram();
 }
 
-void EnvironmentBRDFLUTPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void EnvironmentBRDFLUTPassPBSShaderProgram::update()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
 	useProgram();
-
-	if (visibleComponents.size() > 0)
-	{
-		for (auto& l_visibleComponent : visibleComponents)
-		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
-			{
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
-				{
-					auto l_environmentBRDFLUTTexture = textureMap.find(l_graphicData.second.find(textureType::RENDER_BUFFER_SAMPLER)->second);
-					if (l_environmentBRDFLUTTexture != textureMap.end())
-					{
-						l_environmentBRDFLUTTexture->second->attachToFramebuffer(0, 0, 0);
-					}
-				}
-			}
-		}
-	}
 }
 
 void ShadowForwardPassShaderProgram::initialize()
@@ -398,45 +242,13 @@ void ShadowForwardPassShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void ShadowForwardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void ShadowForwardPassShaderProgram::update()
 {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CCW);
 	glCullFace(GL_FRONT);
 	useProgram();
-
-	// draw each lightComponent's shadowmap
-	for (size_t i = 0; i < 4; i++)
-	{
-		for (auto& l_lightComponent : lightComponents)
-		{
-			if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
-			{
-				updateUniform(m_uni_p, l_lightComponent->getProjectionMatrix(i));
-				updateUniform(m_uni_v, l_lightComponent->getViewMatrix());
-
-				// draw each visibleComponent
-				for (auto& l_visibleComponent : visibleComponents)
-				{
-					if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
-					{
-						updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
-
-						// draw each graphic data of visibleComponent
-						for (auto& l_graphicData : l_visibleComponent->getModelMap())
-						{
-							// draw meshes
-							meshMap.find(l_graphicData.first)->second->update();
-						}
-					}
-				}
-			}
-		}
-	}
-
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
 }
 
 void ShadowDeferPassShaderProgram::initialize()
@@ -448,7 +260,7 @@ void ShadowDeferPassShaderProgram::initialize()
 	updateUniform(m_uni_shadowForwardPassRT0, 0);
 }
 
-void ShadowDeferPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void ShadowDeferPassShaderProgram::update()
 {
 	useProgram();
 }
@@ -471,65 +283,12 @@ void GeometryPassBlinnPhongShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void GeometryPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void GeometryPassBlinnPhongShaderProgram::update()
 {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
 	useProgram();
-
-	mat4 p = cameraComponents[0]->m_projectionMatrix;
-	mat4 r = cameraComponents[0]->getInvertRotationMatrix();
-	mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
-
-	updateUniform(m_uni_p, p);
-	updateUniform(m_uni_r, r);
-	updateUniform(m_uni_t, t);
-
-	// draw each visibleComponent
-	for (auto& l_visibleComponent : visibleComponents)
-	{
-		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
-		{
-			updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
-
-			// draw each graphic data of visibleComponent
-			for (auto& l_graphicData : l_visibleComponent->getModelMap())
-			{
-				//active and bind textures
-				// is there any texture?
-				auto l_textureMap = &l_graphicData.second;
-				if (l_textureMap != nullptr)
-				{
-					// any normal?
-					auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
-					if (l_normalTextureID != l_textureMap->end())
-					{
-						auto l_textureData = textureMap.find(l_normalTextureID->second)->second;
-						l_textureData->update(0);
-					}
-					// any diffuse?
-					auto l_diffuseTextureID = l_textureMap->find(textureType::ALBEDO);
-					if (l_diffuseTextureID != l_textureMap->end())
-					{
-						auto l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
-						l_textureData->update(1);
-					}
-					// any specular?
-					auto l_specularTextureID = l_textureMap->find(textureType::METALLIC);
-					if (l_specularTextureID != l_textureMap->end())
-					{
-						auto l_textureData = textureMap.find(l_specularTextureID->second)->second;
-						l_textureData->update(2);
-					}
-				}
-				// draw meshes
-				meshMap.find(l_graphicData.first)->second->update();
-			}
-		}
-	}
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_DEPTH_CLAMP);
 }
 
 void LightPassBlinnPhongShaderProgram::initialize()
@@ -552,51 +311,9 @@ void LightPassBlinnPhongShaderProgram::initialize()
 	m_uni_dirLight_color = getUniformLocation("uni_dirLight.color");
 }
 
-void LightPassBlinnPhongShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void LightPassBlinnPhongShaderProgram::update()
 {
 	useProgram();
-
-	if (!isPointLightUniformAdded)
-	{
-		int l_pointLightIndexOffset = 0;
-		for (auto i = (unsigned int)0; i < lightComponents.size(); i++)
-		{
-			if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
-			{
-				l_pointLightIndexOffset -= 1;
-			}
-			if (lightComponents[i]->getLightType() == lightType::POINT)
-			{
-				std::stringstream ss;
-				ss << i + l_pointLightIndexOffset;
-				m_uni_pointLights_position.emplace_back(getUniformLocation("uni_pointLights[" + ss.str() + "].position"));
-				m_uni_pointLights_radius.emplace_back(getUniformLocation("uni_pointLights[" + ss.str() + "].radius"));
-				m_uni_pointLights_color.emplace_back(getUniformLocation("uni_pointLights[" + ss.str() + "].color"));
-			}
-		}
-		isPointLightUniformAdded = true;
-	}
-
-	int l_pointLightIndexOffset = 0;
-	for (auto i = (unsigned int)0; i < lightComponents.size(); i++)
-	{
-		//@TODO: generalization
-
-		updateUniform(m_uni_viewPos, cameraComponents[0]->getParentEntity()->getTransform()->getPos().x, cameraComponents[0]->getParentEntity()->getTransform()->getPos().y, cameraComponents[0]->getParentEntity()->getTransform()->getPos().z);
-
-		if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
-		{
-			l_pointLightIndexOffset -= 1;
-			updateUniform(m_uni_dirLight_direction, lightComponents[i]->getDirection().x, lightComponents[i]->getDirection().y, lightComponents[i]->getDirection().z);
-			updateUniform(m_uni_dirLight_color, lightComponents[i]->getColor().x, lightComponents[i]->getColor().y, lightComponents[i]->getColor().z);
-		}
-		else if (lightComponents[i]->getLightType() == lightType::POINT)
-		{
-			updateUniform(m_uni_pointLights_position[i + l_pointLightIndexOffset], lightComponents[i]->getParentEntity()->getTransform()->getPos().x, lightComponents[i]->getParentEntity()->getTransform()->getPos().y, lightComponents[i]->getParentEntity()->getTransform()->getPos().z);
-			updateUniform(m_uni_pointLights_radius[i + l_pointLightIndexOffset], lightComponents[i]->getRadius());
-			updateUniform(m_uni_pointLights_color[i + l_pointLightIndexOffset], lightComponents[i]->getColor().x, lightComponents[i]->getColor().y, lightComponents[i]->getColor().z);
-		}
-	}
 }
 
 void GeometryPassPBSShaderProgram::initialize()
@@ -627,7 +344,7 @@ void GeometryPassPBSShaderProgram::initialize()
 	m_uni_MRA = getUniformLocation("uni_MRA");
 }
 
-void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void GeometryPassPBSShaderProgram::update()
 {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_DEPTH_TEST);
@@ -639,115 +356,6 @@ void GeometryPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraC
 	glClear(GL_STENCIL_BUFFER_BIT);
 
 	useProgram();
-
-	if (cameraComponents.size() > 0)
-	{
-		mat4 p = cameraComponents[0]->m_projectionMatrix;
-		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
-		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
-		updateUniform(m_uni_p, p);
-		updateUniform(m_uni_r, r);
-		updateUniform(m_uni_t, t);
-	}
-
-	if (lightComponents.size() > 0)
-	{
-		for (auto& l_lightComponent : lightComponents)
-		{
-			// update light space transformation matrices
-			if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
-			{
-				updateUniform(m_uni_p_light, l_lightComponent->getProjectionMatrix(0));
-				updateUniform(m_uni_v_light, l_lightComponent->getViewMatrix());
-
-				// draw each visibleComponent
-				for (auto& l_visibleComponent : visibleComponents)
-				{
-					if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
-					{
-						glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
-
-						updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
-
-						// draw each graphic data of visibleComponent
-						for (auto& l_graphicData : l_visibleComponent->getModelMap())
-						{
-							//active and bind textures
-							// is there any texture?
-							auto l_textureMap = &l_graphicData.second;
-							if (l_textureMap != nullptr)
-							{
-								// any normal?
-								auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
-								if (l_normalTextureID != l_textureMap->end())
-								{
-									auto l_textureData = textureMap.find(l_normalTextureID->second)->second;
-									l_textureData->update(0);
-								}
-								// any albedo?
-								auto l_albedoTextureID = l_textureMap->find(textureType::ALBEDO);
-								if (l_albedoTextureID != l_textureMap->end())
-								{
-									auto l_textureData = textureMap.find(l_albedoTextureID->second)->second;
-									l_textureData->update(1);
-								}
-								// any metallic?
-								auto l_metallicTextureID = l_textureMap->find(textureType::METALLIC);
-								if (l_metallicTextureID != l_textureMap->end())
-								{
-									auto l_textureData = textureMap.find(l_metallicTextureID->second)->second;
-									l_textureData->update(2);
-								}
-								// any roughness?
-								auto l_roughnessTextureID = l_textureMap->find(textureType::ROUGHNESS);
-								if (l_roughnessTextureID != l_textureMap->end())
-								{
-									auto l_textureData = textureMap.find(l_roughnessTextureID->second)->second;
-									l_textureData->update(3);
-								}
-								// any ao?
-								auto l_aoTextureID = l_textureMap->find(textureType::AMBIENT_OCCLUSION);
-								if (l_aoTextureID != l_textureMap->end())
-								{
-									auto l_textureData = textureMap.find(l_aoTextureID->second)->second;
-									l_textureData->update(4);
-								}
-							}
-							updateUniform(m_uni_useTexture, l_visibleComponent->m_useTexture);
-							updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
-							updateUniform(m_uni_MRA, l_visibleComponent->m_MRA.x, l_visibleComponent->m_MRA.y, l_visibleComponent->m_MRA.z);
-							// draw meshes
-							meshMap.find(l_graphicData.first)->second->update();
-						}
-					}
-					else if (l_visibleComponent->m_visiblilityType == visiblilityType::EMISSIVE)
-					{
-						glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
-
-						updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
-
-						// draw each graphic data of visibleComponent
-						for (auto& l_graphicData : l_visibleComponent->getModelMap())
-						{
-							updateUniform(m_uni_useTexture, l_visibleComponent->m_useTexture);
-							updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
-							// draw meshes
-							meshMap.find(l_graphicData.first)->second->update();
-						}
-					}
-					else
-					{
-						glStencilFunc(GL_ALWAYS, 0x00, 0xFF);
-					}
-				}
-			}
-		}
-	}
-
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_DEPTH_CLAMP);
-	glDisable(GL_STENCIL_TEST);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void LightPassPBSShaderProgram::initialize()
@@ -782,7 +390,7 @@ void LightPassPBSShaderProgram::initialize()
 	m_uni_dirLight_color = getUniformLocation("uni_dirLight.color");
 }
 
-void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void LightPassPBSShaderProgram::update()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -792,53 +400,6 @@ void LightPassPBSShaderProgram::update(std::vector<CameraComponent*>& cameraComp
 	glStencilMask(0x00);
 
 	useProgram();
-
-	if (lightComponents.size() > 0)
-	{
-		if (!isPointLightUniformAdded)
-		{
-			int l_pointLightIndexOffset = 0;
-			for (auto i = (unsigned int)0; i < lightComponents.size(); i++)
-			{
-				if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
-				{
-					l_pointLightIndexOffset -= 1;
-				}
-				if (lightComponents[i]->getLightType() == lightType::POINT)
-				{
-					std::stringstream ss;
-					ss << i + l_pointLightIndexOffset;
-					m_uni_pointLights_position.emplace_back(getUniformLocation("uni_pointLights[" + ss.str() + "].position"));
-					m_uni_pointLights_radius.emplace_back(getUniformLocation("uni_pointLights[" + ss.str() + "].radius"));
-					m_uni_pointLights_color.emplace_back(getUniformLocation("uni_pointLights[" + ss.str() + "].color"));
-				}
-			}
-			isPointLightUniformAdded = true;
-		}
-
-		int l_pointLightIndexOffset = 0;
-		for (auto i = (unsigned int)0; i < lightComponents.size(); i++)
-		{
-			//@TODO: generalization
-
-			updateUniform(m_uni_viewPos, cameraComponents[0]->getParentEntity()->getTransform()->getPos().x, cameraComponents[0]->getParentEntity()->getTransform()->getPos().y, cameraComponents[0]->getParentEntity()->getTransform()->getPos().z);
-			updateUniform(m_uni_textureMode, (int)in_shaderDrawPair.second);
-
-			if (lightComponents[i]->getLightType() == lightType::DIRECTIONAL)
-			{
-				l_pointLightIndexOffset -= 1;
-				updateUniform(m_uni_dirLight_position, lightComponents[i]->getParentEntity()->getTransform()->getPos().x, lightComponents[i]->getParentEntity()->getTransform()->getPos().y, lightComponents[i]->getParentEntity()->getTransform()->getPos().z);
-				updateUniform(m_uni_dirLight_direction, lightComponents[i]->getDirection().x, lightComponents[i]->getDirection().y, lightComponents[i]->getDirection().z);
-				updateUniform(m_uni_dirLight_color, lightComponents[i]->getColor().x, lightComponents[i]->getColor().y, lightComponents[i]->getColor().z);
-			}
-			else if (lightComponents[i]->getLightType() == lightType::POINT)
-			{
-				updateUniform(m_uni_pointLights_position[i + l_pointLightIndexOffset], lightComponents[i]->getParentEntity()->getTransform()->getPos().x, lightComponents[i]->getParentEntity()->getTransform()->getPos().y, lightComponents[i]->getParentEntity()->getTransform()->getPos().z);
-				updateUniform(m_uni_pointLights_radius[i + l_pointLightIndexOffset], lightComponents[i]->getRadius());
-				updateUniform(m_uni_pointLights_color[i + l_pointLightIndexOffset], lightComponents[i]->getColor().x, lightComponents[i]->getColor().y, lightComponents[i]->getColor().z);
-			}
-		}
-	}
 }
 
 void SkyPassShaderProgram::initialize()
@@ -853,7 +414,7 @@ void SkyPassShaderProgram::initialize()
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void SkyPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void SkyPassShaderProgram::update()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
@@ -861,38 +422,8 @@ void SkyPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponent
 	glFrontFace(GL_CW);
 	glCullFace(GL_BACK);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_POINT + (int)in_shaderDrawPair.first);
+
 	useProgram();
-
-	if (cameraComponents.size() > 0)
-	{
-		mat4 p = cameraComponents[0]->m_projectionMatrix;
-		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
-
-		updateUniform(m_uni_p, p);
-		updateUniform(m_uni_r, r);
-	}
-
-	if (visibleComponents.size() > 0)
-	{
-		for (auto& l_visibleComponent : visibleComponents)
-		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
-			{
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
-				{
-					auto l_cubeMapTexture = textureMap.find(l_graphicData.second.find(textureType::CUBEMAP)->second);
-					if (l_cubeMapTexture != textureMap.end())
-					{
-						l_cubeMapTexture->second->update(0);
-						meshMap.find(l_graphicData.first)->second->update();
-					}
-				}
-			}
-		}
-	}
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
 }
 
 void BloomExtractPassShaderProgram::initialize()
@@ -904,7 +435,7 @@ void BloomExtractPassShaderProgram::initialize()
 	updateUniform(m_uni_lightPassRT0, 0);
 }
 
-void BloomExtractPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void BloomExtractPassShaderProgram::update()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -922,23 +453,12 @@ void BloomBlurPassShaderProgram::initialize()
 	m_uni_horizontal = getUniformLocation("uni_horizontal");
 }
 
-void BloomBlurPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void BloomBlurPassShaderProgram::update()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_POINT + (int)in_shaderDrawPair.first);
 	useProgram();
-	updateUniform(m_uni_horizontal, m_isHorizontal);
-
-	if (m_isHorizontal)
-	{
-		m_isHorizontal = false;
-	}
-	else
-	{
-		m_isHorizontal = true;
-	}
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void BillboardPassShaderProgram::initialize()
@@ -956,64 +476,10 @@ void BillboardPassShaderProgram::initialize()
 	m_uni_t = getUniformLocation("uni_t");
 }
 
-void BillboardPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void BillboardPassShaderProgram::update()
 {
 	glEnable(GL_DEPTH_TEST);
 	useProgram();
-
-	if (cameraComponents.size() > 0)
-	{
-		mat4 p = cameraComponents[0]->m_projectionMatrix;
-		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
-		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
-
-		updateUniform(m_uni_p, p);
-		updateUniform(m_uni_r, r);
-		updateUniform(m_uni_t, t);
-	}
-
-	if (visibleComponents.size() > 0)
-	{
-		// draw each visibleComponent
-		for (auto& l_visibleComponent : visibleComponents)
-		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::BILLBOARD)
-			{
-				updateUniform(m_uni_pos, l_visibleComponent->getParentEntity()->getTransform()->getPos().x, l_visibleComponent->getParentEntity()->getTransform()->getPos().y, l_visibleComponent->getParentEntity()->getTransform()->getPos().z);
-				updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
-				auto l_distanceToCamera = (cameraComponents[0]->getParentEntity()->getTransform()->getPos() - l_visibleComponent->getParentEntity()->getTransform()->getPos()).length();
-				if (l_distanceToCamera > 1)
-				{
-					updateUniform(m_uni_size, (vec2(1.0, 1.0) * (1.0 / l_distanceToCamera)).x, (vec2(1.0, 1.0) * (1.0 / l_distanceToCamera)).y);
-				}
-				else
-				{
-					updateUniform(m_uni_size, vec2(1.0, 1.0).x, vec2(1.0, 1.0).y);
-				}
-
-				// draw each graphic data of visibleComponent
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
-				{
-					//active and bind textures
-					// is there any texture?
-					auto l_textureMap = &l_graphicData.second;
-					if (l_textureMap != nullptr)
-					{
-						// any albedo?
-						auto l_diffuseTextureID = l_textureMap->find(textureType::ALBEDO);
-						if (l_diffuseTextureID != l_textureMap->end())
-						{
-							auto l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
-							l_textureData->update(0);
-						}
-					}
-					// draw meshes
-					meshMap.find(l_graphicData.first)->second->update();
-				}
-			}
-		}
-	}
-	glDisable(GL_DEPTH_TEST);
 }
 
 void DebuggerShaderProgram::initialize()
@@ -1030,99 +496,12 @@ void DebuggerShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void DebuggerShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void DebuggerShaderProgram::update()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	useProgram();
-
-	if (cameraComponents.size() > 0)
-	{
-		mat4 p = cameraComponents[0]->m_projectionMatrix;
-		mat4 r = cameraComponents[0]->getInvertRotationMatrix();
-		mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
-
-		updateUniform(m_uni_p, p);
-		updateUniform(m_uni_r, r);
-		updateUniform(m_uni_t, t);
-	}
-
-	if (cameraComponents.size() > 0)
-	{
-		for (auto& l_cameraComponent : cameraComponents)
-		{
-			// draw frustum for cameraComponent
-			if (l_cameraComponent->m_drawFrustum)
-			{
-				auto l_cameraLocalMat = mat4();
-				l_cameraLocalMat.initializeToIdentityMatrix();
-				updateUniform(m_uni_m, l_cameraLocalMat);
-				meshMap.find(l_cameraComponent->m_FrustumMeshID)->second->update();
-			}
-			// draw AABB of frustum for cameraComponent
-			if (l_cameraComponent->m_drawAABB)
-			{
-				auto l_cameraLocalMat = mat4();
-				l_cameraLocalMat.initializeToIdentityMatrix();
-				updateUniform(m_uni_m, l_cameraLocalMat);
-				meshMap.find(l_cameraComponent->m_AABBMeshID)->second->update();
-			}
-		}
-	}
-
-	if (lightComponents.size() > 0)
-	{
-		// draw AABB for lightComponent
-		for (auto& l_lightComponent : lightComponents)
-		{
-			if (l_lightComponent->m_drawAABB)
-			{
-				auto l_lightLocalMat = l_lightComponent->getParentEntity()->caclWorldRotMatrix();
-				updateUniform(m_uni_m, l_lightLocalMat);
-				for (auto l_AABBMeshID : l_lightComponent->m_AABBMeshIDs)
-				{
-					meshMap.find(l_AABBMeshID)->second->update();
-				}
-			}
-		}
-	}
-
-	if (visibleComponents.size() > 0)
-	{
-		// draw AABB for visibleComponent
-		for (auto& l_visibleComponent : visibleComponents)
-		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH && l_visibleComponent->m_drawAABB)
-			{
-				auto l_m = mat4();
-				l_m.initializeToIdentityMatrix();
-				updateUniform(m_uni_m, l_m);
-
-				// draw each graphic data of visibleComponent
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
-				{
-					//active and bind textures
-					// is there any texture?
-					auto l_textureMap = &l_graphicData.second;
-					if (l_textureMap != nullptr)
-					{
-						// any normal?
-						auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
-						if (l_normalTextureID != l_textureMap->end())
-						{
-							auto l_textureData = textureMap.find(l_normalTextureID->second)->second;
-							l_textureData->update(0);
-						}
-					}
-					// draw meshes
-					meshMap.find(l_visibleComponent->m_AABBMeshID)->second->update();
-				}
-			}
-		}
-	}
-	glDisable(GL_DEPTH_TEST);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void FinalPassShaderProgram::initialize()
@@ -1142,7 +521,7 @@ void FinalPassShaderProgram::initialize()
 	updateUniform(m_uni_debuggerPassRT0, 4);
 }
 
-void FinalPassShaderProgram::update(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents, std::unordered_map<EntityID, BaseMesh*>& meshMap, std::unordered_map<EntityID, BaseTexture*>& textureMap, shaderDrawPair in_shaderDrawPair)
+void FinalPassShaderProgram::update()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);

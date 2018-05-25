@@ -169,60 +169,6 @@ private:
 	std::vector<VisibleComponent*> m_selectedVisibleComponents;
 	std::vector<VisibleComponent*> m_inFrustumVisibleComponents;
 
-	BaseFrameBuffer* m_environmentPassFrameBuffer;
-	BaseShaderProgram* m_environmentCapturePassShaderProgram;
-	BaseShaderProgram* m_environmentConvolutionPassShaderProgram;
-	BaseShaderProgram* m_environmentPreFilterPassShaderProgram;
-	BaseShaderProgram* m_environmentBRDFLUTPassShaderProgram;
-	textureID m_environmentCapturePassTextureID;
-	textureID m_environmentConvolutionPassTextureID;
-	textureID m_environmentPreFilterPassTextureID;
-	textureID m_environmentBRDFLUTTextureID;
-
-	BaseFrameBuffer* m_shadowForwardPassFrameBuffer;
-	BaseShaderProgram* m_shadowForwardPassShaderProgram;
-	textureID m_shadowForwardPassTextureID_L0;
-	textureID m_shadowForwardPassTextureID_L1;
-	textureID m_shadowForwardPassTextureID_L2;
-	textureID m_shadowForwardPassTextureID_L3;
-
-	BaseFrameBuffer* m_geometryPassFrameBuffer;
-	BaseShaderProgram* m_geometryPassShaderProgram;
-	textureID m_geometryPassRT0TextureID;
-	textureID m_geometryPassRT1TextureID;
-	textureID m_geometryPassRT2TextureID;
-	textureID m_geometryPassRT3TextureID;
-
-	BaseFrameBuffer* m_lightPassFrameBuffer;
-	BaseShaderProgram* m_lightPassShaderProgram;
-	textureID m_lightPassTextureID;
-
-	BaseFrameBuffer* m_skyPassFrameBuffer;
-	BaseShaderProgram* m_skyPassShaderProgram;
-	textureID m_skyPassTextureID;
-
-	BaseFrameBuffer* m_debuggerPassFrameBuffer;
-	BaseShaderProgram* m_debuggerPassShaderProgram;
-	textureID m_debuggerPassTextureID;
-
-	BaseFrameBuffer* m_billboardPassFrameBuffer;
-	BaseShaderProgram* m_billboardPassShaderProgram;
-	textureID m_billboardPassTextureID;
-
-	BaseFrameBuffer* m_bloomExtractPassFrameBuffer;
-	BaseShaderProgram* m_bloomExtractPassShaderProgram;
-	textureID m_bloomExtractPassTextureID;
-
-	BaseFrameBuffer* m_bloomBlurPassPingFrameBuffer;
-	BaseFrameBuffer* m_bloomBlurPassPongFrameBuffer;
-	BaseShaderProgram* m_bloomBlurPassShaderProgram;
-	textureID m_bloomBlurPassPingTextureID;
-	textureID m_bloomBlurPassPongTextureID;
-
-	BaseFrameBuffer* m_finalPassFrameBuffer;
-	BaseShaderProgram* m_finalPassShaderProgram;
-	textureID m_finalPassTextureID;
-
 	int m_polygonMode = 2;
 	int m_textureMode = 0;
 	int m_shadingMode = 0;
