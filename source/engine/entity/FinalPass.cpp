@@ -141,7 +141,7 @@ void FinalPass::initialize()
 	//m_finalPassShaderProgram->initialize();
 }
 
-void FinalPass::update()
+void FinalPass::draw()
 {
 	//// bind to framebuffer
 	//// draw sky pass

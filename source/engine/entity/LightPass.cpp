@@ -32,7 +32,7 @@ void LightPass::initialize()
 //	m_lightPassFrameBuffer->initialize();
 }
 
-void LightPass::update()
+void LightPass::draw()
 {
 //	// bind to framebuffer
 //

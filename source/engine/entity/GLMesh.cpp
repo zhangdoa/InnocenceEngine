@@ -73,7 +73,7 @@ void GLMesh::initialize()
 	m_objectStatus = objectStatus::ALIVE;
 }
 
-void GLMesh::update()
+void GLMesh::draw()
 {
 	if (getStatus() == objectStatus::ALIVE)
 	{

@@ -6,10 +6,12 @@
 #include "interface/IRenderingSystem.h"
 #include "interface/IMemorySystem.h"
 #include "interface/IAssetSystem.h"
+#include "interface/IGameSystem.h"
 
 extern IMemorySystem* g_pMemorySystem;
 extern IRenderingSystem* g_pRenderingSystem;
 extern IAssetSystem* g_pAssetSystem;
+extern IGameSystem* g_pGameSystem;
 
 class EnvironmentCapturePass : public IRenderPass
 {
@@ -19,7 +21,7 @@ public:
 
 	void setup() override;
 	void initialize() override;
-	void update() override;
+	void draw() override;
 	void shutdown() override;
 
 	const objectStatus& getStatus() const override;

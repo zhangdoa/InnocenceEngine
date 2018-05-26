@@ -63,12 +63,6 @@ void GLShaderProgram::attachShader(BaseShader* GLShader) const
 	}
 }
 
-inline void GLShaderProgram::useProgram() const
-{
-	glUseProgram(m_program);
-}
-
-
 inline GLint GLShaderProgram::getUniformLocation(const std::string & uniformName) const
 {
 	int uniformLocation = glGetUniformLocation(m_program, uniformName.c_str());
@@ -80,37 +74,37 @@ inline GLint GLShaderProgram::getUniformLocation(const std::string & uniformName
 	return uniformLocation;
 }
 
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, bool uniformValue) const
+inline void GLShaderProgram::activateUniform(const GLint uniformLocation, bool uniformValue) const
 {
 	glUniform1i(uniformLocation, (int)uniformValue);
 }
 
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, int uniformValue) const
+inline void GLShaderProgram::activateUniform(const GLint uniformLocation, int uniformValue) const
 {
 	glUniform1i(uniformLocation, uniformValue);
 }
 
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double uniformValue) const
+inline void GLShaderProgram::activateUniform(const GLint uniformLocation, double uniformValue) const
 {
 	glUniform1f(uniformLocation, (GLfloat)uniformValue);
 }
 
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y) const
+inline void GLShaderProgram::activateUniform(const GLint uniformLocation, double x, double y) const
 {
 	glUniform2f(uniformLocation, (GLfloat)x, (GLfloat)y);
 }
 
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y, double z) const
+inline void GLShaderProgram::activateUniform(const GLint uniformLocation, double x, double y, double z) const
 {
 	glUniform3f(uniformLocation, (GLfloat)x, (GLfloat)y, (GLfloat)z);
 }
 
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, double x, double y, double z, double w) const
+inline void GLShaderProgram::activateUniform(const GLint uniformLocation, double x, double y, double z, double w) const
 {
 	glUniform4f(uniformLocation, (GLfloat)x, (GLfloat)y, (GLfloat)z, (GLfloat)w);
 }
 
-inline void GLShaderProgram::updateUniform(const GLint uniformLocation, const mat4 & mat) const
+inline void GLShaderProgram::activateUniform(const GLint uniformLocation, const mat4 & mat) const
 {
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat.m[0][0]);
@@ -123,50 +117,50 @@ inline void GLShaderProgram::updateUniform(const GLint uniformLocation, const ma
 void EnvironmentCapturePassPBSShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_equirectangularMap = getUniformLocation("uni_equirectangularMap");
-	updateUniform(m_uni_equirectangularMap, 0);
+	activateUniform(m_uni_equirectangularMap, 0);
 
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void EnvironmentCapturePassPBSShaderProgram::update()
+void EnvironmentCapturePassPBSShaderProgram::activate()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void EnvironmentConvolutionPassPBSShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_capturedCubeMap = getUniformLocation("uni_capturedCubeMap");
-	updateUniform(m_uni_capturedCubeMap, 0);
+	activateUniform(m_uni_capturedCubeMap, 0);
 
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void EnvironmentConvolutionPassPBSShaderProgram::update()
+void EnvironmentConvolutionPassPBSShaderProgram::activate()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void EnvironmentPreFilterPassPBSShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_capturedCubeMap = getUniformLocation("uni_capturedCubeMap");
-	updateUniform(m_uni_capturedCubeMap, 0);
+	activateUniform(m_uni_capturedCubeMap, 0);
 
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_r = getUniformLocation("uni_r");
@@ -174,72 +168,72 @@ void EnvironmentPreFilterPassPBSShaderProgram::initialize()
 	m_uni_roughness = getUniformLocation("uni_roughness");
 }
 
-void EnvironmentPreFilterPassPBSShaderProgram::update()
+void EnvironmentPreFilterPassPBSShaderProgram::activate()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void EnvironmentBRDFLUTPassPBSShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 }
 
-void EnvironmentBRDFLUTPassPBSShaderProgram::update()
+void EnvironmentBRDFLUTPassPBSShaderProgram::activate()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void ShadowForwardPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_v = getUniformLocation("uni_v");
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void ShadowForwardPassShaderProgram::update()
+void ShadowForwardPassShaderProgram::activate()
 {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CCW);
 	glCullFace(GL_FRONT);
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void ShadowDeferPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_shadowForwardPassRT0 = getUniformLocation("uni_shadowForwardPassRT0");
-	updateUniform(m_uni_shadowForwardPassRT0, 0);
+	activateUniform(m_uni_shadowForwardPassRT0, 0);
 }
 
-void ShadowDeferPassShaderProgram::update()
+void ShadowDeferPassShaderProgram::activate()
 {
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void GeometryPassBlinnPhongShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_normalTexture = getUniformLocation("uni_normalTexture");
-	updateUniform(m_uni_normalTexture, 0);
+	activateUniform(m_uni_normalTexture, 0);
 	m_uni_diffuseTexture = getUniformLocation("uni_diffuseTexture");
-	updateUniform(m_uni_diffuseTexture, 1);
+	activateUniform(m_uni_diffuseTexture, 1);
 	m_uni_specularTexture = getUniformLocation("uni_specularTexture");
-	updateUniform(m_uni_specularTexture, 2);
+	activateUniform(m_uni_specularTexture, 2);
 
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_r = getUniformLocation("uni_r");
@@ -247,27 +241,27 @@ void GeometryPassBlinnPhongShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void GeometryPassBlinnPhongShaderProgram::update()
+void GeometryPassBlinnPhongShaderProgram::activate()
 {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void LightPassBlinnPhongShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_RT0 = getUniformLocation("uni_RT0");
-	updateUniform(m_uni_RT0, 0);
+	activateUniform(m_uni_RT0, 0);
 	m_uni_RT1 = getUniformLocation("uni_RT1");
-	updateUniform(m_uni_RT1, 1);
+	activateUniform(m_uni_RT1, 1);
 	m_uni_RT2 = getUniformLocation("uni_RT2");
-	updateUniform(m_uni_RT2, 2);
+	activateUniform(m_uni_RT2, 2);
 	m_uni_RT3 = getUniformLocation("uni_RT3");
-	updateUniform(m_uni_RT3, 3);
+	activateUniform(m_uni_RT3, 3);
 
 	m_uni_viewPos = getUniformLocation("uni_viewPos");
 
@@ -275,26 +269,26 @@ void LightPassBlinnPhongShaderProgram::initialize()
 	m_uni_dirLight_color = getUniformLocation("uni_dirLight.color");
 }
 
-void LightPassBlinnPhongShaderProgram::update()
+void LightPassBlinnPhongShaderProgram::activate()
 {
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void GeometryPassPBSShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_normalTexture = getUniformLocation("uni_normalTexture");
-	updateUniform(m_uni_normalTexture, 0);
+	activateUniform(m_uni_normalTexture, 0);
 	m_uni_albedoTexture = getUniformLocation("uni_albedoTexture");
-	updateUniform(m_uni_albedoTexture, 1);
+	activateUniform(m_uni_albedoTexture, 1);
 	m_uni_metallicTexture = getUniformLocation("uni_metallicTexture");
-	updateUniform(m_uni_metallicTexture, 2);
+	activateUniform(m_uni_metallicTexture, 2);
 	m_uni_roughnessTexture = getUniformLocation("uni_roughnessTexture");
-	updateUniform(m_uni_roughnessTexture, 3);
+	activateUniform(m_uni_roughnessTexture, 3);
 	m_uni_aoTexture = getUniformLocation("uni_aoTexture");
-	updateUniform(m_uni_aoTexture, 4);
+	activateUniform(m_uni_aoTexture, 4);
 
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_r = getUniformLocation("uni_r");
@@ -308,7 +302,7 @@ void GeometryPassPBSShaderProgram::initialize()
 	m_uni_MRA = getUniformLocation("uni_MRA");
 }
 
-void GeometryPassPBSShaderProgram::update()
+void GeometryPassPBSShaderProgram::activate()
 {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_DEPTH_TEST);
@@ -319,30 +313,30 @@ void GeometryPassPBSShaderProgram::update()
 	glStencilMask(0xFF);
 	glClear(GL_STENCIL_BUFFER_BIT);
 
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void LightPassPBSShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_geometryPassRT0 = getUniformLocation("uni_geometryPassRT0");
-	updateUniform(m_uni_geometryPassRT0, 0);
+	activateUniform(m_uni_geometryPassRT0, 0);
 	m_uni_geometryPassRT1 = getUniformLocation("uni_geometryPassRT1");
-	updateUniform(m_uni_geometryPassRT1, 1);
+	activateUniform(m_uni_geometryPassRT1, 1);
 	m_uni_geometryPassRT2 = getUniformLocation("uni_geometryPassRT2");
-	updateUniform(m_uni_geometryPassRT2, 2);
+	activateUniform(m_uni_geometryPassRT2, 2);
 	m_uni_geometryPassRT3 = getUniformLocation("uni_geometryPassRT3");
-	updateUniform(m_uni_geometryPassRT3, 3);
+	activateUniform(m_uni_geometryPassRT3, 3);
 	m_uni_shadowMap = getUniformLocation("uni_shadowMap");
-	updateUniform(m_uni_shadowMap, 4);
+	activateUniform(m_uni_shadowMap, 4);
 	m_uni_irradianceMap = getUniformLocation("uni_irradianceMap");
-	updateUniform(m_uni_irradianceMap, 5);
+	activateUniform(m_uni_irradianceMap, 5);
 	m_uni_preFiltedMap = getUniformLocation("uni_preFiltedMap");
-	updateUniform(m_uni_preFiltedMap, 6);
+	activateUniform(m_uni_preFiltedMap, 6);
 	m_uni_brdfLUT = getUniformLocation("uni_brdfLUT");
-	updateUniform(m_uni_brdfLUT, 7);
+	activateUniform(m_uni_brdfLUT, 7);
 
 	m_uni_textureMode = getUniformLocation("uni_textureMode");
 	m_uni_shadingMode = getUniformLocation("uni_shadingMode");
@@ -354,7 +348,7 @@ void LightPassPBSShaderProgram::initialize()
 	m_uni_dirLight_color = getUniformLocation("uni_dirLight.color");
 }
 
-void LightPassPBSShaderProgram::update()
+void LightPassPBSShaderProgram::activate()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -363,22 +357,22 @@ void LightPassPBSShaderProgram::update()
 	glStencilFunc(GL_EQUAL, 0x01, 0xFF);
 	glStencilMask(0x00);
 
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void SkyPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_skybox = getUniformLocation("uni_skybox");
-	updateUniform(m_uni_skybox, 0);
+	activateUniform(m_uni_skybox, 0);
 
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_r = getUniformLocation("uni_r");
 }
 
-void SkyPassShaderProgram::update()
+void SkyPassShaderProgram::activate()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
@@ -387,51 +381,51 @@ void SkyPassShaderProgram::update()
 	glCullFace(GL_BACK);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_POINT + (int)in_shaderDrawPair.first);
 
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void BloomExtractPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_lightPassRT0 = getUniformLocation("uni_lightPassRT0");
-	updateUniform(m_uni_lightPassRT0, 0);
+	activateUniform(m_uni_lightPassRT0, 0);
 }
 
-void BloomExtractPassShaderProgram::update()
+void BloomExtractPassShaderProgram::activate()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void BloomBlurPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_bloomExtractPassRT0 = getUniformLocation("uni_bloomExtractPassRT0");
-	updateUniform(m_uni_bloomExtractPassRT0, 0);
+	activateUniform(m_uni_bloomExtractPassRT0, 0);
 	m_uni_horizontal = getUniformLocation("uni_horizontal");
 }
 
-void BloomBlurPassShaderProgram::update()
+void BloomBlurPassShaderProgram::activate()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_POINT + (int)in_shaderDrawPair.first);
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void BillboardPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_texture = getUniformLocation("uni_texture");
-	updateUniform(m_uni_texture, 0);
+	activateUniform(m_uni_texture, 0);
 	m_uni_pos = getUniformLocation("uni_pos");
 	m_uni_albedo = getUniformLocation("uni_albedo");
 	m_uni_size = getUniformLocation("uni_size");
@@ -440,19 +434,19 @@ void BillboardPassShaderProgram::initialize()
 	m_uni_t = getUniformLocation("uni_t");
 }
 
-void BillboardPassShaderProgram::update()
+void BillboardPassShaderProgram::activate()
 {
 	glEnable(GL_DEPTH_TEST);
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void DebuggerShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_normalTexture = getUniformLocation("uni_normalTexture");
-	updateUniform(m_uni_normalTexture, 0);
+	activateUniform(m_uni_normalTexture, 0);
 
 	m_uni_p = getUniformLocation("uni_p");
 	m_uni_r = getUniformLocation("uni_r");
@@ -460,36 +454,36 @@ void DebuggerShaderProgram::initialize()
 	m_uni_m = getUniformLocation("uni_m");
 }
 
-void DebuggerShaderProgram::update()
+void DebuggerShaderProgram::activate()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	useProgram();
+	glUseProgram(m_program);
 }
 
 void FinalPassShaderProgram::initialize()
 {
 	GLShaderProgram::initialize();
-	useProgram();
+	glUseProgram(m_program);
 
 	m_uni_lightPassRT0 = getUniformLocation("uni_lightPassRT0");
-	updateUniform(m_uni_lightPassRT0, 0);
+	activateUniform(m_uni_lightPassRT0, 0);
 	m_uni_skyPassRT0 = getUniformLocation("uni_skyPassRT0");
-	updateUniform(m_uni_skyPassRT0, 1);
+	activateUniform(m_uni_skyPassRT0, 1);
 	m_uni_bloomPassRT0 = getUniformLocation("uni_bloomPassRT0");
-	updateUniform(m_uni_bloomPassRT0, 2);
+	activateUniform(m_uni_bloomPassRT0, 2);
 	m_uni_billboardPassRT0 = getUniformLocation("uni_billboardPassRT0");
-	updateUniform(m_uni_billboardPassRT0, 3);
+	activateUniform(m_uni_billboardPassRT0, 3);
 	m_uni_debuggerPassRT0 = getUniformLocation("uni_debuggerPassRT0");
-	updateUniform(m_uni_debuggerPassRT0, 4);
+	activateUniform(m_uni_debuggerPassRT0, 4);
 }
 
-void FinalPassShaderProgram::update()
+void FinalPassShaderProgram::activate()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_STENCIL_TEST);
 
-	useProgram();
+	glUseProgram(m_program);
 }

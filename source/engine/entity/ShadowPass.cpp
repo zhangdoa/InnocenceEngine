@@ -40,7 +40,7 @@ void ShadowPass::initialize()
 	m_shadowForwardPassFrameBuffer->initialize();
 }
 
-void ShadowPass::update()
+void ShadowPass::draw()
 {
 	//// bind to framebuffer
 	//m_shadowForwardPassFrameBuffer->update(true, true);

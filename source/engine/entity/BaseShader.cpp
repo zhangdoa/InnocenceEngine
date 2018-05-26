@@ -11,11 +11,6 @@ void BaseShader::setup(shaderData shaderData)
 	m_objectStatus = objectStatus::ALIVE;
 }
 
-void BaseShader::update()
-{
-	g_pLogSystem->printLog("BaseShader: Warning: shader class do not need to update()! Use ShaderProgram's update().");
-}
-
 const objectStatus & BaseShader::getStatus() const
 {
 	return m_objectStatus;

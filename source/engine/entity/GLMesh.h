@@ -9,7 +9,7 @@ public:
 	~GLMesh() {};
 
 	void initialize() override;
-	void update() override;
+	void draw() override;
 	void shutdown() override;
 
 private:

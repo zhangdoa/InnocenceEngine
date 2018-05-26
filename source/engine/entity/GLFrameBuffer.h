@@ -10,7 +10,7 @@ public:
 	virtual ~GLFrameBuffer() {};
 
 	void initialize() override;
-	void update(bool cleanColorBuffer, bool cleanDepthBuffer) override;
+	void activate(bool cleanColorBuffer, bool cleanDepthBuffer) override;
 	void setRenderBufferStorageSize(unsigned int RenderBufferTextureIndex) override;
 	void activeRenderTargetTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer) override;
 	void bindAsReadBuffer() override;

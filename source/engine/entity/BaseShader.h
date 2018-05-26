@@ -13,7 +13,6 @@ public:
 
 	void setup() override;
 	void setup(shaderData shaderData);
-	void update() override;
 
 	const objectStatus& getStatus() const override;
 	const shaderData& getShaderData() const;

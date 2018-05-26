@@ -13,15 +13,14 @@ public:
 	void shutdown() override;
 
 	void attachShader(BaseShader* GLShader) const;
-	inline void useProgram() const;
 	inline GLint getUniformLocation(const std::string &uniformName) const;
-	inline void updateUniform(const GLint uniformLocation, bool uniformValue) const;
-	inline void updateUniform(const GLint uniformLocation, int uniformValue) const;
-	inline void updateUniform(const GLint uniformLocation, double uniformValue) const;
-	inline void updateUniform(const GLint uniformLocation, double x, double y) const;
-	inline void updateUniform(const GLint uniformLocation, double x, double y, double z) const;
-	inline void updateUniform(const GLint uniformLocation, double x, double y, double z, double w) const;
-	inline void updateUniform(const GLint uniformLocation, const mat4& mat) const;
+	inline void activateUniform(const GLint uniformLocation, bool uniformValue) const;
+	inline void activateUniform(const GLint uniformLocation, int uniformValue) const;
+	inline void activateUniform(const GLint uniformLocation, double uniformValue) const;
+	inline void activateUniform(const GLint uniformLocation, double x, double y) const;
+	inline void activateUniform(const GLint uniformLocation, double x, double y, double z) const;
+	inline void activateUniform(const GLint uniformLocation, double x, double y, double z, double w) const;
+	inline void activateUniform(const GLint uniformLocation, const mat4& mat) const;
 
 protected:
 	GLint m_program = 0;
@@ -34,7 +33,7 @@ public:
 	~EnvironmentCapturePassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_equirectangularMap;
@@ -50,7 +49,7 @@ public:
 	~EnvironmentConvolutionPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_capturedCubeMap;
@@ -66,7 +65,7 @@ public:
 	~EnvironmentPreFilterPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_capturedCubeMap;
@@ -85,7 +84,7 @@ public:
 
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 };
 
 class ShadowForwardPassShaderProgram : public GLShaderProgram
@@ -95,7 +94,7 @@ public:
 	~ShadowForwardPassShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_p;
@@ -110,7 +109,7 @@ public:
 	~ShadowDeferPassShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_shadowForwardPassRT0;
@@ -123,7 +122,7 @@ public:
 	~GeometryPassBlinnPhongShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_normalTexture;
@@ -142,7 +141,7 @@ public:
 	~LightPassBlinnPhongShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_RT0;
@@ -168,7 +167,7 @@ public:
 	~GeometryPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_normalTexture;
@@ -196,7 +195,7 @@ public:
 	~LightPassPBSShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_geometryPassRT0;
@@ -229,7 +228,7 @@ public:
 	~SkyPassShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_skybox;
@@ -245,7 +244,7 @@ public:
 	~BloomExtractPassShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_lightPassRT0;
@@ -258,7 +257,7 @@ public:
 	~BloomBlurPassShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_bloomExtractPassRT0;
@@ -273,7 +272,7 @@ public:
 	~BillboardPassShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_texture;
@@ -292,7 +291,7 @@ public:
 	~DebuggerShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_normalTexture;
@@ -310,7 +309,7 @@ public:
 	~FinalPassShaderProgram() {};
 
 	void initialize() override;
-	void update() override;
+	void activate() override;
 
 private:
 	GLint m_uni_lightPassRT0;

@@ -13,6 +13,5 @@ public:
 	void shutdown() override;
 
 	Transform m_transform;
-	Transform* m_parentTransform;
 };
 

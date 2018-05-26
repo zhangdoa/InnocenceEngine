@@ -172,12 +172,7 @@ void GLTexture::initialize()
 	}
 }
 
-void GLTexture::update()
-{
-	this->update(0);
-}
-
-void GLTexture::update(int textureIndex)
+void GLTexture::activate(int textureIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + textureIndex);
 	if (m_textureType == textureType::CUBEMAP || m_textureType == textureType::ENVIRONMENT_CAPTURE || m_textureType == textureType::ENVIRONMENT_CONVOLUTION || m_textureType == textureType::ENVIRONMENT_PREFILTER)

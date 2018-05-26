@@ -15,6 +15,7 @@ public:
 	void setup() override;
 	void setup(meshType meshType, meshDrawMethod meshDrawMethod, bool calculateNormals, bool calculateTangents);
 	void initialize() override;
+	virtual void draw() = 0;
 	const objectStatus& getStatus() const override;
 	const meshID getMeshID() const;
 	const vec4 findMaxVertex() const;

@@ -17,7 +17,7 @@ public:
 
 	void setup() override;
 	void initialize() override;
-	void update() override;
+	void draw() override;
 	void shutdown() override;
 
 	const objectStatus& getStatus() const override;

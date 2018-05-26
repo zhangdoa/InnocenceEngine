@@ -73,7 +73,7 @@ void EnvironmentCapturePass::initialize()
 	m_environmentPassFrameBuffer->initialize();
 }
 
-void EnvironmentCapturePass::update()
+void EnvironmentCapturePass::draw()
 {
 	//// bind to framebuffer
 	//m_environmentPassFrameBuffer->update(true, true);
@@ -93,7 +93,7 @@ void EnvironmentCapturePass::update()
 	//	mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0, -1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0))
 	//};
 
-	//m_environmentCapturePassShaderProgram->update();
+	//m_environmentCapturePassShaderProgram->activate();
 	//m_environmentCapturePassShaderProgram->updateUniform(m_uni_p, captureProjection);
 
 	//if (visibleComponents.size() > 0)
@@ -110,7 +110,7 @@ void EnvironmentCapturePass::update()
 	//				auto l_environmentCaptureTexture = textureMap.find(l_graphicData.second.find(textureType::ENVIRONMENT_CAPTURE)->second);
 	//				if (l_equiretangularTexture != textureMap.end() && l_environmentCaptureTexture != textureMap.end())
 	//				{
-	//					l_equiretangularTexture->second->update(0);
+	//					l_equiretangularTexture->second->activate(0);
 	//					for (unsigned int i = 0; i < 6; ++i)
 	//					{
 	//						updateUniform(m_uni_r, captureViews[i]);
@@ -118,7 +118,7 @@ void EnvironmentCapturePass::update()
 	//						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//						meshMap.find(l_graphicData.first)->second->update();
 	//					}
-	//					l_environmentCaptureTexture->second->update(0);
+	//					l_environmentCaptureTexture->second->activate(0);
 	//					glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 	//				}
 	//			}
@@ -128,7 +128,7 @@ void EnvironmentCapturePass::update()
 
 	//// draw environment convolution texture
 	//m_environmentPassFrameBuffer->setRenderBufferStorageSize(1);
-	//m_environmentConvolutionPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
+	//m_environmentConvolutionPassShaderProgram->activate();
 
 	//m_environmentConvolutionPassShaderProgram->updateUniform(m_uni_p, captureProjection);
 
@@ -161,7 +161,7 @@ void EnvironmentCapturePass::update()
 
 	//// draw environment pre-filter texture
 	//m_environmentPassFrameBuffer->setRenderBufferStorageSize(2);
-	//m_environmentPreFilterPassShaderProgram->update(cameraComponents, lightComponents, visibleComponents, m_meshMap, m_textureMap);
+	//m_environmentPreFilterPassShaderProgram->activate();
 
 	//m_environmentPreFilterPassShaderProgram->updateUniform(m_uni_p, captureProjection);
 
@@ -228,7 +228,7 @@ void EnvironmentCapturePass::update()
 	//}
 
 	//// draw environment map BRDF LUT rectangle
-	//this->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
+	//g_pRenderingSystem->getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate)->update();
 }
 
 void EnvironmentCapturePass::shutdown()

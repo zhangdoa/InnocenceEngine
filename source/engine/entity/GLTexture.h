@@ -9,8 +9,7 @@ public:
 	~GLTexture() {};
 
 	void initialize() override;
-	void update() override;
-	void update(int textureIndex) override;
+	void activate(int textureIndex) override;
 	void shutdown() override;
 	void attachToFramebuffer(int colorAttachmentIndex, int textureIndex, int mipLevel) override;
 
