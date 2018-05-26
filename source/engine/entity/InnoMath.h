@@ -396,6 +396,8 @@ public:
 
 	vec4 getDirection(direction direction) const;
 
+	Transform* m_parentTransform;
+
 private:
 	vec4 m_pos;
 	vec4 m_rot;
@@ -405,7 +407,7 @@ private:
 	vec4 m_oldRot;
 	vec4 m_oldScale;
 
-	Transform* m_parentTransform;
+
 };
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };

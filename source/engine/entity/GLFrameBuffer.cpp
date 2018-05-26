@@ -73,7 +73,7 @@ void GLFrameBuffer::initialize()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLFrameBuffer::update(bool cleanColorBuffer, bool cleanDepthBuffer)
+void GLFrameBuffer::activate(bool cleanColorBuffer, bool cleanDepthBuffer)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
 	if (m_renderBufferType != renderBufferType::NONE)
@@ -101,7 +101,7 @@ void GLFrameBuffer::setRenderBufferStorageSize(unsigned int RenderBufferTextureI
 
 void GLFrameBuffer::activeRenderTargetTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer)
 {
-	m_renderTargetTextures[textureIndexInOwnerFrameBuffer]->update(textureIndexInUserFrameBuffer);
+	m_renderTargetTextures[textureIndexInOwnerFrameBuffer]->activate(textureIndexInUserFrameBuffer);
 }
 
 void GLFrameBuffer::bindAsReadBuffer()

@@ -44,7 +44,7 @@ void GeometryPass::initialize()
 	//m_geometryPassFrameBuffer->initialize();
 }
 
-void GeometryPass::update()
+void GeometryPass::draw()
 {
 	//// bind to framebuffer
 	//m_geometryPassFrameBuffer->update(true, true);

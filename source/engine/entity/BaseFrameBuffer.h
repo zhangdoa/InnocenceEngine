@@ -17,8 +17,7 @@ public:
 
 	void setup() override;
 	void setup(frameBufferType frameBufferType, renderBufferType renderBufferType, const std::vector<vec2>& renderBufferStorageSize, const std::vector<BaseTexture*>& renderTargetTextures);
-	void update() override;
-	virtual void update(bool cleanColorBuffer, bool cleanDepthBuffer) = 0;
+	virtual void activate(bool cleanColorBuffer, bool cleanDepthBuffer) = 0;
 	virtual void setRenderBufferStorageSize(unsigned int RenderBufferTextureIndex) = 0;	
 	virtual void activeRenderTargetTexture(int textureIndexInOwnerFrameBuffer, int textureIndexInUserFrameBuffer) = 0;
 	const unsigned int getRenderTargetNumber() const;

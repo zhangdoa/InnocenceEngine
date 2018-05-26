@@ -6,4 +6,6 @@ class IRenderPass : public IGraphicPrimitive
 public:
 	IRenderPass() {};
 	virtual ~IRenderPass() {};
+
+	virtual void draw() = 0;
 };

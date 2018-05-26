@@ -1,5 +1,14 @@
 #include "RenderingSystem.h"
 
+void RenderingSystem::setup()
+{
+	setupWindow();
+	setupInput();
+	setupRendering();
+
+	m_objectStatus = objectStatus::ALIVE;
+}
+
 void RenderingSystem::setupWindow()
 {
 	//setup window
@@ -61,6 +70,109 @@ void RenderingSystem::setupRendering()
 	m_canRender = true;
 }
 
+void RenderingSystem::initialize()
+{
+	initializeWindow();
+	initializeInput();
+	initializeRendering();
+
+	g_pLogSystem->printLog("RenderingSystem has been initialized.");
+}
+
+void RenderingSystem::initializeWindow()
+{
+	//initialize window
+	windowCallbackWrapper::getInstance().setRenderingSystem(this);
+	windowCallbackWrapper::getInstance().initialize();
+}
+
+void RenderingSystem::initializeInput()
+{
+	//initialize input
+	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
+	{
+		// @TODO: multi input components need to register to multi map
+		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->getKeyboardInputCallbackContainer());
+		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->getMouseInputCallbackContainer());
+	}
+
+	// @TODO: debt I owe
+	addKeyboardInputCallback(INNO_KEY_Q, &f_changeDrawPolygonMode);
+	m_keyButtonMap.find(INNO_KEY_Q)->second.m_keyPressType = keyPressType::ONCE;
+	addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
+	m_keyButtonMap.find(INNO_KEY_E)->second.m_keyPressType = keyPressType::ONCE;
+	addKeyboardInputCallback(INNO_KEY_R, &f_changeShadingMode);
+	m_keyButtonMap.find(INNO_KEY_R)->second.m_keyPressType = keyPressType::ONCE;
+}
+
+void RenderingSystem::initializeRendering()
+{
+	loadDefaultAssets();
+	setupComponents();
+
+	//initialize rendering
+	glEnable(GL_PROGRAM_POINT_SIZE);
+	glEnable(GL_TEXTURE_2D);
+	initializeBackgroundPass();
+	initializeShadowPass();
+	initializeGeometryPass();
+	initializeLightPass();
+	initializeFinalPass();
+}
+
+void RenderingSystem::loadDefaultAssets()
+{
+	m_basicNormalTemplate = addTexture(textureType::NORMAL);
+	m_basicAlbedoTemplate = addTexture(textureType::ALBEDO);
+	m_basicMetallicTemplate = addTexture(textureType::METALLIC);
+	m_basicRoughnessTemplate = addTexture(textureType::ROUGHNESS);
+	m_basicAOTemplate = addTexture(textureType::AMBIENT_OCCLUSION);
+
+	g_pAssetSystem->loadTextureFromDisk({ "basic_normal.png" }, textureType::NORMAL, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicNormalTemplate));
+	g_pAssetSystem->loadTextureFromDisk({ "basic_albedo.png" }, textureType::ALBEDO, textureWrapMethod::REPEAT, getTexture(textureType::ALBEDO, m_basicAlbedoTemplate));
+	g_pAssetSystem->loadTextureFromDisk({ "basic_metallic.png" }, textureType::METALLIC, textureWrapMethod::REPEAT, getTexture(textureType::METALLIC, m_basicMetallicTemplate));
+	g_pAssetSystem->loadTextureFromDisk({ "basic_roughness.png" }, textureType::ROUGHNESS, textureWrapMethod::REPEAT, getTexture(textureType::ROUGHNESS, m_basicRoughnessTemplate));
+	g_pAssetSystem->loadTextureFromDisk({ "basic_ao.png" }, textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT, getTexture(textureType::AMBIENT_OCCLUSION, m_basicAOTemplate));
+
+	m_Unit3DQuadTemplate = addMesh(meshType::THREE_DIMENSION);
+	auto last3DQuadMeshData = getMesh(meshType::THREE_DIMENSION, m_Unit3DQuadTemplate);
+	last3DQuadMeshData->addUnitQuad();
+	last3DQuadMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE, true, true);
+	last3DQuadMeshData->initialize();
+
+	m_Unit2DQuadTemplate = addMesh(meshType::TWO_DIMENSION);
+	auto last2DQuadMeshData = getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate);
+	last2DQuadMeshData->addUnitQuad();
+	last2DQuadMeshData->setup(meshType::TWO_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
+	last2DQuadMeshData->initialize();
+
+	m_UnitCubeTemplate = addMesh(meshType::THREE_DIMENSION);
+	auto lastCubeMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitCubeTemplate);
+	lastCubeMeshData->addUnitCube();
+	lastCubeMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE, false, false);
+	lastCubeMeshData->initialize();
+
+	m_UnitSphereTemplate = addMesh(meshType::THREE_DIMENSION);
+	auto lastSphereMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitSphereTemplate);
+	lastSphereMeshData->addUnitSphere();
+	lastSphereMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
+	lastSphereMeshData->initialize();
+
+	m_UnitLineTemplate = addMesh(meshType::THREE_DIMENSION);
+	auto lastLineMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitLineTemplate);
+	lastLineMeshData->addUnitLine();
+	lastLineMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
+	lastLineMeshData->initialize();
+}
+
+
+void RenderingSystem::setupComponents()
+{
+	setupCameraComponents();
+	setupVisibleComponents();
+	setupLightComponents();
+}
+
 void RenderingSystem::setupCameraComponents()
 {
 	for (auto& i : g_pGameSystem->getCameraComponents())
@@ -68,6 +180,7 @@ void RenderingSystem::setupCameraComponents()
 		setupCameraComponentProjectionMatrix(i);
 		setupCameraComponentRayOfEye(i);
 		setupCameraComponentFrustumVertices(i);
+		generateAABB(*i);
 	}
 }
 
@@ -126,94 +239,14 @@ void RenderingSystem::setupCameraComponentFrustumVertices(CameraComponent * came
 	cameraComponent->m_frustumVertices = l_NDC;
 
 	cameraComponent->m_frustumIndices = { 0, 1, 3, 1, 2, 3,
-	4, 5, 0, 5, 1, 0,
-	7, 6, 4, 6, 5, 4,
-	3, 2, 7, 2, 6 ,7,
-	4, 0, 7, 0, 3, 7,
-	1, 5, 2, 5, 6, 2 };
+		4, 5, 0, 5, 1, 0,
+		7, 6, 4, 6, 5, 4,
+		3, 2, 7, 2, 6 ,7,
+		4, 0, 7, 0, 3, 7,
+		1, 5, 2, 5, 6, 2 };
 }
 
-void RenderingSystem::setup()
-{
-	setupWindow();
-	setupInput();
-	setupRendering();
-
-	m_objectStatus = objectStatus::ALIVE;
-}
-
-void RenderingSystem::initializeWindow()
-{
-	//initialize window
-	windowCallbackWrapper::getInstance().setRenderingSystem(this);
-	windowCallbackWrapper::getInstance().initialize();
-}
-
-void RenderingSystem::initializeInput()
-{
-	//initialize input
-	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
-	{
-		// @TODO: multi input components need to register to multi map
-		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->getKeyboardInputCallbackContainer());
-		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->getMouseInputCallbackContainer());
-	}
-
-	// @TODO: debt I owe
-	addKeyboardInputCallback(INNO_KEY_Q, &f_changeDrawPolygonMode);
-	m_keyButtonMap.find(INNO_KEY_Q)->second.m_keyPressType = keyPressType::ONCE;
-	addKeyboardInputCallback(GLFW_KEY_E, &f_changeDrawTextureMode);
-	m_keyButtonMap.find(INNO_KEY_E)->second.m_keyPressType = keyPressType::ONCE;
-	addKeyboardInputCallback(INNO_KEY_R, &f_changeShadingMode);
-	m_keyButtonMap.find(INNO_KEY_R)->second.m_keyPressType = keyPressType::ONCE;
-}
-
-void RenderingSystem::loadDefaultAssets()
-{
-	m_basicNormalTemplate = addTexture(textureType::NORMAL);
-	m_basicAlbedoTemplate = addTexture(textureType::ALBEDO);
-	m_basicMetallicTemplate = addTexture(textureType::METALLIC);
-	m_basicRoughnessTemplate = addTexture(textureType::ROUGHNESS);
-	m_basicAOTemplate = addTexture(textureType::AMBIENT_OCCLUSION);
-
-	g_pAssetSystem->loadTextureFromDisk({ "basic_normal.png" }, textureType::NORMAL, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicNormalTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_albedo.png" }, textureType::ALBEDO, textureWrapMethod::REPEAT, getTexture(textureType::ALBEDO, m_basicAlbedoTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_metallic.png" }, textureType::METALLIC, textureWrapMethod::REPEAT, getTexture(textureType::METALLIC, m_basicMetallicTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_roughness.png" }, textureType::ROUGHNESS, textureWrapMethod::REPEAT, getTexture(textureType::ROUGHNESS, m_basicRoughnessTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_ao.png" }, textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT, getTexture(textureType::AMBIENT_OCCLUSION, m_basicAOTemplate));
-
-	m_Unit3DQuadTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto last3DQuadMeshData = getMesh(meshType::THREE_DIMENSION, m_Unit3DQuadTemplate);
-	last3DQuadMeshData->addUnitQuad();
-	last3DQuadMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE, true, true);
-	last3DQuadMeshData->initialize();
-
-	m_Unit2DQuadTemplate = addMesh(meshType::TWO_DIMENSION);
-	auto last2DQuadMeshData = getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate);
-	last2DQuadMeshData->addUnitQuad();
-	last2DQuadMeshData->setup(meshType::TWO_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
-	last2DQuadMeshData->initialize();
-
-	m_UnitCubeTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto lastCubeMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitCubeTemplate);
-	lastCubeMeshData->addUnitCube();
-	lastCubeMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE, false, false);
-	lastCubeMeshData->initialize();
-
-	m_UnitSphereTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto lastSphereMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitSphereTemplate);
-	lastSphereMeshData->addUnitSphere();
-	lastSphereMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
-	lastSphereMeshData->initialize();
-
-	m_UnitLineTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto lastLineMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitLineTemplate);
-	lastLineMeshData->addUnitLine();
-	lastLineMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
-	lastLineMeshData->initialize();
-}
-
-void RenderingSystem::loadAssetsForComponents()
+void RenderingSystem::setupVisibleComponents()
 {
 	for (auto i : g_pGameSystem->getVisibleComponents())
 	{
@@ -242,7 +275,6 @@ void RenderingSystem::loadAssetsForComponents()
 			generateAABB(*i);
 		}
 
-
 		if (i->m_textureFileNameMap.size() != 0)
 		{
 			for (auto& j : i->m_textureFileNameMap)
@@ -251,48 +283,30 @@ void RenderingSystem::loadAssetsForComponents()
 			}
 		}
 	}
+}
 
-	// generate AABB for camera
-	for (auto& i : g_pGameSystem->getCameraComponents())
-	{
-		generateAABB(*i);
-	}
-
-	// generate AABB for light
+void RenderingSystem::setupLightComponents()
+{
 	for (auto& i : g_pGameSystem->getLightComponents())
 	{
-		if (i->getLightType() == lightType::DIRECTIONAL)
+		i->m_direction = vec4(0.0, 0.0, 1.0, 0.0);
+		i->m_constantFactor = 1.0;
+		i->m_linearFactor = 0.14;
+		i->m_quadraticFactor = 0.07;
+		setupLightComponentRadius(i);
+		i->m_color = vec4(1.0, 1.0, 1.0, 1.0);
+
+		if (i->m_lightType == lightType::DIRECTIONAL)
 		{
 			generateAABB(*i);
 		}
 	}
-
 }
 
-void RenderingSystem::initializeRendering()
+void RenderingSystem::setupLightComponentRadius(LightComponent * lightComponent)
 {
-	loadDefaultAssets();
-	loadAssetsForComponents();
-
-	//initialize rendering
-	glEnable(GL_PROGRAM_POINT_SIZE);
-	glEnable(GL_TEXTURE_2D);
-	initializeBackgroundPass();
-	initializeShadowPass();
-	initializeGeometryPass();
-	initializeLightPass();
-	initializeFinalPass();
-}
-
-void RenderingSystem::initialize()
-{
-	setupCameraComponents();
-
-	initializeWindow();
-	initializeInput();
-	initializeRendering();
-
-	g_pLogSystem->printLog("RenderingSystem has been initialized.");
+	double l_lightMaxIntensity = std::fmax(std::fmax(lightComponent->m_color.x, lightComponent->m_color.y), lightComponent->m_color.z);
+	lightComponent->m_radius = -lightComponent->m_linearFactor + std::sqrt(lightComponent->m_linearFactor * lightComponent->m_linearFactor - 4.0 * lightComponent->m_quadraticFactor * (lightComponent->m_constantFactor - (256.0 / 5.0) * l_lightMaxIntensity)) / (2.0 * lightComponent->m_quadraticFactor);
 }
 
 vec4 RenderingSystem::calcMousePositionInWorldSpace()
@@ -407,14 +421,43 @@ void RenderingSystem::updatePhysics()
 {
 	m_selectedVisibleComponents.clear();
 	m_inFrustumVisibleComponents.clear();
+
+	// camera update
+	updateCameraComponents();
+
+	if (g_pGameSystem->getLightComponents().size() > 0)
+	{
+		// generate AABB for CSM
+		for (auto& i : g_pGameSystem->getLightComponents())
+		{
+			setupLightComponentRadius(i);
+			if (i->m_lightType == lightType::DIRECTIONAL)
+			{
+				//generateAABB(*i);
+			}
+		}
+	}
+}
+
+void RenderingSystem::updateCameraComponents()
+{
 	if (g_pGameSystem->getCameraComponents().size() > 0)
 	{
+		for (auto& i : g_pGameSystem->getCameraComponents())
+		{
+			setupCameraComponentRayOfEye(i);
+			setupCameraComponentFrustumVertices(i);
+		}
+
 		//generateAABB(*g_pGameSystem->getCameraComponents()[0]);
 
 		m_mouseRay.m_origin = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.caclGlobalPos();
 		m_mouseRay.m_direction = calcMousePositionInWorldSpace();
+
 		auto l_cameraAABB = g_pGameSystem->getCameraComponents()[0]->m_AABB;
+
 		auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
+
 		for (auto& j : g_pGameSystem->getVisibleComponents())
 		{
 			if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
@@ -430,28 +473,7 @@ void RenderingSystem::updatePhysics()
 			}
 		}
 	}
-	if (g_pGameSystem->getLightComponents().size() > 0)
-	{
-		// generate AABB for CSM
-		for (auto& i : g_pGameSystem->getLightComponents())
-		{
-			if (i->getLightType() == lightType::DIRECTIONAL)
-			{
-				//generateAABB(*i);
-			}
-		}
-	}
 }
-
-void RenderingSystem::updateCameraComponents()
-{
-	for (auto& i : g_pGameSystem->getCameraComponents())
-	{
-		setupCameraComponentRayOfEye(i);
-		setupCameraComponentFrustumVertices(i);
-	}
-}
-
 
 void RenderingSystem::update()
 {
@@ -463,8 +485,6 @@ void RenderingSystem::update()
 		updateInput();
 		// physics update
 		updatePhysics();
-		// camera update
-		updateCameraComponents();
 	}
 	else
 	{
@@ -939,7 +959,7 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 
 		if (lightComponent.m_drawAABB)
 		{
-			removeMesh(meshType::BOUNDING_BOX, lightComponent.m_AABBMeshID);
+			removeMesh(meshType::BOUNDING_BOX, lightComponent.m_AABBMeshIDs[i]);
 			lightComponent.m_AABBMeshIDs.emplace_back(addMesh(lightComponent.m_AABBs[i].m_vertices, lightComponent.m_AABBs[i].m_indices));
 		}
 	}

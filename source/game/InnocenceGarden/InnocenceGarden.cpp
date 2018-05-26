@@ -12,13 +12,13 @@ InnocenceGarden::~InnocenceGarden()
 void InnocenceGarden::setup()
 {
 	// setup root entity
-	m_rootTransformComponent.m_parentTransform = nullptr;
+	m_rootTransformComponent.m_transform.m_parentTransform = nullptr;
 	m_transformComponents.emplace_back(&m_rootTransformComponent);
 	m_rootEntity.addChildComponent(&m_rootTransformComponent);
 
 	// setup player character
 	m_playCharacter.setup();
-	m_playCharacter.getTransformComponent().m_parentTransform = &m_rootTransformComponent.m_transform;
+	m_playCharacter.getTransformComponent().m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 	m_playCharacter.getTransformComponent().m_transform.setLocalPos(vec4(2.0, 1.0, 2.0, 1.0));
 	//m_playCharacter.getTransformComponent().m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
 	m_playCharacter.getCameraComponent().m_drawFrustum = false;
@@ -29,7 +29,7 @@ void InnocenceGarden::setup()
 	m_inputComponents.emplace_back(&m_playCharacter.getInputComponent());
 
 	//setup skybox
-	m_skyboxTransformComponent.m_parentTransform = &m_rootTransformComponent.m_transform;
+	m_skyboxTransformComponent.m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 	m_skyboxVisibleComponent.m_visiblilityType = visiblilityType::SKYBOX;
 	m_skyboxVisibleComponent.m_meshType = meshShapeType::CUBE;
 	m_skyboxVisibleComponent.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
@@ -42,12 +42,12 @@ void InnocenceGarden::setup()
 	m_visibleComponents.emplace_back(&m_skyboxVisibleComponent);
 
 	//setup directional light
-	m_directionalLightTransformComponent.m_parentTransform = &m_rootTransformComponent.m_transform;
+	m_directionalLightTransformComponent.m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 	m_directionalLightTransformComponent.m_transform.setLocalPos(vec4(0.0, 4.0, 0.0, 1.0));
 	m_directionalLightTransformComponent.m_transform.rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), -75.0);
 	m_directionalLightTransformComponent.m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), -35.0);
-	m_directionalLightComponent.setColor(vec4(0.5, 0.3, 0.0, 1.0));
-	m_directionalLightComponent.setlightType(lightType::DIRECTIONAL);
+	m_directionalLightComponent.m_color = vec4(0.5, 0.3, 0.0, 1.0);
+	m_directionalLightComponent.m_lightType = lightType::DIRECTIONAL;
 	m_directionalLightComponent.m_drawAABB = false;
 	m_directionalLightVisibleComponent.m_visiblilityType = visiblilityType::BILLBOARD;
 	m_directionalLightVisibleComponent.m_meshType = meshShapeType::CUBE;
@@ -63,7 +63,7 @@ void InnocenceGarden::setup()
 	m_visibleComponents.emplace_back(&m_directionalLightVisibleComponent);
 
 	//setup landscape
-	m_landscapeTransformComponent.m_parentTransform = &m_rootTransformComponent.m_transform;
+	m_landscapeTransformComponent.m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 	m_landscapeTransformComponent.m_transform.setLocalScale(vec4(20.0, 20.0, 0.1, 1.0));
 	m_landscapeTransformComponent.m_transform.rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), 90.0);
 	m_landscapeVisibleComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
@@ -76,7 +76,7 @@ void InnocenceGarden::setup()
 	m_visibleComponents.emplace_back(&m_landscapeVisibleComponent);
 
 	//setup pawn 1
-	m_pawnTransformComponent1.m_parentTransform = &m_rootTransformComponent.m_transform;
+	m_pawnTransformComponent1.m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 	m_pawnTransformComponent1.m_transform.setLocalScale(vec4(0.1, 0.1, 0.1, 1.0));
 	m_pawnVisibleComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent1.m_meshType = meshShapeType::CUSTOM;
@@ -95,7 +95,7 @@ void InnocenceGarden::setup()
 	m_visibleComponents.emplace_back(&m_pawnVisibleComponent1);
 
 	//setup pawn 2
-	m_pawnTransformComponent2.m_parentTransform = &m_rootTransformComponent.m_transform;
+	m_pawnTransformComponent2.m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 	m_pawnTransformComponent2.m_transform.setLocalScale(vec4(0.01, 0.01, 0.01, 1.0));
 	m_pawnTransformComponent2.m_transform.setLocalPos(vec4(0.0, 0.2, 3.5, 1.0));
 	m_pawnVisibleComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
@@ -185,7 +185,7 @@ void InnocenceGarden::setupSpheres()
 	}
 	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i++)
 	{
-		m_sphereTransformComponents[i].m_parentTransform = &m_rootTransformComponent.m_transform;
+		m_sphereTransformComponents[i].m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 		m_sphereTransformComponents[i].m_transform.setLocalScale(vec4(10.0, 10.0, 10.0, 1.0));
 		m_sphereVisibleComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
 		m_sphereVisibleComponents[i].m_meshType = meshShapeType::CUSTOM;
@@ -250,7 +250,7 @@ void InnocenceGarden::setupLights()
 	}
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i++)
 	{
-		m_pointLightTransformComponents[i].m_parentTransform = &m_rootTransformComponent.m_transform;
+		m_pointLightTransformComponents[i].m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 		m_pointLightTransformComponents[i].m_transform.setLocalScale(vec4(0.1, 0.1, 0.1, 1.0));
 		m_pointLightVisibleComponents[i].m_visiblilityType = visiblilityType::EMISSIVE;
 		m_pointLightVisibleComponents[i].m_meshType = meshShapeType::SPHERE;
@@ -278,13 +278,13 @@ void InnocenceGarden::updateLights(double seed)
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
 	{
 		m_pointLightVisibleComponents[i].m_albedo = vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2 * 5.0, 0.4 * 5.0, 1.0);
-		m_pointLightComponents[i].setColor(vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2 * 5.0, 0.4 * 5.0, 1.0));
+		m_pointLightComponents[i].m_color = vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2 * 5.0, 0.4 * 5.0, 1.0);
 		m_pointLightVisibleComponents[i + 1].m_albedo = vec4(0.2 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 0.4 * 5.0, 1.0);
-		m_pointLightComponents[i + 1].setColor(vec4(0.2 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 0.4 * 5.0, 1.0));
+		m_pointLightComponents[i + 1].m_color = vec4(0.2 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 0.4 * 5.0, 1.0);
 		m_pointLightVisibleComponents[i + 2].m_albedo = vec4(0.2 * 5.0, 0.4 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 1.0);
-		m_pointLightComponents[i + 2].setColor(vec4(0.2 * 5.0, 0.4 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 1.0));
+		m_pointLightComponents[i + 2].m_color = vec4(0.2 * 5.0, 0.4 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 1.0);
 		m_pointLightVisibleComponents[i + 3].m_albedo = vec4((sin(seed + i * 2.0) + 1.0) * 5.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 5.0 / 2.0, 1.0);
-		m_pointLightComponents[i + 3].setColor(vec4((sin(seed + i * 2.0 ) + 1.0) * 5.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 5.0 / 2.0, 1.0));
+		m_pointLightComponents[i + 3].m_color = vec4((sin(seed + i * 2.0 ) + 1.0) * 5.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 5.0 / 2.0, 1.0);
 	}
 }
 

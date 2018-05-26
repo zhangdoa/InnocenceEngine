@@ -23,7 +23,6 @@ void BaseMesh::setup(meshType meshType, meshDrawMethod meshDrawMethod, bool calc
 
 void BaseMesh::initialize()
 {
-
 }
 
 const objectStatus & BaseMesh::getStatus() const

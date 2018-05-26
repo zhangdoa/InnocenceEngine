@@ -67,17 +67,20 @@ private:
 	void setupWindow();
 	void setupInput();
 	void setupRendering();
-	void setupCameraComponents();
-	void setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent);
-	void setupCameraComponentRayOfEye(CameraComponent* cameraComponent);
-	void setupCameraComponentFrustumVertices(CameraComponent* cameraComponent);
 
 	void initializeWindow();
 	void initializeInput();
 	void initializeRendering();
-	void loadDefaultAssets();
-	void loadAssetsForComponents();
 
+	void loadDefaultAssets();
+	void setupComponents();
+	void setupCameraComponents();
+	void setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent);
+	void setupCameraComponentRayOfEye(CameraComponent* cameraComponent);
+	void setupCameraComponentFrustumVertices(CameraComponent* cameraComponent);
+	void setupVisibleComponents();
+	void setupLightComponents();
+	void setupLightComponentRadius(LightComponent* lightComponent);
 
 	void assignUnitMesh(VisibleComponent& visibleComponent, meshShapeType meshType);
 	void assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);

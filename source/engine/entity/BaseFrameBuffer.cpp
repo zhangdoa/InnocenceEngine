@@ -13,11 +13,6 @@ void BaseFrameBuffer::setup(frameBufferType frameBufferType, renderBufferType re
 	m_renderTargetTextures = renderTargetTextures;
 }
 
-void BaseFrameBuffer::update()
-{
-	g_pLogSystem->printLog("BaseFrameBuffer: Warning: use the update() with parameter!");
-}
-
 const unsigned int BaseFrameBuffer::getRenderTargetNumber() const
 {
 	return m_renderTargetTextures.size();

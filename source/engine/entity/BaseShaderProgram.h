@@ -19,6 +19,7 @@ public:
 
 	void setup() override;
 	void setup(const std::vector<BaseShader*>& baseShaders);
+	virtual void activate() = 0;
 	const objectStatus& getStatus() const override;
 
 protected:
