@@ -7,16 +7,19 @@
 #include "interface/IAssetSystem.h"
 #include "interface/ILogSystem.h"
 #include "interface/IMemorySystem.h"
-#include "interface/IRenderingSystem.h"
+#include "interface/IGameSystem.h"
+#include "MeshDataSystem.h"
 
 #include "assimp/Importer.hpp"
 #include "assimp/Exporter.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
+#include "component/AssetSystemSingletonComponent.h"
+
 extern ILogSystem* g_pLogSystem;
 extern IMemorySystem* g_pMemorySystem;
-extern IRenderingSystem* g_pRenderingSystem;
+extern IGameSystem* g_pGameSystem;
 
 class assimpMeshRawData : public IMeshRawData
 {
@@ -45,27 +48,38 @@ public:
 	void update() override;
 	void shutdown() override;
 
-	void loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod, BaseTexture* baseDexture) const override;
-	void loadModelFromDisk(const std::string & fileName, modelMap& modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, bool caclNormal) override;
+	meshID addMesh(meshType meshType) override;
+	textureID addTexture(textureType textureType) override;
+	MeshDataComponent* getMesh(meshType meshType, meshID meshID) override;
+	TextureDataComponent* getTexture(textureType textureType, textureID textureID) override;
+	void removeMesh(meshType meshType, meshID meshID) override;
+	void removeTexture(textureID textureID) override;
+
 	std::string loadShader(const std::string& fileName) const override;
 
 	const objectStatus& getStatus() const override;
 
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	MeshDataSystem* m_meshDataSystem;
+
+	void loadDefaultAssets();
+	void loadAssetsForComponents();
+
+	void loadTexture(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent& visibleComponent);
+	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
+	void loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod, TextureDataComponent* baseDexture);
+	void loadModelFromDisk(const std::string & fileName, modelMap& modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, bool caclNormal);
 
 	void processAssimpScene(const std::string& fileName, modelMap & modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, const aiScene* aiScene, bool caclNormal);
 	void processAssimpNode(const std::string& fileName, modelMap & modelMap, aiNode * node, const aiScene * scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod, bool caclNormal);
-	void processSingleAssimpMesh(const std::string& fileName, meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod, bool caclNormal) const;
+	void processSingleAssimpMesh(const std::string& fileName, meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod, bool caclNormal);
 	void processSingleAssimpMaterial(const std::string& fileName, textureMap & textureMap, const aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod);
 
-	std::unordered_map<std::string, int> m_supportedTextureType = { std::pair<std::string, int>("png", 0) };
-	std::unordered_map<std::string, int> m_supportedModelType = { std::pair<std::string, int>("obj",0), std::pair<std::string, int>("innoModel", 0) };
-	std::unordered_map<std::string, int> m_supportedShaderType = { std::pair<std::string, int>("sf", 0) };
-	
-	std::unordered_map<std::string, texturePair> m_loadedTexture;
-	const std::string m_textureRelativePath = "../res/textures/";
-	const std::string m_modelRelativePath = "../res/models/";
-	const std::string m_shaderRelativePath = "../res/shaders/";
+	void assignUnitMesh(meshShapeType meshType, VisibleComponent& visibleComponent);
+	void assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
+	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
+	void assignLoadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
+	meshID addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 };
 
