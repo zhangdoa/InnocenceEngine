@@ -4,8 +4,8 @@
 class CameraComponent : public BaseComponent
 {
 public:
-	CameraComponent();
-	~CameraComponent();
+	CameraComponent() {};
+	~CameraComponent() {};
 
 	void setup() override;
 	void initialize() override;

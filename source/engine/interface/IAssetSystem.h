@@ -1,13 +1,20 @@
 #pragma once
 #include "common/stdafx.h"
 #include "ISystem.h"
-#include "entity/BaseGraphicPrimitiveHeader.h"
+#include "component/MeshDataComponent.h"
+#include "component/TextureDataComponent.h"
 
 class IAssetSystem : public ISystem
 {
 public:
 	virtual ~IAssetSystem() {};
-	virtual void loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod, BaseTexture* baseDexture) const = 0;
-	virtual void loadModelFromDisk(const std::string & fileName, modelMap& modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod , bool caclNormal) = 0;
+
+	virtual meshID addMesh(meshType meshType) = 0;
+	virtual textureID addTexture(textureType textureType) = 0;
+	virtual MeshDataComponent* getMesh(meshType meshType, meshID meshID) = 0;
+	virtual TextureDataComponent* getTexture(textureType textureType, textureID textureID) = 0;
+	virtual void removeMesh(meshType meshType, meshID meshID) = 0;
+	virtual void removeTexture(textureID textureID) = 0;
+
 	virtual std::string loadShader(const std::string& fileName) const = 0;
 };

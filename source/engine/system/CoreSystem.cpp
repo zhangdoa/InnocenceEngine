@@ -14,15 +14,16 @@ void CoreSystem::setup()
 	g_pLogSystem->printLog("LogSystem setup finished.");
 	g_pLogSystem->printLog("TaskSystem setup finished.");
 	g_pLogSystem->printLog("TimeSystem setup finished.");
-	g_pRenderingSystem = g_pMemorySystem->spawn<INNO_RENDERING_SYSTEM>();
-	g_pRenderingSystem->setup();
-	g_pLogSystem->printLog("RenderingSystem setup finished.");
-	g_pAssetSystem = g_pMemorySystem->spawn<INNO_ASSET_SYSTEM>();
-	g_pAssetSystem->setup();
-	g_pLogSystem->printLog("AssetSystem setup finished.");
 	g_pGameSystem = g_pMemorySystem->spawn<INNO_GAME_SYSTEM>();
 	g_pGameSystem->setup();
 	g_pLogSystem->printLog("GameSystem setup finished.");
+	g_pAssetSystem = g_pMemorySystem->spawn<INNO_ASSET_SYSTEM>();
+	g_pAssetSystem->setup();
+	g_pLogSystem->printLog("AssetSystem setup finished.");
+	g_pRenderingSystem = g_pMemorySystem->spawn<INNO_RENDERING_SYSTEM>();
+	g_pRenderingSystem->setup();
+	g_pLogSystem->printLog("RenderingSystem setup finished.");
+
 	if (g_pGameSystem->getStatus() == objectStatus::ALIVE)
 	{
 		g_pRenderingSystem->setWindowName(g_pGameSystem->getGameName());
@@ -42,9 +43,9 @@ void CoreSystem::initialize()
 	g_pLogSystem->initialize();
 	g_pTaskSystem->initialize();
 	g_pTimeSystem->initialize();
-	g_pRenderingSystem->initialize();
-	g_pAssetSystem->initialize();
 	g_pGameSystem->initialize();
+	g_pAssetSystem->initialize();
+	g_pRenderingSystem->initialize();
 	g_pLogSystem->printLog("CoreSystem has been initialized.");
 }
 
@@ -79,18 +80,13 @@ void CoreSystem::update()
 #ifdef DEBUG
 	//g_pMemorySystem->dumpToFile("../" + g_pTimeSystem->getCurrentTimeInLocal() + ".innoMemoryDump");
 #endif // DEBUG
-
-
-
 }
-//}
-
 
 void CoreSystem::shutdown()
 {
+	g_pRenderingSystem->shutdown();
 	g_pGameSystem->shutdown();
 	g_pAssetSystem->shutdown();
-	g_pRenderingSystem->shutdown();
 	g_pTimeSystem->shutdown();
 	m_objectStatus = objectStatus::SHUTDOWN;
 	g_pLogSystem->printLog("CoreSystem has been shutdown.");

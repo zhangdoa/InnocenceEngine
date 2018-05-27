@@ -107,7 +107,6 @@ void RenderingSystem::initializeInput()
 
 void RenderingSystem::initializeRendering()
 {
-	loadDefaultAssets();
 	setupComponents();
 
 	//initialize rendering
@@ -119,52 +118,6 @@ void RenderingSystem::initializeRendering()
 	initializeLightPass();
 	initializeFinalPass();
 }
-
-void RenderingSystem::loadDefaultAssets()
-{
-	m_basicNormalTemplate = addTexture(textureType::NORMAL);
-	m_basicAlbedoTemplate = addTexture(textureType::ALBEDO);
-	m_basicMetallicTemplate = addTexture(textureType::METALLIC);
-	m_basicRoughnessTemplate = addTexture(textureType::ROUGHNESS);
-	m_basicAOTemplate = addTexture(textureType::AMBIENT_OCCLUSION);
-
-	g_pAssetSystem->loadTextureFromDisk({ "basic_normal.png" }, textureType::NORMAL, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, m_basicNormalTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_albedo.png" }, textureType::ALBEDO, textureWrapMethod::REPEAT, getTexture(textureType::ALBEDO, m_basicAlbedoTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_metallic.png" }, textureType::METALLIC, textureWrapMethod::REPEAT, getTexture(textureType::METALLIC, m_basicMetallicTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_roughness.png" }, textureType::ROUGHNESS, textureWrapMethod::REPEAT, getTexture(textureType::ROUGHNESS, m_basicRoughnessTemplate));
-	g_pAssetSystem->loadTextureFromDisk({ "basic_ao.png" }, textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT, getTexture(textureType::AMBIENT_OCCLUSION, m_basicAOTemplate));
-
-	m_Unit3DQuadTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto last3DQuadMeshData = getMesh(meshType::THREE_DIMENSION, m_Unit3DQuadTemplate);
-	last3DQuadMeshData->addUnitQuad();
-	last3DQuadMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE, true, true);
-	last3DQuadMeshData->initialize();
-
-	m_Unit2DQuadTemplate = addMesh(meshType::TWO_DIMENSION);
-	auto last2DQuadMeshData = getMesh(meshType::TWO_DIMENSION, m_Unit2DQuadTemplate);
-	last2DQuadMeshData->addUnitQuad();
-	last2DQuadMeshData->setup(meshType::TWO_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
-	last2DQuadMeshData->initialize();
-
-	m_UnitCubeTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto lastCubeMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitCubeTemplate);
-	lastCubeMeshData->addUnitCube();
-	lastCubeMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE, false, false);
-	lastCubeMeshData->initialize();
-
-	m_UnitSphereTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto lastSphereMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitSphereTemplate);
-	lastSphereMeshData->addUnitSphere();
-	lastSphereMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
-	lastSphereMeshData->initialize();
-
-	m_UnitLineTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto lastLineMeshData = getMesh(meshType::THREE_DIMENSION, m_UnitLineTemplate);
-	lastLineMeshData->addUnitLine();
-	lastLineMeshData->setup(meshType::THREE_DIMENSION, meshDrawMethod::TRIANGLE_STRIP, false, false);
-	lastLineMeshData->initialize();
-}
-
 
 void RenderingSystem::setupComponents()
 {
@@ -260,27 +213,7 @@ void RenderingSystem::setupVisibleComponents()
 			{
 				m_staticMeshVisibleComponents.emplace_back(i);
 			}
-			// load or assign mesh data
-			if (i->m_meshType == meshShapeType::CUSTOM)
-			{
-				if (i->m_modelFileName != "")
-				{
-					loadModel(i->m_modelFileName, *i);
-				}
-			}
-			else
-			{
-				assignUnitMesh(*i, i->m_meshType);
-			}
 			generateAABB(*i);
-		}
-
-		if (i->m_textureFileNameMap.size() != 0)
-		{
-			for (auto& j : i->m_textureFileNameMap)
-			{
-				loadTexture({ j.second }, j.first, *i);
-			}
 		}
 	}
 }
@@ -647,112 +580,6 @@ void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, double xoffs
 	m_renderingSystem->setupCameraComponentProjectionMatrix(g_pGameSystem->getCameraComponents()[0]);
 }
 
-meshID RenderingSystem::addMesh(meshType meshType)
-{
-	BaseMesh* newMesh = g_pMemorySystem->spawn<MESH_CLASS>();
-	auto l_meshMap = &m_meshMap;
-	if (meshType == meshType::BOUNDING_BOX)
-	{
-		l_meshMap = &m_BBMeshMap;
-	}
-	l_meshMap->emplace(std::pair<meshID, BaseMesh*>(newMesh->getMeshID(), newMesh));
-	return newMesh->getMeshID();
-}
-
-textureID RenderingSystem::addTexture(textureType textureType)
-{
-	BaseTexture* newTexture = g_pMemorySystem->spawn<TEXTURE_CLASS>();
-	m_textureMap.emplace(std::pair<textureID, BaseTexture*>(newTexture->getTextureID(), newTexture));
-	return newTexture->getTextureID();
-}
-
-BaseMesh* RenderingSystem::getMesh(meshType meshType, meshID meshID)
-{
-	auto l_meshMap = &m_meshMap;
-	if (meshType == meshType::BOUNDING_BOX)
-	{
-		l_meshMap = &m_BBMeshMap;
-	}
-	return l_meshMap->find(meshID)->second;
-}
-
-BaseTexture * RenderingSystem::getTexture(textureType textureType, textureID textureID)
-{
-	return m_textureMap.find(textureID)->second;
-}
-
-void RenderingSystem::removeMesh(meshType meshType, meshID meshID)
-{
-	auto l_meshMap = &m_meshMap;
-	if (meshType == meshType::BOUNDING_BOX)
-	{
-		l_meshMap = &m_BBMeshMap;
-	}
-	auto l_mesh = l_meshMap->find(meshID);
-	if (l_mesh != l_meshMap->end())
-	{
-		l_mesh->second->shutdown();
-		l_meshMap->erase(meshID);
-	}
-}
-
-void RenderingSystem::removeTexture(textureID textureID)
-{
-	auto l_texture = m_textureMap.find(textureID);
-	if (l_texture != m_textureMap.end())
-	{
-		l_texture->second->shutdown();
-		m_textureMap.erase(textureID);
-	}
-}
-
-void RenderingSystem::assignUnitMesh(VisibleComponent & visibleComponent, meshShapeType meshType)
-{
-	meshID l_UnitMeshTemplate;
-	switch (meshType)
-	{
-	case meshShapeType::QUAD: l_UnitMeshTemplate = m_Unit3DQuadTemplate; break;
-	case meshShapeType::CUBE: l_UnitMeshTemplate = m_UnitCubeTemplate; break;
-	case meshShapeType::SPHERE: l_UnitMeshTemplate = m_UnitSphereTemplate; break;
-	}
-	visibleComponent.addMeshData(l_UnitMeshTemplate);
-
-	// generate AABB
-	generateAABB(visibleComponent);
-
-	assignDefaultTextures(textureAssignType::OVERWRITE, visibleComponent);
-}
-
-void RenderingSystem::assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedtexturePair, VisibleComponent & visibleComponent)
-{
-	if (textureAssignType == textureAssignType::ADD)
-	{
-		visibleComponent.addTextureData(loadedtexturePair);
-	}
-	else if (textureAssignType == textureAssignType::OVERWRITE)
-	{
-		visibleComponent.overwriteTextureData(loadedtexturePair);
-	}
-}
-
-void RenderingSystem::assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent)
-{
-	if (visibleComponent.m_visiblilityType == visiblilityType::STATIC_MESH)
-	{
-		assignLoadedTexture(textureAssignType, texturePair(textureType::NORMAL, m_basicNormalTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::ALBEDO, m_basicAlbedoTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::METALLIC, m_basicMetallicTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::ROUGHNESS, m_basicRoughnessTemplate), visibleComponent);
-		assignLoadedTexture(textureAssignType, texturePair(textureType::AMBIENT_OCCLUSION, m_basicAOTemplate), visibleComponent);
-	}
-}
-
-void RenderingSystem::assignLoadedModel(modelMap& loadedmodelMap, VisibleComponent & visibleComponent)
-{
-	visibleComponent.setModelMap(loadedmodelMap);
-	assignDefaultTextures(textureAssignType::ADD, visibleComponent);
-}
-
 std::vector<Vertex> RenderingSystem::generateNDC()
 {
 	Vertex l_VertexData_1;
@@ -1081,73 +908,6 @@ AABB RenderingSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin)
 		1, 5, 2, 5, 6, 2 };
 
 	return l_AABB;
-}
-
-meshID RenderingSystem::addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
-{
-	//@TODO: generalize
-	auto l_BBMeshID = addMesh(meshType::BOUNDING_BOX);
-	auto l_BBMeshData = getMesh(meshType::BOUNDING_BOX, l_BBMeshID);
-
-	std::for_each(vertices.begin(), vertices.end(), [&](Vertex val)
-	{
-		l_BBMeshData->addVertices(val);
-	});
-
-	std::for_each(indices.begin(), indices.end(), [&](unsigned int val)
-	{
-		l_BBMeshData->addIndices(val);
-	});
-
-	l_BBMeshData->setup(meshType::BOUNDING_BOX, meshDrawMethod::TRIANGLE, false, false);
-	l_BBMeshData->initialize();
-	return l_BBMeshID;
-}
-
-void RenderingSystem::loadTexture(const std::vector<std::string> &fileName, textureType textureType, VisibleComponent & visibleComponent)
-{
-	for (auto& i : fileName)
-	{
-		auto l_loadedTexturePair = m_loadedTextureMap.find(i);
-		// check if this file has already loaded
-		if (l_loadedTexturePair != m_loadedTextureMap.end())
-		{
-			assignLoadedTexture(textureAssignType::OVERWRITE, l_loadedTexturePair->second, visibleComponent);
-			g_pLogSystem->printLog("innoTexture: " + i + " is already loaded, successfully assigned loaded textureID.");
-		}
-		else
-		{
-			auto l_textureID = addTexture(textureType);
-			auto l_baseTexture = getTexture(textureType, l_textureID);
-			g_pAssetSystem->loadTextureFromDisk({ i }, textureType, visibleComponent.m_textureWrapMethod, l_baseTexture);
-			m_loadedTextureMap.emplace(i, texturePair(textureType, l_textureID));
-			assignLoadedTexture(textureAssignType::OVERWRITE, texturePair(textureType, l_textureID), visibleComponent);
-		}
-	}
-}
-
-void RenderingSystem::loadModel(const std::string & fileName, VisibleComponent & visibleComponent)
-{
-	auto l_convertedFilePath = fileName.substr(0, fileName.find(".")) + ".innoModel";
-
-	// check if this file has already been loaded once
-	auto l_loadedmodelMap = m_loadedModelMap.find(l_convertedFilePath);
-	if (l_loadedmodelMap != m_loadedModelMap.end())
-	{
-		assignLoadedModel(l_loadedmodelMap->second, visibleComponent);
-
-		g_pLogSystem->printLog("innoMesh: " + l_convertedFilePath + " is already loaded, successfully assigned loaded modelMap.");
-	}
-	else
-	{
-		modelMap l_modelMap;
-		g_pAssetSystem->loadModelFromDisk(fileName, l_modelMap, visibleComponent.m_meshDrawMethod, visibleComponent.m_textureWrapMethod, visibleComponent.m_caclNormal);
-
-		assignLoadedModel(l_modelMap, visibleComponent);
-
-		//mark as loaded
-		m_loadedModelMap.emplace(l_convertedFilePath, l_modelMap);
-	}
 }
 
 void RenderingSystem::render()

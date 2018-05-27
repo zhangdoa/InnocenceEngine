@@ -44,22 +44,9 @@ public:
 
 	friend class windowCallbackWrapper;
 
-	void addKeyboardInputCallback(int keyCode, std::function<void()>* keyboardInputCallback);
-	void addKeyboardInputCallback(int keyCode, std::vector<std::function<void()>*>& keyboardInputCallback);
-	void addKeyboardInputCallback(std::unordered_map<int,std::vector<std::function<void()>*>>& keyboardInputCallback);
-	void addMouseMovementCallback(int mouseCode, std::function<void(double)>* mouseMovementCallback);
-	void addMouseMovementCallback(int mouseCode, std::vector<std::function<void(double)>*>& mouseMovementCallback);
-	void addMouseMovementCallback(std::unordered_map<int,std::vector<std::function<void(double)>*>>& mouseMovementCallback);
-
 	void setWindowName(const std::string& windowName) override;
 
 	void render() override;
-	meshID addMesh(meshType meshType) override;
-	textureID addTexture(textureType textureType) override;
-	BaseMesh* getMesh(meshType meshType, meshID meshID) override;
-	BaseTexture* getTexture(textureType textureType, textureID textureID) override;
-	void removeMesh(meshType meshType, meshID meshID) override;
-	void removeTexture(textureID textureID) override;
 
 	const objectStatus& getStatus() const override;
 
@@ -72,7 +59,6 @@ private:
 	void initializeInput();
 	void initializeRendering();
 
-	void loadDefaultAssets();
 	void setupComponents();
 	void setupCameraComponents();
 	void setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent);
@@ -82,12 +68,13 @@ private:
 	void setupLightComponents();
 	void setupLightComponentRadius(LightComponent* lightComponent);
 
-	void assignUnitMesh(VisibleComponent& visibleComponent, meshShapeType meshType);
-	void assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
-	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
-	void loadTexture(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent& visibleComponent);
-	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
-	void assignLoadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
+	void addKeyboardInputCallback(int keyCode, std::function<void()>* keyboardInputCallback);
+	void addKeyboardInputCallback(int keyCode, std::vector<std::function<void()>*>& keyboardInputCallback);
+	void addKeyboardInputCallback(std::unordered_map<int, std::vector<std::function<void()>*>>& keyboardInputCallback);
+	void addMouseMovementCallback(int mouseCode, std::function<void(double)>* mouseMovementCallback);
+	void addMouseMovementCallback(int mouseCode, std::vector<std::function<void(double)>*>& mouseMovementCallback);
+	void addMouseMovementCallback(std::unordered_map<int, std::vector<std::function<void(double)>*>>& mouseMovementCallback);
+
 	std::vector<Vertex> generateNDC();
 	std::vector<Vertex> generateViewFrustum(const mat4& transformMatrix);
 	void generateAABB(VisibleComponent & visibleComponent);
@@ -95,7 +82,6 @@ private:
 	void generateAABB(CameraComponent & cameraComponent);
 	AABB generateAABB(const std::vector<Vertex>& vertices);
 	AABB generateAABB(const vec4& boundMax, const vec4& boundMin);
-	meshID addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 	vec4 calcMousePositionInWorldSpace();
 
 	void updateInput();
@@ -140,26 +126,6 @@ private:
 
 	//Physic data
 	Ray m_mouseRay;
-
-	//Asset data
-	std::unordered_map<meshID, BaseMesh*> m_meshMap;
-	std::unordered_map<meshID, BaseMesh*> m_BBMeshMap;
-	std::unordered_map<textureID, BaseTexture*> m_textureMap;
-	std::unordered_map<textureID, BaseTexture*> m_shadowTextureMap;
-
-	meshID m_UnitCubeTemplate;
-	meshID m_UnitSphereTemplate;
-	meshID m_Unit3DQuadTemplate;
-	meshID m_Unit2DQuadTemplate;
-	meshID m_UnitLineTemplate;
-	textureID m_basicNormalTemplate;
-	textureID m_basicAlbedoTemplate;
-	textureID m_basicMetallicTemplate;
-	textureID m_basicRoughnessTemplate;
-	textureID m_basicAOTemplate;
-
-	std::unordered_map<std::string, modelMap> m_loadedModelMap;
-	std::unordered_map<std::string, texturePair> m_loadedTextureMap;
 
 	//Rendering Data
 	std::atomic<bool> m_canRender;
