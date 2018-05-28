@@ -3,6 +3,7 @@
 void AssetSystem::setup()
 {
 	m_meshDataSystem = g_pMemorySystem->spawn<MeshDataSystem>();
+	m_textureDataSystem = g_pMemorySystem->spawn<TextureDataSystem>();
 }
 
 void AssetSystem::initialize()
@@ -40,47 +41,53 @@ const objectStatus & AssetSystem::getStatus() const
 	return m_objectStatus;
 }
 
-meshID AssetSystem::addMesh(meshType meshType)
+meshID AssetSystem::addMesh()
 {
-	BaseMesh* newMesh = g_pMemorySystem->spawn<MESH_CLASS>();
+	MeshDataComponent* newMesh = g_pMemorySystem->spawn<MeshDataComponent>();
 	auto l_meshMap = &AssetSystemSingletonComponent::getInstance().m_meshMap;
-	if (meshType == meshType::BOUNDING_BOX)
+	l_meshMap->emplace(std::pair<meshID, MeshDataComponent*>(newMesh->m_meshID, newMesh));
+	return newMesh->m_meshID;
+}
+
+meshID AssetSystem::addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
+{
+	auto l_MeshID = addMesh();
+	auto l_MeshData = getMesh(l_MeshID);
+
+	std::for_each(vertices.begin(), vertices.end(), [&](Vertex val)
 	{
-		l_meshMap = &AssetSystemSingletonComponent::getInstance().m_BBMeshMap;
-	}
-	l_meshMap->emplace(std::pair<meshID, BaseMesh*>(newMesh->getMeshID(), newMesh));
-	return newMesh->getMeshID();
+		l_MeshData->m_vertices.emplace_back(val);
+	});
+
+	std::for_each(indices.begin(), indices.end(), [&](unsigned int val)
+	{
+		l_MeshData->m_indices.emplace_back(val);
+	});
+
+	return l_MeshID;
 }
 
 textureID AssetSystem::addTexture(textureType textureType)
 {
-	BaseTexture* newTexture = g_pMemorySystem->spawn<TEXTURE_CLASS>();
-	AssetSystemSingletonComponent::getInstance().m_textureMap.emplace(std::pair<textureID, BaseTexture*>(newTexture->getTextureID(), newTexture));
-	return newTexture->getTextureID();
+	TextureDataComponent* newTexture = g_pMemorySystem->spawn<TextureDataComponent>();
+	AssetSystemSingletonComponent::getInstance().m_textureMap.emplace(std::pair<textureID, TextureDataComponent*>(newTexture->m_textureID, newTexture));
+	return newTexture->m_textureID;
 }
 
-MeshDataComponent* AssetSystem::getMesh(meshType meshType, meshID meshID)
+MeshDataComponent* AssetSystem::getMesh(meshID meshID)
 {
 	auto l_meshMap = &AssetSystemSingletonComponent::getInstance().m_meshMap;
-	if (meshType == meshType::BOUNDING_BOX)
-	{
-		l_meshMap = &AssetSystemSingletonComponent::getInstance().m_BBMeshMap;
-	}
 	return l_meshMap->find(meshID)->second;
 }
 
-TextureDataComponent * AssetSystem::getTexture(textureType textureType, textureID textureID)
+TextureDataComponent * AssetSystem::getTexture(textureID textureID)
 {
 	return AssetSystemSingletonComponent::getInstance().m_textureMap.find(textureID)->second;
 }
 
-void AssetSystem::removeMesh(meshType meshType, meshID meshID)
+void AssetSystem::removeMesh(meshID meshID)
 {
 	auto l_meshMap = &AssetSystemSingletonComponent::getInstance().m_meshMap;
-	if (meshType == meshType::BOUNDING_BOX)
-	{
-		l_meshMap = &AssetSystemSingletonComponent::getInstance().m_BBMeshMap;
-	}
 	auto l_mesh = l_meshMap->find(meshID);
 	if (l_mesh != l_meshMap->end())
 	{
@@ -99,6 +106,16 @@ void AssetSystem::removeTexture(textureID textureID)
 	}
 }
 
+vec4 AssetSystem::findMaxVertex(meshID meshID)
+{
+	return m_meshDataSystem->findMaxVertex(*getMesh(meshID));
+}
+
+vec4 AssetSystem::findMinVertex(meshID meshID)
+{
+	return m_meshDataSystem->findMinVertex(*getMesh(meshID));
+}
+
 void AssetSystem::loadDefaultAssets()
 {
 	AssetSystemSingletonComponent::getInstance().m_basicNormalTemplate = addTexture(textureType::NORMAL);
@@ -107,46 +124,46 @@ void AssetSystem::loadDefaultAssets()
 	AssetSystemSingletonComponent::getInstance().m_basicRoughnessTemplate = addTexture(textureType::ROUGHNESS);
 	AssetSystemSingletonComponent::getInstance().m_basicAOTemplate = addTexture(textureType::AMBIENT_OCCLUSION);
 
-	loadTextureFromDisk({ "basic_normal.png" }, textureType::NORMAL, textureWrapMethod::REPEAT, getTexture(textureType::NORMAL, AssetSystemSingletonComponent::getInstance().m_basicNormalTemplate));
-	loadTextureFromDisk({ "basic_albedo.png" }, textureType::ALBEDO, textureWrapMethod::REPEAT, getTexture(textureType::ALBEDO, AssetSystemSingletonComponent::getInstance().m_basicAlbedoTemplate));
-	loadTextureFromDisk({ "basic_metallic.png" }, textureType::METALLIC, textureWrapMethod::REPEAT, getTexture(textureType::METALLIC, AssetSystemSingletonComponent::getInstance().m_basicMetallicTemplate));
-	loadTextureFromDisk({ "basic_roughness.png" }, textureType::ROUGHNESS, textureWrapMethod::REPEAT, getTexture(textureType::ROUGHNESS, AssetSystemSingletonComponent::getInstance().m_basicRoughnessTemplate));
-	loadTextureFromDisk({ "basic_ao.png" }, textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT, getTexture(textureType::AMBIENT_OCCLUSION, AssetSystemSingletonComponent::getInstance().m_basicAOTemplate));
+	loadTextureFromDisk({ "basic_normal.png" }, textureType::NORMAL, textureWrapMethod::REPEAT, getTexture( AssetSystemSingletonComponent::getInstance().m_basicNormalTemplate));
+	loadTextureFromDisk({ "basic_albedo.png" }, textureType::ALBEDO, textureWrapMethod::REPEAT, getTexture(AssetSystemSingletonComponent::getInstance().m_basicAlbedoTemplate));
+	loadTextureFromDisk({ "basic_metallic.png" }, textureType::METALLIC, textureWrapMethod::REPEAT, getTexture(AssetSystemSingletonComponent::getInstance().m_basicMetallicTemplate));
+	loadTextureFromDisk({ "basic_roughness.png" }, textureType::ROUGHNESS, textureWrapMethod::REPEAT, getTexture(AssetSystemSingletonComponent::getInstance().m_basicRoughnessTemplate));
+	loadTextureFromDisk({ "basic_ao.png" }, textureType::AMBIENT_OCCLUSION, textureWrapMethod::REPEAT, getTexture(AssetSystemSingletonComponent::getInstance().m_basicAOTemplate));
 
-	AssetSystemSingletonComponent::getInstance().m_Unit3DQuadTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto last3DQuadMeshData = getMesh(meshType::THREE_DIMENSION, AssetSystemSingletonComponent::getInstance().m_Unit3DQuadTemplate);
+	AssetSystemSingletonComponent::getInstance().m_Unit3DQuadTemplate = addMesh();
+	auto last3DQuadMeshData = getMesh(AssetSystemSingletonComponent::getInstance().m_Unit3DQuadTemplate);
 	m_meshDataSystem->addUnitQuad(*last3DQuadMeshData);
 	last3DQuadMeshData->m_meshType = meshType::THREE_DIMENSION;
 	last3DQuadMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	last3DQuadMeshData->m_calculateNormals = true;
 	last3DQuadMeshData->m_calculateTangents = true;
 
-	AssetSystemSingletonComponent::getInstance().m_Unit2DQuadTemplate = addMesh(meshType::TWO_DIMENSION);
-	auto last2DQuadMeshData = getMesh(meshType::TWO_DIMENSION, AssetSystemSingletonComponent::getInstance().m_Unit2DQuadTemplate);
+	AssetSystemSingletonComponent::getInstance().m_Unit2DQuadTemplate = addMesh();
+	auto last2DQuadMeshData = getMesh(AssetSystemSingletonComponent::getInstance().m_Unit2DQuadTemplate);
 	m_meshDataSystem->addUnitQuad(*last2DQuadMeshData);
 	last2DQuadMeshData->m_meshType = meshType::TWO_DIMENSION;
 	last2DQuadMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 	last2DQuadMeshData->m_calculateNormals = false;
 	last2DQuadMeshData->m_calculateTangents = false;
 
-	AssetSystemSingletonComponent::getInstance().m_UnitCubeTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto lastCubeMeshData = getMesh(meshType::THREE_DIMENSION, AssetSystemSingletonComponent::getInstance().m_UnitCubeTemplate);
+	AssetSystemSingletonComponent::getInstance().m_UnitCubeTemplate = addMesh();
+	auto lastCubeMeshData = getMesh(AssetSystemSingletonComponent::getInstance().m_UnitCubeTemplate);
 	m_meshDataSystem->addUnitCube(*lastCubeMeshData);
 	lastCubeMeshData->m_meshType = meshType::THREE_DIMENSION;
 	lastCubeMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	lastCubeMeshData->m_calculateNormals = false;
 	lastCubeMeshData->m_calculateTangents = false;
 
-	AssetSystemSingletonComponent::getInstance().m_UnitSphereTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto lastSphereMeshData = getMesh(meshType::THREE_DIMENSION, AssetSystemSingletonComponent::getInstance().m_UnitSphereTemplate);
+	AssetSystemSingletonComponent::getInstance().m_UnitSphereTemplate = addMesh();
+	auto lastSphereMeshData = getMesh(AssetSystemSingletonComponent::getInstance().m_UnitSphereTemplate);
 	m_meshDataSystem->addUnitSphere(*lastSphereMeshData);
 	lastSphereMeshData->m_meshType = meshType::THREE_DIMENSION;
 	lastSphereMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 	lastSphereMeshData->m_calculateNormals = false;
 	lastSphereMeshData->m_calculateTangents = false;
 
-	AssetSystemSingletonComponent::getInstance().m_UnitLineTemplate = addMesh(meshType::THREE_DIMENSION);
-	auto lastLineMeshData = getMesh(meshType::THREE_DIMENSION, AssetSystemSingletonComponent::getInstance().m_UnitLineTemplate);
+	AssetSystemSingletonComponent::getInstance().m_UnitLineTemplate = addMesh();
+	auto lastLineMeshData = getMesh(AssetSystemSingletonComponent::getInstance().m_UnitLineTemplate);
 	m_meshDataSystem->addUnitLine(*lastLineMeshData);
 	lastLineMeshData->m_meshType = meshType::THREE_DIMENSION;
 	lastLineMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
@@ -227,30 +244,6 @@ void AssetSystem::assignLoadedModel(modelMap& loadedmodelMap, VisibleComponent &
 	assignDefaultTextures(textureAssignType::ADD, visibleComponent);
 }
 
-meshID AssetSystem::addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
-{
-	//@TODO: generalize
-	auto l_BBMeshID = addMesh(meshType::BOUNDING_BOX);
-	auto l_BBMeshData = getMesh(meshType::BOUNDING_BOX, l_BBMeshID);
-
-	std::for_each(vertices.begin(), vertices.end(), [&](Vertex val)
-	{
-		l_BBMeshData->m_vertices.emplace_back(val);
-	});
-
-	std::for_each(indices.begin(), indices.end(), [&](unsigned int val)
-	{
-		l_BBMeshData->m_indices.emplace_back(val);
-	});
-
-	l_BBMeshData->m_meshType = meshType::BOUNDING_BOX;
-	l_BBMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
-	l_BBMeshData->m_calculateNormals = false;
-	l_BBMeshData->m_calculateTangents = false;
-
-	return l_BBMeshID;
-}
-
 void AssetSystem::loadTexture(const std::vector<std::string> &fileName, textureType textureType, VisibleComponent & visibleComponent)
 {
 	for (auto& i : fileName)
@@ -265,7 +258,7 @@ void AssetSystem::loadTexture(const std::vector<std::string> &fileName, textureT
 		else
 		{
 			auto l_textureID = addTexture(textureType);
-			auto l_baseTexture = getTexture(textureType, l_textureID);
+			auto l_baseTexture = getTexture(l_textureID);
 			loadTextureFromDisk({ i }, textureType, visibleComponent.m_textureWrapMethod, l_baseTexture);
 			AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.emplace(i, texturePair(textureType, l_textureID));
 			assignLoadedTexture(textureAssignType::OVERWRITE, texturePair(textureType, l_textureID), visibleComponent);
@@ -467,8 +460,8 @@ void AssetSystem::processAssimpNode(const std::string& fileName, modelMap & mode
 
 void AssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod, bool caclNormal)
 {
-	meshID = addMesh(meshType::THREE_DIMENSION);
-	auto l_meshData = getMesh(meshType::THREE_DIMENSION, meshID);
+	meshID = addMesh();
+	auto l_meshData = getMesh(meshID);
 
 	for (auto i = (unsigned int)0; i < aiMesh->mNumVertices; i++)
 	{
@@ -604,7 +597,7 @@ void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textu
 			else
 			{
 				auto l_textureDataID = addTexture(l_textureType);
-				auto l_textureData = getTexture(l_textureType, l_textureDataID);
+				auto l_textureData = getTexture(l_textureDataID);
 
 				l_texturePair.first = l_textureType;
 				l_texturePair.second = l_textureDataID;

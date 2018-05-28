@@ -110,7 +110,7 @@ void MeshDataSystem::addUnitCube(MeshDataComponent& meshDataComponent)
 
 	meshDataComponent.m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
-	for (auto& l_vertexData : m_vertices)
+	for (auto& l_vertexData : meshDataComponent.m_vertices)
 	{
 		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
 	}

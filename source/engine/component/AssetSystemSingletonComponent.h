@@ -1,8 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
 #include "common/GLHeaders.h"
-#include "entity/BaseGraphicPrimitiveHeader.h"
-#include "entity/GLGraphicPrimitiveHeader.h"
 #include "component/MeshDataComponent.h"
 #include "component/TextureDataComponent.h"
 
