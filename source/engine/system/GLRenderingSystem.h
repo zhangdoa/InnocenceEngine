@@ -1,6 +1,7 @@
 #pragma once
 #include "interface/IRenderingSystem.h"
 #include "component/EnvironmentRenderPassSingletonComponent.h"
+#include "component/GLRenderingSystemSingletonComponent.h"
 
 #include "interface/IRenderingSystem.h"
 #include "interface/IMemorySystem.h"
@@ -8,7 +9,6 @@
 #include "interface/IGameSystem.h"
 
 extern IMemorySystem* g_pMemorySystem;
-extern IRenderingSystem* g_pRenderingSystem;
 extern IAssetSystem* g_pAssetSystem;
 extern IGameSystem* g_pGameSystem;
 
@@ -28,6 +28,10 @@ public:
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
+	void setupEnvironmentRenderPass();
+	void setupGraphicPrimtives();
+	void setupMesh(const MeshDataComponent * MeshDataComponent, GLMeshDataComponent* GLMeshDataComponent);
+	void setupTexture(const TextureDataComponent * TextureDataComponent, GLTextureDataComponent* GLTextureDataComponent);
 	void setupShader(GLuint shaderProgram, GLuint shaderID, GLuint shaderType, const std::string& shaderFilePath);
 	GLuint getUniformLocation(GLuint shaderProgram, const std::string& uniformName);
 	void updateUniform(const GLint uniformLocation, bool uniformValue) const;

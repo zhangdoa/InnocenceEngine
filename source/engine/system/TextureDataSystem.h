@@ -1,17 +1,8 @@
 #pragma once
-#include "interface/IRenderingSystem.h"
-#include "interface/IMemorySystem.h"
-#include "interface/IAssetSystem.h"
-#include "interface/IGameSystem.h"
+#include "interface/ISystem.h"
+#include "component/TextureDataComponent.h"
 
-#include "component/MeshDataComponent.h"
-
-extern IMemorySystem* g_pMemorySystem;
-extern IRenderingSystem* g_pRenderingSystem;
-extern IAssetSystem* g_pAssetSystem;
-extern IGameSystem* g_pGameSystem;
-
-class TextureDataSystem : public IRenderingSystem
+class TextureDataSystem : public ISystem
 {
 public:
 	TextureDataSystem() {};

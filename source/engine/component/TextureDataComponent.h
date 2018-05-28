@@ -5,7 +5,7 @@
 class TextureDataComponent : public BaseComponent
 {
 public:
-	TextureDataComponent() {};
+	TextureDataComponent() { m_textureID = std::rand(); };
 	~TextureDataComponent() {};
 
 	void setup() override;

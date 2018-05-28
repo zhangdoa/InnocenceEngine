@@ -669,8 +669,8 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 	for (auto& l_graphicData : visibleComponent.getModelMap())
 	{
 		// get corner vertices from sub meshes
-		l_cornerVertices.emplace_back(m_meshMap.find(l_graphicData.first)->second->findMaxVertex());
-		l_cornerVertices.emplace_back(m_meshMap.find(l_graphicData.first)->second->findMinVertex());
+		l_cornerVertices.emplace_back(g_pAssetSystem->findMaxVertex(l_graphicData.first));
+		l_cornerVertices.emplace_back(g_pAssetSystem->findMinVertex(l_graphicData.first));
 	}
 
 	std::for_each(l_cornerVertices.begin(), l_cornerVertices.end(), [&](vec4 val)
@@ -726,7 +726,7 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 
 	if (visibleComponent.m_drawAABB)
 	{
-		visibleComponent.m_AABBMeshID = addMesh(visibleComponent.m_AABB.m_vertices, visibleComponent.m_AABB.m_indices);
+		visibleComponent.m_AABBMeshID = g_pAssetSystem->addMesh(visibleComponent.m_AABB.m_vertices, visibleComponent.m_AABB.m_indices);
 	}
 }
 
@@ -786,8 +786,8 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 
 		if (lightComponent.m_drawAABB)
 		{
-			removeMesh(meshType::BOUNDING_BOX, lightComponent.m_AABBMeshIDs[i]);
-			lightComponent.m_AABBMeshIDs.emplace_back(addMesh(lightComponent.m_AABBs[i].m_vertices, lightComponent.m_AABBs[i].m_indices));
+			g_pAssetSystem->removeMesh(lightComponent.m_AABBMeshIDs[i]);
+			lightComponent.m_AABBMeshIDs.emplace_back(g_pAssetSystem->addMesh(lightComponent.m_AABBs[i].m_vertices, lightComponent.m_AABBs[i].m_indices));
 		}
 	}
 }
@@ -799,14 +799,14 @@ void RenderingSystem::generateAABB(CameraComponent & cameraComponent)
 
 	if (cameraComponent.m_drawFrustum)
 	{
-		removeMesh(meshType::BOUNDING_BOX, cameraComponent.m_FrustumMeshID);
-		cameraComponent.m_FrustumMeshID = addMesh(cameraComponent.m_frustumVertices, cameraComponent.m_frustumIndices);
+		g_pAssetSystem->removeMesh(cameraComponent.m_FrustumMeshID);
+		cameraComponent.m_FrustumMeshID = g_pAssetSystem->addMesh(cameraComponent.m_frustumVertices, cameraComponent.m_frustumIndices);
 	}
 
 	if (cameraComponent.m_drawAABB)
 	{
-		removeMesh(meshType::BOUNDING_BOX, cameraComponent.m_AABBMeshID);
-		cameraComponent.m_AABBMeshID = addMesh(cameraComponent.m_AABB.m_vertices, cameraComponent.m_AABB.m_indices);
+		g_pAssetSystem->removeMesh(cameraComponent.m_AABBMeshID);
+		cameraComponent.m_AABBMeshID = g_pAssetSystem->addMesh(cameraComponent.m_AABB.m_vertices, cameraComponent.m_AABB.m_indices);
 	}
 }
 

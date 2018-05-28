@@ -9,6 +9,7 @@
 #include "interface/IMemorySystem.h"
 #include "interface/IGameSystem.h"
 #include "MeshDataSystem.h"
+#include "TextureDataSystem.h"
 
 #include "assimp/Importer.hpp"
 #include "assimp/Exporter.hpp"
@@ -20,6 +21,21 @@
 extern ILogSystem* g_pLogSystem;
 extern IMemorySystem* g_pMemorySystem;
 extern IGameSystem* g_pGameSystem;
+
+class IMeshRawData
+{
+public:
+	IMeshRawData() {};
+	virtual ~IMeshRawData() {};
+
+	virtual int getNumVertices() const = 0;
+	virtual int getNumFaces() const = 0;
+	virtual int getNumIndicesInFace(int faceIndex) const = 0;
+	virtual vec4 getVertices(unsigned int index) const = 0;
+	virtual vec2 getTextureCoords(unsigned int index) const = 0;
+	virtual vec4 getNormals(unsigned int index) const = 0;
+	virtual int getIndices(int faceIndex, int index) const = 0;
+};
 
 class assimpMeshRawData : public IMeshRawData
 {
@@ -48,13 +64,15 @@ public:
 	void update() override;
 	void shutdown() override;
 
-	meshID addMesh(meshType meshType) override;
+	meshID addMesh() override;
+	meshID addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) override;
 	textureID addTexture(textureType textureType) override;
-	MeshDataComponent* getMesh(meshType meshType, meshID meshID) override;
-	TextureDataComponent* getTexture(textureType textureType, textureID textureID) override;
-	void removeMesh(meshType meshType, meshID meshID) override;
+	MeshDataComponent* getMesh(meshID meshID) override;
+	TextureDataComponent* getTexture(textureID textureID) override;
+	void removeMesh(meshID meshID) override;
 	void removeTexture(textureID textureID) override;
-
+	vec4 findMaxVertex(meshID meshID) override;
+	vec4 findMinVertex(meshID meshID) override;
 	std::string loadShader(const std::string& fileName) const override;
 
 	const objectStatus& getStatus() const override;
@@ -62,6 +80,7 @@ public:
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	MeshDataSystem* m_meshDataSystem;
+	TextureDataSystem* m_textureDataSystem;
 
 	void loadDefaultAssets();
 	void loadAssetsForComponents();
@@ -80,6 +99,5 @@ private:
 	void assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
 	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
 	void assignLoadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
-	meshID addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 };
 
