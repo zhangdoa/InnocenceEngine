@@ -76,8 +76,7 @@ textureID AssetSystem::addTexture(textureType textureType)
 
 MeshDataComponent* AssetSystem::getMesh(meshID meshID)
 {
-	auto l_meshMap = &AssetSystemSingletonComponent::getInstance().m_meshMap;
-	return l_meshMap->find(meshID)->second;
+	return AssetSystemSingletonComponent::getInstance().m_meshMap.find(meshID)->second;
 }
 
 TextureDataComponent * AssetSystem::getTexture(textureID textureID)
@@ -98,11 +97,12 @@ void AssetSystem::removeMesh(meshID meshID)
 
 void AssetSystem::removeTexture(textureID textureID)
 {
-	auto l_texture = AssetSystemSingletonComponent::getInstance().m_textureMap.find(textureID);
-	if (l_texture != AssetSystemSingletonComponent::getInstance().m_textureMap.end())
+	auto l_textureMap = &AssetSystemSingletonComponent::getInstance().m_textureMap;
+	auto l_texture = l_textureMap->find(textureID);
+	if (l_texture != l_textureMap->end())
 	{
 		l_texture->second->shutdown();
-		AssetSystemSingletonComponent::getInstance().m_textureMap.erase(textureID);
+		l_textureMap->erase(textureID);
 	}
 }
 
