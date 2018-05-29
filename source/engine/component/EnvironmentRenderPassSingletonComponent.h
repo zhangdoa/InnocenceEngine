@@ -1,6 +1,8 @@
 #pragma once
 #include "BaseComponent.h"
-#include "common/GLHeaders.h"
+#include "component/GLFrameBufferComponent.h"
+#include "component/GLShaderProgramComponent.h"
+#include "component/GLTextureDataComponent.h"
 
 class EnvironmentRenderPassSingletonComponent : public BaseComponent
 {
@@ -17,31 +19,30 @@ public:
 		return instance;
 	}
 
-	GLuint m_FBO;
-	GLuint m_RBO;
+	GLFrameBufferComponent m_GLFrameBufferComponent;
 
-	GLuint m_capturePassProgram;
+	GLShaderProgramComponent m_capturePassProgram;
 	GLuint m_capturePassVertexShaderID;
 	GLuint m_capturePassFragmentShaderID;
-	GLuint m_capturePassTextureID;
+	GLTextureDataComponent m_capturePassTexture;
 	GLuint m_capturePass_uni_equirectangularMap;
 	GLuint m_capturePass_uni_p;
 	GLuint m_capturePass_uni_r;
 
-	GLuint m_convolutionPassProgram;
+	GLShaderProgramComponent m_convolutionPassProgram;
 	GLuint m_convolutionPassVertexShaderID;
 	GLuint m_convolutionPassFragmentShaderID;
-	GLuint m_convolutionPassTextureID;
+	GLTextureDataComponent m_convolutionPassTexture;
 
-	GLuint m_preFilterPassProgram;
+	GLShaderProgramComponent m_preFilterPassProgram;
 	GLuint m_preFilterPassVertexShaderID;
 	GLuint m_preFilterPassFragmentShaderID;
-	GLuint m_preFilterPassTextureID;
+	GLTextureDataComponent m_preFilterPassTexture;
 
-	GLuint m_BRDFLUTPassProgram;
+	GLShaderProgramComponent m_BRDFLUTPassProgram;
 	GLuint m_BRDFLUTPassVertexShaderID;
 	GLuint m_BRDFLUTPassFragmentShaderID;
-	GLuint m_BRDFLUTTextureID;
+	GLTextureDataComponent m_BRDFLUTTexture;
 
 private:
 	EnvironmentRenderPassSingletonComponent() {};

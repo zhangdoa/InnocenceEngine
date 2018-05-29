@@ -1,6 +1,5 @@
 #pragma once
 #include "BaseComponent.h"
-#include "entity/InnoMath.h"
 #include "common/GLHeaders.h"
 
 class GLTextureDataComponent : public BaseComponent

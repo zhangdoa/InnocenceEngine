@@ -41,4 +41,18 @@ private:
 	void updateUniform(const GLint uniformLocation, double x, double y, double z) const;
 	void updateUniform(const GLint uniformLocation, double x, double y, double z, double w) const;
 	void updateUniform(const GLint uniformLocation, const mat4& mat) const;
+
+
+	GLMeshDataComponent* addMesh(meshID meshID);
+	GLTextureDataComponent* addTexture(textureType textureType, textureID textureID);
+	GLMeshDataComponent* getMesh(meshID meshID);
+	GLTextureDataComponent* getTexture(textureID textureID);
+	void removeMesh(meshID meshID);
+	void removeTexture(textureID textureID);
+
+	void attachTextureToFramebuffer(const GLTextureDataComponent* GLTextureDataComponent, const GLFrameBufferComponent* GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel);
+	void activateShaderProgram(const GLShaderProgramComponent* GLShaderProgramComponent);
+	void activateMesh(const GLMeshDataComponent* GLTextureDataComponent);
+	void drawMesh(const GLMeshDataComponent* GLTextureDataComponent);
+	void activateTexture(const GLTextureDataComponent* GLTextureDataComponent, int activateIndex);
 };
