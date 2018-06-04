@@ -54,22 +54,15 @@ void CoreSystem::update()
 	// time System should update without any limitation.
 	g_pTimeSystem->update();
 
-	// a frame counter occurred.
-	// @TODO: Async rendering
-	//if (g_pTimeSystem->getStatus() == objectStatus::ALIVE)
-	//{
-
 	// async game simulation
 	std::async(&IGameSystem::update, g_pGameSystem);
 	//// sync game simulation
 	//g_pGameSystem->update();
 	if (g_pRenderingSystem->getStatus() == objectStatus::ALIVE)
 	{
-		if (g_pGameSystem->needRender() && g_pRenderingSystem->canRender())
+		if (g_pGameSystem->needRender())
 		{
-			//std::async(&IRenderingSystem::render, g_pRenderingSystem);
 			g_pRenderingSystem->update();
-			g_pRenderingSystem->render();
 		}
 	}
 	else

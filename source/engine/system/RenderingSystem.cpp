@@ -60,7 +60,8 @@ void RenderingSystem::setupInput()
 void RenderingSystem::setupRendering()
 {
 	//setup rendering
-
+	m_GLRenderingSystem = g_pMemorySystem->spawn<GLRenderingSystem>();
+	m_GLRenderingSystem->setup();
 
 	m_canRender = true;
 }
@@ -104,12 +105,7 @@ void RenderingSystem::initializeRendering()
 {
 	setupComponents();
 	//initialize rendering
-
-	initializeBackgroundPass();
-	initializeShadowPass();
-	initializeGeometryPass();
-	initializeLightPass();
-	initializeFinalPass();
+	m_GLRenderingSystem->initialize();
 }
 
 void RenderingSystem::setupComponents()
@@ -411,10 +407,20 @@ void RenderingSystem::update()
 		updateInput();
 		// physics update
 		updatePhysics();
+
+		//defer render	
+		if (m_canRender)
+		{
+			m_canRender = false;
+			m_GLRenderingSystem->update();
+			//swap framebuffers
+			glfwSwapBuffers(m_window);
+			m_canRender = true;
+		}
 	}
 	else
 	{
-		g_pLogSystem->printLog("Input error!");
+		g_pLogSystem->printLog("Input error or Window closed.");
 		g_pLogSystem->printLog("RenderingSystem is stand-by.");
 		m_objectStatus = objectStatus::STANDBY;
 	}
@@ -424,6 +430,8 @@ void RenderingSystem::shutdown()
 {
 	if (m_window != nullptr)
 	{
+		m_GLRenderingSystem->shutdown();
+
 		glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_FALSE);
 		glfwDestroyWindow(m_window);
 		glfwTerminate();
@@ -431,11 +439,6 @@ void RenderingSystem::shutdown()
 	}
 	m_objectStatus = objectStatus::SHUTDOWN;
 	g_pLogSystem->printLog("RenderingSystem has been shutdown.");
-}
-
-bool RenderingSystem::canRender()
-{
-	return m_canRender;
 }
 
 const objectStatus & RenderingSystem::getStatus() const
@@ -901,65 +904,6 @@ AABB RenderingSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin)
 		1, 5, 2, 5, 6, 2 };
 
 	return l_AABB;
-}
-
-void RenderingSystem::render()
-{
-	//defer render
-	m_canRender = false;
-
-	//swap framebuffers
-	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0)
-	{
-		glfwSwapBuffers(m_window);
-		m_canRender = true;
-	}
-	else
-	{
-		g_pLogSystem->printLog("Window closed.");
-		g_pLogSystem->printLog("RenderingSystem is stand-by.");
-		m_objectStatus = objectStatus::STANDBY;
-	}
-}
-
-void RenderingSystem::initializeBackgroundPass()
-{
-}
-
-void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
-{
-}
-
-void RenderingSystem::initializeShadowPass()
-{
-}
-
-void RenderingSystem::renderShadowPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
-{
-}
-
-void RenderingSystem::initializeGeometryPass()
-{
-}
-
-void RenderingSystem::renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
-{
-}
-
-void RenderingSystem::initializeLightPass()
-{
-}
-
-void RenderingSystem::renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
-{
-}
-
-void RenderingSystem::initializeFinalPass()
-{
-}
-
-void RenderingSystem::renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
-{
 }
 
 void RenderingSystem::changeDrawPolygonMode()
