@@ -8,11 +8,18 @@ void GLRenderingSystem::setup()
 	glEnable(GL_MULTISAMPLE);
 	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-	setupEnvironmentRenderPass();
 }
 
-void GLRenderingSystem::setupEnvironmentRenderPass()
+void GLRenderingSystem::initialize()
+{
+	glEnable(GL_PROGRAM_POINT_SIZE);
+	glEnable(GL_TEXTURE_2D);
+
+	initializeEnvironmentRenderPass();
+	initializeGraphicPrimtives();
+}
+
+void GLRenderingSystem::initializeEnvironmentRenderPass()
 {
 	// generate and bind framebuffer
 	glGenFramebuffers(1, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
@@ -101,12 +108,12 @@ void GLRenderingSystem::setupEnvironmentRenderPass()
 
 	// shader programs and shaders
 	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program = glCreateProgram();
-	setupShader(
+	initializeShader(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3/environmentCapturePassPBSVertex.sf");
-	setupShader(
+	initializeShader(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
@@ -127,62 +134,122 @@ void GLRenderingSystem::setupEnvironmentRenderPass()
 
 	////
 	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program = glCreateProgram();
-	setupShader(
+	initializeShader(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3/environmentConvolutionPassPBSVertex.sf");
-	setupShader(
+	initializeShader(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3/environmentConvolutionPassPBSFragment.sf");
 
+	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_p = getUniformLocation(
+		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program,
+		"uni_p");
+	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_r = getUniformLocation(
+		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program,
+		"uni_r");
 
 	////
 	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program = glCreateProgram();
-	setupShader(
+	initializeShader(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3/environmentPreFilterPassPBSVertex.sf");
-	setupShader(
+	initializeShader(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3/environmentPreFilterPassPBSFragment.sf");
 
+	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_roughness = getUniformLocation(
+		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program,
+		"uni_roughness");
+	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_p = getUniformLocation(
+		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program,
+		"uni_p");
+	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_r = getUniformLocation(
+		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program,
+		"uni_r");
+
 	////
 	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassProgram.m_program = glCreateProgram();
-	setupShader(
+	initializeShader(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassProgram.m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3/environmentBRDFLUTPassPBSVertex.sf");
-	setupShader(
+	initializeShader(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassProgram.m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3/environmentBRDFLUTPassPBSFragment.sf");
 }
 
-void GLRenderingSystem::setupGraphicPrimtives()
+void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string & shaderFilePath)
+{
+	shaderID = glCreateShader(shaderType);
+
+	if (shaderID == 0) {
+		g_pLogSystem->printLog("Error: Shader creation failed: memory location invaild when adding shader!");
+	}
+
+	auto l_shaderCodeContent = g_pAssetSystem->loadShader(shaderFilePath);
+	const char* l_sourcePointer = l_shaderCodeContent.c_str();
+
+	glShaderSource(shaderID, 1, &l_sourcePointer, NULL);
+
+	GLint l_compileResult = GL_FALSE;
+	int l_infoLogLength = 0;
+	int l_shaderFileLength = 0;
+	glGetShaderiv(shaderProgram, GL_COMPILE_STATUS, &l_compileResult);
+	glGetShaderiv(shaderProgram, GL_INFO_LOG_LENGTH, &l_infoLogLength);
+	glGetShaderiv(shaderProgram, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
+	
+	if (l_infoLogLength > 0) {
+		std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
+		glGetShaderInfoLog(shaderProgram, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
+		g_pLogSystem->printLog("innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+	}
+
+	glAttachShader(shaderProgram, shaderID);
+	glLinkProgram(shaderProgram);
+	glValidateProgram(shaderProgram);
+
+	g_pLogSystem->printLog("innoShader: compiling " + shaderFilePath + " ...");
+
+	GLint success;
+	GLchar infoLog[1024];
+	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(shaderID, 1024, NULL, infoLog);
+		g_pLogSystem->printLog("innoShader: compile error: " + std::string(infoLog) + "\n -- --------------------------------------------------- -- ");
+	}
+
+	g_pLogSystem->printLog("innoShader: " + shaderFilePath + " Shader is compiled.");
+}
+
+void GLRenderingSystem::initializeGraphicPrimtives()
 {
 	for (auto& l_visibleComponent : g_pGameSystem->getVisibleComponents())
 	{
 		for (auto& l_graphicData : l_visibleComponent->getModelMap())
 		{
 			auto l_Mesh = g_pAssetSystem->getMesh(l_graphicData.first);
-			setupMesh(l_Mesh);
+			initializeMesh(l_Mesh);
 			std::for_each(l_graphicData.second.begin(), l_graphicData.second.end(), [&](texturePair val) {
 				auto l_Texture = g_pAssetSystem->getTexture(val.second);
-				setupTexture(l_Texture);
+				initializeTexture(l_Texture);
 			});
 		}
 	}
 }
 
-void GLRenderingSystem::setupMesh(MeshDataComponent* GLMeshDataComponent)
+void GLRenderingSystem::initializeMesh(MeshDataComponent* GLMeshDataComponent)
 {
 	glGenVertexArrays(1, &GLMeshDataComponent->m_VAO);
 	glGenBuffers(1, &GLMeshDataComponent->m_VBO);
@@ -252,7 +319,7 @@ void GLRenderingSystem::setupMesh(MeshDataComponent* GLMeshDataComponent)
 	}
 }
 
-void GLRenderingSystem::setupTexture(TextureDataComponent * GLTextureDataComponent)
+void GLRenderingSystem::initializeTexture(TextureDataComponent * GLTextureDataComponent)
 {
 	if (GLTextureDataComponent->m_textureType == textureType::INVISIBLE)
 	{
@@ -419,16 +486,8 @@ void GLRenderingSystem::setupTexture(TextureDataComponent * GLTextureDataCompone
 			}
 
 		}
-
-		m_objectStatus = objectStatus::ALIVE;
 	}
 
-}
-
-void GLRenderingSystem::initialize()
-{
-	glEnable(GL_PROGRAM_POINT_SIZE);
-	glEnable(GL_TEXTURE_2D);
 }
 
 void GLRenderingSystem::update()
@@ -601,36 +660,6 @@ void GLRenderingSystem::shutdown()
 const objectStatus & GLRenderingSystem::getStatus() const
 {
 	return m_objectStatus;
-}
-
-void GLRenderingSystem::setupShader(GLuint shaderProgram, GLuint shaderID, GLuint shaderType, const std::string & shaderFilePath)
-{
-	shaderID = glCreateShader(shaderType);
-
-	if (shaderID == 0) {
-		g_pLogSystem->printLog("Error: Shader creation failed: memory location invaild when adding shader!");
-	}
-
-	char const * l_sourcePointer = g_pAssetSystem->loadShader(shaderFilePath).c_str();
-	glShaderSource(shaderID, 1, &l_sourcePointer, NULL);
-
-	GLint l_compileResult = GL_FALSE;
-	int l_infoLogLength = 0;
-
-	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &l_compileResult);
-	glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
-
-	if (!l_compileResult) {
-		std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
-		glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-		g_pLogSystem->printLog("innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
-	}
-
-	glAttachShader(shaderProgram, shaderID);
-	glLinkProgram(shaderProgram);
-	glValidateProgram(shaderProgram);
-
-	g_pLogSystem->printLog("innoShader: " + shaderFilePath + " Shader is compiled.");
 }
 
 GLuint GLRenderingSystem::getUniformLocation(GLuint shaderProgram, const std::string & uniformName)

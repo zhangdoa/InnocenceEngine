@@ -10,6 +10,7 @@
 #include "interface/ILogSystem.h"
 
 #include "entity/ComponentHeaders.h"
+#include "GLRenderingSystem.h"
 
 extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;
@@ -38,13 +39,10 @@ public:
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
-	bool canRender() override;
 
 	friend class windowCallbackWrapper;
 
 	void setWindowName(const std::string& windowName) override;
-
-	void render() override;
 
 	const objectStatus& getStatus() const override;
 
@@ -86,16 +84,6 @@ private:
 	void updatePhysics();
 	void updateCameraComponents();
 
-	void initializeBackgroundPass();
-	void renderBackgroundPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
-	void initializeShadowPass();
-	void renderShadowPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
-	void initializeGeometryPass();
-	void renderGeometryPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
-	void initializeLightPass();
-	void renderLightPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
-	void initializeFinalPass();
-	void renderFinalPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents);
 	void changeDrawPolygonMode();
 	void changeDrawTextureMode();
 	void changeShadingMode();
@@ -130,6 +118,8 @@ private:
 	std::function<void()> f_changeDrawPolygonMode;
 	std::function<void()> f_changeDrawTextureMode;
 	std::function<void()> f_changeShadingMode;
+
+	GLRenderingSystem* m_GLRenderingSystem;
 
 	std::vector<VisibleComponent*> m_staticMeshVisibleComponents;
 	std::vector<VisibleComponent*> m_emissiveVisibleComponents;

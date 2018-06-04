@@ -4,7 +4,7 @@
 #include "component/GLRenderingSystemSingletonComponent.h"
 #include "component/AssetSystemSingletonComponent.h"
 
-#include "interface/IRenderingSystem.h"
+#include "interface/ISystem.h"
 #include "interface/IMemorySystem.h"
 #include "interface/IAssetSystem.h"
 #include "interface/IGameSystem.h"
@@ -13,7 +13,7 @@ extern IMemorySystem* g_pMemorySystem;
 extern IAssetSystem* g_pAssetSystem;
 extern IGameSystem* g_pGameSystem;
 
-class GLRenderingSystem : public IRenderingSystem
+class GLRenderingSystem : public ISystem
 {
 public:
 	GLRenderingSystem() {};
@@ -29,11 +29,11 @@ public:
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	void setupEnvironmentRenderPass();
-	void setupGraphicPrimtives();
-	void setupMesh(MeshDataComponent* GLMeshDataComponent);
-	void setupTexture(TextureDataComponent* GLTextureDataComponent);
-	void setupShader(GLuint shaderProgram, GLuint shaderID, GLuint shaderType, const std::string& shaderFilePath);
+	void initializeEnvironmentRenderPass();
+	void initializeGraphicPrimtives();
+	void initializeMesh(MeshDataComponent* GLMeshDataComponent);
+	void initializeTexture(TextureDataComponent* GLTextureDataComponent);
+	void initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string& shaderFilePath);
 	GLuint getUniformLocation(GLuint shaderProgram, const std::string& uniformName);
 	void updateUniform(const GLint uniformLocation, bool uniformValue) const;
 	void updateUniform(const GLint uniformLocation, int uniformValue) const;
