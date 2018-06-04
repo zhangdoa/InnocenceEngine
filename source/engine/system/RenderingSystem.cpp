@@ -60,12 +60,7 @@ void RenderingSystem::setupInput()
 void RenderingSystem::setupRendering()
 {
 	//setup rendering
-	// 16x antialiasing
-	glfwWindowHint(GLFW_SAMPLES, 16);
-	// MSAA
-	glEnable(GL_MULTISAMPLE);
-	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 
 	m_canRender = true;
 }
@@ -108,10 +103,8 @@ void RenderingSystem::initializeInput()
 void RenderingSystem::initializeRendering()
 {
 	setupComponents();
-
 	//initialize rendering
-	glEnable(GL_PROGRAM_POINT_SIZE);
-	glEnable(GL_TEXTURE_2D);
+
 	initializeBackgroundPass();
 	initializeShadowPass();
 	initializeGeometryPass();
@@ -914,14 +907,6 @@ void RenderingSystem::render()
 {
 	//defer render
 	m_canRender = false;
-	auto l_cameraComponents = g_pGameSystem->getCameraComponents();
-	auto l_lightComponents = g_pGameSystem->getLightComponents();
-	auto l_visibleComponents = g_pGameSystem->getVisibleComponents();
-	renderBackgroundPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
-	renderShadowPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
-	renderGeometryPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
-	renderLightPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
-	renderFinalPass(l_cameraComponents, l_lightComponents, l_visibleComponents);
 
 	//swap framebuffers
 	if (m_window != nullptr && glfwWindowShouldClose(m_window) == 0)
@@ -939,39 +924,18 @@ void RenderingSystem::render()
 
 void RenderingSystem::initializeBackgroundPass()
 {
-	// environment capture pass
-
-	//assign the textures to Skybox visibleComponent
-	// @TODO: multi CaptureRRRRRRRRR
-	//for (auto i : g_pGameSystem->getVisibleComponents())
-	//{
-	//	if (i->m_visiblilityType == visiblilityType::SKYBOX)
-	//	{
-	//		i->overwriteTextureData(texturePair(textureType::ENVIRONMENT_CAPTURE, m_environmentCapturePassTextureID));
-	//		i->overwriteTextureData(texturePair(textureType::ENVIRONMENT_CONVOLUTION, m_environmentConvolutionPassTextureID));
-	//		i->overwriteTextureData(texturePair(textureType::ENVIRONMENT_PREFILTER, m_environmentPreFilterPassTextureID));
-	//		i->overwriteTextureData(texturePair(textureType::RENDER_BUFFER_SAMPLER, m_environmentBRDFLUTTextureID));
-	//		i->overwriteTextureData(texturePair(textureType::CUBEMAP, m_environmentCapturePassTextureID));
-	//	}
-	//}
 }
 
 void RenderingSystem::renderBackgroundPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	if (m_shouldUpdateEnvironmentMap)
-	{
-		m_shouldUpdateEnvironmentMap = false;
-	}
 }
 
 void RenderingSystem::initializeShadowPass()
 {
-	// shadow forward pass
 }
 
 void RenderingSystem::renderShadowPass(std::vector<CameraComponent*>& cameraComponents, std::vector<LightComponent*>& lightComponents, std::vector<VisibleComponent*>& visibleComponents)
 {
-	// draw shadow forward pass
 }
 
 void RenderingSystem::initializeGeometryPass()

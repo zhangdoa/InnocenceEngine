@@ -1,9 +1,8 @@
 #pragma once
-#include "BaseComponent.h"
-#include "entity/InnoMath.h"
+#include "MeshDataComponent.h"
 #include "common/GLHeaders.h"
 
-class GLMeshDataComponent : public BaseComponent
+class GLMeshDataComponent : public MeshDataComponent
 {
 public:
 	GLMeshDataComponent() {};
@@ -12,9 +11,6 @@ public:
 	void setup() override;
 	void initialize() override;
 	void shutdown() override;
-
-	meshID m_meshID;
-	meshType m_meshType;
 
 	GLuint m_VAO = 0;
 	GLuint m_VBO = 0;

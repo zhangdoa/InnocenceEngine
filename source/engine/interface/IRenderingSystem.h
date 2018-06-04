@@ -1,7 +1,6 @@
 #pragma once
 #include "common/stdafx.h"
 #include "ISystem.h"
-#include "entity/BaseGraphicPrimitiveHeader.h"
 
 class IRenderingSystem : public ISystem
 {

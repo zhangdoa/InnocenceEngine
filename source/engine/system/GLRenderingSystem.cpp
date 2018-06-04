@@ -2,6 +2,13 @@
 
 void GLRenderingSystem::setup()
 {
+	// 16x antialiasing
+	glfwWindowHint(GLFW_SAMPLES, 16);
+	// MSAA
+	glEnable(GL_MULTISAMPLE);
+	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 	setupEnvironmentRenderPass();
 }
 
@@ -166,26 +173,24 @@ void GLRenderingSystem::setupGraphicPrimtives()
 		for (auto& l_graphicData : l_visibleComponent->getModelMap())
 		{
 			auto l_Mesh = g_pAssetSystem->getMesh(l_graphicData.first);
-			setupMesh(l_Mesh, addMesh(l_graphicData.first));
+			setupMesh(l_Mesh);
 			std::for_each(l_graphicData.second.begin(), l_graphicData.second.end(), [&](texturePair val) {
 				auto l_Texture = g_pAssetSystem->getTexture(val.second);
-				setupTexture(l_Texture, addTexture(val.first, val.second));
+				setupTexture(l_Texture);
 			});
 		}
 	}
 }
 
-void GLRenderingSystem::setupMesh(const MeshDataComponent * MeshDataComponent, GLMeshDataComponent* GLMeshDataComponent)
+void GLRenderingSystem::setupMesh(MeshDataComponent* GLMeshDataComponent)
 {
-	GLMeshDataComponent->m_meshType = MeshDataComponent->m_meshType;
-
 	glGenVertexArrays(1, &GLMeshDataComponent->m_VAO);
 	glGenBuffers(1, &GLMeshDataComponent->m_VBO);
 	glGenBuffers(1, &GLMeshDataComponent->m_IBO);
 
 	std::vector<float> l_verticesBuffer;
-	auto& l_vertices = MeshDataComponent->m_vertices;
-	auto& l_indices = MeshDataComponent->m_indices;
+	auto& l_vertices = GLMeshDataComponent->m_vertices;
+	auto& l_indices = GLMeshDataComponent->m_indices;
 
 	if (GLMeshDataComponent->m_meshType == meshType::TWO_DIMENSION)
 	{
@@ -247,10 +252,8 @@ void GLRenderingSystem::setupMesh(const MeshDataComponent * MeshDataComponent, G
 	}
 }
 
-void GLRenderingSystem::setupTexture(const TextureDataComponent * TextureDataComponent, GLTextureDataComponent * GLTextureDataComponent)
+void GLRenderingSystem::setupTexture(TextureDataComponent * GLTextureDataComponent)
 {
-	GLTextureDataComponent->m_textureType = TextureDataComponent->m_textureType;
-
 	if (GLTextureDataComponent->m_textureType == textureType::INVISIBLE)
 	{
 		return;
@@ -259,7 +262,7 @@ void GLRenderingSystem::setupTexture(const TextureDataComponent * TextureDataCom
 	{
 		//generate and bind texture object
 		glGenTextures(1, &GLTextureDataComponent->m_TAO);
-		if (TextureDataComponent->m_textureType == textureType::CUBEMAP || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		if (GLTextureDataComponent->m_textureType == textureType::CUBEMAP || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glBindTexture(GL_TEXTURE_CUBE_MAP, GLTextureDataComponent->m_TAO);
 		}
@@ -270,19 +273,19 @@ void GLRenderingSystem::setupTexture(const TextureDataComponent * TextureDataCom
 
 		// set the texture wrapping parameters
 		GLenum l_textureWrapMethod;
-		switch (TextureDataComponent->m_textureWrapMethod)
+		switch (GLTextureDataComponent->m_textureWrapMethod)
 		{
 		case textureWrapMethod::CLAMP_TO_EDGE: l_textureWrapMethod = GL_CLAMP_TO_EDGE; break;
 		case textureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
 		case textureWrapMethod::CLAMP_TO_BORDER: l_textureWrapMethod = GL_CLAMP_TO_BORDER; break;
 		}
-		if (TextureDataComponent->m_textureType == textureType::CUBEMAP || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		if (GLTextureDataComponent->m_textureType == textureType::CUBEMAP || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
 		}
-		else if (TextureDataComponent->m_textureType == textureType::SHADOWMAP)
+		else if (GLTextureDataComponent->m_textureType == textureType::SHADOWMAP)
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
@@ -297,7 +300,7 @@ void GLRenderingSystem::setupTexture(const TextureDataComponent * TextureDataCom
 
 		// set texture filtering parameters
 		GLenum l_minFilterParam;
-		switch (TextureDataComponent->m_textureMinFilterMethod)
+		switch (GLTextureDataComponent->m_textureMinFilterMethod)
 		{
 		case textureFilterMethod::NEAREST: l_minFilterParam = GL_NEAREST; break;
 		case textureFilterMethod::LINEAR: l_minFilterParam = GL_LINEAR; break;
@@ -305,14 +308,14 @@ void GLRenderingSystem::setupTexture(const TextureDataComponent * TextureDataCom
 
 		}
 		GLenum l_magFilterParam;
-		switch (TextureDataComponent->m_textureMagFilterMethod)
+		switch (GLTextureDataComponent->m_textureMagFilterMethod)
 		{
 		case textureFilterMethod::NEAREST: l_magFilterParam = GL_NEAREST; break;
 		case textureFilterMethod::LINEAR: l_magFilterParam = GL_LINEAR; break;
 		case textureFilterMethod::LINEAR_MIPMAP_LINEAR: l_magFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
 
 		}
-		if (TextureDataComponent->m_textureType == textureType::CUBEMAP || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		if (GLTextureDataComponent->m_textureType == textureType::CUBEMAP || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, l_minFilterParam);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, l_magFilterParam);
@@ -327,20 +330,20 @@ void GLRenderingSystem::setupTexture(const TextureDataComponent * TextureDataCom
 		GLenum l_internalFormat;
 		GLenum l_dataFormat;
 		GLenum l_type;
-		if (TextureDataComponent->m_textureType == textureType::ALBEDO)
+		if (GLTextureDataComponent->m_textureType == textureType::ALBEDO)
 		{
-			if (TextureDataComponent->m_texturePixelDataFormat == texturePixelDataFormat::RGB)
+			if (GLTextureDataComponent->m_texturePixelDataFormat == texturePixelDataFormat::RGB)
 			{
 				l_internalFormat = GL_SRGB;
 			}
-			else if (TextureDataComponent->m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
+			else if (GLTextureDataComponent->m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
 			{
 				l_internalFormat = GL_SRGB_ALPHA;
 			}
 		}
 		else
 		{
-			switch (TextureDataComponent->m_textureColorComponentsFormat)
+			switch (GLTextureDataComponent->m_textureColorComponentsFormat)
 			{
 			case textureColorComponentsFormat::RED: l_internalFormat = GL_RED; break;
 			case textureColorComponentsFormat::RG: l_internalFormat = GL_RG; break;
@@ -369,7 +372,7 @@ void GLRenderingSystem::setupTexture(const TextureDataComponent * TextureDataCom
 			case textureColorComponentsFormat::DEPTH_COMPONENT: l_internalFormat = GL_DEPTH_COMPONENT; break;
 			}
 		}
-		switch (TextureDataComponent->m_texturePixelDataFormat)
+		switch (GLTextureDataComponent->m_texturePixelDataFormat)
 		{
 		case texturePixelDataFormat::RED:l_dataFormat = GL_RED; break;
 		case texturePixelDataFormat::RG:l_dataFormat = GL_RG; break;
@@ -377,7 +380,7 @@ void GLRenderingSystem::setupTexture(const TextureDataComponent * TextureDataCom
 		case texturePixelDataFormat::RGBA:l_dataFormat = GL_RGBA; break;
 		case texturePixelDataFormat::DEPTH_COMPONENT:l_dataFormat = GL_DEPTH_COMPONENT; break;
 		}
-		switch (TextureDataComponent->m_texturePixelDataType)
+		switch (GLTextureDataComponent->m_texturePixelDataType)
 		{
 		case texturePixelDataType::UNSIGNED_BYTE:l_type = GL_UNSIGNED_BYTE; break;
 		case texturePixelDataType::BYTE:l_type = GL_BYTE; break;
@@ -388,29 +391,29 @@ void GLRenderingSystem::setupTexture(const TextureDataComponent * TextureDataCom
 		case texturePixelDataType::FLOAT:l_type = GL_FLOAT; break;
 		}
 
-		if (TextureDataComponent->m_textureType == textureType::CUBEMAP || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		if (GLTextureDataComponent->m_textureType == textureType::CUBEMAP || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, TextureDataComponent->m_textureWidth, TextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, TextureDataComponent->m_textureData[0]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, TextureDataComponent->m_textureWidth, TextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, TextureDataComponent->m_textureData[1]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, l_internalFormat, TextureDataComponent->m_textureWidth, TextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, TextureDataComponent->m_textureData[2]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, l_internalFormat, TextureDataComponent->m_textureWidth, TextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, TextureDataComponent->m_textureData[3]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, l_internalFormat, TextureDataComponent->m_textureWidth, TextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, TextureDataComponent->m_textureData[4]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, l_internalFormat, TextureDataComponent->m_textureWidth, TextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, TextureDataComponent->m_textureData[5]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[0]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[1]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[2]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[3]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[4]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[5]);
 		}
 		else
 		{
-			glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, TextureDataComponent->m_textureWidth, TextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, TextureDataComponent->m_textureData[0]);
+			glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[0]);
 		}
 
 		// should generate mipmap or not
-		if (TextureDataComponent->m_textureMinFilterMethod == textureFilterMethod::LINEAR_MIPMAP_LINEAR)
+		if (GLTextureDataComponent->m_textureMinFilterMethod == textureFilterMethod::LINEAR_MIPMAP_LINEAR)
 		{
 			// @TODO: generalization...
-			if (TextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+			if (GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 			{
 				glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 			}
-			else if (TextureDataComponent->m_textureType != textureType::CUBEMAP || TextureDataComponent->m_textureType != textureType::ENVIRONMENT_CAPTURE || TextureDataComponent->m_textureType != textureType::ENVIRONMENT_CONVOLUTION || TextureDataComponent->m_textureType != textureType::RENDER_BUFFER_SAMPLER)
+			else if (GLTextureDataComponent->m_textureType != textureType::CUBEMAP || GLTextureDataComponent->m_textureType != textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType != textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType != textureType::RENDER_BUFFER_SAMPLER)
 			{
 				glGenerateMipmap(GL_TEXTURE_2D);
 			}
@@ -424,144 +427,101 @@ void GLRenderingSystem::setupTexture(const TextureDataComponent * TextureDataCom
 
 void GLRenderingSystem::initialize()
 {
+	glEnable(GL_PROGRAM_POINT_SIZE);
+	glEnable(GL_TEXTURE_2D);
 }
 
 void GLRenderingSystem::update()
 {
-	// bind to framebuffer
-	glBindFramebuffer(GL_FRAMEBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	// draw environment capture texture
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
-	glViewport(0, 0, 2048, 2048);
-
-	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0, 0.1, 10.0);
-	std::vector<mat4> captureViews =
+	if (GLRenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap)
 	{
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(-1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  1.0,  0.0, 1.0), vec4(0.0,  0.0,  1.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, -1.0,  0.0, 1.0), vec4(0.0,  0.0, -1.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0,  1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0, -1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0))
-	};
+		// bind to framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
 
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
+		// draw environment capture texture
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
+		glViewport(0, 0, 2048, 2048);
 
-	glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program);
-	updateUniform(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p,
-		captureProjection);
-
-	auto& l_visibleComponents = g_pGameSystem->getVisibleComponents();
-	if (l_visibleComponents.size() > 0)
-	{
-		for (auto& l_visibleComponent : l_visibleComponents)
+		mat4 captureProjection;
+		captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0, 0.1, 10.0);
+		std::vector<mat4> captureViews =
 		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
-			{
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
-				{
-					// activate equiretangular texture and remap equiretangular texture to cubemap
-					auto l_equiretangularTexture = getTexture(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);
-					activateTexture(l_equiretangularTexture, 0);
-					for (unsigned int i = 0; i < 6; ++i)
-					{
-						updateUniform(
-							EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r,
-							captureViews[i]);
-						glBindTexture(GL_TEXTURE_CUBE_MAP, EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_TAO);
-						glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_TAO, 0);
-						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-						auto l_mesh = getMesh(l_graphicData.first);
-						activateMesh(l_mesh);
-						drawMesh(l_mesh);
-					}
-					glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-				}
-			}
-		}
-	}
+			mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+			mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(-1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+			mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  1.0,  0.0, 1.0), vec4(0.0,  0.0,  1.0, 0.0)),
+			mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, -1.0,  0.0, 1.0), vec4(0.0,  0.0, -1.0, 0.0)),
+			mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0,  1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
+			mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0, -1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0))
+		};
 
-	// draw environment convolution texture
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
-	glViewport(0, 0, 128, 128);
-	glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program);
-	updateUniform(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p,
-		captureProjection);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_CULL_FACE);
 
-	auto& l_visibleComponents = g_pGameSystem->getVisibleComponents();
-	if (l_visibleComponents.size() > 0)
-	{
-		for (auto& l_visibleComponent : l_visibleComponents)
+		glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program);
+		updateUniform(
+			EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p,
+			captureProjection);
+
+		auto& l_visibleComponents = g_pGameSystem->getVisibleComponents();
+
+		if (l_visibleComponents.size() > 0)
 		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
+			for (auto& l_visibleComponent : l_visibleComponents)
 			{
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
+				if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
 				{
-					auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
-					auto l_environmentConvolutionTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture;
-					activateTexture(l_environmentCaptureTexture, 1);
-					for (unsigned int i = 0; i < 6; ++i)
+					for (auto& l_graphicData : l_visibleComponent->getModelMap())
 					{
-						updateUniform(
-							EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r,
-							captureViews[i]);
-						attachTextureToFramebuffer(l_environmentConvolutionTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
-						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-						auto l_mesh = getMesh(l_graphicData.first);
-						activateMesh(l_mesh);
-						drawMesh(l_mesh);
-					}
-				}
-			}
-		}
-	}
-
-	// draw environment pre-filter texture
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
-	glViewport(0, 0, 128, 128);
-	glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program);
-	updateUniform(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p,
-		captureProjection);
-
-	auto& l_visibleComponents = g_pGameSystem->getVisibleComponents();
-	if (l_visibleComponents.size() > 0)
-	{
-		for (auto& l_visibleComponent : l_visibleComponents)
-		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
-			{
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
-				{
-					auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
-					auto l_environmentPrefilterTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture;
-					activateTexture(l_environmentPrefilterTexture, 2);
-					unsigned int maxMipLevels = 5;
-					for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
-					{
-						// resize framebuffer according to mip-level size.
-						unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
-						unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
-
-						glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, mipWidth, mipHeight);
-						glViewport(0, 0, mipWidth, mipHeight);
-
-						double roughness = (double)mip / (double)(maxMipLevels - 1);
-						updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_roughness, roughness);
+						// activate equiretangular texture and remap equiretangular texture to cubemap
+						auto l_equiretangularTexture = g_pAssetSystem->getTexture(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);
+						activateTexture(l_equiretangularTexture, 0);
 						for (unsigned int i = 0; i < 6; ++i)
 						{
-							updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_r, captureViews[i]);
-							attachTextureToFramebuffer(l_environmentPrefilterTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, mip);
-
+							updateUniform(
+								EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r,
+								captureViews[i]);
+							glBindTexture(GL_TEXTURE_CUBE_MAP, EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_TAO);
+							glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_TAO, 0);
 							glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-							auto l_mesh = getMesh(l_graphicData.first);
+							auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+							activateMesh(l_mesh);
+							drawMesh(l_mesh);
+						}
+						glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+					}
+				}
+			}
+		}
+
+		// draw environment convolution texture
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
+		glViewport(0, 0, 128, 128);
+		glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program);
+		updateUniform(
+			EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_p,
+			captureProjection);
+
+		if (l_visibleComponents.size() > 0)
+		{
+			for (auto& l_visibleComponent : l_visibleComponents)
+			{
+				if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
+				{
+					for (auto& l_graphicData : l_visibleComponent->getModelMap())
+					{
+						auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
+						auto l_environmentConvolutionTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture;
+						activateTexture(l_environmentCaptureTexture, 1);
+						for (unsigned int i = 0; i < 6; ++i)
+						{
+							updateUniform(
+								EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_r,
+								captureViews[i]);
+							attachTextureToFramebuffer(l_environmentConvolutionTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
+							glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+							auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
 							activateMesh(l_mesh);
 							drawMesh(l_mesh);
 						}
@@ -569,18 +529,69 @@ void GLRenderingSystem::update()
 				}
 			}
 		}
+
+		// draw environment pre-filter texture
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
+		glViewport(0, 0, 128, 128);
+		glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program);
+		updateUniform(
+			EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_p,
+			captureProjection);
+
+		if (l_visibleComponents.size() > 0)
+		{
+			for (auto& l_visibleComponent : l_visibleComponents)
+			{
+				if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
+				{
+					for (auto& l_graphicData : l_visibleComponent->getModelMap())
+					{
+						auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
+						auto l_environmentPrefilterTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture;
+						activateTexture(l_environmentPrefilterTexture, 2);
+						unsigned int maxMipLevels = 5;
+						for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
+						{
+							// resize framebuffer according to mip-level size.
+							unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
+							unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
+
+							glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, mipWidth, mipHeight);
+							glViewport(0, 0, mipWidth, mipHeight);
+
+							double roughness = (double)mip / (double)(maxMipLevels - 1);
+							updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_roughness, roughness);
+							for (unsigned int i = 0; i < 6; ++i)
+							{
+								updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_r, captureViews[i]);
+								attachTextureToFramebuffer(l_environmentPrefilterTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, mip);
+
+								glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+								auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+								activateMesh(l_mesh);
+								drawMesh(l_mesh);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// draw environment BRDF look-up table texture
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
+		glViewport(0, 0, 512, 512);
+		glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassProgram.m_program);
+
+		auto l_environmentBRDFLUTTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture;
+		attachTextureToFramebuffer(l_environmentBRDFLUTTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, 0, 0);
+
+		// draw environment map BRDF LUT rectangle
+		auto l_mesh = g_pAssetSystem->getMesh(AssetSystemSingletonComponent::getInstance().m_Unit2DQuadTemplate);
+		activateMesh(l_mesh);
+		drawMesh(l_mesh);
+
+		GLRenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap = false;
 	}
-
-	// draw environment BRDF look-up table texture
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
-	glViewport(0, 0, 512, 512);
-	glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassProgram.m_program);
-
-	auto l_environmentBRDFLUTTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture;
-	attachTextureToFramebuffer(l_environmentBRDFLUTTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, 0, 0);
-
-	// draw environment map BRDF LUT rectangle
-	getMesh(m_Unit2DQuadTemplate)->update();
 }
 
 void GLRenderingSystem::shutdown()
@@ -673,54 +684,6 @@ void GLRenderingSystem::updateUniform(const GLint uniformLocation, const mat4 & 
 #endif
 }
 
-GLMeshDataComponent* GLRenderingSystem::addMesh(meshID meshID)
-{
-	auto l_GLMesh = g_pMemorySystem->spawn<GLMeshDataComponent>();
-	l_GLMesh->m_meshID = meshID;
-	GLRenderingSystemSingletonComponent::getInstance().m_meshMap.emplace(meshID, l_GLMesh);
-	return l_GLMesh;
-}
-
-GLTextureDataComponent* GLRenderingSystem::addTexture(textureType textureType, textureID textureID)
-{
-	auto l_GLTexture = g_pMemorySystem->spawn<GLTextureDataComponent>();
-	l_GLTexture->m_textureID = textureID;
-	GLRenderingSystemSingletonComponent::getInstance().m_textureMap.emplace(textureType, l_GLTexture);
-	return l_GLTexture;
-}
-
-GLMeshDataComponent * GLRenderingSystem::getMesh(meshID meshID)
-{
-	return GLRenderingSystemSingletonComponent::getInstance().m_meshMap.find(meshID)->second;
-}
-
-GLTextureDataComponent * GLRenderingSystem::getTexture(textureID textureID)
-{
-	return GLRenderingSystemSingletonComponent::getInstance().m_textureMap.find(textureID)->second;
-}
-
-void GLRenderingSystem::removeMesh(meshID meshID)
-{
-	auto l_meshMap = &GLRenderingSystemSingletonComponent::getInstance().m_meshMap;
-	auto l_mesh = l_meshMap->find(meshID);
-	if (l_mesh != l_meshMap->end())
-	{
-		l_mesh->second->shutdown();
-		l_meshMap->erase(meshID);
-	}
-}
-
-void GLRenderingSystem::removeTexture(textureID textureID)
-{
-	auto l_textureMap = &GLRenderingSystemSingletonComponent::getInstance().m_textureMap;
-	auto l_texture = l_textureMap->find(textureID);
-	if (l_texture != l_textureMap->end())
-	{
-		l_texture->second->shutdown();
-		l_textureMap->erase(textureID);
-	}
-}
-
 void GLRenderingSystem::attachTextureToFramebuffer(const GLTextureDataComponent * GLTextureDataComponent, const GLFrameBufferComponent * GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel)
 {
 	if (GLTextureDataComponent->m_textureType == textureType::CUBEMAP || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
@@ -746,18 +709,17 @@ void GLRenderingSystem::activateShaderProgram(const GLShaderProgramComponent * G
 	glUseProgram(GLShaderProgramComponent->m_program);
 }
 
-void GLRenderingSystem::activateMesh(const GLMeshDataComponent * GLTextureDataComponent)
+void GLRenderingSystem::activateMesh(const MeshDataComponent * GLTextureDataComponent)
 {
 	glBindVertexArray(GLTextureDataComponent->m_VAO);
 }
 
-void GLRenderingSystem::drawMesh(const GLMeshDataComponent * GLTextureDataComponent)
+void GLRenderingSystem::drawMesh(const MeshDataComponent * GLTextureDataComponent)
 {
-	auto l_mesh = 
 	glDrawElements(GL_TRIANGLES + (int)GLTextureDataComponent->m_meshDrawMethod, GLTextureDataComponent->m_indices.size(), GL_UNSIGNED_INT, 0);
 }
 
-void GLRenderingSystem::activateTexture(const GLTextureDataComponent * GLTextureDataComponent, int activateIndex)
+void GLRenderingSystem::activateTexture(const TextureDataComponent * GLTextureDataComponent, int activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
 	if (GLTextureDataComponent->m_textureType == textureType::CUBEMAP || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
