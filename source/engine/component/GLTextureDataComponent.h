@@ -1,8 +1,8 @@
 #pragma once
-#include "BaseComponent.h"
+#include "TextureDataComponent.h"
 #include "common/GLHeaders.h"
 
-class GLTextureDataComponent : public BaseComponent
+class GLTextureDataComponent : public TextureDataComponent
 {
 public:
 	GLTextureDataComponent() {};
@@ -11,9 +11,6 @@ public:
 	void setup() override;
 	void initialize() override;
 	void shutdown() override;
-
-	textureID m_textureID;
-	textureType m_textureType;
 
 	GLuint m_TAO;
 };

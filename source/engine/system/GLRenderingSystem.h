@@ -2,6 +2,7 @@
 #include "interface/IRenderingSystem.h"
 #include "component/EnvironmentRenderPassSingletonComponent.h"
 #include "component/GLRenderingSystemSingletonComponent.h"
+#include "component/AssetSystemSingletonComponent.h"
 
 #include "interface/IRenderingSystem.h"
 #include "interface/IMemorySystem.h"
@@ -30,8 +31,8 @@ private:
 
 	void setupEnvironmentRenderPass();
 	void setupGraphicPrimtives();
-	void setupMesh(const MeshDataComponent * MeshDataComponent, GLMeshDataComponent* GLMeshDataComponent);
-	void setupTexture(const TextureDataComponent * TextureDataComponent, GLTextureDataComponent* GLTextureDataComponent);
+	void setupMesh(MeshDataComponent* GLMeshDataComponent);
+	void setupTexture(TextureDataComponent* GLTextureDataComponent);
 	void setupShader(GLuint shaderProgram, GLuint shaderID, GLuint shaderType, const std::string& shaderFilePath);
 	GLuint getUniformLocation(GLuint shaderProgram, const std::string& uniformName);
 	void updateUniform(const GLint uniformLocation, bool uniformValue) const;
@@ -42,17 +43,9 @@ private:
 	void updateUniform(const GLint uniformLocation, double x, double y, double z, double w) const;
 	void updateUniform(const GLint uniformLocation, const mat4& mat) const;
 
-
-	GLMeshDataComponent* addMesh(meshID meshID);
-	GLTextureDataComponent* addTexture(textureType textureType, textureID textureID);
-	GLMeshDataComponent* getMesh(meshID meshID);
-	GLTextureDataComponent* getTexture(textureID textureID);
-	void removeMesh(meshID meshID);
-	void removeTexture(textureID textureID);
-
 	void attachTextureToFramebuffer(const GLTextureDataComponent* GLTextureDataComponent, const GLFrameBufferComponent* GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel);
 	void activateShaderProgram(const GLShaderProgramComponent* GLShaderProgramComponent);
-	void activateMesh(const GLMeshDataComponent* GLTextureDataComponent);
-	void drawMesh(const GLMeshDataComponent* GLTextureDataComponent);
-	void activateTexture(const GLTextureDataComponent* GLTextureDataComponent, int activateIndex);
+	void activateMesh(const MeshDataComponent* GLTextureDataComponent);
+	void drawMesh(const MeshDataComponent* GLTextureDataComponent);
+	void activateTexture(const TextureDataComponent* GLTextureDataComponent, int activateIndex);
 };

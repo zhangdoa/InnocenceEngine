@@ -10,8 +10,6 @@
 #include "interface/ILogSystem.h"
 
 #include "entity/ComponentHeaders.h"
-#include "entity/BaseGraphicPrimitiveHeader.h"
-#include "entity/GLGraphicPrimitiveHeader.h"
 
 extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;
@@ -141,8 +139,6 @@ private:
 	int m_polygonMode = 2;
 	int m_textureMode = 0;
 	int m_shadingMode = 0;
-
-	bool m_shouldUpdateEnvironmentMap = true;
 };
 
 class windowCallbackWrapper

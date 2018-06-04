@@ -1,8 +1,10 @@
 #pragma once
 #include "BaseComponent.h"
-#include "common/GLHeaders.h"
-#include "component/MeshDataComponent.h"
-#include "component/TextureDataComponent.h"
+#include "component/GLMeshDataComponent.h"
+#include "component/GLTextureDataComponent.h"
+
+#define MeshDataComponent GLMeshDataComponent
+#define TextureDataComponent GLTextureDataComponent
 
 class AssetSystemSingletonComponent : public BaseComponent
 {

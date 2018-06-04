@@ -1,8 +1,5 @@
 #pragma once
 #include "BaseComponent.h"
-#include "common/GLHeaders.h"
-#include "GLMeshDataComponent.h"
-#include "GLTextureDataComponent.h"
 
 class GLRenderingSystemSingletonComponent : public BaseComponent
 {
@@ -19,8 +16,7 @@ public:
 		return instance;
 	}
 
-	std::unordered_map<meshID, GLMeshDataComponent*> m_meshMap;
-	std::unordered_map<textureID, GLTextureDataComponent*> m_textureMap;
+	bool m_shouldUpdateEnvironmentMap = true;
 
 private:
 	GLRenderingSystemSingletonComponent() {};
