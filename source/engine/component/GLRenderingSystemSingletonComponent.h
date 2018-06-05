@@ -2,6 +2,9 @@
 #include "BaseComponent.h"
 #include "AssetSystemSingletonComponent.h"
 
+//#define BlinnPhong
+#define CookTorrance
+
 class GLRenderingSystemSingletonComponent : public BaseComponent
 {
 public:

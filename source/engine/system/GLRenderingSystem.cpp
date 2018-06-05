@@ -88,13 +88,13 @@ void GLRenderingSystem::initializeEnvironmentRenderPass()
 	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 	////
 	glGenTextures(1, &EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_TAO);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_TAO);
+	glBindTexture(GL_TEXTURE_2D, EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_TAO);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, nullptr);
 
@@ -210,8 +210,8 @@ void GLRenderingSystem::initializeShadowRenderPass()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_ATTACHMENT, 2048, 2048, 0, GL_DEPTH_ATTACHMENT, GL_FLOAT, nullptr);
 
@@ -221,8 +221,8 @@ void GLRenderingSystem::initializeShadowRenderPass()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_ATTACHMENT, 2048, 2048, 0, GL_DEPTH_ATTACHMENT, GL_FLOAT, nullptr);
 
@@ -232,8 +232,8 @@ void GLRenderingSystem::initializeShadowRenderPass()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_ATTACHMENT, 2048, 2048, 0, GL_DEPTH_ATTACHMENT, GL_FLOAT, nullptr);
 
@@ -243,8 +243,8 @@ void GLRenderingSystem::initializeShadowRenderPass()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_ATTACHMENT, 2048, 2048, 0, GL_DEPTH_ATTACHMENT, GL_FLOAT, nullptr);
 
@@ -283,6 +283,108 @@ void GLRenderingSystem::initializeShadowRenderPass()
 
 void GLRenderingSystem::initializeGeometryRenderPass()
 {
+	// generate and bind framebuffer
+	glGenFramebuffers(1, &GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+
+	// generate and bind renderbuffer
+	glGenRenderbuffers(1, &GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
+
+	// generate and bind texture
+	glGenTextures(1, &GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextureID_RT0.m_TAO);
+	glBindTexture(GL_TEXTURE_2D, GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextureID_RT0.m_TAO);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 2048, 2048, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+	glGenTextures(1, &GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextureID_RT1.m_TAO);
+	glBindTexture(GL_TEXTURE_2D, GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextureID_RT1.m_TAO);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 2048, 2048, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+	glGenTextures(1, &GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextureID_RT2.m_TAO);
+	glBindTexture(GL_TEXTURE_2D, GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextureID_RT2.m_TAO);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 2048, 2048, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+	glGenTextures(1, &GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextureID_RT3.m_TAO);
+	glBindTexture(GL_TEXTURE_2D, GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextureID_RT3.m_TAO);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 2048, 2048, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+	// finally check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		g_pLogSystem->printLog("GLFrameBuffer: ShadowRenderPass Framebuffer is not completed!");
+	}
+
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// shader programs and shaders
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program = glCreateProgram();
+#ifdef CookTorrance
+	initializeShader(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassVertexShaderID,
+		GL_VERTEX_SHADER,
+		"GL3.3/geometryCookTorrancePassVertex.sf");
+	initializeShader(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassFragmentShaderID,
+		GL_FRAGMENT_SHADER,
+		"GL3.3/geometryCookTorrancePassFragment.sf");
+#elif BlinnPhong
+	initializeShader(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassVertexShaderID,
+		GL_VERTEX_SHADER,
+		"GL3.3/geometryBlinnPhongPassVertex.sf");
+	initializeShader(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassFragmentShaderID,
+		GL_FRAGMENT_SHADER,
+		"GL3.3/geometryBlinnPhongPassFragment.sf");
+#endif
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_p");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_r");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_t");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_m");
 }
 
 void GLRenderingSystem::initializeLightRenderPass()
@@ -751,7 +853,6 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
-
 }
 
 void GLRenderingSystem::updateShadowRenderPass()
@@ -808,6 +909,175 @@ void GLRenderingSystem::updateShadowRenderPass()
 
 void GLRenderingSystem::updateGeometryRenderPass()
 {
+	//// bind to framebuffer
+	//m_geometryPassFrameBuffer->update(true, true);
+	//m_geometryPassFrameBuffer->setRenderBufferStorageSize(0);
+
+	//m_geometryPassShaderProgram->update();
+
+	//mat4 p = cameraComponents[0]->m_projectionMatrix;
+	//mat4 r = cameraComponents[0]->getInvertRotationMatrix();
+	//mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
+
+	//updateUniform(m_uni_p, p);
+	//updateUniform(m_uni_r, r);
+	//updateUniform(m_uni_t, t);
+
+	///////////////////Blinn-Phong
+	//// draw each visibleComponent
+	//for (auto& l_visibleComponent : visibleComponents)
+	//{
+	//	if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
+	//	{
+	//		updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+
+	//		// draw each graphic data of visibleComponent
+	//		for (auto& l_graphicData : l_visibleComponent->getModelMap())
+	//		{
+	//			//active and bind textures
+	//			// is there any texture?
+	//			auto l_textureMap = &l_graphicData.second;
+	//			if (l_textureMap != nullptr)
+	//			{
+	//				// any normal?
+	//				auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
+	//				if (l_normalTextureID != l_textureMap->end())
+	//				{
+	//					auto l_textureData = textureMap.find(l_normalTextureID->second)->second;
+	//					l_textureData->update(0);
+	//				}
+	//				// any diffuse?
+	//				auto l_diffuseTextureID = l_textureMap->find(textureType::ALBEDO);
+	//				if (l_diffuseTextureID != l_textureMap->end())
+	//				{
+	//					auto l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
+	//					l_textureData->update(1);
+	//				}
+	//				// any specular?
+	//				auto l_specularTextureID = l_textureMap->find(textureType::METALLIC);
+	//				if (l_specularTextureID != l_textureMap->end())
+	//				{
+	//					auto l_textureData = textureMap.find(l_specularTextureID->second)->second;
+	//					l_textureData->update(2);
+	//				}
+	//			}
+	//			// draw meshes
+	//			meshMap.find(l_graphicData.first)->second->update();
+	//		}
+	//	}
+	//}
+	//glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_DEPTH_CLAMP);
+
+	/////////////////Cook-Torrance
+	//if (cameraComponents.size() > 0)
+	//{
+	//	mat4 p = cameraComponents[0]->m_projectionMatrix;
+	//	mat4 r = cameraComponents[0]->getInvertRotationMatrix();
+	//	mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
+	//	updateUniform(m_uni_p, p);
+	//	updateUniform(m_uni_r, r);
+	//	updateUniform(m_uni_t, t);
+	//}
+
+	//if (lightComponents.size() > 0)
+	//{
+	//	for (auto& l_lightComponent : lightComponents)
+	//	{
+	//		// update light space transformation matrices
+	//		if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
+	//		{
+	//			updateUniform(m_uni_p_light, l_lightComponent->getProjectionMatrix(0));
+	//			updateUniform(m_uni_v_light, l_lightComponent->getViewMatrix());
+
+	//			// draw each visibleComponent
+	//			for (auto& l_visibleComponent : visibleComponents)
+	//			{
+	//				if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
+	//				{
+	//					glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
+
+	//					updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+
+	//					// draw each graphic data of visibleComponent
+	//					for (auto& l_graphicData : l_visibleComponent->getModelMap())
+	//					{
+	//						//active and bind textures
+	//						// is there any texture?
+	//						auto l_textureMap = &l_graphicData.second;
+	//						if (l_textureMap != nullptr)
+	//						{
+	//							// any normal?
+	//							auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
+	//							if (l_normalTextureID != l_textureMap->end())
+	//							{
+	//								auto l_textureData = textureMap.find(l_normalTextureID->second)->second;
+	//								l_textureData->update(0);
+	//							}
+	//							// any albedo?
+	//							auto l_albedoTextureID = l_textureMap->find(textureType::ALBEDO);
+	//							if (l_albedoTextureID != l_textureMap->end())
+	//							{
+	//								auto l_textureData = textureMap.find(l_albedoTextureID->second)->second;
+	//								l_textureData->update(1);
+	//							}
+	//							// any metallic?
+	//							auto l_metallicTextureID = l_textureMap->find(textureType::METALLIC);
+	//							if (l_metallicTextureID != l_textureMap->end())
+	//							{
+	//								auto l_textureData = textureMap.find(l_metallicTextureID->second)->second;
+	//								l_textureData->update(2);
+	//							}
+	//							// any roughness?
+	//							auto l_roughnessTextureID = l_textureMap->find(textureType::ROUGHNESS);
+	//							if (l_roughnessTextureID != l_textureMap->end())
+	//							{
+	//								auto l_textureData = textureMap.find(l_roughnessTextureID->second)->second;
+	//								l_textureData->update(3);
+	//							}
+	//							// any ao?
+	//							auto l_aoTextureID = l_textureMap->find(textureType::AMBIENT_OCCLUSION);
+	//							if (l_aoTextureID != l_textureMap->end())
+	//							{
+	//								auto l_textureData = textureMap.find(l_aoTextureID->second)->second;
+	//								l_textureData->update(4);
+	//							}
+	//						}
+	//						updateUniform(m_uni_useTexture, l_visibleComponent->m_useTexture);
+	//						updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
+	//						updateUniform(m_uni_MRA, l_visibleComponent->m_MRA.x, l_visibleComponent->m_MRA.y, l_visibleComponent->m_MRA.z);
+	//						// draw meshes
+	//						meshMap.find(l_graphicData.first)->second->update();
+	//					}
+	//				}
+	//				else if (l_visibleComponent->m_visiblilityType == visiblilityType::EMISSIVE)
+	//				{
+	//					glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
+
+	//					updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+
+	//					// draw each graphic data of visibleComponent
+	//					for (auto& l_graphicData : l_visibleComponent->getModelMap())
+	//					{
+	//						updateUniform(m_uni_useTexture, l_visibleComponent->m_useTexture);
+	//						updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
+	//						// draw meshes
+	//						meshMap.find(l_graphicData.first)->second->update();
+	//					}
+	//				}
+	//				else
+	//				{
+	//					glStencilFunc(GL_ALWAYS, 0x00, 0xFF);
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+
+	//glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_DEPTH_CLAMP);
+	//glDisable(GL_STENCIL_TEST);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void GLRenderingSystem::updateLightRenderPass()

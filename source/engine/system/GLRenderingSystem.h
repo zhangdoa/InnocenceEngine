@@ -2,6 +2,7 @@
 #include "interface/IRenderingSystem.h"
 #include "component/EnvironmentRenderPassSingletonComponent.h"
 #include "component/ShadowRenderPassSingletonComponent.h"
+#include "component/GeometryRenderPassSingletonComponent.h"
 #include "component/GLRenderingSystemSingletonComponent.h"
 #include "component/AssetSystemSingletonComponent.h"
 
