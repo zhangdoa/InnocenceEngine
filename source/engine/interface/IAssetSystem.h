@@ -1,8 +1,7 @@
 #pragma once
 #include "common/stdafx.h"
 #include "ISystem.h"
-#include "component/MeshDataComponent.h"
-#include "component/TextureDataComponent.h"
+#include "component/AssetSystemSingletonComponent.h"
 
 class IAssetSystem : public ISystem
 {
@@ -14,6 +13,8 @@ public:
 	virtual textureID addTexture(textureType textureType) = 0;
 	virtual MeshDataComponent* getMesh(meshID meshID) = 0;
 	virtual TextureDataComponent* getTexture(textureID textureID) = 0;
+	virtual MeshDataComponent* getDefaultMesh(meshShapeType meshShapeType) = 0;
+	virtual TextureDataComponent* getDefaultTexture(textureType textureType) = 0;
 	virtual void removeMesh(meshID meshID) = 0;
 	virtual void removeTexture(textureID textureID) = 0;
 	virtual vec4 findMaxVertex(meshID meshID) = 0;

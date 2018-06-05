@@ -1,6 +1,6 @@
 #pragma once
 #include "interface/ISystem.h"
-#include "component/MeshDataComponent.h"
+#include "component/AssetSystemSingletonComponent.h"
 
 class MeshDataSystem : public ISystem
 {

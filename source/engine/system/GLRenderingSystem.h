@@ -1,6 +1,7 @@
 #pragma once
 #include "interface/IRenderingSystem.h"
 #include "component/EnvironmentRenderPassSingletonComponent.h"
+#include "component/ShadowRenderPassSingletonComponent.h"
 #include "component/GLRenderingSystemSingletonComponent.h"
 #include "component/AssetSystemSingletonComponent.h"
 
@@ -30,11 +31,25 @@ private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
 	void initializeEnvironmentRenderPass();
-	void initializeGraphicPrimtives();
+	void initializeShadowRenderPass();
+	void initializeGeometryRenderPass();
+	void initializeLightRenderPass();
+	void initializeFinalRenderPass();
+
+	void initializeDefaultGraphicPrimtives();
+	void initializeGraphicPrimtivesOfComponents();
 	void initializeMesh(MeshDataComponent* GLMeshDataComponent);
 	void initializeTexture(TextureDataComponent* GLTextureDataComponent);
 	void initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string& shaderFilePath);
+
+	void updateEnvironmentRenderPass();
+	void updateShadowRenderPass();
+	void updateGeometryRenderPass();
+	void updateLightRenderPass();
+	void updateFinalRenderPass();
+
 	GLuint getUniformLocation(GLuint shaderProgram, const std::string& uniformName);
+
 	void updateUniform(const GLint uniformLocation, bool uniformValue) const;
 	void updateUniform(const GLint uniformLocation, int uniformValue) const;
 	void updateUniform(const GLint uniformLocation, double uniformValue) const;

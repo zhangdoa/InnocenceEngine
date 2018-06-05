@@ -406,14 +406,12 @@ private:
 	vec4 m_oldPos;
 	vec4 m_oldRot;
 	vec4 m_oldScale;
-
-
 };
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
 // mesh custom types
-enum class meshType { TWO_DIMENSION, THREE_DIMENSION, BOUNDING_BOX};
-enum class meshShapeType { QUAD, CUBE, SPHERE, CUSTOM };
+enum class meshType { NORMAL, BOUNDING_BOX };
+enum class meshShapeType { LINE, QUAD, CUBE, SPHERE, CUSTOM };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 // texture custom types
 enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, ENVIRONMENT_CAPTURE, ENVIRONMENT_CONVOLUTION, ENVIRONMENT_PREFILTER, EQUIRETANGULAR, RENDER_BUFFER_SAMPLER, SHADOWMAP };
