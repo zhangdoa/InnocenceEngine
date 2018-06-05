@@ -16,8 +16,6 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
-#include "component/AssetSystemSingletonComponent.h"
-
 extern ILogSystem* g_pLogSystem;
 extern IMemorySystem* g_pMemorySystem;
 extern IGameSystem* g_pGameSystem;
@@ -69,6 +67,8 @@ public:
 	textureID addTexture(textureType textureType) override;
 	MeshDataComponent* getMesh(meshID meshID) override;
 	TextureDataComponent* getTexture(textureID textureID) override;
+	MeshDataComponent* getDefaultMesh(meshShapeType meshShapeType) override;
+	TextureDataComponent* getDefaultTexture(textureType textureType) override;
 	void removeMesh(meshID meshID) override;
 	void removeTexture(textureID textureID) override;
 	vec4 findMaxVertex(meshID meshID) override;
@@ -81,6 +81,7 @@ private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	MeshDataSystem* m_meshDataSystem;
 	TextureDataSystem* m_textureDataSystem;
+	AssetSystemSingletonComponent* m_AssetSystemSingletonComponent;
 
 	void loadDefaultAssets();
 	void loadAssetsForComponents();
