@@ -385,6 +385,21 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_m");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_p_light");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_v_light");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_useTexture");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_albedo");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_MRA");
 }
 
 void GLRenderingSystem::initializeLightRenderPass()
@@ -414,7 +429,7 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 	glGetShaderiv(shaderProgram, GL_COMPILE_STATUS, &l_compileResult);
 	glGetShaderiv(shaderProgram, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 	glGetShaderiv(shaderProgram, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-	
+
 	if (l_infoLogLength > 0) {
 		std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 		glGetShaderInfoLog(shaderProgram, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
@@ -457,20 +472,20 @@ void GLRenderingSystem::initializeGraphicPrimtivesOfComponents()
 {
 	for (auto& l_visibleComponent : g_pGameSystem->getVisibleComponents())
 	{
-			for (auto& l_graphicData : l_visibleComponent->getModelMap())
+		for (auto& l_graphicData : l_visibleComponent->getModelMap())
+		{
+			if (GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.find(l_graphicData.first) == GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.end())
 			{
-				if (GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.find(l_graphicData.first) == GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.end())
-				{
-					auto l_Mesh = g_pAssetSystem->getMesh(l_graphicData.first);
-					initializeMesh(l_Mesh);
-					std::for_each(l_graphicData.second.begin(), l_graphicData.second.end(), [&](texturePair val) {
-						auto l_Texture = g_pAssetSystem->getTexture(val.second);
-						initializeTexture(l_Texture);
-						GLRenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(val.second, l_Texture);
-					});
-					GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_graphicData.first, l_Mesh);
-				}
+				auto l_Mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+				initializeMesh(l_Mesh);
+				std::for_each(l_graphicData.second.begin(), l_graphicData.second.end(), [&](texturePair val) {
+					auto l_Texture = g_pAssetSystem->getTexture(val.second);
+					initializeTexture(l_Texture);
+					GLRenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(val.second, l_Texture);
+				});
+				GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_graphicData.first, l_Mesh);
 			}
+		}
 	}
 }
 
@@ -701,6 +716,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 {
 	// bind to framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -859,6 +875,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 {
 	// bind to framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, ShadowRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, ShadowRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -909,175 +926,192 @@ void GLRenderingSystem::updateShadowRenderPass()
 
 void GLRenderingSystem::updateGeometryRenderPass()
 {
-	//// bind to framebuffer
-	//m_geometryPassFrameBuffer->update(true, true);
-	//m_geometryPassFrameBuffer->setRenderBufferStorageSize(0);
+	// bind to framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
-	//m_geometryPassShaderProgram->update();
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 
-	//mat4 p = cameraComponents[0]->m_projectionMatrix;
-	//mat4 r = cameraComponents[0]->getInvertRotationMatrix();
-	//mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
+	if (g_pGameSystem->getCameraComponents().size() > 0)
+	{
+		mat4 p = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
+		mat4 r = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
+		mat4 t = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
 
-	//updateUniform(m_uni_p, p);
-	//updateUniform(m_uni_r, r);
-	//updateUniform(m_uni_t, t);
+		updateUniform(
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p,
+			p);
+		updateUniform(
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r,
+			r);
+		updateUniform(
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t,
+			t);
 
-	///////////////////Blinn-Phong
-	//// draw each visibleComponent
-	//for (auto& l_visibleComponent : visibleComponents)
-	//{
-	//	if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
-	//	{
-	//		updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+#ifdef CookTorrance
+		//Cook-Torrance
+		if (g_pGameSystem->getLightComponents().size() > 0)
+		{
+			for (auto& l_lightComponent : g_pGameSystem->getLightComponents())
+			{
+				// update light space transformation matrices
+				if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
+				{
+					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light, 
+						l_lightComponent->getProjectionMatrix(0));
+					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light, 
+						g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.caclGlobalRotMatrix());
 
-	//		// draw each graphic data of visibleComponent
-	//		for (auto& l_graphicData : l_visibleComponent->getModelMap())
-	//		{
-	//			//active and bind textures
-	//			// is there any texture?
-	//			auto l_textureMap = &l_graphicData.second;
-	//			if (l_textureMap != nullptr)
-	//			{
-	//				// any normal?
-	//				auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
-	//				if (l_normalTextureID != l_textureMap->end())
-	//				{
-	//					auto l_textureData = textureMap.find(l_normalTextureID->second)->second;
-	//					l_textureData->update(0);
-	//				}
-	//				// any diffuse?
-	//				auto l_diffuseTextureID = l_textureMap->find(textureType::ALBEDO);
-	//				if (l_diffuseTextureID != l_textureMap->end())
-	//				{
-	//					auto l_textureData = textureMap.find(l_diffuseTextureID->second)->second;
-	//					l_textureData->update(1);
-	//				}
-	//				// any specular?
-	//				auto l_specularTextureID = l_textureMap->find(textureType::METALLIC);
-	//				if (l_specularTextureID != l_textureMap->end())
-	//				{
-	//					auto l_textureData = textureMap.find(l_specularTextureID->second)->second;
-	//					l_textureData->update(2);
-	//				}
-	//			}
-	//			// draw meshes
-	//			meshMap.find(l_graphicData.first)->second->update();
-	//		}
-	//	}
-	//}
-	//glDisable(GL_DEPTH_TEST);
-	//glDisable(GL_DEPTH_CLAMP);
+					// draw each visibleComponent
+					for (auto& l_visibleComponent : g_pGameSystem->getVisibleComponents())
+					{
+						if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
+						{
+							glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
 
-	/////////////////Cook-Torrance
-	//if (cameraComponents.size() > 0)
-	//{
-	//	mat4 p = cameraComponents[0]->m_projectionMatrix;
-	//	mat4 r = cameraComponents[0]->getInvertRotationMatrix();
-	//	mat4 t = cameraComponents[0]->getInvertTranslationMatrix();
-	//	updateUniform(m_uni_p, p);
-	//	updateUniform(m_uni_r, r);
-	//	updateUniform(m_uni_t, t);
-	//}
+							updateUniform(
+								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
+								g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
 
-	//if (lightComponents.size() > 0)
-	//{
-	//	for (auto& l_lightComponent : lightComponents)
-	//	{
-	//		// update light space transformation matrices
-	//		if (l_lightComponent->getLightType() == lightType::DIRECTIONAL)
-	//		{
-	//			updateUniform(m_uni_p_light, l_lightComponent->getProjectionMatrix(0));
-	//			updateUniform(m_uni_v_light, l_lightComponent->getViewMatrix());
+							// draw each graphic data of visibleComponent
+							for (auto& l_graphicData : l_visibleComponent->getModelMap())
+							{
+								//active and bind textures
+								// is there any texture?
+								auto l_textureMap = &l_graphicData.second;
+								if (l_textureMap != nullptr)
+								{
+									// any normal?
+									auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
+									if (l_normalTextureID != l_textureMap->end())
+									{
+										auto l_textureData = g_pAssetSystem->getTexture(l_normalTextureID->second);
+										activateTexture(l_textureData, 0);
+									}
+									// any albedo?
+									auto l_albedoTextureID = l_textureMap->find(textureType::ALBEDO);
+									if (l_albedoTextureID != l_textureMap->end())
+									{
+										auto l_textureData = g_pAssetSystem->getTexture(l_albedoTextureID->second);
+										activateTexture(l_textureData, 1);
+									}
+									// any metallic?
+									auto l_metallicTextureID = l_textureMap->find(textureType::METALLIC);
+									if (l_metallicTextureID != l_textureMap->end())
+									{
+										auto l_textureData = g_pAssetSystem->getTexture(l_metallicTextureID->second);
+										activateTexture(l_textureData, 2);
+									}
+									// any roughness?
+									auto l_roughnessTextureID = l_textureMap->find(textureType::ROUGHNESS);
+									if (l_roughnessTextureID != l_textureMap->end())
+									{
+										auto l_textureData = g_pAssetSystem->getTexture(l_roughnessTextureID->second);
+										activateTexture(l_textureData, 3);
+									}
+									// any ao?
+									auto l_aoTextureID = l_textureMap->find(textureType::AMBIENT_OCCLUSION);
+									if (l_aoTextureID != l_textureMap->end())
+									{
+										auto l_textureData = g_pAssetSystem->getTexture(l_aoTextureID->second);
+										activateTexture(l_textureData, 4);
+									}
+								}
+								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture, l_visibleComponent->m_useTexture);
+								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
+								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA, l_visibleComponent->m_MRA.x, l_visibleComponent->m_MRA.y, l_visibleComponent->m_MRA.z);
+								// draw meshes
+								auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+								activateMesh(l_mesh);
+								drawMesh(l_mesh);
+							}
+						}
+						else if (l_visibleComponent->m_visiblilityType == visiblilityType::EMISSIVE)
+						{
+							glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
 
-	//			// draw each visibleComponent
-	//			for (auto& l_visibleComponent : visibleComponents)
-	//			{
-	//				if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
-	//				{
-	//					glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
+							updateUniform(
+								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
+								g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
 
-	//					updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
+							// draw each graphic data of visibleComponent
+							for (auto& l_graphicData : l_visibleComponent->getModelMap())
+							{
+								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture, l_visibleComponent->m_useTexture);
+								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
+								// draw meshes
+								auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+								activateMesh(l_mesh);
+								drawMesh(l_mesh);
+							}
+						}
+						else
+						{
+							glStencilFunc(GL_ALWAYS, 0x00, 0xFF);
+						}
+					}
+				}
+			}
+		}
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_DEPTH_CLAMP);
+		glDisable(GL_STENCIL_TEST);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#elif BlinnPhong
+		// draw each visibleComponent
+		for (auto& l_visibleComponent : visibleComponents)
+		{
+			if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
+			{
+				updateUniform(
+					GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
+					g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
 
-	//					// draw each graphic data of visibleComponent
-	//					for (auto& l_graphicData : l_visibleComponent->getModelMap())
-	//					{
-	//						//active and bind textures
-	//						// is there any texture?
-	//						auto l_textureMap = &l_graphicData.second;
-	//						if (l_textureMap != nullptr)
-	//						{
-	//							// any normal?
-	//							auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
-	//							if (l_normalTextureID != l_textureMap->end())
-	//							{
-	//								auto l_textureData = textureMap.find(l_normalTextureID->second)->second;
-	//								l_textureData->update(0);
-	//							}
-	//							// any albedo?
-	//							auto l_albedoTextureID = l_textureMap->find(textureType::ALBEDO);
-	//							if (l_albedoTextureID != l_textureMap->end())
-	//							{
-	//								auto l_textureData = textureMap.find(l_albedoTextureID->second)->second;
-	//								l_textureData->update(1);
-	//							}
-	//							// any metallic?
-	//							auto l_metallicTextureID = l_textureMap->find(textureType::METALLIC);
-	//							if (l_metallicTextureID != l_textureMap->end())
-	//							{
-	//								auto l_textureData = textureMap.find(l_metallicTextureID->second)->second;
-	//								l_textureData->update(2);
-	//							}
-	//							// any roughness?
-	//							auto l_roughnessTextureID = l_textureMap->find(textureType::ROUGHNESS);
-	//							if (l_roughnessTextureID != l_textureMap->end())
-	//							{
-	//								auto l_textureData = textureMap.find(l_roughnessTextureID->second)->second;
-	//								l_textureData->update(3);
-	//							}
-	//							// any ao?
-	//							auto l_aoTextureID = l_textureMap->find(textureType::AMBIENT_OCCLUSION);
-	//							if (l_aoTextureID != l_textureMap->end())
-	//							{
-	//								auto l_textureData = textureMap.find(l_aoTextureID->second)->second;
-	//								l_textureData->update(4);
-	//							}
-	//						}
-	//						updateUniform(m_uni_useTexture, l_visibleComponent->m_useTexture);
-	//						updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
-	//						updateUniform(m_uni_MRA, l_visibleComponent->m_MRA.x, l_visibleComponent->m_MRA.y, l_visibleComponent->m_MRA.z);
-	//						// draw meshes
-	//						meshMap.find(l_graphicData.first)->second->update();
-	//					}
-	//				}
-	//				else if (l_visibleComponent->m_visiblilityType == visiblilityType::EMISSIVE)
-	//				{
-	//					glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
+				// draw each graphic data of visibleComponent
+				for (auto& l_graphicData : l_visibleComponent->getModelMap())
+				{
+					//active and bind textures
+					// is there any texture?
+					auto l_textureMap = &l_graphicData.second;
+					if (l_textureMap != nullptr)
+					{
+						// any normal?
+						auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
+						if (l_normalTextureID != l_textureMap->end())
+						{
+							auto l_textureData = g_pAssetSystem->getTexture(l_normalTextureID->second);
+							activateTexture(l_textureData, 0);
+						}
+						// any diffuse?
+						auto l_diffuseTextureID = l_textureMap->find(textureType::ALBEDO);
+						if (l_diffuseTextureID != l_textureMap->end())
+						{
+							auto l_textureData = g_pAssetSystem->getTexture(l_diffuseTextureID->second);
+							activateTexture(l_textureData, 1);
+						}
+						// any specular?
+						auto l_specularTextureID = l_textureMap->find(textureType::METALLIC);
+						if (l_specularTextureID != l_textureMap->end())
+						{
+							auto l_textureData = g_pAssetSystem->getTexture(l_specularTextureID->second);
+							activateTexture(l_textureData, 2);
+						}
 
-	//					updateUniform(m_uni_m, l_visibleComponent->getParentEntity()->caclTransformationMatrix());
-
-	//					// draw each graphic data of visibleComponent
-	//					for (auto& l_graphicData : l_visibleComponent->getModelMap())
-	//					{
-	//						updateUniform(m_uni_useTexture, l_visibleComponent->m_useTexture);
-	//						updateUniform(m_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
-	//						// draw meshes
-	//						meshMap.find(l_graphicData.first)->second->update();
-	//					}
-	//				}
-	//				else
-	//				{
-	//					glStencilFunc(GL_ALWAYS, 0x00, 0xFF);
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
-
-	//glDisable(GL_DEPTH_TEST);
-	//glDisable(GL_DEPTH_CLAMP);
-	//glDisable(GL_STENCIL_TEST);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					}
+					// draw meshes
+					auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+					activateMesh(l_mesh);
+					drawMesh(l_mesh);
+				}
+			}
+		}
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_DEPTH_CLAMP);
+#endif
+	}
 }
 
 void GLRenderingSystem::updateLightRenderPass()
