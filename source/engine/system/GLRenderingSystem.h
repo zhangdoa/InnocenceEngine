@@ -4,6 +4,7 @@
 #include "component/ShadowRenderPassSingletonComponent.h"
 #include "component/GeometryRenderPassSingletonComponent.h"
 #include "component/LightRenderPassSingletonComponent.h"
+#include "component/FinalRenderPassSingletonComponent.h"
 #include "component/GLRenderingSystemSingletonComponent.h"
 #include "component/AssetSystemSingletonComponent.h"
 
@@ -39,6 +40,13 @@ private:
 	void initializeGeometryRenderPass();
 	void initializeLightRenderPass();
 	void initializeFinalRenderPass();
+
+	void initializeSkyPass();
+	void initializeDebuggerPass();
+	void initializeBillboardPass();
+	void initializeBloomExtractPass();
+	void initializeBloomBlurPass();
+	void initializeFinalBlendPass();
 
 	void initializeDefaultGraphicPrimtives();
 	void initializeGraphicPrimtivesOfComponents();
