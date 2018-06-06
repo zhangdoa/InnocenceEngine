@@ -57,7 +57,7 @@ void * MemorySystem::allocate(unsigned long size)
 		}
 	}
 	// Now search for a block big enough, double linked list, O(n)
-	Chunk* l_block = (Chunk*)(m_poolMemory + m_boundCheckSize);
+	Chunk* l_block = reinterpret_cast<Chunk*>(m_poolMemory + m_boundCheckSize);
 	while (l_block)
 	{
 		if (l_block->m_free && l_block->m_chuckSize - l_requiredSize > m_minFreeBlockSize) { break; }
@@ -81,12 +81,12 @@ void * MemorySystem::allocate(unsigned long size)
 
 	if (freeBlock.m_next)
 	{
-		freeBlock.m_next->m_prev = (Chunk*)(l_blockData + l_requiredSize);
+		freeBlock.m_next->m_prev = reinterpret_cast<Chunk*>(l_blockData + l_requiredSize);
 	}
 
 	std::memcpy(l_blockData + l_requiredSize - m_boundCheckSize, m_startBound,
 		m_boundCheckSize);
-	l_block->m_next = (Chunk*)(l_blockData + l_requiredSize);
+	l_block->m_next = reinterpret_cast<Chunk*>(l_blockData + l_requiredSize);
 	l_block->m_chuckSize = size;
 
 	// update the pool size
@@ -110,7 +110,7 @@ void MemorySystem::free(void * ptr)
 {
 	// is a valid node?
 	if (!ptr) return;
-	Chunk* block = (Chunk*)((unsigned char*)ptr - sizeof(Chunk));
+	Chunk* block = reinterpret_cast<Chunk*>((unsigned char*)ptr - sizeof(Chunk));
 	if (block->m_free) return;
 
 	unsigned long l_fullBlockSize = block->m_chuckSize + sizeof(Chunk) + m_boundCheckSize * 2;

@@ -316,8 +316,11 @@ public:
 		m_pos(rhs.m_pos),
 		m_texCoord(rhs.m_texCoord),
 		m_normal(rhs.m_normal) {};
+	Vertex(const vec4& pos, const vec2& texCoord, const vec4& normal) :
+		m_pos(pos),
+		m_texCoord(texCoord),
+		m_normal(normal) {};
 	Vertex& operator=(const Vertex& rhs);
-	Vertex(const vec4& pos, const vec2& texCoord, const vec4& normal);
 	~Vertex() {};
 
 	vec4 m_pos;
