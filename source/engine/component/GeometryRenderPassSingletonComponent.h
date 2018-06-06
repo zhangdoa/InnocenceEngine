@@ -32,6 +32,11 @@ public:
 	GLuint m_geometryPass_uni_r;
 	GLuint m_geometryPass_uni_t;
 	GLuint m_geometryPass_uni_m;
+	GLuint m_geometryPass_uni_p_light;
+	GLuint m_geometryPass_uni_v_light;
+	GLuint m_geometryPass_uni_useTexture;
+	GLuint m_geometryPass_uni_albedo;
+	GLuint m_geometryPass_uni_MRA;
 private:
 	GeometryRenderPassSingletonComponent() {};
 };
