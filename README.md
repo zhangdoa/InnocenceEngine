@@ -1,7 +1,5 @@
-[![MIT licensed][1]][2]
-
-[1]: https://img.shields.io/badge/license-MIT-blue.svg
-[2]: LICENSE.md
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/3c0ea60f7c46491d87236822f6de35a6)](https://www.codacy.com/app/zhangdoa/InnocenceEngine?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=zhangdoa/InnocenceEngine&amp;utm_campaign=Badge_Grade)
 
 # Innocence Engine C++
 ![3](https://github.com/zhangdoa/InnocenceEngine-C-/blob/master/Innocence%20Engine's%20Belly.png)
