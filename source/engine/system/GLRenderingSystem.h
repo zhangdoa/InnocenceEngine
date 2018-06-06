@@ -3,6 +3,7 @@
 #include "component/EnvironmentRenderPassSingletonComponent.h"
 #include "component/ShadowRenderPassSingletonComponent.h"
 #include "component/GeometryRenderPassSingletonComponent.h"
+#include "component/LightRenderPassSingletonComponent.h"
 #include "component/GLRenderingSystemSingletonComponent.h"
 #include "component/AssetSystemSingletonComponent.h"
 
@@ -10,6 +11,8 @@
 #include "interface/IMemorySystem.h"
 #include "interface/IAssetSystem.h"
 #include "interface/IGameSystem.h"
+
+#include <sstream>
 
 extern IMemorySystem* g_pMemorySystem;
 extern IAssetSystem* g_pAssetSystem;

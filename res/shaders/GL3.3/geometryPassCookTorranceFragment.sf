@@ -10,14 +10,13 @@ in vec2 thefrag_TexCoord;
 in vec3 thefrag_Normal;
 in vec4 thefrag_FragPosInLightSpace;
 
-uniform bool uni_useTexture = true;
-
 uniform sampler2D uni_normalTexture;
 uniform sampler2D uni_albedoTexture;
 uniform sampler2D uni_metallicTexture;
 uniform sampler2D uni_roughnessTexture;
 uniform sampler2D uni_aoTexture;
 
+uniform bool uni_useTexture = true;
 uniform vec3 uni_albedo;
 uniform vec3 uni_MRA;
 
