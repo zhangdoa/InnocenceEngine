@@ -767,13 +767,6 @@ Vertex& Vertex::operator=(const Vertex & rhs)
 	return *this;
 }
 
-Vertex::Vertex(const vec4& pos, const vec2& texCoord, const vec4& normal)
-{
-	m_pos = pos;
-	m_texCoord = texCoord;
-	m_normal = normal;
-}
-
 Ray & Ray::operator=(const Ray & rhs)
 {
 	m_origin = rhs.m_origin;
