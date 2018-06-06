@@ -451,18 +451,33 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_normalTexture = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_normalTexture");
+	updateUniform(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_normalTexture,
+		0);
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedoTexture = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_albedoTexture");
+	updateUniform(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedoTexture,
+		1);
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_metallicTexture = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_metallicTexture");
+	updateUniform(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_metallicTexture,
+		2);
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_roughnessTexture = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_roughnessTexture");
+	updateUniform(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_roughnessTexture,
+		3);
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_aoTexture = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_aoTexture");
+	updateUniform(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_aoTexture,
+		4);
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_useTexture");
@@ -522,6 +537,7 @@ void GLRenderingSystem::initializeLightRenderPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
+	LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program = glCreateProgram();
 #ifdef CookTorrance
 	initializeShader(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
@@ -548,27 +564,51 @@ void GLRenderingSystem::initializeLightRenderPass()
 	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT0 = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_geometryPassRT0");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT0,
+		0);
 	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT1 = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_geometryPassRT1");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT1,
+		1);
 	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT2 = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_geometryPassRT2");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT2,
+		2);
 	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT3 = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_geometryPassRT3");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT3,
+		3);
 	LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_shadowMap");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap,
+		4);
 	LightRenderPassSingletonComponent::getInstance().m_uni_irradianceMap = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_irradianceMap");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_irradianceMap,
+		5);
 	LightRenderPassSingletonComponent::getInstance().m_uni_preFiltedMap = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_preFiltedMap");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_preFiltedMap,
+		6);
 	LightRenderPassSingletonComponent::getInstance().m_uni_brdfLUT = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_brdfLUT");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_brdfLUT,
+		7);
 	LightRenderPassSingletonComponent::getInstance().m_uni_viewPos = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_viewPos");
@@ -659,6 +699,8 @@ void GLRenderingSystem::initializeSkyPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// shader programs and shaders
+	FinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program = glCreateProgram();
 	initializeShader(
 		FinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program,
 		FinalRenderPassSingletonComponent::getInstance().m_skyPassVertexShaderID,
@@ -669,7 +711,14 @@ void GLRenderingSystem::initializeSkyPass()
 		FinalRenderPassSingletonComponent::getInstance().m_skyPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3/skyPassFragment.sf");
+	FinalRenderPassSingletonComponent::getInstance().m_uni_skybox = getUniformLocation(
+		FinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program,
+		"uni_skybox");
+	updateUniform(
+		FinalRenderPassSingletonComponent::getInstance().m_uni_skybox,
+		0);
 }
+
 void GLRenderingSystem::initializeDebuggerPass()
 {
 	// generate and bind framebuffer
@@ -714,6 +763,8 @@ void GLRenderingSystem::initializeDebuggerPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// shader programs and shaders
+	FinalRenderPassSingletonComponent::getInstance().m_debuggerPassProgram.m_program = glCreateProgram();
 	initializeShader(
 		FinalRenderPassSingletonComponent::getInstance().m_debuggerPassProgram.m_program,
 		FinalRenderPassSingletonComponent::getInstance().m_debuggerPassVertexShaderID,
@@ -725,6 +776,7 @@ void GLRenderingSystem::initializeDebuggerPass()
 		GL_FRAGMENT_SHADER,
 		"GL3.3/debuggerPassFragment.sf");
 }
+
 void GLRenderingSystem::initializeBillboardPass()
 {
 	// generate and bind framebuffer
@@ -769,6 +821,8 @@ void GLRenderingSystem::initializeBillboardPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// shader programs and shaders
+	FinalRenderPassSingletonComponent::getInstance().m_billboardPassProgram.m_program = glCreateProgram();
 	initializeShader(
 		FinalRenderPassSingletonComponent::getInstance().m_billboardPassProgram.m_program,
 		FinalRenderPassSingletonComponent::getInstance().m_billboardPassVertexShaderID,
@@ -780,6 +834,7 @@ void GLRenderingSystem::initializeBillboardPass()
 		GL_FRAGMENT_SHADER,
 		"GL3.3/billboardPassFragment.sf");
 }
+
 void GLRenderingSystem::initializeBloomExtractPass()
 {
 	// generate and bind framebuffer
@@ -824,6 +879,8 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// shader programs and shaders
+	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassProgram.m_program = glCreateProgram();
 	initializeShader(
 		FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassProgram.m_program,
 		FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassVertexShaderID,
@@ -835,6 +892,7 @@ void GLRenderingSystem::initializeBloomExtractPass()
 		GL_FRAGMENT_SHADER,
 		"GL3.3/bloomExtractPassFragment.sf");
 }
+
 void GLRenderingSystem::initializeBloomBlurPass()
 {
 	// generate and bind framebuffer
@@ -918,6 +976,8 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// shader programs and shaders
+	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPassProgram.m_program = glCreateProgram();
 	initializeShader(
 		FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPassProgram.m_program,
 		FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPassVertexShaderID,
@@ -929,11 +989,14 @@ void GLRenderingSystem::initializeBloomBlurPass()
 		GL_FRAGMENT_SHADER,
 		"GL3.3/bloomBlurPassFragment.sf");
 }
+
 void GLRenderingSystem::initializeFinalBlendPass()
 {
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// shader programs and shaders
+	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program = glCreateProgram();
 	initializeShader(
 		FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program,
 		FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassVertexShaderID,
@@ -944,6 +1007,36 @@ void GLRenderingSystem::initializeFinalBlendPass()
 		FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3/finalBlendPassFragment.sf");
+	FinalRenderPassSingletonComponent::getInstance().m_uni_lightPassRT0 = getUniformLocation(
+		FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program,
+		"uni_lightPassRT0");
+	updateUniform(
+		FinalRenderPassSingletonComponent::getInstance().m_uni_lightPassRT0,
+		0);
+	FinalRenderPassSingletonComponent::getInstance().m_uni_skyPassRT0 = getUniformLocation(
+		FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program,
+		"uni_skyPassRT0");
+	updateUniform(
+		FinalRenderPassSingletonComponent::getInstance().m_uni_skyPassRT0,
+		1);
+	FinalRenderPassSingletonComponent::getInstance().m_uni_bloomPassRT0 = getUniformLocation(
+		FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program,
+		"uni_bloomPassRT0");
+	updateUniform(
+		FinalRenderPassSingletonComponent::getInstance().m_uni_bloomPassRT0,
+		2);
+	FinalRenderPassSingletonComponent::getInstance().m_uni_billboardPassRT0 = getUniformLocation(
+		FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program,
+		"uni_billboardPassRT0");
+	updateUniform(
+		FinalRenderPassSingletonComponent::getInstance().m_uni_billboardPassRT0,
+		3);
+	FinalRenderPassSingletonComponent::getInstance().m_uni_debuggerPassRT0 = getUniformLocation(
+		FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program,
+		"uni_debuggerPassRT0");
+	updateUniform(
+		FinalRenderPassSingletonComponent::getInstance().m_uni_debuggerPassRT0,
+		4);
 }
 
 void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string & shaderFilePath)
@@ -1503,9 +1596,9 @@ void GLRenderingSystem::updateGeometryRenderPass()
 				// update light space transformation matrices
 				if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
 				{
-					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light, 
+					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light,
 						l_lightComponent->getProjectionMatrix(0));
-					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light, 
+					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light,
 						g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.caclGlobalRotMatrix());
 
 					// draw each visibleComponent
@@ -1649,11 +1742,11 @@ void GLRenderingSystem::updateGeometryRenderPass()
 					drawMesh(l_mesh);
 				}
 			}
-		}
+	}
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_DEPTH_CLAMP);
 #endif
-	}
+}
 }
 
 void GLRenderingSystem::updateLightRenderPass()
@@ -1749,19 +1842,26 @@ void GLRenderingSystem::updateFinalRenderPass()
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// use environment pass capture cubemap as skybox
-	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture, 0);
+	//activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture, 0);
 
 	// draw final pass
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
 	glViewport(0, 0, 1280, 720);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
-	//m_lightPassFrameBuffer->activeRenderTargetTexture(0, 0);
-	//m_skyPassFrameBuffer->activeRenderTargetTexture(0, 1);
-	//m_bloomBlurPassPongFrameBuffer->activeRenderTargetTexture(0, 2);
-	//m_billboardPassFrameBuffer->activeRenderTargetTexture(0, 3);
-	//m_debuggerPassFrameBuffer->activeRenderTargetTexture(0, 4);
+	// light pass rendering target
+	activateTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture, 0);
+	// sky pass rendering target
+	activateTexture(&FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture, 1);
+	// bloom pass rendering target 
+	activateTexture(&FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture, 2);
+	// billboard pass rendering target
+	activateTexture(&FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture, 3);
+	// debugger pass rendering target 
+	activateTexture(&FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture, 4);
 
 	//// draw final pass rectangle
 	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
