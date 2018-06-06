@@ -23,6 +23,7 @@ public:
 	GLuint m_skyPassVertexShaderID;
 	GLuint m_skyPassFragmentShaderID;
 	GLTextureDataComponent m_skyPassTexture;
+	GLuint m_uni_skybox;
 
 	GLFrameBufferComponent m_debuggerPassGLFrameBufferComponent;
 	GLShaderProgramComponent m_debuggerPassProgram;
@@ -53,6 +54,11 @@ public:
 	GLShaderProgramComponent m_finalBlendPassProgram;
 	GLuint m_finalBlendPassVertexShaderID;
 	GLuint m_finalBlendPassFragmentShaderID;
+	GLuint m_uni_lightPassRT0;
+	GLuint m_uni_skyPassRT0;
+	GLuint m_uni_bloomPassRT0;
+	GLuint m_uni_billboardPassRT0;
+	GLuint m_uni_debuggerPassRT0;
 
 private:
 	FinalRenderPassSingletonComponent() {};
