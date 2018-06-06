@@ -18,7 +18,7 @@ public:
 	void shutdown() override;
 
 	void printLog(double logMessage) const override;
-	void printLog(std::string logMessage) const override;
+	void printLog(const std::string& logMessage) const override;
 	void printLog(const vec2& logMessage) const override;
 	void printLog(const vec4& logMessage) const override;
 	void printLog(const mat4& logMessage) const override;

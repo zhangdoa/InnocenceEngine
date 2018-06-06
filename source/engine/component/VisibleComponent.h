@@ -5,8 +5,8 @@
 class VisibleComponent : public BaseComponent
 {
 public:
-	VisibleComponent();
-	~VisibleComponent();
+	VisibleComponent() {};
+	~VisibleComponent() {};
 
 
 	void setup() override;

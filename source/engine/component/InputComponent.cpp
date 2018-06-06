@@ -1,14 +1,5 @@
 #include "InputComponent.h"
 
-
-InputComponent::InputComponent()
-{
-}
-
-InputComponent::~InputComponent()
-{
-}
-
 void InputComponent::registerKeyboardInputCallback(int keyCode, std::function<void()>* function)
 {
 	auto l_keyboardInputCallbackVector = m_keyboardInputCallbackImpl.find(keyCode);

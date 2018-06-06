@@ -759,20 +759,6 @@ mat4 mat4::lookAt(const vec4 & eyePos, const vec4 & centerPos, const vec4 & upDi
 }
 #endif
 
-Vertex::Vertex()
-{
-	m_pos = vec4(0.0, 0.0, 0.0, 1.0);
-	m_texCoord = vec2(0.0, 0.0);
-	m_normal = vec4(0.0, 0.0, 1.0, 0.0);
-}
-
-Vertex::Vertex(const Vertex & rhs)
-{
-	m_pos = rhs.m_pos;
-	m_texCoord = rhs.m_texCoord;
-	m_normal = rhs.m_normal;
-}
-
 Vertex& Vertex::operator=(const Vertex & rhs)
 {
 	m_pos = rhs.m_pos;
@@ -788,48 +774,12 @@ Vertex::Vertex(const vec4& pos, const vec2& texCoord, const vec4& normal)
 	m_normal = normal;
 }
 
-Vertex::~Vertex()
-{
-}
-
-Ray::Ray()
-{
-}
-
-Ray::Ray(const Ray & rhs)
-{
-	m_origin = rhs.m_origin;
-	m_direction = rhs.m_direction;
-}
-
 Ray & Ray::operator=(const Ray & rhs)
 {
 	m_origin = rhs.m_origin;
 	m_direction = rhs.m_direction;
 
 	return *this;
-}
-
-Ray::~Ray()
-{
-}
-
-AABB::AABB()
-{
-	m_center = vec4(0.0, 0.0, 0.0, 1.0);
-	m_sphereRadius = 0.0;
-	m_boundMin = vec4(0.0, 0.0, 0.0, 1.0);
-	m_boundMax = vec4(0.0, 0.0, 0.0, 1.0);
-}
-
-AABB::AABB(const AABB & rhs)
-{
-	m_center = rhs.m_center;
-	m_sphereRadius = rhs.m_sphereRadius;
-	m_boundMin = rhs.m_boundMin;
-	m_boundMax = rhs.m_boundMax;
-	m_vertices = rhs.m_vertices;
-	m_indices = rhs.m_indices;
 }
 
 AABB & AABB::operator=(const AABB & rhs)
@@ -841,11 +791,6 @@ AABB & AABB::operator=(const AABB & rhs)
 	m_vertices = rhs.m_vertices;
 	m_indices = rhs.m_indices;
 	return *this;
-}
-
-
-AABB::~AABB()
-{
 }
 
 bool AABB::intersectCheck(const AABB & rhs)
@@ -900,20 +845,6 @@ bool AABB::intersectCheck(const Ray & rhs)
 		return true;
 	}
 	return false;
-}
-
-Transform::Transform()
-{
-	m_pos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	m_rot = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	m_oldPos = m_pos + (1.0f);
-	m_oldRot = m_rot.quatMul(0.5f);
-	m_oldScale = m_scale + (1.0f);
-}
-
-Transform::~Transform()
-{
 }
 
 bool Transform::hasChanged()

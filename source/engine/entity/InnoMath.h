@@ -308,11 +308,17 @@ public:
 class Vertex
 {
 public:
-	Vertex();
-	Vertex(const Vertex& rhs);
+	Vertex() :
+		m_pos(vec4(0.0, 0.0, 0.0, 1.0)),
+		m_texCoord(vec2(0.0, 0.0)),
+		m_normal(vec4(0.0, 0.0, 1.0, 0.0)) {};
+	Vertex(const Vertex& rhs) :
+		m_pos(rhs.m_pos),
+		m_texCoord(rhs.m_texCoord),
+		m_normal(rhs.m_normal) {};
 	Vertex& operator=(const Vertex& rhs);
 	Vertex(const vec4& pos, const vec2& texCoord, const vec4& normal);
-	~Vertex();
+	~Vertex() {};
 
 	vec4 m_pos;
 	vec2 m_texCoord;
@@ -322,10 +328,14 @@ public:
 class Ray
 {
 public:
-	Ray();
-	Ray(const Ray& rhs);
+	Ray():
+		m_origin(vec4(0.0, 0.0, 0.0, 1.0)),
+		m_direction(vec4(0.0, 0.0, 0.0, 0.0)) {};
+	Ray(const Ray& rhs) :
+		m_origin(rhs.m_origin),
+		m_direction(rhs.m_direction) {};
 	Ray& operator=(const Ray& rhs);
-	~Ray();
+	~Ray() {};
 
 	vec4 m_origin;
 	vec4 m_direction;
@@ -334,10 +344,20 @@ public:
 class AABB
 {
 public:
-	AABB();
-	AABB(const AABB& rhs);
+	AABB() :
+		m_center(vec4(0.0, 0.0, 0.0, 1.0)),
+		m_sphereRadius(0.0),
+		m_boundMin(vec4(0.0, 0.0, 0.0, 1.0)),
+		m_boundMax(vec4(0.0, 0.0, 0.0, 1.0)) {};;
+	AABB(const AABB& rhs) :
+		m_center(rhs.m_center),
+		m_sphereRadius(rhs.m_sphereRadius),
+		m_boundMin(rhs.m_boundMin),
+		m_boundMax(rhs.m_boundMax),
+		m_vertices(rhs.m_vertices),
+		m_indices(rhs.m_indices) {};
 	AABB& operator=(const AABB& rhs);
-	~AABB();
+	~AABB() {};
 
 	vec4 m_center;
 	double m_sphereRadius;
@@ -356,8 +376,15 @@ enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
 class Transform
 {
 public:
-	Transform();
-	~Transform();
+	Transform() : 
+		m_parentTransform(nullptr),
+		m_pos(vec4(0.0, 0.0, 0.0, 1.0)),
+		m_rot(vec4(0.0, 0.0, 0.0, 1.0)),
+		m_scale(vec4(1.0, 1.0, 1.0, 1.0)),
+		m_oldPos(m_pos + (1.0)),
+		m_oldRot(m_rot.quatMul(0.5)),
+		m_oldScale(m_scale + (1.0)) {};
+	~Transform() {};
 
 	bool hasChanged();
 	void update();
@@ -384,7 +411,7 @@ public:
 	mat4 caclGlobalRotMatrix();
 	mat4 caclGlobalScaleMatrix();
 	mat4 caclGlobalTransformationMatrix();
-	
+
 	mat4 caclLookAtMatrix();
 
 	mat4 getInvertLocalTranslationMatrix();
