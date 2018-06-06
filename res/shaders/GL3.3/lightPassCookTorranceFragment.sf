@@ -20,7 +20,6 @@ const float PI = 3.14159265359;
 const int NR_POINT_LIGHTS = 64;
 const float MAX_REFLECTION_LOD = 4.0;
 
-uniform vec3 uni_viewPos;
 uniform sampler2D uni_geometryPassRT0;
 uniform sampler2D uni_geometryPassRT1;
 uniform sampler2D uni_geometryPassRT2;
@@ -29,6 +28,8 @@ uniform sampler2D uni_shadowMap;
 uniform samplerCube uni_irradianceMap;
 uniform samplerCube uni_preFiltedMap;
 uniform sampler2D uni_brdfLUT;
+uniform vec3 uni_viewPos;
+
 uniform int uni_textureMode;
 uniform int uni_shadingMode;
 
