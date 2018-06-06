@@ -1,15 +1,5 @@
 #include "VisibleComponent.h"
 
-
-VisibleComponent::VisibleComponent()
-{
-}
-
-
-VisibleComponent::~VisibleComponent()
-{
-}
-
 void VisibleComponent::addMeshData(const meshID & meshID)
 {
 	m_modelMap.emplace(meshID, textureMap());

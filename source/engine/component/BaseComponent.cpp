@@ -1,13 +1,5 @@
 #include "BaseComponent.h"
 
-BaseComponent::BaseComponent()
-{
-}
-
-BaseComponent::~BaseComponent()
-{
-}
-
 IEntity* BaseComponent::getParentEntity() const
 {
 	return m_parentEntity;

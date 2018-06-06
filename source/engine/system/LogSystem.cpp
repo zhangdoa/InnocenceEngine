@@ -5,7 +5,7 @@ void LogSystem::printLog(double logMessage) const
 	std::cout << "[" <<g_pTimeSystem->getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }
 
-void LogSystem::printLog(std::string logMessage) const
+void LogSystem::printLog(const std::string& logMessage) const
 {
 	std::cout << "[" <<g_pTimeSystem->getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }

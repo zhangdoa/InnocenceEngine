@@ -4,8 +4,8 @@
 class InputComponent : public BaseComponent
 {
 public:
-	InputComponent();
-	~InputComponent();
+	InputComponent() {};
+	~InputComponent() {};
 
 
 	void setup() override;

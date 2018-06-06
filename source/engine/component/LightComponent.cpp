@@ -1,15 +1,5 @@
 #include "LightComponent.h"
 
-
-LightComponent::LightComponent()
-{
-}
-
-
-LightComponent::~LightComponent()
-{
-}
-
 mat4 LightComponent::getProjectionMatrix(unsigned int cascadedLevel) const
 {
 	auto l_boundMax = m_AABBs[cascadedLevel].m_boundMax;

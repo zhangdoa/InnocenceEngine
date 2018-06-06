@@ -5,8 +5,9 @@
 class BaseComponent : public IComponent
 {
 public:
-	BaseComponent();
-	virtual ~BaseComponent();
+	BaseComponent() :
+		m_parentEntity(nullptr) {};
+	virtual ~BaseComponent() {};
 
 	IEntity* getParentEntity() const override;
 	void setParentEntity(IEntity* parentEntity) override;

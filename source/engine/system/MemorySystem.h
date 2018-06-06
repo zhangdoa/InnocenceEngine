@@ -56,7 +56,7 @@ private:
 	const unsigned char  m_startBound[m_boundCheckSize] = { '[','I','n','n','o','C','h','u','c','k','S','t','a','r','t',']' };
 	const unsigned char  m_endBound[m_boundCheckSize] = { '[','I','n','n','o','C','h','u','c','k','.','.','E','n','d',']' };
 
-	unsigned char* m_poolMemory;
+	unsigned char* m_poolMemory = nullptr;
 
 	class Chunk
 	{
