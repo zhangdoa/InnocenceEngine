@@ -1117,16 +1117,35 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 
 void GLRenderingSystem::initializeDefaultGraphicPrimtives()
 {
-	initializeMesh(g_pAssetSystem->getDefaultMesh(meshShapeType::LINE));
-	initializeMesh(g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD));
-	initializeMesh(g_pAssetSystem->getDefaultMesh(meshShapeType::CUBE));
-	initializeMesh(g_pAssetSystem->getDefaultMesh(meshShapeType::SPHERE));
+	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::LINE);
+	initializeMesh(l_Mesh);
+	GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
+	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
+	initializeMesh(l_Mesh);
+	GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
+	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::CUBE);
+	initializeMesh(l_Mesh);
+	GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
+	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::SPHERE);
+	initializeMesh(l_Mesh);
+	GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
 
-	initializeTexture(g_pAssetSystem->getDefaultTexture(textureType::NORMAL));
-	initializeTexture(g_pAssetSystem->getDefaultTexture(textureType::ALBEDO));
-	initializeTexture(g_pAssetSystem->getDefaultTexture(textureType::METALLIC));
-	initializeTexture(g_pAssetSystem->getDefaultTexture(textureType::ROUGHNESS));
-	initializeTexture(g_pAssetSystem->getDefaultTexture(textureType::AMBIENT_OCCLUSION));
+
+	{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::NORMAL);
+	initializeTexture(l_Texture);
+	GLRenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
+	{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::ALBEDO);
+	initializeTexture(l_Texture);
+	GLRenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
+	{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::METALLIC);
+	initializeTexture(l_Texture);
+	GLRenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
+	{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::ROUGHNESS);
+	initializeTexture(l_Texture);
+	GLRenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
+	{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::AMBIENT_OCCLUSION);
+	initializeTexture(l_Texture);
+	GLRenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
 }
 
 void GLRenderingSystem::initializeGraphicPrimtivesOfComponents()
@@ -1139,13 +1158,16 @@ void GLRenderingSystem::initializeGraphicPrimtivesOfComponents()
 			{
 				auto l_Mesh = g_pAssetSystem->getMesh(l_graphicData.first);
 				initializeMesh(l_Mesh);
-				std::for_each(l_graphicData.second.begin(), l_graphicData.second.end(), [&](texturePair val) {
+				GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_graphicData.first, l_Mesh);
+			}
+			std::for_each(l_graphicData.second.begin(), l_graphicData.second.end(), [&](texturePair val) {
+				if (GLRenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.find(val.second) == GLRenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.end())
+				{
 					auto l_Texture = g_pAssetSystem->getTexture(val.second);
 					initializeTexture(l_Texture);
 					GLRenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(val.second, l_Texture);
-				});
-				GLRenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_graphicData.first, l_Mesh);
-			}
+				}
+			});
 		}
 	}
 }
@@ -1425,8 +1447,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 						updateUniform(
 							EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r,
 							captureViews[i]);
-						glBindTexture(GL_TEXTURE_CUBE_MAP, EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_TAO);
-						glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_TAO, 0);
+						attachTextureToFramebuffer(&EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
 						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 						auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
 						activateMesh(l_mesh);
@@ -1491,7 +1512,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 				{
 					auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
 					auto l_environmentPrefilterTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture;
-					activateTexture(l_environmentPrefilterTexture, 2);
+					activateTexture(l_environmentCaptureTexture, 2);
 					unsigned int maxMipLevels = 5;
 					for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
 					{
@@ -1832,7 +1853,7 @@ void GLRenderingSystem::updateLightRenderPass()
 	// shadow map
 	activateTexture(&ShadowRenderPassSingletonComponent::getInstance().m_shadowForwardPassTexture_L0, 4);
 	// irradiance environment map
-	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture, 5);
+	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture, 5);
 	// pre-filter specular environment map
 	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture, 6);
 	// BRDF look-up table
@@ -2123,5 +2144,4 @@ void GLRenderingSystem::activateTexture(const TextureDataComponent * GLTextureDa
 	{
 		glBindTexture(GL_TEXTURE_2D, GLTextureDataComponent->m_textureID);
 	}
-
 }
