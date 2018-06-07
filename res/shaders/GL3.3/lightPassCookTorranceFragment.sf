@@ -372,7 +372,7 @@ void main()
 				Lo += Unreal_CalcPointLightRadiance(uni_pointLights[i], Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
 			}
 		}
-		//Lo += imageBasedLight(Albedo, Metallic, Roughness, Normal, AO, uni_viewPos, FragPos, F0);
+		Lo += imageBasedLight(Albedo, Metallic, Roughness, Normal, AO, uni_viewPos, FragPos, F0);
 		uni_lightPassRT0.rgb = Lo;
 		uni_lightPassRT0.a = 1.0;
 	}

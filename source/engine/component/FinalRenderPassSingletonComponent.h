@@ -23,7 +23,9 @@ public:
 	GLuint m_skyPassVertexShaderID;
 	GLuint m_skyPassFragmentShaderID;
 	GLTextureDataComponent m_skyPassTexture;
-	GLuint m_uni_skybox;
+	GLuint m_skyPass_uni_skybox;
+	GLuint m_skyPass_uni_p;
+	GLuint m_skyPass_uni_r;
 
 	GLFrameBufferComponent m_debuggerPassGLFrameBufferComponent;
 	GLShaderProgramComponent m_debuggerPassProgram;
@@ -42,6 +44,7 @@ public:
 	GLuint m_bloomExtractPassVertexShaderID;
 	GLuint m_bloomExtractPassFragmentShaderID;
 	GLTextureDataComponent m_bloomExtractPassTexture;
+	GLuint m_bloomExtractPass_uni_lightPassRT0;
 
 	GLFrameBufferComponent m_bloomBlurPingPassGLFrameBufferComponent;
 	GLFrameBufferComponent m_bloomBlurPongPassGLFrameBufferComponent;
@@ -50,6 +53,8 @@ public:
 	GLuint m_bloomBlurPassFragmentShaderID;
 	GLTextureDataComponent m_bloomBlurPingPassTexture;
 	GLTextureDataComponent m_bloomBlurPongPassTexture;
+	GLuint m_bloomBlurPass_uni_bloomExtractPassRT0;
+	GLuint m_bloomBlurPass_uni_horizontal;
 
 	GLShaderProgramComponent m_finalBlendPassProgram;
 	GLuint m_finalBlendPassVertexShaderID;

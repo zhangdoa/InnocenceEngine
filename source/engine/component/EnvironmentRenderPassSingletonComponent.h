@@ -33,6 +33,7 @@ public:
 	GLuint m_convolutionPassVertexShaderID;
 	GLuint m_convolutionPassFragmentShaderID;
 	GLTextureDataComponent m_convolutionPassTexture;
+	GLuint m_convolutionPass_uni_capturedCubeMap;
 	GLuint m_convolutionPass_uni_p;
 	GLuint m_convolutionPass_uni_r;
 	
@@ -40,6 +41,7 @@ public:
 	GLuint m_preFilterPassVertexShaderID;
 	GLuint m_preFilterPassFragmentShaderID;
 	GLTextureDataComponent m_preFilterPassTexture;
+	GLuint m_preFilterPass_uni_capturedCubeMap;
 	GLuint m_preFilterPass_uni_roughness;
 	GLuint m_preFilterPass_uni_p;
 	GLuint m_preFilterPass_uni_r;
