@@ -43,7 +43,8 @@ void main()
 	//gamma correction
 	finalColor = pow(finalColor, vec3(1.0 / 2.2));
 
-	FragColor = vec4(finalColor, 1.0);
+	//FragColor = vec4(finalColor, 1.0);
+	FragColor = vec4(0.1, 0.2, 0.3, 1.0);
 }
 
 

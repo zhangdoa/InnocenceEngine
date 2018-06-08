@@ -19,7 +19,7 @@ void InnocenceGarden::setup()
 	// setup player character
 	m_playCharacter.setup();
 	m_playCharacter.getTransformComponent().m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
-	m_playCharacter.getTransformComponent().m_transform.setLocalPos(vec4(2.0, 1.0, 2.0, 1.0));
+	m_playCharacter.getTransformComponent().m_transform.setLocalPos(vec4(2.0, 3.0, 2.0, 1.0));
 	//m_playCharacter.getTransformComponent().m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
 	m_playCharacter.getCameraComponent().m_drawFrustum = false;
 	m_playCharacter.getCameraComponent().m_drawAABB = false;

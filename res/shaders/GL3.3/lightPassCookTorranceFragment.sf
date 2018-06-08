@@ -30,8 +30,8 @@ uniform samplerCube uni_preFiltedMap;
 uniform sampler2D uni_brdfLUT;
 uniform vec3 uni_viewPos;
 
-uniform int uni_textureMode;
-uniform int uni_shadingMode;
+uniform int uni_textureMode = 0;
+uniform int uni_shadingMode = 0;
 
 uniform dirLight uni_dirLight;
 uniform pointLight uni_pointLights[NR_POINT_LIGHTS];

@@ -27,18 +27,6 @@ public:
 	GLuint m_skyPass_uni_p;
 	GLuint m_skyPass_uni_r;
 
-	GLFrameBufferComponent m_debuggerPassGLFrameBufferComponent;
-	GLShaderProgramComponent m_debuggerPassProgram;
-	GLuint m_debuggerPassVertexShaderID;
-	GLuint m_debuggerPassFragmentShaderID;
-	GLTextureDataComponent m_debuggerPassTexture;
-
-	GLFrameBufferComponent m_billboardPassGLFrameBufferComponent;
-	GLShaderProgramComponent m_billboardPassProgram;
-	GLuint m_billboardPassVertexShaderID;
-	GLuint m_billboardPassFragmentShaderID;
-	GLTextureDataComponent m_billboardPassTexture;
-
 	GLFrameBufferComponent m_bloomExtractPassGLFrameBufferComponent;
 	GLShaderProgramComponent m_bloomExtractPassProgram;
 	GLuint m_bloomExtractPassVertexShaderID;
@@ -55,6 +43,28 @@ public:
 	GLTextureDataComponent m_bloomBlurPongPassTexture;
 	GLuint m_bloomBlurPass_uni_bloomExtractPassRT0;
 	GLuint m_bloomBlurPass_uni_horizontal;
+
+	GLFrameBufferComponent m_billboardPassGLFrameBufferComponent;
+	GLShaderProgramComponent m_billboardPassProgram;
+	GLuint m_billboardPassVertexShaderID;
+	GLuint m_billboardPassFragmentShaderID;
+	GLTextureDataComponent m_billboardPassTexture;
+	GLuint m_billboardPass_uni_p;
+	GLuint m_billboardPass_uni_r;
+	GLuint m_billboardPass_uni_t;
+	GLuint m_billboardPass_uni_pos;
+	GLuint m_billboardPass_uni_albedo;
+	GLuint m_billboardPass_uni_size;
+
+	GLFrameBufferComponent m_debuggerPassGLFrameBufferComponent;
+	GLShaderProgramComponent m_debuggerPassProgram;
+	GLuint m_debuggerPassVertexShaderID;
+	GLuint m_debuggerPassFragmentShaderID;
+	GLTextureDataComponent m_debuggerPassTexture;
+	GLuint m_debuggerPass_uni_p;
+	GLuint m_debuggerPass_uni_r;	
+	GLuint m_debuggerPass_uni_t;	
+	GLuint m_debuggerPass_uni_m;
 
 	GLShaderProgramComponent m_finalBlendPassProgram;
 	GLuint m_finalBlendPassVertexShaderID;
