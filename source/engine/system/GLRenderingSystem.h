@@ -42,10 +42,10 @@ private:
 	void initializeFinalRenderPass();
 
 	void initializeSkyPass();
-	void initializeDebuggerPass();
-	void initializeBillboardPass();
 	void initializeBloomExtractPass();
 	void initializeBloomBlurPass();
+	void initializeBillboardPass();
+	void initializeDebuggerPass();
 	void initializeFinalBlendPass();
 
 	void initializeDefaultGraphicPrimtives();
