@@ -31,7 +31,7 @@ void InnocenceGarden::setup()
 	//setup skybox
 	m_skyboxTransformComponent.m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 	m_skyboxVisibleComponent.m_visiblilityType = visiblilityType::SKYBOX;
-	m_skyboxVisibleComponent.m_meshType = meshShapeType::CUBE;
+	m_skyboxVisibleComponent.m_meshShapeType = meshShapeType::CUBE;
 	m_skyboxVisibleComponent.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
 	m_skyboxVisibleComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl/Mono_Lake_B_Ref.hdr"));
 
@@ -50,7 +50,7 @@ void InnocenceGarden::setup()
 	m_directionalLightComponent.m_lightType = lightType::DIRECTIONAL;
 	m_directionalLightComponent.m_drawAABB = false;
 	m_directionalLightVisibleComponent.m_visiblilityType = visiblilityType::BILLBOARD;
-	m_directionalLightVisibleComponent.m_meshType = meshShapeType::CUBE;
+	m_directionalLightVisibleComponent.m_meshShapeType = meshShapeType::CUBE;
 	m_directionalLightVisibleComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lightbulb.png"));
 	m_directionalLightVisibleComponent.m_albedo = vec4(0.5, 0.3, 0.0, 1.0);
 
@@ -67,7 +67,7 @@ void InnocenceGarden::setup()
 	m_landscapeTransformComponent.m_transform.setLocalScale(vec4(20.0, 20.0, 0.1, 1.0));
 	m_landscapeTransformComponent.m_transform.rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), 90.0);
 	m_landscapeVisibleComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
-	m_landscapeVisibleComponent.m_meshType = meshShapeType::CUBE;
+	m_landscapeVisibleComponent.m_meshShapeType = meshShapeType::CUBE;
 
 	m_landscapeEntity.addChildComponent(&m_landscapeTransformComponent);
 	m_landscapeEntity.addChildComponent(&m_landscapeVisibleComponent);
@@ -79,7 +79,7 @@ void InnocenceGarden::setup()
 	m_pawnTransformComponent1.m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 	m_pawnTransformComponent1.m_transform.setLocalScale(vec4(0.1, 0.1, 0.1, 1.0));
 	m_pawnVisibleComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
-	m_pawnVisibleComponent1.m_meshType = meshShapeType::CUSTOM;
+	m_pawnVisibleComponent1.m_meshShapeType = meshShapeType::CUSTOM;
 	//m_pawnVisibleComponent1.m_modelFileName = "sponza/sponza.obj";
 	//m_pawnVisibleComponent1.m_modelFileName = "cat/cat.obj";
 	m_pawnVisibleComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
@@ -99,7 +99,7 @@ void InnocenceGarden::setup()
 	m_pawnTransformComponent2.m_transform.setLocalScale(vec4(0.01, 0.01, 0.01, 1.0));
 	m_pawnTransformComponent2.m_transform.setLocalPos(vec4(0.0, 0.2, 3.5, 1.0));
 	m_pawnVisibleComponent2.m_visiblilityType = visiblilityType::STATIC_MESH;
-	m_pawnVisibleComponent2.m_meshType = meshShapeType::CUSTOM;
+	m_pawnVisibleComponent2.m_meshShapeType = meshShapeType::CUSTOM;
 	m_pawnVisibleComponent2.m_drawAABB = true;
 	m_pawnVisibleComponent2.m_modelFileName = "lantern/lantern.obj";
 	m_pawnVisibleComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "lantern/lantern_Normal_OpenGL.jpg"));
@@ -188,7 +188,7 @@ void InnocenceGarden::setupSpheres()
 		m_sphereTransformComponents[i].m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 		m_sphereTransformComponents[i].m_transform.setLocalScale(vec4(10.0, 10.0, 10.0, 1.0));
 		m_sphereVisibleComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
-		m_sphereVisibleComponents[i].m_meshType = meshShapeType::CUSTOM;
+		m_sphereVisibleComponents[i].m_meshShapeType = meshShapeType::CUSTOM;
 		m_sphereVisibleComponents[i].m_drawAABB = true;
 		m_sphereVisibleComponents[i].m_modelFileName = "lteOrb/lteOrb.obj";
 		m_sphereVisibleComponents[i].m_useTexture = false;
@@ -253,7 +253,7 @@ void InnocenceGarden::setupLights()
 		m_pointLightTransformComponents[i].m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 		m_pointLightTransformComponents[i].m_transform.setLocalScale(vec4(0.1, 0.1, 0.1, 1.0));
 		m_pointLightVisibleComponents[i].m_visiblilityType = visiblilityType::EMISSIVE;
-		m_pointLightVisibleComponents[i].m_meshType = meshShapeType::SPHERE;
+		m_pointLightVisibleComponents[i].m_meshShapeType = meshShapeType::SPHERE;
 		m_pointLightVisibleComponents[i].m_useTexture = false;
 
 		m_pointLightEntitys[i].addChildComponent(&m_pointLightTransformComponents[i]);

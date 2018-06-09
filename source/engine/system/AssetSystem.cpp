@@ -224,7 +224,7 @@ void AssetSystem::loadAssetsForComponents()
 	{
 		if (i->m_visiblilityType != visiblilityType::INVISIBLE)
 		{
-			if (i->m_meshType == meshShapeType::CUSTOM)
+			if (i->m_meshShapeType == meshShapeType::CUSTOM)
 			{
 				if (i->m_modelFileName != "")
 				{
@@ -233,7 +233,7 @@ void AssetSystem::loadAssetsForComponents()
 			}
 			else
 			{
-				assignUnitMesh(i->m_meshType, *i);
+				assignUnitMesh(i->m_meshShapeType, *i);
 				assignDefaultTextures(textureAssignType::OVERWRITE, *i);
 			}
 		}

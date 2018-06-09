@@ -719,11 +719,6 @@ void RenderingSystem::generateAABB(VisibleComponent & visibleComponent)
 		l_vertexData.m_pos = l_worldTm * l_vertexData.m_pos;
 	}
 #endif
-
-	if (visibleComponent.m_drawAABB)
-	{
-		visibleComponent.m_AABBMeshID = g_pAssetSystem->addMesh(visibleComponent.m_AABB.m_vertices, visibleComponent.m_AABB.m_indices);
-	}
 }
 
 void RenderingSystem::generateAABB(LightComponent & lightComponent)
@@ -779,12 +774,6 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	for (size_t i = 0; i < 4; i++)
 	{
 		lightComponent.m_AABBs.emplace_back(generateAABB(l_splitedFrustums[i]));
-
-		if (lightComponent.m_drawAABB)
-		{
-			g_pAssetSystem->removeMesh(lightComponent.m_AABBMeshIDs[i]);
-			lightComponent.m_AABBMeshIDs.emplace_back(g_pAssetSystem->addMesh(lightComponent.m_AABBs[i].m_vertices, lightComponent.m_AABBs[i].m_indices));
-		}
 	}
 }
 
@@ -792,18 +781,6 @@ void RenderingSystem::generateAABB(CameraComponent & cameraComponent)
 {
 	auto l_frustumCorners = cameraComponent.m_frustumVertices;
 	cameraComponent.m_AABB = generateAABB(l_frustumCorners);
-
-	if (cameraComponent.m_drawFrustum)
-	{
-		g_pAssetSystem->removeMesh(cameraComponent.m_FrustumMeshID);
-		cameraComponent.m_FrustumMeshID = g_pAssetSystem->addMesh(cameraComponent.m_frustumVertices, cameraComponent.m_frustumIndices);
-	}
-
-	if (cameraComponent.m_drawAABB)
-	{
-		g_pAssetSystem->removeMesh(cameraComponent.m_AABBMeshID);
-		cameraComponent.m_AABBMeshID = g_pAssetSystem->addMesh(cameraComponent.m_AABB.m_vertices, cameraComponent.m_AABB.m_indices);
-	}
 }
 
 AABB RenderingSystem::generateAABB(const std::vector<Vertex>& vertices)

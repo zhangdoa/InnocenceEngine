@@ -49,6 +49,7 @@ public:
 	GLuint m_billboardPassVertexShaderID;
 	GLuint m_billboardPassFragmentShaderID;
 	GLTextureDataComponent m_billboardPassTexture;
+	GLuint m_billboardPass_uni_texture;
 	GLuint m_billboardPass_uni_p;
 	GLuint m_billboardPass_uni_r;
 	GLuint m_billboardPass_uni_t;
@@ -61,6 +62,7 @@ public:
 	GLuint m_debuggerPassVertexShaderID;
 	GLuint m_debuggerPassFragmentShaderID;
 	GLTextureDataComponent m_debuggerPassTexture;
+	GLuint m_debuggerPass_uni_normalTexture;
 	GLuint m_debuggerPass_uni_p;
 	GLuint m_debuggerPass_uni_r;	
 	GLuint m_debuggerPass_uni_t;	
