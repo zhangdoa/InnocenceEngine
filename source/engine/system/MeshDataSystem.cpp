@@ -115,12 +115,12 @@ void MeshDataSystem::addUnitCube(MeshDataComponent& meshDataComponent)
 		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
 	}
 
-	meshDataComponent.m_indices = { 0, 1, 3, 1, 2, 3,
-		4, 5, 0, 5, 1, 0,
-		7, 6, 4, 6, 5, 4,
-		3, 2, 7, 2, 6 ,7,
-		4, 0, 7, 0, 3, 7,
-		1, 5, 2, 5, 6, 2 };
+	meshDataComponent.m_indices = { 0, 3, 1, 1, 3, 2,
+		4, 0, 5, 5, 0, 1,
+		7, 4, 6, 6, 4, 5,
+		3, 7, 2, 2, 7 ,6,
+		4, 7, 0, 0, 7, 3,
+		1, 2, 5, 5, 2, 6 };
 }
 
 void MeshDataSystem::addUnitSphere(MeshDataComponent& meshDataComponent)

@@ -337,7 +337,7 @@ void main()
 	vec4 RT1 = texture(uni_geometryPassRT1, TexCoords);
 	vec4 RT2 = texture(uni_geometryPassRT2, TexCoords);
 	vec4 RT3 = texture(uni_geometryPassRT3, TexCoords);
-
+	uni_lightPassRT0 = vec4(0.0, 0.0, 0.0, 0.0);
 	if(uni_textureMode == 0)
 	{
 		vec3 FragPos	= RT0.rgb;

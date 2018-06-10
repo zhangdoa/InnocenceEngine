@@ -4,7 +4,7 @@ void PlayerCharacter::setup()
 {
 	BaseEntity::setup();
 
-	addChildComponent(&m_transformCompoent);
+	addChildComponent(&m_transformComponent);
 	addChildComponent(&m_cameraComponent);
 	addChildComponent(&m_inputComponent);
 	addChildComponent(&m_visibleComponent);
@@ -35,7 +35,7 @@ void PlayerCharacter::setup()
 
 TransformComponent & PlayerCharacter::getTransformComponent()
 {
-	return m_transformCompoent;
+	return m_transformComponent;
 }
 
 CameraComponent & PlayerCharacter::getCameraComponent()
@@ -55,35 +55,35 @@ VisibleComponent & PlayerCharacter::getVisibleComponent()
 
 void PlayerCharacter::move(vec4 direction, double length)
 {
-	m_transformCompoent.m_transform.setLocalPos(m_transformCompoent.m_transform.getPos() + direction.scale(length));
+	m_transformComponent.m_transform.setLocalPos(m_transformComponent.m_transform.getPos() + direction.scale(length));
 }
 
 void PlayerCharacter::moveForward()
 {
-	move(m_transformCompoent.m_transform.getDirection(direction::FORWARD), m_moveSpeed);
+	move(m_transformComponent.m_transform.getDirection(direction::FORWARD), m_moveSpeed);
 }
 
 void PlayerCharacter::moveBackward()
 {
-	move(m_transformCompoent.m_transform.getDirection(direction::BACKWARD), m_moveSpeed);
+	move(m_transformComponent.m_transform.getDirection(direction::BACKWARD), m_moveSpeed);
 }
 
 void PlayerCharacter::moveLeft()
 {
-	move(m_transformCompoent.m_transform.getDirection(direction::LEFT), m_moveSpeed);
+	move(m_transformComponent.m_transform.getDirection(direction::LEFT), m_moveSpeed);
 }
 
 void PlayerCharacter::moveRight()
 {
-	move(m_transformCompoent.m_transform.getDirection(direction::RIGHT), m_moveSpeed);
+	move(m_transformComponent.m_transform.getDirection(direction::RIGHT), m_moveSpeed);
 }
 
 void PlayerCharacter::rotateAroundPositiveYAxis(double offset)
 {
-	m_transformCompoent.m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * m_rotateSpeed) / 180.0)* PI);
+	m_transformComponent.m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * m_rotateSpeed) / 180.0)* PI);
 }
 
 void PlayerCharacter::rotateAroundRightAxis(double offset)
 {
-	m_transformCompoent.m_transform.rotateInLocal(m_transformCompoent.m_transform.getDirection(direction::RIGHT), ((offset * m_rotateSpeed) / 180.0)* PI);
+	m_transformComponent.m_transform.rotateInLocal(m_transformComponent.m_transform.getDirection(direction::RIGHT), ((offset * m_rotateSpeed) / 180.0)* PI);
 }

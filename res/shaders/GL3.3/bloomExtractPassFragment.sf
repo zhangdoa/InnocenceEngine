@@ -5,18 +5,25 @@ layout (location = 0) out vec4 uni_bloomExtractPassRT0;
 in vec2 TexCoords;
 
 uniform sampler2D uni_lightPassRT0;
-
+uniform bool uni_isEmissive = false;
 void main()
 {    
 	vec3 lightPassRT0ExtractedResult = texture(uni_lightPassRT0, TexCoords).rgb;
-	float brightness = dot(lightPassRT0ExtractedResult.rgb, vec3(0.2126, 0.7152, 0.0722));
-
-	if(brightness > 1.0)
+	float brightness = 0.0;
+	if(uni_isEmissive)
 	{
-		uni_bloomExtractPassRT0 = vec4(lightPassRT0ExtractedResult, 1.0);
+		 uni_bloomExtractPassRT0 = vec4(lightPassRT0ExtractedResult, 1.0);
 	}
 	else
 	{
-		uni_bloomExtractPassRT0 = vec4(0.0);
+		brightness = dot(lightPassRT0ExtractedResult.rgb, vec3(0.2126, 0.7152, 0.0722));
+		if(brightness > 1.0)
+		{
+			uni_bloomExtractPassRT0 = vec4(lightPassRT0ExtractedResult, 1.0);
+		}
+		else
+		{
+			uni_bloomExtractPassRT0 = vec4(0.0);
+		}
 	}
 }
