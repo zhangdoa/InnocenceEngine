@@ -19,7 +19,7 @@ public:
 	VisibleComponent& getVisibleComponent();
 
 private:	
-	TransformComponent m_transformCompoent;
+	TransformComponent m_transformComponent;
 	InputComponent m_inputComponent;
 	CameraComponent m_cameraComponent;
 	VisibleComponent m_visibleComponent;

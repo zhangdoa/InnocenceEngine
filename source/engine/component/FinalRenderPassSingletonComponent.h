@@ -33,6 +33,7 @@ public:
 	GLuint m_bloomExtractPassFragmentShaderID;
 	GLTextureDataComponent m_bloomExtractPassTexture;
 	GLuint m_bloomExtractPass_uni_lightPassRT0;
+	GLuint m_bloomExtractPass_uni_isEmissive;
 
 	GLFrameBufferComponent m_bloomBlurPingPassGLFrameBufferComponent;
 	GLFrameBufferComponent m_bloomBlurPongPassGLFrameBufferComponent;

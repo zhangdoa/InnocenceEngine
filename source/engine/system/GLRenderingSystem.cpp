@@ -758,6 +758,9 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	updateUniform(
 		FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_lightPassRT0,
 		0);
+	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_isEmissive = getUniformLocation(
+		FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassProgram.m_program,
+		"uni_isEmissive");
 }
 
 void GLRenderingSystem::initializeBloomBlurPass()
@@ -1448,14 +1451,15 @@ void GLRenderingSystem::update()
 
 void GLRenderingSystem::updateEnvironmentRenderPass()
 {
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
 	// bind to framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
+
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
-
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
 
 	// draw environment capture texture
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
@@ -1607,6 +1611,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 void GLRenderingSystem::updateShadowRenderPass()
 {
 	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CCW);
 	glCullFace(GL_FRONT);
@@ -1658,12 +1663,24 @@ void GLRenderingSystem::updateShadowRenderPass()
 		}
 	}
 
-	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
 }
 
 void GLRenderingSystem::updateGeometryRenderPass()
 {
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glEnable(GL_DEPTH_CLAMP);
+
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	glStencilMask(0xFF);
+
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
+
 	// bind to framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
@@ -1672,19 +1689,8 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
-
 	glClear(GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_DEPTH_CLAMP);
-
 	glClear(GL_STENCIL_BUFFER_BIT);
-	glEnable(GL_STENCIL_TEST);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-	glStencilMask(0xFF);
-
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
 
 	glUseProgram(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program);
 
@@ -1809,10 +1815,11 @@ void GLRenderingSystem::updateGeometryRenderPass()
 				}
 			}
 		}
+
 		glDisable(GL_CULL_FACE);
+		glDisable(GL_STENCIL_TEST);
 		glDisable(GL_DEPTH_CLAMP);
 		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_STENCIL_TEST);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #elif BlinnPhong
 		// draw each visibleComponent
@@ -1869,6 +1876,15 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 void GLRenderingSystem::updateLightRenderPass()
 {
+	glDisable(GL_DEPTH_TEST);
+
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilFunc(GL_EQUAL, 0x01, 0xFF);
+	glStencilMask(0x00);
+
+	glDisable(GL_CULL_FACE);
+
 	// bind to framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, LightRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, LightRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
@@ -1878,9 +1894,12 @@ void GLRenderingSystem::updateLightRenderPass()
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	glDisable(GL_DEPTH_TEST);
+	glClear(GL_STENCIL_BUFFER_BIT);
 
-	glDisable(GL_CULL_FACE);
+	// copy stencil buffer from G-Pass
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, LightRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
 	glUseProgram(LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program);
 
@@ -1948,11 +1967,20 @@ void GLRenderingSystem::updateLightRenderPass()
 	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
+
+	glDisable(GL_STENCIL_TEST);
 }
 
 void GLRenderingSystem::updateFinalRenderPass()
 {
 	// sky pass
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CW);
+	glCullFace(GL_FRONT);
+
 	// bind to framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_skyPassGLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_skyPassGLFrameBufferComponent.m_RBO);
@@ -1962,11 +1990,6 @@ void GLRenderingSystem::updateFinalRenderPass()
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CW);
-	glCullFace(GL_BACK);
 
 	glUseProgram(FinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program);
 
@@ -2003,8 +2026,8 @@ void GLRenderingSystem::updateFinalRenderPass()
 		}
 	}
 
-	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
 
 	// bloom extract pass
 	glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLFrameBufferComponent.m_FBO);
@@ -2016,10 +2039,37 @@ void GLRenderingSystem::updateFinalRenderPass()
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glUseProgram(FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassProgram.m_program);
+
+	// 1. extract bright part from light pass
+	updateUniform(
+		FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_isEmissive,
+		false);
 	activateTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture, 0);
 	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
+
+	// 2. draw emissive mesh
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilFunc(GL_EQUAL, 0x02, 0xFF);
+	glStencilMask(0x00);
+
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	// copy stencil buffer from G-Pass
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLFrameBufferComponent.m_FBO);
+	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+
+	updateUniform(
+		FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_isEmissive,
+		true);
+	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2, 0);
+	activateMesh(l_mesh);
+	drawMesh(l_mesh);
+
+	glDisable(GL_STENCIL_TEST);
 
 	// bloom blur pass
 	glUseProgram(FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPassProgram.m_program);
@@ -2081,11 +2131,8 @@ void GLRenderingSystem::updateFinalRenderPass()
 	}
 
 	// billboard pass
-	// copy depth buffer from G-Pass
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_billboardPassGLFrameBufferComponent.m_FBO);
-	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_billboardPassGLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_billboardPassGLFrameBufferComponent.m_RBO);
@@ -2093,7 +2140,15 @@ void GLRenderingSystem::updateFinalRenderPass()
 	glViewport(0, 0, 1280, 720);
 
 	glClearColor(0.0, 0.0, 0.0, 0.0);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);	
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	// copy depth buffer from G-Pass
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_billboardPassGLFrameBufferComponent.m_FBO);
+	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+
 	glUseProgram(FinalRenderPassSingletonComponent::getInstance().m_billboardPassProgram.m_program);
 
 	if (g_pGameSystem->getCameraComponents().size() > 0)
@@ -2120,7 +2175,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 			if (l_visibleComponent->m_visiblilityType == visiblilityType::BILLBOARD)
 			{
 				auto l_GlobalPos = g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalPos();
-				auto l_GlobalCameraPos = g_pGameSystem->getTransformComponent(g_pGameSystem->getVisibleComponents()[0]->getParentEntity())->m_transform.caclGlobalPos();
+				auto l_GlobalCameraPos = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.caclGlobalPos();
 				updateUniform(
 					FinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_pos,
 					l_GlobalPos.x, l_GlobalPos.y, l_GlobalPos.z);
@@ -2128,17 +2183,17 @@ void GLRenderingSystem::updateFinalRenderPass()
 					FinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_albedo,
 					l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
 				auto l_distanceToCamera = (l_GlobalCameraPos - l_GlobalPos).length();
-				if (l_distanceToCamera > 1)
+				if (l_distanceToCamera > 1.0)
 				{
 					updateUniform(
 						FinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_size,
-						(vec2(1.0, 1.0) * (1.0 / l_distanceToCamera)).x, (vec2(1.0, 1.0) * (1.0 / l_distanceToCamera)).y);
+						(1.0 / l_distanceToCamera) * (9.0 / 16.0), (1.0 / l_distanceToCamera));
 				}
 				else
 				{
 					updateUniform(
 						FinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_size,
-						vec2(1.0, 1.0).x, vec2(1.0, 1.0).y);
+						(9.0 / 16.0), 1.0);
 				}
 				// draw each graphic data of visibleComponent
 				for (auto& l_graphicData : l_visibleComponent->getModelMap())
@@ -2164,19 +2219,26 @@ void GLRenderingSystem::updateFinalRenderPass()
 		}
 	}
 
+	glDisable(GL_DEPTH_TEST);
+
 	// debugger pass
-	// copy depth buffer from G-Pass
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLFrameBufferComponent.m_FBO);
-	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLFrameBufferComponent.m_RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
 	glViewport(0, 0, 1280, 720);
 
+	// copy depth buffer from G-Pass
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLFrameBufferComponent.m_FBO);
+	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+
 	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
 	glUseProgram(FinalRenderPassSingletonComponent::getInstance().m_debuggerPassProgram.m_program);
 
 	//if (g_pGameSystem->getCameraComponents().size() > 0)
@@ -2280,13 +2342,12 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//	}
 	//}
 
+	glDisable(GL_DEPTH_TEST);
+
 	// final blend pass
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
-	glViewport(0, 0, 1280, 720);
 	glClear(GL_COLOR_BUFFER_BIT);
-	glClear(GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program);
 
