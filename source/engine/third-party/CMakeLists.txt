@@ -1,2 +1,3 @@
-add_library(GLAD glad.c)
-add_library(STB_Image stb_image.cpp)
+add_subdirectory("GLAD")
+add_subdirectory("STB_Image")
+add_subdirectory("ImGui")
