@@ -1,12 +1,3 @@
-newmtl StingrayPBS1SG
-illum 4
-Kd 0.00 0.00 0.00
-Ka 0.00 0.00 0.00
-Tf 1.00 1.00 1.00
-Ni 0.00
-newmtl StingrayPBS2SG
-illum 4
-Kd 0.00 0.00 0.00
-Ka 0.00 0.00 0.00
-Tf 1.00 1.00 1.00
-Ni 0.00
+version https://git-lfs.github.com/spec/v1
+oid sha256:18de53aff03d1677f67b0f2af6bab47dd6b8d72436d894f228333932352071ca
+size 196

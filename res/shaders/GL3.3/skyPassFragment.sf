@@ -1,13 +1,3 @@
-// shadertype=<glsl>
-#version 330 core
-layout (location = 0) out vec4 uni_skyPassRT0;
-
-in vec3 TexCoords;
-
-uniform samplerCube uni_skybox;
-
-void main()
-{    
-    uni_skyPassRT0 = texture(uni_skybox, TexCoords);
-    //uni_skyPassRT0 = vec4(0.0, 0.0, 0.0, 1.0);
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:7dddcdeece9f2cf1a8fbc725c4d746564fd2405aad3eb34f42060dbdf26b3e0a
+size 273

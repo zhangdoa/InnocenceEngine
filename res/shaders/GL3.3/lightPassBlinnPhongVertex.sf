@@ -1,12 +1,3 @@
-// shadertype=glsl
-#version 330 core
-layout (location = 0) in vec3 in_Position;
-layout (location = 1) in vec2 in_TexCoord;
-
-out vec2 TexCoords;
-
-void main()
-{
-    TexCoords = in_TexCoord;
-    gl_Position = vec4(in_Position, 1.0);
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:9dd5f02e286183d3e70d6ccd98758f841e2528e14a4e99ce4fcb8488b17e578b
+size 242

@@ -1,14 +1,3 @@
-# 
-# 
-newmtl cat
-Ns 96.078431
-Ka 0.000000 0.000000 0.000000
-Kd 0.640000 0.640000 0.640000
-Ks 0.000000 0.000000 0.000000
-Ni 1.000000
-d 1.000000
-illum 1
-map_Kn cat_norm.tga
-map_Kd cat_diff.tga
-map_Ks cat_spec.tga
-
+version https://git-lfs.github.com/spec/v1
+oid sha256:b52d03cdc7e98ee7c3aa9aebd4b64ffebe2bc7a8de40db498a03c07a85d03ad1
+size 226

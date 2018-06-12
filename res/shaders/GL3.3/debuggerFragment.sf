@@ -1,17 +1,3 @@
-// shadertype=glsl
-#version 330 core
-//in vec4 finalColor;
-layout (location = 0) out vec4 uni_debuggerPassRT0;
-
-void main()
-{
-	//if(finalColor.a == 1.0)
-	//{
-	//	uni_debuggerPassRT0 = finalColor;
-	//}
-	//else
-	//{
-	//	uni_debuggerPassRT0 = vec4(0.3, 0.4, 0.5, 1.0);
-	//}
-	uni_debuggerPassRT0 = vec4(0.6, 0.2, 0.1, 1.0);
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:52137fca8d4982c2da6ecac47bf01e2d4d900a1096d8094aaa7af7e7aa08d145
+size 339

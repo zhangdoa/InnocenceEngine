@@ -1,28 +1,3 @@
-// shadertype=glsl
-#version 330 core
-layout (location = 0) in vec3 in_Position;
-layout (location = 1) in vec2 in_TexCoord;
-layout (location = 2) in vec3 in_Normal;
-
-out vec3 thefrag_FragPos;
-out vec2 thefrag_TexCoord;
-out vec3 thefrag_Normal;
-
-uniform mat4 uni_p;
-uniform mat4 uni_r;
-uniform mat4 uni_t;
-uniform mat4 uni_m;
-
-void main()
-{
-	// output the fragment position
-	thefrag_FragPos = vec3(uni_m * vec4(in_Position, 1.0));
-
-	// output the texture coordinate
-	thefrag_TexCoord = in_TexCoord;
-
-	// output the normal
-	thefrag_Normal = mat3(transpose(inverse(uni_m))) * in_Normal;
-
-	gl_Position = uni_p * uni_r * uni_t * uni_m * vec4(in_Position, 1.0);
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:e08896fc33b534fdfc6fbbb805fbac887c3d9aea21aa3f4bf78dfd0abbcf17fc
+size 683

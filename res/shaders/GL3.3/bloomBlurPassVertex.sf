@@ -1,12 +1,3 @@
-// shadertype=glsl
-#version 330 core
-layout (location = 0) in vec3 in_Position;
-layout (location = 1) in vec2 in_TexCoord;
-
-out vec2 thefrag_TexCoord;
-
-void main()
-{
-    thefrag_TexCoord = in_TexCoord;
-    gl_Position = vec4(in_Position, 1.0);
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:69e7b5445931ac5e40c74c2fd4e05b02b402c79060fad486001ab57021e236ab
+size 256

@@ -1,14 +1,3 @@
-// shadertype=<glsl>
-#version 330 core
-
-layout (location = 0) in vec3 in_Position;
-
-uniform mat4 uni_p;
-uniform mat4 uni_v;
-uniform mat4 uni_m;
-
-
-void main()
-{
-    gl_Position = uni_p * uni_v * uni_m * vec4(in_Position, 1.0);
-}  
+version https://git-lfs.github.com/spec/v1
+oid sha256:382d981ed91d1ef86d442feeb34ebfee762947ce07b4ad7ec907ec79342a635e
+size 242
