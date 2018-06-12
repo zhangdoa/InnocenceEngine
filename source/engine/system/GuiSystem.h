@@ -1,7 +1,6 @@
 #pragma once
 #include "interface/IGuiSystem.h"
 #include "interface/ILogSystem.h"
-#include "third-party/ImGui/imgui.h"
 
 extern ILogSystem* g_pLogSystem;
 

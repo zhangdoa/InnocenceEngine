@@ -8,7 +8,6 @@ void GuiSystem::setup()
 void GuiSystem::initialize()
 {
 	g_pLogSystem->printLog("GuiSystem has been initialized.");
-
 }
 
 void GuiSystem::update()

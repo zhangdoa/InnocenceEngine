@@ -69,9 +69,11 @@ public:
 	GLuint m_debuggerPass_uni_t;	
 	GLuint m_debuggerPass_uni_m;
 
+	GLFrameBufferComponent m_finalBlendPassGLFrameBufferComponent;
 	GLShaderProgramComponent m_finalBlendPassProgram;
 	GLuint m_finalBlendPassVertexShaderID;
 	GLuint m_finalBlendPassFragmentShaderID;
+	GLTextureDataComponent m_finalBlendPassTexture;
 	GLuint m_uni_lightPassRT0;
 	GLuint m_uni_skyPassRT0;
 	GLuint m_uni_bloomPassRT0;
