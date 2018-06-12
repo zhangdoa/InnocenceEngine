@@ -387,9 +387,12 @@ void RenderingSystem::updatePhysics()
 
 void RenderingSystem::updateGui()
 {
+	const char* items[] = { "Final Pass", "Light Pass", "Geometry Pass" };
+	static const char* item_current = items[0];
+
 	ImGui_ImplGlfwGL3_NewFrame();
 	{
-		ImGui::Begin("Global Settings");
+		ImGui::Begin("Global Settings", false, ImGuiWindowFlags_AlwaysAutoResize);
 
 		static float f = 0.0f;
 		static int counter = 0;
@@ -407,32 +410,56 @@ void RenderingSystem::updateGui()
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
+           // Here our selection is a single pointer stored outside the object.
+		if (ImGui::BeginCombo("Active render pass result", item_current)) // The second parameter is the label previewed before opening the combo.
+		{
+			for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+			{
+				bool is_selected = (item_current == items[n]);
+				if (ImGui::Selectable(items[n], is_selected))
+					item_current = items[n];
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();   // Set the initial focus when opening the combo (scrolling + for keyboard navigation support in the upcoming navigation branch)
+			}
+			ImGui::EndCombo();
+		}
+
 		ImGui::End();
 	}
 
 	auto l_renderTargetSize = ImVec2(GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 	{
-		ImGui::Begin("Geometry Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
-		ImGui::BeginChild("World Space Position(RGB) + Metallic(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
-		ImGui::EndChild();
-		ImGui::BeginChild("World Space Normal(RGB) + Roughness(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
-		ImGui::EndChild();
-		ImGui::BeginChild("Albedo(RGB) + Ambient Occlusion(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
-		ImGui::EndChild();
-		ImGui::BeginChild("Light Space Position", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
-		ImGui::EndChild();
-		ImGui::End();
+		if (item_current == items[0])
+		{
+			ImGui::Begin("Final Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Image(ImTextureID(FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::End();
+		}
+		else if (item_current == items[1])
+		{
+			ImGui::Begin("Light Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Image(ImTextureID(LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::End();
+		}
+		else if (item_current == items[2])
+		{
+			ImGui::Begin("Geometry Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::BeginChild("World Space Position(RGB) + Metallic(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::EndChild();
+			ImGui::BeginChild("World Space Normal(RGB) + Roughness(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::EndChild();
+			ImGui::BeginChild("Albedo(RGB) + Ambient Occlusion(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::EndChild();
+			ImGui::BeginChild("Light Space Position", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::EndChild();
+			ImGui::End();
+		}
 	}
-	ImGui::Begin("Light Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
-	ImGui::Image(ImTextureID(LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
-	ImGui::End();
-	ImGui::Begin("Final Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
-	ImGui::Image(ImTextureID(FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
-	ImGui::End();
+
 	// Rendering
 	glViewport(0, 0, m_screenResolution.x, m_screenResolution.y);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
