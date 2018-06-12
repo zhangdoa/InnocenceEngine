@@ -281,7 +281,7 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	// generate and bind texture
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
@@ -290,8 +290,8 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureWidth = 1280;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureHeight = 720;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureData = { nullptr };
 	initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0);
@@ -308,8 +308,8 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureWidth = 1280;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureHeight = 720;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureData = { nullptr };
 	initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1);
@@ -326,8 +326,8 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureWidth = 1280;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureHeight = 720;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureData = { nullptr };
 	initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2);
@@ -344,8 +344,8 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureWidth = 1280;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureHeight = 720;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureData = { nullptr };
 	initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3);
@@ -471,7 +471,7 @@ void GLRenderingSystem::initializeLightRenderPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, LightRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, LightRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	// generate and bind texture
 	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
@@ -480,8 +480,8 @@ void GLRenderingSystem::initializeLightRenderPass()
 	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_textureWidth = 1280;
-	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_textureHeight = 720;
+	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_textureData = { nullptr };
 	initializeTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture);
@@ -635,7 +635,7 @@ void GLRenderingSystem::initializeSkyPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_skyPassGLFrameBufferComponent.m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_skyPassGLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	// generate and bind texture
 	FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
@@ -644,8 +644,8 @@ void GLRenderingSystem::initializeSkyPass()
 	FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_textureWidth = 1280;
-	FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_textureHeight = 720;
+	FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_textureData = { nullptr };
 	initializeTexture(&FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture);
@@ -706,7 +706,7 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLFrameBufferComponent.m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	// generate and bind texture
 	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
@@ -715,8 +715,8 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_textureWidth = 1280;
-	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_textureHeight = 720;
+	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_textureData = { nullptr };
 	initializeTexture(&FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture);
@@ -774,7 +774,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLFrameBufferComponent.m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	// generate and bind texture
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
@@ -783,8 +783,8 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_textureWidth = 1280;
-	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_textureHeight = 720;
+	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_textureData = { nullptr };
 	initializeTexture(&FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture);
@@ -814,7 +814,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLFrameBufferComponent.m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	// generate and bind texture
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
@@ -823,8 +823,8 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_textureWidth = 1280;
-	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_textureHeight = 720;
+	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_textureData = { nullptr };
 	initializeTexture(&FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture);
@@ -882,7 +882,7 @@ void GLRenderingSystem::initializeBillboardPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_billboardPassGLFrameBufferComponent.m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_billboardPassGLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	// generate and bind texture
 	FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
@@ -891,8 +891,8 @@ void GLRenderingSystem::initializeBillboardPass()
 	FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_textureWidth = 1280;
-	FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_textureHeight = 720;
+	FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_textureData = { nullptr };
 	initializeTexture(&FinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture);
@@ -966,7 +966,7 @@ void GLRenderingSystem::initializeDebuggerPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLFrameBufferComponent.m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	// generate and bind texture
 	FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
@@ -975,8 +975,8 @@ void GLRenderingSystem::initializeDebuggerPass()
 	FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_textureWidth = 1280;
-	FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_textureHeight = 720;
+	FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_textureData = { nullptr };
 	initializeTexture(&FinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture);
@@ -1034,8 +1034,49 @@ void GLRenderingSystem::initializeDebuggerPass()
 
 void GLRenderingSystem::initializeFinalBlendPass()
 {
+	// generate and bind framebuffer
+	glGenFramebuffers(1, &FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLFrameBufferComponent.m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLFrameBufferComponent.m_FBO);
+
+	// generate and bind renderbuffer
+	glGenRenderbuffers(1, &FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLFrameBufferComponent.m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLFrameBufferComponent.m_RBO);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLFrameBufferComponent.m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+
+	// generate and bind texture
+	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
+	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
+	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
+	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
+	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
+	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
+	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
+	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_textureData = { nullptr };
+	initializeTexture(&FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture);
+
+	attachTextureToFramebuffer(
+		&FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture,
+		&FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLFrameBufferComponent,
+		0, 0, 0
+	);
+
+	std::vector<unsigned int> l_colorAttachments;
+	l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0);
+	glDrawBuffers(l_colorAttachments.size(), &l_colorAttachments[0]);
+
+	// finally check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		g_pLogSystem->printLog("GLFrameBuffer: FinalBlendRenderPass Framebuffer is not completed!");
+	}
+
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
 	// shader programs and shaders
 	FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program = glCreateProgram();
@@ -1684,8 +1725,8 @@ void GLRenderingSystem::updateGeometryRenderPass()
 	// bind to framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
-	glViewport(0, 0, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glViewport(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -1725,7 +1766,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 						g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.caclGlobalRotMatrix());
 
 					// draw each visibleComponent
-					for (auto& l_visibleComponent : g_pGameSystem->getVisibleComponents())
+					for (auto& l_visibleComponent : GLRenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
 					{
 						if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 						{
@@ -1888,8 +1929,8 @@ void GLRenderingSystem::updateLightRenderPass()
 	// bind to framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, LightRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, LightRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
-	glViewport(0, 0, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glViewport(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -1899,7 +1940,7 @@ void GLRenderingSystem::updateLightRenderPass()
 	// copy stencil buffer from G-Pass
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, LightRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
-	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
 	glUseProgram(LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program);
 
@@ -1984,8 +2025,8 @@ void GLRenderingSystem::updateFinalRenderPass()
 	// bind to framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_skyPassGLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_skyPassGLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
-	glViewport(0, 0, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glViewport(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -2032,8 +2073,8 @@ void GLRenderingSystem::updateFinalRenderPass()
 	// bloom extract pass
 	glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
-	glViewport(0, 0, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glViewport(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -2060,7 +2101,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	// copy stencil buffer from G-Pass
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLFrameBufferComponent.m_FBO);
-	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
 	updateUniform(
 		FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_isEmissive,
@@ -2082,8 +2123,8 @@ void GLRenderingSystem::updateFinalRenderPass()
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLFrameBufferComponent.m_FBO);
 			glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLFrameBufferComponent.m_RBO);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
-			glViewport(0, 0, 1280, 720);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+			glViewport(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 			glClearColor(0.0, 0.0, 0.0, 0.0);
 			glClear(GL_COLOR_BUFFER_BIT);
@@ -2111,8 +2152,8 @@ void GLRenderingSystem::updateFinalRenderPass()
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLFrameBufferComponent.m_FBO);
 			glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLFrameBufferComponent.m_RBO);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
-			glViewport(0, 0, 1280, 720);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+			glViewport(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 			glClearColor(0.0, 0.0, 0.0, 0.0);
 			glClear(GL_COLOR_BUFFER_BIT);
@@ -2136,8 +2177,8 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_billboardPassGLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_billboardPassGLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
-	glViewport(0, 0, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glViewport(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);	
@@ -2146,8 +2187,8 @@ void GLRenderingSystem::updateFinalRenderPass()
 	// copy depth buffer from G-Pass
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_billboardPassGLFrameBufferComponent.m_FBO);
-	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
 	glUseProgram(FinalRenderPassSingletonComponent::getInstance().m_billboardPassProgram.m_program);
 
@@ -2227,14 +2268,14 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLFrameBufferComponent.m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
-	glViewport(0, 0, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glViewport(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	// copy depth buffer from G-Pass
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLFrameBufferComponent.m_FBO);
-	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -2345,9 +2386,14 @@ void GLRenderingSystem::updateFinalRenderPass()
 	glDisable(GL_DEPTH_TEST);
 
 	// final blend pass
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLFrameBufferComponent.m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLFrameBufferComponent.m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glViewport(0, 0, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+
+	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program);
 
@@ -2365,6 +2411,9 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//// draw final pass rectangle
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
 void GLRenderingSystem::shutdown()

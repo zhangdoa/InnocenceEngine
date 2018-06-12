@@ -29,10 +29,7 @@ uniform samplerCube uni_irradianceMap;
 uniform samplerCube uni_preFiltedMap;
 uniform sampler2D uni_brdfLUT;
 uniform vec3 uni_viewPos;
-
-uniform int uni_textureMode = 0;
 uniform int uni_shadingMode = 0;
-
 uniform dirLight uni_dirLight;
 uniform pointLight uni_pointLights[NR_POINT_LIGHTS];
 
@@ -338,8 +335,6 @@ void main()
 	vec4 RT2 = texture(uni_geometryPassRT2, TexCoords);
 	vec4 RT3 = texture(uni_geometryPassRT3, TexCoords);
 	uni_lightPassRT0 = vec4(0.0, 0.0, 0.0, 0.0);
-	if(uni_textureMode == 0)
-	{
 		vec3 FragPos	= RT0.rgb;
 		vec3 Normal		= RT1.rgb;
 		vec3 Albedo     = RT2.rgb;
@@ -375,25 +370,4 @@ void main()
 		Lo += imageBasedLight(Albedo, Metallic, Roughness, Normal, AO, uni_viewPos, FragPos, F0);
 		uni_lightPassRT0.rgb = Lo;
 		uni_lightPassRT0.a = 1.0;
-	}
-	else if(uni_textureMode == 1)
-	{
-			uni_lightPassRT0.rgb = RT0.rgb;
-			uni_lightPassRT0.a = 1.0;
-	}
-	else if(uni_textureMode == 2)
-	{
-			uni_lightPassRT0.rgb = RT1.rgb;
-			uni_lightPassRT0.a = 1.0;
-	}
-	else if(uni_textureMode == 3)
-	{
-			uni_lightPassRT0.rgb = RT2.rgb;
-			uni_lightPassRT0.a = 1.0;
-	}
-	else if(uni_textureMode == 4)
-	{
-			uni_lightPassRT0.rgb = vec3(RT0.a, RT1.a, RT2.a);
-			uni_lightPassRT0.a = 1.0;
-	}	
 }

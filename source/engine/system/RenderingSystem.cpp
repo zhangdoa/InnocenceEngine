@@ -5,6 +5,7 @@ void RenderingSystem::setup()
 	setupWindow();
 	setupInput();
 	setupRendering();
+	setupGui();
 
 	m_objectStatus = objectStatus::ALIVE;
 }
@@ -66,11 +67,30 @@ void RenderingSystem::setupRendering()
 	m_canRender = true;
 }
 
+inline void RenderingSystem::setupGui()
+{
+	// Setup Dear ImGui binding
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+	ImGui_ImplGlfwGL3_Init(m_window, true);
+
+	// Setup style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsClassic();
+
+	// Load Fonts
+	io.Fonts->AddFontFromFileTTF("../res/fonts/FreeSans.otf", 16.0f);
+}
+
 void RenderingSystem::initialize()
 {
 	initializeWindow();
 	initializeInput();
 	initializeRendering();
+	initializeGui();
 
 	g_pLogSystem->printLog("RenderingSystem has been initialized.");
 }
@@ -106,6 +126,10 @@ void RenderingSystem::initializeRendering()
 	setupComponents();
 	//initialize rendering
 	m_GLRenderingSystem->initialize();
+}
+
+void RenderingSystem::initializeGui()
+{
 }
 
 void RenderingSystem::setupComponents()
@@ -196,11 +220,11 @@ void RenderingSystem::setupVisibleComponents()
 		{
 			if (i->m_visiblilityType == visiblilityType::EMISSIVE)
 			{
-				m_emissiveVisibleComponents.emplace_back(i);
+				GLRenderingSystemSingletonComponent::getInstance().m_emissiveVisibleComponents.emplace_back(i);
 			}
 			else if (i->m_visiblilityType == visiblilityType::STATIC_MESH)
 			{
-				m_staticMeshVisibleComponents.emplace_back(i);
+				GLRenderingSystemSingletonComponent::getInstance().m_staticMeshVisibleComponents.emplace_back(i);
 			}
 			generateAABB(*i);
 		}
@@ -341,8 +365,8 @@ void RenderingSystem::updateInput()
 
 void RenderingSystem::updatePhysics()
 {
-	m_selectedVisibleComponents.clear();
-	m_inFrustumVisibleComponents.clear();
+	GLRenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.clear();
+	GLRenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.clear();
 
 	// camera update
 	updateCameraComponents();
@@ -359,6 +383,62 @@ void RenderingSystem::updatePhysics()
 			}
 		}
 	}
+}
+
+void RenderingSystem::updateGui()
+{
+	ImGui_ImplGlfwGL3_NewFrame();
+	{
+		ImGui::Begin("Global Settings");
+
+		static float f = 0.0f;
+		static int counter = 0;
+		ImGui::Text("Global Settings");                           // Display some text (you can use a format string too)
+		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
+		//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+		//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state
+		//ImGui::Checkbox("Another Window", &show_another_window);
+
+		if (ImGui::Button("Button"))                            // Buttons return true when clicked (NB: most widgets return true when edited/activated)
+			counter++;
+		ImGui::SameLine();
+		ImGui::Text("counter = %d", counter);
+
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+		ImGui::End();
+	}
+
+	auto l_renderTargetSize = ImVec2(GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	{
+		ImGui::Begin("Geometry Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::BeginChild("World Space Position(RGB) + Metallic(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+		ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+		ImGui::EndChild();
+		ImGui::BeginChild("World Space Normal(RGB) + Roughness(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+		ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+		ImGui::EndChild();
+		ImGui::BeginChild("Albedo(RGB) + Ambient Occlusion(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+		ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+		ImGui::EndChild();
+		ImGui::BeginChild("Light Space Position", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+		ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+		ImGui::EndChild();
+		ImGui::End();
+	}
+	ImGui::Begin("Light Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
+	ImGui::Image(ImTextureID(LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+	ImGui::End();
+	ImGui::Begin("Final Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
+	ImGui::Image(ImTextureID(FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+	ImGui::End();
+	// Rendering
+	glViewport(0, 0, m_screenResolution.x, m_screenResolution.y);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	ImGui::Render();
+	ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void RenderingSystem::updateCameraComponents()
@@ -386,11 +466,11 @@ void RenderingSystem::updateCameraComponents()
 			{
 				if (j->m_AABB.intersectCheck(m_mouseRay))
 				{
-					m_selectedVisibleComponents.emplace_back(j);
+					GLRenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.emplace_back(j);
 				}
 				if (l_cameraAABB.intersectCheck(j->m_AABB))
 				{
-					m_inFrustumVisibleComponents.emplace_back(j);
+					GLRenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.emplace_back(j);
 				}
 			}
 		}
@@ -413,6 +493,7 @@ void RenderingSystem::update()
 		{
 			m_canRender = false;
 			m_GLRenderingSystem->update();
+			updateGui();
 			//swap framebuffers
 			glfwSwapBuffers(m_window);
 			m_canRender = true;

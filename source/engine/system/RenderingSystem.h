@@ -3,6 +3,9 @@
 
 #include "common/GLHeaders.h"
 
+#include "third-party/ImGui/imgui.h"
+#include "third-party/ImGui/imgui_impl_glfw_gl3.h"
+
 #include "interface/IRenderingSystem.h"
 #include "interface/IMemorySystem.h"
 #include "interface/IAssetSystem.h"
@@ -50,10 +53,12 @@ private:
 	void setupWindow();
 	void setupInput();
 	void setupRendering();
+	void setupGui();
 
 	void initializeWindow();
 	void initializeInput();
 	void initializeRendering();
+	void initializeGui();
 
 	void setupComponents();
 	void setupCameraComponents();
@@ -82,6 +87,8 @@ private:
 
 	void updateInput();
 	void updatePhysics();
+	void updateGui();
+
 	void updateCameraComponents();
 
 	void changeDrawPolygonMode();
@@ -120,11 +127,6 @@ private:
 	std::function<void()> f_changeShadingMode;
 
 	GLRenderingSystem* m_GLRenderingSystem;
-
-	std::vector<VisibleComponent*> m_staticMeshVisibleComponents;
-	std::vector<VisibleComponent*> m_emissiveVisibleComponents;
-	std::vector<VisibleComponent*> m_selectedVisibleComponents;
-	std::vector<VisibleComponent*> m_inFrustumVisibleComponents;
 
 	int m_polygonMode = 2;
 	int m_textureMode = 0;
