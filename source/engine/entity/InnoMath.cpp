@@ -842,7 +842,7 @@ bool AABB::intersectCheck(const Ray & rhs)
 
 bool Transform::hasChanged()
 {
-	if (m_pos != m_oldPos || m_rot != m_oldRot || m_scale != m_oldScale)
+	if (m_pos != m_previousPos || m_rot != m_previousRot || m_scale != m_previousScale)
 	{
 		return true;
 	}
@@ -860,9 +860,9 @@ bool Transform::hasChanged()
 
 void Transform::update()
 {
-	m_oldPos = m_pos;
-	m_oldRot = m_rot;
-	m_oldScale = m_scale;
+	m_previousPos = m_pos;
+	m_previousRot = m_rot;
+	m_previousScale = m_scale;
 }
 
 void Transform::rotateInLocal(const vec4 & axis, double angle)
@@ -923,6 +923,26 @@ mat4 Transform::caclLocalTransformationMatrix()
 	return caclLocalTranslationMatrix() * caclLocalRotMatrix() * caclLocalScaleMatrix();
 }
 
+mat4 Transform::caclPreviousLocalTranslationMatrix()
+{
+	return m_previousPos.toTranslationMatrix();
+}
+
+mat4 Transform::caclPreviousLocalRotMatrix()
+{
+	return m_previousRot.toRotationMatrix();
+}
+
+mat4 Transform::caclPreviousLocalScaleMatrix()
+{
+	return m_previousScale.toScaleMatrix();
+}
+
+mat4 Transform::caclPreviousLocalTransformationMatrix()
+{
+	return caclPreviousLocalTranslationMatrix() * caclPreviousLocalRotMatrix() * caclPreviousLocalScaleMatrix();
+}
+
 vec4 Transform::caclGlobalPos()
 {
 	mat4 l_parentTransformationMatrix;
@@ -973,6 +993,56 @@ vec4 Transform::caclGlobalScale()
 	return l_parentScale.scale(m_scale);
 }
 
+vec4 Transform::caclPreviousGlobalPos()
+{
+	mat4 l_parentTransformationMatrix;
+	l_parentTransformationMatrix.initializeToIdentityMatrix();
+
+	if (nullptr != m_parentTransform)
+	{
+		l_parentTransformationMatrix = m_parentTransform->caclPreviousGlobalTransformationMatrix();
+	}
+
+	//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+	auto result = vec4();
+	result = m_previousPos * l_parentTransformationMatrix;
+	result = result * (1 / result.w);
+	return result;
+#endif
+	//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+	auto result = vec4();
+	result = l_parentTransformationMatrix * m_previousPos;
+	result = result * (1 / result.w);
+	return result;
+#endif
+}
+
+vec4 Transform::caclPreviousGlobalRot()
+{
+	vec4 l_parentRot = vec4(0.0, 0.0, 0.0, 1.0);
+
+	if (nullptr != m_parentTransform)
+	{
+		l_parentRot = m_parentTransform->caclPreviousGlobalRot();
+	}
+
+	return l_parentRot.quatMul(m_previousRot);
+}
+
+vec4 Transform::caclPreviousGlobalScale()
+{
+	vec4 l_parentScale = vec4(1.0, 1.0, 1.0, 1.0);
+
+	if (nullptr != m_parentTransform)
+	{
+		l_parentScale = m_parentTransform->caclPreviousGlobalScale();
+	}
+
+	return l_parentScale.scale(m_previousScale);
+}
+
 mat4 Transform::caclGlobalTranslationMatrix()
 {
 	return caclGlobalPos().toTranslationMatrix();
@@ -1001,9 +1071,43 @@ mat4 Transform::caclGlobalTransformationMatrix()
 	return l_parentTransformationMatrix * caclLocalTransformationMatrix();
 }
 
+mat4 Transform::caclPreviousGlobalTranslationMatrix()
+{
+	return caclPreviousGlobalPos().toTranslationMatrix();
+}
+
+mat4 Transform::caclPreviousGlobalRotMatrix()
+{
+	return caclPreviousGlobalRot().toRotationMatrix();
+}
+
+mat4 Transform::caclPreviousGlobalScaleMatrix()
+{
+	return caclPreviousGlobalScale().toScaleMatrix();
+}
+
+mat4 Transform::caclPreviousGlobalTransformationMatrix()
+{
+	mat4 l_parentTransformationMatrix;
+	l_parentTransformationMatrix.initializeToIdentityMatrix();
+
+	if (nullptr != m_parentTransform)
+	{
+		l_parentTransformationMatrix = m_parentTransform->caclPreviousGlobalTransformationMatrix();
+	}
+
+	return l_parentTransformationMatrix * caclPreviousLocalTransformationMatrix();
+
+}
+
 mat4 Transform::caclLookAtMatrix()
 {
 	return mat4().lookAt(caclGlobalPos(), caclGlobalPos() + getDirection(direction::BACKWARD), getDirection(direction::UP));
+}
+
+mat4 Transform::caclPreviousLookAtMatrix()
+{
+	return mat4().lookAt(caclPreviousGlobalPos(), caclPreviousGlobalPos() + getPreviousDirection(direction::BACKWARD), getPreviousDirection(direction::UP));
 }
 
 mat4 Transform::getInvertLocalTranslationMatrix()
@@ -1034,6 +1138,36 @@ mat4 Transform::getInvertGlobalRotMatrix()
 mat4 Transform::getInvertGlobalScaleMatrix()
 {
 	return caclGlobalScale().reciprocal().toScaleMatrix();
+}
+
+mat4 Transform::getPreviousInvertLocalTranslationMatrix()
+{
+	return m_previousPos.scale(-1.0).toTranslationMatrix();
+}
+
+mat4 Transform::getPreviousInvertLocalRotMatrix()
+{
+	return m_previousRot.quatConjugate().toRotationMatrix();
+}
+
+mat4 Transform::getPreviousInvertLocalScaleMatrix()
+{
+	return m_previousScale.reciprocal().toScaleMatrix();
+}
+
+mat4 Transform::getPreviousInvertGlobalTranslationMatrix()
+{
+	return caclPreviousGlobalPos().scale(-1.0).toTranslationMatrix();
+}
+
+mat4 Transform::getPreviousInvertGlobalRotMatrix()
+{
+	return caclPreviousGlobalRot().quatConjugate().toRotationMatrix();
+}
+
+mat4 Transform::getPreviousInvertGlobalScaleMatrix()
+{
+	return caclPreviousGlobalScale().reciprocal().toScaleMatrix();
 }
 
 vec4 Transform::getDirection(direction direction) const
@@ -1085,6 +1219,58 @@ vec4 Transform::getDirection(direction direction) const
 	l_directionVec4 = l_directionVec4 + l_Qv.cross((l_Qv.cross(l_directionVec4) + l_directionVec4.scale(m_rot.w))).scale(2.0f);
 
 	return l_directionVec4.normalize();
+}
+
+vec4 Transform::getPreviousDirection(direction direction) const
+{
+	vec4 l_directionVec4;
+
+	switch (direction)
+	{
+	case FORWARD: l_directionVec4 = vec4(0.0f, 0.0f, 1.0f, 0.0f); break;
+	case BACKWARD:l_directionVec4 = vec4(0.0f, 0.0f, -1.0f, 0.0f); break;
+	case UP:l_directionVec4 = vec4(0.0f, 1.0f, 0.0f, 0.0f); break;
+	case DOWN:l_directionVec4 = vec4(0.0f, -1.0f, 0.0f, 0.0f); break;
+	case RIGHT:l_directionVec4 = vec4(1.0f, 0.0f, 0.0f, 0.0f); break;
+	case LEFT:l_directionVec4 = vec4(-1.0f, 0.0f, 0.0f, 0.0f); break;
+	}
+
+	// V' = QVQ^-1, for unit quaternion, the conjugated quaternion is as same as the inverse quaternion
+
+	// naive version
+	// get Q * V by hand
+	//vec4 l_hiddenRotatedQuat;
+	//l_hiddenRotatedQuat.w = -m_rot.x * l_directionvec4.x - m_rot.y * l_directionvec4.y - m_rot.z * l_directionvec4.z;
+	//l_hiddenRotatedQuat.x = m_rot.w * l_directionvec4.x + m_rot.y * l_directionvec4.z - m_rot.z * l_directionvec4.y;
+	//l_hiddenRotatedQuat.y = m_rot.w * l_directionvec4.y + m_rot.z * l_directionvec4.x - m_rot.x * l_directionvec4.z;
+	//l_hiddenRotatedQuat.z = m_rot.w * l_directionvec4.z + m_rot.x * l_directionvec4.y - m_rot.y * l_directionvec4.x;
+
+	// get conjugated quaternion
+	//vec4 l_conjugatedQuat;
+	//l_conjugatedQuat = conjugate(m_rot);
+
+	// then QV * Q^-1 
+	//vec4 l_directionQuat;
+	//l_directionQuat = l_hiddenRotatedQuat * l_conjugatedQuat;
+	//l_directionvec4.x = l_directionQuat.x;
+	//l_directionvec4.y = l_directionQuat.y;
+	//l_directionvec4.z = l_directionQuat.z;
+
+	// traditional version, change direction vector to quaternion representation
+
+	//vec4 l_directionQuat = vec4(0.0, l_directionvec4);
+	//l_directionQuat = m_rot * l_directionQuat * conjugate(m_rot);
+	//l_directionvec4.x = l_directionQuat.x;
+	//l_directionvec4.y = l_directionQuat.y;
+	//l_directionvec4.z = l_directionQuat.z;
+
+	// optimized version ([Kavan et al. ] Lemma 4)
+	//V' = V + 2 * Qv x (Qv x V + Qs * V)
+	vec4 l_Qv = vec4(m_previousRot.x, m_previousRot.y, m_previousRot.z, m_previousRot.w);
+	l_directionVec4 = l_directionVec4 + l_Qv.cross((l_Qv.cross(l_directionVec4) + l_directionVec4.scale(m_previousRot.w))).scale(2.0f);
+
+	return l_directionVec4.normalize();
+
 }
 
 

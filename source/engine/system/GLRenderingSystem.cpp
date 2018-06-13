@@ -356,8 +356,26 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 		3, 0, 0
 	);
 
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_texturePixelDataType = texturePixelDataType::FLOAT;
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureData = { nullptr };
+	initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4);
+
+	attachTextureToFramebuffer(
+		&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4,
+		&GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent,
+		4, 0, 0
+	);
+
 	std::vector<unsigned int> l_colorAttachments;
-	for (auto i = (unsigned int)0; i < 4; ++i)
+	for (auto i = (unsigned int)0; i < 5; ++i)
 	{
 		l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 	}
@@ -397,19 +415,16 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 		GL_FRAGMENT_SHADER,
 		"GL3.3/geometryPassBlinnPhongFragment.sf");
 #endif
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p = getUniformLocation(
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_prt = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
-		"uni_p");
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
-		"uni_r");
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
-		"uni_t");
+		"uni_prt");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_m");
 #ifdef CookTorrance
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_prt_previous = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_prt_previous");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_p_light");
@@ -1740,16 +1755,16 @@ void GLRenderingSystem::updateGeometryRenderPass()
 		mat4 p = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
 		mat4 r = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
 		mat4 t = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
+		mat4 r_prev = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getPreviousInvertGlobalRotMatrix();
+		mat4 t_prev = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getPreviousInvertGlobalTranslationMatrix();
 
 		updateUniform(
-			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p,
-			p);
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_prt,
+			p * r * t);
+
 		updateUniform(
-			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r,
-			r);
-		updateUniform(
-			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t,
-			t);
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_prt_previous,
+			p * r_prev * t_prev);
 
 #ifdef CookTorrance
 		//Cook-Torrance

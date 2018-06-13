@@ -45,6 +45,12 @@ public:
 	GLuint m_bloomBlurPass_uni_bloomExtractPassRT0;
 	GLuint m_bloomBlurPass_uni_horizontal;
 
+	GLFrameBufferComponent m_motionBlurPassGLFrameBufferComponent;
+	GLShaderProgramComponent m_motionBlurPassProgram;
+	GLuint m_motionBlurPassVertexShaderID;
+	GLuint m_motionBlurPassFragmentShaderID;
+	GLTextureDataComponent m_motionBlurPassTexture;
+
 	GLFrameBufferComponent m_billboardPassGLFrameBufferComponent;
 	GLShaderProgramComponent m_billboardPassProgram;
 	GLuint m_billboardPassVertexShaderID;
