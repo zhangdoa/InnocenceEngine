@@ -56,10 +56,6 @@ void GameSystem::initialize()
 void GameSystem::update()
 {
 	auto l_tickTime = g_pTimeSystem->getcurrentTime();
-	std::for_each(m_TransformComponents.begin(), m_TransformComponents.end(), [&](TransformComponent* val)
-	{
-		val->m_transform.update();
-	});
 	g_pGame->update();
 	l_tickTime = g_pTimeSystem->getcurrentTime() - l_tickTime;
 	//g_pLogSystem->printLog(l_tickTime);

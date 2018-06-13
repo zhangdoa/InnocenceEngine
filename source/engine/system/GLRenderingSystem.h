@@ -44,6 +44,7 @@ private:
 	void initializeSkyPass();
 	void initializeBloomExtractPass();
 	void initializeBloomBlurPass();
+	void initializeMotionBlurPass();
 	void initializeBillboardPass();
 	void initializeDebuggerPass();
 	void initializeFinalBlendPass();

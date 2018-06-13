@@ -384,9 +384,9 @@ public:
 		m_pos(vec4(0.0, 0.0, 0.0, 1.0)),
 		m_rot(vec4(0.0, 0.0, 0.0, 1.0)),
 		m_scale(vec4(1.0, 1.0, 1.0, 1.0)),
-		m_oldPos(m_pos + (1.0)),
-		m_oldRot(m_rot.quatMul(0.5)),
-		m_oldScale(m_scale + (1.0)) {};
+		m_previousPos((m_pos + (1.0)) / 2.0),
+		m_previousRot(m_rot.quatMul(vec4(1.0, 1.0, 1.0, 0.0))),
+		m_previousScale(m_scale + (1.0)) {};
 	~Transform() {};
 
 	bool hasChanged();
@@ -405,17 +405,29 @@ public:
 	mat4 caclLocalRotMatrix();
 	mat4 caclLocalScaleMatrix();
 	mat4 caclLocalTransformationMatrix();
+	mat4 caclPreviousLocalTranslationMatrix();
+	mat4 caclPreviousLocalRotMatrix();
+	mat4 caclPreviousLocalScaleMatrix();
+	mat4 caclPreviousLocalTransformationMatrix();
 
 	vec4 caclGlobalPos();
 	vec4 caclGlobalRot();
 	vec4 caclGlobalScale();
+	vec4 caclPreviousGlobalPos();
+	vec4 caclPreviousGlobalRot();
+	vec4 caclPreviousGlobalScale();
 
 	mat4 caclGlobalTranslationMatrix();
 	mat4 caclGlobalRotMatrix();
 	mat4 caclGlobalScaleMatrix();
 	mat4 caclGlobalTransformationMatrix();
+	mat4 caclPreviousGlobalTranslationMatrix();
+	mat4 caclPreviousGlobalRotMatrix();
+	mat4 caclPreviousGlobalScaleMatrix();
+	mat4 caclPreviousGlobalTransformationMatrix();
 
 	mat4 caclLookAtMatrix();
+	mat4 caclPreviousLookAtMatrix();
 
 	mat4 getInvertLocalTranslationMatrix();
 	mat4 getInvertLocalRotMatrix();
@@ -423,9 +435,14 @@ public:
 	mat4 getInvertGlobalTranslationMatrix();
 	mat4 getInvertGlobalRotMatrix();
 	mat4 getInvertGlobalScaleMatrix();
-
+	mat4 getPreviousInvertLocalTranslationMatrix();
+	mat4 getPreviousInvertLocalRotMatrix();
+	mat4 getPreviousInvertLocalScaleMatrix();
+	mat4 getPreviousInvertGlobalTranslationMatrix();
+	mat4 getPreviousInvertGlobalRotMatrix();
+	mat4 getPreviousInvertGlobalScaleMatrix();
 	vec4 getDirection(direction direction) const;
-
+	vec4 getPreviousDirection(direction direction) const;
 	Transform* m_parentTransform;
 
 private:
@@ -433,9 +450,9 @@ private:
 	vec4 m_rot;
 	vec4 m_scale;
 
-	vec4 m_oldPos;
-	vec4 m_oldRot;
-	vec4 m_oldScale;
+	vec4 m_previousPos;
+	vec4 m_previousRot;
+	vec4 m_previousScale;
 };
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };

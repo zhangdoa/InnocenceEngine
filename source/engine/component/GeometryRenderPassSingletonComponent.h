@@ -28,9 +28,9 @@ public:
 	GLTextureDataComponent m_geometryPassTexture_RT1;
 	GLTextureDataComponent m_geometryPassTexture_RT2;
 	GLTextureDataComponent m_geometryPassTexture_RT3;
-	GLuint m_geometryPass_uni_p;
-	GLuint m_geometryPass_uni_r;
-	GLuint m_geometryPass_uni_t;
+	GLTextureDataComponent m_geometryPassTexture_RT4;
+	GLuint m_geometryPass_uni_prt;
+	GLuint m_geometryPass_uni_prt_previous;
 	GLuint m_geometryPass_uni_m;
 	GLuint m_geometryPass_uni_p_light;
 	GLuint m_geometryPass_uni_v_light;

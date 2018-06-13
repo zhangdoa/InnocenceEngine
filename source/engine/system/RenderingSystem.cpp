@@ -456,6 +456,9 @@ void RenderingSystem::updateGui()
 			ImGui::BeginChild("Light Space Position", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 			ImGui::EndChild();
+			ImGui::BeginChild("Screen Space Motion Vector", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::EndChild();		
 			ImGui::End();
 		}
 	}
@@ -515,7 +518,7 @@ void RenderingSystem::update()
 		// physics update
 		updatePhysics();
 
-		//defer render	
+		// defer render	
 		if (m_canRender)
 		{
 			m_canRender = false;
@@ -525,6 +528,12 @@ void RenderingSystem::update()
 			glfwSwapBuffers(m_window);
 			m_canRender = true;
 		}
+
+		// update the transform data @TODO: ugly
+		std::for_each(g_pGameSystem->getTransformComponents().begin(), g_pGameSystem->getTransformComponents().end(), [&](TransformComponent* val)
+		{
+			val->m_transform.update();
+		});
 	}
 	else
 	{
