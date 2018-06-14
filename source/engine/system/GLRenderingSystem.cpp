@@ -284,98 +284,33 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	// generate and bind texture
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_texturePixelDataType = texturePixelDataType::FLOAT;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0.m_textureData = { nullptr };
-	initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0);
+	for (size_t i = 0; i < 8; i++)
+	{
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures.emplace_back();
+	}
+	for (size_t i = 0; i < GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures.size(); i++)
+	{
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureType = textureType::RENDER_BUFFER_SAMPLER;
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureMinFilterMethod = textureFilterMethod::NEAREST;
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureMagFilterMethod = textureFilterMethod::NEAREST;
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_texturePixelDataType = texturePixelDataType::FLOAT;
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureData = { nullptr };
+		initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i]);
 
-	attachTextureToFramebuffer(
-		&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0,
-		&GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent,
-		0, 0, 0
-	);
-
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_texturePixelDataType = texturePixelDataType::FLOAT;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1.m_textureData = { nullptr };
-	initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1);
-
-	attachTextureToFramebuffer(
-		&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1,
-		&GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent,
-		1, 0, 0
-	);
-
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_texturePixelDataType = texturePixelDataType::FLOAT;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2.m_textureData = { nullptr };
-	initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2);
-
-	attachTextureToFramebuffer(
-		&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2,
-		&GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent,
-		2, 0, 0
-	);
-
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_texturePixelDataType = texturePixelDataType::FLOAT;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3.m_textureData = { nullptr };
-	initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3);
-
-	attachTextureToFramebuffer(
-		&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3,
-		&GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent,
-		3, 0, 0
-	);
-
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureWidth = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureHeight = GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_texturePixelDataType = texturePixelDataType::FLOAT;
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4.m_textureData = { nullptr };
-	initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4);
-
-	attachTextureToFramebuffer(
-		&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4,
-		&GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent,
-		4, 0, 0
-	);
+		attachTextureToFramebuffer(
+			&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i],
+			&GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent,
+			i, 0, 0
+		);
+	}
 
 	std::vector<unsigned int> l_colorAttachments;
-	for (auto i = (unsigned int)0; i < 5; ++i)
+	for (size_t i = 0; i < GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures.size(); ++i)
 	{
 		l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 	}
@@ -425,9 +360,18 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_prt_previous = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_prt_previous");
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light = getUniformLocation(
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_0 = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
-		"uni_p_light");
+		"uni_p_light_0");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_1 = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_p_light_1");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_2 = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_p_light_2");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3 = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_p_light_3");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_v_light");
@@ -1847,8 +1791,14 @@ void GLRenderingSystem::updateGeometryRenderPass()
 				// update light space transformation matrices
 				if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
 				{
-					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light,
+					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_0,
 						l_lightComponent->getProjectionMatrix(0));
+					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_1,
+						l_lightComponent->getProjectionMatrix(1));
+					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_2,
+						l_lightComponent->getProjectionMatrix(2));
+					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3,
+						l_lightComponent->getProjectionMatrix(3));
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light,
 						g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.caclGlobalRotMatrix());
 
@@ -2034,14 +1984,14 @@ void GLRenderingSystem::updateLightRenderPass()
 #ifdef CookTorrance
 	// Cook-Torrance
 	// world space position + metallic
-	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT0, 0);
+	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[0], 0);
 	// normal + roughness
-	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT1, 1);
+	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[1], 1);
 	// albedo + ambient occlusion
-	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2, 2);
-	// light space position
-	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT3, 3);
-	// shadow map @TODO: multi-framebuffer??
+	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[2], 2);
+	// light space position 0
+	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[4], 3);
+	// shadow map
 	activateTexture(&ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[0].second, 4);
 	// irradiance environment map
 	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture, 5);
@@ -2193,7 +2143,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	updateUniform(
 		FinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_isEmissive,
 		true);
-	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT2, 0);
+	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[2], 0);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
 
@@ -2267,7 +2217,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTexture_RT4, 0);
+	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[3], 0);
 	activateTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture, 1);
 
 	activateMesh(l_mesh);
