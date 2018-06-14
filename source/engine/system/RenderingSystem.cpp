@@ -387,7 +387,7 @@ void RenderingSystem::updatePhysics()
 
 void RenderingSystem::updateGui()
 {
-	const char* items[] = { "Final Pass", "Light Pass", "Geometry Pass" };
+	const char* items[] = { "Final Pass", "Light Pass", "Geometry Pass", "Shadow Pass" };
 	static const char* item_current = items[0];
 
 	ImGui_ImplGlfwGL3_NewFrame();
@@ -470,6 +470,23 @@ void RenderingSystem::updateGui()
 			ImGui::End();
 			ImGui::BeginChild("Light Space Position 3", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[7].m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::EndChild();
+			ImGui::End();
+		}
+		else if (item_current == items[3])
+		{
+			ImGui::Begin("Shadow Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::BeginChild("Shadow Pass Depth Buffer 0", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[0].second.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::EndChild();
+			ImGui::BeginChild("Shadow Pass Depth Buffer 1", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[1].second.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::EndChild();
+			ImGui::BeginChild("Shadow Pass Depth Buffer 2", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[2].second.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::EndChild();
+			ImGui::BeginChild("Shadow Pass Depth Buffer 3", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[3].second.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 			ImGui::EndChild();
 			ImGui::End();
 		}

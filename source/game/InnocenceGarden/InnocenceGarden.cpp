@@ -45,7 +45,7 @@ void InnocenceGarden::setup()
 	m_directionalLightTransformComponent.m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
 	m_directionalLightTransformComponent.m_transform.setLocalPos(vec4(0.0, 4.0, 0.0, 1.0));
 	m_directionalLightTransformComponent.m_transform.rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), -75.0);
-	m_directionalLightTransformComponent.m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), -35.0);
+	//m_directionalLightTransformComponent.m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), -35.0);
 	m_directionalLightComponent.m_color = vec4(0.5, 0.3, 0.0, 1.0);
 	m_directionalLightComponent.m_lightType = lightType::DIRECTIONAL;
 	m_directionalLightComponent.m_drawAABB = false;
@@ -84,7 +84,7 @@ void InnocenceGarden::setup()
 	//m_pawnVisibleComponent1.m_modelFileName = "cat/cat.obj";
 	m_pawnVisibleComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnVisibleComponent1.m_drawAABB = false;
-	m_pawnVisibleComponent1.m_useTexture = false;
+	//m_pawnVisibleComponent1.m_useTexture = true;
 	m_pawnVisibleComponent1.m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
 	m_pawnVisibleComponent1.m_MRA = vec4(0.0, 0.35, 1.0, 1.0);
 
