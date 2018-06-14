@@ -50,6 +50,8 @@ public:
 	GLuint m_motionBlurPassVertexShaderID;
 	GLuint m_motionBlurPassFragmentShaderID;
 	GLTextureDataComponent m_motionBlurPassTexture;
+	GLuint m_motionBlurPass_uni_motionVectorTexture;
+	GLuint m_motionBlurPass_uni_lightPassRT0;
 
 	GLFrameBufferComponent m_billboardPassGLFrameBufferComponent;
 	GLShaderProgramComponent m_billboardPassProgram;

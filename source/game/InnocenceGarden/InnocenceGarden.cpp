@@ -186,11 +186,11 @@ void InnocenceGarden::setupSpheres()
 	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i++)
 	{
 		m_sphereTransformComponents[i].m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
-		m_sphereTransformComponents[i].m_transform.setLocalScale(vec4(10.0, 10.0, 10.0, 1.0));
+		m_sphereTransformComponents[i].m_transform.setLocalScale(vec4(1.0, 1.0, 1.0, 1.0));
 		m_sphereVisibleComponents[i].m_visiblilityType = visiblilityType::STATIC_MESH;
 		m_sphereVisibleComponents[i].m_meshShapeType = meshShapeType::CUSTOM;
 		m_sphereVisibleComponents[i].m_drawAABB = true;
-		m_sphereVisibleComponents[i].m_modelFileName = "lteOrb/lteOrb.obj";
+		m_sphereVisibleComponents[i].m_modelFileName = "Orb/Orb.obj";
 		m_sphereVisibleComponents[i].m_useTexture = false;
 
 		m_sphereEntitys[i].addChildComponent(&m_sphereTransformComponents[i]);
