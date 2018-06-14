@@ -26,8 +26,11 @@ public:
 	GLuint m_geometryPassFragmentShaderID;
 	std::vector<GLTextureDataComponent> m_geometryPassTextures;
 
-	GLuint m_geometryPass_uni_prt;
-	GLuint m_geometryPass_uni_prt_previous;
+	GLuint m_geometryPass_uni_p_camera;
+	GLuint m_geometryPass_uni_r_camera;
+	GLuint m_geometryPass_uni_t_camera;
+	GLuint m_geometryPass_uni_r_camera_previous;
+	GLuint m_geometryPass_uni_t_camera_previous;
 	GLuint m_geometryPass_uni_m;
 
 	GLuint m_geometryPass_uni_p_light_0;

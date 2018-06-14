@@ -310,7 +310,7 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	}
 
 	std::vector<unsigned int> l_colorAttachments;
-	for (size_t i = 0; i < GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures.size(); ++i)
+	for (unsigned int i = 0; i < 8; ++i)
 	{
 		l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 	}
@@ -350,16 +350,25 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 		GL_FRAGMENT_SHADER,
 		"GL3.3/geometryPassBlinnPhongFragment.sf");
 #endif
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_prt = getUniformLocation(
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
-		"uni_prt");
+		"uni_p_camera");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_r_camera");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_t_camera");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_m");
 #ifdef CookTorrance
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_prt_previous = getUniformLocation(
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera_previous = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
-		"uni_prt_previous");
+		"uni_r_camera_previous");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera_previous = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_t_camera_previous");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_0 = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_p_light_0");
@@ -507,36 +516,72 @@ void GLRenderingSystem::initializeLightRenderPass()
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT2,
 		2);
-	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT3 = getUniformLocation(
+	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT4 = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
-		"uni_geometryPassRT3");
+		"uni_geometryPassRT4");
 	updateUniform(
-		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT3,
+		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT4,
 		3);
-	LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap = getUniformLocation(
+	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT5 = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
-		"uni_shadowMap");
+		"uni_geometryPassRT5");
 	updateUniform(
-		LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap,
+		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT5,
 		4);
+	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT6 = getUniformLocation(
+		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
+		"uni_geometryPassRT6");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT6,
+		5);
+	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT7 = getUniformLocation(
+		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
+		"uni_geometryPassRT7");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT7,
+		6);
+	LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_0 = getUniformLocation(
+		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
+		"uni_shadowMap_0");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_0,
+		7);
+	LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_1 = getUniformLocation(
+		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
+		"uni_shadowMap_1");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_1,
+		8);
+	LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_2 = getUniformLocation(
+		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
+		"uni_shadowMap_2");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_2,
+		9);
+	LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_3 = getUniformLocation(
+		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
+		"uni_shadowMap_3");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_3,
+		10);
 	LightRenderPassSingletonComponent::getInstance().m_uni_irradianceMap = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_irradianceMap");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_irradianceMap,
-		5);
+		11);
 	LightRenderPassSingletonComponent::getInstance().m_uni_preFiltedMap = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_preFiltedMap");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_preFiltedMap,
-		6);
+		12);
 	LightRenderPassSingletonComponent::getInstance().m_uni_brdfLUT = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_brdfLUT");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_brdfLUT,
-		7);
+		13);
 	LightRenderPassSingletonComponent::getInstance().m_uni_viewPos = getUniformLocation(
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_viewPos");
@@ -982,8 +1027,7 @@ void GLRenderingSystem::initializeBillboardPass()
 		"uni_albedo");
 	FinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_size = getUniformLocation(
 		FinalRenderPassSingletonComponent::getInstance().m_billboardPassProgram.m_program,
-		"uni_size");
-	
+		"uni_size");	
 }
 
 void GLRenderingSystem::initializeDebuggerPass()
@@ -1121,11 +1165,11 @@ void GLRenderingSystem::initializeFinalBlendPass()
 		FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3/finalBlendPassFragment.sf");
-	FinalRenderPassSingletonComponent::getInstance().m_uni_lightPassRT0 = getUniformLocation(
+	FinalRenderPassSingletonComponent::getInstance().m_uni_motionBlurPassRT0 = getUniformLocation(
 		FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program,
-		"uni_lightPassRT0");
+		"uni_motionBlurPassRT0");
 	updateUniform(
-		FinalRenderPassSingletonComponent::getInstance().m_uni_lightPassRT0,
+		FinalRenderPassSingletonComponent::getInstance().m_uni_motionBlurPassRT0,
 		0);
 	FinalRenderPassSingletonComponent::getInstance().m_uni_skyPassRT0 = getUniformLocation(
 		FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program,
@@ -1775,12 +1819,21 @@ void GLRenderingSystem::updateGeometryRenderPass()
 		mat4 t_prev = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getPreviousInvertGlobalTranslationMatrix();
 
 		updateUniform(
-			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_prt,
-			p * r * t);
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera,
+			p);
+		updateUniform(
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera,
+			r);
+		updateUniform(
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera,
+			t);
 
 		updateUniform(
-			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_prt_previous,
-			p * r_prev * t_prev);
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera_previous,
+			r_prev);
+		updateUniform(
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera_previous,
+			t_prev);
 
 #ifdef CookTorrance
 		//Cook-Torrance
@@ -1991,14 +2044,26 @@ void GLRenderingSystem::updateLightRenderPass()
 	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[2], 2);
 	// light space position 0
 	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[4], 3);
-	// shadow map
-	activateTexture(&ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[0].second, 4);
+	// light space position 1
+	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[5], 4);
+	// light space position 2
+	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[6], 5);
+	// light space position 3
+	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[7], 6);
+	// shadow map 0
+	activateTexture(&ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[0].second, 7);
+	// shadow map 1
+	activateTexture(&ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[1].second, 8);
+	// shadow map 2
+	activateTexture(&ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[2].second, 9);
+	// shadow map 3
+	activateTexture(&ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[3].second, 10);
 	// irradiance environment map
-	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture, 5);
+	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture, 11);
 	// pre-filter specular environment map
-	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture, 6);
+	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture, 12);
 	// BRDF look-up table
-	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture, 7);
+	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture, 13);
 #endif
 	if (g_pGameSystem->getLightComponents().size() > 0)
 	{
@@ -2207,7 +2272,6 @@ void GLRenderingSystem::updateFinalRenderPass()
 	}
 
 	// motion blur pass
-	glUseProgram(FinalRenderPassSingletonComponent::getInstance().m_motionBlurPassProgram.m_program);
 	glBindFramebuffer(GL_FRAMEBUFFER, FinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, FinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLFrameBufferComponent.m_RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, GLRenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
@@ -2217,6 +2281,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
+	glUseProgram(FinalRenderPassSingletonComponent::getInstance().m_motionBlurPassProgram.m_program);
 	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[3], 0);
 	activateTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture, 1);
 
@@ -2449,8 +2514,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	glUseProgram(FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassProgram.m_program);
 
-	// light pass rendering target
-	//activateTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture, 0);
+	// motion blur pass rendering target
 	activateTexture(&FinalRenderPassSingletonComponent::getInstance().m_motionBlurPassTexture, 0);
 	// sky pass rendering target
 	activateTexture(&FinalRenderPassSingletonComponent::getInstance().m_skyPassTexture, 1);

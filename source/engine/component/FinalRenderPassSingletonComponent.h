@@ -82,7 +82,7 @@ public:
 	GLuint m_finalBlendPassVertexShaderID;
 	GLuint m_finalBlendPassFragmentShaderID;
 	GLTextureDataComponent m_finalBlendPassTexture;
-	GLuint m_uni_lightPassRT0;
+	GLuint m_uni_motionBlurPassRT0;
 	GLuint m_uni_skyPassRT0;
 	GLuint m_uni_bloomPassRT0;
 	GLuint m_uni_billboardPassRT0;
