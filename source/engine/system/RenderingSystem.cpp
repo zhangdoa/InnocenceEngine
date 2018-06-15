@@ -363,14 +363,44 @@ void RenderingSystem::updateInput()
 	}
 }
 
-void RenderingSystem::updatePhysics()
+void RenderingSystem::updateCameraComponents()
 {
-	GLRenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.clear();
-	GLRenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.clear();
+	if (g_pGameSystem->getCameraComponents().size() > 0)
+	{
+		for (auto& i : g_pGameSystem->getCameraComponents())
+		{
+			setupCameraComponentRayOfEye(i);
+			setupCameraComponentFrustumVertices(i);
+		}
 
-	// camera update
-	updateCameraComponents();
+		generateAABB(*g_pGameSystem->getCameraComponents()[0]);
 
+		m_mouseRay.m_origin = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.caclGlobalPos();
+		m_mouseRay.m_direction = calcMousePositionInWorldSpace();
+
+		auto l_cameraAABB = g_pGameSystem->getCameraComponents()[0]->m_AABB;
+
+		auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
+
+		for (auto& j : g_pGameSystem->getVisibleComponents())
+		{
+			if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
+			{
+				if (j->m_AABB.intersectCheck(m_mouseRay))
+				{
+					GLRenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.emplace_back(j);
+				}
+				if (l_cameraAABB.intersectCheck(j->m_AABB))
+				{
+					GLRenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.emplace_back(j);
+				}
+			}
+		}
+	}
+}
+
+void RenderingSystem::updateLightComponents()
+{
 	if (g_pGameSystem->getLightComponents().size() > 0)
 	{
 		// generate AABB for CSM
@@ -379,10 +409,21 @@ void RenderingSystem::updatePhysics()
 			setupLightComponentRadius(i);
 			if (i->m_lightType == lightType::DIRECTIONAL)
 			{
-				//generateAABB(*i);
+				generateAABB(*i);
 			}
 		}
 	}
+}
+
+void RenderingSystem::updatePhysics()
+{
+	GLRenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.clear();
+	GLRenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.clear();
+
+	// camera update
+	updateCameraComponents();
+
+	updateLightComponents();
 }
 
 void RenderingSystem::updateGui()
@@ -475,18 +516,19 @@ void RenderingSystem::updateGui()
 		}
 		else if (item_current == items[3])
 		{
+			auto l_shadowPassWindowSize = ImVec2(512.0, 512.0);
 			ImGui::Begin("Shadow Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
-			ImGui::BeginChild("Shadow Pass Depth Buffer 0", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[0].second.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::BeginChild("Shadow Pass Depth Buffer 0", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[0].second.m_TAO), l_shadowPassWindowSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 			ImGui::EndChild();
-			ImGui::BeginChild("Shadow Pass Depth Buffer 1", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[1].second.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::BeginChild("Shadow Pass Depth Buffer 1", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[1].second.m_TAO), l_shadowPassWindowSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 			ImGui::EndChild();
-			ImGui::BeginChild("Shadow Pass Depth Buffer 2", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[2].second.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::BeginChild("Shadow Pass Depth Buffer 2", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[2].second.m_TAO), l_shadowPassWindowSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 			ImGui::EndChild();
-			ImGui::BeginChild("Shadow Pass Depth Buffer 3", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[3].second.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+			ImGui::BeginChild("Shadow Pass Depth Buffer 3", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID(ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[3].second.m_TAO), l_shadowPassWindowSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 			ImGui::EndChild();
 			ImGui::End();
 		}
@@ -498,42 +540,6 @@ void RenderingSystem::updateGui()
 	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui::Render();
 	ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
-void RenderingSystem::updateCameraComponents()
-{
-	if (g_pGameSystem->getCameraComponents().size() > 0)
-	{
-		for (auto& i : g_pGameSystem->getCameraComponents())
-		{
-			setupCameraComponentRayOfEye(i);
-			setupCameraComponentFrustumVertices(i);
-		}
-
-		//generateAABB(*g_pGameSystem->getCameraComponents()[0]);
-
-		m_mouseRay.m_origin = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.caclGlobalPos();
-		m_mouseRay.m_direction = calcMousePositionInWorldSpace();
-
-		auto l_cameraAABB = g_pGameSystem->getCameraComponents()[0]->m_AABB;
-
-		auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
-
-		for (auto& j : g_pGameSystem->getVisibleComponents())
-		{
-			if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
-			{
-				if (j->m_AABB.intersectCheck(m_mouseRay))
-				{
-					GLRenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.emplace_back(j);
-				}
-				if (l_cameraAABB.intersectCheck(j->m_AABB))
-				{
-					GLRenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.emplace_back(j);
-				}
-			}
-		}
-	}
 }
 
 void RenderingSystem::update()

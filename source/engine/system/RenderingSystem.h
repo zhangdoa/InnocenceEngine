@@ -86,10 +86,10 @@ private:
 	vec4 calcMousePositionInWorldSpace();
 
 	void updateInput();
+	void updateCameraComponents();
+	void updateLightComponents();
 	void updatePhysics();
 	void updateGui();
-
-	void updateCameraComponents();
 
 	void changeDrawPolygonMode();
 	void changeDrawTextureMode();
