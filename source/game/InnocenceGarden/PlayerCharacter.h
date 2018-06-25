@@ -3,7 +3,7 @@
 #include "component/CameraComponent.h"
 #include "component/InputComponent.h"
 #include "component/VisibleComponent.h"
-#include "entity/BaseEntity.h"
+#include "component/BaseEntity.h"
 
 class PlayerCharacter : public BaseEntity
 {

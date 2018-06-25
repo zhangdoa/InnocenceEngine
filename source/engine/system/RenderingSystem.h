@@ -12,7 +12,7 @@
 #include "interface/IGameSystem.h"
 #include "interface/ILogSystem.h"
 
-#include "entity/ComponentHeaders.h"
+#include "common/ComponentHeaders.h"
 #include "GLRenderingSystem.h"
 
 extern IMemorySystem* g_pMemorySystem;
