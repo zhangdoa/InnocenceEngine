@@ -428,6 +428,7 @@ void RenderingSystem::updatePhysics()
 
 void RenderingSystem::updateGui()
 {
+	#ifndef INNO_PLATFORM_LINUX64
 	const char* items[] = { "Final Pass", "Light Pass", "Geometry Pass", "Shadow Pass" };
 	static const char* item_current = items[0];
 
@@ -438,29 +439,29 @@ void RenderingSystem::updateGui()
 		static float f = 0.0f;
 		static int counter = 0;
 		ImGui::Text("Global Settings");                           // Display some text (you can use a format string too)
-		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
+		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 		//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
 		//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state
 		//ImGui::Checkbox("Another Window", &show_another_window);
 
 		if (ImGui::Button("Button"))                            // Buttons return true when clicked (NB: most widgets return true when edited/activated)
-			counter++;
+		counter++;
 		ImGui::SameLine();
 		ImGui::Text("counter = %d", counter);
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-           // Here our selection is a single pointer stored outside the object.
+		// Here our selection is a single pointer stored outside the object.
 		if (ImGui::BeginCombo("Active render pass result", item_current)) // The second parameter is the label previewed before opening the combo.
 		{
 			for (int n = 0; n < IM_ARRAYSIZE(items); n++)
 			{
 				bool is_selected = (item_current == items[n]);
 				if (ImGui::Selectable(items[n], is_selected))
-					item_current = items[n];
+				item_current = items[n];
 				if (is_selected)
-					ImGui::SetItemDefaultFocus();   // Set the initial focus when opening the combo (scrolling + for keyboard navigation support in the upcoming navigation branch)
+				ImGui::SetItemDefaultFocus();   // Set the initial focus when opening the combo (scrolling + for keyboard navigation support in the upcoming navigation branch)
 			}
 			ImGui::EndCombo();
 		}
@@ -499,7 +500,7 @@ void RenderingSystem::updateGui()
 			ImGui::EndChild();
 			ImGui::BeginChild("Light Space Position 0", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[4].m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
-			ImGui::EndChild();		
+			ImGui::EndChild();
 			ImGui::BeginChild("Light Space Position 1", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Image(ImTextureID(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[5].m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 			ImGui::EndChild();
@@ -537,6 +538,9 @@ void RenderingSystem::updateGui()
 	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui::Render();
 	ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+	#else
+	//@TODO: Linux ImGui WIP
+	#endif
 }
 
 void RenderingSystem::update()
@@ -550,7 +554,7 @@ void RenderingSystem::update()
 		// physics update
 		updatePhysics();
 
-		// defer render	
+		// defer render
 		if (m_canRender)
 		{
 			m_canRender = false;

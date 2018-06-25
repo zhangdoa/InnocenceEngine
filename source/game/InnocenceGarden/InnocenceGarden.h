@@ -1,6 +1,6 @@
 #pragma once
 #include "interface/IGame.h"
-#include "entity/BaseEntity.h"
+#include "component/BaseEntity.h"
 #include "PlayerCharacter.h"
 
 class InnocenceGarden : public IGame

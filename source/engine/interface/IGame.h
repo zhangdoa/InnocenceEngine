@@ -1,7 +1,7 @@
 #pragma once
 #include "common/stdafx.h"
 #include "IObject.h"
-#include "entity/ComponentHeaders.h"
+#include "common/ComponentHeaders.h"
 #include "interface/ILogSystem.h"
 
 extern ILogSystem* g_pLogSystem;

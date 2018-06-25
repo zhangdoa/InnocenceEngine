@@ -2,7 +2,7 @@
 #include "interface/IGameSystem.h"
 #include "interface/ITimeSystem.h"
 
-#include "entity/ComponentHeaders.h"
+#include "common/ComponentHeaders.h"
 
 extern ITimeSystem* g_pTimeSystem;
 

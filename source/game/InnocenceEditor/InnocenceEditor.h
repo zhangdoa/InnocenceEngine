@@ -1,7 +1,7 @@
 #pragma once
 
 #include "interface/IGame.h"
-#include "entity/BaseEntity.h"
+#include "component/BaseEntity.h"
 
 class InnocenceEditor : public IGame
 {

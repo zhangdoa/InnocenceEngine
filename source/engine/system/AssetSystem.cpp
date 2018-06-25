@@ -439,7 +439,7 @@ void AssetSystem::loadModelFromDisk(const std::string & fileName, modelMap & mod
 
 	Assimp::Importer l_assImporter;
 	const aiScene* l_assScene;
-
+#ifndef INNO_PLATFORM_LINUX64
 	if (std::experimental::filesystem::exists(std::experimental::filesystem::path(m_AssetSystemSingletonComponent->m_modelRelativePath + l_convertedFilePath)))
 	{
 		l_assScene = l_assImporter.ReadFile(m_AssetSystemSingletonComponent->m_modelRelativePath + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
@@ -452,6 +452,18 @@ void AssetSystem::loadModelFromDisk(const std::string & fileName, modelMap & mod
 		l_assExporter.Export(l_assScene, "assbin", m_AssetSystemSingletonComponent->m_modelRelativePath + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
 		g_pLogSystem->printLog("AssetSystem: " + fileName + " is successfully converted.");
 	}
+#else
+	l_assScene = l_assImporter.ReadFile(m_AssetSystemSingletonComponent->m_modelRelativePath + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	if (l_assScene == nullptr)
+	{
+		l_assScene = l_assImporter.ReadFile(m_AssetSystemSingletonComponent->m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		// save model file as .innoModel binary file
+		Assimp::Exporter l_assExporter;
+		l_assExporter.Export(l_assScene, "assbin", m_AssetSystemSingletonComponent->m_modelRelativePath + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
+		g_pLogSystem->printLog("AssetSystem: " + fileName + " is successfully converted.");
+	}
+
+#endif
 	else
 	{
 		g_pLogSystem->printLog("AssetSystem: " + fileName + " doesn't exist!");
@@ -589,7 +601,7 @@ void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textu
 			// set local path, remove slash
 			std::string l_localPath;
 			auto l_AssString_char = std::string(l_AssString.C_Str());
-			if (l_AssString_char.find_last_of('//') != std::string::npos)
+			if (l_AssString_char.find_last_of("//") != std::string::npos)
 			{
 				l_localPath = std::string(l_AssString.C_Str()).substr(std::string(l_AssString.C_Str()).find_last_of("//"));
 			}
