@@ -880,13 +880,6 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 	auto l_camera = g_pGameSystem->getCameraComponents()[0];
 	auto l_frustumVertices = l_camera->m_frustumVertices;
 
-	auto l_lightInvertRotationMatrix = g_pGameSystem->getTransformComponent(lightComponent.getParentEntity())->m_transform.getInvertLocalRotMatrix();
-
-	for (auto& l_vertexData : l_frustumVertices)
-	{
-		l_vertexData.m_pos = l_lightInvertRotationMatrix * l_vertexData.m_pos;
-	}
-
 	//2.calculate splited planes' corners
 	std::vector<vec4> l_frustumsCornerPos;
 	for (size_t i = 0; i < 4; i++)
@@ -894,6 +887,7 @@ void RenderingSystem::generateAABB(LightComponent & lightComponent)
 		l_frustumsCornerPos.emplace_back(l_frustumVertices[i].m_pos);
 	}
 
+	// @TODO: non-linear split
 	for (size_t i = 0; i < 4; i++)
 	{
 		for (size_t j = 0; j < 4; j++)

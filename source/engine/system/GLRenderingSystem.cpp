@@ -1853,7 +1853,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3,
 						l_lightComponent->getProjectionMatrix(3));
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light,
-						g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.caclGlobalRotMatrix());
+						g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.getInvertGlobalRotMatrix());
 
 					// draw each visibleComponent
 					for (auto& l_visibleComponent : GLRenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
