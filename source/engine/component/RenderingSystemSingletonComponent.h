@@ -5,18 +5,18 @@
 //#define BlinnPhong
 #define CookTorrance
 
-class GLRenderingSystemSingletonComponent : public BaseComponent
+class RenderingSystemSingletonComponent : public BaseComponent
 {
 public:
-	~GLRenderingSystemSingletonComponent() {};
+	~RenderingSystemSingletonComponent() {};
 
 	void setup() override;
 	void initialize() override;
 	void shutdown() override;
 	
-	static GLRenderingSystemSingletonComponent& getInstance()
+	static RenderingSystemSingletonComponent& getInstance()
 	{
-		static GLRenderingSystemSingletonComponent instance;
+		static RenderingSystemSingletonComponent instance;
 		return instance;
 	}
 
@@ -30,5 +30,5 @@ public:
 	std::vector<VisibleComponent*> m_inFrustumVisibleComponents;
 
 private:
-	GLRenderingSystemSingletonComponent() {};
+	RenderingSystemSingletonComponent() {};
 };

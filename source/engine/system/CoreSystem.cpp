@@ -20,13 +20,16 @@ void CoreSystem::setup()
 	g_pAssetSystem = g_pMemorySystem->spawn<INNO_ASSET_SYSTEM>();
 	g_pAssetSystem->setup();
 	g_pLogSystem->printLog("AssetSystem setup finished.");
-	g_pRenderingSystem = g_pMemorySystem->spawn<INNO_RENDERING_SYSTEM>();
-	g_pRenderingSystem->setup();
-	g_pLogSystem->printLog("RenderingSystem setup finished.");
+	g_pPhysicsSystem = g_pMemorySystem->spawn<INNO_PHYSICS_SYSTEM>();
+	g_pPhysicsSystem->setup();
+	g_pLogSystem->printLog("PhysicsSystem setup finished.");
+	g_pVisionSystem = g_pMemorySystem->spawn<INNO_VISION_SYSTEM>();
+	g_pVisionSystem->setup();
+	g_pLogSystem->printLog("VisionSystem setup finished.");
 
 	if (g_pGameSystem->getStatus() == objectStatus::ALIVE)
 	{
-		g_pRenderingSystem->setWindowName(g_pGameSystem->getGameName());
+		g_pVisionSystem->setWindowName(g_pGameSystem->getGameName());
 		m_objectStatus = objectStatus::ALIVE;
 		g_pLogSystem->printLog("CoreSystem setup finished.");
 	}
@@ -45,7 +48,8 @@ void CoreSystem::initialize()
 	g_pTimeSystem->initialize();
 	g_pGameSystem->initialize();
 	g_pAssetSystem->initialize();
-	g_pRenderingSystem->initialize();
+	g_pPhysicsSystem->initialize();
+	g_pVisionSystem->initialize();
 	g_pLogSystem->printLog("CoreSystem has been initialized.");
 }
 
@@ -58,11 +62,12 @@ void CoreSystem::update()
 	std::async(&IGameSystem::update, g_pGameSystem);
 	//// sync game simulation
 	//g_pGameSystem->update();
-	if (g_pRenderingSystem->getStatus() == objectStatus::ALIVE)
+	if (g_pVisionSystem->getStatus() == objectStatus::ALIVE)
 	{
 		if (g_pGameSystem->needRender())
 		{
-			g_pRenderingSystem->update();
+			g_pPhysicsSystem->update();
+			g_pVisionSystem->update();
 		}
 	}
 	else
@@ -77,8 +82,9 @@ void CoreSystem::update()
 
 void CoreSystem::shutdown()
 {
-	g_pRenderingSystem->shutdown();
+	g_pVisionSystem->shutdown();
 	g_pGameSystem->shutdown();
+	g_pPhysicsSystem->shutdown();
 	g_pAssetSystem->shutdown();
 	g_pTimeSystem->shutdown();
 	m_objectStatus = objectStatus::SHUTDOWN;

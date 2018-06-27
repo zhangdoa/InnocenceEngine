@@ -6,19 +6,19 @@
 #include "third-party/ImGui/imgui.h"
 #include "third-party/ImGui/imgui_impl_glfw_gl3.h"
 
-#include "interface/IRenderingSystem.h"
+#include "interface/IVisionSystem.h"
 #include "interface/IMemorySystem.h"
-#include "interface/IAssetSystem.h"
-#include "interface/IGameSystem.h"
 #include "interface/ILogSystem.h"
+#include "interface/IGameSystem.h"
+#include "interface/IPhysicsSystem.h"
 
 #include "common/ComponentHeaders.h"
 #include "GLRenderingSystem.h"
 
 extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;
-extern IAssetSystem* g_pAssetSystem;
 extern IGameSystem* g_pGameSystem;
+extern IPhysicsSystem* g_pPhysicsSystem;
 
 enum class keyPressType { CONTINUOUS, ONCE };
 
@@ -32,11 +32,11 @@ public:
 	bool m_allowCallback = true;
 };
 
-class RenderingSystem : public IRenderingSystem
+class VisionSystem : public IVisionSystem
 {
 public:
-	RenderingSystem() {};
-	~RenderingSystem() {};
+	VisionSystem() {};
+	~VisionSystem() {};
 
 	void setup() override;
 	void initialize() override;
@@ -60,37 +60,22 @@ private:
 	void initializeRendering();
 	void initializeGui();
 
-	void setupComponents();
-	void setupCameraComponents();
-	void setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent);
-	void setupCameraComponentRayOfEye(CameraComponent* cameraComponent);
-	void setupCameraComponentFrustumVertices(CameraComponent* cameraComponent);
-	void setupVisibleComponents();
-	void setupLightComponents();
-	void setupLightComponentRadius(LightComponent* lightComponent);
-
 	void addKeyboardInputCallback(int keyCode, std::function<void()>* keyboardInputCallback);
 	void addKeyboardInputCallback(int keyCode, std::vector<std::function<void()>*>& keyboardInputCallback);
 	void addKeyboardInputCallback(std::unordered_map<int, std::vector<std::function<void()>*>>& keyboardInputCallback);
 	void addMouseMovementCallback(int mouseCode, std::function<void(double)>* mouseMovementCallback);
 	void addMouseMovementCallback(int mouseCode, std::vector<std::function<void(double)>*>& mouseMovementCallback);
 	void addMouseMovementCallback(std::unordered_map<int, std::vector<std::function<void(double)>*>>& mouseMovementCallback);
+	void framebufferSizeCallback(int width, int height);
+	void mousePositionCallback(double mouseXPos, double mouseYPos);
+	void scrollCallback(double xoffset, double yoffset);
 
-	std::vector<Vertex> generateNDC();
-	std::vector<Vertex> generateViewFrustum(const mat4& transformMatrix);
-	void generateAABB(VisibleComponent & visibleComponent);
-	void generateAABB(LightComponent & lightComponent);
-	void generateAABB(CameraComponent & cameraComponent);
-	AABB generateAABB(const std::vector<Vertex>& vertices);
-	AABB generateAABB(const vec4& boundMax, const vec4& boundMin);
 	vec4 calcMousePositionInWorldSpace();
 
 	void updateInput();
-	void updateCameraComponents();
-	void updateLightComponents();
-	void updatePhysics();
+	void updateRendering();
 	void updateGui();
-
+	
 	void changeDrawPolygonMode();
 	void changeDrawTextureMode();
 	void changeShadingMode();
@@ -126,7 +111,7 @@ private:
 	std::function<void()> f_changeDrawTextureMode;
 	std::function<void()> f_changeShadingMode;
 
-	GLRenderingSystem* m_GLRenderingSystem;
+	IRenderingSystem* m_RenderingSystem;
 
 	int m_polygonMode = 2;
 	int m_textureMode = 0;
@@ -144,7 +129,7 @@ public:
 		return instance;
 	}
 
-	void setRenderingSystem(RenderingSystem* RenderingSystem);
+	void setVisionSystem(VisionSystem* visionSystem);
 	void initialize();
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void mousePositionCallback(GLFWwindow* window, double mouseXPos, double mouseYPos);
@@ -153,7 +138,7 @@ public:
 private:
 	windowCallbackWrapper() {};
 
-	RenderingSystem* m_renderingSystem;
+	VisionSystem* m_visionSystem;
 
 	void framebufferSizeCallbackImpl(GLFWwindow* window, int width, int height);
 	void mousePositionCallbackImpl(GLFWwindow* window, double mouseXPos, double mouseYPos);
