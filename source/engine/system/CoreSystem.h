@@ -20,9 +20,10 @@ IMemorySystem* g_pMemorySystem;
 ILogSystem* g_pLogSystem;
 ITaskSystem* g_pTaskSystem;
 ITimeSystem* g_pTimeSystem;
-IRenderingSystem* g_pRenderingSystem;
-IAssetSystem* g_pAssetSystem;
 IGameSystem* g_pGameSystem;
+IAssetSystem* g_pAssetSystem;
+IVisionSystem* g_pVisionSystem;
+IPhysicsSystem* g_pPhysicsSystem;
 
 class CoreSystem : public ICoreSystem
 {

@@ -2,8 +2,8 @@
 #include "common/stdafx.h"
 #include "ISystem.h"
 
-class IRenderingSystem : public ISystem
+class IPhysicsSystem : public ISystem
 {
 public:
-	virtual ~IRenderingSystem() {};
+	virtual ~IPhysicsSystem() {};
 };

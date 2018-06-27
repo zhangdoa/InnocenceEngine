@@ -1,4 +1,4 @@
-#cmakedefine USE_CLANG
+#cmakedefine INNO_COMPILER_CLANG
 
 #cmakedefine BUILD_GAME
 #cmakedefine BUILD_EDITOR
@@ -10,3 +10,8 @@
 #cmakedefine INNO_PLATFORM_WIN32
 #cmakedefine INNO_PLATFORM_WIN64
 #cmakedefine INNO_PLATFORM_LINUX64
+
+#cmakedefine INNO_RENDERER_OPENGL
+#cmakedefine INNO_RENDERER_DX
+#cmakedefine INNO_RENDERER_VULKAN
+#cmakedefine INNO_RENDERER_METAL

@@ -6,8 +6,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 configure_file ("${CMAKE_SOURCE_DIR}/engine/common/config.h.in" "${CMAKE_SOURCE_DIR}/engine/common/config.h")
 
 # Use Clang?
-option (USE_CLANG "Use Clang as the default compiler" OFF)
-if (USE_CLANG)
+option (INNO_COMPILER_CLANG "Use Clang as the default compiler" OFF)
+if (INNO_COMPILER_CLANG)
 set (CMAKE_C_COMPILER               "clang-cl")
 set (CMAKE_C_FLAGS                  "-Wall")
 set (CMAKE_C_FLAGS_DEBUG            "/Debug")
@@ -21,13 +21,19 @@ set (CMAKE_CXX_FLAGS_DEBUG          "/Debug")
 set (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
 set (CMAKE_CXX_FLAGS_RELEASE        "-O4 -DNDEBUG")
 set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 /Debug")
-endif (USE_CLANG)
+endif (INNO_COMPILER_CLANG)
 
 option (USE_ROW_MAJOR_MEMORY_LAYOUT "use Row-Major memory layout" ON)
 option (USE_COLUMN_MAJOR_MEMORY_LAYOUT "use Column-Major memory layout" OFF)
+
 option (INNO_PLATFORM_WIN32 "Windows x86 32-bit" OFF)
 option (INNO_PLATFORM_WIN64 "Windows x86-64 64-bit" ON)
 option (INNO_PLATFORM_LINUX64 "Linux x86-64 64-bit" OFF)
+
+option (INNO_RENDERER_OPENGL "OpenGL renderer for Multi-Platforms" ON)
+option (INNO_RENDERER_DX "DirectX renderer for Windows OS only" OFF)
+option (INNO_RENDERER_VULKAN "Vulkan renderer for Multi-Platforms" OFF)
+option (INNO_RENDERER_METAL "Metal renderer for MacOS and iOS only" OFF)
 
 option (BUILD_EDITOR "Build editor" OFF)
 option (BUILD_GAME "Build game" ON)

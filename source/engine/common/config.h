@@ -1,4 +1,4 @@
-/* #undef USE_CLANG */
+/* #undef INNO_COMPILER_CLANG */
 
 #define BUILD_GAME
 /* #undef BUILD_EDITOR */
@@ -10,3 +10,8 @@
 /* #undef INNO_PLATFORM_WIN32 */
 #define INNO_PLATFORM_WIN64
 /* #undef INNO_PLATFORM_LINUX64 */
+
+#define INNO_RENDERER_OPENGL
+/* #undef INNO_RENDERER_DX */
+/* #undef INNO_RENDERER_VULKAN */
+/* #undef INNO_RENDERER_METAL */

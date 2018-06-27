@@ -300,7 +300,7 @@ void AssetSystem::loadTexture(const std::vector<std::string> &fileName, textureT
 		if (l_loadedTexturePair != m_AssetSystemSingletonComponent->m_loadedTextureMap.end())
 		{
 			assignLoadedTexture(textureAssignType::OVERWRITE, l_loadedTexturePair->second, visibleComponent);
-			g_pLogSystem->printLog("innoTexture: " + i + " is already loaded, successfully assigned loaded textureID.");
+			g_pLogSystem->printLog("AssetSystem: innoTexture: " + i + " is already loaded, successfully assigned loaded textureID.");
 		}
 		else
 		{
@@ -323,7 +323,7 @@ void AssetSystem::loadModel(const std::string & fileName, VisibleComponent & vis
 	{
 		assignLoadedModel(l_loadedmodelMap->second, visibleComponent);
 
-		g_pLogSystem->printLog("innoMesh: " + l_convertedFilePath + " is already loaded, successfully assigned loaded modelMap.");
+		g_pLogSystem->printLog("AssetSystem: innoMesh: " + l_convertedFilePath + " is already loaded, successfully assigned loaded modelMap.");
 	}
 	else
 	{
@@ -373,7 +373,7 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 		baseTexture->m_texturePixelDataType = texturePixelDataType::UNSIGNED_BYTE;
 		baseTexture->m_textureData = l_3DTextureRawData;
 
-		g_pLogSystem->printLog("innoTexture: cubemap texture is fully loaded.");
+		g_pLogSystem->printLog("AssetSystem: innoTexture: cubemap texture is fully loaded.");
 	}
 	else if (textureType == textureType::EQUIRETANGULAR)
 	{
@@ -394,7 +394,7 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 			baseTexture->m_texturePixelDataType = texturePixelDataType::FLOAT;
 			baseTexture->m_textureData = { data };
 
-			g_pLogSystem->printLog("innoTexture: " + fileName[0] + " is loaded.");
+			g_pLogSystem->printLog("AssetSystem: innoTexture: " + fileName[0] + " is loaded.");
 		}
 		else
 		{
@@ -414,7 +414,7 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 			baseTexture->m_textureType = textureType;
 			baseTexture->m_textureColorComponentsFormat = textureColorComponentsFormat::RGB;
 			baseTexture->m_texturePixelDataFormat = texturePixelDataFormat(nrChannels - 1);
-			baseTexture->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
+			baseTexture->m_textureWrapMethod = textureWrapMethod;
 			baseTexture->m_textureMinFilterMethod = textureFilterMethod::LINEAR_MIPMAP_LINEAR;
 			baseTexture->m_textureMagFilterMethod = textureFilterMethod::LINEAR;
 			baseTexture->m_textureWidth = width;
@@ -422,7 +422,7 @@ void AssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileName, 
 			baseTexture->m_texturePixelDataType = texturePixelDataType::UNSIGNED_BYTE;
 			baseTexture->m_textureData = { data };
 
-			g_pLogSystem->printLog("innoTexture: " + fileName[0] + " is loaded.");
+			g_pLogSystem->printLog("AssetSystem: innoTexture: " + fileName[0] + " is loaded.");
 		}
 		else
 		{
@@ -586,7 +586,7 @@ void AssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& m
 	l_meshData->m_calculateNormals = caclNormal;
 	l_meshData->m_calculateTangents = false;
 
-	g_pLogSystem->printLog("innoMesh: mesh of model " + fileName + " is loaded.");
+	g_pLogSystem->printLog("AssetSystem: innoMesh: mesh of model " + fileName + " is loaded.");
 }
 
 void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textureMap & textureMap, const aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod)
@@ -618,7 +618,7 @@ void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textu
 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
-				g_pLogSystem->printLog("innoTexture: " + fileName + " is unknown type!");
+				g_pLogSystem->printLog("AssetSystem: innoTexture: " + fileName + " is unknown type!");
 				return;
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
@@ -643,7 +643,7 @@ void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textu
 			}
 			else
 			{
-				g_pLogSystem->printLog("innoTexture: " + fileName + " is unsupported type!");
+				g_pLogSystem->printLog("AssetSystem: innoTexture: " + fileName + " is unsupported type!");
 				return;
 			}
 			// load image
@@ -651,7 +651,7 @@ void AssetSystem::processSingleAssimpMaterial(const std::string& fileName, textu
 			if (l_loadedTexturePair != m_AssetSystemSingletonComponent->m_loadedTextureMap.end())
 			{
 				textureMap.emplace(l_loadedTexturePair->second);
-				g_pLogSystem->printLog("innoTexture: " + fileName + " is already loaded.");
+				g_pLogSystem->printLog("AssetSystem: innoTexture: " + fileName + " is already loaded.");
 			}
 			else
 			{

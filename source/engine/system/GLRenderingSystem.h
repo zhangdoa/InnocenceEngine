@@ -1,17 +1,16 @@
 #pragma once
-#include "interface/IRenderingSystem.h"
 #include "component/EnvironmentRenderPassSingletonComponent.h"
 #include "component/ShadowRenderPassSingletonComponent.h"
 #include "component/GeometryRenderPassSingletonComponent.h"
 #include "component/LightRenderPassSingletonComponent.h"
 #include "component/FinalRenderPassSingletonComponent.h"
-#include "component/GLRenderingSystemSingletonComponent.h"
+#include "component/RenderingSystemSingletonComponent.h"
 #include "component/AssetSystemSingletonComponent.h"
 
-#include "interface/ISystem.h"
+#include "interface/IRenderingSystem.h"
 #include "interface/IMemorySystem.h"
-#include "interface/IAssetSystem.h"
 #include "interface/IGameSystem.h"
+#include "interface/IAssetSystem.h"
 
 #include <sstream>
 
@@ -19,7 +18,7 @@ extern IMemorySystem* g_pMemorySystem;
 extern IAssetSystem* g_pAssetSystem;
 extern IGameSystem* g_pGameSystem;
 
-class GLRenderingSystem : public ISystem
+class GLRenderingSystem : public IRenderingSystem
 {
 public:
 	GLRenderingSystem() {};
