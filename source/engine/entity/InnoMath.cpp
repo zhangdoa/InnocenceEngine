@@ -37,34 +37,34 @@ vec4::~vec4()
 {
 }
 
-vec4 vec4::operator+(const vec4 & rhs)
+vec4 vec4::operator+(const vec4 & rhs) const
 {
 	return vec4(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
 }
 
-vec4 vec4::operator+(double rhs)
+vec4 vec4::operator+(double rhs) const
 {
 	return vec4(x + rhs, y + rhs, z + rhs, w + rhs);
 }
 
-vec4 vec4::operator-(const vec4 & rhs)
+vec4 vec4::operator-(const vec4 & rhs) const
 {
 	return vec4(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
 }
 
-vec4 vec4::operator-(double rhs)
+vec4 vec4::operator-(double rhs) const
 {
 	return vec4(x - rhs, y - rhs, z - rhs, w - rhs);
 }
 
-double vec4::operator*(const vec4 & rhs)
+double vec4::operator*(const vec4 & rhs) const
 {
 	return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w;
 }
 
 //Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-vec4 vec4::operator*(const mat4 & rhs)
+vec4 vec4::operator*(const mat4 & rhs) const
 {
 	// @TODO: replace with SIMD impl
 	vec4 l_vec4;
@@ -78,32 +78,32 @@ vec4 vec4::operator*(const mat4 & rhs)
 }
 #endif
 
-vec4 vec4::cross(const vec4 & rhs)
+vec4 vec4::cross(const vec4 & rhs) const
 {
 	return vec4(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x, 0.0);
 }
 
-vec4 vec4::scale(const vec4 & rhs)
+vec4 vec4::scale(const vec4 & rhs) const
 {
 	return vec4(x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w);
 }
 
-vec4 vec4::scale(double rhs)
+vec4 vec4::scale(double rhs) const
 {
 	return vec4(x * rhs, y * rhs, z * rhs, w * rhs);
 }
 
-vec4 vec4::operator*(double rhs)
+vec4 vec4::operator*(double rhs) const
 {
 	return vec4(x * rhs, y * rhs, z * rhs, w * rhs);
 }
 
-vec4 vec4::operator/(double rhs)
+vec4 vec4::operator/(double rhs) const
 {
 	return vec4(x / rhs, y / rhs, z / rhs, w / rhs);
 }
 
-vec4 vec4::quatMul(const vec4 & rhs)
+vec4 vec4::quatMul(const vec4 & rhs) const
 {
 	vec4 l_result = vec4(
 		w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y,
@@ -114,7 +114,7 @@ vec4 vec4::quatMul(const vec4 & rhs)
 	return l_result.normalize();
 }
 
-vec4 vec4::quatMul(double rhs)
+vec4 vec4::quatMul(double rhs) const
 {
 	vec4 l_result = vec4(
 		w * rhs + x * rhs + y * rhs - z * rhs,
@@ -125,12 +125,12 @@ vec4 vec4::quatMul(double rhs)
 	return l_result.normalize();
 }
 
-vec4 vec4::quatConjugate()
+vec4 vec4::quatConjugate() const
 {
 	return vec4(-x, -y, -z, w);
 }
 
-vec4 vec4::reciprocal()
+vec4 vec4::reciprocal() const
 {
 	double result_x = 0.0;
 	double result_y = 0.0;
@@ -157,17 +157,60 @@ vec4 vec4::reciprocal()
 	return vec4(result_x, result_y, result_z, result_w);
 }
 
-double vec4::length()
+double vec4::length() const
 {
 	// @TODO: replace with SIMD impl
 	return sqrt(x * x + y * y + z * z + w * w);
 }
 
-vec4 vec4::normalize()
+vec4 vec4::normalize() const
 {
 	// @TODO: replace with SIMD impl
 	auto l_length = length();
 	return vec4(x / l_length, y / l_length, z / l_length, w / l_length);
+}
+
+vec4 vec4::lerp(const vec4 & a, const vec4 & b, double alpha) const
+{
+	return a * alpha + b * (1.0 - alpha);
+}
+
+vec4 vec4::slerp(const vec4 & a, const vec4 & b, double alpha) const
+{
+	double cosOfAngle = a * b;
+	// use nlerp for quaternions which are too close 
+	if (cosOfAngle > 0.9995) {
+		return (a * alpha + b * (1.0 - alpha)).normalize();
+	}
+	// for shorter path
+	if (cosOfAngle < 0.0) {
+		double theta_0 = acos(-cosOfAngle);
+		double theta = theta_0 * alpha;
+		double sin_theta = sin(theta);
+		double sin_theta_0 = sin(theta_0);
+
+		double s0 = sin_theta / sin_theta_0;
+		double s1 = cos(theta) + cosOfAngle * sin_theta / sin_theta_0;
+
+		return (a * -1.0 * s0) + (b * s1);
+	}
+	else
+	{
+		double theta_0 = acos(cosOfAngle);
+		double theta = theta_0 * alpha;
+		double sin_theta = sin(theta);
+		double sin_theta_0 = sin(theta_0);
+
+		double s0 = sin_theta / sin_theta_0;
+		double s1 = cos(theta) - cosOfAngle * sin_theta / sin_theta_0;
+
+		return (a * s0) + (b * s1);
+	}
+}
+
+vec4 vec4::nlerp(const vec4 & a, const vec4 & b, double alpha) const
+{
+	return (a * alpha + b * (1.0 - alpha)).normalize();
 }
 
 bool vec4::operator!=(const vec4 & rhs)
