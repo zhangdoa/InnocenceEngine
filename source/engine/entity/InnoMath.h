@@ -150,25 +150,28 @@ public:
 
 	~vec4();
 
-	vec4 operator+(const vec4& rhs);
-	vec4 operator+(double rhs);
-	vec4 operator-(const vec4& rhs);
-	vec4 operator-(double rhs);
-	double operator*(const vec4& rhs);
+	vec4 operator+(const vec4& rhs) const;
+	vec4 operator+(double rhs) const;
+	vec4 operator-(const vec4& rhs) const;
+	vec4 operator-(double rhs) const;
+	double operator*(const vec4& rhs) const;
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	vec4 operator*(const mat4 & rhs);
+	vec4 operator*(const mat4 & rhs) const;
 #endif
-	vec4 cross(const vec4& rhs);
-	vec4 scale(const vec4& rhs);
-	vec4 scale(double rhs);
-	vec4 operator*(double rhs);
-	vec4 operator/(double rhs);
-	vec4 quatMul(const vec4& rhs);
-	vec4 quatMul(double rhs);
-	vec4 quatConjugate();
-	vec4 reciprocal();
-	double length();
-	vec4 normalize();
+	vec4 cross(const vec4& rhs) const;
+	vec4 scale(const vec4& rhs) const;
+	vec4 scale(double rhs) const;
+	vec4 operator*(double rhs) const;
+	vec4 operator/(double rhs) const;
+	vec4 quatMul(const vec4& rhs) const;
+	vec4 quatMul(double rhs) const;
+	vec4 quatConjugate() const;
+	vec4 reciprocal() const;
+	double length() const;
+	vec4 normalize() const;
+	vec4 lerp(const vec4& a, const vec4& b, double alpha) const;
+	vec4 slerp(const vec4& a, const vec4& b, double alpha) const;
+	vec4 nlerp(const vec4& a, const vec4& b, double alpha) const;
 
 	bool operator!=(const vec4& rhs);
 	bool operator==(const vec4& rhs);
