@@ -80,4 +80,3 @@ private:
 		bool    m_free;
 	};
 };
-

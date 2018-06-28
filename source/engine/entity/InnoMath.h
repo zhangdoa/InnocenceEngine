@@ -1,6 +1,7 @@
 #pragma once
 #include "common/stdafx.h"
 #include "common/config.h"
+#include "interface/IMemorySystem.h"
 //typedef __m128 vec4;
 
 const static double PI = 3.14159265358979323846264338327950288;
@@ -491,6 +492,75 @@ using modelPair = std::pair<meshID, textureMap>;
 using modelMap = std::unordered_map<meshID, textureMap>;
 using textureFileNamePair = std::pair<textureType, std::string>;
 using textureFileNameMap = std::unordered_map<textureType, std::string>;
+
+extern IMemorySystem* g_pMemorySystem;
+
+template <typename T>
+class innoAllocator
+{
+public:
+
+	typedef T value_type;
+	typedef T *pointer;
+	typedef T &reference;
+	typedef const T *const_pointer;
+	typedef const T &const_reference;
+	typedef unsigned size_type;
+	typedef unsigned difference_type;
+
+	innoAllocator() {}
+	~innoAllocator() {}
+
+	template <typename U>
+	struct rebind
+	{
+		typedef innoAllocator<U> other;
+	};
+
+	template <class U> innoAllocator(const innoAllocator<U>&) {}
+
+	pointer address(reference x) const { return &x; }
+	const_pointer address(const_reference x) const { return &x; }
+	size_type max_size() const throw() { return size_t(-1) / sizeof(value_type); }
+
+	pointer allocate(unsigned n)
+	{
+		return g_pMemorySystem->spawn<T>();
+	}
+
+	void deallocate(pointer p, unsigned n)
+	{
+		return g_pMemorySystem->destroy<T>(p);
+	}
+
+	void construct(pointer p, const_reference clone)
+	{
+		new (static_cast<void*>(p)) T(clone);
+	}
+
+	void construct(pointer p)
+	{
+		new(static_cast<void*>(p)) T();
+	}
+
+	void destroy(pointer p)
+	{
+		p->~T();
+	}
+
+	bool operator==(const innoAllocator &rhs)
+	{
+		return true;
+	}
+
+	bool operator!=(const innoAllocator &rhs)
+	{
+		return !operator==(rhs);
+	}
+};
+
+template <typename T>
+using innoVector = std::vector<T, innoAllocator<T>>;
 
 #define INNO_KEY_SPACE              32
 #define INNO_KEY_APOSTROPHE         39  /* ' */
