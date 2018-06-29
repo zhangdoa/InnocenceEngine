@@ -232,28 +232,30 @@ void VisionSystem::updateRendering()
 	RenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.clear();
 	RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.clear();
 
-	m_mouseRay.m_origin = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.caclGlobalPos();
-	m_mouseRay.m_direction = calcMousePositionInWorldSpace();
-
-	auto l_cameraAABB = g_pGameSystem->getCameraComponents()[0]->m_AABB;
-
-	auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
-
-	for (auto& j : g_pGameSystem->getVisibleComponents())
+	if (g_pGameSystem->getCameraComponents().size() > 0)
 	{
-		if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
+		m_mouseRay.m_origin = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.caclGlobalPos();
+		m_mouseRay.m_direction = calcMousePositionInWorldSpace();
+
+		auto l_cameraAABB = g_pGameSystem->getCameraComponents()[0]->m_AABB;
+
+		auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
+
+		for (auto& j : g_pGameSystem->getVisibleComponents())
 		{
-			if (j->m_AABB.intersectCheck(m_mouseRay))
+			if (j->m_visiblilityType == visiblilityType::STATIC_MESH)
 			{
-				RenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.emplace_back(j);
-			}
-			if (l_cameraAABB.intersectCheck(j->m_AABB))
-			{
-				RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.emplace_back(j);
+				if (j->m_AABB.intersectCheck(m_mouseRay))
+				{
+					RenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.emplace_back(j);
+				}
+				if (l_cameraAABB.intersectCheck(j->m_AABB))
+				{
+					RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.emplace_back(j);
+				}
 			}
 		}
 	}
-
 }
 
 void VisionSystem::updateGui()

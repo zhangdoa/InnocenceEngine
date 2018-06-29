@@ -55,7 +55,6 @@ const std::tuple<int, unsigned, unsigned> TimeSystem::getCivilFromDays(int z) co
 
 const std::string TimeSystem::getCurrentTimeInLocal(std::chrono::hours timezone_adjustment) const
 {
-
 	typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type> days;
 	auto now = std::chrono::system_clock::now();
 	auto tp = now.time_since_epoch();
@@ -75,6 +74,30 @@ const std::string TimeSystem::getCurrentTimeInLocal(std::chrono::hours timezone_
 											 // 1970-01-01 0:0:0 UTC as the epoch,
 											 // and does not count leap seconds.
 	return std::string{ std::to_string(std::get<0>(date)) + "-" + std::to_string(std::get<1>(date)) + "-" + std::to_string(std::get<2>(date)) + " " + std::to_string(h.count()) + ":" + std::to_string(m.count()) + ":" + std::to_string(s.count()) + ":" + std::to_string(tp / std::chrono::milliseconds(1)) };
+}
+
+const std::string TimeSystem::getCurrentTimeInLocalForOutput(std::chrono::hours timezone_adjustment) const
+{
+	typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type> days;
+	auto now = std::chrono::system_clock::now();
+	auto tp = now.time_since_epoch();
+
+	tp += timezone_adjustment;
+
+	days d = std::chrono::duration_cast<days>(tp);
+	tp -= d;
+	std::chrono::hours h = std::chrono::duration_cast<std::chrono::hours>(tp);
+	tp -= h;
+	std::chrono::minutes m = std::chrono::duration_cast<std::chrono::minutes>(tp);
+	tp -= m;
+	std::chrono::seconds s = std::chrono::duration_cast<std::chrono::seconds>(tp);
+	tp -= s;
+
+	auto date = getCivilFromDays(d.count()); // assumes that system_clock uses
+											 // 1970-01-01 0:0:0 UTC as the epoch,
+											 // and does not count leap seconds.
+	return std::string{ std::to_string(std::get<0>(date)) + "-" + std::to_string(std::get<1>(date)) + "-" + std::to_string(std::get<2>(date)) + "-" + std::to_string(h.count()) + "-" + std::to_string(m.count()) + "-" + std::to_string(s.count()) + "-" + std::to_string(tp / std::chrono::milliseconds(1)) };
+
 }
 
 const objectStatus & TimeSystem::getStatus() const

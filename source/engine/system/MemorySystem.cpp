@@ -30,12 +30,6 @@ void MemorySystem::initialize()
 
 void MemorySystem::update()
 {
-#ifdef DEBUG
-	if (g_pTimeSystem)
-	{
-		dumpToFile("../" + g_pTimeSystem->getCurrentTimeInLocal() + ".innoMemoryDump");
-	}
-#endif // DEBUG
 }
 
 void MemorySystem::shutdown()
@@ -178,8 +172,79 @@ void MemorySystem::free(void * ptr)
 	std::memcpy(freeBlockStart + sizeof(Chunk) + l_freeUserDataSize, m_endBound, m_boundCheckSize);
 }
 
-void MemorySystem::dumpToFile(const std::string & fileName) const
+void MemorySystem::dumpToFile(bool fullDump) const
 {
+	std::ofstream l_file;
+	l_file.open("../" + g_pTimeSystem->getCurrentTimeInLocalForOutput() + ".innoMemoryDump");
+
+	l_file << "InnoMemory Pool Dump File ----------------------------------\n";
+	l_file << "Total Size: " << m_totalPoolSize << "\n";
+	l_file << "Free Size: " << m_freePoolSize << "\n";
+
+	// Now search for a block big enough
+	Chunk* block = (Chunk*)(m_poolMemory + m_boundCheckSize);
+
+	while (block)
+	{
+		if (block->m_free)
+		{
+			l_file << "Free: " << block << "[Bytes: " << block->m_chuckSize << "]\n";
+		}
+		else
+		{
+			l_file << "Used: " << block << "[Bytes: " << block->m_chuckSize << "]\n";
+		}
+		block = block->m_next;
+	}
+
+	if (fullDump)
+	{
+		l_file << "\n\nMemory Dump:\n";
+		unsigned char* ptr = m_poolMemory;
+		unsigned char* charPtr = m_poolMemory;
+
+		l_file << "Start: " << ptr << "\n";
+		unsigned char i = 0;
+
+		// Write the hex memory data
+		unsigned long long bytesPerLine = 32;
+
+		l_file << "\n" << ptr << ": " << *(ptr);
+		++ptr;
+		for (i = 1; ((unsigned long long)(ptr - m_poolMemory) < m_totalPoolSize); ++i, ++ptr)
+		{
+			if (i == bytesPerLine)
+			{
+				// Write all the chars for this line now
+				l_file << "  " << charPtr;
+				for (unsigned long long charI = 0; charI < bytesPerLine; ++charI, ++charPtr)
+					l_file << *charPtr;
+				charPtr = ptr;
+
+				// Write the new line memory data
+				l_file << "\n" << ptr << ": " << *(ptr);
+				i = 0;
+			}
+			else
+				l_file << *(ptr);
+		}
+
+		// Fill any gaps in the tab
+		if ((unsigned long long)(ptr - m_poolMemory) >= m_totalPoolSize)
+		{
+			unsigned long long lastLineBytes = i;
+			for (i; i < bytesPerLine; i++)
+				l_file << " --";
+
+			// Write all the chars for this line now
+			l_file << "  " << charPtr;
+			for (unsigned long long charI = 0; charI < lastLineBytes; ++charI, ++charPtr)
+				l_file << *charPtr;
+			charPtr = ptr;
+		}
+	}
+
+	l_file.close();
 }
 
 const objectStatus & MemorySystem::getStatus() const

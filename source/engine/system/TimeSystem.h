@@ -18,6 +18,7 @@ public:
 	const double getcurrentTime() const override;
 	const std::tuple<int, unsigned, unsigned> getCivilFromDays(int z) const override;
 	const std::string getCurrentTimeInLocal(std::chrono::hours timezone_adjustment = std::chrono::hours(8)) const override;
+	const std::string getCurrentTimeInLocalForOutput(std::chrono::hours timezone_adjustment = std::chrono::hours(8)) const override;
 	const objectStatus& getStatus() const override;
 
 private:

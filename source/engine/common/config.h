@@ -1,8 +1,8 @@
 /* #undef INNO_COMPILER_CLANG */
 
-#define BUILD_GAME
+/* #undef BUILD_GAME */
 /* #undef BUILD_EDITOR */
-/* #undef BUILD_TEST */
+#define BUILD_TEST
 
 #define USE_ROW_MAJOR_MEMORY_LAYOUT
 /* #undef USE_COLUMN_MAJOR_MEMORY_LAYOUT */
