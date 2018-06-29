@@ -36,8 +36,8 @@ option (INNO_RENDERER_VULKAN "Vulkan renderer for Multi-Platforms" OFF)
 option (INNO_RENDERER_METAL "Metal renderer for MacOS and iOS only" OFF)
 
 option (BUILD_EDITOR "Build editor" OFF)
-option (BUILD_GAME "Build game" ON)
-option (BUILD_TEST "Build test" OFF)
+option (BUILD_GAME "Build game" OFF)
+option (BUILD_TEST "Build test" ON)
 
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 11)

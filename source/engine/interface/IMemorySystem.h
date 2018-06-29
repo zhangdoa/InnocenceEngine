@@ -19,5 +19,5 @@ public:
 		reinterpret_cast<T *>(p)->~T();
 		free(p);
 	};
-	virtual void dumpToFile(const std::string& fileName) const = 0;
+	virtual void dumpToFile(bool fullDump) const = 0;
 };

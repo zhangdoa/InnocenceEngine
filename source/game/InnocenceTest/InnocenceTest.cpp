@@ -19,11 +19,11 @@ void InnocenceTest::initialize()
 {
 	m_rootEntity.initialize();
 	testMath();
+	g_pMemorySystem->dumpToFile(false);
 }
 
 void InnocenceTest::update()
 {
-	m_rootEntity.update();
 }
 
 void InnocenceTest::shutdown()
@@ -39,6 +39,11 @@ const objectStatus & InnocenceTest::getStatus() const
 std::string InnocenceTest::getGameName() const
 {
 	return std::string{ typeid(*this).name() }.substr(std::string{ typeid(*this).name() }.find("class"), std::string::npos);
+}
+
+std::vector<TransformComponent*>& InnocenceTest::getTransformComponents()
+{
+	return m_transformComponents;
 }
 
 std::vector<CameraComponent*>& InnocenceTest::getCameraComponents()
@@ -63,7 +68,13 @@ std::vector<VisibleComponent*>& InnocenceTest::getVisibleComponents()
 
 void InnocenceTest::testMath()
 {
-	//LogSystem::getInstance().printLog(vec4(1.0, 0.0, 0.0).cross(vec4(0.0, 1.0, 0.0)));
+	//innoVector<int> l_innoVectorTest;
+	//for (int i = 0; i < 10; i++)
+	//{
+	//	l_innoVectorTest.push_back(i);
+	//	g_pLogSystem->printLog(l_innoVectorTest.size());
+	//}
+	auto t = g_pMemorySystem->spawn<TransformComponent>();
 }
 
 void InnocenceTest::testMemory()

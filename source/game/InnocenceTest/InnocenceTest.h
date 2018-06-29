@@ -1,6 +1,12 @@
 #pragma once
 #include "interface/IGame.h"
-#include "entity/BaseEntity.h"
+#include "component/BaseEntity.h"
+
+#include "interface/ILogSystem.h"
+#include "interface/IMemorySystem.h"
+
+extern ILogSystem* g_pLogSystem;
+extern IMemorySystem* g_pMemorySystem;
 
 class InnocenceTest : public IGame
 {
@@ -15,6 +21,7 @@ public:
 	const objectStatus& getStatus() const override;
 
 	std::string getGameName() const override;
+	std::vector<TransformComponent*>& getTransformComponents() override;
 	std::vector<CameraComponent*>& getCameraComponents() override;
 	std::vector<InputComponent*>& getInputComponents() override;
 	std::vector<LightComponent*>& getLightComponents() override;
@@ -28,6 +35,7 @@ private:
 
 	BaseEntity m_rootEntity;
 
+	std::vector<TransformComponent*> m_transformComponents;
 	std::vector<CameraComponent*> m_cameraComponents;
 	std::vector<InputComponent*> m_inputComponents;
 	std::vector<LightComponent*> m_lightComponents;

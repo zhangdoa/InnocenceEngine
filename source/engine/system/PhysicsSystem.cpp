@@ -469,5 +469,5 @@ void PhysicsSystem::update()
 void PhysicsSystem::shutdown()
 {
 	m_objectStatus = objectStatus::SHUTDOWN;
-	g_pLogSystem->printLog("LogSystem has been shutdown.");
+	g_pLogSystem->printLog("PhysicsSystem has been shutdown.");
 }
