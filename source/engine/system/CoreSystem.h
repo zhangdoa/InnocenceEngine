@@ -16,6 +16,10 @@
 #include "platform/InnoSystemHeaderLinux64.h"
 #endif
 
+#ifdef INNO_PLATFORM_MACOS
+#include "platform/InnoSystemHeaderMacOS.h"
+#endif
+
 IMemorySystem* g_pMemorySystem;
 ILogSystem* g_pLogSystem;
 ITaskSystem* g_pTaskSystem;

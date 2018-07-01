@@ -10,6 +10,7 @@
 #cmakedefine INNO_PLATFORM_WIN32
 #cmakedefine INNO_PLATFORM_WIN64
 #cmakedefine INNO_PLATFORM_LINUX64
+#cmakedefine INNO_PLATFORM_MACOS
 
 #cmakedefine INNO_RENDERER_OPENGL
 #cmakedefine INNO_RENDERER_DX

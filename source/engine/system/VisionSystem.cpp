@@ -266,7 +266,7 @@ void VisionSystem::updateGui()
 
 	ImGui_ImplGlfwGL3_NewFrame();
 	{
-		ImGui::Begin("Global Settings", false, ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::Begin("Global Settings", 0, ImGuiWindowFlags_AlwaysAutoResize);
 
 		static float f = 0.0f;
 		static int counter = 0;
@@ -305,19 +305,19 @@ void VisionSystem::updateGui()
 	{
 		if (item_current == items[0])
 		{
-			ImGui::Begin("Final Pass", false, ImGuiWindowFlags_AlwaysAutoResize); \
+			ImGui::Begin("Final Pass", 0, ImGuiWindowFlags_AlwaysAutoResize); \
 			ImGui::Image(ImTextureID((GLuint64)FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 			ImGui::End();
 		}
 		else if (item_current == items[1])
 		{
-			ImGui::Begin("Light Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Begin("Light Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 			ImGui::Image(ImTextureID((GLuint64)LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 			ImGui::End();
 		}
 		else if (item_current == items[2])
 		{
-			ImGui::Begin("Geometry Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Begin("Geometry Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 			ImGui::BeginChild("World Space Position(RGB) + Metallic(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Image(ImTextureID((GLuint64)GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[0].m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 			ImGui::EndChild();
@@ -347,7 +347,7 @@ void VisionSystem::updateGui()
 		else if (item_current == items[3])
 		{
 			auto l_shadowPassWindowSize = ImVec2(512.0, 512.0);
-			ImGui::Begin("Shadow Pass", false, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Begin("Shadow Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 			ImGui::BeginChild("Shadow Pass Depth Buffer 0", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Image(ImTextureID((GLuint64)ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[0].second.m_TAO), l_shadowPassWindowSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 			ImGui::EndChild();
