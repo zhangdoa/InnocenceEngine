@@ -16,9 +16,9 @@ public:
 	void initialize() override;
 	void shutdown() override;
 
-	std::unordered_map<std::string, int> m_supportedTextureType = { std::pair<std::string, int>("png", 0) };
-	std::unordered_map<std::string, int> m_supportedModelType = { std::pair<std::string, int>("obj", 0), std::pair<std::string, int>("innoModel", 0) };
-	std::unordered_map<std::string, int> m_supportedShaderType = { std::pair<std::string, int>("sf", 0) };
+    std::unordered_map<std::string, int> m_supportedTextureType = { {"png", 0} };
+    std::unordered_map<std::string, int> m_supportedModelType = { {"obj", 0}, {"innoModel", 0} };
+    std::unordered_map<std::string, int> m_supportedShaderType = { {"sf", 0} };
 
 	std::unordered_map<meshID, MeshDataComponent*> m_meshMap;
 	std::unordered_map<meshID, MeshDataComponent*> m_BBMeshMap;
@@ -39,7 +39,7 @@ public:
 	std::unordered_map<std::string, modelMap> m_loadedModelMap;
 	std::unordered_map<std::string, texturePair> m_loadedTextureMap;
 
-	const std::string m_textureRelativePath = "../res/textures/";
-	const std::string m_modelRelativePath = "../res/models/";
-	const std::string m_shaderRelativePath = "../res/shaders/";
+    const std::string m_textureRelativePath = std::string{"../res/textures/"};
+    const std::string m_modelRelativePath = std::string{"../res/models/"};
+    const std::string m_shaderRelativePath = std::string{"../res/shaders/"};
 };

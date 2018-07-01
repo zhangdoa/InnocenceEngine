@@ -29,6 +29,7 @@ option (USE_COLUMN_MAJOR_MEMORY_LAYOUT "use Column-Major memory layout" OFF)
 option (INNO_PLATFORM_WIN32 "Windows x86 32-bit" OFF)
 option (INNO_PLATFORM_WIN64 "Windows x86-64 64-bit" ON)
 option (INNO_PLATFORM_LINUX64 "Linux x86-64 64-bit" OFF)
+option (INNO_PLATFORM_MACOS "MAC x86-64 64-bit" OFF)
 
 option (INNO_RENDERER_OPENGL "OpenGL renderer for Multi-Platforms" ON)
 option (INNO_RENDERER_DX "DirectX renderer for Windows OS only" OFF)
@@ -57,6 +58,10 @@ endif (INNO_PLATFORM_WIN64)
 if (INNO_PLATFORM_LINUX64)
 set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/external/lib/unix)
 endif (INNO_PLATFORM_LINUX64)
+
+if (INNO_PLATFORM_MACOS)
+set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/external/lib/macos)
+endif (INNO_PLATFORM_MACOS)
 
 project (InnocenceEngine)
 

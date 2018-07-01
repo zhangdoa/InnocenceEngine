@@ -486,12 +486,30 @@ enum class renderBufferType { NONE, DEPTH, STENCIL, DEPTH_AND_STENCIL };
 
 using textureID = unsigned long int;
 using meshID = unsigned long int;
+
+#ifdef INNO_PLATFORM_MACOS
+struct EnumClassHash
+{
+    template <typename T>
+    std::size_t operator()(T t) const
+    {
+        return static_cast<std::size_t>(t);
+    }
+};
+using texturePair = std::pair<textureType, textureID>;
+using textureMap = std::unordered_map<textureType, textureID, EnumClassHash>;
+using modelPair = std::pair<meshID, textureMap>;
+using modelMap = std::unordered_map<meshID, textureMap, EnumClassHash>;
+using textureFileNamePair = std::pair<textureType, std::string>;
+using textureFileNameMap = std::unordered_map<textureType, std::string, EnumClassHash>;
+#else
 using texturePair = std::pair<textureType, textureID>;
 using textureMap = std::unordered_map<textureType, textureID>;
 using modelPair = std::pair<meshID, textureMap>;
 using modelMap = std::unordered_map<meshID, textureMap>;
 using textureFileNamePair = std::pair<textureType, std::string>;
 using textureFileNameMap = std::unordered_map<textureType, std::string>;
+#endif
 
 extern IMemorySystem* g_pMemorySystem;
 
