@@ -4,6 +4,7 @@
 
 # Innocence Engine C++
 ![3](https://github.com/zhangdoa/InnocenceEngine-C-/blob/master/Innocence%20Engine's%20Belly.png)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_shield)
 > "A poet once said, 'The whole universe is in a glass of wine.'"
 > -- Richard Feynman, 1963
 
@@ -86,3 +87,7 @@
 [Sébastien Lagarde's blog](https://seblagarde.wordpress.com)
 
 [Stephen Hill's blog](http://blog.selfshadow.com)
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_large)
