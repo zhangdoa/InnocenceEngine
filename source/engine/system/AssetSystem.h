@@ -3,6 +3,11 @@
 #include <sstream>
 #include <iostream>
 
+#include "../common/config.h"
+#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#include <experimental/filesystem>
+#endif
+
 #include "common/UltiHeaders.h"
 #include "interface/IAssetSystem.h"
 #include "interface/ILogSystem.h"

@@ -19,6 +19,7 @@ find_library(IOKIT IOKit)
 find_library(COREVIDEO CoreVideo)
 target_link_libraries(InnoSystem "${GLFW}" "${COCOA}" "${OPENGL}" "${IOKIT}" "${COREVIDEO}")
 else ()
+target_link_libraries(InnoSystem "${ASSIMP}")
 target_link_libraries(InnoSystem "${GLFW}")
 endif (INNO_PLATFORM_LINUX64)
 
