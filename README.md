@@ -1,9 +1,8 @@
+# Innocence Engine C++
+![The Innocence Engine's Belly](https://github.com/zhangdoa/InnocenceEngine-C-/blob/master/Innocence%20Engine's%20Belly.png)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/3c0ea60f7c46491d87236822f6de35a6)](https://www.codacy.com/app/zhangdoa/InnocenceEngine?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=zhangdoa/InnocenceEngine&amp;utm_campaign=Badge_Grade)
 [![Build status](https://ci.appveyor.com/api/projects/status/hl31o0q6nbmlf83i?svg=true)](https://ci.appveyor.com/project/zhangdoa/innocenceengine)
-
-# Innocence Engine C++
-![3](https://github.com/zhangdoa/InnocenceEngine-C-/blob/master/Innocence%20Engine's%20Belly.png)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_shield)
 > "A poet once said, 'The whole universe is in a glass of wine.'"
 > -- Richard Feynman, 1963
