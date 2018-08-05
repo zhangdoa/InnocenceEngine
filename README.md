@@ -1,5 +1,5 @@
-# Innocence Engine C++
-![The Innocence Engine's Belly](https://github.com/zhangdoa/InnocenceEngine-C-/blob/master/Innocence%20Engine's%20Belly.png)
+# Innocence Engine
+![Screen capture](https://github.com/zhangdoa/InnocenceEngine-C-/blob/master/Innocence%20Engine's%20Belly.png)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/3c0ea60f7c46491d87236822f6de35a6)](https://www.codacy.com/app/zhangdoa/InnocenceEngine?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=zhangdoa/InnocenceEngine&amp;utm_campaign=Badge_Grade)
 [![Build status](https://ci.appveyor.com/api/projects/status/hl31o0q6nbmlf83i?svg=true)](https://ci.appveyor.com/project/zhangdoa/innocenceengine)

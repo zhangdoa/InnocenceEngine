@@ -33,7 +33,7 @@ void InnocenceGarden::setup()
 	m_skyboxVisibleComponent.m_visiblilityType = visiblilityType::SKYBOX;
 	m_skyboxVisibleComponent.m_meshShapeType = meshShapeType::CUBE;
 	m_skyboxVisibleComponent.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	m_skyboxVisibleComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl/Mono_Lake_B_Ref.hdr"));
+	m_skyboxVisibleComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl/Playa_Sunrise.hdr"));
 
 	m_skyboxEntity.addChildComponent(&m_skyboxTransformComponent);
 	m_skyboxEntity.addChildComponent(&m_skyboxVisibleComponent);
@@ -60,7 +60,7 @@ void InnocenceGarden::setup()
 
 	m_transformComponents.emplace_back(&m_directionalLightTransformComponent);
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
-	m_visibleComponents.emplace_back(&m_directionalLightVisibleComponent);
+	//m_visibleComponents.emplace_back(&m_directionalLightVisibleComponent);
 
 	//setup landscape
 	m_landscapeTransformComponent.m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
@@ -80,11 +80,11 @@ void InnocenceGarden::setup()
 	m_pawnTransformComponent1.m_transform.setLocalScale(vec4(0.1, 0.1, 0.1, 1.0));
 	m_pawnVisibleComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent1.m_meshShapeType = meshShapeType::CUSTOM;
-	//m_pawnVisibleComponent1.m_modelFileName = "sponza/sponza.obj";
+	m_pawnVisibleComponent1.m_modelFileName = "sponza/sponza.obj";
 	//m_pawnVisibleComponent1.m_modelFileName = "cat/cat.obj";
 	m_pawnVisibleComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnVisibleComponent1.m_drawAABB = false;
-	//m_pawnVisibleComponent1.m_useTexture = true;
+	m_pawnVisibleComponent1.m_useTexture = true;
 	m_pawnVisibleComponent1.m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
 	m_pawnVisibleComponent1.m_MRA = vec4(0.0, 0.35, 1.0, 1.0);
 
