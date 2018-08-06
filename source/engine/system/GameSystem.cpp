@@ -34,6 +34,7 @@ void GameSystem::addComponentsToMap()
 
 void GameSystem::initialize()
 {
+	g_pMemorySystem->serialize(m_cameraComponents[0]);
 }
 
 void GameSystem::update()

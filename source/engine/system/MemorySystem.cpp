@@ -172,6 +172,47 @@ void MemorySystem::free(void * ptr)
 	std::memcpy(freeBlockStart + sizeof(Chunk) + l_freeUserDataSize, m_endBound, m_boundCheckSize);
 }
 
+void MemorySystem::serializeImpl(void * ptr)
+{
+	// is a valid node?
+	if (!ptr) return;
+	Chunk* block = reinterpret_cast<Chunk*>((unsigned char*)ptr - sizeof(Chunk));
+	if (block->m_free) return;
+
+	unsigned long l_fullBlockSize = block->m_chuckSize + sizeof(Chunk) + m_boundCheckSize * 2;
+
+	std::ofstream l_file;
+	l_file.open("../" + g_pTimeSystem->getCurrentTimeInLocalForOutput() + ".innoAssetTest");
+
+	unsigned char* origPtr = (unsigned char*)ptr;
+	unsigned char* charPtr = (unsigned char*)ptr;
+	unsigned char i = 0;
+
+	// Write the hex memory data
+	unsigned long long bytesPerLine = 16;
+
+	l_file << "\n" << origPtr << ": " << *(origPtr);
+	++origPtr;
+	for (i = 1; ((unsigned long long)(origPtr - m_poolMemory) < l_fullBlockSize); ++i, ++origPtr)
+	{
+		if (i == bytesPerLine)
+		{
+			// Write all the chars for this line now
+			l_file << "  " << charPtr;
+			for (unsigned long long charI = 0; charI < bytesPerLine; ++charI, ++charPtr)
+				l_file << *charPtr;
+			charPtr = origPtr;
+
+			// Write the new line memory data
+			l_file << "\n" << origPtr << ": " << *(origPtr);
+			i = 0;
+		}
+		else
+			l_file << *(origPtr);
+	}
+	l_file.close();
+}
+
 void MemorySystem::dumpToFile(bool fullDump) const
 {
 	std::ofstream l_file;

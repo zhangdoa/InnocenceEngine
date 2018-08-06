@@ -42,6 +42,7 @@ public:
 
 	void* allocate(unsigned long size) override;
 	void free(void* ptr) override;
+	void serializeImpl(void* ptr) override;
 	void dumpToFile(bool fullDump) const override;
 	
 	const objectStatus& getStatus() const override;
