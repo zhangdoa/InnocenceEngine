@@ -15,6 +15,7 @@
 #include "interface/IGameSystem.h"
 #include "MeshDataSystem.h"
 #include "TextureDataSystem.h"
+#include "common/ComponentHeaders.h"
 
 #include "assimp/Importer.hpp"
 #include "assimp/Exporter.hpp"

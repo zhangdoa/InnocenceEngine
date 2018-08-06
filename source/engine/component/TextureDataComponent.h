@@ -8,10 +8,6 @@ public:
 	TextureDataComponent() { m_textureID = std::rand(); };
 	~TextureDataComponent() {};
 
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
-
 	textureID m_textureID;
 	textureType m_textureType;
 	textureColorComponentsFormat m_textureColorComponentsFormat;

@@ -9,10 +9,6 @@ class RenderingSystemSingletonComponent : public BaseComponent
 {
 public:
 	~RenderingSystemSingletonComponent() {};
-
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
 	
 	static RenderingSystemSingletonComponent& getInstance()
 	{

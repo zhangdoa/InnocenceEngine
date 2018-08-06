@@ -9,10 +9,6 @@ class ShadowRenderPassSingletonComponent : public BaseComponent
 public:
 	~ShadowRenderPassSingletonComponent() {};
 
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
-	
 	static ShadowRenderPassSingletonComponent& getInstance()
 	{
 		static ShadowRenderPassSingletonComponent instance;

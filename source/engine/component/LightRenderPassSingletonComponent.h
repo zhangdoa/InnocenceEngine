@@ -8,10 +8,6 @@ class LightRenderPassSingletonComponent : public BaseComponent
 {
 public:
 	~LightRenderPassSingletonComponent() {};
-
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
 	
 	static LightRenderPassSingletonComponent& getInstance()
 	{

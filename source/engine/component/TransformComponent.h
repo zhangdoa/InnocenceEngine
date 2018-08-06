@@ -8,10 +8,6 @@ public:
 	TransformComponent() {};
 	~TransformComponent() {};
 
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
-
 	Transform m_transform;
 };
 

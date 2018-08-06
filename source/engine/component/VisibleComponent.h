@@ -8,11 +8,6 @@ public:
 	VisibleComponent() {};
 	~VisibleComponent() {};
 
-
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
-
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
 	meshShapeType m_meshShapeType = meshShapeType::QUAD;
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;

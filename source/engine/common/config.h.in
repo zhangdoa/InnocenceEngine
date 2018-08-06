@@ -1,9 +1,3 @@
-#cmakedefine INNO_COMPILER_CLANG
-
-#cmakedefine BUILD_GAME
-#cmakedefine BUILD_EDITOR
-#cmakedefine BUILD_TEST
-
 #cmakedefine USE_ROW_MAJOR_MEMORY_LAYOUT
 #cmakedefine USE_COLUMN_MAJOR_MEMORY_LAYOUT
 
@@ -16,3 +10,7 @@
 #cmakedefine INNO_RENDERER_DX
 #cmakedefine INNO_RENDERER_VULKAN
 #cmakedefine INNO_RENDERER_METAL
+
+#cmakedefine BUILD_EDITOR
+#cmakedefine BUILD_GAME
+#cmakedefine BUILD_TEST

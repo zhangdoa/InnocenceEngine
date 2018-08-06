@@ -1,11 +1,9 @@
 #pragma once
-#include "IObject.h"
+#include "ISystem.h"
 
-class IApplication : public IObject
+class IApplication : public ISystem
 {
 public:
 	virtual ~IApplication() {};
-
-	virtual void update() = 0;
 };
 

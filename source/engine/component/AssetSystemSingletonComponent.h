@@ -12,10 +12,6 @@ public:
 	AssetSystemSingletonComponent() {};
 	~AssetSystemSingletonComponent() {};
 
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
-
     std::unordered_map<std::string, int> m_supportedTextureType = { {"png", 0} };
     std::unordered_map<std::string, int> m_supportedModelType = { {"obj", 0}, {"innoModel", 0} };
     std::unordered_map<std::string, int> m_supportedShaderType = { {"sf", 0} };

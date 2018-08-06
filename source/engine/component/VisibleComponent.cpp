@@ -42,16 +42,3 @@ void VisibleComponent::setModelMap(const modelMap & modelMap)
 {
 	m_modelMap = modelMap;
 }
-
-
-void VisibleComponent::setup()
-{
-}
-
-void VisibleComponent::initialize()
-{
-}
-
-void VisibleComponent::shutdown()
-{
-}

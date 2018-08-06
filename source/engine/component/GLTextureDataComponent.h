@@ -8,10 +8,6 @@ public:
 	GLTextureDataComponent() {};
 	~GLTextureDataComponent() {};
 
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
-
 	GLuint m_TAO;
 };
 

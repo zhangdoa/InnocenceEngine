@@ -1,11 +1,11 @@
 #include "BaseComponent.h"
 
-IEntity* BaseComponent::getParentEntity() const
+EntityID BaseComponent::getParentEntity() const
 {
 	return m_parentEntity;
 }
 
-void BaseComponent::setParentEntity(IEntity* parentEntity)
+void BaseComponent::setParentEntity(EntityID parentEntity)
 {
 	m_parentEntity = parentEntity;
 }

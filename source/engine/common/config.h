@@ -1,9 +1,3 @@
-/* #undef INNO_COMPILER_CLANG */
-
-#define BUILD_GAME
-/* #undef BUILD_EDITOR */
-/* #undef BUILD_TEST */
-
 #define USE_ROW_MAJOR_MEMORY_LAYOUT
 /* #undef USE_COLUMN_MAJOR_MEMORY_LAYOUT */
 
@@ -16,3 +10,7 @@
 /* #undef INNO_RENDERER_DX */
 /* #undef INNO_RENDERER_VULKAN */
 /* #undef INNO_RENDERER_METAL */
+
+/* #undef BUILD_EDITOR */
+#define BUILD_GAME
+/* #undef BUILD_TEST */

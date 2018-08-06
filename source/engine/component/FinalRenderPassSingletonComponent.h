@@ -8,10 +8,6 @@ class FinalRenderPassSingletonComponent : public BaseComponent
 {
 public:
 	~FinalRenderPassSingletonComponent() {};
-
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
 	
 	static FinalRenderPassSingletonComponent& getInstance()
 	{

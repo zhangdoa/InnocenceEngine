@@ -11,22 +11,26 @@ InnocenceGarden::~InnocenceGarden()
 
 void InnocenceGarden::setup()
 {
+	GameSystem::setup();
 	// setup root entity
 	m_rootTransformComponent.m_transform.m_parentTransform = nullptr;
 	m_transformComponents.emplace_back(&m_rootTransformComponent);
-	m_rootEntity.addChildComponent(&m_rootTransformComponent);
+	m_rootEntity = createEntityID();
+	m_rootTransformComponent.setParentEntity(m_rootEntity);
 
 	// setup player character
-	m_playCharacter.setup();
-	m_playCharacter.getTransformComponent().m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
-	m_playCharacter.getTransformComponent().m_transform.setLocalPos(vec4(2.0, 3.0, 2.0, 1.0));
+	m_playerCharacterEntity = createEntityID();
+	m_playCharacterComponent.setParentEntity(m_playerCharacterEntity);
+	m_playCharacterComponent.setup();
+	m_playCharacterComponent.getTransformComponent().m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
+	m_playCharacterComponent.getTransformComponent().m_transform.setLocalPos(vec4(2.0, 3.0, 2.0, 1.0));
 	//m_playCharacter.getTransformComponent().m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
-	m_playCharacter.getCameraComponent().m_drawFrustum = false;
-	m_playCharacter.getCameraComponent().m_drawAABB = false;
+	m_playCharacterComponent.getCameraComponent().m_drawFrustum = false;
+	m_playCharacterComponent.getCameraComponent().m_drawAABB = false;
 
-	m_transformComponents.emplace_back(&m_playCharacter.getTransformComponent());
-	m_cameraComponents.emplace_back(&m_playCharacter.getCameraComponent());
-	m_inputComponents.emplace_back(&m_playCharacter.getInputComponent());
+	m_transformComponents.emplace_back(&m_playCharacterComponent.getTransformComponent());
+	m_cameraComponents.emplace_back(&m_playCharacterComponent.getCameraComponent());
+	m_inputComponents.emplace_back(&m_playCharacterComponent.getInputComponent());
 
 	//setup skybox
 	m_skyboxTransformComponent.m_transform.m_parentTransform = &m_rootTransformComponent.m_transform;
@@ -35,8 +39,9 @@ void InnocenceGarden::setup()
 	m_skyboxVisibleComponent.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
 	m_skyboxVisibleComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl/Playa_Sunrise.hdr"));
 
-	m_skyboxEntity.addChildComponent(&m_skyboxTransformComponent);
-	m_skyboxEntity.addChildComponent(&m_skyboxVisibleComponent);
+	m_skyboxEntity = createEntityID();
+	m_skyboxTransformComponent.setParentEntity(m_skyboxEntity);
+	m_skyboxVisibleComponent.setParentEntity(m_skyboxEntity);
 
 	m_transformComponents.emplace_back(&m_skyboxTransformComponent);
 	m_visibleComponents.emplace_back(&m_skyboxVisibleComponent);
@@ -54,9 +59,10 @@ void InnocenceGarden::setup()
 	m_directionalLightVisibleComponent.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lightbulb.png"));
 	m_directionalLightVisibleComponent.m_albedo = vec4(0.5, 0.3, 0.0, 1.0);
 
-	m_directionalLightEntity.addChildComponent(&m_directionalLightTransformComponent);
-	m_directionalLightEntity.addChildComponent(&m_directionalLightComponent);
-	m_directionalLightEntity.addChildComponent(&m_directionalLightVisibleComponent);
+	m_directionalLightEntity = createEntityID();
+	m_directionalLightTransformComponent.setParentEntity(m_directionalLightEntity);
+	m_directionalLightComponent.setParentEntity(m_directionalLightEntity);
+	m_directionalLightVisibleComponent.setParentEntity(m_directionalLightEntity);
 
 	m_transformComponents.emplace_back(&m_directionalLightTransformComponent);
 	m_lightComponents.emplace_back(&m_directionalLightComponent);
@@ -69,8 +75,9 @@ void InnocenceGarden::setup()
 	m_landscapeVisibleComponent.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_landscapeVisibleComponent.m_meshShapeType = meshShapeType::CUBE;
 
-	m_landscapeEntity.addChildComponent(&m_landscapeTransformComponent);
-	m_landscapeEntity.addChildComponent(&m_landscapeVisibleComponent);
+	m_landscapeEntity = createEntityID();
+	m_landscapeTransformComponent.setParentEntity(m_landscapeEntity);
+	m_landscapeVisibleComponent.setParentEntity(m_landscapeEntity);
 
 	m_transformComponents.emplace_back(&m_landscapeTransformComponent);
 	m_visibleComponents.emplace_back(&m_landscapeVisibleComponent);
@@ -80,16 +87,17 @@ void InnocenceGarden::setup()
 	m_pawnTransformComponent1.m_transform.setLocalScale(vec4(0.1, 0.1, 0.1, 1.0));
 	m_pawnVisibleComponent1.m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent1.m_meshShapeType = meshShapeType::CUSTOM;
-	m_pawnVisibleComponent1.m_modelFileName = "sponza/sponza.obj";
+	//m_pawnVisibleComponent1.m_modelFileName = "sponza/sponza.obj";
 	//m_pawnVisibleComponent1.m_modelFileName = "cat/cat.obj";
 	m_pawnVisibleComponent1.m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnVisibleComponent1.m_drawAABB = false;
-	m_pawnVisibleComponent1.m_useTexture = true;
+	m_pawnVisibleComponent1.m_useTexture = false;
 	m_pawnVisibleComponent1.m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
 	m_pawnVisibleComponent1.m_MRA = vec4(0.0, 0.35, 1.0, 1.0);
 
-	m_pawnEntity1.addChildComponent(&m_pawnTransformComponent1);
-	m_pawnEntity1.addChildComponent(&m_pawnVisibleComponent1);
+	m_pawnEntity1 = createEntityID();
+	m_pawnTransformComponent1.setParentEntity(m_pawnEntity1);
+	m_pawnVisibleComponent1.setParentEntity(m_pawnEntity1);
 
 	m_transformComponents.emplace_back(&m_pawnTransformComponent1);
 	m_visibleComponents.emplace_back(&m_pawnVisibleComponent1);
@@ -108,8 +116,9 @@ void InnocenceGarden::setup()
 	m_pawnVisibleComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "lantern/lantern_Roughness.jpg"));
 	m_pawnVisibleComponent2.m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "lantern/lantern_Mixed_AO.jpg"));
 
-	m_pawnEntity2.addChildComponent(&m_pawnTransformComponent2);
-	m_pawnEntity2.addChildComponent(&m_pawnVisibleComponent2);
+	m_pawnEntity2 = createEntityID();
+	m_pawnTransformComponent2.setParentEntity(m_pawnEntity2);
+	m_pawnVisibleComponent2.setParentEntity(m_pawnEntity2);
 
 	m_transformComponents.emplace_back(&m_pawnTransformComponent2);
 	m_visibleComponents.emplace_back(&m_pawnVisibleComponent2);
@@ -117,16 +126,19 @@ void InnocenceGarden::setup()
 	setupLights();
 	setupSpheres();
 
-	m_rootEntity.setup();
+	addComponentsToMap();
+
+	m_objectStatus = objectStatus::ALIVE;
 }
 
 void InnocenceGarden::initialize()
 {	
-	m_rootEntity.initialize();
+	GameSystem::initialize();
 }
 
 void InnocenceGarden::update()
 {
+	GameSystem::update();
 	temp += 0.02;
 	updateLights(temp);
 	updateSpheres(temp);
@@ -134,7 +146,8 @@ void InnocenceGarden::update()
 
 void InnocenceGarden::shutdown()
 {	
-	m_rootEntity.shutdown();
+	GameSystem::shutdown();
+	m_objectStatus = objectStatus::SHUTDOWN;
 }
 
 const objectStatus & InnocenceGarden::getStatus() const
@@ -193,8 +206,9 @@ void InnocenceGarden::setupSpheres()
 		m_sphereVisibleComponents[i].m_modelFileName = "Orb/Orb.obj";
 		m_sphereVisibleComponents[i].m_useTexture = false;
 
-		m_sphereEntitys[i].addChildComponent(&m_sphereTransformComponents[i]);
-		m_sphereEntitys[i].addChildComponent(&m_sphereVisibleComponents[i]);
+		m_sphereEntitys[i] = createEntityID();
+		m_sphereTransformComponents[i].setParentEntity(m_sphereEntitys[i]);
+		m_sphereVisibleComponents[i].setParentEntity(m_sphereEntitys[i]);
 
 		m_transformComponents.emplace_back(&m_sphereTransformComponents[i]);
 		m_visibleComponents.emplace_back(&m_sphereVisibleComponents[i]);
@@ -256,9 +270,10 @@ void InnocenceGarden::setupLights()
 		m_pointLightVisibleComponents[i].m_meshShapeType = meshShapeType::SPHERE;
 		m_pointLightVisibleComponents[i].m_useTexture = false;
 
-		m_pointLightEntitys[i].addChildComponent(&m_pointLightTransformComponents[i]);
-		m_pointLightEntitys[i].addChildComponent(&m_pointLightComponents[i]);
-		m_pointLightEntitys[i].addChildComponent(&m_pointLightVisibleComponents[i]);
+		m_pointLightEntitys[i] = createEntityID();
+		m_pointLightTransformComponents[i].setParentEntity(m_pointLightEntitys[i]);
+		m_pointLightComponents[i].setParentEntity(m_pointLightEntitys[i]);
+		m_pointLightVisibleComponents[i].setParentEntity(m_pointLightEntitys[i]);
 
 		m_transformComponents.emplace_back(&m_pointLightTransformComponents[i]);
 		m_lightComponents.emplace_back(&m_pointLightComponents[i]);

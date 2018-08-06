@@ -35,17 +35,3 @@ std::unordered_map<int, std::vector<std::function<void(double)>*>>& InputCompone
 {
 	return m_mouseMovementCallbackImpl;
 }
-
-void InputComponent::setup()
-{
-}
-
-void InputComponent::initialize()
-{
-}
-
-
-void InputComponent::shutdown()
-{
-}
-

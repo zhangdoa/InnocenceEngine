@@ -8,10 +8,6 @@ class EnvironmentRenderPassSingletonComponent : public BaseComponent
 {
 public:
 	~EnvironmentRenderPassSingletonComponent() {};
-
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
 	
 	static EnvironmentRenderPassSingletonComponent& getInstance()
 	{

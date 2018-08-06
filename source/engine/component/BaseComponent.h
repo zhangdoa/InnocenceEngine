@@ -6,17 +6,16 @@ class BaseComponent : public IComponent
 {
 public:
 	BaseComponent() :
-		m_parentEntity(nullptr) {};
+		m_parentEntity() {};
 	virtual ~BaseComponent() {};
 
-	IEntity* getParentEntity() const override;
-	void setParentEntity(IEntity* parentEntity) override;
+	EntityID getParentEntity() const override;
+	void setParentEntity(EntityID parentEntity) override;
 
 	const objectStatus& getStatus() const override;
+	//void setStatus(objectStatus objectStatus) override;
 
 protected:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-
-private:
-	IEntity* m_parentEntity;
+	EntityID m_parentEntity;
 };

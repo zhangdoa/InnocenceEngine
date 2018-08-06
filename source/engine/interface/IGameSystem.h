@@ -2,10 +2,9 @@
 #include "common/stdafx.h"
 #include "ISystem.h"
 #include "ILogSystem.h"
-#include "IGame.h"
+#include "common/ComponentHeaders.h"
 
 extern ILogSystem* g_pLogSystem;
-extern IGame* g_pGame;
 
 class IGameSystem : public ISystem
 {
@@ -18,8 +17,9 @@ public:
 	virtual std::vector<CameraComponent*>& getCameraComponents() = 0;
 	virtual std::vector<InputComponent*>& getInputComponents() = 0;
 
-	virtual TransformComponent* getTransformComponent(IEntity* parentEntity) = 0;
+	virtual TransformComponent* getTransformComponent(EntityID parentEntity) = 0;
 
 	virtual std::string getGameName() const = 0;
 	virtual bool needRender() = 0;
+	virtual EntityID createEntityID() = 0;
 };

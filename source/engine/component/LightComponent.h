@@ -18,10 +18,6 @@ public:
 		m_drawAABB(false) {};
 	~LightComponent() {};
 
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
-
 	mat4 getProjectionMatrix(unsigned int cascadedLevel) const;
 
 	lightType m_lightType;

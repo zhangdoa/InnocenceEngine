@@ -7,10 +7,6 @@ public:
 	CameraComponent() {};
 	~CameraComponent() {};
 
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
-
 	double m_FOV;
 	double m_WHRatio;
 	double m_zNear;

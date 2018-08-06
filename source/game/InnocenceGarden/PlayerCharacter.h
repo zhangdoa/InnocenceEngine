@@ -3,22 +3,21 @@
 #include "component/CameraComponent.h"
 #include "component/InputComponent.h"
 #include "component/VisibleComponent.h"
-#include "component/BaseEntity.h"
 
-class PlayerCharacter : public BaseEntity
+class PlayerCharacter : public BaseComponent
 {
 public:
 	PlayerCharacter() {};
 	~PlayerCharacter() {};
 
-	void setup() override;
+	void setup();
 
 	TransformComponent& getTransformComponent();
 	CameraComponent& getCameraComponent();
 	InputComponent& getInputComponent();
 	VisibleComponent& getVisibleComponent();
 
-private:	
+private:
 	TransformComponent m_transformComponent;
 	InputComponent m_inputComponent;
 	CameraComponent m_cameraComponent;

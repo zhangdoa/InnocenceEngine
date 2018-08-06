@@ -8,9 +8,5 @@ public:
 	GLShaderProgramComponent() {};
 	~GLShaderProgramComponent() {};
 
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
-
 	GLuint m_program = 0;
 };

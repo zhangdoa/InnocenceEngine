@@ -8,10 +8,6 @@ class GeometryRenderPassSingletonComponent : public BaseComponent
 {
 public:
 	~GeometryRenderPassSingletonComponent() {};
-
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
 	
 	static GeometryRenderPassSingletonComponent& getInstance()
 	{

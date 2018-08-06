@@ -8,10 +8,6 @@ public:
 	MeshDataComponent() { m_meshID = std::rand(); };
 	~MeshDataComponent() {};
 
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
-
 	meshID m_meshID;
 	meshType m_meshType;
 	std::vector<Vertex> m_vertices;

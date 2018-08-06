@@ -18,15 +18,3 @@ mat4 LightComponent::getProjectionMatrix(unsigned int cascadedLevel) const
 	p.initializeToOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
 	return p;
 }
-
-void LightComponent::setup()
-{
-}
-
-void LightComponent::initialize()
-{
-}
-
-void LightComponent::shutdown()
-{
-}

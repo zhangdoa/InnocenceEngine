@@ -7,11 +7,6 @@ public:
 	InputComponent() {};
 	~InputComponent() {};
 
-
-	void setup() override;
-	void initialize() override;
-	void shutdown() override;
-
 	void registerKeyboardInputCallback(int keyCode, std::function<void()>* function);
 	void registerMouseInputCallback(int mouseCode, std::function<void(double)>* function);
 	

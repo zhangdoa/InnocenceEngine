@@ -145,7 +145,6 @@ void AssetSystem::removeMesh(meshID meshID)
 	auto l_mesh = l_meshMap->find(meshID);
 	if (l_mesh != l_meshMap->end())
 	{
-		l_mesh->second->shutdown();
 		l_meshMap->erase(meshID);
 	}
 }
@@ -156,7 +155,6 @@ void AssetSystem::removeTexture(textureID textureID)
 	auto l_texture = l_textureMap->find(textureID);
 	if (l_texture != l_textureMap->end())
 	{
-		l_texture->second->shutdown();
 		l_textureMap->erase(textureID);
 	}
 }
