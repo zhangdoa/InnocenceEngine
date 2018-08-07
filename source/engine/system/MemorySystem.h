@@ -51,35 +51,27 @@ private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
 	const unsigned long  m_maxPoolSize = 1024 * 512;
-	static const unsigned char m_minFreeBlockSize = 16;
+	static const unsigned char m_minFreeBlockSize = 48;
 	unsigned long  m_totalPoolSize;
-	unsigned long  m_freePoolSize;
+	unsigned long  m_availablePoolSize;
 
 	static const unsigned int m_boundCheckSize = 16;
-	const unsigned char  m_startBound[m_boundCheckSize] = { '[','I','n','n','o','C','h','u','c','k','S','t','a','r','t',']' };
-	const unsigned char  m_endBound[m_boundCheckSize] = { '[','I','n','n','o','C','h','u','c','k','.','.','E','n','d',']' };
+	const unsigned char  m_startBoundMarker[m_boundCheckSize] = { '[','I','n','n','o','C','h','u','c','k','S','t','a','r','t',']' };
+	const unsigned char  m_endBoundMarker[m_boundCheckSize] = { '[','I','n','n','o','C','h','u','c','k','.','.','E','n','d',']' };
 
-	unsigned char* m_poolMemory = nullptr;
+	unsigned char* m_poolMemoryPtr = nullptr;
 
 	class Chunk
 	{
 	public:
-		Chunk(unsigned int chuckSize) : m_next(NULL),
-			m_prev(NULL),
-			m_chuckSize(chuckSize),
+		Chunk(unsigned int chuckSize) : m_next(nullptr),
+			m_prev(nullptr),
+			m_blockSize(chuckSize),
 			m_free(true) {};
-		void write(void* dest)
-		{
-			memcpy(dest, this, sizeof(Chunk));
-		}
-		void read(void* src)
-		{
-			memcpy(this, src, sizeof(Chunk));
-		}
 
 		Chunk*  m_next;
 		Chunk*  m_prev;
-		unsigned int   m_chuckSize;
+		unsigned int   m_blockSize;
 		bool    m_free;
 	};
 };

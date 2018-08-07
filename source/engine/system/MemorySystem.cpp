@@ -8,22 +8,23 @@ void MemorySystem::setup()
 void MemorySystem::setup(unsigned long  memoryPoolSize)
 {
 	// Allocate memory pool
-	m_poolMemory = nullptr;
-	m_poolMemory = ::new unsigned char[memoryPoolSize];
-	memset(m_poolMemory, 0xCC, memoryPoolSize);
-	m_freePoolSize = memoryPoolSize - sizeof(Chunk);
+	m_poolMemoryPtr = nullptr;
+	m_poolMemoryPtr = ::new unsigned char[memoryPoolSize];
+	std::memset(m_poolMemoryPtr, 0xCC, memoryPoolSize);
+	m_availablePoolSize = memoryPoolSize - sizeof(Chunk) - m_boundCheckSize * 2;
 	m_totalPoolSize = memoryPoolSize;
-	m_freePoolSize -= m_boundCheckSize * 2;
+	m_availablePoolSize -= m_boundCheckSize * 2;
 
 	// first free chuck
-	Chunk freeChunk(memoryPoolSize - sizeof(Chunk) - m_boundCheckSize * 2);
-	freeChunk.write(m_poolMemory + m_boundCheckSize);
-	std::memcpy(m_poolMemory, m_startBound, m_boundCheckSize);
-	std::memcpy(m_poolMemory + memoryPoolSize - m_boundCheckSize, m_endBound, m_boundCheckSize);
+	Chunk freeChunk(memoryPoolSize);
+	std::memcpy(m_poolMemoryPtr, m_startBoundMarker, m_boundCheckSize);
+	std::memcpy(m_poolMemoryPtr + m_boundCheckSize, &freeChunk, sizeof(Chunk));
+	std::memcpy(m_poolMemoryPtr + memoryPoolSize - m_boundCheckSize, m_endBoundMarker, m_boundCheckSize);
 }
 
 void MemorySystem::initialize()
 {
+	g_pLogSystem->printLog(sizeof(Chunk));
 	m_objectStatus = objectStatus::ALIVE;
 	g_pLogSystem->printLog("MemorySystem has been initialized.");
 }
@@ -34,142 +35,139 @@ void MemorySystem::update()
 
 void MemorySystem::shutdown()
 {
-	::delete[] m_poolMemory;
+	::delete[] m_poolMemoryPtr;
 }
 
 void * MemorySystem::allocate(unsigned long size)
 {
 	// add bound check size
+	// [StartBound + Chuck + data + EndBound]
 	unsigned long l_requiredSize = size + sizeof(Chunk) + m_boundCheckSize * 2;
 	// alignment to 4
+	// [StartBound + Chuck + data + EndBound + alignment]
 	for (size_t i = 0; i < s_NumBlockSizes; i++)
 	{
-		if (l_requiredSize < s_BlockSizes[i])
+		if (l_requiredSize <= s_BlockSizes[i])
 		{
 			l_requiredSize = s_BlockSizes[i];
 			break;
 		}
 	}
-	// Now search for a block big enough, double linked list, O(n)
-	Chunk* l_block = reinterpret_cast<Chunk*>(m_poolMemory + m_boundCheckSize);
-	while (l_block)
+	// Now search for a block big enough from the beginning of the pool, double linked list, O(n)
+	//[                 suitable block                 ] is larger than
+	//[StartBoundMarker + Chuck + data + EndBoundMarker + alignment]
+	Chunk* l_suitableChuckPtr = reinterpret_cast<Chunk*>(m_poolMemoryPtr + m_boundCheckSize);
+	while (l_suitableChuckPtr)
 	{
-		if (l_block->m_free && l_block->m_chuckSize - l_requiredSize > m_minFreeBlockSize) { break; }
-		l_block = l_block->m_next;
+		if (l_suitableChuckPtr->m_free && l_suitableChuckPtr->m_blockSize - l_requiredSize >= m_minFreeBlockSize) { break; }
+		l_suitableChuckPtr = l_suitableChuckPtr->m_next;
 	}
 
-	// If no block is found, return NULL
-	if (!l_block) { return NULL; }
+	// If no block is found, return nullptr
+	if (!l_suitableChuckPtr) { return nullptr; }
 
 	// If the block is valid, create a new free block with
 	// what remains of the block memory
-
-	unsigned char* l_blockData = (unsigned char*)l_block;
-
-	unsigned long l_freeChuckSize = l_block->m_chuckSize - l_requiredSize;
-
-	Chunk freeBlock(l_freeChuckSize);
-	freeBlock.m_next = l_block->m_next;
-	freeBlock.m_prev = l_block;
-	freeBlock.write(l_blockData + l_requiredSize);
-
-	if (freeBlock.m_next)
+	unsigned long l_freeBlockSize = l_suitableChuckPtr->m_blockSize - l_requiredSize;
+	//[      suitable block       ] is divided to
+	//[required block + free block]
+	Chunk l_freeChuck(l_freeBlockSize);
+	Chunk* l_freeChuckPtr = l_suitableChuckPtr + l_requiredSize;
+	// assign the next block's prev pointer to this free block
+	if (l_suitableChuckPtr->m_next)
 	{
-		freeBlock.m_next->m_prev = reinterpret_cast<Chunk*>(l_blockData + l_requiredSize);
+		l_freeChuck.m_next = l_suitableChuckPtr->m_next;
+		l_freeChuck.m_next->m_prev = l_freeChuckPtr;
 	}
+	l_freeChuck.m_prev = l_suitableChuckPtr;
 
-	std::memcpy(l_blockData + l_requiredSize - m_boundCheckSize, m_startBound,
-		m_boundCheckSize);
-	l_block->m_next = reinterpret_cast<Chunk*>(l_blockData + l_requiredSize);
-	l_block->m_chuckSize = size;
+	unsigned char* l_freeBlockPtr = reinterpret_cast<unsigned char*>(l_freeChuckPtr - m_boundCheckSize);
+	std::memcpy(l_freeBlockPtr, m_startBoundMarker, m_boundCheckSize);
+	std::memcpy(l_freeChuckPtr, &l_freeChuck, sizeof(Chunk));
+	std::memcpy(l_freeBlockPtr + l_freeBlockSize - m_boundCheckSize, m_endBoundMarker, m_boundCheckSize);
+
+	// set allocated block chuck data
+	l_suitableChuckPtr->m_next = l_freeChuckPtr;
+	l_suitableChuckPtr->m_blockSize = l_requiredSize;
+	l_suitableChuckPtr->m_free = false;
+
+	// Fill the block with end bound marker and filling flags
+	unsigned char* l_suitableBlockPtr = reinterpret_cast<unsigned char*>(l_suitableChuckPtr - m_boundCheckSize);
+	std::memset(l_suitableChuckPtr + sizeof(Chunk), 0xAB, size);
+	std::memcpy(l_suitableBlockPtr + l_requiredSize - m_boundCheckSize, m_endBoundMarker, m_boundCheckSize);
 
 	// update the pool size
-	m_freePoolSize -= l_block->m_chuckSize;
+	m_availablePoolSize -= l_requiredSize;
 
-	// Set the memory block
-	l_block->m_free = false;
-
-	// Move the memory around
-	std::memcpy(l_blockData - m_boundCheckSize, m_startBound, m_boundCheckSize);
-	std::memcpy(l_blockData + sizeof(Chunk) + l_block->m_chuckSize, m_endBound,
-		m_boundCheckSize);
-
-	std::memset(l_blockData + sizeof(Chunk), 0xAB,
-		l_block->m_chuckSize);
-
-	return (l_blockData + sizeof(Chunk));
+	return (l_suitableChuckPtr + sizeof(Chunk));
 }
 
 void MemorySystem::free(void * ptr)
 {
 	// is a valid node?
 	if (!ptr) return;
-	Chunk* block = reinterpret_cast<Chunk*>((unsigned char*)ptr - sizeof(Chunk));
-	if (block->m_free) return;
+	Chunk* l_chuckPtr = reinterpret_cast<Chunk*>((unsigned char*)ptr - sizeof(Chunk));
+	if (l_chuckPtr->m_free) return;
 
-	unsigned long l_fullBlockSize = block->m_chuckSize + sizeof(Chunk) + m_boundCheckSize * 2;
-	m_freePoolSize += block->m_chuckSize;
+	unsigned long l_fullFreeBlockSize = l_chuckPtr->m_blockSize;
+	m_availablePoolSize += l_fullFreeBlockSize;
 
-	Chunk* headBlock = block;
-	Chunk* prev = block->m_prev;
-	Chunk* next = block->m_next;
+	Chunk* l_freeChuckPtr = l_chuckPtr;
+	Chunk* l_prevChuckPtr = l_chuckPtr->m_prev;
+	Chunk* l_nextChuckPtr = l_chuckPtr->m_next;
 
-	// If the node before is free I merge it with this one
-	if (block->m_prev && block->m_prev->m_free)
+	if (l_prevChuckPtr)
 	{
-		headBlock = block->m_prev;
-		prev = block->m_prev->m_prev;
-		next = block->m_next;
-
-		// Include the prev node in the block size so we trash it as well
-		l_fullBlockSize += block->m_prev->m_chuckSize + sizeof(Chunk) + m_boundCheckSize * 2;
-
-		// If there is a next one, we need to update its pointer
-		if (block->m_next)
+		// If the node before is free merge it with this one
+		if (l_prevChuckPtr->m_free)
 		{
-			// We will re point the next
-			block->m_next->m_prev = headBlock;
-
-			// Include the next node in the block size if it is
-			// free so we trash it as well
-			if (block->m_next->m_free)
+			l_freeChuckPtr = l_prevChuckPtr;
+			if (l_freeChuckPtr->m_prev)
 			{
-				// We will point to next's next
-				next = block->m_next->m_next;
-				if (block->m_next->m_next)
-				{
-					block->m_next->m_next->m_prev = headBlock;
-				}
-				l_fullBlockSize += block->m_next->m_chuckSize + sizeof(Chunk) + m_boundCheckSize * 2;
+				l_prevChuckPtr = l_freeChuckPtr->m_prev;
+			}
+			else
+			{
+				l_prevChuckPtr = nullptr;
+			}
+
+			// Include the prev node in the block size so we trash it as well
+			l_fullFreeBlockSize += l_prevChuckPtr->m_blockSize;
+		}
+	}
+	// If there is a next one, we need to update its pointer
+	if (l_nextChuckPtr)
+	{
+		// We will re point the next of the freer's prev
+		l_nextChuckPtr->m_prev = l_freeChuckPtr;
+
+		// Include the next node in the block size if it is
+		// free so we trash it as well
+		if (l_nextChuckPtr->m_free)
+		{
+			// We will point to next's next
+			if (l_nextChuckPtr->m_next)
+			{
+				l_fullFreeBlockSize += l_nextChuckPtr->m_blockSize;
+				l_nextChuckPtr = l_nextChuckPtr->m_next;
+				l_nextChuckPtr->m_prev = l_freeChuckPtr;
+			}
+			else
+			{
+				l_nextChuckPtr = nullptr;
 			}
 		}
 	}
-	else
-		// If next node is free lets merge it to the current one
-		if (block->m_next && block->m_next->m_free)
-		{
-			headBlock = block;
-			prev = block->m_prev;
-			next = block->m_next->m_next;
-
-			// Include the next node in the block size so we trash it as well
-			l_fullBlockSize += block->m_next->m_chuckSize + sizeof(Chunk) + m_boundCheckSize * 2;
-		}
 	// Create the free block
-	unsigned char* freeBlockStart = (unsigned char*)headBlock;
-	memset(freeBlockStart - m_boundCheckSize, 0xCC, l_fullBlockSize);
+	unsigned char* l_freeBlockPtr = reinterpret_cast<unsigned char*>(l_freeChuckPtr - sizeof(Chunk));
 
-	unsigned long l_freeUserDataSize = l_fullBlockSize - sizeof(Chunk);
-	l_freeUserDataSize = l_freeUserDataSize - m_boundCheckSize * 2;
-
-	Chunk freeBlock(l_freeUserDataSize);
-	freeBlock.m_prev = prev;
-	freeBlock.m_next = next;
-	freeBlock.write(freeBlockStart);
-
-	// Move the memory around if guards are needed
-	std::memcpy(freeBlockStart - m_boundCheckSize, m_startBound, m_boundCheckSize);
-	std::memcpy(freeBlockStart + sizeof(Chunk) + l_freeUserDataSize, m_endBound, m_boundCheckSize);
+	Chunk l_freeChuck(l_fullFreeBlockSize);
+	l_freeChuck.m_prev = l_prevChuckPtr;
+	l_freeChuck.m_next = l_nextChuckPtr;
+	std::memcpy(l_freeBlockPtr, m_startBoundMarker, m_boundCheckSize);
+	std::memcpy(l_freeBlockPtr + m_boundCheckSize, &l_freeChuck, sizeof(Chunk));
+	std::memset(l_freeBlockPtr + m_boundCheckSize + sizeof(Chunk), 0xCC, l_fullFreeBlockSize);
+	std::memcpy(l_freeBlockPtr + l_fullFreeBlockSize - m_boundCheckSize, m_endBoundMarker, m_boundCheckSize);
 }
 
 void MemorySystem::serializeImpl(void * ptr)
@@ -179,7 +177,7 @@ void MemorySystem::serializeImpl(void * ptr)
 	Chunk* block = reinterpret_cast<Chunk*>((unsigned char*)ptr - sizeof(Chunk));
 	if (block->m_free) return;
 
-	unsigned long l_fullBlockSize = block->m_chuckSize + sizeof(Chunk) + m_boundCheckSize * 2;
+	unsigned long l_fullBlockSize = block->m_blockSize + sizeof(Chunk) + m_boundCheckSize * 2;
 
 	std::ofstream l_file;
 	l_file.open("../" + g_pTimeSystem->getCurrentTimeInLocalForOutput() + ".innoAssetTest");
@@ -193,7 +191,7 @@ void MemorySystem::serializeImpl(void * ptr)
 
 	l_file << "\n" << origPtr << ": " << *(origPtr);
 	++origPtr;
-	for (i = 1; ((unsigned long long)(origPtr - m_poolMemory) < l_fullBlockSize); ++i, ++origPtr)
+	for (i = 1; ((unsigned long long)(origPtr - m_poolMemoryPtr) < l_fullBlockSize); ++i, ++origPtr)
 	{
 		if (i == bytesPerLine)
 		{
@@ -220,20 +218,19 @@ void MemorySystem::dumpToFile(bool fullDump) const
 
 	l_file << "InnoMemory Pool Dump File ----------------------------------\n";
 	l_file << "Total Size: " << m_totalPoolSize << "\n";
-	l_file << "Free Size: " << m_freePoolSize << "\n";
+	l_file << "Free Size: " << m_availablePoolSize << "\n";
 
-	// Now search for a block big enough
-	Chunk* block = (Chunk*)(m_poolMemory + m_boundCheckSize);
+	Chunk* block = (Chunk*)(m_poolMemoryPtr + m_boundCheckSize);
 
 	while (block)
 	{
 		if (block->m_free)
 		{
-			l_file << "Free: " << block << "[Bytes: " << block->m_chuckSize << "]\n";
+			l_file << "Free: " << block << "[Bytes: " << block->m_blockSize << "]\n";
 		}
 		else
 		{
-			l_file << "Used: " << block << "[Bytes: " << block->m_chuckSize << "]\n";
+			l_file << "Used: " << block << "[Bytes: " << block->m_blockSize << "]\n";
 		}
 		block = block->m_next;
 	}
@@ -241,8 +238,8 @@ void MemorySystem::dumpToFile(bool fullDump) const
 	if (fullDump)
 	{
 		l_file << "\n\nMemory Dump:\n";
-		unsigned char* ptr = m_poolMemory;
-		unsigned char* charPtr = m_poolMemory;
+		unsigned char* ptr = m_poolMemoryPtr;
+		unsigned char* charPtr = m_poolMemoryPtr;
 
 		l_file << "Start: " << ptr << "\n";
 		unsigned char i = 0;
@@ -252,7 +249,7 @@ void MemorySystem::dumpToFile(bool fullDump) const
 
 		l_file << "\n" << ptr << ": " << *(ptr);
 		++ptr;
-		for (i = 1; ((unsigned long long)(ptr - m_poolMemory) < m_totalPoolSize); ++i, ++ptr)
+		for (i = 1; ((unsigned long long)(ptr - m_poolMemoryPtr) < m_totalPoolSize); ++i, ++ptr)
 		{
 			if (i == bytesPerLine)
 			{
@@ -271,7 +268,7 @@ void MemorySystem::dumpToFile(bool fullDump) const
 		}
 
 		// Fill any gaps in the tab
-		if ((unsigned long long)(ptr - m_poolMemory) >= m_totalPoolSize)
+		if ((unsigned long long)(ptr - m_poolMemoryPtr) >= m_totalPoolSize)
 		{
 			unsigned long long lastLineBytes = i;
 			for (i; i < bytesPerLine; i++)
