@@ -30,7 +30,7 @@ private:
 
 	// player character
 	EntityID m_playerCharacterEntity;
-	PlayerCharacter* m_playCharacterComponent;
+	PlayerCharacter* m_playerCharacterComponent;
 
 	// skybox entity and its components
 	EntityID m_skyboxEntity;

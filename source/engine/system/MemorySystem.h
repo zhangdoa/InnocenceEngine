@@ -2,8 +2,11 @@
 #include "interface/IMemorySystem.h"
 #include "interface/ILogSystem.h"
 #include "interface/ITimeSystem.h"
-#include <fstream>
+#include <cstring>
 #include <iostream>
+#include <fstream>
+#include <iterator>
+#include <vector>
 
 extern ILogSystem* g_pLogSystem;
 extern ITimeSystem* g_pTimeSystem;
@@ -43,6 +46,8 @@ public:
 	void* allocate(unsigned long size) override;
 	void free(void* ptr) override;
 	void serializeImpl(void* ptr) override;
+	void* deserializeImpl(unsigned long size, const std::string& filePath) override;
+
 	void dumpToFile(bool fullDump) const override;
 	
 	const objectStatus& getStatus() const override;
@@ -50,7 +55,7 @@ public:
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	const unsigned long  m_maxPoolSize = 1024 * 512;
+	const unsigned long  m_maxPoolSize = 1024 * 1024 * 512;
 	static const unsigned char m_minFreeBlockSize = 48;
 	unsigned long  m_totalPoolSize;
 	unsigned long  m_availablePoolSize;

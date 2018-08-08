@@ -20,20 +20,20 @@ void InnocenceGarden::setup()
 	m_rootTransformComponent->setParentEntity(m_rootEntity);
 
 	// setup player character
-	m_playCharacterComponent = g_pMemorySystem->spawn<PlayerCharacter>();
-	m_playCharacterComponent->setup();
-	m_playCharacterComponent->getTransformComponent().m_transform.m_parentTransform = &m_rootTransformComponent->m_transform;
-	m_playCharacterComponent->getTransformComponent().m_transform.setLocalPos(vec4(2.0, 3.0, 2.0, 1.0));
+	m_playerCharacterComponent = g_pMemorySystem->spawn<PlayerCharacter>();
+	m_playerCharacterComponent->setup();
+	m_playerCharacterComponent->getTransformComponent().m_transform.m_parentTransform = &m_rootTransformComponent->m_transform;
+	m_playerCharacterComponent->getTransformComponent().m_transform.setLocalPos(vec4(2.0, 3.0, 2.0, 1.0));
 	//m_playCharacter.getTransformComponent().m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
-	m_playCharacterComponent->getCameraComponent().m_drawFrustum = false;
-	m_playCharacterComponent->getCameraComponent().m_drawAABB = false;
+	m_playerCharacterComponent->getCameraComponent().m_drawFrustum = false;
+	m_playerCharacterComponent->getCameraComponent().m_drawAABB = false;
 
-	m_transformComponents.emplace_back(&m_playCharacterComponent->getTransformComponent());
-	m_cameraComponents.emplace_back(&m_playCharacterComponent->getCameraComponent());
-	m_inputComponents.emplace_back(&m_playCharacterComponent->getInputComponent());
+	m_transformComponents.emplace_back(&m_playerCharacterComponent->getTransformComponent());
+	m_cameraComponents.emplace_back(&m_playerCharacterComponent->getCameraComponent());
+	m_inputComponents.emplace_back(&m_playerCharacterComponent->getInputComponent());
 
 	m_playerCharacterEntity = createEntityID();
-	m_playCharacterComponent->setParentEntity(m_playerCharacterEntity);
+	m_playerCharacterComponent->setParentEntity(m_playerCharacterEntity);
 
 	//setup skybox
 	m_skyboxTransformComponent = g_pMemorySystem->spawn<TransformComponent>();
