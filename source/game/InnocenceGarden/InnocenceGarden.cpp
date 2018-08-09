@@ -1,17 +1,27 @@
 #include "InnocenceGarden.h"
 
-
-InnocenceGarden::InnocenceGarden()
-{
-}
-
-InnocenceGarden::~InnocenceGarden()
-{
-}
-
 void InnocenceGarden::setup()
 {
 	GameSystem::setup();
+	//
+	auto l_currentTime = g_pTimeSystem->getcurrentTime();
+	auto x = innoList<int>();
+	for (size_t i = 0; i < 1024 * 32; i++)
+	{
+		x.emplace_back(i);
+	}
+	auto l_tickTime = g_pTimeSystem->getcurrentTime() - l_currentTime;
+	g_pLogSystem->printLog(l_tickTime);
+
+	l_currentTime = g_pTimeSystem->getcurrentTime();
+	auto y = std::list<int>();
+	for (size_t i = 0; i < 1024 * 32; i++)
+	{
+		y.emplace_back(i);
+	}
+	l_tickTime = g_pTimeSystem->getcurrentTime() - l_currentTime;
+	g_pLogSystem->printLog(l_tickTime);
+
 	// setup root entity
 	m_rootTransformComponent = g_pMemorySystem->spawn<TransformComponent>();
 	m_rootTransformComponent->m_transform.m_parentTransform = nullptr;

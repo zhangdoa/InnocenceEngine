@@ -1,7 +1,7 @@
 #pragma once
 #include "common/stdafx.h"
 #include "ISystem.h"
-#include "entity/InnoMath.h"
+#include "component/InnoMath.h"
 
 class IGuiSystem : public ISystem
 {

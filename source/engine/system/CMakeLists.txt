@@ -1,7 +1,6 @@
 aux_source_directory(. DIR_SRCS)
 add_library(InnoSystem ${DIR_SRCS})
 
-target_link_libraries(InnoSystem InnoEntity)
 target_link_libraries(InnoSystem InnoComponent)
 
 find_library(ASSIMP assimp)

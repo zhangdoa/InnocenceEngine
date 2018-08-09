@@ -1,12 +1,13 @@
 #pragma once
 #include "system/GameSystem.h"
 #include "PlayerCharacter.h"
+#include "component/InnoAllocator.h"
 
 class InnocenceGarden : public GameSystem
 {
 public:
-	InnocenceGarden();
-	~InnocenceGarden();
+	InnocenceGarden() {};
+	~InnocenceGarden() {};
 
 	void setup() override;
 	void initialize() override;
