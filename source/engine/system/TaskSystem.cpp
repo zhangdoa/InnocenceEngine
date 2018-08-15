@@ -2,6 +2,7 @@
 
 void TaskSystem::setup()
 {
+	m_threadPool = g_pMemorySystem->spawn<InnoThreadPool>();
 	m_objectStatus = objectStatus::ALIVE;
 }
 
@@ -12,10 +13,6 @@ void TaskSystem::initialize()
 
 void TaskSystem::update()
 {
-	for (auto i : m_taskQueue)
-	{
-		
-	}
 }
 
 void TaskSystem::shutdown()
@@ -29,11 +26,4 @@ void TaskSystem::shutdown()
 const objectStatus & TaskSystem::getStatus() const
 {
 	return m_objectStatus;
-}
-
-void TaskSystem::addTask(void* task)
-{
-	m_mtx.lock();
-	m_taskQueue.emplace_back(task);
-	m_mtx.unlock();
 }

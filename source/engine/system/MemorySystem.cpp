@@ -57,7 +57,7 @@ void * MemorySystem::allocate(unsigned long size)
 	Chunk* l_suitableChuckPtr = reinterpret_cast<Chunk*>(m_poolMemoryPtr + m_boundCheckSize);
 	while (l_suitableChuckPtr)
 	{
-		if (l_suitableChuckPtr->m_free && l_suitableChuckPtr->m_blockSize - l_requiredSize >= 0) { break; }
+		if (l_suitableChuckPtr->m_free && l_suitableChuckPtr->m_blockSize >= l_requiredSize) { break; }
 		l_suitableChuckPtr = l_suitableChuckPtr->m_next;
 	}
 

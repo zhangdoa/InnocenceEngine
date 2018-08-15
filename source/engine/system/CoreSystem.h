@@ -6,7 +6,7 @@
 
 IMemorySystem* g_pMemorySystem;
 ILogSystem* g_pLogSystem;
-ITaskSystem* g_pTaskSystem;
+INNO_TASK_SYSTEM* g_pTaskSystem;
 ITimeSystem* g_pTimeSystem;
 IGameSystem* g_pGameSystem;
 IAssetSystem* g_pAssetSystem;

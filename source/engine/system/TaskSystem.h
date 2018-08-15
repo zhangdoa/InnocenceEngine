@@ -1,10 +1,10 @@
 #pragma once
-#include <condition_variable>
-#include <thread>
-#include <future>
 #include "interface/ITaskSystem.h"
+#include "interface/IMemorySystem.h"
 #include "interface/ILogSystem.h"
+#include "component/InnoConcurrency.h"
 
+extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;
 
 class TaskSystem : public ITaskSystem
@@ -19,13 +19,15 @@ public:
 	void shutdown() override;
 	const objectStatus& getStatus() const override;
 
-	void addTask(void* task) override;
+	template <typename Func, typename... Args>
+	auto submit(Func&& func, Args&&... args)
+	{
+		return m_threadPool->submit(std::forward<Func>(func), std::forward<Args>(args)...);
+	}
 
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	std::mutex m_mtx;
-	std::condition_variable m_cv;
-	std::vector<void*> m_taskQueue;
+	InnoThreadPool* m_threadPool;
 };
 

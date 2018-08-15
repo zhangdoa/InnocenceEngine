@@ -57,11 +57,12 @@ void CoreSystem::update()
 {
 	// time System should update without any limitation.
 	g_pTimeSystem->update();
-
+	g_pTaskSystem->submit([this]() {taskTest(); });
 	// async game simulation
-	std::async(&IGameSystem::update, g_pGameSystem);
+	std::async(std::launch::async, &IGameSystem::update, g_pGameSystem);
 	//// sync game simulation
 	//g_pGameSystem->update();
+
 	if (g_pVisionSystem->getStatus() == objectStatus::ALIVE)
 	{
 		if (g_pGameSystem->needRender())
@@ -103,5 +104,4 @@ const objectStatus & CoreSystem::getStatus() const
 
 void CoreSystem::taskTest()
 {
-	g_pLogSystem->printLog("task");
 }
