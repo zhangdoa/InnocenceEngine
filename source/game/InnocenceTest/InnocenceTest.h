@@ -1,6 +1,6 @@
 #pragma once
-#include "interface/IGame.h"
-#include "component/BaseEntity.h"
+#include "system/GameSystem.h"
+#include "component/InnoAllocator.h"
 
 #include "interface/ILogSystem.h"
 #include "interface/IMemorySystem.h"
@@ -8,11 +8,11 @@
 extern ILogSystem* g_pLogSystem;
 extern IMemorySystem* g_pMemorySystem;
 
-class InnocenceTest : public IGame
+class InnocenceTest : public GameSystem
 {
 public:
-	InnocenceTest();
-	~InnocenceTest();
+	InnocenceTest() {};
+	~InnocenceTest() {};
 
 	void setup() override;
 	void initialize() override;
@@ -32,8 +32,8 @@ private:
 
 	void testMath();
 	void testMemory();
-
-	BaseEntity m_rootEntity;
+	void testConcurrency();
+	void testContainer();
 
 	std::vector<TransformComponent*> m_transformComponents;
 	std::vector<CameraComponent*> m_cameraComponents;
@@ -41,6 +41,3 @@ private:
 	std::vector<LightComponent*> m_lightComponents;
 	std::vector<VisibleComponent*> m_visibleComponents;
 };
-
-InnocenceTest g_game;
-IGame* g_pGame = &g_game;

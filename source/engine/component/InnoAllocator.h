@@ -23,7 +23,7 @@ public:
 
 	pointer allocate(size_type n, innoAllocator<void>::const_pointer hint = 0)
 	{
-		return g_pMemorySystem->spawn<T>();
+		return g_pMemorySystem->spawn<T>(n);
 	}
 
 	void deallocate(pointer p, unsigned n)
@@ -40,10 +40,5 @@ public:
 	{
 		return !operator==(rhs);
 	}
-};
-
-template<class _Ty, class _Ax = innoAllocator<_Ty> >
-class innoList : public std::list<_Ty, _Ax>
-{
 };
 

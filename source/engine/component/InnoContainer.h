@@ -7,6 +7,8 @@
 #include <queue>
 #include <utility>
 
+#include "component/InnoAllocator.h"
+
 template <typename T>
 class ThreadSafeQueue
 {
@@ -88,3 +90,12 @@ private:
 	std::condition_variable m_condition;
 };
 
+template<class _Ty, class _Ax = innoAllocator<_Ty> >
+class innoList : public std::list<_Ty, _Ax>
+{
+};
+
+template<class _Ty, class _Ax = innoAllocator<_Ty> >
+class innoVector : public std::vector<_Ty, _Ax>
+{
+};

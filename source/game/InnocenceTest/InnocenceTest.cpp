@@ -1,34 +1,26 @@
 #include "InnocenceTest.h"
 
-
-InnocenceTest::InnocenceTest()
-{
-}
-
-
-InnocenceTest::~InnocenceTest()
-{
-}
-
 void InnocenceTest::setup()
 {
-	m_rootEntity.setup();
+		GameSystem::setup();
+		addComponentsToMap();
+		testContainer();
+		m_objectStatus = objectStatus::ALIVE;
 }
 
 void InnocenceTest::initialize()
 {
-	m_rootEntity.initialize();
-	testMath();
-	g_pMemorySystem->dumpToFile(false);
+	GameSystem::initialize();
 }
 
 void InnocenceTest::update()
 {
+	GameSystem::update();
 }
 
 void InnocenceTest::shutdown()
 {
-	m_rootEntity.shutdown();
+	GameSystem::shutdown();
 }
 
 const objectStatus & InnocenceTest::getStatus() const
@@ -68,16 +60,28 @@ std::vector<VisibleComponent*>& InnocenceTest::getVisibleComponents()
 
 void InnocenceTest::testMath()
 {
-	//innoVector<int> l_innoVectorTest;
-	//for (int i = 0; i < 10; i++)
-	//{
-	//	l_innoVectorTest.push_back(i);
-	//	g_pLogSystem->printLog(l_innoVectorTest.size());
-	//}
 	auto t = g_pMemorySystem->spawn<TransformComponent>();
 }
 
 void InnocenceTest::testMemory()
 {
+}
 
+void InnocenceTest::testConcurrency()
+{
+}
+
+void InnocenceTest::testContainer()
+{
+	innoVector<int> l_innoVectorTest;
+	for (int i = 0; i < 2048; i++)
+	{
+		l_innoVectorTest.push_back(i);
+	}
+	g_pLogSystem->printLog(l_innoVectorTest.size());
+	for (int i = 0; i < l_innoVectorTest.size(); i++)
+	{
+		l_innoVectorTest.pop_back();
+	}
+	g_pLogSystem->printLog(l_innoVectorTest.size());
 }

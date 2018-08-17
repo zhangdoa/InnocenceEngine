@@ -12,6 +12,11 @@ public:
 		return new(allocate(sizeof(T))) T();
 	};
 
+	template <typename T> T * spawn(size_t n)
+	{
+		return reinterpret_cast<T *>(allocate(n * sizeof(T)));
+	};
+
 	template <typename T> void destroy(T *p)
 	{
 		reinterpret_cast<T *>(p)->~T();
