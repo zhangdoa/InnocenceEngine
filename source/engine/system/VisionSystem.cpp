@@ -101,7 +101,7 @@ inline void VisionSystem::setupGui()
 	//ImGui::StyleColorsClassic();
 
 	// Load Fonts
-	io.Fonts->AddFontFromFileTTF("../res/fonts/FreeSans.otf", 16.0f);
+	io.Fonts->AddFontFromFileTTF("..//res//fonts//FreeSans.otf", 16.0f);
 }
 
 void VisionSystem::initialize()

@@ -35,7 +35,7 @@ public:
 	std::unordered_map<std::string, modelMap> m_loadedModelMap;
 	std::unordered_map<std::string, texturePair> m_loadedTextureMap;
 
-    const std::string m_textureRelativePath = std::string{"../res/textures/"};
-    const std::string m_modelRelativePath = std::string{"../res/models/"};
-    const std::string m_shaderRelativePath = std::string{"../res/shaders/"};
+    const std::string m_textureRelativePath = std::string{"..//res//textures//"};
+    const std::string m_modelRelativePath = std::string{"..//res//models//"};
+    const std::string m_shaderRelativePath = std::string{"../res//shaders//"};
 };

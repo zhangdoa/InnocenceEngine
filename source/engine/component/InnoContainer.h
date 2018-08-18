@@ -90,6 +90,7 @@ private:
 	std::condition_variable m_condition;
 };
 
+#ifdef INNO_PLATFORM_WIN64
 template<class _Ty, class _Ax = innoAllocator<_Ty> >
 class innoList : public std::list<_Ty, _Ax>
 {
@@ -99,3 +100,4 @@ template<class _Ty, class _Ax = innoAllocator<_Ty> >
 class innoVector : public std::vector<_Ty, _Ax>
 {
 };
+#endif

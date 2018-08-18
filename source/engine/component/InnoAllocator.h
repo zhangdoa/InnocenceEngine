@@ -21,7 +21,7 @@ public:
 	template <class U> struct rebind { typedef innoAllocator<U> other; };
 	template <class U> innoAllocator(const innoAllocator<U>&) {}
 
-	pointer allocate(size_type n, innoAllocator<void>::const_pointer hint = 0)
+	pointer allocate(size_type n, const_pointer hint = 0)
 	{
 		return g_pMemorySystem->spawn<T>(n);
 	}

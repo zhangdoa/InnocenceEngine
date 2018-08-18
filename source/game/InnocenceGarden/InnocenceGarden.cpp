@@ -34,7 +34,7 @@ void InnocenceGarden::setup()
 	m_skyboxVisibleComponent->m_visiblilityType = visiblilityType::SKYBOX;
 	m_skyboxVisibleComponent->m_meshShapeType = meshShapeType::CUBE;
 	m_skyboxVisibleComponent->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	m_skyboxVisibleComponent->m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl/Playa_Sunrise.hdr"));
+	m_skyboxVisibleComponent->m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl//Playa_Sunrise.hdr"));
 
 	m_skyboxEntity = createEntityID();
 	m_skyboxTransformComponent->setParentEntity(m_skyboxEntity);
@@ -115,12 +115,12 @@ void InnocenceGarden::setup()
 	m_pawnVisibleComponent2->m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::CUSTOM;
 	m_pawnVisibleComponent2->m_drawAABB = true;
-	m_pawnVisibleComponent2->m_modelFileName = "lantern/lantern.obj";
-	m_pawnVisibleComponent2->m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "lantern/lantern_Normal_OpenGL.jpg"));
-	m_pawnVisibleComponent2->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lantern/lantern_Base_Color.jpg"));
-	m_pawnVisibleComponent2->m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "lantern/lantern_Metallic.jpg"));
-	m_pawnVisibleComponent2->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "lantern/lantern_Roughness.jpg"));
-	m_pawnVisibleComponent2->m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "lantern/lantern_Mixed_AO.jpg"));
+	m_pawnVisibleComponent2->m_modelFileName = "lantern//lantern.obj";
+	m_pawnVisibleComponent2->m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "lantern//lantern_Normal_OpenGL.jpg"));
+	m_pawnVisibleComponent2->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "lantern//lantern_Base_Color.jpg"));
+	m_pawnVisibleComponent2->m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "lantern//lantern_Metallic.jpg"));
+	m_pawnVisibleComponent2->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "lantern//lantern_Roughness.jpg"));
+	m_pawnVisibleComponent2->m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "lantern//lantern_Mixed_AO.jpg"));
 
 	m_pawnEntity2 = createEntityID();
 	m_pawnTransformComponent2->setParentEntity(m_pawnEntity2);
@@ -138,7 +138,7 @@ void InnocenceGarden::setup()
 }
 
 void InnocenceGarden::initialize()
-{	
+{
 	GameSystem::initialize();
 }
 
@@ -151,7 +151,7 @@ void InnocenceGarden::update()
 }
 
 void InnocenceGarden::shutdown()
-{	
+{
 	GameSystem::shutdown();
 	m_objectStatus = objectStatus::SHUTDOWN;
 }
@@ -164,7 +164,11 @@ const objectStatus & InnocenceGarden::getStatus() const
 
 std::string InnocenceGarden::getGameName() const
 {
+#ifdef INNO_PLATFORM_WIN64
 	return std::string{ typeid(*this).name() }.substr(std::string{ typeid(*this).name() }.find("class"), std::string::npos);
+#else
+    return std::string("GameNameWIP");
+#endif // INNO_PLATFORM_WIN64
 }
 
 std::vector<TransformComponent*>& InnocenceGarden::getTransformComponents()
@@ -211,7 +215,7 @@ void InnocenceGarden::setupSpheres()
 		m_sphereVisibleComponents[i]->m_visiblilityType = visiblilityType::STATIC_MESH;
 		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::CUSTOM;
 		m_sphereVisibleComponents[i]->m_drawAABB = true;
-		m_sphereVisibleComponents[i]->m_modelFileName = "Orb/Orb.obj";
+		m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 		m_sphereVisibleComponents[i]->m_useTexture = false;
 
 		m_sphereEntitys[i] = createEntityID();
@@ -256,7 +260,7 @@ void InnocenceGarden::setupSpheres()
 			m_sphereTransformComponents[i * sphereMatrixDim + j]->m_transform.setLocalPos(vec4((-(sphereMatrixDim - 1.0) * sphereBreadthInterval / 2.0) + (i * sphereBreadthInterval), 0.0, (j * sphereBreadthInterval) - 2.0 * (sphereMatrixDim - 1), 1.0));
 			m_sphereVisibleComponents[i * sphereMatrixDim + j]->m_MRA = vec4((double)(i) / (double)(sphereMatrixDim), (double)(j) / (double)(sphereMatrixDim), 1.0, 1.0);
 		}
-	}	
+	}
 }
 
 void InnocenceGarden::setupLights()
