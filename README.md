@@ -10,6 +10,33 @@
 > "A poet once said, 'The whole universe is in a glass of wine.'"
 > -- Richard Feynman, 1963
 
+## How to build
+
+Currently avaliable platforms:
+
+### Windows:
+
+Windows 10 version 1803:
+
+Prerequisites: Visual Studio 2017 + CMake 3.10 or higher
+
+Run buildWin64VS15.bat or buildWin32VS15.bat to generate project and build, then run postBuildWin64.bat or postBuildWin32.bat to copy the resources files and dynamic libs for debug usage.
+
+### Linux:
+
+Ubuntu 18.04 LTS:
+
+Prerequisites: CMake 3.10 or higher + OpenGL library(lGL) + GLFW3 library(lglfw3)
+
+Run buildLinux64.sh to generate makefiles or buildLinux64-CodeBlocks.sh to get CodeBlocks IDE project, then manually make and build.
+
+### Mac OSX:
+
+version 10.13.6:
+
+Prerequisites: CMake 3.10 or higher + XCode 9.4.1 or higher
+
+Run buildMac64-XCode.sh to generate XCode projects and then manually build.
 
 ## Features
 
