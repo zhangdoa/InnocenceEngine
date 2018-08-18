@@ -260,7 +260,7 @@ void VisionSystem::updateRendering()
 
 void VisionSystem::updateGui()
 {
-	auto l_renderTargetSize = ImVec2(RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	auto l_renderTargetSize = ImVec2((float)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (float)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 #ifdef BUILD_EDITOR
 	#ifndef INNO_PLATFORM_LINUX64
 	const char* items[] = { "Final Pass", "Light Pass", "Geometry Pass", "Shadow Pass" };
@@ -380,7 +380,7 @@ ImGui_ImplGlfwGL3_NewFrame();
 	ImGui::Begin("Window", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Image(ImTextureID((GLuint64)FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 	ImGui::End();
-	glViewport(0, 0, m_screenResolution.x, m_screenResolution.y);
+	glViewport(0, 0, (GLsizei)m_screenResolution.x, (GLsizei)m_screenResolution.y);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui::Render();

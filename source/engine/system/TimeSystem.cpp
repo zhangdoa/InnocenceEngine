@@ -110,12 +110,12 @@ const time_t TimeSystem::getGameStartTime() const
 	return m_gameStartTime;
 }
 
-const double TimeSystem::getDeltaTime() const
+const long long TimeSystem::getDeltaTime() const
 {
 	return m_deltaTime;
 }
 
-const double TimeSystem::getcurrentTime() const
+const long long TimeSystem::getcurrentTime() const
 {
 	return (std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1));
 }
