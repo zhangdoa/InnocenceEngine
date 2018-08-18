@@ -98,9 +98,9 @@ MeshDataComponent * AssetSystem::getDefaultMesh(meshShapeType meshShapeType)
 	case meshShapeType::SPHERE:
 		return this->getMesh(m_AssetSystemSingletonComponent->m_UnitSphereTemplate); break;
 	case meshShapeType::CUSTOM:
-		break;
+		return nullptr; break;
 	default:
-		break;
+		return nullptr; break;
 	}
 }
 
@@ -109,7 +109,7 @@ TextureDataComponent * AssetSystem::getDefaultTexture(textureType textureType)
 	switch (textureType)
 	{
 	case textureType::INVISIBLE:
-		break;
+		return nullptr; break;
 	case textureType::NORMAL:
 		return this->getTexture(m_AssetSystemSingletonComponent->m_basicNormalTemplate); break;
 	case textureType::ALBEDO:
@@ -121,21 +121,21 @@ TextureDataComponent * AssetSystem::getDefaultTexture(textureType textureType)
 	case textureType::AMBIENT_OCCLUSION:
 		return this->getTexture(m_AssetSystemSingletonComponent->m_basicAOTemplate); break;
 	case textureType::CUBEMAP:
-		break;
+		return nullptr; break;
 	case textureType::ENVIRONMENT_CAPTURE:
-		break;
+		return nullptr; break;
 	case textureType::ENVIRONMENT_CONVOLUTION:
-		break;
+		return nullptr; break;
 	case textureType::ENVIRONMENT_PREFILTER:
-		break;
+		return nullptr; break;
 	case textureType::EQUIRETANGULAR:
-		break;
+		return nullptr; break;
 	case textureType::RENDER_BUFFER_SAMPLER:
-		break;
+		return nullptr; break;
 	case textureType::SHADOWMAP:
-		break;
+		return nullptr; break;
 	default:
-		break;
+		return nullptr; break;
 	}
 }
 
