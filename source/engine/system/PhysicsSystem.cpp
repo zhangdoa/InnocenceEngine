@@ -208,7 +208,7 @@ void PhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 
 	std::vector<vec4> l_cornerVertices;
 
-	for (auto& l_graphicData : visibleComponent.getModelMap())
+	for (auto& l_graphicData : visibleComponent.m_modelMap)
 	{
 		// get corner vertices from sub meshes
 		l_cornerVertices.emplace_back(g_pAssetSystem->findMaxVertex(l_graphicData.first));

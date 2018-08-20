@@ -19,16 +19,9 @@ void PlayerCharacter::setup()
 	f_moveBackward = std::bind(&PlayerCharacter::moveBackward, this);
 	f_moveLeft = std::bind(&PlayerCharacter::moveLeft, this);
 	f_moveRight = std::bind(&PlayerCharacter::moveRight, this);
-	
-	m_inputComponent.registerKeyboardInputCallback(INNO_KEY_S, &f_moveForward);
-	m_inputComponent.registerKeyboardInputCallback(INNO_KEY_W, &f_moveBackward);
-	m_inputComponent.registerKeyboardInputCallback(INNO_KEY_A, &f_moveLeft);
-	m_inputComponent.registerKeyboardInputCallback(INNO_KEY_D, &f_moveRight);
 
 	f_rotateAroundPositiveYAxis = std::bind(&PlayerCharacter::rotateAroundPositiveYAxis, this, std::placeholders::_1);
 	f_rotateAroundRightAxis = std::bind(&PlayerCharacter::rotateAroundRightAxis, this, std::placeholders::_1);
-	m_inputComponent.registerMouseInputCallback(0, &f_rotateAroundPositiveYAxis);
-	m_inputComponent.registerMouseInputCallback(1, &f_rotateAroundRightAxis);
 }
 
 TransformComponent & PlayerCharacter::getTransformComponent()

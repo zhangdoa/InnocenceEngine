@@ -19,6 +19,12 @@ void InnocenceGarden::setup()
 	//m_playCharacter.getTransformComponent().m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
 	m_playerCharacterComponent->getCameraComponent().m_drawFrustum = false;
 	m_playerCharacterComponent->getCameraComponent().m_drawAABB = false;
+	registerKeyboardInputCallback(&m_playerCharacterComponent->getInputComponent(), INNO_KEY_S, &m_playerCharacterComponent->f_moveForward);
+	registerKeyboardInputCallback(&m_playerCharacterComponent->getInputComponent(), INNO_KEY_W, &m_playerCharacterComponent->f_moveBackward);
+	registerKeyboardInputCallback(&m_playerCharacterComponent->getInputComponent(), INNO_KEY_A, &m_playerCharacterComponent->f_moveLeft);
+	registerKeyboardInputCallback(&m_playerCharacterComponent->getInputComponent(), INNO_KEY_D, &m_playerCharacterComponent->f_moveRight);
+	registerMouseInputCallback(&m_playerCharacterComponent->getInputComponent(), 0, &m_playerCharacterComponent->f_rotateAroundPositiveYAxis);
+	registerMouseInputCallback(&m_playerCharacterComponent->getInputComponent(), 1, &m_playerCharacterComponent->f_rotateAroundRightAxis);
 
 	m_transformComponents.emplace_back(&m_playerCharacterComponent->getTransformComponent());
 	m_cameraComponents.emplace_back(&m_playerCharacterComponent->getCameraComponent());

@@ -256,18 +256,18 @@ void AssetSystem::assignUnitMesh(meshShapeType meshType, VisibleComponent & visi
 	case meshShapeType::CUBE: l_UnitMeshTemplate = m_AssetSystemSingletonComponent->m_UnitCubeTemplate; break;
 	case meshShapeType::SPHERE: l_UnitMeshTemplate = m_AssetSystemSingletonComponent->m_UnitSphereTemplate; break;
 	}
-	visibleComponent.addMeshData(l_UnitMeshTemplate);
+	g_pGameSystem->addMeshData(&visibleComponent, l_UnitMeshTemplate);
 }
 
 void AssetSystem::assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedtexturePair, VisibleComponent & visibleComponent)
 {
 	if (textureAssignType == textureAssignType::ADD)
 	{
-		visibleComponent.addTextureData(loadedtexturePair);
+		g_pGameSystem->addTextureData(&visibleComponent, loadedtexturePair);
 	}
 	else if (textureAssignType == textureAssignType::OVERWRITE)
 	{
-		visibleComponent.overwriteTextureData(loadedtexturePair);
+		g_pGameSystem->overwriteTextureData(&visibleComponent, loadedtexturePair);
 	}
 }
 
@@ -285,7 +285,7 @@ void AssetSystem::assignDefaultTextures(textureAssignType textureAssignType, Vis
 
 void AssetSystem::assignLoadedModel(modelMap& loadedmodelMap, VisibleComponent & visibleComponent)
 {
-	visibleComponent.setModelMap(loadedmodelMap);
+	visibleComponent.m_modelMap = loadedmodelMap;
 	assignDefaultTextures(textureAssignType::ADD, visibleComponent);
 }
 

@@ -1332,7 +1332,7 @@ void GLRenderingSystem::initializeGraphicPrimtivesOfComponents()
 	}
 	for (auto& l_visibleComponent : g_pGameSystem->getVisibleComponents())
 	{
-		for (auto& l_graphicData : l_visibleComponent->getModelMap())
+		for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 		{
 			if (RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.find(l_graphicData.first) == RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.end())
 			{
@@ -1627,7 +1627,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 		{
 			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
 			{
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
+				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 				{
 					// activate equiretangular texture and remap equiretangular texture to cubemap
 					auto l_equiretangularTexture = g_pAssetSystem->getTexture(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);
@@ -1663,7 +1663,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 		{
 			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
 			{
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
+				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 				{
 					auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
 					auto l_environmentConvolutionTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture;
@@ -1698,7 +1698,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 		{
 			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
 			{
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
+				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 				{
 					auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
 					auto l_environmentPrefilterTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture;
@@ -1772,7 +1772,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 				glUseProgram(ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram.m_program);
 				updateUniform(
 					ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_p,
-					l_lightComponent->getProjectionMatrix((unsigned int)i));
+					g_pGameSystem->getProjectionMatrix(l_lightComponent, (unsigned int)i));					
 				updateUniform(
 					ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_v,
 					g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.getInvertGlobalRotMatrix());
@@ -1787,7 +1787,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 							g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
 
 						// draw each graphic data of visibleComponent
-						for (auto& l_graphicData : l_visibleComponent->getModelMap())
+						for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 						{
 							// draw meshes
 							auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
@@ -1866,13 +1866,13 @@ void GLRenderingSystem::updateGeometryRenderPass()
 				if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
 				{
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_0,
-						l_lightComponent->getProjectionMatrix(0));
+						g_pGameSystem->getProjectionMatrix(l_lightComponent, 0));
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_1,
-						l_lightComponent->getProjectionMatrix(1));
+						g_pGameSystem->getProjectionMatrix(l_lightComponent, 1));
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_2,
-						l_lightComponent->getProjectionMatrix(2));
+						g_pGameSystem->getProjectionMatrix(l_lightComponent, 2));
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3,
-						l_lightComponent->getProjectionMatrix(3));
+						g_pGameSystem->getProjectionMatrix(l_lightComponent, 3));
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light,
 						g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.getInvertGlobalRotMatrix());
 
@@ -1888,7 +1888,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 								g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
 
 							// draw each graphic data of visibleComponent
-							for (auto& l_graphicData : l_visibleComponent->getModelMap())
+							for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 							{
 								//active and bind textures
 								// is there any texture?
@@ -1949,7 +1949,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 								g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
 
 							// draw each graphic data of visibleComponent
-							for (auto& l_graphicData : l_visibleComponent->getModelMap())
+							for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 							{
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture, l_visibleComponent->m_useTexture);
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
@@ -1984,7 +1984,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 					g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
 
 				// draw each graphic data of visibleComponent
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
+				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 				{
 					//active and bind textures
 					// is there any texture?
@@ -2176,7 +2176,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 			{
 				if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
 				{
-					for (auto& l_graphicData : l_visibleComponent->getModelMap())
+					for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 					{
 						// use environment pass capture texture as skybox cubemap
 						auto l_skyboxTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
@@ -2375,7 +2375,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 						(9.0 / 16.0), 1.0);
 				}
 				// draw each graphic data of visibleComponent
-				for (auto& l_graphicData : l_visibleComponent->getModelMap())
+				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 				{
 					//active and bind textures
 					// is there any texture?
@@ -2497,7 +2497,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//				FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
 	//				l_m);
 	//			// draw each graphic data of visibleComponent
-	//			for (auto& l_graphicData : l_visibleComponent->getModelMap())
+	//			for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 	//			{
 	//				//active and bind textures
 	//				// is there any texture?

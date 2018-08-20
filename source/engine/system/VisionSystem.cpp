@@ -75,9 +75,11 @@ void VisionSystem::setupRendering()
 			}
 		}
 	}
+
 #ifdef INNO_RENDERER_OPENGL
 	m_RenderingSystem = g_pMemorySystem->spawn<GLRenderingSystem>();
 #elif INNO_RENDERER_DX
+	m_RenderingSystem = g_pMemorySystem->spawn<DXRenderingSystem>();
 #elif INNO_RENDERER_VULKAN
 #elif INNO_RENDERER_METAL
 #endif
@@ -127,8 +129,8 @@ void VisionSystem::initializeInput()
 	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
 	{
 		// @TODO: multi input components need to register to multi map
-		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->getKeyboardInputCallbackContainer());
-		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->getMouseInputCallbackContainer());
+		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->m_keyboardInputCallbackImpl);
+		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->m_mouseMovementCallbackImpl);
 	}
 
 	// @TODO: debt I owe

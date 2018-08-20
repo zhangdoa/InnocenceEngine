@@ -13,15 +13,23 @@ public:
 	void setup();
 
 	TransformComponent& getTransformComponent();
+	VisibleComponent& getVisibleComponent();
 	CameraComponent& getCameraComponent();
 	InputComponent& getInputComponent();
-	VisibleComponent& getVisibleComponent();
+
+	std::function<void()> f_moveForward;
+	std::function<void()> f_moveBackward;
+	std::function<void()> f_moveLeft;
+	std::function<void()> f_moveRight;
+
+	std::function<void(double)> f_rotateAroundPositiveYAxis;
+	std::function<void(double)> f_rotateAroundRightAxis;
 
 private:
 	TransformComponent m_transformComponent;
+	VisibleComponent m_visibleComponent;
 	InputComponent m_inputComponent;
 	CameraComponent m_cameraComponent;
-	VisibleComponent m_visibleComponent;
 
 	double m_moveSpeed;
 	double m_rotateSpeed;
@@ -32,15 +40,8 @@ private:
 	void moveBackward();
 	void moveLeft();
 	void moveRight();
-	std::function<void()> f_moveForward;
-	std::function<void()> f_moveBackward;
-	std::function<void()> f_moveLeft;
-	std::function<void()> f_moveRight;
 
 	void rotateAroundPositiveYAxis(double offset);
 	void rotateAroundRightAxis(double offset);
-
-	std::function<void(double)> f_rotateAroundPositiveYAxis;
-	std::function<void(double)> f_rotateAroundRightAxis;
 };
 

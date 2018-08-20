@@ -27,7 +27,12 @@ public:
 	std::vector<InputComponent*>& getInputComponents() override;
 
 	TransformComponent* getTransformComponent(EntityID parentEntity) override;
-
+	void addMeshData(VisibleComponent* visibleComponentconst, meshID & meshID) override;
+	void addTextureData(VisibleComponent* visibleComponentconst, const texturePair & texturePair) override;
+	void overwriteTextureData(VisibleComponent* visibleComponentconst, const texturePair & texturePair) override;
+	mat4 getProjectionMatrix(LightComponent* lightComponent, unsigned int cascadedLevel) override;
+	void registerKeyboardInputCallback(InputComponent* inputComponent, int keyCode, std::function<void()>* function) override;
+	void registerMouseInputCallback(InputComponent* inputComponent, int mouseCode, std::function<void(double)>* function) override;
 	bool needRender() override;
 	EntityID createEntityID() override;
 

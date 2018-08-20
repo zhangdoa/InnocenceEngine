@@ -18,8 +18,6 @@ public:
 		m_drawAABB(false) {};
 	~LightComponent() {};
 
-	mat4 getProjectionMatrix(unsigned int cascadedLevel) const;
-
 	lightType m_lightType;
 	vec4 m_direction;
 

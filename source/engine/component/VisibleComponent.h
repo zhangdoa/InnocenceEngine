@@ -24,13 +24,6 @@ public:
 	std::string m_modelFileName;
 	textureFileNameMap m_textureFileNameMap;
 
-	const modelMap& getModelMap() const;
-	void setModelMap(const modelMap & modelMap);
-	void addMeshData(const meshID & meshID);
-	void addTextureData(const texturePair & texturePair);
-	void overwriteTextureData(const texturePair & texturePair);
-
-private:
 	modelMap m_modelMap;
 };
 
