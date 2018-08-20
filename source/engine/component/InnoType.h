@@ -53,6 +53,18 @@ using textureFileNamePair = std::pair<textureType, std::string>;
 using textureFileNameMap = std::unordered_map<textureType, std::string>;
 #endif
 
+enum class keyPressType { CONTINUOUS, ONCE };
+
+class keyButton
+{
+public:
+	keyButton() {};
+	~keyButton() {};
+
+	keyPressType m_keyPressType = keyPressType::CONTINUOUS;
+	bool m_allowCallback = true;
+};
+
 #define INNO_KEY_SPACE              32
 #define INNO_KEY_APOSTROPHE         39  /* ' */
 #define INNO_KEY_COMMA              44  /* , */
