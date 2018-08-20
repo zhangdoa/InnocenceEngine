@@ -13,8 +13,8 @@ option (INNO_PLATFORM_WIN64 "Windows x86-64 64-bit" ON)
 option (INNO_PLATFORM_LINUX64 "Linux x86-64 64-bit" OFF)
 option (INNO_PLATFORM_MACOS "MAC x86-64 64-bit" OFF)
 
-option (INNO_RENDERER_OPENGL "OpenGL renderer for Multi-Platforms" ON)
-option (INNO_RENDERER_DX "DirectX renderer for Windows OS only" OFF)
+option (INNO_RENDERER_OPENGL "OpenGL renderer for Multi-Platforms" OFF)
+option (INNO_RENDERER_DX "DirectX renderer for Windows OS only" ON)
 option (INNO_RENDERER_VULKAN "Vulkan renderer for Multi-Platforms" OFF)
 option (INNO_RENDERER_METAL "Metal renderer for MacOS and iOS only" OFF)
 

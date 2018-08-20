@@ -6,8 +6,8 @@
 /* #undef INNO_PLATFORM_LINUX64 */
 /* #undef INNO_PLATFORM_MACOS */
 
-#define INNO_RENDERER_OPENGL
-/* #undef INNO_RENDERER_DX */
+/* #undef INNO_RENDERER_OPENGL */
+#define INNO_RENDERER_DX
 /* #undef INNO_RENDERER_VULKAN */
 /* #undef INNO_RENDERER_METAL */
 

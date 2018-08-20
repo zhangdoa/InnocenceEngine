@@ -10,11 +10,13 @@
 #include "common/ComponentHeaders.h"
 
 #include "GLWindowSystem.h"
+#include "DXWindowSystem.h"
 
 #include "GLRenderingSystem.h"
 #include "DXRenderingSystem.h"
 
 #include "GLGuiSystem.h"
+#include "DXGuiSystem.h"
 
 extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;

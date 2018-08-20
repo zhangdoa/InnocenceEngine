@@ -11,12 +11,12 @@ void VisionSystem::setup()
 
 void VisionSystem::setupWindow()
 {
-#ifdef INNO_RENDERER_OPENGL
+#if defined (INNO_RENDERER_OPENGL)
 	m_WindowSystem = g_pMemorySystem->spawn<GLWindowSystem>();
-#elif INNO_RENDERER_DX
+#elif defined (INNO_RENDERER_DX)
 	m_WindowSystem = g_pMemorySystem->spawn<DXWindowSystem>();
-#elif INNO_RENDERER_VULKAN
-#elif INNO_RENDERER_METAL
+#elif defined (INNO_RENDERER_VULKAN)
+#elif defined (INNO_RENDERER_METAL)
 #endif
 	m_WindowSystem->setup();
 }
@@ -39,12 +39,12 @@ void VisionSystem::setupRendering()
 		}
 	}
 
-#ifdef INNO_RENDERER_OPENGL
+#if defined (INNO_RENDERER_OPENGL)
 	m_RenderingSystem = g_pMemorySystem->spawn<GLRenderingSystem>();
-#elif INNO_RENDERER_DX
+#elif defined (INNO_RENDERER_DX)
 	m_RenderingSystem = g_pMemorySystem->spawn<DXRenderingSystem>();
-#elif INNO_RENDERER_VULKAN
-#elif INNO_RENDERER_METAL
+#elif defined (INNO_RENDERER_VULKAN)
+#elif defined (INNO_RENDERER_METAL)
 #endif
 	m_RenderingSystem->setup();
 
@@ -53,12 +53,12 @@ void VisionSystem::setupRendering()
 
 inline void VisionSystem::setupGui()
 {
-#ifdef INNO_RENDERER_OPENGL
+#if defined (INNO_RENDERER_OPENGL)
 	m_GuiSystem = g_pMemorySystem->spawn<GLGuiSystem>();
-#elif INNO_RENDERER_DX
+#elif defined (INNO_RENDERER_DX)
 	m_GuiSystem = g_pMemorySystem->spawn<DXGuiSystem>();
-#elif INNO_RENDERER_VULKAN
-#elif INNO_RENDERER_METAL
+#elif defined (INNO_RENDERER_VULKAN)
+#elif defined (INNO_RENDERER_METAL)
 #endif
 	m_GuiSystem->setup();
 }
