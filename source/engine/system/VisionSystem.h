@@ -9,14 +9,15 @@
 
 #include "common/ComponentHeaders.h"
 
-#include "GLWindowSystem.h"
+#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
 #include "DXWindowSystem.h"
-
-#include "GLRenderingSystem.h"
 #include "DXRenderingSystem.h"
-
-#include "GLGuiSystem.h"
 #include "DXGuiSystem.h"
+#else
+#include "GLWindowSystem.h"
+#include "GLRenderingSystem.h"
+#include "GLGuiSystem.h"
+#endif
 
 extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;
@@ -29,7 +30,12 @@ public:
 	VisionSystem() {};
 	~VisionSystem() {};
 
+#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
+	void setup() override {};
+	void setup(void* appInstance, char* commandLineArg, int showMethod) override;
+#else
 	void setup() override;
+#endif
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
@@ -39,7 +45,12 @@ public:
 	const objectStatus& getStatus() const override;
 
 private:
+#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
+	void setupWindow(void* appInstance, char* commandLineArg, int showMethod);
+#else
 	void setupWindow();
+#endif
+
 	void setupRendering();
 	void setupGui();
 

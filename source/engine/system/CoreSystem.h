@@ -1,5 +1,4 @@
 #pragma once
-#include "common/config.h"
 #include "interface/ICoreSystem.h"
 
 #include "platform/InnoSystemHeader.h"
@@ -18,7 +17,12 @@ class CoreSystem : public ICoreSystem
 public:
 	CoreSystem() {};
 	~CoreSystem() {};
+#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
+	void setup() override {};
+	void setup(void* appInstance, char* commandLineArg, int showMethod) override;
+#else
 	void setup() override;
+#endif
 	void initialize() override;
 	void update() override;
 	void shutdown() override;

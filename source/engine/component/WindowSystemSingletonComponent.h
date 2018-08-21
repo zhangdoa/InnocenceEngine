@@ -15,8 +15,9 @@ public:
 
 	//window data
 	GLFWwindow* m_window;
-	vec2 m_screenResolution = vec2(1280, 720);
+	vec2 m_windowResolution = vec2(1280, 720);
 	std::string m_windowName;
+	bool m_fullScreen = false;
 
 	//input data
 	const int NUM_KEYCODES = 256;

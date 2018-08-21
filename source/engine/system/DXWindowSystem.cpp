@@ -1,7 +1,52 @@
 #include "DXWindowSystem.h"
 
-void DXWindowSystem::setup()
+void DXWindowSystem::setup(void* appInstance, char* commandLineArg, int showMethod)
 {
+	WNDCLASS wc = {};
+
+	// Get an external pointer to this object.	
+	ApplicationHandle = this;
+
+	// Get the instance of this application.
+	m_hinstance = (HINSTANCE)appInstance;
+
+	// Give the application a name.
+	const wchar_t CLASS_NAME[] = L"Sample Window Class";
+
+	// Setup the windows class with default settings.
+	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+	wc.lpfnWndProc = WindowProc;
+	wc.cbClsExtra = 0;
+	wc.cbWndExtra = 0;
+	wc.hInstance = m_hinstance;
+	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+	wc.lpszClassName = (LPCSTR)CLASS_NAME;
+
+	// Register the window class.
+	RegisterClass(&wc);
+
+	// Determine the resolution of the clients desktop screen.
+	auto l_screenWidth = (int)WindowSystemSingletonComponent::getInstance().m_windowResolution.x;
+	auto l_screenHeight = (int)WindowSystemSingletonComponent::getInstance().m_windowResolution.y;
+
+	auto l_posX = (GetSystemMetrics(SM_CXSCREEN) - l_screenWidth) / 2;
+	auto l_posY = (GetSystemMetrics(SM_CYSCREEN) - l_screenHeight) / 2;
+
+	// Create the window with the screen settings and get the handle to it.
+	m_hwnd = CreateWindowEx(0, (LPCSTR)CLASS_NAME, (LPCSTR)CLASS_NAME,
+		WS_OVERLAPPEDWINDOW,
+		l_posX, l_posY, l_screenWidth, l_screenHeight, NULL, NULL, m_hinstance, NULL);
+
+	// Bring the window up on the screen and set it as main focus.
+	ShowWindow(m_hwnd, showMethod);
+	SetForegroundWindow(m_hwnd);
+	SetFocus(m_hwnd);
+
+	// Hide the mouse cursor.
+	ShowCursor(false);
+
 	m_objectStatus = objectStatus::ALIVE;
 }
 
@@ -10,12 +55,7 @@ void DXWindowSystem::initialize()
 	//initialize window
 
 	//initialize input
-	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
-	{
-		// @TODO: multi input components need to register to multi map
-		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->m_keyboardInputCallbackImpl);
-		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->m_mouseMovementCallbackImpl);
-	}
+	BaseWindowSystem::addInputCallback();
 
 	g_pLogSystem->printLog("DXWindowSystem has been initialized.");
 }
@@ -23,13 +63,58 @@ void DXWindowSystem::initialize()
 void DXWindowSystem::update()
 {
 	//update window
-	
+	MSG msg;
+
+	// Initialize the message structure.
+	ZeroMemory(&msg, sizeof(MSG));
+
+	// Loop until there is a quit message from the window or the user.
+	while (m_objectStatus == objectStatus::ALIVE)
+	{
+		// Handle the windows messages.
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+
+		// If windows signals to end the application then exit out.
+		if (msg.message == WM_QUIT)
+		{
+			m_objectStatus = objectStatus::STANDBY;
+		}
+		else
+		{
+		}
+	}
+
 	//update input
+	updateInput();
 }
 
 void DXWindowSystem::shutdown()
 {
+	// Show the mouse cursor.
+	ShowCursor(true);
+
+	// Fix the display settings if leaving full screen mode.
+	if (WindowSystemSingletonComponent::getInstance().m_fullScreen)
+	{
+		ChangeDisplaySettings(NULL, 0);
+	}
+
+	// Remove the window.
+	DestroyWindow(m_hwnd);
+	m_hwnd = NULL;
+
 	g_pLogSystem->printLog("DXWindowSystem: Window closed.");
+
+	// Remove the application instance.
+	UnregisterClass(m_applicationName, m_hinstance);
+	m_hinstance = NULL;
+
+	// Release the pointer to this class.
+	ApplicationHandle = NULL;
 
 	m_objectStatus = objectStatus::SHUTDOWN;
 	g_pLogSystem->printLog("DXWindowSystem has been shutdown.");
@@ -40,125 +125,56 @@ const objectStatus & DXWindowSystem::getStatus() const
 	return m_objectStatus;
 }
 
-void DXWindowSystem::addKeyboardInputCallback(int keyCode, std::function<void()>* keyboardInputCallback)
-{
-	auto l_keyboardInputCallbackFunctionVector = WindowSystemSingletonComponent::getInstance().m_keyboardInputCallback.find(keyCode);
-	if (l_keyboardInputCallbackFunctionVector != WindowSystemSingletonComponent::getInstance().m_keyboardInputCallback.end())
-	{
-		l_keyboardInputCallbackFunctionVector->second.emplace_back(keyboardInputCallback);
-	}
-	else
-	{
-		WindowSystemSingletonComponent::getInstance().m_keyboardInputCallback.emplace(keyCode, std::vector<std::function<void()>*>{keyboardInputCallback});
-	}
-}
-
-void DXWindowSystem::addKeyboardInputCallback(int keyCode, std::vector<std::function<void()>*>& keyboardInputCallback)
-{
-	for (auto i : keyboardInputCallback)
-	{
-		addKeyboardInputCallback(keyCode, i);
-	}
-}
-
-void DXWindowSystem::addKeyboardInputCallback(std::unordered_map<int, std::vector<std::function<void()>*>>& keyboardInputCallback)
-{
-	for (auto i : keyboardInputCallback)
-	{
-		addKeyboardInputCallback(i.first, i.second);
-	}
-}
-
-void DXWindowSystem::addMouseMovementCallback(int mouseCode, std::function<void(double)>* mouseMovementCallback)
-{
-	auto l_mouseMovementCallbackFunctionVector = WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.find(mouseCode);
-	if (l_mouseMovementCallbackFunctionVector != WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.end())
-	{
-		l_mouseMovementCallbackFunctionVector->second.emplace_back(mouseMovementCallback);
-	}
-	else
-	{
-		WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.emplace(mouseCode, std::vector<std::function<void(double)>*>{mouseMovementCallback});
-	}
-}
-
-void DXWindowSystem::addMouseMovementCallback(int mouseCode, std::vector<std::function<void(double)>*>& mouseMovementCallback)
-{
-	for (auto i : mouseMovementCallback)
-	{
-		addMouseMovementCallback(mouseCode, i);
-	}
-}
-
-void DXWindowSystem::addMouseMovementCallback(std::unordered_map<int, std::vector<std::function<void(double)>*>>& mouseMovementCallback)
-{
-	for (auto i : mouseMovementCallback)
-	{
-		addMouseMovementCallback(i.first, i.second);
-	}
-}
-
-void DXWindowSystem::framebufferSizeCallback(int width, int height)
-{
-	WindowSystemSingletonComponent::getInstance().m_screenResolution.x = width;
-	WindowSystemSingletonComponent::getInstance().m_screenResolution.y = height;
-}
-
-void DXWindowSystem::mousePositionCallback(double mouseXPos, double mouseYPos)
-{
-	WindowSystemSingletonComponent::getInstance().m_mouseXOffset = mouseXPos - WindowSystemSingletonComponent::getInstance().m_mouseLastX;
-	WindowSystemSingletonComponent::getInstance().m_mouseYOffset = WindowSystemSingletonComponent::getInstance().m_mouseLastY - mouseYPos;
-
-	WindowSystemSingletonComponent::getInstance().m_mouseLastX = mouseXPos;
-	WindowSystemSingletonComponent::getInstance().m_mouseLastY = mouseYPos;
-}
-
-void DXWindowSystem::scrollCallback(double xoffset, double yoffset)
-{
-	//@TODO: context based binding
-	if (yoffset >= 0.0)
-	{
-		g_pGameSystem->getCameraComponents()[0]->m_FOV += 1.0;
-	}
-	else
-	{
-		g_pGameSystem->getCameraComponents()[0]->m_FOV -= 1.0;
-	}
-	//g_pPhysicsSystem->setupCameraComponentProjectionMatrix(g_pGameSystem->getCameraComponents()[0]);
-}
-
-vec4 DXWindowSystem::calcMousePositionInWorldSpace()
-{
-	auto l_x = 2.0 * WindowSystemSingletonComponent::getInstance().m_mouseLastX / WindowSystemSingletonComponent::getInstance().m_screenResolution.x - 1.0;
-	auto l_y = 1.0 - 2.0 * WindowSystemSingletonComponent::getInstance().m_mouseLastY / WindowSystemSingletonComponent::getInstance().m_screenResolution.y;
-	auto l_z = -1.0;
-	auto l_w = 1.0;
-	vec4 l_ndcSpace = vec4(l_x, l_y, l_z, l_w);
-
-	auto pCamera = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
-	auto rCamera = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
-	auto tCamera = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
-	//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	l_ndcSpace = l_ndcSpace * pCamera.inverse();
-	l_ndcSpace.z = -1.0;
-	l_ndcSpace.w = 0.0;
-	l_ndcSpace = l_ndcSpace * rCamera.inverse();
-	l_ndcSpace = l_ndcSpace * tCamera.inverse();
-#endif
-	//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-
-	l_ndcSpace = pCamera.inverse() * l_ndcSpace;
-	l_ndcSpace.z = -1.0;
-	l_ndcSpace.w = 0.0;
-	l_ndcSpace = tCamera.inverse() * l_ndcSpace;
-	l_ndcSpace = rCamera.inverse() * l_ndcSpace;
-#endif
-	l_ndcSpace = l_ndcSpace.normalize();
-	return l_ndcSpace;
-}
-
 void DXWindowSystem::swapBuffer()
 {
+}
+
+LRESULT DXWindowSystem::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
+{
+	switch (umsg)
+	{
+	case WM_KEYDOWN:
+	{
+		return 0;
+	}
+
+	// Check if a key has been released on the keyboard.
+	case WM_KEYUP:
+	{
+		return 0;
+	}
+
+	// Any other messages send to the default message handler as our application won't make use of them.
+	default:
+	{
+		return DefWindowProc(hwnd, umsg, wparam, lparam);
+	}
+	}
+}
+
+void DXWindowSystem::updateInput()
+{
+}
+
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+		case WM_DESTROY:
+		{
+			PostQuitMessage(0);
+			return 0;
+		}
+		case WM_PAINT:
+		{
+			PAINTSTRUCT ps;
+			HDC hdc = BeginPaint(hwnd, &ps);
+			FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+			EndPaint(hwnd, &ps);
+		}
+		default:
+		{
+			return ApplicationHandle->MessageHandler(hwnd, uMsg, wParam, lParam);
+		}
+	}
 }

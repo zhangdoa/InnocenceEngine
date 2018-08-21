@@ -17,7 +17,7 @@ void GLWindowSystem::setup()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL
 
 	// Open a window and create its OpenGL context
-	WindowSystemSingletonComponent::getInstance().m_window = glfwCreateWindow((int)WindowSystemSingletonComponent::getInstance().m_screenResolution.x, (int)WindowSystemSingletonComponent::getInstance().m_screenResolution.y, WindowSystemSingletonComponent::getInstance().m_windowName.c_str(), NULL, NULL);
+	WindowSystemSingletonComponent::getInstance().m_window = glfwCreateWindow((int)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (int)WindowSystemSingletonComponent::getInstance().m_windowResolution.y, WindowSystemSingletonComponent::getInstance().m_windowName.c_str(), NULL, NULL);
 	glfwMakeContextCurrent(WindowSystemSingletonComponent::getInstance().m_window);
 	if (WindowSystemSingletonComponent::getInstance().m_window == nullptr) {
 		m_objectStatus = objectStatus::STANDBY;
@@ -35,10 +35,7 @@ void GLWindowSystem::setup()
 	//setup input
 	glfwSetInputMode(WindowSystemSingletonComponent::getInstance().m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
-	for (int i = 0; i < WindowSystemSingletonComponent::getInstance().NUM_KEYCODES; i++)
-	{
-		WindowSystemSingletonComponent::getInstance().m_keyButtonMap.emplace(i, keyButton());
-	}
+	BaseWindowSystem::addInputCallback();
 
 	m_objectStatus = objectStatus::ALIVE;
 }
@@ -163,126 +160,6 @@ void GLWindowSystem::shutdown()
 const objectStatus & GLWindowSystem::getStatus() const
 {
 	return m_objectStatus;
-}
-
-void GLWindowSystem::addKeyboardInputCallback(int keyCode, std::function<void()>* keyboardInputCallback)
-{
-	auto l_keyboardInputCallbackFunctionVector = WindowSystemSingletonComponent::getInstance().m_keyboardInputCallback.find(keyCode);
-	if (l_keyboardInputCallbackFunctionVector != WindowSystemSingletonComponent::getInstance().m_keyboardInputCallback.end())
-	{
-		l_keyboardInputCallbackFunctionVector->second.emplace_back(keyboardInputCallback);
-	}
-	else
-	{
-		WindowSystemSingletonComponent::getInstance().m_keyboardInputCallback.emplace(keyCode, std::vector<std::function<void()>*>{keyboardInputCallback});
-	}
-}
-
-void GLWindowSystem::addKeyboardInputCallback(int keyCode, std::vector<std::function<void()>*>& keyboardInputCallback)
-{
-	for (auto i : keyboardInputCallback)
-	{
-		addKeyboardInputCallback(keyCode, i);
-	}
-}
-
-void GLWindowSystem::addKeyboardInputCallback(std::unordered_map<int, std::vector<std::function<void()>*>>& keyboardInputCallback)
-{
-	for (auto i : keyboardInputCallback)
-	{
-		addKeyboardInputCallback(i.first, i.second);
-	}
-}
-
-void GLWindowSystem::addMouseMovementCallback(int mouseCode, std::function<void(double)>* mouseMovementCallback)
-{
-	auto l_mouseMovementCallbackFunctionVector = WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.find(mouseCode);
-	if (l_mouseMovementCallbackFunctionVector != WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.end())
-	{
-		l_mouseMovementCallbackFunctionVector->second.emplace_back(mouseMovementCallback);
-	}
-	else
-	{
-		WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.emplace(mouseCode, std::vector<std::function<void(double)>*>{mouseMovementCallback});
-	}
-}
-
-void GLWindowSystem::addMouseMovementCallback(int mouseCode, std::vector<std::function<void(double)>*>& mouseMovementCallback)
-{
-	for (auto i : mouseMovementCallback)
-	{
-		addMouseMovementCallback(mouseCode, i);
-	}
-}
-
-void GLWindowSystem::addMouseMovementCallback(std::unordered_map<int, std::vector<std::function<void(double)>*>>& mouseMovementCallback)
-{
-	for (auto i : mouseMovementCallback)
-	{
-		addMouseMovementCallback(i.first, i.second);
-	}
-}
-
-void GLWindowSystem::framebufferSizeCallback(int width, int height)
-{
-	WindowSystemSingletonComponent::getInstance().m_screenResolution.x = width;
-	WindowSystemSingletonComponent::getInstance().m_screenResolution.y = height;
-	glViewport(0, 0, width, height);
-}
-
-void GLWindowSystem::mousePositionCallback(double mouseXPos, double mouseYPos)
-{
-	WindowSystemSingletonComponent::getInstance().m_mouseXOffset = mouseXPos - WindowSystemSingletonComponent::getInstance().m_mouseLastX;
-	WindowSystemSingletonComponent::getInstance().m_mouseYOffset = WindowSystemSingletonComponent::getInstance().m_mouseLastY - mouseYPos;
-
-	WindowSystemSingletonComponent::getInstance().m_mouseLastX = mouseXPos;
-	WindowSystemSingletonComponent::getInstance().m_mouseLastY = mouseYPos;
-}
-
-void GLWindowSystem::scrollCallback(double xoffset, double yoffset)
-{
-	//@TODO: context based binding
-	if (yoffset >= 0.0)
-	{
-		g_pGameSystem->getCameraComponents()[0]->m_FOV += 1.0;
-	}
-	else
-	{
-		g_pGameSystem->getCameraComponents()[0]->m_FOV -= 1.0;
-	}
-	//g_pPhysicsSystem->setupCameraComponentProjectionMatrix(g_pGameSystem->getCameraComponents()[0]);
-}
-
-vec4 GLWindowSystem::calcMousePositionInWorldSpace()
-{
-	auto l_x = 2.0 * WindowSystemSingletonComponent::getInstance().m_mouseLastX / WindowSystemSingletonComponent::getInstance().m_screenResolution.x - 1.0;
-	auto l_y = 1.0 - 2.0 * WindowSystemSingletonComponent::getInstance().m_mouseLastY / WindowSystemSingletonComponent::getInstance().m_screenResolution.y;
-	auto l_z = -1.0;
-	auto l_w = 1.0;
-	vec4 l_ndcSpace = vec4(l_x, l_y, l_z, l_w);
-
-	auto pCamera = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
-	auto rCamera = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
-	auto tCamera = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
-	//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	l_ndcSpace = l_ndcSpace * pCamera.inverse();
-	l_ndcSpace.z = -1.0;
-	l_ndcSpace.w = 0.0;
-	l_ndcSpace = l_ndcSpace * rCamera.inverse();
-	l_ndcSpace = l_ndcSpace * tCamera.inverse();
-#endif
-	//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-
-	l_ndcSpace = pCamera.inverse() * l_ndcSpace;
-	l_ndcSpace.z = -1.0;
-	l_ndcSpace.w = 0.0;
-	l_ndcSpace = tCamera.inverse() * l_ndcSpace;
-	l_ndcSpace = rCamera.inverse() * l_ndcSpace;
-#endif
-	l_ndcSpace = l_ndcSpace.normalize();
-	return l_ndcSpace;
 }
 
 void GLWindowSystem::swapBuffer()

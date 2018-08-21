@@ -1,10 +1,18 @@
 #include "BaseApplication.h"
 
+#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
+void BaseApplication::setup(void* appInstance, char* commandLineArg, int showMethod)
+{
+	g_pCoreSystem->setup(appInstance, commandLineArg, showMethod);
+#else
 void BaseApplication::setup()
 {
 	g_pCoreSystem->setup();
+#endif
 	m_objectStatus = objectStatus::ALIVE;
 }
+
+
 
 void BaseApplication::initialize()
 {
