@@ -23,9 +23,9 @@ public:
 	const int NUM_KEYCODES = 256;
 	const int NUM_MOUSEBUTTONS = 5;
 
-	std::unordered_map<int, keyButton> m_keyButtonMap;
-	std::unordered_map<int, std::vector<std::function<void()>*>> m_keyboardInputCallback;
-	std::unordered_map<int, std::vector<std::function<void(double)>*>> m_mouseMovementCallback;
+	buttonStatusMap m_buttonStatus;
+	buttonStatusCallbackMap m_buttonStatusCallback;
+	mouseMovementCallbackMap m_mouseMovementCallback;
 
 	double m_mouseXOffset;
 	double m_mouseYOffset;

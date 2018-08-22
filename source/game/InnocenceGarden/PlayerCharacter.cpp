@@ -14,11 +14,15 @@ void PlayerCharacter::setup()
 
 	m_moveSpeed = 0.5;
 	m_rotateSpeed = 2.0;
+	m_canMove = false;
 
 	f_moveForward = std::bind(&PlayerCharacter::moveForward, this);
 	f_moveBackward = std::bind(&PlayerCharacter::moveBackward, this);
 	f_moveLeft = std::bind(&PlayerCharacter::moveLeft, this);
 	f_moveRight = std::bind(&PlayerCharacter::moveRight, this);
+
+	f_allowMove = std::bind(&PlayerCharacter::allowMove, this);
+	f_forbidMove = std::bind(&PlayerCharacter::forbidMove, this);
 
 	f_rotateAroundPositiveYAxis = std::bind(&PlayerCharacter::rotateAroundPositiveYAxis, this, std::placeholders::_1);
 	f_rotateAroundRightAxis = std::bind(&PlayerCharacter::rotateAroundRightAxis, this, std::placeholders::_1);
@@ -46,7 +50,10 @@ VisibleComponent & PlayerCharacter::getVisibleComponent()
 
 void PlayerCharacter::move(vec4 direction, double length)
 {
-	m_transformComponent.m_transform.setLocalPos(m_transformComponent.m_transform.getPos() + direction.scale(length));
+	if (m_canMove)
+	{
+		m_transformComponent.m_transform.setLocalPos(m_transformComponent.m_transform.getPos() + direction.scale(length));
+	}
 }
 
 void PlayerCharacter::moveForward()
@@ -69,12 +76,28 @@ void PlayerCharacter::moveRight()
 	move(m_transformComponent.m_transform.getDirection(direction::RIGHT), m_moveSpeed);
 }
 
+void PlayerCharacter::allowMove()
+{
+	m_canMove = true;
+}
+
+void PlayerCharacter::forbidMove()
+{
+	m_canMove = false;
+}
+
 void PlayerCharacter::rotateAroundPositiveYAxis(double offset)
 {
-	m_transformComponent.m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * m_rotateSpeed) / 180.0)* PI);
+	if (m_canMove)
+	{
+		m_transformComponent.m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * m_rotateSpeed) / 180.0)* PI);
+	}
 }
 
 void PlayerCharacter::rotateAroundRightAxis(double offset)
 {
-	m_transformComponent.m_transform.rotateInLocal(m_transformComponent.m_transform.getDirection(direction::RIGHT), ((offset * m_rotateSpeed) / 180.0)* PI);
+	if (m_canMove)
+	{
+		m_transformComponent.m_transform.rotateInLocal(m_transformComponent.m_transform.getDirection(direction::RIGHT), ((offset * m_rotateSpeed) / 180.0)* PI);
+	}
 }

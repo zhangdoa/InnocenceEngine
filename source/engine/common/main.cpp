@@ -4,7 +4,7 @@
 
 extern IApplication* g_pApp;
 
-#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
+#if defined(INNO_RENDERER_DX)
 #include <windows.h>
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {

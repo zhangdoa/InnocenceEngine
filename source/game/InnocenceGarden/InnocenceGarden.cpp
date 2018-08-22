@@ -19,12 +19,14 @@ void InnocenceGarden::setup()
 	//m_playCharacter.getTransformComponent().m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
 	m_playerCharacterComponent->getCameraComponent().m_drawFrustum = false;
 	m_playerCharacterComponent->getCameraComponent().m_drawAABB = false;
-	registerKeyboardInputCallback(&m_playerCharacterComponent->getInputComponent(), INNO_KEY_S, &m_playerCharacterComponent->f_moveForward);
-	registerKeyboardInputCallback(&m_playerCharacterComponent->getInputComponent(), INNO_KEY_W, &m_playerCharacterComponent->f_moveBackward);
-	registerKeyboardInputCallback(&m_playerCharacterComponent->getInputComponent(), INNO_KEY_A, &m_playerCharacterComponent->f_moveLeft);
-	registerKeyboardInputCallback(&m_playerCharacterComponent->getInputComponent(), INNO_KEY_D, &m_playerCharacterComponent->f_moveRight);
-	registerMouseInputCallback(&m_playerCharacterComponent->getInputComponent(), 0, &m_playerCharacterComponent->f_rotateAroundPositiveYAxis);
-	registerMouseInputCallback(&m_playerCharacterComponent->getInputComponent(), 1, &m_playerCharacterComponent->f_rotateAroundRightAxis);
+	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_S, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveForward);
+	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_W, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveBackward);
+	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_A, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveLeft);
+	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_D, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveRight);
+	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_MOUSE_BUTTON_2, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_allowMove);
+	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_MOUSE_BUTTON_2, buttonStatus::RELEASED }, &m_playerCharacterComponent->f_forbidMove);
+	registerMouseMovementCallback(&m_playerCharacterComponent->getInputComponent(), 0, &m_playerCharacterComponent->f_rotateAroundPositiveYAxis);
+	registerMouseMovementCallback(&m_playerCharacterComponent->getInputComponent(), 1, &m_playerCharacterComponent->f_rotateAroundRightAxis);
 
 	m_transformComponents.emplace_back(&m_playerCharacterComponent->getTransformComponent());
 	m_cameraComponents.emplace_back(&m_playerCharacterComponent->getCameraComponent());

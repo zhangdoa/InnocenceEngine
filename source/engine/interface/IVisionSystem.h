@@ -9,7 +9,7 @@ public:
 	virtual ~IVisionSystem() {};
 
 	virtual void setWindowName(const std::string& windowName) = 0;
-#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
+#if defined(INNO_RENDERER_DX)
 	virtual void setup(void* appInstance, char* commandLineArg, int showMethod) = 0;
 #endif
 };

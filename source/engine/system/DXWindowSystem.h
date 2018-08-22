@@ -14,9 +14,9 @@ class DXWindowSystem : public BaseWindowSystem
 public:
 	DXWindowSystem() {};
 	~DXWindowSystem() {};
-
-	void setup() override {};
+#if defined(INNO_RENDERER_DX)
 	void setup(void* appInstance, char* commandLineArg, int showMethod) override;
+#endif
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
@@ -33,6 +33,7 @@ private:
 	HINSTANCE m_hinstance;
 	HWND m_hwnd;
 
+	std::vector<int> m_keyButtonStatus;
 	void updateInput();
 };
 

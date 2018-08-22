@@ -138,25 +138,25 @@ mat4 GameSystem::getProjectionMatrix(LightComponent * lightComponent, unsigned i
 	return p;
 }
 
-void GameSystem::registerKeyboardInputCallback(InputComponent * inputComponent, int keyCode, std::function<void()>* function)
+void GameSystem::registerButtonStatusCallback(InputComponent * inputComponent, button boundButton, std::function<void()>* function)
 {
-	auto l_keyboardInputCallbackVector = inputComponent->m_keyboardInputCallbackImpl.find(keyCode);
-	if (l_keyboardInputCallbackVector != inputComponent->m_keyboardInputCallbackImpl.end())
+	auto l_kbuttonStatusCallbackVector = inputComponent->m_buttonStatusCallbackImpl.find(boundButton);
+	if (l_kbuttonStatusCallbackVector != inputComponent->m_buttonStatusCallbackImpl.end())
 	{
-		l_keyboardInputCallbackVector->second.emplace_back(function);
+		l_kbuttonStatusCallbackVector->second.emplace_back(function);
 	}
 	else
 	{
-		inputComponent->m_keyboardInputCallbackImpl.emplace(keyCode, std::vector<std::function<void()>*>{function});
+		inputComponent->m_buttonStatusCallbackImpl.emplace(boundButton, std::vector<std::function<void()>*>{function});
 	}
 }
 
-void GameSystem::registerMouseInputCallback(InputComponent * inputComponent, int mouseCode, std::function<void(double)>* function)
+void GameSystem::registerMouseMovementCallback(InputComponent * inputComponent, int mouseCode, std::function<void(double)>* function)
 {
-	auto l_mouseInputCallbackVector = inputComponent->m_mouseMovementCallbackImpl.find(mouseCode);
-	if (l_mouseInputCallbackVector != inputComponent->m_mouseMovementCallbackImpl.end())
+	auto l_mouseMovementCallbackVector = inputComponent->m_mouseMovementCallbackImpl.find(mouseCode);
+	if (l_mouseMovementCallbackVector != inputComponent->m_mouseMovementCallbackImpl.end())
 	{
-		l_mouseInputCallbackVector->second.emplace_back(function);
+		l_mouseMovementCallbackVector->second.emplace_back(function);
 	}
 	else
 	{

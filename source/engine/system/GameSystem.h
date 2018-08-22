@@ -31,8 +31,8 @@ public:
 	void addTextureData(VisibleComponent* visibleComponentconst, const texturePair & texturePair) override;
 	void overwriteTextureData(VisibleComponent* visibleComponentconst, const texturePair & texturePair) override;
 	mat4 getProjectionMatrix(LightComponent* lightComponent, unsigned int cascadedLevel) override;
-	void registerKeyboardInputCallback(InputComponent* inputComponent, int keyCode, std::function<void()>* function) override;
-	void registerMouseInputCallback(InputComponent* inputComponent, int mouseCode, std::function<void(double)>* function) override;
+	void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function) override;
+	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(double)>* function) override;
 	bool needRender() override;
 	EntityID createEntityID() override;
 

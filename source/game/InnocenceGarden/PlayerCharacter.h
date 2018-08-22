@@ -22,6 +22,9 @@ public:
 	std::function<void()> f_moveLeft;
 	std::function<void()> f_moveRight;
 
+	std::function<void()> f_allowMove;
+	std::function<void()> f_forbidMove;
+
 	std::function<void(double)> f_rotateAroundPositiveYAxis;
 	std::function<void(double)> f_rotateAroundRightAxis;
 
@@ -33,6 +36,7 @@ private:
 
 	double m_moveSpeed;
 	double m_rotateSpeed;
+	bool m_canMove;
 
 	void move(vec4 direction, double length);
 
@@ -40,6 +44,9 @@ private:
 	void moveBackward();
 	void moveLeft();
 	void moveRight();
+
+	void allowMove();
+	void forbidMove();
 
 	void rotateAroundPositiveYAxis(double offset);
 	void rotateAroundRightAxis(double offset);

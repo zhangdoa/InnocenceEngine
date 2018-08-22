@@ -13,17 +13,20 @@ public:
 	BaseWindowSystem() {};
 	~BaseWindowSystem() {};
 
+	void setup() override;
+	void initialize() override;
+	void update() override;
+
 	vec4 calcMousePositionInWorldSpace() override;
 	void swapBuffer() override;
 
 protected:
-	void addInputCallback();
-	void addKeyboardInputCallback(int keyCode, std::function<void()>* keyboardInputCallback);
-	void addKeyboardInputCallback(int keyCode, std::vector<std::function<void()>*>& keyboardInputCallback);
-	void addKeyboardInputCallback(std::unordered_map<int, std::vector<std::function<void()>*>>& keyboardInputCallback);
+	void addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor);
+	void addButtonStatusCallback(button boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor);
+	void addButtonStatusCallback(buttonStatusCallbackMap & buttonStatusCallbackFunctor);
 	void addMouseMovementCallback(int mouseCode, std::function<void(double)>* mouseMovementCallback);
 	void addMouseMovementCallback(int mouseCode, std::vector<std::function<void(double)>*>& mouseMovementCallback);
-	void addMouseMovementCallback(std::unordered_map<int, std::vector<std::function<void(double)>*>>& mouseMovementCallback);
+	void addMouseMovementCallback(mouseMovementCallbackMap& mouseMovementCallback);
 
 	void framebufferSizeCallback(int width, int height);
 	void mousePositionCallback(double mouseXPos, double mouseYPos);

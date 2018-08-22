@@ -35,7 +35,7 @@ void GLWindowSystem::setup()
 	//setup input
 	glfwSetInputMode(WindowSystemSingletonComponent::getInstance().m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
-	BaseWindowSystem::addInputCallback();
+	BaseWindowSystem::setup();
 
 	m_objectStatus = objectStatus::ALIVE;
 }
@@ -47,12 +47,8 @@ void GLWindowSystem::initialize()
 	windowCallbackWrapper::getInstance().initialize();
 
 	//initialize input
-	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
-	{
-		// @TODO: multi input components need to register to multi map
-		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->m_keyboardInputCallbackImpl);
-		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->m_mouseMovementCallbackImpl);
-	}
+
+	BaseWindowSystem::initialize();
 
 	g_pLogSystem->printLog("GLWindowSystem has been initialized.");
 }
@@ -65,85 +61,54 @@ void GLWindowSystem::update()
 		m_objectStatus = objectStatus::STANDBY;
 		g_pLogSystem->printLog("GLWindowSystem: Input error or Window closed.");
 	}
-	else 
+	else
 	{
 		glfwPollEvents();
 
 		//update input
+		//keyboard
 		for (int i = 0; i < WindowSystemSingletonComponent::getInstance().NUM_KEYCODES; i++)
 		{
-			//if key pressed
 			if (glfwGetKey(WindowSystemSingletonComponent::getInstance().m_window, i) == GLFW_PRESS)
 			{
-				auto l_keyButton = WindowSystemSingletonComponent::getInstance().m_keyButtonMap.find(i);
-				if (l_keyButton != WindowSystemSingletonComponent::getInstance().m_keyButtonMap.end())
+				auto l_result = WindowSystemSingletonComponent::getInstance().m_buttonStatus.find(i);
+				if (l_result != WindowSystemSingletonComponent::getInstance().m_buttonStatus.end())
 				{
-					//check whether it's still pressed/ the bound functions has been invoked
-					if (l_keyButton->second.m_allowCallback)
-					{
-						auto l_keybinding = WindowSystemSingletonComponent::getInstance().m_keyboardInputCallback.find(i);
-						if (l_keybinding != WindowSystemSingletonComponent::getInstance().m_keyboardInputCallback.end())
-						{
-							for (auto j : l_keybinding->second)
-							{
-								if (j)
-								{
-									(*j)();
-								}
-							}
-						}
-						if (l_keyButton->second.m_keyPressType == keyPressType::ONCE)
-						{
-							l_keyButton->second.m_allowCallback = false;
-						}
-					}
-
+					l_result->second = buttonStatus::PRESSED;
 				}
 			}
 			else
 			{
-				auto l_keyButton = WindowSystemSingletonComponent::getInstance().m_keyButtonMap.find(i);
-				if (l_keyButton != WindowSystemSingletonComponent::getInstance().m_keyButtonMap.end())
+				auto l_result = WindowSystemSingletonComponent::getInstance().m_buttonStatus.find(i);
+				if (l_result != WindowSystemSingletonComponent::getInstance().m_buttonStatus.end())
 				{
-					if (l_keyButton->second.m_keyPressType == keyPressType::ONCE)
-					{
-						l_keyButton->second.m_allowCallback = true;
-					}
+					l_result->second = buttonStatus::RELEASED;
 				}
 			}
 		}
-		if (glfwGetMouseButton(WindowSystemSingletonComponent::getInstance().m_window, 1) == GLFW_PRESS)
+		//mouse
+		for (int i = 0; i < WindowSystemSingletonComponent::getInstance().NUM_MOUSEBUTTONS; i++)
 		{
-			hideMouseCursor();
-			// @TODO: relative offset for editor window
-			if (WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.size() != 0)
+			if (glfwGetMouseButton(WindowSystemSingletonComponent::getInstance().m_window, i) == GLFW_PRESS)
 			{
-				if (WindowSystemSingletonComponent::getInstance().m_mouseXOffset != 0)
+				auto l_result = WindowSystemSingletonComponent::getInstance().m_buttonStatus.find(i);
+				if (l_result != WindowSystemSingletonComponent::getInstance().m_buttonStatus.end())
 				{
-					for (auto j : WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.find(0)->second)
-					{
-						(*j)(WindowSystemSingletonComponent::getInstance().m_mouseXOffset);
-					};
-				}
-				if (WindowSystemSingletonComponent::getInstance().WindowSystemSingletonComponent::getInstance().m_mouseYOffset != 0)
-				{
-					for (auto j : WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.find(1)->second)
-					{
-						(*j)(WindowSystemSingletonComponent::getInstance().m_mouseYOffset);
-					};
-				}
-				if (WindowSystemSingletonComponent::getInstance().m_mouseXOffset != 0 || WindowSystemSingletonComponent::getInstance().m_mouseYOffset != 0)
-				{
-					WindowSystemSingletonComponent::getInstance().m_mouseXOffset = 0;
-					WindowSystemSingletonComponent::getInstance().m_mouseYOffset = 0;
+					l_result->second = buttonStatus::PRESSED;
 				}
 			}
-		}
-		else
-		{
-			showMouseCursor();
+			else
+			{
+				auto l_result = WindowSystemSingletonComponent::getInstance().m_buttonStatus.find(i);
+				if (l_result != WindowSystemSingletonComponent::getInstance().m_buttonStatus.end())
+				{
+					l_result->second = buttonStatus::RELEASED;
+				}
+			}
 		}
 	}
+
+	BaseWindowSystem::update();
 }
 
 void GLWindowSystem::shutdown()

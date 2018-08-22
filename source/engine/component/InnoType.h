@@ -53,17 +53,30 @@ using textureFileNamePair = std::pair<textureType, std::string>;
 using textureFileNameMap = std::unordered_map<textureType, std::string>;
 #endif
 
-enum class keyPressType { CONTINUOUS, ONCE };
+enum class buttonStatus { RELEASED, PRESSED };
+using buttonStatusMap = std::unordered_map<int, buttonStatus>;
 
-class keyButton
+struct button
 {
-public:
-	keyButton() {};
-	~keyButton() {};
+	int m_code = 0;
+	buttonStatus m_status = buttonStatus::RELEASED;
 
-	keyPressType m_keyPressType = keyPressType::CONTINUOUS;
-	bool m_allowCallback = true;
+	bool operator==(const button &other) const
+	{
+		return (m_code == other.m_code && m_status == other.m_status);
+	}
 };
+
+struct buttonHasher
+{
+	std::size_t operator()(const button& k) const
+	{
+		return std::hash<int>()(k.m_code) ^ (std::hash<buttonStatus>()(k.m_status) << 1);
+	}
+};
+
+using buttonStatusCallbackMap = std::unordered_map<button, std::vector<std::function<void()>*>, buttonHasher>;
+using mouseMovementCallbackMap = std::unordered_map<int, std::vector<std::function<void(double)>*>>;
 
 #define INNO_KEY_SPACE              32
 #define INNO_KEY_APOSTROPHE         39  /* ' */
@@ -187,3 +200,16 @@ public:
 #define INNO_KEY_RIGHT_ALT          346
 #define INNO_KEY_RIGHT_SUPER        347
 #define INNO_KEY_MENU               348
+
+#define INNO_MOUSE_BUTTON_1         0
+#define INNO_MOUSE_BUTTON_2         1
+#define INNO_MOUSE_BUTTON_3         2
+#define INNO_MOUSE_BUTTON_4         3
+#define INNO_MOUSE_BUTTON_5         4
+#define INNO_MOUSE_BUTTON_6         5
+#define INNO_MOUSE_BUTTON_7         6
+#define INNO_MOUSE_BUTTON_8         7
+#define INNO_MOUSE_BUTTON_LAST      INNO_MOUSE_BUTTON_8
+#define INNO_MOUSE_BUTTON_LEFT      INNO_MOUSE_BUTTON_1
+#define INNO_MOUSE_BUTTON_RIGHT     INNO_MOUSE_BUTTON_2
+#define INNO_MOUSE_BUTTON_MIDDLE    INNO_MOUSE_BUTTON_3

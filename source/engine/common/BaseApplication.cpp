@@ -1,6 +1,6 @@
 #include "BaseApplication.h"
 
-#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
+#if defined(INNO_RENDERER_DX)
 void BaseApplication::setup(void* appInstance, char* commandLineArg, int showMethod)
 {
 	g_pCoreSystem->setup(appInstance, commandLineArg, showMethod);

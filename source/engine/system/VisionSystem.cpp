@@ -1,6 +1,6 @@
 #include "VisionSystem.h"
 
-#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
+#if defined(INNO_RENDERER_DX)
 void VisionSystem::setup(void* appInstance, char* commandLineArg, int showMethod)
 {
 	setupWindow(appInstance, commandLineArg, showMethod);
@@ -15,7 +15,7 @@ void VisionSystem::setup()
 	m_objectStatus = objectStatus::ALIVE;
 }
 
-#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
+#if defined(INNO_RENDERER_DX)
 void VisionSystem::setupWindow(void* appInstance, char* commandLineArg, int showMethod)
 {
 #else
@@ -29,7 +29,7 @@ void VisionSystem::setupWindow()
 #elif defined (INNO_RENDERER_VULKAN)
 #elif defined (INNO_RENDERER_METAL)
 #endif
-#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
+#if defined(INNO_RENDERER_DX)
 	m_WindowSystem->setup(appInstance, commandLineArg, showMethod);
 #else
 	m_WindowSystem->setup();

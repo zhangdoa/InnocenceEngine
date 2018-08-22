@@ -1,41 +1,91 @@
 #include "BaseWindowSystem.h"
 
-void BaseWindowSystem::addInputCallback()
+void BaseWindowSystem::setup()
 {
+}
+
+void BaseWindowSystem::initialize()
+{
+	for (int i = 0; i < WindowSystemSingletonComponent::getInstance().NUM_KEYCODES; i++)
+	{
+		WindowSystemSingletonComponent::getInstance().m_buttonStatus.emplace(i, buttonStatus::RELEASED);
+	}
+
 	for (size_t i = 0; i < g_pGameSystem->getInputComponents().size(); i++)
 	{
 		// @TODO: multi input components need to register to multi map
-		addKeyboardInputCallback(g_pGameSystem->getInputComponents()[i]->m_keyboardInputCallbackImpl);
+		addButtonStatusCallback(g_pGameSystem->getInputComponents()[i]->m_buttonStatusCallbackImpl);
 		addMouseMovementCallback(g_pGameSystem->getInputComponents()[i]->m_mouseMovementCallbackImpl);
 	}
 }
 
-void BaseWindowSystem::addKeyboardInputCallback(int keyCode, std::function<void()>* keyboardInputCallback)
+void BaseWindowSystem::update()
 {
-	auto l_keyboardInputCallbackFunctionVector = WindowSystemSingletonComponent::getInstance().m_keyboardInputCallback.find(keyCode);
-	if (l_keyboardInputCallbackFunctionVector != WindowSystemSingletonComponent::getInstance().m_keyboardInputCallback.end())
+	for (auto i : WindowSystemSingletonComponent::getInstance().m_buttonStatus)
 	{
-		l_keyboardInputCallbackFunctionVector->second.emplace_back(keyboardInputCallback);
+		auto l_keybinding = WindowSystemSingletonComponent::getInstance().m_buttonStatusCallback.find(button{ i.first, i.second });
+		if (l_keybinding != WindowSystemSingletonComponent::getInstance().m_buttonStatusCallback.end())
+		{
+			for (auto j : l_keybinding->second)
+			{
+				if (j)
+				{
+					(*j)();
+				}
+			}
+		}
+	}
+	// @TODO: relative offset for editor window
+	if (WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.size() != 0)
+	{
+		if (WindowSystemSingletonComponent::getInstance().m_mouseXOffset != 0)
+		{
+			for (auto j : WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.find(0)->second)
+			{
+				(*j)(WindowSystemSingletonComponent::getInstance().m_mouseXOffset);
+			};
+		}
+		if (WindowSystemSingletonComponent::getInstance().m_mouseYOffset != 0)
+		{
+			for (auto j : WindowSystemSingletonComponent::getInstance().m_mouseMovementCallback.find(1)->second)
+			{
+				(*j)(WindowSystemSingletonComponent::getInstance().m_mouseYOffset);
+			};
+		}
+		if (WindowSystemSingletonComponent::getInstance().m_mouseXOffset != 0 || WindowSystemSingletonComponent::getInstance().m_mouseYOffset != 0)
+		{
+			WindowSystemSingletonComponent::getInstance().m_mouseXOffset = 0;
+			WindowSystemSingletonComponent::getInstance().m_mouseYOffset = 0;
+		}
+	}
+}
+
+void BaseWindowSystem::addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor)
+{
+	auto l_keyboardInputCallbackFunctionVector = WindowSystemSingletonComponent::getInstance().m_buttonStatusCallback.find(boundButton);
+	if (l_keyboardInputCallbackFunctionVector != WindowSystemSingletonComponent::getInstance().m_buttonStatusCallback.end())
+	{
+		l_keyboardInputCallbackFunctionVector->second.emplace_back(buttonStatusCallbackFunctor);
 	}
 	else
 	{
-		WindowSystemSingletonComponent::getInstance().m_keyboardInputCallback.emplace(keyCode, std::vector<std::function<void()>*>{keyboardInputCallback});
+		WindowSystemSingletonComponent::getInstance().m_buttonStatusCallback.emplace(boundButton, std::vector<std::function<void()>*>{buttonStatusCallbackFunctor});
 	}
 }
 
-void BaseWindowSystem::addKeyboardInputCallback(int keyCode, std::vector<std::function<void()>*>& keyboardInputCallback)
+void BaseWindowSystem::addButtonStatusCallback(button boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor)
 {
-	for (auto i : keyboardInputCallback)
+	for (auto i : buttonStatusCallbackFunctor)
 	{
-		addKeyboardInputCallback(keyCode, i);
+		addButtonStatusCallback(boundButton, i);
 	}
 }
 
-void BaseWindowSystem::addKeyboardInputCallback(std::unordered_map<int, std::vector<std::function<void()>*>>& keyboardInputCallback)
+void BaseWindowSystem::addButtonStatusCallback(buttonStatusCallbackMap & buttonStatusCallbackFunctor)
 {
-	for (auto i : keyboardInputCallback)
+	for (auto i : buttonStatusCallbackFunctor)
 	{
-		addKeyboardInputCallback(i.first, i.second);
+		addButtonStatusCallback(i.first, i.second);
 	}
 }
 
@@ -60,7 +110,7 @@ void BaseWindowSystem::addMouseMovementCallback(int mouseCode, std::vector<std::
 	}
 }
 
-void BaseWindowSystem::addMouseMovementCallback(std::unordered_map<int, std::vector<std::function<void(double)>*>>& mouseMovementCallback)
+void BaseWindowSystem::addMouseMovementCallback(mouseMovementCallbackMap& mouseMovementCallback)
 {
 	for (auto i : mouseMovementCallback)
 	{

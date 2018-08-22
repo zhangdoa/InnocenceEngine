@@ -1,5 +1,6 @@
 #include "DXWindowSystem.h"
 
+#if defined(INNO_RENDERER_DX)
 void DXWindowSystem::setup(void* appInstance, char* commandLineArg, int showMethod)
 {
 	WNDCLASS wc = {};
@@ -47,15 +48,19 @@ void DXWindowSystem::setup(void* appInstance, char* commandLineArg, int showMeth
 	// Hide the mouse cursor.
 	ShowCursor(false);
 
+	BaseWindowSystem::setup();
+
 	m_objectStatus = objectStatus::ALIVE;
 }
+#endif
 
 void DXWindowSystem::initialize()
 {
 	//initialize window
 
 	//initialize input
-	BaseWindowSystem::addInputCallback();
+
+	BaseWindowSystem::initialize();
 
 	g_pLogSystem->printLog("DXWindowSystem has been initialized.");
 }
@@ -90,6 +95,8 @@ void DXWindowSystem::update()
 
 	//update input
 	updateInput();
+
+	BaseWindowSystem::update();
 }
 
 void DXWindowSystem::shutdown()
