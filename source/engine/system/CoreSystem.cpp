@@ -36,17 +36,8 @@ void CoreSystem::setup()
 #endif
 	g_pLogSystem->printLog("VisionSystem setup finished.");
 
-	if (g_pGameSystem->getStatus() == objectStatus::ALIVE)
-	{
-		g_pVisionSystem->setWindowName(g_pGameSystem->getGameName());
-		m_objectStatus = objectStatus::ALIVE;
-		g_pLogSystem->printLog("CoreSystem setup finished.");
-	}
-	else
-	{
-		m_objectStatus = objectStatus::STANDBY;
-		g_pLogSystem->printLog("CoreSystem stand-by.");
-	}
+	m_objectStatus = objectStatus::ALIVE;
+	g_pLogSystem->printLog("CoreSystem setup finished.");
 }
 
 void CoreSystem::initialize()

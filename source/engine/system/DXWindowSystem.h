@@ -1,4 +1,5 @@
 #pragma once
+
 #include "BaseWindowSystem.h"
 #include "interface/ILogSystem.h"
 #include "interface/IGameSystem.h"
@@ -32,9 +33,6 @@ private:
 	LPCSTR m_applicationName;
 	HINSTANCE m_hinstance;
 	HWND m_hwnd;
-
-	std::vector<int> m_keyButtonStatus;
-	void updateInput();
 };
 
 static DXWindowSystem* ApplicationHandle = 0;

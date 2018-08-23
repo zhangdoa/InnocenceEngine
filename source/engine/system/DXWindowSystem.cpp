@@ -12,7 +12,7 @@ void DXWindowSystem::setup(void* appInstance, char* commandLineArg, int showMeth
 	m_hinstance = (HINSTANCE)appInstance;
 
 	// Give the application a name.
-	const wchar_t CLASS_NAME[] = L"Sample Window Class";
+	auto l_windowName = std::wstring(WindowSystemSingletonComponent::getInstance().m_windowName.begin(), WindowSystemSingletonComponent::getInstance().m_windowName.end());
 
 	// Setup the windows class with default settings.
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
@@ -23,7 +23,7 @@ void DXWindowSystem::setup(void* appInstance, char* commandLineArg, int showMeth
 	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-	wc.lpszClassName = (LPCSTR)CLASS_NAME;
+	wc.lpszClassName = (LPCSTR)l_windowName.c_str();
 
 	// Register the window class.
 	RegisterClass(&wc);
@@ -36,7 +36,7 @@ void DXWindowSystem::setup(void* appInstance, char* commandLineArg, int showMeth
 	auto l_posY = (GetSystemMetrics(SM_CYSCREEN) - l_screenHeight) / 2;
 
 	// Create the window with the screen settings and get the handle to it.
-	m_hwnd = CreateWindowEx(0, (LPCSTR)CLASS_NAME, (LPCSTR)CLASS_NAME,
+	m_hwnd = CreateWindowEx(0, (LPCSTR)l_windowName.c_str(), (LPCSTR)l_windowName.c_str(),
 		WS_OVERLAPPEDWINDOW,
 		l_posX, l_posY, l_screenWidth, l_screenHeight, NULL, NULL, m_hinstance, NULL);
 
@@ -93,9 +93,6 @@ void DXWindowSystem::update()
 		}
 	}
 
-	//update input
-	updateInput();
-
 	BaseWindowSystem::update();
 }
 
@@ -142,12 +139,21 @@ LRESULT DXWindowSystem::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPAR
 	{
 	case WM_KEYDOWN:
 	{
+		auto l_result = WindowSystemSingletonComponent::getInstance().m_buttonStatus.find((int)wparam);
+		if (l_result != WindowSystemSingletonComponent::getInstance().m_buttonStatus.end())
+		{
+			l_result->second = buttonStatus::PRESSED;
+		}
 		return 0;
 	}
-
-	// Check if a key has been released on the keyboard.
 	case WM_KEYUP:
 	{
+		auto l_result = WindowSystemSingletonComponent::getInstance().m_buttonStatus.find((int)wparam);
+		if (l_result != WindowSystemSingletonComponent::getInstance().m_buttonStatus.end())
+		{
+			l_result->second = buttonStatus::RELEASED;
+		}
+
 		return 0;
 	}
 
@@ -157,10 +163,6 @@ LRESULT DXWindowSystem::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPAR
 		return DefWindowProc(hwnd, umsg, wparam, lparam);
 	}
 	}
-}
-
-void DXWindowSystem::updateInput()
-{
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

@@ -40,8 +40,6 @@ public:
 	void update() override;
 	void shutdown() override;
 
-	void setWindowName(const std::string& windowName) override;
-
 	const objectStatus& getStatus() const override;
 
 private:

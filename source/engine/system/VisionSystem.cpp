@@ -3,6 +3,8 @@
 #if defined(INNO_RENDERER_DX)
 void VisionSystem::setup(void* appInstance, char* commandLineArg, int showMethod)
 {
+	WindowSystemSingletonComponent::getInstance().m_windowName = g_pGameSystem->getGameName();
+
 	setupWindow(appInstance, commandLineArg, showMethod);
 #else
 void VisionSystem::setup()
@@ -163,11 +165,6 @@ void VisionSystem::shutdown()
 const objectStatus & VisionSystem::getStatus() const
 {
 	return m_objectStatus;
-}
-
-void VisionSystem::setWindowName(const std::string & windowName)
-{
-	WindowSystemSingletonComponent::getInstance().m_windowName = windowName;
 }
 
 void VisionSystem::changeDrawPolygonMode()
