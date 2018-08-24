@@ -19,6 +19,8 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 
+#include "component/WindowSystemSingletonComponent.h"
+
 extern IMemorySystem* g_pMemorySystem;
 extern IAssetSystem* g_pAssetSystem;
 extern IGameSystem* g_pGameSystem;
@@ -53,4 +55,7 @@ private:
 	DirectX::XMMATRIX m_projectionMatrix;
 	DirectX::XMMATRIX m_worldMatrix;
 	DirectX::XMMATRIX m_orthoMatrix;
+
+	void beginScene(float r, float g, float b, float a);
+	void endScene();
 };

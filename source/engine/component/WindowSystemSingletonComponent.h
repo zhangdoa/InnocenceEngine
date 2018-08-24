@@ -15,18 +15,17 @@ public:
 	}
 
 	//window data
-	GLFWwindow* m_window;
 	vec2 m_windowResolution = vec2(1280, 720);
 	std::string m_windowName;
 	bool m_fullScreen = false;
 
-#if defined(INNO_RENDERER_DX)
+	GLFWwindow* m_window;
+
 	HINSTANCE m_hInstance;
 	PSTR m_pScmdline;
 	int m_nCmdshow;
 	LPCSTR m_applicationName;
 	HWND m_hwnd;
-#endif
 
 	//input data
 	const int NUM_KEYCODES = 256;

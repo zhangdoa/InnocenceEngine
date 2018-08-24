@@ -42,7 +42,7 @@ void DXWindowSystem::setup()
 	SetFocus(WindowSystemSingletonComponent::getInstance().m_hwnd);
 
 	// Hide the mouse cursor.
-	ShowCursor(false);
+	// ShowCursor(false);
 
 	BaseWindowSystem::setup();
 
@@ -68,24 +68,20 @@ void DXWindowSystem::update()
 	// Initialize the message structure.
 	ZeroMemory(&msg, sizeof(MSG));
 
-	// Loop until there is a quit message from the window or the user.
-	while (m_objectStatus == objectStatus::ALIVE)
+	// Handle the windows messages.
+	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	{
-		// Handle the windows messages.
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
 
-		// If windows signals to end the application then exit out.
-		if (msg.message == WM_QUIT)
-		{
-			m_objectStatus = objectStatus::STANDBY;
-		}
-		else
-		{
-		}
+	// If windows signals to end the application then exit out.
+	if (msg.message == WM_QUIT)
+	{
+		m_objectStatus = objectStatus::STANDBY;
+	}
+	else
+	{
 	}
 
 	BaseWindowSystem::update();
