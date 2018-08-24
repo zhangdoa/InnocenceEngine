@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "interface/IApplication.h"
 #include "config.h"
+#include "component/WindowSystemSingletonComponent.h"
 
 extern IApplication* g_pApp;
 
@@ -8,12 +9,14 @@ extern IApplication* g_pApp;
 #include <windows.h>
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {
-	g_pApp->setup(hInstance, pScmdline, nCmdshow);
+	WindowSystemSingletonComponent::getInstance().m_hInstance = hInstance;
+	WindowSystemSingletonComponent::getInstance().m_pScmdline = pScmdline;
+	WindowSystemSingletonComponent::getInstance().m_nCmdshow = nCmdshow;
 #else
 int main()
 {
-	g_pApp->setup();
 #endif
+	g_pApp->setup();
 	g_pApp->initialize();
 
 	while (g_pApp->getStatus() == objectStatus::ALIVE)

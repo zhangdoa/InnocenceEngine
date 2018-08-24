@@ -15,9 +15,8 @@ class DXWindowSystem : public BaseWindowSystem
 public:
 	DXWindowSystem() {};
 	~DXWindowSystem() {};
-#if defined(INNO_RENDERER_DX)
-	void setup(void* appInstance, char* commandLineArg, int showMethod) override;
-#endif
+
+	void setup() override;
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
@@ -29,10 +28,6 @@ public:
 
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-
-	LPCSTR m_applicationName;
-	HINSTANCE m_hinstance;
-	HWND m_hwnd;
 };
 
 static DXWindowSystem* ApplicationHandle = 0;

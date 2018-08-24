@@ -1,12 +1,7 @@
 #include "CoreSystem.h"
 
-#if defined(INNO_RENDERER_DX)
-void CoreSystem::setup(void* appInstance, char* commandLineArg, int showMethod)
-{
-#else
 void CoreSystem::setup()
 {
-#endif
 	g_pMemorySystem = new INNO_MEMORY_SYSTEM;
 	g_pMemorySystem->setup();
 	g_pLogSystem = g_pMemorySystem->spawn<INNO_LOG_SYSTEM>();
@@ -29,11 +24,7 @@ void CoreSystem::setup()
 	g_pPhysicsSystem->setup();
 	g_pLogSystem->printLog("PhysicsSystem setup finished.");
 	g_pVisionSystem = g_pMemorySystem->spawn<INNO_VISION_SYSTEM>();
-#if defined(INNO_RENDERER_DX)
-	g_pVisionSystem->setup(appInstance, commandLineArg, showMethod);
-#else
 	g_pVisionSystem->setup();
-#endif
 	g_pLogSystem->printLog("VisionSystem setup finished.");
 
 	m_objectStatus = objectStatus::ALIVE;

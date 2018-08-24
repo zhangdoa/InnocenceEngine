@@ -17,12 +17,8 @@ class CoreSystem : public ICoreSystem
 public:
 	CoreSystem() {};
 	~CoreSystem() {};
-#if defined(INNO_RENDERER_DX)
-	void setup() override {};
-	void setup(void* appInstance, char* commandLineArg, int showMethod) override;
-#else
+
 	void setup() override;
-#endif
 	void initialize() override;
 	void update() override;
 	void shutdown() override;

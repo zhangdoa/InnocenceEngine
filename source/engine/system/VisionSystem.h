@@ -30,12 +30,7 @@ public:
 	VisionSystem() {};
 	~VisionSystem() {};
 
-#if defined(INNO_RENDERER_DX)
-	void setup() override {};
-	void setup(void* appInstance, char* commandLineArg, int showMethod) override;
-#else
 	void setup() override;
-#endif
 	void initialize() override;
 	void update() override;
 	void shutdown() override;
@@ -43,12 +38,7 @@ public:
 	const objectStatus& getStatus() const override;
 
 private:
-#if defined(INNO_RENDERER_DX)
-	void setupWindow(void* appInstance, char* commandLineArg, int showMethod);
-#else
 	void setupWindow();
-#endif
-
 	void setupRendering();
 	void setupGui();
 

@@ -1,29 +1,17 @@
 #include "VisionSystem.h"
 
-#if defined(INNO_RENDERER_DX)
-void VisionSystem::setup(void* appInstance, char* commandLineArg, int showMethod)
-{
-	WindowSystemSingletonComponent::getInstance().m_windowName = g_pGameSystem->getGameName();
-
-	setupWindow(appInstance, commandLineArg, showMethod);
-#else
 void VisionSystem::setup()
 {
+	WindowSystemSingletonComponent::getInstance().m_windowName = g_pGameSystem->getGameName();
 	setupWindow();
-#endif
 	setupRendering();
 	setupGui();
 
 	m_objectStatus = objectStatus::ALIVE;
 }
 
-#if defined(INNO_RENDERER_DX)
-void VisionSystem::setupWindow(void* appInstance, char* commandLineArg, int showMethod)
-{
-#else
 void VisionSystem::setupWindow()
 {
-#endif
 #if defined (INNO_RENDERER_OPENGL)
 	m_WindowSystem = g_pMemorySystem->spawn<GLWindowSystem>();
 #elif defined (INNO_RENDERER_DX)
@@ -31,11 +19,7 @@ void VisionSystem::setupWindow()
 #elif defined (INNO_RENDERER_VULKAN)
 #elif defined (INNO_RENDERER_METAL)
 #endif
-#if defined(INNO_RENDERER_DX)
-	m_WindowSystem->setup(appInstance, commandLineArg, showMethod);
-#else
 	m_WindowSystem->setup();
-#endif
 }
 
 void VisionSystem::setupRendering()

@@ -1,14 +1,8 @@
 #include "BaseApplication.h"
 
-#if defined(INNO_RENDERER_DX)
-void BaseApplication::setup(void* appInstance, char* commandLineArg, int showMethod)
-{
-	g_pCoreSystem->setup(appInstance, commandLineArg, showMethod);
-#else
 void BaseApplication::setup()
 {
 	g_pCoreSystem->setup();
-#endif
 	m_objectStatus = objectStatus::ALIVE;
 }
 
