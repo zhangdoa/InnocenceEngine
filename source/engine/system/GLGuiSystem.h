@@ -7,6 +7,9 @@
 #include "common/GLHeaders.h"
 
 #include "component/WindowSystemSingletonComponent.h"
+#include "component/ShadowRenderPassSingletonComponent.h"
+#include "component/GeometryRenderPassSingletonComponent.h"
+#include "component/LightRenderPassSingletonComponent.h"
 #include "component/FinalRenderPassSingletonComponent.h"
 #include "component/RenderingSystemSingletonComponent.h"
 

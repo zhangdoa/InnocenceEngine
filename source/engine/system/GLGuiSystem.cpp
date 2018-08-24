@@ -133,7 +133,7 @@ void GLGuiSystem::update()
 	}
 
 	// Rendering
-	glViewport(0, 0, WindowSystemSingletonComponent::getInstance().m_screenResolution.x, WindowSystemSingletonComponent::getInstance().m_screenResolution.y);
+	glViewport(0, 0, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui::Render();
