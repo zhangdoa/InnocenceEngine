@@ -350,6 +350,27 @@ void DXRenderingSystem::setup()
 
 void DXRenderingSystem::initialize()
 {
+	initializeShader(shaderType::VERTEX, "DX11//testVertex.sf");
+
+	initializeShader(shaderType::FRAGMENT, "DX11//testPixel.sf");
+
+	// Setup the description of the dynamic matrix constant buffer
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.ByteWidth = sizeof(DirectX::XMMATRIX);
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.MiscFlags = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.StructureByteStride = 0;
+
+	// Create the constant buffer pointer
+	auto result = m_device->CreateBuffer(&DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc, NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer);
+	if (FAILED(result))
+	{
+		g_pLogSystem->printLog("Error: DXRenderingSystem: can't create matrix buffer pointer!");
+		m_objectStatus = objectStatus::STANDBY;
+		return;
+	}
+
 	g_pLogSystem->printLog("DXRenderingSystem has been initialized.");
 }
 
@@ -426,6 +447,200 @@ void DXRenderingSystem::shutdown()
 const objectStatus & DXRenderingSystem::getStatus() const
 {
 	return m_objectStatus;
+}
+
+void DXRenderingSystem::initializeShader(shaderType shaderType, const std::string & shaderFilePath)
+{
+	auto l_shaderFilePath = std::wstring(shaderFilePath.begin(), shaderFilePath.end()).c_str();
+
+	HRESULT result;
+	ID3D10Blob* errorMessage;
+	ID3D10Blob* shaderBuffer;
+
+	// Initialize the pointers this function will use to null.
+	errorMessage = 0;
+	shaderBuffer = 0;
+
+	switch (shaderType)
+	{
+	case shaderType::VERTEX:
+		// Compile the shader code.
+		result = D3DCompileFromFile(l_shaderFilePath, NULL, NULL, shaderFilePath.c_str(), "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+			&shaderBuffer, &errorMessage);
+		if (FAILED(result))
+		{
+			// If the shader failed to compile it should have writen something to the error message.
+			if (errorMessage)
+			{
+				OutputShaderErrorMessage(errorMessage, WindowSystemSingletonComponent::getInstance().m_hwnd, shaderFilePath);
+			}
+			// If there was nothing in the error message then it simply could not find the shader file itself.
+			else
+			{
+				g_pLogSystem->printLog("Error: Shader creation failed: cannot find shader!");
+			}
+
+			return;
+		}
+
+		// Create the shader from the buffer.
+		result = m_device->CreateVertexShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader);
+		if (FAILED(result))
+		{
+			g_pLogSystem->printLog("Error: DXRenderingSystem: can't create vertex shader!");
+			m_objectStatus = objectStatus::STANDBY;
+			return;
+		}
+
+		D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
+		unsigned int numElements;
+
+		// Create the vertex input layout description.
+		polygonLayout[0].SemanticName = "POSITION";
+		polygonLayout[0].SemanticIndex = 0;
+		polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[0].InputSlot = 0;
+		polygonLayout[0].AlignedByteOffset = 0;
+		polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[0].InstanceDataStepRate = 0;
+
+		polygonLayout[1].SemanticName = "TEXCOORD";
+		polygonLayout[1].SemanticIndex = 0;
+		polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+		polygonLayout[1].InputSlot = 0;
+		polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[1].InstanceDataStepRate = 0;
+
+		polygonLayout[2].SemanticName = "NORMAL";
+		polygonLayout[2].SemanticIndex = 0;
+		polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[2].InputSlot = 0;
+		polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[2].InstanceDataStepRate = 0;
+
+		// Get a count of the elements in the layout.
+		numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
+
+		// Create the vertex input layout.
+		result = m_device->CreateInputLayout(polygonLayout, numElements, shaderBuffer->GetBufferPointer(),
+			shaderBuffer->GetBufferSize(), &DXFinalRenderPassSingletonComponent::getInstance().m_layout);
+		if (FAILED(result))
+		{
+			g_pLogSystem->printLog("Error: DXRenderingSystem: can't create shader layout!");
+			m_objectStatus = objectStatus::STANDBY;
+			return;
+		}
+		break;
+
+	case shaderType::GEOMETRY:
+		break;
+
+	case shaderType::FRAGMENT:
+		// Compile the shader code.
+		result = D3DCompileFromFile(l_shaderFilePath, NULL, NULL, shaderFilePath.c_str(), "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+			&shaderBuffer, &errorMessage);
+		if (FAILED(result))
+		{
+			// If the shader failed to compile it should have writen something to the error message.
+			if (errorMessage)
+			{
+				OutputShaderErrorMessage(errorMessage, WindowSystemSingletonComponent::getInstance().m_hwnd, shaderFilePath);
+			}
+			// If there was nothing in the error message then it simply could not find the shader file itself.
+			else
+			{
+				g_pLogSystem->printLog("Error: Shader creation failed: cannot find shader!");
+			}
+
+			return;
+		}
+
+		// Create the shader from the buffer.
+		result = m_device->CreatePixelShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader);
+		if (FAILED(result))
+		{
+			g_pLogSystem->printLog("Error: DXRenderingSystem: can't create pixel shader!");
+			m_objectStatus = objectStatus::STANDBY;
+			return;
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	shaderBuffer->Release();
+	shaderBuffer = 0;
+}
+
+void DXRenderingSystem::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename)
+{
+	char* compileErrors;
+	unsigned long long bufferSize, i;
+	std::stringstream errorSStream;
+
+	// Get a pointer to the error message text buffer.
+	compileErrors = (char*)(errorMessage->GetBufferPointer());
+
+	// Get the length of the message.
+	bufferSize = errorMessage->GetBufferSize();
+
+	// Write out the error message.
+	for (i = 0; i<bufferSize; i++)
+	{
+		errorSStream << compileErrors[i];
+	}
+
+	// Release the error message.
+	errorMessage->Release();
+	errorMessage = 0;
+
+	g_pLogSystem->printLog("DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
+}
+
+void DXRenderingSystem::updateShaderParameter(shaderType shaderType, ID3D11Buffer * matrixBuffer, DirectX::XMMATRIX parameterValue)
+{
+	HRESULT result;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	DirectX::XMMATRIX* dataPtr;
+	unsigned int bufferNumber;
+
+	parameterValue = DirectX::XMMatrixTranspose(parameterValue);
+
+	// Lock the constant buffer so it can be written to.
+	result = m_deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		g_pLogSystem->printLog("Error: DXRenderingSystem: can't lock the shader matrix buffer!");
+		m_objectStatus = objectStatus::STANDBY;
+		return;
+	}
+
+	dataPtr = (DirectX::XMMATRIX*)mappedResource.pData;
+
+	*dataPtr = parameterValue;
+
+	// Unlock the constant buffer.
+	m_deviceContext->Unmap(matrixBuffer, 0);
+
+	bufferNumber = 0;
+
+	switch (shaderType)
+	{
+	case shaderType::VERTEX:
+		m_deviceContext->VSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		break;
+	case shaderType::GEOMETRY:
+		m_deviceContext->GSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		break;
+	case shaderType::FRAGMENT:
+		m_deviceContext->PSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		break;
+	default:
+		break;
+	}
 }
 
 void DXRenderingSystem::beginScene(float r, float g, float b, float a)

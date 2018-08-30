@@ -145,7 +145,7 @@ void GLGuiSystem::update()
 	ImGui_ImplGlfwGL3_NewFrame();
 	{
 		ImGui::Begin("Window", 0, ImGuiWindowFlags_AlwaysAutoResize);
-		ImGui::Image(ImTextureID((GLuint64)FinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_TAO), l_renderTargetSize, ImVec2(1.0, 1.0), ImVec2(0.0, 0.0));
 		ImGui::End();
 		glViewport(0, 0, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);

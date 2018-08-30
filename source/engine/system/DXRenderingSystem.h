@@ -3,13 +3,7 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-#include "component/EnvironmentRenderPassSingletonComponent.h"
-#include "component/ShadowRenderPassSingletonComponent.h"
-#include "component/GeometryRenderPassSingletonComponent.h"
-#include "component/LightRenderPassSingletonComponent.h"
-#include "component/FinalRenderPassSingletonComponent.h"
-#include "component/RenderingSystemSingletonComponent.h"
-#include "component/AssetSystemSingletonComponent.h"
+#include "component/DXFinalRenderPassSingletonComponent.h"
 
 #include "interface/IRenderingSystem.h"
 #include "interface/IMemorySystem.h"
@@ -18,7 +12,11 @@
 
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <d3dcompiler.h>
 
+#include <sstream>
+
+#include "component/RenderingSystemSingletonComponent.h"
 #include "component/WindowSystemSingletonComponent.h"
 
 extern IMemorySystem* g_pMemorySystem;
@@ -56,6 +54,10 @@ private:
 	DirectX::XMMATRIX m_worldMatrix;
 	DirectX::XMMATRIX m_orthoMatrix;
 
+	void initializeShader(shaderType shaderType, const std::string& shaderFilePath);
+	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
+
+	void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, DirectX::XMMATRIX parameterValue);
 	void beginScene(float r, float g, float b, float a);
 	void endScene();
 };

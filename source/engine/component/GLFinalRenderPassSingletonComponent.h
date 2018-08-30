@@ -4,14 +4,14 @@
 #include "component/GLShaderProgramComponent.h"
 #include "component/GLTextureDataComponent.h"
 
-class FinalRenderPassSingletonComponent : public BaseComponent
+class GLFinalRenderPassSingletonComponent : public BaseComponent
 {
 public:
-	~FinalRenderPassSingletonComponent() {};
+	~GLFinalRenderPassSingletonComponent() {};
 	
-	static FinalRenderPassSingletonComponent& getInstance()
+	static GLFinalRenderPassSingletonComponent& getInstance()
 	{
-		static FinalRenderPassSingletonComponent instance;
+		static GLFinalRenderPassSingletonComponent instance;
 		return instance;
 	}
 	GLFrameBufferComponent m_skyPassGLFrameBufferComponent;
@@ -85,5 +85,5 @@ public:
 	GLuint m_uni_debuggerPassRT0;
 
 private:
-	FinalRenderPassSingletonComponent() {};
+	GLFinalRenderPassSingletonComponent() {};
 };

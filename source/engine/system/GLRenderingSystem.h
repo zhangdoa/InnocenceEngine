@@ -3,7 +3,7 @@
 #include "component/ShadowRenderPassSingletonComponent.h"
 #include "component/GeometryRenderPassSingletonComponent.h"
 #include "component/LightRenderPassSingletonComponent.h"
-#include "component/FinalRenderPassSingletonComponent.h"
+#include "component/GLFinalRenderPassSingletonComponent.h"
 #include "component/RenderingSystemSingletonComponent.h"
 #include "component/AssetSystemSingletonComponent.h"
 
