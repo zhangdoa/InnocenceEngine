@@ -1,6 +1,6 @@
 #pragma once
-#include "interface/IApplication.h"
-#include "interface/ICoreSystem.h"
+#include "../interface/IApplication.h"
+#include "../interface/ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
 

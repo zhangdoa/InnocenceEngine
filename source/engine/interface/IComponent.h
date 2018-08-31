@@ -1,6 +1,6 @@
 #pragma once
-#include "common/stdafx.h"
-#include "interface/IObject.h"
+
+#include "IObject.h"
 
 using EntityID = unsigned long;
 

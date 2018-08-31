@@ -1,7 +1,6 @@
 #pragma once
-#include "common/stdafx.h"
 #include "ISystem.h"
-#include "component/AssetSystemSingletonComponent.h"
+#include "../component/AssetSystemSingletonComponent.h"
 
 class IAssetSystem : public ISystem
 {

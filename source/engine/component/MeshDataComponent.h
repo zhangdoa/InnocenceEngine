@@ -1,6 +1,5 @@
 #pragma once
 #include "BaseComponent.h"
-#include "component/InnoMath.h"
 
 class MeshDataComponent : public BaseComponent
 {

@@ -1,7 +1,7 @@
 #include "stdafx.h"
-#include "interface/IApplication.h"
 #include "config.h"
-#include "component/WindowSystemSingletonComponent.h"
+#include "../interface/IApplication.h"
+#include "../component/WindowSystemSingletonComponent.h"
 
 extern IApplication* g_pApp;
 

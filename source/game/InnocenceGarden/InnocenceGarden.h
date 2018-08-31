@@ -1,7 +1,7 @@
 #pragma once
-#include "system/GameSystem.h"
+#include "../../engine/system/GameSystem.h"
+#include "../../engine/component/InnoAllocator.h"
 #include "PlayerCharacter.h"
-#include "component/InnoAllocator.h"
 
 class InnocenceGarden : public GameSystem
 {

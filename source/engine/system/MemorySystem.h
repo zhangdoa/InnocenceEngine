@@ -1,7 +1,7 @@
 #pragma once
-#include "interface/IMemorySystem.h"
-#include "interface/ILogSystem.h"
-#include "interface/ITimeSystem.h"
+#include "../interface/IMemorySystem.h"
+#include "../interface/ILogSystem.h"
+#include "../interface/ITimeSystem.h"
 #include <cstring>
 #include <iostream>
 #include <fstream>

@@ -3,12 +3,12 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-#include "component/DXFinalRenderPassSingletonComponent.h"
+#include "../../component/DXFinalRenderPassSingletonComponent.h"
 
-#include "interface/IRenderingSystem.h"
-#include "interface/IMemorySystem.h"
-#include "interface/IGameSystem.h"
-#include "interface/IAssetSystem.h"
+#include "../../interface/IRenderingSystem.h"
+#include "../../interface/IMemorySystem.h"
+#include "../../interface/IGameSystem.h"
+#include "../../interface/IAssetSystem.h"
 
 #include <d3d11.h>
 #include <DirectXMath.h>
@@ -16,8 +16,9 @@
 
 #include <sstream>
 
-#include "component/RenderingSystemSingletonComponent.h"
-#include "component/WindowSystemSingletonComponent.h"
+#include "../../component/RenderingSystemSingletonComponent.h"
+#include "../../component/WindowSystemSingletonComponent.h"
+#include "../../component/AssetSystemSingletonComponent.h"
 
 extern IMemorySystem* g_pMemorySystem;
 extern IAssetSystem* g_pAssetSystem;
@@ -54,8 +55,12 @@ private:
 	DirectX::XMMATRIX m_worldMatrix;
 	DirectX::XMMATRIX m_orthoMatrix;
 
-	void initializeShader(shaderType shaderType, const std::string& shaderFilePath);
+	void initializeShader(shaderType shaderType, const std::wstring & shaderFilePath);
 	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
+
+	void initializeDefaultGraphicPrimtives();
+	void initializeGraphicPrimtivesOfComponents();
+	void initializeMesh(MeshDataComponent* DXMeshDataComponent);
 
 	void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, DirectX::XMMATRIX parameterValue);
 	void beginScene(float r, float g, float b, float a);

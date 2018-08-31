@@ -1,6 +1,5 @@
 #pragma once
 #include "BaseComponent.h"
-#include "component/InnoMath.h"
 
 class TextureDataComponent : public BaseComponent
 {

@@ -1,9 +1,9 @@
 #pragma once
-#include "interface/IGameSystem.h"
-#include "interface/ITimeSystem.h"
-#include "interface/IMemorySystem.h"
+#include "../interface/IGameSystem.h"
+#include "../interface/ITimeSystem.h"
+#include "../interface/IMemorySystem.h"
 
-#include "common/ComponentHeaders.h"
+#include "../common/ComponentHeaders.h"
 
 extern ITimeSystem* g_pTimeSystem;
 extern IMemorySystem* g_pMemorySystem;

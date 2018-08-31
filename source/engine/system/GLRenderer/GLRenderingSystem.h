@@ -1,16 +1,16 @@
 #pragma once
-#include "component/EnvironmentRenderPassSingletonComponent.h"
-#include "component/ShadowRenderPassSingletonComponent.h"
-#include "component/GeometryRenderPassSingletonComponent.h"
-#include "component/LightRenderPassSingletonComponent.h"
-#include "component/GLFinalRenderPassSingletonComponent.h"
-#include "component/RenderingSystemSingletonComponent.h"
-#include "component/AssetSystemSingletonComponent.h"
+#include "../../component/EnvironmentRenderPassSingletonComponent.h"
+#include "../../component/ShadowRenderPassSingletonComponent.h"
+#include "../../component/GeometryRenderPassSingletonComponent.h"
+#include "../../component/LightRenderPassSingletonComponent.h"
+#include "../../component/GLFinalRenderPassSingletonComponent.h"
+#include "../../component/RenderingSystemSingletonComponent.h"
+#include "../../component/AssetSystemSingletonComponent.h"
 
-#include "interface/IRenderingSystem.h"
-#include "interface/IMemorySystem.h"
-#include "interface/IGameSystem.h"
-#include "interface/IAssetSystem.h"
+#include "../../interface/IRenderingSystem.h"
+#include "../../interface/IMemorySystem.h"
+#include "../../interface/IGameSystem.h"
+#include "../../interface/IAssetSystem.h"
 
 #include <sstream>
 

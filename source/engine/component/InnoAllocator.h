@@ -1,6 +1,6 @@
 #pragma once
-#include "common/stdafx.h"
-#include "interface/IMemorySystem.h"
+#include "../common/stdafx.h"
+#include "../interface/IMemorySystem.h"
 
 extern IMemorySystem* g_pMemorySystem;
 

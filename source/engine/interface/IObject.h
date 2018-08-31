@@ -3,6 +3,8 @@
 #ifndef _I_BASE_OBJECT_HPP_
 #define _I_BASE_OBJECT_HPP_
 
+#include "../common/stdafx.h"
+
 enum class objectStatus
 {
 	STANDBY,

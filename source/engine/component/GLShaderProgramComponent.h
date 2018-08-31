@@ -1,6 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
-#include "common/GLHeaders.h"
+#include "../common/GLHeaders.h"
 
 class GLShaderProgramComponent : public BaseComponent
 {

@@ -1,10 +1,17 @@
 #pragma once
 #include "BaseComponent.h"
-#include "component/GLMeshDataComponent.h"
-#include "component/GLTextureDataComponent.h"
 
+#if defined (INNO_RENDERER_OPENGL)
+#include "../component/GLMeshDataComponent.h"
+#include "../component/GLTextureDataComponent.h"
 #define MeshDataComponent GLMeshDataComponent
 #define TextureDataComponent GLTextureDataComponent
+#elif defined (INNO_RENDERER_DX)
+#include "../component/DXMeshDataComponent.h"
+#include "../component/DXTextureDataComponent.h"
+#define MeshDataComponent DXMeshDataComponent
+#define TextureDataComponent DXTextureDataComponent
+#endif
 
 class AssetSystemSingletonComponent : public BaseComponent
 {

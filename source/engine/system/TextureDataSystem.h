@@ -1,6 +1,6 @@
 #pragma once
-#include "interface/ISystem.h"
-#include "component/AssetSystemSingletonComponent.h"
+#include "../interface/ISystem.h"
+#include "../component/AssetSystemSingletonComponent.h"
 
 class TextureDataSystem : public ISystem
 {

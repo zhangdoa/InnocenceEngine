@@ -1,5 +1,5 @@
 #pragma once
-#include "common/stdafx.h"
+
 #include <future>
 #include "InnoContainer.h"
 

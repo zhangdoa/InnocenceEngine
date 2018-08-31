@@ -1,8 +1,9 @@
 #pragma once
+#include "../interface/ILogSystem.h"
+#include "../interface/ITimeSystem.h"
+
 #include <sstream>
 #include <iostream>
-#include "interface/ILogSystem.h"
-#include "interface/ITimeSystem.h"
 
 extern ITimeSystem* g_pTimeSystem;
 

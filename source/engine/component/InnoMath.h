@@ -1,6 +1,6 @@
 #pragma once
-#include "common/stdafx.h"
-#include "common/config.h"
+#include "../common/stdafx.h"
+#include "../common/config.h"
 
 //typedef __m128 vec4;
 

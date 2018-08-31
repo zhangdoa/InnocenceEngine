@@ -1,12 +1,12 @@
 #pragma once
 
-#include "system/MemorySystem.h"
-#include "system/LogSystem.h"
-#include "system/TaskSystem.h"
-#include "system/TimeSystem.h"
-#include "system/AssetSystem.h"
-#include "system/PhysicsSystem.h"
-#include "system/VisionSystem.h"
+#include "../system/MemorySystem.h"
+#include "../system/LogSystem.h"
+#include "../system/TaskSystem.h"
+#include "../system/TimeSystem.h"
+#include "../system/AssetSystem.h"
+#include "../system/PhysicsSystem.h"
+#include "../system/VisionSystem.h"
 
 #define INNO_MEMORY_SYSTEM MemorySystem
 #define INNO_LOG_SYSTEM LogSystem

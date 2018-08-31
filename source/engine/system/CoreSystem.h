@@ -1,7 +1,7 @@
 #pragma once
-#include "interface/ICoreSystem.h"
+#include "../interface/ICoreSystem.h"
 
-#include "platform/InnoSystemHeader.h"
+#include "../platform/InnoSystemHeader.h"
 
 IMemorySystem* g_pMemorySystem;
 ILogSystem* g_pLogSystem;

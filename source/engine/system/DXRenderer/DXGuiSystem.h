@@ -1,6 +1,6 @@
 #pragma once
-#include "interface/IGuiSystem.h"
-#include "interface/ILogSystem.h"
+#include "../../interface/IGuiSystem.h"
+#include "../../interface/ILogSystem.h"
 
 extern ILogSystem* g_pLogSystem;
 

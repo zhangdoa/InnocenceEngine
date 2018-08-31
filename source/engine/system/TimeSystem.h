@@ -1,6 +1,6 @@
 #pragma once
+#include "../interface/ITimeSystem.h"
 #include <sstream>
-#include "interface/ITimeSystem.h"
 
 class TimeSystem : public ITimeSystem
 {

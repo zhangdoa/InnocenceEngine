@@ -1,26 +1,34 @@
 #pragma once
+
+#include "../common/config.h"
+
+#include "../interface/IAssetSystem.h"
+#include "../interface/ILogSystem.h"
+#include "../interface/IMemorySystem.h"
+#include "../interface/IGameSystem.h"
+#include "MeshDataSystem.h"
+#include "TextureDataSystem.h"
+#include "../common/ComponentHeaders.h"
+
+#include "../component/InnoMath.h"
+#include "../component/InnoType.h"
+#include "../component/InnoAllocator.h"
+#include "../component/InnoConcurrency.h"
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
 
-#include "../common/config.h"
 #if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 #include <experimental/filesystem>
 #endif
-
-#include "common/UltiHeaders.h"
-#include "interface/IAssetSystem.h"
-#include "interface/ILogSystem.h"
-#include "interface/IMemorySystem.h"
-#include "interface/IGameSystem.h"
-#include "MeshDataSystem.h"
-#include "TextureDataSystem.h"
-#include "common/ComponentHeaders.h"
 
 #include "assimp/Importer.hpp"
 #include "assimp/Exporter.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
+
+#include "STB_Image/stb_image.h"
 
 extern ILogSystem* g_pLogSystem;
 extern IMemorySystem* g_pMemorySystem;

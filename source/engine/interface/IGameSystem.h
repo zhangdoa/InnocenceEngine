@@ -1,8 +1,7 @@
 #pragma once
-#include "common/stdafx.h"
 #include "ISystem.h"
 #include "ILogSystem.h"
-#include "common/ComponentHeaders.h"
+#include "../common/ComponentHeaders.h"
 
 extern ILogSystem* g_pLogSystem;
 

@@ -1,9 +1,9 @@
 #pragma once
-#include "interface/IPhysicsSystem.h"
-#include "interface/ILogSystem.h"
-#include "interface/IGameSystem.h"
-#include "interface/IAssetSystem.h"
-#include "common/ComponentHeaders.h"
+#include "../interface/IPhysicsSystem.h"
+#include "../interface/ILogSystem.h"
+#include "../interface/IGameSystem.h"
+#include "../interface/IAssetSystem.h"
+#include "../common/ComponentHeaders.h"
 
 extern ILogSystem* g_pLogSystem;
 extern IGameSystem* g_pGameSystem;

@@ -1,8 +1,8 @@
 #pragma once
-#include "interface/IWindowSystem.h"
-#include "interface/ILogSystem.h"
-#include "interface/IGameSystem.h"
-#include "component/WindowSystemSingletonComponent.h"
+#include "../interface/IWindowSystem.h"
+#include "../interface/ILogSystem.h"
+#include "../interface/IGameSystem.h"
+#include "../component/WindowSystemSingletonComponent.h"
 
 extern ILogSystem* g_pLogSystem;
 extern IGameSystem* g_pGameSystem;

@@ -1,8 +1,8 @@
 #pragma once
-#include "component/TransformComponent.h"
-#include "component/CameraComponent.h"
-#include "component/InputComponent.h"
-#include "component/VisibleComponent.h"
+#include "../../engine/component/TransformComponent.h"
+#include "../../engine/component/CameraComponent.h"
+#include "../../engine/component/InputComponent.h"
+#include "../../engine/component/VisibleComponent.h"
 
 class PlayerCharacter : public BaseComponent
 {

@@ -1,13 +1,11 @@
 #pragma once
-#include "common/stdafx.h"
-
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <queue>
 #include <utility>
 
-#include "component/InnoAllocator.h"
+#include "InnoAllocator.h"
 
 template <typename T>
 class ThreadSafeQueue

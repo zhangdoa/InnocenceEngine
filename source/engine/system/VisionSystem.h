@@ -1,22 +1,22 @@
 #pragma once
 #include<atomic>
 
-#include "interface/IVisionSystem.h"
-#include "interface/IMemorySystem.h"
-#include "interface/ILogSystem.h"
-#include "interface/IGameSystem.h"
-#include "interface/IPhysicsSystem.h"
+#include "../interface/IVisionSystem.h"
+#include "../interface/IMemorySystem.h"
+#include "../interface/ILogSystem.h"
+#include "../interface/IGameSystem.h"
+#include "../interface/IPhysicsSystem.h"
 
-#include "common/ComponentHeaders.h"
+#include "../common/ComponentHeaders.h"
 
 #if defined (INNO_RENDERER_OPENGL)
-#include "GLWindowSystem.h"
-#include "GLRenderingSystem.h"
-#include "GLGuiSystem.h"
+#include "GLRenderer/GLWindowSystem.h"
+#include "GLRenderer/GLRenderingSystem.h"
+#include "GLRenderer/GLGuiSystem.h"
 #elif defined (INNO_RENDERER_DX)
-#include "DXWindowSystem.h"
-#include "DXRenderingSystem.h"
-#include "DXGuiSystem.h"
+#include "DXRenderer/DXWindowSystem.h"
+#include "DXRenderer/DXRenderingSystem.h"
+#include "DXRenderer/DXGuiSystem.h"
 #endif
 
 extern IMemorySystem* g_pMemorySystem;

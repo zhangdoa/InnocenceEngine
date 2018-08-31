@@ -350,9 +350,9 @@ void DXRenderingSystem::setup()
 
 void DXRenderingSystem::initialize()
 {
-	initializeShader(shaderType::VERTEX, "DX11//testVertex.sf");
+	initializeShader(shaderType::VERTEX, L"..//res//shaders//DX11//testVertex.sf");
 
-	initializeShader(shaderType::FRAGMENT, "DX11//testPixel.sf");
+	initializeShader(shaderType::FRAGMENT, L"..//res//shaders//DX11//testPixel.sf");
 
 	// Setup the description of the dynamic matrix constant buffer
 	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -449,9 +449,13 @@ const objectStatus & DXRenderingSystem::getStatus() const
 	return m_objectStatus;
 }
 
-void DXRenderingSystem::initializeShader(shaderType shaderType, const std::string & shaderFilePath)
+void DXRenderingSystem::initializeShader(shaderType shaderType, const std::wstring & shaderFilePath)
 {
-	auto l_shaderFilePath = std::wstring(shaderFilePath.begin(), shaderFilePath.end()).c_str();
+	auto l_shaderFilePath = shaderFilePath.c_str();
+	auto l_shaderName = std::string(shaderFilePath.begin(), shaderFilePath.end());
+	std::reverse(l_shaderName.begin(), l_shaderName.end());
+	l_shaderName = l_shaderName.substr(l_shaderName.find(".") + 1, l_shaderName.find("//") - l_shaderName.find(".") - 1);
+	std::reverse(l_shaderName.begin(), l_shaderName.end());
 
 	HRESULT result;
 	ID3D10Blob* errorMessage;
@@ -465,18 +469,19 @@ void DXRenderingSystem::initializeShader(shaderType shaderType, const std::strin
 	{
 	case shaderType::VERTEX:
 		// Compile the shader code.
-		result = D3DCompileFromFile(l_shaderFilePath, NULL, NULL, shaderFilePath.c_str(), "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+		result = D3DCompileFromFile(l_shaderFilePath, NULL, NULL, l_shaderName.c_str(), "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
 			&shaderBuffer, &errorMessage);
 		if (FAILED(result))
 		{
 			// If the shader failed to compile it should have writen something to the error message.
 			if (errorMessage)
 			{
-				OutputShaderErrorMessage(errorMessage, WindowSystemSingletonComponent::getInstance().m_hwnd, shaderFilePath);
+				OutputShaderErrorMessage(errorMessage, WindowSystemSingletonComponent::getInstance().m_hwnd, l_shaderName.c_str());
 			}
 			// If there was nothing in the error message then it simply could not find the shader file itself.
 			else
 			{
+				MessageBox(WindowSystemSingletonComponent::getInstance().m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
 				g_pLogSystem->printLog("Error: Shader creation failed: cannot find shader!");
 			}
 
@@ -539,18 +544,19 @@ void DXRenderingSystem::initializeShader(shaderType shaderType, const std::strin
 
 	case shaderType::FRAGMENT:
 		// Compile the shader code.
-		result = D3DCompileFromFile(l_shaderFilePath, NULL, NULL, shaderFilePath.c_str(), "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+		result = D3DCompileFromFile(l_shaderFilePath, NULL, NULL, l_shaderName.c_str(), "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
 			&shaderBuffer, &errorMessage);
 		if (FAILED(result))
 		{
 			// If the shader failed to compile it should have writen something to the error message.
 			if (errorMessage)
 			{
-				OutputShaderErrorMessage(errorMessage, WindowSystemSingletonComponent::getInstance().m_hwnd, shaderFilePath);
+				OutputShaderErrorMessage(errorMessage, WindowSystemSingletonComponent::getInstance().m_hwnd, l_shaderName.c_str());
 			}
 			// If there was nothing in the error message then it simply could not find the shader file itself.
 			else
 			{
+				MessageBox(WindowSystemSingletonComponent::getInstance().m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
 				g_pLogSystem->printLog("Error: Shader creation failed: cannot find shader!");
 			}
 
@@ -597,7 +603,20 @@ void DXRenderingSystem::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND
 	errorMessage->Release();
 	errorMessage = 0;
 
+	MessageBox(WindowSystemSingletonComponent::getInstance().m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
 	g_pLogSystem->printLog("DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
+}
+
+void DXRenderingSystem::initializeDefaultGraphicPrimtives()
+{
+}
+
+void DXRenderingSystem::initializeGraphicPrimtivesOfComponents()
+{
+}
+
+void DXRenderingSystem::initializeMesh(MeshDataComponent * DXMeshDataComponent)
+{
 }
 
 void DXRenderingSystem::updateShaderParameter(shaderType shaderType, ID3D11Buffer * matrixBuffer, DirectX::XMMATRIX parameterValue)

@@ -1,7 +1,6 @@
 #pragma once
-#include "common/stdafx.h"
 #include "ISystem.h"
-#include "component/InnoMath.h"
+#include "../component/InnoMath.h"
 
 class ILogSystem : public ISystem
 {

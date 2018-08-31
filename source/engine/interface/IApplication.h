@@ -1,6 +1,6 @@
 #pragma once
 #include "ISystem.h"
-#include "config.h"
+#include "../common/config.h"
 
 class IApplication : public ISystem
 {

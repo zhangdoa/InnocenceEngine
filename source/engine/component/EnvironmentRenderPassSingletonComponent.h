@@ -1,8 +1,8 @@
 #pragma once
 #include "BaseComponent.h"
-#include "component/GLFrameBufferComponent.h"
-#include "component/GLShaderProgramComponent.h"
-#include "component/GLTextureDataComponent.h"
+#include "GLFrameBufferComponent.h"
+#include "GLShaderProgramComponent.h"
+#include "GLTextureDataComponent.h"
 
 class EnvironmentRenderPassSingletonComponent : public BaseComponent
 {

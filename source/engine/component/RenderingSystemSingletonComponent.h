@@ -1,7 +1,8 @@
 #pragma once
 #include "BaseComponent.h"
 #include "AssetSystemSingletonComponent.h"
-#include  "VisibleComponent.h"
+#include "VisibleComponent.h"
+
 //#define BlinnPhong
 #define CookTorrance
 
