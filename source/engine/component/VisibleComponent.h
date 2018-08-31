@@ -14,8 +14,8 @@ public:
 
 	bool m_caclNormal = false;
 	bool m_useTexture = true;
-	vec4 m_albedo;
-	vec4 m_MRA;
+	vec4<double> m_albedo;
+	vec4<double> m_MRA;
 	bool m_drawAABB = false;
 	meshID m_AABBMeshID;
 	AABB m_AABB;

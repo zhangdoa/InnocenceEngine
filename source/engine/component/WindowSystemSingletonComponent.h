@@ -18,7 +18,7 @@ public:
 	}
 
 	//window data
-	vec2 m_windowResolution = vec2(1280, 720);
+	vec2<double> m_windowResolution = vec2<double>(1280, 720);
 	std::string m_windowName;
 	bool m_fullScreen = false;
 
