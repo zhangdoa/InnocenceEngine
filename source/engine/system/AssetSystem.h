@@ -10,10 +10,10 @@
 #include "TextureDataSystem.h"
 #include "../common/ComponentHeaders.h"
 
-#include "../component/InnoMath.h"
-#include "../component/InnoType.h"
-#include "../component/InnoAllocator.h"
-#include "../component/InnoConcurrency.h"
+#include "../common/InnoMath.h"
+#include "../common/InnoType.h"
+#include "../common/InnoAllocator.h"
+#include "../common/InnoConcurrency.h"
 
 #include <fstream>
 #include <sstream>

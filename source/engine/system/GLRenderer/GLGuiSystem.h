@@ -4,7 +4,6 @@
 
 #include "../../third-party/ImGui/imgui.h"
 #include "../../third-party/ImGui/imgui_impl_glfw_gl3.h"
-#include "../../common/GLHeaders.h"
 
 #include "../../component/WindowSystemSingletonComponent.h"
 #include "../../component/ShadowRenderPassSingletonComponent.h"

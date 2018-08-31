@@ -19,7 +19,6 @@ void DXRenderingSystem::setup()
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 	D3D11_RASTERIZER_DESC rasterDesc;
 	D3D11_VIEWPORT viewport;
-	float fieldOfView, screenAspect;
 
 	// Create a DirectX graphics interface factory.
 	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
@@ -332,44 +331,14 @@ void DXRenderingSystem::setup()
 	// Create the viewport.
 	m_deviceContext->RSSetViewports(1, &viewport);
 
-	// Setup the projection matrix.
-	fieldOfView = (float)(PI / 4.0);
-	screenAspect = (float)WindowSystemSingletonComponent::getInstance().m_windowResolution.x / (float)WindowSystemSingletonComponent::getInstance().m_windowResolution.y;
-
-	// Create the projection matrix for 3D rendering.
-	m_projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(fieldOfView, screenAspect, 0.1f, 10000.0f);
-
-	// Initialize the world matrix to the identity matrix.
-	m_worldMatrix = DirectX::XMMatrixIdentity();
-
-	// Create an orthographic projection matrix for 2D rendering.
-	m_orthoMatrix = DirectX::XMMatrixOrthographicLH((float)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (float)WindowSystemSingletonComponent::getInstance().m_windowResolution.y, 0.1f, 10000.0f);
-
 	m_objectStatus = objectStatus::ALIVE;
 }
 
 void DXRenderingSystem::initialize()
 {
-	initializeShader(shaderType::VERTEX, L"..//res//shaders//DX11//testVertex.sf");
+	initializeFinalBlendPass();
 
-	initializeShader(shaderType::FRAGMENT, L"..//res//shaders//DX11//testPixel.sf");
-
-	// Setup the description of the dynamic matrix constant buffer
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.ByteWidth = sizeof(DirectX::XMMATRIX);
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.MiscFlags = 0;
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.StructureByteStride = 0;
-
-	// Create the constant buffer pointer
-	auto result = m_device->CreateBuffer(&DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc, NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer);
-	if (FAILED(result))
-	{
-		g_pLogSystem->printLog("Error: DXRenderingSystem: can't create matrix buffer pointer!");
-		m_objectStatus = objectStatus::STANDBY;
-		return;
-	}
+	initializeDefaultGraphicPrimtives();
 
 	g_pLogSystem->printLog("DXRenderingSystem has been initialized.");
 }
@@ -379,6 +348,7 @@ void DXRenderingSystem::update()
 	// Clear the buffers to begin the scene.
 	beginScene(0.2f, 0.4f, 0.7f, 1.0f);
 
+	updateFinalBlendPass();
 
 	// Present the rendered scene to the screen.
 	endScene();
@@ -449,6 +419,30 @@ const objectStatus & DXRenderingSystem::getStatus() const
 	return m_objectStatus;
 }
 
+void DXRenderingSystem::initializeFinalBlendPass()
+{
+	initializeShader(shaderType::VERTEX, L"..//res//shaders//DX11//testVertex.sf");
+
+	initializeShader(shaderType::FRAGMENT, L"..//res//shaders//DX11//testPixel.sf");
+
+	// Setup the description of the dynamic matrix constant buffer
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.ByteWidth = sizeof(DirectX::XMMATRIX);
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.MiscFlags = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.StructureByteStride = 0;
+
+	// Create the constant buffer pointer
+	auto result = m_device->CreateBuffer(&DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc, NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer);
+	if (FAILED(result))
+	{
+		g_pLogSystem->printLog("Error: DXRenderingSystem: can't create matrix buffer pointer!");
+		m_objectStatus = objectStatus::STANDBY;
+		return;
+	}
+}
+
 void DXRenderingSystem::initializeShader(shaderType shaderType, const std::wstring & shaderFilePath)
 {
 	auto l_shaderFilePath = shaderFilePath.c_str();
@@ -503,7 +497,7 @@ void DXRenderingSystem::initializeShader(shaderType shaderType, const std::wstri
 		// Create the vertex input layout description.
 		polygonLayout[0].SemanticName = "POSITION";
 		polygonLayout[0].SemanticIndex = 0;
-		polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		polygonLayout[0].InputSlot = 0;
 		polygonLayout[0].AlignedByteOffset = 0;
 		polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
@@ -609,6 +603,35 @@ void DXRenderingSystem::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND
 
 void DXRenderingSystem::initializeDefaultGraphicPrimtives()
 {
+	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::LINE);
+	initializeMesh(l_Mesh);
+	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
+	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
+	initializeMesh(l_Mesh);
+	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
+	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::CUBE);
+	initializeMesh(l_Mesh);
+	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
+	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::SPHERE);
+	initializeMesh(l_Mesh);
+	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
+
+
+	//{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::NORMAL);
+	//initializeTexture(l_Texture);
+	//RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
+	//{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::ALBEDO);
+	//initializeTexture(l_Texture);
+	//RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
+	//{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::METALLIC);
+	//initializeTexture(l_Texture);
+	//RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
+	//{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::ROUGHNESS);
+	//initializeTexture(l_Texture);
+	//RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
+	//{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::AMBIENT_OCCLUSION);
+	//initializeTexture(l_Texture);
+	//RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
 }
 
 void DXRenderingSystem::initializeGraphicPrimtivesOfComponents()
@@ -617,6 +640,91 @@ void DXRenderingSystem::initializeGraphicPrimtivesOfComponents()
 
 void DXRenderingSystem::initializeMesh(MeshDataComponent * DXMeshDataComponent)
 {
+	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
+	D3D11_SUBRESOURCE_DATA vertexData, indexData;
+	HRESULT result;
+
+	// Set up the description of the static vertex buffer.
+	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)DXMeshDataComponent->m_vertices.size();
+	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexBufferDesc.CPUAccessFlags = 0;
+	vertexBufferDesc.MiscFlags = 0;
+	vertexBufferDesc.StructureByteStride = 0;
+
+	// Give the subresource structure a pointer to the vertex data.
+	//@TODO: InnoMath's vec4 is 32bit while XMFLOAT4 is 16bit
+	vertexData.pSysMem = &DXMeshDataComponent->m_vertices[0];
+	vertexData.SysMemPitch = 0;
+	vertexData.SysMemSlicePitch = 0;
+
+	// Now create the vertex buffer.
+	result = m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &DXMeshDataComponent->m_vertexBuffer);
+	if (FAILED(result))
+	{
+		g_pLogSystem->printLog("Error: DXRenderingSystem: can't create vbo!");
+		return;
+	}
+
+	// Set up the description of the static index buffer.
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.ByteWidth = sizeof(unsigned long) * (UINT)DXMeshDataComponent->m_indices.size();
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.CPUAccessFlags = 0;
+	indexBufferDesc.MiscFlags = 0;
+	indexBufferDesc.StructureByteStride = 0;
+
+	// Give the subresource structure a pointer to the index data.
+	indexData.pSysMem = &DXMeshDataComponent->m_indices[0];
+	indexData.SysMemPitch = 0;
+	indexData.SysMemSlicePitch = 0;
+
+	// Create the index buffer.
+	result = m_device->CreateBuffer(&indexBufferDesc, &indexData, &DXMeshDataComponent->m_indexBuffer);
+	if (FAILED(result))
+	{
+		g_pLogSystem->printLog("Error: DXRenderingSystem: can't create ibo!");
+		return;
+	}
+}
+
+void DXRenderingSystem::updateFinalBlendPass()
+{
+	unsigned int stride;
+	unsigned int offset;
+
+	mat4 p = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
+	mat4 r = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
+	mat4 t = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
+
+	auto mvp = t * r * p;
+	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
+
+	// Set vertex buffer stride and offset.
+	stride = sizeof(Vertex);
+	offset = 0;
+
+	// Set the vertex buffer to active in the input assembler so it can be rendered.
+	m_deviceContext->IASetVertexBuffers(0, 1, &l_mesh->m_vertexBuffer, &stride, &offset);
+
+	// Set the index buffer to active in the input assembler so it can be rendered.
+	m_deviceContext->IASetIndexBuffer(l_mesh->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+	m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Set the shader parameters that it will use for rendering.
+	// updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, mvp);
+
+	// Set the vertex input layout.
+	m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
+
+	// Set the vertex and pixel shaders that will be used to render this triangle.
+	m_deviceContext->VSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader, NULL, 0);
+	m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
+
+	// Render the triangle.
+	m_deviceContext->DrawIndexed((UINT)l_mesh->m_indices.size(), 0, 0);
 }
 
 void DXRenderingSystem::updateShaderParameter(shaderType shaderType, ID3D11Buffer * matrixBuffer, DirectX::XMMATRIX parameterValue)

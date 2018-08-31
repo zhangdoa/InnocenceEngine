@@ -1,6 +1,6 @@
 #pragma once
 #include "ISystem.h"
-#include "../component/InnoMath.h"
+#include "../common/InnoMath.h"
 
 class ILogSystem : public ISystem
 {

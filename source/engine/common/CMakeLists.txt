@@ -4,5 +4,7 @@ else ()
 add_executable(InnoMain main.cpp BaseApplication.h BaseApplication.cpp)
 endif (INNO_RENDERER_DX)
 
+add_library(InnoMath InnoMath.h InnoMath.cpp)
+target_link_libraries(InnoMain InnoMath)
 target_link_libraries(InnoMain InnoSystem)
 

@@ -1,6 +1,6 @@
 #pragma once
 #include "TextureDataComponent.h"
-#include "../common/GLHeaders.h"
+#include "../system/GLRenderer/GLHeaders.h"
 
 class GLTextureDataComponent : public TextureDataComponent
 {

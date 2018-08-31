@@ -1,4 +1,5 @@
 #pragma once
+#include "../common/stdafx.h"
 #include <atomic>
 #include <condition_variable>
 #include <mutex>

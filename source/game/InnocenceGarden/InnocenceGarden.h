@@ -1,6 +1,6 @@
 #pragma once
 #include "../../engine/system/GameSystem.h"
-#include "../../engine/component/InnoAllocator.h"
+#include "../../engine/common/InnoAllocator.h"
 #include "PlayerCharacter.h"
 
 class InnocenceGarden : public GameSystem

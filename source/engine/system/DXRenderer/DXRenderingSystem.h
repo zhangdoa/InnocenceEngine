@@ -1,7 +1,4 @@
 #pragma once
-#pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "d3dcompiler.lib")
 
 #include "../../component/DXFinalRenderPassSingletonComponent.h"
 
@@ -10,15 +7,16 @@
 #include "../../interface/IGameSystem.h"
 #include "../../interface/IAssetSystem.h"
 
-#include <d3d11.h>
-#include <DirectXMath.h>
-#include <d3dcompiler.h>
-
 #include <sstream>
 
 #include "../../component/RenderingSystemSingletonComponent.h"
 #include "../../component/WindowSystemSingletonComponent.h"
 #include "../../component/AssetSystemSingletonComponent.h"
+
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3dcompiler.lib")
+#include "DXHeaders.h"
 
 extern IMemorySystem* g_pMemorySystem;
 extern IAssetSystem* g_pAssetSystem;
@@ -51,9 +49,8 @@ private:
 	ID3D11DepthStencilState* m_depthStencilState;
 	ID3D11DepthStencilView* m_depthStencilView;
 	ID3D11RasterizerState* m_rasterState;
-	DirectX::XMMATRIX m_projectionMatrix;
-	DirectX::XMMATRIX m_worldMatrix;
-	DirectX::XMMATRIX m_orthoMatrix;
+
+	void initializeFinalBlendPass();
 
 	void initializeShader(shaderType shaderType, const std::wstring & shaderFilePath);
 	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
@@ -61,6 +58,8 @@ private:
 	void initializeDefaultGraphicPrimtives();
 	void initializeGraphicPrimtivesOfComponents();
 	void initializeMesh(MeshDataComponent* DXMeshDataComponent);
+
+	void updateFinalBlendPass();
 
 	void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, DirectX::XMMATRIX parameterValue);
 	void beginScene(float r, float g, float b, float a);

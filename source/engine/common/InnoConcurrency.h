@@ -1,7 +1,8 @@
 #pragma once
-
 #include <future>
+
 #include "InnoContainer.h"
+
 
 class IThreadTask
 {
@@ -75,7 +76,7 @@ class InnoThreadPool
 {
 public:
 	InnoThreadPool(void)
-		:InnoThreadPool{ std::max(std::thread::hardware_concurrency(), 2u) - 1u }
+		:InnoThreadPool{ std::max<unsigned int>(std::thread::hardware_concurrency(), 2u) - 1u }
 	{
 	}
 

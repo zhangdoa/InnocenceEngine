@@ -1,8 +1,5 @@
 #pragma once
 #include "../common/stdafx.h"
-#include "../interface/IMemorySystem.h"
-
-extern IMemorySystem* g_pMemorySystem;
 
 template <typename T>
 class innoAllocator
@@ -23,12 +20,12 @@ public:
 
 	pointer allocate(size_type n, const_pointer hint = 0)
 	{
-		return g_pMemorySystem->spawn<T>(n);
+		//g_pMemorySystem->spawn<T>(n);
 	}
 
 	void deallocate(pointer p, unsigned n)
 	{
-		return g_pMemorySystem->destroy(p);
+		//g_pMemorySystem->destroy(p);
 	}
 
 	bool operator==(const innoAllocator &rhs)

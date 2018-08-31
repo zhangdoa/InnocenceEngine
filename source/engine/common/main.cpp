@@ -6,7 +6,6 @@
 extern IApplication* g_pApp;
 
 #if defined(INNO_RENDERER_DX)
-#include <windows.h>
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {
 	WindowSystemSingletonComponent::getInstance().m_hInstance = hInstance;

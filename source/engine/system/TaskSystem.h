@@ -2,7 +2,7 @@
 #include "../interface/ITaskSystem.h"
 #include "../interface/IMemorySystem.h"
 #include "../interface/ILogSystem.h"
-#include "../component/InnoConcurrency.h"
+#include "../common/InnoConcurrency.h"
 
 extern IMemorySystem* g_pMemorySystem;
 extern ILogSystem* g_pLogSystem;

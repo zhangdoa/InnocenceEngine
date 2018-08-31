@@ -1,6 +1,6 @@
 #pragma once
 #include "MeshDataComponent.h"
-#include "../common/GLHeaders.h"
+#include "../system/GLRenderer/GLHeaders.h"
 
 class GLMeshDataComponent : public MeshDataComponent
 {

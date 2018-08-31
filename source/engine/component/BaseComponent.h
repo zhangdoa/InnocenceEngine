@@ -1,7 +1,7 @@
 #pragma once
 #include "../interface/IComponent.h"
-#include "InnoMath.h"
-#include "InnoType.h"
+#include "../common/InnoMath.h"
+#include "../common/InnoType.h"
 #include "../common/config.h"
 
 class BaseComponent : public IComponent

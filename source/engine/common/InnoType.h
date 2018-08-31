@@ -1,5 +1,6 @@
 #pragma once
 #include "../common/stdafx.h"
+#include "../common/config.h"
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
 // mesh custom types

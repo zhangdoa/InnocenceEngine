@@ -40,7 +40,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw_gl3.h"
 
-#include "../../common/GLHeaders.h"
+#include "../../system/GLRenderer/GLHeaders.h"
 #ifdef _WIN32
 #undef APIENTRY
 #define GLFW_EXPOSE_NATIVE_WIN32

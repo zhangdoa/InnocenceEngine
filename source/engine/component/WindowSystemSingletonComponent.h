@@ -1,7 +1,10 @@
 #pragma once
 #include "BaseComponent.h"
-#include "../common/GLHeaders.h"
+#if defined (INNO_RENDERER_OPENGL)
+#include "../system/GLRenderer/GLHeaders.h"
+#elif defined (INNO_RENDERER_DX)
 #include <windows.h>
+#endif
 
 class WindowSystemSingletonComponent : public BaseComponent
 {
@@ -19,13 +22,15 @@ public:
 	std::string m_windowName;
 	bool m_fullScreen = false;
 
+#if defined (INNO_RENDERER_OPENGL)
 	GLFWwindow* m_window;
-
+#elif defined (INNO_RENDERER_DX)
 	HINSTANCE m_hInstance;
 	PSTR m_pScmdline;
 	int m_nCmdshow;
 	LPCSTR m_applicationName;
 	HWND m_hwnd;
+#endif
 
 	//input data
 	const int NUM_KEYCODES = 256;

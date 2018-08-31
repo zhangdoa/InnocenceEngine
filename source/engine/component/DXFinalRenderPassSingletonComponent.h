@@ -1,9 +1,7 @@
 #pragma once
 #include "BaseComponent.h"
+#include "../system/DXRenderer/DXHeaders.h"
 
-#include <d3d11.h>
-#include <DirectXMath.h>
-#include <d3dcompiler.h>
 
 class DXFinalRenderPassSingletonComponent : public BaseComponent
 {
