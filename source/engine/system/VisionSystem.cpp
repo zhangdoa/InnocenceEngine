@@ -91,11 +91,11 @@ void VisionSystem::updatePhysics()
 		{
 			if (j->m_visiblilityType == visiblilityType::STATIC_MESH || j->m_visiblilityType == visiblilityType::EMISSIVE)
 			{
-				if (j->m_AABB.intersectCheck(m_mouseRay))
+				if (InnoMath::intersectCheck(j->m_AABB, m_mouseRay))
 				{
 					RenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.emplace_back(j);
 				}
-				if (l_cameraAABB.intersectCheck(j->m_AABB))
+				if (InnoMath::intersectCheck(l_cameraAABB, j->m_AABB))
 				{
 					RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.emplace_back(j);
 				}

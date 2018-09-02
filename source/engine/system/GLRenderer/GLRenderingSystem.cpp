@@ -2607,11 +2607,12 @@ void GLRenderingSystem::updateUniform(const GLint uniformLocation, double x, dou
 
 void GLRenderingSystem::updateUniform(const GLint uniformLocation, const mat4 & mat) const
 {
+	TMat4<float> l_m = InnoMath::precisionConvert<double, float>(mat);
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat.m[0][0]);
+	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &l_mB.m[0][0]);
 #endif
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-	glUniformMatrix4fv(uniformLocation, 1, GL_TRUE, &mat.m[0][0]);
+	glUniformMatrix4fv(uniformLocation, 1, GL_TRUE, &l_m.m[0][0]);
 #endif
 }
 

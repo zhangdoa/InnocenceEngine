@@ -160,20 +160,20 @@ vec4 BaseWindowSystem::calcMousePositionInWorldSpace()
 	auto tCamera = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	l_ndcSpace = l_ndcSpace * pCamera.inverse();
+	l_ndcSpace = InnoMath::mul(l_ndcSpace, pCamera.inverse());
 	l_ndcSpace.z = -1.0;
 	l_ndcSpace.w = 0.0;
-	l_ndcSpace = l_ndcSpace * rCamera.inverse();
-	l_ndcSpace = l_ndcSpace * tCamera.inverse();
+	l_ndcSpace = InnoMath::mul(l_ndcSpace, rCamera.inverse());
+	l_ndcSpace = InnoMath::mul(l_ndcSpace, tCamera.inverse());
 #endif
 	//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 
-	l_ndcSpace = pCamera.inverse() * l_ndcSpace;
+	l_ndcSpace = InnoMath::mul(pCamera.inverse(), l_ndcSpace);
 	l_ndcSpace.z = -1.0;
 	l_ndcSpace.w = 0.0;
-	l_ndcSpace = tCamera.inverse() * l_ndcSpace;
-	l_ndcSpace = rCamera.inverse() * l_ndcSpace;
+	l_ndcSpace = InnoMath::mul(tCamera.inverse(), l_ndcSpace);
+	l_ndcSpace = InnoMath::mul(rCamera.inverse(), l_ndcSpace);
 #endif
 	l_ndcSpace = l_ndcSpace.normalize();
 	return l_ndcSpace;

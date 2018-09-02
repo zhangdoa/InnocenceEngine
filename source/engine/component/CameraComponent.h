@@ -21,5 +21,5 @@ public:
 	std::vector<unsigned int> m_frustumIndices;
 	AABB m_AABB;
 	meshID m_AABBMeshID;
-	mat4<double> m_projectionMatrix;
+	mat4 m_projectionMatrix;
 };

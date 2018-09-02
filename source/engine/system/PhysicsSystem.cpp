@@ -41,8 +41,8 @@ void PhysicsSystem::setupCameraComponentFrustumVertices(CameraComponent * camera
 {
 	auto l_NDC = generateNDC();
 	auto l_pCamera = cameraComponent->m_projectionMatrix;
-	auto l_rCamera = g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.caclGlobalRot().toRotationMatrix();
-	auto l_tCamera = g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.caclGlobalPos().toTranslationMatrix();
+	auto l_rCamera = InnoMath::toRotationMatrix(g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.caclGlobalRot());
+	auto l_tCamera = InnoMath::toTranslationMatrix(g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.caclGlobalPos());
 
 	for (auto& l_vertexData : l_NDC)
 	{
@@ -51,24 +51,24 @@ void PhysicsSystem::setupCameraComponentFrustumVertices(CameraComponent * camera
 		// from projection space to view space
 		//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_mulPos = l_mulPos * l_pCamera.inverse();
+		l_mulPos = InnoMath::mul(l_mulPos, l_pCamera.inverse());
 #endif
 		//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_mulPos = l_pCamera.inverse() * l_mulPos;
+		l_mulPos = InnoMath::mul(l_pCamera.inverse(), l_mulPos);
 #endif
 		// perspective division
 		l_mulPos = l_mulPos * (1.0 / l_mulPos.w);
 		// from view space to world space
 		//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_mulPos = l_mulPos * l_rCamera;
-		l_mulPos = l_mulPos * l_tCamera;
+		l_mulPos = InnoMath::mul(l_mulPos, l_rCamera);
+		l_mulPos = InnoMath::mul(l_mulPos, l_tCamera);
 #endif
 		//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_mulPos = l_rCamera * l_mulPos;
-		l_mulPos = l_tCamera * l_mulPos;
+		l_mulPos = InnoMath::mul(l_rCamera, l_mulPos);
+		l_mulPos = InnoMath::mul(l_tCamera, l_mulPos);
 #endif
 		l_vertexData.m_pos = l_mulPos;
 	}
@@ -178,11 +178,11 @@ std::vector<Vertex> PhysicsSystem::generateViewFrustum(const mat4& transformMatr
 		// from projection space to view space
 		//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_mulPos = l_mulPos * transformMatrix;
+		l_mulPos = InnoMath::mul(l_mulPos, transformMatrix);
 #endif
 		//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_mulPos = l_transformMatrix * l_mulPos;
+		l_mulPos = InnoMath::mul(l_transformMatrix, l_mulPos);
 #endif
 		// perspective division
 		l_mulPos = l_mulPos / l_mulPos.w;
@@ -247,22 +247,22 @@ void PhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 	auto l_worldTm = g_pGameSystem->getTransformComponent(visibleComponent.getParentEntity())->m_transform.caclGlobalTransformationMatrix();
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	visibleComponent.m_AABB.m_boundMax = visibleComponent.m_AABB.m_boundMax * l_worldTm;
-	visibleComponent.m_AABB.m_boundMin = visibleComponent.m_AABB.m_boundMin *l_worldTm;
-	visibleComponent.m_AABB.m_center = visibleComponent.m_AABB.m_center * l_worldTm;
+	visibleComponent.m_AABB.m_boundMax = InnoMath::mul(visibleComponent.m_AABB.m_boundMax, l_worldTm);
+	visibleComponent.m_AABB.m_boundMin = InnoMath::mul(visibleComponent.m_AABB.m_boundMin,l_worldTm);
+	visibleComponent.m_AABB.m_center = InnoMath::mul(visibleComponent.m_AABB.m_center, l_worldTm);
 	for (auto& l_vertexData : visibleComponent.m_AABB.m_vertices)
 	{
-		l_vertexData.m_pos = l_vertexData.m_pos * l_worldTm;
+		l_vertexData.m_pos = InnoMath::mul(l_vertexData.m_pos, l_worldTm);
 	}
 #endif
 	//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-	visibleComponent.m_AABB.m_boundMax = l_worldTm * visibleComponent.m_AABB.m_boundMax;
-	visibleComponent.m_AABB.m_boundMin = l_worldTm * visibleComponent.m_AABB.m_boundMin;
-	visibleComponent.m_AABB.m_center = l_worldTm * visibleComponent.m_AABB.m_center;
+	visibleComponent.m_AABB.m_boundMax = InnoMath::mul(l_worldTm, visibleComponent.m_AABB.m_boundMax);
+	visibleComponent.m_AABB.m_boundMin = InnoMath::mul(l_worldTm, visibleComponent.m_AABB.m_boundMin);
+	visibleComponent.m_AABB.m_center = InnoMath::mul(l_worldTm, visibleComponent.m_AABB.m_center);
 	for (auto& l_vertexData : visibleComponent.m_AABB.m_vertices)
 	{
-		l_vertexData.m_pos = l_worldTm * l_vertexData.m_pos;
+		l_vertexData.m_pos = InnoMath::mul(l_worldTm, l_vertexData.m_pos);
 	}
 #endif
 }
