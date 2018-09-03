@@ -28,7 +28,7 @@ void PhysicsSystem::setupCameraComponents()
 
 void PhysicsSystem::setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent)
 {
-	cameraComponent->m_projectionMatrix.initializeToPerspectiveMatrix((cameraComponent->m_FOV / 180.0) * PI, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
+	cameraComponent->m_projectionMatrix.initializeToPerspectiveMatrix((cameraComponent->m_FOVX / 180.0) * PI<double>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
 }
 
 void PhysicsSystem::setupCameraComponentRayOfEye(CameraComponent * cameraComponent)

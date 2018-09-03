@@ -7,7 +7,7 @@ public:
 	CameraComponent() {};
 	~CameraComponent() {};
 
-	double m_FOV;
+	double m_FOVX;
 	double m_WHRatio;
 	double m_zNear;
 	double m_zFar;

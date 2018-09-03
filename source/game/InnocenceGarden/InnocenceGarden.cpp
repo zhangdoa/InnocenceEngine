@@ -23,8 +23,8 @@ void InnocenceGarden::setup()
 	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_W, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveBackward);
 	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_A, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveLeft);
 	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_D, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveRight);
-	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_MOUSE_BUTTON_2, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_allowMove);
-	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_MOUSE_BUTTON_2, buttonStatus::RELEASED }, &m_playerCharacterComponent->f_forbidMove);
+	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_MOUSE_BUTTON_RIGHT, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_allowMove);
+	registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_MOUSE_BUTTON_RIGHT, buttonStatus::RELEASED }, &m_playerCharacterComponent->f_forbidMove);
 	registerMouseMovementCallback(&m_playerCharacterComponent->getInputComponent(), 0, &m_playerCharacterComponent->f_rotateAroundPositiveYAxis);
 	registerMouseMovementCallback(&m_playerCharacterComponent->getInputComponent(), 1, &m_playerCharacterComponent->f_rotateAroundRightAxis);
 

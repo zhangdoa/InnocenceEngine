@@ -4,6 +4,7 @@
 #include "../system/GLRenderer/GLHeaders.h"
 #elif defined (INNO_RENDERER_DX)
 #include <windows.h>
+#include <windowsx.h>
 #endif
 
 class WindowSystemSingletonComponent : public BaseComponent

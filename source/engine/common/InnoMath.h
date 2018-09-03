@@ -4,7 +4,8 @@
 
 //typedef __m128 TVec4;
 
-const static double PI = 3.14159265358979323846264338327950288;
+template<class T>
+const static T PI = T(3.14159265358979323846264338327950288L);
 
 template<class T>
 T tolerance2 = T(0.95L);
@@ -939,8 +940,8 @@ public:
 
 	void TTransform::rotateInLocal(const TVec4<T> & axis, T angle)
 	{
-		T sinHalfAngle = std::sin((angle * PI / halfCircumference<T>) / two<T>);
-		T cosHalfAngle = std::cos((angle * PI / halfCircumference<T>) / two<T>);
+		T sinHalfAngle = std::sin((angle * PI<T> / halfCircumference<T>) / two<T>);
+		T cosHalfAngle = std::cos((angle * PI<T> / halfCircumference<T>) / two<T>);
 		// get final rotation
 		m_rot = TVec4<T>(axis.x * sinHalfAngle, axis.y * sinHalfAngle, axis.z * sinHalfAngle, cosHalfAngle).quatMul(m_rot);
 	}
@@ -1358,19 +1359,23 @@ private:
 	TVec4<T> m_previousScale;
 };
 
+#if defined (INNO_RENDERER_OPENGL)
 using vec2 = TVec2<double>;
-
 using vec4 = TVec4<double>;
-
 using mat4 = TMat4<double>;
-
 using Vertex = TVertex<double>;
-
 using Ray = TRay<double>;
-
 using AABB = TAABB<double>;
-
 using Transform = TTransform<double>;
+#elif defined (INNO_RENDERER_DX)
+using vec2 = TVec2<float>;
+using vec4 = TVec4<float>;
+using mat4 = TMat4<float>;
+using Vertex = TVertex<float>;
+using Ray = TRay<float>;
+using AABB = TAABB<float>;
+using Transform = TTransform<float>;
+#endif
 
 namespace InnoMath
 {

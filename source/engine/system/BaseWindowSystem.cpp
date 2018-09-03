@@ -138,11 +138,11 @@ void BaseWindowSystem::scrollCallback(double xoffset, double yoffset)
 	//@TODO: context based binding
 	if (yoffset >= 0.0)
 	{
-		g_pGameSystem->getCameraComponents()[0]->m_FOV += 1.0;
+		g_pGameSystem->getCameraComponents()[0]->m_FOVX += 1.0;
 	}
 	else
 	{
-		g_pGameSystem->getCameraComponents()[0]->m_FOV -= 1.0;
+		g_pGameSystem->getCameraComponents()[0]->m_FOVX -= 1.0;
 	}
 	//g_pPhysicsSystem->setupCameraComponentProjectionMatrix(g_pGameSystem->getCameraComponents()[0]);
 }

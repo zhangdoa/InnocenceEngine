@@ -693,16 +693,10 @@ void DXRenderingSystem::updateFinalBlendPass()
 	unsigned int stride;
 	unsigned int offset;
 
-	mat4 p = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
-	mat4 r = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
-	mat4 t = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
-
-	auto mvp = t * r * p;
-	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
-
 	// Set vertex buffer stride and offset.
 	stride = sizeof(Vertex);
 	offset = 0;
+	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::CUBE);
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
 	m_deviceContext->IASetVertexBuffers(0, 1, &l_mesh->m_vertexBuffer, &stride, &offset);
@@ -714,7 +708,16 @@ void DXRenderingSystem::updateFinalBlendPass()
 	m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set the shader parameters that it will use for rendering.
-	// updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, mvp);
+
+	mat4 p = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
+	mat4 r = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
+	mat4 t = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();	
+	mat4 v = p * r * t;
+
+	mat4 m = InnoMath::toTranslationMatrix(vec4(0.0, 0.0, -5.0, 1.0));
+	auto mvp = v * m;
+
+	updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &mvp);
 
 	// Set the vertex input layout.
 	m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
@@ -727,14 +730,14 @@ void DXRenderingSystem::updateFinalBlendPass()
 	m_deviceContext->DrawIndexed((UINT)l_mesh->m_indices.size(), 0, 0);
 }
 
-void DXRenderingSystem::updateShaderParameter(shaderType shaderType, ID3D11Buffer * matrixBuffer, DirectX::XMMATRIX parameterValue)
+void DXRenderingSystem::updateShaderParameter(shaderType shaderType, ID3D11Buffer * matrixBuffer, mat4* parameterValue)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	DirectX::XMMATRIX* dataPtr;
 	unsigned int bufferNumber;
 
-	parameterValue = DirectX::XMMatrixTranspose(parameterValue);
+	//parameterValue = DirectX::XMMatrixTranspose(parameterValue);
 
 	// Lock the constant buffer so it can be written to.
 	result = m_deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -747,7 +750,7 @@ void DXRenderingSystem::updateShaderParameter(shaderType shaderType, ID3D11Buffe
 
 	dataPtr = (DirectX::XMMATRIX*)mappedResource.pData;
 
-	*dataPtr = parameterValue;
+	*dataPtr = *(DirectX::XMMATRIX*)parameterValue;
 
 	// Unlock the constant buffer.
 	m_deviceContext->Unmap(matrixBuffer, 0);

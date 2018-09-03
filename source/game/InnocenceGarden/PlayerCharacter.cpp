@@ -7,7 +7,7 @@ void PlayerCharacter::setup()
 	m_inputComponent.setParentEntity(m_parentEntity);
 	m_visibleComponent.setParentEntity(m_parentEntity);
 
-	m_cameraComponent.m_FOV = 60.0;
+	m_cameraComponent.m_FOVX = 60.0;
 	m_cameraComponent.m_WHRatio = 16.0 / 9.0;
 	m_cameraComponent.m_zNear = 0.1;
 	m_cameraComponent.m_zFar = 20000.0;
@@ -90,7 +90,7 @@ void PlayerCharacter::rotateAroundPositiveYAxis(double offset)
 {
 	if (m_canMove)
 	{
-		m_transformComponent.m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * m_rotateSpeed) / 180.0)* PI);
+		m_transformComponent.m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * m_rotateSpeed) / 180.0)* PI<double>);
 	}
 }
 
@@ -98,6 +98,6 @@ void PlayerCharacter::rotateAroundRightAxis(double offset)
 {
 	if (m_canMove)
 	{
-		m_transformComponent.m_transform.rotateInLocal(m_transformComponent.m_transform.getDirection(direction::RIGHT), ((offset * m_rotateSpeed) / 180.0)* PI);
+		m_transformComponent.m_transform.rotateInLocal(m_transformComponent.m_transform.getDirection(direction::RIGHT), ((offset * m_rotateSpeed) / 180.0)* PI<double>);
 	}
 }

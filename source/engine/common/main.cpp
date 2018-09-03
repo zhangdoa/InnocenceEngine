@@ -8,6 +8,8 @@ extern IApplication* g_pApp;
 #if defined(INNO_RENDERER_DX)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {
+	AllocConsole();
+	freopen("CONOUT$", "w+", stdout);
 	WindowSystemSingletonComponent::getInstance().m_hInstance = hInstance;
 	WindowSystemSingletonComponent::getInstance().m_pScmdline = pScmdline;
 	WindowSystemSingletonComponent::getInstance().m_nCmdshow = nCmdshow;

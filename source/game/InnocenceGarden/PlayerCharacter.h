@@ -3,6 +3,8 @@
 #include "../../engine/component/CameraComponent.h"
 #include "../../engine/component/InputComponent.h"
 #include "../../engine/component/VisibleComponent.h"
+#include "../../engine/interface/ILogSystem.h"
+extern ILogSystem* g_pLogSystem;
 
 class PlayerCharacter : public BaseComponent
 {

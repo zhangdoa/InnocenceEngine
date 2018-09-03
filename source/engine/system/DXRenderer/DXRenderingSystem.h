@@ -61,7 +61,7 @@ private:
 
 	void updateFinalBlendPass();
 
-	void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, DirectX::XMMATRIX parameterValue);
+	void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, mat4* parameterValue);
 	void beginScene(float r, float g, float b, float a);
 	void endScene();
 };
