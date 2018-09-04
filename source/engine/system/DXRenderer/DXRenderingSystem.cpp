@@ -481,6 +481,7 @@ void DXRenderingSystem::initializeShader(shaderType shaderType, const std::wstri
 
 			return;
 		}
+		g_pLogSystem->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
 
 		// Create the shader from the buffer.
 		result = m_device->CreateVertexShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader);
@@ -490,6 +491,7 @@ void DXRenderingSystem::initializeShader(shaderType shaderType, const std::wstri
 			m_objectStatus = objectStatus::STANDBY;
 			return;
 		}
+		g_pLogSystem->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been created.");
 
 		D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
 		unsigned int numElements;
@@ -556,6 +558,7 @@ void DXRenderingSystem::initializeShader(shaderType shaderType, const std::wstri
 
 			return;
 		}
+		g_pLogSystem->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
 
 		// Create the shader from the buffer.
 		result = m_device->CreatePixelShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader);
@@ -565,6 +568,7 @@ void DXRenderingSystem::initializeShader(shaderType shaderType, const std::wstri
 			m_objectStatus = objectStatus::STANDBY;
 			return;
 		}
+		g_pLogSystem->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been created.");
 		break;
 
 	default:
