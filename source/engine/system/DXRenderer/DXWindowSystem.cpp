@@ -188,10 +188,7 @@ LRESULT DXWindowSystem::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPAR
 	{
 		auto l_mouseCurrentX = GET_X_LPARAM(lparam);
 		auto l_mouseCurrentY = GET_Y_LPARAM(lparam);
-		WindowSystemSingletonComponent::getInstance().m_mouseXOffset = l_mouseCurrentX - WindowSystemSingletonComponent::getInstance().m_mouseLastX;
-		WindowSystemSingletonComponent::getInstance().m_mouseYOffset = l_mouseCurrentY - WindowSystemSingletonComponent::getInstance().m_mouseLastY;
-		WindowSystemSingletonComponent::getInstance().m_mouseLastX = l_mouseCurrentX;
-		WindowSystemSingletonComponent::getInstance().m_mouseLastY = l_mouseCurrentY;
+		BaseWindowSystem::mousePositionCallback(l_mouseCurrentX, l_mouseCurrentY);
 		return 0;
 	}
 	// Any other messages send to the default message handler as our application won't make use of them.

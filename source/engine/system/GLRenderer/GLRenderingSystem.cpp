@@ -1603,7 +1603,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	glViewport(0, 0, 2048, 2048);
 
 	mat4 captureProjection;
-	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI, 1.0, 0.1, 10.0);
+	captureProjection.initializeToPerspectiveMatrix((90.0 / 180.0) * PI<double>, 1.0, 0.1, 10.0);
 	std::vector<mat4> captureViews =
 	{
 		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
