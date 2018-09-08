@@ -31,7 +31,4 @@ protected:
 	void framebufferSizeCallback(int width, int height);
 	void mousePositionCallback(double mouseXPos, double mouseYPos);
 	void scrollCallback(double xoffset, double yoffset);
-
-private:
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 };

@@ -249,14 +249,18 @@ void AssetSystem::loadAssetsForComponents()
 
 void AssetSystem::assignUnitMesh(meshShapeType meshType, VisibleComponent & visibleComponent)
 {
-	meshID l_UnitMeshTemplate;
-	switch (meshType)
-	{
-	case meshShapeType::QUAD: l_UnitMeshTemplate = m_AssetSystemSingletonComponent->m_UnitQuadTemplate; break;
-	case meshShapeType::CUBE: l_UnitMeshTemplate = m_AssetSystemSingletonComponent->m_UnitCubeTemplate; break;
-	case meshShapeType::SPHERE: l_UnitMeshTemplate = m_AssetSystemSingletonComponent->m_UnitSphereTemplate; break;
-	}
-	g_pGameSystem->addMeshData(&visibleComponent, l_UnitMeshTemplate);
+    meshID l_UnitMeshTemplate;
+    switch (meshType)
+    {
+            case meshShapeType::LINE:
+            l_UnitMeshTemplate = m_AssetSystemSingletonComponent->m_UnitLineTemplate; break;
+            case meshShapeType::QUAD: l_UnitMeshTemplate = m_AssetSystemSingletonComponent->m_UnitQuadTemplate; break;
+            case meshShapeType::CUBE: l_UnitMeshTemplate = m_AssetSystemSingletonComponent->m_UnitCubeTemplate; break;
+            case meshShapeType::SPHERE: l_UnitMeshTemplate = m_AssetSystemSingletonComponent->m_UnitSphereTemplate; break;
+            case meshShapeType::CUSTOM:
+            break;
+    }
+    g_pGameSystem->addMeshData(&visibleComponent, l_UnitMeshTemplate);
 }
 
 void AssetSystem::assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedtexturePair, VisibleComponent & visibleComponent)
