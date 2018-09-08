@@ -523,7 +523,7 @@ public:
 	}
 	//Row-Major memory layout
 #elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
-	auto TMat4::operator*(const TMat4<T> & rhs) -> TMat4<T>
+	auto operator*(const TMat4<T> & rhs) -> TMat4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
@@ -702,7 +702,7 @@ public:
 	}
 	//Row-Major memory layout
 #elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
-	void TMat4::initializeToPerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar)
+	void initializeToPerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar)
 	{
 		m[0][0] = (one<T> / (tan(FOV / two<T>) * WHRatio));
 		m[1][1] = (one<T> / tan(FOV / two<T>));
@@ -714,7 +714,7 @@ public:
 
 	//Column-Major memory layout
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-	void TMat4::initializeToOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar)
+	void initializeToOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar)
 	{
 		m[0][0] = (two<T> / (right - left));
 		m[1][1] = (two<T> / (up - bottom));
@@ -726,7 +726,7 @@ public:
 	}
 	//Row-Major memory layout
 #elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
-	void TMat4::initializeToOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar)
+	void initializeToOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar)
 	{
 		m[0][0] = (two<T> / (right - left));
 		m[0][3] = (-(right + left) / (right - left));
@@ -739,7 +739,7 @@ public:
 #endif
 	//Column-Major memory layout
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-	auto TMat4::lookAt(const TVec4<T> & eyePos, const TVec4<T> & centerPos, const TVec4<T> & upDir) -> TMat4<T>
+	auto lookAt(const TVec4<T> & eyePos, const TVec4<T> & centerPos, const TVec4<T> & upDir) -> TMat4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
@@ -824,7 +824,7 @@ public:
 		m_pos(pos),
 		m_texCoord(texCoord),
 		m_normal(normal) {};
-	auto TVertex::operator=(const TVertex & rhs) -> TVertex<T>&
+	auto operator=(const TVertex & rhs) -> TVertex<T>&
 	{
 		m_pos = rhs.m_pos;
 		m_texCoord = rhs.m_texCoord;
@@ -848,7 +848,7 @@ public:
 	TRay(const TRay<T>& rhs) :
 		m_origin(rhs.m_origin),
 		m_direction(rhs.m_direction) {};
-	auto TRay::operator=(const TRay<T> & rhs) -> TRay<T>&
+	auto operator=(const TRay<T> & rhs) -> TRay<T>&
 	{
 		m_origin = rhs.m_origin;
 		m_direction = rhs.m_direction;
@@ -877,7 +877,7 @@ public:
 		m_boundMax(rhs.m_boundMax),
 		m_vertices(rhs.m_vertices),
 		m_indices(rhs.m_indices) {};
-	auto TAABB::operator=(const TAABB<T> & rhs) -> TAABB<T>&
+	auto operator=(const TAABB<T> & rhs) -> TAABB<T>&
 	{
 		m_center = rhs.m_center;
 		m_sphereRadius = rhs.m_sphereRadius;
@@ -898,6 +898,351 @@ public:
 	std::vector<unsigned int> m_indices;
 };
 
+namespace InnoMath
+{
+#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
+    template<class T>
+    auto mul(const TVec4<T> & lhs, const TMat4<T> & rhs) -> TVec4<T>
+    {
+        // @TODO: replace with SIMD impl
+        TVec4<T> l_TVec4;
+        
+        l_TVec4.x = lhs.x * rhs.m[0][0] + lhs.y * rhs.m[1][0] + lhs.z * rhs.m[2][0] + lhs.w * rhs.m[3][0];
+        l_TVec4.y = lhs.x * rhs.m[0][1] + lhs.y * rhs.m[1][1] + lhs.z * rhs.m[2][1] + lhs.w * rhs.m[3][1];
+        l_TVec4.z = lhs.x * rhs.m[0][2] + lhs.y * rhs.m[1][2] + lhs.z * rhs.m[2][2] + lhs.w * rhs.m[3][2];
+        l_TVec4.w = lhs.x * rhs.m[0][3] + lhs.y * rhs.m[1][3] + lhs.z * rhs.m[2][3] + lhs.w * rhs.m[3][3];
+        
+        return l_TVec4;
+    }
+#elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
+    template<class T>
+    auto mul(const TMat4<T> & lhs, const TVec4<T> & rhs) -> TVec4<T>
+    {
+        // @TODO: replace with SIMD impl
+        TVec4<T> l_TVec4;
+        
+        l_TVec4.x = lhs.m[0][0] * rhs.x + lhs.m[0][1] * rhs.y + lhs.m[0][2] * rhs.z + lhs.m[0][3] * rhs.w;
+        l_TVec4.y = lhs.m[1][0] * rhs.x + lhs.m[1][1] * rhs.y + lhs.m[1][2] * rhs.z + lhs.m[1][3] * rhs.w;
+        l_TVec4.z = lhs.m[2][0] * rhs.x + lhs.m[2][1] * rhs.y + lhs.m[2][2] * rhs.z + lhs.m[2][3] * rhs.w;
+        l_TVec4.w = lhs.m[3][0] * rhs.x + lhs.m[3][1] * rhs.y + lhs.m[3][2] * rhs.z + lhs.m[3][3] * rhs.w;
+        
+        return l_TVec4;
+    }
+#endif
+    /*
+     Column-Major memory layout and
+     Row-Major vector4 mathematical convention
+     
+     vector4(a matrix1x4) :
+     | x y z w |
+     
+     matrix4x4 £º
+     [columnIndex][rowIndex]
+     | m[0][0] <-> a00(1.0) m[1][0] <->  a01(0.0) m[2][0] <->  a02(0.0) m[3][0] <->  a03(0.0) |
+     | m[0][1] <-> a10(0.0) m[1][1] <->  a11(1.0) m[2][1] <->  a12(0.0) m[3][1] <->  a13(0.0) |
+     | m[0][2] <-> a20(0.0) m[1][2] <->  a21(0.0) m[2][2] <->  a22(1.0) m[3][2] <->  a23(0.0) |
+     | m[0][3] <-> a30(Tx ) m[1][3] <->  a31(Ty ) m[2][3] <->  a32(Tz ) m[3][3] <->  a33(1.0) |
+     
+     in
+     
+     vector4 * matrix4x4 :
+     | x' = x * a00(1.0) + y * a10(0.0) + z * a20(0.0) + w * a30 (Tx) |
+     | y' = x * a01(0.0) + y * a11(1.0) + z * a21(0.0) + w * a31 (Ty) |
+     | z' = x * a02(0.0) + y * a12(0.0) + z * a22(1.0) + w * a32 (Tz) |
+     | w' = x * a03(0.0) + y * a13(0.0) + z * a23(0.0) + w * a33(1.0) |
+     
+     --------------------------------------------
+     
+     Row-Major memory layout and
+     Column-Major vector4 mathematical convention
+     
+     vector4(a matrix4x1) :
+     | x |
+     | y |
+     | z |
+     | w |
+     
+     matrix4x4 £º
+     [rowIndex][columnIndex]
+     | m[0][0] <-> a00(1.0) m[0][1] <->  a01(0.0) m[0][2] <->  a02(0.0) m[0][3] <->  a03(Tx ) |
+     | m[1][0] <-> a10(0.0) m[1][1] <->  a11(1.0) m[1][2] <->  a12(0.0) m[1][3] <->  a13(Ty ) |
+     | m[2][0] <-> a20(0.0) m[2][1] <->  a21(0.0) m[2][2] <->  a22(1.0) m[2][3] <->  a23(Tz ) |
+     | m[3][0] <-> a30(0.0) m[3][1] <->  a31(0.0) m[3][2] <->  a32(0.0) m[3][3] <->  a33(1.0) |
+     
+     in
+     
+     matrix4x4 * vector4 :
+     | x' = a00(1.0) * x  + a01(0.0) * y + a02(0.0) * z + a03(Tx ) * w |
+     | y' = a10(0.0) * x  + a11(1.0) * y + a12(0.0) * z + a13(Ty ) * w |
+     | z' = a20(0.0) * x  + a21(0.0) * y + a22(1.0) * z + a23(Tz ) * w |
+     | w' = a30(0.0) * x  + a31(0.0) * y + a32(0.0) * z + a33(1.0) * w |
+     */
+    
+    //Column-Major memory layout
+#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
+    template<class T>
+    auto TVec4::toTranslationMatrix(const TVec4<T>& rhs) -> TMat4<T>
+    {
+        // @TODO: replace with SIMD impl
+        TMat4<T> l_m;
+        
+        l_m.m[0][0] = one<T>;
+        l_m.m[1][1] = one<T>;
+        l_m.m[2][2] = one<T>;
+        l_m.m[3][0] = rhs.x;
+        l_m.m[3][1] = rhs.y;
+        l_m.m[3][2] = rhs.z;
+        l_m.m[3][3] = one<T>;
+        
+        return l_m;
+    }
+    //Row-Major memory layout
+#elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
+    template<class T>
+    auto toTranslationMatrix(const TVec4<T>& rhs) -> TMat4<T>
+    {
+        // @TODO: replace with SIMD impl
+        TMat4<T> l_m;
+        
+        l_m.m[0][0] = one<T>;
+        l_m.m[0][3] = rhs.x;
+        l_m.m[1][1] = one<T>;
+        l_m.m[1][3] = rhs.y;
+        l_m.m[2][2] = one<T>;
+        l_m.m[2][3] = rhs.z;
+        l_m.m[3][3] = one<T>;
+        
+        return l_m;
+    }
+#endif
+    
+    /*
+     Column-Major memory layout and
+     Row-Major vector4 mathematical convention
+     
+     vector4(a matrix1x4) :
+     | x y z w |
+     
+     matrix4x4 £º
+     [columnIndex][rowIndex]
+     | m[0][0] <-> a00(1 - 2*qy2 - 2*qz2) m[1][0] <->  a01(2*qx*qy + 2*qz*qw) m[2][0] <->  a02(2*qx*qz - 2*qy*qw) m[3][0] <->  a03(0.0) |
+     | m[0][1] <-> a10(2*qx*qy - 2*qz*qw) m[1][1] <->  a11(1 - 2*qx2 - 2*qz2) m[2][1] <->  a12(2*qy*qz + 2*qx*qw) m[3][1] <->  a13(0.0) |
+     | m[0][2] <-> a20(2*qx*qz + 2*qy*qw) m[1][2] <->  a21(2*qy*qz - 2*qx*qw) m[2][2] <->  a22(1 - 2*qx2 - 2*qy2) m[3][2] <->  a23(0.0) |
+     | m[0][3] <-> a30(       0.0       ) m[1][3] <->  a31(       0.0       ) m[2][3] <->  a32(       0.0       ) m[3][3] <->  a33(1.0) |
+     
+     in
+     
+     vector4 * matrix4x4 :
+     | x' = x * a00(1 - 2*qy2 - 2*qz2) + y * a10(2*qx*qy - 2*qz*qw) + z * a20(2*qx*qz + 2*qy*qw) + w * a30(       0.0       ) |
+     | y' = x * a01(2*qx*qy + 2*qz*qw) + y * a11(1 - 2*qx2 - 2*qz2) + z * a21(2*qy*qz - 2*qx*qw) + w * a31(       0.0       ) |
+     | z' = x * a02(2*qx*qz - 2*qy*qw) + y * a12(2*qy*qz + 2*qx*qw) + z * a22(1 - 2*qx2 - 2*qy2) + w * a32(       0.0       ) |
+     | w' = x * a03(       0.0       ) + y * a13(       0.0       ) + z * a23(       0.0       ) + w * a33(       1.0       ) |
+     
+     --------------------------------------------
+     
+     Row-Major memory layout and
+     Column-Major vector4 mathematical convention
+     
+     vector4(a matrix4x1) :
+     | x |
+     | y |
+     | z |
+     | w |
+     
+     matrix4x4 £º
+     [rowIndex][columnIndex]
+     | m[0][0] <-> a00(1 - 2*qy2 - 2*qz2) m[0][1] <->  a01(2*qx*qy - 2*qz*qw) m[0][2] <->  a02(2*qx*qz + 2*qy*qw) m[0][3] <->  a03(0.0) |
+     | m[1][0] <-> a10(2*qx*qy + 2*qz*qw) m[1][1] <->  a11(1 - 2*qx2 - 2*qz2) m[1][2] <->  a12(2*qy*qz - 2*qx*qw) m[1][3] <->  a13(0.0) |
+     | m[2][0] <-> a20(2*qx*qz - 2*qy*qw) m[2][1] <->  a21(2*qy*qz + 2*qx*qw) m[2][2] <->  a22(1 - 2*qx2 - 2*qy2) m[2][3] <->  a23(0.0) |
+     | m[3][0] <-> a30(       0.0       ) m[3][1] <->  a31(       0.0       ) m[3][2] <->  a32(       0.0       ) m[3][3] <->  a33(1.0) |
+     
+     in
+     
+     matrix4x4 * vector4 :
+     | x' = a00(1 - 2*qy2 - 2*qz2) * x  + a01(2*qx*qy - 2*qz*qw) * y + a02(2*qx*qz + 2*qy*qw) * z + a03(       0.0       ) * w |
+     | y' = a10(2*qx*qy + 2*qz*qw) * x  + a11(1 - 2*qx2 - 2*qz2) * y + a12(2*qy*qz - 2*qx*qw) * z + a13(       0.0       ) * w |
+     | z' = a20(2*qx*qz - 2*qy*qw) * x  + a21(2*qy*qz + 2*qx*qw) * y + a22(1 - 2*qx2 - 2*qy2) * z + a23(       0.0       ) * w |
+     | w' = a30(       0.0       ) * x  + a31(       0.0       ) * y + a32(       0.0       ) * z + a33(       1.0       ) * w |
+     */
+    
+    //Column-Major memory layout
+#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
+    template<class T>
+    auto toRotationMatrix(const TVec4<T>& rhs) -> TMat4<T>
+    {
+        // @TODO: replace with SIMD impl
+        TMat4<T> l_m;
+        
+        l_m.m[0][0] = (one<T> -two<T> * rhs.y * rhs.y - two<T> * rhs.z * rhs.z);
+        l_m.m[0][1] = (two<T> * rhs.x * y + two<T> * rhs.z * rhs.w);
+        l_m.m[0][2] = (two<T> * rhs.x * rhs.z - two<T> * rhs.y * rhs.w);
+        l_m.m[0][3] = (T());
+        
+        l_m.m[1][0] = (two<T> * rhs.x * rhs.y - two<T> * rhs.z * rhs.w);
+        l_m.m[1][1] = (one<T> -two<T> * rhs.x * rhs.x - two<T> * rhs.z * rhs.z);
+        l_m.m[1][2] = (two<T> * rhs.y * rhs.z + two<T> * rhs.x * rhs.w);
+        l_m.m[1][3] = (T());
+        
+        l_m.m[2][0] = (two<T> * rhs.x * rhs.z + two<T> * rhs.y * rhs.w);
+        l_m.m[2][1] = (two<T> * rhs.y * rhs.z - two<T> * rhs.x * rhs.w);
+        l_m.m[2][2] = (one<T> -two<T> * rhs.x * rhs.x - two<T> * rhs.y * rhs.y);
+        l_m.m[2][3] = (T());
+        
+        l_m.m[3][0] = (T());
+        l_m.m[3][1] = (T());
+        l_m.m[3][2] = (T());
+        l_m.m[3][3] = (one<T>);
+        
+        return l_m;
+    }
+    //Row-Major memory layout
+#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
+    template<class T>
+    auto toRotationMatrix(const TVec4<T>& rhs) -> TMat4<T>
+    {
+        // @TODO: replace with SIMD impl
+        TMat4<T> l_m;
+        
+        l_m.m[0][0] = (one<T> -two<T> *  rhs.y *  rhs.y - two<T> *  rhs.z *  rhs.z);
+        l_m.m[0][1] = (two<T> *  rhs.x *  rhs.y - two<T> *  rhs.z *  rhs.w);
+        l_m.m[0][2] = (two<T> *  rhs.x *  rhs.z + two<T> *  rhs.y *  rhs.w);
+        l_m.m[0][3] = (T());
+        
+        l_m.m[1][0] = (two<T> *  rhs.x *  rhs.y + two<T> *  rhs.z *  rhs.w);
+        l_m.m[1][1] = (one<T> -two<T> *  rhs.x *  rhs.x - two<T> *  rhs.z *  rhs.z);
+        l_m.m[1][2] = (two<T> *  rhs.y *  rhs.z - two<T> *  rhs.x *  rhs.w);
+        l_m.m[1][3] = (T());
+        
+        l_m.m[2][0] = (two<T> *  rhs.x *  rhs.z - two<T> *  rhs.y *  rhs.w);
+        l_m.m[2][1] = (two<T> *  rhs.y *  rhs.z + two<T> *  rhs.x *  rhs.w);
+        l_m.m[2][2] = (one<T> -two<T> *  rhs.x *  rhs.x - two<T> *  rhs.y *  rhs.y);
+        l_m.m[2][3] = (T());
+        
+        l_m.m[3][0] = (T());
+        l_m.m[3][1] = (T());
+        l_m.m[3][2] = (T());
+        l_m.m[3][3] = one<T>;
+        
+        return l_m;
+    }
+#endif
+    
+    template<class T>
+    auto toScaleMatrix(const TVec4<T>& rhs) -> TMat4<T>
+    {
+        // @TODO: replace with SIMD impl
+        TMat4<T> l_m;
+        l_m.m[0][0] = rhs.x;
+        l_m.m[1][1] = rhs.y;
+        l_m.m[2][2] = rhs.z;
+        l_m.m[3][3] = rhs.w;
+        return l_m;
+    }
+    
+    template<class T>
+    bool intersectCheck(const TAABB<T> & lhs, const TAABB<T> & rhs)
+    {
+        if (rhs.m_center.x - lhs.m_center.x > rhs.m_sphereRadius + lhs.m_sphereRadius)
+        {
+            return false;
+        }
+        if (rhs.m_center.y - lhs.m_center.y > rhs.m_sphereRadius + lhs.m_sphereRadius)
+        {
+            return false;
+        }
+        if (rhs.m_center.z - lhs.m_center.z > rhs.m_sphereRadius + lhs.m_sphereRadius)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+    
+    template<class T>
+    bool intersectCheck(const TAABB<T> & lhs, const TRay<T> & rhs)
+    {
+        T txmin, txmax, tymin, tymax, tzmin, tzmax;
+        T l_invDirectionX = std::isinf(one<T> / rhs.m_direction.x) ? zero<T> : one<T> / rhs.m_direction.x;
+        T l_invDirectionY = std::isinf(one<T> / rhs.m_direction.y) ? zero<T> : one<T> / rhs.m_direction.y;
+        T l_invDirectionZ = std::isinf(one<T> / rhs.m_direction.z) ? zero<T> : one<T> / rhs.m_direction.z;
+        TVec4<T> l_invDirection = TVec4<T>(l_invDirectionX, l_invDirectionY, l_invDirectionZ, zero<T>).normalize();
+        
+        if (l_invDirection.x >= zero<T>)
+        {
+            txmin = (lhs.m_boundMin.x - rhs.m_origin.x) * l_invDirection.x;
+            txmax = (lhs.m_boundMax.x - rhs.m_origin.x) * l_invDirection.x;
+        }
+        else
+        {
+            txmin = (lhs.m_boundMax.x - rhs.m_origin.x) * l_invDirection.x;
+            txmax = (lhs.m_boundMin.x - rhs.m_origin.x) * l_invDirection.x;
+        }
+        if (l_invDirection.y >= zero<T>)
+        {
+            tymin = (lhs.m_boundMin.y - rhs.m_origin.y) * l_invDirection.y;
+            tymax = (lhs.m_boundMax.y - rhs.m_origin.y) * l_invDirection.y;
+        }
+        else
+        {
+            tymin = (lhs.m_boundMax.y - rhs.m_origin.y) * l_invDirection.y;
+            tymax = (lhs.m_boundMin.y - rhs.m_origin.y) * l_invDirection.y;
+        }
+        if (txmin > tymax || tymin > txmax)
+        {
+            return false;
+        }
+        if (l_invDirection.z >= zero<T>)
+        {
+            tzmin = (lhs.m_boundMin.z - rhs.m_origin.z) * l_invDirection.z;
+            tzmax = (lhs.m_boundMax.z - rhs.m_origin.z) * l_invDirection.z;
+        }
+        else {
+            tzmin = (lhs.m_boundMax.z - rhs.m_origin.z) * l_invDirection.z;
+            tzmax = (lhs.m_boundMin.z - rhs.m_origin.z) * l_invDirection.z;
+        }
+        if (txmin > tzmax || tzmin > txmax)
+        {
+            return false;
+        }
+        txmin = (tymin > txmin) || std::isinf(txmin) ? tymin : txmin;
+        txmax = (tymax < txmax) || std::isinf(txmax) ? tymax : txmax;
+        txmin = (tzmin > txmin) ? tzmin : txmin;
+        txmax = (tzmax < txmax) ? tzmax : txmax;
+        if (txmin < txmax && txmax >= zero<T>)
+        {
+            return true;
+        }
+        return false;
+    }
+    
+    template<class T, class U>
+    auto precisionConvert(TMat4<T> rhs) ->TMat4<U>
+    {
+        TMat4<U> l_m;
+        
+        l_m.m[0][0] = static_cast<U>(rhs.m[0][0]);
+        l_m.m[0][1] = static_cast<U>(rhs.m[0][1]);
+        l_m.m[0][2] = static_cast<U>(rhs.m[0][2]);
+        l_m.m[0][3] = static_cast<U>(rhs.m[0][3]);
+        l_m.m[1][0] = static_cast<U>(rhs.m[1][0]);
+        l_m.m[1][1] = static_cast<U>(rhs.m[1][1]);
+        l_m.m[1][2] = static_cast<U>(rhs.m[1][2]);
+        l_m.m[1][3] = static_cast<U>(rhs.m[1][3]);
+        l_m.m[2][0] = static_cast<U>(rhs.m[2][0]);
+        l_m.m[2][1] = static_cast<U>(rhs.m[2][1]);
+        l_m.m[2][2] = static_cast<U>(rhs.m[2][2]);
+        l_m.m[2][3] = static_cast<U>(rhs.m[2][3]);
+        l_m.m[3][0] = static_cast<U>(rhs.m[3][0]);
+        l_m.m[3][1] = static_cast<U>(rhs.m[3][1]);
+        l_m.m[3][2] = static_cast<U>(rhs.m[3][2]);
+        l_m.m[3][3] = static_cast<U>(rhs.m[3][3]);
+        
+        return l_m;
+    }
+}
+
 enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
 
 template<class T>
@@ -914,7 +1259,7 @@ public:
 		m_previousScale(m_scale + (1.0)) {};
 	~TTransform() {};
 
-	bool TTransform::hasChanged()
+	bool hasChanged()
 	{
 		if (m_pos != m_previousPos || m_rot != m_previousRot || m_scale != m_previousScale)
 		{
@@ -931,14 +1276,14 @@ public:
 		return false;
 	}
 
-	void TTransform::update()
+	void update()
 	{
 		m_previousPos = m_pos;
 		m_previousRot = m_rot;
 		m_previousScale = m_scale;
 	}
 
-	void TTransform::rotateInLocal(const TVec4<T> & axis, T angle)
+	void rotateInLocal(const TVec4<T> & axis, T angle)
 	{
 		T sinHalfAngle = std::sin((angle * PI<T> / halfCircumference<T>) / two<T>);
 		T cosHalfAngle = std::cos((angle * PI<T> / halfCircumference<T>) / two<T>);
@@ -946,77 +1291,77 @@ public:
 		m_rot = TVec4<T>(axis.x * sinHalfAngle, axis.y * sinHalfAngle, axis.z * sinHalfAngle, cosHalfAngle).quatMul(m_rot);
 	}
 
-	auto TTransform::getPos() -> TVec4<T>
+	auto getPos() -> TVec4<T>
 	{
 		return m_pos;
 	}
 
-	auto TTransform::getRot() -> TVec4<T>
+	auto getRot() -> TVec4<T>
 	{
 		return m_rot;
 	}
 
-	auto TTransform::getScale() -> TVec4<T>
+	auto getScale() -> TVec4<T>
 	{
 		return m_scale;
 	}
 
-	void TTransform::setLocalPos(const TVec4<T> & pos)
+	void setLocalPos(const TVec4<T> & pos)
 	{
 		m_pos = pos;
 	}
 
-	void TTransform::setLocalRot(const TVec4<T> & rot)
+	void setLocalRot(const TVec4<T> & rot)
 	{
 		m_rot = rot;
 	}
 
-	void TTransform::setLocalScale(const TVec4<T> & scale)
+	void setLocalScale(const TVec4<T> & scale)
 	{
 		m_scale = scale;
 	}
 
-	auto TTransform::caclLocalTranslationMatrix() -> TMat4<T>
+	auto caclLocalTranslationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(m_pos);
 	}
 
-	auto TTransform::caclLocalRotMatrix() -> TMat4<T>
+	auto caclLocalRotMatrix() -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(m_rot);
 	}
 
-	auto TTransform::caclLocalScaleMatrix() -> TMat4<T>
+	auto caclLocalScaleMatrix() -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(m_scale);
 	}
 
-	auto TTransform::caclLocalTransformationMatrix() -> TMat4<T>
+	auto caclLocalTransformationMatrix() -> TMat4<T>
 	{
 		return caclLocalTranslationMatrix() * caclLocalRotMatrix() * caclLocalScaleMatrix();
 	}
 
-	auto TTransform::caclPreviousLocalTranslationMatrix() -> TMat4<T>
+	auto caclPreviousLocalTranslationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(m_previousPos);
 	}
 
-	auto TTransform::caclPreviousLocalRotMatrix() -> TMat4<T>
+	auto caclPreviousLocalRotMatrix() -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(m_previousRot);
 	}
 
-	auto TTransform::caclPreviousLocalScaleMatrix() -> TMat4<T>
+	auto caclPreviousLocalScaleMatrix() -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(m_previousScale);
 	}
 
-	auto TTransform::caclPreviousLocalTransformationMatrix() -> TMat4<T>
+	auto caclPreviousLocalTransformationMatrix() -> TMat4<T>
 	{
 		return caclPreviousLocalTranslationMatrix() * caclPreviousLocalRotMatrix() * caclPreviousLocalScaleMatrix();
 	}
 
-	auto TTransform::caclGlobalPos() -> TVec4<T>
+	auto caclGlobalPos() -> TVec4<T>
 	{
 		TMat4<T> l_parentTransformationMatrix;
 		l_parentTransformationMatrix.initializeToIdentityMatrix();
@@ -1042,7 +1387,7 @@ public:
 #endif
 	}
 
-	auto TTransform::caclGlobalRot() -> TVec4<T>
+	auto caclGlobalRot() -> TVec4<T>
 	{
 		TVec4<T> l_parentRot = TVec4<T>(T(), T(), T(), one<T>);
 
@@ -1054,7 +1399,7 @@ public:
 		return l_parentRot.quatMul(m_rot);
 	}
 
-	auto TTransform::caclGlobalScale() -> TVec4<T>
+	auto caclGlobalScale() -> TVec4<T>
 	{
 		TVec4<T> l_parentScale = TVec4<T>(one<T>, one<T>, one<T>, one<T>);
 
@@ -1066,7 +1411,7 @@ public:
 		return l_parentScale.scale(m_scale);
 	}
 
-	auto TTransform::caclPreviousGlobalPos() -> TVec4<T>
+	auto caclPreviousGlobalPos() -> TVec4<T>
 	{
 		TMat4<T> l_parentTransformationMatrix;
 		l_parentTransformationMatrix.initializeToIdentityMatrix();
@@ -1092,7 +1437,7 @@ public:
 #endif
 	}
 
-	auto TTransform::caclPreviousGlobalRot() -> TVec4<T>
+	auto caclPreviousGlobalRot() -> TVec4<T>
 	{
 		TVec4<T> l_parentRot = TVec4<T>(T(), T(), T(), one<T>);
 
@@ -1104,7 +1449,7 @@ public:
 		return l_parentRot.quatMul(m_previousRot);
 	}
 
-	auto TTransform::caclPreviousGlobalScale() -> TVec4<T>
+	auto caclPreviousGlobalScale() -> TVec4<T>
 	{
 		TVec4<T> l_parentScale = TVec4<T>(one<T>, one<T>, one<T>, one<T>);
 
@@ -1116,22 +1461,22 @@ public:
 		return l_parentScale.scale(m_previousScale);
 	}
 
-	auto TTransform::caclGlobalTranslationMatrix() -> TMat4<T>
+	auto caclGlobalTranslationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(caclGlobalPos());
 	}
 
-	auto TTransform::caclGlobalRotMatrix() -> TMat4<T>
+	auto caclGlobalRotMatrix() -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(caclGlobalRot());
 	}
 
-	auto TTransform::caclGlobalScaleMatrix() -> TMat4<T>
+	auto caclGlobalScaleMatrix() -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(caclGlobalScale());
 	}
 
-	auto TTransform::caclGlobalTransformationMatrix() -> TMat4<T>
+	auto caclGlobalTransformationMatrix() -> TMat4<T>
 	{
 		TMat4<T> l_parentTransformationMatrix;
 		l_parentTransformationMatrix.initializeToIdentityMatrix();
@@ -1144,22 +1489,22 @@ public:
 		return l_parentTransformationMatrix * caclLocalTransformationMatrix();
 	}
 
-	auto TTransform::caclPreviousGlobalTranslationMatrix() -> TMat4<T>
+	auto caclPreviousGlobalTranslationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(caclPreviousGlobalPos());
 	}
 
-	auto TTransform::caclPreviousGlobalRotMatrix() -> TMat4<T>
+	auto caclPreviousGlobalRotMatrix() -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(caclPreviousGlobalRot());
 	}
 
-	auto TTransform::caclPreviousGlobalScaleMatrix() -> TMat4<T>
+	auto caclPreviousGlobalScaleMatrix() -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(caclPreviousGlobalScale());
 	}
 
-	auto TTransform::caclPreviousGlobalTransformationMatrix() -> TMat4<T>
+	auto caclPreviousGlobalTransformationMatrix() -> TMat4<T>
 	{
 		TMat4<T> l_parentTransformationMatrix;
 		l_parentTransformationMatrix.initializeToIdentityMatrix();
@@ -1173,79 +1518,79 @@ public:
 
 	}
 
-	auto TTransform::caclLookAtMatrix() -> TMat4<T>
+	auto caclLookAtMatrix() -> TMat4<T>
 	{
 		return TMat4<T>().lookAt(caclGlobalPos(), caclGlobalPos() + getDirection(direction::BACKWARD), getDirection(direction::UP));
 	}
 
-	auto TTransform::caclPreviousLookAtMatrix() -> TMat4<T>
+	auto caclPreviousLookAtMatrix() -> TMat4<T>
 	{
 		return TMat4<T>().lookAt(caclPreviousGlobalPos(), caclPreviousGlobalPos() + getPreviousDirection(direction::BACKWARD), getPreviousDirection(direction::UP));
 	}
 
-	auto TTransform::getInvertLocalTranslationMatrix() -> TMat4<T>
+	auto getInvertLocalTranslationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(m_pos.scale(-1.0));
 	}
 
-	auto TTransform::getInvertLocalRotMatrix() -> TMat4<T>
+	auto getInvertLocalRotMatrix() -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(m_rot.quatConjugate());
 	}
 
-	auto TTransform::getInvertLocalScaleMatrix() -> TMat4<T>
+	auto getInvertLocalScaleMatrix() -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(m_scale.reciprocal());
 	}
 
-	auto TTransform::getInvertGlobalTranslationMatrix() -> TMat4<T>
+	auto getInvertGlobalTranslationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(caclGlobalPos().scale(-1.0));
 	}
 
-	auto TTransform::getInvertGlobalRotMatrix() -> TMat4<T>
+	auto getInvertGlobalRotMatrix() -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(caclGlobalRot().quatConjugate());
 	}
 
-	auto TTransform::getInvertGlobalScaleMatrix() -> TMat4<T>
+	auto getInvertGlobalScaleMatrix() -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(caclGlobalScale().reciprocal());
 	}
 
-	auto TTransform::getPreviousInvertLocalTranslationMatrix() -> TMat4<T>
+	auto getPreviousInvertLocalTranslationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(m_previousPos.scale(-1.0));
 	}
 
-	auto TTransform::getPreviousInvertLocalRotMatrix() -> TMat4<T>
+	auto getPreviousInvertLocalRotMatrix() -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(m_previousRot.quatConjugate());
 	}
 
-	auto TTransform::getPreviousInvertLocalScaleMatrix() -> TMat4<T>
+	auto getPreviousInvertLocalScaleMatrix() -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(m_previousScale.reciprocal());
 	}
 
-	auto TTransform::getPreviousInvertGlobalTranslationMatrix() -> TMat4<T>
+	auto getPreviousInvertGlobalTranslationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(caclPreviousGlobalPos().scale(-1.0));
 	}
 
-	auto TTransform::getPreviousInvertGlobalRotMatrix() -> TMat4<T>
+	auto getPreviousInvertGlobalRotMatrix() -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(caclPreviousGlobalRot().quatConjugate());
 	}
 
 
-	auto TTransform::getPreviousInvertGlobalScaleMatrix() -> TMat4<T>
+	auto getPreviousInvertGlobalScaleMatrix() -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(caclPreviousGlobalScale().reciprocal());
 	}
 
 
-	auto TTransform::getDirection(direction direction) -> TVec4<T>
+	auto getDirection(direction direction) -> TVec4<T>
 	{
 		TVec4<T> l_directionTVec4;
 
@@ -1297,7 +1642,7 @@ public:
 	}
 
 
-	auto TTransform::getPreviousDirection(direction direction) -> TVec4<T>
+	auto getPreviousDirection(direction direction) -> TVec4<T>
 	{
 		TVec4<T> l_directionTVec4;
 
@@ -1376,348 +1721,3 @@ using Ray = TRay<float>;
 using AABB = TAABB<float>;
 using Transform = TTransform<float>;
 #endif
-
-namespace InnoMath
-{
-#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-	template<class T>
-	auto mul(const TVec4<T> & lhs, const TMat4<T> & rhs) -> TVec4<T>
-	{
-		// @TODO: replace with SIMD impl
-		TVec4<T> l_TVec4;
-
-		l_TVec4.x = lhs.x * rhs.m[0][0] + lhs.y * rhs.m[1][0] + lhs.z * rhs.m[2][0] + lhs.w * rhs.m[3][0];
-		l_TVec4.y = lhs.x * rhs.m[0][1] + lhs.y * rhs.m[1][1] + lhs.z * rhs.m[2][1] + lhs.w * rhs.m[3][1];
-		l_TVec4.z = lhs.x * rhs.m[0][2] + lhs.y * rhs.m[1][2] + lhs.z * rhs.m[2][2] + lhs.w * rhs.m[3][2];
-		l_TVec4.w = lhs.x * rhs.m[0][3] + lhs.y * rhs.m[1][3] + lhs.z * rhs.m[2][3] + lhs.w * rhs.m[3][3];
-
-		return l_TVec4;
-	}
-#elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
-	template<class T>
-	auto mul(const TMat4<T> & lhs, const TVec4<T> & rhs) -> TVec4<T>
-	{
-		// @TODO: replace with SIMD impl
-		TVec4<T> l_TVec4;
-
-		l_TVec4.x = lhs.m[0][0] * rhs.x + lhs.m[0][1] * rhs.y + lhs.m[0][2] * rhs.z + lhs.m[0][3] * rhs.w;
-		l_TVec4.y = lhs.m[1][0] * rhs.x + lhs.m[1][1] * rhs.y + lhs.m[1][2] * rhs.z + lhs.m[1][3] * rhs.w;
-		l_TVec4.z = lhs.m[2][0] * rhs.x + lhs.m[2][1] * rhs.y + lhs.m[2][2] * rhs.z + lhs.m[2][3] * rhs.w;
-		l_TVec4.w = lhs.m[3][0] * rhs.x + lhs.m[3][1] * rhs.y + lhs.m[3][2] * rhs.z + lhs.m[3][3] * rhs.w;
-
-		return l_TVec4;
-	}
-#endif
-	/*
-	Column-Major memory layout and
-	Row-Major vector4 mathematical convention
-
-	vector4(a matrix1x4) :
-	| x y z w |
-
-	matrix4x4 £º
-	[columnIndex][rowIndex]
-	| m[0][0] <-> a00(1.0) m[1][0] <->  a01(0.0) m[2][0] <->  a02(0.0) m[3][0] <->  a03(0.0) |
-	| m[0][1] <-> a10(0.0) m[1][1] <->  a11(1.0) m[2][1] <->  a12(0.0) m[3][1] <->  a13(0.0) |
-	| m[0][2] <-> a20(0.0) m[1][2] <->  a21(0.0) m[2][2] <->  a22(1.0) m[3][2] <->  a23(0.0) |
-	| m[0][3] <-> a30(Tx ) m[1][3] <->  a31(Ty ) m[2][3] <->  a32(Tz ) m[3][3] <->  a33(1.0) |
-
-	in
-
-	vector4 * matrix4x4 :
-	| x' = x * a00(1.0) + y * a10(0.0) + z * a20(0.0) + w * a30 (Tx) |
-	| y' = x * a01(0.0) + y * a11(1.0) + z * a21(0.0) + w * a31 (Ty) |
-	| z' = x * a02(0.0) + y * a12(0.0) + z * a22(1.0) + w * a32 (Tz) |
-	| w' = x * a03(0.0) + y * a13(0.0) + z * a23(0.0) + w * a33(1.0) |
-
-	--------------------------------------------
-
-	Row-Major memory layout and
-	Column-Major vector4 mathematical convention
-
-	vector4(a matrix4x1) :
-	| x |
-	| y |
-	| z |
-	| w |
-
-	matrix4x4 £º
-	[rowIndex][columnIndex]
-	| m[0][0] <-> a00(1.0) m[0][1] <->  a01(0.0) m[0][2] <->  a02(0.0) m[0][3] <->  a03(Tx ) |
-	| m[1][0] <-> a10(0.0) m[1][1] <->  a11(1.0) m[1][2] <->  a12(0.0) m[1][3] <->  a13(Ty ) |
-	| m[2][0] <-> a20(0.0) m[2][1] <->  a21(0.0) m[2][2] <->  a22(1.0) m[2][3] <->  a23(Tz ) |
-	| m[3][0] <-> a30(0.0) m[3][1] <->  a31(0.0) m[3][2] <->  a32(0.0) m[3][3] <->  a33(1.0) |
-
-	in
-
-	matrix4x4 * vector4 :
-	| x' = a00(1.0) * x  + a01(0.0) * y + a02(0.0) * z + a03(Tx ) * w |
-	| y' = a10(0.0) * x  + a11(1.0) * y + a12(0.0) * z + a13(Ty ) * w |
-	| z' = a20(0.0) * x  + a21(0.0) * y + a22(1.0) * z + a23(Tz ) * w |
-	| w' = a30(0.0) * x  + a31(0.0) * y + a32(0.0) * z + a33(1.0) * w |
-	*/
-
-	//Column-Major memory layout
-#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-	template<class T>
-	auto TVec4::toTranslationMatrix(const TVec4<T>& rhs) -> TMat4<T>
-	{
-		// @TODO: replace with SIMD impl
-		TMat4<T> l_m;
-
-		l_m.m[0][0] = one<T>;
-		l_m.m[1][1] = one<T>;
-		l_m.m[2][2] = one<T>;
-		l_m.m[3][0] = rhs.x;
-		l_m.m[3][1] = rhs.y;
-		l_m.m[3][2] = rhs.z;
-		l_m.m[3][3] = one<T>;
-
-		return l_m;
-	}
-	//Row-Major memory layout
-#elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
-	template<class T>
-	auto toTranslationMatrix(const TVec4<T>& rhs) -> TMat4<T>
-	{
-		// @TODO: replace with SIMD impl
-		TMat4<T> l_m;
-
-		l_m.m[0][0] = one<T>;
-		l_m.m[0][3] = rhs.x;
-		l_m.m[1][1] = one<T>;
-		l_m.m[1][3] = rhs.y;
-		l_m.m[2][2] = one<T>;
-		l_m.m[2][3] = rhs.z;
-		l_m.m[3][3] = one<T>;
-
-		return l_m;
-	}
-#endif
-
-	/*
-	Column-Major memory layout and
-	Row-Major vector4 mathematical convention
-
-	vector4(a matrix1x4) :
-	| x y z w |
-
-	matrix4x4 £º
-	[columnIndex][rowIndex]
-	| m[0][0] <-> a00(1 - 2*qy2 - 2*qz2) m[1][0] <->  a01(2*qx*qy + 2*qz*qw) m[2][0] <->  a02(2*qx*qz - 2*qy*qw) m[3][0] <->  a03(0.0) |
-	| m[0][1] <-> a10(2*qx*qy - 2*qz*qw) m[1][1] <->  a11(1 - 2*qx2 - 2*qz2) m[2][1] <->  a12(2*qy*qz + 2*qx*qw) m[3][1] <->  a13(0.0) |
-	| m[0][2] <-> a20(2*qx*qz + 2*qy*qw) m[1][2] <->  a21(2*qy*qz - 2*qx*qw) m[2][2] <->  a22(1 - 2*qx2 - 2*qy2) m[3][2] <->  a23(0.0) |
-	| m[0][3] <-> a30(       0.0       ) m[1][3] <->  a31(       0.0       ) m[2][3] <->  a32(       0.0       ) m[3][3] <->  a33(1.0) |
-
-	in
-
-	vector4 * matrix4x4 :
-	| x' = x * a00(1 - 2*qy2 - 2*qz2) + y * a10(2*qx*qy - 2*qz*qw) + z * a20(2*qx*qz + 2*qy*qw) + w * a30(       0.0       ) |
-	| y' = x * a01(2*qx*qy + 2*qz*qw) + y * a11(1 - 2*qx2 - 2*qz2) + z * a21(2*qy*qz - 2*qx*qw) + w * a31(       0.0       ) |
-	| z' = x * a02(2*qx*qz - 2*qy*qw) + y * a12(2*qy*qz + 2*qx*qw) + z * a22(1 - 2*qx2 - 2*qy2) + w * a32(       0.0       ) |
-	| w' = x * a03(       0.0       ) + y * a13(       0.0       ) + z * a23(       0.0       ) + w * a33(       1.0       ) |
-
-	--------------------------------------------
-
-	Row-Major memory layout and
-	Column-Major vector4 mathematical convention
-
-	vector4(a matrix4x1) :
-	| x |
-	| y |
-	| z |
-	| w |
-
-	matrix4x4 £º
-	[rowIndex][columnIndex]
-	| m[0][0] <-> a00(1 - 2*qy2 - 2*qz2) m[0][1] <->  a01(2*qx*qy - 2*qz*qw) m[0][2] <->  a02(2*qx*qz + 2*qy*qw) m[0][3] <->  a03(0.0) |
-	| m[1][0] <-> a10(2*qx*qy + 2*qz*qw) m[1][1] <->  a11(1 - 2*qx2 - 2*qz2) m[1][2] <->  a12(2*qy*qz - 2*qx*qw) m[1][3] <->  a13(0.0) |
-	| m[2][0] <-> a20(2*qx*qz - 2*qy*qw) m[2][1] <->  a21(2*qy*qz + 2*qx*qw) m[2][2] <->  a22(1 - 2*qx2 - 2*qy2) m[2][3] <->  a23(0.0) |
-	| m[3][0] <-> a30(       0.0       ) m[3][1] <->  a31(       0.0       ) m[3][2] <->  a32(       0.0       ) m[3][3] <->  a33(1.0) |
-
-	in
-
-	matrix4x4 * vector4 :
-	| x' = a00(1 - 2*qy2 - 2*qz2) * x  + a01(2*qx*qy - 2*qz*qw) * y + a02(2*qx*qz + 2*qy*qw) * z + a03(       0.0       ) * w |
-	| y' = a10(2*qx*qy + 2*qz*qw) * x  + a11(1 - 2*qx2 - 2*qz2) * y + a12(2*qy*qz - 2*qx*qw) * z + a13(       0.0       ) * w |
-	| z' = a20(2*qx*qz - 2*qy*qw) * x  + a21(2*qy*qz + 2*qx*qw) * y + a22(1 - 2*qx2 - 2*qy2) * z + a23(       0.0       ) * w |
-	| w' = a30(       0.0       ) * x  + a31(       0.0       ) * y + a32(       0.0       ) * z + a33(       1.0       ) * w |
-	*/
-
-	//Column-Major memory layout
-#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-	template<class T>
-	auto toRotationMatrix(const TVec4<T>& rhs) -> TMat4<T>
-	{
-		// @TODO: replace with SIMD impl
-		TMat4<T> l_m;
-
-		l_m.m[0][0] = (one<T> -two<T> * rhs.y * rhs.y - two<T> * rhs.z * rhs.z);
-		l_m.m[0][1] = (two<T> * rhs.x * y + two<T> * rhs.z * rhs.w);
-		l_m.m[0][2] = (two<T> * rhs.x * rhs.z - two<T> * rhs.y * rhs.w);
-		l_m.m[0][3] = (T());
-
-		l_m.m[1][0] = (two<T> * rhs.x * rhs.y - two<T> * rhs.z * rhs.w);
-		l_m.m[1][1] = (one<T> -two<T> * rhs.x * rhs.x - two<T> * rhs.z * rhs.z);
-		l_m.m[1][2] = (two<T> * rhs.y * rhs.z + two<T> * rhs.x * rhs.w);
-		l_m.m[1][3] = (T());
-
-		l_m.m[2][0] = (two<T> * rhs.x * rhs.z + two<T> * rhs.y * rhs.w);
-		l_m.m[2][1] = (two<T> * rhs.y * rhs.z - two<T> * rhs.x * rhs.w);
-		l_m.m[2][2] = (one<T> -two<T> * rhs.x * rhs.x - two<T> * rhs.y * rhs.y);
-		l_m.m[2][3] = (T());
-
-		l_m.m[3][0] = (T());
-		l_m.m[3][1] = (T());
-		l_m.m[3][2] = (T());
-		l_m.m[3][3] = (one<T>);
-
-		return l_m;
-	}
-	//Row-Major memory layout
-#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
-	template<class T>
-	auto toRotationMatrix(const TVec4<T>& rhs) -> TMat4<T>
-	{
-		// @TODO: replace with SIMD impl
-		TMat4<T> l_m;
-
-		l_m.m[0][0] = (one<T> -two<T> *  rhs.y *  rhs.y - two<T> *  rhs.z *  rhs.z);
-		l_m.m[0][1] = (two<T> *  rhs.x *  rhs.y - two<T> *  rhs.z *  rhs.w);
-		l_m.m[0][2] = (two<T> *  rhs.x *  rhs.z + two<T> *  rhs.y *  rhs.w);
-		l_m.m[0][3] = (T());
-
-		l_m.m[1][0] = (two<T> *  rhs.x *  rhs.y + two<T> *  rhs.z *  rhs.w);
-		l_m.m[1][1] = (one<T> -two<T> *  rhs.x *  rhs.x - two<T> *  rhs.z *  rhs.z);
-		l_m.m[1][2] = (two<T> *  rhs.y *  rhs.z - two<T> *  rhs.x *  rhs.w);
-		l_m.m[1][3] = (T());
-
-		l_m.m[2][0] = (two<T> *  rhs.x *  rhs.z - two<T> *  rhs.y *  rhs.w);
-		l_m.m[2][1] = (two<T> *  rhs.y *  rhs.z + two<T> *  rhs.x *  rhs.w);
-		l_m.m[2][2] = (one<T> -two<T> *  rhs.x *  rhs.x - two<T> *  rhs.y *  rhs.y);
-		l_m.m[2][3] = (T());
-
-		l_m.m[3][0] = (T());
-		l_m.m[3][1] = (T());
-		l_m.m[3][2] = (T());
-		l_m.m[3][3] = one<T>;
-
-		return l_m;
-	}
-#endif
-
-	template<class T>
-	auto toScaleMatrix(const TVec4<T>& rhs) -> TMat4<T>
-	{
-		// @TODO: replace with SIMD impl
-		TMat4<T> l_m;
-		l_m.m[0][0] = rhs.x;
-		l_m.m[1][1] = rhs.y;
-		l_m.m[2][2] = rhs.z;
-		l_m.m[3][3] = rhs.w;
-		return l_m;
-	}
-
-	template<class T>
-	bool intersectCheck(const TAABB<T> & lhs, const TAABB<T> & rhs)
-	{
-		if (rhs.m_center.x - lhs.m_center.x > rhs.m_sphereRadius + lhs.m_sphereRadius)
-		{
-			return false;
-		}
-		if (rhs.m_center.y - lhs.m_center.y > rhs.m_sphereRadius + lhs.m_sphereRadius)
-		{
-			return false;
-		}
-		if (rhs.m_center.z - lhs.m_center.z > rhs.m_sphereRadius + lhs.m_sphereRadius)
-		{
-			return false;
-		}
-		else
-		{
-			return true;
-		}
-	}
-
-	template<class T>
-	bool intersectCheck(const TAABB<T> & lhs, const TRay<T> & rhs)
-	{
-		T txmin, txmax, tymin, tymax, tzmin, tzmax;
-		T l_invDirectionX = std::isinf(one<T> / rhs.m_direction.x) ? zero<T> : one<T> / rhs.m_direction.x;
-		T l_invDirectionY = std::isinf(one<T> / rhs.m_direction.y) ? zero<T> : one<T> / rhs.m_direction.y;
-		T l_invDirectionZ = std::isinf(one<T> / rhs.m_direction.z) ? zero<T> : one<T> / rhs.m_direction.z;
-		TVec4<T> l_invDirection = TVec4<T>(l_invDirectionX, l_invDirectionY, l_invDirectionZ, zero<T>).normalize();
-
-		if (l_invDirection.x >= zero<T>)
-		{
-			txmin = (lhs.m_boundMin.x - rhs.m_origin.x) * l_invDirection.x;
-			txmax = (lhs.m_boundMax.x - rhs.m_origin.x) * l_invDirection.x;
-		}
-		else
-		{
-			txmin = (lhs.m_boundMax.x - rhs.m_origin.x) * l_invDirection.x;
-			txmax = (lhs.m_boundMin.x - rhs.m_origin.x) * l_invDirection.x;
-		}
-		if (l_invDirection.y >= zero<T>)
-		{
-			tymin = (lhs.m_boundMin.y - rhs.m_origin.y) * l_invDirection.y;
-			tymax = (lhs.m_boundMax.y - rhs.m_origin.y) * l_invDirection.y;
-		}
-		else
-		{
-			tymin = (lhs.m_boundMax.y - rhs.m_origin.y) * l_invDirection.y;
-			tymax = (lhs.m_boundMin.y - rhs.m_origin.y) * l_invDirection.y;
-		}
-		if (txmin > tymax || tymin > txmax)
-		{
-			return false;
-		}
-		if (l_invDirection.z >= zero<T>)
-		{
-			tzmin = (lhs.m_boundMin.z - rhs.m_origin.z) * l_invDirection.z;
-			tzmax = (lhs.m_boundMax.z - rhs.m_origin.z) * l_invDirection.z;
-		}
-		else {
-			tzmin = (lhs.m_boundMax.z - rhs.m_origin.z) * l_invDirection.z;
-			tzmax = (lhs.m_boundMin.z - rhs.m_origin.z) * l_invDirection.z;
-		}
-		if (txmin > tzmax || tzmin > txmax)
-		{
-			return false;
-		}
-		txmin = (tymin > txmin) || std::isinf(txmin) ? tymin : txmin;
-		txmax = (tymax < txmax) || std::isinf(txmax) ? tymax : txmax;
-		txmin = (tzmin > txmin) ? tzmin : txmin;
-		txmax = (tzmax < txmax) ? tzmax : txmax;
-		if (txmin < txmax && txmax >= zero<T>)
-		{
-			return true;
-		}
-		return false;
-	}
-
-	template<class T, class U>
-	auto precisionConvert(TMat4<T> rhs) ->TMat4<U>
-	{
-		TMat4<U> l_m;
-
-		l_m.m[0][0] = static_cast<U>(rhs.m[0][0]);
-		l_m.m[0][1] = static_cast<U>(rhs.m[0][1]);
-		l_m.m[0][2] = static_cast<U>(rhs.m[0][2]);
-		l_m.m[0][3] = static_cast<U>(rhs.m[0][3]);
-		l_m.m[1][0] = static_cast<U>(rhs.m[1][0]);
-		l_m.m[1][1] = static_cast<U>(rhs.m[1][1]);
-		l_m.m[1][2] = static_cast<U>(rhs.m[1][2]);
-		l_m.m[1][3] = static_cast<U>(rhs.m[1][3]);
-		l_m.m[2][0] = static_cast<U>(rhs.m[2][0]);
-		l_m.m[2][1] = static_cast<U>(rhs.m[2][1]);
-		l_m.m[2][2] = static_cast<U>(rhs.m[2][2]);
-		l_m.m[2][3] = static_cast<U>(rhs.m[2][3]);
-		l_m.m[3][0] = static_cast<U>(rhs.m[3][0]);
-		l_m.m[3][1] = static_cast<U>(rhs.m[3][1]);
-		l_m.m[3][2] = static_cast<U>(rhs.m[3][2]);
-		l_m.m[3][3] = static_cast<U>(rhs.m[3][3]);
-
-		return l_m;
-	}
-}
