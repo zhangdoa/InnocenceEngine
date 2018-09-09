@@ -441,36 +441,44 @@ void AssetSystem::loadModelFromDisk(const std::string & fileName, modelMap & mod
 
 	Assimp::Importer l_assImporter;
 	const aiScene* l_assScene;
-#if defined INNO_PLATFORM_LINUX64 || defined INNO_PLATFORM_MACOS
-    l_assScene = l_assImporter.ReadFile(m_AssetSystemSingletonComponent->m_modelRelativePath + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-    if (l_assScene == nullptr)
-    {
-        l_assScene = l_assImporter.ReadFile(m_AssetSystemSingletonComponent->m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-        // save model file as .innoModel binary file
-        Assimp::Exporter l_assExporter;
-        l_assExporter.Export(l_assScene, "assbin", m_AssetSystemSingletonComponent->m_modelRelativePath + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
-        g_pLogSystem->printLog("AssetSystem: " + fileName + " is successfully converted.");
-    }
-#else
-    if (std::experimental::filesystem::exists(std::experimental::filesystem::path(m_AssetSystemSingletonComponent->m_modelRelativePath + l_convertedFilePath)))
-    {
-        l_assScene = l_assImporter.ReadFile(m_AssetSystemSingletonComponent->m_modelRelativePath + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-    }
-    else if (std::experimental::filesystem::exists(std::experimental::filesystem::path(m_AssetSystemSingletonComponent->m_modelRelativePath + fileName)))
-    {
-        l_assScene = l_assImporter.ReadFile(m_AssetSystemSingletonComponent->m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-        // save model file as .innoModel binary file
-        Assimp::Exporter l_assExporter;
-        l_assExporter.Export(l_assScene, "assbin", m_AssetSystemSingletonComponent->m_modelRelativePath + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
-        g_pLogSystem->printLog("AssetSystem: " + fileName + " is successfully converted.");
-    }
-#endif
+#if defined INNO_PLATFORM_WIN32 || defined INNO_PLATFORM_WIN64
+	// try to load .innoModel first
+	if (std::experimental::filesystem::exists(std::experimental::filesystem::path(m_AssetSystemSingletonComponent->m_modelRelativePath + l_convertedFilePath)))
+	{
+		l_assScene = l_assImporter.ReadFile(m_AssetSystemSingletonComponent->m_modelRelativePath + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	}
+	else if (std::experimental::filesystem::exists(std::experimental::filesystem::path(m_AssetSystemSingletonComponent->m_modelRelativePath + fileName)))
+	{
+		// try to load original file then
+		l_assScene = l_assImporter.ReadFile(m_AssetSystemSingletonComponent->m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		// save model file as .innoModel binary file
+		Assimp::Exporter l_assExporter;
+		l_assExporter.Export(l_assScene, "assbin", m_AssetSystemSingletonComponent->m_modelRelativePath + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
+		g_pLogSystem->printLog("AssetSystem: " + fileName + " is successfully converted.");
+	}
 	else
 	{
 		g_pLogSystem->printLog("AssetSystem: " + fileName + " doesn't exist!");
 		return;
 	}
-
+#else
+	// try to load .innoModel first
+    l_assScene = l_assImporter.ReadFile(m_AssetSystemSingletonComponent->m_modelRelativePath + l_convertedFilePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    if (l_assScene == nullptr)
+    {
+		// try to load original file then
+        l_assScene = l_assImporter.ReadFile(m_AssetSystemSingletonComponent->m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		if (l_assScene == nullptr)
+		{
+			g_pLogSystem->printLog("AssetSystem: " + fileName + " doesn't exist!");
+			return;
+		}
+		// save model file as .innoModel binary file
+        Assimp::Exporter l_assExporter;
+        l_assExporter.Export(l_assScene, "assbin", m_AssetSystemSingletonComponent->m_modelRelativePath + fileName.substr(0, fileName.find(".")) + ".innoModel", 0u, 0);
+        g_pLogSystem->printLog("AssetSystem: " + fileName + " is successfully converted.");
+    }
+#endif
 	if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 	{
 		g_pLogSystem->printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
