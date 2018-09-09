@@ -2552,6 +2552,9 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	activateMesh(l_mesh);
+	drawMesh(l_mesh);
 }
 
 void GLRenderingSystem::shutdown()
