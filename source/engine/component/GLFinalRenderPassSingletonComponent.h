@@ -30,8 +30,10 @@ public:
 	GLuint m_TAAPassFragmentShaderID;
 	GLTextureDataComponent m_TAAPingPassTexture;
 	GLTextureDataComponent m_TAAPongPassTexture;
-	GLuint m_TAAPass_uni_TAA_LightPassRT0;
-	GLuint m_TAAPass_uni_TAA_LastTAAPassRT0;
+	GLuint m_TAAPass_uni_lightPassRT0;
+	GLuint m_TAAPass_uni_lastTAAPassRT0;
+	GLuint m_TAAPass_uni_motionVectorTexture;
+	GLuint m_TAAPass_uni_renderTargetSize;
 
 	GLFrameBufferComponent m_bloomExtractPassGLFrameBufferComponent;
 	GLShaderProgramComponent m_bloomExtractPassProgram;
@@ -39,7 +41,6 @@ public:
 	GLuint m_bloomExtractPassFragmentShaderID;
 	GLTextureDataComponent m_bloomExtractPassTexture;
 	GLuint m_bloomExtractPass_uni_TAAPassRT0;
-	GLuint m_bloomExtractPass_uni_isEmissive;
 
 	GLFrameBufferComponent m_bloomBlurPingPassGLFrameBufferComponent;
 	GLFrameBufferComponent m_bloomBlurPongPassGLFrameBufferComponent;

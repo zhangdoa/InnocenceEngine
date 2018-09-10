@@ -47,6 +47,8 @@ public:
 	std::vector<GLuint> m_uni_pointLights_position;
 	std::vector<GLuint> m_uni_pointLights_radius;
 	std::vector<GLuint> m_uni_pointLights_color;
+
+	GLuint m_uni_isEmissive;
 private:
 	LightRenderPassSingletonComponent() {};
 };

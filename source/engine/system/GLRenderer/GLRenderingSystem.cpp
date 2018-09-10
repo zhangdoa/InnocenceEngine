@@ -2,10 +2,13 @@
 
 void GLRenderingSystem::setup()
 {
-	// 16x antialiasing
-	glfwWindowHint(GLFW_SAMPLES, 16);
-	// MSAA
-	glEnable(GL_MULTISAMPLE);
+	if (RenderingSystemSingletonComponent::getInstance().m_MSAAdepth)
+	{
+		// 16x antialiasing
+		glfwWindowHint(GLFW_SAMPLES, 16);
+		// MSAA
+		glEnable(GL_MULTISAMPLE);
+	}
 	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glEnable(GL_PROGRAM_POINT_SIZE);
@@ -374,9 +377,12 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 		GL_FRAGMENT_SHADER,
 		"GL3.3//geometryPassBlinnPhongFragment.sf");
 #endif
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera = getUniformLocation(
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_original = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
-		"uni_p_camera");
+		"uni_p_camera_original");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_jittered = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_p_camera_jittered");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_r_camera");
@@ -387,12 +393,15 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_m");
 #ifdef CookTorrance
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera_previous = getUniformLocation(
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera_prev = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
-		"uni_r_camera_previous");
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera_previous = getUniformLocation(
+		"uni_r_camera_prev");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera_prev = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
-		"uni_t_camera_previous");
+		"uni_t_camera_prev");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev = getUniformLocation(
+		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		"uni_m_prev");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_0 = getUniformLocation(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
 		"uni_p_light_0");
@@ -640,6 +649,9 @@ void GLRenderingSystem::initializeLightRenderPass()
 			);
 		}
 	}
+	LightRenderPassSingletonComponent::getInstance().m_uni_isEmissive = getUniformLocation(
+		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
+		"uni_isEmissive");
 }
 
 void GLRenderingSystem::initializeFinalRenderPass()
@@ -822,18 +834,27 @@ void GLRenderingSystem::initializeTAAPass()
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3//TAAPassFragment.sf");
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_TAA_LightPassRT0 = getUniformLocation(
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_lightPassRT0 = getUniformLocation(
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassProgram.m_program,
-		"uni_TAA_LightPassRT0");
+		"uni_lightPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_TAA_LightPassRT0,
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_lightPassRT0,
 		0);
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_TAA_LastTAAPassRT0 = getUniformLocation(
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_lastTAAPassRT0 = getUniformLocation(
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassProgram.m_program,
-		"uni_TAA_LastTAAPassRT0");
+		"uni_lastTAAPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_TAA_LastTAAPassRT0,
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_lastTAAPassRT0,
 		1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_motionVectorTexture = getUniformLocation(
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassProgram.m_program,
+		"uni_motionVectorTexture");
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_motionVectorTexture,
+		2);
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize = getUniformLocation(
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassProgram.m_program,
+		"uni_renderTargetSize");	
 }
 
 void GLRenderingSystem::initializeBloomExtractPass()
@@ -899,9 +920,6 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	updateUniform(
 		GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_TAAPassRT0,
 		0);
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_isEmissive = getUniformLocation(
-		GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassProgram.m_program,
-		"uni_isEmissive");
 }
 
 void GLRenderingSystem::initializeBloomBlurPass()
@@ -1969,14 +1987,15 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 	if (g_pGameSystem->getCameraComponents().size() > 0)
 	{
-		mat4 p = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
+		mat4 p_original = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
+		mat4 p_jittered = p_original;
 		//TAA jitter for projection matrix
 		if (RenderingSystemSingletonComponent::getInstance().currentHaltonStep >= 16)
 		{
 			RenderingSystemSingletonComponent::getInstance().currentHaltonStep = 0;
 		}
-		p.m[0][2] = RenderingSystemSingletonComponent::getInstance().HaltonSampler[RenderingSystemSingletonComponent::getInstance().currentHaltonStep].x / RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-		p.m[1][2] = RenderingSystemSingletonComponent::getInstance().HaltonSampler[RenderingSystemSingletonComponent::getInstance().currentHaltonStep].y / RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+		p_jittered.m[0][2] = RenderingSystemSingletonComponent::getInstance().HaltonSampler[RenderingSystemSingletonComponent::getInstance().currentHaltonStep].x / RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+		p_jittered.m[1][2] = RenderingSystemSingletonComponent::getInstance().HaltonSampler[RenderingSystemSingletonComponent::getInstance().currentHaltonStep].y / RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 		RenderingSystemSingletonComponent::getInstance().currentHaltonStep += 1;
 
 		mat4 r = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
@@ -1985,20 +2004,22 @@ void GLRenderingSystem::updateGeometryRenderPass()
 		mat4 t_prev = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getPreviousInvertGlobalTranslationMatrix();
 
 		updateUniform(
-			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera,
-			p);
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_original,
+			p_original);
+		updateUniform(
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_jittered,
+			p_jittered);
 		updateUniform(
 			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera,
 			r);
 		updateUniform(
 			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera,
 			t);
-
 		updateUniform(
-			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera_previous,
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera_prev,
 			r_prev);
 		updateUniform(
-			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera_previous,
+			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera_prev,
 			t_prev);
 
 #ifdef CookTorrance
@@ -2031,6 +2052,9 @@ void GLRenderingSystem::updateGeometryRenderPass()
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
 								g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
+							updateUniform(
+								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
+								g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclPreviousGlobalTransformationMatrix());
 
 							// draw each graphic data of visibleComponent
 							for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -2193,7 +2217,8 @@ void GLRenderingSystem::updateLightRenderPass()
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glClear(GL_STENCIL_BUFFER_BIT);
 
-	// copy stencil buffer from G-Pass
+	// 1. opaque objects
+	// copy stencil buffer of opaque objects from G-Pass
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, LightRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
 	glBlitFramebuffer(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
@@ -2231,6 +2256,11 @@ void GLRenderingSystem::updateLightRenderPass()
 	// BRDF look-up table
 	activateTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture, 13);
 #endif
+
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_isEmissive,
+		false);
+
 	if (g_pGameSystem->getLightComponents().size() > 0)
 	{
 		int l_pointLightIndexOffset = 0;
@@ -2274,6 +2304,27 @@ void GLRenderingSystem::updateLightRenderPass()
 	}
 	// draw light pass rectangle
 	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
+	activateMesh(l_mesh);
+	drawMesh(l_mesh);
+
+	// 2. draw emissive objects
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilFunc(GL_EQUAL, 0x02, 0xFF);
+	glStencilMask(0x00);
+
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	// copy stencil buffer of emmisive objects from G-Pass
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, LightRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	glBlitFramebuffer(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_isEmissive,
+		true);
+
+	// draw light pass rectangle
+	l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
 
@@ -2354,6 +2405,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 		glClear(GL_DEPTH_BUFFER_BIT);
 		activateTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture, 0);
 		activateTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture, 1);
+		activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[3], 2);
 		RenderingSystemSingletonComponent::getInstance().m_isTAAPingPass = false;
 		l_lastTAATextureDataComponent = &GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture;
 	}
@@ -2369,9 +2421,14 @@ void GLRenderingSystem::updateFinalRenderPass()
 		glClear(GL_DEPTH_BUFFER_BIT);
 		activateTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture, 0);
 		activateTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture, 1);
+		activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[3], 2);
 		RenderingSystemSingletonComponent::getInstance().m_isTAAPingPass = true;
 		l_lastTAATextureDataComponent = &GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture;
 	}
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize,
+		RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	
 	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
@@ -2388,34 +2445,9 @@ void GLRenderingSystem::updateFinalRenderPass()
 	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassProgram.m_program);
 
 	// 1. extract bright part from TAA pass
-	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_isEmissive,
-		false);
 	activateTexture(l_lastTAATextureDataComponent, 0);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
-
-	// 2. draw emissive mesh
-	glEnable(GL_STENCIL_TEST);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	glStencilFunc(GL_EQUAL, 0x02, 0xFF);
-	glStencilMask(0x00);
-
-	glClear(GL_STENCIL_BUFFER_BIT);
-
-	// copy stencil buffer from G-Pass
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLFrameBufferComponent.m_FBO);
-	glBlitFramebuffer(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
-
-	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_isEmissive,
-		true);
-	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[2], 0);
-	activateMesh(l_mesh);
-	drawMesh(l_mesh);
-
-	glDisable(GL_STENCIL_TEST);
 
 	// bloom blur pass
 	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPassProgram.m_program);
