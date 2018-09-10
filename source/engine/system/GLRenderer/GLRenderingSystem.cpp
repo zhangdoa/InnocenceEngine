@@ -14,6 +14,7 @@ void GLRenderingSystem::setup()
 
 void GLRenderingSystem::initialize()
 {
+	initializeHaltonSampler();
 	initializeEnvironmentRenderPass();
 	initializeShadowRenderPass();
 	initializeGeometryRenderPass();
@@ -21,6 +22,29 @@ void GLRenderingSystem::initialize()
 	initializeFinalRenderPass();
 	initializeDefaultGraphicPrimtives();
 	initializeGraphicPrimtivesOfComponents();
+}
+
+double GLRenderingSystem::RadicalInverse(int n, int base) {
+
+	double val = 0;
+	double invBase = 1. / base, invBi = invBase;
+	while (n > 0)
+	{
+		int d_i = (n % base);
+		val += d_i * invBi;
+		n *= invBase;
+		invBi *= invBase;
+	}
+	return val;
+};
+
+void GLRenderingSystem::initializeHaltonSampler()
+{
+	// in NDC space
+	for (size_t i = 0; i < 16; i++)
+	{
+		RenderingSystemSingletonComponent::getInstance().HaltonSampler.emplace_back(vec2(RadicalInverse(i, 2) * 2.0 - 1.0, RadicalInverse(i, 3) * 2.0 - 1.0));
+	}
 }
 
 void GLRenderingSystem::initializeEnvironmentRenderPass()
@@ -621,6 +645,7 @@ void GLRenderingSystem::initializeLightRenderPass()
 void GLRenderingSystem::initializeFinalRenderPass()
 {
 	initializeSkyPass();
+	initializeTAAPass();
 	initializeBloomExtractPass();
 	initializeBloomBlurPass();
 	initializeMotionBlurPass();
@@ -700,6 +725,117 @@ void GLRenderingSystem::initializeSkyPass()
 		"uni_r");
 }
 
+void GLRenderingSystem::initializeTAAPass()
+{
+	// generate and bind framebuffer
+	glGenFramebuffers(1, &GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLFrameBufferComponent.m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLFrameBufferComponent.m_FBO);
+
+	// generate and bind renderbuffer
+	glGenRenderbuffers(1, &GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLFrameBufferComponent.m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLFrameBufferComponent.m_RBO);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLFrameBufferComponent.m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+
+	// generate and bind texture
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_textureData = { nullptr };
+	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture);
+
+	attachTextureToFramebuffer(
+		&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture,
+		&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLFrameBufferComponent,
+		0, 0, 0
+	);
+
+	std::vector<unsigned int> l_pingPassColorAttachments;
+	l_pingPassColorAttachments.emplace_back(GL_COLOR_ATTACHMENT0);
+	glDrawBuffers((GLsizei)l_pingPassColorAttachments.size(), &l_pingPassColorAttachments[0]);
+
+	// finally check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		g_pLogSystem->printLog("GLFrameBuffer: TAAPingRenderPass Framebuffer is not completed!");
+	}
+
+	// generate and bind framebuffer
+	glGenFramebuffers(1, &GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLFrameBufferComponent.m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLFrameBufferComponent.m_FBO);
+
+	// generate and bind renderbuffer
+	glGenRenderbuffers(1, &GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLFrameBufferComponent.m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLFrameBufferComponent.m_RBO);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLFrameBufferComponent.m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+
+	// generate and bind texture
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_textureMinFilterMethod = textureFilterMethod::NEAREST;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_textureMagFilterMethod = textureFilterMethod::NEAREST;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_textureData = { nullptr };
+	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture);
+
+	attachTextureToFramebuffer(
+		&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture,
+		&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLFrameBufferComponent,
+		0, 0, 0
+	);
+
+	std::vector<unsigned int> l_pongPassColorAttachments;
+	l_pongPassColorAttachments.emplace_back(GL_COLOR_ATTACHMENT0);
+	glDrawBuffers((GLsizei)l_pongPassColorAttachments.size(), &l_pongPassColorAttachments[0]);
+
+	// finally check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		g_pLogSystem->printLog("GLFrameBuffer: TAAPongRenderPass Framebuffer is not completed!");
+	}
+
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// shader programs and shaders
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassProgram.m_program = glCreateProgram();
+	initializeShader(
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassProgram.m_program,
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassVertexShaderID,
+		GL_VERTEX_SHADER,
+		"GL3.3//TAAPassVertex.sf");
+	initializeShader(
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassProgram.m_program,
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassFragmentShaderID,
+		GL_FRAGMENT_SHADER,
+		"GL3.3//TAAPassFragment.sf");
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_TAA_LightPassRT0 = getUniformLocation(
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassProgram.m_program,
+		"uni_TAA_LightPassRT0");
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_TAA_LightPassRT0,
+		0);
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_TAA_LastTAAPassRT0 = getUniformLocation(
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassProgram.m_program,
+		"uni_TAA_LastTAAPassRT0");
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_TAA_LastTAAPassRT0,
+		1);
+}
+
 void GLRenderingSystem::initializeBloomExtractPass()
 {
 	// generate and bind framebuffer
@@ -757,11 +893,11 @@ void GLRenderingSystem::initializeBloomExtractPass()
 		GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3//bloomExtractPassFragment.sf");
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_lightPassRT0 = getUniformLocation(
+	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_TAAPassRT0 = getUniformLocation(
 		GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassProgram.m_program,
-		"uni_lightPassRT0");
+		"uni_TAAPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_lightPassRT0,
+		GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_TAAPassRT0,
 		0);
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_isEmissive = getUniformLocation(
 		GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassProgram.m_program,
@@ -908,9 +1044,9 @@ void GLRenderingSystem::initializeMotionBlurPass()
 		0, 0, 0
 	);
 
-	std::vector<unsigned int> l_pongPassColorAttachments;
-	l_pongPassColorAttachments.emplace_back(GL_COLOR_ATTACHMENT0);
-	glDrawBuffers((GLsizei)l_pongPassColorAttachments.size(), &l_pongPassColorAttachments[0]);
+	std::vector<unsigned int> l_motionBlurPassColorAttachments;
+	l_motionBlurPassColorAttachments.emplace_back(GL_COLOR_ATTACHMENT0);
+	glDrawBuffers((GLsizei)l_motionBlurPassColorAttachments.size(), &l_motionBlurPassColorAttachments[0]);
 
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -939,11 +1075,11 @@ void GLRenderingSystem::initializeMotionBlurPass()
 	updateUniform(
 		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPass_uni_motionVectorTexture,
 		0);
-	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPass_uni_lightPassRT0 = getUniformLocation(
+	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPass_uni_TAAPassRT0 = getUniformLocation(
 		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassProgram.m_program,
-		"uni_lightPassRT0");
+		"uni_TAAPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPass_uni_lightPassRT0,
+		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPass_uni_TAAPassRT0,
 		1);
 }
 
@@ -1834,6 +1970,15 @@ void GLRenderingSystem::updateGeometryRenderPass()
 	if (g_pGameSystem->getCameraComponents().size() > 0)
 	{
 		mat4 p = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
+		//TAA jitter for projection matrix
+		if (RenderingSystemSingletonComponent::getInstance().currentHaltonStep >= 16)
+		{
+			RenderingSystemSingletonComponent::getInstance().currentHaltonStep = 0;
+		}
+		p.m[0][2] = RenderingSystemSingletonComponent::getInstance().HaltonSampler[RenderingSystemSingletonComponent::getInstance().currentHaltonStep].x / RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+		p.m[1][2] = RenderingSystemSingletonComponent::getInstance().HaltonSampler[RenderingSystemSingletonComponent::getInstance().currentHaltonStep].y / RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+		RenderingSystemSingletonComponent::getInstance().currentHaltonStep += 1;
+
 		mat4 r = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
 		mat4 t = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
 		mat4 r_prev = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getPreviousInvertGlobalRotMatrix();
@@ -2193,6 +2338,44 @@ void GLRenderingSystem::updateFinalRenderPass()
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 
+	// TAA pass
+	GLTextureDataComponent* l_lastTAATextureDataComponent;
+	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassProgram.m_program);
+
+	if (RenderingSystemSingletonComponent::getInstance().m_isTAAPingPass)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLFrameBufferComponent.m_FBO);
+		glBindRenderbuffer(GL_RENDERBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLFrameBufferComponent.m_RBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+		glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		activateTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture, 0);
+		activateTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture, 1);
+		RenderingSystemSingletonComponent::getInstance().m_isTAAPingPass = false;
+		l_lastTAATextureDataComponent = &GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture;
+	}
+	else
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLFrameBufferComponent.m_FBO);
+		glBindRenderbuffer(GL_RENDERBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLFrameBufferComponent.m_RBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+		glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		activateTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture, 0);
+		activateTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture, 1);
+		RenderingSystemSingletonComponent::getInstance().m_isTAAPingPass = true;
+		l_lastTAATextureDataComponent = &GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture;
+	}
+	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
+	activateMesh(l_mesh);
+	drawMesh(l_mesh);
+
 	// bloom extract pass
 	glBindFramebuffer(GL_FRAMEBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLFrameBufferComponent.m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLFrameBufferComponent.m_RBO);
@@ -2204,12 +2387,11 @@ void GLRenderingSystem::updateFinalRenderPass()
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassProgram.m_program);
 
-	// 1. extract bright part from light pass
+	// 1. extract bright part from TAA pass
 	updateUniform(
 		GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_isEmissive,
 		false);
-	activateTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture, 0);
-	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
+	activateTexture(l_lastTAATextureDataComponent, 0);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
 
@@ -2304,7 +2486,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassProgram.m_program);
 	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[3], 0);
-	activateTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture, 1);
+	activateTexture(l_lastTAATextureDataComponent, 1);
 
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);

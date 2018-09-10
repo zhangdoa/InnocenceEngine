@@ -23,12 +23,22 @@ public:
 	GLuint m_skyPass_uni_p;
 	GLuint m_skyPass_uni_r;
 
+	GLFrameBufferComponent m_TAAPingPassGLFrameBufferComponent;
+	GLFrameBufferComponent m_TAAPongPassGLFrameBufferComponent;
+	GLShaderProgramComponent m_TAAPassProgram;
+	GLuint m_TAAPassVertexShaderID;
+	GLuint m_TAAPassFragmentShaderID;
+	GLTextureDataComponent m_TAAPingPassTexture;
+	GLTextureDataComponent m_TAAPongPassTexture;
+	GLuint m_TAAPass_uni_TAA_LightPassRT0;
+	GLuint m_TAAPass_uni_TAA_LastTAAPassRT0;
+
 	GLFrameBufferComponent m_bloomExtractPassGLFrameBufferComponent;
 	GLShaderProgramComponent m_bloomExtractPassProgram;
 	GLuint m_bloomExtractPassVertexShaderID;
 	GLuint m_bloomExtractPassFragmentShaderID;
 	GLTextureDataComponent m_bloomExtractPassTexture;
-	GLuint m_bloomExtractPass_uni_lightPassRT0;
+	GLuint m_bloomExtractPass_uni_TAAPassRT0;
 	GLuint m_bloomExtractPass_uni_isEmissive;
 
 	GLFrameBufferComponent m_bloomBlurPingPassGLFrameBufferComponent;
@@ -47,7 +57,7 @@ public:
 	GLuint m_motionBlurPassFragmentShaderID;
 	GLTextureDataComponent m_motionBlurPassTexture;
 	GLuint m_motionBlurPass_uni_motionVectorTexture;
-	GLuint m_motionBlurPass_uni_lightPassRT0;
+	GLuint m_motionBlurPass_uni_TAAPassRT0;
 
 	GLFrameBufferComponent m_billboardPassGLFrameBufferComponent;
 	GLShaderProgramComponent m_billboardPassProgram;

@@ -34,6 +34,8 @@ public:
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
+	double RadicalInverse(int n, int base);
+	void initializeHaltonSampler();
 	void initializeEnvironmentRenderPass();
 	void initializeShadowRenderPass();
 	void initializeGeometryRenderPass();
@@ -41,6 +43,7 @@ private:
 	void initializeFinalRenderPass();
 
 	void initializeSkyPass();
+	void initializeTAAPass();
 	void initializeBloomExtractPass();
 	void initializeBloomBlurPass();
 	void initializeMotionBlurPass();

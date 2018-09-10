@@ -18,6 +18,7 @@ public:
 	}
 
 	bool m_shouldUpdateEnvironmentMap = true;
+	bool m_isTAAPingPass = true;
 	std::unordered_map<meshID, MeshDataComponent*> m_initializedMeshMap;
 	std::unordered_map<textureID, TextureDataComponent*> m_initializedTextureMap;
 	vec2 m_renderTargetSize = vec2(1280, 720);
@@ -25,7 +26,8 @@ public:
 	std::vector<VisibleComponent*> m_emissiveVisibleComponents;
 	std::vector<VisibleComponent*> m_selectedVisibleComponents;
 	std::vector<VisibleComponent*> m_inFrustumVisibleComponents;
-
+	std::vector<vec2> HaltonSampler;
+	int currentHaltonStep = 0;
 private:
 	RenderingSystemSingletonComponent() {};
 };
