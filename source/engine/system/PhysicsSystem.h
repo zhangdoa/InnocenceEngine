@@ -35,7 +35,6 @@ private:
 	void setupLightComponentRadius(LightComponent* lightComponent);
 
 	std::vector<Vertex> generateNDC();
-	std::vector<Vertex> generateViewFrustum(const mat4& transformMatrix);
 	void generateAABB(VisibleComponent & visibleComponent);
 	void generateAABB(LightComponent & lightComponent);
 	void generateAABB(CameraComponent & cameraComponent);

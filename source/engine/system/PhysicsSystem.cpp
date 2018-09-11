@@ -78,7 +78,11 @@ void PhysicsSystem::setupCameraComponentFrustumVertices(CameraComponent * camera
 		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
 	}
 
-	cameraComponent->m_frustumVertices = l_NDC;
+	// near clip plane first
+	for (size_t i = 0; i < l_NDC.size(); i++)
+	{
+		cameraComponent->m_frustumVertices.emplace_back(l_NDC[l_NDC.size() -  1 - i]);
+	}
 
 	cameraComponent->m_frustumIndices = { 0, 1, 3, 1, 2, 3,
 		4, 5, 0, 5, 1, 0,
@@ -166,37 +170,6 @@ std::vector<Vertex> PhysicsSystem::generateNDC()
 	return l_vertices;
 }
 
-std::vector<Vertex> PhysicsSystem::generateViewFrustum(const mat4& transformMatrix)
-{
-	auto l_NDCube = generateNDC();
-	//@TODO: const influenza
-	mat4 l_transformMatrix = transformMatrix;
-	for (auto& l_vertexData : l_NDCube)
-	{
-		vec4 l_mulPos;
-		l_mulPos = l_vertexData.m_pos;
-		// from projection space to view space
-		//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_mulPos = InnoMath::mul(l_mulPos, transformMatrix);
-#endif
-		//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_mulPos = InnoMath::mul(l_transformMatrix, l_mulPos);
-#endif
-		// perspective division
-		l_mulPos = l_mulPos / l_mulPos.w;
-		l_vertexData.m_pos = l_mulPos;
-	}
-
-	for (auto& l_vertexData : l_NDCube)
-	{
-		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
-	}
-
-	return l_NDCube;
-}
-
 void PhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 {
 	double maxX = 0;
@@ -269,23 +242,39 @@ void PhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 
 void PhysicsSystem::generateAABB(LightComponent & lightComponent)
 {
+	lightComponent.m_AABBs.clear();
+
 	//1.translate the big frustum to light space
 	auto l_camera = g_pGameSystem->getCameraComponents()[0];
 	auto l_frustumVertices = l_camera->m_frustumVertices;
+	auto l_lightRotMat = g_pGameSystem->getTransformComponent(lightComponent.getParentEntity())->m_transform.getInvertGlobalRotMatrix();
+	for (size_t i = 0; i < l_frustumVertices.size(); i++)
+	{
+		//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_frustumVertices[i].m_pos = InnoMath::mul(l_frustumVertices[i].m_pos, l_lightRotMat);
+#endif
+		//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_frustumVertices[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVertices[i].m_pos);
+#endif	
+	}
 
 	//2.calculate splited planes' corners
 	std::vector<vec4> l_frustumsCornerPos;
+	//2.1 first 4 corner
 	for (size_t i = 0; i < 4; i++)
 	{
 		l_frustumsCornerPos.emplace_back(l_frustumVertices[i].m_pos);
 	}
 
-	// @TODO: non-linear split
+	//2.2 other 16 corner based on e^2i / e^8
 	for (size_t i = 0; i < 4; i++)
 	{
 		for (size_t j = 0; j < 4; j++)
 		{
-			auto l_splitedPlaneCornerPos = l_frustumVertices[j].m_pos + ((l_frustumVertices[j + 4].m_pos - l_frustumVertices[j].m_pos) * (i + 1.0) / 4.0);
+			auto scaleFactor = std::exp(((double)i + 1.0) * E<double>) / std::exp(E<double> * 4.0);
+			auto l_splitedPlaneCornerPos = l_frustumVertices[j].m_pos + (l_frustumVertices[j + 4].m_pos - l_frustumVertices[j].m_pos) * scaleFactor;
 			l_frustumsCornerPos.emplace_back(l_splitedPlaneCornerPos);
 		}
 	}

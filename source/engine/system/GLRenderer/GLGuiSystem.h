@@ -27,6 +27,7 @@ public:
 	const objectStatus& getStatus() const override;
 
 private:
+	void zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize);
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 };
 

@@ -265,7 +265,7 @@ void GLRenderingSystem::initializeShadowRenderPass()
 		{
 			std::stringstream ss;
 			ss << i;
-			g_pLogSystem->printLog("GLFrameBuffer: ShadowRenderPass level " + ss.str() +" Framebuffer is not completed!");
+			g_pLogSystem->printLog("GLFrameBuffer: ShadowRenderPass level " + ss.str() + " Framebuffer is not completed!");
 		}
 	}
 
@@ -854,7 +854,7 @@ void GLRenderingSystem::initializeTAAPass()
 		2);
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize = getUniformLocation(
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassProgram.m_program,
-		"uni_renderTargetSize");	
+		"uni_renderTargetSize");
 }
 
 void GLRenderingSystem::initializeBloomExtractPass()
@@ -1362,13 +1362,13 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 	auto l_shaderCodeContent = g_pAssetSystem->loadShader(shaderFilePath);
 	const char* l_sourcePointer = l_shaderCodeContent.c_str();
 
-	if(l_sourcePointer == nullptr)
+	if (l_sourcePointer == nullptr)
 	{
-        g_pLogSystem->printLog("Error: Shader loading failed!");
+		g_pLogSystem->printLog("Error: Shader loading failed!");
 	}
 
 	glShaderSource(shaderID, 1, &l_sourcePointer, NULL);
-    glCompileShader(shaderID);
+	glCompileShader(shaderID);
 
 	GLint l_compileResult = GL_FALSE;
 	GLint l_infoLogLength = 0;
@@ -1378,19 +1378,19 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 	if (!l_compileResult)
 	{
 		g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
-        glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-        g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
-        glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
+		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
+		g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
-            std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
-            glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-            g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
-            return;
-        }
+			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
+			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
+			g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+			return;
+		}
 	}
 
-    g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
+	g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
 
 	glAttachShader(shaderProgram, shaderID);
 	glLinkProgram(shaderProgram);
@@ -1398,19 +1398,19 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 
 	g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
 
-    glGetShaderiv(shaderID, GL_COMPILE_STATUS, &l_compileResult);
+	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &l_compileResult);
 	if (!l_compileResult)
 	{
 		g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
-        glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-        g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
-        glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
+		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
+		g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
-            std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
-            glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-            g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
-        }
+			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
+			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
+			g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+		}
 	}
 
 	g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
@@ -1904,7 +1904,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CCW);
+	glFrontFace(GL_CW);
 	glCullFace(GL_FRONT);
 
 	// draw each lightComponent's shadowmap
@@ -1926,7 +1926,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 				glUseProgram(ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram.m_program);
 				updateUniform(
 					ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_p,
-					g_pGameSystem->getProjectionMatrix(l_lightComponent, (unsigned int)i));					
+					g_pGameSystem->getProjectionMatrix(l_lightComponent, (unsigned int)i));
 				updateUniform(
 					ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_v,
 					g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.getInvertGlobalRotMatrix());
@@ -2188,11 +2188,11 @@ void GLRenderingSystem::updateGeometryRenderPass()
 					drawMesh(l_mesh);
 				}
 			}
-	}
+		}
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_DEPTH_CLAMP);
 #endif
-}
+	}
 }
 
 void GLRenderingSystem::updateLightRenderPass()
@@ -2428,7 +2428,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	updateUniform(
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize,
 		RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-	
+
 	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
@@ -2560,7 +2560,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_t,
 			t);
 	}
-	if(g_pGameSystem->getVisibleComponents().size() > 0)
+	if (g_pGameSystem->getVisibleComponents().size() > 0)
 	{
 		// draw each visibleComponent
 		for (auto& l_visibleComponent : g_pGameSystem->getVisibleComponents())

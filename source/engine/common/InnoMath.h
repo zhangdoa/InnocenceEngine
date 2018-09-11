@@ -6,6 +6,8 @@
 
 template<class T>
 const static T PI = T(3.14159265358979323846264338327950288L);
+template<class T>
+const static T E = T(2.71828182845904523536028747135266249L);
 
 template<class T>
 T tolerance2 = T(0.95L);
