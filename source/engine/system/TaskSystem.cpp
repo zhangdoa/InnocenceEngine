@@ -1,29 +1,26 @@
 #include "TaskSystem.h"
+#include "MemorySystem.h"
+#include "LogSystem.h"
 
-void TaskSystem::setup()
+void InnoTaskSystem::setup()
 {
-	m_threadPool = g_pMemorySystem->spawn<InnoThreadPool>();
-	m_objectStatus = objectStatus::ALIVE;
+	m_threadPool = InnoMemorySystem::spawn<InnoThreadPool>();
+	m_TaskSystemStatus = objectStatus::ALIVE;
 }
 
-void TaskSystem::initialize()
+void InnoTaskSystem::initialize()
 {
-	g_pLogSystem->printLog("TaskSystem has been initialized.");
+	InnoLogSystem::printLog("TaskSystem has been initialized.");
 }
 
-void TaskSystem::update()
+void InnoTaskSystem::update()
 {
 }
 
-void TaskSystem::shutdown()
+void InnoTaskSystem::shutdown()
 {
-	m_objectStatus = objectStatus::STANDBY;
-
-	m_objectStatus = objectStatus::SHUTDOWN;
-	g_pLogSystem->printLog("TaskSystem has been shutdown.");
-}
-
-const objectStatus & TaskSystem::getStatus() const
-{
-	return m_objectStatus;
+	m_TaskSystemStatus = objectStatus::STANDBY;
+	delete m_threadPool;
+	m_TaskSystemStatus = objectStatus::SHUTDOWN;
+	InnoLogSystem::printLog("TaskSystem has been shutdown.");
 }

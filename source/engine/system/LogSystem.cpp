@@ -1,20 +1,23 @@
 #include "LogSystem.h"
+#include <sstream>
+#include <iostream>
+#include "TimeSystem.h"
 
-void LogSystem::printLog(double logMessage) const
+void InnoLogSystem::printLog(double logMessage)
 {
-	std::cout << "[" <<g_pTimeSystem->getCurrentTimeInLocal() << "]" << logMessage << std::endl;
+	std::cout << "[" <<InnoTimeSystem::getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }
 
-void LogSystem::printLog(const std::string& logMessage) const
+void InnoLogSystem::printLog(const std::string& logMessage)
 {
-	std::cout << "[" <<g_pTimeSystem->getCurrentTimeInLocal() << "]" << logMessage << std::endl;
+	std::cout << "[" <<InnoTimeSystem::getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }
 
-void LogSystem::printLog(const vec2 & logMessage) const
+void InnoLogSystem::printLog(const vec2 & logMessage)
 {
 	std::cout
 		<< "[" 
-		<<g_pTimeSystem->getCurrentTimeInLocal()
+		<<InnoTimeSystem::getCurrentTimeInLocal()
 		<< "]"
 		<<"vec2(x: "
 		<< logMessage.x
@@ -24,11 +27,11 @@ void LogSystem::printLog(const vec2 & logMessage) const
 		<< std::endl;
 }
 
-void LogSystem::printLog(const vec4 & logMessage) const
+void InnoLogSystem::printLog(const vec4 & logMessage)
 {
 	std::cout
 		<< "["
-		<<g_pTimeSystem->getCurrentTimeInLocal()
+		<<InnoTimeSystem::getCurrentTimeInLocal()
 		<< "]"
 		<< "vec4(x: "
 		<< logMessage.x
@@ -42,11 +45,11 @@ void LogSystem::printLog(const vec4 & logMessage) const
 		<< std::endl;
 }
 
-void LogSystem::printLog(const mat4 & logMessage) const
+void InnoLogSystem::printLog(const mat4 & logMessage)
 {
 	std::cout
 		<< "["
-		<<g_pTimeSystem->getCurrentTimeInLocal()
+		<<InnoTimeSystem::getCurrentTimeInLocal()
 		<< "]"
 		<< std::endl
 		<< "|"
@@ -91,27 +94,22 @@ void LogSystem::printLog(const mat4 & logMessage) const
 		<< std::endl;
 }
 
-const objectStatus & LogSystem::getStatus() const
-{
-	return m_objectStatus;
-}
-
-void LogSystem::setup()
+void InnoLogSystem::setup()
 {	
 }
 
-void LogSystem::initialize()
+void InnoLogSystem::initialize()
 {
-	m_objectStatus = objectStatus::ALIVE;
+	m_LogSystemStatus = objectStatus::ALIVE;
 	printLog("LogSystem has been initialized.");
 }
 
-void LogSystem::update()
+void InnoLogSystem::update()
 {
 }
 
-void LogSystem::shutdown()
+void InnoLogSystem::shutdown()
 {
-	m_objectStatus = objectStatus::SHUTDOWN;
+	m_LogSystemStatus = objectStatus::SHUTDOWN;
 	printLog("LogSystem has been shutdown.");
 }

@@ -1,23 +1,44 @@
 #include "PhysicsSystem.h"
+#include "GameSystem.h"
+#include "AssetSystem.h"
+#include "LogSystem.h"
 
-const objectStatus & PhysicsSystem::getStatus() const
+namespace InnoPhysicsSystem
 {
-	return m_objectStatus;
+	void setupComponents();
+	void setupCameraComponents();
+	void setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent);
+	void setupCameraComponentRayOfEye(CameraComponent* cameraComponent);
+	void setupCameraComponentFrustumVertices(CameraComponent* cameraComponent);
+	void setupVisibleComponents();
+	void setupLightComponents();
+	void setupLightComponentRadius(LightComponent* lightComponent);
+
+	std::vector<Vertex> generateNDC();
+	void generateAABB(VisibleComponent & visibleComponent);
+	void generateAABB(LightComponent & lightComponent);
+	void generateAABB(CameraComponent & cameraComponent);
+	AABB generateAABB(const std::vector<Vertex>& vertices);
+	AABB generateAABB(const vec4& boundMax, const vec4& boundMin);
+
+	void updateCameraComponents();
+	void updateLightComponents();
 }
 
-void PhysicsSystem::setup()
+void InnoPhysicsSystem::setup()
 {	
 }
-void PhysicsSystem::setupComponents()
+
+void InnoPhysicsSystem::setupComponents()
 {
 	setupCameraComponents();
 	setupVisibleComponents();
 	setupLightComponents();
 }
 
-void PhysicsSystem::setupCameraComponents()
+void InnoPhysicsSystem::setupCameraComponents()
 {
-	for (auto& i : g_pGameSystem->getCameraComponents())
+	for (auto& i : InnoGameSystem::getCameraComponents())
 	{
 		setupCameraComponentProjectionMatrix(i);
 		setupCameraComponentRayOfEye(i);
@@ -26,23 +47,23 @@ void PhysicsSystem::setupCameraComponents()
 	}
 }
 
-void PhysicsSystem::setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent)
+void InnoPhysicsSystem::setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent)
 {
 	cameraComponent->m_projectionMatrix.initializeToPerspectiveMatrix((cameraComponent->m_FOVX / 180.0) * PI<double>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
 }
 
-void PhysicsSystem::setupCameraComponentRayOfEye(CameraComponent * cameraComponent)
+void InnoPhysicsSystem::setupCameraComponentRayOfEye(CameraComponent * cameraComponent)
 {
-	cameraComponent->m_rayOfEye.m_origin = g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.caclGlobalPos();
-	cameraComponent->m_rayOfEye.m_direction = g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.getDirection(direction::BACKWARD);
+	cameraComponent->m_rayOfEye.m_origin = InnoGameSystem::getComponent<TransformComponent>(cameraComponent->m_parentEntity)->m_transform.caclGlobalPos();
+	cameraComponent->m_rayOfEye.m_direction = InnoGameSystem::getComponent<TransformComponent>(cameraComponent->m_parentEntity)->m_transform.getDirection(direction::BACKWARD);
 }
 
-void PhysicsSystem::setupCameraComponentFrustumVertices(CameraComponent * cameraComponent)
+void InnoPhysicsSystem::setupCameraComponentFrustumVertices(CameraComponent * cameraComponent)
 {
 	auto l_NDC = generateNDC();
 	auto l_pCamera = cameraComponent->m_projectionMatrix;
-	auto l_rCamera = InnoMath::toRotationMatrix(g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.caclGlobalRot());
-	auto l_tCamera = InnoMath::toTranslationMatrix(g_pGameSystem->getTransformComponent(cameraComponent->getParentEntity())->m_transform.caclGlobalPos());
+	auto l_rCamera = InnoMath::toRotationMatrix(InnoGameSystem::getComponent<TransformComponent>(cameraComponent->m_parentEntity)->m_transform.caclGlobalRot());
+	auto l_tCamera = InnoMath::toTranslationMatrix(InnoGameSystem::getComponent<TransformComponent>(cameraComponent->m_parentEntity)->m_transform.caclGlobalPos());
 
 	for (auto& l_vertexData : l_NDC)
 	{
@@ -92,9 +113,9 @@ void PhysicsSystem::setupCameraComponentFrustumVertices(CameraComponent * camera
 		1, 5, 2, 5, 6, 2 };
 }
 
-void PhysicsSystem::setupVisibleComponents()
+void InnoPhysicsSystem::setupVisibleComponents()
 {
-	for (auto i : g_pGameSystem->getVisibleComponents())
+	for (auto i : InnoGameSystem::getVisibleComponents())
 	{
 		if (i->m_visiblilityType != visiblilityType::INVISIBLE)
 		{
@@ -103,9 +124,9 @@ void PhysicsSystem::setupVisibleComponents()
 	}
 }
 
-void PhysicsSystem::setupLightComponents()
+void InnoPhysicsSystem::setupLightComponents()
 {
-	for (auto& i : g_pGameSystem->getLightComponents())
+	for (auto& i : InnoGameSystem::getLightComponents())
 	{
 		i->m_direction = vec4(0.0, 0.0, 1.0, 0.0);
 		i->m_constantFactor = 1.0;
@@ -121,12 +142,12 @@ void PhysicsSystem::setupLightComponents()
 	}
 }
 
-void PhysicsSystem::setupLightComponentRadius(LightComponent * lightComponent)
+void InnoPhysicsSystem::setupLightComponentRadius(LightComponent * lightComponent)
 {
 	double l_lightMaxIntensity = std::fmax(std::fmax(lightComponent->m_color.x, lightComponent->m_color.y), lightComponent->m_color.z);
 	lightComponent->m_radius = -lightComponent->m_linearFactor + std::sqrt(lightComponent->m_linearFactor * lightComponent->m_linearFactor - 4.0 * lightComponent->m_quadraticFactor * (lightComponent->m_constantFactor - (256.0 / 5.0) * l_lightMaxIntensity)) / (2.0 * lightComponent->m_quadraticFactor);
 }
-std::vector<Vertex> PhysicsSystem::generateNDC()
+std::vector<Vertex> InnoPhysicsSystem::generateNDC()
 {
 	Vertex l_VertexData_1;
 	l_VertexData_1.m_pos = vec4(1.0, 1.0, 1.0, 1.0);
@@ -170,7 +191,7 @@ std::vector<Vertex> PhysicsSystem::generateNDC()
 	return l_vertices;
 }
 
-void PhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
+void InnoPhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 {
 	double maxX = 0;
 	double maxY = 0;
@@ -184,8 +205,8 @@ void PhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 	for (auto& l_graphicData : visibleComponent.m_modelMap)
 	{
 		// get corner vertices from sub meshes
-		l_cornerVertices.emplace_back(g_pAssetSystem->findMaxVertex(l_graphicData.first));
-		l_cornerVertices.emplace_back(g_pAssetSystem->findMinVertex(l_graphicData.first));
+		l_cornerVertices.emplace_back(InnoAssetSystem::findMaxVertex(l_graphicData.first));
+		l_cornerVertices.emplace_back(InnoAssetSystem::findMinVertex(l_graphicData.first));
 	}
 
 	std::for_each(l_cornerVertices.begin(), l_cornerVertices.end(), [&](vec4 val)
@@ -217,7 +238,7 @@ void PhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 	});
 
 	visibleComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0));
-	auto l_worldTm = g_pGameSystem->getTransformComponent(visibleComponent.getParentEntity())->m_transform.caclGlobalTransformationMatrix();
+	auto l_worldTm = InnoGameSystem::getComponent<TransformComponent>(visibleComponent.m_parentEntity)->m_transform.caclGlobalTransformationMatrix();
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 	visibleComponent.m_AABB.m_boundMax = InnoMath::mul(visibleComponent.m_AABB.m_boundMax, l_worldTm);
@@ -240,14 +261,14 @@ void PhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 #endif
 }
 
-void PhysicsSystem::generateAABB(LightComponent & lightComponent)
+void InnoPhysicsSystem::generateAABB(LightComponent & lightComponent)
 {
 	lightComponent.m_AABBs.clear();
 
 	//1.translate the big frustum to light space
-	auto l_camera = g_pGameSystem->getCameraComponents()[0];
+	auto l_camera = InnoGameSystem::getCameraComponents()[0];
 	auto l_frustumVertices = l_camera->m_frustumVertices;
-	auto l_lightRotMat = g_pGameSystem->getTransformComponent(lightComponent.getParentEntity())->m_transform.getInvertGlobalRotMatrix();
+	auto l_lightRotMat = InnoGameSystem::getComponent<TransformComponent>(lightComponent.m_parentEntity)->m_transform.getInvertGlobalRotMatrix();
 	for (size_t i = 0; i < l_frustumVertices.size(); i++)
 	{
 		//Column-Major memory layout
@@ -306,13 +327,13 @@ void PhysicsSystem::generateAABB(LightComponent & lightComponent)
 	}
 }
 
-void PhysicsSystem::generateAABB(CameraComponent & cameraComponent)
+void InnoPhysicsSystem::generateAABB(CameraComponent & cameraComponent)
 {
 	auto l_frustumCorners = cameraComponent.m_frustumVertices;
 	cameraComponent.m_AABB = generateAABB(l_frustumCorners);
 }
 
-AABB PhysicsSystem::generateAABB(const std::vector<Vertex>& vertices)
+AABB InnoPhysicsSystem::generateAABB(const std::vector<Vertex>& vertices)
 {
 	double maxX = vertices[0].m_pos.x;
 	double maxY = vertices[0].m_pos.y;
@@ -352,7 +373,7 @@ AABB PhysicsSystem::generateAABB(const std::vector<Vertex>& vertices)
 	return generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0));
 }
 
-AABB PhysicsSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin)
+AABB InnoPhysicsSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin)
 {
 	AABB l_AABB;
 
@@ -412,33 +433,33 @@ AABB PhysicsSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin)
 	return l_AABB;
 }
 
-void PhysicsSystem::initialize()
+void InnoPhysicsSystem::initialize()
 {
 	setupComponents();
-	m_objectStatus = objectStatus::ALIVE;
-	g_pLogSystem->printLog("PhysicsSystem has been initialized.");
+	m_PhysicsSystemStatus = objectStatus::ALIVE;
+	InnoLogSystem::printLog("PhysicsSystem has been initialized.");
 }
 
-void PhysicsSystem::updateCameraComponents()
+void InnoPhysicsSystem::updateCameraComponents()
 {
-	if (g_pGameSystem->getCameraComponents().size() > 0)
+	if (InnoGameSystem::getCameraComponents().size() > 0)
 	{
-		for (auto& i : g_pGameSystem->getCameraComponents())
+		for (auto& i : InnoGameSystem::getCameraComponents())
 		{
 			setupCameraComponentRayOfEye(i);
 			setupCameraComponentFrustumVertices(i);
 		}
 
-		generateAABB(*g_pGameSystem->getCameraComponents()[0]);
+		generateAABB(*InnoGameSystem::getCameraComponents()[0]);
 	}
 }
 
-void PhysicsSystem::updateLightComponents()
+void InnoPhysicsSystem::updateLightComponents()
 {
-	if (g_pGameSystem->getLightComponents().size() > 0)
+	if (InnoGameSystem::getLightComponents().size() > 0)
 	{
 		// generate AABB for CSM
-		for (auto& i : g_pGameSystem->getLightComponents())
+		for (auto& i : InnoGameSystem::getLightComponents())
 		{
 			setupLightComponentRadius(i);
 			if (i->m_lightType == lightType::DIRECTIONAL)
@@ -449,14 +470,14 @@ void PhysicsSystem::updateLightComponents()
 	}
 }
 
-void PhysicsSystem::update()
+void InnoPhysicsSystem::update()
 {
 	updateCameraComponents();
 	updateLightComponents();
 }
 
-void PhysicsSystem::shutdown()
+void InnoPhysicsSystem::shutdown()
 {
-	m_objectStatus = objectStatus::SHUTDOWN;
-	g_pLogSystem->printLog("PhysicsSystem has been shutdown.");
+	m_PhysicsSystemStatus = objectStatus::SHUTDOWN;
+	InnoLogSystem::printLog("PhysicsSystem has been shutdown.");
 }

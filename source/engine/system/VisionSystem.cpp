@@ -1,31 +1,80 @@
 #include "VisionSystem.h"
+#include<atomic>
+#include "../common/ComponentHeaders.h"
+#if defined (INNO_RENDERER_OPENGL)
+#include "GLRenderer/GLWindowSystem.h"
+#include "GLRenderer/GLRenderingSystem.h"
+#include "GLRenderer/GLGuiSystem.h"
+#elif defined (INNO_RENDERER_DX)
+#include "DXRenderer/DXWindowSystem.h"
+#include "DXRenderer/DXRenderingSystem.h"
+#include "DXRenderer/DXGuiSystem.h"
+#endif
+#include "MemorySystem.h"
+#include "LogSystem.h"
+#include "GameSystem.h"
+#include "PhysicsSystem.h"
+#include "InputSystem.h"
 
-void VisionSystem::setup()
+#include "../component/RenderingSystemSingletonComponent.h"
+
+namespace InnoVisionSystem
 {
-	WindowSystemSingletonComponent::getInstance().m_windowName = g_pGameSystem->getGameName();
+	void setupWindow();
+	void setupRendering();
+	void setupGui();
+
+	void updatePhysics();
+
+	void changeDrawPolygonMode();
+	void changeDrawTextureMode();
+	void changeShadingMode();
+
+	//Physics data
+	Ray m_mouseRay;
+
+	//Rendering Data
+	std::atomic<bool> m_canRender;
+	std::function<void()> f_changeDrawPolygonMode;
+	std::function<void()> f_changeDrawTextureMode;
+	std::function<void()> f_changeShadingMode;
+
+	int m_polygonMode = 2;
+	int m_textureMode = 0;
+	int m_shadingMode = 0;
+
+#if defined (INNO_RENDERER_OPENGL)
+#define WindowSystem GLWindowSystem
+#define RenderingSystem GLRenderingSystem
+#define GuiSystem GLGuiSystem
+#elif defined (INNO_RENDERER_DX)
+#define WindowSystem DXWindowSystem
+#define RenderingSystem DXRenderingSystem
+#define GuiSystem DXGuiSystem
+#elif defined (INNO_RENDERER_VULKAN)
+#elif defined (INNO_RENDERER_METAL)
+#endif
+}
+
+void InnoVisionSystem::setup()
+{
+	WindowSystemSingletonComponent::getInstance().m_windowName = InnoGameSystem::getGameName();
 	setupWindow();
 	setupRendering();
 	setupGui();
 
-	m_objectStatus = objectStatus::ALIVE;
+	m_VisionSystemStatus = objectStatus::ALIVE;
 }
 
-void VisionSystem::setupWindow()
+void InnoVisionSystem::setupWindow()
 {
-#if defined (INNO_RENDERER_OPENGL)
-	m_WindowSystem = g_pMemorySystem->spawn<GLWindowSystem>();
-#elif defined (INNO_RENDERER_DX)
-	m_WindowSystem = g_pMemorySystem->spawn<DXWindowSystem>();
-#elif defined (INNO_RENDERER_VULKAN)
-#elif defined (INNO_RENDERER_METAL)
-#endif
-	m_WindowSystem->setup();
+	WindowSystem::setup();
 }
 
-void VisionSystem::setupRendering()
+void InnoVisionSystem::setupRendering()
 {
 	//setup rendering
-	for (auto i : g_pGameSystem->getVisibleComponents())
+	for (auto i : InnoGameSystem::getVisibleComponents())
 	{
 		if (i->m_visiblilityType != visiblilityType::INVISIBLE)
 		{
@@ -40,54 +89,40 @@ void VisionSystem::setupRendering()
 		}
 	}
 
-#if defined (INNO_RENDERER_OPENGL)
-	m_RenderingSystem = g_pMemorySystem->spawn<GLRenderingSystem>();
-#elif defined (INNO_RENDERER_DX)
-	m_RenderingSystem = g_pMemorySystem->spawn<DXRenderingSystem>();
-#elif defined (INNO_RENDERER_VULKAN)
-#elif defined (INNO_RENDERER_METAL)
-#endif
-	m_RenderingSystem->setup();
+	RenderingSystem::setup();
 
 	m_canRender = true;
 }
 
-inline void VisionSystem::setupGui()
+void InnoVisionSystem::setupGui()
 {
-#if defined (INNO_RENDERER_OPENGL)
-	m_GuiSystem = g_pMemorySystem->spawn<GLGuiSystem>();
-#elif defined (INNO_RENDERER_DX)
-	m_GuiSystem = g_pMemorySystem->spawn<DXGuiSystem>();
-#elif defined (INNO_RENDERER_VULKAN)
-#elif defined (INNO_RENDERER_METAL)
-#endif
-	m_GuiSystem->setup();
+	GuiSystem::setup();
 }
 
-void VisionSystem::initialize()
+void InnoVisionSystem::initialize()
 {
-	m_WindowSystem->initialize();
-	m_RenderingSystem->initialize();
-	m_GuiSystem->initialize();
+	WindowSystem::initialize();
+	RenderingSystem::initialize();
+	GuiSystem::initialize();
 
-	g_pLogSystem->printLog("VisionSystem has been initialized.");
+	InnoLogSystem::printLog("VisionSystem has been initialized.");
 }
 
-void VisionSystem::updatePhysics()
+void InnoVisionSystem::updatePhysics()
 {
 	RenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.clear();
 	RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.clear();
 
-	if (g_pGameSystem->getCameraComponents().size() > 0)
+	if (InnoGameSystem::getCameraComponents().size() > 0)
 	{
-		m_mouseRay.m_origin = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.caclGlobalPos();
-		m_mouseRay.m_direction = m_WindowSystem->calcMousePositionInWorldSpace();
+		m_mouseRay.m_origin = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.caclGlobalPos();
+		m_mouseRay.m_direction = InputSystem::calcMousePositionInWorldSpace();
 
-		auto l_cameraAABB = g_pGameSystem->getCameraComponents()[0]->m_AABB;
+		auto l_cameraAABB = InnoGameSystem::getCameraComponents()[0]->m_AABB;
 
-		auto l_ray = g_pGameSystem->getCameraComponents()[0]->m_rayOfEye;
+		auto l_ray = InnoGameSystem::getCameraComponents()[0]->m_rayOfEye;
 
-		for (auto& j : g_pGameSystem->getVisibleComponents())
+		for (auto& j : InnoGameSystem::getVisibleComponents())
 		{
 			if (j->m_visiblilityType == visiblilityType::STATIC_MESH || j->m_visiblilityType == visiblilityType::EMISSIVE)
 			{
@@ -104,54 +139,49 @@ void VisionSystem::updatePhysics()
 	}
 }
 
-void VisionSystem::update()
+void InnoVisionSystem::update()
 {
-	m_WindowSystem->update();
+	WindowSystem::update();
 
-	if (m_WindowSystem->getStatus() == objectStatus::ALIVE)
+	if (WindowSystem::m_WindowSystemStatus == objectStatus::ALIVE)
 	{
 		updatePhysics();
 
 		if (m_canRender)
 		{
 			m_canRender = false;
-			m_RenderingSystem->update();
-			m_GuiSystem->update();
-			m_WindowSystem->swapBuffer();
+			RenderingSystem::update();
+			GuiSystem::update();
+			WindowSystem::swapBuffer();
 			m_canRender = true;
 		}
 
 		// update the transform data @TODO: ugly
-		std::for_each(g_pGameSystem->getTransformComponents().begin(), g_pGameSystem->getTransformComponents().end(), [&](TransformComponent* val)
+		std::for_each(InnoGameSystem::getTransformComponents().begin(), InnoGameSystem::getTransformComponents().end(), [&](TransformComponent* val)
 		{
 			val->m_transform.update();
 		});
 	}
 	else
 	{
-		g_pLogSystem->printLog("VisionSystem is stand-by.");
-		m_objectStatus = objectStatus::STANDBY;
+		InnoLogSystem::printLog("VisionSystem is stand-by.");
+		m_VisionSystemStatus = objectStatus::STANDBY;
 	}
 }
 
-void VisionSystem::shutdown()
+void InnoVisionSystem::shutdown()
 {
-	if (m_WindowSystem->getStatus() == objectStatus::ALIVE)
+	if (WindowSystem::m_WindowSystemStatus == objectStatus::ALIVE)
 	{
-		m_GuiSystem->shutdown();
-		m_RenderingSystem->shutdown();
-		m_WindowSystem->shutdown();
+		GuiSystem::shutdown();
+		RenderingSystem::shutdown();
+		WindowSystem::shutdown();
 	}
-	m_objectStatus = objectStatus::SHUTDOWN;
-	g_pLogSystem->printLog("VisionSystem has been shutdown.");
+	m_VisionSystemStatus = objectStatus::SHUTDOWN;
+	InnoLogSystem::printLog("VisionSystem has been shutdown.");
 }
 
-const objectStatus & VisionSystem::getStatus() const
-{
-	return m_objectStatus;
-}
-
-void VisionSystem::changeDrawPolygonMode()
+void InnoVisionSystem::changeDrawPolygonMode()
 {
 	if (m_polygonMode == 2)
 	{
@@ -163,7 +193,7 @@ void VisionSystem::changeDrawPolygonMode()
 	}
 }
 
-void VisionSystem::changeDrawTextureMode()
+void InnoVisionSystem::changeDrawTextureMode()
 {
 	if (m_textureMode == 4)
 	{
@@ -175,7 +205,7 @@ void VisionSystem::changeDrawTextureMode()
 	}
 }
 
-void VisionSystem::changeShadingMode()
+void InnoVisionSystem::changeShadingMode()
 {
 	if (m_shadingMode == 1)
 	{

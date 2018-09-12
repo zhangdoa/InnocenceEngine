@@ -1,11 +1,65 @@
 #include "MemorySystem.h"
+#include <cstring>
+#include <iostream>
+#include <fstream>
+#include <iterator>
+#include <vector>
+#include "LogSystem.h"
+#include "TimeSystem.h"
 
-void MemorySystem::setup()
+namespace InnoMemorySystem
 {
-	this->setup(m_maxPoolSize);
+	static const uint32_t s_BlockSizes[] = {
+		// 4-increments
+		4,  8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48,
+		52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96,
+
+		// 32-increments
+		128, 160, 192, 224, 256, 288, 320, 352, 384,
+		416, 448, 480, 512, 544, 576, 608, 640,
+
+		// 64-increments
+		704, 768, 832, 896, 960, 1024
+	};
+
+	// number of elements in the block size array
+	static const uint32_t s_NumBlockSizes = sizeof(s_BlockSizes) / sizeof(s_BlockSizes[0]);
+
+	// largest valid block size
+	static const uint32_t s_MaxBlockSize = s_BlockSizes[s_NumBlockSizes - 1];
+
+	const unsigned long  m_maxPoolSize = 1024 * 1024 * 512;
+	static const unsigned char m_minFreeBlockSize = 48;
+	unsigned long  m_totalPoolSize;
+	unsigned long  m_availablePoolSize;
+
+	static const unsigned int m_boundCheckSize = 16;
+	unsigned char  m_startBoundMarker[m_boundCheckSize] = { '[','I','n','n','o','C','h','u','c','k','S','t','a','r','t',']' };
+	unsigned char  m_endBoundMarker[m_boundCheckSize] = { '[','I','n','n','o','C','h','u','c','k','.','.','E','n','d',']' };
+
+	unsigned char* m_poolMemoryPtr = nullptr;
+
+	class Chunk
+	{
+	public:
+		Chunk(unsigned int chuckSize) : m_next(nullptr),
+			m_prev(nullptr),
+			m_blockSize(chuckSize),
+			m_free(true) {};
+
+		Chunk*  m_next;
+		Chunk*  m_prev;
+		unsigned int   m_blockSize;
+		bool    m_free;
+	};
 }
 
-void MemorySystem::setup(unsigned long  memoryPoolSize)
+void InnoMemorySystem::setup()
+{
+	InnoMemorySystem::setup(m_maxPoolSize);
+}
+
+void InnoMemorySystem::setup(unsigned long  memoryPoolSize)
 {
 	// Allocate memory pool
 	m_poolMemoryPtr = nullptr;
@@ -21,22 +75,22 @@ void MemorySystem::setup(unsigned long  memoryPoolSize)
 	m_availablePoolSize = memoryPoolSize - sizeof(Chunk) - m_boundCheckSize * 2;
 }
 
-void MemorySystem::initialize()
+void InnoMemorySystem::initialize()
 {
-	m_objectStatus = objectStatus::ALIVE;
-	g_pLogSystem->printLog("MemorySystem has been initialized.");
+	m_MemorySystemStatus = objectStatus::ALIVE;
+	InnoLogSystem::printLog("MemorySystem has been initialized.");
 }
 
-void MemorySystem::update()
+void InnoMemorySystem::update()
 {
 }
 
-void MemorySystem::shutdown()
+void InnoMemorySystem::shutdown()
 {
 	::delete[] m_poolMemoryPtr;
 }
 
-void * MemorySystem::allocate(unsigned long size)
+void * InnoMemorySystem::allocate(unsigned long size)
 {
 	// add bound check size
 	// [StartBound + Chuck + data + EndBound]
@@ -64,7 +118,7 @@ void * MemorySystem::allocate(unsigned long size)
 	// If no block is found, return nullptr
 	if (!l_suitableChuckPtr)
 	{ 
-		g_pLogSystem->printLog("MemorySystem: Can't allocate memory!");
+		InnoLogSystem::printLog("MemorySystem: Can't allocate memory!");
 		return nullptr; 
 	}
 
@@ -105,7 +159,7 @@ void * MemorySystem::allocate(unsigned long size)
 	return (l_suitableChuckPtr_UC + sizeof(Chunk));
 }
 
-void MemorySystem::free(void * ptr)
+void InnoMemorySystem::free(void * ptr)
 {
 	// is a valid node?
 	if (!ptr) return;
@@ -174,7 +228,7 @@ void MemorySystem::free(void * ptr)
 	std::memcpy(l_freeChuckPtr_UC + l_fullFreeBlockSize - m_boundCheckSize * 2, m_endBoundMarker, m_boundCheckSize);
 }
 
-void MemorySystem::serializeImpl(void * ptr)
+void InnoMemorySystem::serializeImpl(void * ptr)
 {
 	if (!ptr) return;
 	char* l_ptr_UC = reinterpret_cast<char*>(ptr);
@@ -184,13 +238,13 @@ void MemorySystem::serializeImpl(void * ptr)
 	unsigned long l_fullBlockSize = l_chuckPtr->m_blockSize;
 
 	std::ofstream l_file;
-	//l_file.open("../serializationTest" + g_pTimeSystem->getCurrentTimeInLocalForOutput() + ".innoAsset", std::ios::out | std::ios::trunc | std::ios::binary);
+	//l_file.open("../serializationTest" + InnoTimeSystem->getCurrentTimeInLocalForOutput() + ".innoAsset", std::ios::out | std::ios::trunc | std::ios::binary);
 	l_file.open("../serializationTest.innoAsset", std::ios::out | std::ios::trunc | std::ios::binary);
 	l_file.write(l_ptr_UC, l_fullBlockSize - sizeof(Chunk) - m_boundCheckSize * 2);
 	l_file.close();
 }
 
-void * MemorySystem::deserializeImpl(unsigned long size, const std::string & filePath)
+void * InnoMemorySystem::deserializeImpl(unsigned long size, const std::string & filePath)
 {
 	std::ifstream l_file;
 	l_file.open(filePath, std::ios::binary);
@@ -217,10 +271,10 @@ void * MemorySystem::deserializeImpl(unsigned long size, const std::string & fil
 	return l_ptr;
 }
 
-void MemorySystem::dumpToFile(bool fullDump) const
+void InnoMemorySystem::dumpToFile(bool fullDump)
 {
 	std::ofstream l_file;
-	l_file.open("../" + g_pTimeSystem->getCurrentTimeInLocalForOutput() + ".innoMemoryDump");
+	l_file.open("../" + InnoTimeSystem::getCurrentTimeInLocalForOutput() + ".innoMemoryDump");
 
 	l_file << "InnoMemory Pool Dump File ----------------------------------\n";
 	l_file << "Total Size: " << m_totalPoolSize << "\n";
@@ -289,9 +343,4 @@ void MemorySystem::dumpToFile(bool fullDump) const
 	}
 
 	l_file.close();
-}
-
-const objectStatus & MemorySystem::getStatus() const
-{
-	return m_objectStatus;
 }

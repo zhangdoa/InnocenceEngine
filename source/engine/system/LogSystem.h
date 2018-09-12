@@ -1,31 +1,19 @@
 #pragma once
-#include "../interface/ILogSystem.h"
-#include "../interface/ITimeSystem.h"
+#include "../common/InnoType.h"
+#include "../common/InnoMath.h"
 
-#include <sstream>
-#include <iostream>
-
-extern ITimeSystem* g_pTimeSystem;
-
-class LogSystem : public ILogSystem
+namespace InnoLogSystem
 {
-public:
-	LogSystem() {};
-	~LogSystem() {};
+	void setup();
+	void initialize();
+	void update();
+	void shutdown();
 
-	void setup() override;
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
+	void printLog(double logMessage);
+	void printLog(const std::string& logMessage);
+	void printLog(const vec2& logMessage);
+	void printLog(const vec4& logMessage);
+	void printLog(const mat4& logMessage);
 
-	void printLog(double logMessage) const override;
-	void printLog(const std::string& logMessage) const override;
-	void printLog(const vec2& logMessage) const override;
-	void printLog(const vec4& logMessage) const override;
-	void printLog(const mat4& logMessage) const override;
-
-	const objectStatus& getStatus() const override;
-
-private:
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	objectStatus m_LogSystemStatus = objectStatus::SHUTDOWN;
 };

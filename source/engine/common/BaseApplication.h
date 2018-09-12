@@ -1,25 +1,12 @@
 #pragma once
-#include "../interface/IApplication.h"
-#include "../interface/ICoreSystem.h"
+#include "InnoType.h"
 
-extern ICoreSystem* g_pCoreSystem;
-
-class BaseApplication : public IApplication
+namespace InnoApplication
 {
-public:
-	BaseApplication() {};
-	~BaseApplication() {};
+	void setup();
+	void initialize();
+	void update();
+	void shutdown();
 
-	void setup() override;
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
-
-	const objectStatus& getStatus() const override;
-
-private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 };
-
-BaseApplication g_App;
-IApplication* g_pApp = &g_App;

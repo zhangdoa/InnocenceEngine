@@ -369,7 +369,7 @@
  - 2015/07/02 (1.42) - renamed SetScrollPosHere() to SetScrollFromCursorPos(). Kept inline redirection function (will obsolete).
  - 2015/07/02 (1.42) - renamed GetScrollPosY() to GetScrollY(). Necessary to reduce confusion along with other scrolling functions, because positions (e.g. cursor position) are not equivalent to scrolling amount.
  - 2015/06/14 (1.41) - changed ImageButton() default bg_col parameter from (0,0,0,1) (black) to (0,0,0,0) (transparent) - makes a difference when texture have transparence
- - 2015/06/14 (1.41) - changed Selectable() API from (label, selected, size) to (label, selected, flags, size). Size override should have been rarely be used. Sorry!
+ - 2015/06/14 (1.41) - changed Selectable() API from (label, selected, size) to (label, selected, flags, size). Size should have been rarely be used. Sorry!
  - 2015/05/31 (1.40) - renamed GetWindowCollapsed() to IsWindowCollapsed() for consistency. Kept inline redirection function (will obsolete).
  - 2015/05/31 (1.40) - renamed IsRectClipped() to IsRectVisible() for consistency. Note that return value is opposite! Kept inline redirection function (will obsolete).
  - 2015/05/27 (1.40) - removed the third 'repeat_if_held' parameter from Button() - sorry! it was rarely used and inconsistent. Use PushButtonRepeat(true) / PopButtonRepeat() to enable repeat on desired buttons.
@@ -4807,7 +4807,7 @@ static ImRect GetViewportRect()
 }
 
 // Not exposed publicly as BeginTooltip() because bool parameters are evil. Let's see if other needs arise first.
-void ImGui::BeginTooltipEx(ImGuiWindowFlags extra_flags, bool override_previous_tooltip)
+void ImGui::BeginTooltipEx(ImGuiWindowFlags extra_flags, bool_previous_tooltip)
 {
     ImGuiContext& g = *GImGui;
     char window_name[16];
@@ -5867,7 +5867,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
         ImVec2 size_full_modified(FLT_MAX, FLT_MAX);
         if ((flags & ImGuiWindowFlags_AlwaysAutoResize) && !window->Collapsed)
         {
-            // Using SetNextWindowSize() overrides ImGuiWindowFlags_AlwaysAutoResize, so it can be used on tooltips/popups, etc.
+            // Using SetNextWindowSize()s ImGuiWindowFlags_AlwaysAutoResize, so it can be used on tooltips/popups, etc.
             if (!window_size_x_set_by_api)
                 window->SizeFull.x = size_full_modified.x = size_auto_fit.x;
             if (!window_size_y_set_by_api)
@@ -6272,7 +6272,7 @@ bool ImGui::Begin(const char* name, bool* p_open, const ImVec2& size_first_use, 
     if (size_first_use.x != 0.0f || size_first_use.y != 0.0f)
         ImGui::SetNextWindowSize(size_first_use, ImGuiCond_FirstUseEver);
 
-    // Old API feature: override the window background alpha with a parameter.
+    // Old API feature: the window background alpha with a parameter.
     if (bg_alpha_override >= 0.0f)
         ImGui::SetNextWindowBgAlpha(bg_alpha_override);
 
@@ -8163,9 +8163,9 @@ bool ImGui::TreeNodeBehavior(ImGuiID id, ImGuiTreeNodeFlags flags, const char* l
         if (g.LogEnabled)
         {
             // NB: '##' is normally used to hide text (as a library-wide feature), so we need to specify the text range to make sure the ## aren't stripped out here.
-            const char log_prefix[] = "\n##";
+            const char loInnorefix[] = "\n##";
             const char log_suffix[] = "##";
-            LogRenderedText(&text_pos, log_prefix, log_prefix+3);
+            LogRenderedText(&text_pos, loInnorefix, loInnorefix+3);
             RenderTextClipped(text_pos, frame_bb.Max, label, label_end, &label_size);
             LogRenderedText(&text_pos, log_suffix+1, log_suffix+3);
         }
@@ -8585,7 +8585,7 @@ bool ImGui::InputScalarAsWidgetReplacement(const ImRect& aabb, const char* label
     ImGuiContext& g = *GImGui;
     ImGuiWindow* window = GetCurrentWindow();
 
-    // Our replacement widget will override the focus ID (registered previously to allow for a TAB focus to happen)
+    // Our replacement widget will the focus ID (registered previously to allow for a TAB focus to happen)
     // On the first frame, g.ScalarAsInputTextId == 0, then on subsequent frames it becomes == id
     SetActiveID(g.ScalarAsInputTextId, window);
     g.ActiveIdAllowNavDirFlags = (1 << ImGuiDir_Up) | (1 << ImGuiDir_Down);
@@ -9516,7 +9516,7 @@ void ImGui::ProgressBar(float fraction, const ImVec2& size_arg, const char* over
     const ImVec2 fill_br = ImVec2(ImLerp(bb.Min.x, bb.Max.x, fraction), bb.Max.y);
     RenderRectFilledRangeH(window->DrawList, bb, GetColorU32(ImGuiCol_PlotHistogram), 0.0f, fraction, style.FrameRounding);
 
-    // Default displaying the fraction as percentage string, but user can override it
+    // Default displaying the fraction as percentage string, but user can it
     char overlay_buf[32];
     if (!overlay)
     {
@@ -10022,7 +10022,7 @@ bool ImGui::InputTextEx(const char* label, char* buf, int buf_size, const ImVec2
             if (recycle_state)
             {
                 // Recycle existing cursor/selection/undo stack but clamp position
-                // Note a single mouse click will override the cursor/position immediately by calling stb_textedit_click handler.
+                // Note a single mouse click will the cursor/position immediately by calling stb_textedit_click handler.
                 edit_state.CursorClamp();
             }
             else

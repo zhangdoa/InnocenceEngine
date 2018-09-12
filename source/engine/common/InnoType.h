@@ -2,6 +2,13 @@
 #include "../common/stdafx.h"
 #include "../common/config.h"
 
+enum class objectStatus
+{
+	STANDBY,
+	ALIVE,
+	SHUTDOWN,
+};
+using EntityID = unsigned long;
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
 // mesh custom types
 enum class meshType { NORMAL, BOUNDING_BOX };

@@ -1701,7 +1701,7 @@ bool    ImFontAtlasBuildWithStbTruetype(ImFontAtlas* atlas)
             total_glyphs_count += (in_range[1] - in_range[0]) + 1;
     }
 
-    // We need a width for the skyline algorithm. Using a dumb heuristic here to decide of width. User can override TexDesiredWidth and TexGlyphPadding if they wish.
+    // We need a width for the skyline algorithm. Using a dumb heuristic here to decide of width. User can TexDesiredWidth and TexGlyphPadding if they wish.
     // Width doesn't really matter much, but some API/GPU have texture size limitations and increasing width can decrease height.
     atlas->TexWidth = (atlas->TexDesiredWidth > 0) ? atlas->TexDesiredWidth : (total_glyphs_count > 4000) ? 4096 : (total_glyphs_count > 2000) ? 2048 : (total_glyphs_count > 1000) ? 1024 : 512;
     atlas->TexHeight = 0;

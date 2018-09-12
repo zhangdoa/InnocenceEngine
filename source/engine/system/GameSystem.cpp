@@ -1,79 +1,103 @@
 #include "GameSystem.h"
 
-void GameSystem::setup()
+namespace InnoGameSystem
 {
-		m_objectStatus = objectStatus::ALIVE;
+	// the SOA here
+	std::vector<TransformComponent*> m_transformComponents;
+	std::vector<VisibleComponent*> m_visibleComponents;
+	std::vector<LightComponent*> m_lightComponents;
+	std::vector<CameraComponent*> m_cameraComponents;
+	std::vector<InputComponent*> m_inputComponents;
+
+	std::unordered_map<EntityID, TransformComponent*> m_TransformComponentsMap;
+	std::unordered_multimap<EntityID, VisibleComponent*> m_VisibleComponentsMap;
+	std::unordered_multimap<EntityID, LightComponent*> m_LightComponentsMap;
+	std::unordered_multimap<EntityID, CameraComponent*> m_CameraComponentsMap;
+	std::unordered_multimap<EntityID, InputComponent*> m_InputComponentsMap;
+
+	bool m_needRender = true;
 }
 
-void GameSystem::addComponentsToMap()
+void InnoGameSystem::setup()
+{
+	m_GameSystemStatus = objectStatus::ALIVE;
+}
+
+void InnoGameSystem::addComponentsToMap()
 {
 	std::for_each(m_transformComponents.begin(), m_transformComponents.end(), [&](TransformComponent* val)
 	{
-		m_TransformComponentsMap.emplace(val->getParentEntity(), val);
+		m_TransformComponentsMap.emplace(val->m_parentEntity, val);
 	});
 	std::for_each(m_visibleComponents.begin(), m_visibleComponents.end(), [&](VisibleComponent* val)
 	{
-		m_VisibleComponentsMap.emplace(val->getParentEntity(), val);
+		m_VisibleComponentsMap.emplace(val->m_parentEntity, val);
 	});
 
 	std::for_each(m_lightComponents.begin(), m_lightComponents.end(), [&](LightComponent* val)
 	{
-		m_LightComponentsMap.emplace(val->getParentEntity(), val);
+		m_LightComponentsMap.emplace(val->m_parentEntity, val);
 	});
 
 	std::for_each(m_cameraComponents.begin(), m_cameraComponents.end(), [&](CameraComponent* val)
 	{
-		m_CameraComponentsMap.emplace(val->getParentEntity(), val);
+		m_CameraComponentsMap.emplace(val->m_parentEntity, val);
 	});
 
 	std::for_each(m_inputComponents.begin(), m_inputComponents.end(), [&](InputComponent* val)
 	{
-		m_InputComponentsMap.emplace(val->getParentEntity(), val);
+		m_InputComponentsMap.emplace(val->m_parentEntity, val);
 	});
 }
 
-void GameSystem::initialize()
+void InnoGameSystem::initialize()
 {
 }
 
-void GameSystem::update()
+void InnoGameSystem::update()
 {
-	//auto l_tickTime = g_pTimeSystem->getcurrentTime();
-	//l_tickTime = g_pTimeSystem->getcurrentTime() - l_tickTime;
-	////g_pLogSystem->printLog(l_tickTime);
+	//auto l_tickTime = InnoTimeSystem->getcurrentTime();
+	//l_tickTime = InnoTimeSystem->getcurrentTime() - l_tickTime;
+	////InnoLogSystem::printLog(l_tickTime);
 }
 
-void GameSystem::shutdown()
+void InnoGameSystem::shutdown()
 {
-	m_objectStatus = objectStatus::SHUTDOWN;
+	m_GameSystemStatus = objectStatus::SHUTDOWN;
 }
 
-std::vector<TransformComponent*>& GameSystem::getTransformComponents()
+std::vector<TransformComponent*>& InnoGameSystem::getTransformComponents()
 {
 	return m_transformComponents;
 }
 
-std::vector<VisibleComponent*>& GameSystem::getVisibleComponents()
+std::vector<VisibleComponent*>& InnoGameSystem::getVisibleComponents()
 {
 	return m_visibleComponents;
 }
 
-std::vector<LightComponent*>& GameSystem::getLightComponents()
+std::vector<LightComponent*>& InnoGameSystem::getLightComponents()
 {
 	return m_lightComponents;
 }
 
-std::vector<CameraComponent*>& GameSystem::getCameraComponents()
+std::vector<CameraComponent*>& InnoGameSystem::getCameraComponents()
 {
 	return m_cameraComponents;
 }
 
-std::vector<InputComponent*>& GameSystem::getInputComponents()
+std::vector<InputComponent*>& InnoGameSystem::getInputComponents()
 {
 	return m_inputComponents;
 }
 
-TransformComponent * GameSystem::getTransformComponent(EntityID parentEntity)
+std::string InnoGameSystem::getGameName()
+{
+	return std::string();
+}
+
+template<class TComponent>
+auto InnoGameSystem::getComponent(EntityID parentEntity) -> TComponent*
 {
 	auto result = m_TransformComponentsMap.find(parentEntity);
 	if (result != m_TransformComponentsMap.end())
@@ -86,12 +110,12 @@ TransformComponent * GameSystem::getTransformComponent(EntityID parentEntity)
 	}
 }
 
-void GameSystem::addMeshData(VisibleComponent * visibleComponentconst, meshID & meshID)
+void InnoGameSystem::addMeshData(VisibleComponent * visibleComponentconst, meshID & meshID)
 {
 	visibleComponentconst->m_modelMap.emplace(meshID, textureMap());
 }
 
-void GameSystem::addTextureData(VisibleComponent * visibleComponentconst, const texturePair & texturePair)
+void InnoGameSystem::addTextureData(VisibleComponent * visibleComponentconst, const texturePair & texturePair)
 {
 	for (auto& l_model : visibleComponentconst->m_modelMap)
 	{
@@ -103,7 +127,7 @@ void GameSystem::addTextureData(VisibleComponent * visibleComponentconst, const 
 	}
 }
 
-void GameSystem::overwriteTextureData(VisibleComponent * visibleComponentconst, const texturePair & texturePair)
+void InnoGameSystem::overwriteTextureData(VisibleComponent * visibleComponentconst, const texturePair & texturePair)
 {
 	for (auto& l_model : visibleComponentconst->m_modelMap)
 	{
@@ -119,7 +143,7 @@ void GameSystem::overwriteTextureData(VisibleComponent * visibleComponentconst, 
 	}
 }
 
-mat4 GameSystem::getProjectionMatrix(LightComponent * lightComponent, unsigned int cascadedLevel)
+mat4 InnoGameSystem::getProjectionMatrix(LightComponent * lightComponent, unsigned int cascadedLevel)
 {
 	auto l_center = lightComponent->m_AABBs[cascadedLevel].m_center;
 	double l_radius = 0.0;
@@ -138,7 +162,7 @@ mat4 GameSystem::getProjectionMatrix(LightComponent * lightComponent, unsigned i
 	return p;
 }
 
-void GameSystem::registerButtonStatusCallback(InputComponent * inputComponent, button boundButton, std::function<void()>* function)
+void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponent, button boundButton, std::function<void()>* function)
 {
 	auto l_kbuttonStatusCallbackVector = inputComponent->m_buttonStatusCallbackImpl.find(boundButton);
 	if (l_kbuttonStatusCallbackVector != inputComponent->m_buttonStatusCallbackImpl.end())
@@ -151,7 +175,7 @@ void GameSystem::registerButtonStatusCallback(InputComponent * inputComponent, b
 	}
 }
 
-void GameSystem::registerMouseMovementCallback(InputComponent * inputComponent, int mouseCode, std::function<void(double)>* function)
+void InnoGameSystem::registerMouseMovementCallback(InputComponent * inputComponent, int mouseCode, std::function<void(double)>* function)
 {
 	auto l_mouseMovementCallbackVector = inputComponent->m_mouseMovementCallbackImpl.find(mouseCode);
 	if (l_mouseMovementCallbackVector != inputComponent->m_mouseMovementCallbackImpl.end())
@@ -164,17 +188,12 @@ void GameSystem::registerMouseMovementCallback(InputComponent * inputComponent, 
 	}
 }
 
-bool GameSystem::needRender()
+bool InnoGameSystem::needRender()
 {
 	return m_needRender;
 }
 
-EntityID GameSystem::createEntityID()
+EntityID InnoGameSystem::createEntityID()
 {
 	return std::rand();
-}
-
-const objectStatus & GameSystem::getStatus() const
-{
-	return m_objectStatus;
 }

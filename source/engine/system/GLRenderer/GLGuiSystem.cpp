@@ -1,6 +1,63 @@
 #include "GLGuiSystem.h"
+#include "../../component/WindowSystemSingletonComponent.h"
+#include "../../component/ShadowRenderPassSingletonComponent.h"
+#include "../../component/GeometryRenderPassSingletonComponent.h"
+#include "../../component/LightRenderPassSingletonComponent.h"
+#include "../../component/GLFinalRenderPassSingletonComponent.h"
+#include "../../component/RenderingSystemSingletonComponent.h"
+
+#include "../../third-party/ImGui/imgui.h"
+#include "../../third-party/ImGui/imgui_impl_glfw_gl3.h"
+
+#include "../LogSystem.h"
+
+class ImGuiWrapper
+{
+public:
+	~ImGuiWrapper() {};
+
+	static ImGuiWrapper& getInstance()
+	{
+		static ImGuiWrapper instance;
+		return instance;
+	}
+	void setup();
+	void initialize();
+	void update();
+	void shutdown();
+	void zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize);
+
+private:
+	ImGuiWrapper() {};
+};
 
 void GLGuiSystem::setup()
+{
+	ImGuiWrapper::getInstance().setup();
+	m_GLGuiSystemStatus = objectStatus::ALIVE;
+}
+
+void GLGuiSystem::initialize()
+{
+	ImGuiWrapper::getInstance().initialize();
+	InnoLogSystem::printLog("GLGuiSystem has been initialized.");
+}
+
+void GLGuiSystem::update()
+{
+	ImGuiWrapper::getInstance().update();
+}
+
+void GLGuiSystem::shutdown()
+{
+	m_GLGuiSystemStatus = objectStatus::STANDBY;
+	ImGuiWrapper::getInstance().shutdown();
+
+	m_GLGuiSystemStatus = objectStatus::SHUTDOWN;
+	InnoLogSystem::printLog("GLGuiSystem has been shutdown.");
+}
+
+void ImGuiWrapper::setup()
 {
 	// Setup Dear ImGui binding
 	IMGUI_CHECKVERSION();
@@ -16,16 +73,13 @@ void GLGuiSystem::setup()
 
 	// Load Fonts
 	io.Fonts->AddFontFromFileTTF("..//res//fonts//FreeSans.otf", 16.0f);
-
-	m_objectStatus = objectStatus::ALIVE;
 }
 
-void GLGuiSystem::initialize()
+void ImGuiWrapper::initialize()
 {
-	g_pLogSystem->printLog("GLGuiSystem has been initialized.");
 }
 
-void GLGuiSystem::update()
+void ImGuiWrapper::update()
 {
 	auto l_renderTargetSize = ImVec2((float)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x / 4.0, (float)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y / 4.0);
 #ifdef DEBUG
@@ -44,7 +98,7 @@ void GLGuiSystem::update()
 		{
 			ImGui::Image(ImTextureID((GLuint64)LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			zoom(l_zoom, ImTextureID((GLuint64)LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_TAO), l_renderTargetSize);
-		}			
+		}
 		ImGui::End();
 
 		ImGui::Begin("Geometry Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
@@ -56,7 +110,7 @@ void GLGuiSystem::update()
 				ImGui::EndChild();
 
 				ImGui::SameLine();
-				
+
 				ImGui::BeginChild("World Space Normal(RGB) + Roughness(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 				ImGui::Text("World Space Normal(RGB) + Roughness(A)");
 				ImGui::Image(ImTextureID((GLuint64)GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[1].m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
@@ -142,22 +196,14 @@ void GLGuiSystem::update()
 		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 	}
 #endif
+
 }
 
-void GLGuiSystem::shutdown()
+void ImGuiWrapper::shutdown()
 {
-	m_objectStatus = objectStatus::STANDBY;
-
-	m_objectStatus = objectStatus::SHUTDOWN;
-	g_pLogSystem->printLog("GLGuiSystem has been shutdown.");
 }
 
-const objectStatus & GLGuiSystem::getStatus() const
-{
-	return m_objectStatus;
-}
-
-void GLGuiSystem::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize)
+void ImGuiWrapper::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize)
 {
 	if (zoom)
 	{

@@ -8,7 +8,7 @@
 extern ILogSystem* g_pLogSystem;
 extern IGameSystem* g_pGameSystem;
 
-class DXWindowSystem : public BaseWindowSystem
+class DXWindowSystem : public InputSystem
 {
 public:
 	DXWindowSystem() {};

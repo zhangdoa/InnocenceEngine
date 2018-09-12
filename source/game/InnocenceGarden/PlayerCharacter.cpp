@@ -2,10 +2,10 @@
 
 void PlayerCharacter::setup()
 {
-	m_transformComponent.setParentEntity(m_parentEntity);
-	m_cameraComponent.setParentEntity(m_parentEntity);
-	m_inputComponent.setParentEntity(m_parentEntity);
-	m_visibleComponent.setParentEntity(m_parentEntity);
+	m_transformComponent.m_parentEntity = m_parentEntity;
+	m_cameraComponent.m_parentEntity = m_parentEntity;
+	m_inputComponent.m_parentEntity = m_parentEntity;
+	m_visibleComponent.m_parentEntity = m_parentEntity;
 
 	m_cameraComponent.m_FOVX = 60.0;
 	m_cameraComponent.m_WHRatio = 16.0 / 9.0;

@@ -1,23 +1,13 @@
 #pragma once
-#include "../interface/ITaskSystem.h"
-#include "../interface/IMemorySystem.h"
-#include "../interface/ILogSystem.h"
+#include "../common/InnoType.h"
 #include "../common/InnoConcurrency.h"
 
-extern IMemorySystem* g_pMemorySystem;
-extern ILogSystem* g_pLogSystem;
-
-class TaskSystem : public ITaskSystem
+namespace InnoTaskSystem
 {
-public:
-	TaskSystem() {};
-	~TaskSystem() {};
-
-	void setup() override;
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
-	const objectStatus& getStatus() const override;
+	void setup();
+	void initialize();
+	void update();
+	void shutdown();
 
 	template <typename Func, typename... Args>
 	auto submit(Func&& func, Args&&... args)
@@ -25,8 +15,7 @@ public:
 		return m_threadPool->submit(std::forward<Func>(func), std::forward<Args>(args)...);
 	}
 
-private:
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	objectStatus m_TaskSystemStatus = objectStatus::SHUTDOWN;
 
 	InnoThreadPool* m_threadPool;
 };

@@ -1,4 +1,63 @@
 #include "GLRenderingSystem.h"
+#include "../../component/EnvironmentRenderPassSingletonComponent.h"
+#include "../../component/ShadowRenderPassSingletonComponent.h"
+#include "../../component/GeometryRenderPassSingletonComponent.h"
+#include "../../component/LightRenderPassSingletonComponent.h"
+#include "../../component/GLFinalRenderPassSingletonComponent.h"
+#include "../../component/RenderingSystemSingletonComponent.h"
+#include "../../component/AssetSystemSingletonComponent.h"
+#include <sstream>
+#include "../LogSystem.h"
+#include "../GameSystem.h"
+#include "../AssetSystem.h"
+
+namespace GLRenderingSystem
+{
+	double RadicalInverse(int n, int base);
+	void initializeHaltonSampler();
+	void initializeEnvironmentRenderPass();
+	void initializeShadowRenderPass();
+	void initializeGeometryRenderPass();
+	void initializeLightRenderPass();
+	void initializeFinalRenderPass();
+
+	void initializeSkyPass();
+	void initializeTAAPass();
+	void initializeBloomExtractPass();
+	void initializeBloomBlurPass();
+	void initializeMotionBlurPass();
+	void initializeBillboardPass();
+	void initializeDebuggerPass();
+	void initializeFinalBlendPass();
+
+	void initializeDefaultGraphicPrimtives();
+	void initializeGraphicPrimtivesOfComponents();
+	void initializeMesh(MeshDataComponent* GLMeshDataComponent);
+	void initializeTexture(TextureDataComponent* GLTextureDataComponent);
+	void initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string& shaderFilePath);
+
+	void updateEnvironmentRenderPass();
+	void updateShadowRenderPass();
+	void updateGeometryRenderPass();
+	void updateLightRenderPass();
+	void updateFinalRenderPass();
+
+	GLuint getUniformLocation(GLuint shaderProgram, const std::string& uniformName);
+
+	void updateUniform(const GLint uniformLocation, bool uniformValue);
+	void updateUniform(const GLint uniformLocation, int uniformValue);
+	void updateUniform(const GLint uniformLocation, double uniformValue);
+	void updateUniform(const GLint uniformLocation, double x, double y);
+	void updateUniform(const GLint uniformLocation, double x, double y, double z);
+	void updateUniform(const GLint uniformLocation, double x, double y, double z, double w);
+	void updateUniform(const GLint uniformLocation, const mat4& mat);
+
+	void attachTextureToFramebuffer(const GLTextureDataComponent* GLTextureDataComponent, const GLFrameBufferComponent* GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel);
+	void activateShaderProgram(const GLShaderProgramComponent* GLShaderProgramComponent);
+	void activateMesh(const MeshDataComponent* GLTextureDataComponent);
+	void drawMesh(const MeshDataComponent* GLTextureDataComponent);
+	void activateTexture(const TextureDataComponent* GLTextureDataComponent, int activateIndex);
+}
 
 void GLRenderingSystem::setup()
 {
@@ -118,7 +177,7 @@ void GLRenderingSystem::initializeEnvironmentRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: EnvironmentRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: EnvironmentRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -265,7 +324,7 @@ void GLRenderingSystem::initializeShadowRenderPass()
 		{
 			std::stringstream ss;
 			ss << i;
-			g_pLogSystem->printLog("GLFrameBuffer: ShadowRenderPass level " + ss.str() + " Framebuffer is not completed!");
+			InnoLogSystem::printLog("GLFrameBuffer: ShadowRenderPass level " + ss.str() + " Framebuffer is not completed!");
 		}
 	}
 
@@ -346,7 +405,7 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: GeometryRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: GeometryRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -500,7 +559,7 @@ void GLRenderingSystem::initializeLightRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: LightRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: LightRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -628,13 +687,13 @@ void GLRenderingSystem::initializeLightRenderPass()
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_dirLight.color");
 	int l_pointLightIndexOffset = 0;
-	for (auto i = (unsigned int)0; i < g_pGameSystem->getLightComponents().size(); i++)
+	for (auto i = (unsigned int)0; i < InnoGameSystem::getLightComponents().size(); i++)
 	{
-		if (g_pGameSystem->getLightComponents()[i]->m_lightType == lightType::DIRECTIONAL)
+		if (InnoGameSystem::getLightComponents()[i]->m_lightType == lightType::DIRECTIONAL)
 		{
 			l_pointLightIndexOffset -= 1;
 		}
-		if (g_pGameSystem->getLightComponents()[i]->m_lightType == lightType::POINT)
+		if (InnoGameSystem::getLightComponents()[i]->m_lightType == lightType::POINT)
 		{
 			std::stringstream ss;
 			ss << i + l_pointLightIndexOffset;
@@ -705,7 +764,7 @@ void GLRenderingSystem::initializeSkyPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: ShadowRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: ShadowRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -776,7 +835,7 @@ void GLRenderingSystem::initializeTAAPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: TAAPingRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: TAAPingRenderPass Framebuffer is not completed!");
 	}
 
 	// generate and bind framebuffer
@@ -816,7 +875,7 @@ void GLRenderingSystem::initializeTAAPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: TAAPongRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: TAAPongRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -896,7 +955,7 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: BloomExtractRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: BloomExtractRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -961,7 +1020,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: BloomBlurPingRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: BloomBlurPingRenderPass Framebuffer is not completed!");
 	}
 
 	// generate and bind framebuffer
@@ -1001,7 +1060,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: BloomBlurPongRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: BloomBlurPongRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1069,7 +1128,7 @@ void GLRenderingSystem::initializeMotionBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: MotionBlurRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: MotionBlurRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1140,7 +1199,7 @@ void GLRenderingSystem::initializeBillboardPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: BillboardRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: BillboardRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1223,7 +1282,7 @@ void GLRenderingSystem::initializeDebuggerPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: DebuggerRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: DebuggerRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1300,7 +1359,7 @@ void GLRenderingSystem::initializeFinalBlendPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pLogSystem->printLog("GLFrameBuffer: FinalBlendRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: FinalBlendRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1356,15 +1415,15 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 	shaderID = glCreateShader(shaderType);
 
 	if (shaderID == 0) {
-		g_pLogSystem->printLog("Error: Shader creation failed: memory location invaild when adding shader!");
+		InnoLogSystem::printLog("Error: Shader creation failed: memory location invaild when adding shader!");
 	}
 
-	auto l_shaderCodeContent = g_pAssetSystem->loadShader(shaderFilePath);
+	auto l_shaderCodeContent = InnoAssetSystem::loadShader(shaderFilePath);
 	const char* l_sourcePointer = l_shaderCodeContent.c_str();
 
 	if (l_sourcePointer == nullptr)
 	{
-		g_pLogSystem->printLog("Error: Shader loading failed!");
+		InnoLogSystem::printLog("Error: Shader loading failed!");
 	}
 
 	glShaderSource(shaderID, 1, &l_sourcePointer, NULL);
@@ -1377,127 +1436,127 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 
 	if (!l_compileResult)
 	{
-		g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
+		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
 		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-		g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
 		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
 			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-			g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+			InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
 			return;
 		}
 	}
 
-	g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
+	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
 
 	glAttachShader(shaderProgram, shaderID);
 	glLinkProgram(shaderProgram);
 	glValidateProgram(shaderProgram);
 
-	g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
+	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
 
 	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &l_compileResult);
 	if (!l_compileResult)
 	{
-		g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
+		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
 		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-		g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
 		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
 			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-			g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+			InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
 		}
 	}
 
-	g_pLogSystem->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
+	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
 }
 
 void GLRenderingSystem::initializeDefaultGraphicPrimtives()
 {
-	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::LINE);
+	{	auto l_Mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::LINE);
 	initializeMesh(l_Mesh);
 	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
-	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
+	{	auto l_Mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
 	initializeMesh(l_Mesh);
 	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
-	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::CUBE);
+	{	auto l_Mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::CUBE);
 	initializeMesh(l_Mesh);
 	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
-	{	auto l_Mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::SPHERE);
+	{	auto l_Mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::SPHERE);
 	initializeMesh(l_Mesh);
 	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
 
 
-	{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::NORMAL);
+	{	auto l_Texture = InnoAssetSystem::getDefaultTexture(textureType::NORMAL);
 	initializeTexture(l_Texture);
 	RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
-	{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::ALBEDO);
+	{	auto l_Texture = InnoAssetSystem::getDefaultTexture(textureType::ALBEDO);
 	initializeTexture(l_Texture);
 	RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
-	{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::METALLIC);
+	{	auto l_Texture = InnoAssetSystem::getDefaultTexture(textureType::METALLIC);
 	initializeTexture(l_Texture);
 	RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
-	{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::ROUGHNESS);
+	{	auto l_Texture = InnoAssetSystem::getDefaultTexture(textureType::ROUGHNESS);
 	initializeTexture(l_Texture);
 	RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
-	{	auto l_Texture = g_pAssetSystem->getDefaultTexture(textureType::AMBIENT_OCCLUSION);
+	{	auto l_Texture = InnoAssetSystem::getDefaultTexture(textureType::AMBIENT_OCCLUSION);
 	initializeTexture(l_Texture);
 	RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
 }
 
 void GLRenderingSystem::initializeGraphicPrimtivesOfComponents()
 {
-	for (auto& l_cameraComponent : g_pGameSystem->getCameraComponents())
+	for (auto& l_cameraComponent : InnoGameSystem::getCameraComponents())
 	{
 		if (l_cameraComponent->m_drawAABB)
 		{
-			auto l_meshID = g_pAssetSystem->addMesh(l_cameraComponent->m_AABB.m_vertices, l_cameraComponent->m_AABB.m_indices);
-			auto l_Mesh = g_pAssetSystem->getMesh(l_meshID);
+			auto l_meshID = InnoAssetSystem::addMesh(l_cameraComponent->m_AABB.m_vertices, l_cameraComponent->m_AABB.m_indices);
+			auto l_Mesh = InnoAssetSystem::getMesh(l_meshID);
 			initializeMesh(l_Mesh);
 			RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_cameraComponent->m_AABBMeshID, l_Mesh);
 			l_cameraComponent->m_AABBMeshID = l_meshID;
 		}
 		if (l_cameraComponent->m_drawFrustum)
 		{
-			auto l_meshID = g_pAssetSystem->addMesh(l_cameraComponent->m_frustumVertices, l_cameraComponent->m_frustumIndices);
-			auto l_Mesh = g_pAssetSystem->getMesh(l_meshID);
+			auto l_meshID = InnoAssetSystem::addMesh(l_cameraComponent->m_frustumVertices, l_cameraComponent->m_frustumIndices);
+			auto l_Mesh = InnoAssetSystem::getMesh(l_meshID);
 			initializeMesh(l_Mesh);
 			RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_cameraComponent->m_FrustumMeshID, l_Mesh);
 			l_cameraComponent->m_FrustumMeshID = l_meshID;
 		}
 	}
-	for (auto& l_lightComponent : g_pGameSystem->getLightComponents())
+	for (auto& l_lightComponent : InnoGameSystem::getLightComponents())
 	{
 		if (l_lightComponent->m_drawAABB)
 		{
 			for (size_t i = 0; i < l_lightComponent->m_AABBMeshIDs.size(); i++)
 			{
-				auto l_meshID = g_pAssetSystem->addMesh(l_lightComponent->m_AABBs[i].m_vertices, l_lightComponent->m_AABBs[i].m_indices);
-				auto l_Mesh = g_pAssetSystem->getMesh(l_meshID);
+				auto l_meshID = InnoAssetSystem::addMesh(l_lightComponent->m_AABBs[i].m_vertices, l_lightComponent->m_AABBs[i].m_indices);
+				auto l_Mesh = InnoAssetSystem::getMesh(l_meshID);
 				initializeMesh(l_Mesh);
 				RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_lightComponent->m_AABBMeshIDs[i], l_Mesh);
 				l_lightComponent->m_AABBMeshIDs.emplace_back(l_meshID);
 			}
 		}
 	}
-	for (auto& l_visibleComponent : g_pGameSystem->getVisibleComponents())
+	for (auto& l_visibleComponent : InnoGameSystem::getVisibleComponents())
 	{
 		for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 		{
 			if (RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.find(l_graphicData.first) == RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.end())
 			{
-				auto l_Mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+				auto l_Mesh = InnoAssetSystem::getMesh(l_graphicData.first);
 				initializeMesh(l_Mesh);
 				RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_graphicData.first, l_Mesh);
 			}
 			std::for_each(l_graphicData.second.begin(), l_graphicData.second.end(), [&](texturePair val) {
 				if (RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.find(val.second) == RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.end())
 				{
-					auto l_Texture = g_pAssetSystem->getTexture(val.second);
+					auto l_Texture = InnoAssetSystem::getTexture(val.second);
 					initializeTexture(l_Texture);
 					RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(val.second, l_Texture);
 				}
@@ -1506,8 +1565,8 @@ void GLRenderingSystem::initializeGraphicPrimtivesOfComponents()
 		// @TODO: AABB's mesh shouldn't be the first class citizen
 		if (l_visibleComponent->m_drawAABB)
 		{
-			auto l_meshID = g_pAssetSystem->addMesh(l_visibleComponent->m_AABB.m_vertices, l_visibleComponent->m_AABB.m_indices);
-			auto l_Mesh = g_pAssetSystem->getMesh(l_meshID);
+			auto l_meshID = InnoAssetSystem::addMesh(l_visibleComponent->m_AABB.m_vertices, l_visibleComponent->m_AABB.m_indices);
+			auto l_Mesh = InnoAssetSystem::getMesh(l_meshID);
 			initializeMesh(l_Mesh);
 			RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_visibleComponent->m_AABBMeshID, l_Mesh);
 			l_visibleComponent->m_AABBMeshID = l_meshID;
@@ -1773,7 +1832,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p,
 		captureProjection);
 
-	auto& l_visibleComponents = g_pGameSystem->getVisibleComponents();
+	auto& l_visibleComponents = InnoGameSystem::getVisibleComponents();
 
 	if (l_visibleComponents.size() > 0)
 	{
@@ -1784,7 +1843,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 				{
 					// activate equiretangular texture and remap equiretangular texture to cubemap
-					auto l_equiretangularTexture = g_pAssetSystem->getTexture(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);
+					auto l_equiretangularTexture = InnoAssetSystem::getTexture(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);
 					activateTexture(l_equiretangularTexture, 0);
 					for (unsigned int i = 0; i < 6; ++i)
 					{
@@ -1793,7 +1852,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 							captureViews[i]);
 						attachTextureToFramebuffer(&EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
 						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-						auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+						auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
 						activateMesh(l_mesh);
 						drawMesh(l_mesh);
 					}
@@ -1829,7 +1888,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 							captureViews[i]);
 						attachTextureToFramebuffer(l_environmentConvolutionTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
 						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-						auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+						auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
 						activateMesh(l_mesh);
 						drawMesh(l_mesh);
 					}
@@ -1875,7 +1934,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 							attachTextureToFramebuffer(l_environmentPrefilterTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, mip);
 
 							glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-							auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+							auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
 							activateMesh(l_mesh);
 							drawMesh(l_mesh);
 						}
@@ -1894,7 +1953,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	attachTextureToFramebuffer(l_environmentBRDFLUTTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, 0, 0);
 
 	// draw environment map BRDF LUT rectangle
-	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
+	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
 }
@@ -1919,32 +1978,32 @@ void GLRenderingSystem::updateShadowRenderPass()
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		for (auto& l_lightComponent : g_pGameSystem->getLightComponents())
+		for (auto& l_lightComponent : InnoGameSystem::getLightComponents())
 		{
 			if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
 			{
 				glUseProgram(ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram.m_program);
 				updateUniform(
 					ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_p,
-					g_pGameSystem->getProjectionMatrix(l_lightComponent, (unsigned int)i));
+					InnoGameSystem::getProjectionMatrix(l_lightComponent, (unsigned int)i));
 				updateUniform(
 					ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_v,
-					g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.getInvertGlobalRotMatrix());
+					InnoGameSystem::getComponent<TransformComponent>(l_lightComponent->m_parentEntity)->m_transform.getInvertGlobalRotMatrix());
 
 				// draw each visibleComponent
-				for (auto& l_visibleComponent : g_pGameSystem->getVisibleComponents())
+				for (auto& l_visibleComponent : InnoGameSystem::getVisibleComponents())
 				{
 					if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 					{
 						updateUniform(
 							ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_m,
-							g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
+							InnoGameSystem::getComponent<TransformComponent>(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix());
 
 						// draw each graphic data of visibleComponent
 						for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 						{
 							// draw meshes
-							auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+							auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
 							activateMesh(l_mesh);
 							drawMesh(l_mesh);
 						}
@@ -1985,9 +2044,9 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 	glUseProgram(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program);
 
-	if (g_pGameSystem->getCameraComponents().size() > 0)
+	if (InnoGameSystem::getCameraComponents().size() > 0)
 	{
-		mat4 p_original = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
+		mat4 p_original = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
 		mat4 p_jittered = p_original;
 		//TAA jitter for projection matrix
 		if (RenderingSystemSingletonComponent::getInstance().currentHaltonStep >= 16)
@@ -1998,10 +2057,10 @@ void GLRenderingSystem::updateGeometryRenderPass()
 		p_jittered.m[1][2] = RenderingSystemSingletonComponent::getInstance().HaltonSampler[RenderingSystemSingletonComponent::getInstance().currentHaltonStep].y / RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 		RenderingSystemSingletonComponent::getInstance().currentHaltonStep += 1;
 
-		mat4 r = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
-		mat4 t = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
-		mat4 r_prev = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getPreviousInvertGlobalRotMatrix();
-		mat4 t_prev = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getPreviousInvertGlobalTranslationMatrix();
+		mat4 r = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotMatrix();
+		mat4 t = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
+		mat4 r_prev = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getPreviousInvertGlobalRotMatrix();
+		mat4 t_prev = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getPreviousInvertGlobalTranslationMatrix();
 
 		updateUniform(
 			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_original,
@@ -2024,23 +2083,23 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 #ifdef CookTorrance
 		//Cook-Torrance
-		if (g_pGameSystem->getLightComponents().size() > 0)
+		if (InnoGameSystem::getLightComponents().size() > 0)
 		{
-			for (auto& l_lightComponent : g_pGameSystem->getLightComponents())
+			for (auto& l_lightComponent : InnoGameSystem::getLightComponents())
 			{
 				// update light space transformation matrices
 				if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
 				{
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_0,
-						g_pGameSystem->getProjectionMatrix(l_lightComponent, 0));
+						InnoGameSystem::getProjectionMatrix(l_lightComponent, 0));
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_1,
-						g_pGameSystem->getProjectionMatrix(l_lightComponent, 1));
+						InnoGameSystem::getProjectionMatrix(l_lightComponent, 1));
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_2,
-						g_pGameSystem->getProjectionMatrix(l_lightComponent, 2));
+						InnoGameSystem::getProjectionMatrix(l_lightComponent, 2));
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3,
-						g_pGameSystem->getProjectionMatrix(l_lightComponent, 3));
+						InnoGameSystem::getProjectionMatrix(l_lightComponent, 3));
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light,
-						g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.getInvertGlobalRotMatrix());
+						InnoGameSystem::getComponent<TransformComponent>(l_lightComponent->m_parentEntity)->m_transform.getInvertGlobalRotMatrix());
 
 					// draw each visibleComponent
 					for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
@@ -2051,10 +2110,10 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
-								g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
+								InnoGameSystem::getComponent<TransformComponent>(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix());
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
-								g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclPreviousGlobalTransformationMatrix());
+								InnoGameSystem::getComponent<TransformComponent>(l_visibleComponent->m_parentEntity)->m_transform.caclPreviousGlobalTransformationMatrix());
 
 							// draw each graphic data of visibleComponent
 							for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -2068,35 +2127,35 @@ void GLRenderingSystem::updateGeometryRenderPass()
 									auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
 									if (l_normalTextureID != l_textureMap->end())
 									{
-										auto l_textureData = g_pAssetSystem->getTexture(l_normalTextureID->second);
+										auto l_textureData = InnoAssetSystem::getTexture(l_normalTextureID->second);
 										activateTexture(l_textureData, 0);
 									}
 									// any albedo?
 									auto l_albedoTextureID = l_textureMap->find(textureType::ALBEDO);
 									if (l_albedoTextureID != l_textureMap->end())
 									{
-										auto l_textureData = g_pAssetSystem->getTexture(l_albedoTextureID->second);
+										auto l_textureData = InnoAssetSystem::getTexture(l_albedoTextureID->second);
 										activateTexture(l_textureData, 1);
 									}
 									// any metallic?
 									auto l_metallicTextureID = l_textureMap->find(textureType::METALLIC);
 									if (l_metallicTextureID != l_textureMap->end())
 									{
-										auto l_textureData = g_pAssetSystem->getTexture(l_metallicTextureID->second);
+										auto l_textureData = InnoAssetSystem::getTexture(l_metallicTextureID->second);
 										activateTexture(l_textureData, 2);
 									}
 									// any roughness?
 									auto l_roughnessTextureID = l_textureMap->find(textureType::ROUGHNESS);
 									if (l_roughnessTextureID != l_textureMap->end())
 									{
-										auto l_textureData = g_pAssetSystem->getTexture(l_roughnessTextureID->second);
+										auto l_textureData = InnoAssetSystem::getTexture(l_roughnessTextureID->second);
 										activateTexture(l_textureData, 3);
 									}
 									// any ao?
 									auto l_aoTextureID = l_textureMap->find(textureType::AMBIENT_OCCLUSION);
 									if (l_aoTextureID != l_textureMap->end())
 									{
-										auto l_textureData = g_pAssetSystem->getTexture(l_aoTextureID->second);
+										auto l_textureData = InnoAssetSystem::getTexture(l_aoTextureID->second);
 										activateTexture(l_textureData, 4);
 									}
 								}
@@ -2104,7 +2163,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA, l_visibleComponent->m_MRA.x, l_visibleComponent->m_MRA.y, l_visibleComponent->m_MRA.z);
 								// draw meshes
-								auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+								auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
 								activateMesh(l_mesh);
 								drawMesh(l_mesh);
 							}
@@ -2115,7 +2174,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
-								g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
+								InnoGameSystem::getComponent<TransformComponent>(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix());
 
 							// draw each graphic data of visibleComponent
 							for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -2123,7 +2182,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture, l_visibleComponent->m_useTexture);
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
 								// draw meshes
-								auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+								auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
 								activateMesh(l_mesh);
 								drawMesh(l_mesh);
 							}
@@ -2150,7 +2209,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 			{
 				updateUniform(
 					GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
-					g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalTransformationMatrix());
+					InnoGameSystem::getComponent<TransformComponent>(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix());
 
 				// draw each graphic data of visibleComponent
 				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -2164,26 +2223,26 @@ void GLRenderingSystem::updateGeometryRenderPass()
 						auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
 						if (l_normalTextureID != l_textureMap->end())
 						{
-							auto l_textureData = g_pAssetSystem->getTexture(l_normalTextureID->second);
+							auto l_textureData = InnoAssetSystem::getTexture(l_normalTextureID->second);
 							activateTexture(l_textureData, 0);
 						}
 						// any diffuse?
 						auto l_diffuseTextureID = l_textureMap->find(textureType::ALBEDO);
 						if (l_diffuseTextureID != l_textureMap->end())
 						{
-							auto l_textureData = g_pAssetSystem->getTexture(l_diffuseTextureID->second);
+							auto l_textureData = InnoAssetSystem::getTexture(l_diffuseTextureID->second);
 							activateTexture(l_textureData, 1);
 						}
 						// any specular?
 						auto l_specularTextureID = l_textureMap->find(textureType::METALLIC);
 						if (l_specularTextureID != l_textureMap->end())
 						{
-							auto l_textureData = g_pAssetSystem->getTexture(l_specularTextureID->second);
+							auto l_textureData = InnoAssetSystem::getTexture(l_specularTextureID->second);
 							activateTexture(l_textureData, 2);
 						}
 					}
 					// draw meshes
-					auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+					auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
 					activateMesh(l_mesh);
 					drawMesh(l_mesh);
 				}
@@ -2261,21 +2320,21 @@ void GLRenderingSystem::updateLightRenderPass()
 		LightRenderPassSingletonComponent::getInstance().m_uni_isEmissive,
 		false);
 
-	if (g_pGameSystem->getLightComponents().size() > 0)
+	if (InnoGameSystem::getLightComponents().size() > 0)
 	{
 		int l_pointLightIndexOffset = 0;
-		for (auto i = (unsigned int)0; i < g_pGameSystem->getLightComponents().size(); i++)
+		for (auto i = (unsigned int)0; i < InnoGameSystem::getLightComponents().size(); i++)
 		{
-			auto l_viewPos = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.caclGlobalPos();
-			auto l_lightPos = g_pGameSystem->getTransformComponent(g_pGameSystem->getLightComponents()[i]->getParentEntity())->m_transform.caclGlobalPos();
-			auto l_dirLightDirection = g_pGameSystem->getTransformComponent(g_pGameSystem->getLightComponents()[i]->getParentEntity())->m_transform.getDirection(direction::BACKWARD);
-			auto l_lightColor = g_pGameSystem->getLightComponents()[i]->m_color;
+			auto l_viewPos = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.caclGlobalPos();
+			auto l_lightPos = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getLightComponents()[i]->m_parentEntity)->m_transform.caclGlobalPos();
+			auto l_dirLightDirection = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getLightComponents()[i]->m_parentEntity)->m_transform.getDirection(direction::BACKWARD);
+			auto l_lightColor = InnoGameSystem::getLightComponents()[i]->m_color;
 			updateUniform(
 				LightRenderPassSingletonComponent::getInstance().m_uni_viewPos,
 				l_viewPos.x, l_viewPos.y, l_viewPos.z);
 			//updateUniform(m_uni_textureMode, (int)in_shaderDrawPair.second);
 
-			if (g_pGameSystem->getLightComponents()[i]->m_lightType == lightType::DIRECTIONAL)
+			if (InnoGameSystem::getLightComponents()[i]->m_lightType == lightType::DIRECTIONAL)
 			{
 				l_pointLightIndexOffset -= 1;
 				updateUniform(
@@ -2288,14 +2347,14 @@ void GLRenderingSystem::updateLightRenderPass()
 					LightRenderPassSingletonComponent::getInstance().m_uni_dirLight_color,
 					l_lightColor.x, l_lightColor.y, l_lightColor.z);
 			}
-			else if (g_pGameSystem->getLightComponents()[i]->m_lightType == lightType::POINT)
+			else if (InnoGameSystem::getLightComponents()[i]->m_lightType == lightType::POINT)
 			{
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position[i + l_pointLightIndexOffset],
 					l_lightPos.x, l_lightPos.y, l_lightPos.z);
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_radius[i + l_pointLightIndexOffset],
-					g_pGameSystem->getLightComponents()[i]->m_radius);
+					InnoGameSystem::getLightComponents()[i]->m_radius);
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_color[i + l_pointLightIndexOffset],
 					l_lightColor.x, l_lightColor.y, l_lightColor.z);
@@ -2303,7 +2362,7 @@ void GLRenderingSystem::updateLightRenderPass()
 		}
 	}
 	// draw light pass rectangle
-	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
+	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
 
@@ -2324,7 +2383,7 @@ void GLRenderingSystem::updateLightRenderPass()
 		true);
 
 	// draw light pass rectangle
-	l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
+	l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
 
@@ -2353,10 +2412,10 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program);
 
-	if (g_pGameSystem->getCameraComponents().size() > 0)
+	if (InnoGameSystem::getCameraComponents().size() > 0)
 	{
-		mat4 p = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
-		mat4 r = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
+		mat4 p = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
+		mat4 r = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotMatrix();
 
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p,
@@ -2365,7 +2424,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r,
 			r);
 
-		auto& l_visibleComponents = g_pGameSystem->getVisibleComponents();
+		auto& l_visibleComponents = InnoGameSystem::getVisibleComponents();
 		if (l_visibleComponents.size() > 0)
 		{
 			for (auto& l_visibleComponent : l_visibleComponents)
@@ -2377,7 +2436,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 						// use environment pass capture texture as skybox cubemap
 						auto l_skyboxTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
 						activateTexture(l_skyboxTexture, 0);
-						auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+						auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
 						activateMesh(l_mesh);
 						drawMesh(l_mesh);
 					}
@@ -2429,7 +2488,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize,
 		RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
-	auto l_mesh = g_pAssetSystem->getDefaultMesh(meshShapeType::QUAD);
+	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
 	activateMesh(l_mesh);
 	drawMesh(l_mesh);
 
@@ -2544,11 +2603,11 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassProgram.m_program);
 
-	if (g_pGameSystem->getCameraComponents().size() > 0)
+	if (InnoGameSystem::getCameraComponents().size() > 0)
 	{
-		mat4 p = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
-		mat4 r = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
-		mat4 t = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
+		mat4 p = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
+		mat4 r = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotMatrix();
+		mat4 t = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
 
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_p,
@@ -2560,15 +2619,15 @@ void GLRenderingSystem::updateFinalRenderPass()
 			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_t,
 			t);
 	}
-	if (g_pGameSystem->getVisibleComponents().size() > 0)
+	if (InnoGameSystem::getVisibleComponents().size() > 0)
 	{
 		// draw each visibleComponent
-		for (auto& l_visibleComponent : g_pGameSystem->getVisibleComponents())
+		for (auto& l_visibleComponent : InnoGameSystem::getVisibleComponents())
 		{
 			if (l_visibleComponent->m_visiblilityType == visiblilityType::BILLBOARD)
 			{
-				auto l_GlobalPos = g_pGameSystem->getTransformComponent(l_visibleComponent->getParentEntity())->m_transform.caclGlobalPos();
-				auto l_GlobalCameraPos = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.caclGlobalPos();
+				auto l_GlobalPos = InnoGameSystem::getComponent<TransformComponent>(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalPos();
+				auto l_GlobalCameraPos = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.caclGlobalPos();
 				updateUniform(
 					GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_pos,
 					l_GlobalPos.x, l_GlobalPos.y, l_GlobalPos.z);
@@ -2600,10 +2659,10 @@ void GLRenderingSystem::updateFinalRenderPass()
 						auto l_normalTextureID = l_textureMap->find(textureType::ALBEDO);
 						if (l_normalTextureID != l_textureMap->end())
 						{
-							auto l_textureData = g_pAssetSystem->getTexture(l_normalTextureID->second);
+							auto l_textureData = InnoAssetSystem::getTexture(l_normalTextureID->second);
 							activateTexture(l_textureData, 0);
 						}
-						auto l_mesh = g_pAssetSystem->getMesh(l_graphicData.first);
+						auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
 						activateMesh(l_mesh);
 						drawMesh(l_mesh);
 					}
@@ -2634,11 +2693,11 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassProgram.m_program);
 
-	//if (g_pGameSystem->getCameraComponents().size() > 0)
+	//if (InnoGameSystem::getCameraComponents().size() > 0)
 	//{
-	//	mat4 p = g_pGameSystem->getCameraComponents()[0]->m_projectionMatrix;
-	//	mat4 r = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalRotMatrix();
-	//	mat4 t = g_pGameSystem->getTransformComponent(g_pGameSystem->getCameraComponents()[0]->getParentEntity())->m_transform.getInvertGlobalTranslationMatrix();
+	//	mat4 p = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
+	//	mat4 r = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotMatrix();
+	//	mat4 t = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
 
 	//	updateUniform(
 	//		FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_p,
@@ -2650,7 +2709,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//		FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_t,
 	//		t);
 
-	//	for (auto& l_cameraComponent : g_pGameSystem->getCameraComponents())
+	//	for (auto& l_cameraComponent : InnoGameSystem::getCameraComponents())
 	//	{
 	//		// draw frustum for cameraComponent
 	//		if (l_cameraComponent->m_drawFrustum)
@@ -2660,7 +2719,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//			updateUniform(
 	//				FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
 	//				l_cameraLocalMat);
-	//			auto l_mesh = g_pAssetSystem->getMesh(l_cameraComponent->m_FrustumMeshID);
+	//			auto l_mesh = InnoAssetSystem::getMesh(l_cameraComponent->m_FrustumMeshID);
 	//			activateMesh(l_mesh);
 	//			drawMesh(l_mesh);
 	//		}
@@ -2672,36 +2731,36 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//			updateUniform(
 	//				FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
 	//				l_cameraLocalMat);
-	//			auto l_mesh = g_pAssetSystem->getMesh(l_cameraComponent->m_AABBMeshID);
+	//			auto l_mesh = InnoAssetSystem::getMesh(l_cameraComponent->m_AABBMeshID);
 	//			activateMesh(l_mesh);
 	//			drawMesh(l_mesh);
 	//		}
 	//	}
 	//}
-	//if (g_pGameSystem->getLightComponents().size() > 0)
+	//if (InnoGameSystem::getLightComponents().size() > 0)
 	//{
 	//	// draw AABB for lightComponent
-	//	for (auto& l_lightComponent : g_pGameSystem->getLightComponents())
+	//	for (auto& l_lightComponent : InnoGameSystem::getLightComponents())
 	//	{
 	//		if (l_lightComponent->m_drawAABB)
 	//		{
-	//			auto l_lightLocalMat = g_pGameSystem->getTransformComponent(l_lightComponent->getParentEntity())->m_transform.caclGlobalRotMatrix();
+	//			auto l_lightLocalMat = InnoGameSystem::getComponent<TransformComponent>(l_lightComponent->m_parentEntity)->m_transform.caclGlobalRotMatrix();
 	//			updateUniform(
 	//				FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
 	//				l_lightLocalMat);
 	//			for (auto l_AABBMeshID : l_lightComponent->m_AABBMeshIDs)
 	//			{
-	//				auto l_mesh = g_pAssetSystem->getMesh(l_AABBMeshID);
+	//				auto l_mesh = InnoAssetSystem::getMesh(l_AABBMeshID);
 	//				activateMesh(l_mesh);
 	//				drawMesh(l_mesh);
 	//			}
 	//		}
 	//	}
 	//}
-	//if (g_pGameSystem->getVisibleComponents().size() > 0)
+	//if (InnoGameSystem::getVisibleComponents().size() > 0)
 	//{
 	//	// draw AABB for visibleComponent
-	//	for (auto& l_visibleComponent : g_pGameSystem->getVisibleComponents())
+	//	for (auto& l_visibleComponent : InnoGameSystem::getVisibleComponents())
 	//	{
 	//		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH && l_visibleComponent->m_drawAABB)
 	//		{
@@ -2722,12 +2781,12 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//					auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
 	//					if (l_normalTextureID != l_textureMap->end())
 	//					{
-	//						auto l_textureData = g_pAssetSystem->getTexture(l_normalTextureID->second);
+	//						auto l_textureData = InnoAssetSystem::getTexture(l_normalTextureID->second);
 	//						activateTexture(l_textureData, 0);
 	//					}
 	//				}
 	//				// draw meshes
-	//				auto l_mesh = g_pAssetSystem->getMesh(l_visibleComponent->m_AABBMeshID);
+	//				auto l_mesh = InnoAssetSystem::getMesh(l_visibleComponent->m_AABBMeshID);
 	//				activateMesh(l_mesh);
 	//				drawMesh(l_mesh);
 	//			}
@@ -2775,54 +2834,49 @@ void GLRenderingSystem::shutdown()
 {
 }
 
-const objectStatus & GLRenderingSystem::getStatus() const
-{
-	return m_objectStatus;
-}
-
 GLuint GLRenderingSystem::getUniformLocation(GLuint shaderProgram, const std::string & uniformName)
 {
 	glUseProgram(shaderProgram);
 	int uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 	if (uniformLocation == 0xFFFFFFFF)
 	{
-		g_pLogSystem->printLog("GLRenderingSystem: innoShader: Error: Uniform lost: " + uniformName);
+		InnoLogSystem::printLog("GLRenderingSystem: innoShader: Error: Uniform lost: " + uniformName);
 		return -1;
 	}
 	return uniformLocation;
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, bool uniformValue) const
+void GLRenderingSystem::updateUniform(const GLint uniformLocation, bool uniformValue)
 {
 	glUniform1i(uniformLocation, (int)uniformValue);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, int uniformValue) const
+void GLRenderingSystem::updateUniform(const GLint uniformLocation, int uniformValue)
 {
 	glUniform1i(uniformLocation, uniformValue);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, double uniformValue) const
+void GLRenderingSystem::updateUniform(const GLint uniformLocation, double uniformValue)
 {
 	glUniform1f(uniformLocation, (GLfloat)uniformValue);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, double x, double y) const
+void GLRenderingSystem::updateUniform(const GLint uniformLocation, double x, double y)
 {
 	glUniform2f(uniformLocation, (GLfloat)x, (GLfloat)y);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, double x, double y, double z) const
+void GLRenderingSystem::updateUniform(const GLint uniformLocation, double x, double y, double z)
 {
 	glUniform3f(uniformLocation, (GLfloat)x, (GLfloat)y, (GLfloat)z);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, double x, double y, double z, double w) const
+void GLRenderingSystem::updateUniform(const GLint uniformLocation, double x, double y, double z, double w)
 {
 	glUniform4f(uniformLocation, (GLfloat)x, (GLfloat)y, (GLfloat)z, (GLfloat)w);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, const mat4 & mat) const
+void GLRenderingSystem::updateUniform(const GLint uniformLocation, const mat4 & mat)
 {
 	TMat4<float> l_m = InnoMath::precisionConvert<double, float>(mat);
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT

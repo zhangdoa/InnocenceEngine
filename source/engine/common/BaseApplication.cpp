@@ -1,44 +1,84 @@
 #include "BaseApplication.h"
+#include "../system/MemorySystem.h"
+#include "../system/LogSystem.h"
+#include "../system/TaskSystem.h"
+#include "../system/TimeSystem.h"
+#include "../system/GameSystem.h"
+#include "../system/AssetSystem.h"
+#include "../system/PhysicsSystem.h"
+#include "../system/VisionSystem.h"
 
-void BaseApplication::setup()
+void InnoApplication::setup()
 {
-	g_pCoreSystem->setup();
+	InnoMemorySystem::setup();
+	InnoLogSystem::setup();
+	InnoTaskSystem::setup();
+	InnoTimeSystem::setup();
+	InnoLogSystem::printLog("MemorySystem setup finished.");
+	InnoLogSystem::printLog("LogSystem setup finished.");
+	InnoLogSystem::printLog("TaskSystem setup finished.");
+	InnoLogSystem::printLog("TimeSystem setup finished.");
+	InnoGameSystem::setup();
+	InnoLogSystem::printLog("GameSystem setup finished.");
+	InnoAssetSystem::setup();
+	InnoLogSystem::printLog("AssetSystem setup finished.");
+	InnoPhysicsSystem::setup();
+	InnoLogSystem::printLog("PhysicsSystem setup finished.");
+	InnoVisionSystem::setup();
+	InnoLogSystem::printLog("VisionSystem setup finished.");
+
 	m_objectStatus = objectStatus::ALIVE;
+	InnoLogSystem::printLog("CoreSystem setup finished.");
 }
 
 
 
-void BaseApplication::initialize()
+void InnoApplication::initialize()
 {
-	if (g_pCoreSystem->getStatus() == objectStatus::ALIVE)
+	InnoMemorySystem::initialize();
+	InnoLogSystem::initialize();
+	InnoTaskSystem::initialize();
+	InnoTimeSystem::initialize();
+	InnoGameSystem::initialize();
+	InnoAssetSystem::initialize();
+	InnoPhysicsSystem::initialize();
+	InnoVisionSystem::initialize();
+	InnoLogSystem::printLog("CoreSystem has been initialized.");
+}
+
+void InnoApplication::update()
+{
+	// time System should update without any limitation.
+	InnoTimeSystem::update();
+
+	InnoGameSystem::update();
+
+	if (InnoVisionSystem::m_VisionSystemStatus == objectStatus::ALIVE)
 	{
-		g_pCoreSystem->initialize();
+		if (InnoGameSystem::needRender())
+		{
+			InnoPhysicsSystem::update();
+			InnoVisionSystem::update();
+		}
 	}
 	else
 	{
 		m_objectStatus = objectStatus::STANDBY;
+		InnoLogSystem::printLog("CoreSystem is stand-by.");
 	}
 }
 
-void BaseApplication::update()
+void InnoApplication::shutdown()
 {
-	if (g_pCoreSystem->getStatus() == objectStatus::ALIVE)
-	{
-		g_pCoreSystem->update();
-	}
-	else
-	{
-		m_objectStatus = objectStatus::STANDBY;
-	}
-}
-
-void BaseApplication::shutdown()
-{
-	g_pCoreSystem->shutdown();
+	InnoVisionSystem::shutdown();
+	InnoGameSystem::shutdown();
+	InnoPhysicsSystem::shutdown();
+	InnoAssetSystem::shutdown();
+	InnoTimeSystem::shutdown();
 	m_objectStatus = objectStatus::SHUTDOWN;
-}
+	InnoLogSystem::printLog("CoreSystem has been shutdown.");
+	InnoLogSystem::shutdown();
+	InnoMemorySystem::shutdown();
 
-const objectStatus & BaseApplication::getStatus() const
-{
-	return m_objectStatus;
+	std::this_thread::sleep_for(std::chrono::seconds(2));
 }

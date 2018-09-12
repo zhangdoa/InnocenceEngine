@@ -16,12 +16,7 @@ void MeshDataSystem::shutdown()
 {
 }
 
-const objectStatus & MeshDataSystem::getStatus() const
-{
-	return m_objectStatus;
-}
-
-vec4 MeshDataSystem::findMaxVertex(const MeshDataComponent& meshDataComponent) const
+vec4 MeshDataSystem::findMaxVertex(const MeshDataComponent& meshDataComponent)
 {
 	double maxX = 0;
 	double maxY = 0;
@@ -47,7 +42,7 @@ vec4 MeshDataSystem::findMaxVertex(const MeshDataComponent& meshDataComponent) c
 	return vec4(maxX, maxY, maxZ, 1.0);
 }
 
-vec4 MeshDataSystem::findMinVertex(const MeshDataComponent& meshDataComponent) const
+vec4 MeshDataSystem::findMinVertex(const MeshDataComponent& meshDataComponent)
 {
 	double minX = 0;
 	double minY = 0;

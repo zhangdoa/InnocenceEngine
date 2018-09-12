@@ -1,9 +1,7 @@
 #include "stdafx.h"
 #include "config.h"
-#include "../interface/IApplication.h"
+#include "BaseApplication.h"
 #include "../component/WindowSystemSingletonComponent.h"
-
-extern IApplication* g_pApp;
 
 #if defined(INNO_RENDERER_DX)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
@@ -17,15 +15,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 int main()
 {
 #endif
-	g_pApp->setup();
-	g_pApp->initialize();
+	InnoApplication::setup();
+	InnoApplication::initialize();
 
-	while (g_pApp->getStatus() == objectStatus::ALIVE)
+	while (InnoApplication::m_objectStatus == objectStatus::ALIVE)
 	{
-		g_pApp->update();
+		InnoApplication::update();
 	}
 
-	g_pApp->shutdown();
+	InnoApplication::shutdown();
 
 	return 0;
 }
