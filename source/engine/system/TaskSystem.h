@@ -15,8 +15,8 @@ namespace InnoTaskSystem
 		return m_threadPool->submit(std::forward<Func>(func), std::forward<Args>(args)...);
 	}
 
-	objectStatus m_TaskSystemStatus = objectStatus::SHUTDOWN;
+	objectStatus getStatus();
 
-	InnoThreadPool* m_threadPool;
+	static InnoThreadPool* m_threadPool;
 };
 

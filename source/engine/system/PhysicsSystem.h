@@ -8,5 +8,5 @@ namespace InnoPhysicsSystem
 	void update();
 	void shutdown();
 
-	objectStatus m_PhysicsSystemStatus = objectStatus::SHUTDOWN;
+	objectStatus getStatus();
 };

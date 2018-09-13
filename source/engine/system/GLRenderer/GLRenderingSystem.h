@@ -8,5 +8,5 @@ namespace GLRenderingSystem
 	void update();
 	void shutdown();
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	objectStatus getStatus();
 };

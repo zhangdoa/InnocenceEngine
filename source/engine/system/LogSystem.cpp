@@ -3,6 +3,11 @@
 #include <iostream>
 #include "TimeSystem.h"
 
+namespace InnoLogSystem
+{
+	objectStatus m_LogSystemStatus = objectStatus::SHUTDOWN;
+}
+
 void InnoLogSystem::printLog(double logMessage)
 {
 	std::cout << "[" <<InnoTimeSystem::getCurrentTimeInLocal() << "]" << logMessage << std::endl;
@@ -92,6 +97,11 @@ void InnoLogSystem::printLog(const mat4 & logMessage)
 		<< logMessage.m[3][3]
 		<< "|"
 		<< std::endl;
+}
+
+objectStatus InnoLogSystem::getStatus()
+{
+	return m_LogSystemStatus;
 }
 
 void InnoLogSystem::setup()

@@ -1,5 +1,16 @@
 #include "TimeSystem.h"
 
+namespace InnoTimeSystem
+{
+	objectStatus m_TimeSystemStatus = objectStatus::SHUTDOWN;
+
+	const double m_frameTime = (1.0 / 120.0) * 1000.0 * 1000.0;
+	time_t m_gameStartTime;
+	std::chrono::high_resolution_clock::time_point m_updateStartTime;
+	long long m_deltaTime;
+	double m_unprocessedTime;
+};
+
 void InnoTimeSystem::setup()
 {
 }
@@ -98,6 +109,11 @@ const std::string InnoTimeSystem::getCurrentTimeInLocalForOutput(std::chrono::ho
 											 // and does not count leap seconds.
 	return std::string{ std::to_string(std::get<0>(date)) + "-" + std::to_string(std::get<1>(date)) + "-" + std::to_string(std::get<2>(date)) + "-" + std::to_string(h.count()) + "-" + std::to_string(m.count()) + "-" + std::to_string(s.count()) + "-" + std::to_string(tp / std::chrono::milliseconds(1)) };
 
+}
+
+objectStatus InnoTimeSystem::getStatus()
+{
+	return m_TimeSystemStatus;
 }
 
 const time_t InnoTimeSystem::getGameStartTime()

@@ -9,6 +9,12 @@ namespace InnoGameSystem
 	void update();
 	void shutdown();
 
+	void addTransformComponent(TransformComponent* rhs);
+	void addVisibleComponent(VisibleComponent* rhs);
+	void addLightComponent(LightComponent* rhs);
+	void addCameraComponent(CameraComponent* rhs);
+	void addInputComponent(InputComponent* rhs);
+
 	std::vector<TransformComponent*>& getTransformComponents();
 	std::vector<VisibleComponent*>& getVisibleComponents();
 	std::vector<LightComponent*>& getLightComponents();
@@ -16,8 +22,7 @@ namespace InnoGameSystem
 	std::vector<InputComponent*>& getInputComponents();
 	std::string getGameName();
 
-	template<class TComponent>
-	auto getComponent(EntityID parentEntity) -> TComponent*;
+	TransformComponent* getTransformComponent(EntityID parentEntity);
 
 	void addMeshData(VisibleComponent* visibleComponentconst, meshID & meshID);
 	void addTextureData(VisibleComponent* visibleComponentconst, const texturePair & texturePair);
@@ -28,5 +33,5 @@ namespace InnoGameSystem
 	bool needRender();
 	EntityID createEntityID();
 
-	objectStatus m_GameSystemStatus = objectStatus::SHUTDOWN;
+	objectStatus getStatus();
 };

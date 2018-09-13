@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10.0)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # compiler config file
-configure_file ("${CMAKE_SOURCE_DIR}/engine/common/config.h.in" "${CMAKE_SOURCE_DIR}/engine/common/config.h")
+configure_file ("${CMAKE_SOURCE_DIR}/engine/common/config.h.in" "${CMAKE_SOURCE_DIR}/engine/common/config.h" @ONLY)
 
 option (USE_ROW_MAJOR_MEMORY_LAYOUT "use Row-Major memory layout" ON)
 option (USE_COLUMN_MAJOR_MEMORY_LAYOUT "use Column-Major memory layout" OFF)

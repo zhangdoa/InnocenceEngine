@@ -1,4 +1,16 @@
 #include "GameSystem.h"
+#include "../common/config.h"
+
+#if defined (BUILD_EDITOR)
+#include "../../game/InnocenceEditor/InnocenceEditor.h"
+#define InnoGameInstance InnocenceEditor
+#elif defined (BUILD_GAME)
+#include "../../game/InnocenceGarden/InnocenceGarden.h"
+#define InnoGameInstance InnocenceGarden
+#elif defined (BUILD_TEST)
+#include "../../game/InnocenceTest/InnocenceTest.h"
+#define InnoGameInstance InnocenceTest
+#endif
 
 namespace InnoGameSystem
 {
@@ -16,10 +28,14 @@ namespace InnoGameSystem
 	std::unordered_multimap<EntityID, InputComponent*> m_InputComponentsMap;
 
 	bool m_needRender = true;
+
+	objectStatus m_GameSystemStatus = objectStatus::SHUTDOWN;
 }
 
 void InnoGameSystem::setup()
 {
+	InnoGameInstance::setup();
+	addComponentsToMap();
 	m_GameSystemStatus = objectStatus::ALIVE;
 }
 
@@ -52,10 +68,12 @@ void InnoGameSystem::addComponentsToMap()
 
 void InnoGameSystem::initialize()
 {
+	InnoGameInstance::initialize();
 }
 
 void InnoGameSystem::update()
 {
+	InnoGameInstance::update();
 	//auto l_tickTime = InnoTimeSystem->getcurrentTime();
 	//l_tickTime = InnoTimeSystem->getcurrentTime() - l_tickTime;
 	////InnoLogSystem::printLog(l_tickTime);
@@ -63,7 +81,33 @@ void InnoGameSystem::update()
 
 void InnoGameSystem::shutdown()
 {
+	InnoGameInstance::shutdown();
 	m_GameSystemStatus = objectStatus::SHUTDOWN;
+}
+
+void InnoGameSystem::addTransformComponent(TransformComponent * rhs)
+{
+	m_transformComponents.emplace_back(rhs);
+}
+
+void InnoGameSystem::addVisibleComponent(VisibleComponent * rhs)
+{
+	m_visibleComponents.emplace_back(rhs);
+}
+
+void InnoGameSystem::addLightComponent(LightComponent * rhs)
+{
+	m_lightComponents.emplace_back(rhs);
+}
+
+void InnoGameSystem::addCameraComponent(CameraComponent * rhs)
+{
+	m_cameraComponents.emplace_back(rhs);
+}
+
+void InnoGameSystem::addInputComponent(InputComponent * rhs)
+{
+	m_inputComponents.emplace_back(rhs);
 }
 
 std::vector<TransformComponent*>& InnoGameSystem::getTransformComponents()
@@ -93,11 +137,10 @@ std::vector<InputComponent*>& InnoGameSystem::getInputComponents()
 
 std::string InnoGameSystem::getGameName()
 {
-	return std::string();
+	return InnoGameInstance::getGameName();
 }
 
-template<class TComponent>
-auto InnoGameSystem::getComponent(EntityID parentEntity) -> TComponent*
+TransformComponent * InnoGameSystem::getTransformComponent(EntityID parentEntity)
 {
 	auto result = m_TransformComponentsMap.find(parentEntity);
 	if (result != m_TransformComponentsMap.end())
@@ -196,4 +239,9 @@ bool InnoGameSystem::needRender()
 EntityID InnoGameSystem::createEntityID()
 {
 	return std::rand();
+}
+
+objectStatus InnoGameSystem::getStatus()
+{
+	return m_GameSystemStatus;
 }

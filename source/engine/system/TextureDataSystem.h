@@ -7,6 +7,4 @@ namespace TextureDataSystem
 	void initialize();
 	void update();
 	void shutdown();
-
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 };

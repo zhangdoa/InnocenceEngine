@@ -1,7 +1,5 @@
 #pragma once
 #include "../../common/InnoType.h"
-#include "../../third-party/ImGui/imgui.h"
-#include "../../third-party/ImGui/imgui_impl_glfw_gl3.h"
 
 namespace GLGuiSystem
 {
@@ -10,6 +8,6 @@ namespace GLGuiSystem
 	void update();
 	void shutdown();
 
-	objectStatus m_GLGuiSystemStatus = objectStatus::SHUTDOWN;
+	objectStatus getStatus();
 };
 

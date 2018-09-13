@@ -32,7 +32,6 @@ namespace InnoAssetSystem
 	vec4 findMinVertex(meshID meshID);
 	std::string loadShader(const std::string& fileName);
 
-	objectStatus m_AssetSystemStatus = objectStatus::SHUTDOWN;
-	AssetSystemSingletonComponent* m_AssetSystemSingletonComponent;
+	objectStatus getStatus();
 };
 

@@ -39,6 +39,7 @@ namespace InnoMemorySystem
 
 	unsigned char* m_poolMemoryPtr = nullptr;
 
+
 	class Chunk
 	{
 	public:
@@ -52,6 +53,8 @@ namespace InnoMemorySystem
 		unsigned int   m_blockSize;
 		bool    m_free;
 	};
+
+	objectStatus m_MemorySystemStatus = objectStatus::SHUTDOWN;
 }
 
 void InnoMemorySystem::setup()
@@ -343,4 +346,9 @@ void InnoMemorySystem::dumpToFile(bool fullDump)
 	}
 
 	l_file.close();
+}
+
+objectStatus InnoMemorySystem::getStatus()
+{
+	return m_MemorySystemStatus;
 }

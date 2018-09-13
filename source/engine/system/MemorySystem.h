@@ -42,5 +42,5 @@ namespace InnoMemorySystem
 
 	void dumpToFile(bool fullDump);
 	
-	objectStatus m_MemorySystemStatus = objectStatus::SHUTDOWN;
+	objectStatus getStatus();
 };

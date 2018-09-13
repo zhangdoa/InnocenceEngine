@@ -15,5 +15,5 @@ namespace InnoLogSystem
 	void printLog(const vec4& logMessage);
 	void printLog(const mat4& logMessage);
 
-	objectStatus m_LogSystemStatus = objectStatus::SHUTDOWN;
+	objectStatus getStatus();
 };

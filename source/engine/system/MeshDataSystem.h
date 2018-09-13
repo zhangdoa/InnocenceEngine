@@ -15,6 +15,4 @@ namespace MeshDataSystem
 
 	vec4 findMaxVertex(const MeshDataComponent& meshDataComponent);
 	vec4 findMinVertex(const MeshDataComponent& meshDataComponent);
-
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 };

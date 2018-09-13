@@ -4,12 +4,6 @@
 
 namespace InnocenceGarden
 {
-	std::vector<TransformComponent*> m_transformComponents;
-	std::vector<VisibleComponent*> m_visibleComponents;
-	std::vector<LightComponent*> m_lightComponents;
-	std::vector<CameraComponent*> m_cameraComponents;
-	std::vector<InputComponent*> m_inputComponents;
-
 	// root entity and its components
 	EntityID m_rootEntity;
 	TransformComponent* m_rootTransformComponent;
@@ -61,6 +55,8 @@ namespace InnocenceGarden
 	void setupLights();
 	void updateLights(double seed);
 	void updateSpheres(double seed);
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 }
 
 void InnocenceGarden::setup()
@@ -68,16 +64,19 @@ void InnocenceGarden::setup()
 	// setup root entity
 	m_rootTransformComponent = InnoMemorySystem::spawn<TransformComponent>();
 	m_rootTransformComponent->m_transform.m_parentTransform = nullptr;
-	m_transformComponents.emplace_back(m_rootTransformComponent);
+
+	InnoGameSystem::addTransformComponent(m_rootTransformComponent);
 	m_rootEntity = InnoGameSystem::createEntityID();
-	m_rootTransformComponent->m_parentEntity=m_rootEntity;
+	m_rootTransformComponent->m_parentEntity = m_rootEntity;
 
 	// setup player character
 	m_playerCharacterComponent = InnoMemorySystem::spawn<PlayerCharacter>();
 	m_playerCharacterComponent->setup();
 	m_playerCharacterComponent->getTransformComponent().m_transform.m_parentTransform = &m_rootTransformComponent->m_transform;
 	m_playerCharacterComponent->getTransformComponent().m_transform.setLocalPos(vec4(2.0, 3.0, 2.0, 1.0));
-	//m_playCharacter.getComponent<TransformComponent>().m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
+
+	//m_playCharacter.getTransformComponent<TransformComponent>().m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
+
 	m_playerCharacterComponent->getCameraComponent().m_drawFrustum = false;
 	m_playerCharacterComponent->getCameraComponent().m_drawAABB = false;
 	InnoGameSystem::registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_S, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveForward);
@@ -89,12 +88,12 @@ void InnocenceGarden::setup()
 	InnoGameSystem::registerMouseMovementCallback(&m_playerCharacterComponent->getInputComponent(), 0, &m_playerCharacterComponent->f_rotateAroundPositiveYAxis);
 	InnoGameSystem::registerMouseMovementCallback(&m_playerCharacterComponent->getInputComponent(), 1, &m_playerCharacterComponent->f_rotateAroundRightAxis);
 
-	m_transformComponents.emplace_back(&m_playerCharacterComponent->getTransformComponent());
-	m_cameraComponents.emplace_back(&m_playerCharacterComponent->getCameraComponent());
-	m_inputComponents.emplace_back(&m_playerCharacterComponent->getInputComponent());
+	InnoGameSystem::addTransformComponent(&m_playerCharacterComponent->getTransformComponent());
+	InnoGameSystem::addCameraComponent(&m_playerCharacterComponent->getCameraComponent());
+	InnoGameSystem::addInputComponent(&m_playerCharacterComponent->getInputComponent());
 
 	m_playerCharacterEntity = InnoGameSystem::createEntityID();
-	m_playerCharacterComponent->m_parentEntity=m_playerCharacterEntity;
+	m_playerCharacterComponent->m_parentEntity = m_playerCharacterEntity;
 
 	//setup skybox
 	m_skyboxTransformComponent = InnoMemorySystem::spawn<TransformComponent>();
@@ -106,11 +105,12 @@ void InnocenceGarden::setup()
 	m_skyboxVisibleComponent->m_textureFileNameMap.emplace(textureFileNamePair(textureType::EQUIRETANGULAR, "ibl//Playa_Sunrise.hdr"));
 
 	m_skyboxEntity = InnoGameSystem::createEntityID();
-	m_skyboxTransformComponent->m_parentEntity=m_skyboxEntity;
-	m_skyboxVisibleComponent->m_parentEntity=m_skyboxEntity;
 
-	m_transformComponents.emplace_back(m_skyboxTransformComponent);
-	m_visibleComponents.emplace_back(m_skyboxVisibleComponent);
+	m_skyboxTransformComponent->m_parentEntity = m_skyboxEntity;
+	m_skyboxVisibleComponent->m_parentEntity = m_skyboxEntity;
+
+	InnoGameSystem::addTransformComponent(m_skyboxTransformComponent);
+	InnoGameSystem::addVisibleComponent(m_skyboxVisibleComponent);
 
 	//setup directional light
 	m_directionalLightTransformComponent = InnoMemorySystem::spawn<TransformComponent>();
@@ -129,13 +129,14 @@ void InnocenceGarden::setup()
 	m_directionalLightVisibleComponent->m_albedo = vec4(0.5, 0.3, 0.0, 1.0);
 
 	m_directionalLightEntity = InnoGameSystem::createEntityID();
-	m_directionalLightTransformComponent->m_parentEntity=m_directionalLightEntity;
-	m_directionalLightComponent->m_parentEntity=m_directionalLightEntity;
-	m_directionalLightVisibleComponent->m_parentEntity=m_directionalLightEntity;
 
-	m_transformComponents.emplace_back(m_directionalLightTransformComponent);
-	m_lightComponents.emplace_back(m_directionalLightComponent);
-	//m_visibleComponents.emplace_back(m_directionalLightVisibleComponent);
+	m_directionalLightTransformComponent->m_parentEntity = m_directionalLightEntity;
+	m_directionalLightComponent->m_parentEntity = m_directionalLightEntity;
+	m_directionalLightVisibleComponent->m_parentEntity = m_directionalLightEntity;
+
+	InnoGameSystem::addTransformComponent(m_directionalLightTransformComponent);
+	InnoGameSystem::addLightComponent(m_directionalLightComponent);
+	//InnoGameSystem::addVisibleComponent(m_directionalLightVisibleComponent);
 
 	//setup landscape
 	m_landscapeTransformComponent = InnoMemorySystem::spawn<TransformComponent>();
@@ -147,11 +148,12 @@ void InnocenceGarden::setup()
 	m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUBE;
 
 	m_landscapeEntity = InnoGameSystem::createEntityID();
-	m_landscapeTransformComponent->m_parentEntity=m_landscapeEntity;
-	m_landscapeVisibleComponent->m_parentEntity=m_landscapeEntity;
 
-	m_transformComponents.emplace_back(m_landscapeTransformComponent);
-	m_visibleComponents.emplace_back(m_landscapeVisibleComponent);
+	m_landscapeTransformComponent->m_parentEntity = m_landscapeEntity;
+	m_landscapeVisibleComponent->m_parentEntity = m_landscapeEntity;
+
+	InnoGameSystem::addTransformComponent(m_landscapeTransformComponent);
+	InnoGameSystem::addVisibleComponent(m_landscapeVisibleComponent);
 
 	//setup pawn 1
 	m_pawnTransformComponent1 = InnoMemorySystem::spawn<TransformComponent>();
@@ -169,11 +171,12 @@ void InnocenceGarden::setup()
 	m_pawnVisibleComponent1->m_MRA = vec4(0.0, 0.35, 1.0, 1.0);
 
 	m_pawnEntity1 = InnoGameSystem::createEntityID();
-	m_pawnTransformComponent1->m_parentEntity=m_pawnEntity1;
-	m_pawnVisibleComponent1->m_parentEntity=m_pawnEntity1;
 
-	m_transformComponents.emplace_back(m_pawnTransformComponent1);
-	m_visibleComponents.emplace_back(m_pawnVisibleComponent1);
+	m_pawnTransformComponent1->m_parentEntity = m_pawnEntity1;
+	m_pawnVisibleComponent1->m_parentEntity = m_pawnEntity1;
+
+	InnoGameSystem::addTransformComponent(m_pawnTransformComponent1);
+	InnoGameSystem::addVisibleComponent(m_pawnVisibleComponent1);
 
 	//setup pawn 2
 	m_pawnTransformComponent2 = InnoMemorySystem::spawn<TransformComponent>();
@@ -192,11 +195,12 @@ void InnocenceGarden::setup()
 	m_pawnVisibleComponent2->m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "lantern//lantern_Mixed_AO.jpg"));
 
 	m_pawnEntity2 = InnoGameSystem::createEntityID();
-	m_pawnTransformComponent2->m_parentEntity=m_pawnEntity2;
-	m_pawnVisibleComponent2->m_parentEntity=m_pawnEntity2;
 
-	m_transformComponents.emplace_back(m_pawnTransformComponent2);
-	m_visibleComponents.emplace_back(m_pawnVisibleComponent2);
+	m_pawnTransformComponent2->m_parentEntity = m_pawnEntity2;
+	m_pawnVisibleComponent2->m_parentEntity = m_pawnEntity2;
+
+	InnoGameSystem::addTransformComponent(m_pawnTransformComponent2);
+	InnoGameSystem::addVisibleComponent(m_pawnVisibleComponent2);
 
 	setupLights();
 	setupSpheres();
@@ -222,7 +226,7 @@ void InnocenceGarden::shutdown()
 
 std::string InnocenceGarden::getGameName()
 {
-    return std::string("InnocenceGarden");
+	return std::string("InnocenceGarden");
 }
 
 void InnocenceGarden::setupSpheres()
@@ -248,16 +252,17 @@ void InnocenceGarden::setupSpheres()
 		m_sphereVisibleComponents[i]->m_useTexture = false;
 
 		m_sphereEntitys[i] = InnoGameSystem::createEntityID();
-		m_sphereTransformComponents[i]->m_parentEntity=m_sphereEntitys[i];
-		m_sphereVisibleComponents[i]->m_parentEntity=m_sphereEntitys[i];
 
-		m_transformComponents.emplace_back(m_sphereTransformComponents[i]);
-		m_visibleComponents.emplace_back(m_sphereVisibleComponents[i]);
+		m_sphereTransformComponents[i]->m_parentEntity = m_sphereEntitys[i];
+		m_sphereVisibleComponents[i]->m_parentEntity = m_sphereEntitys[i];
+
+		InnoGameSystem::addTransformComponent(m_sphereTransformComponents[i]);
+		InnoGameSystem::addVisibleComponent(m_sphereVisibleComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i += 4)
 	{
 		//Copper
-		m_sphereVisibleComponents[i]->m_albedo = vec4(0.95, 0.64, 0.54 ,1.0);
+		m_sphereVisibleComponents[i]->m_albedo = vec4(0.95, 0.64, 0.54, 1.0);
 		//m_sphereVisibleComponents[i]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/rustediron2_normal.png"));
 		//m_sphereVisibleComponents[i]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/rustediron2_basecolor.png"));
 		//m_sphereVisibleComponents[i]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/rustediron2_metallic.png"));
@@ -315,13 +320,14 @@ void InnocenceGarden::setupLights()
 		m_pointLightVisibleComponents[i]->m_useTexture = false;
 
 		m_pointLightEntitys[i] = InnoGameSystem::createEntityID();
-		m_pointLightTransformComponents[i]->m_parentEntity=m_pointLightEntitys[i];
-		m_pointLightComponents[i]->m_parentEntity=m_pointLightEntitys[i];
-		m_pointLightVisibleComponents[i]->m_parentEntity=m_pointLightEntitys[i];
 
-		m_transformComponents.emplace_back(m_pointLightTransformComponents[i]);
-		m_lightComponents.emplace_back(m_pointLightComponents[i]);
-		m_visibleComponents.emplace_back(m_pointLightVisibleComponents[i]);
+		m_pointLightTransformComponents[i]->m_parentEntity = m_pointLightEntitys[i];
+		m_pointLightComponents[i]->m_parentEntity = m_pointLightEntitys[i];
+		m_pointLightVisibleComponents[i]->m_parentEntity = m_pointLightEntitys[i];
+
+		InnoGameSystem::addTransformComponent(m_pointLightTransformComponents[i]);
+		InnoGameSystem::addLightComponent(m_pointLightComponents[i]);
+		InnoGameSystem::addVisibleComponent(m_pointLightVisibleComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim; i++)
 	{
@@ -335,7 +341,7 @@ void InnocenceGarden::setupLights()
 void InnocenceGarden::updateLights(double seed)
 {
 	m_directionalLightTransformComponent->m_transform.rotateInLocal(vec4(1.0, 1.0, 0.0, 0.0), 0.5);
-	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i+=4)
+	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i += 4)
 	{
 		m_pointLightVisibleComponents[i]->m_albedo = vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2 * 5.0, 0.4 * 5.0, 1.0);
 		m_pointLightComponents[i]->m_color = vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2 * 5.0, 0.4 * 5.0, 1.0);
@@ -343,8 +349,8 @@ void InnocenceGarden::updateLights(double seed)
 		m_pointLightComponents[i + 1]->m_color = vec4(0.2 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 0.4 * 5.0, 1.0);
 		m_pointLightVisibleComponents[i + 2]->m_albedo = vec4(0.2 * 5.0, 0.4 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 1.0);
 		m_pointLightComponents[i + 2]->m_color = vec4(0.2 * 5.0, 0.4 * 5.0, (sin(seed + i) + 1.0) * 5.0 / 2.0, 1.0);
-		m_pointLightVisibleComponents[i + 3]->m_albedo = vec4((sin(seed + i * 2.0) + 1.0) * 5.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 5.0 / 2.0, 1.0);
-		m_pointLightComponents[i + 3]->m_color = vec4((sin(seed + i * 2.0 ) + 1.0) * 5.0 / 2.0, (sin(seed + i* 3.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 5.0 / 2.0, 1.0);
+		m_pointLightVisibleComponents[i + 3]->m_albedo = vec4((sin(seed + i * 2.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 3.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 5.0 / 2.0, 1.0);
+		m_pointLightComponents[i + 3]->m_color = vec4((sin(seed + i * 2.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 3.0) + 1.0) * 5.0 / 2.0, (sin(seed + i * 5.0) + 1.0) * 5.0 / 2.0, 1.0);
 	}
 }
 

@@ -18,7 +18,7 @@ int main()
 	InnoApplication::setup();
 	InnoApplication::initialize();
 
-	while (InnoApplication::m_objectStatus == objectStatus::ALIVE)
+	while (InnoApplication::getStatus() == objectStatus::ALIVE)
 	{
 		InnoApplication::update();
 	}

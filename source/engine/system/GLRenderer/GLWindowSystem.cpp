@@ -26,6 +26,11 @@ private:
 	windowCallbackWrapper() {};
 };
 
+namespace GLWindowSystem
+{
+	objectStatus m_WindowSystemStatus = objectStatus::SHUTDOWN;
+}
+
 void GLWindowSystem::setup()
 {
 	//setup window
@@ -61,7 +66,7 @@ void GLWindowSystem::setup()
 	//setup input
 	glfwSetInputMode(WindowSystemSingletonComponent::getInstance().m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
-	InputSystem::setup();
+	InnoInputSystem::setup();
 
 	m_WindowSystemStatus = objectStatus::ALIVE;
 }
@@ -72,8 +77,8 @@ void GLWindowSystem::initialize()
 	windowCallbackWrapper::getInstance().initialize();
 
 	//initialize input
-
-	InputSystem::initialize();
+	
+	InnoInputSystem::initialize();
 
 	InnoLogSystem::printLog("GLWindowSystem has been initialized.");
 }
@@ -133,7 +138,7 @@ void GLWindowSystem::update()
 		}
 	}
 
-	InputSystem::update();
+	InnoInputSystem::update();
 }
 
 void GLWindowSystem::shutdown()
@@ -162,6 +167,11 @@ void GLWindowSystem::showMouseCursor()
 	glfwSetInputMode(WindowSystemSingletonComponent::getInstance().m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
+objectStatus GLWindowSystem::getStatus()
+{
+	return m_WindowSystemStatus;
+}
+
 void windowCallbackWrapper::initialize()
 {
 	glfwSetFramebufferSizeCallback(WindowSystemSingletonComponent::getInstance().m_window, &framebufferSizeCallback);
@@ -186,15 +196,15 @@ void windowCallbackWrapper::scrollCallback(GLFWwindow * window, double xoffset, 
 
 void windowCallbackWrapper::framebufferSizeCallbackImpl(GLFWwindow * window, int width, int height)
 {
-	InputSystem::framebufferSizeCallback(width, height);
+	InnoInputSystem::framebufferSizeCallback(width, height);
 }
 
 void windowCallbackWrapper::mousePositionCallbackImpl(GLFWwindow * window, double mouseXPos, double mouseYPos)
 {
-	InputSystem::mousePositionCallback(mouseXPos, mouseYPos);
+	InnoInputSystem::mousePositionCallback(mouseXPos, mouseYPos);
 }
 
 void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, double xoffset, double yoffset)
 {
-	InputSystem::scrollCallback(xoffset, yoffset);
+	InnoInputSystem::scrollCallback(xoffset, yoffset);
 }

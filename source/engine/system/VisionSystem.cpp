@@ -54,6 +54,8 @@ namespace InnoVisionSystem
 #elif defined (INNO_RENDERER_VULKAN)
 #elif defined (INNO_RENDERER_METAL)
 #endif
+
+	objectStatus m_VisionSystemStatus = objectStatus::SHUTDOWN;
 }
 
 void InnoVisionSystem::setup()
@@ -115,8 +117,8 @@ void InnoVisionSystem::updatePhysics()
 
 	if (InnoGameSystem::getCameraComponents().size() > 0)
 	{
-		m_mouseRay.m_origin = InnoGameSystem::getComponent<TransformComponent>(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.caclGlobalPos();
-		m_mouseRay.m_direction = InputSystem::calcMousePositionInWorldSpace();
+		m_mouseRay.m_origin = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.caclGlobalPos();
+		m_mouseRay.m_direction = InnoInputSystem::calcMousePositionInWorldSpace();
 
 		auto l_cameraAABB = InnoGameSystem::getCameraComponents()[0]->m_AABB;
 
@@ -143,7 +145,7 @@ void InnoVisionSystem::update()
 {
 	WindowSystem::update();
 
-	if (WindowSystem::m_WindowSystemStatus == objectStatus::ALIVE)
+	if (WindowSystem::getStatus() == objectStatus::ALIVE)
 	{
 		updatePhysics();
 
@@ -171,7 +173,8 @@ void InnoVisionSystem::update()
 
 void InnoVisionSystem::shutdown()
 {
-	if (WindowSystem::m_WindowSystemStatus == objectStatus::ALIVE)
+
+	if (WindowSystem::getStatus() == objectStatus::ALIVE)
 	{
 		GuiSystem::shutdown();
 		RenderingSystem::shutdown();
@@ -179,6 +182,11 @@ void InnoVisionSystem::shutdown()
 	}
 	m_VisionSystemStatus = objectStatus::SHUTDOWN;
 	InnoLogSystem::printLog("VisionSystem has been shutdown.");
+}
+
+objectStatus InnoVisionSystem::getStatus()
+{
+	return m_VisionSystemStatus;
 }
 
 void InnoVisionSystem::changeDrawPolygonMode()

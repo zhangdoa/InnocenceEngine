@@ -704,7 +704,7 @@ void ImGui::ShowDemoWindow(bool* p_open)
             }
             if (ImGui::TreeNode("Rendering more text into the same line"))
             {
-                // Using the Selectable() that takes "bool* p_selected" parameter and toggle your booleans automatically.
+                // Using the Selectable() override that takes "bool* p_selected" parameter and toggle your booleans automatically.
                 static bool selected[3] = { false, false, false };
                 ImGui::Selectable("main.c",    &selected[0]); ImGui::SameLine(300); ImGui::Text(" 2,345 bytes");
                 ImGui::Selectable("Hello.cpp", &selected[1]); ImGui::SameLine(300); ImGui::Text("12,345 bytes");
@@ -1555,7 +1555,7 @@ void ImGui::ShowDemoWindow(bool* p_open)
             }
 
             static char name[32] = "Label1";
-            char buf[64]; sprintf(buf, "Button: %s###Button", name); // ### operator ID ignoring the preceding label
+            char buf[64]; sprintf(buf, "Button: %s###Button", name); // ### operator override ID ignoring the preceding label
             ImGui::Button(buf);
             if (ImGui::BeginPopupContextItem()) // When used after an item that has an ID (here the Button), we can skip providing an ID to BeginPopupContextItem().
             {
@@ -2597,15 +2597,15 @@ static void ShowExampleAppCustomRendering(bool* p_open)
         draw_list->AddRectFilledMultiColor(canvas_pos, ImVec2(canvas_pos.x + canvas_size.x, canvas_pos.y + canvas_size.y), IM_COL32(50,50,50,255), IM_COL32(50,50,60,255), IM_COL32(60,60,70,255), IM_COL32(50,50,60,255));
         draw_list->AddRect(canvas_pos, ImVec2(canvas_pos.x + canvas_size.x, canvas_pos.y + canvas_size.y), IM_COL32(255,255,255,255));
 
-        bool addinInnoreview = false;
+        bool adding_preview = false;
         ImGui::InvisibleButton("canvas", canvas_size);
         ImVec2 mouse_pos_in_canvas = ImVec2(ImGui::GetIO().MousePos.x - canvas_pos.x, ImGui::GetIO().MousePos.y - canvas_pos.y);
         if (adding_line)
         {
-            addinInnoreview = true;
+            adding_preview = true;
             points.push_back(mouse_pos_in_canvas);
             if (!ImGui::IsMouseDown(0))
-                adding_line = addinInnoreview = false;
+                adding_line = adding_preview = false;
         }
         if (ImGui::IsItemHovered())
         {
@@ -2616,7 +2616,7 @@ static void ShowExampleAppCustomRendering(bool* p_open)
             }
             if (ImGui::IsMouseClicked(1) && !points.empty())
             {
-                adding_line = addinInnoreview = false;
+                adding_line = adding_preview = false;
                 points.pop_back();
                 points.pop_back();
             }
@@ -2625,7 +2625,7 @@ static void ShowExampleAppCustomRendering(bool* p_open)
         for (int i = 0; i < points.Size - 1; i += 2)
             draw_list->AddLine(ImVec2(canvas_pos.x + points[i].x, canvas_pos.y + points[i].y), ImVec2(canvas_pos.x + points[i+1].x, canvas_pos.y + points[i+1].y), IM_COL32(255,255,0,255), 2.0f);
         draw_list->PopClipRect();
-        if (addinInnoreview)
+        if (adding_preview)
             points.pop_back();
     }
     ImGui::End();

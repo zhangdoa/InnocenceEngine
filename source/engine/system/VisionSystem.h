@@ -8,5 +8,5 @@ namespace InnoVisionSystem
 	void update();
 	void shutdown();
 
-	objectStatus m_VisionSystemStatus = objectStatus::SHUTDOWN;
+	objectStatus getStatus();
 };

@@ -11,8 +11,8 @@ namespace GLWindowSystem
 
 	void swapBuffer();
 
-	objectStatus m_WindowSystemStatus = objectStatus::SHUTDOWN;
-
 	void hideMouseCursor();
 	void showMouseCursor();
+
+	objectStatus getStatus();
 };

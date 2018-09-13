@@ -31,6 +31,11 @@ private:
 	ImGuiWrapper() {};
 };
 
+namespace GLGuiSystem
+{
+	objectStatus m_GLGuiSystemStatus = objectStatus::SHUTDOWN;
+};
+
 void GLGuiSystem::setup()
 {
 	ImGuiWrapper::getInstance().setup();
@@ -55,6 +60,11 @@ void GLGuiSystem::shutdown()
 
 	m_GLGuiSystemStatus = objectStatus::SHUTDOWN;
 	InnoLogSystem::printLog("GLGuiSystem has been shutdown.");
+}
+
+objectStatus GLGuiSystem::getStatus()
+{
+	return m_GLGuiSystemStatus;
 }
 
 void ImGuiWrapper::setup()

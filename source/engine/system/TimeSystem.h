@@ -18,11 +18,5 @@ namespace InnoTimeSystem
 	const std::string getCurrentTimeInLocal(std::chrono::hours timezone_adjustment = std::chrono::hours(8));
 	const std::string getCurrentTimeInLocalForOutput(std::chrono::hours timezone_adjustment = std::chrono::hours(8));
 
-	objectStatus m_TimeSystemStatus = objectStatus::SHUTDOWN;
-
-	const double m_frameTime = (1.0 / 120.0) * 1000.0 * 1000.0;
-	time_t m_gameStartTime;
-	std::chrono::high_resolution_clock::time_point m_updateStartTime;
-	long long m_deltaTime;
-	double m_unprocessedTime;
+	objectStatus getStatus();
 };

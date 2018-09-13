@@ -2,6 +2,11 @@
 #include "MemorySystem.h"
 #include "LogSystem.h"
 
+namespace InnoTaskSystem
+{
+	objectStatus m_TaskSystemStatus = objectStatus::SHUTDOWN;
+}
+
 void InnoTaskSystem::setup()
 {
 	m_threadPool = InnoMemorySystem::spawn<InnoThreadPool>();
@@ -23,4 +28,9 @@ void InnoTaskSystem::shutdown()
 	delete m_threadPool;
 	m_TaskSystemStatus = objectStatus::SHUTDOWN;
 	InnoLogSystem::printLog("TaskSystem has been shutdown.");
+}
+
+objectStatus InnoTaskSystem::getStatus()
+{
+	return m_TaskSystemStatus;
 }

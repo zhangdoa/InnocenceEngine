@@ -1,7 +1,7 @@
 #pragma once
 #include "../component/WindowSystemSingletonComponent.h"
 
-namespace InputSystem 
+namespace InnoInputSystem 
 {
 	void setup();
 	void initialize();
@@ -21,5 +21,5 @@ namespace InputSystem
 	void mousePositionCallback(double mouseXPos, double mouseYPos);
 	void scrollCallback(double xoffset, double yoffset);
 
-	objectStatus m_InputSystemStatus = objectStatus::SHUTDOWN;
+	objectStatus getStatus();
 };

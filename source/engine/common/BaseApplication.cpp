@@ -8,6 +8,11 @@
 #include "../system/PhysicsSystem.h"
 #include "../system/VisionSystem.h"
 
+namespace InnoApplication
+{
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+}
+
 void InnoApplication::setup()
 {
 	InnoMemorySystem::setup();
@@ -28,7 +33,8 @@ void InnoApplication::setup()
 	InnoLogSystem::printLog("VisionSystem setup finished.");
 
 	m_objectStatus = objectStatus::ALIVE;
-	InnoLogSystem::printLog("CoreSystem setup finished.");
+
+	InnoLogSystem::printLog("Engine setup finished.");
 }
 
 
@@ -43,7 +49,8 @@ void InnoApplication::initialize()
 	InnoAssetSystem::initialize();
 	InnoPhysicsSystem::initialize();
 	InnoVisionSystem::initialize();
-	InnoLogSystem::printLog("CoreSystem has been initialized.");
+
+	InnoLogSystem::printLog("Engine has been initialized.");
 }
 
 void InnoApplication::update()
@@ -53,7 +60,7 @@ void InnoApplication::update()
 
 	InnoGameSystem::update();
 
-	if (InnoVisionSystem::m_VisionSystemStatus == objectStatus::ALIVE)
+	if (InnoVisionSystem::getStatus() == objectStatus::ALIVE)
 	{
 		if (InnoGameSystem::needRender())
 		{
@@ -64,7 +71,8 @@ void InnoApplication::update()
 	else
 	{
 		m_objectStatus = objectStatus::STANDBY;
-		InnoLogSystem::printLog("CoreSystem is stand-by.");
+
+		InnoLogSystem::printLog("Engine is stand-by.");
 	}
 }
 
@@ -75,10 +83,14 @@ void InnoApplication::shutdown()
 	InnoPhysicsSystem::shutdown();
 	InnoAssetSystem::shutdown();
 	InnoTimeSystem::shutdown();
-	m_objectStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("CoreSystem has been shutdown.");
+	InnoLogSystem::printLog("Engine has been shutdown.");
 	InnoLogSystem::shutdown();
 	InnoMemorySystem::shutdown();
-
+	m_objectStatus = objectStatus::SHUTDOWN;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
+}
+
+objectStatus InnoApplication::getStatus()
+{
+	return m_objectStatus;
 }

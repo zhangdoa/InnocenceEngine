@@ -10,6 +10,4 @@ namespace InnocenceGarden
 	void shutdown();
 
 	std::string getGameName();
-
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 };

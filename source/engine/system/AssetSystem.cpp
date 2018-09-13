@@ -32,6 +32,9 @@ namespace InnoAssetSystem
 	void assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
 	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
 	void assignLoadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
+
+	objectStatus m_AssetSystemStatus = objectStatus::SHUTDOWN;
+	AssetSystemSingletonComponent* m_AssetSystemSingletonComponent;
 }
 
 class IMeshRawData
@@ -98,6 +101,11 @@ std::string InnoAssetSystem::loadShader(const std::string & fileName)
 	file.close();
 
 	return output;
+}
+
+objectStatus InnoAssetSystem::getStatus()
+{
+	return m_AssetSystemStatus;
 }
 
 meshID InnoAssetSystem::addMesh()
