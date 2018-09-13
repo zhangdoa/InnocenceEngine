@@ -1,4 +1,10 @@
 #include "DXGuiSystem.h"
+#include "../LogSystem.h"
+
+namespace DXGuiSystem
+{
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+}
 
 void DXGuiSystem::setup()
 {
@@ -6,7 +12,7 @@ void DXGuiSystem::setup()
 
 void DXGuiSystem::initialize()
 {
-	g_pLogSystem->printLog("DXGuiSystem has been initialized.");
+	InnoLogSystem::printLog("DXGuiSystem has been initialized.");
 }
 
 void DXGuiSystem::update()
@@ -18,10 +24,10 @@ void DXGuiSystem::shutdown()
 	m_objectStatus = objectStatus::STANDBY;
 
 	m_objectStatus = objectStatus::SHUTDOWN;
-	g_pLogSystem->printLog("DXGuiSystem has been shutdown.");
+	InnoLogSystem::printLog("DXGuiSystem has been shutdown.");
 }
 
-const objectStatus & DXGuiSystem::getStatus() const
+objectStatus DXGuiSystem::getStatus()
 {
 	return m_objectStatus;
 }

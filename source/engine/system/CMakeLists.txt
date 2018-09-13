@@ -26,7 +26,6 @@ else ()
 target_link_libraries(InnoSystem "${GLFW}")
 endif (INNO_PLATFORM_LINUX64)
 
-target_link_libraries(InnoSystem ImGui)
 target_link_libraries(InnoSystem GLAD)
 target_link_libraries(InnoSystem STB_Image)
 
@@ -34,6 +33,7 @@ link_directories(${CMAKE_SOURCE_DIR}/game/)
 
 if (INNO_RENDERER_OPENGL)
 target_link_libraries(InnoSystem InnoGLRenderer)
+target_link_libraries(InnoSystem ImGui)
 endif (INNO_RENDERER_OPENGL)
 
 if (INNO_RENDERER_DX)

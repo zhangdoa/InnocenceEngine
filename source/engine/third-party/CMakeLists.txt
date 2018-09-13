@@ -1,3 +1,5 @@
 add_subdirectory("GLAD")
 add_subdirectory("STB_Image")
+if (INNO_RENDERER_OPENGL)
 add_subdirectory("ImGui")
+endif (INNO_RENDERER_OPENGL)

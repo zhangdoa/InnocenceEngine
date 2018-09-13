@@ -1,11 +1,18 @@
 #include "DXWindowSystem.h"
+#include "../InputSystem.h"
+#include "../LogSystem.h"
+
+namespace DXWindowSystem
+{
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+}
 
 void DXWindowSystem::setup()
 {
 	WNDCLASS wc = {};
 
 	// Get an external pointer to this object.	
-	ApplicationHandle = this;
+	ApplicationHandle = &windowCallbackWrapper::getInstance();
 
 	// Give the application a name.
 	auto l_windowName = std::wstring(WindowSystemSingletonComponent::getInstance().m_windowName.begin(), WindowSystemSingletonComponent::getInstance().m_windowName.end());
@@ -44,7 +51,7 @@ void DXWindowSystem::setup()
 	// Hide the mouse cursor.
 	// ShowCursor(false);
 
-	BaseWindowSystem::setup();
+	InnoInputSystem::setup();
 
 	m_objectStatus = objectStatus::ALIVE;
 }
@@ -55,9 +62,9 @@ void DXWindowSystem::initialize()
 
 	//initialize input
 
-	BaseWindowSystem::initialize();
+	InnoInputSystem::initialize();
 
-	g_pLogSystem->printLog("DXWindowSystem has been initialized.");
+	InnoLogSystem::printLog("DXWindowSystem has been initialized.");
 }
 
 void DXWindowSystem::update()
@@ -84,7 +91,7 @@ void DXWindowSystem::update()
 	{
 	}
 
-	BaseWindowSystem::update();
+	InnoInputSystem::update();
 }
 
 void DXWindowSystem::shutdown()
@@ -102,7 +109,7 @@ void DXWindowSystem::shutdown()
 	DestroyWindow(WindowSystemSingletonComponent::getInstance().m_hwnd);
 	WindowSystemSingletonComponent::getInstance().m_hwnd = NULL;
 
-	g_pLogSystem->printLog("DXWindowSystem: Window closed.");
+	InnoLogSystem::printLog("DXWindowSystem: Window closed.");
 
 	// Remove the application instance.
 	UnregisterClass(WindowSystemSingletonComponent::getInstance().m_applicationName, WindowSystemSingletonComponent::getInstance().m_hInstance);
@@ -112,10 +119,10 @@ void DXWindowSystem::shutdown()
 	ApplicationHandle = NULL;
 
 	m_objectStatus = objectStatus::SHUTDOWN;
-	g_pLogSystem->printLog("DXWindowSystem has been shutdown.");
+	InnoLogSystem::printLog("DXWindowSystem has been shutdown.");
 }
 
-const objectStatus & DXWindowSystem::getStatus() const
+objectStatus DXWindowSystem::getStatus()
 {
 	return m_objectStatus;
 }
@@ -124,7 +131,30 @@ void DXWindowSystem::swapBuffer()
 {
 }
 
-LRESULT DXWindowSystem::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+	case WM_DESTROY:
+	{
+		PostQuitMessage(0);
+		return 0;
+	}
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hwnd, &ps);
+		FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+		EndPaint(hwnd, &ps);
+	}
+	default:
+	{
+		return ApplicationHandle->MessageHandler(hwnd, uMsg, wParam, lParam);
+	}
+	}
+}
+
+LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 {
 	switch (umsg)
 	{
@@ -188,7 +218,7 @@ LRESULT DXWindowSystem::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPAR
 	{
 		auto l_mouseCurrentX = GET_X_LPARAM(lparam);
 		auto l_mouseCurrentY = GET_Y_LPARAM(lparam);
-		BaseWindowSystem::mousePositionCallback(l_mouseCurrentX, l_mouseCurrentY);
+		InnoInputSystem::mousePositionCallback(l_mouseCurrentX, l_mouseCurrentY);
 		return 0;
 	}
 	// Any other messages send to the default message handler as our application won't make use of them.
@@ -196,28 +226,5 @@ LRESULT DXWindowSystem::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPAR
 	{
 		return DefWindowProc(hwnd, umsg, wparam, lparam);
 	}
-	}
-}
-
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	switch (uMsg)
-	{
-		case WM_DESTROY:
-		{
-			PostQuitMessage(0);
-			return 0;
-		}
-		case WM_PAINT:
-		{
-			PAINTSTRUCT ps;
-			HDC hdc = BeginPaint(hwnd, &ps);
-			FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-			EndPaint(hwnd, &ps);
-		}
-		default:
-		{
-			return ApplicationHandle->MessageHandler(hwnd, uMsg, wParam, lParam);
-		}
 	}
 }

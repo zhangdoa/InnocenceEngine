@@ -1,22 +1,13 @@
 #pragma once
-#include "../../interface/IGuiSystem.h"
-#include "../../interface/ILogSystem.h"
+#include "../../common/InnoType.h"
 
-extern ILogSystem* g_pLogSystem;
-
-class DXGuiSystem : public IGuiSystem
+namespace DXGuiSystem
 {
-public:
-	DXGuiSystem() {};
-	~DXGuiSystem() {};
-
-	void setup() override;
-	void initialize() override;
-	void update() override;
-	void shutdown() override;
-	const objectStatus& getStatus() const override;
-
-private:
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	void setup();
+	void initialize();
+	void update();
+	void shutdown();
+	
+	objectStatus getStatus();
 };
 
