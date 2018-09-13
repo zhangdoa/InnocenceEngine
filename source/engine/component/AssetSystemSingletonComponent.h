@@ -13,11 +13,17 @@
 #define TextureDataComponent DXTextureDataComponent
 #endif
 
+#include "../common/InnoConcurrency.h"
 class AssetSystemSingletonComponent : public BaseComponent
 {
 public:
-	AssetSystemSingletonComponent() {};
 	~AssetSystemSingletonComponent() {};
+
+	static AssetSystemSingletonComponent& getInstance()
+	{
+		static AssetSystemSingletonComponent instance;
+		return instance;
+	}
 
     std::unordered_map<std::string, int> m_supportedTextureType = { {"png", 0} };
     std::unordered_map<std::string, int> m_supportedModelType = { {"obj", 0}, {"innoModel", 0} };
@@ -27,6 +33,9 @@ public:
 	std::unordered_map<meshID, MeshDataComponent*> m_BBMeshMap;
 	std::unordered_map<textureID, TextureDataComponent*> m_textureMap;
 	std::unordered_map<textureID, TextureDataComponent*> m_shadowTextureMap;
+
+	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshComponents;
+	ThreadSafeQueue<TextureDataComponent*> m_uninitializedTextureComponents;
 
 	meshID m_UnitLineTemplate;
 	meshID m_UnitQuadTemplate;
@@ -45,4 +54,7 @@ public:
     const std::string m_textureRelativePath = std::string{"..//res//textures//"};
     const std::string m_modelRelativePath = std::string{"..//res//models//"};
     const std::string m_shaderRelativePath = std::string{"..//res//shaders//"};
+
+private:
+	AssetSystemSingletonComponent() {};
 };

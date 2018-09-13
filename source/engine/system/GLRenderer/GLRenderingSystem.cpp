@@ -30,8 +30,6 @@ namespace GLRenderingSystem
 	void initializeDebuggerPass();
 	void initializeFinalBlendPass();
 
-	void initializeDefaultGraphicPrimtives();
-	void initializeGraphicPrimtivesOfComponents();
 	void initializeMesh(MeshDataComponent* GLMeshDataComponent);
 	void initializeTexture(TextureDataComponent* GLTextureDataComponent);
 	void initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string& shaderFilePath);
@@ -1617,6 +1615,8 @@ void GLRenderingSystem::initializeMesh(MeshDataComponent* GLMeshDataComponent)
 	// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+
+	GLMeshDataComponent->m_objectStatus = objectStatus::ALIVE;
 }
 
 void GLRenderingSystem::initializeTexture(TextureDataComponent * GLTextureDataComponent)
@@ -1786,14 +1786,31 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * GLTextureDataCo
 			}
 		}
 	}
+
+	GLTextureDataComponent->m_objectStatus = objectStatus::ALIVE;
 }
 
 void GLRenderingSystem::update()
 {
+	if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.size() > 0)
+	{
+		MeshDataComponent* l_meshDataComponent;
+		if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
+		{
+			initializeMesh(l_meshDataComponent);
+		}
+	}
+	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
+	{
+		TextureDataComponent* l_textureDataComponent;
+		if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
+		{
+			initializeTexture(l_textureDataComponent);
+		}
+	}
 	if (RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap)
 	{
 		updateEnvironmentRenderPass();
-		RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap = false;
 	}
 	updateShadowRenderPass();
 	updateGeometryRenderPass();
@@ -1845,20 +1862,31 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 				{
 					// activate equiretangular texture and remap equiretangular texture to cubemap
-					auto l_equiretangularTexture = InnoAssetSystem::getTexture(l_graphicData.second.find(textureType::EQUIRETANGULAR)->second);
-					activateTexture(l_equiretangularTexture, 0);
-					for (unsigned int i = 0; i < 6; ++i)
+					auto l_equiretangularTexture = l_graphicData.second.find(textureType::EQUIRETANGULAR);
+					if (l_equiretangularTexture != l_graphicData.second.end())
 					{
-						updateUniform(
-							EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r,
-							captureViews[i]);
-						attachTextureToFramebuffer(&EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
-						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-						auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-						activateMesh(l_mesh);
-						drawMesh(l_mesh);
+						auto l_equiretangularTextureComponent = InnoAssetSystem::getTexture(l_equiretangularTexture->second);
+						if (l_equiretangularTextureComponent != nullptr)
+						{
+							if (l_equiretangularTextureComponent->m_objectStatus == objectStatus::ALIVE)
+							{
+								RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap = false;
+								activateTexture(l_equiretangularTextureComponent, 0);
+								for (unsigned int i = 0; i < 6; ++i)
+								{
+									updateUniform(
+										EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r,
+										captureViews[i]);
+									attachTextureToFramebuffer(&EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
+									glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+									auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
+									activateMesh(l_mesh);
+									drawMesh(l_mesh);
+								}
+								glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+							}
+						}
 					}
-					glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 				}
 			}
 		}
@@ -1891,8 +1919,14 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 						attachTextureToFramebuffer(l_environmentConvolutionTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
 						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 						auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-						activateMesh(l_mesh);
-						drawMesh(l_mesh);
+						if (l_mesh)
+						{
+							if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+							{
+								activateMesh(l_mesh);
+								drawMesh(l_mesh);
+							}
+						}
 					}
 				}
 			}
@@ -1937,8 +1971,14 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 
 							glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 							auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-							activateMesh(l_mesh);
-							drawMesh(l_mesh);
+							if (l_mesh)
+							{
+								if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+								{
+									activateMesh(l_mesh);
+									drawMesh(l_mesh);
+								}
+							}
 						}
 					}
 				}
@@ -1956,8 +1996,14 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 
 	// draw environment map BRDF LUT rectangle
 	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
-	activateMesh(l_mesh);
-	drawMesh(l_mesh);
+	if (l_mesh)
+	{
+		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+		{
+			activateMesh(l_mesh);
+			drawMesh(l_mesh);
+		}
+	}
 }
 
 void GLRenderingSystem::updateShadowRenderPass()
@@ -2006,8 +2052,14 @@ void GLRenderingSystem::updateShadowRenderPass()
 						{
 							// draw meshes
 							auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-							activateMesh(l_mesh);
-							drawMesh(l_mesh);
+							if (l_mesh)
+							{
+								if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+								{
+									activateMesh(l_mesh);
+									drawMesh(l_mesh);
+								}
+							}
 						}
 					}
 				}
@@ -2130,35 +2182,65 @@ void GLRenderingSystem::updateGeometryRenderPass()
 									if (l_normalTextureID != l_textureMap->end())
 									{
 										auto l_textureData = InnoAssetSystem::getTexture(l_normalTextureID->second);
-										activateTexture(l_textureData, 0);
+										if (l_textureData)
+										{
+											if (l_textureData->m_objectStatus == objectStatus::ALIVE)
+											{
+												activateTexture(l_textureData, 0);
+											}
+										}
 									}
 									// any albedo?
 									auto l_albedoTextureID = l_textureMap->find(textureType::ALBEDO);
 									if (l_albedoTextureID != l_textureMap->end())
 									{
 										auto l_textureData = InnoAssetSystem::getTexture(l_albedoTextureID->second);
-										activateTexture(l_textureData, 1);
+										if (l_textureData)
+										{
+											if (l_textureData->m_objectStatus == objectStatus::ALIVE)
+											{
+												activateTexture(l_textureData, 1);
+											}
+										}
 									}
 									// any metallic?
 									auto l_metallicTextureID = l_textureMap->find(textureType::METALLIC);
 									if (l_metallicTextureID != l_textureMap->end())
 									{
 										auto l_textureData = InnoAssetSystem::getTexture(l_metallicTextureID->second);
-										activateTexture(l_textureData, 2);
+										if (l_textureData)
+										{
+											if (l_textureData->m_objectStatus == objectStatus::ALIVE)
+											{
+												activateTexture(l_textureData, 2);
+											}
+										}
 									}
 									// any roughness?
 									auto l_roughnessTextureID = l_textureMap->find(textureType::ROUGHNESS);
 									if (l_roughnessTextureID != l_textureMap->end())
 									{
 										auto l_textureData = InnoAssetSystem::getTexture(l_roughnessTextureID->second);
-										activateTexture(l_textureData, 3);
+										if (l_textureData)
+										{
+											if (l_textureData->m_objectStatus == objectStatus::ALIVE)
+											{
+												activateTexture(l_textureData, 3);
+											}
+										}
 									}
 									// any ao?
 									auto l_aoTextureID = l_textureMap->find(textureType::AMBIENT_OCCLUSION);
 									if (l_aoTextureID != l_textureMap->end())
 									{
 										auto l_textureData = InnoAssetSystem::getTexture(l_aoTextureID->second);
-										activateTexture(l_textureData, 4);
+										if (l_textureData)
+										{
+											if (l_textureData->m_objectStatus == objectStatus::ALIVE)
+											{
+												activateTexture(l_textureData, 4);
+											}
+										}
 									}
 								}
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture, l_visibleComponent->m_useTexture);
@@ -2166,8 +2248,14 @@ void GLRenderingSystem::updateGeometryRenderPass()
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA, l_visibleComponent->m_MRA.x, l_visibleComponent->m_MRA.y, l_visibleComponent->m_MRA.z);
 								// draw meshes
 								auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-								activateMesh(l_mesh);
-								drawMesh(l_mesh);
+								if (l_mesh)
+								{
+									if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+									{
+										activateMesh(l_mesh);
+										drawMesh(l_mesh);
+									}
+								}
 							}
 						}
 						else if (l_visibleComponent->m_visiblilityType == visiblilityType::EMISSIVE)
@@ -2185,8 +2273,14 @@ void GLRenderingSystem::updateGeometryRenderPass()
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
 								// draw meshes
 								auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-								activateMesh(l_mesh);
-								drawMesh(l_mesh);
+								if (l_mesh)
+								{
+									if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+									{
+										activateMesh(l_mesh);
+										drawMesh(l_mesh);
+									}
+								}
 							}
 						}
 						else
@@ -2366,8 +2460,14 @@ void GLRenderingSystem::updateLightRenderPass()
 	}
 	// draw light pass rectangle
 	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
-	activateMesh(l_mesh);
-	drawMesh(l_mesh);
+	if (l_mesh)
+	{
+		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+		{
+			activateMesh(l_mesh);
+			drawMesh(l_mesh);
+		}
+	}
 
 	// 2. draw emissive objects
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -2387,8 +2487,14 @@ void GLRenderingSystem::updateLightRenderPass()
 
 	// draw light pass rectangle
 	l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
-	activateMesh(l_mesh);
-	drawMesh(l_mesh);
+	if (l_mesh)
+	{
+		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+		{
+			activateMesh(l_mesh);
+			drawMesh(l_mesh);
+		}
+	}
 
 	glDisable(GL_STENCIL_TEST);
 }
@@ -2440,8 +2546,14 @@ void GLRenderingSystem::updateFinalRenderPass()
 						auto l_skyboxTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
 						activateTexture(l_skyboxTexture, 0);
 						auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-						activateMesh(l_mesh);
-						drawMesh(l_mesh);
+						if (l_mesh)
+						{
+							if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+							{
+								activateMesh(l_mesh);
+								drawMesh(l_mesh);
+							}
+						}
 					}
 				}
 			}
@@ -2492,8 +2604,14 @@ void GLRenderingSystem::updateFinalRenderPass()
 		RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
 	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
-	activateMesh(l_mesh);
-	drawMesh(l_mesh);
+	if (l_mesh)
+	{
+		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+		{
+			activateMesh(l_mesh);
+			drawMesh(l_mesh);
+		}
+	}
 
 	// bloom extract pass
 	glBindFramebuffer(GL_FRAMEBUFFER, GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLFrameBufferComponent.m_FBO);
@@ -2508,8 +2626,14 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	// 1. extract bright part from TAA pass
 	activateTexture(l_lastTAATextureDataComponent, 0);
-	activateMesh(l_mesh);
-	drawMesh(l_mesh);
+	if (l_mesh)
+	{
+		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+		{
+			activateMesh(l_mesh);
+			drawMesh(l_mesh);
+		}
+	}
 
 	// bloom blur pass
 	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPassProgram.m_program);
@@ -2542,8 +2666,14 @@ void GLRenderingSystem::updateFinalRenderPass()
 				activateTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture, 0);
 			}
 
-			activateMesh(l_mesh);
-			drawMesh(l_mesh);
+			if (l_mesh)
+			{
+				if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+				{
+					activateMesh(l_mesh);
+					drawMesh(l_mesh);
+				}
+			}
 			l_isPing = false;
 		}
 		else
@@ -2562,8 +2692,14 @@ void GLRenderingSystem::updateFinalRenderPass()
 				false);
 			activateTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture, 0);
 
-			activateMesh(l_mesh);
-			drawMesh(l_mesh);
+			if (l_mesh)
+			{
+				if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+				{
+					activateMesh(l_mesh);
+					drawMesh(l_mesh);
+				}
+			}
 			l_isPing = true;
 		}
 	}
@@ -2582,8 +2718,14 @@ void GLRenderingSystem::updateFinalRenderPass()
 	activateTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[3], 0);
 	activateTexture(l_lastTAATextureDataComponent, 1);
 
-	activateMesh(l_mesh);
-	drawMesh(l_mesh);
+	if (l_mesh)
+	{
+		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+		{
+			activateMesh(l_mesh);
+			drawMesh(l_mesh);
+		}
+	}
 
 	// billboard pass
 	glEnable(GL_DEPTH_TEST);
@@ -2667,8 +2809,14 @@ void GLRenderingSystem::updateFinalRenderPass()
 							activateTexture(l_textureData, 0);
 						}
 						auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-						activateMesh(l_mesh);
-						drawMesh(l_mesh);
+						if (l_mesh)
+						{
+							if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+							{
+								activateMesh(l_mesh);
+								drawMesh(l_mesh);
+							}
+						}
 					}
 				}
 			}
@@ -2824,14 +2972,26 @@ void GLRenderingSystem::updateFinalRenderPass()
 	activateTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture, 4);
 
 	//// draw final pass rectangle
-	activateMesh(l_mesh);
-	drawMesh(l_mesh);
+	if (l_mesh)
+	{
+		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+		{
+			activateMesh(l_mesh);
+			drawMesh(l_mesh);
+		}
+	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-	activateMesh(l_mesh);
-	drawMesh(l_mesh);
+	if (l_mesh)
+	{
+		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+		{
+			activateMesh(l_mesh);
+			drawMesh(l_mesh);
+		}
+	}
 }
 
 void GLRenderingSystem::shutdown()

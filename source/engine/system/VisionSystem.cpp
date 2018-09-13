@@ -1,15 +1,7 @@
 #include "VisionSystem.h"
 #include<atomic>
 #include "../common/ComponentHeaders.h"
-#if defined (INNO_RENDERER_OPENGL)
-#include "GLRenderer/GLWindowSystem.h"
-#include "GLRenderer/GLRenderingSystem.h"
-#include "GLRenderer/GLGuiSystem.h"
-#elif defined (INNO_RENDERER_DX)
-#include "DXRenderer/DXWindowSystem.h"
-#include "DXRenderer/DXRenderingSystem.h"
-#include "DXRenderer/DXGuiSystem.h"
-#endif
+
 #include "MemorySystem.h"
 #include "LogSystem.h"
 #include "GameSystem.h"
@@ -42,18 +34,6 @@ namespace InnoVisionSystem
 	int m_polygonMode = 2;
 	int m_textureMode = 0;
 	int m_shadingMode = 0;
-
-#if defined (INNO_RENDERER_OPENGL)
-#define WindowSystem GLWindowSystem
-#define RenderingSystem GLRenderingSystem
-#define GuiSystem GLGuiSystem
-#elif defined (INNO_RENDERER_DX)
-#define WindowSystem DXWindowSystem
-#define RenderingSystem DXRenderingSystem
-#define GuiSystem DXGuiSystem
-#elif defined (INNO_RENDERER_VULKAN)
-#elif defined (INNO_RENDERER_METAL)
-#endif
 
 	objectStatus m_VisionSystemStatus = objectStatus::SHUTDOWN;
 }

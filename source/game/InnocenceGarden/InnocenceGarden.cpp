@@ -162,11 +162,11 @@ void InnocenceGarden::setup()
 	m_pawnVisibleComponent1 = InnoMemorySystem::spawn<VisibleComponent>();
 	m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
-	//m_pawnVisibleComponent1->m_modelFileName = "sponza/sponza.obj";
+	m_pawnVisibleComponent1->m_modelFileName = "sponza/sponza.obj";
 	//m_pawnVisibleComponent1->m_modelFileName = "cat/cat.obj";
 	m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnVisibleComponent1->m_drawAABB = false;
-	m_pawnVisibleComponent1->m_useTexture = false;
+	m_pawnVisibleComponent1->m_useTexture = true;
 	m_pawnVisibleComponent1->m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
 	m_pawnVisibleComponent1->m_MRA = vec4(0.0, 0.35, 1.0, 1.0);
 

@@ -15,5 +15,7 @@ public:
 	meshDrawMethod m_meshDrawMethod;
 	bool m_calculateNormals;
 	bool m_calculateTangents;
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 };
 

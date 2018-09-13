@@ -12,11 +12,11 @@ namespace InnoTaskSystem
 	template <typename Func, typename... Args>
 	auto submit(Func&& func, Args&&... args)
 	{
-		return m_threadPool->submit(std::forward<Func>(func), std::forward<Args>(args)...);
+		return m_threadPool.submit(std::forward<Func>(func), std::forward<Args>(args)...);
 	}
 
 	objectStatus getStatus();
 
-	static InnoThreadPool* m_threadPool;
+	static InnoThreadPool m_threadPool;
 };
 

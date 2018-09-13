@@ -8,5 +8,8 @@ namespace GLRenderingSystem
 	void update();
 	void shutdown();
 
+	void initializeDefaultGraphicPrimtives();
+	void initializeGraphicPrimtivesOfComponents();
+
 	objectStatus getStatus();
 };

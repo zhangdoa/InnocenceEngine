@@ -58,6 +58,8 @@ void InnoApplication::update()
 	// time System should update without any limitation.
 	InnoTimeSystem::update();
 
+	InnoTaskSystem::update();
+
 	InnoGameSystem::update();
 
 	if (InnoVisionSystem::getStatus() == objectStatus::ALIVE)
@@ -94,3 +96,4 @@ objectStatus InnoApplication::getStatus()
 {
 	return m_objectStatus;
 }
+

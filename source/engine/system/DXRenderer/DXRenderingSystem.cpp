@@ -1,4 +1,17 @@
 #include "DXRenderingSystem.h"
+
+#include "../../component/DXFinalRenderPassSingletonComponent.h"
+
+#include <sstream>
+
+#include "../../component/RenderingSystemSingletonComponent.h"
+#include "../../component/WindowSystemSingletonComponent.h"
+
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3dcompiler.lib")
+#include "DXHeaders.h"
+
 #include "../LogSystem.h"
 #include "../AssetSystem.h"
 #include "../GameSystem.h"
@@ -23,10 +36,6 @@ namespace DXRenderingSystem
 
 	void initializeShader(shaderType shaderType, const std::wstring & shaderFilePath);
 	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
-
-	void initializeDefaultGraphicPrimtives();
-	void initializeGraphicPrimtivesOfComponents();
-	void initializeMesh(MeshDataComponent* DXMeshDataComponent);
 
 	void updateFinalBlendPass();
 
