@@ -2028,7 +2028,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 
 		for (auto& l_lightComponent : InnoGameSystem::getLightComponents())
 		{
-			if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
+			if (l_lightComponent->m_lightType == lightType::DIRECTIONAL) 
 			{
 				glUseProgram(ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram.m_program);
 				updateUniform(
@@ -2036,7 +2036,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 					InnoGameSystem::getProjectionMatrix(l_lightComponent, (unsigned int)i));
 				updateUniform(
 					ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_v,
-					InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_transform.getInvertGlobalRotMatrix());
+					InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix().inverse());
 
 				// draw each visibleComponent
 				for (auto& l_visibleComponent : InnoGameSystem::getVisibleComponents())
@@ -2111,9 +2111,9 @@ void GLRenderingSystem::updateGeometryRenderPass()
 		p_jittered.m[1][2] = RenderingSystemSingletonComponent::getInstance().HaltonSampler[RenderingSystemSingletonComponent::getInstance().currentHaltonStep].y / RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 		RenderingSystemSingletonComponent::getInstance().currentHaltonStep += 1;
 
-		mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotMatrix();
+		mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
 		mat4 t = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
-		mat4 r_prev = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getPreviousInvertGlobalRotMatrix();
+		mat4 r_prev = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getPreviousInvertGlobalRotationMatrix();
 		mat4 t_prev = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getPreviousInvertGlobalTranslationMatrix();
 
 		updateUniform(
@@ -2153,7 +2153,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3,
 						InnoGameSystem::getProjectionMatrix(l_lightComponent, 3));
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light,
-						InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_transform.getInvertGlobalRotMatrix());
+						InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix());
 
 					// draw each visibleComponent
 					for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
@@ -2524,7 +2524,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	if (InnoGameSystem::getCameraComponents().size() > 0)
 	{
 		mat4 p = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
-		mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotMatrix();
+		mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
 
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p,
@@ -2751,7 +2751,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	if (InnoGameSystem::getCameraComponents().size() > 0)
 	{
 		mat4 p = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
-		mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotMatrix();
+		mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
 		mat4 t = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
 
 		updateUniform(
@@ -2848,7 +2848,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//if (InnoGameSystem::getCameraComponents().size() > 0)
 	//{
 	//	mat4 p = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
-	//	mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotMatrix();
+	//	mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
 	//	mat4 t = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
 
 	//	updateUniform(
@@ -2896,7 +2896,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//	{
 	//		if (l_lightComponent->m_drawAABB)
 	//		{
-	//			auto l_lightLocalMat = InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_transform.caclGlobalRotMatrix();
+	//			auto l_lightLocalMat = InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_transform.caclGlobalRotationMatrix();
 	//			updateUniform(
 	//				FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
 	//				l_lightLocalMat);

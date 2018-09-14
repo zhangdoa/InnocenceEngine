@@ -274,20 +274,6 @@ void InnoPhysicsSystem::generateAABB(LightComponent & lightComponent)
 	auto l_camera = InnoGameSystem::getCameraComponents()[0];
 	auto l_frustumVertices = l_camera->m_frustumVertices;
 
-	auto l_lightRotMat = InnoGameSystem::getTransformComponent(lightComponent.m_parentEntity)->m_transform.getInvertGlobalRotMatrix();
-
-	for (size_t i = 0; i < l_frustumVertices.size(); i++)
-	{
-		//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_frustumVertices[i].m_pos = InnoMath::mul(l_frustumVertices[i].m_pos, l_lightRotMat);
-#endif
-		//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_frustumVertices[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVertices[i].m_pos);
-#endif	
-	}
-
 	//2.calculate splited planes' corners
 	std::vector<vec4> l_frustumsCornerPos;
 	//2.1 first 4 corner
@@ -307,6 +293,20 @@ void InnoPhysicsSystem::generateAABB(LightComponent & lightComponent)
 		}
 	}
 
+	//2.3 transform to light space
+	auto l_lightRotMat = InnoGameSystem::getTransformComponent(lightComponent.m_parentEntity)->m_transform.caclGlobalTransformationMatrix().inverse();
+	for (size_t i = 0; i < l_frustumsCornerPos.size(); i++)
+	{
+		//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_frustumsCornerPos[i] = InnoMath::mul(l_frustumsCornerPos[i], l_lightRotMat);
+#endif
+		//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_frustumsCornerPos[i] = InnoMath::mul(l_lightRotMat, l_frustumsCornerPos[i]);
+#endif	
+	}
+
 	//3.assemble splited frustums
 	std::vector<Vertex> l_frustumsCornerVertices;
 	auto l_NDC = generateNDC();
@@ -321,6 +321,7 @@ void InnoPhysicsSystem::generateAABB(LightComponent & lightComponent)
 			l_frustumsCornerVertices[i * 8 + j].m_pos = l_frustumsCornerPos[i * 4 + j];
 		}
 	}
+
 	std::vector<std::vector<Vertex>> l_splitedFrustums;
 	for (size_t i = 0; i < 4; i++)
 	{

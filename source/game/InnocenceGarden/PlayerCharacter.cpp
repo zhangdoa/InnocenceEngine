@@ -10,7 +10,7 @@ void PlayerCharacter::setup()
 	m_cameraComponent.m_FOVX = 60.0;
 	m_cameraComponent.m_WHRatio = 16.0 / 9.0;
 	m_cameraComponent.m_zNear = 0.1;
-	m_cameraComponent.m_zFar = 20000.0;
+	m_cameraComponent.m_zFar = 200.0;
 
 	m_moveSpeed = 0.5;
 	m_rotateSpeed = 2.0;
@@ -52,7 +52,7 @@ void PlayerCharacter::move(vec4 direction, double length)
 {
 	if (m_canMove)
 	{
-		m_transformComponent.m_transform.setLocalPos(m_transformComponent.m_transform.getPos() + direction.scale(length));
+		m_transformComponent.m_transform.setGlobalPos(m_transformComponent.m_transform.caclGlobalPos() + direction * length);
 	}
 }
 

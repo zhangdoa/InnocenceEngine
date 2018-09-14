@@ -34,9 +34,9 @@ private:
 	InputComponent m_inputComponent;
 	CameraComponent m_cameraComponent;
 
-	double m_moveSpeed;
-	double m_rotateSpeed;
-	bool m_canMove;
+	double m_moveSpeed = 0;
+	double m_rotateSpeed = 0;
+	bool m_canMove = false;
 
 	void move(vec4 direction, double length);
 
