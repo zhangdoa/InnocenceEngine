@@ -9,6 +9,8 @@ namespace InnoTaskSystem
 	void update();
 	void shutdown();
 
+    static InnoThreadPool m_threadPool;
+    
 	template <typename Func, typename... Args>
 	auto submit(Func&& func, Args&&... args)
 	{
@@ -16,7 +18,5 @@ namespace InnoTaskSystem
 	}
 
 	objectStatus getStatus();
-
-	static InnoThreadPool m_threadPool;
 };
 
