@@ -186,16 +186,6 @@ void InnoGameSystem::overwriteTextureData(VisibleComponent * visibleComponentcon
 	}
 }
 
-mat4 InnoGameSystem::getProjectionMatrix(LightComponent * lightComponent, unsigned int cascadedLevel)
-{
-	vec4 l_maxExtents = lightComponent->m_AABBs[cascadedLevel].m_boundMax;
-	vec4 l_minExtents = lightComponent->m_AABBs[cascadedLevel].m_boundMin;
-
-	mat4 p;
-	p.initializeToOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
-	return p;
-}
-
 void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponent, button boundButton, std::function<void()>* function)
 {
 	auto l_kbuttonStatusCallbackVector = inputComponent->m_buttonStatusCallbackImpl.find(boundButton);

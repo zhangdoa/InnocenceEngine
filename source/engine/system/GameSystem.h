@@ -27,7 +27,6 @@ namespace InnoGameSystem
 	void addMeshData(VisibleComponent* visibleComponentconst, meshID & meshID);
 	void addTextureData(VisibleComponent* visibleComponentconst, const texturePair & texturePair);
 	void overwriteTextureData(VisibleComponent* visibleComponentconst, const texturePair & texturePair);
-	mat4 getProjectionMatrix(LightComponent* lightComponent, unsigned int cascadedLevel);
 	void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function);
 	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(double)>* function);
 	bool needRender();

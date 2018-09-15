@@ -277,6 +277,8 @@ void InnoAssetSystem::loadDefaultAssets()
 	lastLineMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 	lastLineMeshData->m_calculateNormals = false;
 	lastLineMeshData->m_calculateTangents = false;
+	lastLineMeshData->m_objectStatus = objectStatus::STANDBY;
+	AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.push(lastLineMeshData);
 
 	AssetSystemSingletonComponent::getInstance().m_UnitQuadTemplate = addMesh();
 	auto lastQuadMeshData = getMesh(AssetSystemSingletonComponent::getInstance().m_UnitQuadTemplate);
@@ -285,6 +287,8 @@ void InnoAssetSystem::loadDefaultAssets()
 	lastQuadMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 	lastQuadMeshData->m_calculateNormals = false;
 	lastQuadMeshData->m_calculateTangents = false;
+	lastQuadMeshData->m_objectStatus = objectStatus::STANDBY;
+	AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.push(lastQuadMeshData);
 
 	AssetSystemSingletonComponent::getInstance().m_UnitCubeTemplate = addMesh();
 	auto lastCubeMeshData = getMesh(AssetSystemSingletonComponent::getInstance().m_UnitCubeTemplate);
@@ -293,6 +297,8 @@ void InnoAssetSystem::loadDefaultAssets()
 	lastCubeMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	lastCubeMeshData->m_calculateNormals = false;
 	lastCubeMeshData->m_calculateTangents = false;
+	lastCubeMeshData->m_objectStatus = objectStatus::STANDBY;
+	AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.push(lastCubeMeshData);
 
 	AssetSystemSingletonComponent::getInstance().m_UnitSphereTemplate = addMesh();
 	auto lastSphereMeshData = getMesh(AssetSystemSingletonComponent::getInstance().m_UnitSphereTemplate);
@@ -301,10 +307,46 @@ void InnoAssetSystem::loadDefaultAssets()
 	lastSphereMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 	lastSphereMeshData->m_calculateNormals = false;
 	lastSphereMeshData->m_calculateTangents = false;
+	lastSphereMeshData->m_objectStatus = objectStatus::STANDBY;
+	AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.push(lastSphereMeshData);
 }
 
 void InnoAssetSystem::loadAssetsForComponents()
 {
+	for (auto& l_cameraComponent : InnoGameSystem::getCameraComponents())
+	{
+		if (l_cameraComponent->m_drawAABB)
+		{
+			auto l_meshID = addMesh(l_cameraComponent->m_AABB.m_vertices, l_cameraComponent->m_AABB.m_indices);
+			auto l_Mesh = InnoAssetSystem::getMesh(l_meshID);
+			l_Mesh->m_objectStatus = objectStatus::STANDBY;
+			AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.push(l_Mesh);
+			l_cameraComponent->m_AABBMeshID = l_meshID;
+		}
+		if (l_cameraComponent->m_drawFrustum)
+		{
+			auto l_meshID = addMesh(l_cameraComponent->m_frustumVertices, l_cameraComponent->m_frustumIndices);
+			auto l_Mesh = getMesh(l_meshID);
+			l_Mesh->m_objectStatus = objectStatus::STANDBY;
+			AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.push(l_Mesh);
+			l_cameraComponent->m_FrustumMeshID = l_meshID;
+		}
+	}
+	for (auto& l_lightComponent : InnoGameSystem::getLightComponents())
+	{
+		if (l_lightComponent->m_drawAABB)
+		{
+			for (size_t i = 0; i < l_lightComponent->m_AABBMeshIDs.size(); i++)
+			{
+				auto l_meshID = addMesh(l_lightComponent->m_AABBs[i].m_vertices, l_lightComponent->m_AABBs[i].m_indices);
+				auto l_Mesh = getMesh(l_meshID);
+				l_Mesh->m_objectStatus = objectStatus::STANDBY;
+				AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.push(l_Mesh);
+				l_lightComponent->m_AABBMeshIDs.emplace_back(l_meshID);
+			}
+		}
+	}
+
 	for (auto i : InnoGameSystem::getVisibleComponents())
 	{
 		if (i->m_visiblilityType != visiblilityType::INVISIBLE)
@@ -321,6 +363,14 @@ void InnoAssetSystem::loadAssetsForComponents()
 				assignUnitMesh(i->m_meshShapeType, *i);
 				assignDefaultTextures(textureAssignType::OVERWRITE, *i);
 			}
+			if (i->m_drawAABB)
+			{
+				auto l_meshID = InnoAssetSystem::addMesh(i->m_AABB.m_vertices, i->m_AABB.m_indices);
+				auto l_Mesh = InnoAssetSystem::getMesh(l_meshID);
+				l_Mesh->m_objectStatus = objectStatus::STANDBY;
+				AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.push(l_Mesh);
+				i->m_AABBMeshID = l_meshID;
+			}
 		}
 
 		if (i->m_textureFileNameMap.size() != 0)
@@ -331,7 +381,6 @@ void InnoAssetSystem::loadAssetsForComponents()
 			}
 		}
 	}
-
 }
 
 void InnoAssetSystem::assignUnitMesh(meshShapeType meshType, VisibleComponent & visibleComponent)

@@ -7,9 +7,9 @@ namespace InnoPhysicsSystem
 {
 	void setupComponents();
 	void setupCameraComponents();
-	void setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent);
-	void setupCameraComponentRayOfEye(CameraComponent* cameraComponent);
-	void setupCameraComponentFrustumVertices(CameraComponent* cameraComponent);
+	void generateProjectionMatrix(CameraComponent* cameraComponent);
+	void generateRayOfEye(CameraComponent* cameraComponent);
+	void generateFrustumVertices(CameraComponent* cameraComponent);
 	void setupVisibleComponents();
 	void setupLightComponents();
 	void setupLightComponentRadius(LightComponent* lightComponent);
@@ -42,26 +42,29 @@ void InnoPhysicsSystem::setupCameraComponents()
 {
 	for (auto& i : InnoGameSystem::getCameraComponents())
 	{
-		setupCameraComponentProjectionMatrix(i);
-		setupCameraComponentRayOfEye(i);
-		setupCameraComponentFrustumVertices(i);
+		generateProjectionMatrix(i);
+		generateRayOfEye(i);
+		generateFrustumVertices(i);
 		generateAABB(*i);
 	}
 }
 
-void InnoPhysicsSystem::setupCameraComponentProjectionMatrix(CameraComponent* cameraComponent)
+void InnoPhysicsSystem::generateProjectionMatrix(CameraComponent* cameraComponent)
 {
 	cameraComponent->m_projectionMatrix.initializeToPerspectiveMatrix((cameraComponent->m_FOVX / 180.0) * PI<double>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
 }
 
-void InnoPhysicsSystem::setupCameraComponentRayOfEye(CameraComponent * cameraComponent)
+void InnoPhysicsSystem::generateRayOfEye(CameraComponent * cameraComponent)
 {
 	cameraComponent->m_rayOfEye.m_origin = InnoGameSystem::getTransformComponent(cameraComponent->m_parentEntity)->m_transform.caclGlobalPos();
 	cameraComponent->m_rayOfEye.m_direction = InnoGameSystem::getTransformComponent(cameraComponent->m_parentEntity)->m_transform.getDirection(direction::BACKWARD);
 }
 
-void InnoPhysicsSystem::setupCameraComponentFrustumVertices(CameraComponent * cameraComponent)
+void InnoPhysicsSystem::generateFrustumVertices(CameraComponent * cameraComponent)
 {
+	cameraComponent->m_frustumVertices.clear();
+	cameraComponent->m_frustumIndices.clear();
+
 	auto l_NDC = generateNDC();
 	auto l_pCamera = cameraComponent->m_projectionMatrix;
 
@@ -150,49 +153,6 @@ void InnoPhysicsSystem::setupLightComponentRadius(LightComponent * lightComponen
 	double l_lightMaxIntensity = std::fmax(std::fmax(lightComponent->m_color.x, lightComponent->m_color.y), lightComponent->m_color.z);
 	lightComponent->m_radius = -lightComponent->m_linearFactor + std::sqrt(lightComponent->m_linearFactor * lightComponent->m_linearFactor - 4.0 * lightComponent->m_quadraticFactor * (lightComponent->m_constantFactor - (256.0 / 5.0) * l_lightMaxIntensity)) / (2.0 * lightComponent->m_quadraticFactor);
 }
-std::vector<Vertex> InnoPhysicsSystem::generateNDC()
-{
-	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = vec4(1.0, 1.0, 1.0, 1.0);
-	l_VertexData_1.m_texCoord = vec2(1.0, 1.0);
-
-	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = vec4(1.0, -1.0, 1.0, 1.0);
-	l_VertexData_2.m_texCoord = vec2(1.0, 0.0);
-
-	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = vec4(-1.0, -1.0, 1.0, 1.0);
-	l_VertexData_3.m_texCoord = vec2(0.0, 0.0);
-
-	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = vec4(-1.0, 1.0, 1.0, 1.0);
-	l_VertexData_4.m_texCoord = vec2(0.0, 1.0);
-
-	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = vec4(1.0, 1.0, -1.0, 1.0);
-	l_VertexData_5.m_texCoord = vec2(1.0, 1.0);
-
-	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = vec4(1.0, -1.0, -1.0, 1.0);
-	l_VertexData_6.m_texCoord = vec2(1.0, 0.0);
-
-	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = vec4(-1.0, -1.0, -1.0, 1.0);
-	l_VertexData_7.m_texCoord = vec2(0.0, 0.0);
-
-	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = vec4(-1.0, 1.0, -1.0, 1.0);
-	l_VertexData_8.m_texCoord = vec2(0.0, 1.0);
-
-	std::vector<Vertex> l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
-
-	for (auto& l_vertexData : l_vertices)
-	{
-		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
-	}
-
-	return l_vertices;
-}
 
 void InnoPhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 {
@@ -269,6 +229,8 @@ void InnoPhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 void InnoPhysicsSystem::generateAABB(LightComponent & lightComponent)
 {
 	lightComponent.m_AABBs.clear();
+	lightComponent.m_shadowSplitPoints.clear();
+	lightComponent.m_projectionMatrices.clear();
 
 	//1.translate the big frustum to light space
 	auto l_camera = InnoGameSystem::getCameraComponents()[0];
@@ -285,9 +247,10 @@ void InnoPhysicsSystem::generateAABB(LightComponent & lightComponent)
 	//2.2 other 16 corner based on e^2i / e^8
 	for (size_t i = 0; i < 4; i++)
 	{
+		auto scaleFactor = std::exp(((double)i + 1.0) * 2.0 / E<double>) / std::exp(8.0 / E<double>);
+		lightComponent.m_shadowSplitPoints.emplace_back(scaleFactor);
 		for (size_t j = 0; j < 4; j++)
 		{
-			auto scaleFactor = std::exp(((double)i + 1.0) * E<double>) / std::exp(E<double> * 4.0);
 			auto l_splitedPlaneCornerPos = l_frustumVertices[j].m_pos + (l_frustumVertices[j + 4].m_pos - l_frustumVertices[j].m_pos) * scaleFactor;
 			l_frustumsCornerPos.emplace_back(l_splitedPlaneCornerPos);
 		}
@@ -332,6 +295,17 @@ void InnoPhysicsSystem::generateAABB(LightComponent & lightComponent)
 	for (size_t i = 0; i < 4; i++)
 	{
 		lightComponent.m_AABBs.emplace_back(generateAABB(l_splitedFrustums[i]));
+	}
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		vec4 l_maxExtents = lightComponent.m_AABBs[i].m_boundMax;
+		vec4 l_minExtents = lightComponent.m_AABBs[i].m_boundMin;
+		vec4 l_center = lightComponent.m_AABBs[i].m_center;
+
+		mat4 p;
+		p.initializeToOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
+		lightComponent.m_projectionMatrices.emplace_back(p);
 	}
 }
 
@@ -454,11 +428,10 @@ void InnoPhysicsSystem::updateCameraComponents()
 	{
 		for (auto& i : InnoGameSystem::getCameraComponents())
 		{
-			setupCameraComponentRayOfEye(i);
-			setupCameraComponentFrustumVertices(i);
+			generateRayOfEye(i);
+			generateFrustumVertices(i);
+			generateAABB(*i);
 		}
-
-		generateAABB(*InnoGameSystem::getCameraComponents()[0]);
 	}
 }
 
@@ -493,4 +466,48 @@ void InnoPhysicsSystem::shutdown()
 objectStatus InnoPhysicsSystem::getStatus()
 {
 	return m_PhysicsSystemStatus;
+}
+
+std::vector<Vertex> InnoPhysicsSystem::generateNDC()
+{
+	Vertex l_VertexData_1;
+	l_VertexData_1.m_pos = vec4(1.0, 1.0, 1.0, 1.0);
+	l_VertexData_1.m_texCoord = vec2(1.0, 1.0);
+
+	Vertex l_VertexData_2;
+	l_VertexData_2.m_pos = vec4(1.0, -1.0, 1.0, 1.0);
+	l_VertexData_2.m_texCoord = vec2(1.0, 0.0);
+
+	Vertex l_VertexData_3;
+	l_VertexData_3.m_pos = vec4(-1.0, -1.0, 1.0, 1.0);
+	l_VertexData_3.m_texCoord = vec2(0.0, 0.0);
+
+	Vertex l_VertexData_4;
+	l_VertexData_4.m_pos = vec4(-1.0, 1.0, 1.0, 1.0);
+	l_VertexData_4.m_texCoord = vec2(0.0, 1.0);
+
+	Vertex l_VertexData_5;
+	l_VertexData_5.m_pos = vec4(1.0, 1.0, -1.0, 1.0);
+	l_VertexData_5.m_texCoord = vec2(1.0, 1.0);
+
+	Vertex l_VertexData_6;
+	l_VertexData_6.m_pos = vec4(1.0, -1.0, -1.0, 1.0);
+	l_VertexData_6.m_texCoord = vec2(1.0, 0.0);
+
+	Vertex l_VertexData_7;
+	l_VertexData_7.m_pos = vec4(-1.0, -1.0, -1.0, 1.0);
+	l_VertexData_7.m_texCoord = vec2(0.0, 0.0);
+
+	Vertex l_VertexData_8;
+	l_VertexData_8.m_pos = vec4(-1.0, 1.0, -1.0, 1.0);
+	l_VertexData_8.m_texCoord = vec2(0.0, 1.0);
+
+	std::vector<Vertex> l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
+
+	for (auto& l_vertexData : l_vertices)
+	{
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
+	}
+
+	return l_vertices;
 }

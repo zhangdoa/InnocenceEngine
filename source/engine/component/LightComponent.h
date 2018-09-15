@@ -31,5 +31,8 @@ public:
 
 	std::vector<AABB> m_AABBs;
 	std::vector<meshID> m_AABBMeshIDs;
+
+	std::vector<float> m_shadowSplitPoints;
+	std::vector<mat4> m_projectionMatrices;
 };
 

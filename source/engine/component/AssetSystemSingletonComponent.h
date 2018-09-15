@@ -30,9 +30,7 @@ public:
     std::unordered_map<std::string, int> m_supportedShaderType = { {"sf", 0} };
 
 	std::unordered_map<meshID, MeshDataComponent*> m_meshMap;
-	std::unordered_map<meshID, MeshDataComponent*> m_BBMeshMap;
 	std::unordered_map<textureID, TextureDataComponent*> m_textureMap;
-	std::unordered_map<textureID, TextureDataComponent*> m_shadowTextureMap;
 
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshComponents;
 	ThreadSafeQueue<TextureDataComponent*> m_uninitializedTextureComponents;
