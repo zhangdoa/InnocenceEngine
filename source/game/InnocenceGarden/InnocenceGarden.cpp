@@ -162,7 +162,7 @@ void InnocenceGarden::setup()
 	m_pawnVisibleComponent1 = InnoMemorySystem::spawn<VisibleComponent>();
 	m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
-	m_pawnVisibleComponent1->m_modelFileName = "sponza/sponza.obj";
+	//m_pawnVisibleComponent1->m_modelFileName = "sponza/sponza.obj";
 	//m_pawnVisibleComponent1->m_modelFileName = "cat/cat.obj";
 	m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnVisibleComponent1->m_drawAABB = false;
@@ -249,7 +249,7 @@ void InnocenceGarden::setupSpheres()
 		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::CUSTOM;
 		m_sphereVisibleComponents[i]->m_drawAABB = true;
 		m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
-		m_sphereVisibleComponents[i]->m_useTexture = false;
+		m_sphereVisibleComponents[i]->m_useTexture = true;
 
 		m_sphereEntitys[i] = InnoGameSystem::createEntityID();
 
@@ -262,30 +262,30 @@ void InnocenceGarden::setupSpheres()
 	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i += 4)
 	{
 		//Copper
-		m_sphereVisibleComponents[i]->m_albedo = vec4(0.95, 0.64, 0.54, 1.0);
+		//m_sphereVisibleComponents[i]->m_albedo = vec4(0.95, 0.64, 0.54, 1.0);
 		//m_sphereVisibleComponents[i]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/rustediron2_normal.png"));
 		//m_sphereVisibleComponents[i]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/rustediron2_basecolor.png"));
 		//m_sphereVisibleComponents[i]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/rustediron2_metallic.png"));
 		//m_sphereVisibleComponents[i]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/rustediron2_roughness.png"));
-		//Gold
-		m_sphereVisibleComponents[i + 1]->m_albedo = vec4(1.00, 0.71, 0.29, 1.0);
-		//m_sphereVisibleComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/bamboo-wood-semigloss-normal.png"));
-		//m_sphereVisibleComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/bamboo-wood-semigloss-albedo.png"));
-		//m_sphereVisibleComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/bamboo-wood-semigloss-metal.png"));
-		//m_sphereVisibleComponents[i + 1].m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "PBS/bamboo-wood-semigloss-ao.png"));
-		//Iron
-		m_sphereVisibleComponents[i + 2]->m_albedo = vec4(0.56, 0.57, 0.58, 1.0);
-		//m_sphereVisibleComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/greasy-metal-pan1-normal.png"));
-		//m_sphereVisibleComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/greasy-metal-pan1-albedo.png"));
-		//m_sphereVisibleComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/greasy-metal-pan1-metal.png"));
-		//m_sphereVisibleComponents[i + 2].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/greasy-metal-pan1-roughness.png"));
-		//Silver
-		m_sphereVisibleComponents[i + 3]->m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
-		//m_sphereVisibleComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/roughrock1-normal.png"));
-		//m_sphereVisibleComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/roughrock1-albedo.png"));
-		//m_sphereVisibleComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/roughrock1-metalness.png"));
-		//m_sphereVisibleComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/roughrock1-roughness.png"));
-		//m_sphereVisibleComponents[i + 3].m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "PBS/roughrock1-ao.png"));
+		////Gold
+		//m_sphereVisibleComponents[i + 1]->m_albedo = vec4(1.00, 0.71, 0.29, 1.0);
+		//m_sphereVisibleComponents[i + 1]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/bamboo-wood-semigloss-normal.png"));
+		//m_sphereVisibleComponents[i + 1]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/bamboo-wood-semigloss-albedo.png"));
+		//m_sphereVisibleComponents[i + 1]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/bamboo-wood-semigloss-metal.png"));
+		//m_sphereVisibleComponents[i + 1]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "PBS/bamboo-wood-semigloss-ao.png"));
+		////Iron
+		//m_sphereVisibleComponents[i + 2]->m_albedo = vec4(0.56, 0.57, 0.58, 1.0);
+		//m_sphereVisibleComponents[i + 2]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/greasy-metal-pan1-normal.png"));
+		//m_sphereVisibleComponents[i + 2]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/greasy-metal-pan1-albedo.png"));
+		//m_sphereVisibleComponents[i + 2]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/greasy-metal-pan1-metal.png"));
+		//m_sphereVisibleComponents[i + 2]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/greasy-metal-pan1-roughness.png"));
+		////Silver
+		//m_sphereVisibleComponents[i + 3]->m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
+		//m_sphereVisibleComponents[i + 3]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::NORMAL, "PBS/roughrock1-normal.png"));
+		//m_sphereVisibleComponents[i + 3]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ALBEDO, "PBS/roughrock1-albedo.png"));
+		//m_sphereVisibleComponents[i + 3]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::METALLIC, "PBS/roughrock1-metalness.png"));
+		//m_sphereVisibleComponents[i + 3]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::ROUGHNESS, "PBS/roughrock1-roughness.png"));
+		//m_sphereVisibleComponents[i + 3]->m_textureFileNameMap.emplace(textureFileNamePair(textureType::AMBIENT_OCCLUSION, "PBS/roughrock1-ao.png"));
 	}
 	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
 	{

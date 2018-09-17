@@ -2,3 +2,5 @@
 /build
 
 \.DS_Store
+
+*.innoModel

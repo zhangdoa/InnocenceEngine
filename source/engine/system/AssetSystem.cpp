@@ -24,10 +24,10 @@ namespace InnoAssetSystem
 	void loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod, TextureDataComponent* baseDexture);
 	void loadModelFromDisk(const std::string & fileName, modelMap& modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, bool caclNormal);
 
-	void processAssimpScene(const std::string& fileName, modelMap & modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, const aiScene* aiScene, bool caclNormal);
-	void processAssimpNode(const std::string& fileName, modelMap & modelMap, aiNode * node, const aiScene * scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod, bool caclNormal);
-	void processSingleAssimpMesh(const std::string& fileName, meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod, bool caclNormal);
-	void processSingleAssimpMaterial(const std::string& fileName, textureMap & textureMap, const aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod);
+	void processAssimpScene(modelMap & modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, const aiScene* aiScene, bool caclNormal);
+	void processAssimpNode(modelMap & modelMap, aiNode * node, const aiScene * scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod, bool caclNormal);
+	void processSingleAssimpMesh(meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod, bool caclNormal);
+	void processSingleAssimpMaterial(textureMap & textureMap, const aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod);
 
 	void assignUnitMesh(meshShapeType meshType, VisibleComponent& visibleComponent);
 	void assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
@@ -627,48 +627,46 @@ void InnoAssetSystem::loadModelFromDisk(const std::string & fileName, modelMap &
 		return;
 	}
 
-	// only need last part of file name without subfix as material's subfolder name
-	auto l_fileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
-	processAssimpScene(l_fileName, modelMap, meshDrawMethod, textureWrapMethod, l_assScene, caclNormal);
+	processAssimpScene(modelMap, meshDrawMethod, textureWrapMethod, l_assScene, caclNormal);
 
 	InnoLogSystem::printLog("AssetSystem: " + fileName + " is loaded for the first time, successfully assigned modelMap IDs.");
 }
 
-void InnoAssetSystem::processAssimpScene(const std::string& fileName, modelMap & modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, const aiScene* aiScene, bool caclNormal)
+void InnoAssetSystem::processAssimpScene(modelMap & modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, const aiScene* aiScene, bool caclNormal)
 {
 	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
 	if (aiScene->mRootNode->mNumMeshes > 0)
 	{
-		processAssimpNode(fileName, modelMap, aiScene->mRootNode, aiScene, meshDrawMethod, textureWrapMethod, caclNormal);
+		processAssimpNode(modelMap, aiScene->mRootNode, aiScene, meshDrawMethod, textureWrapMethod, caclNormal);
 	}
 	for (auto i = (unsigned int)0; i < aiScene->mRootNode->mNumChildren; i++)
 	{
 		if (aiScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
-			processAssimpNode(fileName, modelMap, aiScene->mRootNode->mChildren[i], aiScene, meshDrawMethod, textureWrapMethod, caclNormal);
+			processAssimpNode(modelMap, aiScene->mRootNode->mChildren[i], aiScene, meshDrawMethod, textureWrapMethod, caclNormal);
 		}
 	}
 }
 
-void InnoAssetSystem::processAssimpNode(const std::string& fileName, modelMap & modelMap, aiNode * node, const aiScene * scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod, bool caclNormal)
+void InnoAssetSystem::processAssimpNode(modelMap & modelMap, aiNode * node, const aiScene * scene, meshDrawMethod& meshDrawMethod, textureWrapMethod textureWrapMethod, bool caclNormal)
 {
 	// process each mesh located at the current node
 	for (auto i = (unsigned int)0; i < node->mNumMeshes; i++)
 	{
 		auto l_modelPair = modelPair();
+		auto l_aiMesh = scene->mMeshes[node->mMeshes[i]];
+		processSingleAssimpMesh(l_modelPair.first, l_aiMesh, meshDrawMethod, caclNormal);
 
-		processSingleAssimpMesh(fileName, l_modelPair.first, scene->mMeshes[node->mMeshes[i]], meshDrawMethod, caclNormal);
-
-		// process material if there was anyone
-		if (scene->mMeshes[node->mMeshes[i]]->mMaterialIndex > 0)
+		// process material
+		if (l_aiMesh->mMaterialIndex > 0)
 		{
-			processSingleAssimpMaterial(fileName, l_modelPair.second, scene->mMaterials[scene->mMeshes[node->mMeshes[i]]->mMaterialIndex], textureWrapMethod);
+			processSingleAssimpMaterial(l_modelPair.second, scene->mMaterials[l_aiMesh->mMaterialIndex], textureWrapMethod);
 		}
 		modelMap.emplace(l_modelPair);
 	}
 }
 
-void InnoAssetSystem::processSingleAssimpMesh(const std::string& fileName, meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod, bool caclNormal)
+void InnoAssetSystem::processSingleAssimpMesh(meshID& meshID, aiMesh * aiMesh, meshDrawMethod meshDrawMethod, bool caclNormal)
 {
 	meshID = addMesh();
 	auto l_meshData = getMesh(meshID);
@@ -738,40 +736,33 @@ void InnoAssetSystem::processSingleAssimpMesh(const std::string& fileName, meshI
 	l_meshData->m_calculateTangents = false;
 	l_meshData->m_objectStatus = objectStatus::STANDBY;
 	AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.push(l_meshData);
-
-	InnoLogSystem::printLog("AssetSystem: innoMesh: mesh of model " + fileName + " is loaded.");
 }
 
-void InnoAssetSystem::processSingleAssimpMaterial(const std::string& fileName, textureMap & textureMap, const aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod)
+/*
+aiTextureType::aiTextureType_NORMALS textureType::NORMAL map_Kn normal map texture
+aiTextureType::aiTextureType_DIFFUSE textureType::ALBEDO map_Kd albedo texture
+aiTextureType::aiTextureType_SPECULAR textureType::METALLIC map_Ks metallic texture
+aiTextureType::aiTextureType_AMBIENT textureType::ROUGHNESS map_Ka roughness texture
+aiTextureType::aiTextureType_EMISSIVE textureType::AMBIENT_OCCLUSION map_emissive AO texture
+*/
+
+void InnoAssetSystem::processSingleAssimpMaterial(textureMap & textureMap, const aiMaterial * aiMaterial, textureWrapMethod textureWrapMethod)
 {
 	for (auto i = (unsigned int)0; i < aiTextureType_UNKNOWN; i++)
 	{
 		if (aiMaterial->GetTextureCount(aiTextureType(i)) > 0)
 		{
 			auto l_texturePair = texturePair();
+
 			aiString l_AssString;
 			aiMaterial->GetTexture(aiTextureType(i), 0, &l_AssString);
-			// set local path, remove slash
-			std::string l_localPath;
-			auto l_AssString_char = std::string(l_AssString.C_Str());
-			if (l_AssString_char.find_last_of("//") != std::string::npos)
-			{
-				l_localPath = std::string(l_AssString.C_Str()).substr(std::string(l_AssString.C_Str()).find_last_of("//"));
-			}
-			else if (std::string(l_AssString.C_Str()).find_last_of('\\') != std::string::npos)
-			{
-				l_localPath = std::string(l_AssString.C_Str()).substr(std::string(l_AssString.C_Str()).find_last_of("\\"));
-			}
-			else
-			{
-				l_localPath = std::string(l_AssString.C_Str());
-			}
+			std::string l_localPath = std::string(l_AssString.C_Str());
 
 			textureType l_textureType;
 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
-				InnoLogSystem::printLog("AssetSystem: innoTexture: " + fileName + " is unknown type!");
+				InnoLogSystem::printLog("AssetSystem: innoTexture: " + l_localPath + " is unknown type!");
 				return;
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
@@ -796,15 +787,15 @@ void InnoAssetSystem::processSingleAssimpMaterial(const std::string& fileName, t
 			}
 			else
 			{
-				InnoLogSystem::printLog("AssetSystem: innoTexture: " + fileName + " is unsupported type!");
+				InnoLogSystem::printLog("AssetSystem: innoTexture: " + l_localPath + " is unsupported type!");
 				return;
 			}
 			// load image
-			auto l_loadedTexturePair = AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.find(fileName + "//" + l_localPath);
+			auto l_loadedTexturePair = AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.find(l_localPath);
 			if (l_loadedTexturePair != AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.end())
 			{
 				textureMap.emplace(l_loadedTexturePair->second);
-				InnoLogSystem::printLog("AssetSystem: innoTexture: " + fileName + " is already loaded.");
+				InnoLogSystem::printLog("AssetSystem: innoTexture: " + l_localPath + " is already loaded.");
 			}
 			else
 			{
@@ -814,10 +805,10 @@ void InnoAssetSystem::processSingleAssimpMaterial(const std::string& fileName, t
 				l_texturePair.first = l_textureType;
 				l_texturePair.second = l_textureDataID;
 
-				loadTextureFromDisk({ fileName + "//" + l_localPath }, l_textureType, textureWrapMethod, l_textureData);
+				loadTextureFromDisk({ l_localPath }, l_textureType, textureWrapMethod, l_textureData);
 
 				textureMap.emplace(l_texturePair);
-				AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.emplace(fileName + "//" + l_localPath, l_texturePair);
+				AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.emplace(l_localPath, l_texturePair);
 			}
 		}
 	}
