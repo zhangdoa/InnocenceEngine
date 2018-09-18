@@ -119,7 +119,7 @@ void InnocenceGarden::setup()
 	m_directionalLightTransformComponent->m_transform.rotateInLocal(vec4(-1.0, 0.0, 0.0, 0.0), 35.0);
 	//m_directionalLightTransformComponent->m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 35.0);
 	m_directionalLightComponent = InnoMemorySystem::spawn<LightComponent>();
-	m_directionalLightComponent->m_color = vec4(0.5, 0.3, 0.0, 1.0);
+	m_directionalLightComponent->m_color = vec4(1.0, 1.0, 1.0, 1.0);
 	m_directionalLightComponent->m_lightType = lightType::DIRECTIONAL;
 	m_directionalLightComponent->m_drawAABB = false;
 	m_directionalLightVisibleComponent = InnoMemorySystem::spawn<VisibleComponent>();
@@ -340,7 +340,7 @@ void InnocenceGarden::setupLights()
 
 void InnocenceGarden::updateLights(double seed)
 {
-	//m_directionalLightTransformComponent->m_transform.rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), 0.5);
+	m_directionalLightTransformComponent->m_transform.rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), 0.5);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i += 4)
 	{
 		m_pointLightVisibleComponents[i]->m_albedo = vec4((sin(seed + i) + 1.0) * 5.0 / 2.0, 0.2 * 5.0, 0.4 * 5.0, 1.0);

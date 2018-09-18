@@ -22,6 +22,7 @@ public:
 	GLuint m_skyPass_uni_skybox;
 	GLuint m_skyPass_uni_p;
 	GLuint m_skyPass_uni_r;
+	GLuint m_skyPass_uni_lightDir;
 
 	GLFrameBufferComponent m_TAAPingPassGLFrameBufferComponent;
 	GLFrameBufferComponent m_TAAPongPassGLFrameBufferComponent;

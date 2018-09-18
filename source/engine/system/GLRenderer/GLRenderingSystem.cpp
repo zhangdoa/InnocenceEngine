@@ -812,6 +812,9 @@ void GLRenderingSystem::initializeSkyPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r = getUniformLocation(
 		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program,
 		"uni_r");
+	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir = getUniformLocation(
+		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program,
+		"uni_lightDir");
 }
 
 void GLRenderingSystem::initializeTAAPass()
@@ -2452,6 +2455,11 @@ void GLRenderingSystem::updateFinalRenderPass()
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r,
 			r);
+		auto l_lightDir = InnoGameSystem::getTransformComponent(InnoGameSystem::getLightComponents()[0]->m_parentEntity)->m_transform.getDirection(direction::BACKWARD);
+		updateUniform(
+			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
+			l_lightDir.x, l_lightDir.y, l_lightDir.z);
+
 
 		auto& l_visibleComponents = InnoGameSystem::getVisibleComponents();
 		if (l_visibleComponents.size() > 0)
