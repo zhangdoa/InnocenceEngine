@@ -318,5 +318,5 @@ void InnocenceGarden::updateLights(double seed)
 
 void InnocenceGarden::updateSpheres(double seed)
 {
-	m_pawnTransformComponent2->m_transform.rotateInGlobal(vec4(0.0, 1.0, 0.0, 0.0), 0.5);
+	m_pawnTransformComponent2->m_transform.rotateInGlobal(vec4(0.0, 1.0, 0.0, 0.0), 0.2);
 }

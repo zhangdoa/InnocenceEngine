@@ -2142,6 +2142,9 @@ void GLRenderingSystem::updateGeometryRenderPass()
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
 								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix());
+							updateUniform(
+								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
+								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_transform.caclPreviousGlobalTransformationMatrix());
 
 							// draw each graphic data of visibleComponent
 							for (auto& l_graphicData : l_visibleComponent->m_modelMap)
