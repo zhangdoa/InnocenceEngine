@@ -19,8 +19,8 @@ namespace InnoAssetSystem
 	void loadDefaultAssets();
 	void loadAssetsForComponents();
 
-	void loadTexture(const std::vector<std::string>& fileName, textureType textureType, VisibleComponent& visibleComponent);
 	void loadModel(const std::string& fileName, VisibleComponent& visibleComponent);
+	texturePair loadTexture(const std::string &fileName, textureType textureType, textureWrapMethod textureWrapMethod);
 	void loadTextureFromDisk(const std::vector<std::string>& fileName, textureType textureType, textureWrapMethod textureWrapMethod, TextureDataComponent* baseDexture);
 	void loadModelFromDisk(const std::string & fileName, modelMap& modelMap, meshDrawMethod meshDrawMethod, textureWrapMethod textureWrapMethod, bool caclNormal);
 
@@ -33,6 +33,9 @@ namespace InnoAssetSystem
 	void assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedTextureDataPair, VisibleComponent& visibleComponent);
 	void assignDefaultTextures(textureAssignType textureAssignType, VisibleComponent & visibleComponent);
 	void assignLoadedModel(modelMap& loadedGraphicDataMap, VisibleComponent& visibleComponent);
+	void addMeshData(VisibleComponent* visibleComponentconst, meshID & meshID);
+	void addTextureData(VisibleComponent* visibleComponentconst, const texturePair & texturePair);
+	void overwriteTextureData(VisibleComponent* visibleComponentconst, const texturePair & texturePair);
 
 	objectStatus m_AssetSystemStatus = objectStatus::SHUTDOWN;
 
@@ -372,14 +375,10 @@ void InnoAssetSystem::loadAssetsForComponents()
 				i->m_AABBMeshID = l_meshID;
 			}
 		}
-
-		if (i->m_textureFileNameMap.size() != 0)
-		{
-			for (auto& j : i->m_textureFileNameMap)
-			{
-				loadTexture({ j.second }, j.first, *i);
-			}
-		}
+	}
+	for (auto& l_environmentCaptureComponent : InnoGameSystem::getEnvironmentCaptureComponents())
+	{
+		l_environmentCaptureComponent->m_texturePair = loadTexture(l_environmentCaptureComponent->m_cubemapTextureFileName, textureType::EQUIRETANGULAR, textureWrapMethod::CLAMP_TO_EDGE);
 	}
 }
 
@@ -388,26 +387,24 @@ void InnoAssetSystem::assignUnitMesh(meshShapeType meshType, VisibleComponent & 
     meshID l_UnitMeshTemplate;
     switch (meshType)
     {
-            case meshShapeType::LINE:
-            l_UnitMeshTemplate = AssetSystemSingletonComponent::getInstance().m_UnitLineTemplate; break;
+            case meshShapeType::LINE: l_UnitMeshTemplate = AssetSystemSingletonComponent::getInstance().m_UnitLineTemplate; break;
             case meshShapeType::QUAD: l_UnitMeshTemplate = AssetSystemSingletonComponent::getInstance().m_UnitQuadTemplate; break;
             case meshShapeType::CUBE: l_UnitMeshTemplate = AssetSystemSingletonComponent::getInstance().m_UnitCubeTemplate; break;
             case meshShapeType::SPHERE: l_UnitMeshTemplate = AssetSystemSingletonComponent::getInstance().m_UnitSphereTemplate; break;
-            case meshShapeType::CUSTOM:
-            break;
+            case meshShapeType::CUSTOM: break;
     }
-    InnoGameSystem::addMeshData(&visibleComponent, l_UnitMeshTemplate);
+	InnoAssetSystem::addMeshData(&visibleComponent, l_UnitMeshTemplate);
 }
 
 void InnoAssetSystem::assignLoadedTexture(textureAssignType textureAssignType, const texturePair& loadedtexturePair, VisibleComponent & visibleComponent)
 {
 	if (textureAssignType == textureAssignType::ADD)
 	{
-		InnoGameSystem::addTextureData(&visibleComponent, loadedtexturePair);
+		InnoAssetSystem::addTextureData(&visibleComponent, loadedtexturePair);
 	}
 	else if (textureAssignType == textureAssignType::OVERWRITE)
 	{
-		InnoGameSystem::overwriteTextureData(&visibleComponent, loadedtexturePair);
+		InnoAssetSystem::overwriteTextureData(&visibleComponent, loadedtexturePair);
 	}
 }
 
@@ -429,26 +426,59 @@ void InnoAssetSystem::assignLoadedModel(modelMap& loadedmodelMap, VisibleCompone
 	assignDefaultTextures(textureAssignType::ADD, visibleComponent);
 }
 
-void InnoAssetSystem::loadTexture(const std::vector<std::string> &fileName, textureType textureType, VisibleComponent & visibleComponent)
+void InnoAssetSystem::addMeshData(VisibleComponent * visibleComponentconst, meshID & meshID)
 {
-	for (auto& i : fileName)
+	visibleComponentconst->m_modelMap.emplace(meshID, textureMap());
+}
+
+void InnoAssetSystem::addTextureData(VisibleComponent * visibleComponentconst, const texturePair & texturePair)
+{
+	for (auto& l_model : visibleComponentconst->m_modelMap)
 	{
-		auto l_loadedTexturePair = AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.find(i);
-		// check if this file has already loaded
-		if (l_loadedTexturePair != AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.end())
+		auto l_texturePair = l_model.second.find(texturePair.first);
+		if (l_texturePair == l_model.second.end())
 		{
-			assignLoadedTexture(textureAssignType::OVERWRITE, l_loadedTexturePair->second, visibleComponent);
-			InnoLogSystem::printLog("AssetSystem: innoTexture: " + i + " is already loaded, successfully assigned loaded textureID.");
+			l_model.second.emplace(texturePair);
+		}
+	}
+}
+
+void InnoAssetSystem::overwriteTextureData(VisibleComponent * visibleComponentconst, const texturePair & texturePair)
+{
+	for (auto& l_model : visibleComponentconst->m_modelMap)
+	{
+		auto l_texturePair = l_model.second.find(texturePair.first);
+		if (l_texturePair == l_model.second.end())
+		{
+			l_model.second.emplace(texturePair);
 		}
 		else
 		{
-			auto l_textureID = addTexture(textureType);
-			auto l_baseTexture = getTexture(l_textureID);
-			loadTextureFromDisk({ i }, textureType, visibleComponent.m_textureWrapMethod, l_baseTexture);
-			AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.emplace(i, texturePair(textureType, l_textureID));
-			assignLoadedTexture(textureAssignType::OVERWRITE, texturePair(textureType, l_textureID), visibleComponent);
+			l_texturePair->second = texturePair.second;
 		}
 	}
+}
+
+texturePair InnoAssetSystem::loadTexture(const std::string &fileName, textureType textureType, textureWrapMethod textureWrapMethod)
+{
+	auto l_loadedTexturePair = AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.find(fileName);
+	if (l_loadedTexturePair != AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.end())
+	{
+		InnoLogSystem::printLog("AssetSystem: innoTexture: " + fileName + " is already loaded.");
+		return l_loadedTexturePair->second;
+	}
+	else
+	{
+		auto l_textureDataID = addTexture(textureType);
+		auto l_textureData = getTexture(l_textureDataID);
+
+		loadTextureFromDisk({ fileName }, textureType, textureWrapMethod, l_textureData);
+
+		AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.emplace(fileName, texturePair(textureType, l_textureDataID));
+		
+		return texturePair(textureType, l_textureDataID);
+	}
+
 }
 
 void InnoAssetSystem::loadModel(const std::string & fileName, VisibleComponent & visibleComponent)
@@ -791,25 +821,8 @@ void InnoAssetSystem::processSingleAssimpMaterial(textureMap & textureMap, const
 				return;
 			}
 			// load image
-			auto l_loadedTexturePair = AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.find(l_localPath);
-			if (l_loadedTexturePair != AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.end())
-			{
-				textureMap.emplace(l_loadedTexturePair->second);
-				InnoLogSystem::printLog("AssetSystem: innoTexture: " + l_localPath + " is already loaded.");
-			}
-			else
-			{
-				auto l_textureDataID = addTexture(l_textureType);
-				auto l_textureData = getTexture(l_textureDataID);
-
-				l_texturePair.first = l_textureType;
-				l_texturePair.second = l_textureDataID;
-
-				loadTextureFromDisk({ l_localPath }, l_textureType, textureWrapMethod, l_textureData);
-
-				textureMap.emplace(l_texturePair);
-				AssetSystemSingletonComponent::getInstance().m_loadedTextureMap.emplace(l_localPath, l_texturePair);
-			}
+			auto l_loadedTexture = loadTexture(l_localPath, l_textureType, textureWrapMethod);
+			textureMap.emplace(l_loadedTexture);
 		}
 	}
 }

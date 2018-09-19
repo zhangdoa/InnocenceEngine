@@ -19,9 +19,10 @@ public:
 	GLuint m_skyPassVertexShaderID;
 	GLuint m_skyPassFragmentShaderID;
 	GLTextureDataComponent m_skyPassTexture;
-	GLuint m_skyPass_uni_skybox;
 	GLuint m_skyPass_uni_p;
 	GLuint m_skyPass_uni_r;
+	GLuint m_skyPass_uni_viewportSize;
+	GLuint m_skyPass_uni_eyePos;	
 	GLuint m_skyPass_uni_lightDir;
 
 	GLFrameBufferComponent m_TAAPingPassGLFrameBufferComponent;

@@ -20,12 +20,14 @@ namespace InnoGameSystem
 	std::vector<LightComponent*> m_lightComponents;
 	std::vector<CameraComponent*> m_cameraComponents;
 	std::vector<InputComponent*> m_inputComponents;
+	std::vector<EnvironmentCaptureComponent*> m_environmentCaptureComponents;
 
 	std::unordered_map<EntityID, TransformComponent*> m_TransformComponentsMap;
 	std::unordered_multimap<EntityID, VisibleComponent*> m_VisibleComponentsMap;
 	std::unordered_multimap<EntityID, LightComponent*> m_LightComponentsMap;
 	std::unordered_multimap<EntityID, CameraComponent*> m_CameraComponentsMap;
 	std::unordered_multimap<EntityID, InputComponent*> m_InputComponentsMap;
+	std::unordered_multimap<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
 
 	bool m_needRender = true;
 
@@ -63,6 +65,11 @@ void InnoGameSystem::addComponentsToMap()
 	std::for_each(m_inputComponents.begin(), m_inputComponents.end(), [&](InputComponent* val)
 	{
 		m_InputComponentsMap.emplace(val->m_parentEntity, val);
+	});
+
+	std::for_each(m_environmentCaptureComponents.begin(), m_environmentCaptureComponents.end(), [&](EnvironmentCaptureComponent* val)
+	{
+		m_EnvironmentCaptureComponentsMap.emplace(val->m_parentEntity, val);
 	});
 }
 
@@ -110,6 +117,11 @@ void InnoGameSystem::addInputComponent(InputComponent * rhs)
 	m_inputComponents.emplace_back(rhs);
 }
 
+void InnoGameSystem::addEnvironmentCaptureComponent(EnvironmentCaptureComponent * rhs)
+{
+	m_environmentCaptureComponents.emplace_back(rhs);
+}
+
 std::vector<TransformComponent*>& InnoGameSystem::getTransformComponents()
 {
 	return m_transformComponents;
@@ -135,6 +147,11 @@ std::vector<InputComponent*>& InnoGameSystem::getInputComponents()
 	return m_inputComponents;
 }
 
+std::vector<EnvironmentCaptureComponent*>& InnoGameSystem::getEnvironmentCaptureComponents()
+{
+	return m_environmentCaptureComponents;
+}
+
 std::string InnoGameSystem::getGameName()
 {
 	return InnoGameInstance::getGameName();
@@ -150,39 +167,6 @@ TransformComponent * InnoGameSystem::getTransformComponent(EntityID parentEntity
 	else
 	{
 		return nullptr;
-	}
-}
-
-void InnoGameSystem::addMeshData(VisibleComponent * visibleComponentconst, meshID & meshID)
-{
-	visibleComponentconst->m_modelMap.emplace(meshID, textureMap());
-}
-
-void InnoGameSystem::addTextureData(VisibleComponent * visibleComponentconst, const texturePair & texturePair)
-{
-	for (auto& l_model : visibleComponentconst->m_modelMap)
-	{
-		auto l_texturePair = l_model.second.find(texturePair.first);
-		if (l_texturePair == l_model.second.end())
-		{
-			l_model.second.emplace(texturePair);
-		}
-	}
-}
-
-void InnoGameSystem::overwriteTextureData(VisibleComponent * visibleComponentconst, const texturePair & texturePair)
-{
-	for (auto& l_model : visibleComponentconst->m_modelMap)
-	{
-		auto l_texturePair = l_model.second.find(texturePair.first);
-		if (l_texturePair == l_model.second.end())
-		{
-			l_model.second.emplace(texturePair);
-		}
-		else
-		{
-			l_texturePair->second = texturePair.second;
-		}
 	}
 }
 

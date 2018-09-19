@@ -21,7 +21,6 @@ public:
 	AABB m_AABB;
 
 	std::string m_modelFileName;
-	textureFileNameMap m_textureFileNameMap;
 
 	modelMap m_modelMap;
 };

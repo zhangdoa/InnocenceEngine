@@ -800,18 +800,18 @@ void GLRenderingSystem::initializeSkyPass()
 		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3//skyPassFragment.sf");
-	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_skybox = getUniformLocation(
-		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program,
-		"uni_skybox");
-	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_skybox,
-		0);
 	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p = getUniformLocation(
 		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program,
 		"uni_p");
 	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r = getUniformLocation(
 		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program,
 		"uni_r");
+	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize = getUniformLocation(
+		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program,
+		"uni_viewportSize");
+	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos = getUniformLocation(
+		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program,
+		"uni_eyePos");
 	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir = getUniformLocation(
 		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program,
 		"uni_lightDir");
@@ -1770,88 +1770,58 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	};
 
 	glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program);
-	updateUniform(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p,
-		captureProjection);
+	updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p, captureProjection);
 
-	auto& l_visibleComponents = InnoGameSystem::getVisibleComponents();
+	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::CUBE);
 
-	if (l_visibleComponents.size() > 0)
-	{
-		for (auto& l_visibleComponent : l_visibleComponents)
+	// activate equiretangular texture and remap equiretangular texture to cubemap
+	auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
+
+	auto l_equiretangularTextureComponent = InnoAssetSystem::getTexture(InnoGameSystem::getEnvironmentCaptureComponents()[0]->m_texturePair.second);
+	if (l_equiretangularTextureComponent != nullptr)
 		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
+			if (l_equiretangularTextureComponent->m_objectStatus == objectStatus::ALIVE)
 			{
-				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
+				RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap = false;
+				activateTexture(l_equiretangularTextureComponent, 0);
+				for (unsigned int i = 0; i < 6; ++i)
 				{
-					// activate equiretangular texture and remap equiretangular texture to cubemap
-					auto l_equiretangularTexture = l_graphicData.second.find(textureType::EQUIRETANGULAR);
-					if (l_equiretangularTexture != l_graphicData.second.end())
+					updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r, captureViews[i]);
+					attachTextureToFramebuffer(l_environmentCaptureTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
+					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+					if (l_mesh)
 					{
-						auto l_equiretangularTextureComponent = InnoAssetSystem::getTexture(l_equiretangularTexture->second);
-						if (l_equiretangularTextureComponent != nullptr)
+						if (l_mesh->m_objectStatus == objectStatus::ALIVE)
 						{
-							if (l_equiretangularTextureComponent->m_objectStatus == objectStatus::ALIVE)
-							{
-								RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap = false;
-								activateTexture(l_equiretangularTextureComponent, 0);
-								for (unsigned int i = 0; i < 6; ++i)
-								{
-									updateUniform(
-										EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r,
-										captureViews[i]);
-									attachTextureToFramebuffer(&EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
-									glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-									auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-									activateMesh(l_mesh);
-									drawMesh(l_mesh);
-								}
-								glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-							}
+							activateMesh(l_mesh);
+							drawMesh(l_mesh);
 						}
 					}
 				}
+				glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 			}
 		}
-	}
 
 	// draw environment convolution texture
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
 	glViewport(0, 0, 128, 128);
 	glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program);
-	updateUniform(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_p,
-		captureProjection);
+	updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_p, captureProjection);
 
-	if (l_visibleComponents.size() > 0)
+	auto l_environmentConvolutionTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture;
+	activateTexture(l_environmentCaptureTexture, 1);
+
+	for (unsigned int i = 0; i < 6; ++i)
 	{
-		for (auto& l_visibleComponent : l_visibleComponents)
+		updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_r, captureViews[i]);
+		attachTextureToFramebuffer(l_environmentConvolutionTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		if (l_mesh)
 		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
+			if (l_mesh->m_objectStatus == objectStatus::ALIVE)
 			{
-				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
-				{
-					auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
-					auto l_environmentConvolutionTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture;
-					activateTexture(l_environmentCaptureTexture, 1);
-					for (unsigned int i = 0; i < 6; ++i)
-					{
-						updateUniform(
-							EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_r,
-							captureViews[i]);
-						attachTextureToFramebuffer(l_environmentConvolutionTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
-						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-						auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-						if (l_mesh)
-						{
-							if (l_mesh->m_objectStatus == objectStatus::ALIVE)
-							{
-								activateMesh(l_mesh);
-								drawMesh(l_mesh);
-							}
-						}
-					}
-				}
+				activateMesh(l_mesh);
+				drawMesh(l_mesh);
 			}
 		}
 	}
@@ -1860,50 +1830,34 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
 	glViewport(0, 0, 128, 128);
 	glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program);
-	updateUniform(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_p,
-		captureProjection);
+	updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_p, captureProjection);
 
-	if (l_visibleComponents.size() > 0)
+	auto l_environmentPrefilterTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture;
+	activateTexture(l_environmentCaptureTexture, 2);
+
+	unsigned int maxMipLevels = 5;
+	for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
 	{
-		for (auto& l_visibleComponent : l_visibleComponents)
+		// resize framebuffer according to mip-level size.
+		unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
+		unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
+
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, mipWidth, mipHeight);
+		glViewport(0, 0, mipWidth, mipHeight);
+
+		double roughness = (double)mip / (double)(maxMipLevels - 1);
+		updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_roughness, roughness);
+		for (unsigned int i = 0; i < 6; ++i)
 		{
-			if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
+			updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_r, captureViews[i]);
+			attachTextureToFramebuffer(l_environmentPrefilterTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, mip);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			if (l_mesh)
 			{
-				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
+				if (l_mesh->m_objectStatus == objectStatus::ALIVE)
 				{
-					auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
-					auto l_environmentPrefilterTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture;
-					activateTexture(l_environmentCaptureTexture, 2);
-					unsigned int maxMipLevels = 5;
-					for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
-					{
-						// resize framebuffer according to mip-level size.
-						unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
-						unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
-
-						glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, mipWidth, mipHeight);
-						glViewport(0, 0, mipWidth, mipHeight);
-
-						double roughness = (double)mip / (double)(maxMipLevels - 1);
-						updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_roughness, roughness);
-						for (unsigned int i = 0; i < 6; ++i)
-						{
-							updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_r, captureViews[i]);
-							attachTextureToFramebuffer(l_environmentPrefilterTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, mip);
-
-							glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-							auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-							if (l_mesh)
-							{
-								if (l_mesh->m_objectStatus == objectStatus::ALIVE)
-								{
-									activateMesh(l_mesh);
-									drawMesh(l_mesh);
-								}
-							}
-						}
-					}
+					activateMesh(l_mesh);
+					drawMesh(l_mesh);
 				}
 			}
 		}
@@ -1918,7 +1872,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	attachTextureToFramebuffer(l_environmentBRDFLUTTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, 0, 0);
 
 	// draw environment map BRDF LUT rectangle
-	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
+	l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
 	if (l_mesh)
 	{
 		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
@@ -2455,35 +2409,27 @@ void GLRenderingSystem::updateFinalRenderPass()
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r,
 			r);
-		auto l_lightDir = InnoGameSystem::getTransformComponent(InnoGameSystem::getLightComponents()[0]->m_parentEntity)->m_transform.getDirection(direction::BACKWARD);
+		updateUniform(
+			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize,
+			RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+		
+		auto l_eyePos = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.caclGlobalPos();
+		updateUniform(
+			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos,
+			l_eyePos.x, l_eyePos.y, l_eyePos.z);
+		
+		auto l_lightDir = InnoGameSystem::getTransformComponent(InnoGameSystem::getLightComponents()[0]->m_parentEntity)->m_transform.getDirection(direction::FORWARD);
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
 			l_lightDir.x, l_lightDir.y, l_lightDir.z);
 
-
-		auto& l_visibleComponents = InnoGameSystem::getVisibleComponents();
-		if (l_visibleComponents.size() > 0)
+		auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::CUBE);
+		if (l_mesh)
 		{
-			for (auto& l_visibleComponent : l_visibleComponents)
+			if (l_mesh->m_objectStatus == objectStatus::ALIVE)
 			{
-				if (l_visibleComponent->m_visiblilityType == visiblilityType::SKYBOX)
-				{
-					for (auto& l_graphicData : l_visibleComponent->m_modelMap)
-					{
-						// use environment pass capture texture as skybox cubemap
-						auto l_skyboxTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
-						activateTexture(l_skyboxTexture, 0);
-						auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
-						if (l_mesh)
-						{
-							if (l_mesh->m_objectStatus == objectStatus::ALIVE)
-							{
-								activateMesh(l_mesh);
-								drawMesh(l_mesh);
-							}
-						}
-					}
-				}
+				activateMesh(l_mesh);
+				drawMesh(l_mesh);
 			}
 		}
 	}
