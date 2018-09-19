@@ -2,6 +2,7 @@
 #include "GameSystem.h"
 #include "AssetSystem.h"
 #include "LogSystem.h"
+#include "TaskSystem.h"
 
 namespace InnoPhysicsSystem
 {
@@ -25,6 +26,8 @@ namespace InnoPhysicsSystem
 	void updateLightComponents();
 
 	objectStatus m_PhysicsSystemStatus = objectStatus::SHUTDOWN;
+
+	InnoFuture<void>* m_asyncTask;
 }
 
 void InnoPhysicsSystem::setup()
@@ -453,8 +456,12 @@ void InnoPhysicsSystem::updateLightComponents()
 
 void InnoPhysicsSystem::update()
 {
-	updateCameraComponents();
-	updateLightComponents();
+	m_asyncTask = &InnoTaskSystem::submit([]()
+	{
+		updateCameraComponents();
+		updateLightComponents();
+	});
+
 }
 
 void InnoPhysicsSystem::shutdown()

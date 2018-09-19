@@ -12,6 +12,10 @@
 #define InnoGameInstance InnocenceTest
 #endif
 
+#include "TaskSystem.h"
+#include "TimeSystem.h"
+#include "LogSystem.h"
+
 namespace InnoGameSystem
 {
 	// the SOA here
@@ -32,6 +36,8 @@ namespace InnoGameSystem
 	bool m_needRender = true;
 
 	objectStatus m_GameSystemStatus = objectStatus::SHUTDOWN;
+
+	InnoFuture<void>* m_asyncTask;
 }
 
 void InnoGameSystem::setup()
@@ -80,10 +86,10 @@ void InnoGameSystem::initialize()
 
 void InnoGameSystem::update()
 {
-	InnoGameInstance::update();
-	//auto l_tickTime = InnoTimeSystem->getcurrentTime();
-	//l_tickTime = InnoTimeSystem->getcurrentTime() - l_tickTime;
-	////InnoLogSystem::printLog(l_tickTime);
+	m_asyncTask = &InnoTaskSystem::submit([]()
+	{
+		InnoGameInstance::update();
+	});
 }
 
 void InnoGameSystem::shutdown()
