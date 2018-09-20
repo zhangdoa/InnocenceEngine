@@ -426,14 +426,14 @@ void InnoAssetSystem::assignLoadedModel(modelMap& loadedmodelMap, VisibleCompone
 	assignDefaultTextures(textureAssignType::ADD, visibleComponent);
 }
 
-void InnoAssetSystem::addMeshData(VisibleComponent * visibleComponentconst, meshID & meshID)
+void InnoAssetSystem::addMeshData(VisibleComponent * visibleComponent, meshID & meshID)
 {
-	visibleComponentconst->m_modelMap.emplace(meshID, textureMap());
+	visibleComponent->m_modelMap.emplace(meshID, textureMap());
 }
 
-void InnoAssetSystem::addTextureData(VisibleComponent * visibleComponentconst, const texturePair & texturePair)
+void InnoAssetSystem::addTextureData(VisibleComponent * visibleComponent, const texturePair & texturePair)
 {
-	for (auto& l_model : visibleComponentconst->m_modelMap)
+	for (auto& l_model : visibleComponent->m_modelMap)
 	{
 		auto l_texturePair = l_model.second.find(texturePair.first);
 		if (l_texturePair == l_model.second.end())
@@ -443,9 +443,9 @@ void InnoAssetSystem::addTextureData(VisibleComponent * visibleComponentconst, c
 	}
 }
 
-void InnoAssetSystem::overwriteTextureData(VisibleComponent * visibleComponentconst, const texturePair & texturePair)
+void InnoAssetSystem::overwriteTextureData(VisibleComponent * visibleComponent, const texturePair & texturePair)
 {
-	for (auto& l_model : visibleComponentconst->m_modelMap)
+	for (auto& l_model : visibleComponent->m_modelMap)
 	{
 		auto l_texturePair = l_model.second.find(texturePair.first);
 		if (l_texturePair == l_model.second.end())

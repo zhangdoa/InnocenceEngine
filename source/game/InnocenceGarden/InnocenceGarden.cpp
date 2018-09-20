@@ -71,9 +71,7 @@ void InnocenceGarden::setup()
 	m_playerCharacterComponent = InnoMemorySystem::spawn<PlayerCharacter>();
 	m_playerCharacterComponent->setup();
 	m_playerCharacterComponent->getTransformComponent().m_transform.m_parentTransform = &m_rootTransformComponent->m_transform;
-	m_playerCharacterComponent->getTransformComponent().m_transform.setLocalPos(vec4(2.0, 3.0, 2.0, 1.0));
-
-	//m_playCharacter.getTransformComponent<TransformComponent>().m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 45.0);
+	m_playerCharacterComponent->getTransformComponent().m_transform.setLocalPos(vec4(0.0, 4.0, 3.0, 1.0));
 
 	m_playerCharacterComponent->getCameraComponent().m_drawFrustum = false;
 	m_playerCharacterComponent->getCameraComponent().m_drawAABB = false;
@@ -139,6 +137,9 @@ void InnocenceGarden::setup()
 	InnoGameSystem::addTransformComponent(m_landscapeTransformComponent);
 	InnoGameSystem::addVisibleComponent(m_landscapeVisibleComponent);
 
+	setupLights();
+	setupSpheres();
+
 	//setup pawn 1
 	m_pawnTransformComponent1 = InnoMemorySystem::spawn<TransformComponent>();
 	m_pawnTransformComponent1->m_transform.m_parentTransform = &m_rootTransformComponent->m_transform;
@@ -146,6 +147,7 @@ void InnocenceGarden::setup()
 	m_pawnVisibleComponent1 = InnoMemorySystem::spawn<VisibleComponent>();
 	m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
+	m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	//m_pawnVisibleComponent1->m_modelFileName = "sponza/sponza.obj";
 	//m_pawnVisibleComponent1->m_modelFileName = "cat/cat.obj";
 	m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
@@ -170,6 +172,7 @@ void InnocenceGarden::setup()
 	m_pawnVisibleComponent2 = InnoMemorySystem::spawn<VisibleComponent>();
 	m_pawnVisibleComponent2->m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::CUSTOM;
+	m_pawnVisibleComponent2->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	m_pawnVisibleComponent2->m_drawAABB = true;
 	m_pawnVisibleComponent2->m_modelFileName = "lantern//lantern.obj";
 
@@ -180,9 +183,6 @@ void InnocenceGarden::setup()
 
 	InnoGameSystem::addTransformComponent(m_pawnTransformComponent2);
 	InnoGameSystem::addVisibleComponent(m_pawnVisibleComponent2);
-
-	setupLights();
-	setupSpheres();
 
 	m_objectStatus = objectStatus::ALIVE;
 }
@@ -226,6 +226,7 @@ void InnocenceGarden::setupSpheres()
 		m_sphereVisibleComponents[i] = InnoMemorySystem::spawn<VisibleComponent>();
 		m_sphereVisibleComponents[i]->m_visiblilityType = visiblilityType::STATIC_MESH;
 		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::CUSTOM;
+		m_sphereVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 		m_sphereVisibleComponents[i]->m_drawAABB = true;
 		m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 		m_sphereVisibleComponents[i]->m_useTexture = true;

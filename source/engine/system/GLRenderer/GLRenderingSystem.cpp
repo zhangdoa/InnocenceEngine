@@ -1720,7 +1720,6 @@ void GLRenderingSystem::update()
 		if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
 			initializeMesh(l_meshDataComponent);
-
 		}
 	}
 	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
@@ -2957,14 +2956,14 @@ void GLRenderingSystem::activateShaderProgram(const GLShaderProgramComponent * G
 	glUseProgram(GLShaderProgramComponent->m_program);
 }
 
-void GLRenderingSystem::activateMesh(const MeshDataComponent * GLTextureDataComponent)
+void GLRenderingSystem::activateMesh(const MeshDataComponent * GLMeshDataComponent)
 {
-	glBindVertexArray(GLTextureDataComponent->m_VAO);
+	glBindVertexArray(GLMeshDataComponent->m_VAO);
 }
 
-void GLRenderingSystem::drawMesh(const MeshDataComponent * GLTextureDataComponent)
+void GLRenderingSystem::drawMesh(const MeshDataComponent * GLMeshDataComponent)
 {
-	glDrawElements(GL_TRIANGLES + (int)GLTextureDataComponent->m_meshDrawMethod, (GLsizei)GLTextureDataComponent->m_indices.size(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES + (int)GLMeshDataComponent->m_meshDrawMethod, (GLsizei)GLMeshDataComponent->m_indices.size(), GL_UNSIGNED_INT, 0);
 }
 
 void GLRenderingSystem::activateTexture(const TextureDataComponent * GLTextureDataComponent, int activateIndex)
