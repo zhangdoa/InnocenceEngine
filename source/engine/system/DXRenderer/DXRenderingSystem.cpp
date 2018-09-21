@@ -6,6 +6,7 @@
 
 #include "../../component/RenderingSystemSingletonComponent.h"
 #include "../../component/WindowSystemSingletonComponent.h"
+#include "../../component/AssetSystemSingletonComponent.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -31,6 +32,9 @@ namespace DXRenderingSystem
 	ID3D11DepthStencilState* m_depthStencilState;
 	ID3D11DepthStencilView* m_depthStencilView;
 	ID3D11RasterizerState* m_rasterState;
+
+	void initializeMesh(MeshDataComponent* DXMeshDataComponent);
+	void initializeTexture(TextureDataComponent* DXTextureDataComponent);
 
 	void initializeFinalBlendPass();
 
@@ -382,15 +386,29 @@ void DXRenderingSystem::initialize()
 {
 	initializeFinalBlendPass();
 
-	initializeDefaultGraphicPrimtives();
-
 	InnoLogSystem::printLog("DXRenderingSystem has been initialized.");
 }
 
 void DXRenderingSystem::update()
 {
+	if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.size() > 0)
+	{
+		MeshDataComponent* l_meshDataComponent;
+		if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
+		{
+			initializeMesh(l_meshDataComponent);
+		}
+	}
+	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
+	{
+		TextureDataComponent* l_textureDataComponent;
+		if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
+		{
+			//initializeTexture(l_textureDataComponent);
+		}
+	}
 	// Clear the buffers to begin the scene.
-	beginScene(0.2f, 0.4f, 0.7f, 1.0f);
+	beginScene(0.0f, 0.0f, 0.0f, 0.0f);
 
 	updateFinalBlendPass();
 
@@ -482,6 +500,30 @@ void DXRenderingSystem::initializeFinalBlendPass()
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create matrix buffer pointer!");
+		m_objectStatus = objectStatus::STANDBY;
+		return;
+	}
+
+	// Create a texture sampler state description.
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MipLODBias = 0.0f;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxAnisotropy = 1;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[0] = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[1] = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[2] = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[3] = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MinLOD = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	// Create the texture sampler state.
+	result = m_device->CreateSamplerState(&DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc, &DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
+	if (FAILED(result))
+	{
+		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create texture sampler state!");
 		m_objectStatus = objectStatus::STANDBY;
 		return;
 	}
@@ -649,43 +691,6 @@ void DXRenderingSystem::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND
 	InnoLogSystem::printLog("DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
 
-void DXRenderingSystem::initializeDefaultGraphicPrimtives()
-{
-	{	auto l_Mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::LINE);
-	initializeMesh(l_Mesh);
-	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
-	{	auto l_Mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
-	initializeMesh(l_Mesh);
-	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
-	{	auto l_Mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::CUBE);
-	initializeMesh(l_Mesh);
-	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
-	{	auto l_Mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::SPHERE);
-	initializeMesh(l_Mesh);
-	RenderingSystemSingletonComponent::getInstance().m_initializedMeshMap.emplace(l_Mesh->m_meshID, l_Mesh); }
-
-
-	//{	auto l_Texture = InnoAssetSystem::getDefaultTexture(textureType::NORMAL);
-	//initializeTexture(l_Texture);
-	//RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
-	//{	auto l_Texture = InnoAssetSystem::getDefaultTexture(textureType::ALBEDO);
-	//initializeTexture(l_Texture);
-	//RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
-	//{	auto l_Texture = InnoAssetSystem::getDefaultTexture(textureType::METALLIC);
-	//initializeTexture(l_Texture);
-	//RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
-	//{	auto l_Texture = InnoAssetSystem::getDefaultTexture(textureType::ROUGHNESS);
-	//initializeTexture(l_Texture);
-	//RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
-	//{	auto l_Texture = InnoAssetSystem::getDefaultTexture(textureType::AMBIENT_OCCLUSION);
-	//initializeTexture(l_Texture);
-	//RenderingSystemSingletonComponent::getInstance().m_initializedTextureMap.emplace(l_Texture->m_textureID, l_Texture); }
-}
-
-void DXRenderingSystem::initializeGraphicPrimtivesOfComponents()
-{
-}
-
 void DXRenderingSystem::initializeMesh(MeshDataComponent * DXMeshDataComponent)
 {
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
@@ -734,6 +739,56 @@ void DXRenderingSystem::initializeMesh(MeshDataComponent * DXMeshDataComponent)
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create ibo!");
 		return;
 	}
+	DXMeshDataComponent->m_objectStatus = objectStatus::ALIVE;
+}
+
+void DXRenderingSystem::initializeTexture(TextureDataComponent * DXTextureDataComponent)
+{
+	D3D11_TEXTURE2D_DESC textureDesc;
+	HRESULT hResult;
+	unsigned int rowPitch;
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+
+	// Setup the description of the texture.
+	textureDesc.Height = DXTextureDataComponent->m_textureHeight;
+	textureDesc.Width = DXTextureDataComponent->m_textureWidth;
+	textureDesc.MipLevels = 0;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+
+	// Create the empty texture.
+	hResult = m_device->CreateTexture2D(&textureDesc, NULL, &DXTextureDataComponent->m_texture);
+	if (FAILED(hResult))
+	{
+		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create texture!");
+		return;
+	}
+
+	rowPitch = (DXTextureDataComponent->m_textureWidth * 4) * sizeof(unsigned char);
+	m_deviceContext->UpdateSubresource(DXTextureDataComponent->m_texture, 0, NULL, DXTextureDataComponent->m_textureData[0], rowPitch, 0);
+
+	// Setup the shader resource view description.
+	srvDesc.Format = textureDesc.Format;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = -1;
+
+	// Create the shader resource view for the texture.
+	hResult = m_device->CreateShaderResourceView(DXTextureDataComponent->m_texture, &srvDesc, &DXTextureDataComponent->m_textureView);
+	if (FAILED(hResult))
+	{
+		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create shader resource view for texture!");
+		return;
+	}
+
+	// Generate mipmaps for this texture.
+	m_deviceContext->GenerateMips(DXTextureDataComponent->m_textureView);
 }
 
 void DXRenderingSystem::updateFinalBlendPass()
@@ -745,37 +800,42 @@ void DXRenderingSystem::updateFinalBlendPass()
 	stride = sizeof(Vertex);
 	offset = 0;
 	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::CUBE);
+	if (l_mesh)
+	{
+		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+		{
+			// Set the vertex buffer to active in the input assembler so it can be rendered.
+			m_deviceContext->IASetVertexBuffers(0, 1, &l_mesh->m_vertexBuffer, &stride, &offset);
 
-	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	m_deviceContext->IASetVertexBuffers(0, 1, &l_mesh->m_vertexBuffer, &stride, &offset);
+			// Set the index buffer to active in the input assembler so it can be rendered.
+			m_deviceContext->IASetIndexBuffer(l_mesh->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	// Set the index buffer to active in the input assembler so it can be rendered.
-	m_deviceContext->IASetIndexBuffer(l_mesh->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+			// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+			m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			// Set the shader parameters that it will use for rendering.
 
-	// Set the shader parameters that it will use for rendering.
+			mat4 p = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
+			mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
+			mat4 t = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
+			mat4 v = p * r * t;
 
-	mat4 p = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
-	mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotMatrix();
-	mat4 t = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
-	mat4 v = p * r * t;
+			mat4 m = InnoMath::toTranslationMatrix(vec4(0.0, 0.0, -5.0, 1.0));
+			auto mvp = v * m;
 
-	mat4 m = InnoMath::toTranslationMatrix(vec4(0.0, 0.0, -5.0, 1.0));
-	auto mvp = v * m;
+			updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &mvp);
 
-	updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &mvp);
+			// Set the vertex input layout.
+			m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
 
-	// Set the vertex input layout.
-	m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
+			// Set the vertex and pixel shaders that will be used to render this triangle.
+			m_deviceContext->VSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader, NULL, 0);
+			m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
 
-	// Set the vertex and pixel shaders that will be used to render this triangle.
-	m_deviceContext->VSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader, NULL, 0);
-	m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
-
-	// Render the triangle.
-	m_deviceContext->DrawIndexed((UINT)l_mesh->m_indices.size(), 0, 0);
+			// Render the triangle.
+			m_deviceContext->DrawIndexed((UINT)l_mesh->m_indices.size(), 0, 0);
+		}
+	}
 }
 
 void DXRenderingSystem::updateShaderParameter(shaderType shaderType, ID3D11Buffer * matrixBuffer, mat4* parameterValue)
@@ -824,7 +884,6 @@ void DXRenderingSystem::updateShaderParameter(shaderType shaderType, ID3D11Buffe
 void DXRenderingSystem::beginScene(float r, float g, float b, float a)
 {
 	float color[4];
-
 
 	// Setup the color to clear the buffer to.
 	color[0] = r;
