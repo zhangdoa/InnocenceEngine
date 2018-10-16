@@ -1,9 +1,12 @@
 #include "InputSystem.h"
-#include "GameSystem.h"
-#include "LogSystem.h" 
+#include "../../component/LogSystemSingletonComponent.h"
+#include "../GameSystem/GameSystem.h"
+#include "../../component/GameSystemSingletonComponent.h"
 
 namespace InnoInputSystem
 {
+	vec4 calcMousePositionInWorldSpace();
+
 	objectStatus m_InputSystemStatus = objectStatus::SHUTDOWN;
 };
 
@@ -19,13 +22,13 @@ void InnoInputSystem::initialize()
 		WindowSystemSingletonComponent::getInstance().m_buttonStatus.emplace(i, buttonStatus::RELEASED);
 	}
 
-	for (size_t i = 0; i < InnoGameSystem::getInputComponents().size(); i++)
+	for (size_t i = 0; i < GameSystemSingletonComponent::getInstance().m_inputComponents.size(); i++)
 	{
 		// @TODO: multi input components need to register to multi map
-		addButtonStatusCallback(InnoGameSystem::getInputComponents()[i]->m_buttonStatusCallbackImpl);
-		addMouseMovementCallback(InnoGameSystem::getInputComponents()[i]->m_mouseMovementCallbackImpl);
+		addButtonStatusCallback(GameSystemSingletonComponent::getInstance().m_inputComponents[i]->m_buttonStatusCallbackImpl);
+		addMouseMovementCallback(GameSystemSingletonComponent::getInstance().m_inputComponents[i]->m_mouseMovementCallbackImpl);
 	}
-	InnoLogSystem::printLog("InputSystem has been initialized.");
+	LogSystemSingletonComponent::getInstance().m_log.push("InputSystem has been initialized.");
 }
 
 void InnoInputSystem::update()
@@ -67,12 +70,14 @@ void InnoInputSystem::update()
 			WindowSystemSingletonComponent::getInstance().m_mouseYOffset = 0;
 		}
 	}
+
+	WindowSystemSingletonComponent::getInstance().m_mousePositionInWorldSpace = calcMousePositionInWorldSpace();
 }
 
 void InnoInputSystem::shutdown()
 {
 	m_InputSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("InputSystem has been shutdown.");
+	LogSystemSingletonComponent::getInstance().m_log.push("InputSystem has been shutdown.");
 }
 
 void InnoInputSystem::addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor)
@@ -153,11 +158,11 @@ void InnoInputSystem::scrollCallback(double xoffset, double yoffset)
 	//@TODO: context based binding
 	if (yoffset >= 0.0)
 	{
-		InnoGameSystem::getCameraComponents()[0]->m_FOVX += 1.0;
+		GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_FOVX += 1.0;
 	}
 	else
 	{
-		InnoGameSystem::getCameraComponents()[0]->m_FOVX -= 1.0;
+		GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_FOVX -= 1.0;
 	}
 	//InnoPhysicsSystem::setupCameraComponentProjectionMatrix(InnoGameSystem::getCameraComponents()[0]);
 }
@@ -175,9 +180,9 @@ vec4 InnoInputSystem::calcMousePositionInWorldSpace()
 	auto l_w = 1.0;
 	vec4 l_ndcSpace = vec4(l_x, l_y, l_z, l_w);
 
-	auto pCamera = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
-	auto rCamera = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
-	auto tCamera = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
+	auto pCamera = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
+	auto rCamera = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
+	auto tCamera = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 	l_ndcSpace = InnoMath::mul(l_ndcSpace, pCamera.inverse());

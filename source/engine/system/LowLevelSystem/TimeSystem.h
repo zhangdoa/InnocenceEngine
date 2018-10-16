@@ -2,7 +2,7 @@
 #include <sstream>
 #include <chrono>
 #include <ctime>
-#include "../common/InnoType.h"
+#include "../../common/InnoType.h"
 
 namespace InnoTimeSystem
 {

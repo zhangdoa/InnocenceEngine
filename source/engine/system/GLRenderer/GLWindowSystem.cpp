@@ -1,6 +1,6 @@
 #include "GLWindowSystem.h"
-#include "../LogSystem.h"
-#include "../InputSystem.h"
+#include "../../component/LogSystemSingletonComponent.h"
+#include "../InputSystem/InputSystem.h"
 
 class windowCallbackWrapper
 {
@@ -31,13 +31,13 @@ namespace GLWindowSystem
 	objectStatus m_WindowSystemStatus = objectStatus::SHUTDOWN;
 }
 
-void GLWindowSystem::setup()
+void GLWindowSystem::Instance::setup()
 {
 	//setup window
 	if (glfwInit() != GL_TRUE)
 	{
 		m_WindowSystemStatus = objectStatus::STANDBY;
-		InnoLogSystem::printLog("Failed to initialize GLFW.");
+		LogSystemSingletonComponent::getInstance().m_log.push("Failed to initialize GLFW.");
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
@@ -52,7 +52,7 @@ void GLWindowSystem::setup()
 	glfwMakeContextCurrent(WindowSystemSingletonComponent::getInstance().m_window);
 	if (WindowSystemSingletonComponent::getInstance().m_window == nullptr) {
 		m_WindowSystemStatus = objectStatus::STANDBY;
-		InnoLogSystem::printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
+		LogSystemSingletonComponent::getInstance().m_log.push("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
 		glfwTerminate();
 	}
 	// glad: load all OpenGL function pointers
@@ -60,7 +60,7 @@ void GLWindowSystem::setup()
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		m_WindowSystemStatus = objectStatus::STANDBY;
-		InnoLogSystem::printLog("Failed to initialize GLAD.");
+		LogSystemSingletonComponent::getInstance().m_log.push("Failed to initialize GLAD.");
 	}
 
 	//setup input
@@ -71,7 +71,7 @@ void GLWindowSystem::setup()
 	m_WindowSystemStatus = objectStatus::ALIVE;
 }
 
-void GLWindowSystem::initialize()
+void GLWindowSystem::Instance::initialize()
 {
 	//initialize window
 	windowCallbackWrapper::getInstance().initialize();
@@ -80,16 +80,16 @@ void GLWindowSystem::initialize()
 	
 	InnoInputSystem::initialize();
 
-	InnoLogSystem::printLog("GLWindowSystem has been initialized.");
+	LogSystemSingletonComponent::getInstance().m_log.push("GLWindowSystem has been initialized.");
 }
 
-void GLWindowSystem::update()
+void GLWindowSystem::Instance::update()
 {
 	//update window
 	if (WindowSystemSingletonComponent::getInstance().m_window == nullptr || glfwWindowShouldClose(WindowSystemSingletonComponent::getInstance().m_window) != 0)
 	{
 		m_WindowSystemStatus = objectStatus::STANDBY;
-		InnoLogSystem::printLog("GLWindowSystem: Input error or Window closed.");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLWindowSystem: Input error or Window closed.");
 	}
 	else
 	{
@@ -141,33 +141,33 @@ void GLWindowSystem::update()
 	InnoInputSystem::update();
 }
 
-void GLWindowSystem::shutdown()
+void GLWindowSystem::Instance::shutdown()
 {
 	glfwSetInputMode(WindowSystemSingletonComponent::getInstance().m_window, GLFW_STICKY_KEYS, GL_FALSE);
 	glfwDestroyWindow(WindowSystemSingletonComponent::getInstance().m_window);
 	glfwTerminate();
-	InnoLogSystem::printLog("GLWindowSystem: Window closed.");
+	LogSystemSingletonComponent::getInstance().m_log.push("GLWindowSystem: Window closed.");
 
 	m_WindowSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("GLWindowSystem has been shutdown.");
+	LogSystemSingletonComponent::getInstance().m_log.push("GLWindowSystem has been shutdown.");
 }
 
-void GLWindowSystem::swapBuffer()
+void GLWindowSystem::Instance::swapBuffer()
 {
 	glfwSwapBuffers(WindowSystemSingletonComponent::getInstance().m_window);
 }
 
-void GLWindowSystem::hideMouseCursor()
+void GLWindowSystem::Instance::hideMouseCursor()
 {
 	glfwSetInputMode(WindowSystemSingletonComponent::getInstance().m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
-void GLWindowSystem::showMouseCursor()
+void GLWindowSystem::Instance::showMouseCursor()
 {
 	glfwSetInputMode(WindowSystemSingletonComponent::getInstance().m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
-objectStatus GLWindowSystem::getStatus()
+objectStatus GLWindowSystem::Instance::getStatus()
 {
 	return m_WindowSystemStatus;
 }

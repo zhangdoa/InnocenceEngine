@@ -7,9 +7,10 @@
 #include "../../component/RenderingSystemSingletonComponent.h"
 #include "../../component/AssetSystemSingletonComponent.h"
 #include <sstream>
-#include "../LogSystem.h"
-#include "../GameSystem.h"
-#include "../AssetSystem.h"
+#include "../../component/LogSystemSingletonComponent.h"
+#include "../GameSystem/GameSystem.h"
+#include "../../component/GameSystemSingletonComponent.h"
+#include "../AssetSystem/AssetSystem.h"
 
 namespace GLRenderingSystem
 {
@@ -30,8 +31,8 @@ namespace GLRenderingSystem
 	void initializeDebuggerPass();
 	void initializeFinalBlendPass();
 
-	void initializeMesh(MeshDataComponent* GLMeshDataComponent);
-	void initializeTexture(TextureDataComponent* GLTextureDataComponent);
+	void initializeMesh(MeshDataComponent* rhs);
+	void initializeTexture(TextureDataComponent* rhs);
 	void initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string& shaderFilePath);
 
 	void updateEnvironmentRenderPass();
@@ -52,14 +53,14 @@ namespace GLRenderingSystem
 
 	void attachTextureToFramebuffer(const GLTextureDataComponent* GLTextureDataComponent, const GLFrameBufferComponent* GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel);
 	void activateShaderProgram(const GLShaderProgramComponent* GLShaderProgramComponent);
-	void activateMesh(const MeshDataComponent* GLTextureDataComponent);
-	void drawMesh(const MeshDataComponent* GLTextureDataComponent);
-	void activateTexture(const TextureDataComponent* GLTextureDataComponent, int activateIndex);
+	void activateMesh(MeshDataComponent* rhs);
+	void drawMesh(MeshDataComponent* rhs);
+	void activateTexture(TextureDataComponent* rhs, int activateIndex);
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 }
 
-void GLRenderingSystem::setup()
+void GLRenderingSystem::Instance::setup()
 {
 	if (RenderingSystemSingletonComponent::getInstance().m_MSAAdepth)
 	{
@@ -74,7 +75,7 @@ void GLRenderingSystem::setup()
 	glEnable(GL_TEXTURE_2D);
 }
 
-void GLRenderingSystem::initialize()
+void GLRenderingSystem::Instance::initialize()
 {
 	initializeHaltonSampler();
 	initializeEnvironmentRenderPass();
@@ -175,7 +176,7 @@ void GLRenderingSystem::initializeEnvironmentRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: EnvironmentRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: EnvironmentRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -322,7 +323,7 @@ void GLRenderingSystem::initializeShadowRenderPass()
 		{
 			std::stringstream ss;
 			ss << i;
-			InnoLogSystem::printLog("GLFrameBuffer: ShadowRenderPass level " + ss.str() + " Framebuffer is not completed!");
+			LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: ShadowRenderPass level " + ss.str() + " Framebuffer is not completed!");
 		}
 	}
 
@@ -403,7 +404,7 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: GeometryRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: GeometryRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -557,7 +558,7 @@ void GLRenderingSystem::initializeLightRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: LightRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: LightRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -662,15 +663,15 @@ void GLRenderingSystem::initializeLightRenderPass()
 				getUniformLocation(LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program, "uni_shadowSplitPoints[" + ss.str() + "]")
 			);
 	}
-	for (auto i = (unsigned int)0; i < InnoGameSystem::getLightComponents().size(); i++)
+	for (auto i = (unsigned int)0; i < GameSystemSingletonComponent::getInstance().m_lightComponents.size(); i++)
 	{
-		if (InnoGameSystem::getLightComponents()[i]->m_lightType == lightType::DIRECTIONAL)
+		if (GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
 		{
 			for (size_t j = 0; j < 4; j++)
 			{
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitPoints[j],
-					InnoGameSystem::getLightComponents()[i]->m_shadowSplitPoints[j]);
+					GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_shadowSplitPoints[j]);
 			}
 		}
 	}
@@ -705,13 +706,13 @@ void GLRenderingSystem::initializeLightRenderPass()
 		LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program,
 		"uni_dirLight.color");
 	int l_pointLightIndexOffset = 0;
-	for (auto i = (unsigned int)0; i < InnoGameSystem::getLightComponents().size(); i++)
+	for (auto i = (unsigned int)0; i < GameSystemSingletonComponent::getInstance().m_lightComponents.size(); i++)
 	{
-		if (InnoGameSystem::getLightComponents()[i]->m_lightType == lightType::DIRECTIONAL)
+		if (GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
 		{
 			l_pointLightIndexOffset -= 1;
 		}
-		if (InnoGameSystem::getLightComponents()[i]->m_lightType == lightType::POINT)
+		if (GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_lightType == lightType::POINT)
 		{
 			std::stringstream ss;
 			ss << i + l_pointLightIndexOffset;
@@ -782,7 +783,7 @@ void GLRenderingSystem::initializeSkyPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: ShadowRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: ShadowRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -856,7 +857,7 @@ void GLRenderingSystem::initializeTAAPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: TAAPingRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: TAAPingRenderPass Framebuffer is not completed!");
 	}
 
 	// generate and bind framebuffer
@@ -896,7 +897,7 @@ void GLRenderingSystem::initializeTAAPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: TAAPongRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: TAAPongRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -976,7 +977,7 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: BloomExtractRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: BloomExtractRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1041,7 +1042,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: BloomBlurPingRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: BloomBlurPingRenderPass Framebuffer is not completed!");
 	}
 
 	// generate and bind framebuffer
@@ -1081,7 +1082,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: BloomBlurPongRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: BloomBlurPongRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1149,7 +1150,7 @@ void GLRenderingSystem::initializeMotionBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: MotionBlurRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: MotionBlurRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1220,7 +1221,7 @@ void GLRenderingSystem::initializeBillboardPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: BillboardRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: BillboardRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1303,7 +1304,7 @@ void GLRenderingSystem::initializeDebuggerPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: DebuggerRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: DebuggerRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1380,7 +1381,7 @@ void GLRenderingSystem::initializeFinalBlendPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: FinalBlendRenderPass Framebuffer is not completed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: FinalBlendRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1436,7 +1437,7 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 	shaderID = glCreateShader(shaderType);
 
 	if (shaderID == 0) {
-		InnoLogSystem::printLog("Error: Shader creation failed: memory location invaild when adding shader!");
+		LogSystemSingletonComponent::getInstance().m_log.push("Error: Shader creation failed: memory location invaild when adding shader!");
 	}
 
 	auto l_shaderCodeContent = InnoAssetSystem::loadShader(shaderFilePath);
@@ -1444,7 +1445,7 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 
 	if (l_sourcePointer == nullptr)
 	{
-		InnoLogSystem::printLog("Error: Shader loading failed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("Error: Shader loading failed!");
 	}
 
 	glShaderSource(shaderID, 1, &l_sourcePointer, NULL);
@@ -1457,54 +1458,56 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 
 	if (!l_compileResult)
 	{
-		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
 		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+		LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
 		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
 			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-			InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+			LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
 			return;
 		}
 	}
 
-	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
+	LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
 
 	glAttachShader(shaderProgram, shaderID);
 	glLinkProgram(shaderProgram);
 	glValidateProgram(shaderProgram);
 
-	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
+	LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
 
 	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &l_compileResult);
 	if (!l_compileResult)
 	{
-		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
+		LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
 		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+		LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
 		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
 			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-			InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+			LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
 		}
 	}
 
-	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
+	LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
 }
 
-void GLRenderingSystem::initializeMesh(MeshDataComponent* GLMeshDataComponent)
+void GLRenderingSystem::initializeMesh(MeshDataComponent* rhs)
 {
-	glGenVertexArrays(1, &GLMeshDataComponent->m_VAO);
-	glGenBuffers(1, &GLMeshDataComponent->m_VBO);
-	glGenBuffers(1, &GLMeshDataComponent->m_IBO);
+	auto l_ptr = reinterpret_cast<GLMeshDataComponent*>(rhs);
+
+	glGenVertexArrays(1, &l_ptr->m_VAO);
+	glGenBuffers(1, &l_ptr->m_VBO);
+	glGenBuffers(1, &l_ptr->m_IBO);
 
 	std::vector<float> l_verticesBuffer;
-	auto& l_vertices = GLMeshDataComponent->m_vertices;
-	auto& l_indices = GLMeshDataComponent->m_indices;
+	auto& l_vertices = l_ptr->m_vertices;
+	auto& l_indices = l_ptr->m_indices;
 
 	std::for_each(l_vertices.begin(), l_vertices.end(), [&](Vertex val)
 	{
@@ -1518,12 +1521,12 @@ void GLRenderingSystem::initializeMesh(MeshDataComponent* GLMeshDataComponent)
 		l_verticesBuffer.emplace_back((float)val.m_normal.z);
 	});
 
-	glBindVertexArray(GLMeshDataComponent->m_VAO);
+	glBindVertexArray(l_ptr->m_VAO);
 
-	glBindBuffer(GL_ARRAY_BUFFER, GLMeshDataComponent->m_VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, l_ptr->m_VBO);
 	glBufferData(GL_ARRAY_BUFFER, l_verticesBuffer.size() * sizeof(float), &l_verticesBuffer[0], GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLMeshDataComponent->m_IBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l_ptr->m_IBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, l_indices.size() * sizeof(unsigned int), &l_indices[0], GL_STATIC_DRAW);
 
 	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
@@ -1538,43 +1541,45 @@ void GLRenderingSystem::initializeMesh(MeshDataComponent* GLMeshDataComponent)
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
 
-	GLMeshDataComponent->m_objectStatus = objectStatus::ALIVE;
+	l_ptr->m_objectStatus = objectStatus::ALIVE;
 }
 
-void GLRenderingSystem::initializeTexture(TextureDataComponent * GLTextureDataComponent)
+void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 {
-	if (GLTextureDataComponent->m_textureType == textureType::INVISIBLE)
+	auto l_ptr = reinterpret_cast<GLTextureDataComponent*>(rhs);
+
+	if (l_ptr->m_textureType == textureType::INVISIBLE)
 	{
 		return;
 	}
 	else
 	{
 		//generate and bind texture object
-		glGenTextures(1, &GLTextureDataComponent->m_TAO);
-		if (GLTextureDataComponent->m_textureType == textureType::CUBEMAP || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		glGenTextures(1, &l_ptr->m_TAO);
+		if (l_ptr->m_textureType == textureType::CUBEMAP || l_ptr->m_textureType == textureType::ENVIRONMENT_CAPTURE || l_ptr->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || l_ptr->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
-			glBindTexture(GL_TEXTURE_CUBE_MAP, GLTextureDataComponent->m_TAO);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, l_ptr->m_TAO);
 		}
 		else
 		{
-			glBindTexture(GL_TEXTURE_2D, GLTextureDataComponent->m_TAO);
+			glBindTexture(GL_TEXTURE_2D, l_ptr->m_TAO);
 		}
 
 		// set the texture wrapping parameters
 		GLenum l_textureWrapMethod;
-		switch (GLTextureDataComponent->m_textureWrapMethod)
+		switch (l_ptr->m_textureWrapMethod)
 		{
 		case textureWrapMethod::CLAMP_TO_EDGE: l_textureWrapMethod = GL_CLAMP_TO_EDGE; break;
 		case textureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
 		case textureWrapMethod::CLAMP_TO_BORDER: l_textureWrapMethod = GL_CLAMP_TO_BORDER; break;
 		}
-		if (GLTextureDataComponent->m_textureType == textureType::CUBEMAP || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		if (l_ptr->m_textureType == textureType::CUBEMAP || l_ptr->m_textureType == textureType::ENVIRONMENT_CAPTURE || l_ptr->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || l_ptr->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
 		}
-		else if (GLTextureDataComponent->m_textureType == textureType::SHADOWMAP)
+		else if (l_ptr->m_textureType == textureType::SHADOWMAP)
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
@@ -1589,7 +1594,7 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * GLTextureDataCo
 
 		// set texture filtering parameters
 		GLenum l_minFilterParam;
-		switch (GLTextureDataComponent->m_textureMinFilterMethod)
+		switch (l_ptr->m_textureMinFilterMethod)
 		{
 		case textureFilterMethod::NEAREST: l_minFilterParam = GL_NEAREST; break;
 		case textureFilterMethod::LINEAR: l_minFilterParam = GL_LINEAR; break;
@@ -1597,14 +1602,14 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * GLTextureDataCo
 
 		}
 		GLenum l_magFilterParam;
-		switch (GLTextureDataComponent->m_textureMagFilterMethod)
+		switch (l_ptr->m_textureMagFilterMethod)
 		{
 		case textureFilterMethod::NEAREST: l_magFilterParam = GL_NEAREST; break;
 		case textureFilterMethod::LINEAR: l_magFilterParam = GL_LINEAR; break;
 		case textureFilterMethod::LINEAR_MIPMAP_LINEAR: l_magFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
 
 		}
-		if (GLTextureDataComponent->m_textureType == textureType::CUBEMAP || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		if (l_ptr->m_textureType == textureType::CUBEMAP || l_ptr->m_textureType == textureType::ENVIRONMENT_CAPTURE || l_ptr->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || l_ptr->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, l_minFilterParam);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, l_magFilterParam);
@@ -1619,20 +1624,20 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * GLTextureDataCo
 		GLenum l_internalFormat;
 		GLenum l_dataFormat;
 		GLenum l_type;
-		if (GLTextureDataComponent->m_textureType == textureType::ALBEDO)
+		if (l_ptr->m_textureType == textureType::ALBEDO)
 		{
-			if (GLTextureDataComponent->m_texturePixelDataFormat == texturePixelDataFormat::RGB)
+			if (l_ptr->m_texturePixelDataFormat == texturePixelDataFormat::RGB)
 			{
 				l_internalFormat = GL_SRGB;
 			}
-			else if (GLTextureDataComponent->m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
+			else if (l_ptr->m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
 			{
 				l_internalFormat = GL_SRGB_ALPHA;
 			}
 		}
 		else
 		{
-			switch (GLTextureDataComponent->m_textureColorComponentsFormat)
+			switch (l_ptr->m_textureColorComponentsFormat)
 			{
 			case textureColorComponentsFormat::RED: l_internalFormat = GL_RED; break;
 			case textureColorComponentsFormat::RG: l_internalFormat = GL_RG; break;
@@ -1661,7 +1666,7 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * GLTextureDataCo
 			case textureColorComponentsFormat::DEPTH_COMPONENT: l_internalFormat = GL_DEPTH_COMPONENT; break;
 			}
 		}
-		switch (GLTextureDataComponent->m_texturePixelDataFormat)
+		switch (l_ptr->m_texturePixelDataFormat)
 		{
 		case texturePixelDataFormat::RED:l_dataFormat = GL_RED; break;
 		case texturePixelDataFormat::RG:l_dataFormat = GL_RG; break;
@@ -1669,7 +1674,7 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * GLTextureDataCo
 		case texturePixelDataFormat::RGBA:l_dataFormat = GL_RGBA; break;
 		case texturePixelDataFormat::DEPTH_COMPONENT:l_dataFormat = GL_DEPTH_COMPONENT; break;
 		}
-		switch (GLTextureDataComponent->m_texturePixelDataType)
+		switch (l_ptr->m_texturePixelDataType)
 		{
 		case texturePixelDataType::UNSIGNED_BYTE:l_type = GL_UNSIGNED_BYTE; break;
 		case texturePixelDataType::BYTE:l_type = GL_BYTE; break;
@@ -1680,39 +1685,39 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * GLTextureDataCo
 		case texturePixelDataType::FLOAT:l_type = GL_FLOAT; break;
 		}
 
-		if (GLTextureDataComponent->m_textureType == textureType::CUBEMAP || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		if (l_ptr->m_textureType == textureType::CUBEMAP || l_ptr->m_textureType == textureType::ENVIRONMENT_CAPTURE || l_ptr->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || l_ptr->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[0]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[1]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[2]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[3]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[4]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[5]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[0]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[1]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[2]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[3]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[4]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[5]);
 		}
 		else
 		{
-			glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, GLTextureDataComponent->m_textureWidth, GLTextureDataComponent->m_textureHeight, 0, l_dataFormat, l_type, GLTextureDataComponent->m_textureData[0]);
+			glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[0]);
 		}
 
 		// should generate mipmap or not
-		if (GLTextureDataComponent->m_textureMinFilterMethod == textureFilterMethod::LINEAR_MIPMAP_LINEAR)
+		if (l_ptr->m_textureMinFilterMethod == textureFilterMethod::LINEAR_MIPMAP_LINEAR)
 		{
 			// @TODO: generalization...
-			if (GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+			if (l_ptr->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 			{
 				glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 			}
-			else if (GLTextureDataComponent->m_textureType != textureType::CUBEMAP || GLTextureDataComponent->m_textureType != textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType != textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType != textureType::RENDER_BUFFER_SAMPLER)
+			else if (l_ptr->m_textureType != textureType::CUBEMAP || l_ptr->m_textureType != textureType::ENVIRONMENT_CAPTURE || l_ptr->m_textureType != textureType::ENVIRONMENT_CONVOLUTION || l_ptr->m_textureType != textureType::RENDER_BUFFER_SAMPLER)
 			{
 				glGenerateMipmap(GL_TEXTURE_2D);
 			}
 		}
 	}
 
-	GLTextureDataComponent->m_objectStatus = objectStatus::ALIVE;
+	l_ptr->m_objectStatus = objectStatus::ALIVE;
 }
 
-void GLRenderingSystem::update()
+void GLRenderingSystem::Instance::update()
 {
 	if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.size() > 0)
 	{
@@ -1776,7 +1781,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	// activate equiretangular texture and remap equiretangular texture to cubemap
 	auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
 
-	auto l_equiretangularTextureComponent = InnoAssetSystem::getTexture(InnoGameSystem::getEnvironmentCaptureComponents()[0]->m_texturePair.second);
+	auto l_equiretangularTextureComponent = InnoAssetSystem::getTexture(GameSystemSingletonComponent::getInstance().m_environmentCaptureComponents[0]->m_texturePair.second);
 	if (l_equiretangularTextureComponent != nullptr)
 		{
 			if (l_equiretangularTextureComponent->m_objectStatus == objectStatus::ALIVE)
@@ -1902,7 +1907,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		for (auto& l_lightComponent : InnoGameSystem::getLightComponents())
+		for (auto& l_lightComponent : GameSystemSingletonComponent::getInstance().m_lightComponents)
 		{
 			if (l_lightComponent->m_lightType == lightType::DIRECTIONAL) 
 			{
@@ -1915,7 +1920,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 					InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix().inverse());
 
 				// draw each visibleComponent
-				for (auto& l_visibleComponent : InnoGameSystem::getVisibleComponents())
+				for (auto& l_visibleComponent : GameSystemSingletonComponent::getInstance().m_visibleComponents)
 				{
 					if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 					{
@@ -1974,9 +1979,9 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 	glUseProgram(GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program);
 
-	if (InnoGameSystem::getCameraComponents().size() > 0)
+	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
 	{
-		mat4 p_original = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
+		mat4 p_original = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
 		mat4 p_jittered = p_original;
 		//TAA jitter for projection matrix
 		if (RenderingSystemSingletonComponent::getInstance().currentHaltonStep >= 16)
@@ -1987,10 +1992,10 @@ void GLRenderingSystem::updateGeometryRenderPass()
 		p_jittered.m[1][2] = RenderingSystemSingletonComponent::getInstance().HaltonSampler[RenderingSystemSingletonComponent::getInstance().currentHaltonStep].y / RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 		RenderingSystemSingletonComponent::getInstance().currentHaltonStep += 1;
 
-		mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
-		mat4 t = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
-		mat4 r_prev = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getPreviousInvertGlobalRotationMatrix();
-		mat4 t_prev = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getPreviousInvertGlobalTranslationMatrix();
+		mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
+		mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
+		mat4 r_prev = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getPreviousInvertGlobalRotationMatrix();
+		mat4 t_prev = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getPreviousInvertGlobalTranslationMatrix();
 
 		updateUniform(
 			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_original,
@@ -2013,9 +2018,9 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 #ifdef CookTorrance
 		//Cook-Torrance
-		if (InnoGameSystem::getLightComponents().size() > 0)
+		if (GameSystemSingletonComponent::getInstance().m_lightComponents.size() > 0)
 		{
-			for (auto& l_lightComponent : InnoGameSystem::getLightComponents())
+			for (auto& l_lightComponent : GameSystemSingletonComponent::getInstance().m_lightComponents)
 			{
 				// update light space transformation matrices
 				if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
@@ -2295,22 +2300,22 @@ void GLRenderingSystem::updateLightRenderPass()
 		LightRenderPassSingletonComponent::getInstance().m_uni_isEmissive,
 		false);
 
-	if (InnoGameSystem::getLightComponents().size() > 0)
+	if (GameSystemSingletonComponent::getInstance().m_lightComponents.size() > 0)
 	{
 		int l_pointLightIndexOffset = 0;
-		for (auto i = (unsigned int)0; i < InnoGameSystem::getLightComponents().size(); i++)
+		for (auto i = (unsigned int)0; i < GameSystemSingletonComponent::getInstance().m_lightComponents.size(); i++)
 		{
-			auto l_viewPos = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.caclGlobalPos();
-			auto l_lightPos = InnoGameSystem::getTransformComponent(InnoGameSystem::getLightComponents()[i]->m_parentEntity)->m_transform.caclGlobalPos();
-			auto l_dirLightDirection = InnoGameSystem::getTransformComponent(InnoGameSystem::getLightComponents()[i]->m_parentEntity)->m_transform.getDirection(direction::BACKWARD);
+			auto l_viewPos = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.caclGlobalPos();
+			auto l_lightPos = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_parentEntity)->m_transform.caclGlobalPos();
+			auto l_dirLightDirection = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_parentEntity)->m_transform.getDirection(direction::BACKWARD);
 
-			auto l_lightColor = InnoGameSystem::getLightComponents()[i]->m_color;
+			auto l_lightColor = GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_color;
 			updateUniform(
 				LightRenderPassSingletonComponent::getInstance().m_uni_viewPos,
 				l_viewPos.x, l_viewPos.y, l_viewPos.z);
 			//updateUniform(m_uni_textureMode, (int)in_shaderDrawPair.second);
 
-			if (InnoGameSystem::getLightComponents()[i]->m_lightType == lightType::DIRECTIONAL)
+			if (GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
 			{
 				l_pointLightIndexOffset -= 1;
 				updateUniform(
@@ -2323,14 +2328,14 @@ void GLRenderingSystem::updateLightRenderPass()
 					LightRenderPassSingletonComponent::getInstance().m_uni_dirLight_color,
 					l_lightColor.x, l_lightColor.y, l_lightColor.z);
 			}
-			else if (InnoGameSystem::getLightComponents()[i]->m_lightType == lightType::POINT)
+			else if (GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_lightType == lightType::POINT)
 			{
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position[i + l_pointLightIndexOffset],
 					l_lightPos.x, l_lightPos.y, l_lightPos.z);
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_radius[i + l_pointLightIndexOffset],
-					InnoGameSystem::getLightComponents()[i]->m_radius);
+					GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_radius);
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_color[i + l_pointLightIndexOffset],
 					l_lightColor.x, l_lightColor.y, l_lightColor.z);
@@ -2400,10 +2405,10 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassProgram.m_program);
 
-	if (InnoGameSystem::getCameraComponents().size() > 0)
+	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
 	{
-		mat4 p = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
-		mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
+		mat4 p = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
+		mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
 
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p,
@@ -2415,12 +2420,12 @@ void GLRenderingSystem::updateFinalRenderPass()
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize,
 			RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 		
-		auto l_eyePos = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.caclGlobalPos();
+		auto l_eyePos = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.caclGlobalPos();
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos,
 			l_eyePos.x, l_eyePos.y, l_eyePos.z);
 		
-		auto l_lightDir = InnoGameSystem::getTransformComponent(InnoGameSystem::getLightComponents()[0]->m_parentEntity)->m_transform.getDirection(direction::FORWARD);
+		auto l_lightDir = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_lightComponents[0]->m_parentEntity)->m_transform.getDirection(direction::FORWARD);
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
 			l_lightDir.x, l_lightDir.y, l_lightDir.z);
@@ -2624,11 +2629,11 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassProgram.m_program);
 
-	if (InnoGameSystem::getCameraComponents().size() > 0)
+	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
 	{
-		mat4 p = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
-		mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
-		mat4 t = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
+		mat4 p = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
+		mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
+		mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
 
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_p,
@@ -2640,15 +2645,15 @@ void GLRenderingSystem::updateFinalRenderPass()
 			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_t,
 			t);
 	}
-	if (InnoGameSystem::getVisibleComponents().size() > 0)
+	if (GameSystemSingletonComponent::getInstance().m_visibleComponents.size() > 0)
 	{
 		// draw each visibleComponent
-		for (auto& l_visibleComponent : InnoGameSystem::getVisibleComponents())
+		for (auto& l_visibleComponent : GameSystemSingletonComponent::getInstance().m_visibleComponents)
 		{
 			if (l_visibleComponent->m_visiblilityType == visiblilityType::BILLBOARD)
 			{
 				auto l_GlobalPos = InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalPos();
-				auto l_GlobalCameraPos = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.caclGlobalPos();
+				auto l_GlobalCameraPos = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.caclGlobalPos();
 
 				updateUniform(
 					GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_pos,
@@ -2721,11 +2726,11 @@ void GLRenderingSystem::updateFinalRenderPass()
 
 	glUseProgram(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassProgram.m_program);
 
-	//if (InnoGameSystem::getCameraComponents().size() > 0)
+	//if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
 	//{
-	//	mat4 p = InnoGameSystem::getCameraComponents()[0]->m_projectionMatrix;
-	//	mat4 r = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
-	//	mat4 t = InnoGameSystem::getTransformComponent(InnoGameSystem::getCameraComponents()[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
+	//	mat4 p = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
+	//	mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
+	//	mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
 
 	//	updateUniform(
 	//		FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_p,
@@ -2737,7 +2742,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//		FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_t,
 	//		t);
 
-	//	for (auto& l_cameraComponent : InnoGameSystem::getCameraComponents())
+	//	for (auto& l_cameraComponent : GameSystemSingletonComponent::getInstance().m_cameraComponents)
 	//	{
 	//		// draw frustum for cameraComponent
 	//		if (l_cameraComponent->m_drawFrustum)
@@ -2765,10 +2770,10 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//		}
 	//	}
 	//}
-	//if (InnoGameSystem::getLightComponents().size() > 0)
+	//if (GameSystemSingletonComponent::getInstance().m_lightComponents.size() > 0)
 	//{
 	//	// draw AABB for lightComponent
-	//	for (auto& l_lightComponent : InnoGameSystem::getLightComponents())
+	//	for (auto& l_lightComponent : GameSystemSingletonComponent::getInstance().m_lightComponents)
 	//	{
 	//		if (l_lightComponent->m_drawAABB)
 	//		{
@@ -2870,11 +2875,11 @@ void GLRenderingSystem::updateFinalRenderPass()
 	}
 }
 
-void GLRenderingSystem::shutdown()
+void GLRenderingSystem::Instance::shutdown()
 {
 }
 
-objectStatus GLRenderingSystem::getStatus()
+objectStatus GLRenderingSystem::Instance::getStatus()
 {
 	return m_objectStatus;
 }
@@ -2885,7 +2890,7 @@ GLuint GLRenderingSystem::getUniformLocation(GLuint shaderProgram, const std::st
 	int uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 	if (uniformLocation == 0xFFFFFFFF)
 	{
-		InnoLogSystem::printLog("GLRenderingSystem: innoShader: Error: Uniform lost: " + uniformName);
+		LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: Error: Uniform lost: " + uniformName);
 		return -1;
 	}
 	return uniformLocation;
@@ -2923,12 +2928,11 @@ void GLRenderingSystem::updateUniform(const GLint uniformLocation, double x, dou
 
 void GLRenderingSystem::updateUniform(const GLint uniformLocation, const mat4 & mat)
 {
-	TMat4<float> l_m = InnoMath::precisionConvert<double, float>(mat);
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &l_mB.m[0][0]);
+	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat.m[0][0]);
 #endif
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-	glUniformMatrix4fv(uniformLocation, 1, GL_TRUE, &l_m.m[0][0]);
+	glUniformMatrix4fv(uniformLocation, 1, GL_TRUE, &mat.m[0][0]);
 #endif
 }
 
@@ -2956,25 +2960,31 @@ void GLRenderingSystem::activateShaderProgram(const GLShaderProgramComponent * G
 	glUseProgram(GLShaderProgramComponent->m_program);
 }
 
-void GLRenderingSystem::activateMesh(const MeshDataComponent * GLMeshDataComponent)
+void GLRenderingSystem::activateMesh(MeshDataComponent * rhs)
 {
-	glBindVertexArray(GLMeshDataComponent->m_VAO);
+	auto l_ptr = reinterpret_cast<GLMeshDataComponent*>(rhs);
+
+	glBindVertexArray(l_ptr->m_VAO);
 }
 
-void GLRenderingSystem::drawMesh(const MeshDataComponent * GLMeshDataComponent)
+void GLRenderingSystem::drawMesh(MeshDataComponent * rhs)
 {
-	glDrawElements(GL_TRIANGLES + (int)GLMeshDataComponent->m_meshDrawMethod, (GLsizei)GLMeshDataComponent->m_indices.size(), GL_UNSIGNED_INT, 0);
+	auto l_ptr = reinterpret_cast<GLMeshDataComponent*>(rhs);
+
+	glDrawElements(GL_TRIANGLES + (int)l_ptr->m_meshDrawMethod, (GLsizei)l_ptr->m_indices.size(), GL_UNSIGNED_INT, 0);
 }
 
-void GLRenderingSystem::activateTexture(const TextureDataComponent * GLTextureDataComponent, int activateIndex)
+void GLRenderingSystem::activateTexture(TextureDataComponent * rhs, int activateIndex)
 {
+	auto l_ptr = reinterpret_cast<GLTextureDataComponent*>(rhs);
+
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
-	if (GLTextureDataComponent->m_textureType == textureType::CUBEMAP || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CAPTURE || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || GLTextureDataComponent->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+	if (l_ptr->m_textureType == textureType::CUBEMAP || l_ptr->m_textureType == textureType::ENVIRONMENT_CAPTURE || l_ptr->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || l_ptr->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 	{
-		glBindTexture(GL_TEXTURE_CUBE_MAP, GLTextureDataComponent->m_TAO);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, l_ptr->m_TAO);
 	}
 	else
 	{
-		glBindTexture(GL_TEXTURE_2D, GLTextureDataComponent->m_TAO);
+		glBindTexture(GL_TEXTURE_2D, l_ptr->m_TAO);
 	}
 }

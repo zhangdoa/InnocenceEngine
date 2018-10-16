@@ -4,15 +4,28 @@
 
 namespace GLWindowSystem
 {
-	void setup();
-	void initialize();
-	void update();
-	void shutdown();
+	class Instance
+	{
+	public:
+		__declspec(dllexport) void setup();
+		__declspec(dllexport) void initialize();
+		__declspec(dllexport) void update();
+		__declspec(dllexport) void shutdown();
 
-	void swapBuffer();
+		__declspec(dllexport) objectStatus getStatus();
 
-	void hideMouseCursor();
-	void showMouseCursor();
+		__declspec(dllexport) void swapBuffer();
 
-	objectStatus getStatus();
+		__declspec(dllexport) void hideMouseCursor();
+		__declspec(dllexport) void showMouseCursor();
+
+		static Instance& get()
+		{
+			static Instance instance;
+			return instance;
+		}
+
+	private:
+		Instance() {};
+	};
 };

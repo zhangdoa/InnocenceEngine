@@ -1,8 +1,5 @@
 #include "TaskSystem.h"
-#include "MemorySystem.h"
-#include "LogSystem.h"
-#include "AssetSystem.h"
-#include <iostream>
+#include "../../component/LogSystemSingletonComponent.h"
 
 namespace InnoTaskSystem
 {
@@ -16,7 +13,7 @@ void InnoTaskSystem::setup()
 
 void InnoTaskSystem::initialize()
 {
-	InnoLogSystem::printLog("TaskSystem has been initialized.");
+	LogSystemSingletonComponent::getInstance().m_log.push("TaskSystem has been initialized.");
 }
 
 void InnoTaskSystem::update()
@@ -27,7 +24,7 @@ void InnoTaskSystem::shutdown()
 {
 	m_TaskSystemStatus = objectStatus::STANDBY;
 	m_TaskSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("TaskSystem has been shutdown.");
+	LogSystemSingletonComponent::getInstance().m_log.push("TaskSystem has been shutdown.");
 }
 
 objectStatus InnoTaskSystem::getStatus()

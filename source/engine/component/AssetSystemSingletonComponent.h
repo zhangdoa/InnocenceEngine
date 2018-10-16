@@ -1,17 +1,11 @@
 #pragma once
 #include "BaseComponent.h"
 
-#if defined (INNO_RENDERER_OPENGL)
 #include "../component/GLMeshDataComponent.h"
 #include "../component/GLTextureDataComponent.h"
-#define MeshDataComponent GLMeshDataComponent
-#define TextureDataComponent GLTextureDataComponent
-#elif defined (INNO_RENDERER_DX)
+
 #include "../component/DXMeshDataComponent.h"
 #include "../component/DXTextureDataComponent.h"
-#define MeshDataComponent DXMeshDataComponent
-#define TextureDataComponent DXTextureDataComponent
-#endif
 
 #include "../common/InnoConcurrency.h"
 class AssetSystemSingletonComponent : public BaseComponent
@@ -53,6 +47,7 @@ public:
     const std::string m_modelRelativePath = std::string{"..//res//models//"};
     const std::string m_shaderRelativePath = std::string{"..//res//shaders//"};
 
+	std::vector<InnoFuture<void>> m_asyncTaskVector;
 private:
 	AssetSystemSingletonComponent() {};
 };

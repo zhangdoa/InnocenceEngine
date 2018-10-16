@@ -1,13 +1,13 @@
 #include "DXWindowSystem.h"
-#include "../InputSystem.h"
-#include "../LogSystem.h"
+#include "../InputSystem/InputSystem.h"
+#include "../../component/LogSystemSingletonComponent.h"
 
 namespace DXWindowSystem
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 }
 
-void DXWindowSystem::setup()
+void DXWindowSystem::Instance::setup()
 {
 	WNDCLASS wc = {};
 
@@ -56,18 +56,17 @@ void DXWindowSystem::setup()
 	m_objectStatus = objectStatus::ALIVE;
 }
 
-void DXWindowSystem::initialize()
+void DXWindowSystem::Instance::initialize()
 {
 	//initialize window
 
 	//initialize input
 
 	InnoInputSystem::initialize();
-
-	InnoLogSystem::printLog("DXWindowSystem has been initialized.");
+	LogSystemSingletonComponent::getInstance().m_log.push("DXWindowSystem has been initialized.");
 }
 
-void DXWindowSystem::update()
+void DXWindowSystem::Instance::update()
 {
 	//update window
 	MSG msg;
@@ -94,7 +93,7 @@ void DXWindowSystem::update()
 	InnoInputSystem::update();
 }
 
-void DXWindowSystem::shutdown()
+void DXWindowSystem::Instance::shutdown()
 {
 	// Show the mouse cursor.
 	ShowCursor(true);
@@ -109,7 +108,7 @@ void DXWindowSystem::shutdown()
 	DestroyWindow(WindowSystemSingletonComponent::getInstance().m_hwnd);
 	WindowSystemSingletonComponent::getInstance().m_hwnd = NULL;
 
-	InnoLogSystem::printLog("DXWindowSystem: Window closed.");
+	LogSystemSingletonComponent::getInstance().m_log.push("DXWindowSystem: Window closed.");
 
 	// Remove the application instance.
 	UnregisterClass(WindowSystemSingletonComponent::getInstance().m_applicationName, WindowSystemSingletonComponent::getInstance().m_hInstance);
@@ -119,15 +118,15 @@ void DXWindowSystem::shutdown()
 	ApplicationHandle = NULL;
 
 	m_objectStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("DXWindowSystem has been shutdown.");
+	LogSystemSingletonComponent::getInstance().m_log.push("DXWindowSystem has been shutdown.");
 }
 
-objectStatus DXWindowSystem::getStatus()
+objectStatus DXWindowSystem::Instance::getStatus()
 {
 	return m_objectStatus;
 }
 
-void DXWindowSystem::swapBuffer()
+void DXWindowSystem::Instance::swapBuffer()
 {
 }
 

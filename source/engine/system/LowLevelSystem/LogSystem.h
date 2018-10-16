@@ -1,6 +1,6 @@
 #pragma once
-#include "../common/InnoType.h"
-#include "../common/InnoMath.h"
+#include "../../common/InnoType.h"
+#include "../../common/InnoMath.h"
 
 namespace InnoLogSystem
 {

@@ -1,12 +1,14 @@
 #include "BaseApplication.h"
-#include "../system/MemorySystem.h"
-#include "../system/LogSystem.h"
-#include "../system/TaskSystem.h"
-#include "../system/TimeSystem.h"
-#include "../system/GameSystem.h"
-#include "../system/AssetSystem.h"
-#include "../system/PhysicsSystem.h"
-#include "../system/VisionSystem.h"
+#include "../system/LowLevelSystem/MemorySystem.h"
+#include "../system/LowLevelSystem/LogSystem.h"
+#include "../system/LowLevelSystem/TaskSystem.h"
+#include "../system/LowLevelSystem/TimeSystem.h"
+#include "../system/GameSystem/GameSystem.h"
+#include "../system/AssetSystem/AssetSystem.h"
+#include "../system/PhysicsSystem/PhysicsSystem.h"
+#include "../system/VisionSystem/VisionSystem.h"
+
+#include "../component/GameSystemSingletonComponent.h"
 
 namespace InnoApplication
 {
@@ -64,7 +66,7 @@ void InnoApplication::update()
 
 	if (InnoVisionSystem::getStatus() == objectStatus::ALIVE)
 	{
-		if (InnoGameSystem::needRender())
+		if (GameSystemSingletonComponent::getInstance().m_needRender)
 		{
 			InnoPhysicsSystem::update();
 			InnoVisionSystem::update();

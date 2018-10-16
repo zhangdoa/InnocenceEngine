@@ -1,2 +1,7 @@
 aux_source_directory(. DIR_SRCS)
-add_library(InnoGLRenderer ${DIR_SRCS})
+add_library(InnoGLRenderer SHARED ${DIR_SRCS})
+target_link_libraries(InnoGLRenderer GLAD)
+target_link_libraries(InnoGLRenderer ImGui)
+target_link_libraries(InnoGLRenderer InnoAssetSystem)
+target_link_libraries(InnoGLRenderer InnoGameSystem)
+target_link_libraries(InnoGLRenderer InnoInputSystem)

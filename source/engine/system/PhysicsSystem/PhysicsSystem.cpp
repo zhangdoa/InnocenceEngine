@@ -1,8 +1,9 @@
 #include "PhysicsSystem.h"
-#include "GameSystem.h"
-#include "AssetSystem.h"
-#include "LogSystem.h"
-#include "TaskSystem.h"
+#include "../AssetSystem/AssetSystem.h"
+#include "../GameSystem/GameSystem.h"
+#include "../../component/LogSystemSingletonComponent.h"
+#include "../../component/GameSystemSingletonComponent.h"
+#include "../LowLevelSystem/TaskSystem.h"
 
 namespace InnoPhysicsSystem
 {
@@ -43,7 +44,7 @@ void InnoPhysicsSystem::setupComponents()
 
 void InnoPhysicsSystem::setupCameraComponents()
 {
-	for (auto& i : InnoGameSystem::getCameraComponents())
+	for (auto& i : GameSystemSingletonComponent::getInstance().m_cameraComponents)
 	{
 		generateProjectionMatrix(i);
 		generateRayOfEye(i);
@@ -124,7 +125,7 @@ void InnoPhysicsSystem::generateFrustumVertices(CameraComponent * cameraComponen
 
 void InnoPhysicsSystem::setupVisibleComponents()
 {
-	for (auto i : InnoGameSystem::getVisibleComponents())
+	for (auto i : GameSystemSingletonComponent::getInstance().m_visibleComponents)
 	{
 		if (i->m_visiblilityType != visiblilityType::INVISIBLE)
 		{
@@ -135,7 +136,7 @@ void InnoPhysicsSystem::setupVisibleComponents()
 
 void InnoPhysicsSystem::setupLightComponents()
 {
-	for (auto& i : InnoGameSystem::getLightComponents())
+	for (auto& i : GameSystemSingletonComponent::getInstance().m_lightComponents)
 	{
 		i->m_direction = vec4(0.0, 0.0, 1.0, 0.0);
 		i->m_constantFactor = 1.0;
@@ -236,7 +237,7 @@ void InnoPhysicsSystem::generateAABB(LightComponent & lightComponent)
 	lightComponent.m_projectionMatrices.clear();
 
 	//1.translate the big frustum to light space
-	auto l_camera = InnoGameSystem::getCameraComponents()[0];
+	auto l_camera = GameSystemSingletonComponent::getInstance().m_cameraComponents[0];
 	auto l_frustumVertices = l_camera->m_frustumVertices;
 
 	//2.calculate splited planes' corners
@@ -422,14 +423,14 @@ void InnoPhysicsSystem::initialize()
 {
 	setupComponents();
 	m_PhysicsSystemStatus = objectStatus::ALIVE;
-	InnoLogSystem::printLog("PhysicsSystem has been initialized.");
+	LogSystemSingletonComponent::getInstance().m_log.push("PhysicsSystem has been initialized.");
 }
 
 void InnoPhysicsSystem::updateCameraComponents()
 {
-	if (InnoGameSystem::getCameraComponents().size() > 0)
+	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
 	{
-		for (auto& i : InnoGameSystem::getCameraComponents())
+		for (auto& i : GameSystemSingletonComponent::getInstance().m_cameraComponents)
 		{
 			generateRayOfEye(i);
 			generateFrustumVertices(i);
@@ -440,10 +441,10 @@ void InnoPhysicsSystem::updateCameraComponents()
 
 void InnoPhysicsSystem::updateLightComponents()
 {
-	if (InnoGameSystem::getLightComponents().size() > 0)
+	if (GameSystemSingletonComponent::getInstance().m_lightComponents.size() > 0)
 	{
 		// generate AABB for CSM
-		for (auto& i : InnoGameSystem::getLightComponents())
+		for (auto& i : GameSystemSingletonComponent::getInstance().m_lightComponents)
 		{
 			setupLightComponentRadius(i);
 			if (i->m_lightType == lightType::DIRECTIONAL)
@@ -467,7 +468,7 @@ void InnoPhysicsSystem::update()
 void InnoPhysicsSystem::shutdown()
 {
 	m_PhysicsSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("PhysicsSystem has been shutdown.");
+	LogSystemSingletonComponent::getInstance().m_log.push("PhysicsSystem has been shutdown.");
 }
 
 objectStatus InnoPhysicsSystem::getStatus()

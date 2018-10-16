@@ -2,6 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include "TimeSystem.h"
+#include "../../component/LogSystemSingletonComponent.h"
 
 namespace InnoLogSystem
 {
@@ -116,6 +117,14 @@ void InnoLogSystem::initialize()
 
 void InnoLogSystem::update()
 {
+	if (LogSystemSingletonComponent::getInstance().m_log.size() > 0)
+	{
+		std::string l_log;
+		if (LogSystemSingletonComponent::getInstance().m_log.tryPop(l_log))
+		{
+			printLog(l_log);
+		}
+	}
 }
 
 void InnoLogSystem::shutdown()

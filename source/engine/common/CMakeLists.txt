@@ -6,5 +6,5 @@ endif (INNO_RENDERER_DX)
 
 add_library(InnoMath InnoMath.h InnoMath.cpp)
 target_link_libraries(InnoMain InnoMath)
-target_link_libraries(InnoMain InnoSystem)
-
+target_link_libraries(InnoMain InnoGameSystem)
+target_link_libraries(InnoMain InnoVisionSystem)

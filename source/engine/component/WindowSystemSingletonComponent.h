@@ -1,11 +1,11 @@
 #pragma once
 #include "BaseComponent.h"
-#if defined (INNO_RENDERER_OPENGL)
+
 #include "../system/GLRenderer/GLHeaders.h"
-#elif defined (INNO_RENDERER_DX)
+
 #include <windows.h>
 #include <windowsx.h>
-#endif
+
 
 class WindowSystemSingletonComponent : public BaseComponent
 {
@@ -23,15 +23,13 @@ public:
 	std::string m_windowName;
 	bool m_fullScreen = false;
 
-#if defined (INNO_RENDERER_OPENGL)
 	GLFWwindow* m_window;
-#elif defined (INNO_RENDERER_DX)
+
 	HINSTANCE m_hInstance;
 	PSTR m_pScmdline;
 	int m_nCmdshow;
 	LPCSTR m_applicationName;
 	HWND m_hwnd;
-#endif
 
 	//input data
 	const int NUM_KEYCODES = 256;
@@ -45,6 +43,9 @@ public:
 	double m_mouseYOffset;
 	double m_mouseLastX;
 	double m_mouseLastY;
+
+	vec4 m_mousePositionInWorldSpace;
+	Ray m_mouseRay;
 
 private:
 	WindowSystemSingletonComponent() {};

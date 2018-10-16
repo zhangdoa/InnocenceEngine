@@ -1676,15 +1676,6 @@ private:
 	TVec4<T> m_previousScale;
 };
 
-#if defined (INNO_RENDERER_OPENGL)
-using vec2 = TVec2<double>;
-using vec4 = TVec4<double>;
-using mat4 = TMat4<double>;
-using Vertex = TVertex<double>;
-using Ray = TRay<double>;
-using AABB = TAABB<double>;
-using Transform = TTransform<double>;
-#elif defined (INNO_RENDERER_DX)
 using vec2 = TVec2<float>;
 using vec4 = TVec4<float>;
 using mat4 = TMat4<float>;
@@ -1692,4 +1683,3 @@ using Vertex = TVertex<float>;
 using Ray = TRay<float>;
 using AABB = TAABB<float>;
 using Transform = TTransform<float>;
-#endif

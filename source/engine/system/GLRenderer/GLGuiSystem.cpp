@@ -9,7 +9,7 @@
 #include "../../third-party/ImGui/imgui.h"
 #include "../../third-party/ImGui/imgui_impl_glfw_gl3.h"
 
-#include "../LogSystem.h"
+#include "../../component/LogSystemSingletonComponent.h"
 
 class ImGuiWrapper
 {
@@ -36,33 +36,33 @@ namespace GLGuiSystem
 	objectStatus m_GLGuiSystemStatus = objectStatus::SHUTDOWN;
 };
 
-void GLGuiSystem::setup()
+void GLGuiSystem::Instance::setup()
 {
 	ImGuiWrapper::getInstance().setup();
 	m_GLGuiSystemStatus = objectStatus::ALIVE;
 }
 
-void GLGuiSystem::initialize()
+void GLGuiSystem::Instance::initialize()
 {
 	ImGuiWrapper::getInstance().initialize();
-	InnoLogSystem::printLog("GLGuiSystem has been initialized.");
+	LogSystemSingletonComponent::getInstance().m_log.push("GLGuiSystem has been initialized.");
 }
 
-void GLGuiSystem::update()
+void GLGuiSystem::Instance::update()
 {
 	ImGuiWrapper::getInstance().update();
 }
 
-void GLGuiSystem::shutdown()
+void GLGuiSystem::Instance::shutdown()
 {
 	m_GLGuiSystemStatus = objectStatus::STANDBY;
 	ImGuiWrapper::getInstance().shutdown();
 
 	m_GLGuiSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("GLGuiSystem has been shutdown.");
+	LogSystemSingletonComponent::getInstance().m_log.push("GLGuiSystem has been shutdown.");
 }
 
-objectStatus GLGuiSystem::getStatus()
+objectStatus GLGuiSystem::Instance::getStatus()
 {
 	return m_GLGuiSystemStatus;
 }

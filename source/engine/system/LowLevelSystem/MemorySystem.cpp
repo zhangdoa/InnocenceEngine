@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iterator>
 #include <vector>
-#include "LogSystem.h"
+#include "../../component/LogSystemSingletonComponent.h"
 #include "TimeSystem.h"
 
 namespace InnoMemorySystem
@@ -81,7 +81,7 @@ void InnoMemorySystem::setup(unsigned long  memoryPoolSize)
 void InnoMemorySystem::initialize()
 {
 	m_MemorySystemStatus = objectStatus::ALIVE;
-	InnoLogSystem::printLog("MemorySystem has been initialized.");
+	LogSystemSingletonComponent::getInstance().m_log.push("MemorySystem has been initialized.");
 }
 
 void InnoMemorySystem::update()
@@ -121,7 +121,7 @@ void * InnoMemorySystem::allocate(unsigned long size)
 	// If no block is found, return nullptr
 	if (!l_suitableChuckPtr)
 	{ 
-		InnoLogSystem::printLog("MemorySystem: Can't allocate memory!");
+		LogSystemSingletonComponent::getInstance().m_log.push("MemorySystem: Can't allocate memory!");
 		return nullptr; 
 	}
 

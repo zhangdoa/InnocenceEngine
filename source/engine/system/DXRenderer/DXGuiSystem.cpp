@@ -1,33 +1,33 @@
 #include "DXGuiSystem.h"
-#include "../LogSystem.h"
+#include "../../component/LogSystemSingletonComponent.h"
 
 namespace DXGuiSystem
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 }
 
-void DXGuiSystem::setup()
+void DXGuiSystem::Instance::setup()
 {
 }
 
-void DXGuiSystem::initialize()
+void DXGuiSystem::Instance::initialize()
 {
-	InnoLogSystem::printLog("DXGuiSystem has been initialized.");
+	LogSystemSingletonComponent::getInstance().m_log.push("DXGuiSystem has been initialized.");
 }
 
-void DXGuiSystem::update()
+void DXGuiSystem::Instance::update()
 {
 }
 
-void DXGuiSystem::shutdown()
+void DXGuiSystem::Instance::shutdown()
 {
 	m_objectStatus = objectStatus::STANDBY;
 
 	m_objectStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("DXGuiSystem has been shutdown.");
+	LogSystemSingletonComponent::getInstance().m_log.push("DXGuiSystem has been shutdown.");
 }
 
-objectStatus DXGuiSystem::getStatus()
+objectStatus DXGuiSystem::Instance::getStatus()
 {
 	return m_objectStatus;
 }

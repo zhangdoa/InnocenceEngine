@@ -1,6 +1,6 @@
 #pragma once
-#include "../common/InnoType.h"
-#include "../common/InnoConcurrency.h"
+#include "../../common/InnoType.h"
+#include "../../common/InnoConcurrency.h"
 
 namespace InnoTaskSystem
 {

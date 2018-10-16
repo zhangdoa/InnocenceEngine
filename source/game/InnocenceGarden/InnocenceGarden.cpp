@@ -1,6 +1,6 @@
 #include "InnocenceGarden.h"
-#include "../../engine/system/MemorySystem.h"
-#include "../../engine/system/GameSystem.h"
+#include "../../engine/system/LowLevelSystem/MemorySystem.h"
+#include "../../engine/system/GameSystem/GameSystem.h"
 
 namespace InnocenceGarden
 {

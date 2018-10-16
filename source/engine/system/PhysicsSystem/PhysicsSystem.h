@@ -1,5 +1,5 @@
 #pragma once
-#include "../common/ComponentHeaders.h"
+#include "../../common/ComponentHeaders.h"
 
 namespace InnoPhysicsSystem
 {
