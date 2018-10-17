@@ -3,10 +3,10 @@
 
 namespace InnoGameSystem
 {
-	void setup();
-	void initialize();
-	void update();
-	void shutdown();
+	__declspec(dllexport) void setup();
+	__declspec(dllexport) void initialize();
+	__declspec(dllexport) void update();
+	__declspec(dllexport) void shutdown();
 
 	void addTransformComponent(TransformComponent* rhs);
 	void addVisibleComponent(VisibleComponent* rhs);
@@ -23,5 +23,5 @@ namespace InnoGameSystem
 	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(double)>* function);
 	EntityID createEntityID();
 
-	objectStatus getStatus();
+	__declspec(dllexport) objectStatus getStatus();
 };

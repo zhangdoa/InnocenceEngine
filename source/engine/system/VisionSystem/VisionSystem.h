@@ -3,10 +3,10 @@
 
 namespace InnoVisionSystem
 {
-	void setup();
-	void initialize();
-	void update();
-	void shutdown();
+	__declspec(dllexport) void setup();
+	__declspec(dllexport) void initialize();
+	__declspec(dllexport) void update();
+	__declspec(dllexport) void shutdown();
 
-	objectStatus getStatus();
+	__declspec(dllexport) objectStatus getStatus();
 };

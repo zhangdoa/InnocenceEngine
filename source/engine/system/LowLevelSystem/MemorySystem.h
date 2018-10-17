@@ -3,18 +3,17 @@
 
 namespace InnoMemorySystem
 {
-	void setup();
-	void setup(unsigned long  memoryPoolSize);
-	void initialize();
-	void update();
-	void shutdown();
+	__declspec(dllexport) void setup();
+	__declspec(dllexport) void initialize();
+	__declspec(dllexport) void update();
+	__declspec(dllexport) void shutdown();
 
 	__declspec(dllexport) void* allocate(unsigned long size);
 	__declspec(dllexport) void free(void* ptr);
 	__declspec(dllexport) void serializeImpl(void* ptr);
 	__declspec(dllexport) void* deserializeImpl(unsigned long size, const std::string& filePath);
 
-	void dumpToFile(bool fullDump);
+	__declspec(dllexport) void dumpToFile(bool fullDump);
 	
     template <typename T> __declspec(dllexport) T * spawn()
     {
@@ -41,7 +40,6 @@ namespace InnoMemorySystem
     {
         return reinterpret_cast<T *>(deserializeImpl(sizeof(T), filePath));
     };
-
-    
-	objectStatus getStatus();
+   
+	__declspec(dllexport) objectStatus getStatus();
 };

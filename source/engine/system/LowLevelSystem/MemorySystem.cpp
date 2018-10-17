@@ -29,7 +29,7 @@ namespace InnoMemorySystem
 	static const uint32_t s_MaxBlockSize = s_BlockSizes[s_NumBlockSizes - 1];
 
 	const unsigned long  m_maxPoolSize = 1024 * 1024 * 512;
-	static const unsigned char m_minFreeBlockSize = 48;
+	static const unsigned int m_minFreeBlockSize = 48;
 	unsigned long  m_totalPoolSize;
 	unsigned long  m_availablePoolSize;
 
@@ -38,7 +38,6 @@ namespace InnoMemorySystem
 	unsigned char  m_endBoundMarker[m_boundCheckSize] = { '[','I','n','n','o','C','h','u','c','k','.','.','E','n','d',']' };
 
 	unsigned char* m_poolMemoryPtr = nullptr;
-
 
 	class Chunk
 	{
@@ -59,23 +58,18 @@ namespace InnoMemorySystem
 
 void InnoMemorySystem::setup()
 {
-	InnoMemorySystem::setup(m_maxPoolSize);
-}
-
-void InnoMemorySystem::setup(unsigned long  memoryPoolSize)
-{
 	// Allocate memory pool
 	m_poolMemoryPtr = nullptr;
-	m_poolMemoryPtr = ::new unsigned char[memoryPoolSize];
-	std::memset(m_poolMemoryPtr, 0xCC, memoryPoolSize);
-	m_totalPoolSize = memoryPoolSize;
+	m_poolMemoryPtr = ::new unsigned char[m_maxPoolSize];
+	std::memset(m_poolMemoryPtr, 0xCC, m_maxPoolSize);
+	m_totalPoolSize = m_maxPoolSize;
 
 	// first free chuck
-	Chunk l_freeChunk(memoryPoolSize);
+	Chunk l_freeChunk(m_maxPoolSize);
 	std::memcpy(m_poolMemoryPtr, m_startBoundMarker, m_boundCheckSize);
 	std::memcpy(m_poolMemoryPtr + m_boundCheckSize, &l_freeChunk, sizeof(Chunk));
-	std::memcpy(m_poolMemoryPtr + memoryPoolSize - m_boundCheckSize, m_endBoundMarker, m_boundCheckSize);
-	m_availablePoolSize = memoryPoolSize - sizeof(Chunk) - m_boundCheckSize * 2;
+	std::memcpy(m_poolMemoryPtr + m_maxPoolSize - m_boundCheckSize, m_endBoundMarker, m_boundCheckSize);
+	m_availablePoolSize = m_maxPoolSize - sizeof(Chunk) - m_boundCheckSize * 2;
 }
 
 void InnoMemorySystem::initialize()

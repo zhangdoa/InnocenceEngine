@@ -6,17 +6,17 @@
 
 namespace InnoTimeSystem
 {
-	void setup();
-	void initialize();
-	void update();
-	void shutdown();
+	__declspec(dllexport) void setup();
+	__declspec(dllexport) void initialize();
+	__declspec(dllexport) void update();
+	__declspec(dllexport) void shutdown();
 
-	const time_t getGameStartTime();
-	const long long getDeltaTime();
-	const long long getcurrentTime();
-	const std::tuple<int, unsigned, unsigned> getCivilFromDays(int z);
-	const std::string getCurrentTimeInLocal(std::chrono::hours timezone_adjustment = std::chrono::hours(8));
-	const std::string getCurrentTimeInLocalForOutput(std::chrono::hours timezone_adjustment = std::chrono::hours(8));
+	__declspec(dllexport) const time_t getGameStartTime();
+	__declspec(dllexport) const long long getDeltaTime();
+	__declspec(dllexport) const long long getcurrentTime();
+	__declspec(dllexport) const std::tuple<int, unsigned, unsigned> getCivilFromDays(int z);
+	__declspec(dllexport) const std::string getCurrentTimeInLocal(std::chrono::hours timezone_adjustment = std::chrono::hours(8));
+	__declspec(dllexport) const std::string getCurrentTimeInLocalForOutput(std::chrono::hours timezone_adjustment = std::chrono::hours(8));
 
-	objectStatus getStatus();
+	__declspec(dllexport) objectStatus getStatus();
 };

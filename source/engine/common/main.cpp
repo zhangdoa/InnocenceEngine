@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "config.h"
-#include "BaseApplication.h"
+#include "InnoApplication.h"
 #include "../component/WindowSystemSingletonComponent.h"
 
 #if defined(INNO_RENDERER_DX)

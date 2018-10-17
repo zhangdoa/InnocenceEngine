@@ -13,8 +13,6 @@ namespace DXGuiSystem
 
 		__declspec(dllexport) objectStatus getStatus();
 
-		__declspec(dllexport) void swapBuffer();
-
 		static Instance& get()
 		{
 			static Instance instance;

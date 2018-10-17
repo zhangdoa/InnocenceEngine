@@ -4,19 +4,19 @@
 
 namespace InnoTaskSystem
 {
-	void setup();
-	void initialize();
-	void update();
-	void shutdown();
+	__declspec(dllexport) void setup();
+	__declspec(dllexport) void initialize();
+	__declspec(dllexport) void update();
+	__declspec(dllexport) void shutdown();
 
     static InnoThreadPool m_threadPool;
     
 	template <typename Func, typename... Args>
-	auto submit(Func&& func, Args&&... args)
+	__declspec(dllexport) auto submit(Func&& func, Args&&... args)
 	{
 		return m_threadPool.submit(std::forward<Func>(func), std::forward<Args>(args)...);
 	}
 
-	objectStatus getStatus();
+	__declspec(dllexport) objectStatus getStatus();
 };
 

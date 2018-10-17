@@ -14,10 +14,10 @@
 
 namespace InnoAssetSystem
 {
-	void setup();
-	void initialize();
-	void update();
-	void shutdown();
+	__declspec(dllexport) void setup();
+	__declspec(dllexport) void initialize();
+	__declspec(dllexport) void update();
+	__declspec(dllexport) void shutdown();
 
 	__declspec(dllexport) MeshDataComponent* getMesh(meshID meshID);
 	__declspec(dllexport) TextureDataComponent* getTexture(textureID textureID);
@@ -29,6 +29,6 @@ namespace InnoAssetSystem
 	__declspec(dllexport) vec4 findMinVertex(meshID meshID);
 	__declspec(dllexport) std::string loadShader(const std::string& fileName);
 
-	objectStatus getStatus();
+	__declspec(dllexport) objectStatus getStatus();
 };
 

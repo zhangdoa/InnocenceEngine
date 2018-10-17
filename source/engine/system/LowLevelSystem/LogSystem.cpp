@@ -1,5 +1,4 @@
 #include "LogSystem.h"
-#include <sstream>
 #include <iostream>
 #include "TimeSystem.h"
 #include "../../component/LogSystemSingletonComponent.h"
