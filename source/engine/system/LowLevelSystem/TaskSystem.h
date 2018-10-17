@@ -1,22 +1,23 @@
 #pragma once
 #include "../../common/InnoType.h"
 #include "../../common/InnoConcurrency.h"
+#include "../../exports/LowLevelSystem_Export.h"
 
 namespace InnoTaskSystem
 {
-	__declspec(dllexport) void setup();
-	__declspec(dllexport) void initialize();
-	__declspec(dllexport) void update();
-	__declspec(dllexport) void shutdown();
+	InnoLowLevelSystem_EXPORT void setup();
+	InnoLowLevelSystem_EXPORT void initialize();
+	InnoLowLevelSystem_EXPORT void update();
+	InnoLowLevelSystem_EXPORT void shutdown();
 
     static InnoThreadPool m_threadPool;
     
 	template <typename Func, typename... Args>
-	__declspec(dllexport) auto submit(Func&& func, Args&&... args)
+	auto submit(Func&& func, Args&&... args)
 	{
 		return m_threadPool.submit(std::forward<Func>(func), std::forward<Args>(args)...);
 	}
 
-	__declspec(dllexport) objectStatus getStatus();
+	InnoLowLevelSystem_EXPORT objectStatus getStatus();
 };
 

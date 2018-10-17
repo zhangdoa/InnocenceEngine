@@ -1,5 +1,6 @@
 #include "InnoApplication.h"
-//#include "../system/LowLevelSystem/MemorySystem.h"
+#include "../system/LowLevelSystem/MemorySystem.h"
+#include "../exports/LowLevelSystem_Export.h"
 //#include "../system/LowLevelSystem/LogSystem.h"
 //#include "../system/LowLevelSystem/TaskSystem.h"
 //#include "../system/LowLevelSystem/TimeSystem.h"
@@ -17,7 +18,7 @@ namespace InnoApplication
 
 void InnoApplication::setup()
 {
-	//InnoMemorySystem::setup();
+	InnoMemorySystem::setup();
 	//InnoLogSystem::setup();
 	//InnoTaskSystem::setup();
 	//InnoTimeSystem::setup();

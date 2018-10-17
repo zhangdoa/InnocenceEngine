@@ -1,45 +1,46 @@
 #pragma once
 #include "../../common/InnoType.h"
+#include "../../exports/LowLevelSystem_Export.h"
 
 namespace InnoMemorySystem
 {
-	__declspec(dllexport) void setup();
-	__declspec(dllexport) void initialize();
-	__declspec(dllexport) void update();
-	__declspec(dllexport) void shutdown();
+	InnoLowLevelSystem_EXPORT void setup();
+	InnoLowLevelSystem_EXPORT void initialize();
+	InnoLowLevelSystem_EXPORT void update();
+	InnoLowLevelSystem_EXPORT void shutdown();
 
-	__declspec(dllexport) void* allocate(unsigned long size);
-	__declspec(dllexport) void free(void* ptr);
-	__declspec(dllexport) void serializeImpl(void* ptr);
-	__declspec(dllexport) void* deserializeImpl(unsigned long size, const std::string& filePath);
+	InnoLowLevelSystem_EXPORT void* allocate(unsigned long size);
+	InnoLowLevelSystem_EXPORT void free(void* ptr);
+	InnoLowLevelSystem_EXPORT void serializeImpl(void* ptr);
+	InnoLowLevelSystem_EXPORT void* deserializeImpl(unsigned long size, const std::string& filePath);
 
-	__declspec(dllexport) void dumpToFile(bool fullDump);
+	InnoLowLevelSystem_EXPORT void dumpToFile(bool fullDump);
 	
-    template <typename T> __declspec(dllexport) T * spawn()
+    template <typename T> T * spawn()
     {
         return new(allocate(sizeof(T))) T();
     };
     
-    template <typename T> __declspec(dllexport) T * spawn(size_t n)
+    template <typename T> T * spawn(size_t n)
     {
         return reinterpret_cast<T *>(allocate(n * sizeof(T)));
     };
     
-    template <typename T> __declspec(dllexport) void destroy(T *p)
+    template <typename T> void destroy(T *p)
     {
         reinterpret_cast<T *>(p)->~T();
         free(p);
     };
     
-    template <typename T> __declspec(dllexport) void serialize(T* p)
+    template <typename T> void serialize(T* p)
     {
         serializeImpl(p);
     };
     
-    template <typename T> __declspec(dllexport) T* deserialize(const std::string& filePath)
+    template <typename T> T* deserialize(const std::string& filePath)
     {
         return reinterpret_cast<T *>(deserializeImpl(sizeof(T), filePath));
     };
    
-	__declspec(dllexport) objectStatus getStatus();
+	InnoLowLevelSystem_EXPORT objectStatus getStatus();
 };

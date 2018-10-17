@@ -1,22 +1,20 @@
 #pragma once
-#include <sstream>
-#include <chrono>
-#include <ctime>
 #include "../../common/InnoType.h"
+#include "../../exports/LowLevelSystem_Export.h"
 
 namespace InnoTimeSystem
 {
-	__declspec(dllexport) void setup();
-	__declspec(dllexport) void initialize();
-	__declspec(dllexport) void update();
-	__declspec(dllexport) void shutdown();
+	InnoLowLevelSystem_EXPORT void setup();
+	InnoLowLevelSystem_EXPORT void initialize();
+	InnoLowLevelSystem_EXPORT void update();
+	InnoLowLevelSystem_EXPORT void shutdown();
 
-	__declspec(dllexport) const time_t getGameStartTime();
-	__declspec(dllexport) const long long getDeltaTime();
-	__declspec(dllexport) const long long getcurrentTime();
-	__declspec(dllexport) const std::tuple<int, unsigned, unsigned> getCivilFromDays(int z);
-	__declspec(dllexport) const std::string getCurrentTimeInLocal(std::chrono::hours timezone_adjustment = std::chrono::hours(8));
-	__declspec(dllexport) const std::string getCurrentTimeInLocalForOutput(std::chrono::hours timezone_adjustment = std::chrono::hours(8));
+	InnoLowLevelSystem_EXPORT const long long getGameStartTime();
+	InnoLowLevelSystem_EXPORT const long long getDeltaTime();
+	InnoLowLevelSystem_EXPORT const long long getCurrentTime();
+	InnoLowLevelSystem_EXPORT const std::tuple<int, unsigned, unsigned> getCivilFromDays(int z);
+	InnoLowLevelSystem_EXPORT const std::string getCurrentTimeInLocal(unsigned int timezone_adjustment = 8);
+	InnoLowLevelSystem_EXPORT const std::string getCurrentTimeInLocalForOutput(unsigned int timezone_adjustment = 8);
 
-	__declspec(dllexport) objectStatus getStatus();
+	InnoLowLevelSystem_EXPORT objectStatus getStatus();
 };

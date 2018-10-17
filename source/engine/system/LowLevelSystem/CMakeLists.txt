@@ -4,6 +4,6 @@ include (GenerateExportHeader)
 GENERATE_EXPORT_HEADER (InnoLowLevelSystem
     BASE_NAME InnoLowLevelSystem
     EXPORT_MACRO_NAME InnoLowLevelSystem_EXPORT
-    EXPORT_FILE_NAME LowLevelSystem_Export.h
+    EXPORT_FILE_NAME ${CMAKE_SOURCE_DIR}/engine/exports/LowLevelSystem_Export.h
     STATIC_DEFINE InnoLowLevelSystem_BUILT_AS_STATIC
 )

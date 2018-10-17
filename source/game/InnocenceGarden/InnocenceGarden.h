@@ -1,6 +1,5 @@
 #pragma once
 #include "../../engine/common/ComponentHeaders.h"
-#include "PlayerCharacter.h"
 
 namespace InnocenceGarden
 {

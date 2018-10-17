@@ -1,11 +1,14 @@
 #include "TimeSystem.h"
+#include <sstream>
+#include <chrono>
+#include <ctime>
 
 namespace InnoTimeSystem
 {
 	objectStatus m_TimeSystemStatus = objectStatus::SHUTDOWN;
 
 	const double m_frameTime = (1.0 / 120.0) * 1000.0 * 1000.0;
-	time_t m_gameStartTime;
+	long long m_gameStartTime;
 	std::chrono::high_resolution_clock::time_point m_updateStartTime;
 	long long m_deltaTime;
 	double m_unprocessedTime;
@@ -64,13 +67,13 @@ const std::tuple<int, unsigned, unsigned> InnoTimeSystem::getCivilFromDays(int z
 	return std::tuple<int, unsigned, unsigned>(y + (m <= 2), m, d);
 }
 
-const std::string InnoTimeSystem::getCurrentTimeInLocal(std::chrono::hours timezone_adjustment)
+const std::string InnoTimeSystem::getCurrentTimeInLocal(unsigned int timezone_adjustment)
 {
 	typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type> days;
 	auto now = std::chrono::system_clock::now();
 	auto tp = now.time_since_epoch();
 
-	tp += timezone_adjustment;
+	tp += std::chrono::hours(timezone_adjustment);
 
 	days d = std::chrono::duration_cast<days>(tp);
 	tp -= d;
@@ -87,13 +90,13 @@ const std::string InnoTimeSystem::getCurrentTimeInLocal(std::chrono::hours timez
 	return std::string{ std::to_string(std::get<0>(date)) + "-" + std::to_string(std::get<1>(date)) + "-" + std::to_string(std::get<2>(date)) + " " + std::to_string(h.count()) + ":" + std::to_string(m.count()) + ":" + std::to_string(s.count()) + ":" + std::to_string(tp / std::chrono::milliseconds(1)) };
 }
 
-const std::string InnoTimeSystem::getCurrentTimeInLocalForOutput(std::chrono::hours timezone_adjustment)
+const std::string InnoTimeSystem::getCurrentTimeInLocalForOutput(unsigned int timezone_adjustment)
 {
 	typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type> days;
 	auto now = std::chrono::system_clock::now();
 	auto tp = now.time_since_epoch();
 
-	tp += timezone_adjustment;
+	tp += std::chrono::hours(timezone_adjustment);
 
 	days d = std::chrono::duration_cast<days>(tp);
 	tp -= d;
@@ -108,7 +111,6 @@ const std::string InnoTimeSystem::getCurrentTimeInLocalForOutput(std::chrono::ho
 											 // 1970-01-01 0:0:0 UTC as the epoch,
 											 // and does not count leap seconds.
 	return std::string{ std::to_string(std::get<0>(date)) + "-" + std::to_string(std::get<1>(date)) + "-" + std::to_string(std::get<2>(date)) + "-" + std::to_string(h.count()) + "-" + std::to_string(m.count()) + "-" + std::to_string(s.count()) + "-" + std::to_string(tp / std::chrono::milliseconds(1)) };
-
 }
 
 objectStatus InnoTimeSystem::getStatus()
@@ -116,7 +118,7 @@ objectStatus InnoTimeSystem::getStatus()
 	return m_TimeSystemStatus;
 }
 
-const time_t InnoTimeSystem::getGameStartTime()
+const long long InnoTimeSystem::getGameStartTime()
 {
 	return m_gameStartTime;
 }
@@ -126,7 +128,7 @@ const long long InnoTimeSystem::getDeltaTime()
 	return m_deltaTime;
 }
 
-const long long InnoTimeSystem::getcurrentTime()
+const long long InnoTimeSystem::getCurrentTime()
 {
 	return (std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1));
 }
