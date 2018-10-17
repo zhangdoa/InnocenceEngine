@@ -1,6 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
-#include "../system/GLRenderer/GLHeaders.h"
+#include "../system/HighLevelSystem/GLHeaders.h"
 
 class GLFrameBufferComponent : public BaseComponent
 {

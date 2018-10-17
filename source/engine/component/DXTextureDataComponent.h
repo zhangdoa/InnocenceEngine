@@ -1,6 +1,6 @@
 #pragma once
 #include "TextureDataComponent.h"
-#include "../system/DXRenderer/DXHeaders.h"
+#include "../system/HighLevelSystem/DXHeaders.h"
 
 class DXTextureDataComponent : public TextureDataComponent
 {

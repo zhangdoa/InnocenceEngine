@@ -2,6 +2,7 @@
 #include <sstream>
 #include <chrono>
 #include <ctime>
+#include "../../component/LogSystemSingletonComponent.h"
 
 namespace InnoTimeSystem
 {
@@ -14,17 +15,18 @@ namespace InnoTimeSystem
 	double m_unprocessedTime;
 };
 
-void InnoTimeSystem::setup()
-{
-}
-
-void InnoTimeSystem::initialize()
+InnoLowLevelSystem_EXPORT void InnoTimeSystem::setup()
 {
 	m_gameStartTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	m_TimeSystemStatus = objectStatus::ALIVE;
 }
 
-void InnoTimeSystem::update()
+InnoLowLevelSystem_EXPORT void InnoTimeSystem::initialize()
+{	
+	m_TimeSystemStatus = objectStatus::ALIVE;
+	LogSystemSingletonComponent::getInstance().m_log.push("TimeSystem has been initialized.");
+}
+
+InnoLowLevelSystem_EXPORT void InnoTimeSystem::update()
 {
 	m_updateStartTime = std::chrono::high_resolution_clock::now();
 	m_deltaTime = (std::chrono::high_resolution_clock::now() - m_updateStartTime).count();
@@ -41,12 +43,13 @@ void InnoTimeSystem::update()
 	}
 }
 
-void InnoTimeSystem::shutdown()
+InnoLowLevelSystem_EXPORT void InnoTimeSystem::shutdown()
 {
 	m_TimeSystemStatus = objectStatus::SHUTDOWN;
+	LogSystemSingletonComponent::getInstance().m_log.push("TimeSystem has been shutdown.");
 }
 
-const std::tuple<int, unsigned, unsigned> InnoTimeSystem::getCivilFromDays(int z)
+InnoLowLevelSystem_EXPORT const std::tuple<int, unsigned, unsigned> InnoTimeSystem::getCivilFromDays(int z)
 {
 	static_assert(
 		std::numeric_limits<unsigned>::digits >= 18,
@@ -67,7 +70,7 @@ const std::tuple<int, unsigned, unsigned> InnoTimeSystem::getCivilFromDays(int z
 	return std::tuple<int, unsigned, unsigned>(y + (m <= 2), m, d);
 }
 
-const std::string InnoTimeSystem::getCurrentTimeInLocal(unsigned int timezone_adjustment)
+InnoLowLevelSystem_EXPORT const std::string InnoTimeSystem::getCurrentTimeInLocal(unsigned int timezone_adjustment)
 {
 	typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type> days;
 	auto now = std::chrono::system_clock::now();
@@ -90,7 +93,7 @@ const std::string InnoTimeSystem::getCurrentTimeInLocal(unsigned int timezone_ad
 	return std::string{ std::to_string(std::get<0>(date)) + "-" + std::to_string(std::get<1>(date)) + "-" + std::to_string(std::get<2>(date)) + " " + std::to_string(h.count()) + ":" + std::to_string(m.count()) + ":" + std::to_string(s.count()) + ":" + std::to_string(tp / std::chrono::milliseconds(1)) };
 }
 
-const std::string InnoTimeSystem::getCurrentTimeInLocalForOutput(unsigned int timezone_adjustment)
+InnoLowLevelSystem_EXPORT const std::string InnoTimeSystem::getCurrentTimeInLocalForOutput(unsigned int timezone_adjustment)
 {
 	typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type> days;
 	auto now = std::chrono::system_clock::now();
@@ -113,22 +116,22 @@ const std::string InnoTimeSystem::getCurrentTimeInLocalForOutput(unsigned int ti
 	return std::string{ std::to_string(std::get<0>(date)) + "-" + std::to_string(std::get<1>(date)) + "-" + std::to_string(std::get<2>(date)) + "-" + std::to_string(h.count()) + "-" + std::to_string(m.count()) + "-" + std::to_string(s.count()) + "-" + std::to_string(tp / std::chrono::milliseconds(1)) };
 }
 
-objectStatus InnoTimeSystem::getStatus()
+InnoLowLevelSystem_EXPORT objectStatus InnoTimeSystem::getStatus()
 {
 	return m_TimeSystemStatus;
 }
 
-const long long InnoTimeSystem::getGameStartTime()
+InnoLowLevelSystem_EXPORT const long long InnoTimeSystem::getGameStartTime()
 {
 	return m_gameStartTime;
 }
 
-const long long InnoTimeSystem::getDeltaTime()
+InnoLowLevelSystem_EXPORT const long long InnoTimeSystem::getDeltaTime()
 {
 	return m_deltaTime;
 }
 
-const long long InnoTimeSystem::getCurrentTime()
+InnoLowLevelSystem_EXPORT const long long InnoTimeSystem::getCurrentTime()
 {
 	return (std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1));
 }

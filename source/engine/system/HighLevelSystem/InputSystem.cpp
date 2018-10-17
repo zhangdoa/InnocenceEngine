@@ -1,6 +1,6 @@
 #include "InputSystem.h"
 #include "../../component/LogSystemSingletonComponent.h"
-#include "../GameSystem/GameSystem.h"
+#include "../HighLevelSystem/GameSystem.h"
 #include "../../component/GameSystemSingletonComponent.h"
 
 namespace InnoInputSystem

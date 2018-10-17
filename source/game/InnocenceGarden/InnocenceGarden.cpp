@@ -1,8 +1,9 @@
 #include "InnocenceGarden.h"
-#include "../../engine/system/LowLevelSystem/MemorySystem.h"
-#include "../../engine/system/GameSystem/GameSystem.h"
-#include "PlayerCharacter.h"
 #include "../../engine/exports/LowLevelSystem_Export.h"
+#include "../../engine/exports/HighLevelSystem_Export.h"
+#include "../../engine/system/LowLevelSystem/MemorySystem.h"
+#include "../../engine/system/HighLevelSystem/GameSystem.h"
+#include "PlayerCharacter.h"
 
 namespace InnocenceGarden
 {

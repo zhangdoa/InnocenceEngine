@@ -1,6 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
-#include "../system/DXRenderer/DXHeaders.h"
+#include "../system/HighLevelSystem/DXHeaders.h"
 
 
 class DXFinalRenderPassSingletonComponent : public BaseComponent

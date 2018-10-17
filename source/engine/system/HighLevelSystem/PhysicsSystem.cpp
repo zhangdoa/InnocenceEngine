@@ -1,6 +1,6 @@
 #include "PhysicsSystem.h"
-#include "../AssetSystem/AssetSystem.h"
-#include "../GameSystem/GameSystem.h"
+#include "../HighLevelSystem/AssetSystem.h"
+#include "../HighLevelSystem/GameSystem.h"
 #include "../../component/LogSystemSingletonComponent.h"
 #include "../../component/GameSystemSingletonComponent.h"
 #include "../LowLevelSystem/TaskSystem.h"

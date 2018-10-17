@@ -1,6 +1,6 @@
 #pragma once
 #include "MeshDataComponent.h"
-#include "../system/DXRenderer/DXHeaders.h"
+#include "../system/HighLevelSystem/DXHeaders.h"
 
 class DXMeshDataComponent : public MeshDataComponent
 {

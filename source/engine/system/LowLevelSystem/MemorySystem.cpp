@@ -56,7 +56,7 @@ namespace InnoMemorySystem
 	objectStatus m_MemorySystemStatus = objectStatus::SHUTDOWN;
 }
 
-void InnoMemorySystem::setup()
+InnoLowLevelSystem_EXPORT void InnoMemorySystem::setup()
 {
 	// Allocate memory pool
 	m_poolMemoryPtr = nullptr;
@@ -72,22 +72,22 @@ void InnoMemorySystem::setup()
 	m_availablePoolSize = m_maxPoolSize - sizeof(Chunk) - m_boundCheckSize * 2;
 }
 
-void InnoMemorySystem::initialize()
+InnoLowLevelSystem_EXPORT void InnoMemorySystem::initialize()
 {
 	m_MemorySystemStatus = objectStatus::ALIVE;
 	LogSystemSingletonComponent::getInstance().m_log.push("MemorySystem has been initialized.");
 }
 
-void InnoMemorySystem::update()
+InnoLowLevelSystem_EXPORT void InnoMemorySystem::update()
 {
 }
 
-void InnoMemorySystem::shutdown()
+InnoLowLevelSystem_EXPORT void InnoMemorySystem::shutdown()
 {
 	::delete[] m_poolMemoryPtr;
 }
 
-void * InnoMemorySystem::allocate(unsigned long size)
+InnoLowLevelSystem_EXPORT void * InnoMemorySystem::allocate(unsigned long size)
 {
 	// add bound check size
 	// [StartBound + Chuck + data + EndBound]
@@ -156,7 +156,7 @@ void * InnoMemorySystem::allocate(unsigned long size)
 	return (l_suitableChuckPtr_UC + sizeof(Chunk));
 }
 
-void InnoMemorySystem::free(void * ptr)
+InnoLowLevelSystem_EXPORT void InnoMemorySystem::free(void * ptr)
 {
 	// is a valid node?
 	if (!ptr) return;
@@ -225,7 +225,7 @@ void InnoMemorySystem::free(void * ptr)
 	std::memcpy(l_freeChuckPtr_UC + l_fullFreeBlockSize - m_boundCheckSize * 2, m_endBoundMarker, m_boundCheckSize);
 }
 
-void InnoMemorySystem::serializeImpl(void * ptr)
+InnoLowLevelSystem_EXPORT void InnoMemorySystem::serializeImpl(void * ptr)
 {
 	if (!ptr) return;
 	char* l_ptr_UC = reinterpret_cast<char*>(ptr);
@@ -241,7 +241,7 @@ void InnoMemorySystem::serializeImpl(void * ptr)
 	l_file.close();
 }
 
-void * InnoMemorySystem::deserializeImpl(unsigned long size, const std::string & filePath)
+InnoLowLevelSystem_EXPORT void * InnoMemorySystem::deserializeImpl(unsigned long size, const std::string & filePath)
 {
 	std::ifstream l_file;
 	l_file.open(filePath, std::ios::binary);
@@ -268,7 +268,7 @@ void * InnoMemorySystem::deserializeImpl(unsigned long size, const std::string &
 	return l_ptr;
 }
 
-void InnoMemorySystem::dumpToFile(bool fullDump)
+InnoLowLevelSystem_EXPORT void InnoMemorySystem::dumpToFile(bool fullDump)
 {
 	std::ofstream l_file;
 	l_file.open("../" + InnoTimeSystem::getCurrentTimeInLocalForOutput() + ".innoMemoryDump");

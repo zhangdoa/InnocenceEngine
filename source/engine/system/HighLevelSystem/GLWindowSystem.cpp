@@ -1,6 +1,6 @@
 #include "GLWindowSystem.h"
 #include "../../component/LogSystemSingletonComponent.h"
-#include "../InputSystem/InputSystem.h"
+#include "../HighLevelSystem/InputSystem.h"
 
 class windowCallbackWrapper
 {

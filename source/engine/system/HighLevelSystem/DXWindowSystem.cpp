@@ -1,5 +1,5 @@
 #include "DXWindowSystem.h"
-#include "../InputSystem/InputSystem.h"
+#include "../HighLevelSystem/InputSystem.h"
 #include "../../component/LogSystemSingletonComponent.h"
 
 namespace DXWindowSystem

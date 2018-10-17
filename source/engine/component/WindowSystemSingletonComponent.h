@@ -1,7 +1,7 @@
 #pragma once
 #include "BaseComponent.h"
 
-#include "../system/GLRenderer/GLHeaders.h"
+#include "../system/HighLevelSystem/GLHeaders.h"
 
 #include <windows.h>
 #include <windowsx.h>

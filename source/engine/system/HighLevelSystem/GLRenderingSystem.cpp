@@ -8,9 +8,9 @@
 #include "../../component/AssetSystemSingletonComponent.h"
 #include <sstream>
 #include "../../component/LogSystemSingletonComponent.h"
-#include "../GameSystem/GameSystem.h"
+#include "../HighLevelSystem/GameSystem.h"
 #include "../../component/GameSystemSingletonComponent.h"
-#include "../AssetSystem/AssetSystem.h"
+#include "../HighLevelSystem/AssetSystem.h"
 
 namespace GLRenderingSystem
 {

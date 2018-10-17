@@ -1,5 +1,0 @@
-aux_source_directory(. DIR_SRCS)
-add_library(InnoDXRenderer SHARED ${DIR_SRCS})
-target_link_libraries(InnoDXRenderer InnoAssetSystem)
-target_link_libraries(InnoDXRenderer InnoGameSystem)
-target_link_libraries(InnoDXRenderer InnoInputSystem)

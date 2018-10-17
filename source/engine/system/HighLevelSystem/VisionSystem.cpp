@@ -6,19 +6,19 @@
 
 #include "../../component/LogSystemSingletonComponent.h"
 
-#include "../GameSystem/GameSystem.h"
+#include "../HighLevelSystem/GameSystem.h"
 
 #include "../../component/WindowSystemSingletonComponent.h"
 #include "../../component/RenderingSystemSingletonComponent.h"
 #include "../../component/GameSystemSingletonComponent.h"
 
-#include "../DXRenderer/DXWindowSystem.h"
-#include "../DXRenderer/DXRenderingSystem.h"
-#include "../DXRenderer/DXGuiSystem.h"
+#include "../HighLevelSystem/DXWindowSystem.h"
+#include "../HighLevelSystem/DXRenderingSystem.h"
+#include "../HighLevelSystem/DXGuiSystem.h"
 
-#include "../GLRenderer/GLWindowSystem.h"
-#include "../GLRenderer/GLRenderingSystem.h"
-#include "../GLRenderer/GLGuiSystem.h"
+#include "../HighLevelSystem/GLWindowSystem.h"
+#include "../HighLevelSystem/GLRenderingSystem.h"
+#include "../HighLevelSystem/GLGuiSystem.h"
 
 namespace InnoVisionSystem
 {

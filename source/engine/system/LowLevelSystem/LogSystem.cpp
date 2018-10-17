@@ -8,17 +8,17 @@ namespace InnoLogSystem
 	objectStatus m_LogSystemStatus = objectStatus::SHUTDOWN;
 }
 
-void InnoLogSystem::printLog(double logMessage)
+InnoLowLevelSystem_EXPORT void InnoLogSystem::printLog(double logMessage)
 {
 	std::cout << "[" <<InnoTimeSystem::getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }
 
-void InnoLogSystem::printLog(const std::string& logMessage)
+InnoLowLevelSystem_EXPORT void InnoLogSystem::printLog(const std::string& logMessage)
 {
 	std::cout << "[" <<InnoTimeSystem::getCurrentTimeInLocal() << "]" << logMessage << std::endl;
 }
 
-void InnoLogSystem::printLog(const vec2 & logMessage)
+InnoLowLevelSystem_EXPORT void InnoLogSystem::printLog(const vec2 & logMessage)
 {
 	std::cout
 		<< "[" 
@@ -32,7 +32,7 @@ void InnoLogSystem::printLog(const vec2 & logMessage)
 		<< std::endl;
 }
 
-void InnoLogSystem::printLog(const vec4 & logMessage)
+InnoLowLevelSystem_EXPORT void InnoLogSystem::printLog(const vec4 & logMessage)
 {
 	std::cout
 		<< "["
@@ -50,7 +50,7 @@ void InnoLogSystem::printLog(const vec4 & logMessage)
 		<< std::endl;
 }
 
-void InnoLogSystem::printLog(const mat4 & logMessage)
+InnoLowLevelSystem_EXPORT void InnoLogSystem::printLog(const mat4 & logMessage)
 {
 	std::cout
 		<< "["
@@ -99,22 +99,22 @@ void InnoLogSystem::printLog(const mat4 & logMessage)
 		<< std::endl;
 }
 
-objectStatus InnoLogSystem::getStatus()
+InnoLowLevelSystem_EXPORT objectStatus InnoLogSystem::getStatus()
 {
 	return m_LogSystemStatus;
 }
 
-void InnoLogSystem::setup()
+InnoLowLevelSystem_EXPORT void InnoLogSystem::setup()
 {	
 }
 
-void InnoLogSystem::initialize()
+InnoLowLevelSystem_EXPORT void InnoLogSystem::initialize()
 {
 	m_LogSystemStatus = objectStatus::ALIVE;
-	printLog("LogSystem has been initialized.");
+	LogSystemSingletonComponent::getInstance().m_log.push("LogSystem has been initialized.");
 }
 
-void InnoLogSystem::update()
+InnoLowLevelSystem_EXPORT void InnoLogSystem::update()
 {
 	if (LogSystemSingletonComponent::getInstance().m_log.size() > 0)
 	{
@@ -126,8 +126,8 @@ void InnoLogSystem::update()
 	}
 }
 
-void InnoLogSystem::shutdown()
+InnoLowLevelSystem_EXPORT void InnoLogSystem::shutdown()
 {
 	m_LogSystemStatus = objectStatus::SHUTDOWN;
-	printLog("LogSystem has been shutdown.");
+	LogSystemSingletonComponent::getInstance().m_log.push("LogSystem has been shutdown.");
 }
