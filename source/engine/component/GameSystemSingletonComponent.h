@@ -28,8 +28,6 @@ public:
 	std::unordered_multimap<EntityID, InputComponent*> m_InputComponentsMap;
 	std::unordered_multimap<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
 
-	bool m_needRender = true;
-
 	InnoFuture<void>* m_asyncTask;
 
 private:

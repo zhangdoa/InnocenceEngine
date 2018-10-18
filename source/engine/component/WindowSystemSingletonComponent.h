@@ -1,17 +1,14 @@
 #pragma once
 #include "BaseComponent.h"
-
-#include "../system/HighLevelSystem/GLHeaders.h"
-
-#include <windows.h>
-#include <windowsx.h>
-
+#include "../common/InnoConcurrency.h"
 
 class WindowSystemSingletonComponent : public BaseComponent
 {
 public:
 	~WindowSystemSingletonComponent() {};
-	
+	WindowSystemSingletonComponent(const WindowSystemSingletonComponent&) = delete;
+	WindowSystemSingletonComponent& operator=(const WindowSystemSingletonComponent&) = delete;
+
 	static WindowSystemSingletonComponent& getInstance()
 	{
 		static WindowSystemSingletonComponent instance;
@@ -22,14 +19,6 @@ public:
 	vec2 m_windowResolution = vec2(1280, 720);
 	std::string m_windowName;
 	bool m_fullScreen = false;
-
-	GLFWwindow* m_window;
-
-	HINSTANCE m_hInstance;
-	PSTR m_pScmdline;
-	int m_nCmdshow;
-	LPCSTR m_applicationName;
-	HWND m_hwnd;
 
 	//input data
 	const int NUM_KEYCODES = 256;

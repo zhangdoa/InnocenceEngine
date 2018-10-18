@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iterator>
 #include <vector>
-#include "../../component/LogSystemSingletonComponent.h"
+#include "../LowLevelSystem/LogSystem.h"
 #include "TimeSystem.h"
 
 namespace InnoMemorySystem
@@ -75,7 +75,7 @@ InnoLowLevelSystem_EXPORT void InnoMemorySystem::setup()
 InnoLowLevelSystem_EXPORT void InnoMemorySystem::initialize()
 {
 	m_MemorySystemStatus = objectStatus::ALIVE;
-	LogSystemSingletonComponent::getInstance().m_log.push("MemorySystem has been initialized.");
+	InnoLogSystem::printLog("MemorySystem has been initialized.");
 }
 
 InnoLowLevelSystem_EXPORT void InnoMemorySystem::update()
@@ -115,7 +115,7 @@ InnoLowLevelSystem_EXPORT void * InnoMemorySystem::allocate(unsigned long size)
 	// If no block is found, return nullptr
 	if (!l_suitableChuckPtr)
 	{ 
-		LogSystemSingletonComponent::getInstance().m_log.push("MemorySystem: Can't allocate memory!");
+		InnoLogSystem::printLog("MemorySystem: Can't allocate memory!");
 		return nullptr; 
 	}
 

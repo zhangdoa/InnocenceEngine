@@ -1,5 +1,5 @@
 #include "TaskSystem.h"
-#include "../../component/LogSystemSingletonComponent.h"
+#include "../LowLevelSystem/LogSystem.h"
 
 namespace InnoTaskSystem
 {
@@ -13,7 +13,7 @@ InnoLowLevelSystem_EXPORT void InnoTaskSystem::setup()
 
 InnoLowLevelSystem_EXPORT void InnoTaskSystem::initialize()
 {
-	LogSystemSingletonComponent::getInstance().m_log.push("TaskSystem has been initialized.");
+	InnoLogSystem::printLog("TaskSystem has been initialized.");
 }
 
 InnoLowLevelSystem_EXPORT void InnoTaskSystem::update()
@@ -24,7 +24,7 @@ InnoLowLevelSystem_EXPORT void InnoTaskSystem::shutdown()
 {
 	m_TaskSystemStatus = objectStatus::STANDBY;
 	m_TaskSystemStatus = objectStatus::SHUTDOWN;
-	LogSystemSingletonComponent::getInstance().m_log.push("TaskSystem has been shutdown.");
+	InnoLogSystem::printLog("TaskSystem has been shutdown.");
 }
 
 InnoLowLevelSystem_EXPORT objectStatus InnoTaskSystem::getStatus()

@@ -2,7 +2,7 @@
 #include <sstream>
 #include <chrono>
 #include <ctime>
-#include "../../component/LogSystemSingletonComponent.h"
+#include "../LowLevelSystem/LogSystem.h"
 
 namespace InnoTimeSystem
 {
@@ -23,7 +23,7 @@ InnoLowLevelSystem_EXPORT void InnoTimeSystem::setup()
 InnoLowLevelSystem_EXPORT void InnoTimeSystem::initialize()
 {	
 	m_TimeSystemStatus = objectStatus::ALIVE;
-	LogSystemSingletonComponent::getInstance().m_log.push("TimeSystem has been initialized.");
+	InnoLogSystem::printLog("TimeSystem has been initialized.");
 }
 
 InnoLowLevelSystem_EXPORT void InnoTimeSystem::update()
@@ -46,7 +46,7 @@ InnoLowLevelSystem_EXPORT void InnoTimeSystem::update()
 InnoLowLevelSystem_EXPORT void InnoTimeSystem::shutdown()
 {
 	m_TimeSystemStatus = objectStatus::SHUTDOWN;
-	LogSystemSingletonComponent::getInstance().m_log.push("TimeSystem has been shutdown.");
+	InnoLogSystem::printLog("TimeSystem has been shutdown.");
 }
 
 InnoLowLevelSystem_EXPORT const std::tuple<int, unsigned, unsigned> InnoTimeSystem::getCivilFromDays(int z)

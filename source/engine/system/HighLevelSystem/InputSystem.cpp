@@ -1,5 +1,5 @@
 #include "InputSystem.h"
-#include "../../component/LogSystemSingletonComponent.h"
+#include "../LowLevelSystem/LogSystem.h"
 #include "../HighLevelSystem/GameSystem.h"
 #include "../../component/GameSystemSingletonComponent.h"
 
@@ -28,7 +28,7 @@ void InnoInputSystem::initialize()
 		addButtonStatusCallback(GameSystemSingletonComponent::getInstance().m_inputComponents[i]->m_buttonStatusCallbackImpl);
 		addMouseMovementCallback(GameSystemSingletonComponent::getInstance().m_inputComponents[i]->m_mouseMovementCallbackImpl);
 	}
-	LogSystemSingletonComponent::getInstance().m_log.push("InputSystem has been initialized.");
+	InnoLogSystem::printLog("InputSystem has been initialized.");
 }
 
 void InnoInputSystem::update()
@@ -77,7 +77,7 @@ void InnoInputSystem::update()
 void InnoInputSystem::shutdown()
 {
 	m_InputSystemStatus = objectStatus::SHUTDOWN;
-	LogSystemSingletonComponent::getInstance().m_log.push("InputSystem has been shutdown.");
+	InnoLogSystem::printLog("InputSystem has been shutdown.");
 }
 
 void InnoInputSystem::addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor)

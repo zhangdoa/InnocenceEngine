@@ -1,7 +1,7 @@
 #include "PhysicsSystem.h"
 #include "../HighLevelSystem/AssetSystem.h"
 #include "../HighLevelSystem/GameSystem.h"
-#include "../../component/LogSystemSingletonComponent.h"
+#include "../LowLevelSystem/LogSystem.h"
 #include "../../component/GameSystemSingletonComponent.h"
 #include "../LowLevelSystem/TaskSystem.h"
 
@@ -423,7 +423,7 @@ void InnoPhysicsSystem::initialize()
 {
 	setupComponents();
 	m_PhysicsSystemStatus = objectStatus::ALIVE;
-	LogSystemSingletonComponent::getInstance().m_log.push("PhysicsSystem has been initialized.");
+	InnoLogSystem::printLog("PhysicsSystem has been initialized.");
 }
 
 void InnoPhysicsSystem::updateCameraComponents()
@@ -468,7 +468,7 @@ void InnoPhysicsSystem::update()
 void InnoPhysicsSystem::shutdown()
 {
 	m_PhysicsSystemStatus = objectStatus::SHUTDOWN;
-	LogSystemSingletonComponent::getInstance().m_log.push("PhysicsSystem has been shutdown.");
+	InnoLogSystem::printLog("PhysicsSystem has been shutdown.");
 }
 
 objectStatus InnoPhysicsSystem::getStatus()

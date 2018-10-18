@@ -7,7 +7,7 @@
 #include "../../component/RenderingSystemSingletonComponent.h"
 #include "../../component/AssetSystemSingletonComponent.h"
 #include <sstream>
-#include "../../component/LogSystemSingletonComponent.h"
+#include "../LowLevelSystem/LogSystem.h"
 #include "../HighLevelSystem/GameSystem.h"
 #include "../../component/GameSystemSingletonComponent.h"
 #include "../HighLevelSystem/AssetSystem.h"
@@ -176,7 +176,7 @@ void GLRenderingSystem::initializeEnvironmentRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: EnvironmentRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: EnvironmentRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -323,7 +323,7 @@ void GLRenderingSystem::initializeShadowRenderPass()
 		{
 			std::stringstream ss;
 			ss << i;
-			LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: ShadowRenderPass level " + ss.str() + " Framebuffer is not completed!");
+			InnoLogSystem::printLog("GLFrameBuffer: ShadowRenderPass level " + ss.str() + " Framebuffer is not completed!");
 		}
 	}
 
@@ -404,7 +404,7 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: GeometryRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: GeometryRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -558,7 +558,7 @@ void GLRenderingSystem::initializeLightRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: LightRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: LightRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -783,7 +783,7 @@ void GLRenderingSystem::initializeSkyPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: ShadowRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: ShadowRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -857,7 +857,7 @@ void GLRenderingSystem::initializeTAAPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: TAAPingRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: TAAPingRenderPass Framebuffer is not completed!");
 	}
 
 	// generate and bind framebuffer
@@ -897,7 +897,7 @@ void GLRenderingSystem::initializeTAAPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: TAAPongRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: TAAPongRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -977,7 +977,7 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: BloomExtractRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: BloomExtractRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1042,7 +1042,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: BloomBlurPingRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: BloomBlurPingRenderPass Framebuffer is not completed!");
 	}
 
 	// generate and bind framebuffer
@@ -1082,7 +1082,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: BloomBlurPongRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: BloomBlurPongRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1150,7 +1150,7 @@ void GLRenderingSystem::initializeMotionBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: MotionBlurRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: MotionBlurRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1221,7 +1221,7 @@ void GLRenderingSystem::initializeBillboardPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: BillboardRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: BillboardRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1304,7 +1304,7 @@ void GLRenderingSystem::initializeDebuggerPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: DebuggerRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: DebuggerRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1381,7 +1381,7 @@ void GLRenderingSystem::initializeFinalBlendPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLFrameBuffer: FinalBlendRenderPass Framebuffer is not completed!");
+		InnoLogSystem::printLog("GLFrameBuffer: FinalBlendRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1437,7 +1437,7 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 	shaderID = glCreateShader(shaderType);
 
 	if (shaderID == 0) {
-		LogSystemSingletonComponent::getInstance().m_log.push("Error: Shader creation failed: memory location invaild when adding shader!");
+		InnoLogSystem::printLog("Error: Shader creation failed: memory location invaild when adding shader!");
 	}
 
 	auto l_shaderCodeContent = InnoAssetSystem::loadShader(shaderFilePath);
@@ -1445,7 +1445,7 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 
 	if (l_sourcePointer == nullptr)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("Error: Shader loading failed!");
+		InnoLogSystem::printLog("Error: Shader loading failed!");
 	}
 
 	glShaderSource(shaderID, 1, &l_sourcePointer, NULL);
@@ -1458,43 +1458,43 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 
 	if (!l_compileResult)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
+		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
 		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-		LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
 		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
 			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-			LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+			InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
 			return;
 		}
 	}
 
-	LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
+	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
 
 	glAttachShader(shaderProgram, shaderID);
 	glLinkProgram(shaderProgram);
 	glValidateProgram(shaderProgram);
 
-	LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
+	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
 
 	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &l_compileResult);
 	if (!l_compileResult)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
+		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
 		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-		LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
 		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
 			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-			LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+			InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
 		}
 	}
 
-	LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
+	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
 }
 
 void GLRenderingSystem::initializeMesh(MeshDataComponent* rhs)
@@ -2890,7 +2890,7 @@ GLuint GLRenderingSystem::getUniformLocation(GLuint shaderProgram, const std::st
 	int uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 	if (uniformLocation == 0xFFFFFFFF)
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("GLRenderingSystem: innoShader: Error: Uniform lost: " + uniformName);
+		InnoLogSystem::printLog("GLRenderingSystem: innoShader: Error: Uniform lost: " + uniformName);
 		return -1;
 	}
 	return uniformLocation;

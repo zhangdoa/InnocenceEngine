@@ -1,6 +1,5 @@
 #pragma once
-#include "../../common/InnoType.h"
-#include "../../component/WindowSystemSingletonComponent.h"
+#include "../../component/GLWindowSystemSingletonComponent.h"
 
 namespace GLWindowSystem
 {

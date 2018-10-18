@@ -1,5 +1,6 @@
 #include "GLGuiSystem.h"
 #include "../../component/WindowSystemSingletonComponent.h"
+#include "../../component/GLWindowSystemSingletonComponent.h"
 #include "../../component/ShadowRenderPassSingletonComponent.h"
 #include "../../component/GeometryRenderPassSingletonComponent.h"
 #include "../../component/LightRenderPassSingletonComponent.h"
@@ -9,7 +10,7 @@
 #include "../../third-party/ImGui/imgui.h"
 #include "../../third-party/ImGui/imgui_impl_glfw_gl3.h"
 
-#include "../../component/LogSystemSingletonComponent.h"
+#include "../LowLevelSystem/LogSystem.h"
 
 class ImGuiWrapper
 {
@@ -45,7 +46,7 @@ void GLGuiSystem::Instance::setup()
 void GLGuiSystem::Instance::initialize()
 {
 	ImGuiWrapper::getInstance().initialize();
-	LogSystemSingletonComponent::getInstance().m_log.push("GLGuiSystem has been initialized.");
+	InnoLogSystem::printLog("GLGuiSystem has been initialized.");
 }
 
 void GLGuiSystem::Instance::update()
@@ -59,7 +60,7 @@ void GLGuiSystem::Instance::shutdown()
 	ImGuiWrapper::getInstance().shutdown();
 
 	m_GLGuiSystemStatus = objectStatus::SHUTDOWN;
-	LogSystemSingletonComponent::getInstance().m_log.push("GLGuiSystem has been shutdown.");
+	InnoLogSystem::printLog("GLGuiSystem has been shutdown.");
 }
 
 objectStatus GLGuiSystem::Instance::getStatus()
@@ -75,7 +76,7 @@ void ImGuiWrapper::setup()
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
-	ImGui_ImplGlfwGL3_Init(WindowSystemSingletonComponent::getInstance().m_window, true);
+	ImGui_ImplGlfwGL3_Init(GLWindowSystemSingletonComponent::getInstance().m_window, true);
 
 	// Setup style
 	ImGui::StyleColorsDark();

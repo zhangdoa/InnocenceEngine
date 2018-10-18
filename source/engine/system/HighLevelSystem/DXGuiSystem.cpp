@@ -1,5 +1,5 @@
 #include "DXGuiSystem.h"
-#include "../../component/LogSystemSingletonComponent.h"
+#include "../LowLevelSystem/LogSystem.h"
 
 namespace DXGuiSystem
 {
@@ -12,7 +12,7 @@ void DXGuiSystem::Instance::setup()
 
 void DXGuiSystem::Instance::initialize()
 {
-	LogSystemSingletonComponent::getInstance().m_log.push("DXGuiSystem has been initialized.");
+	InnoLogSystem::printLog("DXGuiSystem has been initialized.");
 }
 
 void DXGuiSystem::Instance::update()
@@ -24,7 +24,7 @@ void DXGuiSystem::Instance::shutdown()
 	m_objectStatus = objectStatus::STANDBY;
 
 	m_objectStatus = objectStatus::SHUTDOWN;
-	LogSystemSingletonComponent::getInstance().m_log.push("DXGuiSystem has been shutdown.");
+	InnoLogSystem::printLog("DXGuiSystem has been shutdown.");
 }
 
 objectStatus DXGuiSystem::Instance::getStatus()

@@ -2,7 +2,8 @@
 #include "../../common/config.h"
 #include "../../component/GameSystemSingletonComponent.h"
 
-#include "../../system/LowLevelSystem/TaskSystem.h"
+#include "../LowLevelSystem/TaskSystem.h"
+#include "../LowLevelSystem/LogSystem.h"
 
 #if defined (BUILD_EDITOR)
 #include "../../game/InnocenceEditor/InnocenceEditor.h"
@@ -64,6 +65,7 @@ void InnoGameSystem::addComponentsToMap()
 void InnoGameSystem::initialize()
 {
 	InnoGameInstance::initialize();
+	InnoLogSystem::printLog("GameSystem has been initialized.");
 }
 
 void InnoGameSystem::update()

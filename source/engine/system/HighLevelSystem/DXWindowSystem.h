@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../component/WindowSystemSingletonComponent.h"
+#include "../../component/DXWindowSystemSingletonComponent.h"
 
 namespace DXWindowSystem
 {

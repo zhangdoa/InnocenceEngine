@@ -1,6 +1,7 @@
 #include "DXWindowSystem.h"
 #include "../HighLevelSystem/InputSystem.h"
-#include "../../component/LogSystemSingletonComponent.h"
+#include "../LowLevelSystem/LogSystem.h"
+#include "../../component/WindowSystemSingletonComponent.h"
 
 namespace DXWindowSystem
 {
@@ -22,7 +23,7 @@ void DXWindowSystem::Instance::setup()
 	wc.lpfnWndProc = WindowProc;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
-	wc.hInstance = WindowSystemSingletonComponent::getInstance().m_hInstance;
+	wc.hInstance = DXWindowSystemSingletonComponent::getInstance().m_hInstance;
 	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
@@ -39,14 +40,14 @@ void DXWindowSystem::Instance::setup()
 	auto l_posY = (GetSystemMetrics(SM_CYSCREEN) - l_screenHeight) / 2;
 
 	// Create the window with the screen settings and get the handle to it.
-	WindowSystemSingletonComponent::getInstance().m_hwnd = CreateWindowEx(0, (LPCSTR)l_windowName.c_str(), (LPCSTR)l_windowName.c_str(),
+	DXWindowSystemSingletonComponent::getInstance().m_hwnd = CreateWindowEx(0, (LPCSTR)l_windowName.c_str(), (LPCSTR)l_windowName.c_str(),
 		WS_OVERLAPPEDWINDOW,
-		l_posX, l_posY, l_screenWidth, l_screenHeight, NULL, NULL, WindowSystemSingletonComponent::getInstance().m_hInstance, NULL);
+		l_posX, l_posY, l_screenWidth, l_screenHeight, NULL, NULL, DXWindowSystemSingletonComponent::getInstance().m_hInstance, NULL);
 
 	// Bring the window up on the screen and set it as main focus.
-	ShowWindow(WindowSystemSingletonComponent::getInstance().m_hwnd, WindowSystemSingletonComponent::getInstance().m_nCmdshow);
-	SetForegroundWindow(WindowSystemSingletonComponent::getInstance().m_hwnd);
-	SetFocus(WindowSystemSingletonComponent::getInstance().m_hwnd);
+	ShowWindow(DXWindowSystemSingletonComponent::getInstance().m_hwnd, DXWindowSystemSingletonComponent::getInstance().m_nCmdshow);
+	SetForegroundWindow(DXWindowSystemSingletonComponent::getInstance().m_hwnd);
+	SetFocus(DXWindowSystemSingletonComponent::getInstance().m_hwnd);
 
 	// Hide the mouse cursor.
 	// ShowCursor(false);
@@ -63,7 +64,7 @@ void DXWindowSystem::Instance::initialize()
 	//initialize input
 
 	InnoInputSystem::initialize();
-	LogSystemSingletonComponent::getInstance().m_log.push("DXWindowSystem has been initialized.");
+	InnoLogSystem::printLog("DXWindowSystem has been initialized.");
 }
 
 void DXWindowSystem::Instance::update()
@@ -105,20 +106,20 @@ void DXWindowSystem::Instance::shutdown()
 	}
 
 	// Remove the window.
-	DestroyWindow(WindowSystemSingletonComponent::getInstance().m_hwnd);
-	WindowSystemSingletonComponent::getInstance().m_hwnd = NULL;
+	DestroyWindow(DXWindowSystemSingletonComponent::getInstance().m_hwnd);
+	DXWindowSystemSingletonComponent::getInstance().m_hwnd = NULL;
 
-	LogSystemSingletonComponent::getInstance().m_log.push("DXWindowSystem: Window closed.");
+	InnoLogSystem::printLog("DXWindowSystem: Window closed.");
 
 	// Remove the application instance.
-	UnregisterClass(WindowSystemSingletonComponent::getInstance().m_applicationName, WindowSystemSingletonComponent::getInstance().m_hInstance);
-	WindowSystemSingletonComponent::getInstance().m_hInstance = NULL;
+	UnregisterClass(DXWindowSystemSingletonComponent::getInstance().m_applicationName, DXWindowSystemSingletonComponent::getInstance().m_hInstance);
+	DXWindowSystemSingletonComponent::getInstance().m_hInstance = NULL;
 
 	// Release the pointer to this class.
 	ApplicationHandle = NULL;
 
 	m_objectStatus = objectStatus::SHUTDOWN;
-	LogSystemSingletonComponent::getInstance().m_log.push("DXWindowSystem has been shutdown.");
+	InnoLogSystem::printLog("DXWindowSystem has been shutdown.");
 }
 
 objectStatus DXWindowSystem::Instance::getStatus()

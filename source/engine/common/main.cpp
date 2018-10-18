@@ -1,18 +1,18 @@
 #include "stdafx.h"
 #include "config.h"
 #include "InnoApplication.h"
-#include "../component/WindowSystemSingletonComponent.h"
 
 #if defined(INNO_RENDERER_DX)
+#include "../component/DXWindowSystemSingletonComponent.h"
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {
 	AllocConsole();
 	freopen("CONOUT$", "w+", stdout);
-	WindowSystemSingletonComponent::getInstance().m_hInstance = hInstance;
-	WindowSystemSingletonComponent::getInstance().m_pScmdline = pScmdline;
-	WindowSystemSingletonComponent::getInstance().m_nCmdshow = nCmdshow;
+	DXWindowSystemSingletonComponent::getInstance().m_hInstance = hInstance;
+	DXWindowSystemSingletonComponent::getInstance().m_pScmdline = pScmdline;
+	DXWindowSystemSingletonComponent::getInstance().m_nCmdshow = nCmdshow;
 #else
-int main()
+int main(int argc, char *argv[])
 {
 #endif
 	InnoApplication::setup();

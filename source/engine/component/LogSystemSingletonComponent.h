@@ -1,6 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
-
+#include <iostream>
 #include "../common/InnoConcurrency.h"
 class LogSystemSingletonComponent : public BaseComponent
 {
@@ -10,6 +10,7 @@ public:
 	static LogSystemSingletonComponent& getInstance()
 	{
 		static LogSystemSingletonComponent instance;
+		//std::cout << &instance << std::endl;
 		return instance;
 	}
 

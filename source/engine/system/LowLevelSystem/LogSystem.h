@@ -10,11 +10,12 @@ namespace InnoLogSystem
 	InnoLowLevelSystem_EXPORT void update();
 	InnoLowLevelSystem_EXPORT void shutdown();
 
-	InnoLowLevelSystem_EXPORT void printLog(double logMessage);
 	InnoLowLevelSystem_EXPORT void printLog(const std::string& logMessage);
-	InnoLowLevelSystem_EXPORT void printLog(const vec2& logMessage);
-	InnoLowLevelSystem_EXPORT void printLog(const vec4& logMessage);
-	InnoLowLevelSystem_EXPORT void printLog(const mat4& logMessage);
+	InnoLowLevelSystem_EXPORT void printLogImpl(double logMessage);
+	InnoLowLevelSystem_EXPORT void printLogImpl(const vec2& logMessage);
+	InnoLowLevelSystem_EXPORT void printLogImpl(const vec4& logMessage);
+	InnoLowLevelSystem_EXPORT void printLogImpl(const mat4& logMessage);
+	InnoLowLevelSystem_EXPORT void printLogImpl(const std::string& logMessage);
 
 	InnoLowLevelSystem_EXPORT objectStatus getStatus();
 };

@@ -5,13 +5,10 @@
 #include "../system/LowLevelSystem/LogSystem.h"
 #include "../system/LowLevelSystem/MemorySystem.h"
 #include "../system/LowLevelSystem/TaskSystem.h"
-//#include "../system/HighLevelSystem/GameSystem.h"
-//#include "../system/HighLevelSystem/AssetSystem.h"
-//#include "../system/HighLevelSystem/PhysicsSystem.h"
-//#include "../system/HighLevelSystem/VisionSystem.h"
-//
-#include "../component/LogSystemSingletonComponent.h"
-//#include "../component/GameSystemSingletonComponent.h"
+#include "../system/HighLevelSystem/GameSystem.h"
+#include "../system/HighLevelSystem/AssetSystem.h"
+#include "../system/HighLevelSystem/PhysicsSystem.h"
+#include "../system/HighLevelSystem/VisionSystem.h"
 
 namespace InnoApplication
 {
@@ -24,23 +21,23 @@ void InnoApplication::setup()
 	InnoLogSystem::setup();
 	InnoMemorySystem::setup();
 	InnoTaskSystem::setup();
-	LogSystemSingletonComponent::getInstance().m_log.push("TimeSystem setup finished.");
-	LogSystemSingletonComponent::getInstance().m_log.push("LogSystem setup finished.");
-	LogSystemSingletonComponent::getInstance().m_log.push("MemorySystem setup finished.");
-	LogSystemSingletonComponent::getInstance().m_log.push("TaskSystem setup finished.");
+	InnoLogSystem::printLog("TimeSystem setup finished.");
+	InnoLogSystem::printLog("LogSystem setup finished.");
+	InnoLogSystem::printLog("MemorySystem setup finished.");
+	InnoLogSystem::printLog("TaskSystem setup finished.");
 
-	//InnoGameSystem::setup();
-	//LogSystemSingletonComponent::getInstance().m_log.push("GameSystem setup finished.");
-	//InnoAssetSystem::setup();
-	//LogSystemSingletonComponent::getInstance().m_log.push("AssetSystem setup finished.");
-	//InnoPhysicsSystem::setup();
-	//LogSystemSingletonComponent::getInstance().m_log.push("PhysicsSystem setup finished.");
-	//InnoVisionSystem::setup();
-	//LogSystemSingletonComponent::getInstance().m_log.push("VisionSystem setup finished.");
+	InnoGameSystem::setup();
+	InnoLogSystem::printLog("GameSystem setup finished.");
+	InnoAssetSystem::setup();
+	InnoLogSystem::printLog("AssetSystem setup finished.");
+	InnoPhysicsSystem::setup();
+	InnoLogSystem::printLog("PhysicsSystem setup finished.");
+	InnoVisionSystem::setup();
+	InnoLogSystem::printLog("VisionSystem setup finished.");
 
 	m_objectStatus = objectStatus::ALIVE;
 
-	LogSystemSingletonComponent::getInstance().m_log.push("Engine setup finished.");
+	InnoLogSystem::printLog("Engine setup finished.");
 }
 
 
@@ -51,12 +48,12 @@ void InnoApplication::initialize()
 	InnoLogSystem::initialize();
 	InnoMemorySystem::initialize();
 	InnoTaskSystem::initialize();
-	//InnoGameSystem::initialize();
-	//InnoAssetSystem::initialize();
-	//InnoPhysicsSystem::initialize();
-	//InnoVisionSystem::initialize();
+	InnoGameSystem::initialize();
+	InnoAssetSystem::initialize();
+	InnoPhysicsSystem::initialize();
+	InnoVisionSystem::initialize();
 
-	LogSystemSingletonComponent::getInstance().m_log.push("Engine has been initialized.");
+	InnoLogSystem::printLog("Engine has been initialized.");
 }
 
 void InnoApplication::update()
@@ -66,32 +63,29 @@ void InnoApplication::update()
 	InnoMemorySystem::update();
 	InnoTaskSystem::update();
 
-	//InnoGameSystem::update();
-	//InnoAssetSystem::update();
+	InnoGameSystem::update();
+	InnoAssetSystem::update();
+	InnoPhysicsSystem::update();
 
-	//if (InnoVisionSystem::getStatus() == objectStatus::ALIVE)
-	//{
-	//	if (GameSystemSingletonComponent::getInstance().m_needRender)
-	//	{
-	//		InnoPhysicsSystem::update();
-	//		InnoVisionSystem::update();
-	//	}
-	//}
-	//else
-	//{
-	//	m_objectStatus = objectStatus::STANDBY;
+	if (InnoVisionSystem::getStatus() == objectStatus::ALIVE)
+	{	
+		InnoVisionSystem::update();
+	}
+	else
+	{
+		m_objectStatus = objectStatus::STANDBY;
 
-	//	LogSystemSingletonComponent::getInstance().m_log.push("Engine is stand-by.");
-	//}
+		InnoLogSystem::printLog("Engine is stand-by.");
+	}
 }
 
 void InnoApplication::shutdown()
 {
-	//InnoVisionSystem::shutdown();
-	//InnoPhysicsSystem::shutdown();
+	InnoVisionSystem::shutdown();
+	InnoPhysicsSystem::shutdown();
 
-	//InnoAssetSystem::shutdown();
-	//InnoGameSystem::shutdown();
+	InnoAssetSystem::shutdown();
+	InnoGameSystem::shutdown();
 
 	InnoMemorySystem::shutdown();
 	InnoTaskSystem::shutdown();

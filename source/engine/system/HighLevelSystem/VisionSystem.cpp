@@ -3,8 +3,7 @@
 #include "../../common/ComponentHeaders.h"
 
 #include "../LowLevelSystem/MemorySystem.h"
-
-#include "../../component/LogSystemSingletonComponent.h"
+#include "../LowLevelSystem/LogSystem.h"
 
 #include "../HighLevelSystem/GameSystem.h"
 
@@ -26,48 +25,27 @@ namespace InnoVisionSystem
 	using RenderingSystem = DXRenderingSystem::Instance;
 	using GuiSystem = DXGuiSystem::Instance;
 
-	void setupWindow();
-	void setupRendering();
-	void setupGui();
+	bool setupWindow();
+	bool setupRendering();
+	bool setupGui();
 
 	void updateCulling();
 
-	void changeDrawPolygonMode();
-	void changeDrawTextureMode();
-	void changeShadingMode();
-
 	//Rendering Data
 	std::atomic<bool> m_canRender;
-	std::function<void()> f_changeDrawPolygonMode;
-	std::function<void()> f_changeDrawTextureMode;
-	std::function<void()> f_changeShadingMode;
-
-	int m_polygonMode = 2;
-	int m_textureMode = 0;
-	int m_shadingMode = 0;
 
 	objectStatus m_VisionSystemStatus = objectStatus::SHUTDOWN;
 }
 
 void InnoVisionSystem::setup()
 {
-	WindowSystemSingletonComponent::getInstance().m_windowName = InnoGameSystem::getGameName();
-	setupWindow();
-	setupRendering();
-	setupGui();
-
-	m_VisionSystemStatus = objectStatus::ALIVE;
-}
-
-void InnoVisionSystem::setupWindow()
-{
-	if (WindowSystemSingletonComponent::getInstance().m_pScmdline)
+	if (DXWindowSystemSingletonComponent::getInstance().m_pScmdline)
 	{
-		std::string l_windowArguments = WindowSystemSingletonComponent::getInstance().m_pScmdline;
+		std::string l_windowArguments = DXWindowSystemSingletonComponent::getInstance().m_pScmdline;
 		auto l_argPos = l_windowArguments.find("renderer");
 		if (l_argPos == 0)
 		{
-			LogSystemSingletonComponent::getInstance().m_log.push("ERROR::VisionSystem:: No renderer argument found!");
+			InnoLogSystem::printLog("ERROR::VisionSystem:: No renderer argument found!");
 			m_VisionSystemStatus = objectStatus::STANDBY;
 			return;
 		}
@@ -88,16 +66,46 @@ void InnoVisionSystem::setupWindow()
 			}
 			else
 			{
-				LogSystemSingletonComponent::getInstance().m_log.push("ERROR::VisionSystem:: Incorrect renderer argument!");
+				InnoLogSystem::printLog("ERROR::VisionSystem:: Incorrect renderer argument!");
 				m_VisionSystemStatus = objectStatus::STANDBY;
 				return;
 			}
 		}
 	}
-	WindowSystem::get().setup();
+	else
+	{
+		InnoLogSystem::printLog("ERROR::VisionSystem:: No arguments found!");
+		m_VisionSystemStatus = objectStatus::STANDBY;
+		return;
+	}
+
+	WindowSystemSingletonComponent::getInstance().m_windowName = InnoGameSystem::getGameName();
+
+	if (!setupWindow())
+	{
+		m_VisionSystemStatus = objectStatus::STANDBY;
+		return;
+	};
+	if (!setupRendering())
+	{
+		m_VisionSystemStatus = objectStatus::STANDBY;
+		return;
+	}
+	if (!setupGui())
+	{
+		m_VisionSystemStatus = objectStatus::STANDBY;
+		return;
+	}
+	m_VisionSystemStatus = objectStatus::ALIVE;
 }
 
-void InnoVisionSystem::setupRendering()
+bool InnoVisionSystem::setupWindow()
+{
+		WindowSystem::get().setup();
+		return true;
+}
+
+bool InnoVisionSystem::setupRendering()
 {
 	//setup rendering
 	for (auto i : GameSystemSingletonComponent::getInstance().m_visibleComponents)
@@ -116,13 +124,15 @@ void InnoVisionSystem::setupRendering()
 	}
 
 	RenderingSystem::get().setup();
-
 	m_canRender = true;
+
+	return true;
 }
 
-void InnoVisionSystem::setupGui()
+bool InnoVisionSystem::setupGui()
 {
 	GuiSystem::get().setup();
+	return true;
 }
 
 void InnoVisionSystem::initialize()
@@ -131,7 +141,7 @@ void InnoVisionSystem::initialize()
 	RenderingSystem::get().initialize();
 	GuiSystem::get().initialize();
 
-	LogSystemSingletonComponent::getInstance().m_log.push("VisionSystem has been initialized.");
+	InnoLogSystem::printLog("VisionSystem has been initialized.");
 }
 
 void InnoVisionSystem::updateCulling()
@@ -190,7 +200,7 @@ void InnoVisionSystem::update()
 	}
 	else
 	{
-		LogSystemSingletonComponent::getInstance().m_log.push("VisionSystem is stand-by.");
+		InnoLogSystem::printLog("VisionSystem is stand-by.");
 		m_VisionSystemStatus = objectStatus::STANDBY;
 	}
 }
@@ -205,46 +215,10 @@ void InnoVisionSystem::shutdown()
 		WindowSystem::get().shutdown();
 	}
 	m_VisionSystemStatus = objectStatus::SHUTDOWN;
-	LogSystemSingletonComponent::getInstance().m_log.push("VisionSystem has been shutdown.");
+	InnoLogSystem::printLog("VisionSystem has been shutdown.");
 }
 
 objectStatus InnoVisionSystem::getStatus()
 {
 	return m_VisionSystemStatus;
-}
-
-void InnoVisionSystem::changeDrawPolygonMode()
-{
-	if (m_polygonMode == 2)
-	{
-		m_polygonMode = 0;
-	}
-	else
-	{
-		m_polygonMode += 1;
-	}
-}
-
-void InnoVisionSystem::changeDrawTextureMode()
-{
-	if (m_textureMode == 4)
-	{
-		m_textureMode = 0;
-	}
-	else
-	{
-		m_textureMode += 1;
-	}
-}
-
-void InnoVisionSystem::changeShadingMode()
-{
-	if (m_shadingMode == 1)
-	{
-		m_shadingMode = 0;
-	}
-	else
-	{
-		m_shadingMode += 1;
-	}
 }

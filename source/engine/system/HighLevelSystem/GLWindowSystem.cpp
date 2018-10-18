@@ -1,6 +1,7 @@
 #include "GLWindowSystem.h"
-#include "../../component/LogSystemSingletonComponent.h"
+#include "../LowLevelSystem/LogSystem.h"
 #include "../HighLevelSystem/InputSystem.h"
+#include "../../component/WindowSystemSingletonComponent.h"
 
 class windowCallbackWrapper
 {
@@ -37,7 +38,7 @@ void GLWindowSystem::Instance::setup()
 	if (glfwInit() != GL_TRUE)
 	{
 		m_WindowSystemStatus = objectStatus::STANDBY;
-		LogSystemSingletonComponent::getInstance().m_log.push("Failed to initialize GLFW.");
+		InnoLogSystem::printLog("Failed to initialize GLFW.");
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
@@ -48,11 +49,11 @@ void GLWindowSystem::Instance::setup()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL
 
 	// Open a window and create its OpenGL context
-	WindowSystemSingletonComponent::getInstance().m_window = glfwCreateWindow((int)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (int)WindowSystemSingletonComponent::getInstance().m_windowResolution.y, WindowSystemSingletonComponent::getInstance().m_windowName.c_str(), NULL, NULL);
-	glfwMakeContextCurrent(WindowSystemSingletonComponent::getInstance().m_window);
-	if (WindowSystemSingletonComponent::getInstance().m_window == nullptr) {
+	GLWindowSystemSingletonComponent::getInstance().m_window = glfwCreateWindow((int)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (int)WindowSystemSingletonComponent::getInstance().m_windowResolution.y, WindowSystemSingletonComponent::getInstance().m_windowName.c_str(), NULL, NULL);
+	glfwMakeContextCurrent(GLWindowSystemSingletonComponent::getInstance().m_window);
+	if (GLWindowSystemSingletonComponent::getInstance().m_window == nullptr) {
 		m_WindowSystemStatus = objectStatus::STANDBY;
-		LogSystemSingletonComponent::getInstance().m_log.push("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
+		InnoLogSystem::printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
 		glfwTerminate();
 	}
 	// glad: load all OpenGL function pointers
@@ -60,11 +61,11 @@ void GLWindowSystem::Instance::setup()
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		m_WindowSystemStatus = objectStatus::STANDBY;
-		LogSystemSingletonComponent::getInstance().m_log.push("Failed to initialize GLAD.");
+		InnoLogSystem::printLog("Failed to initialize GLAD.");
 	}
 
 	//setup input
-	glfwSetInputMode(WindowSystemSingletonComponent::getInstance().m_window, GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetInputMode(GLWindowSystemSingletonComponent::getInstance().m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
 	InnoInputSystem::setup();
 
@@ -80,16 +81,16 @@ void GLWindowSystem::Instance::initialize()
 	
 	InnoInputSystem::initialize();
 
-	LogSystemSingletonComponent::getInstance().m_log.push("GLWindowSystem has been initialized.");
+	InnoLogSystem::printLog("GLWindowSystem has been initialized.");
 }
 
 void GLWindowSystem::Instance::update()
 {
 	//update window
-	if (WindowSystemSingletonComponent::getInstance().m_window == nullptr || glfwWindowShouldClose(WindowSystemSingletonComponent::getInstance().m_window) != 0)
+	if (GLWindowSystemSingletonComponent::getInstance().m_window == nullptr || glfwWindowShouldClose(GLWindowSystemSingletonComponent::getInstance().m_window) != 0)
 	{
 		m_WindowSystemStatus = objectStatus::STANDBY;
-		LogSystemSingletonComponent::getInstance().m_log.push("GLWindowSystem: Input error or Window closed.");
+		InnoLogSystem::printLog("GLWindowSystem: Input error or Window closed.");
 	}
 	else
 	{
@@ -99,7 +100,7 @@ void GLWindowSystem::Instance::update()
 		//keyboard
 		for (int i = 0; i < WindowSystemSingletonComponent::getInstance().NUM_KEYCODES; i++)
 		{
-			if (glfwGetKey(WindowSystemSingletonComponent::getInstance().m_window, i) == GLFW_PRESS)
+			if (glfwGetKey(GLWindowSystemSingletonComponent::getInstance().m_window, i) == GLFW_PRESS)
 			{
 				auto l_result = WindowSystemSingletonComponent::getInstance().m_buttonStatus.find(i);
 				if (l_result != WindowSystemSingletonComponent::getInstance().m_buttonStatus.end())
@@ -119,7 +120,7 @@ void GLWindowSystem::Instance::update()
 		//mouse
 		for (int i = 0; i < WindowSystemSingletonComponent::getInstance().NUM_MOUSEBUTTONS; i++)
 		{
-			if (glfwGetMouseButton(WindowSystemSingletonComponent::getInstance().m_window, i) == GLFW_PRESS)
+			if (glfwGetMouseButton(GLWindowSystemSingletonComponent::getInstance().m_window, i) == GLFW_PRESS)
 			{
 				auto l_result = WindowSystemSingletonComponent::getInstance().m_buttonStatus.find(i);
 				if (l_result != WindowSystemSingletonComponent::getInstance().m_buttonStatus.end())
@@ -143,28 +144,28 @@ void GLWindowSystem::Instance::update()
 
 void GLWindowSystem::Instance::shutdown()
 {
-	glfwSetInputMode(WindowSystemSingletonComponent::getInstance().m_window, GLFW_STICKY_KEYS, GL_FALSE);
-	glfwDestroyWindow(WindowSystemSingletonComponent::getInstance().m_window);
+	glfwSetInputMode(GLWindowSystemSingletonComponent::getInstance().m_window, GLFW_STICKY_KEYS, GL_FALSE);
+	glfwDestroyWindow(GLWindowSystemSingletonComponent::getInstance().m_window);
 	glfwTerminate();
-	LogSystemSingletonComponent::getInstance().m_log.push("GLWindowSystem: Window closed.");
+	InnoLogSystem::printLog("GLWindowSystem: Window closed.");
 
 	m_WindowSystemStatus = objectStatus::SHUTDOWN;
-	LogSystemSingletonComponent::getInstance().m_log.push("GLWindowSystem has been shutdown.");
+	InnoLogSystem::printLog("GLWindowSystem has been shutdown.");
 }
 
 void GLWindowSystem::Instance::swapBuffer()
 {
-	glfwSwapBuffers(WindowSystemSingletonComponent::getInstance().m_window);
+	glfwSwapBuffers(GLWindowSystemSingletonComponent::getInstance().m_window);
 }
 
 void GLWindowSystem::Instance::hideMouseCursor()
 {
-	glfwSetInputMode(WindowSystemSingletonComponent::getInstance().m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(GLWindowSystemSingletonComponent::getInstance().m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void GLWindowSystem::Instance::showMouseCursor()
 {
-	glfwSetInputMode(WindowSystemSingletonComponent::getInstance().m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	glfwSetInputMode(GLWindowSystemSingletonComponent::getInstance().m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 objectStatus GLWindowSystem::Instance::getStatus()
@@ -174,9 +175,9 @@ objectStatus GLWindowSystem::Instance::getStatus()
 
 void windowCallbackWrapper::initialize()
 {
-	glfwSetFramebufferSizeCallback(WindowSystemSingletonComponent::getInstance().m_window, &framebufferSizeCallback);
-	glfwSetCursorPosCallback(WindowSystemSingletonComponent::getInstance().m_window, &mousePositionCallback);
-	glfwSetScrollCallback(WindowSystemSingletonComponent::getInstance().m_window, &scrollCallback);
+	glfwSetFramebufferSizeCallback(GLWindowSystemSingletonComponent::getInstance().m_window, &framebufferSizeCallback);
+	glfwSetCursorPosCallback(GLWindowSystemSingletonComponent::getInstance().m_window, &mousePositionCallback);
+	glfwSetScrollCallback(GLWindowSystemSingletonComponent::getInstance().m_window, &scrollCallback);
 }
 
 void windowCallbackWrapper::framebufferSizeCallback(GLFWwindow * window, int width, int height)
