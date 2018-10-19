@@ -1,12 +1,13 @@
 #pragma once
+#include "../../exports/HighLevelSystem_Export.h"
 #include "../../common/ComponentHeaders.h"
 
 namespace InnoPhysicsSystem
 {
-	__declspec(dllexport) void setup();
-	__declspec(dllexport) void initialize();
-	__declspec(dllexport) void update();
-	__declspec(dllexport) void shutdown();
+	InnoHighLevelSystem_EXPORT bool setup();
+	InnoHighLevelSystem_EXPORT bool initialize();
+	InnoHighLevelSystem_EXPORT bool update();
+	InnoHighLevelSystem_EXPORT bool terminate();
 
-	__declspec(dllexport) objectStatus getStatus();
+	InnoHighLevelSystem_EXPORT objectStatus getStatus();
 };

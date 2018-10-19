@@ -14,35 +14,78 @@ namespace InnoApplication
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 }
-
-void InnoApplication::setup()
+#if defined(INNO_RENDERER_DX)
+#include "../component/DXWindowSystemSingletonComponent.h"
+bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
+{	
+#else
+bool InnoApplication::setup()
 {
-	InnoTimeSystem::setup();
-	InnoLogSystem::setup();
-	InnoMemorySystem::setup();
-	InnoTaskSystem::setup();
+#endif
+	if (!InnoTimeSystem::setup())
+	{
+		return false;
+	}
 	InnoLogSystem::printLog("TimeSystem setup finished.");
+
+	if (!InnoLogSystem::setup())
+	{
+		return false;
+	}
 	InnoLogSystem::printLog("LogSystem setup finished.");
+
+	if (!InnoMemorySystem::setup())
+	{
+		return false;
+	}
 	InnoLogSystem::printLog("MemorySystem setup finished.");
+
+	if (!InnoTaskSystem::setup())
+	{
+		return false;
+	}
 	InnoLogSystem::printLog("TaskSystem setup finished.");
 
-	InnoGameSystem::setup();
+	if (!InnoGameSystem::setup())
+	{
+		return false;
+	}
 	InnoLogSystem::printLog("GameSystem setup finished.");
-	InnoAssetSystem::setup();
+
+	if (!InnoAssetSystem::setup())
+	{
+		return false;
+	}
 	InnoLogSystem::printLog("AssetSystem setup finished.");
-	InnoPhysicsSystem::setup();
+
+	if (!InnoPhysicsSystem::setup())
+	{
+		return false;
+	}
 	InnoLogSystem::printLog("PhysicsSystem setup finished.");
-	InnoVisionSystem::setup();
+
+#if defined(INNO_RENDERER_DX)
+	if (!InnoVisionSystem::setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
+	{
+		return false;
+	}
+#else
+	if (!InnoVisionSystem::setup();)
+	{
+		return false;
+	}
+#endif
 	InnoLogSystem::printLog("VisionSystem setup finished.");
 
 	m_objectStatus = objectStatus::ALIVE;
 
 	InnoLogSystem::printLog("Engine setup finished.");
+	return true;
 }
 
 
 
-void InnoApplication::initialize()
+bool InnoApplication::initialize()
 {
 	InnoTimeSystem::initialize();
 	InnoLogSystem::initialize();
@@ -54,9 +97,10 @@ void InnoApplication::initialize()
 	InnoVisionSystem::initialize();
 
 	InnoLogSystem::printLog("Engine has been initialized.");
+	return true;
 }
 
-void InnoApplication::update()
+bool InnoApplication::update()
 {
 	InnoTimeSystem::update();
 	InnoLogSystem::update();
@@ -70,29 +114,31 @@ void InnoApplication::update()
 	if (InnoVisionSystem::getStatus() == objectStatus::ALIVE)
 	{	
 		InnoVisionSystem::update();
+		return true;
 	}
 	else
 	{
 		m_objectStatus = objectStatus::STANDBY;
-
 		InnoLogSystem::printLog("Engine is stand-by.");
+		return false;
 	}
 }
 
-void InnoApplication::shutdown()
+bool InnoApplication::terminate()
 {
-	InnoVisionSystem::shutdown();
-	InnoPhysicsSystem::shutdown();
+	InnoVisionSystem::terminate();
+	InnoPhysicsSystem::terminate();
 
-	InnoAssetSystem::shutdown();
-	InnoGameSystem::shutdown();
+	InnoAssetSystem::terminate();
+	InnoGameSystem::terminate();
 
-	InnoMemorySystem::shutdown();
-	InnoTaskSystem::shutdown();
-	InnoLogSystem::shutdown();
-	InnoTimeSystem::shutdown();
+	InnoMemorySystem::terminate();
+	InnoTaskSystem::terminate();
+	InnoLogSystem::terminate();
+	InnoTimeSystem::terminate();
 
 	m_objectStatus = objectStatus::SHUTDOWN;
+	return true;
 }
 
 objectStatus InnoApplication::getStatus()

@@ -4,10 +4,10 @@
 
 namespace InnoMemorySystem
 {
-	InnoLowLevelSystem_EXPORT void setup();
-	InnoLowLevelSystem_EXPORT void initialize();
-	InnoLowLevelSystem_EXPORT void update();
-	InnoLowLevelSystem_EXPORT void shutdown();
+	InnoLowLevelSystem_EXPORT bool setup();
+	InnoLowLevelSystem_EXPORT bool initialize();
+	InnoLowLevelSystem_EXPORT bool update();
+	InnoLowLevelSystem_EXPORT bool terminate();
 
 	InnoLowLevelSystem_EXPORT void* allocate(unsigned long size);
 	InnoLowLevelSystem_EXPORT void free(void* ptr);

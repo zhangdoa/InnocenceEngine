@@ -109,17 +109,19 @@ InnoLowLevelSystem_EXPORT objectStatus InnoLogSystem::getStatus()
 	return m_LogSystemStatus;
 }
 
-InnoLowLevelSystem_EXPORT void InnoLogSystem::setup()
+InnoLowLevelSystem_EXPORT bool InnoLogSystem::setup()
 {	
+	return true;
 }
 
-InnoLowLevelSystem_EXPORT void InnoLogSystem::initialize()
+InnoLowLevelSystem_EXPORT bool InnoLogSystem::initialize()
 {
 	m_LogSystemStatus = objectStatus::ALIVE;
 	InnoLogSystem::printLog("LogSystem has been initialized.");
+	return true;
 }
 
-InnoLowLevelSystem_EXPORT void InnoLogSystem::update()
+InnoLowLevelSystem_EXPORT bool InnoLogSystem::update()
 {
 	if (LogSystemSingletonComponent::getInstance().m_log.size() > 0)
 	{
@@ -129,10 +131,12 @@ InnoLowLevelSystem_EXPORT void InnoLogSystem::update()
 			printLogImpl(l_log);
 		}
 	}
+	return true;
 }
 
-InnoLowLevelSystem_EXPORT void InnoLogSystem::shutdown()
+InnoLowLevelSystem_EXPORT bool InnoLogSystem::terminate()
 {
 	m_LogSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("LogSystem has been shutdown.");
+	InnoLogSystem::printLog("LogSystem has been terminated.");
+	return true;
 }

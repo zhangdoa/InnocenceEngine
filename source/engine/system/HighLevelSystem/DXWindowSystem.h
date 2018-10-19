@@ -1,5 +1,5 @@
 #pragma once
-
+#include "../../exports/HighLevelSystem_Export.h"
 #include "../../component/DXWindowSystemSingletonComponent.h"
 
 namespace DXWindowSystem
@@ -7,13 +7,13 @@ namespace DXWindowSystem
 	class Instance
 	{
 	public:
-		__declspec(dllexport) void setup();
-		__declspec(dllexport) void initialize();
-		__declspec(dllexport) void update();
-		__declspec(dllexport) void shutdown();
-		__declspec(dllexport) objectStatus getStatus();
+		InnoHighLevelSystem_EXPORT bool setup();
+		InnoHighLevelSystem_EXPORT bool initialize();
+		InnoHighLevelSystem_EXPORT bool update();
+		InnoHighLevelSystem_EXPORT bool terminate();
+		InnoHighLevelSystem_EXPORT objectStatus getStatus();
 
-		__declspec(dllexport) void swapBuffer();
+		void swapBuffer();
 
 		static Instance& get()
 		{

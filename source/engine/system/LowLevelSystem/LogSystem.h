@@ -5,10 +5,10 @@
 
 namespace InnoLogSystem
 {
-	InnoLowLevelSystem_EXPORT void setup();
-	InnoLowLevelSystem_EXPORT void initialize();
-	InnoLowLevelSystem_EXPORT void update();
-	InnoLowLevelSystem_EXPORT void shutdown();
+	InnoLowLevelSystem_EXPORT bool setup();
+	InnoLowLevelSystem_EXPORT bool initialize();
+	InnoLowLevelSystem_EXPORT bool update();
+	InnoLowLevelSystem_EXPORT bool terminate();
 
 	InnoLowLevelSystem_EXPORT void printLog(const std::string& logMessage);
 	InnoLowLevelSystem_EXPORT void printLogImpl(double logMessage);

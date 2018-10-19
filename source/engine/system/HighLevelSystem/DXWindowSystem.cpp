@@ -8,7 +8,7 @@ namespace DXWindowSystem
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 }
 
-void DXWindowSystem::Instance::setup()
+InnoHighLevelSystem_EXPORT bool DXWindowSystem::Instance::setup()
 {
 	WNDCLASS wc = {};
 
@@ -55,19 +55,17 @@ void DXWindowSystem::Instance::setup()
 	InnoInputSystem::setup();
 
 	m_objectStatus = objectStatus::ALIVE;
+	return true;
 }
 
-void DXWindowSystem::Instance::initialize()
+InnoHighLevelSystem_EXPORT bool DXWindowSystem::Instance::initialize()
 {
-	//initialize window
-
-	//initialize input
-
 	InnoInputSystem::initialize();
 	InnoLogSystem::printLog("DXWindowSystem has been initialized.");
+	return true;
 }
 
-void DXWindowSystem::Instance::update()
+InnoHighLevelSystem_EXPORT bool DXWindowSystem::Instance::update()
 {
 	//update window
 	MSG msg;
@@ -86,15 +84,14 @@ void DXWindowSystem::Instance::update()
 	if (msg.message == WM_QUIT)
 	{
 		m_objectStatus = objectStatus::STANDBY;
-	}
-	else
-	{
+		return false;
 	}
 
 	InnoInputSystem::update();
+	return true;
 }
 
-void DXWindowSystem::Instance::shutdown()
+InnoHighLevelSystem_EXPORT bool DXWindowSystem::Instance::terminate()
 {
 	// Show the mouse cursor.
 	ShowCursor(true);
@@ -119,10 +116,11 @@ void DXWindowSystem::Instance::shutdown()
 	ApplicationHandle = NULL;
 
 	m_objectStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("DXWindowSystem has been shutdown.");
+	InnoLogSystem::printLog("DXWindowSystem has been terminated.");
+	return true;
 }
 
-objectStatus DXWindowSystem::Instance::getStatus()
+InnoHighLevelSystem_EXPORT objectStatus DXWindowSystem::Instance::getStatus()
 {
 	return m_objectStatus;
 }

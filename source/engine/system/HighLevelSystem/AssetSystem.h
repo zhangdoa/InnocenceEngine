@@ -14,20 +14,20 @@
 
 namespace InnoAssetSystem
 {
-	InnoHighLevelSystem_EXPORT void setup();
-	InnoHighLevelSystem_EXPORT void initialize();
-	InnoHighLevelSystem_EXPORT void update();
-	InnoHighLevelSystem_EXPORT void shutdown();
+	InnoHighLevelSystem_EXPORT bool setup();
+	InnoHighLevelSystem_EXPORT bool initialize();
+	InnoHighLevelSystem_EXPORT bool update();
+	InnoHighLevelSystem_EXPORT bool terminate();
 
-	InnoHighLevelSystem_EXPORT MeshDataComponent* getMesh(meshID meshID);
-	InnoHighLevelSystem_EXPORT TextureDataComponent* getTexture(textureID textureID);
-	InnoHighLevelSystem_EXPORT MeshDataComponent* getDefaultMesh(meshShapeType meshShapeType);
-	InnoHighLevelSystem_EXPORT TextureDataComponent* getDefaultTexture(textureType textureType);
-	InnoHighLevelSystem_EXPORT void removeMesh(meshID meshID);
-	InnoHighLevelSystem_EXPORT void removeTexture(textureID textureID);
-	InnoHighLevelSystem_EXPORT vec4 findMaxVertex(meshID meshID);
-	InnoHighLevelSystem_EXPORT vec4 findMinVertex(meshID meshID);
-	InnoHighLevelSystem_EXPORT std::string loadShader(const std::string& fileName);
+	MeshDataComponent* getMesh(meshID meshID);
+	TextureDataComponent* getTexture(textureID textureID);
+	MeshDataComponent* getDefaultMesh(meshShapeType meshShapeType);
+	TextureDataComponent* getDefaultTexture(textureType textureType);
+	void removeMesh(meshID meshID);
+	void removeTexture(textureID textureID);
+	vec4 findMaxVertex(meshID meshID);
+	vec4 findMinVertex(meshID meshID);
+	std::string loadShader(const std::string& fileName);
 
 	InnoHighLevelSystem_EXPORT objectStatus getStatus();
 };

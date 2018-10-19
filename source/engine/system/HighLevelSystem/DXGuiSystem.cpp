@@ -6,28 +6,32 @@ namespace DXGuiSystem
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 }
 
-void DXGuiSystem::Instance::setup()
+InnoHighLevelSystem_EXPORT bool DXGuiSystem::Instance::setup()
 {
+	m_objectStatus = objectStatus::ALIVE;
+	return true;
 }
 
-void DXGuiSystem::Instance::initialize()
+InnoHighLevelSystem_EXPORT bool DXGuiSystem::Instance::initialize()
 {
 	InnoLogSystem::printLog("DXGuiSystem has been initialized.");
+	return true;
 }
 
-void DXGuiSystem::Instance::update()
+InnoHighLevelSystem_EXPORT bool DXGuiSystem::Instance::update()
 {
+	return true;
 }
 
-void DXGuiSystem::Instance::shutdown()
+InnoHighLevelSystem_EXPORT bool DXGuiSystem::Instance::terminate()
 {
 	m_objectStatus = objectStatus::STANDBY;
-
 	m_objectStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("DXGuiSystem has been shutdown.");
+	InnoLogSystem::printLog("DXGuiSystem has been terminated.");
+	return true;
 }
 
-objectStatus DXGuiSystem::Instance::getStatus()
+InnoHighLevelSystem_EXPORT objectStatus DXGuiSystem::Instance::getStatus()
 {
 	return m_objectStatus;
 }

@@ -1,12 +1,13 @@
 #pragma once
+#include "../../exports/HighLevelSystem_Export.h"
 #include "../../common/ComponentHeaders.h"
 
 namespace InnoGameSystem
 {
-	__declspec(dllexport) void setup();
-	__declspec(dllexport) void initialize();
-	__declspec(dllexport) void update();
-	__declspec(dllexport) void shutdown();
+	InnoHighLevelSystem_EXPORT bool setup();
+	InnoHighLevelSystem_EXPORT bool initialize();
+	InnoHighLevelSystem_EXPORT bool update();
+	InnoHighLevelSystem_EXPORT bool terminate();
 
 	void addTransformComponent(TransformComponent* rhs);
 	void addVisibleComponent(VisibleComponent* rhs);
@@ -15,13 +16,15 @@ namespace InnoGameSystem
 	void addInputComponent(InputComponent* rhs);
 	void addEnvironmentCaptureComponent(EnvironmentCaptureComponent* rhs);
 
-	__declspec(dllexport) std::string getGameName();
-
-	__declspec(dllexport) TransformComponent* getTransformComponent(EntityID parentEntity);
+	std::string getGameName();
+	TransformComponent* getTransformComponent(EntityID parentEntity);
 
 	void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function);
 	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(double)>* function);
+	
+	void updateTransform();
+
 	EntityID createEntityID();
 
-	__declspec(dllexport) objectStatus getStatus();
+	InnoHighLevelSystem_EXPORT objectStatus getStatus();
 };

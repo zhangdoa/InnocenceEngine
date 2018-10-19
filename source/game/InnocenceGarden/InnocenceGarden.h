@@ -6,7 +6,7 @@ namespace InnocenceGarden
 	void setup();
 	void initialize();
 	void update();
-	void shutdown();
+	void terminate();
 
 	std::string getGameName();
 };

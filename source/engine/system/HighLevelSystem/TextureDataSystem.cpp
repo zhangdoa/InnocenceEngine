@@ -12,6 +12,6 @@ void TextureDataSystem::update()
 {
 }
 
-void TextureDataSystem::shutdown()
+void TextureDataSystem::terminate()
 {
 }

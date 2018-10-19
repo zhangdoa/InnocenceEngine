@@ -74,10 +74,10 @@ void InnoInputSystem::update()
 	WindowSystemSingletonComponent::getInstance().m_mousePositionInWorldSpace = calcMousePositionInWorldSpace();
 }
 
-void InnoInputSystem::shutdown()
+void InnoInputSystem::terminate()
 {
 	m_InputSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("InputSystem has been shutdown.");
+	InnoLogSystem::printLog("InputSystem has been terminated.");
 }
 
 void InnoInputSystem::addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor)

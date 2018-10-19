@@ -56,7 +56,7 @@ namespace InnoMemorySystem
 	objectStatus m_MemorySystemStatus = objectStatus::SHUTDOWN;
 }
 
-InnoLowLevelSystem_EXPORT void InnoMemorySystem::setup()
+InnoLowLevelSystem_EXPORT bool InnoMemorySystem::setup()
 {
 	// Allocate memory pool
 	m_poolMemoryPtr = nullptr;
@@ -70,21 +70,27 @@ InnoLowLevelSystem_EXPORT void InnoMemorySystem::setup()
 	std::memcpy(m_poolMemoryPtr + m_boundCheckSize, &l_freeChunk, sizeof(Chunk));
 	std::memcpy(m_poolMemoryPtr + m_maxPoolSize - m_boundCheckSize, m_endBoundMarker, m_boundCheckSize);
 	m_availablePoolSize = m_maxPoolSize - sizeof(Chunk) - m_boundCheckSize * 2;
+	return true;
 }
 
-InnoLowLevelSystem_EXPORT void InnoMemorySystem::initialize()
+InnoLowLevelSystem_EXPORT bool InnoMemorySystem::initialize()
 {
 	m_MemorySystemStatus = objectStatus::ALIVE;
 	InnoLogSystem::printLog("MemorySystem has been initialized.");
+	return true;
 }
 
-InnoLowLevelSystem_EXPORT void InnoMemorySystem::update()
+InnoLowLevelSystem_EXPORT bool InnoMemorySystem::update()
 {
+	return true;
 }
 
-InnoLowLevelSystem_EXPORT void InnoMemorySystem::shutdown()
+InnoLowLevelSystem_EXPORT bool InnoMemorySystem::terminate()
 {
 	::delete[] m_poolMemoryPtr;
+	m_MemorySystemStatus = objectStatus::ALIVE;
+	InnoLogSystem::printLog("MemorySystem has been terminated.");
+	return true;
 }
 
 InnoLowLevelSystem_EXPORT void * InnoMemorySystem::allocate(unsigned long size)

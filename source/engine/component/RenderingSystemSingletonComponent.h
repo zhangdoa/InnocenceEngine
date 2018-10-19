@@ -2,6 +2,7 @@
 #include "BaseComponent.h"
 #include "AssetSystemSingletonComponent.h"
 #include "VisibleComponent.h"
+#include<atomic>
 
 //#define BlinnPhong
 #define CookTorrance
@@ -17,6 +18,7 @@ public:
 		return instance;
 	}
 
+	std::atomic<bool> m_canRender;
 	bool m_shouldUpdateEnvironmentMap = true;
 	bool m_isTAAPingPass = true;
 	vec2 m_renderTargetSize = vec2(1280, 720);

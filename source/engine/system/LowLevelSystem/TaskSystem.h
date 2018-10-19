@@ -7,10 +7,10 @@
 
 namespace InnoTaskSystem
 {
-	InnoLowLevelSystem_EXPORT void setup();
-	InnoLowLevelSystem_EXPORT void initialize();
-	InnoLowLevelSystem_EXPORT void update();
-	InnoLowLevelSystem_EXPORT void shutdown();
+	InnoLowLevelSystem_EXPORT bool setup();
+	InnoLowLevelSystem_EXPORT bool initialize();
+	InnoLowLevelSystem_EXPORT bool update();
+	InnoLowLevelSystem_EXPORT bool terminate();
     
 	template <typename Func, typename... Args>
 	auto submit(Func&& func, Args&&... args)

@@ -50,7 +50,7 @@ namespace DXRenderingSystem
 	void endScene();
 };
 
-void DXRenderingSystem::Instance::setup()
+InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 {
 	HRESULT result;
 	IDXGIFactory* factory;
@@ -76,7 +76,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create DXGI factory!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Use the factory to create an adapter for the primary graphics interface (video card).
@@ -85,7 +85,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create video card adapter!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Enumerate the primary adapter output (monitor).
@@ -94,7 +94,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create monitor adapter!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
@@ -103,7 +103,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Create a list to hold all the possible display modes for this monitor/video card combination.
@@ -112,7 +112,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't get display modes!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Now fill the display mode list structures.
@@ -121,7 +121,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't fill the display mode list structures!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Now go through all the display modes and find the one that matches the screen width and height.
@@ -144,7 +144,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't get the video card adapter description!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Store the dedicated video card memory in megabytes.
@@ -156,7 +156,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't convert the name of the video card to a character array!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Release the display mode list.
@@ -240,7 +240,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the swap chain/D3D device/D3D device context!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Get the pointer to the back buffer.
@@ -249,7 +249,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't get back buffer pointer!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Create the render target view with the back buffer pointer.
@@ -258,7 +258,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create render target view!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Release pointer to the back buffer as we no longer need it.
@@ -287,7 +287,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the texture for the depth buffer!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Initialize the description of the stencil state.
@@ -320,7 +320,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the depth stencil state!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Set the depth stencil state.
@@ -340,7 +340,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the depth stencil view!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Bind the render target view and depth stencil buffer to the output render pipeline.
@@ -364,7 +364,7 @@ void DXRenderingSystem::Instance::setup()
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the rasterizer state!");
 		m_objectStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 
 	// Now set the rasterizer state.
@@ -382,16 +382,18 @@ void DXRenderingSystem::Instance::setup()
 	m_deviceContext->RSSetViewports(1, &viewport);
 
 	m_objectStatus = objectStatus::ALIVE;
+	return true;
 }
 
-void DXRenderingSystem::Instance::initialize()
+InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::initialize()
 {
 	initializeFinalBlendPass();
 
 	InnoLogSystem::printLog("DXRenderingSystem has been initialized.");
+	return true;
 }
 
-void DXRenderingSystem::Instance::update()
+InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::update()
 {
 	if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.size() > 0)
 	{
@@ -416,9 +418,10 @@ void DXRenderingSystem::Instance::update()
 
 	// Present the rendered scene to the screen.
 	endScene();
+	return true;
 }
 
-void DXRenderingSystem::Instance::shutdown()
+InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::terminate()
 {
 	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
 	if (m_swapChain)
@@ -475,7 +478,8 @@ void DXRenderingSystem::Instance::shutdown()
 	}
 
 	m_objectStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("DXRenderingSystem has been shutdown.");
+	InnoLogSystem::printLog("DXRenderingSystem has been terminated.");
+	return true;
 }
 
 objectStatus DXRenderingSystem::Instance::getStatus()

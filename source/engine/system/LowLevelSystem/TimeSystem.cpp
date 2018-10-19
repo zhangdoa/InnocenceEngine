@@ -15,18 +15,20 @@ namespace InnoTimeSystem
 	double m_unprocessedTime;
 };
 
-InnoLowLevelSystem_EXPORT void InnoTimeSystem::setup()
+InnoLowLevelSystem_EXPORT bool InnoTimeSystem::setup()
 {
 	m_gameStartTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	return true;
 }
 
-InnoLowLevelSystem_EXPORT void InnoTimeSystem::initialize()
+InnoLowLevelSystem_EXPORT bool InnoTimeSystem::initialize()
 {	
 	m_TimeSystemStatus = objectStatus::ALIVE;
 	InnoLogSystem::printLog("TimeSystem has been initialized.");
+	return true;
 }
 
-InnoLowLevelSystem_EXPORT void InnoTimeSystem::update()
+InnoLowLevelSystem_EXPORT bool InnoTimeSystem::update()
 {
 	m_updateStartTime = std::chrono::high_resolution_clock::now();
 	m_deltaTime = (std::chrono::high_resolution_clock::now() - m_updateStartTime).count();
@@ -41,12 +43,14 @@ InnoLowLevelSystem_EXPORT void InnoTimeSystem::update()
 	{
 		m_TimeSystemStatus = objectStatus::STANDBY;
 	}
+	return true;
 }
 
-InnoLowLevelSystem_EXPORT void InnoTimeSystem::shutdown()
+InnoLowLevelSystem_EXPORT bool InnoTimeSystem::terminate()
 {
 	m_TimeSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("TimeSystem has been shutdown.");
+	InnoLogSystem::printLog("TimeSystem has been terminated.");
+	return true;
 }
 
 InnoLowLevelSystem_EXPORT const std::tuple<int, unsigned, unsigned> InnoTimeSystem::getCivilFromDays(int z)

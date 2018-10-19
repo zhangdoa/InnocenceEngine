@@ -201,7 +201,7 @@ void InnocenceGarden::update()
 	updateSpheres(temp);
 }
 
-void InnocenceGarden::shutdown()
+void InnocenceGarden::terminate()
 {
 	m_objectStatus = objectStatus::SHUTDOWN;
 }

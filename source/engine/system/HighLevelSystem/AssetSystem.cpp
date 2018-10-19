@@ -75,11 +75,13 @@ public:
 	aiMesh* m_aiMesh;
 };
 
-void InnoAssetSystem::setup()
+InnoHighLevelSystem_EXPORT bool InnoAssetSystem::setup()
 {
+	m_AssetSystemStatus = objectStatus::ALIVE;
+	return true;
 }
 
-void InnoAssetSystem::initialize()
+InnoHighLevelSystem_EXPORT bool InnoAssetSystem::initialize()
 {
 	loadDefaultAssets();
 	AssetSystemSingletonComponent::getInstance().m_asyncTaskVector.push_back(InnoTaskSystem::submit([]()
@@ -88,15 +90,20 @@ void InnoAssetSystem::initialize()
 	}));
 
 	InnoLogSystem::printLog("AssetSystem has been initialized.");
+	return true;
 }
 
-void InnoAssetSystem::update()
+InnoHighLevelSystem_EXPORT bool InnoAssetSystem::update()
 {
+	return true;
 }
 
-void InnoAssetSystem::shutdown()
+InnoHighLevelSystem_EXPORT bool InnoAssetSystem::terminate()
 {
-	InnoLogSystem::printLog("AssetSystem has been shutdown.");
+	m_AssetSystemStatus = objectStatus::STANDBY;
+	m_AssetSystemStatus = objectStatus::SHUTDOWN;
+	InnoLogSystem::printLog("AssetSystem has been terminated.");
+	return true;
 }
 
 std::string InnoAssetSystem::loadShader(const std::string & fileName)

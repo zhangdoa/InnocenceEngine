@@ -6,7 +6,7 @@ namespace InnoInputSystem
 	__declspec(dllexport) void setup();
 	__declspec(dllexport) void initialize();
 	__declspec(dllexport) void update();
-	__declspec(dllexport) void shutdown();
+	__declspec(dllexport) void terminate();
 
 	__declspec(dllexport) void addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor);
 	__declspec(dllexport) void addButtonStatusCallback(button boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor);

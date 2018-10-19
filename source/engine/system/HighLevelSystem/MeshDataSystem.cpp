@@ -12,7 +12,7 @@ void MeshDataSystem::update()
 {
 }
 
-void MeshDataSystem::shutdown()
+void MeshDataSystem::terminate()
 {
 }
 

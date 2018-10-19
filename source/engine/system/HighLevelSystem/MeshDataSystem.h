@@ -6,7 +6,7 @@ namespace MeshDataSystem
 	void setup();
 	void initialize();
 	void update();
-	void shutdown();
+	void terminate();
 
 	void addUnitCube(MeshDataComponent& meshDataComponent);
 	void addUnitSphere(MeshDataComponent& meshDataComponent);

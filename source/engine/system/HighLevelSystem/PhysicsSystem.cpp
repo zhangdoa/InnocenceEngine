@@ -3,6 +3,8 @@
 #include "../HighLevelSystem/GameSystem.h"
 #include "../LowLevelSystem/LogSystem.h"
 #include "../../component/GameSystemSingletonComponent.h"
+#include "../../component/RenderingSystemSingletonComponent.h"
+#include "../../component/WindowSystemSingletonComponent.h"
 #include "../LowLevelSystem/TaskSystem.h"
 
 namespace InnoPhysicsSystem
@@ -25,14 +27,17 @@ namespace InnoPhysicsSystem
 
 	void updateCameraComponents();
 	void updateLightComponents();
+	void updateCulling();
 
 	objectStatus m_PhysicsSystemStatus = objectStatus::SHUTDOWN;
 
 	InnoFuture<void>* m_asyncTask;
 }
 
-void InnoPhysicsSystem::setup()
+InnoHighLevelSystem_EXPORT bool InnoPhysicsSystem::setup()
 {	
+	m_PhysicsSystemStatus = objectStatus::ALIVE;
+	return true;
 }
 
 void InnoPhysicsSystem::setupComponents()
@@ -130,6 +135,15 @@ void InnoPhysicsSystem::setupVisibleComponents()
 		if (i->m_visiblilityType != visiblilityType::INVISIBLE)
 		{
 			generateAABB(*i);
+			if (i->m_visiblilityType == visiblilityType::EMISSIVE)
+			{
+				RenderingSystemSingletonComponent::getInstance().m_emissiveVisibleComponents.emplace_back(i);
+			}
+			else if (i->m_visiblilityType == visiblilityType::STATIC_MESH)
+			{
+				RenderingSystemSingletonComponent::getInstance().m_staticMeshVisibleComponents.emplace_back(i);
+			}
+
 		}
 	}
 }
@@ -419,11 +433,12 @@ AABB InnoPhysicsSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMi
 	return l_AABB;
 }
 
-void InnoPhysicsSystem::initialize()
+InnoHighLevelSystem_EXPORT bool InnoPhysicsSystem::initialize()
 {
 	setupComponents();
 	m_PhysicsSystemStatus = objectStatus::ALIVE;
 	InnoLogSystem::printLog("PhysicsSystem has been initialized.");
+	return true;
 }
 
 void InnoPhysicsSystem::updateCameraComponents()
@@ -455,23 +470,57 @@ void InnoPhysicsSystem::updateLightComponents()
 	}
 }
 
-void InnoPhysicsSystem::update()
+void InnoPhysicsSystem::updateCulling()
+{
+	RenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.clear();
+	RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.clear();
+
+	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
+	{
+		WindowSystemSingletonComponent::getInstance().m_mouseRay.m_origin = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.caclGlobalPos();
+		WindowSystemSingletonComponent::getInstance().m_mouseRay.m_direction = WindowSystemSingletonComponent::getInstance().m_mousePositionInWorldSpace;
+
+		auto l_cameraAABB = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_AABB;
+
+		auto l_ray = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_rayOfEye;
+
+		for (auto& j : GameSystemSingletonComponent::getInstance().m_visibleComponents)
+		{
+			if (j->m_visiblilityType == visiblilityType::STATIC_MESH || j->m_visiblilityType == visiblilityType::EMISSIVE)
+			{
+				if (InnoMath::intersectCheck(j->m_AABB, WindowSystemSingletonComponent::getInstance().m_mouseRay))
+				{
+					RenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.emplace_back(j);
+				}
+				if (InnoMath::intersectCheck(l_cameraAABB, j->m_AABB))
+				{
+					RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.emplace_back(j);
+				}
+			}
+		}
+	}
+}
+
+
+InnoHighLevelSystem_EXPORT bool InnoPhysicsSystem::update()
 {
 	m_asyncTask = &InnoTaskSystem::submit([]()
 	{
 		updateCameraComponents();
 		updateLightComponents();
+		updateCulling();
 	});
-
+	return true;
 }
 
-void InnoPhysicsSystem::shutdown()
+InnoHighLevelSystem_EXPORT bool InnoPhysicsSystem::terminate()
 {
 	m_PhysicsSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("PhysicsSystem has been shutdown.");
+	InnoLogSystem::printLog("PhysicsSystem has been terminated.");
+	return true;
 }
 
-objectStatus InnoPhysicsSystem::getStatus()
+InnoHighLevelSystem_EXPORT objectStatus InnoPhysicsSystem::getStatus()
 {
 	return m_PhysicsSystemStatus;
 }

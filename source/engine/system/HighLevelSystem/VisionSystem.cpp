@@ -1,15 +1,11 @@
 #include "VisionSystem.h"
-#include<atomic>
-#include "../../common/ComponentHeaders.h"
 
-#include "../LowLevelSystem/MemorySystem.h"
 #include "../LowLevelSystem/LogSystem.h"
-
-#include "../HighLevelSystem/GameSystem.h"
 
 #include "../../component/WindowSystemSingletonComponent.h"
 #include "../../component/RenderingSystemSingletonComponent.h"
-#include "../../component/GameSystemSingletonComponent.h"
+
+#include "../HighLevelSystem/GameSystem.h"
 
 #include "../HighLevelSystem/DXWindowSystem.h"
 #include "../HighLevelSystem/DXRenderingSystem.h"
@@ -29,196 +25,157 @@ namespace InnoVisionSystem
 	bool setupRendering();
 	bool setupGui();
 
-	void updateCulling();
-
-	//Rendering Data
-	std::atomic<bool> m_canRender;
-
 	objectStatus m_VisionSystemStatus = objectStatus::SHUTDOWN;
 }
 
-void InnoVisionSystem::setup()
+#if defined(INNO_RENDERER_DX)
+InnoHighLevelSystem_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
-	if (DXWindowSystemSingletonComponent::getInstance().m_pScmdline)
+	DXWindowSystemSingletonComponent::getInstance().m_hInstance = static_cast<HINSTANCE>(hInstance);
+	DXWindowSystemSingletonComponent::getInstance().m_pScmdline = pScmdline;
+	DXWindowSystemSingletonComponent::getInstance().m_nCmdshow = nCmdshow;
+
+	std::string l_windowArguments = DXWindowSystemSingletonComponent::getInstance().m_pScmdline;
+	if (l_windowArguments == "")
 	{
-		std::string l_windowArguments = DXWindowSystemSingletonComponent::getInstance().m_pScmdline;
-		auto l_argPos = l_windowArguments.find("renderer");
-		if (l_argPos == 0)
-		{
-			InnoLogSystem::printLog("ERROR::VisionSystem:: No renderer argument found!");
-			m_VisionSystemStatus = objectStatus::STANDBY;
-			return;
-		}
-		else
-		{
-			std::string l_rendererArguments = l_windowArguments.substr(l_argPos + 9);
-			if (l_rendererArguments == "DX")
-			{
-				using WindowSystem = DXWindowSystem::Instance;
-				using RenderingSystem = DXRenderingSystem::Instance;
-				using GuiSystem = DXGuiSystem::Instance;
-			}
-			else if (l_rendererArguments == "GL")
-			{
-				using WindowSystem = GLWindowSystem::Instance;
-				using RenderingSystem = GLRenderingSystem::Instance;
-				using GuiSystem = GLGuiSystem::Instance;
-			}
-			else
-			{
-				InnoLogSystem::printLog("ERROR::VisionSystem:: Incorrect renderer argument!");
-				m_VisionSystemStatus = objectStatus::STANDBY;
-				return;
-			}
-		}
+		InnoLogSystem::printLog("Error: VisionSystem: No arguments found!");
+		m_VisionSystemStatus = objectStatus::STANDBY;
+		return false;
+	}
+
+	auto l_argPos = l_windowArguments.find("renderer");
+	if (l_argPos == 0)
+	{
+		InnoLogSystem::printLog("Error: VisionSystem: No renderer argument found!");
+		m_VisionSystemStatus = objectStatus::STANDBY;
+		return false;
+	}
+
+	std::string l_rendererArguments = l_windowArguments.substr(l_argPos + 9);
+	if (l_rendererArguments == "DX")
+	{
+		using WindowSystem = DXWindowSystem::Instance;
+		using RenderingSystem = DXRenderingSystem::Instance;
+		using GuiSystem = DXGuiSystem::Instance;
+	}
+	else if (l_rendererArguments == "GL")
+	{
+		using WindowSystem = GLWindowSystem::Instance;
+		using RenderingSystem = GLRenderingSystem::Instance;
+		using GuiSystem = GLGuiSystem::Instance;
 	}
 	else
 	{
-		InnoLogSystem::printLog("ERROR::VisionSystem:: No arguments found!");
+		InnoLogSystem::printLog("ERROR::VisionSystem:: Incorrect renderer argument!");
 		m_VisionSystemStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
-
+#else
+InnoHighLevelSystem_EXPORT bool InnoVisionSystem::setup()
+{
+#endif
 	WindowSystemSingletonComponent::getInstance().m_windowName = InnoGameSystem::getGameName();
 
 	if (!setupWindow())
 	{
 		m_VisionSystemStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	};
 	if (!setupRendering())
 	{
 		m_VisionSystemStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 	if (!setupGui())
 	{
 		m_VisionSystemStatus = objectStatus::STANDBY;
-		return;
+		return false;
 	}
 	m_VisionSystemStatus = objectStatus::ALIVE;
+	return true;
 }
 
 bool InnoVisionSystem::setupWindow()
 {
-		WindowSystem::get().setup();
-		return true;
+	if (!WindowSystem::get().setup())
+	{
+		return false;
+	}
+	return true;
 }
 
 bool InnoVisionSystem::setupRendering()
 {
-	//setup rendering
-	for (auto i : GameSystemSingletonComponent::getInstance().m_visibleComponents)
+	if (!RenderingSystem::get().setup())
 	{
-		if (i->m_visiblilityType != visiblilityType::INVISIBLE)
-		{
-			if (i->m_visiblilityType == visiblilityType::EMISSIVE)
-			{
-				RenderingSystemSingletonComponent::getInstance().m_emissiveVisibleComponents.emplace_back(i);
-			}
-			else if (i->m_visiblilityType == visiblilityType::STATIC_MESH)
-			{
-				RenderingSystemSingletonComponent::getInstance().m_staticMeshVisibleComponents.emplace_back(i);
-			}
-		}
+		return false;
 	}
-
-	RenderingSystem::get().setup();
-	m_canRender = true;
+	RenderingSystemSingletonComponent::getInstance().m_canRender = true;
 
 	return true;
 }
 
 bool InnoVisionSystem::setupGui()
 {
-	GuiSystem::get().setup();
+	if (!GuiSystem::get().setup())
+	{
+		return false;
+	}
 	return true;
 }
 
-void InnoVisionSystem::initialize()
+InnoHighLevelSystem_EXPORT bool InnoVisionSystem::initialize()
 {
 	WindowSystem::get().initialize();
 	RenderingSystem::get().initialize();
 	GuiSystem::get().initialize();
 
 	InnoLogSystem::printLog("VisionSystem has been initialized.");
+	return true;
 }
 
-void InnoVisionSystem::updateCulling()
-{
-	RenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.clear();
-	RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.clear();
-
-	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
-	{
-		WindowSystemSingletonComponent::getInstance().m_mouseRay.m_origin = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.caclGlobalPos();
-		WindowSystemSingletonComponent::getInstance().m_mouseRay.m_direction = WindowSystemSingletonComponent::getInstance().m_mousePositionInWorldSpace;
-
-		auto l_cameraAABB = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_AABB;
-
-		auto l_ray = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_rayOfEye;
-
-		for (auto& j : GameSystemSingletonComponent::getInstance().m_visibleComponents)
-		{
-			if (j->m_visiblilityType == visiblilityType::STATIC_MESH || j->m_visiblilityType == visiblilityType::EMISSIVE)
-			{
-				if (InnoMath::intersectCheck(j->m_AABB, WindowSystemSingletonComponent::getInstance().m_mouseRay))
-				{
-					RenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.emplace_back(j);
-				}
-				if (InnoMath::intersectCheck(l_cameraAABB, j->m_AABB))
-				{
-					RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.emplace_back(j);
-				}
-			}
-		}
-	}
-}
-
-void InnoVisionSystem::update()
+InnoHighLevelSystem_EXPORT bool InnoVisionSystem::update()
 {
 	WindowSystem::get().update();
 
 	if (WindowSystem::get().getStatus() == objectStatus::ALIVE)
 	{
-		updateCulling();
-
-		if (m_canRender)
+		if (RenderingSystemSingletonComponent::getInstance().m_canRender)
 		{
-			m_canRender = false;
+			RenderingSystemSingletonComponent::getInstance().m_canRender = false;
 			RenderingSystem::get().update();
 			GuiSystem::get().update();
 			WindowSystem::get().swapBuffer();
-			m_canRender = true;
+			RenderingSystemSingletonComponent::getInstance().m_canRender = true;
 		}
-
-		// update the transform data @TODO: ugly
-		std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
-		{
-			val->m_transform.update();
-		});
+		return true;
 	}
 	else
 	{
 		InnoLogSystem::printLog("VisionSystem is stand-by.");
 		m_VisionSystemStatus = objectStatus::STANDBY;
+		return false;
 	}
 }
 
-void InnoVisionSystem::shutdown()
+InnoHighLevelSystem_EXPORT bool InnoVisionSystem::terminate()
 {
-
 	if (WindowSystem::get().getStatus() == objectStatus::ALIVE)
 	{
-		GuiSystem::get().shutdown();
-		RenderingSystem::get().shutdown();
-		WindowSystem::get().shutdown();
+		GuiSystem::get().terminate();
+		RenderingSystem::get().terminate();
+		WindowSystem::get().terminate();	
+		m_VisionSystemStatus = objectStatus::SHUTDOWN;
+		InnoLogSystem::printLog("VisionSystem has been terminated.");
+		return true;
 	}
-	m_VisionSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("VisionSystem has been shutdown.");
+	else
+	{
+		return false;
+	}
 }
 
-objectStatus InnoVisionSystem::getStatus()
+InnoHighLevelSystem_EXPORT objectStatus InnoVisionSystem::getStatus()
 {
 	return m_VisionSystemStatus;
 }

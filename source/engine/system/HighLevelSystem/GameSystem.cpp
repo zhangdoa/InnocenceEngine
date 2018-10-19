@@ -23,11 +23,12 @@ namespace InnoGameSystem
 	objectStatus m_GameSystemStatus = objectStatus::SHUTDOWN;
 }
 
-void InnoGameSystem::setup()
+InnoHighLevelSystem_EXPORT bool InnoGameSystem::setup()
 {
 	InnoGameInstance::setup();
 	addComponentsToMap();
 	m_GameSystemStatus = objectStatus::ALIVE;
+	return true;
 }
 
 void InnoGameSystem::addComponentsToMap()
@@ -62,24 +63,36 @@ void InnoGameSystem::addComponentsToMap()
 	});
 }
 
-void InnoGameSystem::initialize()
+void InnoGameSystem::updateTransform()
+{
+	std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
+	{
+		val->m_transform.update();
+	});
+}
+
+InnoHighLevelSystem_EXPORT bool InnoGameSystem::initialize()
 {
 	InnoGameInstance::initialize();
 	InnoLogSystem::printLog("GameSystem has been initialized.");
+	return true;
 }
 
-void InnoGameSystem::update()
+InnoHighLevelSystem_EXPORT bool InnoGameSystem::update()
 {
 	GameSystemSingletonComponent::getInstance().m_asyncTask = &InnoTaskSystem::submit([]()
 	{
 		InnoGameInstance::update();
 	});
+	return true;
 }
 
-void InnoGameSystem::shutdown()
+InnoHighLevelSystem_EXPORT bool InnoGameSystem::terminate()
 {
-	InnoGameInstance::shutdown();
+	InnoGameInstance::terminate();
 	m_GameSystemStatus = objectStatus::SHUTDOWN;
+	InnoLogSystem::printLog("GameSystem has been terminated.");
+	return true;
 }
 
 void InnoGameSystem::addTransformComponent(TransformComponent * rhs)
@@ -161,7 +174,7 @@ EntityID InnoGameSystem::createEntityID()
 	return std::rand();
 }
 
-objectStatus InnoGameSystem::getStatus()
+InnoHighLevelSystem_EXPORT objectStatus InnoGameSystem::getStatus()
 {
 	return m_GameSystemStatus;
 }

@@ -2875,7 +2875,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	}
 }
 
-void GLRenderingSystem::Instance::shutdown()
+void GLRenderingSystem::Instance::terminate()
 {
 }
 

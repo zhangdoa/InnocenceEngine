@@ -142,7 +142,7 @@ void GLWindowSystem::Instance::update()
 	InnoInputSystem::update();
 }
 
-void GLWindowSystem::Instance::shutdown()
+void GLWindowSystem::Instance::terminate()
 {
 	glfwSetInputMode(GLWindowSystemSingletonComponent::getInstance().m_window, GLFW_STICKY_KEYS, GL_FALSE);
 	glfwDestroyWindow(GLWindowSystemSingletonComponent::getInstance().m_window);
@@ -150,7 +150,7 @@ void GLWindowSystem::Instance::shutdown()
 	InnoLogSystem::printLog("GLWindowSystem: Window closed.");
 
 	m_WindowSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("GLWindowSystem has been shutdown.");
+	InnoLogSystem::printLog("GLWindowSystem has been terminated.");
 }
 
 void GLWindowSystem::Instance::swapBuffer()

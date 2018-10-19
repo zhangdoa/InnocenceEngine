@@ -25,7 +25,7 @@ public:
 	void setup();
 	void initialize();
 	void update();
-	void shutdown();
+	void terminate();
 	void zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize);
 
 private:
@@ -54,13 +54,13 @@ void GLGuiSystem::Instance::update()
 	ImGuiWrapper::getInstance().update();
 }
 
-void GLGuiSystem::Instance::shutdown()
+void GLGuiSystem::Instance::terminate()
 {
 	m_GLGuiSystemStatus = objectStatus::STANDBY;
-	ImGuiWrapper::getInstance().shutdown();
+	ImGuiWrapper::getInstance().terminate();
 
 	m_GLGuiSystemStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("GLGuiSystem has been shutdown.");
+	InnoLogSystem::printLog("GLGuiSystem has been terminated.");
 }
 
 objectStatus GLGuiSystem::Instance::getStatus()
@@ -210,7 +210,7 @@ void ImGuiWrapper::update()
 
 }
 
-void ImGuiWrapper::shutdown()
+void ImGuiWrapper::terminate()
 {
 }
 
