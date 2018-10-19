@@ -283,7 +283,7 @@ InnoLowLevelSystem_EXPORT void InnoMemorySystem::dumpToFile(bool fullDump)
 	l_file << "Total Size: " << m_totalPoolSize << "\n";
 	l_file << "Free Size: " << m_availablePoolSize << "\n";
 
-	Chunk* block = (Chunk*)(m_poolMemoryPtr + m_boundCheckSize);
+	Chunk* block = reinterpret_cast<Chunk*>(m_poolMemoryPtr + m_boundCheckSize);
 
 	while (block)
 	{

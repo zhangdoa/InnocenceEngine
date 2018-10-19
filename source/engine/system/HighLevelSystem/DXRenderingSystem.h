@@ -14,8 +14,6 @@ namespace DXRenderingSystem
 
 		InnoHighLevelSystem_EXPORT objectStatus getStatus();
 
-		void swapBuffer();
-
 		static Instance& get()
 		{
 			static Instance instance;

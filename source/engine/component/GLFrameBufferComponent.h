@@ -8,6 +8,6 @@ public:
 	GLFrameBufferComponent() {};
 	~GLFrameBufferComponent() {};
 
-	GLuint m_FBO;
-	GLuint m_RBO;
+	GLuint m_FBO = 0;
+	GLuint m_RBO = 0;
 };

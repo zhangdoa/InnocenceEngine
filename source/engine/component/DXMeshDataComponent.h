@@ -8,7 +8,7 @@ public:
 	DXMeshDataComponent() {};
 	~DXMeshDataComponent() {};
 
-	ID3D11Buffer* m_vertexBuffer;
-	ID3D11Buffer* m_indexBuffer;
+	ID3D11Buffer* m_vertexBuffer = 0;
+	ID3D11Buffer* m_indexBuffer = 0;
 };
 

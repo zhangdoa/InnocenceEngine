@@ -72,7 +72,7 @@ public:
 	vec2 getTextureCoords(unsigned int index) const;
 	vec4 getNormals(unsigned int index) const;
 	int getIndices(int faceIndex, int index) const;
-	aiMesh* m_aiMesh;
+	aiMesh* m_aiMesh = 0;
 };
 
 InnoHighLevelSystem_EXPORT bool InnoAssetSystem::setup()

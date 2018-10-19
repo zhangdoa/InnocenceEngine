@@ -108,12 +108,6 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 
 	// Create a list to hold all the possible display modes for this monitor/video card combination.
 	displayModeList = new DXGI_MODE_DESC[numModes];
-	if (!displayModeList)
-	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't get display modes!");
-		m_objectStatus = objectStatus::STANDBY;
-		return false;
-	}
 
 	// Now fill the display mode list structures.
 	result = adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList);

@@ -8,6 +8,6 @@ public:
 	GLTextureDataComponent() {};
 	~GLTextureDataComponent() {};
 
-	GLuint m_TAO;
+	GLuint m_TAO = 0;
 };
 

@@ -8,7 +8,7 @@ public:
 	DXTextureDataComponent() {};
 	~DXTextureDataComponent() {};
 
-	ID3D11Texture2D* m_texture;
-	ID3D11ShaderResourceView* m_textureView;
+	ID3D11Texture2D* m_texture = 0;
+	ID3D11ShaderResourceView* m_textureView = 0;
 };
 

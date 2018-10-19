@@ -376,7 +376,7 @@ public:
 
 		// optimized version ([Kavan et al. ] Lemma 4)
 		//V' = V + 2 * Qv x (Qv x V + Qs * V)
-		auto result = *this + rhs.cross((rhs.cross(*this) + *this * rhs.w)) * two<T>;
+		auto result = *this + rhs.cross(rhs.cross(*this) + *this * rhs.w) * two<T>;
 
 		return result.normalize();
 	}

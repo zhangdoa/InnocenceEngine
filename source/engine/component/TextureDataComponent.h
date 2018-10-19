@@ -18,7 +18,5 @@ public:
 	int m_textureHeight;
 	texturePixelDataType m_texturePixelDataType;
 	std::vector<void *> m_textureData;
-
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 };
 

@@ -97,7 +97,7 @@ InnoHighLevelSystem_EXPORT bool InnoVisionSystem::setup()
 
 bool InnoVisionSystem::setupWindow()
 {
-	if (!WindowSystem::get().setup())
+	if (!WindowSystem::Instance::get().setup())
 	{
 		return false;
 	}
@@ -106,7 +106,7 @@ bool InnoVisionSystem::setupWindow()
 
 bool InnoVisionSystem::setupRendering()
 {
-	if (!RenderingSystem::get().setup())
+	if (!RenderingSystem::Instance::get().setup())
 	{
 		return false;
 	}
@@ -117,7 +117,7 @@ bool InnoVisionSystem::setupRendering()
 
 bool InnoVisionSystem::setupGui()
 {
-	if (!GuiSystem::get().setup())
+	if (!GuiSystem::Instance::get().setup())
 	{
 		return false;
 	}
@@ -126,9 +126,9 @@ bool InnoVisionSystem::setupGui()
 
 InnoHighLevelSystem_EXPORT bool InnoVisionSystem::initialize()
 {
-	WindowSystem::get().initialize();
-	RenderingSystem::get().initialize();
-	GuiSystem::get().initialize();
+	WindowSystem::Instance::get().initialize();
+	RenderingSystem::Instance::get().initialize();
+	GuiSystem::Instance::get().initialize();
 
 	InnoLogSystem::printLog("VisionSystem has been initialized.");
 	return true;
@@ -136,16 +136,16 @@ InnoHighLevelSystem_EXPORT bool InnoVisionSystem::initialize()
 
 InnoHighLevelSystem_EXPORT bool InnoVisionSystem::update()
 {
-	WindowSystem::get().update();
+	WindowSystem::Instance::get().update();
 
-	if (WindowSystem::get().getStatus() == objectStatus::ALIVE)
+	if (WindowSystem::Instance::get().getStatus() == objectStatus::ALIVE)
 	{
 		if (RenderingSystemSingletonComponent::getInstance().m_canRender)
 		{
 			RenderingSystemSingletonComponent::getInstance().m_canRender = false;
-			RenderingSystem::get().update();
-			GuiSystem::get().update();
-			WindowSystem::get().swapBuffer();
+			RenderingSystem::Instance::get().update();
+			GuiSystem::Instance::get().update();
+			WindowSystem::Instance::get().swapBuffer();
 			RenderingSystemSingletonComponent::getInstance().m_canRender = true;
 		}
 		return true;
@@ -160,11 +160,11 @@ InnoHighLevelSystem_EXPORT bool InnoVisionSystem::update()
 
 InnoHighLevelSystem_EXPORT bool InnoVisionSystem::terminate()
 {
-	if (WindowSystem::get().getStatus() == objectStatus::ALIVE)
+	if (WindowSystem::Instance::get().getStatus() == objectStatus::ALIVE)
 	{
-		GuiSystem::get().terminate();
-		RenderingSystem::get().terminate();
-		WindowSystem::get().terminate();	
+		GuiSystem::Instance::get().terminate();
+		RenderingSystem::Instance::get().terminate();
+		WindowSystem::Instance::get().terminate();	
 		m_VisionSystemStatus = objectStatus::SHUTDOWN;
 		InnoLogSystem::printLog("VisionSystem has been terminated.");
 		return true;
