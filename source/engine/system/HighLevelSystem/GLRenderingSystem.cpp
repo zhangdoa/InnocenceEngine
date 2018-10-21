@@ -12,55 +12,7 @@
 #include "../../component/GameSystemSingletonComponent.h"
 #include "../HighLevelSystem/AssetSystem.h"
 
-namespace GLRenderingSystem
-{
-	double RadicalInverse(int n, int base);
-	void initializeHaltonSampler();
-	void initializeEnvironmentRenderPass();
-	void initializeShadowRenderPass();
-	void initializeGeometryRenderPass();
-	void initializeLightRenderPass();
-	void initializeFinalRenderPass();
-
-	void initializeSkyPass();
-	void initializeTAAPass();
-	void initializeBloomExtractPass();
-	void initializeBloomBlurPass();
-	void initializeMotionBlurPass();
-	void initializeBillboardPass();
-	void initializeDebuggerPass();
-	void initializeFinalBlendPass();
-
-	void initializeMesh(MeshDataComponent* rhs);
-	void initializeTexture(TextureDataComponent* rhs);
-	void initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string& shaderFilePath);
-
-	void updateEnvironmentRenderPass();
-	void updateShadowRenderPass();
-	void updateGeometryRenderPass();
-	void updateLightRenderPass();
-	void updateFinalRenderPass();
-
-	GLuint getUniformLocation(GLuint shaderProgram, const std::string& uniformName);
-
-	void updateUniform(const GLint uniformLocation, bool uniformValue);
-	void updateUniform(const GLint uniformLocation, int uniformValue);
-	void updateUniform(const GLint uniformLocation, double uniformValue);
-	void updateUniform(const GLint uniformLocation, double x, double y);
-	void updateUniform(const GLint uniformLocation, double x, double y, double z);
-	void updateUniform(const GLint uniformLocation, double x, double y, double z, double w);
-	void updateUniform(const GLint uniformLocation, const mat4& mat);
-
-	void attachTextureToFramebuffer(const GLTextureDataComponent* GLTextureDataComponent, const GLFrameBufferComponent* GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel);
-	void activateShaderProgram(const GLShaderProgramComponent* GLShaderProgramComponent);
-	void activateMesh(MeshDataComponent* rhs);
-	void drawMesh(MeshDataComponent* rhs);
-	void activateTexture(TextureDataComponent* rhs, int activateIndex);
-
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-}
-
-void GLRenderingSystem::Instance::setup()
+bool GLRenderingSystem::setup()
 {
 	if (RenderingSystemSingletonComponent::getInstance().m_MSAAdepth)
 	{
@@ -73,9 +25,11 @@ void GLRenderingSystem::Instance::setup()
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	glEnable(GL_TEXTURE_2D);
+
+	return true;
 }
 
-void GLRenderingSystem::Instance::initialize()
+bool GLRenderingSystem::initialize()
 {
 	initializeHaltonSampler();
 	initializeEnvironmentRenderPass();
@@ -83,6 +37,8 @@ void GLRenderingSystem::Instance::initialize()
 	initializeGeometryRenderPass();
 	initializeLightRenderPass();
 	initializeFinalRenderPass();
+
+	return true;
 }
 
 double GLRenderingSystem::RadicalInverse(int n, int base) {
@@ -1717,7 +1673,7 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 	l_ptr->m_objectStatus = objectStatus::ALIVE;
 }
 
-void GLRenderingSystem::Instance::update()
+bool GLRenderingSystem::update()
 {
 	if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.size() > 0)
 	{
@@ -1743,6 +1699,8 @@ void GLRenderingSystem::Instance::update()
 	updateGeometryRenderPass();
 	updateLightRenderPass();
 	updateFinalRenderPass();
+
+	return true;
 }
 
 void GLRenderingSystem::updateEnvironmentRenderPass()
@@ -2875,11 +2833,14 @@ void GLRenderingSystem::updateFinalRenderPass()
 	}
 }
 
-void GLRenderingSystem::Instance::terminate()
+bool GLRenderingSystem::terminate()
 {
+	m_objectStatus = objectStatus::SHUTDOWN;
+	InnoLogSystem::printLog("GLRenderingSystem has been terminated.");
+	return true;
 }
 
-objectStatus GLRenderingSystem::Instance::getStatus()
+objectStatus GLRenderingSystem::getStatus()
 {
 	return m_objectStatus;
 }

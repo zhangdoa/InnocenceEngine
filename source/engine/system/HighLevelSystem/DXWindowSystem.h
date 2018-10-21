@@ -1,48 +1,20 @@
 #pragma once
 #include "../../exports/HighLevelSystem_Export.h"
-#include "../../component/DXWindowSystemSingletonComponent.h"
+#include "../../common/InnoType.h"
+#include "IWindowSystem.h"
 
-namespace DXWindowSystem
-{
-	class Instance
-	{
-	public:
-		InnoHighLevelSystem_EXPORT bool setup();
-		InnoHighLevelSystem_EXPORT bool initialize();
-		InnoHighLevelSystem_EXPORT bool update();
-		InnoHighLevelSystem_EXPORT bool terminate();
-		InnoHighLevelSystem_EXPORT objectStatus getStatus();
-
-		void swapBuffer();
-
-		static Instance& get()
-		{
-			static Instance instance;
-			return instance;
-		}
-
-	private:
-		Instance() {};
-	};
-};
-
-class windowCallbackWrapper
+class DXWindowSystem : public IWindowSystem
 {
 public:
-	~windowCallbackWrapper() {};
+	InnoHighLevelSystem_EXPORT bool setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow) override;
+	InnoHighLevelSystem_EXPORT bool initialize() override;
+	InnoHighLevelSystem_EXPORT bool update() override;
+	InnoHighLevelSystem_EXPORT bool terminate() override;
 
-	static windowCallbackWrapper& getInstance()
-	{
-		static windowCallbackWrapper instance;
-		return instance;
-	}
+	InnoHighLevelSystem_EXPORT objectStatus getStatus() override;
 
-	LRESULT CALLBACK MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
+	void swapBuffer() override;
 
 private:
-	windowCallbackWrapper() {};
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 };
-
-static windowCallbackWrapper* ApplicationHandle = 0;
-
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

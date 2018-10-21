@@ -9,8 +9,8 @@
 
 #include "../../common/InnoMath.h"
 #include "../../common/InnoType.h"
-#include "../../common/InnoAllocator.h"
-#include "../../component/AssetSystemSingletonComponent.h"
+#include "../../component/MeshDataComponent.h"
+#include "../../component/TextureDataComponent.h"
 
 namespace InnoAssetSystem
 {

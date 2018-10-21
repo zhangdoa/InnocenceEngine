@@ -32,40 +32,39 @@ private:
 	ImGuiWrapper() {};
 };
 
-namespace GLGuiSystem
-{
-	objectStatus m_GLGuiSystemStatus = objectStatus::SHUTDOWN;
-};
-
-void GLGuiSystem::Instance::setup()
+InnoHighLevelSystem_EXPORT bool GLGuiSystem::setup()
 {
 	ImGuiWrapper::getInstance().setup();
-	m_GLGuiSystemStatus = objectStatus::ALIVE;
+	m_objectStatus = objectStatus::ALIVE;
+	return true;
 }
 
-void GLGuiSystem::Instance::initialize()
+InnoHighLevelSystem_EXPORT bool GLGuiSystem::initialize()
 {
 	ImGuiWrapper::getInstance().initialize();
 	InnoLogSystem::printLog("GLGuiSystem has been initialized.");
+	return true;
 }
 
-void GLGuiSystem::Instance::update()
+InnoHighLevelSystem_EXPORT bool GLGuiSystem::update()
 {
 	ImGuiWrapper::getInstance().update();
+	return true;
 }
 
-void GLGuiSystem::Instance::terminate()
+InnoHighLevelSystem_EXPORT bool GLGuiSystem::terminate()
 {
-	m_GLGuiSystemStatus = objectStatus::STANDBY;
+	m_objectStatus = objectStatus::STANDBY;
 	ImGuiWrapper::getInstance().terminate();
 
-	m_GLGuiSystemStatus = objectStatus::SHUTDOWN;
+	m_objectStatus = objectStatus::SHUTDOWN;
 	InnoLogSystem::printLog("GLGuiSystem has been terminated.");
+	return true;
 }
 
-objectStatus GLGuiSystem::Instance::getStatus()
+InnoHighLevelSystem_EXPORT objectStatus GLGuiSystem::getStatus()
 {
-	return m_GLGuiSystemStatus;
+	return m_objectStatus;
 }
 
 void ImGuiWrapper::setup()

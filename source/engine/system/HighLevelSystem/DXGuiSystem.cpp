@@ -1,29 +1,24 @@
 #include "DXGuiSystem.h"
 #include "../LowLevelSystem/LogSystem.h"
 
-namespace DXGuiSystem
-{
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-}
-
-InnoHighLevelSystem_EXPORT bool DXGuiSystem::Instance::setup()
+InnoHighLevelSystem_EXPORT bool DXGuiSystem::setup()
 {
 	m_objectStatus = objectStatus::ALIVE;
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXGuiSystem::Instance::initialize()
+InnoHighLevelSystem_EXPORT bool DXGuiSystem::initialize()
 {
 	InnoLogSystem::printLog("DXGuiSystem has been initialized.");
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXGuiSystem::Instance::update()
+InnoHighLevelSystem_EXPORT bool DXGuiSystem::update()
 {
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXGuiSystem::Instance::terminate()
+InnoHighLevelSystem_EXPORT bool DXGuiSystem::terminate()
 {
 	m_objectStatus = objectStatus::STANDBY;
 	m_objectStatus = objectStatus::SHUTDOWN;
@@ -31,7 +26,7 @@ InnoHighLevelSystem_EXPORT bool DXGuiSystem::Instance::terminate()
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT objectStatus DXGuiSystem::Instance::getStatus()
+InnoHighLevelSystem_EXPORT objectStatus DXGuiSystem::getStatus()
 {
 	return m_objectStatus;
 }

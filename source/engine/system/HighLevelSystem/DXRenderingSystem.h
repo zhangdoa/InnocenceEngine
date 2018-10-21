@@ -1,26 +1,35 @@
 #pragma once
 #include "../../exports/HighLevelSystem_Export.h"
 #include "../../common/InnoType.h"
+#include "IRenderingSystem.h"
+#include "DXHeaders.h"
+#include "../../component/MeshDataComponent.h"
+#include "../../component/TextureDataComponent.h"
 
-namespace DXRenderingSystem
+class DXRenderingSystem : public IRenderingSystem
 {
-	class Instance
-	{
-	public:
-		InnoHighLevelSystem_EXPORT bool setup();
-		InnoHighLevelSystem_EXPORT bool initialize();
-		InnoHighLevelSystem_EXPORT bool update();
-		InnoHighLevelSystem_EXPORT bool terminate();
+public:
+	InnoHighLevelSystem_EXPORT bool setup() override;
+	InnoHighLevelSystem_EXPORT bool initialize() override;
+	InnoHighLevelSystem_EXPORT bool update() override;
+	InnoHighLevelSystem_EXPORT bool terminate() override;
 
-		InnoHighLevelSystem_EXPORT objectStatus getStatus();
+	InnoHighLevelSystem_EXPORT objectStatus getStatus();
 
-		static Instance& get()
-		{
-			static Instance instance;
-			return instance;
-		}
+private:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	private:
-		Instance() {};
-	};
+	void initializeMesh(MeshDataComponent* rhs);
+	void initializeTexture(TextureDataComponent* rhs);
+
+	void initializeFinalBlendPass();
+
+	void initializeShader(shaderType shaderType, const std::wstring & shaderFilePath);
+	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
+
+	void updateFinalBlendPass();
+
+	void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, mat4* parameterValue);
+	void beginScene(float r, float g, float b, float a);
+	void endScene();
 };

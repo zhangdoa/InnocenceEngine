@@ -1,1 +1,2 @@
-start bin\InnoMain.exe -renderer DX
+cd bin
+start InnoMain.exe -renderer GL

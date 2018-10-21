@@ -10,6 +10,7 @@
 #include "../LowLevelSystem/MemorySystem.h"
 #include "../LowLevelSystem/LogSystem.h"
 #include "../LowLevelSystem/TaskSystem.h"
+#include "../../component/AssetSystemSingletonComponent.h"
 #include "../../component/GameSystemSingletonComponent.h"
 #include "MeshDataSystem.h"
 #include "TextureDataSystem.h"
@@ -533,7 +534,7 @@ void InnoAssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileNa
 			}
 			else
 			{
-				InnoLogSystem::printLog("ERROR::STBI:: Failed to load texture: " + (AssetSystemSingletonComponent::getInstance().m_textureRelativePath + fileName[i]));
+				InnoLogSystem::printLog("Error::STBI:: Failed to load texture: " + (AssetSystemSingletonComponent::getInstance().m_textureRelativePath + fileName[i]));
 				return;
 			}
 			//stbi_image_free(data);
@@ -579,7 +580,7 @@ void InnoAssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileNa
 		}
 		else
 		{
-			InnoLogSystem::printLog("ERROR::STBI:: Failed to load texture: " + (AssetSystemSingletonComponent::getInstance().m_textureRelativePath + fileName[0]));
+			InnoLogSystem::printLog("Error::STBI:: Failed to load texture: " + (AssetSystemSingletonComponent::getInstance().m_textureRelativePath + fileName[0]));
 			return;
 		}
 	}
@@ -609,7 +610,7 @@ void InnoAssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileNa
 		}
 		else
 		{
-			InnoLogSystem::printLog("ERROR::STBI:: Failed to load texture: " + fileName[0]);
+			InnoLogSystem::printLog("Error::STBI:: Failed to load texture: " + fileName[0]);
 			return;
 		}
 	}
@@ -662,7 +663,7 @@ void InnoAssetSystem::loadModelFromDisk(const std::string & fileName, modelMap &
 #endif
 	if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 	{
-		InnoLogSystem::printLog("ERROR:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
+		InnoLogSystem::printLog("Error:ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
 		return;
 	}
 

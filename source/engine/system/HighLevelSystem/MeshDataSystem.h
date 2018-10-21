@@ -1,5 +1,5 @@
 #pragma once
-#include "../../component/AssetSystemSingletonComponent.h"
+#include "../../component/MeshDataComponent.h"
 
 namespace MeshDataSystem
 {

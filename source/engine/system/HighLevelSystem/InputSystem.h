@@ -1,5 +1,5 @@
 #pragma once
-#include "../../component/WindowSystemSingletonComponent.h"
+#include "../../common/InnoType.h"
 
 namespace InnoInputSystem 
 {

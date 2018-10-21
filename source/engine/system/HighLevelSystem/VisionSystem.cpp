@@ -2,7 +2,6 @@
 
 #include "../LowLevelSystem/LogSystem.h"
 
-#include "../../component/WindowSystemSingletonComponent.h"
 #include "../../component/RenderingSystemSingletonComponent.h"
 
 #include "../HighLevelSystem/GameSystem.h"
@@ -17,25 +16,20 @@
 
 namespace InnoVisionSystem
 {
-	using WindowSystem = DXWindowSystem::Instance;
-	using RenderingSystem = DXRenderingSystem::Instance;
-	using GuiSystem = DXGuiSystem::Instance;
+	IWindowSystem* m_windowSystem;
+	IRenderingSystem* m_renderingSystem;
+	IGuiSystem* m_guiSystem;
 
-	bool setupWindow();
+	bool setupWindow(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow);
 	bool setupRendering();
 	bool setupGui();
 
 	objectStatus m_VisionSystemStatus = objectStatus::SHUTDOWN;
 }
 
-#if defined(INNO_RENDERER_DX)
 InnoHighLevelSystem_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
-	DXWindowSystemSingletonComponent::getInstance().m_hInstance = static_cast<HINSTANCE>(hInstance);
-	DXWindowSystemSingletonComponent::getInstance().m_pScmdline = pScmdline;
-	DXWindowSystemSingletonComponent::getInstance().m_nCmdshow = nCmdshow;
-
-	std::string l_windowArguments = DXWindowSystemSingletonComponent::getInstance().m_pScmdline;
+	std::string l_windowArguments = pScmdline;
 	if (l_windowArguments == "")
 	{
 		InnoLogSystem::printLog("Error: VisionSystem: No arguments found!");
@@ -54,29 +48,23 @@ InnoHighLevelSystem_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* h
 	std::string l_rendererArguments = l_windowArguments.substr(l_argPos + 9);
 	if (l_rendererArguments == "DX")
 	{
-		using WindowSystem = DXWindowSystem::Instance;
-		using RenderingSystem = DXRenderingSystem::Instance;
-		using GuiSystem = DXGuiSystem::Instance;
+		m_windowSystem = new DXWindowSystem();
+		m_renderingSystem = new DXRenderingSystem();
+		m_guiSystem = new DXGuiSystem();
 	}
 	else if (l_rendererArguments == "GL")
 	{
-		using WindowSystem = GLWindowSystem::Instance;
-		using RenderingSystem = GLRenderingSystem::Instance;
-		using GuiSystem = GLGuiSystem::Instance;
+		m_windowSystem = new GLWindowSystem();
+		m_renderingSystem = new GLRenderingSystem();
+		m_guiSystem = new GLGuiSystem();
 	}
 	else
 	{
-		InnoLogSystem::printLog("ERROR::VisionSystem:: Incorrect renderer argument!");
+		InnoLogSystem::printLog("Error::VisionSystem:: Incorrect renderer argument!");
 		m_VisionSystemStatus = objectStatus::STANDBY;
 		return false;
 	}
-#else
-InnoHighLevelSystem_EXPORT bool InnoVisionSystem::setup()
-{
-#endif
-	WindowSystemSingletonComponent::getInstance().m_windowName = InnoGameSystem::getGameName();
-
-	if (!setupWindow())
+	if (!setupWindow(hInstance, hPrevInstance, pScmdline, nCmdshow))
 	{
 		m_VisionSystemStatus = objectStatus::STANDBY;
 		return false;
@@ -95,9 +83,9 @@ InnoHighLevelSystem_EXPORT bool InnoVisionSystem::setup()
 	return true;
 }
 
-bool InnoVisionSystem::setupWindow()
+bool InnoVisionSystem::setupWindow(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
-	if (!WindowSystem::Instance::get().setup())
+	if (!m_windowSystem->setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
 	{
 		return false;
 	}
@@ -106,7 +94,7 @@ bool InnoVisionSystem::setupWindow()
 
 bool InnoVisionSystem::setupRendering()
 {
-	if (!RenderingSystem::Instance::get().setup())
+	if (!m_renderingSystem->setup())
 	{
 		return false;
 	}
@@ -117,7 +105,7 @@ bool InnoVisionSystem::setupRendering()
 
 bool InnoVisionSystem::setupGui()
 {
-	if (!GuiSystem::Instance::get().setup())
+	if (!m_guiSystem->setup())
 	{
 		return false;
 	}
@@ -126,9 +114,9 @@ bool InnoVisionSystem::setupGui()
 
 InnoHighLevelSystem_EXPORT bool InnoVisionSystem::initialize()
 {
-	WindowSystem::Instance::get().initialize();
-	RenderingSystem::Instance::get().initialize();
-	GuiSystem::Instance::get().initialize();
+	m_windowSystem->initialize();
+	m_renderingSystem->initialize();
+	m_guiSystem->initialize();
 
 	InnoLogSystem::printLog("VisionSystem has been initialized.");
 	return true;
@@ -136,16 +124,16 @@ InnoHighLevelSystem_EXPORT bool InnoVisionSystem::initialize()
 
 InnoHighLevelSystem_EXPORT bool InnoVisionSystem::update()
 {
-	WindowSystem::Instance::get().update();
+	m_windowSystem->update();
 
-	if (WindowSystem::Instance::get().getStatus() == objectStatus::ALIVE)
+	if (m_windowSystem->getStatus() == objectStatus::ALIVE)
 	{
 		if (RenderingSystemSingletonComponent::getInstance().m_canRender)
 		{
 			RenderingSystemSingletonComponent::getInstance().m_canRender = false;
-			RenderingSystem::Instance::get().update();
-			GuiSystem::Instance::get().update();
-			WindowSystem::Instance::get().swapBuffer();
+			m_renderingSystem->update();
+			m_guiSystem->update();
+			m_windowSystem->swapBuffer();
 			RenderingSystemSingletonComponent::getInstance().m_canRender = true;
 		}
 		return true;
@@ -160,11 +148,11 @@ InnoHighLevelSystem_EXPORT bool InnoVisionSystem::update()
 
 InnoHighLevelSystem_EXPORT bool InnoVisionSystem::terminate()
 {
-	if (WindowSystem::Instance::get().getStatus() == objectStatus::ALIVE)
+	if (m_windowSystem->getStatus() == objectStatus::ALIVE)
 	{
-		GuiSystem::Instance::get().terminate();
-		RenderingSystem::Instance::get().terminate();
-		WindowSystem::Instance::get().terminate();	
+		m_guiSystem->terminate();
+		m_renderingSystem->terminate();
+		m_windowSystem->terminate();	
 		m_VisionSystemStatus = objectStatus::SHUTDOWN;
 		InnoLogSystem::printLog("VisionSystem has been terminated.");
 		return true;

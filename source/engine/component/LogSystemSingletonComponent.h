@@ -10,7 +10,6 @@ public:
 	static LogSystemSingletonComponent& getInstance()
 	{
 		static LogSystemSingletonComponent instance;
-		//std::cout << &instance << std::endl;
 		return instance;
 	}
 

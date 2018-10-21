@@ -1,30 +1,21 @@
 #pragma once
-#include "../../component/GLWindowSystemSingletonComponent.h"
+#include "../../exports/HighLevelSystem_Export.h"
+#include "IWindowSystem.h"
 
-namespace GLWindowSystem
+class GLWindowSystem : public IWindowSystem
 {
-	class Instance
-	{
-	public:
-		__declspec(dllexport) void setup();
-		__declspec(dllexport) void initialize();
-		__declspec(dllexport) void update();
-		__declspec(dllexport) void terminate();
+public:
+	InnoHighLevelSystem_EXPORT bool setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow) override;
+	InnoHighLevelSystem_EXPORT bool initialize() override;
+	InnoHighLevelSystem_EXPORT bool update() override;
+	InnoHighLevelSystem_EXPORT bool terminate() override;
 
-		__declspec(dllexport) objectStatus getStatus();
+	InnoHighLevelSystem_EXPORT objectStatus getStatus() override;
 
-		__declspec(dllexport) void swapBuffer();
+	void swapBuffer() override;
 
-		__declspec(dllexport) void hideMouseCursor();
-		__declspec(dllexport) void showMouseCursor();
-
-		static Instance& get()
-		{
-			static Instance instance;
-			return instance;
-		}
-
-	private:
-		Instance() {};
-	};
+private:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	void hideMouseCursor();
+	void showMouseCursor();
 };

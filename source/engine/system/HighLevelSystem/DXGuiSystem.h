@@ -1,27 +1,19 @@
 #pragma once
 #include "../../exports/HighLevelSystem_Export.h"
 #include "../../common/InnoType.h"
+#include "IGuiSystem.h"
 
-namespace DXGuiSystem
+class DXGuiSystem : public IGuiSystem
 {
-	class Instance
-	{
-	public:
-		InnoHighLevelSystem_EXPORT bool setup();
-		InnoHighLevelSystem_EXPORT bool initialize();
-		InnoHighLevelSystem_EXPORT bool update();
-		InnoHighLevelSystem_EXPORT bool terminate();
+public:
+	InnoHighLevelSystem_EXPORT bool setup() override;
+	InnoHighLevelSystem_EXPORT bool initialize() override;
+	InnoHighLevelSystem_EXPORT bool update() override;
+	InnoHighLevelSystem_EXPORT bool terminate() override;
 
-		InnoHighLevelSystem_EXPORT objectStatus getStatus();
+	InnoHighLevelSystem_EXPORT objectStatus getStatus() override;
 
-		static Instance& get()
-		{
-			static Instance instance;
-			return instance;
-		}
-
-	private:
-		Instance() {};
-	};
+private:
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 };
 

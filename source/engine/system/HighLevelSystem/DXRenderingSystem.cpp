@@ -3,54 +3,22 @@
 #include "../../component/DXFinalRenderPassSingletonComponent.h"
 
 #include <sstream>
-
-#include "../../component/RenderingSystemSingletonComponent.h"
 #include "../../component/WindowSystemSingletonComponent.h"
 #include "../../component/DXWindowSystemSingletonComponent.h"
+#include "../../component/RenderingSystemSingletonComponent.h"
+#include "../../component/DXRenderingSystemSingletonComponent.h"
 #include "../../component/AssetSystemSingletonComponent.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
-#include "DXHeaders.h"
 
 #include "../LowLevelSystem/LogSystem.h"
 #include "../HighLevelSystem/AssetSystem.h"
 #include "../HighLevelSystem/GameSystem.h"
 #include "../../component/GameSystemSingletonComponent.h"
 
-namespace DXRenderingSystem
-{
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-
-	bool m_vsync_enabled;
-	int m_videoCardMemory;
-	char m_videoCardDescription[128];
-	IDXGISwapChain* m_swapChain;
-	ID3D11Device* m_device;
-	ID3D11DeviceContext* m_deviceContext;
-	ID3D11RenderTargetView* m_renderTargetView;
-	ID3D11Texture2D* m_depthStencilBuffer;
-	ID3D11DepthStencilState* m_depthStencilState;
-	ID3D11DepthStencilView* m_depthStencilView;
-	ID3D11RasterizerState* m_rasterState;
-
-	void initializeMesh(MeshDataComponent* DXMeshDataComponent);
-	void initializeTexture(TextureDataComponent* DXTextureDataComponent);
-
-	void initializeFinalBlendPass();
-
-	void initializeShader(shaderType shaderType, const std::wstring & shaderFilePath);
-	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
-
-	void updateFinalBlendPass();
-
-	void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, mat4* parameterValue);
-	void beginScene(float r, float g, float b, float a);
-	void endScene();
-};
-
-InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
+InnoHighLevelSystem_EXPORT bool DXRenderingSystem::setup()
 {
 	HRESULT result;
 	IDXGIFactory* factory;
@@ -142,10 +110,10 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	}
 
 	// Store the dedicated video card memory in megabytes.
-	m_videoCardMemory = (int)(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
+	DXRenderingSystemSingletonComponent::getInstance().m_videoCardMemory = (int)(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
 
 	// Convert the name of the video card to a character array and store it.
-	error = wcstombs_s(&stringLength, m_videoCardDescription, 128, adapterDesc.Description, 128);
+	error = wcstombs_s(&stringLength, DXRenderingSystemSingletonComponent::getInstance().m_videoCardDescription, 128, adapterDesc.Description, 128);
 	if (error != 0)
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't convert the name of the video card to a character array!");
@@ -183,7 +151,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	// Set the refresh rate of the back buffer.
-	if (m_vsync_enabled)
+	if (DXRenderingSystemSingletonComponent::getInstance().m_vsync_enabled)
 	{
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
@@ -229,7 +197,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 
 	// Create the swap chain, Direct3D device, and Direct3D device context.
 	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, &featureLevel, 1,
-		D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &m_device, NULL, &m_deviceContext);
+		D3D11_SDK_VERSION, &swapChainDesc, &DXRenderingSystemSingletonComponent::getInstance().m_swapChain, &DXRenderingSystemSingletonComponent::getInstance().m_device, NULL, &DXRenderingSystemSingletonComponent::getInstance().m_deviceContext);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the swap chain/D3D device/D3D device context!");
@@ -238,7 +206,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	}
 
 	// Get the pointer to the back buffer.
-	result = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
+	result = DXRenderingSystemSingletonComponent::getInstance().m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't get back buffer pointer!");
@@ -247,7 +215,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	}
 
 	// Create the render target view with the back buffer pointer.
-	result = m_device->CreateRenderTargetView(backBufferPtr, NULL, &m_renderTargetView);
+	result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateRenderTargetView(backBufferPtr, NULL, &DXRenderingSystemSingletonComponent::getInstance().m_renderTargetView);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create render target view!");
@@ -276,7 +244,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	depthBufferDesc.MiscFlags = 0;
 
 	// Create the texture for the depth buffer using the filled out description.
-	result = m_device->CreateTexture2D(&depthBufferDesc, NULL, &m_depthStencilBuffer);
+	result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateTexture2D(&depthBufferDesc, NULL, &DXRenderingSystemSingletonComponent::getInstance().m_depthStencilBuffer);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the texture for the depth buffer!");
@@ -309,7 +277,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
 	// Create the depth stencil state.
-	result = m_device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState);
+	result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateDepthStencilState(&depthStencilDesc, &DXRenderingSystemSingletonComponent::getInstance().m_depthStencilState);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the depth stencil state!");
@@ -318,7 +286,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	}
 
 	// Set the depth stencil state.
-	m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 1);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->OMSetDepthStencilState(DXRenderingSystemSingletonComponent::getInstance().m_depthStencilState, 1);
 
 	// Initialize the depth stencil view.
 	ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
@@ -329,7 +297,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
-	result = m_device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView);
+	result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateDepthStencilView(DXRenderingSystemSingletonComponent::getInstance().m_depthStencilBuffer, &depthStencilViewDesc, &DXRenderingSystemSingletonComponent::getInstance().m_depthStencilView);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the depth stencil view!");
@@ -338,7 +306,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	}
 
 	// Bind the render target view and depth stencil buffer to the output render pipeline.
-	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->OMSetRenderTargets(1, &DXRenderingSystemSingletonComponent::getInstance().m_renderTargetView, DXRenderingSystemSingletonComponent::getInstance().m_depthStencilView);
 
 	// Setup the raster description which will determine how and what polygons will be drawn.
 	rasterDesc.AntialiasedLineEnable = false;
@@ -353,7 +321,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	rasterDesc.SlopeScaledDepthBias = 0.0f;
 
 	// Create the rasterizer state from the description we just filled out.
-	result = m_device->CreateRasterizerState(&rasterDesc, &m_rasterState);
+	result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateRasterizerState(&rasterDesc, &DXRenderingSystemSingletonComponent::getInstance().m_rasterState);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the rasterizer state!");
@@ -362,7 +330,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	}
 
 	// Now set the rasterizer state.
-	m_deviceContext->RSSetState(m_rasterState);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->RSSetState(DXRenderingSystemSingletonComponent::getInstance().m_rasterState);
 
 	// Setup the viewport for rendering.
 	viewport.Width = (float)WindowSystemSingletonComponent::getInstance().m_windowResolution.x;
@@ -373,13 +341,13 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::setup()
 	viewport.TopLeftY = 0.0f;
 
 	// Create the viewport.
-	m_deviceContext->RSSetViewports(1, &viewport);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->RSSetViewports(1, &viewport);
 
 	m_objectStatus = objectStatus::ALIVE;
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::initialize()
+InnoHighLevelSystem_EXPORT bool DXRenderingSystem::initialize()
 {
 	initializeFinalBlendPass();
 
@@ -387,7 +355,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::initialize()
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::update()
+InnoHighLevelSystem_EXPORT bool DXRenderingSystem::update()
 {
 	if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.size() > 0)
 	{
@@ -415,60 +383,60 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::update()
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::terminate()
+InnoHighLevelSystem_EXPORT bool DXRenderingSystem::terminate()
 {
 	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
-	if (m_swapChain)
+	if (DXRenderingSystemSingletonComponent::getInstance().m_swapChain)
 	{
-		m_swapChain->SetFullscreenState(false, NULL);
+		DXRenderingSystemSingletonComponent::getInstance().m_swapChain->SetFullscreenState(false, NULL);
 	}
 
-	if (m_rasterState)
+	if (DXRenderingSystemSingletonComponent::getInstance().m_rasterState)
 	{
-		m_rasterState->Release();
-		m_rasterState = 0;
+		DXRenderingSystemSingletonComponent::getInstance().m_rasterState->Release();
+		DXRenderingSystemSingletonComponent::getInstance().m_rasterState = 0;
 	}
 
-	if (m_depthStencilView)
+	if (DXRenderingSystemSingletonComponent::getInstance().m_depthStencilView)
 	{
-		m_depthStencilView->Release();
-		m_depthStencilView = 0;
+		DXRenderingSystemSingletonComponent::getInstance().m_depthStencilView->Release();
+		DXRenderingSystemSingletonComponent::getInstance().m_depthStencilView = 0;
 	}
 
-	if (m_depthStencilState)
+	if (DXRenderingSystemSingletonComponent::getInstance().m_depthStencilState)
 	{
-		m_depthStencilState->Release();
-		m_depthStencilState = 0;
+		DXRenderingSystemSingletonComponent::getInstance().m_depthStencilState->Release();
+		DXRenderingSystemSingletonComponent::getInstance().m_depthStencilState = 0;
 	}
 
-	if (m_depthStencilBuffer)
+	if (DXRenderingSystemSingletonComponent::getInstance().m_depthStencilBuffer)
 	{
-		m_depthStencilBuffer->Release();
-		m_depthStencilBuffer = 0;
+		DXRenderingSystemSingletonComponent::getInstance().m_depthStencilBuffer->Release();
+		DXRenderingSystemSingletonComponent::getInstance().m_depthStencilBuffer = 0;
 	}
 
-	if (m_renderTargetView)
+	if (DXRenderingSystemSingletonComponent::getInstance().m_renderTargetView)
 	{
-		m_renderTargetView->Release();
-		m_renderTargetView = 0;
+		DXRenderingSystemSingletonComponent::getInstance().m_renderTargetView->Release();
+		DXRenderingSystemSingletonComponent::getInstance().m_renderTargetView = 0;
 	}
 
-	if (m_deviceContext)
+	if (DXRenderingSystemSingletonComponent::getInstance().m_deviceContext)
 	{
-		m_deviceContext->Release();
-		m_deviceContext = 0;
+		DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->Release();
+		DXRenderingSystemSingletonComponent::getInstance().m_deviceContext = 0;
 	}
 
-	if (m_device)
+	if (DXRenderingSystemSingletonComponent::getInstance().m_device)
 	{
-		m_device->Release();
-		m_device = 0;
+		DXRenderingSystemSingletonComponent::getInstance().m_device->Release();
+		DXRenderingSystemSingletonComponent::getInstance().m_device = 0;
 	}
 
-	if (m_swapChain)
+	if (DXRenderingSystemSingletonComponent::getInstance().m_swapChain)
 	{
-		m_swapChain->Release();
-		m_swapChain = 0;
+		DXRenderingSystemSingletonComponent::getInstance().m_swapChain->Release();
+		DXRenderingSystemSingletonComponent::getInstance().m_swapChain = 0;
 	}
 
 	m_objectStatus = objectStatus::SHUTDOWN;
@@ -476,7 +444,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::Instance::terminate()
 	return true;
 }
 
-objectStatus DXRenderingSystem::Instance::getStatus()
+objectStatus DXRenderingSystem::getStatus()
 {
 	return m_objectStatus;
 }
@@ -496,7 +464,7 @@ void DXRenderingSystem::initializeFinalBlendPass()
 	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.StructureByteStride = 0;
 
 	// Create the constant buffer pointer
-	auto result = m_device->CreateBuffer(&DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc, NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer);
+	auto result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateBuffer(&DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc, NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create matrix buffer pointer!");
@@ -520,7 +488,7 @@ void DXRenderingSystem::initializeFinalBlendPass()
 	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	// Create the texture sampler state.
-	result = m_device->CreateSamplerState(&DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc, &DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
+	result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateSamplerState(&DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc, &DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create texture sampler state!");
@@ -570,7 +538,7 @@ void DXRenderingSystem::initializeShader(shaderType shaderType, const std::wstri
 		InnoLogSystem::printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
 
 		// Create the shader from the buffer.
-		result = m_device->CreateVertexShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader);
+		result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateVertexShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader);
 		if (FAILED(result))
 		{
 			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create vertex shader!");
@@ -611,7 +579,7 @@ void DXRenderingSystem::initializeShader(shaderType shaderType, const std::wstri
 		numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
 		// Create the vertex input layout.
-		result = m_device->CreateInputLayout(polygonLayout, numElements, shaderBuffer->GetBufferPointer(),
+		result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateInputLayout(polygonLayout, numElements, shaderBuffer->GetBufferPointer(),
 			shaderBuffer->GetBufferSize(), &DXFinalRenderPassSingletonComponent::getInstance().m_layout);
 		if (FAILED(result))
 		{
@@ -647,7 +615,7 @@ void DXRenderingSystem::initializeShader(shaderType shaderType, const std::wstri
 		InnoLogSystem::printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
 
 		// Create the shader from the buffer.
-		result = m_device->CreatePixelShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader);
+		result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreatePixelShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader);
 		if (FAILED(result))
 		{
 			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create pixel shader!");
@@ -714,7 +682,7 @@ void DXRenderingSystem::initializeMesh(MeshDataComponent * rhs)
 	vertexData.SysMemSlicePitch = 0;
 
 	// Now create the vertex buffer.
-	result = m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &l_ptr->m_vertexBuffer);
+	result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &l_ptr->m_vertexBuffer);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create vbo!");
@@ -735,7 +703,7 @@ void DXRenderingSystem::initializeMesh(MeshDataComponent * rhs)
 	indexData.SysMemSlicePitch = 0;
 
 	// Create the index buffer.
-	result = m_device->CreateBuffer(&indexBufferDesc, &indexData, &l_ptr->m_indexBuffer);
+	result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateBuffer(&indexBufferDesc, &indexData, &l_ptr->m_indexBuffer);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create ibo!");
@@ -767,7 +735,7 @@ void DXRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 	textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
 	// Create the empty texture.
-	hResult = m_device->CreateTexture2D(&textureDesc, NULL, &l_ptr->m_texture);
+	hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateTexture2D(&textureDesc, NULL, &l_ptr->m_texture);
 	if (FAILED(hResult))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create texture!");
@@ -775,7 +743,7 @@ void DXRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 	}
 
 	rowPitch = (rhs->m_textureWidth * 4) * sizeof(unsigned char);
-	m_deviceContext->UpdateSubresource(l_ptr->m_texture, 0, NULL, l_ptr->m_textureData[0], rowPitch, 0);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->UpdateSubresource(l_ptr->m_texture, 0, NULL, l_ptr->m_textureData[0], rowPitch, 0);
 
 	// Setup the shader resource view description.
 	srvDesc.Format = textureDesc.Format;
@@ -784,7 +752,7 @@ void DXRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 	srvDesc.Texture2D.MipLevels = -1;
 
 	// Create the shader resource view for the texture.
-	hResult = m_device->CreateShaderResourceView(l_ptr->m_texture, &srvDesc, &l_ptr->m_textureView);
+	hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateShaderResourceView(l_ptr->m_texture, &srvDesc, &l_ptr->m_textureView);
 	if (FAILED(hResult))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create shader resource view for texture!");
@@ -792,7 +760,7 @@ void DXRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 	}
 
 	// Generate mipmaps for this texture.
-	m_deviceContext->GenerateMips(l_ptr->m_textureView);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->GenerateMips(l_ptr->m_textureView);
 }
 
 void DXRenderingSystem::updateFinalBlendPass()
@@ -811,13 +779,13 @@ void DXRenderingSystem::updateFinalBlendPass()
 			auto l_ptr = reinterpret_cast<DXMeshDataComponent*>(l_mesh);
 
 			// Set the vertex buffer to active in the input assembler so it can be rendered.
-			m_deviceContext->IASetVertexBuffers(0, 1, &l_ptr->m_vertexBuffer, &stride, &offset);
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetVertexBuffers(0, 1, &l_ptr->m_vertexBuffer, &stride, &offset);
 
 			// Set the index buffer to active in the input assembler so it can be rendered.
-			m_deviceContext->IASetIndexBuffer(l_ptr->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetIndexBuffer(l_ptr->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 			// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-			m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 			// Set the shader parameters that it will use for rendering.
 
@@ -832,14 +800,14 @@ void DXRenderingSystem::updateFinalBlendPass()
 			updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &mvp);
 
 			// Set the vertex input layout.
-			m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
 
 			// Set the vertex and pixel shaders that will be used to render this triangle.
-			m_deviceContext->VSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader, NULL, 0);
-			m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->VSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader, NULL, 0);
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
 
 			// Render the triangle.
-			m_deviceContext->DrawIndexed((UINT)l_mesh->m_indices.size(), 0, 0);
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->DrawIndexed((UINT)l_mesh->m_indices.size(), 0, 0);
 		}
 	}
 }
@@ -854,7 +822,7 @@ void DXRenderingSystem::updateShaderParameter(shaderType shaderType, ID3D11Buffe
 	//parameterValue = DirectX::XMMatrixTranspose(parameterValue);
 
 	// Lock the constant buffer so it can be written to.
-	result = m_deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't lock the shader matrix buffer!");
@@ -867,20 +835,20 @@ void DXRenderingSystem::updateShaderParameter(shaderType shaderType, ID3D11Buffe
 	*dataPtr = *(DirectX::XMMATRIX*)parameterValue;
 
 	// Unlock the constant buffer.
-	m_deviceContext->Unmap(matrixBuffer, 0);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->Unmap(matrixBuffer, 0);
 
 	bufferNumber = 0;
 
 	switch (shaderType)
 	{
 	case shaderType::VERTEX:
-		m_deviceContext->VSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->VSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
 		break;
 	case shaderType::GEOMETRY:
-		m_deviceContext->GSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->GSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
 		break;
 	case shaderType::FRAGMENT:
-		m_deviceContext->PSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->PSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
 		break;
 	default:
 		break;
@@ -898,23 +866,23 @@ void DXRenderingSystem::beginScene(float r, float g, float b, float a)
 	color[3] = a;
 
 	// Clear the back buffer.
-	m_deviceContext->ClearRenderTargetView(m_renderTargetView, color);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->ClearRenderTargetView(DXRenderingSystemSingletonComponent::getInstance().m_renderTargetView, color);
 
 	// Clear the depth buffer.
-	m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->ClearDepthStencilView(DXRenderingSystemSingletonComponent::getInstance().m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
 void DXRenderingSystem::endScene()
 {
 	// Present the back buffer to the screen since rendering is complete.
-	if (m_vsync_enabled)
+	if (DXRenderingSystemSingletonComponent::getInstance().m_vsync_enabled)
 	{
 		// Lock to screen refresh rate.
-		m_swapChain->Present(1, 0);
+		DXRenderingSystemSingletonComponent::getInstance().m_swapChain->Present(1, 0);
 	}
 	else
 	{
 		// Present as fast as possible.
-		m_swapChain->Present(0, 0);
+		DXRenderingSystemSingletonComponent::getInstance().m_swapChain->Present(0, 0);
 	}
 }

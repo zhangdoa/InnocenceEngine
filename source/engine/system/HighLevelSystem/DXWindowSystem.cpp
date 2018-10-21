@@ -1,15 +1,38 @@
 #include "DXWindowSystem.h"
-#include "../HighLevelSystem/InputSystem.h"
 #include "../LowLevelSystem/LogSystem.h"
+#include "../HighLevelSystem/InputSystem.h"
+#include "../HighLevelSystem/GameSystem.h"
 #include "../../component/WindowSystemSingletonComponent.h"
+#include "../../component/DXWindowSystemSingletonComponent.h"
 
-namespace DXWindowSystem
+class windowCallbackWrapper
 {
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-}
+public:
+	~windowCallbackWrapper() {};
 
-InnoHighLevelSystem_EXPORT bool DXWindowSystem::Instance::setup()
+	static windowCallbackWrapper& getInstance()
+	{
+		static windowCallbackWrapper instance;
+		return instance;
+	}
+
+	LRESULT CALLBACK MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
+
+private:
+	windowCallbackWrapper() {};
+};
+
+static windowCallbackWrapper* ApplicationHandle = 0;
+
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+InnoHighLevelSystem_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
+	WindowSystemSingletonComponent::getInstance().m_windowName = InnoGameSystem::getGameName();
+	DXWindowSystemSingletonComponent::getInstance().m_hInstance = static_cast<HINSTANCE>(hInstance);
+	DXWindowSystemSingletonComponent::getInstance().m_pScmdline = pScmdline;
+	DXWindowSystemSingletonComponent::getInstance().m_nCmdshow = nCmdshow;
+
 	WNDCLASS wc = {};
 
 	// Get an external pointer to this object.	
@@ -58,14 +81,14 @@ InnoHighLevelSystem_EXPORT bool DXWindowSystem::Instance::setup()
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXWindowSystem::Instance::initialize()
+InnoHighLevelSystem_EXPORT bool DXWindowSystem::initialize()
 {
 	InnoInputSystem::initialize();
 	InnoLogSystem::printLog("DXWindowSystem has been initialized.");
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXWindowSystem::Instance::update()
+InnoHighLevelSystem_EXPORT bool DXWindowSystem::update()
 {
 	//update window
 	MSG msg;
@@ -91,7 +114,7 @@ InnoHighLevelSystem_EXPORT bool DXWindowSystem::Instance::update()
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXWindowSystem::Instance::terminate()
+InnoHighLevelSystem_EXPORT bool DXWindowSystem::terminate()
 {
 	// Show the mouse cursor.
 	ShowCursor(true);
@@ -120,12 +143,12 @@ InnoHighLevelSystem_EXPORT bool DXWindowSystem::Instance::terminate()
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT objectStatus DXWindowSystem::Instance::getStatus()
+InnoHighLevelSystem_EXPORT objectStatus DXWindowSystem::getStatus()
 {
 	return m_objectStatus;
 }
 
-void DXWindowSystem::Instance::swapBuffer()
+void DXWindowSystem::swapBuffer()
 {
 }
 

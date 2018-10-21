@@ -14,14 +14,9 @@ namespace InnoApplication
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 }
-#if defined(INNO_RENDERER_DX)
-#include "../component/DXWindowSystemSingletonComponent.h"
+
 bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {	
-#else
-bool InnoApplication::setup()
-{
-#endif
 	if (!InnoTimeSystem::setup())
 	{
 		return false;
@@ -64,17 +59,10 @@ bool InnoApplication::setup()
 	}
 	InnoLogSystem::printLog("PhysicsSystem setup finished.");
 
-#if defined(INNO_RENDERER_DX)
 	if (!InnoVisionSystem::setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
 	{
 		return false;
 	}
-#else
-	if (!InnoVisionSystem::setup();)
-	{
-		return false;
-	}
-#endif
 	InnoLogSystem::printLog("VisionSystem setup finished.");
 
 	m_objectStatus = objectStatus::ALIVE;
@@ -82,8 +70,6 @@ bool InnoApplication::setup()
 	InnoLogSystem::printLog("Engine setup finished.");
 	return true;
 }
-
-
 
 bool InnoApplication::initialize()
 {
@@ -114,6 +100,7 @@ bool InnoApplication::update()
 	if (InnoVisionSystem::getStatus() == objectStatus::ALIVE)
 	{	
 		InnoVisionSystem::update();
+		InnoGameSystem::updateTransform();
 		return true;
 	}
 	else
