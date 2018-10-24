@@ -17,7 +17,7 @@ public:
 	vec4 m_albedo;
 	vec4 m_MRA;
 	bool m_drawAABB = false;
-	meshID m_AABBMeshID = 0;
+	EntityID m_AABBMeshID = 0;
 	AABB m_AABB;
 
 	std::string m_modelFileName;

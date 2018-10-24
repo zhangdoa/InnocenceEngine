@@ -1,6 +1,7 @@
 #pragma once
 #include "BaseComponent.h"
-#include "DXHeaders.h"
+#include "../../component/DXMeshDataComponent.h"
+#include "../../component/DXTextureDataComponent.h"
 
 class DXRenderingSystemSingletonComponent : public BaseComponent
 {
@@ -24,6 +25,9 @@ public:
 	ID3D11DepthStencilState* m_depthStencilState;
 	ID3D11DepthStencilView* m_depthStencilView;
 	ID3D11RasterizerState* m_rasterState;
+
+	std::unordered_map<EntityID, DXMeshDataComponent*> m_meshMap;
+	std::unordered_map<EntityID, DXTextureDataComponent*> m_textureMap;
 
 private:
 	DXRenderingSystemSingletonComponent() {};

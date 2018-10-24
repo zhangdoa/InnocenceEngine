@@ -2,7 +2,7 @@
 #include "MeshDataComponent.h"
 #include "../system/HighLevelSystem/GLHeaders.h"
 
-class GLMeshDataComponent : public MeshDataComponent
+class GLMeshDataComponent : public BaseComponent
 {
 public:
 	GLMeshDataComponent() {};

@@ -10,6 +10,7 @@ GENERATE_EXPORT_HEADER (InnoHighLevelSystem
 
 target_link_libraries(InnoHighLevelSystem GLAD)
 target_link_libraries(InnoHighLevelSystem ImGui)
+target_link_libraries(InnoHighLevelSystem InnoMath)
 target_link_libraries(InnoHighLevelSystem InnoLowLevelSystem)
 
 find_library(ASSIMP assimp)

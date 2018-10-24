@@ -15,12 +15,13 @@ public:
 		return instance;
 	}
 
-	GLFrameBufferComponent m_GLFrameBufferComponent;
+	GLFrameBufferComponent* m_FBC;
 
-	GLShaderProgramComponent m_geometryPassProgram;
+	GLShaderProgramComponent* m_GLSPC;
 	GLuint m_geometryPassVertexShaderID;
 	GLuint m_geometryPassFragmentShaderID;
-	std::vector<GLTextureDataComponent> m_geometryPassTextures;
+	std::vector<TextureDataComponent*> m_TDC;
+	std::vector<GLTextureDataComponent*> m_GLTDC;
 
 	GLuint m_geometryPass_uni_p_camera_original;
 	GLuint m_geometryPass_uni_p_camera_jittered;

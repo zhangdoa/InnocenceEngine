@@ -24,7 +24,5 @@ namespace InnoGameSystem
 	
 	void updateTransform();
 
-	EntityID createEntityID();
-
 	InnoHighLevelSystem_EXPORT objectStatus getStatus();
 };

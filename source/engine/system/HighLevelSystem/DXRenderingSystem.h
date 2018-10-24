@@ -5,6 +5,8 @@
 #include "DXHeaders.h"
 #include "../../component/MeshDataComponent.h"
 #include "../../component/TextureDataComponent.h"
+#include "../../component/DXMeshDataComponent.h"
+#include "../../component/DXTextureDataComponent.h"
 
 class DXRenderingSystem : public IRenderingSystem
 {
@@ -19,8 +21,11 @@ public:
 private:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	void initializeMesh(MeshDataComponent* rhs);
-	void initializeTexture(TextureDataComponent* rhs);
+	void initializeMeshDataComponent(MeshDataComponent* rhs);
+	void initializeTextureDataComponent(TextureDataComponent* rhs);
+
+	DXMeshDataComponent* addDXMeshDataComponent(EntityID rhs);
+	DXTextureDataComponent* addDXTextureDataComponent(EntityID rhs);
 
 	void initializeFinalBlendPass();
 

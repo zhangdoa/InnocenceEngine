@@ -23,22 +23,22 @@ public:
     std::unordered_map<std::string, int> m_supportedModelType = { {"obj", 0}, {"innoModel", 0} };
     std::unordered_map<std::string, int> m_supportedShaderType = { {"sf", 0} };
 
-	std::unordered_map<meshID, MeshDataComponent*> m_meshMap;
-	std::unordered_map<textureID, TextureDataComponent*> m_textureMap;
+	std::unordered_map<EntityID, MeshDataComponent*> m_meshMap;
+	std::unordered_map<EntityID, TextureDataComponent*> m_textureMap;
 
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshComponents;
 	ThreadSafeQueue<TextureDataComponent*> m_uninitializedTextureComponents;
 
-	meshID m_UnitLineTemplate;
-	meshID m_UnitQuadTemplate;
-	meshID m_UnitCubeTemplate;
-	meshID m_UnitSphereTemplate;
+	EntityID m_UnitLineTemplate;
+	EntityID m_UnitQuadTemplate;
+	EntityID m_UnitCubeTemplate;
+	EntityID m_UnitSphereTemplate;
 
-	textureID m_basicNormalTemplate;
-	textureID m_basicAlbedoTemplate;
-	textureID m_basicMetallicTemplate;
-	textureID m_basicRoughnessTemplate;
-	textureID m_basicAOTemplate;
+	EntityID m_basicNormalTemplate;
+	EntityID m_basicAlbedoTemplate;
+	EntityID m_basicMetallicTemplate;
+	EntityID m_basicRoughnessTemplate;
+	EntityID m_basicAOTemplate;
 
 	std::unordered_map<std::string, modelMap> m_loadedModelMap;
 	std::unordered_map<std::string, texturePair> m_loadedTextureMap;

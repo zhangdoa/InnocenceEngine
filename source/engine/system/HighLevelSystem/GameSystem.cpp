@@ -169,11 +169,6 @@ void InnoGameSystem::registerMouseMovementCallback(InputComponent * inputCompone
 	}
 }
 
-EntityID InnoGameSystem::createEntityID()
-{
-	return std::rand();
-}
-
 InnoHighLevelSystem_EXPORT objectStatus InnoGameSystem::getStatus()
 {
 	return m_GameSystemStatus;

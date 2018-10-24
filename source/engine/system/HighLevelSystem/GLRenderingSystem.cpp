@@ -67,67 +67,99 @@ void GLRenderingSystem::initializeHaltonSampler()
 void GLRenderingSystem::initializeEnvironmentRenderPass()
 {
 	// generate and bind framebuffer
-	glGenFramebuffers(1, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+
+	glGenFramebuffers(1, &l_FBC->m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 
 	// generate and bind renderbuffer
-	glGenRenderbuffers(1, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
+	glGenRenderbuffers(1, &l_FBC->m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
 
+	EnvironmentRenderPassSingletonComponent::getInstance().m_FBC = l_FBC;
+
 	// generate and bind texture
-	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_textureType = textureType::ENVIRONMENT_CAPTURE;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_textureColorComponentsFormat = textureColorComponentsFormat::RGB16F;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_texturePixelDataFormat = texturePixelDataFormat::RGB;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_textureMinFilterMethod = textureFilterMethod::LINEAR_MIPMAP_LINEAR;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_textureMagFilterMethod = textureFilterMethod::LINEAR;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_textureWrapMethod = textureWrapMethod::REPEAT;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_textureWidth = 2048;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_textureHeight = 2048;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture.m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-	initializeTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture);
+	auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+
+	l_TDC->m_textureType = textureType::ENVIRONMENT_CAPTURE;
+	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGB16F;
+	l_TDC->m_texturePixelDataFormat = texturePixelDataFormat::RGB;
+	l_TDC->m_textureMinFilterMethod = textureFilterMethod::LINEAR_MIPMAP_LINEAR;
+	l_TDC->m_textureMagFilterMethod = textureFilterMethod::LINEAR;
+	l_TDC->m_textureWrapMethod = textureWrapMethod::REPEAT;
+	l_TDC->m_textureWidth = 2048;
+	l_TDC->m_textureHeight = 2048;
+	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
+	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	
+	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTDC = l_TDC;
+
+	auto l_GLTDC = initializeTextureDataComponent(l_TDC);
+
+	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassGLTDC = l_GLTDC;
 
 	////
-	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture.m_textureType = textureType::ENVIRONMENT_CONVOLUTION;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture.m_textureColorComponentsFormat = textureColorComponentsFormat::RGB16F;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture.m_texturePixelDataFormat = texturePixelDataFormat::RGB;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture.m_textureMinFilterMethod = textureFilterMethod::LINEAR;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture.m_textureMagFilterMethod = textureFilterMethod::LINEAR;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture.m_textureWrapMethod = textureWrapMethod::REPEAT;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture.m_textureWidth = 128;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture.m_textureHeight = 128;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture.m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-	initializeTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTexture);
+	l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+
+	l_TDC->m_textureType = textureType::ENVIRONMENT_CONVOLUTION;
+	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGB16F;
+	l_TDC->m_texturePixelDataFormat = texturePixelDataFormat::RGB;
+	l_TDC->m_textureMinFilterMethod = textureFilterMethod::LINEAR;
+	l_TDC->m_textureMagFilterMethod = textureFilterMethod::LINEAR;
+	l_TDC->m_textureWrapMethod = textureWrapMethod::REPEAT;
+	l_TDC->m_textureWidth = 128;
+	l_TDC->m_textureHeight = 128;
+	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
+	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTDC = l_TDC;
+
+	l_GLTDC = initializeTextureDataComponent(l_TDC);
+
+	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassGLTDC = l_GLTDC;
 
 	////
-	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture.m_textureType = textureType::ENVIRONMENT_PREFILTER;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture.m_textureColorComponentsFormat = textureColorComponentsFormat::RGB16F;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture.m_texturePixelDataFormat = texturePixelDataFormat::RGB;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture.m_textureMinFilterMethod = textureFilterMethod::LINEAR_MIPMAP_LINEAR;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture.m_textureMagFilterMethod = textureFilterMethod::LINEAR;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture.m_textureWrapMethod = textureWrapMethod::REPEAT;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture.m_textureWidth = 128;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture.m_textureHeight = 128;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture.m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-	initializeTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTexture);
+	l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+
+	l_TDC->m_textureType = textureType::ENVIRONMENT_PREFILTER;
+	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGB16F;
+	l_TDC->m_texturePixelDataFormat = texturePixelDataFormat::RGB;
+	l_TDC->m_textureMinFilterMethod = textureFilterMethod::LINEAR_MIPMAP_LINEAR;
+	l_TDC->m_textureMagFilterMethod = textureFilterMethod::LINEAR;
+	l_TDC->m_textureWrapMethod = textureWrapMethod::REPEAT;
+	l_TDC->m_textureWidth = 128;
+	l_TDC->m_textureHeight = 128;
+	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
+	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTDC = l_TDC;
+
+	l_GLTDC = initializeTextureDataComponent(l_TDC);
+
+	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassGLTDC = l_GLTDC;
 
 	////
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_textureType = textureType::RENDER_BUFFER_SAMPLER;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_textureColorComponentsFormat = textureColorComponentsFormat::RG16F;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_texturePixelDataFormat = texturePixelDataFormat::RG;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_textureMinFilterMethod = textureFilterMethod::LINEAR;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_textureMagFilterMethod = textureFilterMethod::LINEAR;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_textureWidth = 512;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_textureHeight = 512;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture.m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-	initializeTexture(&EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture);
+	l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+
+	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
+	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RG16F;
+	l_TDC->m_texturePixelDataFormat = texturePixelDataFormat::RG;
+	l_TDC->m_textureMinFilterMethod = textureFilterMethod::LINEAR;
+	l_TDC->m_textureMagFilterMethod = textureFilterMethod::LINEAR;
+	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
+	l_TDC->m_textureWidth = 512;
+	l_TDC->m_textureHeight = 512;
+	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
+	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTDC = l_TDC;
+
+	l_GLTDC = initializeTextureDataComponent(l_TDC);
+
+	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTGLTDC = l_GLTDC;
 
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -139,137 +171,155 @@ void GLRenderingSystem::initializeEnvironmentRenderPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program = glCreateProgram();
+	auto l_shaderProgram = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+
+	l_shaderProgram->m_program = glCreateProgram();
 	initializeShader(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program,
+		l_shaderProgram->m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3//environmentCapturePassPBSVertex.sf");
 	initializeShader(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program,
+		l_shaderProgram->m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3//environmentCapturePassPBSFragment.sf");
 
 	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_equirectangularMap = getUniformLocation(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program,
+		l_shaderProgram->m_program,
 		"uni_equirectangularMap");
 	updateUniform(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_equirectangularMap,
 		0);
 	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p = getUniformLocation(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program,
+		l_shaderProgram->m_program,
 		"uni_p");
 	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r = getUniformLocation(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program,
+		l_shaderProgram->m_program,
 		"uni_r");
 
+	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram = l_shaderProgram;
+
 	////
-	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program = glCreateProgram();
+	l_shaderProgram->m_program = glCreateProgram();
+
 	initializeShader(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program,
+		l_shaderProgram->m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3//environmentConvolutionPassPBSVertex.sf");
 	initializeShader(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program,
+		l_shaderProgram->m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3//environmentConvolutionPassPBSFragment.sf");
 	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_capturedCubeMap = getUniformLocation(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program,
+		l_shaderProgram->m_program,
 		"uni_capturedCubeMap");
 	updateUniform(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_capturedCubeMap,
 		0);
 	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_p = getUniformLocation(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program,
+		l_shaderProgram->m_program,
 		"uni_p");
 	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_r = getUniformLocation(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram.m_program,
+		l_shaderProgram->m_program,
 		"uni_r");
 
+	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassProgram = l_shaderProgram;
+
 	////
-	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program = glCreateProgram();
+	l_shaderProgram->m_program = glCreateProgram();
+
 	initializeShader(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program,
+		l_shaderProgram->m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3//environmentPreFilterPassPBSVertex.sf");
 	initializeShader(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program,
+		l_shaderProgram->m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3//environmentPreFilterPassPBSFragment.sf");
 	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_capturedCubeMap = getUniformLocation(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program,
+		l_shaderProgram->m_program,
 		"uni_capturedCubeMap");
 	updateUniform(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_capturedCubeMap,
 		0);
 	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_roughness = getUniformLocation(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program,
+		l_shaderProgram->m_program,
 		"uni_roughness");
 	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_p = getUniformLocation(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program,
+		l_shaderProgram->m_program,
 		"uni_p");
 	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_r = getUniformLocation(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram.m_program,
+		l_shaderProgram->m_program,
 		"uni_r");
 
+	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassProgram = l_shaderProgram;
+
 	////
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassProgram.m_program = glCreateProgram();
+	l_shaderProgram->m_program = glCreateProgram();
+
 	initializeShader(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassProgram.m_program,
+		l_shaderProgram->m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3//environmentBRDFLUTPassPBSVertex.sf");
 	initializeShader(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassProgram.m_program,
+		l_shaderProgram->m_program,
 		EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3//environmentBRDFLUTPassPBSFragment.sf");
+
+	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassProgram = l_shaderProgram;
 }
 
 void GLRenderingSystem::initializeShadowRenderPass()
 {
 	for (size_t i = 0; i < 4; i++)
 	{
-		ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector.emplace_back();
-	}
-	for (size_t i = 0; i < ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector.size(); i++)
-	{
-		auto l_frameBuffer = &ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[i].first;
-		auto l_texture = &ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector[i].second;
 		// generate and bind framebuffer
-		glGenFramebuffers(1, &l_frameBuffer->m_FBO);
-		glBindFramebuffer(GL_FRAMEBUFFER, l_frameBuffer->m_FBO);
+		auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+
+		glGenFramebuffers(1, &l_FBC->m_FBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 
 		// generate and bind renderbuffer
-		glGenRenderbuffers(1, &l_frameBuffer->m_RBO);
-		glBindRenderbuffer(GL_RENDERBUFFER, l_frameBuffer->m_RBO);
+		glGenRenderbuffers(1, &l_FBC->m_RBO);
+		glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_frameBuffer->m_RBO);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
 
+		ShadowRenderPassSingletonComponent::getInstance().m_frameBufferVector.emplace_back(l_FBC);
+
 		// generate and bind texture
-		l_texture->m_textureType = textureType::SHADOWMAP;
-		l_texture->m_textureColorComponentsFormat = textureColorComponentsFormat::DEPTH_COMPONENT;
-		l_texture->m_texturePixelDataFormat = texturePixelDataFormat::DEPTH_COMPONENT;
-		l_texture->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
-		l_texture->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
-		l_texture->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_BORDER;
-		l_texture->m_textureWidth = 2048;
-		l_texture->m_textureHeight = 2048;
-		l_texture->m_texturePixelDataType = texturePixelDataType::FLOAT;
-		l_texture->m_textureData = { nullptr };
-		initializeTexture(l_texture);
+		auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+
+		l_TDC->m_textureType = textureType::SHADOWMAP;
+		l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::DEPTH_COMPONENT;
+		l_TDC->m_texturePixelDataFormat = texturePixelDataFormat::DEPTH_COMPONENT;
+		l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
+		l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
+		l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_BORDER;
+		l_TDC->m_textureWidth = 2048;
+		l_TDC->m_textureHeight = 2048;
+		l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
+		l_TDC->m_textureData = { nullptr };
+
+		ShadowRenderPassSingletonComponent::getInstance().m_frameBufferTextureVector.emplace_back(l_TDC);
+
+		auto l_GLTDC = initializeTextureDataComponent(l_TDC);
 
 		attachTextureToFramebuffer(
-			l_texture,
-			l_frameBuffer,
+			l_GLTDC,
+			l_FBC,
 			0, 0, 0
 		);
+
+		ShadowRenderPassSingletonComponent::getInstance().m_frameBufferGLTextureVector.emplace_back(l_GLTDC);
 
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
@@ -283,71 +333,81 @@ void GLRenderingSystem::initializeShadowRenderPass()
 		}
 	}
 
-
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram.m_program = glCreateProgram();
+	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+
+	l_GLSPC->m_program = glCreateProgram();
+
 	initializeShader(
-		ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram.m_program,
+		l_GLSPC->m_program,
 		ShadowRenderPassSingletonComponent::getInstance().m_shadowPassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3//shadowPassVertex.sf");
 	initializeShader(
-		ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram.m_program,
+		l_GLSPC->m_program,
 		ShadowRenderPassSingletonComponent::getInstance().m_shadowPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3//shadowPassFragment.sf");
 
 	ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_p = getUniformLocation(
-		ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_p");
 	ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_v = getUniformLocation(
-		ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_v");
 	ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_m = getUniformLocation(
-		ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_m");
+
+	ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram = l_GLSPC;
 }
 
 void GLRenderingSystem::initializeGeometryRenderPass()
 {
 	// generate and bind framebuffer
-	glGenFramebuffers(1, &GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
+	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+
+	glGenFramebuffers(1, &l_FBC->m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 
 	// generate and bind renderbuffer
-	glGenRenderbuffers(1, &GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
+	glGenRenderbuffers(1, &l_FBC->m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+
+	GeometryRenderPassSingletonComponent::getInstance().m_FBC = l_FBC;
 
 	// generate and bind texture
 	for (size_t i = 0; i < 8; i++)
 	{
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures.emplace_back();
-	}
-	for (size_t i = 0; i < GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures.size(); i++)
-	{
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureType = textureType::RENDER_BUFFER_SAMPLER;
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureMinFilterMethod = textureFilterMethod::NEAREST;
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureMagFilterMethod = textureFilterMethod::NEAREST;
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_texturePixelDataType = texturePixelDataType::FLOAT;
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i].m_textureData = { nullptr };
-		initializeTexture(&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i]);
+		auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+		l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
+		l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
+		l_TDC->m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
+		l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
+		l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
+		l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
+		l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
+		l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+		l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
+		l_TDC->m_textureData = { nullptr };
+		
+		GeometryRenderPassSingletonComponent::getInstance().m_TDC.emplace_back(l_TDC);
+
+		auto l_GLTDC = initializeTextureDataComponent(l_TDC);
 
 		attachTextureToFramebuffer(
-			&GeometryRenderPassSingletonComponent::getInstance().m_geometryPassTextures[i],
-			&GeometryRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent,
+			l_GLTDC,
+			l_FBC,
 			(int)i, 0, 0
 		);
+
+		GeometryRenderPassSingletonComponent::getInstance().m_GLTDC.emplace_back(l_GLTDC);
 	}
 
 	std::vector<unsigned int> l_colorAttachments;
@@ -367,112 +427,117 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program = glCreateProgram();
+	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+
+	l_GLSPC->m_program = glCreateProgram();
+
 #ifdef CookTorrance
 	initializeShader(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3//geometryPassCookTorranceVertex.sf");
 	initializeShader(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3//geometryPassCookTorranceFragment.sf");
 #elif BlinnPhong
 	initializeShader(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_shaderProgram->m_program,
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3//geometryPassBlinnPhongVertex.sf");
 	initializeShader(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_shaderProgram->m_program,
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassFragmentShaderID,
 		GL_FRAGMENT_SHADER,
 		"GL3.3//geometryPassBlinnPhongFragment.sf");
 #endif
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_original = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_p_camera_original");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_jittered = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_p_camera_jittered");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_r_camera");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_t_camera");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_m");
 #ifdef CookTorrance
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera_prev = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_r_camera_prev");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera_prev = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_t_camera_prev");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_m_prev");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_0 = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_p_light_0");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_1 = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_p_light_1");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_2 = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_p_light_2");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3 = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_p_light_3");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_v_light");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_normalTexture = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_normalTexture");
 	updateUniform(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_normalTexture,
 		0);
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedoTexture = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_albedoTexture");
 	updateUniform(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedoTexture,
 		1);
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_metallicTexture = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_metallicTexture");
 	updateUniform(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_metallicTexture,
 		2);
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_roughnessTexture = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_roughnessTexture");
 	updateUniform(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_roughnessTexture,
 		3);
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_aoTexture = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_aoTexture");
 	updateUniform(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_aoTexture,
 		4);
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_useTexture");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_albedo");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA = getUniformLocation(
-		GeometryRenderPassSingletonComponent::getInstance().m_geometryPassProgram.m_program,
+		l_GLSPC->m_program,
 		"uni_MRA");
 #elif BlinnPhong
 	// @TODO: texture uniforms
 #endif
+
+	GeometryRenderPassSingletonComponent::getInstance().m_GLSPC = l_GLSPC;
 }
 
 void GLRenderingSystem::initializeLightRenderPass()
@@ -499,7 +564,7 @@ void GLRenderingSystem::initializeLightRenderPass()
 	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	LightRenderPassSingletonComponent::getInstance().m_lightPassTexture.m_textureData = { nullptr };
-	initializeTexture(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture);
+	initializeTextureDataComponent(&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture);
 
 	attachTextureToFramebuffer(
 		&LightRenderPassSingletonComponent::getInstance().m_lightPassTexture,
@@ -613,11 +678,11 @@ void GLRenderingSystem::initializeLightRenderPass()
 		10);
 	for (size_t i = 0; i < 4; i++)
 	{
-			std::stringstream ss;
-			ss << i;
-			LightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitPoints.emplace_back(
-				getUniformLocation(LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program, "uni_shadowSplitPoints[" + ss.str() + "]")
-			);
+		std::stringstream ss;
+		ss << i;
+		LightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitPoints.emplace_back(
+			getUniformLocation(LightRenderPassSingletonComponent::getInstance().m_lightPassProgram.m_program, "uni_shadowSplitPoints[" + ss.str() + "]")
+		);
 	}
 	for (auto i = (unsigned int)0; i < GameSystemSingletonComponent::getInstance().m_lightComponents.size(); i++)
 	{
@@ -724,7 +789,7 @@ void GLRenderingSystem::initializeSkyPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GLFinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GLFinalRenderPassSingletonComponent::getInstance().m_skyPassTexture.m_textureData = { nullptr };
-	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_skyPassTexture);
+	initializeTextureDataComponent(&GLFinalRenderPassSingletonComponent::getInstance().m_skyPassTexture);
 
 	attachTextureToFramebuffer(
 		&GLFinalRenderPassSingletonComponent::getInstance().m_skyPassTexture,
@@ -798,7 +863,7 @@ void GLRenderingSystem::initializeTAAPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture.m_textureData = { nullptr };
-	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture);
+	initializeTextureDataComponent(&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture);
 
 	attachTextureToFramebuffer(
 		&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTexture,
@@ -838,7 +903,7 @@ void GLRenderingSystem::initializeTAAPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture.m_textureData = { nullptr };
-	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture);
+	initializeTextureDataComponent(&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture);
 
 	attachTextureToFramebuffer(
 		&GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTexture,
@@ -918,7 +983,7 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture.m_textureData = { nullptr };
-	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture);
+	initializeTextureDataComponent(&GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture);
 
 	attachTextureToFramebuffer(
 		&GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTexture,
@@ -983,7 +1048,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture.m_textureData = { nullptr };
-	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture);
+	initializeTextureDataComponent(&GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture);
 
 	attachTextureToFramebuffer(
 		&GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTexture,
@@ -1023,7 +1088,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture.m_textureData = { nullptr };
-	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture);
+	initializeTextureDataComponent(&GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture);
 
 	attachTextureToFramebuffer(
 		&GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTexture,
@@ -1091,7 +1156,7 @@ void GLRenderingSystem::initializeMotionBlurPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassTexture.m_textureData = { nullptr };
-	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassTexture);
+	initializeTextureDataComponent(&GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassTexture);
 
 	attachTextureToFramebuffer(
 		&GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassTexture,
@@ -1162,7 +1227,7 @@ void GLRenderingSystem::initializeBillboardPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture.m_textureData = { nullptr };
-	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture);
+	initializeTextureDataComponent(&GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture);
 
 	attachTextureToFramebuffer(
 		&GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassTexture,
@@ -1245,7 +1310,7 @@ void GLRenderingSystem::initializeDebuggerPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture.m_textureData = { nullptr };
-	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture);
+	initializeTextureDataComponent(&GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture);
 
 	attachTextureToFramebuffer(
 		&GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassTexture,
@@ -1322,7 +1387,7 @@ void GLRenderingSystem::initializeFinalBlendPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
 	GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_texturePixelDataType = texturePixelDataType::FLOAT;
 	GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture.m_textureData = { nullptr };
-	initializeTexture(&GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture);
+	initializeTextureDataComponent(&GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture);
 
 	attachTextureToFramebuffer(
 		&GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassTexture,
@@ -1453,17 +1518,35 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
 }
 
-void GLRenderingSystem::initializeMesh(MeshDataComponent* rhs)
+GLMeshDataComponent * GLRenderingSystem::addGLMeshDataComponent(EntityID rhs)
 {
-	auto l_ptr = reinterpret_cast<GLMeshDataComponent*>(rhs);
+	GLMeshDataComponent* newMesh = InnoMemorySystem::spawn<GLMeshDataComponent>();
+	newMesh->m_parentEntity = rhs;
+	auto l_meshMap = &GLRenderingSystemSingletonComponent::getInstance().m_meshMap;
+	l_meshMap->emplace(std::pair<EntityID, GLMeshDataComponent*>(rhs, newMesh));
+	return newMesh;
+}
+
+GLTextureDataComponent * GLRenderingSystem::addGLTextureDataComponent(EntityID rhs)
+{
+	GLTextureDataComponent* newTexture = InnoMemorySystem::spawn<GLTextureDataComponent>();
+	newTexture->m_parentEntity = rhs;
+	auto l_textureMap = &GLRenderingSystemSingletonComponent::getInstance().m_textureMap;
+	l_textureMap->emplace(std::pair<EntityID, GLTextureDataComponent*>(rhs, newTexture));
+	return newTexture;
+}
+
+GLMeshDataComponent* GLRenderingSystem::initializeMeshDataComponent(MeshDataComponent* rhs)
+{
+	auto l_ptr = addGLMeshDataComponent(rhs->m_parentEntity);
 
 	glGenVertexArrays(1, &l_ptr->m_VAO);
 	glGenBuffers(1, &l_ptr->m_VBO);
 	glGenBuffers(1, &l_ptr->m_IBO);
 
 	std::vector<float> l_verticesBuffer;
-	auto& l_vertices = l_ptr->m_vertices;
-	auto& l_indices = l_ptr->m_indices;
+	auto& l_vertices = rhs->m_vertices;
+	auto& l_indices = rhs->m_indices;
 
 	std::for_each(l_vertices.begin(), l_vertices.end(), [&](Vertex val)
 	{
@@ -1498,13 +1581,14 @@ void GLRenderingSystem::initializeMesh(MeshDataComponent* rhs)
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
 
 	l_ptr->m_objectStatus = objectStatus::ALIVE;
+	rhs->m_objectStatus = objectStatus::ALIVE;
 }
 
-void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
+GLTextureDataComponent* GLRenderingSystem::initializeTextureDataComponent(TextureDataComponent * rhs)
 {
-	auto l_ptr = reinterpret_cast<GLTextureDataComponent*>(rhs);
+	auto l_ptr = addGLTextureDataComponent(rhs->m_parentEntity);
 
-	if (l_ptr->m_textureType == textureType::INVISIBLE)
+	if (rhs->m_textureType == textureType::INVISIBLE)
 	{
 		return;
 	}
@@ -1512,7 +1596,7 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 	{
 		//generate and bind texture object
 		glGenTextures(1, &l_ptr->m_TAO);
-		if (l_ptr->m_textureType == textureType::CUBEMAP || l_ptr->m_textureType == textureType::ENVIRONMENT_CAPTURE || l_ptr->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || l_ptr->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		if (rhs->m_textureType == textureType::CUBEMAP || rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glBindTexture(GL_TEXTURE_CUBE_MAP, l_ptr->m_TAO);
 		}
@@ -1523,19 +1607,19 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 
 		// set the texture wrapping parameters
 		GLenum l_textureWrapMethod;
-		switch (l_ptr->m_textureWrapMethod)
+		switch (rhs->m_textureWrapMethod)
 		{
 		case textureWrapMethod::CLAMP_TO_EDGE: l_textureWrapMethod = GL_CLAMP_TO_EDGE; break;
 		case textureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
 		case textureWrapMethod::CLAMP_TO_BORDER: l_textureWrapMethod = GL_CLAMP_TO_BORDER; break;
 		}
-		if (l_ptr->m_textureType == textureType::CUBEMAP || l_ptr->m_textureType == textureType::ENVIRONMENT_CAPTURE || l_ptr->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || l_ptr->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		if (rhs->m_textureType == textureType::CUBEMAP || rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
 		}
-		else if (l_ptr->m_textureType == textureType::SHADOWMAP)
+		else if (rhs->m_textureType == textureType::SHADOWMAP)
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
@@ -1550,7 +1634,7 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 
 		// set texture filtering parameters
 		GLenum l_minFilterParam;
-		switch (l_ptr->m_textureMinFilterMethod)
+		switch (rhs->m_textureMinFilterMethod)
 		{
 		case textureFilterMethod::NEAREST: l_minFilterParam = GL_NEAREST; break;
 		case textureFilterMethod::LINEAR: l_minFilterParam = GL_LINEAR; break;
@@ -1558,14 +1642,14 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 
 		}
 		GLenum l_magFilterParam;
-		switch (l_ptr->m_textureMagFilterMethod)
+		switch (rhs->m_textureMagFilterMethod)
 		{
 		case textureFilterMethod::NEAREST: l_magFilterParam = GL_NEAREST; break;
 		case textureFilterMethod::LINEAR: l_magFilterParam = GL_LINEAR; break;
 		case textureFilterMethod::LINEAR_MIPMAP_LINEAR: l_magFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
 
 		}
-		if (l_ptr->m_textureType == textureType::CUBEMAP || l_ptr->m_textureType == textureType::ENVIRONMENT_CAPTURE || l_ptr->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || l_ptr->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		if (rhs->m_textureType == textureType::CUBEMAP || rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, l_minFilterParam);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, l_magFilterParam);
@@ -1580,20 +1664,20 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 		GLenum l_internalFormat;
 		GLenum l_dataFormat;
 		GLenum l_type;
-		if (l_ptr->m_textureType == textureType::ALBEDO)
+		if (rhs->m_textureType == textureType::ALBEDO)
 		{
-			if (l_ptr->m_texturePixelDataFormat == texturePixelDataFormat::RGB)
+			if (rhs->m_texturePixelDataFormat == texturePixelDataFormat::RGB)
 			{
 				l_internalFormat = GL_SRGB;
 			}
-			else if (l_ptr->m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
+			else if (rhs->m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
 			{
 				l_internalFormat = GL_SRGB_ALPHA;
 			}
 		}
 		else
 		{
-			switch (l_ptr->m_textureColorComponentsFormat)
+			switch (rhs->m_textureColorComponentsFormat)
 			{
 			case textureColorComponentsFormat::RED: l_internalFormat = GL_RED; break;
 			case textureColorComponentsFormat::RG: l_internalFormat = GL_RG; break;
@@ -1622,7 +1706,7 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 			case textureColorComponentsFormat::DEPTH_COMPONENT: l_internalFormat = GL_DEPTH_COMPONENT; break;
 			}
 		}
-		switch (l_ptr->m_texturePixelDataFormat)
+		switch (rhs->m_texturePixelDataFormat)
 		{
 		case texturePixelDataFormat::RED:l_dataFormat = GL_RED; break;
 		case texturePixelDataFormat::RG:l_dataFormat = GL_RG; break;
@@ -1630,7 +1714,7 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 		case texturePixelDataFormat::RGBA:l_dataFormat = GL_RGBA; break;
 		case texturePixelDataFormat::DEPTH_COMPONENT:l_dataFormat = GL_DEPTH_COMPONENT; break;
 		}
-		switch (l_ptr->m_texturePixelDataType)
+		switch (rhs->m_texturePixelDataType)
 		{
 		case texturePixelDataType::UNSIGNED_BYTE:l_type = GL_UNSIGNED_BYTE; break;
 		case texturePixelDataType::BYTE:l_type = GL_BYTE; break;
@@ -1641,29 +1725,29 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 		case texturePixelDataType::FLOAT:l_type = GL_FLOAT; break;
 		}
 
-		if (l_ptr->m_textureType == textureType::CUBEMAP || l_ptr->m_textureType == textureType::ENVIRONMENT_CAPTURE || l_ptr->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || l_ptr->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		if (rhs->m_textureType == textureType::CUBEMAP || rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[0]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[1]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[2]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[3]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[4]);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[5]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, rhs->m_textureWidth, rhs->m_textureHeight, 0, l_dataFormat, l_type, rhs->m_textureData[0]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, rhs->m_textureWidth, rhs->m_textureHeight, 0, l_dataFormat, l_type, rhs->m_textureData[1]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, l_internalFormat, rhs->m_textureWidth, rhs->m_textureHeight, 0, l_dataFormat, l_type, rhs->m_textureData[2]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, l_internalFormat, rhs->m_textureWidth, rhs->m_textureHeight, 0, l_dataFormat, l_type, rhs->m_textureData[3]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, l_internalFormat, rhs->m_textureWidth, rhs->m_textureHeight, 0, l_dataFormat, l_type, rhs->m_textureData[4]);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, l_internalFormat, rhs->m_textureWidth, rhs->m_textureHeight, 0, l_dataFormat, l_type, rhs->m_textureData[5]);
 		}
 		else
 		{
-			glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, l_ptr->m_textureWidth, l_ptr->m_textureHeight, 0, l_dataFormat, l_type, l_ptr->m_textureData[0]);
+			glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, rhs->m_textureWidth, rhs->m_textureHeight, 0, l_dataFormat, l_type, rhs->m_textureData[0]);
 		}
 
 		// should generate mipmap or not
-		if (l_ptr->m_textureMinFilterMethod == textureFilterMethod::LINEAR_MIPMAP_LINEAR)
+		if (rhs->m_textureMinFilterMethod == textureFilterMethod::LINEAR_MIPMAP_LINEAR)
 		{
 			// @TODO: generalization...
-			if (l_ptr->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+			if (rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 			{
 				glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 			}
-			else if (l_ptr->m_textureType != textureType::CUBEMAP || l_ptr->m_textureType != textureType::ENVIRONMENT_CAPTURE || l_ptr->m_textureType != textureType::ENVIRONMENT_CONVOLUTION || l_ptr->m_textureType != textureType::RENDER_BUFFER_SAMPLER)
+			else if (rhs->m_textureType != textureType::CUBEMAP || rhs->m_textureType != textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType != textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType != textureType::RENDER_BUFFER_SAMPLER)
 			{
 				glGenerateMipmap(GL_TEXTURE_2D);
 			}
@@ -1671,6 +1755,7 @@ void GLRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 	}
 
 	l_ptr->m_objectStatus = objectStatus::ALIVE;
+	rhs->m_objectStatus = objectStatus::ALIVE;
 }
 
 bool GLRenderingSystem::update()
@@ -1680,7 +1765,7 @@ bool GLRenderingSystem::update()
 		MeshDataComponent* l_meshDataComponent;
 		if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
-			initializeMesh(l_meshDataComponent);
+			initializeMeshDataComponent(l_meshDataComponent);
 		}
 	}
 	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
@@ -1688,7 +1773,7 @@ bool GLRenderingSystem::update()
 		TextureDataComponent* l_textureDataComponent;
 		if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
 		{
-			initializeTexture(l_textureDataComponent);
+			initializeTextureDataComponent(l_textureDataComponent);
 		}
 	}
 	if (RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap)
@@ -1709,8 +1794,8 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	glDisable(GL_CULL_FACE);
 
 	// bind to framebuffer
-	glBindFramebuffer(GL_FRAMEBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_FBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent.m_RBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_FBC.m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, EnvironmentRenderPassSingletonComponent::getInstance().m_FBC.m_RBO);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -1734,35 +1819,35 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassProgram.m_program);
 	updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p, captureProjection);
 
-	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::CUBE);
+	auto l_mesh = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::CUBE);
 
 	// activate equiretangular texture and remap equiretangular texture to cubemap
 	auto l_environmentCaptureTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTexture;
 
-	auto l_equiretangularTextureComponent = InnoAssetSystem::getTexture(GameSystemSingletonComponent::getInstance().m_environmentCaptureComponents[0]->m_texturePair.second);
+	auto l_equiretangularTextureComponent = InnoAssetSystem::getTextureDataComponent(GameSystemSingletonComponent::getInstance().m_environmentCaptureComponents[0]->m_texturePair.second);
 	if (l_equiretangularTextureComponent != nullptr)
+	{
+		if (l_equiretangularTextureComponent->m_objectStatus == objectStatus::ALIVE)
 		{
-			if (l_equiretangularTextureComponent->m_objectStatus == objectStatus::ALIVE)
+			RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap = false;
+			activateTexture(l_equiretangularTextureComponent, 0);
+			for (unsigned int i = 0; i < 6; ++i)
 			{
-				RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap = false;
-				activateTexture(l_equiretangularTextureComponent, 0);
-				for (unsigned int i = 0; i < 6; ++i)
+				updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r, captureViews[i]);
+				attachTextureToFramebuffer(l_environmentCaptureTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_FBC, 0, i, 0);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				if (l_mesh)
 				{
-					updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r, captureViews[i]);
-					attachTextureToFramebuffer(l_environmentCaptureTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
-					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-					if (l_mesh)
+					if (l_mesh->m_objectStatus == objectStatus::ALIVE)
 					{
-						if (l_mesh->m_objectStatus == objectStatus::ALIVE)
-						{
-							activateMesh(l_mesh);
-							drawMesh(l_mesh);
-						}
+						activateMesh(l_mesh);
+						drawMesh(l_mesh);
 					}
 				}
-				glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 			}
+			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 		}
+	}
 
 	// draw environment convolution texture
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
@@ -1776,7 +1861,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	for (unsigned int i = 0; i < 6; ++i)
 	{
 		updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_r, captureViews[i]);
-		attachTextureToFramebuffer(l_environmentConvolutionTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, 0);
+		attachTextureToFramebuffer(l_environmentConvolutionTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_FBC, 0, i, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		if (l_mesh)
 		{
@@ -1812,7 +1897,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 		for (unsigned int i = 0; i < 6; ++i)
 		{
 			updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_r, captureViews[i]);
-			attachTextureToFramebuffer(l_environmentPrefilterTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, i, mip);
+			attachTextureToFramebuffer(l_environmentPrefilterTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_FBC, 0, i, mip);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			if (l_mesh)
 			{
@@ -1831,10 +1916,10 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	glUseProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassProgram.m_program);
 
 	auto l_environmentBRDFLUTTexture = &EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTexture;
-	attachTextureToFramebuffer(l_environmentBRDFLUTTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_GLFrameBufferComponent, 0, 0, 0);
+	attachTextureToFramebuffer(l_environmentBRDFLUTTexture, &EnvironmentRenderPassSingletonComponent::getInstance().m_FBC, 0, 0, 0);
 
 	// draw environment map BRDF LUT rectangle
-	l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
+	l_mesh = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::QUAD);
 	if (l_mesh)
 	{
 		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
@@ -1867,7 +1952,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 
 		for (auto& l_lightComponent : GameSystemSingletonComponent::getInstance().m_lightComponents)
 		{
-			if (l_lightComponent->m_lightType == lightType::DIRECTIONAL) 
+			if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
 			{
 				glUseProgram(ShadowRenderPassSingletonComponent::getInstance().m_shadowPassProgram.m_program);
 				updateUniform(
@@ -1890,7 +1975,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 						for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 						{
 							// draw meshes
-							auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
+							auto l_mesh = InnoAssetSystem::getMeshDataComponent(l_graphicData.first);
 							if (l_mesh)
 							{
 								if (l_mesh->m_objectStatus == objectStatus::ALIVE)
@@ -2020,7 +2105,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 									auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
 									if (l_normalTextureID != l_textureMap->end())
 									{
-										auto l_textureData = InnoAssetSystem::getTexture(l_normalTextureID->second);
+										auto l_textureData = InnoAssetSystem::getTextureDataComponent(l_normalTextureID->second);
 										if (l_textureData)
 										{
 											if (l_textureData->m_objectStatus == objectStatus::ALIVE)
@@ -2033,7 +2118,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 									auto l_albedoTextureID = l_textureMap->find(textureType::ALBEDO);
 									if (l_albedoTextureID != l_textureMap->end())
 									{
-										auto l_textureData = InnoAssetSystem::getTexture(l_albedoTextureID->second);
+										auto l_textureData = InnoAssetSystem::getTextureDataComponent(l_albedoTextureID->second);
 										if (l_textureData)
 										{
 											if (l_textureData->m_objectStatus == objectStatus::ALIVE)
@@ -2046,7 +2131,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 									auto l_metallicTextureID = l_textureMap->find(textureType::METALLIC);
 									if (l_metallicTextureID != l_textureMap->end())
 									{
-										auto l_textureData = InnoAssetSystem::getTexture(l_metallicTextureID->second);
+										auto l_textureData = InnoAssetSystem::getTextureDataComponent(l_metallicTextureID->second);
 										if (l_textureData)
 										{
 											if (l_textureData->m_objectStatus == objectStatus::ALIVE)
@@ -2059,7 +2144,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 									auto l_roughnessTextureID = l_textureMap->find(textureType::ROUGHNESS);
 									if (l_roughnessTextureID != l_textureMap->end())
 									{
-										auto l_textureData = InnoAssetSystem::getTexture(l_roughnessTextureID->second);
+										auto l_textureData = InnoAssetSystem::getTextureDataComponent(l_roughnessTextureID->second);
 										if (l_textureData)
 										{
 											if (l_textureData->m_objectStatus == objectStatus::ALIVE)
@@ -2072,7 +2157,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 									auto l_aoTextureID = l_textureMap->find(textureType::AMBIENT_OCCLUSION);
 									if (l_aoTextureID != l_textureMap->end())
 									{
-										auto l_textureData = InnoAssetSystem::getTexture(l_aoTextureID->second);
+										auto l_textureData = InnoAssetSystem::getTextureDataComponent(l_aoTextureID->second);
 										if (l_textureData)
 										{
 											if (l_textureData->m_objectStatus == objectStatus::ALIVE)
@@ -2086,7 +2171,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA, l_visibleComponent->m_MRA.x, l_visibleComponent->m_MRA.y, l_visibleComponent->m_MRA.z);
 								// draw meshes
-								auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
+								auto l_mesh = InnoAssetSystem::getMeshDataComponent(l_graphicData.first);
 								if (l_mesh)
 								{
 									if (l_mesh->m_objectStatus == objectStatus::ALIVE)
@@ -2114,7 +2199,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture, l_visibleComponent->m_useTexture);
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
 								// draw meshes
-								auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
+								auto l_mesh = InnoAssetSystem::getMeshDataComponent(l_graphicData.first);
 								if (l_mesh)
 								{
 									if (l_mesh->m_objectStatus == objectStatus::ALIVE)
@@ -2301,7 +2386,7 @@ void GLRenderingSystem::updateLightRenderPass()
 		}
 	}
 	// draw light pass rectangle
-	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
+	auto l_mesh = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::QUAD);
 	if (l_mesh)
 	{
 		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
@@ -2328,7 +2413,7 @@ void GLRenderingSystem::updateLightRenderPass()
 		true);
 
 	// draw light pass rectangle
-	l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
+	l_mesh = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::QUAD);
 	if (l_mesh)
 	{
 		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
@@ -2377,18 +2462,18 @@ void GLRenderingSystem::updateFinalRenderPass()
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize,
 			RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-		
+
 		auto l_eyePos = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.caclGlobalPos();
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos,
 			l_eyePos.x, l_eyePos.y, l_eyePos.z);
-		
+
 		auto l_lightDir = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_lightComponents[0]->m_parentEntity)->m_transform.getDirection(direction::FORWARD);
 		updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
 			l_lightDir.x, l_lightDir.y, l_lightDir.z);
 
-		auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::CUBE);
+		auto l_mesh = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::CUBE);
 		if (l_mesh)
 		{
 			if (l_mesh->m_objectStatus == objectStatus::ALIVE)
@@ -2442,7 +2527,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize,
 		RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
 
-	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::QUAD);
+	auto l_mesh = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::QUAD);
 	if (l_mesh)
 	{
 		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
@@ -2644,10 +2729,10 @@ void GLRenderingSystem::updateFinalRenderPass()
 						auto l_normalTextureID = l_textureMap->find(textureType::ALBEDO);
 						if (l_normalTextureID != l_textureMap->end())
 						{
-							auto l_textureData = InnoAssetSystem::getTexture(l_normalTextureID->second);
+							auto l_textureData = InnoAssetSystem::getTextureDataComponent(l_normalTextureID->second);
 							activateTexture(l_textureData, 0);
 						}
-						auto l_mesh = InnoAssetSystem::getMesh(l_graphicData.first);
+						auto l_mesh = InnoAssetSystem::getMeshDataComponent(l_graphicData.first);
 						if (l_mesh)
 						{
 							if (l_mesh->m_objectStatus == objectStatus::ALIVE)

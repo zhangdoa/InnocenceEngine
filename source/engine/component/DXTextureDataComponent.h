@@ -2,7 +2,7 @@
 #include "TextureDataComponent.h"
 #include "../system/HighLevelSystem/DXHeaders.h"
 
-class DXTextureDataComponent : public TextureDataComponent
+class DXTextureDataComponent : public BaseComponent
 {
 public:
 	DXTextureDataComponent() {};

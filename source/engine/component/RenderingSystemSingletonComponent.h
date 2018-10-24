@@ -29,6 +29,7 @@ public:
 	std::vector<vec2> HaltonSampler;
 	int currentHaltonStep = 0;
 	int m_MSAAdepth = 0;
+
 private:
 	RenderingSystemSingletonComponent() {};
 };

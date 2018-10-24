@@ -16,10 +16,10 @@ public:
 	bool m_drawRay = false;
 	bool m_drawFrustum = false;
 	bool m_drawAABB = false;
-	meshID m_FrustumMeshID = 0;
+	EntityID m_FrustumMeshID = 0;
 	std::vector<Vertex> m_frustumVertices;
 	std::vector<unsigned int> m_frustumIndices;
 	AABB m_AABB;
-	meshID m_AABBMeshID = 0;
+	EntityID m_AABBMeshID = 0;
 	mat4 m_projectionMatrix;
 };

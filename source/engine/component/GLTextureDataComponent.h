@@ -2,7 +2,7 @@
 #include "TextureDataComponent.h"
 #include "../system/HighLevelSystem/GLHeaders.h"
 
-class GLTextureDataComponent : public TextureDataComponent
+class GLTextureDataComponent : public BaseComponent
 {
 public:
 	GLTextureDataComponent() {};

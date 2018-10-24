@@ -2,7 +2,7 @@
 #include "MeshDataComponent.h"
 #include "../system/HighLevelSystem/DXHeaders.h"
 
-class DXMeshDataComponent : public MeshDataComponent
+class DXMeshDataComponent : public BaseComponent
 {
 public:
 	DXMeshDataComponent() {};

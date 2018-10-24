@@ -14,6 +14,7 @@
 #pragma comment(lib, "d3dcompiler.lib")
 
 #include "../LowLevelSystem/LogSystem.h"
+#include "../LowLevelSystem/MemorySystem.h"
 #include "../HighLevelSystem/AssetSystem.h"
 #include "../HighLevelSystem/GameSystem.h"
 #include "../../component/GameSystemSingletonComponent.h"
@@ -362,7 +363,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::update()
 		MeshDataComponent* l_meshDataComponent;
 		if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
-			initializeMesh(l_meshDataComponent);
+			initializeMeshDataComponent(l_meshDataComponent);
 		}
 	}
 	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
@@ -370,7 +371,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::update()
 		TextureDataComponent* l_textureDataComponent;
 		if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
 		{
-			//initializeTexture(l_textureDataComponent);
+			initializeTextureDataComponent(l_textureDataComponent);
 		}
 	}
 	// Clear the buffers to begin the scene.
@@ -659,17 +660,15 @@ void DXRenderingSystem::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND
 	InnoLogSystem::printLog("DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
 
-void DXRenderingSystem::initializeMesh(MeshDataComponent * rhs)
+void DXRenderingSystem::initializeMeshDataComponent(MeshDataComponent * rhs)
 {
-	auto l_ptr = reinterpret_cast<DXMeshDataComponent*>(rhs);
-
-	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
-	D3D11_SUBRESOURCE_DATA vertexData, indexData;
-	HRESULT result;
+	auto l_ptr = addDXMeshDataComponent(rhs->m_parentEntity);
 
 	// Set up the description of the static vertex buffer.
+	D3D11_BUFFER_DESC vertexBufferDesc;
+	std::memset(&vertexBufferDesc, 0, sizeof(vertexBufferDesc));
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)l_ptr->m_vertices.size();
+	vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)rhs->m_vertices.size();
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.CPUAccessFlags = 0;
 	vertexBufferDesc.MiscFlags = 0;
@@ -677,11 +676,14 @@ void DXRenderingSystem::initializeMesh(MeshDataComponent * rhs)
 
 	// Give the subresource structure a pointer to the vertex data.
 	//@TODO: InnoMath's vec4 is 32bit while XMFLOAT4 is 16bit
-	vertexData.pSysMem = &l_ptr->m_vertices[0];
+	D3D11_SUBRESOURCE_DATA vertexData;
+	std::memset(&vertexData, 0, sizeof(vertexData));
+	vertexData.pSysMem = &rhs->m_vertices[0];
 	vertexData.SysMemPitch = 0;
 	vertexData.SysMemSlicePitch = 0;
 
 	// Now create the vertex buffer.
+	HRESULT result;
 	result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &l_ptr->m_vertexBuffer);
 	if (FAILED(result))
 	{
@@ -690,15 +692,19 @@ void DXRenderingSystem::initializeMesh(MeshDataComponent * rhs)
 	}
 
 	// Set up the description of the static index buffer.
+	D3D11_BUFFER_DESC indexBufferDesc;
+	std::memset(&indexBufferDesc, 0, sizeof(indexBufferDesc));
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(unsigned long) * (UINT)l_ptr->m_indices.size();
+	indexBufferDesc.ByteWidth = sizeof(unsigned long) * (UINT)rhs->m_indices.size();
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.MiscFlags = 0;
 	indexBufferDesc.StructureByteStride = 0;
 
 	// Give the subresource structure a pointer to the index data.
-	indexData.pSysMem = &l_ptr->m_indices[0];
+	D3D11_SUBRESOURCE_DATA indexData;
+	std::memset(&indexData, 0, sizeof(indexData));
+	indexData.pSysMem = &rhs->m_indices[0];
 	indexData.SysMemPitch = 0;
 	indexData.SysMemSlicePitch = 0;
 
@@ -712,18 +718,15 @@ void DXRenderingSystem::initializeMesh(MeshDataComponent * rhs)
 	l_ptr->m_objectStatus = objectStatus::ALIVE;
 }
 
-void DXRenderingSystem::initializeTexture(TextureDataComponent * rhs)
+void DXRenderingSystem::initializeTextureDataComponent(TextureDataComponent * rhs)
 {
-	auto l_ptr = reinterpret_cast<DXTextureDataComponent*>(rhs);
-
-	D3D11_TEXTURE2D_DESC textureDesc;
-	HRESULT hResult;
-	unsigned int rowPitch;
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-
+	auto l_ptr = addDXTextureDataComponent(rhs->m_parentEntity);
+	
 	// Setup the description of the texture.
-	textureDesc.Height = l_ptr->m_textureHeight;
-	textureDesc.Width = l_ptr->m_textureWidth;
+	D3D11_TEXTURE2D_DESC textureDesc;
+	std::memset(&textureDesc, 0, sizeof(textureDesc));
+	textureDesc.Height = rhs->m_textureHeight;
+	textureDesc.Width = rhs->m_textureWidth;
 	textureDesc.MipLevels = 0;
 	textureDesc.ArraySize = 1;
 	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -734,7 +737,16 @@ void DXRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 	textureDesc.CPUAccessFlags = 0;
 	textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	std::memset(&srvDesc, 0, sizeof(srvDesc));
+	srvDesc.Format = textureDesc.Format;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = -1;
+
+	auto t = l_ptr->m_textureView;
 	// Create the empty texture.
+	HRESULT hResult;
 	hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateTexture2D(&textureDesc, NULL, &l_ptr->m_texture);
 	if (FAILED(hResult))
 	{
@@ -742,25 +754,42 @@ void DXRenderingSystem::initializeTexture(TextureDataComponent * rhs)
 		return;
 	}
 
+	unsigned int rowPitch;
 	rowPitch = (rhs->m_textureWidth * 4) * sizeof(unsigned char);
-	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->UpdateSubresource(l_ptr->m_texture, 0, NULL, l_ptr->m_textureData[0], rowPitch, 0);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->UpdateSubresource(l_ptr->m_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
 
 	// Setup the shader resource view description.
-	srvDesc.Format = textureDesc.Format;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = -1;
-
-	// Create the shader resource view for the texture.
-	hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateShaderResourceView(l_ptr->m_texture, &srvDesc, &l_ptr->m_textureView);
-	if (FAILED(hResult))
+	if (l_ptr->m_textureView)
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create shader resource view for texture!");
-		return;
-	}
+		// Create the shader resource view for the texture.
+		hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateShaderResourceView(l_ptr->m_texture, &srvDesc, &l_ptr->m_textureView);
+		if (FAILED(hResult))
+		{
+			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create shader resource view for texture!");
+			return;
+		}
 
-	// Generate mipmaps for this texture.
-	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->GenerateMips(l_ptr->m_textureView);
+		// Generate mipmaps for this texture.
+		DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->GenerateMips(l_ptr->m_textureView);
+	}
+}
+
+DXMeshDataComponent* DXRenderingSystem::addDXMeshDataComponent(EntityID rhs)
+{
+	DXMeshDataComponent* newMesh = InnoMemorySystem::spawn<DXMeshDataComponent>();
+	newMesh->m_parentEntity = rhs;
+	auto l_meshMap = &DXRenderingSystemSingletonComponent::getInstance().m_meshMap;
+	l_meshMap->emplace(std::pair<EntityID, DXMeshDataComponent*>(rhs, newMesh));
+	return newMesh;
+}
+
+DXTextureDataComponent* DXRenderingSystem::addDXTextureDataComponent(EntityID rhs)
+{
+	DXTextureDataComponent* newTexture = InnoMemorySystem::spawn<DXTextureDataComponent>();
+	newTexture->m_parentEntity = rhs;
+	auto l_textureMap = &DXRenderingSystemSingletonComponent::getInstance().m_textureMap;
+	l_textureMap->emplace(std::pair<EntityID, DXTextureDataComponent*>(rhs, newTexture));
+	return newTexture;
 }
 
 void DXRenderingSystem::updateFinalBlendPass()
@@ -771,7 +800,7 @@ void DXRenderingSystem::updateFinalBlendPass()
 	// Set vertex buffer stride and offset.
 	stride = sizeof(Vertex);
 	offset = 0;
-	auto l_mesh = InnoAssetSystem::getDefaultMesh(meshShapeType::CUBE);
+	auto l_mesh = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::CUBE);
 	if (l_mesh)
 	{
 		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
@@ -805,6 +834,9 @@ void DXRenderingSystem::updateFinalBlendPass()
 			// Set the vertex and pixel shaders that will be used to render this triangle.
 			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->VSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader, NULL, 0);
 			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
+
+			// Set the sampler state in the pixel shader.
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->PSSetSamplers(0, 1, &DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
 
 			// Render the triangle.
 			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->DrawIndexed((UINT)l_mesh->m_indices.size(), 0, 0);

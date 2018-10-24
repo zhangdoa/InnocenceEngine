@@ -67,7 +67,7 @@ void InnocenceGarden::setup()
 	m_rootTransformComponent->m_transform.m_parentTransform = nullptr;
 
 	InnoGameSystem::addTransformComponent(m_rootTransformComponent);
-	m_rootEntity = InnoGameSystem::createEntityID();
+	m_rootEntity = InnoMath::createEntityID();
 	m_rootTransformComponent->m_parentEntity = m_rootEntity;
 
 	// setup player character
@@ -91,14 +91,14 @@ void InnocenceGarden::setup()
 	InnoGameSystem::addCameraComponent(&m_playerCharacterComponent->getCameraComponent());
 	InnoGameSystem::addInputComponent(&m_playerCharacterComponent->getInputComponent());
 
-	m_playerCharacterEntity = InnoGameSystem::createEntityID();
+	m_playerCharacterEntity = InnoMath::createEntityID();
 	m_playerCharacterComponent->m_parentEntity = m_playerCharacterEntity;
 
 	//setup environment capture component
 	m_environmentCaptureComponent = InnoMemorySystem::spawn<EnvironmentCaptureComponent>();
 	m_environmentCaptureComponent->m_cubemapTextureFileName = "ibl//Playa_Sunrise.hdr";
 
-	m_EnvironmentCaptureEntity = InnoGameSystem::createEntityID();
+	m_EnvironmentCaptureEntity = InnoMath::createEntityID();
 
 	m_environmentCaptureComponent->m_parentEntity = m_EnvironmentCaptureEntity;
 
@@ -115,7 +115,7 @@ void InnocenceGarden::setup()
 	m_directionalLightComponent->m_lightType = lightType::DIRECTIONAL;
 	m_directionalLightComponent->m_drawAABB = false;
 
-	m_directionalLightEntity = InnoGameSystem::createEntityID();
+	m_directionalLightEntity = InnoMath::createEntityID();
 
 	m_directionalLightTransformComponent->m_parentEntity = m_directionalLightEntity;
 	m_directionalLightComponent->m_parentEntity = m_directionalLightEntity;
@@ -132,7 +132,7 @@ void InnocenceGarden::setup()
 	m_landscapeVisibleComponent->m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUBE;
 
-	m_landscapeEntity = InnoGameSystem::createEntityID();
+	m_landscapeEntity = InnoMath::createEntityID();
 
 	m_landscapeTransformComponent->m_parentEntity = m_landscapeEntity;
 	m_landscapeVisibleComponent->m_parentEntity = m_landscapeEntity;
@@ -151,15 +151,15 @@ void InnocenceGarden::setup()
 	m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
 	m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
-	//m_pawnVisibleComponent1->m_modelFileName = "sponza/sponza.obj";
-	//m_pawnVisibleComponent1->m_modelFileName = "cat/cat.obj";
+	//m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
+	//m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
 	m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnVisibleComponent1->m_drawAABB = false;
 	m_pawnVisibleComponent1->m_useTexture = true;
 	m_pawnVisibleComponent1->m_albedo = vec4(0.95, 0.93, 0.88, 1.0);
 	m_pawnVisibleComponent1->m_MRA = vec4(0.0, 0.35, 1.0, 1.0);
 
-	m_pawnEntity1 = InnoGameSystem::createEntityID();
+	m_pawnEntity1 = InnoMath::createEntityID();
 
 	m_pawnTransformComponent1->m_parentEntity = m_pawnEntity1;
 	m_pawnVisibleComponent1->m_parentEntity = m_pawnEntity1;
@@ -179,7 +179,7 @@ void InnocenceGarden::setup()
 	m_pawnVisibleComponent2->m_drawAABB = true;
 	m_pawnVisibleComponent2->m_modelFileName = "lantern//lantern.obj";
 
-	m_pawnEntity2 = InnoGameSystem::createEntityID();
+	m_pawnEntity2 = InnoMath::createEntityID();
 
 	m_pawnTransformComponent2->m_parentEntity = m_pawnEntity2;
 	m_pawnVisibleComponent2->m_parentEntity = m_pawnEntity2;
@@ -234,7 +234,7 @@ void InnocenceGarden::setupSpheres()
 		m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 		m_sphereVisibleComponents[i]->m_useTexture = true;
 
-		m_sphereEntitys[i] = InnoGameSystem::createEntityID();
+		m_sphereEntitys[i] = InnoMath::createEntityID();
 
 		m_sphereTransformComponents[i]->m_parentEntity = m_sphereEntitys[i];
 		m_sphereVisibleComponents[i]->m_parentEntity = m_sphereEntitys[i];
@@ -283,9 +283,10 @@ void InnocenceGarden::setupLights()
 		m_pointLightVisibleComponents[i] = InnoMemorySystem::spawn<VisibleComponent>();
 		m_pointLightVisibleComponents[i]->m_visiblilityType = visiblilityType::EMISSIVE;
 		m_pointLightVisibleComponents[i]->m_meshShapeType = meshShapeType::SPHERE;
+		m_pointLightVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 		m_pointLightVisibleComponents[i]->m_useTexture = false;
 
-		m_pointLightEntitys[i] = InnoGameSystem::createEntityID();
+		m_pointLightEntitys[i] = InnoMath::createEntityID();
 
 		m_pointLightTransformComponents[i]->m_parentEntity = m_pointLightEntitys[i];
 		m_pointLightComponents[i]->m_parentEntity = m_pointLightEntitys[i];

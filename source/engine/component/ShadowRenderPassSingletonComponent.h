@@ -15,9 +15,11 @@ public:
 		return instance;
 	}
 
-	std::vector<std::pair<GLFrameBufferComponent, GLTextureDataComponent>> m_frameBufferTextureVector;
+	std::vector<GLFrameBufferComponent*> m_frameBufferVector;
+	std::vector<TextureDataComponent*> m_frameBufferTextureVector;
+	std::vector<GLTextureDataComponent*> m_frameBufferGLTextureVector;
 
-	GLShaderProgramComponent m_shadowPassProgram;
+	GLShaderProgramComponent* m_shadowPassProgram;
 	GLuint m_shadowPassVertexShaderID;
 	GLuint m_shadowPassFragmentShaderID;
 	GLuint m_shadowPass_uni_p;

@@ -1,11 +1,14 @@
 #include "../../exports/HighLevelSystem_Export.h"
 #include "../../common/InnoType.h"
 #include "IRenderingSystem.h"
-#include "GLHeaders.h"
+#include "../../component/GLRenderingSystemSingletonComponent.h"
+#include "../../component/MeshDataComponent.h"
+#include "../../component/TextureDataComponent.h"
 #include "../../component/GLMeshDataComponent.h"
 #include "../../component/GLTextureDataComponent.h"
 #include "../../component/GLFrameBufferComponent.h"
 #include "../../component/GLShaderProgramComponent.h"
+#include "../LowLevelSystem/MemorySystem.h"
 
 class GLRenderingSystem : public IRenderingSystem
 {
@@ -37,9 +40,12 @@ private:
 	void initializeDebuggerPass();
 	void initializeFinalBlendPass();
 
-	void initializeMesh(MeshDataComponent* rhs);
-	void initializeTexture(TextureDataComponent* rhs);
+	GLMeshDataComponent* initializeMeshDataComponent(MeshDataComponent* rhs);
+	GLTextureDataComponent* initializeTextureDataComponent(TextureDataComponent* rhs);
 	void initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string& shaderFilePath);
+
+	GLMeshDataComponent* addGLMeshDataComponent(EntityID rhs);
+	GLTextureDataComponent* addGLTextureDataComponent(EntityID rhs);
 
 	void updateEnvironmentRenderPass();
 	void updateShadowRenderPass();

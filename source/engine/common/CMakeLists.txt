@@ -5,7 +5,7 @@ add_executable(InnoMain main.cpp)
 endif (INNO_RENDERER_DX)
 
 add_library(InnoApplication InnoApplication.h InnoApplication.cpp)
-add_library(InnoMath InnoMath.h InnoMath.cpp)
+add_library(InnoMath SHARED InnoMath.h InnoMath.cpp)
 target_link_libraries(InnoMain InnoMath)
 target_link_libraries(InnoMain InnoApplication)
 target_link_libraries(InnoMain InnoLowLevelSystem)

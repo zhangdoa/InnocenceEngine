@@ -7,7 +7,7 @@ public:
 	TextureDataComponent() { m_textureID = std::rand(); };
 	~TextureDataComponent() {};
 
-	textureID m_textureID;
+	EntityID m_textureID;
 	textureType m_textureType;
 	textureColorComponentsFormat m_textureColorComponentsFormat;
 	texturePixelDataFormat m_texturePixelDataFormat;

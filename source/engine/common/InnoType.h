@@ -34,9 +34,6 @@ using shaderDrawPair = std::pair<shaderDrawPolygonType, shaderDrawTextureType>;
 enum class frameBufferType { FORWARD, DEFER, SHADOW_PASS, ENVIRONMENT_PASS, PINGPONG };
 enum class renderBufferType { NONE, DEPTH, STENCIL, DEPTH_AND_STENCIL };
 
-using textureID = unsigned long int;
-using meshID = unsigned long int;
-
 #ifdef INNO_PLATFORM_MACOS
 struct EnumClassHash
 {
@@ -46,17 +43,17 @@ struct EnumClassHash
 		return static_cast<std::size_t>(t);
 	}
 };
-using texturePair = std::pair<textureType, textureID>;
-using textureMap = std::unordered_map<textureType, textureID, EnumClassHash>;
-using modelPair = std::pair<meshID, textureMap>;
-using modelMap = std::unordered_map<meshID, textureMap, EnumClassHash>;
+using texturePair = std::pair<textureType, EntityID>;
+using textureMap = std::unordered_map<textureType, EntityID, EnumClassHash>;
+using modelPair = std::pair<EntityID, textureMap>;
+using modelMap = std::unordered_map<EntityID, textureMap, EnumClassHash>;
 using textureFileNamePair = std::pair<textureType, std::string>;
 using textureFileNameMap = std::unordered_map<textureType, std::string, EnumClassHash>;
 #else
-using texturePair = std::pair<textureType, textureID>;
-using textureMap = std::unordered_map<textureType, textureID>;
-using modelPair = std::pair<meshID, textureMap>;
-using modelMap = std::unordered_map<meshID, textureMap>;
+using texturePair = std::pair<textureType, EntityID>;
+using textureMap = std::unordered_map<textureType, EntityID>;
+using modelPair = std::pair<EntityID, textureMap>;
+using modelMap = std::unordered_map<EntityID, textureMap>;
 using textureFileNamePair = std::pair<textureType, std::string>;
 using textureFileNameMap = std::unordered_map<textureType, std::string>;
 #endif

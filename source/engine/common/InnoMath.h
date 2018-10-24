@@ -1,6 +1,7 @@
 #pragma once
 #include "../common/stdafx.h"
 #include "../common/config.h"
+#include "../common/InnoType.h"
 
 //typedef __m128 TVec4;
 
@@ -1266,6 +1267,8 @@ namespace InnoMath
 
 		return l_m;
 	}
+
+	__declspec(dllexport) EntityID createEntityID();
 }
 
 enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
