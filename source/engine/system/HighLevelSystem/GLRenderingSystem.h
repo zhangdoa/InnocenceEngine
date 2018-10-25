@@ -47,6 +47,9 @@ private:
 	GLMeshDataComponent* addGLMeshDataComponent(EntityID rhs);
 	GLTextureDataComponent* addGLTextureDataComponent(EntityID rhs);
 
+	GLMeshDataComponent* getGLMeshDataComponent(EntityID rhs);
+	GLTextureDataComponent* getGLTextureDataComponent(EntityID rhs);
+
 	void updateEnvironmentRenderPass();
 	void updateShadowRenderPass();
 	void updateGeometryRenderPass();
@@ -63,9 +66,8 @@ private:
 	void updateUniform(const GLint uniformLocation, double x, double y, double z, double w);
 	void updateUniform(const GLint uniformLocation, const mat4& mat);
 
-	void attachTextureToFramebuffer(const GLTextureDataComponent* GLTextureDataComponent, const GLFrameBufferComponent* GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel);
-	void activateShaderProgram(const GLShaderProgramComponent* GLShaderProgramComponent);
-	void activateMesh(MeshDataComponent* rhs);
-	void drawMesh(MeshDataComponent* rhs);
-	void activateTexture(TextureDataComponent* rhs, int activateIndex);
+	void attachTextureToFramebuffer(TextureDataComponent* TDC, GLTextureDataComponent* GLTextureDataComponent, GLFrameBufferComponent* GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel);
+	void activateShaderProgram(GLShaderProgramComponent* GLShaderProgramComponent);
+	void drawMesh(MeshDataComponent* MDC, GLMeshDataComponent* GLMDC);
+	void activateTexture(TextureDataComponent* TDC, GLTextureDataComponent* GLTDC, int activateIndex);
 };

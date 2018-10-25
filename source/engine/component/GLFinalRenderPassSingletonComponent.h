@@ -2,6 +2,7 @@
 #include "BaseComponent.h"
 #include "GLFrameBufferComponent.h"
 #include "GLShaderProgramComponent.h"
+#include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
 
 class GLFinalRenderPassSingletonComponent : public BaseComponent
@@ -14,59 +15,67 @@ public:
 		static GLFinalRenderPassSingletonComponent instance;
 		return instance;
 	}
-	GLFrameBufferComponent m_skyPassGLFrameBufferComponent;
-	GLShaderProgramComponent m_skyPassProgram;
+	GLFrameBufferComponent* m_skyPassFBC;
+	GLShaderProgramComponent* m_skyPassSPC;
 	GLuint m_skyPassVertexShaderID;
 	GLuint m_skyPassFragmentShaderID;
-	GLTextureDataComponent m_skyPassTexture;
+	TextureDataComponent* m_skyPassTDC;
+	GLTextureDataComponent* m_skyPassGLTDC;
 	GLuint m_skyPass_uni_p;
 	GLuint m_skyPass_uni_r;
 	GLuint m_skyPass_uni_viewportSize;
 	GLuint m_skyPass_uni_eyePos;	
 	GLuint m_skyPass_uni_lightDir;
 
-	GLFrameBufferComponent m_TAAPingPassGLFrameBufferComponent;
-	GLFrameBufferComponent m_TAAPongPassGLFrameBufferComponent;
-	GLShaderProgramComponent m_TAAPassProgram;
+	GLFrameBufferComponent* m_TAAPingPassFBC;
+	GLFrameBufferComponent* m_TAAPongPassFBC;
+	GLShaderProgramComponent* m_TAAPassSPC;
 	GLuint m_TAAPassVertexShaderID;
 	GLuint m_TAAPassFragmentShaderID;
-	GLTextureDataComponent m_TAAPingPassTexture;
-	GLTextureDataComponent m_TAAPongPassTexture;
+	TextureDataComponent* m_TAAPingPassTDC;
+	GLTextureDataComponent* m_TAAPingPassGLTDC;
+	TextureDataComponent* m_TAAPongPassTDC;
+	GLTextureDataComponent* m_TAAPongPassGLTDC;
 	GLuint m_TAAPass_uni_lightPassRT0;
 	GLuint m_TAAPass_uni_lastTAAPassRT0;
 	GLuint m_TAAPass_uni_motionVectorTexture;
 	GLuint m_TAAPass_uni_renderTargetSize;
 
-	GLFrameBufferComponent m_bloomExtractPassGLFrameBufferComponent;
-	GLShaderProgramComponent m_bloomExtractPassProgram;
+	GLFrameBufferComponent* m_bloomExtractPassFBC;
+	GLShaderProgramComponent* m_bloomExtractPassSPC;
 	GLuint m_bloomExtractPassVertexShaderID;
 	GLuint m_bloomExtractPassFragmentShaderID;
-	GLTextureDataComponent m_bloomExtractPassTexture;
+	TextureDataComponent* m_bloomExtractPassTDC;
+	GLTextureDataComponent* m_bloomExtractPassGLTDC;
 	GLuint m_bloomExtractPass_uni_TAAPassRT0;
 
-	GLFrameBufferComponent m_bloomBlurPingPassGLFrameBufferComponent;
-	GLFrameBufferComponent m_bloomBlurPongPassGLFrameBufferComponent;
-	GLShaderProgramComponent m_bloomBlurPassProgram;
+	GLFrameBufferComponent* m_bloomBlurPingPassFBC;
+	GLFrameBufferComponent* m_bloomBlurPongPassFBC;
+	GLShaderProgramComponent* m_bloomBlurPassSPC;
 	GLuint m_bloomBlurPassVertexShaderID;
 	GLuint m_bloomBlurPassFragmentShaderID;
-	GLTextureDataComponent m_bloomBlurPingPassTexture;
-	GLTextureDataComponent m_bloomBlurPongPassTexture;
+	TextureDataComponent* m_bloomBlurPingPassTDC;
+	GLTextureDataComponent* m_bloomBlurPingPassGLTDC;
+	TextureDataComponent* m_bloomBlurPongPassTDC;
+	GLTextureDataComponent* m_bloomBlurPongPassGLTDC;
 	GLuint m_bloomBlurPass_uni_bloomExtractPassRT0;
 	GLuint m_bloomBlurPass_uni_horizontal;
 
-	GLFrameBufferComponent m_motionBlurPassGLFrameBufferComponent;
-	GLShaderProgramComponent m_motionBlurPassProgram;
+	GLFrameBufferComponent* m_motionBlurPassFBC;
+	GLShaderProgramComponent* m_motionBlurPassSPC;
 	GLuint m_motionBlurPassVertexShaderID;
 	GLuint m_motionBlurPassFragmentShaderID;
-	GLTextureDataComponent m_motionBlurPassTexture;
+	TextureDataComponent* m_motionBlurPassTDC;
+	GLTextureDataComponent* m_motionBlurPassGLTDC;
 	GLuint m_motionBlurPass_uni_motionVectorTexture;
 	GLuint m_motionBlurPass_uni_TAAPassRT0;
 
-	GLFrameBufferComponent m_billboardPassGLFrameBufferComponent;
-	GLShaderProgramComponent m_billboardPassProgram;
+	GLFrameBufferComponent* m_billboardPassFBC;
+	GLShaderProgramComponent* m_billboardPassSPC;
 	GLuint m_billboardPassVertexShaderID;
 	GLuint m_billboardPassFragmentShaderID;
-	GLTextureDataComponent m_billboardPassTexture;
+	TextureDataComponent* m_billboardPassTDC;
+	GLTextureDataComponent* m_billboardPassGLTDC;
 	GLuint m_billboardPass_uni_texture;
 	GLuint m_billboardPass_uni_p;
 	GLuint m_billboardPass_uni_r;
@@ -75,22 +84,24 @@ public:
 	GLuint m_billboardPass_uni_albedo;
 	GLuint m_billboardPass_uni_size;
 
-	GLFrameBufferComponent m_debuggerPassGLFrameBufferComponent;
-	GLShaderProgramComponent m_debuggerPassProgram;
+	GLFrameBufferComponent* m_debuggerPassFBC;
+	GLShaderProgramComponent* m_debuggerPassSPC;
 	GLuint m_debuggerPassVertexShaderID;
 	GLuint m_debuggerPassFragmentShaderID;
-	GLTextureDataComponent m_debuggerPassTexture;
+	TextureDataComponent* m_debuggerPassTDC;
+	GLTextureDataComponent* m_debuggerPassGLTDC;
 	GLuint m_debuggerPass_uni_normalTexture;
 	GLuint m_debuggerPass_uni_p;
 	GLuint m_debuggerPass_uni_r;	
 	GLuint m_debuggerPass_uni_t;	
 	GLuint m_debuggerPass_uni_m;
 
-	GLFrameBufferComponent m_finalBlendPassGLFrameBufferComponent;
-	GLShaderProgramComponent m_finalBlendPassProgram;
+	GLFrameBufferComponent* m_finalBlendPassFBC;
+	GLShaderProgramComponent* m_finalBlendPassSPC;
 	GLuint m_finalBlendPassVertexShaderID;
 	GLuint m_finalBlendPassFragmentShaderID;
-	GLTextureDataComponent m_finalBlendPassTexture;
+	TextureDataComponent* m_finalBlendPassTDC;
+	GLTextureDataComponent* m_finalBlendPassGLTDC;
 	GLuint m_uni_motionBlurPassRT0;
 	GLuint m_uni_skyPassRT0;
 	GLuint m_uni_bloomPassRT0;

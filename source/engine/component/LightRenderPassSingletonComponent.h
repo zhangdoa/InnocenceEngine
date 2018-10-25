@@ -2,6 +2,7 @@
 #include "BaseComponent.h"
 #include "GLFrameBufferComponent.h"
 #include "GLShaderProgramComponent.h"
+#include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
 
 class LightRenderPassSingletonComponent : public BaseComponent
@@ -15,12 +16,13 @@ public:
 		return instance;
 	}
 
-	GLFrameBufferComponent m_GLFrameBufferComponent;
+	GLFrameBufferComponent* m_FBC;
 
-	GLShaderProgramComponent m_lightPassProgram;
+	GLShaderProgramComponent* m_GLSPC;
 	GLuint m_lightPassVertexShaderID;
 	GLuint m_lightPassFragmentShaderID;
-	GLTextureDataComponent m_lightPassTexture;
+	TextureDataComponent* m_TDC;
+	GLTextureDataComponent* m_GLTDC;
 
 	GLuint m_uni_geometryPassRT0;
 	GLuint m_uni_geometryPassRT1;
