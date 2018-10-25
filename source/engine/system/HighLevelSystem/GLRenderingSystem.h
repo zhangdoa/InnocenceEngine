@@ -68,6 +68,7 @@ private:
 
 	void attachTextureToFramebuffer(TextureDataComponent* TDC, GLTextureDataComponent* GLTextureDataComponent, GLFrameBufferComponent* GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel);
 	void activateShaderProgram(GLShaderProgramComponent* GLShaderProgramComponent);
-	void drawMesh(MeshDataComponent* MDC, GLMeshDataComponent* GLMDC);
+	void drawMesh(EntityID rhs);
+	void drawMesh(MeshDataComponent* MDC);
 	void activateTexture(TextureDataComponent* TDC, GLTextureDataComponent* GLTDC, int activateIndex);
 };

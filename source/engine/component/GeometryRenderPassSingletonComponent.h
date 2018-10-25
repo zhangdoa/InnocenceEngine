@@ -20,8 +20,8 @@ public:
 	GLShaderProgramComponent* m_GLSPC;
 	GLuint m_geometryPassVertexShaderID;
 	GLuint m_geometryPassFragmentShaderID;
-	std::vector<TextureDataComponent*> m_TDC;
-	std::vector<GLTextureDataComponent*> m_GLTDC;
+	std::vector<TextureDataComponent*> m_TDCs;
+	std::vector<GLTextureDataComponent*> m_GLTDCs;
 
 	GLuint m_geometryPass_uni_p_camera_original;
 	GLuint m_geometryPass_uni_p_camera_jittered;
