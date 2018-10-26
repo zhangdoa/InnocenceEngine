@@ -1974,6 +1974,8 @@ GLTextureDataComponent* GLRenderingSystem::initializeTextureDataComponent(Textur
 
 		l_ptr->m_objectStatus = objectStatus::ALIVE;
 		rhs->m_objectStatus = objectStatus::ALIVE;
+
+		return l_ptr;
 	}
 }
 
@@ -1999,10 +2001,10 @@ bool GLRenderingSystem::update()
 	{
 		updateEnvironmentRenderPass();
 	}
-	//updateShadowRenderPass();
-	//updateGeometryRenderPass();
-	//updateLightRenderPass();
-	//updateFinalRenderPass();
+	updateShadowRenderPass();
+	updateGeometryRenderPass();
+	updateLightRenderPass();
+	updateFinalRenderPass();
 
 	return true;
 }
@@ -3296,7 +3298,13 @@ void GLRenderingSystem::drawMesh(MeshDataComponent* MDC)
 		if (MDC->m_objectStatus == objectStatus::ALIVE && l_GLMDC->m_objectStatus == objectStatus::ALIVE)
 		{
 			glBindVertexArray(l_GLMDC->m_VAO);
-			glDrawElements(GL_TRIANGLES + (int)MDC->m_meshDrawMethod, (GLsizei)MDC->m_indices.size(), GL_UNSIGNED_INT, 0);
+			switch (MDC->m_meshDrawMethod)
+			{
+				case meshDrawMethod::TRIANGLE: glDrawElements(GL_TRIANGLES, (GLsizei)MDC->m_indices.size(), GL_UNSIGNED_INT, 0); break;
+				case meshDrawMethod::TRIANGLE_STRIP: glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)MDC->m_indices.size(), GL_UNSIGNED_INT, 0); break;
+				default:
+				break;
+			}
 		}
 	}
 }

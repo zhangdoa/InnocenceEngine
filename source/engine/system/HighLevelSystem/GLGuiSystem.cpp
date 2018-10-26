@@ -96,13 +96,16 @@ void ImGuiWrapper::update()
 #ifndef INNO_PLATFORM_LINUX64
 
 	static bool l_zoom = false;
+	static bool l_showRenderPassResult = false;
 	ImGui_ImplGlfwGL3_NewFrame();
 	{
 		ImGui::Begin("Profiler", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::Checkbox("Use zoom", &l_zoom);
+		ImGui::Checkbox("Show render pass result", &l_showRenderPassResult);
 		ImGui::End();
 	}
+	if(l_showRenderPassResult)
 	{
 		ImGui::Begin("Light Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		{

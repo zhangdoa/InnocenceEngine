@@ -11,6 +11,7 @@ namespace InnoLogSystem
 InnoLowLevelSystem_EXPORT void InnoLogSystem::printLog(const std::string& logMessage)
 {
 	LogSystemSingletonComponent::getInstance().m_log.push(logMessage);
+	//printLogImpl(logMessage);
 }
 
 InnoLowLevelSystem_EXPORT void InnoLogSystem::printLogImpl(double logMessage)

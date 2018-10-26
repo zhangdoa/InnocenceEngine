@@ -151,7 +151,7 @@ void InnocenceGarden::setup()
 	m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
 	m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
-	//m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
+	m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
 	//m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
 	m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
 	m_pawnVisibleComponent1->m_drawAABB = false;
