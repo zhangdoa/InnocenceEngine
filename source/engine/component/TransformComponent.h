@@ -7,6 +7,7 @@ public:
 	TransformComponent() {};
 	~TransformComponent() {};
 
-	Transform m_transform;
+	Transform m_currentTransform;
+	Transform m_previousTransform;
 };
 

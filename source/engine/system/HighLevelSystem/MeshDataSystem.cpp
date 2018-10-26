@@ -116,6 +116,8 @@ void MeshDataSystem::addUnitCube(MeshDataComponent& meshDataComponent)
 		3, 7, 2, 2, 7 ,6,
 		4, 7, 0, 0, 7, 3,
 		1, 2, 5, 5, 2, 6 };
+
+	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
 void MeshDataSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
@@ -123,6 +125,8 @@ void MeshDataSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 	unsigned int X_SEGMENTS = 64;
 	unsigned int Y_SEGMENTS = 64;
 	double PI = 3.14159265359;
+	auto l_containerSize = X_SEGMENTS * Y_SEGMENTS;
+	meshDataComponent.m_vertices.reserve(l_containerSize);
 
 	for (unsigned int y = 0; y <= Y_SEGMENTS; ++y)
 	{
@@ -165,6 +169,8 @@ void MeshDataSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 		}
 		oddRow = !oddRow;
 	}
+
+	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
 void MeshDataSystem::addUnitQuad(MeshDataComponent& meshDataComponent)
@@ -187,6 +193,7 @@ void MeshDataSystem::addUnitQuad(MeshDataComponent& meshDataComponent)
 
 	meshDataComponent.m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4 };
 	meshDataComponent.m_indices = { 0, 1, 3, 1, 2, 3 };
+	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
 void MeshDataSystem::addUnitLine(MeshDataComponent& meshDataComponent)
@@ -201,4 +208,5 @@ void MeshDataSystem::addUnitLine(MeshDataComponent& meshDataComponent)
 
 	meshDataComponent.m_vertices = { l_VertexData_1, l_VertexData_2 };
 	meshDataComponent.m_indices = { 0, 1 };
+	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }

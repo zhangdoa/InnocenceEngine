@@ -97,6 +97,7 @@ InnoLowLevelSystem_EXPORT const std::string InnoTimeSystem::getCurrentTimeInLoca
 	return std::string{ std::to_string(std::get<0>(date)) + "-" + std::to_string(std::get<1>(date)) + "-" + std::to_string(std::get<2>(date)) + " " + std::to_string(h.count()) + ":" + std::to_string(m.count()) + ":" + std::to_string(s.count()) + ":" + std::to_string(tp / std::chrono::milliseconds(1)) };
 }
 
+// @TODO: redundant code, return a struct instead, leave log to LogSystem
 InnoLowLevelSystem_EXPORT const std::string InnoTimeSystem::getCurrentTimeInLocalForOutput(unsigned int timezone_adjustment)
 {
 	typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type> days;

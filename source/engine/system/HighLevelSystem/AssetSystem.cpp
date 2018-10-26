@@ -78,6 +78,8 @@ public:
 
 InnoHighLevelSystem_EXPORT bool InnoAssetSystem::setup()
 {
+	InnoLogSystem::printLog(std::to_string(sizeof(Transform)));
+
 	m_AssetSystemStatus = objectStatus::ALIVE;
 	return true;
 }
@@ -85,6 +87,7 @@ InnoHighLevelSystem_EXPORT bool InnoAssetSystem::setup()
 InnoHighLevelSystem_EXPORT bool InnoAssetSystem::initialize()
 {
 	loadDefaultAssets();
+	// @TODO: more granularly do IO operations
 	AssetSystemSingletonComponent::getInstance().m_asyncTaskVector.push_back(InnoTaskSystem::submit([]()
 	{
 		loadAssetsForComponents();
@@ -107,6 +110,7 @@ InnoHighLevelSystem_EXPORT bool InnoAssetSystem::terminate()
 	return true;
 }
 
+// @TODO: merge to a text file parser
 std::string InnoAssetSystem::loadShader(const std::string & fileName)
 {
 	std::ifstream file;
@@ -141,15 +145,8 @@ EntityID InnoAssetSystem::addMeshDataComponent(const std::vector<Vertex>& vertic
 	auto l_MeshID = addMeshDataComponent();
 	auto l_MeshData = getMeshDataComponent(l_MeshID);
 
-	std::for_each(vertices.begin(), vertices.end(), [&](Vertex val)
-	{
-		l_MeshData->m_vertices.emplace_back(val);
-	});
-
-	std::for_each(indices.begin(), indices.end(), [&](unsigned int val)
-	{
-		l_MeshData->m_indices.emplace_back(val);
-	});
+	l_MeshData->m_vertices = std::move(vertices);
+	l_MeshData->m_indices = std::move(indices);
 
 	return l_MeshID;
 }
@@ -250,6 +247,7 @@ void InnoAssetSystem::removeMeshDataComponent(EntityID EntityID)
 	auto l_mesh = l_meshMap->find(EntityID);
 	if (l_mesh != l_meshMap->end())
 	{
+		InnoMemorySystem::destroy<MeshDataComponent>(l_mesh->second);
 		l_meshMap->erase(EntityID);
 	}
 }
@@ -260,7 +258,41 @@ void InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
 	auto l_texture = l_textureMap->find(EntityID);
 	if (l_texture != l_textureMap->end())
 	{
+		for (auto i : l_texture->second->m_textureData)
+		{
+			stbi_image_free(i);
+		}
+		
+		InnoMemorySystem::destroy<TextureDataComponent>(l_texture->second);
 		l_textureMap->erase(EntityID);
+	}
+}
+
+void InnoAssetSystem::releaseRawDataForMeshDataComponent(EntityID EntityID)
+{
+	auto l_meshMap = &AssetSystemSingletonComponent::getInstance().m_meshMap;
+	auto l_mesh = l_meshMap->find(EntityID);
+	if (l_mesh != l_meshMap->end())
+	{
+		l_mesh->second->m_vertices.clear();
+		l_mesh->second->m_vertices.resize(0);
+		l_mesh->second->m_vertices.shrink_to_fit();
+		l_mesh->second->m_indices.clear();
+		l_mesh->second->m_indices.resize(0);
+		l_mesh->second->m_indices.shrink_to_fit();
+	}
+}
+
+void InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
+{
+	auto l_textureMap = &AssetSystemSingletonComponent::getInstance().m_textureMap;
+	auto l_texture = l_textureMap->find(EntityID);
+	if (l_texture != l_textureMap->end())
+	{
+		for (auto i : l_texture->second->m_textureData)
+		{
+			stbi_image_free(i);
+		}
 	}
 }
 
@@ -354,7 +386,10 @@ void InnoAssetSystem::loadAssetsForComponents()
 	{
 		if (l_lightComponent->m_drawAABB)
 		{
-			for (size_t i = 0; i < l_lightComponent->m_AABBMeshIDs.size(); i++)
+			auto l_containerSize = l_lightComponent->m_AABBs.size();
+			l_lightComponent->m_AABBMeshIDs.reserve(l_containerSize);
+			
+			for (size_t i = 0; i < l_containerSize; i++)
 			{
 				auto l_EntityID = addMeshDataComponent(l_lightComponent->m_AABBs[i].m_vertices, l_lightComponent->m_AABBs[i].m_indices);
 				auto l_Mesh = getMeshDataComponent(l_EntityID);
@@ -496,6 +531,7 @@ texturePair InnoAssetSystem::loadTexture(const std::string &fileName, textureTyp
 
 }
 
+// @TODO: return result
 void InnoAssetSystem::loadModel(const std::string & fileName, VisibleComponent & visibleComponent)
 {
 	auto l_convertedFilePath = fileName.substr(0, fileName.find(".")) + ".innoModel";
@@ -525,9 +561,10 @@ void InnoAssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileNa
 	{
 		int width, height, nrChannels;
 
-		std::vector<void*> l_3DTextureRawData;
+		auto l_containerSize = fileName.size();
+		std::vector<void*> l_3DTextureRawData(l_containerSize);
 
-		for (auto i = (unsigned int)0; i < fileName.size(); i++)
+		for (auto i = (unsigned int)0; i < l_containerSize; i++)
 		{
 			// load image, do not flip texture
 			stbi_set_flip_vertically_on_load(false);
@@ -542,7 +579,6 @@ void InnoAssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileNa
 				InnoLogSystem::printLog("Error::STBI:: Failed to load texture: " + (AssetSystemSingletonComponent::getInstance().m_textureRelativePath + fileName[i]));
 				return;
 			}
-			//stbi_image_free(data);
 		}
 
 		baseTexture->m_textureType = textureType::CUBEMAP;
@@ -554,7 +590,7 @@ void InnoAssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileNa
 		baseTexture->m_textureWidth = width;
 		baseTexture->m_textureHeight = height;
 		baseTexture->m_texturePixelDataType = texturePixelDataType::UNSIGNED_BYTE;
-		baseTexture->m_textureData = l_3DTextureRawData;
+		baseTexture->m_textureData = std::move(l_3DTextureRawData);
 		baseTexture->m_objectStatus = objectStatus::STANDBY;
 		AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.push(baseTexture);
 
@@ -715,8 +751,10 @@ void InnoAssetSystem::processSingleAssimpMesh(EntityID& EntityID, aiMesh * aiMes
 {
 	EntityID = addMeshDataComponent();
 	auto l_meshData = getMeshDataComponent(EntityID);
+	auto l_containerSize = aiMesh->mNumVertices;
+	l_meshData->m_vertices.reserve(l_containerSize);
 
-	for (auto i = (unsigned int)0; i < aiMesh->mNumVertices; i++)
+	for (auto i = (unsigned int)0; i < l_containerSize; i++)
 	{
 		Vertex l_Vertex;
 
@@ -765,6 +803,7 @@ void InnoAssetSystem::processSingleAssimpMesh(EntityID& EntityID, aiMesh * aiMes
 	}
 
 	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+	// @TODO: reserve fixed size vector
 	for (auto i = (unsigned int)0; i < aiMesh->mNumFaces; i++)
 	{
 		aiFace face = aiMesh->mFaces[i];
@@ -779,6 +818,8 @@ void InnoAssetSystem::processSingleAssimpMesh(EntityID& EntityID, aiMesh * aiMes
 	l_meshData->m_meshDrawMethod = meshDrawMethod;
 	l_meshData->m_calculateNormals = caclNormal;
 	l_meshData->m_calculateTangents = false;
+	l_meshData->m_indicesSize = l_meshData->m_indices.size();
+
 	l_meshData->m_objectStatus = objectStatus::STANDBY;
 	AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.push(l_meshData);
 }

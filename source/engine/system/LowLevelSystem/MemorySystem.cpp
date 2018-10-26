@@ -58,6 +58,7 @@ namespace InnoMemorySystem
 
 InnoLowLevelSystem_EXPORT bool InnoMemorySystem::setup()
 {
+	// @TODO: one component type one dedicated pool
 	// Allocate memory pool
 	m_poolMemoryPtr = nullptr;
 	m_poolMemoryPtr = ::new unsigned char[m_maxPoolSize];
@@ -111,6 +112,7 @@ InnoLowLevelSystem_EXPORT void * InnoMemorySystem::allocate(unsigned long size)
 	// Now search for a block big enough from the beginning of the pool, double linked list, O(n)
 	//[                 suitable block                 ] is larger than
 	//[StartBound + Chuck + data + EndBound + alignment]
+	// @TODO: record the free chuck position
 	Chunk* l_suitableChuckPtr = reinterpret_cast<Chunk*>(m_poolMemoryPtr + m_boundCheckSize);
 	while (l_suitableChuckPtr)
 	{
@@ -241,6 +243,7 @@ InnoLowLevelSystem_EXPORT void InnoMemorySystem::serializeImpl(void * ptr)
 	unsigned long l_fullBlockSize = l_chuckPtr->m_blockSize;
 
 	std::ofstream l_file;
+	// @TODO: just return the streaming data, leave IO for AssetSystem
 	//l_file.open("../serializationTest" + InnoTimeSystem->getCurrentTimeInLocalForOutput() + ".innoAsset", std::ios::out | std::ios::trunc | std::ios::binary);
 	l_file.open("../serializationTest.innoAsset", std::ios::out | std::ios::trunc | std::ios::binary);
 	l_file.write(l_ptr_UC, l_fullBlockSize - sizeof(Chunk) - m_boundCheckSize * 2);

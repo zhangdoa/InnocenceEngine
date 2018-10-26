@@ -841,27 +841,41 @@ public:
 	TVertex() :
 		m_pos(TVec4<T>(T(), T(), T(), one<T>)),
 		m_texCoord(TVec2<T>(T(), T())),
-		m_normal(TVec4<T>(T(), T(), one<T>, T())) {};
+		m_pad1(TVec2<T>(T(), T())),
+		m_normal(TVec4<T>(T(), T(), one<T>, T())),
+		m_pad2(TVec4<T>(T(), T(), T(), T())) {};
+
 	TVertex(const TVertex& rhs) :
 		m_pos(rhs.m_pos),
+		m_pad1(TVec2<T>(T(), T())),
 		m_texCoord(rhs.m_texCoord),
-		m_normal(rhs.m_normal) {};
+		m_normal(rhs.m_normal),
+		m_pad2(TVec4<T>(T(), T(), T(), T())) {};
+
 	TVertex(const TVec4<T>& pos, const TVec2<T>& texCoord, const TVec4<T>& normal) :
 		m_pos(pos),
+		m_pad1(TVec2<T>(T(), T())),
 		m_texCoord(texCoord),
-		m_normal(normal) {};
+		m_normal(normal),
+		m_pad2(TVec4<T>(T(), T(), T(), T())) {};
+
 	auto operator=(const TVertex & rhs) -> TVertex<T>&
 	{
 		m_pos = rhs.m_pos;
+		m_pad1 = TVec2<T>(T(), T());
 		m_texCoord = rhs.m_texCoord;
 		m_normal = rhs.m_normal;
+		m_pad2 = TVec4<T>(T(), T(), T(), T());
 		return *this;
 	}
+
 	~TVertex() {};
 
-	TVec4<T> m_pos;
-	TVec2<T> m_texCoord;
-	TVec4<T> m_normal;
+	TVec4<T> m_pos; // 4 * sizeof(T)
+	TVec2<T> m_texCoord; // 2 * sizeof(T)
+	TVec2<T> m_pad1; // 2 * sizeof(T)
+	TVec4<T> m_normal; // 4 * sizeof(T)
+	TVec4<T> m_pad2; // 4 * sizeof(T)
 };
 
 template<class T>
@@ -883,8 +897,8 @@ public:
 	}
 	~TRay() {};
 
-	TVec4<T> m_origin;
-	TVec4<T> m_direction;
+	TVec4<T> m_origin; // 4 * sizeof(T)
+	TVec4<T> m_direction; // 4 * sizeof(T)
 };
 
 template<class T>
@@ -894,11 +908,17 @@ public:
 	TAABB() noexcept :
 		m_center(TVec4<T>(T(), T(), T(), one<T>)),
 		m_sphereRadius(T()),
+		m_pad1(T()),
+		m_pad2(T()),
+		m_pad3(T()),
 		m_boundMin(TVec4<T>(T(), T(), T(), one<T>)),
 		m_boundMax(TVec4<T>(T(), T(), T(), one<T>)) {};
 	TAABB(const TAABB<T>& rhs) :
 		m_center(rhs.m_center),
 		m_sphereRadius(rhs.m_sphereRadius),
+		m_pad1(T()),
+		m_pad2(T()),
+		m_pad3(T()),
 		m_boundMin(rhs.m_boundMin),
 		m_boundMax(rhs.m_boundMax),
 		m_vertices(rhs.m_vertices),
@@ -907,6 +927,9 @@ public:
 	{
 		m_center = rhs.m_center;
 		m_sphereRadius = rhs.m_sphereRadius;
+		m_pad1 = T();
+		m_pad2 = T();
+		m_pad3 = T();
 		m_boundMin = rhs.m_boundMin;
 		m_boundMax = rhs.m_boundMax;
 		m_vertices = rhs.m_vertices;
@@ -915,10 +938,13 @@ public:
 	}
 	~TAABB() {};
 
-	TVec4<T> m_center;
-	T m_sphereRadius;
-	TVec4<T> m_boundMin;
-	TVec4<T> m_boundMax;
+	TVec4<T> m_center; // 4 * sizeof(T)
+	T m_sphereRadius; // 1 * sizeof(T)
+	T m_pad1; // 1 * sizeof(T)
+	T m_pad2; // 1 * sizeof(T)
+	T m_pad3; // 1 * sizeof(T)
+	TVec4<T> m_boundMin; // 4 * sizeof(T)
+	TVec4<T> m_boundMax; // 4 * sizeof(T)
 
 	std::vector<TVertex<T>> m_vertices;
 	std::vector<unsigned int> m_indices;
@@ -1279,37 +1305,10 @@ class TTransform
 public:
 	TTransform() noexcept :
 		m_parentTransform(nullptr),
-		m_pos(TVec4<T>(0.0, 0.0, 0.0, 1.0)),
-		m_rot(TVec4<T>(0.0, 0.0, 0.0, 1.0)),
-		m_scale(TVec4<T>(1.0, 1.0, 1.0, 1.0)),
-		m_previousPos((m_pos + (1.0)) / 2.0),
-		m_previousRot(m_rot.quatMul(TVec4<T>(1.0, 1.0, 1.0, 0.0))),
-		m_previousScale(m_scale + (1.0)) {};
+		m_pos(TVec4<T>(T(), T(), T(), one<T>)),
+		m_rot(TVec4<T>(T(), T(), T(), one<T>)),
+		m_scale(TVec4<T>(one<T>, one<T>, one<T>, one<T>)) {}
 	~TTransform() {};
-
-	bool hasChanged()
-	{
-		if (m_pos != m_previousPos || m_rot != m_previousRot || m_scale != m_previousScale)
-		{
-			return true;
-		}
-
-		if (nullptr != m_parentTransform)
-		{
-			if (m_parentTransform->hasChanged())
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	void update()
-	{
-		m_previousPos = m_pos;
-		m_previousRot = m_rot;
-		m_previousScale = m_scale;
-	}
 
 	void rotateInLocal(const TVec4<T> & axis, T angle)
 	{
@@ -1384,26 +1383,6 @@ public:
 		return caclLocalTranslationMatrix() * caclLocalRotationMatrix() * caclLocalScaleMatrix();
 	}
 
-	auto caclPreviousLocalTranslationMatrix() -> TMat4<T>
-	{
-		return InnoMath::toTranslationMatrix(m_previousPos);
-	}
-
-	auto caclPreviousLocalRotationMatrix() -> TMat4<T>
-	{
-		return InnoMath::toRotationMatrix(m_previousRot);
-	}
-
-	auto caclPreviousLocalScaleMatrix() -> TMat4<T>
-	{
-		return InnoMath::toScaleMatrix(m_previousScale);
-	}
-
-	auto caclPreviousLocalTransformationMatrix() -> TMat4<T>
-	{
-		return caclPreviousLocalTranslationMatrix() * caclPreviousLocalRotationMatrix() * caclPreviousLocalScaleMatrix();
-	}
-
 	auto caclGlobalPos() -> TVec4<T>
 	{
 		TMat4<T> l_parentTransformationMatrix;
@@ -1454,56 +1433,6 @@ public:
 		return l_parentScale.scale(m_scale);
 	}
 
-	auto caclPreviousGlobalPos() -> TVec4<T>
-	{
-		TMat4<T> l_parentTransformationMatrix;
-		l_parentTransformationMatrix.initializeToIdentityMatrix();
-
-		if (nullptr != m_parentTransform)
-		{
-			l_parentTransformationMatrix = m_parentTransform->caclPreviousGlobalTransformationMatrix();
-		}
-
-		//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		auto result = TVec4<T>();
-		result = InnoMath::mul(m_previousPos, l_parentTransformationMatrix);
-		result = result * (one<T> / result.w);
-		return result;
-#endif
-		//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		auto result = TVec4<T>();
-		result = InnoMath::mul(l_parentTransformationMatrix, m_previousPos);
-		result = result * (one<T> / result.w);
-		return result;
-#endif
-	}
-
-	auto caclPreviousGlobalRot() -> TVec4<T>
-	{
-		TVec4<T> l_parentRot = TVec4<T>(T(), T(), T(), one<T>);
-
-		if (nullptr != m_parentTransform)
-		{
-			l_parentRot = m_parentTransform->caclPreviousGlobalRot();
-		}
-
-		return l_parentRot.quatMul(m_previousRot);
-	}
-
-	auto caclPreviousGlobalScale() -> TVec4<T>
-	{
-		TVec4<T> l_parentScale = TVec4<T>(one<T>, one<T>, one<T>, one<T>);
-
-		if (nullptr != m_parentTransform)
-		{
-			l_parentScale = m_parentTransform->caclPreviousGlobalScale();
-		}
-
-		return l_parentScale.scale(m_previousScale);
-	}
-
 	auto caclGlobalTranslationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(caclGlobalPos());
@@ -1532,43 +1461,9 @@ public:
 		return l_parentTransformationMatrix * caclLocalTransformationMatrix();
 	}
 
-	auto caclPreviousGlobalTranslationMatrix() -> TMat4<T>
-	{
-		return InnoMath::toTranslationMatrix(caclPreviousGlobalPos());
-	}
-
-	auto caclPreviousGlobalRotationMatrix() -> TMat4<T>
-	{
-		return InnoMath::toRotationMatrix(caclPreviousGlobalRot());
-	}
-
-	auto caclPreviousGlobalScaleMatrix() -> TMat4<T>
-	{
-		return InnoMath::toScaleMatrix(caclPreviousGlobalScale());
-	}
-
-	auto caclPreviousGlobalTransformationMatrix() -> TMat4<T>
-	{
-		TMat4<T> l_parentTransformationMatrix;
-		l_parentTransformationMatrix.initializeToIdentityMatrix();
-
-		if (nullptr != m_parentTransform)
-		{
-			l_parentTransformationMatrix = m_parentTransform->caclPreviousGlobalTransformationMatrix();
-		}
-
-		return l_parentTransformationMatrix * caclPreviousLocalTransformationMatrix();
-
-	}
-
 	auto caclLookAtMatrix() -> TMat4<T>
 	{
 		return TMat4<T>().lookAt(caclGlobalPos(), caclGlobalPos() + getDirection(direction::BACKWARD), getDirection(direction::UP));
-	}
-
-	auto caclPreviousLookAtMatrix() -> TMat4<T>
-	{
-		return TMat4<T>().lookAt(caclPreviousGlobalPos(), caclPreviousGlobalPos() + getPreviousDirection(direction::BACKWARD), getPreviousDirection(direction::UP));
 	}
 
 	auto getInvertLocalTranslationMatrix() -> TMat4<T>
@@ -1601,38 +1496,6 @@ public:
 		return InnoMath::toScaleMatrix(caclGlobalScale().reciprocal());
 	}
 
-	auto getPreviousInvertLocalTranslationMatrix() -> TMat4<T>
-	{
-		return InnoMath::toTranslationMatrix(m_previousPos * -1.0);
-	}
-
-	auto getPreviousInvertLocalRotationMatrix() -> TMat4<T>
-	{
-		return InnoMath::toRotationMatrix(m_previousRot.quatConjugate());
-	}
-
-	auto getPreviousInvertLocalScaleMatrix() -> TMat4<T>
-	{
-		return InnoMath::toScaleMatrix(m_previousScale.reciprocal());
-	}
-
-	auto getPreviousInvertGlobalTranslationMatrix() -> TMat4<T>
-	{
-		return InnoMath::toTranslationMatrix(caclPreviousGlobalPos() * -1.0);
-	}
-
-	auto getPreviousInvertGlobalRotationMatrix() -> TMat4<T>
-	{
-		return InnoMath::toRotationMatrix(caclPreviousGlobalRot().quatConjugate());
-	}
-
-
-	auto getPreviousInvertGlobalScaleMatrix() -> TMat4<T>
-	{
-		return InnoMath::toScaleMatrix(caclPreviousGlobalScale().reciprocal());
-	}
-
-
 	auto getDirection(direction direction) -> TVec4<T>
 	{
 		TVec4<T> l_directionTVec4;
@@ -1650,33 +1513,13 @@ public:
 		return l_directionTVec4.rotateByQuat(m_rot);
 	}
 
-	auto getPreviousDirection(direction direction) -> TVec4<T>
-	{
-		TVec4<T> l_directionTVec4;
-
-		switch (direction)
-		{
-		case FORWARD: l_directionTVec4 = TVec4<T>(0.0f, 0.0f, 1.0f, 0.0f); break;
-		case BACKWARD:l_directionTVec4 = TVec4<T>(0.0f, 0.0f, -1.0f, 0.0f); break;
-		case UP:l_directionTVec4 = TVec4<T>(0.0f, 1.0f, 0.0f, 0.0f); break;
-		case DOWN:l_directionTVec4 = TVec4<T>(0.0f, -1.0f, 0.0f, 0.0f); break;
-		case RIGHT:l_directionTVec4 = TVec4<T>(1.0f, 0.0f, 0.0f, 0.0f); break;
-		case LEFT:l_directionTVec4 = TVec4<T>(-1.0f, 0.0f, 0.0f, 0.0f); break;
-		}
-
-		return l_directionTVec4.rotateByQuat(m_previousRot);
-	}
-
+	// @TODO: Alignment
 	TTransform* m_parentTransform;
 
 private:
-	TVec4<T> m_pos;
-	TVec4<T> m_rot;
-	TVec4<T> m_scale;
-
-	TVec4<T> m_previousPos;
-	TVec4<T> m_previousRot;
-	TVec4<T> m_previousScale;
+	TVec4<T> m_pos; // 4 * sizeof(T)
+	TVec4<T> m_rot; // 4 * sizeof(T)
+	TVec4<T> m_scale; // 4 * sizeof(T)
 };
 
 using vec2 = TVec2<float>;

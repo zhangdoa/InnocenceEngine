@@ -675,7 +675,7 @@ void DXRenderingSystem::initializeMeshDataComponent(MeshDataComponent * rhs)
 	vertexBufferDesc.StructureByteStride = 0;
 
 	// Give the subresource structure a pointer to the vertex data.
-	//@TODO: InnoMath's vec4 is 32bit while XMFLOAT4 is 16bit
+	// @TODO: InnoMath's vec4 is 32bit while XMFLOAT4 is 16bit
 	D3D11_SUBRESOURCE_DATA vertexData;
 	std::memset(&vertexData, 0, sizeof(vertexData));
 	vertexData.pSysMem = &rhs->m_vertices[0];
@@ -819,8 +819,8 @@ void DXRenderingSystem::updateFinalBlendPass()
 			// Set the shader parameters that it will use for rendering.
 
 			mat4 p = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
-			mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
-			mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
+			mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_currentTransform.getInvertGlobalRotationMatrix();
+			mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_currentTransform.getInvertGlobalTranslationMatrix();
 			mat4 v = p * r * t;
 
 			mat4 m = InnoMath::toTranslationMatrix(vec4(0.0, 0.0, -5.0, 1.0));
@@ -839,7 +839,7 @@ void DXRenderingSystem::updateFinalBlendPass()
 			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->PSSetSamplers(0, 1, &DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
 
 			// Render the triangle.
-			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->DrawIndexed((UINT)l_mesh->m_indices.size(), 0, 0);
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->DrawIndexed((UINT)l_mesh->m_indicesSize, 0, 0);
 		}
 	}
 }

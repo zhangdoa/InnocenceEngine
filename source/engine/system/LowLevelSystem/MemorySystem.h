@@ -29,7 +29,7 @@ namespace InnoMemorySystem
     template <typename T> void destroy(T *p)
     {
         reinterpret_cast<T *>(p)->~T();
-        free(p);
+		InnoMemorySystem::free(p);
     };
     
     template <typename T> void serialize(T* p)

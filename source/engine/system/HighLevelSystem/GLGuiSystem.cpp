@@ -195,12 +195,12 @@ void ImGuiWrapper::update()
 	ImGui::Render();
 	ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 #else
-	//@TODO: Linux ImGui WIP
+	// @TODO: Linux ImGui WIP
 #endif
 #else
 	ImGui_ImplGlfwGL3_NewFrame();
 	{
-		//@TODO: handle GUI component
+		// @TODO: handle GUI component
 		ImGui::Begin("Main Menu", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Button("Start");
 		ImGui::End();

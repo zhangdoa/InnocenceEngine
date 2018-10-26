@@ -23,8 +23,10 @@ namespace InnoAssetSystem
 	TextureDataComponent* getTextureDataComponent(EntityID textureID);
 	MeshDataComponent* getDefaultMeshDataComponent(meshShapeType meshShapeType);
 	TextureDataComponent* getDefaultTextureDataComponent(textureType textureType);
-	void removeMeshDataComponent(EntityID meshID);
-	void removeTextureDataComponent(EntityID textureID);
+	void removeMeshDataComponent(EntityID EntityID);
+	void removeTextureDataComponent(EntityID EntityID);
+	void releaseRawDataForMeshDataComponent(EntityID EntityID);
+	void releaseRawDataForTextureDataComponent(EntityID EntityID);
 	vec4 findMaxVertex(EntityID meshID);
 	vec4 findMinVertex(EntityID meshID);
 	std::string loadShader(const std::string& fileName);

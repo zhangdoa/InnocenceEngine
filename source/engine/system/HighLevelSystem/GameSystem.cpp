@@ -31,6 +31,7 @@ InnoHighLevelSystem_EXPORT bool InnoGameSystem::setup()
 	return true;
 }
 
+// @TODO: generic solution, SOA
 void InnoGameSystem::addComponentsToMap()
 {
 	std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
@@ -63,11 +64,12 @@ void InnoGameSystem::addComponentsToMap()
 	});
 }
 
+// @TODO: add a cache function for after-rendering business
 void InnoGameSystem::updateTransform()
 {
 	std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
 	{
-		val->m_transform.update();
+		val->m_previousTransform = val->m_currentTransform;
 	});
 }
 
@@ -130,6 +132,7 @@ std::string InnoGameSystem::getGameName()
 	return InnoGameInstance::getGameName();
 }
 
+// @TODO: generic impl
 TransformComponent * InnoGameSystem::getTransformComponent(EntityID parentEntity)
 {
 	auto result = GameSystemSingletonComponent::getInstance().m_TransformComponentsMap.find(parentEntity);

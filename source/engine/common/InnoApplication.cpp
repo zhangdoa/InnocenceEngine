@@ -73,6 +73,7 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 
 bool InnoApplication::initialize()
 {
+	// @TODO: return value check
 	InnoTimeSystem::initialize();
 	InnoLogSystem::initialize();
 	InnoMemorySystem::initialize();
@@ -88,6 +89,7 @@ bool InnoApplication::initialize()
 
 bool InnoApplication::update()
 {
+	// @TODO: return value check
 	InnoTimeSystem::update();
 	InnoLogSystem::update();
 	InnoMemorySystem::update();
@@ -113,6 +115,7 @@ bool InnoApplication::update()
 
 bool InnoApplication::terminate()
 {
+	// @TODO: return value check
 	InnoVisionSystem::terminate();
 	InnoPhysicsSystem::terminate();
 

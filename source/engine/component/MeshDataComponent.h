@@ -10,6 +10,7 @@ public:
 	meshType m_meshType = meshType::NORMAL;
 	std::vector<Vertex> m_vertices;
 	std::vector<unsigned int> m_indices;
+	unsigned int m_indicesSize;
 
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	bool m_calculateNormals = false;
