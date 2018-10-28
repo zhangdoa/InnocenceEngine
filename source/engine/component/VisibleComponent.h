@@ -1,11 +1,15 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
+#include "../common/InnoMath.h"
 
-class VisibleComponent : public BaseComponent
+class VisibleComponent
 {
 public:
 	VisibleComponent() {};
 	~VisibleComponent() {};
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
 	meshShapeType m_meshShapeType = meshShapeType::QUAD;

@@ -1,9 +1,8 @@
 #pragma once
-#include "BaseComponent.h"
-
+#include "../common/InnoType.h"
 #include "../system/HighLevelSystem/GLHeaders.h"
 
-class GLWindowSystemSingletonComponent : public BaseComponent
+class GLWindowSystemSingletonComponent
 {
 public:
 	~GLWindowSystemSingletonComponent() {};
@@ -14,6 +13,9 @@ public:
 
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	GLFWwindow* m_window;
 

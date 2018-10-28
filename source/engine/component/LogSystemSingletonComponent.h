@@ -1,8 +1,8 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
 #include <iostream>
 #include "../common/InnoConcurrency.h"
-class LogSystemSingletonComponent : public BaseComponent
+class LogSystemSingletonComponent
 {
 public:
 	~LogSystemSingletonComponent() {};
@@ -12,6 +12,9 @@ public:
 		static LogSystemSingletonComponent instance;
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 ThreadSafeQueue<std::string> m_log; 
 

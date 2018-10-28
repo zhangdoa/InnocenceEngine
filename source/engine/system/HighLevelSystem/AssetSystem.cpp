@@ -78,8 +78,6 @@ public:
 
 InnoHighLevelSystem_EXPORT bool InnoAssetSystem::setup()
 {
-	InnoLogSystem::printLog(std::to_string(sizeof(Transform)));
-
 	m_AssetSystemStatus = objectStatus::ALIVE;
 	return true;
 }

@@ -1,14 +1,10 @@
 #pragma once
-#include "BaseComponent.h"
-
-#include "../component/GLMeshDataComponent.h"
-#include "../component/GLTextureDataComponent.h"
-
-#include "../component/DXMeshDataComponent.h"
-#include "../component/DXTextureDataComponent.h"
+#include "../common/InnoType.h"
+#include "../component/MeshDataComponent.h"
+#include "../component/TextureDataComponent.h"
 
 #include "../common/InnoConcurrency.h"
-class AssetSystemSingletonComponent : public BaseComponent
+class AssetSystemSingletonComponent
 {
 public:
 	~AssetSystemSingletonComponent() {};
@@ -18,6 +14,9 @@ public:
 		static AssetSystemSingletonComponent instance;
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
     std::unordered_map<std::string, int> m_supportedTextureType = { {"png", 0} };
     std::unordered_map<std::string, int> m_supportedModelType = { {"obj", 0}, {"innoModel", 0} };

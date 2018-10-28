@@ -1,10 +1,11 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
 #include "GLFrameBufferComponent.h"
 #include "GLShaderProgramComponent.h"
+#include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
 
-class ShadowRenderPassSingletonComponent : public BaseComponent
+class ShadowRenderPassSingletonComponent
 {
 public:
 	~ShadowRenderPassSingletonComponent() {};
@@ -14,6 +15,9 @@ public:
 		static ShadowRenderPassSingletonComponent instance;
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	std::vector<GLFrameBufferComponent*> m_FBCs;
 	std::vector<TextureDataComponent*> m_TDCs;

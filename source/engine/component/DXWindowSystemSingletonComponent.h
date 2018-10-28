@@ -1,10 +1,9 @@
 #pragma once
-#include "BaseComponent.h"
-
+#include "../common/InnoType.h"
 #include <windows.h>
 #include <windowsx.h>
 
-class DXWindowSystemSingletonComponent : public BaseComponent
+class DXWindowSystemSingletonComponent
 {
 public:
 	~DXWindowSystemSingletonComponent() {};
@@ -15,6 +14,9 @@ public:
 
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	HINSTANCE m_hInstance;
 	PSTR m_pScmdline;

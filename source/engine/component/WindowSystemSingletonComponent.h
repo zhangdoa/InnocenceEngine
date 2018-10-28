@@ -1,8 +1,9 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
+#include "../common/InnoMath.h"
 #include "../common/InnoConcurrency.h"
 
-class WindowSystemSingletonComponent : public BaseComponent
+class WindowSystemSingletonComponent
 {
 public:
 	~WindowSystemSingletonComponent() {};
@@ -14,6 +15,9 @@ public:
 		static WindowSystemSingletonComponent instance;
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	//window data
 	vec2 m_windowResolution = vec2(1280, 720);

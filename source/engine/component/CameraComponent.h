@@ -1,11 +1,14 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
 
-class CameraComponent : public BaseComponent
+class CameraComponent
 {
 public:
 	CameraComponent() {};
 	~CameraComponent() {};
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	double m_FOVX = 0.0;
 	double m_WHRatio = 0.0;

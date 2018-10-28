@@ -1,9 +1,9 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
 #include "../../component/DXMeshDataComponent.h"
 #include "../../component/DXTextureDataComponent.h"
 
-class DXRenderingSystemSingletonComponent : public BaseComponent
+class DXRenderingSystemSingletonComponent
 {
 public:
 	~DXRenderingSystemSingletonComponent() {};
@@ -13,6 +13,9 @@ public:
 		static DXRenderingSystemSingletonComponent instance;
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	bool m_vsync_enabled;
 	int m_videoCardMemory;

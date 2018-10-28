@@ -1,9 +1,9 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
 #include "../../component/GLMeshDataComponent.h"
 #include "../../component/GLTextureDataComponent.h"
 
-class GLRenderingSystemSingletonComponent : public BaseComponent
+class GLRenderingSystemSingletonComponent
 {
 public:
 	~GLRenderingSystemSingletonComponent() {};
@@ -13,6 +13,9 @@ public:
 		static GLRenderingSystemSingletonComponent instance;
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	std::unordered_map<EntityID, GLMeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, GLTextureDataComponent*> m_textureMap;

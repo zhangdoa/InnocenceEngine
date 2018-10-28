@@ -1,11 +1,15 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
+#include "../common/InnoMath.h"
 
-class MeshDataComponent : public BaseComponent
+class MeshDataComponent
 {
 public:
 	MeshDataComponent() {};
 	~MeshDataComponent() {};
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	meshType m_meshType = meshType::NORMAL;
 	std::vector<Vertex> m_vertices;

@@ -1,13 +1,12 @@
 #pragma once
-#include "BaseComponent.h"
-#include "AssetSystemSingletonComponent.h"
+#include "../common/InnoType.h"
 #include "VisibleComponent.h"
 #include<atomic>
 
 //#define BlinnPhong
 #define CookTorrance
 
-class RenderingSystemSingletonComponent : public BaseComponent
+class RenderingSystemSingletonComponent
 {
 public:
 	~RenderingSystemSingletonComponent() {};
@@ -17,6 +16,9 @@ public:
 		static RenderingSystemSingletonComponent instance;
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	std::atomic<bool> m_canRender;
 	bool m_shouldUpdateEnvironmentMap = true;

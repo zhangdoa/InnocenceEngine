@@ -1,9 +1,9 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
 #include "../system/HighLevelSystem/DXHeaders.h"
 
 
-class DXFinalRenderPassSingletonComponent : public BaseComponent
+class DXFinalRenderPassSingletonComponent
 {
 public:
 	~DXFinalRenderPassSingletonComponent() {};
@@ -13,6 +13,9 @@ public:
 		static DXFinalRenderPassSingletonComponent instance;
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	ID3D11VertexShader* m_vertexShader;
 	ID3D11PixelShader* m_pixelShader;

@@ -4,13 +4,16 @@
 #include "../../engine/component/InputComponent.h"
 #include "../../engine/component/VisibleComponent.h"
 
-class PlayerCharacter : public BaseComponent
+class PlayerCharacter
 {
 public:
 	PlayerCharacter() {};
 	~PlayerCharacter() {};
 
 	void setup();
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	TransformComponent& getTransformComponent();
 	VisibleComponent& getVisibleComponent();

@@ -1,8 +1,8 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
 #include "../common/InnoConcurrency.h"
 
-class TaskSystemSingletonComponent : public BaseComponent
+class TaskSystemSingletonComponent
 {
 public:
 	~TaskSystemSingletonComponent() {};
@@ -12,6 +12,9 @@ public:
 		static TaskSystemSingletonComponent instance;
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	InnoThreadPool m_threadPool;
 private:

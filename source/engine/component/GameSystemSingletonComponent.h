@@ -1,8 +1,8 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
 #include "../common/InnoConcurrency.h"
 
-class GameSystemSingletonComponent : public BaseComponent
+class GameSystemSingletonComponent
 {
 public:
 	~GameSystemSingletonComponent() {};
@@ -12,6 +12,9 @@ public:
 		static GameSystemSingletonComponent instance;
 		return instance;
 	}
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	// the SOA here
 	std::vector<TransformComponent*> m_transformComponents;

@@ -1,11 +1,13 @@
 #pragma once
-#include "BaseComponent.h"
-
-class TextureDataComponent : public BaseComponent
+#include "../common/InnoType.h"
+class TextureDataComponent
 {
 public:
 	TextureDataComponent() { m_textureID = std::rand(); };
 	~TextureDataComponent() {};
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	EntityID m_textureID;
 	textureType m_textureType;
