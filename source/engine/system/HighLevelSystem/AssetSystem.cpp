@@ -633,7 +633,7 @@ void InnoAssetSystem::loadTextureFromDisk(const std::vector<std::string>& fileNa
 		if (data)
 		{
 			baseTexture->m_textureType = textureType;
-			baseTexture->m_textureColorComponentsFormat = textureColorComponentsFormat::RGB;
+			baseTexture->m_textureColorComponentsFormat = textureColorComponentsFormat(nrChannels - 1);
 			baseTexture->m_texturePixelDataFormat = texturePixelDataFormat(nrChannels - 1);
 			baseTexture->m_textureWrapMethod = textureWrapMethod;
 			baseTexture->m_textureMinFilterMethod = textureFilterMethod::LINEAR_MIPMAP_LINEAR;

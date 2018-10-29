@@ -666,7 +666,7 @@ void DXRenderingSystem::initializeMeshDataComponent(MeshDataComponent * rhs)
 
 	// Set up the description of the static vertex buffer.
 	D3D11_BUFFER_DESC vertexBufferDesc;
-	std::memset(&vertexBufferDesc, 0, sizeof(vertexBufferDesc));
+	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)rhs->m_vertices.size();
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -677,7 +677,7 @@ void DXRenderingSystem::initializeMeshDataComponent(MeshDataComponent * rhs)
 	// Give the subresource structure a pointer to the vertex data.
 	// @TODO: InnoMath's vec4 is 32bit while XMFLOAT4 is 16bit
 	D3D11_SUBRESOURCE_DATA vertexData;
-	std::memset(&vertexData, 0, sizeof(vertexData));
+	ZeroMemory(&vertexData, sizeof(vertexData));
 	vertexData.pSysMem = &rhs->m_vertices[0];
 	vertexData.SysMemPitch = 0;
 	vertexData.SysMemSlicePitch = 0;
@@ -693,7 +693,7 @@ void DXRenderingSystem::initializeMeshDataComponent(MeshDataComponent * rhs)
 
 	// Set up the description of the static index buffer.
 	D3D11_BUFFER_DESC indexBufferDesc;
-	std::memset(&indexBufferDesc, 0, sizeof(indexBufferDesc));
+	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	indexBufferDesc.ByteWidth = sizeof(unsigned long) * (UINT)rhs->m_indices.size();
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -703,7 +703,7 @@ void DXRenderingSystem::initializeMeshDataComponent(MeshDataComponent * rhs)
 
 	// Give the subresource structure a pointer to the index data.
 	D3D11_SUBRESOURCE_DATA indexData;
-	std::memset(&indexData, 0, sizeof(indexData));
+	ZeroMemory(&indexData, sizeof(indexData));
 	indexData.pSysMem = &rhs->m_indices[0];
 	indexData.SysMemPitch = 0;
 	indexData.SysMemSlicePitch = 0;
@@ -722,14 +722,68 @@ void DXRenderingSystem::initializeTextureDataComponent(TextureDataComponent * rh
 {
 	auto l_ptr = addDXTextureDataComponent(rhs->m_parentEntity);
 	
+	// set texture formats
+	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
+
+	// @TODO: Unified internal format
 	// Setup the description of the texture.
+	if (rhs->m_textureType == textureType::ALBEDO)
+	{
+		if (rhs->m_texturePixelDataFormat == texturePixelDataFormat::RGB)
+		{
+			l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		}
+		else if (rhs->m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
+		{
+			l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		}
+	}
+	else
+	{
+		// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
+		switch (rhs->m_textureColorComponentsFormat)
+		{
+		case textureColorComponentsFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
+		case textureColorComponentsFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
+		case textureColorComponentsFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+		case textureColorComponentsFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+
+		case textureColorComponentsFormat::R8: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
+		case textureColorComponentsFormat::RG8: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
+		case textureColorComponentsFormat::RGB8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+		case textureColorComponentsFormat::RGBA8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+
+		case textureColorComponentsFormat::R16: l_internalFormat = DXGI_FORMAT_R16_UINT; break;
+		case textureColorComponentsFormat::RG16: l_internalFormat = DXGI_FORMAT_R16G16_UINT; break;
+		case textureColorComponentsFormat::RGB16: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
+		case textureColorComponentsFormat::RGBA16: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
+
+		case textureColorComponentsFormat::R16F: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
+		case textureColorComponentsFormat::RG16F: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
+		case textureColorComponentsFormat::RGB16F: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+		case textureColorComponentsFormat::RGBA16F: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+
+		case textureColorComponentsFormat::R32F: l_internalFormat = DXGI_FORMAT_R32_FLOAT; break;
+		case textureColorComponentsFormat::RG32F: l_internalFormat = DXGI_FORMAT_R32G32_FLOAT; break;
+		case textureColorComponentsFormat::RGB32F: l_internalFormat = DXGI_FORMAT_R32G32B32_FLOAT; break;
+		case textureColorComponentsFormat::RGBA32F: l_internalFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+
+		case textureColorComponentsFormat::SRGB: break;
+		case textureColorComponentsFormat::SRGBA: break;
+		case textureColorComponentsFormat::SRGB8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+		case textureColorComponentsFormat::SRGBA8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+
+		case textureColorComponentsFormat::DEPTH_COMPONENT: break;
+		}
+	}
+
 	D3D11_TEXTURE2D_DESC textureDesc;
-	std::memset(&textureDesc, 0, sizeof(textureDesc));
+	ZeroMemory(&textureDesc, sizeof(textureDesc));
 	textureDesc.Height = rhs->m_textureHeight;
 	textureDesc.Width = rhs->m_textureWidth;
 	textureDesc.MipLevels = 0;
 	textureDesc.ArraySize = 1;
-	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.Format = l_internalFormat;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -738,16 +792,18 @@ void DXRenderingSystem::initializeTextureDataComponent(TextureDataComponent * rh
 	textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-	std::memset(&srvDesc, 0, sizeof(srvDesc));
+	ZeroMemory(&srvDesc, sizeof(srvDesc));
 	srvDesc.Format = textureDesc.Format;
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.Texture2D.MipLevels = -1;
 
-	auto t = l_ptr->m_textureView;
 	// Create the empty texture.
+	ID3D11Texture2D* l_texture;
+	ID3D11ShaderResourceView* l_textureView;
+
 	HRESULT hResult;
-	hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateTexture2D(&textureDesc, NULL, &l_ptr->m_texture);
+	hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateTexture2D(&textureDesc, NULL, &l_texture);
 	if (FAILED(hResult))
 	{
 		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create texture!");
@@ -756,22 +812,19 @@ void DXRenderingSystem::initializeTextureDataComponent(TextureDataComponent * rh
 
 	unsigned int rowPitch;
 	rowPitch = (rhs->m_textureWidth * 4) * sizeof(unsigned char);
-	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->UpdateSubresource(l_ptr->m_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->UpdateSubresource(l_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
 
 	// Setup the shader resource view description.
-	if (l_ptr->m_textureView)
+	// Create the shader resource view for the texture.
+	hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateShaderResourceView(l_texture, &srvDesc, &l_textureView);
+	if (FAILED(hResult))
 	{
-		// Create the shader resource view for the texture.
-		hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateShaderResourceView(l_ptr->m_texture, &srvDesc, &l_ptr->m_textureView);
-		if (FAILED(hResult))
-		{
-			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create shader resource view for texture!");
-			return;
-		}
-
-		// Generate mipmaps for this texture.
-		DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->GenerateMips(l_ptr->m_textureView);
+		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create shader resource view for texture!");
+		return;
 	}
+
+	// Generate mipmaps for this texture.
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->GenerateMips(l_ptr->m_textureView);
 }
 
 DXMeshDataComponent* DXRenderingSystem::addDXMeshDataComponent(EntityID rhs)
