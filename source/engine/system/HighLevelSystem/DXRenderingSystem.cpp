@@ -366,14 +366,14 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::update()
 			initializeMeshDataComponent(l_meshDataComponent);
 		}
 	}
-	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
-	{
-		TextureDataComponent* l_textureDataComponent;
-		if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
-		{
-			initializeTextureDataComponent(l_textureDataComponent);
-		}
-	}
+	//if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
+	//{
+	//	TextureDataComponent* l_textureDataComponent;
+	//	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
+	//	{
+	//		initializeTextureDataComponent(l_textureDataComponent);
+	//	}
+	//}
 	// Clear the buffers to begin the scene.
 	beginScene(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -660,171 +660,192 @@ void DXRenderingSystem::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND
 	InnoLogSystem::printLog("DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
 
-void DXRenderingSystem::initializeMeshDataComponent(MeshDataComponent * rhs)
+DXMeshDataComponent* DXRenderingSystem::initializeMeshDataComponent(MeshDataComponent * rhs)
 {
-	auto l_ptr = addDXMeshDataComponent(rhs->m_parentEntity);
-
-	// Set up the description of the static vertex buffer.
-	D3D11_BUFFER_DESC vertexBufferDesc;
-	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)rhs->m_vertices.size();
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = 0;
-
-	// Give the subresource structure a pointer to the vertex data.
-	// @TODO: InnoMath's vec4 is 32bit while XMFLOAT4 is 16bit
-	D3D11_SUBRESOURCE_DATA vertexData;
-	ZeroMemory(&vertexData, sizeof(vertexData));
-	vertexData.pSysMem = &rhs->m_vertices[0];
-	vertexData.SysMemPitch = 0;
-	vertexData.SysMemSlicePitch = 0;
-
-	// Now create the vertex buffer.
-	HRESULT result;
-	result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &l_ptr->m_vertexBuffer);
-	if (FAILED(result))
+	if (rhs->m_objectStatus == objectStatus::ALIVE)
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create vbo!");
-		return;
-	}
-
-	// Set up the description of the static index buffer.
-	D3D11_BUFFER_DESC indexBufferDesc;
-	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(unsigned long) * (UINT)rhs->m_indices.size();
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-	indexBufferDesc.StructureByteStride = 0;
-
-	// Give the subresource structure a pointer to the index data.
-	D3D11_SUBRESOURCE_DATA indexData;
-	ZeroMemory(&indexData, sizeof(indexData));
-	indexData.pSysMem = &rhs->m_indices[0];
-	indexData.SysMemPitch = 0;
-	indexData.SysMemSlicePitch = 0;
-
-	// Create the index buffer.
-	result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateBuffer(&indexBufferDesc, &indexData, &l_ptr->m_indexBuffer);
-	if (FAILED(result))
-	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create ibo!");
-		return;
-	}
-	l_ptr->m_objectStatus = objectStatus::ALIVE;
-}
-
-void DXRenderingSystem::initializeTextureDataComponent(TextureDataComponent * rhs)
-{
-	auto l_ptr = addDXTextureDataComponent(rhs->m_parentEntity);
-	
-	// set texture formats
-	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
-
-	// @TODO: Unified internal format
-	// Setup the description of the texture.
-	if (rhs->m_textureType == textureType::ALBEDO)
-	{
-		if (rhs->m_texturePixelDataFormat == texturePixelDataFormat::RGB)
-		{
-			l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-		}
-		else if (rhs->m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
-		{
-			l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-		}
+		return getDXMeshDataComponent(rhs->m_parentEntity);
 	}
 	else
 	{
-		// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
-		switch (rhs->m_textureColorComponentsFormat)
+		auto l_ptr = addDXMeshDataComponent(rhs->m_parentEntity);
+
+		// Set up the description of the static vertex buffer.
+		D3D11_BUFFER_DESC vertexBufferDesc;
+		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)rhs->m_vertices.size();
+		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		vertexBufferDesc.CPUAccessFlags = 0;
+		vertexBufferDesc.MiscFlags = 0;
+		vertexBufferDesc.StructureByteStride = 0;
+
+		// Give the subresource structure a pointer to the vertex data.
+		// @TODO: InnoMath's vec4 is 32bit while XMFLOAT4 is 16bit
+		D3D11_SUBRESOURCE_DATA vertexData;
+		ZeroMemory(&vertexData, sizeof(vertexData));
+		vertexData.pSysMem = &rhs->m_vertices[0];
+		vertexData.SysMemPitch = 0;
+		vertexData.SysMemSlicePitch = 0;
+
+		// Now create the vertex buffer.
+		HRESULT result;
+		result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &l_ptr->m_vertexBuffer);
+		if (FAILED(result))
 		{
-		case textureColorComponentsFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
-		case textureColorComponentsFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
-		case textureColorComponentsFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
-		case textureColorComponentsFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
-
-		case textureColorComponentsFormat::R8: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
-		case textureColorComponentsFormat::RG8: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
-		case textureColorComponentsFormat::RGB8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
-		case textureColorComponentsFormat::RGBA8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
-
-		case textureColorComponentsFormat::R16: l_internalFormat = DXGI_FORMAT_R16_UINT; break;
-		case textureColorComponentsFormat::RG16: l_internalFormat = DXGI_FORMAT_R16G16_UINT; break;
-		case textureColorComponentsFormat::RGB16: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
-		case textureColorComponentsFormat::RGBA16: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
-
-		case textureColorComponentsFormat::R16F: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
-		case textureColorComponentsFormat::RG16F: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
-		case textureColorComponentsFormat::RGB16F: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
-		case textureColorComponentsFormat::RGBA16F: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
-
-		case textureColorComponentsFormat::R32F: l_internalFormat = DXGI_FORMAT_R32_FLOAT; break;
-		case textureColorComponentsFormat::RG32F: l_internalFormat = DXGI_FORMAT_R32G32_FLOAT; break;
-		case textureColorComponentsFormat::RGB32F: l_internalFormat = DXGI_FORMAT_R32G32B32_FLOAT; break;
-		case textureColorComponentsFormat::RGBA32F: l_internalFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
-
-		case textureColorComponentsFormat::SRGB: break;
-		case textureColorComponentsFormat::SRGBA: break;
-		case textureColorComponentsFormat::SRGB8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-		case textureColorComponentsFormat::SRGBA8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-
-		case textureColorComponentsFormat::DEPTH_COMPONENT: break;
+			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create vbo!");
+			return nullptr;
 		}
+
+		// Set up the description of the static index buffer.
+		D3D11_BUFFER_DESC indexBufferDesc;
+		ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
+		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		indexBufferDesc.ByteWidth = sizeof(unsigned long) * (UINT)rhs->m_indices.size();
+		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		indexBufferDesc.CPUAccessFlags = 0;
+		indexBufferDesc.MiscFlags = 0;
+		indexBufferDesc.StructureByteStride = 0;
+
+		// Give the subresource structure a pointer to the index data.
+		D3D11_SUBRESOURCE_DATA indexData;
+		ZeroMemory(&indexData, sizeof(indexData));
+		indexData.pSysMem = &rhs->m_indices[0];
+		indexData.SysMemPitch = 0;
+		indexData.SysMemSlicePitch = 0;
+
+		// Create the index buffer.
+		result = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateBuffer(&indexBufferDesc, &indexData, &l_ptr->m_indexBuffer);
+		if (FAILED(result))
+		{
+			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create ibo!");
+			return nullptr;
+		}
+		l_ptr->m_objectStatus = objectStatus::ALIVE;
+		rhs->m_objectStatus = objectStatus::ALIVE;
+		return l_ptr;
 	}
+}
 
-	D3D11_TEXTURE2D_DESC textureDesc;
-	ZeroMemory(&textureDesc, sizeof(textureDesc));
-	textureDesc.Height = rhs->m_textureHeight;
-	textureDesc.Width = rhs->m_textureWidth;
-	textureDesc.MipLevels = 0;
-	textureDesc.ArraySize = 1;
-	textureDesc.Format = l_internalFormat;
-	textureDesc.SampleDesc.Count = 1;
-	textureDesc.SampleDesc.Quality = 0;
-	textureDesc.Usage = D3D11_USAGE_DEFAULT;
-	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	textureDesc.CPUAccessFlags = 0;
-	textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-	ZeroMemory(&srvDesc, sizeof(srvDesc));
-	srvDesc.Format = textureDesc.Format;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = -1;
-
-	// Create the empty texture.
-	ID3D11Texture2D* l_texture;
-	ID3D11ShaderResourceView* l_textureView;
-
-	HRESULT hResult;
-	hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateTexture2D(&textureDesc, NULL, &l_texture);
-	if (FAILED(hResult))
+DXTextureDataComponent* DXRenderingSystem::initializeTextureDataComponent(TextureDataComponent * rhs)
+{
+	if (rhs->m_objectStatus == objectStatus::ALIVE)
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create texture!");
-		return;
+		return getDXTextureDataComponent(rhs->m_parentEntity);
 	}
-
-	unsigned int rowPitch;
-	rowPitch = (rhs->m_textureWidth * 4) * sizeof(unsigned char);
-	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->UpdateSubresource(l_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
-
-	// Setup the shader resource view description.
-	// Create the shader resource view for the texture.
-	hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateShaderResourceView(l_texture, &srvDesc, &l_textureView);
-	if (FAILED(hResult))
+	else
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create shader resource view for texture!");
-		return;
-	}
+		auto l_ptr = addDXTextureDataComponent(rhs->m_parentEntity);
 
-	// Generate mipmaps for this texture.
-	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->GenerateMips(l_ptr->m_textureView);
+		// set texture formats
+		DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
+
+		// @TODO: Unified internal format
+		// Setup the description of the texture.
+		if (rhs->m_textureType == textureType::ALBEDO)
+		{
+			if (rhs->m_texturePixelDataFormat == texturePixelDataFormat::RGB)
+			{
+				l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+			}
+			else if (rhs->m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
+			{
+				l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+			}
+		}
+		else
+		{
+			// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
+			switch (rhs->m_textureColorComponentsFormat)
+			{
+			case textureColorComponentsFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
+			case textureColorComponentsFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
+			case textureColorComponentsFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+			case textureColorComponentsFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+
+			case textureColorComponentsFormat::R8: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
+			case textureColorComponentsFormat::RG8: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
+			case textureColorComponentsFormat::RGB8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+			case textureColorComponentsFormat::RGBA8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+
+			case textureColorComponentsFormat::R16: l_internalFormat = DXGI_FORMAT_R16_UINT; break;
+			case textureColorComponentsFormat::RG16: l_internalFormat = DXGI_FORMAT_R16G16_UINT; break;
+			case textureColorComponentsFormat::RGB16: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
+			case textureColorComponentsFormat::RGBA16: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
+
+			case textureColorComponentsFormat::R16F: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
+			case textureColorComponentsFormat::RG16F: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
+			case textureColorComponentsFormat::RGB16F: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+			case textureColorComponentsFormat::RGBA16F: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+
+			case textureColorComponentsFormat::R32F: l_internalFormat = DXGI_FORMAT_R32_FLOAT; break;
+			case textureColorComponentsFormat::RG32F: l_internalFormat = DXGI_FORMAT_R32G32_FLOAT; break;
+			case textureColorComponentsFormat::RGB32F: l_internalFormat = DXGI_FORMAT_R32G32B32_FLOAT; break;
+			case textureColorComponentsFormat::RGBA32F: l_internalFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+
+			case textureColorComponentsFormat::SRGB: break;
+			case textureColorComponentsFormat::SRGBA: break;
+			case textureColorComponentsFormat::SRGB8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+			case textureColorComponentsFormat::SRGBA8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+
+			case textureColorComponentsFormat::DEPTH_COMPONENT: break;
+			}
+		}
+
+		D3D11_TEXTURE2D_DESC textureDesc;
+		ZeroMemory(&textureDesc, sizeof(textureDesc));
+		textureDesc.Height = rhs->m_textureHeight;
+		textureDesc.Width = rhs->m_textureWidth;
+		textureDesc.MipLevels = 0;
+		textureDesc.ArraySize = 1;
+		textureDesc.Format = l_internalFormat;
+		textureDesc.SampleDesc.Count = 1;
+		textureDesc.SampleDesc.Quality = 0;
+		textureDesc.Usage = D3D11_USAGE_DEFAULT;
+		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+		textureDesc.CPUAccessFlags = 0;
+		textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+		ZeroMemory(&srvDesc, sizeof(srvDesc));
+		srvDesc.Format = textureDesc.Format;
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		srvDesc.Texture2D.MipLevels = -1;
+
+		// Create the empty texture.
+		ID3D11Texture2D* l_texture;
+		ID3D11ShaderResourceView* l_textureView;
+
+		HRESULT hResult;
+		hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateTexture2D(&textureDesc, NULL, &l_texture);
+		if (FAILED(hResult))
+		{
+			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create texture!");
+			return nullptr;
+		}
+
+		unsigned int rowPitch;
+		rowPitch = (rhs->m_textureWidth * 4) * sizeof(unsigned char);
+		DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->UpdateSubresource(l_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
+
+		// Setup the shader resource view description.
+		// Create the shader resource view for the texture.
+		hResult = DXRenderingSystemSingletonComponent::getInstance().m_device->CreateShaderResourceView(l_texture, &srvDesc, &l_textureView);
+		if (FAILED(hResult))
+		{
+			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create shader resource view for texture!");
+			return nullptr;
+		}
+
+		// Generate mipmaps for this texture.
+		DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->GenerateMips(l_ptr->m_textureView);
+
+		l_ptr->m_objectStatus = objectStatus::ALIVE;
+		rhs->m_objectStatus = objectStatus::ALIVE;
+
+		return l_ptr;
+	}
 }
 
 DXMeshDataComponent* DXRenderingSystem::addDXMeshDataComponent(EntityID rhs)
@@ -845,54 +866,104 @@ DXTextureDataComponent* DXRenderingSystem::addDXTextureDataComponent(EntityID rh
 	return newTexture;
 }
 
+DXMeshDataComponent * DXRenderingSystem::getDXMeshDataComponent(EntityID rhs)
+{
+	auto result = DXRenderingSystemSingletonComponent::getInstance().m_meshMap.find(rhs);
+	if (result != DXRenderingSystemSingletonComponent::getInstance().m_meshMap.end())
+	{
+		return result->second;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+DXTextureDataComponent * DXRenderingSystem::getDXTextureDataComponent(EntityID rhs)
+{
+	auto result = DXRenderingSystemSingletonComponent::getInstance().m_textureMap.find(rhs);
+	if (result != DXRenderingSystemSingletonComponent::getInstance().m_textureMap.end())
+	{
+		return result->second;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
 void DXRenderingSystem::updateFinalBlendPass()
 {
-	unsigned int stride;
-	unsigned int offset;
+	// Set the vertex and pixel shaders that will be used to render this triangle.
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->VSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader, NULL, 0);
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
 
-	// Set vertex buffer stride and offset.
-	stride = sizeof(Vertex);
-	offset = 0;
-	auto l_mesh = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::CUBE);
-	if (l_mesh)
+	// Set the sampler state in the pixel shader.
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->PSSetSamplers(0, 1, &DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
+	
+	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Set the vertex input layout.
+	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
+
+	mat4 p = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
+	mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_currentTransform.getInvertGlobalRotationMatrix();
+	mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_currentTransform.getInvertGlobalTranslationMatrix();
+	mat4 v = p * r * t;
+
+	for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
 	{
-		if (l_mesh->m_objectStatus == objectStatus::ALIVE)
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 		{
-			auto l_ptr = reinterpret_cast<DXMeshDataComponent*>(l_mesh);
+			// draw each graphic data of visibleComponent
+			for (auto& l_graphicData : l_visibleComponent->m_modelMap)
+			{
+					// Set the shader parameters that it will use for rendering.
+
+					mat4 m = InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_currentTransform.caclGlobalTransformationMatrix();
+					auto mvp = v * m;
+
+					updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &mvp);
+
+					// draw meshes
+					drawMesh(l_graphicData.first);
+			}
+		}
+	}
+}
+
+void DXRenderingSystem::drawMesh(EntityID rhs)
+{
+	auto l_MDC = InnoAssetSystem::getMeshDataComponent(rhs);
+	if (l_MDC)
+	{
+		drawMesh(l_MDC);
+	}
+}
+
+void DXRenderingSystem::drawMesh(MeshDataComponent * MDC)
+{
+	auto l_DXMDC = getDXMeshDataComponent(MDC->m_parentEntity);
+	if (l_DXMDC)
+	{
+		if (MDC->m_objectStatus == objectStatus::ALIVE && l_DXMDC->m_objectStatus == objectStatus::ALIVE)
+		{
+			unsigned int stride;
+			unsigned int offset;
+
+			// Set vertex buffer stride and offset.
+			stride = sizeof(Vertex);
+			offset = 0;
 
 			// Set the vertex buffer to active in the input assembler so it can be rendered.
-			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetVertexBuffers(0, 1, &l_ptr->m_vertexBuffer, &stride, &offset);
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetVertexBuffers(0, 1, &l_DXMDC->m_vertexBuffer, &stride, &offset);
 
 			// Set the index buffer to active in the input assembler so it can be rendered.
-			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetIndexBuffer(l_ptr->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-			// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-			// Set the shader parameters that it will use for rendering.
-
-			mat4 p = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
-			mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_currentTransform.getInvertGlobalRotationMatrix();
-			mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_currentTransform.getInvertGlobalTranslationMatrix();
-			mat4 v = p * r * t;
-
-			mat4 m = InnoMath::toTranslationMatrix(vec4(0.0, 0.0, -5.0, 1.0));
-			auto mvp = v * m;
-
-			updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &mvp);
-
-			// Set the vertex input layout.
-			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
-
-			// Set the vertex and pixel shaders that will be used to render this triangle.
-			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->VSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader, NULL, 0);
-			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
-
-			// Set the sampler state in the pixel shader.
-			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->PSSetSamplers(0, 1, &DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetIndexBuffer(l_DXMDC->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 			// Render the triangle.
-			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->DrawIndexed((UINT)l_mesh->m_indicesSize, 0, 0);
+			DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->DrawIndexed((UINT)MDC->m_indicesSize, 0, 0);
 		}
 	}
 }
