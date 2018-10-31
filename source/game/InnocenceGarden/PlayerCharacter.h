@@ -3,16 +3,17 @@
 #include "../../engine/component/CameraComponent.h"
 #include "../../engine/component/InputComponent.h"
 #include "../../engine/component/VisibleComponent.h"
-#include "../../engine/interface/ILogSystem.h"
-extern ILogSystem* g_pLogSystem;
 
-class PlayerCharacter : public BaseComponent
+class PlayerCharacter
 {
 public:
 	PlayerCharacter() {};
 	~PlayerCharacter() {};
 
 	void setup();
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	TransformComponent& getTransformComponent();
 	VisibleComponent& getVisibleComponent();
@@ -36,9 +37,9 @@ private:
 	InputComponent m_inputComponent;
 	CameraComponent m_cameraComponent;
 
-	double m_moveSpeed;
-	double m_rotateSpeed;
-	bool m_canMove;
+	double m_moveSpeed = 0;
+	double m_rotateSpeed = 0;
+	bool m_canMove = false;
 
 	void move(vec4 direction, double length);
 

@@ -1,12 +1,15 @@
 #pragma once
-#include "BaseComponent.h"
-#include "../system/GLRenderer/GLHeaders.h"
+#include "../common/InnoType.h"
+#include "../system/HighLevelSystem/GLHeaders.h"
 
-class GLShaderProgramComponent : public BaseComponent
+class GLShaderProgramComponent
 {
 public:
 	GLShaderProgramComponent() {};
 	~GLShaderProgramComponent() {};
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	GLuint m_program = 0;
 };

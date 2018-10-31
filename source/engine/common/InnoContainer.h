@@ -82,6 +82,12 @@ public:
 		m_condition.notify_all();
 	}
 
+	size_t size(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_queue.size();
+	}
+
 private:
 	std::atomic_bool m_valid{ true };
 	mutable std::mutex m_mutex;

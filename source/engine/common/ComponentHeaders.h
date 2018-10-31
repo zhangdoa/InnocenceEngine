@@ -4,4 +4,4 @@
 #include "../component/LightComponent.h"
 #include "../component/CameraComponent.h"
 #include "../component/InputComponent.h"
-
+#include "../component/EnvironmentCaptureComponent.h"

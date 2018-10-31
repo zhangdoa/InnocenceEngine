@@ -20,12 +20,12 @@ public:
 
 	pointer allocate(size_type n, const_pointer hint = 0)
 	{
-		//g_pMemorySystem->spawn<T>(n);
+		return g_pMemorySystem->spawn<T>(n);
 	}
 
 	void deallocate(pointer p, unsigned n)
 	{
-		//g_pMemorySystem->destroy(p);
+		g_pMemorySystem->destroy(p);
 	}
 
 	bool operator==(const innoAllocator &rhs)

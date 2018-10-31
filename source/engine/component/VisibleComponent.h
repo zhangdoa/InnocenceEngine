@@ -1,11 +1,15 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
+#include "../common/InnoMath.h"
 
-class VisibleComponent : public BaseComponent
+class VisibleComponent
 {
 public:
 	VisibleComponent() {};
 	~VisibleComponent() {};
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
 	meshShapeType m_meshShapeType = meshShapeType::QUAD;
@@ -17,11 +21,10 @@ public:
 	vec4 m_albedo;
 	vec4 m_MRA;
 	bool m_drawAABB = false;
-	meshID m_AABBMeshID;
+	EntityID m_AABBMeshID = 0;
 	AABB m_AABB;
 
 	std::string m_modelFileName;
-	textureFileNameMap m_textureFileNameMap;
 
 	modelMap m_modelMap;
 };

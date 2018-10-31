@@ -1,37 +1,28 @@
 #pragma once
-#include "BaseComponent.h"
-#if defined (INNO_RENDERER_OPENGL)
-#include "../system/GLRenderer/GLHeaders.h"
-#elif defined (INNO_RENDERER_DX)
-#include <windows.h>
-#include <windowsx.h>
-#endif
+#include "../common/InnoType.h"
+#include "../common/InnoMath.h"
+#include "../common/InnoConcurrency.h"
 
-class WindowSystemSingletonComponent : public BaseComponent
+class WindowSystemSingletonComponent
 {
 public:
 	~WindowSystemSingletonComponent() {};
-	
+	WindowSystemSingletonComponent(const WindowSystemSingletonComponent&) = delete;
+	WindowSystemSingletonComponent& operator=(const WindowSystemSingletonComponent&) = delete;
+
 	static WindowSystemSingletonComponent& getInstance()
 	{
 		static WindowSystemSingletonComponent instance;
 		return instance;
 	}
 
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
+
 	//window data
 	vec2 m_windowResolution = vec2(1280, 720);
 	std::string m_windowName;
 	bool m_fullScreen = false;
-
-#if defined (INNO_RENDERER_OPENGL)
-	GLFWwindow* m_window;
-#elif defined (INNO_RENDERER_DX)
-	HINSTANCE m_hInstance;
-	PSTR m_pScmdline;
-	int m_nCmdshow;
-	LPCSTR m_applicationName;
-	HWND m_hwnd;
-#endif
 
 	//input data
 	const int NUM_KEYCODES = 256;
@@ -45,6 +36,9 @@ public:
 	double m_mouseYOffset;
 	double m_mouseLastX;
 	double m_mouseLastY;
+
+	vec4 m_mousePositionInWorldSpace;
+	Ray m_mouseRay;
 
 private:
 	WindowSystemSingletonComponent() {};

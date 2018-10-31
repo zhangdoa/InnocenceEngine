@@ -17,7 +17,7 @@ public:
 	void setup() override;
 	void initialize() override;
 	void update() override;
-	void shutdown() override;
+	void terminate() override;
 	const objectStatus& getStatus() const override;
 
 	std::string getGameName() const override;

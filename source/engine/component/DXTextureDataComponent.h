@@ -1,11 +1,17 @@
 #pragma once
-#include "TextureDataComponent.h"
-#include "../system/DXRenderer/DXHeaders.h"
+#include "../common/InnoType.h"
+#include "../system/HighLevelSystem/DXHeaders.h"
 
-class DXTextureDataComponent : public TextureDataComponent
+class DXTextureDataComponent
 {
 public:
 	DXTextureDataComponent() {};
 	~DXTextureDataComponent() {};
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
+
+	ID3D11Texture2D* m_texture = 0;
+	ID3D11ShaderResourceView* m_textureView = 0;
 };
 

@@ -1,31 +1,38 @@
 #include "stdafx.h"
 #include "config.h"
-#include "../interface/IApplication.h"
-#include "../component/WindowSystemSingletonComponent.h"
-
-extern IApplication* g_pApp;
+#include "InnoApplication.h"
 
 #if defined(INNO_RENDERER_DX)
+#include <windows.h>
+#include <windowsx.h>
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {
 	AllocConsole();
 	freopen("CONOUT$", "w+", stdout);
-	WindowSystemSingletonComponent::getInstance().m_hInstance = hInstance;
-	WindowSystemSingletonComponent::getInstance().m_pScmdline = pScmdline;
-	WindowSystemSingletonComponent::getInstance().m_nCmdshow = nCmdshow;
 #else
-int main()
+int main(int argc, char *argv[])
 {
 #endif
-	g_pApp->setup();
-	g_pApp->initialize();
-
-	while (g_pApp->getStatus() == objectStatus::ALIVE)
+	if (!InnoApplication::setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
 	{
-		g_pApp->update();
+		return 0;
+	}
+	if (!InnoApplication::initialize())
+	{
+		return 0;
+	}
+	while (InnoApplication::getStatus() == objectStatus::ALIVE)
+	{
+		if (!InnoApplication::update())
+		{
+			return 0;
+		}
 	}
 
-	g_pApp->shutdown();
+	if (!InnoApplication::terminate())
+	{
+		return 0;
+	}
 
 	return 0;
 }

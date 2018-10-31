@@ -1,19 +1,23 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
+#include "../common/InnoMath.h"
 
-class MeshDataComponent : public BaseComponent
+class MeshDataComponent
 {
 public:
-	MeshDataComponent() { m_meshID = std::rand(); };
+	MeshDataComponent() {};
 	~MeshDataComponent() {};
 
-	meshID m_meshID;
-	meshType m_meshType;
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
+
+	meshType m_meshType = meshType::NORMAL;
 	std::vector<Vertex> m_vertices;
 	std::vector<unsigned int> m_indices;
+	unsigned int m_indicesSize;
 
-	meshDrawMethod m_meshDrawMethod;
-	bool m_calculateNormals;
-	bool m_calculateTangents;
+	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
+	bool m_calculateNormals = false;
+	bool m_calculateTangents = false;
 };
 

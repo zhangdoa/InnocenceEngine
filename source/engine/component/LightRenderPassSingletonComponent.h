@@ -1,10 +1,11 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
 #include "GLFrameBufferComponent.h"
 #include "GLShaderProgramComponent.h"
+#include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
 
-class LightRenderPassSingletonComponent : public BaseComponent
+class LightRenderPassSingletonComponent
 {
 public:
 	~LightRenderPassSingletonComponent() {};
@@ -15,12 +16,16 @@ public:
 		return instance;
 	}
 
-	GLFrameBufferComponent m_GLFrameBufferComponent;
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
-	GLShaderProgramComponent m_lightPassProgram;
+	GLFrameBufferComponent* m_FBC;
+
+	GLShaderProgramComponent* m_GLSPC;
 	GLuint m_lightPassVertexShaderID;
 	GLuint m_lightPassFragmentShaderID;
-	GLTextureDataComponent m_lightPassTexture;
+	TextureDataComponent* m_TDC;
+	GLTextureDataComponent* m_GLTDC;
 
 	GLuint m_uni_geometryPassRT0;
 	GLuint m_uni_geometryPassRT1;
@@ -35,15 +40,16 @@ public:
 	GLuint m_uni_shadowMap_1;
 	GLuint m_uni_shadowMap_2;
 	GLuint m_uni_shadowMap_3;
+	std::vector<GLuint> m_uni_shadowSplitPoints;
 
 	GLuint m_uni_irradianceMap;
 	GLuint m_uni_preFiltedMap;
 	GLuint m_uni_brdfLUT;
 	GLuint m_uni_viewPos;
 
-	GLuint  m_uni_dirLight_position;
-	GLuint  m_uni_dirLight_direction;
-	GLuint  m_uni_dirLight_color;
+	GLuint m_uni_dirLight_position;
+	GLuint m_uni_dirLight_direction;
+	GLuint m_uni_dirLight_color;
 	std::vector<GLuint> m_uni_pointLights_position;
 	std::vector<GLuint> m_uni_pointLights_radius;
 	std::vector<GLuint> m_uni_pointLights_color;

@@ -1,10 +1,11 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
 #include "GLFrameBufferComponent.h"
 #include "GLShaderProgramComponent.h"
+#include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
 
-class GeometryRenderPassSingletonComponent : public BaseComponent
+class GeometryRenderPassSingletonComponent
 {
 public:
 	~GeometryRenderPassSingletonComponent() {};
@@ -15,12 +16,16 @@ public:
 		return instance;
 	}
 
-	GLFrameBufferComponent m_GLFrameBufferComponent;
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
+	
+	GLFrameBufferComponent* m_FBC;
 
-	GLShaderProgramComponent m_geometryPassProgram;
+	GLShaderProgramComponent* m_GLSPC;
 	GLuint m_geometryPassVertexShaderID;
 	GLuint m_geometryPassFragmentShaderID;
-	std::vector<GLTextureDataComponent> m_geometryPassTextures;
+	std::vector<TextureDataComponent*> m_TDCs;
+	std::vector<GLTextureDataComponent*> m_GLTDCs;
 
 	GLuint m_geometryPass_uni_p_camera_original;
 	GLuint m_geometryPass_uni_p_camera_jittered;

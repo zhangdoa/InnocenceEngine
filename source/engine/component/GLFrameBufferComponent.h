@@ -1,13 +1,16 @@
 #pragma once
-#include "BaseComponent.h"
-#include "../system/GLRenderer/GLHeaders.h"
+#include "../common/InnoType.h"
+#include "../system/HighLevelSystem/GLHeaders.h"
 
-class GLFrameBufferComponent : public BaseComponent
+class GLFrameBufferComponent
 {
 public:
 	GLFrameBufferComponent() {};
 	~GLFrameBufferComponent() {};
 
-	GLuint m_FBO;
-	GLuint m_RBO;
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
+
+	GLuint m_FBO = 0;
+	GLuint m_RBO = 0;
 };

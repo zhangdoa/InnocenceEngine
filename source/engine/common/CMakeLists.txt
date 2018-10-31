@@ -1,10 +1,12 @@
 if (INNO_RENDERER_DX)
-add_executable(InnoMain WIN32 main.cpp BaseApplication.h BaseApplication.cpp)
+add_executable(InnoMain WIN32 main.cpp)
 else ()
-add_executable(InnoMain main.cpp BaseApplication.h BaseApplication.cpp)
+add_executable(InnoMain main.cpp)
 endif (INNO_RENDERER_DX)
 
-add_library(InnoMath InnoMath.h InnoMath.cpp)
+add_library(InnoApplication InnoApplication.h InnoApplication.cpp)
+add_library(InnoMath SHARED InnoMath.h InnoMath.cpp)
 target_link_libraries(InnoMain InnoMath)
-target_link_libraries(InnoMain InnoSystem)
-
+target_link_libraries(InnoMain InnoApplication)
+target_link_libraries(InnoMain InnoLowLevelSystem)
+target_link_libraries(InnoMain InnoHighLevelSystem)

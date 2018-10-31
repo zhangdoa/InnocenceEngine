@@ -1,10 +1,11 @@
 #pragma once
-#include "BaseComponent.h"
+#include "../common/InnoType.h"
 #include "GLFrameBufferComponent.h"
 #include "GLShaderProgramComponent.h"
+#include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
 
-class EnvironmentRenderPassSingletonComponent : public BaseComponent
+class EnvironmentRenderPassSingletonComponent
 {
 public:
 	~EnvironmentRenderPassSingletonComponent() {};
@@ -15,38 +16,45 @@ public:
 		return instance;
 	}
 
-	GLFrameBufferComponent m_GLFrameBufferComponent;
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
 
-	GLShaderProgramComponent m_capturePassProgram;
+	GLFrameBufferComponent* m_FBC;
+
+	GLShaderProgramComponent* m_capturePassSPC;
 	GLuint m_capturePassVertexShaderID;
 	GLuint m_capturePassFragmentShaderID;
-	GLTextureDataComponent m_capturePassTexture;
+	TextureDataComponent* m_capturePassTDC;
+	GLTextureDataComponent* m_capturePassGLTDC;
 	GLuint m_capturePass_uni_equirectangularMap;
 	GLuint m_capturePass_uni_p;
 	GLuint m_capturePass_uni_r;
 
-	GLShaderProgramComponent m_convolutionPassProgram;
+	GLShaderProgramComponent* m_convolutionPassSPC;
 	GLuint m_convolutionPassVertexShaderID;
 	GLuint m_convolutionPassFragmentShaderID;
-	GLTextureDataComponent m_convolutionPassTexture;
+	TextureDataComponent* m_convolutionPassTDC;
+	GLTextureDataComponent* m_convolutionPassGLTDC;
 	GLuint m_convolutionPass_uni_capturedCubeMap;
 	GLuint m_convolutionPass_uni_p;
 	GLuint m_convolutionPass_uni_r;
 	
-	GLShaderProgramComponent m_preFilterPassProgram;
+	unsigned int m_maxMipLevels = 5;
+	GLShaderProgramComponent* m_preFilterPassSPC;
 	GLuint m_preFilterPassVertexShaderID;
 	GLuint m_preFilterPassFragmentShaderID;
-	GLTextureDataComponent m_preFilterPassTexture;
+	TextureDataComponent* m_preFilterPassTDC;
+	GLTextureDataComponent* m_preFilterPassGLTDC;
 	GLuint m_preFilterPass_uni_capturedCubeMap;
 	GLuint m_preFilterPass_uni_roughness;
 	GLuint m_preFilterPass_uni_p;
 	GLuint m_preFilterPass_uni_r;
 
-	GLShaderProgramComponent m_BRDFLUTPassProgram;
+	GLShaderProgramComponent* m_BRDFLUTPassSPC;
 	GLuint m_BRDFLUTPassVertexShaderID;
 	GLuint m_BRDFLUTPassFragmentShaderID;
-	GLTextureDataComponent m_BRDFLUTTexture;
-
+	TextureDataComponent* m_BRDFLUTTDC;
+	GLTextureDataComponent* m_BRDFLUTGLTDC;
 private:
 	EnvironmentRenderPassSingletonComponent() {};
 };

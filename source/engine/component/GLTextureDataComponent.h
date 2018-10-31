@@ -1,13 +1,16 @@
 #pragma once
-#include "TextureDataComponent.h"
-#include "../system/GLRenderer/GLHeaders.h"
+#include "../common/InnoType.h"
+#include "../system/HighLevelSystem/GLHeaders.h"
 
-class GLTextureDataComponent : public TextureDataComponent
+class GLTextureDataComponent
 {
 public:
 	GLTextureDataComponent() {};
 	~GLTextureDataComponent() {};
 
-	GLuint m_TAO;
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
+
+	GLuint m_TAO = 0;
 };
 
