@@ -966,33 +966,33 @@ public:
 };
 
 template<class T>
-class TTransform
+class TTransformVector
 {
 public:
-	TTransform() noexcept :
-		m_localPos(TVec4<T>(T(), T(), T(), one<T>)),
-		m_localRot(TVec4<T>(T(), T(), T(), one<T>)),
-		m_localScale(TVec4<T>(one<T>, one<T>, one<T>, one<T>)),
+	TTransformVector() noexcept :
+		m_pos(TVec4<T>(T(), T(), T(), one<T>)),
+		m_rot(TVec4<T>(T(), T(), T(), one<T>)),
+		m_scale(TVec4<T>(one<T>, one<T>, one<T>, one<T>)),
 		m_pad1(T(), T(), T(), T()) {}
-	~TTransform() {};
+	~TTransformVector() {};
 
-	TVec4<T> m_localPos; // 4 * sizeof(T)
-	TVec4<T> m_localRot; // 4 * sizeof(T)
-	TVec4<T> m_localScale; // 4 * sizeof(T)
+	TVec4<T> m_pos; // 4 * sizeof(T)
+	TVec4<T> m_rot; // 4 * sizeof(T)
+	TVec4<T> m_scale; // 4 * sizeof(T)
 	TVec4<T> m_pad1; // 4 * sizeof(T)
+};
 
-	TMat4<T> m_localTranslationMat; // 16 * sizeof(T)
-	TMat4<T> m_localRotationMat; // 16 * sizeof(T)
-	TMat4<T> m_localScaleMat; // 16 * sizeof(T)
+template<class T>
+class TTransformMatrix
+{
+public:
+	TTransformMatrix() noexcept {}
+	~TTransformVector() {};
 
-	TVec4<T> m_globalPos; // 4 * sizeof(T)
-	TVec4<T> m_globalRot; // 4 * sizeof(T)
-	TVec4<T> m_globalScale; // 4 * sizeof(T)
-	TVec4<T> m_pad2; // 4 * sizeof(T)
-
-	TMat4<T> m_globalTranslationMat; // 16 * sizeof(T)
-	TMat4<T> m_globalRotationMat; // 16 * sizeof(T)
-	TMat4<T> m_globalScaleMat; // 16 * sizeof(T)
+	TMat4<T> m_translationMat; // 16 * sizeof(T)
+	TMat4<T> m_rotationMat; // 16 * sizeof(T)
+	TMat4<T> m_scaleMat; // 16 * sizeof(T)
+	TMat4<T> m_transformationMat; // 16 * sizeof(T)
 };
 
 namespace InnoMath
@@ -1340,18 +1340,18 @@ namespace InnoMath
 	}
 
 	template<class T>
-	void rotateInLocal(const TTransform<T> & transform, const TVec4<T> & axis, T angle)
+	void rotateInLocal(const TTransformVector<T> & transform, const TVec4<T> & axis, T angle)
 	{
 		TVec4<T> normalizedAxis = axis;
 		normalizedAxis = normalizedAxis.normalize();
 		T sinHalfAngle = std::sin((angle * PI<T> / halfCircumference<T>) / two<T>);
 		T cosHalfAngle = std::cos((angle * PI<T> / halfCircumference<T>) / two<T>);
 
-		m_rot = TVec4<T>(normalizedAxis.x * sinHalfAngle, normalizedAxis.y * sinHalfAngle, normalizedAxis.z * sinHalfAngle, cosHalfAngle).quatMul(transform.m_localRot);
+		transform.m_rot = TVec4<T>(normalizedAxis.x * sinHalfAngle, normalizedAxis.y * sinHalfAngle, normalizedAxis.z * sinHalfAngle, cosHalfAngle).quatMul(transform.m_rot);
 	}
 
 	template<class T>
-	void rotateInGlobal(const TTransform<T> & transform, const TVec4<T> & axis, T angle)
+	void rotateInGlobal(const TTransformVector<T> & transform, const TVec4<T> & axis, T angle)
 	{
 		TVec4<T> normalizedAxis = axis;
 		normalizedAxis = normalizedAxis.normalize();
@@ -1368,29 +1368,33 @@ namespace InnoMath
 	}
 
 	template<class T>
-	void setGlobalPos(const TTransform<T> & transform, const TVec4<T> & pos)
+	void setGlobalPos(const TTransformVector<T> & transform, const TVec4<T> & pos)
 	{
 		auto l_globalPos = caclGlobalPos();
 		auto l_delta = pos - l_globalPos;
-		transform.m_localPos = transform.m_localPos + l_delta;
+		transform.m_pos = transform.m_pos + l_delta;
 	}
 
 	template<class T>
-	void updateTransformMatrices(const TTransform<T> & transform)
+	auto TransformVectorToTransformMatrix(const TTransformVector<T> & transform)->TTransformMatrix<T>
 	{
-		transform.m_localTranslationMat = InnoMath::toTranslationMatrix(m_pos);
-		transform.m_localRotationMat = InnoMath::toRotationMatrix(m_rot);
-		transform.m_localScaleMat = InnoMath::toScaleMatrix(m_scale);
+		TTransformMatrix<T> m;
+		m.m_translationMat = InnoMath::toTranslationMatrix(transform.m_pos);
+		m.m_rotationMat = InnoMath::toRotationMatrix(transform.m_rot);
+		m.m_scaleMat = InnoMath::toScaleMatrix(transform.m_scale);
+		m.m_transformationMat = caclLocalTransformationMatrix(m);
+		return m;
 	}
 
 	template<class T>
-	auto caclLocalTransformationMatrix(const TTransform<T> & transform) -> TMat4<T>
+	auto caclLocalTransformationMatrix(const TTransformMatrix<T> & transform) -> TMat4<T>
 	{
-		return transform.m_localTranslationMat * transform.m_localRotationMat * transform.m_localScaleMat;
+		// @TODO: calculate by hand
+		return transform.m_translationMat * transform.m_rotationMat * transform.m_scaleMat;
 	}
 
 	template<class T>
-	auto caclGlobalPos(const TMat4<T> & parentTransformationMatrix, const TTransform<T> & transform) -> TVec4<T>
+	auto caclGlobalPos(const TMat4<T> & parentTransformationMatrix, const TTransformVector<T> & transform) -> TVec4<T>
 	{
 		//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
@@ -1409,33 +1413,15 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto caclGlobalRot(const TVec4<T> & parentRot, const TTransform<T> & transform) -> TVec4<T>
+	auto caclGlobalRot(const TVec4<T> & parentRot, const TTransformVector<T> & transform) -> TVec4<T>
 	{
 		return parentRot.quatMul(transform.m_rot);
 	}
 
 	template<class T>
-	auto caclGlobalScale(TVec4<T> parentScale, const TTransform<T> & transform) -> TVec4<T>
+	auto caclGlobalScale(TVec4<T> parentScale, const TTransformVector<T> & transform) -> TVec4<T>
 	{
 		return parentScale.scale(transform.m_scale);
-	}
-
-	template<class T>
-	auto caclGlobalTranslationMatrix() -> TMat4<T>
-	{
-		return InnoMath::toTranslationMatrix(caclGlobalPos());
-	}
-
-	template<class T>
-	auto caclGlobalRotRotationMatrix() -> TMat4<T>
-	{
-		return InnoMath::toRotationMatrix(caclGlobalRot());
-	}
-
-	template<class T>
-	auto caclGlobalScaleMatrix() -> TMat4<T>
-	{
-		return InnoMath::toScaleMatrix(caclGlobalScale());
 	}
 
 	template<class T>
@@ -1452,41 +1438,49 @@ namespace InnoMath
 		return l_parentTransformationMatrix * caclLocalTransformationMatrix();
 	}
 
+	template<class T>
 	auto caclLookAtMatrix() -> TMat4<T>
 	{
 		return TMat4<T>().lookAt(caclGlobalPos(), caclGlobalPos() + getDirection(direction::BACKWARD), getDirection(direction::UP));
 	}
 
+	template<class T>
 	auto getInvertLocalTranslationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(m_pos.scale(-1.0));
 	}
 
+	template<class T>
 	auto getInvertLocalRotationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(m_rot.quatConjugate());
 	}
 
+	template<class T>
 	auto getInvertLocalScaleMatrix() -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(m_scale.reciprocal());
 	}
 
+	template<class T>
 	auto getInvertGlobalTranslationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(caclGlobalPos() * -1.0);
 	}
 
+	template<class T>
 	auto getInvertGlobalRotationMatrix() -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(caclGlobalRot().quatConjugate());
 	}
 
+	template<class T>
 	auto getInvertGlobalScaleMatrix() -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(caclGlobalScale().reciprocal());
 	}
 
+	template<class T>
 	auto getDirection(direction direction) -> TVec4<T>
 	{
 		TVec4<T> l_directionTVec4;
@@ -1515,4 +1509,5 @@ using mat4 = TMat4<float>;
 using Vertex = TVertex<float>;
 using Ray = TRay<float>;
 using AABB = TAABB<float>;
-using Transform = TTransform<float>;
+using TransformVector = TTransformVector<float>;
+using TransformMatrix = TTransformMatrix<float>;

@@ -12,10 +12,11 @@ public:
 	EntityID m_parentEntity;
 
 	// @TODO: k-d tree?
-	unsigned int m_transformHierarchyColumnIndex = 0;
-	unsigned int m_transformHierarchyRowIndex = 0;
+	unsigned int m_transformHierarchyLevel = 0;
 
-	Transform m_currentTransform;
-	Transform m_previousTransform;
+	TransformComponent* m_parentTransformComponent = 0;
+
+	TransformVector m_transformVector;
+	TransformMatrix m_transformMatrix;
 };
 

@@ -22,7 +22,7 @@ namespace InnoGameSystem
 	void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function);
 	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(double)>* function);
 	
-	void updateTransform();
+	void saveComponentsCapture();
 
 	InnoHighLevelSystem_EXPORT objectStatus getStatus();
 };
