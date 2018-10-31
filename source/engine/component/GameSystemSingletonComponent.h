@@ -16,8 +16,9 @@ public:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	// the SOA here
+	// the AOS here
 	std::vector<TransformComponent*> m_transformComponents;
+	std::vector<std::vector<TransformComponent*>> m_TransformComponentsTree;
 	std::vector<VisibleComponent*> m_visibleComponents;
 	std::vector<LightComponent*> m_lightComponents;
 	std::vector<CameraComponent*> m_cameraComponents;

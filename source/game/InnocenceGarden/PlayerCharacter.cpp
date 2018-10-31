@@ -52,28 +52,28 @@ void PlayerCharacter::move(vec4 direction, double length)
 {
 	if (m_canMove)
 	{
-		m_transformComponent.m_currentTransform.setGlobalPos(m_transformComponent.m_currentTransform.caclGlobalPos() + direction * length);
+		m_transformComponent.m_transformVector.setGlobalPos(m_transformComponent.m_transformVector.caclGlobalPos() + direction * length);
 	}
 }
 
 void PlayerCharacter::moveForward()
 {
-	move(m_transformComponent.m_currentTransform.getDirection(direction::FORWARD), m_moveSpeed);
+	move(m_transformComponent.m_transformVector.getDirection(direction::FORWARD), m_moveSpeed);
 }
 
 void PlayerCharacter::moveBackward()
 {
-	move(m_transformComponent.m_currentTransform.getDirection(direction::BACKWARD), m_moveSpeed);
+	move(m_transformComponent.m_transformVector.getDirection(direction::BACKWARD), m_moveSpeed);
 }
 
 void PlayerCharacter::moveLeft()
 {
-	move(m_transformComponent.m_currentTransform.getDirection(direction::LEFT), m_moveSpeed);
+	move(m_transformComponent.m_transformVector.getDirection(direction::LEFT), m_moveSpeed);
 }
 
 void PlayerCharacter::moveRight()
 {
-	move(m_transformComponent.m_currentTransform.getDirection(direction::RIGHT), m_moveSpeed);
+	move(m_transformComponent.m_transformVector.getDirection(direction::RIGHT), m_moveSpeed);
 }
 
 void PlayerCharacter::allowMove()
@@ -90,7 +90,7 @@ void PlayerCharacter::rotateAroundPositiveYAxis(double offset)
 {
 	if (m_canMove)
 	{
-		m_transformComponent.m_currentTransform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * m_rotateSpeed) / 180.0)* PI<double>);
+		m_transformComponent.m_transformVector.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * m_rotateSpeed) / 180.0)* PI<double>);
 	}
 }
 
@@ -98,6 +98,6 @@ void PlayerCharacter::rotateAroundRightAxis(double offset)
 {
 	if (m_canMove)
 	{
-		m_transformComponent.m_currentTransform.rotateInLocal(m_transformComponent.m_currentTransform.getDirection(direction::RIGHT), ((offset * m_rotateSpeed) / 180.0)* PI<double>);
+		m_transformComponent.m_transformVector.rotateInLocal(m_transformComponent.m_transformVector.getDirection(direction::RIGHT), ((offset * m_rotateSpeed) / 180.0)* PI<double>);
 	}
 }

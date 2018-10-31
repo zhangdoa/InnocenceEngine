@@ -67,19 +67,17 @@ void InnoGameSystem::addComponentsToMap()
 
 void InnoGameSystem::updateTransform()
 {
+	// @TODO: update from hierarchy's top to down
 	std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
 	{
-		InnoMath::updateTransformMatrices(val->m_currentTransform);
+		val->m_transformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_transformVector);
 	});
 }
 
 // @TODO: add a cache function for after-rendering business
-void InnoGameSystem::savePreviousTransform()
+void InnoGameSystem::saveComponentsCapture()
 {
-	std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
-	{
-		val->m_previousTransform = val->m_currentTransform;
-	});
+// ping-pong cache components
 }
 
 InnoHighLevelSystem_EXPORT bool InnoGameSystem::initialize()

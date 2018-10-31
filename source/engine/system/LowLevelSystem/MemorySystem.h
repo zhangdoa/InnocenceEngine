@@ -1,6 +1,7 @@
 #pragma once
 #include "../../common/InnoType.h"
 #include "../../exports/LowLevelSystem_Export.h"
+#include "../../common/ComponentHeaders.h"
 
 namespace InnoMemorySystem
 {
@@ -20,6 +21,13 @@ namespace InnoMemorySystem
     {
         return new(allocate(sizeof(T))) T();
     };
+
+	template <> TransformComponent * spawn()
+	{
+		// @TODO : component pool
+		auto t = new(allocate(sizeof(TransformComponent))) TransformComponent();
+		return t;
+	};
     
     template <typename T> T * spawn(size_t n)
     {
