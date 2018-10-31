@@ -11,6 +11,10 @@ public:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
+	// @TODO: k-d tree?
+	unsigned int m_transformHierarchyColumnIndex = 0;
+	unsigned int m_transformHierarchyRowIndex = 0;
+
 	Transform m_currentTransform;
 	Transform m_previousTransform;
 };

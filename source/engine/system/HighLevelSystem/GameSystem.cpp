@@ -19,6 +19,7 @@
 namespace InnoGameSystem
 {
 	void addComponentsToMap();
+	void updateTransform();
 
 	objectStatus m_GameSystemStatus = objectStatus::SHUTDOWN;
 }
@@ -64,8 +65,16 @@ void InnoGameSystem::addComponentsToMap()
 	});
 }
 
-// @TODO: add a cache function for after-rendering business
 void InnoGameSystem::updateTransform()
+{
+	std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
+	{
+		InnoMath::updateTransformMatrices(val->m_currentTransform);
+	});
+}
+
+// @TODO: add a cache function for after-rendering business
+void InnoGameSystem::savePreviousTransform()
 {
 	std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
 	{
@@ -85,6 +94,7 @@ InnoHighLevelSystem_EXPORT bool InnoGameSystem::update()
 	GameSystemSingletonComponent::getInstance().m_asyncTask = &InnoTaskSystem::submit([]()
 	{
 		InnoGameInstance::update();
+		updateTransform();
 	});
 	return true;
 }
