@@ -64,7 +64,7 @@ void InnocenceGarden::setup()
 {
 	// setup root entity
 	m_rootTransformComponent = InnoMemorySystem::spawn<TransformComponent>();
-	m_rootTransformComponent->m_transformVector.m_parentTransform = nullptr;
+	m_rootTransformComponent->m_parentTransformComponent = nullptr;
 
 	InnoGameSystem::addTransformComponent(m_rootTransformComponent);
 	m_rootEntity = InnoMath::createEntityID();
@@ -73,8 +73,8 @@ void InnocenceGarden::setup()
 	// setup player character
 	m_playerCharacterComponent = InnoMemorySystem::spawn<PlayerCharacter>();
 	m_playerCharacterComponent->setup();
-	m_playerCharacterComponent->getTransformComponent().m_transformVector.m_parentTransform = &m_rootTransformComponent->m_transformVector;
-	m_playerCharacterComponent->getTransformComponent().m_transformVector.setLocalPos(vec4(0.0, 4.0, 3.0, 1.0));
+	m_playerCharacterComponent->getTransformComponent().m_parentTransformComponent = m_rootTransformComponent;
+	m_playerCharacterComponent->getTransformComponent().m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 3.0f, 1.0f);
 
 	m_playerCharacterComponent->getCameraComponent().m_drawFrustum = false;
 	m_playerCharacterComponent->getCameraComponent().m_drawAABB = false;
@@ -106,8 +106,8 @@ void InnocenceGarden::setup()
 
 	//setup directional light
 	m_directionalLightTransformComponent = InnoMemorySystem::spawn<TransformComponent>();
-	m_directionalLightTransformComponent->m_transformVector.m_parentTransform = &m_rootTransformComponent->m_transformVector;
-	m_directionalLightTransformComponent->m_transformVector.setLocalPos(vec4(0.0, 4.0, 0.0, 1.0));
+	m_directionalLightTransformComponent->m_parentTransformComponent = m_rootTransformComponent;
+	m_directionalLightTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 0.0f, 1.0f);
 	m_directionalLightTransformComponent->m_transformVector.rotateInLocal(vec4(-1.0, 0.0, 0.0, 0.0), 35.0);
 	//m_directionalLightTransformComponent->m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 35.0);
 	m_directionalLightComponent = InnoMemorySystem::spawn<LightComponent>();

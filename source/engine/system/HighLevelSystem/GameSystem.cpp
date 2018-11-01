@@ -68,10 +68,20 @@ void InnoGameSystem::addComponentsToMap()
 void InnoGameSystem::updateTransform()
 {
 	// @TODO: update from hierarchy's top to down
-	std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
+	std::for_each(GameSystemSingletonComponent::getInstance().m_TransformComponentsTree.begin(), GameSystemSingletonComponent::getInstance().m_TransformComponentsTree.end(), [&](std::vector<TransformComponent*> vector)
 	{
-		val->m_transformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_transformVector);
+		std::for_each(vector.begin(), vector.end(), [&](TransformComponent* val)
+		{
+			val->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_localTransformVector);
+			val->m_globalTransformVector = InnoMath::LocalTransformVectorToGlobal(val->m_parentTransformComponent->m_globalTransformVector, val->m_parentTransformComponent->m_globalTransformMatrix);
+			val->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_globalTransformVector);
+		});
 	});
+	//std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
+	//{
+	//	val->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_localTransformVector);
+	//	val->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_localTransformVector);
+	//});
 }
 
 // @TODO: add a cache function for after-rendering business

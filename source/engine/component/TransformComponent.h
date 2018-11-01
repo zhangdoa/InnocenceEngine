@@ -16,7 +16,10 @@ public:
 
 	TransformComponent* m_parentTransformComponent = 0;
 
-	TransformVector m_transformVector;
-	TransformMatrix m_transformMatrix;
+	TransformVector m_localTransformVector;
+	TransformMatrix m_localTransformMatrix;
+
+	TransformVector m_globalTransformVector;
+	TransformMatrix m_globalTransformMatrix;
 };
 

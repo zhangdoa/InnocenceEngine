@@ -18,6 +18,7 @@ public:
 
 	// the AOS here
 	std::vector<TransformComponent*> m_transformComponents;
+	TransformComponent* m_rootTransformComponent;
 	std::vector<std::vector<TransformComponent*>> m_TransformComponentsTree;
 	std::vector<VisibleComponent*> m_visibleComponents;
 	std::vector<LightComponent*> m_lightComponents;
