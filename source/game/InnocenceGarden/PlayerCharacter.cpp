@@ -52,7 +52,7 @@ void PlayerCharacter::move(vec4 direction, double length)
 {
 	if (m_canMove)
 	{
-		m_transformComponent.m_transformVector.setGlobalPos(m_transformComponent.m_transformVector.caclGlobalPos() + direction * length);
+		m_transformComponent.m_globalTransformVector.m_pos = InnoMath::moveTo(m_transformComponent.m_globalTransformVector.m_pos, direction, (float)length);
 	}
 }
 
@@ -90,7 +90,12 @@ void PlayerCharacter::rotateAroundPositiveYAxis(double offset)
 {
 	if (m_canMove)
 	{
-		m_transformComponent.m_transformVector.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), ((-offset * m_rotateSpeed) / 180.0)* PI<double>);
+		m_transformComponent.m_localTransformVector.m_rot = 
+			InnoMath::rotateInLocal(
+				m_transformComponent.m_localTransformVector.m_rot,
+				vec4(0.0f, 1.0f, 0.0f, 0.0f),
+				(float)((-offset * m_rotateSpeed) / 180.0f)* PI<float>
+			);
 	}
 }
 
@@ -98,6 +103,11 @@ void PlayerCharacter::rotateAroundRightAxis(double offset)
 {
 	if (m_canMove)
 	{
-		m_transformComponent.m_transformVector.rotateInLocal(m_transformComponent.m_transformVector.getDirection(direction::RIGHT), ((offset * m_rotateSpeed) / 180.0)* PI<double>);
+		auto l_right = InnoMath::getDirection(direction::RIGHT, m_transformComponent.m_localTransformVector.m_rot);
+		m_transformComponent.m_localTransformVector.m_rot = 
+			InnoMath::rotateInLocal(
+				m_transformComponent.m_localTransformVector.m_rot,
+				l_right,
+				(float)((offset * m_rotateSpeed) / 180.0f)* PI<float>);
 	}
 }

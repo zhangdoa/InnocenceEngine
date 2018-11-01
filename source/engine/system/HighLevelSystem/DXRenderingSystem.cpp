@@ -908,8 +908,8 @@ void DXRenderingSystem::updateFinalBlendPass()
 	DXRenderingSystemSingletonComponent::getInstance().m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
 
 	mat4 p = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
-	mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transformVector.getInvertGlobalRotationMatrix();
-	mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transformVector.getInvertGlobalTranslationMatrix();
+	mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_localTransformVector.getInvertGlobalRotationMatrix();
+	mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_localTransformVector.getInvertGlobalTranslationMatrix();
 	mat4 v = p * r * t;
 
 	for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
@@ -921,7 +921,7 @@ void DXRenderingSystem::updateFinalBlendPass()
 			{
 					// Set the shader parameters that it will use for rendering.
 
-					mat4 m = InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_transformVector.caclGlobalTransformationMatrix();
+					mat4 m = InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_localTransformVector.caclGlobalTransformationMatrix();
 					auto mvp = v * m;
 
 					updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &mvp);
