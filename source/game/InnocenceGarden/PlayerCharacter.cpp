@@ -52,28 +52,28 @@ void PlayerCharacter::move(vec4 direction, double length)
 {
 	if (m_canMove)
 	{
-		m_transformComponent.m_globalTransformVector.m_pos = InnoMath::moveTo(m_transformComponent.m_globalTransformVector.m_pos, direction, (float)length);
+		m_transformComponent.m_localTransformVector.m_pos = InnoMath::moveTo(m_transformComponent.m_localTransformVector.m_pos, direction, (float)length);
 	}
 }
 
 void PlayerCharacter::moveForward()
 {
-	move(m_transformComponent.m_transformVector.getDirection(direction::FORWARD), m_moveSpeed);
+	move(InnoMath::getDirection(direction::FORWARD, m_transformComponent.m_localTransformVector.m_rot), m_moveSpeed);
 }
 
 void PlayerCharacter::moveBackward()
 {
-	move(m_transformComponent.m_transformVector.getDirection(direction::BACKWARD), m_moveSpeed);
+	move(InnoMath::getDirection(direction::BACKWARD, m_transformComponent.m_localTransformVector.m_rot), m_moveSpeed);
 }
 
 void PlayerCharacter::moveLeft()
 {
-	move(m_transformComponent.m_transformVector.getDirection(direction::LEFT), m_moveSpeed);
+	move(InnoMath::getDirection(direction::LEFT, m_transformComponent.m_localTransformVector.m_rot), m_moveSpeed);
 }
 
 void PlayerCharacter::moveRight()
 {
-	move(m_transformComponent.m_transformVector.getDirection(direction::RIGHT), m_moveSpeed);
+	move(InnoMath::getDirection(direction::RIGHT, m_transformComponent.m_localTransformVector.m_rot), m_moveSpeed);
 }
 
 void PlayerCharacter::allowMove()

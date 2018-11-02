@@ -17,14 +17,9 @@ public:
 	EntityID m_parentEntity;
 
 	// the AOS here
-	std::vector<TransformComponent*> m_transformComponents;
 	TransformComponent* m_rootTransformComponent;
-	std::vector<std::vector<TransformComponent*>> m_TransformComponentsTree;
-	std::vector<VisibleComponent*> m_visibleComponents;
-	std::vector<LightComponent*> m_lightComponents;
-	std::vector<CameraComponent*> m_cameraComponents;
-	std::vector<InputComponent*> m_inputComponents;
-	std::vector<EnvironmentCaptureComponent*> m_environmentCaptureComponents;
+	std::vector<std::vector<TransformComponent*>> m_currentTransformComponentsTree;
+	std::vector<std::vector<TransformComponent*>> m_previousTransformComponentsTree;
 
 	std::unordered_map<EntityID, TransformComponent*> m_TransformComponentsMap;
 	std::unordered_multimap<EntityID, VisibleComponent*> m_VisibleComponentsMap;

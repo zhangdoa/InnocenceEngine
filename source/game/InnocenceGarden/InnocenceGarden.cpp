@@ -1,7 +1,5 @@
 #include "InnocenceGarden.h"
-#include "../../engine/exports/LowLevelSystem_Export.h"
 #include "../../engine/exports/HighLevelSystem_Export.h"
-#include "../../engine/system/LowLevelSystem/MemorySystem.h"
 #include "../../engine/system/HighLevelSystem/GameSystem.h"
 #include "PlayerCharacter.h"
 
@@ -63,15 +61,14 @@ namespace InnocenceGarden
 void InnocenceGarden::setup()
 {
 	// setup root entity
-	m_rootTransformComponent = InnoMemorySystem::spawn<TransformComponent>();
+	m_rootTransformComponent = InnoGameSystem::spawn<TransformComponent>();
 	m_rootTransformComponent->m_parentTransformComponent = nullptr;
 
-	InnoGameSystem::addTransformComponent(m_rootTransformComponent);
 	m_rootEntity = InnoMath::createEntityID();
 	m_rootTransformComponent->m_parentEntity = m_rootEntity;
 
 	// setup player character
-	m_playerCharacterComponent = InnoMemorySystem::spawn<PlayerCharacter>();
+	m_playerCharacterComponent = InnoGameSystem::spawn<PlayerCharacter>();
 	m_playerCharacterComponent->setup();
 	m_playerCharacterComponent->getTransformComponent().m_parentTransformComponent = m_rootTransformComponent;
 	m_playerCharacterComponent->getTransformComponent().m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 3.0f, 1.0f);
@@ -87,30 +84,24 @@ void InnocenceGarden::setup()
 	InnoGameSystem::registerMouseMovementCallback(&m_playerCharacterComponent->getInputComponent(), 0, &m_playerCharacterComponent->f_rotateAroundPositiveYAxis);
 	InnoGameSystem::registerMouseMovementCallback(&m_playerCharacterComponent->getInputComponent(), 1, &m_playerCharacterComponent->f_rotateAroundRightAxis);
 
-	InnoGameSystem::addTransformComponent(&m_playerCharacterComponent->getTransformComponent());
-	InnoGameSystem::addCameraComponent(&m_playerCharacterComponent->getCameraComponent());
-	InnoGameSystem::addInputComponent(&m_playerCharacterComponent->getInputComponent());
-
 	m_playerCharacterEntity = InnoMath::createEntityID();
 	m_playerCharacterComponent->m_parentEntity = m_playerCharacterEntity;
 
 	//setup environment capture component
-	m_environmentCaptureComponent = InnoMemorySystem::spawn<EnvironmentCaptureComponent>();
+	m_environmentCaptureComponent = InnoGameSystem::spawn<EnvironmentCaptureComponent>();
 	m_environmentCaptureComponent->m_cubemapTextureFileName = "ibl//Playa_Sunrise.hdr";
 
 	m_EnvironmentCaptureEntity = InnoMath::createEntityID();
 
 	m_environmentCaptureComponent->m_parentEntity = m_EnvironmentCaptureEntity;
 
-	InnoGameSystem::addEnvironmentCaptureComponent(m_environmentCaptureComponent);
-
 	//setup directional light
-	m_directionalLightTransformComponent = InnoMemorySystem::spawn<TransformComponent>();
+	m_directionalLightTransformComponent = InnoGameSystem::spawn<TransformComponent>();
 	m_directionalLightTransformComponent->m_parentTransformComponent = m_rootTransformComponent;
 	m_directionalLightTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 0.0f, 1.0f);
 	m_directionalLightTransformComponent->m_transformVector.rotateInLocal(vec4(-1.0, 0.0, 0.0, 0.0), 35.0);
 	//m_directionalLightTransformComponent->m_transform.rotateInLocal(vec4(0.0, 1.0, 0.0, 0.0), 35.0);
-	m_directionalLightComponent = InnoMemorySystem::spawn<LightComponent>();
+	m_directionalLightComponent = InnoGameSystem::spawn<LightComponent>();
 	m_directionalLightComponent->m_color = vec4(1.0, 1.0, 1.0, 1.0);
 	m_directionalLightComponent->m_lightType = lightType::DIRECTIONAL;
 	m_directionalLightComponent->m_drawAABB = false;
@@ -120,15 +111,12 @@ void InnocenceGarden::setup()
 	m_directionalLightTransformComponent->m_parentEntity = m_directionalLightEntity;
 	m_directionalLightComponent->m_parentEntity = m_directionalLightEntity;
 
-	InnoGameSystem::addTransformComponent(m_directionalLightTransformComponent);
-	InnoGameSystem::addLightComponent(m_directionalLightComponent);
-
 	//setup landscape
-	m_landscapeTransformComponent = InnoMemorySystem::spawn<TransformComponent>();
+	m_landscapeTransformComponent = InnoGameSystem::spawn<TransformComponent>();
 	m_landscapeTransformComponent->m_transformVector.m_parentTransform = &m_rootTransformComponent->m_transformVector;
 	m_landscapeTransformComponent->m_transformVector.setLocalScale(vec4(20.0, 20.0, 0.1, 1.0));
 	m_landscapeTransformComponent->m_transformVector.rotateInLocal(vec4(1.0, 0.0, 0.0, 0.0), 90.0);
-	m_landscapeVisibleComponent = InnoMemorySystem::spawn<VisibleComponent>();
+	m_landscapeVisibleComponent = InnoGameSystem::spawn<VisibleComponent>();
 	m_landscapeVisibleComponent->m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUBE;
 
@@ -137,17 +125,14 @@ void InnocenceGarden::setup()
 	m_landscapeTransformComponent->m_parentEntity = m_landscapeEntity;
 	m_landscapeVisibleComponent->m_parentEntity = m_landscapeEntity;
 
-	InnoGameSystem::addTransformComponent(m_landscapeTransformComponent);
-	InnoGameSystem::addVisibleComponent(m_landscapeVisibleComponent);
-
 	setupLights();
 	setupSpheres();
 
 	//setup pawn 1
-	m_pawnTransformComponent1 = InnoMemorySystem::spawn<TransformComponent>();
+	m_pawnTransformComponent1 = InnoGameSystem::spawn<TransformComponent>();
 	m_pawnTransformComponent1->m_transformVector.m_parentTransform = &m_rootTransformComponent->m_transformVector;
 	m_pawnTransformComponent1->m_transformVector.setLocalScale(vec4(0.1, 0.1, 0.1, 1.0));
-	m_pawnVisibleComponent1 = InnoMemorySystem::spawn<VisibleComponent>();
+	m_pawnVisibleComponent1 = InnoGameSystem::spawn<VisibleComponent>();
 	m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
 	m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
@@ -164,15 +149,12 @@ void InnocenceGarden::setup()
 	m_pawnTransformComponent1->m_parentEntity = m_pawnEntity1;
 	m_pawnVisibleComponent1->m_parentEntity = m_pawnEntity1;
 
-	InnoGameSystem::addTransformComponent(m_pawnTransformComponent1);
-	InnoGameSystem::addVisibleComponent(m_pawnVisibleComponent1);
-
 	//setup pawn 2
-	m_pawnTransformComponent2 = InnoMemorySystem::spawn<TransformComponent>();
+	m_pawnTransformComponent2 = InnoGameSystem::spawn<TransformComponent>();
 	m_pawnTransformComponent2->m_transformVector.m_parentTransform = &m_rootTransformComponent->m_transformVector;
 	m_pawnTransformComponent2->m_transformVector.setLocalScale(vec4(0.01, 0.01, 0.01, 1.0));
 	m_pawnTransformComponent2->m_transformVector.setLocalPos(vec4(0.0, 0.2, 3.5, 1.0));
-	m_pawnVisibleComponent2 = InnoMemorySystem::spawn<VisibleComponent>();
+	m_pawnVisibleComponent2 = InnoGameSystem::spawn<VisibleComponent>();
 	m_pawnVisibleComponent2->m_visiblilityType = visiblilityType::STATIC_MESH;
 	m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::CUSTOM;
 	m_pawnVisibleComponent2->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
@@ -183,9 +165,6 @@ void InnocenceGarden::setup()
 
 	m_pawnTransformComponent2->m_parentEntity = m_pawnEntity2;
 	m_pawnVisibleComponent2->m_parentEntity = m_pawnEntity2;
-
-	InnoGameSystem::addTransformComponent(m_pawnTransformComponent2);
-	InnoGameSystem::addVisibleComponent(m_pawnVisibleComponent2);
 
 	m_objectStatus = objectStatus::ALIVE;
 }
@@ -227,10 +206,10 @@ void InnocenceGarden::setupSpheres()
 	}
 	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i++)
 	{
-		m_sphereTransformComponents[i] = InnoMemorySystem::spawn<TransformComponent>();
+		m_sphereTransformComponents[i] = InnoGameSystem::spawn<TransformComponent>();
 		m_sphereTransformComponents[i]->m_transformVector.m_parentTransform = &m_rootTransformComponent->m_transformVector;
 		m_sphereTransformComponents[i]->m_transformVector.setLocalScale(vec4(1.0, 1.0, 1.0, 1.0));
-		m_sphereVisibleComponents[i] = InnoMemorySystem::spawn<VisibleComponent>();
+		m_sphereVisibleComponents[i] = InnoGameSystem::spawn<VisibleComponent>();
 		m_sphereVisibleComponents[i]->m_visiblilityType = visiblilityType::STATIC_MESH;
 		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::CUSTOM;
 		m_sphereVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
@@ -242,9 +221,6 @@ void InnocenceGarden::setupSpheres()
 
 		m_sphereTransformComponents[i]->m_parentEntity = m_sphereEntitys[i];
 		m_sphereVisibleComponents[i]->m_parentEntity = m_sphereEntitys[i];
-
-		InnoGameSystem::addTransformComponent(m_sphereTransformComponents[i]);
-		InnoGameSystem::addVisibleComponent(m_sphereVisibleComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i += 4)
 	{
@@ -284,11 +260,11 @@ void InnocenceGarden::setupLights()
 	}
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i++)
 	{
-		m_pointLightTransformComponents[i] = InnoMemorySystem::spawn<TransformComponent>();
+		m_pointLightTransformComponents[i] = InnoGameSystem::spawn<TransformComponent>();
 		m_pointLightTransformComponents[i]->m_transformVector.m_parentTransform = &m_rootTransformComponent->m_transformVector;
 		m_pointLightTransformComponents[i]->m_transformVector.setLocalScale(vec4(0.1, 0.1, 0.1, 1.0));
-		m_pointLightComponents[i] = InnoMemorySystem::spawn<LightComponent>();
-		m_pointLightVisibleComponents[i] = InnoMemorySystem::spawn<VisibleComponent>();
+		m_pointLightComponents[i] = InnoGameSystem::spawn<LightComponent>();
+		m_pointLightVisibleComponents[i] = InnoGameSystem::spawn<VisibleComponent>();
 		m_pointLightVisibleComponents[i]->m_visiblilityType = visiblilityType::EMISSIVE;
 		m_pointLightVisibleComponents[i]->m_meshShapeType = meshShapeType::SPHERE;
 		m_pointLightVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
@@ -299,10 +275,6 @@ void InnocenceGarden::setupLights()
 		m_pointLightTransformComponents[i]->m_parentEntity = m_pointLightEntitys[i];
 		m_pointLightComponents[i]->m_parentEntity = m_pointLightEntitys[i];
 		m_pointLightVisibleComponents[i]->m_parentEntity = m_pointLightEntitys[i];
-
-		InnoGameSystem::addTransformComponent(m_pointLightTransformComponents[i]);
-		InnoGameSystem::addLightComponent(m_pointLightComponents[i]);
-		InnoGameSystem::addVisibleComponent(m_pointLightVisibleComponents[i]);
 	}
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim; i++)
 	{

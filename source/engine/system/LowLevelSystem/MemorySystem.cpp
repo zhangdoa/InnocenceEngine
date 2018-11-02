@@ -9,6 +9,14 @@
 
 namespace InnoMemorySystem
 {
+	//Memory pool for TransformComponent
+	unsigned char* m_TransformComponentPoolPtr = nullptr;
+	unsigned char* m_TransformComponentPoolFreePtr = nullptr;
+	unsigned int m_TransformComponentPoolTotalCapability = 1024;
+	unsigned int m_TransformComponentPoolCurrentFreeBlock = m_TransformComponentPoolTotalCapability;
+	unsigned int m_TransformComponentPoolSize = m_TransformComponentPoolTotalCapability * sizeof(TransformComponent);
+
+	//Memory pool for others
 	static const uint32_t s_BlockSizes[] = {
 		// 4-increments
 		4,  8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48,
@@ -28,7 +36,7 @@ namespace InnoMemorySystem
 	// largest valid block size
 	static const uint32_t s_MaxBlockSize = s_BlockSizes[s_NumBlockSizes - 1];
 
-	const unsigned long  m_maxPoolSize = 1024 * 1024 * 512;
+	const unsigned long  m_maxPoolSize = 1024 * 1024 * 64;
 	static const unsigned int m_minFreeBlockSize = 48;
 	unsigned long  m_totalPoolSize;
 	unsigned long  m_availablePoolSize;
@@ -58,6 +66,10 @@ namespace InnoMemorySystem
 
 InnoLowLevelSystem_EXPORT bool InnoMemorySystem::setup()
 {
+	m_TransformComponentPoolPtr = nullptr;
+	m_TransformComponentPoolPtr = ::new unsigned char[m_TransformComponentPoolSize];
+	m_TransformComponentPoolFreePtr = m_TransformComponentPoolPtr;
+
 	// @TODO: one component type one dedicated pool
 	// Allocate memory pool
 	m_poolMemoryPtr = nullptr;
@@ -71,6 +83,7 @@ InnoLowLevelSystem_EXPORT bool InnoMemorySystem::setup()
 	std::memcpy(m_poolMemoryPtr + m_boundCheckSize, &l_freeChunk, sizeof(Chunk));
 	std::memcpy(m_poolMemoryPtr + m_maxPoolSize - m_boundCheckSize, m_endBoundMarker, m_boundCheckSize);
 	m_availablePoolSize = m_maxPoolSize - sizeof(Chunk) - m_boundCheckSize * 2;
+
 	return true;
 }
 
@@ -88,6 +101,7 @@ InnoLowLevelSystem_EXPORT bool InnoMemorySystem::update()
 
 InnoLowLevelSystem_EXPORT bool InnoMemorySystem::terminate()
 {
+	::delete[] m_TransformComponentPoolPtr;
 	::delete[] m_poolMemoryPtr;
 	m_MemorySystemStatus = objectStatus::ALIVE;
 	InnoLogSystem::printLog("MemorySystem has been terminated.");
@@ -349,6 +363,22 @@ InnoLowLevelSystem_EXPORT void InnoMemorySystem::dumpToFile(bool fullDump)
 	}
 
 	l_file.close();
+}
+
+TransformComponent * InnoMemorySystem::allocateTransformComponent()
+{
+	auto l_ptr = new(m_TransformComponentPoolFreePtr) TransformComponent();
+	if (l_ptr)
+	{
+		m_TransformComponentPoolFreePtr += sizeof(TransformComponent);
+		--m_TransformComponentPoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory at " + std::to_string((int)m_TransformComponentPoolFreePtr) + " !");
+		return nullptr;
+	}
 }
 
 objectStatus InnoMemorySystem::getStatus()

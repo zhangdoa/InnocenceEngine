@@ -2,24 +2,22 @@
 #include "../common/InnoType.h"
 #include "../common/InnoMath.h"
 
-class TransformComponent
+struct TransformComponent
 {
-public:
-	TransformComponent() {};
-	~TransformComponent() {};
-
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN; // 4 Bytes
+	EntityID m_parentEntity; // 4 Bytes
 
 	// @TODO: k-d tree?
-	unsigned int m_transformHierarchyLevel = 0;
+	unsigned int m_transformHierarchyLevel = 0; // 4 Bytes
 
-	TransformComponent* m_parentTransformComponent = 0;
+	TransformVector m_localTransformVector; // 16 Bytes
+	TransformMatrix m_localTransformMatrix; // 64 Bytes
 
-	TransformVector m_localTransformVector;
-	TransformMatrix m_localTransformMatrix;
+	TransformVector m_globalTransformVector; // 16 Bytes
+	TransformMatrix m_globalTransformMatrix; // 64 Bytes
 
-	TransformVector m_globalTransformVector;
-	TransformMatrix m_globalTransformMatrix;
+	TransformComponent* m_parentTransformComponent = 0; // 4 Bytes in x86, 8 Bytes in x86-64
+
+	// 196 or 200 Bytes at all
 };
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "../../exports/HighLevelSystem_Export.h"
+#include "../LowLevelSystem/MemorySystem.h"
 #include "../../common/ComponentHeaders.h"
 
 namespace InnoGameSystem
@@ -9,12 +10,21 @@ namespace InnoGameSystem
 	InnoHighLevelSystem_EXPORT bool update();
 	InnoHighLevelSystem_EXPORT bool terminate();
 
-	void addTransformComponent(TransformComponent* rhs);
-	void addVisibleComponent(VisibleComponent* rhs);
-	void addLightComponent(LightComponent* rhs);
-	void addCameraComponent(CameraComponent* rhs);
-	void addInputComponent(InputComponent* rhs);
-	void addEnvironmentCaptureComponent(EnvironmentCaptureComponent* rhs);
+	void registerComponents(TransformComponent* transformComponent);
+	void registerComponents(VisibleComponent* visibleComponent);
+	void registerComponents(LightComponent* lightComponent);
+	void registerComponents(CameraComponent* cameraComponent);
+	void registerComponents(InputComponent* inputComponent);
+	void registerComponents(EnvironmentCaptureComponent* environmentCaptureComponent);
+
+	template <typename T> T * spawn()
+	{
+		auto l_ptr = InnoMemorySystem::spawn<T>();
+		if (l_ptr)
+		{
+			registerComponents(l_ptr);
+		}
+	};
 
 	std::string getGameName();
 	TransformComponent* getTransformComponent(EntityID parentEntity);

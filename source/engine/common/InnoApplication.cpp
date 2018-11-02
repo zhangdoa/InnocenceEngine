@@ -102,7 +102,7 @@ bool InnoApplication::update()
 	if (InnoVisionSystem::getStatus() == objectStatus::ALIVE)
 	{	
 		InnoVisionSystem::update();
-		InnoGameSystem::updateTransform();
+		InnoGameSystem::saveComponentsCapture();
 		return true;
 	}
 	else

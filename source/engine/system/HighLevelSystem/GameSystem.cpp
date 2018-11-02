@@ -18,7 +18,6 @@
 
 namespace InnoGameSystem
 {
-	void addComponentsToMap();
 	void updateTransform();
 
 	objectStatus m_GameSystemStatus = objectStatus::SHUTDOWN;
@@ -27,48 +26,14 @@ namespace InnoGameSystem
 InnoHighLevelSystem_EXPORT bool InnoGameSystem::setup()
 {
 	InnoGameInstance::setup();
-	addComponentsToMap();
 	m_GameSystemStatus = objectStatus::ALIVE;
 	return true;
-}
-
-// @TODO: generic solution, SOA
-void InnoGameSystem::addComponentsToMap()
-{
-	std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
-	{
-		GameSystemSingletonComponent::getInstance().m_TransformComponentsMap.emplace(val->m_parentEntity, val);
-	});
-	std::for_each(GameSystemSingletonComponent::getInstance().m_visibleComponents.begin(), GameSystemSingletonComponent::getInstance().m_visibleComponents.end(), [&](VisibleComponent* val)
-	{
-		GameSystemSingletonComponent::getInstance().m_VisibleComponentsMap.emplace(val->m_parentEntity, val);
-	});
-
-	std::for_each(GameSystemSingletonComponent::getInstance().m_lightComponents.begin(), GameSystemSingletonComponent::getInstance().m_lightComponents.end(), [&](LightComponent* val)
-	{
-		GameSystemSingletonComponent::getInstance().m_LightComponentsMap.emplace(val->m_parentEntity, val);
-	});
-
-	std::for_each(GameSystemSingletonComponent::getInstance().m_cameraComponents.begin(), GameSystemSingletonComponent::getInstance().m_cameraComponents.end(), [&](CameraComponent* val)
-	{
-		GameSystemSingletonComponent::getInstance().m_CameraComponentsMap.emplace(val->m_parentEntity, val);
-	});
-
-	std::for_each(GameSystemSingletonComponent::getInstance().m_inputComponents.begin(), GameSystemSingletonComponent::getInstance().m_inputComponents.end(), [&](InputComponent* val)
-	{
-		GameSystemSingletonComponent::getInstance().m_InputComponentsMap.emplace(val->m_parentEntity, val);
-	});
-
-	std::for_each(GameSystemSingletonComponent::getInstance().m_environmentCaptureComponents.begin(), GameSystemSingletonComponent::getInstance().m_environmentCaptureComponents.end(), [&](EnvironmentCaptureComponent* val)
-	{
-		GameSystemSingletonComponent::getInstance().m_EnvironmentCaptureComponentsMap.emplace(val->m_parentEntity, val);
-	});
 }
 
 void InnoGameSystem::updateTransform()
 {
 	// @TODO: update from hierarchy's top to down
-	std::for_each(GameSystemSingletonComponent::getInstance().m_TransformComponentsTree.begin(), GameSystemSingletonComponent::getInstance().m_TransformComponentsTree.end(), [&](std::vector<TransformComponent*> vector)
+	std::for_each(GameSystemSingletonComponent::getInstance().m_currentTransformComponentsTree.begin(), GameSystemSingletonComponent::getInstance().m_currentTransformComponentsTree.end(), [&](std::vector<TransformComponent*> vector)
 	{
 		std::for_each(vector.begin(), vector.end(), [&](TransformComponent* val)
 		{
@@ -77,17 +42,12 @@ void InnoGameSystem::updateTransform()
 			val->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_globalTransformVector);
 		});
 	});
-	//std::for_each(GameSystemSingletonComponent::getInstance().m_transformComponents.begin(), GameSystemSingletonComponent::getInstance().m_transformComponents.end(), [&](TransformComponent* val)
-	//{
-	//	val->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_localTransformVector);
-	//	val->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_localTransformVector);
-	//});
 }
 
 // @TODO: add a cache function for after-rendering business
 void InnoGameSystem::saveComponentsCapture()
 {
-// ping-pong cache components
+	GameSystemSingletonComponent::getInstance().m_previousTransformComponentsTree = GameSystemSingletonComponent::getInstance().m_currentTransformComponentsTree;
 }
 
 InnoHighLevelSystem_EXPORT bool InnoGameSystem::initialize()
@@ -115,34 +75,34 @@ InnoHighLevelSystem_EXPORT bool InnoGameSystem::terminate()
 	return true;
 }
 
-void InnoGameSystem::addTransformComponent(TransformComponent * rhs)
+void InnoGameSystem::registerComponents(TransformComponent * transformComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_transformComponents.emplace_back(rhs);
+	GameSystemSingletonComponent::getInstance().m_TransformComponentsMap.emplace(transformComponent->m_parentEntity, transformComponent);
 }
 
-void InnoGameSystem::addVisibleComponent(VisibleComponent * rhs)
+void InnoGameSystem::registerComponents(VisibleComponent * visibleComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_visibleComponents.emplace_back(rhs);
+	GameSystemSingletonComponent::getInstance().m_VisibleComponentsMap.emplace(visibleComponent->m_parentEntity, visibleComponent);
 }
 
-void InnoGameSystem::addLightComponent(LightComponent * rhs)
+void InnoGameSystem::registerComponents(LightComponent * lightComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_lightComponents.emplace_back(rhs);
+	GameSystemSingletonComponent::getInstance().m_LightComponentsMap.emplace(lightComponent->m_parentEntity, lightComponent);
 }
 
-void InnoGameSystem::addCameraComponent(CameraComponent * rhs)
+void InnoGameSystem::registerComponents(CameraComponent * cameraComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_cameraComponents.emplace_back(rhs);
+	GameSystemSingletonComponent::getInstance().m_CameraComponentsMap.emplace(cameraComponent->m_parentEntity, cameraComponent);
 }
 
-void InnoGameSystem::addInputComponent(InputComponent * rhs)
+void InnoGameSystem::registerComponents(InputComponent * inputComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_inputComponents.emplace_back(rhs);
+	GameSystemSingletonComponent::getInstance().m_InputComponentsMap.emplace(inputComponent->m_parentEntity, inputComponent);
 }
 
-void InnoGameSystem::addEnvironmentCaptureComponent(EnvironmentCaptureComponent * rhs)
+void InnoGameSystem::registerComponents(EnvironmentCaptureComponent * environmentCaptureComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_environmentCaptureComponents.emplace_back(rhs);
+	GameSystemSingletonComponent::getInstance().m_EnvironmentCaptureComponentsMap.emplace(environmentCaptureComponent->m_parentEntity, environmentCaptureComponent);
 }
 
 std::string InnoGameSystem::getGameName()

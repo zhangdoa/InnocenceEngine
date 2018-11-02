@@ -12,20 +12,21 @@ namespace InnoMemorySystem
 
 	InnoLowLevelSystem_EXPORT void* allocate(unsigned long size);
 	InnoLowLevelSystem_EXPORT void free(void* ptr);
-	InnoLowLevelSystem_EXPORT void serializeImpl(void* ptr);
-	InnoLowLevelSystem_EXPORT void* deserializeImpl(unsigned long size, const std::string& filePath);
+	void serializeImpl(void* ptr);
+	void* deserializeImpl(unsigned long size, const std::string& filePath);
 
 	InnoLowLevelSystem_EXPORT void dumpToFile(bool fullDump);
 	
+	TransformComponent* allocateTransformComponent();
+
     template <typename T> T * spawn()
     {
-        return new(allocate(sizeof(T))) T();
+#pragma message ( "MemorySystem didn't suppose this kind of type now! Need partial specialization!" );
     };
 
 	template <> TransformComponent * spawn()
 	{
-		// @TODO : component pool
-		auto t = new(allocate(sizeof(TransformComponent))) TransformComponent();
+		auto t = allocateTransformComponent();
 		return t;
 	};
     
