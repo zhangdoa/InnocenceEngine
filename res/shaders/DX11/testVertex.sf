@@ -1,0 +1,27 @@
+cbuffer MatrixBuffer
+{
+    matrix mvp;
+};
+
+struct VertexInputType
+{
+    float3 position : POSITION;
+    float2 texcoord : TEXCOORD0;
+    float3 normal : NORMAL;
+};
+
+struct PixelInputType
+{
+    float4 position : SV_POSITION;
+    float2 texcoord : TEXCOORD0;
+};
+
+PixelInputType testVertex(VertexInputType input)
+{
+    PixelInputType output;
+
+    output.position = mul(float4(input.position, 1.0f), mvp);
+    output.texcoord = input.texcoord;
+    
+    return output;
+}
