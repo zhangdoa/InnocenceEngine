@@ -9,13 +9,13 @@
 
 namespace InnoPhysicsSystem
 {
-	void setupComponents();
-	void setupCameraComponents();
+	void initializeComponents();
+	void initializeCameraComponents();
 	void generateProjectionMatrix(CameraComponent* cameraComponent);
 	void generateRayOfEye(CameraComponent* cameraComponent);
 	void generateFrustumVertices(CameraComponent* cameraComponent);
-	void setupVisibleComponents();
-	void setupLightComponents();
+	void initializeVisibleComponents();
+	void initializeLightComponents();
 	void setupLightComponentRadius(LightComponent* lightComponent);
 
 	std::vector<Vertex> generateNDC();
@@ -40,14 +40,14 @@ InnoHighLevelSystem_EXPORT bool InnoPhysicsSystem::setup()
 	return true;
 }
 
-void InnoPhysicsSystem::setupComponents()
+void InnoPhysicsSystem::initializeComponents()
 {
-	setupCameraComponents();
-	setupVisibleComponents();
-	setupLightComponents();
+	initializeCameraComponents();
+	initializeVisibleComponents();
+	initializeLightComponents();
 }
 
-void InnoPhysicsSystem::setupCameraComponents()
+void InnoPhysicsSystem::initializeCameraComponents()
 {
 	for (auto& i : GameSystemSingletonComponent::getInstance().m_cameraComponents)
 	{
@@ -65,8 +65,11 @@ void InnoPhysicsSystem::generateProjectionMatrix(CameraComponent* cameraComponen
 
 void InnoPhysicsSystem::generateRayOfEye(CameraComponent * cameraComponent)
 {
-	cameraComponent->m_rayOfEye.m_origin = InnoGameSystem::getTransformComponent(cameraComponent->m_parentEntity)->m_localTransformVector.caclGlobalPos();
-	cameraComponent->m_rayOfEye.m_direction = InnoGameSystem::getTransformComponent(cameraComponent->m_parentEntity)->m_localTransformVector.getDirection(direction::BACKWARD);
+	cameraComponent->m_rayOfEye.m_origin = InnoGameSystem::getTransformComponent(cameraComponent->m_parentEntity)->m_globalTransformVector.m_pos;
+	cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(
+		direction::BACKWARD,
+		InnoGameSystem::getTransformComponent(cameraComponent->m_parentEntity)->m_localTransformVector.m_rot
+		);
 }
 
 void InnoPhysicsSystem::generateFrustumVertices(CameraComponent * cameraComponent)
@@ -77,8 +80,8 @@ void InnoPhysicsSystem::generateFrustumVertices(CameraComponent * cameraComponen
 	auto l_NDC = generateNDC();
 	auto l_pCamera = cameraComponent->m_projectionMatrix;
 
-	auto l_rCamera = InnoMath::toRotationMatrix(InnoGameSystem::getTransformComponent(cameraComponent->m_parentEntity)->m_localTransformVector.caclGlobalRot());
-	auto l_tCamera = InnoMath::toTranslationMatrix(InnoGameSystem::getTransformComponent(cameraComponent->m_parentEntity)->m_localTransformVector.caclGlobalPos());
+	auto l_rCamera = InnoMath::toRotationMatrix(InnoGameSystem::getTransformComponent(cameraComponent->m_parentEntity)->m_globalTransformVector.m_rot);
+	auto l_tCamera = InnoMath::toTranslationMatrix(InnoGameSystem::getTransformComponent(cameraComponent->m_parentEntity)->m_globalTransformVector.m_pos);
 
 	for (auto& l_vertexData : l_NDC)
 	{
@@ -131,7 +134,7 @@ void InnoPhysicsSystem::generateFrustumVertices(CameraComponent * cameraComponen
 		1, 5, 2, 5, 6, 2 };
 }
 
-void InnoPhysicsSystem::setupVisibleComponents()
+void InnoPhysicsSystem::initializeVisibleComponents()
 {
 	for (auto i : GameSystemSingletonComponent::getInstance().m_visibleComponents)
 	{
@@ -151,7 +154,7 @@ void InnoPhysicsSystem::setupVisibleComponents()
 	}
 }
 
-void InnoPhysicsSystem::setupLightComponents()
+void InnoPhysicsSystem::initializeLightComponents()
 {
 	for (auto& i : GameSystemSingletonComponent::getInstance().m_lightComponents)
 	{
@@ -223,7 +226,7 @@ void InnoPhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 
 	visibleComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0));
 
-	auto l_worldTm = InnoGameSystem::getTransformComponent(visibleComponent.m_parentEntity)->m_localTransformVector.caclGlobalTransformationMatrix();
+	auto l_worldTm = InnoGameSystem::getTransformComponent(visibleComponent.m_parentEntity)->m_globalTransformMatrix.m_transformationMat;
 
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
@@ -282,7 +285,7 @@ void InnoPhysicsSystem::generateAABB(LightComponent & lightComponent)
 	}
 
 	//2.3 transform to light space
-	auto l_lightRotMat = InnoGameSystem::getTransformComponent(lightComponent.m_parentEntity)->m_localTransformVector.caclGlobalTransformationMatrix().inverse();
+	auto l_lightRotMat = InnoGameSystem::getTransformComponent(lightComponent.m_parentEntity)->m_globalTransformMatrix.m_transformationMat.inverse();
 	for (size_t i = 0; i < l_frustumsCornerPos.size(); i++)
 	{
 		//Column-Major memory layout
@@ -449,7 +452,7 @@ AABB InnoPhysicsSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMi
 
 InnoHighLevelSystem_EXPORT bool InnoPhysicsSystem::initialize()
 {
-	setupComponents();
+	initializeComponents();
 	m_PhysicsSystemStatus = objectStatus::ALIVE;
 	InnoLogSystem::printLog("PhysicsSystem has been initialized.");
 	return true;
@@ -491,7 +494,7 @@ void InnoPhysicsSystem::updateCulling()
 
 	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
 	{
-		WindowSystemSingletonComponent::getInstance().m_mouseRay.m_origin = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_localTransformVector.caclGlobalPos();
+		WindowSystemSingletonComponent::getInstance().m_mouseRay.m_origin = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
 		WindowSystemSingletonComponent::getInstance().m_mouseRay.m_direction = WindowSystemSingletonComponent::getInstance().m_mousePositionInWorldSpace;
 
 		auto l_cameraAABB = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_AABB;

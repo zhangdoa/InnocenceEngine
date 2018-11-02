@@ -9,12 +9,37 @@
 
 namespace InnoMemorySystem
 {
-	//Memory pool for TransformComponent
-	unsigned char* m_TransformComponentPoolPtr = nullptr;
-	unsigned char* m_TransformComponentPoolFreePtr = nullptr;
-	unsigned int m_TransformComponentPoolTotalCapability = 1024;
-	unsigned int m_TransformComponentPoolCurrentFreeBlock = m_TransformComponentPoolTotalCapability;
-	unsigned int m_TransformComponentPoolSize = m_TransformComponentPoolTotalCapability * sizeof(TransformComponent);
+	template <class T>
+	class ComponentPool
+	{
+	public:
+		ComponentPool() {
+			ComponentPool(1024)£»
+		};
+		ComponentPool(unsigned int PoolTotalCapability) {
+			m_PoolTotalCapability = PoolTotalCapability;
+			m_PoolPtr = ::new unsigned char[m_PoolTotalCapability];
+			m_PoolFreePtr = m_PoolPtr;
+		};
+		~ComponentPool() {
+			::delete[] m_PoolPtr;
+		};
+
+		unsigned char* m_PoolPtr = nullptr;
+		unsigned char* m_PoolFreePtr = nullptr;
+		unsigned int m_PoolTotalCapability = 0;
+		unsigned int m_PoolCurrentFreeBlock = m_PoolTotalCapability;
+		unsigned int m_PoolSize = m_PoolTotalCapability * sizeof(T);
+	};
+
+	//Memory pool for components
+	// @TODO: finish other components
+	ComponentPool<TransformComponent> m_TransformComponentPool;
+	ComponentPool<VisibleComponent> m_VisibleComponentPool;
+	ComponentPool<LightComponent> m_LightComponentPool;
+	ComponentPool<CameraComponent> m_CameraComponentPool;
+	ComponentPool<InputComponent> m_InputComponentPool;
+	ComponentPool<EnvironmentCaptureComponent> m_EnvironmentCaptureComponentPool;
 
 	//Memory pool for others
 	static const uint32_t s_BlockSizes[] = {
@@ -65,13 +90,8 @@ namespace InnoMemorySystem
 }
 
 InnoLowLevelSystem_EXPORT bool InnoMemorySystem::setup()
-{
-	m_TransformComponentPoolPtr = nullptr;
-	m_TransformComponentPoolPtr = ::new unsigned char[m_TransformComponentPoolSize];
-	m_TransformComponentPoolFreePtr = m_TransformComponentPoolPtr;
-
-	// @TODO: one component type one dedicated pool
-	// Allocate memory pool
+{	
+	// Allocate memory pool for others
 	m_poolMemoryPtr = nullptr;
 	m_poolMemoryPtr = ::new unsigned char[m_maxPoolSize];
 	std::memset(m_poolMemoryPtr, 0xCC, m_maxPoolSize);
@@ -101,7 +121,6 @@ InnoLowLevelSystem_EXPORT bool InnoMemorySystem::update()
 
 InnoLowLevelSystem_EXPORT bool InnoMemorySystem::terminate()
 {
-	::delete[] m_TransformComponentPoolPtr;
 	::delete[] m_poolMemoryPtr;
 	m_MemorySystemStatus = objectStatus::ALIVE;
 	InnoLogSystem::printLog("MemorySystem has been terminated.");
@@ -247,7 +266,7 @@ InnoLowLevelSystem_EXPORT void InnoMemorySystem::free(void * ptr)
 	std::memcpy(l_freeChuckPtr_UC + l_fullFreeBlockSize - m_boundCheckSize * 2, m_endBoundMarker, m_boundCheckSize);
 }
 
-InnoLowLevelSystem_EXPORT void InnoMemorySystem::serializeImpl(void * ptr)
+void InnoMemorySystem::serializeImpl(void * ptr)
 {
 	if (!ptr) return;
 	char* l_ptr_UC = reinterpret_cast<char*>(ptr);
@@ -264,7 +283,7 @@ InnoLowLevelSystem_EXPORT void InnoMemorySystem::serializeImpl(void * ptr)
 	l_file.close();
 }
 
-InnoLowLevelSystem_EXPORT void * InnoMemorySystem::deserializeImpl(unsigned long size, const std::string & filePath)
+void * InnoMemorySystem::deserializeImpl(unsigned long size, const std::string & filePath)
 {
 	std::ifstream l_file;
 	l_file.open(filePath, std::ios::binary);
@@ -367,16 +386,96 @@ InnoLowLevelSystem_EXPORT void InnoMemorySystem::dumpToFile(bool fullDump)
 
 TransformComponent * InnoMemorySystem::allocateTransformComponent()
 {
-	auto l_ptr = new(m_TransformComponentPoolFreePtr) TransformComponent();
+	auto l_ptr = new(m_TransformComponentPool.m_PoolFreePtr) TransformComponent();
 	if (l_ptr)
 	{
-		m_TransformComponentPoolFreePtr += sizeof(TransformComponent);
-		--m_TransformComponentPoolCurrentFreeBlock;
+		m_TransformComponentPool.m_PoolFreePtr += sizeof(TransformComponent);
+		--m_TransformComponentPool.m_PoolCurrentFreeBlock;
 		return l_ptr;
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory at " + std::to_string((int)m_TransformComponentPoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for TransformComponent at " + std::to_string((int)m_TransformComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+VisibleComponent * InnoMemorySystem::allocateVisibleComponent()
+{
+	auto l_ptr = new(m_VisibleComponentPool.m_PoolFreePtr) VisibleComponent();
+	if (l_ptr)
+	{
+		m_VisibleComponentPool.m_PoolFreePtr += sizeof(VisibleComponent);
+		--m_VisibleComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for VisibleComponent at " + std::to_string((int)m_VisibleComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+LightComponent * InnoMemorySystem::allocateLightComponent()
+{
+	auto l_ptr = new(m_LightComponentPool.m_PoolFreePtr) LightComponent();
+	if (l_ptr)
+	{
+		m_LightComponentPool.m_PoolFreePtr += sizeof(LightComponent);
+		--m_LightComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for LightComponent at " + std::to_string((int)m_LightComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+CameraComponent * InnoMemorySystem::allocateCameraComponent()
+{
+	auto l_ptr = new(m_CameraComponentPool.m_PoolFreePtr) CameraComponent();
+	if (l_ptr)
+	{
+		m_CameraComponentPool.m_PoolFreePtr += sizeof(CameraComponent);
+		--m_CameraComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for CameraComponent at " + std::to_string((int)m_CameraComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+InputComponent * InnoMemorySystem::allocateInputComponent()
+{
+	auto l_ptr = new(m_InputComponentPool.m_PoolFreePtr) InputComponent();
+	if (l_ptr)
+	{
+		m_InputComponentPool.m_PoolFreePtr += sizeof(InputComponent);
+		--m_InputComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for InputComponent at " + std::to_string((int)m_InputComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+EnvironmentCaptureComponent * InnoMemorySystem::allocateEnvironmentCaptureComponent()
+{
+	auto l_ptr = new(m_EnvironmentCaptureComponentPool.m_PoolFreePtr) EnvironmentCaptureComponent();
+	if (l_ptr)
+	{
+		m_EnvironmentCaptureComponentPool.m_PoolFreePtr += sizeof(EnvironmentCaptureComponent);
+		--m_EnvironmentCaptureComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for EnvironmentCaptureComponent at " + std::to_string((int)m_EnvironmentCaptureComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }

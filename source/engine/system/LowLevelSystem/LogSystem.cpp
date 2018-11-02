@@ -60,43 +60,43 @@ InnoLowLevelSystem_EXPORT void InnoLogSystem::printLogImpl(const mat4 & logMessa
 		<< "]"
 		<< std::endl
 		<< "|"
-		<< logMessage.m[0][0]
-		<< "]["
-		<< logMessage.m[1][0]
-		<< "]["
-		<< logMessage.m[2][0]
-		<< "]["
-		<< logMessage.m[3][0]
+		<< logMessage.m00
+		<< ""
+		<< logMessage.m10
+		<< ""
+		<< logMessage.m20
+		<< ""
+		<< logMessage.m30
 		<< "|"
 		<< std::endl
 		<< "|"
-		<< logMessage.m[0][1]
-		<< "]["
-		<< logMessage.m[1][1]
-		<< "]["
-		<< logMessage.m[2][1]
-		<< "]["
-		<< logMessage.m[3][1]
+		<< logMessage.m01
+		<< ""
+		<< logMessage.m11
+		<< ""
+		<< logMessage.m21
+		<< ""
+		<< logMessage.m31
 		<< "|"
 		<< std::endl
 		<< "|"
-		<< logMessage.m[0][2]
-		<< "]["
-		<< logMessage.m[1][2]
-		<< "]["
-		<< logMessage.m[2][2]
-		<< "]["
-		<< logMessage.m[3][2]
+		<< logMessage.m02
+		<< ""
+		<< logMessage.m12
+		<< ""
+		<< logMessage.m22
+		<< ""
+		<< logMessage.m32
 		<< "|"
 		<< std::endl
 		<< "|"
-		<< logMessage.m[0][3]
-		<< "]["
-		<< logMessage.m[1][3]
-		<< "]["
-		<< logMessage.m[2][3]
-		<< "]["
-		<< logMessage.m[3][3]
+		<< logMessage.m03
+		<< ""
+		<< logMessage.m13
+		<< ""
+		<< logMessage.m23
+		<< ""
+		<< logMessage.m33
 		<< "|"
 		<< std::endl;
 }

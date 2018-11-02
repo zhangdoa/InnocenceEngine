@@ -77,31 +77,37 @@ InnoHighLevelSystem_EXPORT bool InnoGameSystem::terminate()
 
 void InnoGameSystem::registerComponents(TransformComponent * transformComponent)
 {
+	GameSystemSingletonComponent::getInstance().m_transformComponents.emplace_back(transformComponent);
 	GameSystemSingletonComponent::getInstance().m_TransformComponentsMap.emplace(transformComponent->m_parentEntity, transformComponent);
 }
 
 void InnoGameSystem::registerComponents(VisibleComponent * visibleComponent)
 {
+	GameSystemSingletonComponent::getInstance().m_visibleComponents.emplace_back(visibleComponent);
 	GameSystemSingletonComponent::getInstance().m_VisibleComponentsMap.emplace(visibleComponent->m_parentEntity, visibleComponent);
 }
 
 void InnoGameSystem::registerComponents(LightComponent * lightComponent)
 {
+	GameSystemSingletonComponent::getInstance().m_lightComponents.emplace_back(lightComponent);
 	GameSystemSingletonComponent::getInstance().m_LightComponentsMap.emplace(lightComponent->m_parentEntity, lightComponent);
 }
 
 void InnoGameSystem::registerComponents(CameraComponent * cameraComponent)
 {
+	GameSystemSingletonComponent::getInstance().m_cameraComponents.emplace_back(cameraComponent);
 	GameSystemSingletonComponent::getInstance().m_CameraComponentsMap.emplace(cameraComponent->m_parentEntity, cameraComponent);
 }
 
 void InnoGameSystem::registerComponents(InputComponent * inputComponent)
 {
+	GameSystemSingletonComponent::getInstance().m_inputComponents.emplace_back(inputComponent);
 	GameSystemSingletonComponent::getInstance().m_InputComponentsMap.emplace(inputComponent->m_parentEntity, inputComponent);
 }
 
 void InnoGameSystem::registerComponents(EnvironmentCaptureComponent * environmentCaptureComponent)
 {
+	GameSystemSingletonComponent::getInstance().m_environmentCaptureComponents.emplace_back(environmentCaptureComponent);
 	GameSystemSingletonComponent::getInstance().m_EnvironmentCaptureComponentsMap.emplace(environmentCaptureComponent->m_parentEntity, environmentCaptureComponent);
 }
 
