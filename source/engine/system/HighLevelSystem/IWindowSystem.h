@@ -3,7 +3,7 @@
 #include "../../common/InnoType.h"
 #include "../../common/config.h"
 
-class IWindowSystem
+INTERFACE IWindowSystem
 {
 public:
 	InnoHighLevelSystem_EXPORT virtual bool setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow) = 0;

@@ -2,6 +2,10 @@
 #include "../common/stdafx.h"
 #include "../common/config.h"
 
+#define INTERFACE class
+#define IMPLEMENT public
+#define PRIVATE_SCOPE namespace
+
 enum class objectStatus
 {
 	STANDBY,

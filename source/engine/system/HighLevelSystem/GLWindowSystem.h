@@ -2,7 +2,7 @@
 #include "../../exports/HighLevelSystem_Export.h"
 #include "IWindowSystem.h"
 
-class GLWindowSystem : public IWindowSystem
+class GLWindowSystem : IMPLEMENT IWindowSystem
 {
 public:
 	InnoHighLevelSystem_EXPORT bool setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow) override;
@@ -13,9 +13,4 @@ public:
 	InnoHighLevelSystem_EXPORT objectStatus getStatus() override;
 
 	void swapBuffer() override;
-
-private:
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-	void hideMouseCursor();
-	void showMouseCursor();
 };

@@ -262,7 +262,7 @@ void InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
 	auto l_texture = l_textureMap->find(EntityID);
 	if (l_texture != l_textureMap->end())
 	{
-		for (auto i : l_texture->second->m_textureData)
+		for (auto& i : l_texture->second->m_textureData)
 		{
 			stbi_image_free(i);
 		}
@@ -293,7 +293,7 @@ void InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
 	auto l_texture = l_textureMap->find(EntityID);
 	if (l_texture != l_textureMap->end())
 	{
-		for (auto i : l_texture->second->m_textureData)
+		for (auto& i : l_texture->second->m_textureData)
 		{
 			stbi_image_free(i);
 		}
@@ -404,7 +404,7 @@ void InnoAssetSystem::loadAssetsForComponents()
 		}
 	}
 
-	for (auto l_visibleComponent : g_GameSystemSingletonComponent->m_visibleComponents)
+	for (auto& l_visibleComponent : g_GameSystemSingletonComponent->m_visibleComponents)
 	{
 		if (l_visibleComponent->m_visiblilityType != visiblilityType::INVISIBLE)
 		{

@@ -2180,7 +2180,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 					l_lightComponent->m_projectionMatrices[i]);
 				updateUniform(
 					ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_v,
-					InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_localTransformVector.caclGlobalTransformationMatrix().inverse());
+					InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat.inverse());
 
 				// draw each visibleComponent
 				for (auto& l_visibleComponent : GameSystemSingletonComponent::getInstance().m_visibleComponents)
@@ -2189,7 +2189,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 					{
 						updateUniform(
 							ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_m,
-							InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_localTransformVector.caclGlobalTransformationMatrix());
+							InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 
 						// draw each graphic data of visibleComponent
 						for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -2301,7 +2301,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
-								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_localTransformVector.caclGlobalTransformationMatrix());
+								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
 								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_previousTransformVector.caclGlobalTransformationMatrix());

@@ -32,10 +32,18 @@ namespace InnoPhysicsSystem
 	objectStatus m_PhysicsSystemStatus = objectStatus::SHUTDOWN;
 
 	InnoFuture<void>* m_asyncTask;
+
+	static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
+	static RenderingSystemSingletonComponent* g_RenderingSystemSingletonComponent;
+	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
 }
 
 InnoHighLevelSystem_EXPORT bool InnoPhysicsSystem::setup()
 {	
+	g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
+	g_RenderingSystemSingletonComponent = &RenderingSystemSingletonComponent::getInstance();
+	g_GameSystemSingletonComponent = &GameSystemSingletonComponent::getInstance();
+
 	m_PhysicsSystemStatus = objectStatus::ALIVE;
 	return true;
 }
@@ -49,7 +57,7 @@ void InnoPhysicsSystem::initializeComponents()
 
 void InnoPhysicsSystem::initializeCameraComponents()
 {
-	for (auto& i : GameSystemSingletonComponent::getInstance().m_cameraComponents)
+	for (auto& i : g_GameSystemSingletonComponent->m_cameraComponents)
 	{
 		generateProjectionMatrix(i);
 		generateRayOfEye(i);
@@ -136,27 +144,26 @@ void InnoPhysicsSystem::generateFrustumVertices(CameraComponent * cameraComponen
 
 void InnoPhysicsSystem::initializeVisibleComponents()
 {
-	for (auto i : GameSystemSingletonComponent::getInstance().m_visibleComponents)
+	std::for_each(g_GameSystemSingletonComponent->m_visibleComponents.begin(), g_GameSystemSingletonComponent->m_visibleComponents.end(),
+		[&](VisibleComponent* i)
 	{
-		if (i->m_visiblilityType != visiblilityType::INVISIBLE)
+		if (i->m_visiblilityType == visiblilityType::EMISSIVE)
 		{
 			generateAABB(*i);
-			if (i->m_visiblilityType == visiblilityType::EMISSIVE)
-			{
-				RenderingSystemSingletonComponent::getInstance().m_emissiveVisibleComponents.emplace_back(i);
-			}
-			else if (i->m_visiblilityType == visiblilityType::STATIC_MESH)
-			{
-				RenderingSystemSingletonComponent::getInstance().m_staticMeshVisibleComponents.emplace_back(i);
-			}
-
+			g_RenderingSystemSingletonComponent->m_emissiveVisibleComponents.emplace_back(i);
+		}
+		else if (i->m_visiblilityType == visiblilityType::STATIC_MESH)
+		{
+			generateAABB(*i);
+			g_RenderingSystemSingletonComponent->m_staticMeshVisibleComponents.emplace_back(i);
 		}
 	}
+	);
 }
 
 void InnoPhysicsSystem::initializeLightComponents()
 {
-	for (auto& i : GameSystemSingletonComponent::getInstance().m_lightComponents)
+	for (auto& i : g_GameSystemSingletonComponent->m_lightComponents)
 	{
 		i->m_direction = vec4(0.0, 0.0, 1.0, 0.0);
 		i->m_constantFactor = 1.0;
@@ -257,7 +264,7 @@ void InnoPhysicsSystem::generateAABB(LightComponent & lightComponent)
 	lightComponent.m_projectionMatrices.clear();
 
 	//1.translate the big frustum to light space
-	auto l_camera = GameSystemSingletonComponent::getInstance().m_cameraComponents[0];
+	auto l_camera = g_GameSystemSingletonComponent->m_cameraComponents[0];
 	auto l_frustumVertices = l_camera->m_frustumVertices;
 
 	//2.calculate splited planes' corners
@@ -460,23 +467,26 @@ InnoHighLevelSystem_EXPORT bool InnoPhysicsSystem::initialize()
 
 void InnoPhysicsSystem::updateCameraComponents()
 {
-	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
+	if (g_GameSystemSingletonComponent->m_cameraComponents.size() > 0)
 	{
-		for (auto& i : GameSystemSingletonComponent::getInstance().m_cameraComponents)
+		std::for_each(g_GameSystemSingletonComponent->m_cameraComponents.begin(), g_GameSystemSingletonComponent->m_cameraComponents.end(),
+			[&](CameraComponent* i)
 		{
 			generateRayOfEye(i);
 			generateFrustumVertices(i);
 			generateAABB(*i);
 		}
+		);
 	}
 }
 
 void InnoPhysicsSystem::updateLightComponents()
 {
-	if (GameSystemSingletonComponent::getInstance().m_lightComponents.size() > 0)
+	if (g_GameSystemSingletonComponent->m_lightComponents.size() > 0)
 	{
 		// generate AABB for CSM
-		for (auto& i : GameSystemSingletonComponent::getInstance().m_lightComponents)
+		std::for_each(g_GameSystemSingletonComponent->m_lightComponents.begin(), g_GameSystemSingletonComponent->m_lightComponents.end(),
+			[&](LightComponent* i)
 		{
 			setupLightComponentRadius(i);
 			if (i->m_lightType == lightType::DIRECTIONAL)
@@ -484,37 +494,40 @@ void InnoPhysicsSystem::updateLightComponents()
 				generateAABB(*i);
 			}
 		}
+		);
 	}
 }
 
 void InnoPhysicsSystem::updateCulling()
 {
-	RenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.clear();
-	RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.clear();
+	g_RenderingSystemSingletonComponent->m_selectedVisibleComponents.clear();
+	g_RenderingSystemSingletonComponent->m_inFrustumVisibleComponents.clear();
 
-	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
+	if (g_GameSystemSingletonComponent->m_cameraComponents.size() > 0)
 	{
-		WindowSystemSingletonComponent::getInstance().m_mouseRay.m_origin = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
-		WindowSystemSingletonComponent::getInstance().m_mouseRay.m_direction = WindowSystemSingletonComponent::getInstance().m_mousePositionInWorldSpace;
+		g_WindowSystemSingletonComponent->m_mouseRay.m_origin = InnoGameSystem::getTransformComponent(g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
+		g_WindowSystemSingletonComponent->m_mouseRay.m_direction = g_WindowSystemSingletonComponent->m_mousePositionInWorldSpace;
 
-		auto l_cameraAABB = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_AABB;
+		auto l_cameraAABB = g_GameSystemSingletonComponent->m_cameraComponents[0]->m_AABB;
 
-		auto l_ray = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_rayOfEye;
+		auto l_ray = g_GameSystemSingletonComponent->m_cameraComponents[0]->m_rayOfEye;
 
-		for (auto& j : GameSystemSingletonComponent::getInstance().m_visibleComponents)
+		std::for_each(g_GameSystemSingletonComponent->m_visibleComponents.begin(), g_GameSystemSingletonComponent->m_visibleComponents.end(),
+			[&](VisibleComponent* j) 
 		{
 			if (j->m_visiblilityType == visiblilityType::STATIC_MESH || j->m_visiblilityType == visiblilityType::EMISSIVE)
 			{
-				if (InnoMath::intersectCheck(j->m_AABB, WindowSystemSingletonComponent::getInstance().m_mouseRay))
+				if (InnoMath::intersectCheck(j->m_AABB, g_WindowSystemSingletonComponent->m_mouseRay))
 				{
-					RenderingSystemSingletonComponent::getInstance().m_selectedVisibleComponents.emplace_back(j);
+					g_RenderingSystemSingletonComponent->m_selectedVisibleComponents.emplace_back(j);
 				}
 				if (InnoMath::intersectCheck(l_cameraAABB, j->m_AABB))
 				{
-					RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents.emplace_back(j);
+					g_RenderingSystemSingletonComponent->m_inFrustumVisibleComponents.emplace_back(j);
 				}
 			}
 		}
+		);
 	}
 }
 
