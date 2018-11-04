@@ -14,7 +14,7 @@ namespace InnoInputSystem
 	objectStatus m_InputSystemStatus = objectStatus::SHUTDOWN;
 };
 
-void InnoInputSystem::setup()
+InnoHighLevelSystem_EXPORT void InnoInputSystem::setup()
 {
 	g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
 	g_GameSystemSingletonComponent = &GameSystemSingletonComponent::getInstance();
@@ -22,7 +22,7 @@ void InnoInputSystem::setup()
 	m_InputSystemStatus = objectStatus::ALIVE;
 }
 
-void InnoInputSystem::initialize()
+InnoHighLevelSystem_EXPORT void InnoInputSystem::initialize()
 {
 	for (int i = 0; i < g_WindowSystemSingletonComponent->NUM_KEYCODES; i++)
 	{
@@ -38,7 +38,7 @@ void InnoInputSystem::initialize()
 	InnoLogSystem::printLog("InputSystem has been initialized.");
 }
 
-void InnoInputSystem::update()
+InnoHighLevelSystem_EXPORT void InnoInputSystem::update()
 {
 	for (auto i : g_WindowSystemSingletonComponent->m_buttonStatus)
 	{
@@ -81,13 +81,13 @@ void InnoInputSystem::update()
 	g_WindowSystemSingletonComponent->m_mousePositionInWorldSpace = calcMousePositionInWorldSpace();
 }
 
-void InnoInputSystem::terminate()
+InnoHighLevelSystem_EXPORT void InnoInputSystem::terminate()
 {
 	m_InputSystemStatus = objectStatus::SHUTDOWN;
 	InnoLogSystem::printLog("InputSystem has been terminated.");
 }
 
-void InnoInputSystem::addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor)
+InnoHighLevelSystem_EXPORT void InnoInputSystem::addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor)
 {
 	auto l_keyboardInputCallbackFunctionVector = g_WindowSystemSingletonComponent->m_buttonStatusCallback.find(boundButton);
 	if (l_keyboardInputCallbackFunctionVector != g_WindowSystemSingletonComponent->m_buttonStatusCallback.end())
@@ -100,7 +100,7 @@ void InnoInputSystem::addButtonStatusCallback(button boundButton, std::function<
 	}
 }
 
-void InnoInputSystem::addButtonStatusCallback(button boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor)
+InnoHighLevelSystem_EXPORT void InnoInputSystem::addButtonStatusCallback(button boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor)
 {
 	for (auto i : buttonStatusCallbackFunctor)
 	{
@@ -108,7 +108,7 @@ void InnoInputSystem::addButtonStatusCallback(button boundButton, std::vector<st
 	}
 }
 
-void InnoInputSystem::addButtonStatusCallback(buttonStatusCallbackMap & buttonStatusCallbackFunctor)
+InnoHighLevelSystem_EXPORT void InnoInputSystem::addButtonStatusCallback(buttonStatusCallbackMap & buttonStatusCallbackFunctor)
 {
 	for (auto i : buttonStatusCallbackFunctor)
 	{
@@ -116,7 +116,7 @@ void InnoInputSystem::addButtonStatusCallback(buttonStatusCallbackMap & buttonSt
 	}
 }
 
-void InnoInputSystem::addMouseMovementCallback(int mouseCode, std::function<void(double)>* mouseMovementCallback)
+InnoHighLevelSystem_EXPORT void InnoInputSystem::addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback)
 {
 	auto l_mouseMovementCallbackFunctionVector = g_WindowSystemSingletonComponent->m_mouseMovementCallback.find(mouseCode);
 	if (l_mouseMovementCallbackFunctionVector != g_WindowSystemSingletonComponent->m_mouseMovementCallback.end())
@@ -125,11 +125,11 @@ void InnoInputSystem::addMouseMovementCallback(int mouseCode, std::function<void
 	}
 	else
 	{
-		g_WindowSystemSingletonComponent->m_mouseMovementCallback.emplace(mouseCode, std::vector<std::function<void(double)>*>{mouseMovementCallback});
+		g_WindowSystemSingletonComponent->m_mouseMovementCallback.emplace(mouseCode, std::vector<std::function<void(float)>*>{mouseMovementCallback});
 	}
 }
 
-void InnoInputSystem::addMouseMovementCallback(int mouseCode, std::vector<std::function<void(double)>*>& mouseMovementCallback)
+InnoHighLevelSystem_EXPORT void InnoInputSystem::addMouseMovementCallback(int mouseCode, std::vector<std::function<void(float)>*>& mouseMovementCallback)
 {
 	for (auto i : mouseMovementCallback)
 	{
@@ -137,7 +137,7 @@ void InnoInputSystem::addMouseMovementCallback(int mouseCode, std::vector<std::f
 	}
 }
 
-void InnoInputSystem::addMouseMovementCallback(mouseMovementCallbackMap& mouseMovementCallback)
+InnoHighLevelSystem_EXPORT void InnoInputSystem::addMouseMovementCallback(mouseMovementCallbackMap& mouseMovementCallback)
 {
 	for (auto i : mouseMovementCallback)
 	{
@@ -145,13 +145,13 @@ void InnoInputSystem::addMouseMovementCallback(mouseMovementCallbackMap& mouseMo
 	}
 }
 
-void InnoInputSystem::framebufferSizeCallback(int width, int height)
+InnoHighLevelSystem_EXPORT void InnoInputSystem::framebufferSizeCallback(int width, int height)
 {
 	g_WindowSystemSingletonComponent->m_windowResolution.x = width;
 	g_WindowSystemSingletonComponent->m_windowResolution.y = height;
 }
 
-void InnoInputSystem::mousePositionCallback(double mouseXPos, double mouseYPos)
+InnoHighLevelSystem_EXPORT void InnoInputSystem::mousePositionCallback(float mouseXPos, float mouseYPos)
 {
 	g_WindowSystemSingletonComponent->m_mouseXOffset = mouseXPos - g_WindowSystemSingletonComponent->m_mouseLastX;
 	g_WindowSystemSingletonComponent->m_mouseYOffset = g_WindowSystemSingletonComponent->m_mouseLastY - mouseYPos;
@@ -160,31 +160,31 @@ void InnoInputSystem::mousePositionCallback(double mouseXPos, double mouseYPos)
 	g_WindowSystemSingletonComponent->m_mouseLastY = mouseYPos;
 }
 
-void InnoInputSystem::scrollCallback(double xoffset, double yoffset)
+InnoHighLevelSystem_EXPORT void InnoInputSystem::scrollCallback(float xoffset, float yoffset)
 {
 	//@TODO: context based binding
-	if (yoffset >= 0.0)
+	if (yoffset >= 0.0f)
 	{
-		g_GameSystemSingletonComponent->m_cameraComponents[0]->m_FOVX += 1.0;
+		g_GameSystemSingletonComponent->m_cameraComponents[0]->m_FOVX += 1.0f;
 	}
 	else
 	{
-		g_GameSystemSingletonComponent->m_cameraComponents[0]->m_FOVX -= 1.0;
+		g_GameSystemSingletonComponent->m_cameraComponents[0]->m_FOVX -= 1.0f;
 	}
 	//InnoPhysicsSystem::setupCameraComponentProjectionMatrix(InnoGameSystem::getCameraComponents()[0]);
 }
 
-objectStatus InnoInputSystem::getStatus()
+InnoHighLevelSystem_EXPORT objectStatus InnoInputSystem::getStatus()
 {
 	return m_InputSystemStatus;
 }
 
 vec4 InnoInputSystem::calcMousePositionInWorldSpace()
 {
-	auto l_x = 2.0 * g_WindowSystemSingletonComponent->m_mouseLastX / g_WindowSystemSingletonComponent->m_windowResolution.x - 1.0;
-	auto l_y = 1.0 - 2.0 * g_WindowSystemSingletonComponent->m_mouseLastY / g_WindowSystemSingletonComponent->m_windowResolution.y;
-	auto l_z = -1.0;
-	auto l_w = 1.0;
+	auto l_x = 2.0f * g_WindowSystemSingletonComponent->m_mouseLastX / g_WindowSystemSingletonComponent->m_windowResolution.x - 1.0f;
+	auto l_y = 1.0f - 2.0f * g_WindowSystemSingletonComponent->m_mouseLastY / g_WindowSystemSingletonComponent->m_windowResolution.y;
+	auto l_z = -1.0f;
+	auto l_w = 1.0f;
 	vec4 l_ndcSpace = vec4(l_x, l_y, l_z, l_w);
 
 	auto l_mainCamera = g_GameSystemSingletonComponent->m_cameraComponents[0];
@@ -194,8 +194,8 @@ vec4 InnoInputSystem::calcMousePositionInWorldSpace()
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 	l_ndcSpace = InnoMath::mul(l_ndcSpace, pCamera.inverse());
-	l_ndcSpace.z = -1.0;
-	l_ndcSpace.w = 0.0;
+	l_ndcSpace.z = -1.0f;
+	l_ndcSpace.w = 0.0f;
 	l_ndcSpace = InnoMath::mul(l_ndcSpace, rCamera.inverse());
 	l_ndcSpace = InnoMath::mul(l_ndcSpace, tCamera.inverse());
 #endif
@@ -203,8 +203,8 @@ vec4 InnoInputSystem::calcMousePositionInWorldSpace()
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 
 	l_ndcSpace = InnoMath::mul(pCamera.inverse(), l_ndcSpace);
-	l_ndcSpace.z = -1.0;
-	l_ndcSpace.w = 0.0;
+	l_ndcSpace.z = -1.0f;
+	l_ndcSpace.w = 0.0f;
 	l_ndcSpace = InnoMath::mul(tCamera.inverse(), l_ndcSpace);
 	l_ndcSpace = InnoMath::mul(rCamera.inverse(), l_ndcSpace);
 #endif

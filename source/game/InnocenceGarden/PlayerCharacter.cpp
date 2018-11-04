@@ -7,13 +7,13 @@ void PlayerCharacter::setup()
 	m_inputComponent.m_parentEntity = m_parentEntity;
 	m_visibleComponent.m_parentEntity = m_parentEntity;
 
-	m_cameraComponent.m_FOVX = 60.0;
-	m_cameraComponent.m_WHRatio = 16.0 / 9.0;
-	m_cameraComponent.m_zNear = 0.1;
-	m_cameraComponent.m_zFar = 200.0;
+	m_cameraComponent.m_FOVX = 60.0f;
+	m_cameraComponent.m_WHRatio = 16.0f / 9.0f;
+	m_cameraComponent.m_zNear = 0.1f;
+	m_cameraComponent.m_zFar = 200.0f;
 
-	m_moveSpeed = 0.5;
-	m_rotateSpeed = 2.0;
+	m_moveSpeed = 0.5f;
+	m_rotateSpeed = 2.0f;
 	m_canMove = false;
 
 	f_moveForward = std::bind(&PlayerCharacter::moveForward, this);
@@ -48,7 +48,7 @@ VisibleComponent & PlayerCharacter::getVisibleComponent()
 	return m_visibleComponent;
 }
 
-void PlayerCharacter::move(vec4 direction, double length)
+void PlayerCharacter::move(vec4 direction, float length)
 {
 	if (m_canMove)
 	{
@@ -86,7 +86,7 @@ void PlayerCharacter::forbidMove()
 	m_canMove = false;
 }
 
-void PlayerCharacter::rotateAroundPositiveYAxis(double offset)
+void PlayerCharacter::rotateAroundPositiveYAxis(float offset)
 {
 	if (m_canMove)
 	{
@@ -99,7 +99,7 @@ void PlayerCharacter::rotateAroundPositiveYAxis(double offset)
 	}
 }
 
-void PlayerCharacter::rotateAroundRightAxis(double offset)
+void PlayerCharacter::rotateAroundRightAxis(float offset)
 {
 	if (m_canMove)
 	{

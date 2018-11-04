@@ -593,7 +593,7 @@ public:
 	}
 #endif 
 
-	auto operator*(T rhs) -> TMat4<T>
+	auto operator*(const T rhs) -> TMat4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
@@ -1411,17 +1411,17 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto LocalTransformVectorToGlobal(const TTransformVector<T> & parentTransformVector, const TTransformMatrix<T> & parentTransformMatrix)->TTransformVector<T>
+	auto LocalTransformVectorToGlobal(const TTransformVector<T> & localTransformVector, const TTransformVector<T> & parentTransformVector, const TTransformMatrix<T> & parentTransformMatrix)->TTransformVector<T>
 	{
 		TTransformVector<T> m;
-		m.m_pos = InnoMath::caclGlobalPos(parentTransformMatrix, parentTransformVector.m_pos);
-		m.m_rot = InnoMath::caclGlobalRot(parentTransformVector.m_rot);
-		m.m_scale = InnoMath::caclGlobalScale(parentTransformVector.m_scale);
+		m.m_pos = InnoMath::caclGlobalPos(parentTransformMatrix.m_transformationMat, localTransformVector.m_pos);
+		m.m_rot = InnoMath::caclGlobalRot(parentTransformVector.m_rot, localTransformVector.m_rot);
+		m.m_scale = InnoMath::caclGlobalScale(parentTransformVector.m_scale, localTransformVector.m_scale);
 		return m;
 	}
 
 	template<class T>
-	auto caclTransformationMatrix(const TTransformMatrix<T> & transform) -> TMat4<T>
+	auto caclTransformationMatrix(TTransformMatrix<T> & transform) -> TMat4<T>
 	{
 		// @TODO: calculate by hand
 		return transform.m_translationMat * transform.m_rotationMat * transform.m_scaleMat;
@@ -1447,7 +1447,7 @@ namespace InnoMath
 	template<class T>
 	auto getInvertTranslationMatrix(const TVec4<T> pos) -> TMat4<T>
 	{
-		return InnoMath::toTranslationMatrix(pos.scale(-one<T>));
+		return InnoMath::toTranslationMatrix(pos * -one<T>);
 	}
 
 	template<class T>

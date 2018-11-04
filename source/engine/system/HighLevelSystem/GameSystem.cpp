@@ -18,36 +18,63 @@
 
 namespace InnoGameSystem
 {
+	void sortTransformComponentsVector();
+
 	void updateTransform();
 
 	objectStatus m_GameSystemStatus = objectStatus::SHUTDOWN;
+
+	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
 }
 
 InnoHighLevelSystem_EXPORT bool InnoGameSystem::setup()
 {
+	g_GameSystemSingletonComponent = &GameSystemSingletonComponent::getInstance();
 	InnoGameInstance::setup();
+	sortTransformComponentsVector();
 	m_GameSystemStatus = objectStatus::ALIVE;
 	return true;
+}
+
+void InnoGameSystem::sortTransformComponentsVector()
+{
+	//construct the hierarchy tree
+	std::for_each(g_GameSystemSingletonComponent->m_transformComponents.begin(), g_GameSystemSingletonComponent->m_transformComponents.end(), [&](TransformComponent* val)
+	{
+		if (val->m_parentTransformComponent)
+		{
+			val->m_transformHierarchyLevel = val->m_parentTransformComponent->m_transformHierarchyLevel + 1;
+		}
+		else
+		{
+			val->m_transformHierarchyLevel = 0;
+		}
+	});
+	//from top to bottom
+	std::sort(g_GameSystemSingletonComponent->m_transformComponents.begin(), g_GameSystemSingletonComponent->m_transformComponents.end(), [&](TransformComponent* a, TransformComponent* b)
+	{
+		return a->m_transformHierarchyLevel < b->m_transformHierarchyLevel;
+	});
 }
 
 void InnoGameSystem::updateTransform()
 {
 	// @TODO: update from hierarchy's top to down
-	std::for_each(GameSystemSingletonComponent::getInstance().m_currentTransformComponentsTree.begin(), GameSystemSingletonComponent::getInstance().m_currentTransformComponentsTree.end(), [&](std::vector<TransformComponent*> vector)
+	std::for_each(g_GameSystemSingletonComponent->m_transformComponents.begin(), g_GameSystemSingletonComponent->m_transformComponents.end(), [&](TransformComponent* val)
 	{
-		std::for_each(vector.begin(), vector.end(), [&](TransformComponent* val)
-		{
-			val->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_localTransformVector);
-			val->m_globalTransformVector = InnoMath::LocalTransformVectorToGlobal(val->m_parentTransformComponent->m_globalTransformVector, val->m_parentTransformComponent->m_globalTransformMatrix);
-			val->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_globalTransformVector);
-		});
+		val->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_localTransformVector);
+		val->m_globalTransformVector = InnoMath::LocalTransformVectorToGlobal(val->m_localTransformVector, val->m_parentTransformComponent->m_globalTransformVector, val->m_parentTransformComponent->m_globalTransformMatrix);
+		val->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_globalTransformVector);
 	});
 }
 
 // @TODO: add a cache function for after-rendering business
 void InnoGameSystem::saveComponentsCapture()
 {
-	GameSystemSingletonComponent::getInstance().m_previousTransformComponentsTree = GameSystemSingletonComponent::getInstance().m_currentTransformComponentsTree;
+	std::for_each(g_GameSystemSingletonComponent->m_transformComponents.begin(), g_GameSystemSingletonComponent->m_transformComponents.end(), [&](TransformComponent* val)
+	{
+		val->m_globalTransformMatrix_prev = val->m_globalTransformMatrix;
+	});
 }
 
 InnoHighLevelSystem_EXPORT bool InnoGameSystem::initialize()
@@ -59,7 +86,7 @@ InnoHighLevelSystem_EXPORT bool InnoGameSystem::initialize()
 
 InnoHighLevelSystem_EXPORT bool InnoGameSystem::update()
 {
-	GameSystemSingletonComponent::getInstance().m_asyncTask = &InnoTaskSystem::submit([]()
+	g_GameSystemSingletonComponent->m_asyncTask = &InnoTaskSystem::submit([]()
 	{
 		InnoGameInstance::update();
 		updateTransform();
@@ -77,38 +104,38 @@ InnoHighLevelSystem_EXPORT bool InnoGameSystem::terminate()
 
 void InnoGameSystem::registerComponents(TransformComponent * transformComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_transformComponents.emplace_back(transformComponent);
-	GameSystemSingletonComponent::getInstance().m_TransformComponentsMap.emplace(transformComponent->m_parentEntity, transformComponent);
+	g_GameSystemSingletonComponent->m_transformComponents.emplace_back(transformComponent);
+	g_GameSystemSingletonComponent->m_TransformComponentsMap.emplace(transformComponent->m_parentEntity, transformComponent);
 }
 
 void InnoGameSystem::registerComponents(VisibleComponent * visibleComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_visibleComponents.emplace_back(visibleComponent);
-	GameSystemSingletonComponent::getInstance().m_VisibleComponentsMap.emplace(visibleComponent->m_parentEntity, visibleComponent);
+	g_GameSystemSingletonComponent->m_visibleComponents.emplace_back(visibleComponent);
+	g_GameSystemSingletonComponent->m_VisibleComponentsMap.emplace(visibleComponent->m_parentEntity, visibleComponent);
 }
 
 void InnoGameSystem::registerComponents(LightComponent * lightComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_lightComponents.emplace_back(lightComponent);
-	GameSystemSingletonComponent::getInstance().m_LightComponentsMap.emplace(lightComponent->m_parentEntity, lightComponent);
+	g_GameSystemSingletonComponent->m_lightComponents.emplace_back(lightComponent);
+	g_GameSystemSingletonComponent->m_LightComponentsMap.emplace(lightComponent->m_parentEntity, lightComponent);
 }
 
 void InnoGameSystem::registerComponents(CameraComponent * cameraComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_cameraComponents.emplace_back(cameraComponent);
-	GameSystemSingletonComponent::getInstance().m_CameraComponentsMap.emplace(cameraComponent->m_parentEntity, cameraComponent);
+	g_GameSystemSingletonComponent->m_cameraComponents.emplace_back(cameraComponent);
+	g_GameSystemSingletonComponent->m_CameraComponentsMap.emplace(cameraComponent->m_parentEntity, cameraComponent);
 }
 
 void InnoGameSystem::registerComponents(InputComponent * inputComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_inputComponents.emplace_back(inputComponent);
-	GameSystemSingletonComponent::getInstance().m_InputComponentsMap.emplace(inputComponent->m_parentEntity, inputComponent);
+	g_GameSystemSingletonComponent->m_inputComponents.emplace_back(inputComponent);
+	g_GameSystemSingletonComponent->m_InputComponentsMap.emplace(inputComponent->m_parentEntity, inputComponent);
 }
 
 void InnoGameSystem::registerComponents(EnvironmentCaptureComponent * environmentCaptureComponent)
 {
-	GameSystemSingletonComponent::getInstance().m_environmentCaptureComponents.emplace_back(environmentCaptureComponent);
-	GameSystemSingletonComponent::getInstance().m_EnvironmentCaptureComponentsMap.emplace(environmentCaptureComponent->m_parentEntity, environmentCaptureComponent);
+	g_GameSystemSingletonComponent->m_environmentCaptureComponents.emplace_back(environmentCaptureComponent);
+	g_GameSystemSingletonComponent->m_EnvironmentCaptureComponentsMap.emplace(environmentCaptureComponent->m_parentEntity, environmentCaptureComponent);
 }
 
 std::string InnoGameSystem::getGameName()
@@ -119,8 +146,8 @@ std::string InnoGameSystem::getGameName()
 // @TODO: generic impl
 TransformComponent * InnoGameSystem::getTransformComponent(EntityID parentEntity)
 {
-	auto result = GameSystemSingletonComponent::getInstance().m_TransformComponentsMap.find(parentEntity);
-	if (result != GameSystemSingletonComponent::getInstance().m_TransformComponentsMap.end())
+	auto result = g_GameSystemSingletonComponent->m_TransformComponentsMap.find(parentEntity);
+	if (result != g_GameSystemSingletonComponent->m_TransformComponentsMap.end())
 	{
 		return result->second;
 	}
@@ -143,7 +170,7 @@ void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponen
 	}
 }
 
-void InnoGameSystem::registerMouseMovementCallback(InputComponent * inputComponent, int mouseCode, std::function<void(double)>* function)
+void InnoGameSystem::registerMouseMovementCallback(InputComponent * inputComponent, int mouseCode, std::function<void(float)>* function)
 {
 	auto l_mouseMovementCallbackVector = inputComponent->m_mouseMovementCallbackImpl.find(mouseCode);
 	if (l_mouseMovementCallbackVector != inputComponent->m_mouseMovementCallbackImpl.end())
@@ -152,7 +179,7 @@ void InnoGameSystem::registerMouseMovementCallback(InputComponent * inputCompone
 	}
 	else
 	{
-		inputComponent->m_mouseMovementCallbackImpl.emplace(mouseCode, std::vector<std::function<void(double)>*>{function});
+		inputComponent->m_mouseMovementCallbackImpl.emplace(mouseCode, std::vector<std::function<void(float)>*>{function});
 	}
 }
 

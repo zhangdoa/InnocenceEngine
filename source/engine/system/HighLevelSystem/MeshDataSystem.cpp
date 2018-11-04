@@ -18,9 +18,9 @@ void MeshDataSystem::terminate()
 
 vec4 MeshDataSystem::findMaxVertex(const MeshDataComponent& meshDataComponent)
 {
-	double maxX = 0;
-	double maxY = 0;
-	double maxZ = 0;
+	float maxX = 0;
+	float maxY = 0;
+	float maxZ = 0;
 
 	std::for_each(meshDataComponent.m_vertices.begin(), meshDataComponent.m_vertices.end(), [&](Vertex val)
 	{
@@ -39,14 +39,14 @@ vec4 MeshDataSystem::findMaxVertex(const MeshDataComponent& meshDataComponent)
 			maxZ = val.m_pos.z;
 		};
 	});
-	return vec4(maxX, maxY, maxZ, 1.0);
+	return vec4(maxX, maxY, maxZ, 1.0f);
 }
 
 vec4 MeshDataSystem::findMinVertex(const MeshDataComponent& meshDataComponent)
 {
-	double minX = 0;
-	double minY = 0;
-	double minZ = 0;
+	float minX = 0.0f;
+	float minY = 0.0f;
+	float minZ = 0.0f;
 
 	std::for_each(meshDataComponent.m_vertices.begin(), meshDataComponent.m_vertices.end(), [&](Vertex val)
 	{
@@ -65,7 +65,7 @@ vec4 MeshDataSystem::findMinVertex(const MeshDataComponent& meshDataComponent)
 			minZ = val.m_pos.z;
 		};
 	});
-	return vec4(minX, minY, minZ, 1.0);
+	return vec4(minX, minY, minZ, 1.0f);
 }
 
 void MeshDataSystem::addUnitCube(MeshDataComponent& meshDataComponent)
@@ -107,7 +107,7 @@ void MeshDataSystem::addUnitCube(MeshDataComponent& meshDataComponent)
 
 	for (auto& l_vertexData : meshDataComponent.m_vertices)
 	{
-		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
 	}
 
 	meshDataComponent.m_indices = { 0, 3, 1, 1, 3, 2,
@@ -124,7 +124,6 @@ void MeshDataSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 {
 	unsigned int X_SEGMENTS = 64;
 	unsigned int Y_SEGMENTS = 64;
-	double PI = 3.14159265359;
 	auto l_containerSize = X_SEGMENTS * Y_SEGMENTS;
 	meshDataComponent.m_vertices.reserve(l_containerSize);
 
@@ -132,17 +131,17 @@ void MeshDataSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 	{
 		for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
 		{
-			double xSegment = (double)x / (double)X_SEGMENTS;
-			double ySegment = (double)y / (double)Y_SEGMENTS;
-			double xPos = cos(xSegment * 2.0 * PI) * sin(ySegment * PI);
-			double yPos = cos(ySegment * PI);
-			double zPos = sin(xSegment * 2.0 * PI) * sin(ySegment * PI);
+			float xSegment = (float)x / (float)X_SEGMENTS;
+			float ySegment = (float)y / (float)Y_SEGMENTS;
+			float xPos = cos(xSegment * 2.0f * PI<float>) * sin(ySegment * PI<float>);
+			float yPos = cos(ySegment * PI<float>);
+			float zPos = sin(xSegment * 2.0f * PI<float>) * sin(ySegment * PI<float>);
 
 			Vertex l_VertexData;
-			l_VertexData.m_pos = vec4(xPos, yPos, zPos, 1.0);
+			l_VertexData.m_pos = vec4(xPos, yPos, zPos, 1.0f);
 			l_VertexData.m_texCoord = vec2(xSegment, ySegment);
-			l_VertexData.m_normal = vec4(xPos, yPos, zPos, 0.0).normalize();
-			//l_VertexData.m_tangent = glm::normalize(glm::cross(glm::vec4(0.0, 0.0, 1.0), l_VertexData.m_normal));
+			l_VertexData.m_normal = vec4(xPos, yPos, zPos, 0.0f).normalize();
+			//l_VertexData.m_tangent = glm::normalize(glm::cross(glm::vec4(0.0f, 0.0f, 1.0f), l_VertexData.m_normal));
 			//l_VertexData.m_bitangent = glm::normalize(glm::cross(l_VertexData.m_tangent, l_VertexData.m_normal));
 			meshDataComponent.m_vertices.emplace_back(l_VertexData);
 		}

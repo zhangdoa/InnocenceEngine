@@ -26,7 +26,7 @@ static windowCallbackWrapper* ApplicationHandle = 0;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-PRIVATE_SCOPE DXWindowSystemNS
+INNO_PRIVATE_SCOPE DXWindowSystemNS
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
@@ -249,7 +249,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 		auto l_mouseCurrentX = GET_X_LPARAM(lparam);
 		auto l_mouseCurrentY = GET_Y_LPARAM(lparam);
-		InnoInputSystem::mousePositionCallback(l_mouseCurrentX, l_mouseCurrentY);
+		InnoInputSystem::mousePositionCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
 		return 0;
 	}
 	// Any other messages send to the default message handler as our application won't make use of them.

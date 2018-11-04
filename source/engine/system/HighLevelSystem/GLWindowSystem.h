@@ -2,7 +2,7 @@
 #include "../../exports/HighLevelSystem_Export.h"
 #include "IWindowSystem.h"
 
-class GLWindowSystem : IMPLEMENT IWindowSystem
+class GLWindowSystem : INNO_IMPLEMENT IWindowSystem
 {
 public:
 	InnoHighLevelSystem_EXPORT bool setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow) override;

@@ -2,9 +2,9 @@
 #include "../common/stdafx.h"
 #include "../common/config.h"
 
-#define INTERFACE class
-#define IMPLEMENT public
-#define PRIVATE_SCOPE namespace
+#define INNO_INTERFACE class
+#define INNO_IMPLEMENT public
+#define INNO_PRIVATE_SCOPE namespace
 
 enum class objectStatus
 {
@@ -85,7 +85,7 @@ struct buttonHasher
 };
 
 using buttonStatusCallbackMap = std::unordered_map<button, std::vector<std::function<void()>*>, buttonHasher>;
-using mouseMovementCallbackMap = std::unordered_map<int, std::vector<std::function<void(double)>*>>;
+using mouseMovementCallbackMap = std::unordered_map<int, std::vector<std::function<void(float)>*>>;
 
 #define INNO_KEY_SPACE              32
 #define INNO_KEY_APOSTROPHE         39  /* ' */

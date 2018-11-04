@@ -8,7 +8,7 @@
 #include "../../component/DXMeshDataComponent.h"
 #include "../../component/DXTextureDataComponent.h"
 
-class DXRenderingSystem : public IRenderingSystem
+class DXRenderingSystem : INNO_IMPLEMENT IRenderingSystem
 {
 public:
 	InnoHighLevelSystem_EXPORT bool setup() override;

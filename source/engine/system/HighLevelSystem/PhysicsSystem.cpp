@@ -68,7 +68,7 @@ void InnoPhysicsSystem::initializeCameraComponents()
 
 void InnoPhysicsSystem::generateProjectionMatrix(CameraComponent* cameraComponent)
 {
-	cameraComponent->m_projectionMatrix.initializeToPerspectiveMatrix((cameraComponent->m_FOVX / 180.0) * PI<double>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
+	cameraComponent->m_projectionMatrix.initializeToPerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
 }
 
 void InnoPhysicsSystem::generateRayOfEye(CameraComponent * cameraComponent)
@@ -105,7 +105,7 @@ void InnoPhysicsSystem::generateFrustumVertices(CameraComponent * cameraComponen
 		l_mulPos = InnoMath::mul(l_pCamera.inverse(), l_mulPos);
 #endif
 		// perspective division
-		l_mulPos = l_mulPos * (1.0 / l_mulPos.w);
+		l_mulPos = l_mulPos * (1.0f / l_mulPos.w);
 		// from view space to world space
 		//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
@@ -122,7 +122,7 @@ void InnoPhysicsSystem::generateFrustumVertices(CameraComponent * cameraComponen
 
 	for (auto& l_vertexData : l_NDC)
 	{
-		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
 	}
 
 	// near clip plane first
@@ -165,12 +165,12 @@ void InnoPhysicsSystem::initializeLightComponents()
 {
 	for (auto& i : g_GameSystemSingletonComponent->m_lightComponents)
 	{
-		i->m_direction = vec4(0.0, 0.0, 1.0, 0.0);
-		i->m_constantFactor = 1.0;
-		i->m_linearFactor = 0.14;
-		i->m_quadraticFactor = 0.07;
+		i->m_direction = vec4(0.0f, 0.0f, 1.0f, 0.0f);
+		i->m_constantFactor = 1.0f;
+		i->m_linearFactor = 0.14f;
+		i->m_quadraticFactor = 0.07f;
 		setupLightComponentRadius(i);
-		i->m_color = vec4(1.0, 1.0, 1.0, 1.0);
+		i->m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 		if (i->m_lightType == lightType::DIRECTIONAL)
 		{
@@ -181,18 +181,18 @@ void InnoPhysicsSystem::initializeLightComponents()
 
 void InnoPhysicsSystem::setupLightComponentRadius(LightComponent * lightComponent)
 {
-	double l_lightMaxIntensity = std::fmax(std::fmax(lightComponent->m_color.x, lightComponent->m_color.y), lightComponent->m_color.z);
-	lightComponent->m_radius = -lightComponent->m_linearFactor + std::sqrt(lightComponent->m_linearFactor * lightComponent->m_linearFactor - 4.0 * lightComponent->m_quadraticFactor * (lightComponent->m_constantFactor - (256.0 / 5.0) * l_lightMaxIntensity)) / (2.0 * lightComponent->m_quadraticFactor);
+	float l_lightMaxIntensity = std::fmax(std::fmax(lightComponent->m_color.x, lightComponent->m_color.y), lightComponent->m_color.z);
+	lightComponent->m_radius = -lightComponent->m_linearFactor + std::sqrt(lightComponent->m_linearFactor * lightComponent->m_linearFactor - 4.0f * lightComponent->m_quadraticFactor * (lightComponent->m_constantFactor - (256.0f / 5.0f) * l_lightMaxIntensity)) / (2.0f * lightComponent->m_quadraticFactor);
 }
 
 void InnoPhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 {
-	double maxX = 0;
-	double maxY = 0;
-	double maxZ = 0;
-	double minX = 0;
-	double minY = 0;
-	double minZ = 0;
+	float maxX = 0;
+	float maxY = 0;
+	float maxZ = 0;
+	float minX = 0;
+	float minY = 0;
+	float minZ = 0;
 
 	std::vector<vec4> l_cornerVertices(visibleComponent.m_modelMap.size() * 2);
 
@@ -231,7 +231,7 @@ void InnoPhysicsSystem::generateAABB(VisibleComponent & visibleComponent)
 		};
 	});
 
-	visibleComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0));
+	visibleComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0f), vec4(minX, minY, minZ, 1.0f));
 
 	auto l_worldTm = InnoGameSystem::getTransformComponent(visibleComponent.m_parentEntity)->m_globalTransformMatrix.m_transformationMat;
 
@@ -282,7 +282,7 @@ void InnoPhysicsSystem::generateAABB(LightComponent & lightComponent)
 
 	for (size_t i = 0; i < 4; i++)
 	{
-		auto scaleFactor = std::exp(((double)i + 1.0) * 2.0 / E<double>) / std::exp(8.0 / E<double>);
+		auto scaleFactor = std::exp(((float)i + 1.0f) * 2.0f / E<float>) / std::exp(8.0f / E<float>);
 		lightComponent.m_shadowSplitPoints.emplace_back(scaleFactor);
 		for (size_t j = 0; j < 4; j++)
 		{
@@ -359,12 +359,12 @@ void InnoPhysicsSystem::generateAABB(CameraComponent & cameraComponent)
 
 AABB InnoPhysicsSystem::generateAABB(const std::vector<Vertex>& vertices)
 {
-	double maxX = vertices[0].m_pos.x;
-	double maxY = vertices[0].m_pos.y;
-	double maxZ = vertices[0].m_pos.z;
-	double minX = vertices[0].m_pos.x;
-	double minY = vertices[0].m_pos.y;
-	double minZ = vertices[0].m_pos.z;
+	float maxX = vertices[0].m_pos.x;
+	float maxY = vertices[0].m_pos.y;
+	float maxZ = vertices[0].m_pos.z;
+	float minX = vertices[0].m_pos.x;
+	float minY = vertices[0].m_pos.y;
+	float minZ = vertices[0].m_pos.z;
 
 	for (auto& l_vertexData : vertices)
 	{
@@ -394,7 +394,7 @@ AABB InnoPhysicsSystem::generateAABB(const std::vector<Vertex>& vertices)
 		}
 	}
 
-	return generateAABB(vec4(maxX, maxY, maxZ, 1.0), vec4(minX, minY, minZ, 1.0));
+	return generateAABB(vec4(maxX, maxY, maxZ, 1.0f), vec4(minX, minY, minZ, 1.0f));
 }
 
 AABB InnoPhysicsSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMin)
@@ -404,47 +404,47 @@ AABB InnoPhysicsSystem::generateAABB(const vec4 & boundMax, const vec4 & boundMi
 	l_AABB.m_boundMin = boundMin;
 	l_AABB.m_boundMax = boundMax;
 
-	l_AABB.m_center = (l_AABB.m_boundMax + l_AABB.m_boundMin) * 0.5;
-	l_AABB.m_sphereRadius = std::max<double>(std::max<double>((l_AABB.m_boundMax.x - l_AABB.m_boundMin.x) / 2.0, (l_AABB.m_boundMax.y - l_AABB.m_boundMin.y) / 2.0), (l_AABB.m_boundMax.z - l_AABB.m_boundMin.z) / 2.0);
+	l_AABB.m_center = (l_AABB.m_boundMax + l_AABB.m_boundMin) * 0.5f;
+	l_AABB.m_sphereRadius = std::max<float>(std::max<float>((l_AABB.m_boundMax.x - l_AABB.m_boundMin.x) / 2.0f, (l_AABB.m_boundMax.y - l_AABB.m_boundMin.y) / 2.0f), (l_AABB.m_boundMax.z - l_AABB.m_boundMin.z) / 2.0f);
 
 	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = (vec4(boundMax.x, boundMax.y, boundMax.z, 1.0));
-	l_VertexData_1.m_texCoord = vec2(1.0, 1.0);
+	l_VertexData_1.m_pos = (vec4(boundMax.x, boundMax.y, boundMax.z, 1.0f));
+	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = (vec4(boundMax.x, boundMin.y, boundMax.z, 1.0));
-	l_VertexData_2.m_texCoord = vec2(1.0, 0.0);
+	l_VertexData_2.m_pos = (vec4(boundMax.x, boundMin.y, boundMax.z, 1.0f));
+	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = (vec4(boundMin.x, boundMin.y, boundMax.z, 1.0));
-	l_VertexData_3.m_texCoord = vec2(0.0, 0.0);
+	l_VertexData_3.m_pos = (vec4(boundMin.x, boundMin.y, boundMax.z, 1.0f));
+	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = (vec4(boundMin.x, boundMax.y, boundMax.z, 1.0));
-	l_VertexData_4.m_texCoord = vec2(0.0, 1.0);
+	l_VertexData_4.m_pos = (vec4(boundMin.x, boundMax.y, boundMax.z, 1.0f));
+	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 
 	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = (vec4(boundMax.x, boundMax.y, boundMin.z, 1.0));
-	l_VertexData_5.m_texCoord = vec2(1.0, 1.0);
+	l_VertexData_5.m_pos = (vec4(boundMax.x, boundMax.y, boundMin.z, 1.0f));
+	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = (vec4(boundMax.x, boundMin.y, boundMin.z, 1.0));
-	l_VertexData_6.m_texCoord = vec2(1.0, 0.0);
+	l_VertexData_6.m_pos = (vec4(boundMax.x, boundMin.y, boundMin.z, 1.0f));
+	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = (vec4(boundMin.x, boundMin.y, boundMin.z, 1.0));
-	l_VertexData_7.m_texCoord = vec2(0.0, 0.0);
+	l_VertexData_7.m_pos = (vec4(boundMin.x, boundMin.y, boundMin.z, 1.0f));
+	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = (vec4(boundMin.x, boundMax.y, boundMin.z, 1.0));
-	l_VertexData_8.m_texCoord = vec2(0.0, 1.0);
+	l_VertexData_8.m_pos = (vec4(boundMin.x, boundMax.y, boundMin.z, 1.0f));
+	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
 
 
 	l_AABB.m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
 	for (auto& l_vertexData : l_AABB.m_vertices)
 	{
-		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
 	}
 
 	l_AABB.m_indices = { 0, 1, 3, 1, 2, 3,
@@ -558,42 +558,42 @@ InnoHighLevelSystem_EXPORT objectStatus InnoPhysicsSystem::getStatus()
 std::vector<Vertex> InnoPhysicsSystem::generateNDC()
 {
 	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = vec4(1.0, 1.0, 1.0, 1.0);
-	l_VertexData_1.m_texCoord = vec2(1.0, 1.0);
+	l_VertexData_1.m_pos = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = vec4(1.0, -1.0, 1.0, 1.0);
-	l_VertexData_2.m_texCoord = vec2(1.0, 0.0);
+	l_VertexData_2.m_pos = vec4(1.0f, -1.0f, 1.0f, 1.0f);
+	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = vec4(-1.0, -1.0, 1.0, 1.0);
-	l_VertexData_3.m_texCoord = vec2(0.0, 0.0);
+	l_VertexData_3.m_pos = vec4(-1.0f, -1.0f, 1.0f, 1.0f);
+	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = vec4(-1.0, 1.0, 1.0, 1.0);
-	l_VertexData_4.m_texCoord = vec2(0.0, 1.0);
+	l_VertexData_4.m_pos = vec4(-1.0f, 1.0f, 1.0f, 1.0f);
+	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 
 	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = vec4(1.0, 1.0, -1.0, 1.0);
-	l_VertexData_5.m_texCoord = vec2(1.0, 1.0);
+	l_VertexData_5.m_pos = vec4(1.0f, 1.0f, -1.0f, 1.0f);
+	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
 
 	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = vec4(1.0, -1.0, -1.0, 1.0);
-	l_VertexData_6.m_texCoord = vec2(1.0, 0.0);
+	l_VertexData_6.m_pos = vec4(1.0f, -1.0f, -1.0f, 1.0f);
+	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
 
 	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = vec4(-1.0, -1.0, -1.0, 1.0);
-	l_VertexData_7.m_texCoord = vec2(0.0, 0.0);
+	l_VertexData_7.m_pos = vec4(-1.0f, -1.0f, -1.0f, 1.0f);
+	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
 
 	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = vec4(-1.0, 1.0, -1.0, 1.0);
-	l_VertexData_8.m_texCoord = vec2(0.0, 1.0);
+	l_VertexData_8.m_pos = vec4(-1.0f, 1.0f, -1.0f, 1.0f);
+	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
 
 	std::vector<Vertex> l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
 	for (auto& l_vertexData : l_vertices)
 	{
-		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0).normalize();
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
 	}
 
 	return l_vertices;

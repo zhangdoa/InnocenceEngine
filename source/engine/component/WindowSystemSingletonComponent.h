@@ -20,7 +20,7 @@ public:
 	EntityID m_parentEntity;
 
 	//window data
-	vec2 m_windowResolution = vec2(1280, 720);
+	TVec2<unsigned int> m_windowResolution = TVec2<unsigned int>(1280, 720);
 	std::string m_windowName;
 	bool m_fullScreen = false;
 
@@ -32,10 +32,10 @@ public:
 	buttonStatusCallbackMap m_buttonStatusCallback;
 	mouseMovementCallbackMap m_mouseMovementCallback;
 
-	double m_mouseXOffset;
-	double m_mouseYOffset;
-	double m_mouseLastX;
-	double m_mouseLastY;
+	float m_mouseXOffset;
+	float m_mouseYOffset;
+	float m_mouseLastX;
+	float m_mouseLastY;
 
 	vec4 m_mousePositionInWorldSpace;
 	Ray m_mouseRay;

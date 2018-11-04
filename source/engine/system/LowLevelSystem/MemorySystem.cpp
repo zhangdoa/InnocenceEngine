@@ -14,7 +14,7 @@ namespace InnoMemorySystem
 	{
 	public:
 		ComponentPool() {
-			ComponentPool(1024)£»
+			ComponentPool(1024);
 		};
 		ComponentPool(unsigned int PoolTotalCapability) {
 			m_PoolTotalCapability = PoolTotalCapability;
@@ -33,13 +33,23 @@ namespace InnoMemorySystem
 	};
 
 	//Memory pool for components
-	// @TODO: finish other components
 	ComponentPool<TransformComponent> m_TransformComponentPool;
 	ComponentPool<VisibleComponent> m_VisibleComponentPool;
 	ComponentPool<LightComponent> m_LightComponentPool;
 	ComponentPool<CameraComponent> m_CameraComponentPool;
 	ComponentPool<InputComponent> m_InputComponentPool;
 	ComponentPool<EnvironmentCaptureComponent> m_EnvironmentCaptureComponentPool;
+
+	ComponentPool<MeshDataComponent> m_MeshDataComponentPool;
+	ComponentPool<TextureDataComponent> m_TextureDataComponentPool;
+
+	ComponentPool<GLMeshDataComponent> m_GLMeshDataComponentPool;
+	ComponentPool<GLTextureDataComponent> m_GLTextureDataComponentPool;
+	ComponentPool<GLFrameBufferComponent> m_GLFrameBufferComponentPool;
+	ComponentPool<GLShaderProgramComponent> m_GLShaderProgramComponentPool;
+
+	ComponentPool<DXMeshDataComponent> m_DXMeshDataComponentPool;
+	ComponentPool<DXTextureDataComponent> m_DXTextureDataComponentPool;
 
 	//Memory pool for others
 	static const uint32_t s_BlockSizes[] = {
@@ -395,7 +405,7 @@ TransformComponent * InnoMemorySystem::allocateTransformComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for TransformComponent at " + std::to_string((int)m_TransformComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for TransformComponent at " + std::to_string((size_t)m_TransformComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -476,6 +486,134 @@ EnvironmentCaptureComponent * InnoMemorySystem::allocateEnvironmentCaptureCompon
 	else
 	{
 		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for EnvironmentCaptureComponent at " + std::to_string((int)m_EnvironmentCaptureComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+MeshDataComponent * InnoMemorySystem::allocateMeshDataComponent()
+{
+	auto l_ptr = new(m_MeshDataComponentPool.m_PoolFreePtr) MeshDataComponent();
+	if (l_ptr)
+	{
+		m_MeshDataComponentPool.m_PoolFreePtr += sizeof(MeshDataComponent);
+		--m_MeshDataComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for MeshDataComponent at " + std::to_string((int)m_MeshDataComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+TextureDataComponent * InnoMemorySystem::allocateTextureDataComponent()
+{
+	auto l_ptr = new(m_TextureDataComponentPool.m_PoolFreePtr) TextureDataComponent();
+	if (l_ptr)
+	{
+		m_TextureDataComponentPool.m_PoolFreePtr += sizeof(TextureDataComponent);
+		--m_TextureDataComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for TextureDataComponent at " + std::to_string((int)m_TextureDataComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+GLMeshDataComponent * InnoMemorySystem::allocateGLMeshDataComponent()
+{
+	auto l_ptr = new(m_GLMeshDataComponentPool.m_PoolFreePtr) GLMeshDataComponent();
+	if (l_ptr)
+	{
+		m_GLMeshDataComponentPool.m_PoolFreePtr += sizeof(GLMeshDataComponent);
+		--m_GLMeshDataComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLMeshDataComponent at " + std::to_string((int)m_GLMeshDataComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+GLTextureDataComponent * InnoMemorySystem::allocateGLTextureDataComponent()
+{
+	auto l_ptr = new(m_GLTextureDataComponentPool.m_PoolFreePtr) GLTextureDataComponent();
+	if (l_ptr)
+	{
+		m_GLTextureDataComponentPool.m_PoolFreePtr += sizeof(GLTextureDataComponent);
+		--m_GLTextureDataComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLTextureDataComponent at " + std::to_string((int)m_GLTextureDataComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+GLFrameBufferComponent * InnoMemorySystem::allocateGLFrameBufferComponent()
+{
+	auto l_ptr = new(m_GLFrameBufferComponentPool.m_PoolFreePtr) GLFrameBufferComponent();
+	if (l_ptr)
+	{
+		m_GLFrameBufferComponentPool.m_PoolFreePtr += sizeof(GLFrameBufferComponent);
+		--m_GLFrameBufferComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLFrameBufferComponent at " + std::to_string((int)m_GLFrameBufferComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+GLShaderProgramComponent * InnoMemorySystem::allocateGLShaderProgramComponent()
+{
+	auto l_ptr = new(m_GLShaderProgramComponentPool.m_PoolFreePtr) GLShaderProgramComponent();
+	if (l_ptr)
+	{
+		m_GLShaderProgramComponentPool.m_PoolFreePtr += sizeof(GLShaderProgramComponent);
+		--m_GLShaderProgramComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLShaderProgramComponent at " + std::to_string((int)m_GLShaderProgramComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+DXMeshDataComponent * InnoMemorySystem::allocateDXMeshDataComponent()
+{
+	auto l_ptr = new(m_DXMeshDataComponentPool.m_PoolFreePtr) DXMeshDataComponent();
+	if (l_ptr)
+	{
+		m_DXMeshDataComponentPool.m_PoolFreePtr += sizeof(DXMeshDataComponent);
+		--m_DXMeshDataComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for DXMeshDataComponent at " + std::to_string((int)m_DXMeshDataComponentPool.m_PoolFreePtr) + " !");
+		return nullptr;
+	}
+}
+
+DXTextureDataComponent * InnoMemorySystem::allocateDXTextureDataComponent()
+{
+	auto l_ptr = new(m_DXTextureDataComponentPool.m_PoolFreePtr) DXTextureDataComponent();
+	if (l_ptr)
+	{
+		m_DXTextureDataComponentPool.m_PoolFreePtr += sizeof(DXTextureDataComponent);
+		--m_DXTextureDataComponentPool.m_PoolCurrentFreeBlock;
+		return l_ptr;
+	}
+	else
+	{
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for DXTextureDataComponent at " + std::to_string((int)m_DXTextureDataComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }

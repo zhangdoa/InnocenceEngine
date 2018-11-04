@@ -1,23 +1,24 @@
 #pragma once
+#include "../../exports/HighLevelSystem_Export.h"
 #include "../../common/InnoType.h"
 
 namespace InnoInputSystem 
 {
-	__declspec(dllexport) void setup();
-	__declspec(dllexport) void initialize();
-	__declspec(dllexport) void update();
-	__declspec(dllexport) void terminate();
+	InnoHighLevelSystem_EXPORT void setup();
+	InnoHighLevelSystem_EXPORT void initialize();
+	InnoHighLevelSystem_EXPORT void update();
+	InnoHighLevelSystem_EXPORT void terminate();
 
-	__declspec(dllexport) void addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor);
-	__declspec(dllexport) void addButtonStatusCallback(button boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor);
-	__declspec(dllexport) void addButtonStatusCallback(buttonStatusCallbackMap & buttonStatusCallbackFunctor);
-	__declspec(dllexport) void addMouseMovementCallback(int mouseCode, std::function<void(double)>* mouseMovementCallback);
-	__declspec(dllexport) void addMouseMovementCallback(int mouseCode, std::vector<std::function<void(double)>*>& mouseMovementCallback);
-	__declspec(dllexport) void addMouseMovementCallback(mouseMovementCallbackMap& mouseMovementCallback);
+	InnoHighLevelSystem_EXPORT void addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor);
+	InnoHighLevelSystem_EXPORT void addButtonStatusCallback(button boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor);
+	InnoHighLevelSystem_EXPORT void addButtonStatusCallback(buttonStatusCallbackMap & buttonStatusCallbackFunctor);
+	InnoHighLevelSystem_EXPORT void addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback);
+	InnoHighLevelSystem_EXPORT void addMouseMovementCallback(int mouseCode, std::vector<std::function<void(float)>*>& mouseMovementCallback);
+	InnoHighLevelSystem_EXPORT void addMouseMovementCallback(mouseMovementCallbackMap& mouseMovementCallback);
 
-	__declspec(dllexport) void framebufferSizeCallback(int width, int height);
-	__declspec(dllexport) void mousePositionCallback(double mouseXPos, double mouseYPos);
-	__declspec(dllexport) void scrollCallback(double xoffset, double yoffset);
+	InnoHighLevelSystem_EXPORT void framebufferSizeCallback(int width, int height);
+	InnoHighLevelSystem_EXPORT void mousePositionCallback(float mouseXPos, float mouseYPos);
+	InnoHighLevelSystem_EXPORT void scrollCallback(float xoffset, float yoffset);
 
-	__declspec(dllexport) objectStatus getStatus();
+	InnoHighLevelSystem_EXPORT objectStatus getStatus();
 };

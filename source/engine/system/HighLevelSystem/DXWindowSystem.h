@@ -3,7 +3,7 @@
 #include "../../common/InnoType.h"
 #include "IWindowSystem.h"
 
-class DXWindowSystem : IMPLEMENT IWindowSystem
+class DXWindowSystem : INNO_IMPLEMENT IWindowSystem
 {
 public:
 	InnoHighLevelSystem_EXPORT bool setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow) override;

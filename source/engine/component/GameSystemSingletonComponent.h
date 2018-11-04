@@ -18,8 +18,6 @@ public:
 
 	// the AOS here
 	TransformComponent* m_rootTransformComponent;
-	std::vector<std::vector<TransformComponent*>> m_currentTransformComponentsTree;
-	std::vector<std::vector<TransformComponent*>> m_previousTransformComponentsTree;
 
 	std::vector<TransformComponent*> m_transformComponents;
 	std::vector<VisibleComponent*> m_visibleComponents;

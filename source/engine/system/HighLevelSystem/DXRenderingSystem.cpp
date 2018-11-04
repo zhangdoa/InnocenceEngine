@@ -19,9 +19,9 @@
 #include "../HighLevelSystem/GameSystem.h"
 #include "../../component/GameSystemSingletonComponent.h"
 
-PRIVATE_SCOPE DXRenderingSystemNS
+INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
-	objectStatus DXRenderingSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
 DXMeshDataComponent* initializeMeshDataComponent(MeshDataComponent* rhs);
 DXTextureDataComponent* initializeTextureDataComponent(TextureDataComponent* rhs);

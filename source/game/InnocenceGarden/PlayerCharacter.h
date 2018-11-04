@@ -28,8 +28,8 @@ public:
 	std::function<void()> f_allowMove;
 	std::function<void()> f_forbidMove;
 
-	std::function<void(double)> f_rotateAroundPositiveYAxis;
-	std::function<void(double)> f_rotateAroundRightAxis;
+	std::function<void(float)> f_rotateAroundPositiveYAxis;
+	std::function<void(float)> f_rotateAroundRightAxis;
 
 private:
 	TransformComponent m_transformComponent;
@@ -37,11 +37,11 @@ private:
 	InputComponent m_inputComponent;
 	CameraComponent m_cameraComponent;
 
-	double m_moveSpeed = 0;
-	double m_rotateSpeed = 0;
+	float m_moveSpeed = 0;
+	float m_rotateSpeed = 0;
 	bool m_canMove = false;
 
-	void move(vec4 direction, double length);
+	void move(vec4 direction, float length);
 
 	void moveForward();
 	void moveBackward();
@@ -51,7 +51,7 @@ private:
 	void allowMove();
 	void forbidMove();
 
-	void rotateAroundPositiveYAxis(double offset);
-	void rotateAroundRightAxis(double offset);
+	void rotateAroundPositiveYAxis(float offset);
+	void rotateAroundRightAxis(float offset);
 };
 

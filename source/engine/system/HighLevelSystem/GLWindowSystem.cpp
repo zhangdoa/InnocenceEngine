@@ -22,14 +22,14 @@ public:
 	static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
 	void framebufferSizeCallbackImpl(GLFWwindow* window, int width, int height);
-	void mousePositionCallbackImpl(GLFWwindow* window, double mouseXPos, double mouseYPos);
-	void scrollCallbackImpl(GLFWwindow* window, double xoffset, double yoffset);
+	void mousePositionCallbackImpl(GLFWwindow* window, float mouseXPos, float mouseYPos);
+	void scrollCallbackImpl(GLFWwindow* window, float xoffset, float yoffset);
 
 private:
 	windowCallbackWrapper() {};
 };
 
-PRIVATE_SCOPE GLWindowSystemNS
+INNO_PRIVATE_SCOPE GLWindowSystemNS
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	void hideMouseCursor();
@@ -206,12 +206,12 @@ void windowCallbackWrapper::framebufferSizeCallback(GLFWwindow * window, int wid
 
 void windowCallbackWrapper::mousePositionCallback(GLFWwindow * window, double mouseXPos, double mouseYPos)
 {
-	getInstance().mousePositionCallbackImpl(window, mouseXPos, mouseYPos);
+	getInstance().mousePositionCallbackImpl(window, (float)mouseXPos, (float)mouseYPos);
 }
 
 void windowCallbackWrapper::scrollCallback(GLFWwindow * window, double xoffset, double yoffset)
 {
-	getInstance().scrollCallbackImpl(window, xoffset, yoffset);
+	getInstance().scrollCallbackImpl(window, (float)xoffset, (float)yoffset);
 }
 
 void windowCallbackWrapper::framebufferSizeCallbackImpl(GLFWwindow * window, int width, int height)
@@ -219,12 +219,12 @@ void windowCallbackWrapper::framebufferSizeCallbackImpl(GLFWwindow * window, int
 	InnoInputSystem::framebufferSizeCallback(width, height);
 }
 
-void windowCallbackWrapper::mousePositionCallbackImpl(GLFWwindow * window, double mouseXPos, double mouseYPos)
+void windowCallbackWrapper::mousePositionCallbackImpl(GLFWwindow * window, float mouseXPos, float mouseYPos)
 {
 	InnoInputSystem::mousePositionCallback(mouseXPos, mouseYPos);
 }
 
-void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, double xoffset, double yoffset)
+void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, float xoffset, float yoffset)
 {
 	InnoInputSystem::scrollCallback(xoffset, yoffset);
 }

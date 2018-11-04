@@ -16,8 +16,10 @@ struct TransformComponent
 	TransformVector m_globalTransformVector; // 16 Bytes
 	TransformMatrix m_globalTransformMatrix; // 64 Bytes
 
+	TransformMatrix m_globalTransformMatrix_prev; // 64 Bytes
+
 	TransformComponent* m_parentTransformComponent = 0; // 4 Bytes in x86, 8 Bytes in x86-64
 
-	// 196 or 200 Bytes at all
+	// 260 or 264 Bytes at all
 };
 

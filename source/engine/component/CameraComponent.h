@@ -10,10 +10,10 @@ public:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	double m_FOVX = 0.0;
-	double m_WHRatio = 0.0;
-	double m_zNear = 0.0;
-	double m_zFar = 0.0;
+	float m_FOVX = 0.0;
+	float m_WHRatio = 0.0;
+	float m_zNear = 0.0;
+	float m_zFar = 0.0;
 
 	Ray m_rayOfEye;
 	bool m_drawRay = false;

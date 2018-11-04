@@ -12,9 +12,71 @@
 #include "../../component/GameSystemSingletonComponent.h"
 #include "../HighLevelSystem/AssetSystem.h"
 
+INNO_PRIVATE_SCOPE GLRenderingSystemNS
+{
+	float RadicalInverse(unsigned int n, unsigned int base);
+	void initializeHaltonSampler();
+	void initializeEnvironmentRenderPass();
+	void initializeShadowRenderPass();
+	void initializeGeometryRenderPass();
+	void initializeLightRenderPass();
+	void initializeFinalRenderPass();
+
+	void initializeSkyPass();
+	void initializeTAAPass();
+	void initializeBloomExtractPass();
+	void initializeBloomBlurPass();
+	void initializeMotionBlurPass();
+	void initializeBillboardPass();
+	void initializeDebuggerPass();
+	void initializeFinalBlendPass();
+
+	GLMeshDataComponent* initializeMeshDataComponent(MeshDataComponent* rhs);
+	GLTextureDataComponent* initializeTextureDataComponent(TextureDataComponent* rhs);
+	void initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string& shaderFilePath);
+
+	GLMeshDataComponent* addGLMeshDataComponent(EntityID rhs);
+	GLTextureDataComponent* addGLTextureDataComponent(EntityID rhs);
+
+	GLMeshDataComponent* getGLMeshDataComponent(EntityID rhs);
+	GLTextureDataComponent* getGLTextureDataComponent(EntityID rhs);
+
+	void updateEnvironmentRenderPass();
+	void updateShadowRenderPass();
+	void updateGeometryRenderPass();
+	void updateLightRenderPass();
+	void updateFinalRenderPass();
+
+	GLuint getUniformLocation(GLuint shaderProgram, const std::string& uniformName);
+
+	void updateUniform(const GLint uniformLocation, bool uniformValue);
+	void updateUniform(const GLint uniformLocation, int uniformValue);
+	void updateUniform(const GLint uniformLocation, float uniformValue);
+	void updateUniform(const GLint uniformLocation, float x, float y);
+	void updateUniform(const GLint uniformLocation, float x, float y, float z);
+	void updateUniform(const GLint uniformLocation, float x, float y, float z, float w);
+	void updateUniform(const GLint uniformLocation, const mat4& mat);
+
+	void attachTextureToFramebuffer(TextureDataComponent* TDC, GLTextureDataComponent* GLTextureDataComponent, GLFrameBufferComponent* GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel);
+	void activateShaderProgram(GLShaderProgramComponent* GLShaderProgramComponent);
+	void drawMesh(EntityID rhs);
+	void drawMesh(MeshDataComponent* MDC);
+	void activateTexture(TextureDataComponent* TDC, GLTextureDataComponent* GLTDC, int activateIndex);
+
+	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
+	static RenderingSystemSingletonComponent* g_RenderingSystemSingletonComponent;
+	static GLRenderingSystemSingletonComponent* g_GLRenderingSystemSingletonComponent;
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+}
+
 bool GLRenderingSystem::setup()
 {
-	if (RenderingSystemSingletonComponent::getInstance().m_MSAAdepth)
+	GLRenderingSystemNS::g_GameSystemSingletonComponent = &GameSystemSingletonComponent::getInstance();
+	GLRenderingSystemNS::g_RenderingSystemSingletonComponent = &RenderingSystemSingletonComponent::getInstance();
+	GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent = &GLRenderingSystemSingletonComponent::getInstance();
+
+	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_MSAAdepth)
 	{
 		// 16x antialiasing
 		glfwWindowHint(GLFW_SAMPLES, 16);
@@ -31,23 +93,23 @@ bool GLRenderingSystem::setup()
 
 bool GLRenderingSystem::initialize()
 {
-	initializeHaltonSampler();
-	initializeEnvironmentRenderPass();
-	initializeShadowRenderPass();
-	initializeGeometryRenderPass();
-	initializeLightRenderPass();
-	initializeFinalRenderPass();
+	GLRenderingSystemNS::initializeHaltonSampler();
+	GLRenderingSystemNS::initializeEnvironmentRenderPass();
+	GLRenderingSystemNS::initializeShadowRenderPass();
+	GLRenderingSystemNS::initializeGeometryRenderPass();
+	GLRenderingSystemNS::initializeLightRenderPass();
+	GLRenderingSystemNS::initializeFinalRenderPass();
 
 	return true;
 }
 
-double GLRenderingSystem::RadicalInverse(int n, int base) {
+float GLRenderingSystemNS::RadicalInverse(unsigned int n, unsigned int base) {
 
-	double val = 0;
-	double invBase = 1. / base, invBi = invBase;
+	float val = 0.0f;
+	float invBase = 1.0f / base, invBi = invBase;
 	while (n > 0)
 	{
-		int d_i = (n % base);
+		auto d_i = (n % base);
 		val += d_i * invBi;
 		n *= invBase;
 		invBi *= invBase;
@@ -55,16 +117,16 @@ double GLRenderingSystem::RadicalInverse(int n, int base) {
 	return val;
 };
 
-void GLRenderingSystem::initializeHaltonSampler()
+void GLRenderingSystemNS::initializeHaltonSampler()
 {
 	// in NDC space
-	for (size_t i = 0; i < 16; i++)
+	for (unsigned int i = 0; i < 16; i++)
 	{
-		RenderingSystemSingletonComponent::getInstance().HaltonSampler.emplace_back(vec2(RadicalInverse(i, 2) * 2.0 - 1.0, RadicalInverse(i, 3) * 2.0 - 1.0));
+		GLRenderingSystemNS::g_RenderingSystemSingletonComponent->HaltonSampler.emplace_back(vec2(RadicalInverse(i, 2) * 2.0f - 1.0f, RadicalInverse(i, 3) * 2.0f - 1.0f));
 	}
 }
 
-void GLRenderingSystem::initializeEnvironmentRenderPass()
+void GLRenderingSystemNS::initializeEnvironmentRenderPass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
@@ -283,7 +345,7 @@ void GLRenderingSystem::initializeEnvironmentRenderPass()
 	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassSPC = l_shaderProgram;
 }
 
-void GLRenderingSystem::initializeShadowRenderPass()
+void GLRenderingSystemNS::initializeShadowRenderPass()
 {
 	for (size_t i = 0; i < 4; i++)
 	{
@@ -373,7 +435,7 @@ void GLRenderingSystem::initializeShadowRenderPass()
 	ShadowRenderPassSingletonComponent::getInstance().m_SPC = l_GLSPC;
 }
 
-void GLRenderingSystem::initializeGeometryRenderPass()
+void GLRenderingSystemNS::initializeGeometryRenderPass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
@@ -386,7 +448,7 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	GeometryRenderPassSingletonComponent::getInstance().m_FBC = l_FBC;
 
@@ -401,8 +463,8 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 		l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 		l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 		l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-		l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-		l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+		l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+		l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 		l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 		l_TDC->m_textureData = { nullptr };
 		
@@ -550,7 +612,7 @@ void GLRenderingSystem::initializeGeometryRenderPass()
 	GeometryRenderPassSingletonComponent::getInstance().m_GLSPC = l_GLSPC;
 }
 
-void GLRenderingSystem::initializeLightRenderPass()
+void GLRenderingSystemNS::initializeLightRenderPass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
@@ -563,7 +625,7 @@ void GLRenderingSystem::initializeLightRenderPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 	
 	LightRenderPassSingletonComponent::getInstance().m_FBC = l_FBC;
 
@@ -576,8 +638,8 @@ void GLRenderingSystem::initializeLightRenderPass()
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+	l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
@@ -709,15 +771,15 @@ void GLRenderingSystem::initializeLightRenderPass()
 			getUniformLocation(l_GLSPC->m_program, "uni_shadowSplitPoints[" + ss.str() + "]")
 		);
 	}
-	for (auto i = (unsigned int)0; i < GameSystemSingletonComponent::getInstance().m_lightComponents.size(); i++)
+	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size(); i++)
 	{
-		if (GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
+		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
 		{
 			for (size_t j = 0; j < 4; j++)
 			{
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitPoints[j],
-					GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_shadowSplitPoints[j]);
+					GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_shadowSplitPoints[j]);
 			}
 		}
 	}
@@ -752,13 +814,13 @@ void GLRenderingSystem::initializeLightRenderPass()
 		l_GLSPC->m_program,
 		"uni_dirLight.color");
 	int l_pointLightIndexOffset = 0;
-	for (auto i = (unsigned int)0; i < GameSystemSingletonComponent::getInstance().m_lightComponents.size(); i++)
+	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size(); i++)
 	{
-		if (GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
+		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
 		{
 			l_pointLightIndexOffset -= 1;
 		}
-		if (GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_lightType == lightType::POINT)
+		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_lightType == lightType::POINT)
 		{
 			std::stringstream ss;
 			ss << i + l_pointLightIndexOffset;
@@ -780,7 +842,7 @@ void GLRenderingSystem::initializeLightRenderPass()
 	LightRenderPassSingletonComponent::getInstance().m_GLSPC = l_GLSPC;
 }
 
-void GLRenderingSystem::initializeFinalRenderPass()
+void GLRenderingSystemNS::initializeFinalRenderPass()
 {
 	initializeSkyPass();
 	initializeTAAPass();
@@ -792,7 +854,7 @@ void GLRenderingSystem::initializeFinalRenderPass()
 	initializeFinalBlendPass();
 }
 
-void GLRenderingSystem::initializeSkyPass()
+void GLRenderingSystemNS::initializeSkyPass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
@@ -805,7 +867,7 @@ void GLRenderingSystem::initializeSkyPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	GLFinalRenderPassSingletonComponent::getInstance().m_skyPassFBC = l_FBC;
 
@@ -818,8 +880,8 @@ void GLRenderingSystem::initializeSkyPass()
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+	l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
@@ -883,7 +945,7 @@ void GLRenderingSystem::initializeSkyPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC = l_GLSPC;
 }
 
-void GLRenderingSystem::initializeTAAPass()
+void GLRenderingSystemNS::initializeTAAPass()
 {
 	//Ping pass
 	// generate and bind framebuffer
@@ -897,7 +959,7 @@ void GLRenderingSystem::initializeTAAPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassFBC = l_FBC;
 
@@ -910,8 +972,8 @@ void GLRenderingSystem::initializeTAAPass()
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+	l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
@@ -950,7 +1012,7 @@ void GLRenderingSystem::initializeTAAPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassFBC = l_FBC;
 
@@ -963,8 +1025,8 @@ void GLRenderingSystem::initializeTAAPass()
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+	l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
@@ -1034,7 +1096,7 @@ void GLRenderingSystem::initializeTAAPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassSPC = l_GLSPC;
 }
 
-void GLRenderingSystem::initializeBloomExtractPass()
+void GLRenderingSystemNS::initializeBloomExtractPass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
@@ -1047,7 +1109,7 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassFBC = l_FBC;
 
@@ -1060,8 +1122,8 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+	l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
@@ -1116,7 +1178,7 @@ void GLRenderingSystem::initializeBloomExtractPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassSPC = l_GLSPC;
 }
 
-void GLRenderingSystem::initializeBloomBlurPass()
+void GLRenderingSystemNS::initializeBloomBlurPass()
 {
 	//Ping pass
 	// generate and bind framebuffer
@@ -1130,7 +1192,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassFBC = l_FBC;
 
@@ -1143,8 +1205,8 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+	l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
@@ -1183,7 +1245,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassFBC = l_FBC;
 
@@ -1196,8 +1258,8 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+	l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
@@ -1255,7 +1317,7 @@ void GLRenderingSystem::initializeBloomBlurPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPassSPC = l_GLSPC;
 }
 
-void GLRenderingSystem::initializeMotionBlurPass()
+void GLRenderingSystemNS::initializeMotionBlurPass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
@@ -1268,7 +1330,7 @@ void GLRenderingSystem::initializeMotionBlurPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassFBC = l_FBC;
 
@@ -1281,8 +1343,8 @@ void GLRenderingSystem::initializeMotionBlurPass()
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+	l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
@@ -1343,7 +1405,7 @@ void GLRenderingSystem::initializeMotionBlurPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassSPC = l_GLSPC;
 }
 
-void GLRenderingSystem::initializeBillboardPass()
+void GLRenderingSystemNS::initializeBillboardPass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
@@ -1356,7 +1418,7 @@ void GLRenderingSystem::initializeBillboardPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassFBC = l_FBC;
 
@@ -1369,8 +1431,8 @@ void GLRenderingSystem::initializeBillboardPass()
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+	l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
@@ -1443,7 +1505,7 @@ void GLRenderingSystem::initializeBillboardPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassSPC = l_GLSPC;
 }
 
-void GLRenderingSystem::initializeDebuggerPass()
+void GLRenderingSystemNS::initializeDebuggerPass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
@@ -1456,7 +1518,7 @@ void GLRenderingSystem::initializeDebuggerPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassFBC = l_FBC;
 
@@ -1469,8 +1531,8 @@ void GLRenderingSystem::initializeDebuggerPass()
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+	l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
@@ -1537,7 +1599,7 @@ void GLRenderingSystem::initializeDebuggerPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassSPC = l_GLSPC;
 }
 
-void GLRenderingSystem::initializeFinalBlendPass()
+void GLRenderingSystemNS::initializeFinalBlendPass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
@@ -1550,7 +1612,7 @@ void GLRenderingSystem::initializeFinalBlendPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassFBC = l_FBC;
 
@@ -1563,8 +1625,8 @@ void GLRenderingSystem::initializeFinalBlendPass()
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::NEAREST;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureWidth = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-	l_TDC->m_textureHeight = (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
+	l_TDC->m_textureWidth = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x;
+	l_TDC->m_textureHeight = (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y;
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
@@ -1643,7 +1705,7 @@ void GLRenderingSystem::initializeFinalBlendPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassSPC = l_GLSPC;
 }
 
-void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string & shaderFilePath)
+void GLRenderingSystemNS::initializeShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string & shaderFilePath)
 {
 	shaderID = glCreateShader(shaderType);
 
@@ -1708,28 +1770,28 @@ void GLRenderingSystem::initializeShader(GLuint& shaderProgram, GLuint& shaderID
 	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
 }
 
-GLMeshDataComponent * GLRenderingSystem::addGLMeshDataComponent(EntityID rhs)
+GLMeshDataComponent * GLRenderingSystemNS::addGLMeshDataComponent(EntityID rhs)
 {
 	GLMeshDataComponent* newMesh = InnoMemorySystem::spawn<GLMeshDataComponent>();
 	newMesh->m_parentEntity = rhs;
-	auto l_meshMap = &GLRenderingSystemSingletonComponent::getInstance().m_meshMap;
+	auto l_meshMap = &GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_meshMap;
 	l_meshMap->emplace(std::pair<EntityID, GLMeshDataComponent*>(rhs, newMesh));
 	return newMesh;
 }
 
-GLTextureDataComponent * GLRenderingSystem::addGLTextureDataComponent(EntityID rhs)
+GLTextureDataComponent * GLRenderingSystemNS::addGLTextureDataComponent(EntityID rhs)
 {
 	GLTextureDataComponent* newTexture = InnoMemorySystem::spawn<GLTextureDataComponent>();
 	newTexture->m_parentEntity = rhs;
-	auto l_textureMap = &GLRenderingSystemSingletonComponent::getInstance().m_textureMap;
+	auto l_textureMap = &GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_textureMap;
 	l_textureMap->emplace(std::pair<EntityID, GLTextureDataComponent*>(rhs, newTexture));
 	return newTexture;
 }
 
-GLMeshDataComponent * GLRenderingSystem::getGLMeshDataComponent(EntityID rhs)
+GLMeshDataComponent * GLRenderingSystemNS::getGLMeshDataComponent(EntityID rhs)
 {
-	auto result = GLRenderingSystemSingletonComponent::getInstance().m_meshMap.find(rhs);
-	if (result != GLRenderingSystemSingletonComponent::getInstance().m_meshMap.end())
+	auto result = GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_meshMap.find(rhs);
+	if (result != GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_meshMap.end())
 	{
 		return result->second;
 	}
@@ -1739,10 +1801,10 @@ GLMeshDataComponent * GLRenderingSystem::getGLMeshDataComponent(EntityID rhs)
 	}
 }
 
-GLTextureDataComponent * GLRenderingSystem::getGLTextureDataComponent(EntityID rhs)
+GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(EntityID rhs)
 {
-	auto result = GLRenderingSystemSingletonComponent::getInstance().m_textureMap.find(rhs);
-	if (result != GLRenderingSystemSingletonComponent::getInstance().m_textureMap.end())
+	auto result = GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_textureMap.find(rhs);
+	if (result != GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_textureMap.end())
 	{
 		return result->second;
 	}
@@ -1752,7 +1814,7 @@ GLTextureDataComponent * GLRenderingSystem::getGLTextureDataComponent(EntityID r
 	}
 }
 
-GLMeshDataComponent* GLRenderingSystem::initializeMeshDataComponent(MeshDataComponent* rhs)
+GLMeshDataComponent* GLRenderingSystemNS::initializeMeshDataComponent(MeshDataComponent* rhs)
 {
 	if (rhs->m_objectStatus == objectStatus::ALIVE)
 	{
@@ -1812,7 +1874,7 @@ GLMeshDataComponent* GLRenderingSystem::initializeMeshDataComponent(MeshDataComp
 	}
 }
 
-GLTextureDataComponent* GLRenderingSystem::initializeTextureDataComponent(TextureDataComponent * rhs)
+GLTextureDataComponent* GLRenderingSystemNS::initializeTextureDataComponent(TextureDataComponent * rhs)
 {
 	if (rhs->m_objectStatus == objectStatus::ALIVE)
 	{
@@ -2003,7 +2065,7 @@ bool GLRenderingSystem::update()
 		MeshDataComponent* l_meshDataComponent;
 		if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
-			initializeMeshDataComponent(l_meshDataComponent);
+			GLRenderingSystemNS::initializeMeshDataComponent(l_meshDataComponent);
 		}
 	}
 	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
@@ -2011,22 +2073,22 @@ bool GLRenderingSystem::update()
 		TextureDataComponent* l_textureDataComponent;
 		if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
 		{
-			initializeTextureDataComponent(l_textureDataComponent);
+			GLRenderingSystemNS::initializeTextureDataComponent(l_textureDataComponent);
 		}
 	}
-	if (RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap)
+	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_shouldUpdateEnvironmentMap)
 	{
-		updateEnvironmentRenderPass();
+		GLRenderingSystemNS::updateEnvironmentRenderPass();
 	}
-	updateShadowRenderPass();
-	updateGeometryRenderPass();
-	updateLightRenderPass();
-	updateFinalRenderPass();
+	GLRenderingSystemNS::updateShadowRenderPass();
+	GLRenderingSystemNS::updateGeometryRenderPass();
+	GLRenderingSystemNS::updateLightRenderPass();
+	GLRenderingSystemNS::updateFinalRenderPass();
 
 	return true;
 }
 
-void GLRenderingSystem::updateEnvironmentRenderPass()
+void GLRenderingSystemNS::updateEnvironmentRenderPass()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -2044,15 +2106,15 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	glViewport(0, 0, 2048, 2048);
 
 	mat4 l_p;
-	l_p.initializeToPerspectiveMatrix((90.0 / 180.0) * PI<double>, 1.0, 0.1, 10.0);
+	l_p.initializeToPerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 10.0f);
 	std::vector<mat4> l_v =
 	{
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(-1.0,  0.0,  0.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  1.0,  0.0, 1.0), vec4(0.0,  0.0,  1.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0, -1.0,  0.0, 1.0), vec4(0.0,  0.0, -1.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0,  1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0)),
-		mat4().lookAt(vec4(0.0, 0.0, 0.0, 1.0), vec4(0.0,  0.0, -1.0, 1.0), vec4(0.0, -1.0,  0.0, 0.0))
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
 	};
 
 	activateShaderProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassSPC);
@@ -2064,7 +2126,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	auto l_capturePassTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTDC;
 	auto l_capturePassGLTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassGLTDC;
 
-	auto l_equiretangularTDC = InnoAssetSystem::getTextureDataComponent(GameSystemSingletonComponent::getInstance().m_environmentCaptureComponents[0]->m_texturePair.second);
+	auto l_equiretangularTDC = InnoAssetSystem::getTextureDataComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_environmentCaptureComponents[0]->m_texturePair.second);
 	if (l_equiretangularTDC)
 	{
 		auto l_equiretangularGLTDC = getGLTextureDataComponent(l_equiretangularTDC->m_parentEntity);
@@ -2072,7 +2134,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 		{
 			if (l_equiretangularTDC->m_objectStatus == objectStatus::ALIVE && l_equiretangularGLTDC->m_objectStatus == objectStatus::ALIVE)
 			{
-				RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap = false;
+				GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_shouldUpdateEnvironmentMap = false;
 				activateTexture(l_equiretangularTDC, l_equiretangularGLTDC, 0);
 				for (unsigned int i = 0; i < 6; ++i)
 				{
@@ -2124,7 +2186,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, mipWidth, mipHeight);
 		glViewport(0, 0, mipWidth, mipHeight);
 
-		double roughness = (double)mip / (double)(l_maxMipLevels - 1);
+		float roughness = (float)mip / (float)(l_maxMipLevels - 1);
 		updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPass_uni_roughness, roughness);
 		for (unsigned int i = 0; i < 6; ++i)
 		{
@@ -2149,7 +2211,7 @@ void GLRenderingSystem::updateEnvironmentRenderPass()
 	drawMesh(l_MDC);
 }
 
-void GLRenderingSystem::updateShadowRenderPass()
+void GLRenderingSystemNS::updateShadowRenderPass()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -2170,7 +2232,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		for (auto& l_lightComponent : GameSystemSingletonComponent::getInstance().m_lightComponents)
+		for (auto& l_lightComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents)
 		{
 			if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
 			{
@@ -2183,7 +2245,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 					InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat.inverse());
 
 				// draw each visibleComponent
-				for (auto& l_visibleComponent : GameSystemSingletonComponent::getInstance().m_visibleComponents)
+				for (auto& l_visibleComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_visibleComponents)
 				{
 					if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 					{
@@ -2207,7 +2269,7 @@ void GLRenderingSystem::updateShadowRenderPass()
 	glDisable(GL_DEPTH_TEST);
 }
 
-void GLRenderingSystem::updateGeometryRenderPass()
+void GLRenderingSystemNS::updateGeometryRenderPass()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -2225,33 +2287,48 @@ void GLRenderingSystem::updateGeometryRenderPass()
 	auto l_FBC = GeometryRenderPassSingletonComponent::getInstance().m_FBC;
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-	glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	auto l_RtSize = GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize;
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)l_RtSize.x, (GLsizei)l_RtSize.y);
+	glViewport(0, 0, (GLsizei)l_RtSize.x, (GLsizei)l_RtSize.y);
 
-	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glClear(GL_STENCIL_BUFFER_BIT);
 
 	activateShaderProgram(GeometryRenderPassSingletonComponent::getInstance().m_GLSPC);
 
-	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
+	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents.size() > 0)
 	{
-		mat4 p_original = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
+		auto l_mainCamera = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0];
+		mat4 p_original = l_mainCamera->m_projectionMatrix;
 		mat4 p_jittered = p_original;
 		//TAA jitter for projection matrix
-		if (RenderingSystemSingletonComponent::getInstance().currentHaltonStep >= 16)
+		auto& l_currentHaltonStep = GLRenderingSystemNS::g_RenderingSystemSingletonComponent->currentHaltonStep;
+		if (l_currentHaltonStep >= 16)
 		{
-			RenderingSystemSingletonComponent::getInstance().currentHaltonStep = 0;
+			l_currentHaltonStep = 0;
 		}
-		p_jittered.m[0][2] = RenderingSystemSingletonComponent::getInstance().HaltonSampler[RenderingSystemSingletonComponent::getInstance().currentHaltonStep].x / RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x;
-		p_jittered.m[1][2] = RenderingSystemSingletonComponent::getInstance().HaltonSampler[RenderingSystemSingletonComponent::getInstance().currentHaltonStep].y / RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y;
-		RenderingSystemSingletonComponent::getInstance().currentHaltonStep += 1;
+		p_jittered.m02 = GLRenderingSystemNS::g_RenderingSystemSingletonComponent->HaltonSampler[l_currentHaltonStep].x / l_RtSize.x;
+		p_jittered.m12 = GLRenderingSystemNS::g_RenderingSystemSingletonComponent->HaltonSampler[l_currentHaltonStep].y / l_RtSize.y;
+		l_currentHaltonStep += 1;
 
-		mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_localTransformVector.getInvertGlobalRotationMatrix();
-		mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_localTransformVector.getInvertGlobalTranslationMatrix();
-		mat4 r_prev = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_previousTransformVector.getInvertGlobalRotationMatrix();
-		mat4 t_prev = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_previousTransformVector.getInvertGlobalTranslationMatrix();
+		mat4 r =
+			InnoMath::getInvertRotationMatrix(
+				InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_rot
+			);
+		mat4 t =
+			InnoMath::getInvertTranslationMatrix(
+				InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_pos
+			);
+		mat4 r_prev =
+			InnoMath::getInvertRotationMatrix(
+				InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_rot
+			);
+		mat4 t_prev =
+			InnoMath::getInvertTranslationMatrix(
+				InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_pos
+			);
 
 		updateUniform(
 			GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_original,
@@ -2274,9 +2351,9 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 #ifdef CookTorrance
 		//Cook-Torrance
-		if (GameSystemSingletonComponent::getInstance().m_lightComponents.size() > 0)
+		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size() > 0)
 		{
-			for (auto& l_lightComponent : GameSystemSingletonComponent::getInstance().m_lightComponents)
+			for (auto& l_lightComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents)
 			{
 				// update light space transformation matrices
 				if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
@@ -2290,10 +2367,12 @@ void GLRenderingSystem::updateGeometryRenderPass()
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3,
 						l_lightComponent->m_projectionMatrices[3]);
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light,
-						InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_localTransformVector.getInvertGlobalRotationMatrix());
+						InnoMath::getInvertRotationMatrix(
+							InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_globalTransformVector.m_rot
+						));
 
 					// draw each visibleComponent
-					for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
+					for (auto& l_visibleComponent : GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_inFrustumVisibleComponents)
 					{
 						if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 						{
@@ -2304,7 +2383,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
-								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_previousTransformVector.caclGlobalTransformationMatrix());
+								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix_prev.m_transformationMat);
 
 							// draw each graphic data of visibleComponent
 							for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -2419,10 +2498,10 @@ void GLRenderingSystem::updateGeometryRenderPass()
 
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
-								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_localTransformVector.caclGlobalTransformationMatrix());
+								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
-								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_previousTransformVector.caclGlobalTransformationMatrix());
+								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix_prev.m_transformationMat);
 
 							// draw each graphic data of visibleComponent
 							for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -2534,7 +2613,7 @@ void GLRenderingSystem::updateGeometryRenderPass()
 	}
 }
 
-void GLRenderingSystem::updateLightRenderPass()
+void GLRenderingSystemNS::updateLightRenderPass()
 {
 	glDisable(GL_DEPTH_TEST);
 
@@ -2549,10 +2628,10 @@ void GLRenderingSystem::updateLightRenderPass()
 	auto l_FBC = LightRenderPassSingletonComponent::getInstance().m_FBC;
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-	glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
+	glViewport(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glClear(GL_STENCIL_BUFFER_BIT);
@@ -2561,7 +2640,7 @@ void GLRenderingSystem::updateLightRenderPass()
 	// copy stencil buffer of opaque objects from G-Pass
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_FBC->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_FBC->m_FBO);
-	glBlitFramebuffer(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, 0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
 	activateShaderProgram(LightRenderPassSingletonComponent::getInstance().m_GLSPC);
 
@@ -2643,21 +2722,23 @@ void GLRenderingSystem::updateLightRenderPass()
 		LightRenderPassSingletonComponent::getInstance().m_uni_isEmissive,
 		false);
 
-	if (GameSystemSingletonComponent::getInstance().m_lightComponents.size() > 0)
+	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size() > 0)
 	{
 		int l_pointLightIndexOffset = 0;
-		for (auto i = (unsigned int)0; i < GameSystemSingletonComponent::getInstance().m_lightComponents.size(); i++)
+		auto l_viewPos = InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
+		for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size(); i++)
 		{
-			auto l_viewPos = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_localTransformVector.caclGlobalPos();
-			auto l_lightPos = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_parentEntity)->m_localTransformVector.caclGlobalPos();
-			auto l_dirLightDirection = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_parentEntity)->m_localTransformVector.getDirection(direction::BACKWARD);
+			auto l_lightPos = InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
 
-			auto l_lightColor = GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_color;
+			auto l_dirLightDirection =
+				InnoMath::getDirection(direction::BACKWARD, InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_parentEntity)->m_localTransformVector.m_rot);
+
+			auto l_lightColor = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_color;
 			updateUniform(
 				LightRenderPassSingletonComponent::getInstance().m_uni_viewPos,
 				l_viewPos.x, l_viewPos.y, l_viewPos.z);
 
-			if (GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
+			if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
 			{
 				l_pointLightIndexOffset -= 1;
 				updateUniform(
@@ -2670,14 +2751,14 @@ void GLRenderingSystem::updateLightRenderPass()
 					LightRenderPassSingletonComponent::getInstance().m_uni_dirLight_color,
 					l_lightColor.x, l_lightColor.y, l_lightColor.z);
 			}
-			else if (GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_lightType == lightType::POINT)
+			else if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_lightType == lightType::POINT)
 			{
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position[i + l_pointLightIndexOffset],
 					l_lightPos.x, l_lightPos.y, l_lightPos.z);
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_radius[i + l_pointLightIndexOffset],
-					GameSystemSingletonComponent::getInstance().m_lightComponents[i]->m_radius);
+					GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_radius);
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_color[i + l_pointLightIndexOffset],
 					l_lightColor.x, l_lightColor.y, l_lightColor.z);
@@ -2698,7 +2779,7 @@ void GLRenderingSystem::updateLightRenderPass()
 	// copy stencil buffer of emmisive objects from G-Pass
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_FBC->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_FBC->m_FBO);
-	glBlitFramebuffer(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, 0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_isEmissive,
@@ -2711,7 +2792,7 @@ void GLRenderingSystem::updateLightRenderPass()
 	glDisable(GL_STENCIL_TEST);
 }
 
-void GLRenderingSystem::updateFinalRenderPass()
+void GLRenderingSystemNS::updateFinalRenderPass()
 {
 	// sky pass
 	glEnable(GL_DEPTH_TEST);
@@ -2725,44 +2806,51 @@ void GLRenderingSystem::updateFinalRenderPass()
 	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_skyPassFBC;
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-	glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
+	glViewport(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC);
+	GLRenderingSystemNS::activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC);
 
 	auto l_MDC = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::CUBE);
-	auto l_GLMDC = getGLMeshDataComponent(l_MDC->m_parentEntity);
+	auto l_GLMDC = GLRenderingSystemNS::getGLMeshDataComponent(l_MDC->m_parentEntity);
 
-	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
+	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents.size() > 0)
 	{
-		mat4 p = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
-		mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_localTransformVector.getInvertGlobalRotationMatrix();
+		auto l_mainCamera = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0];
+		mat4 p = l_mainCamera->m_projectionMatrix;
+		mat4 r =
+			InnoMath::getInvertRotationMatrix(
+				InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_rot
+			);
 
-		updateUniform(
+		GLRenderingSystemNS::updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p,
 			p);
-		updateUniform(
+		GLRenderingSystemNS::updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r,
 			r);
-		updateUniform(
+		GLRenderingSystemNS::updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize,
-			RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+			GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-		auto l_eyePos = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_localTransformVector.caclGlobalPos();
-		updateUniform(
+		auto l_eyePos = InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_pos;
+		GLRenderingSystemNS::updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos,
 			l_eyePos.x, l_eyePos.y, l_eyePos.z);
 
-		auto l_lightDir = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_lightComponents[0]->m_parentEntity)->m_localTransformVector.getDirection(direction::FORWARD);
-		updateUniform(
+		auto l_lightDir = InnoMath::getDirection(
+			direction::FORWARD,
+			InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_localTransformVector.m_rot
+		);
+		GLRenderingSystemNS::updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
 			l_lightDir.x, l_lightDir.y, l_lightDir.z);
 
-		drawMesh(l_MDC);
+		GLRenderingSystemNS::drawMesh(l_MDC);
 	}
 
 	glDisable(GL_CULL_FACE);
@@ -2771,32 +2859,32 @@ void GLRenderingSystem::updateFinalRenderPass()
 	// TAA pass
 	TextureDataComponent* l_lastFrameTAATDC;
 	GLTextureDataComponent* l_lastFrameTAAGLTDC;
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassSPC);
+	GLRenderingSystemNS::activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassSPC);
 
-	if (RenderingSystemSingletonComponent::getInstance().m_isTAAPingPass)
+	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_isTAAPingPass)
 	{
 		auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassFBC;
 		glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 		glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-		glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
+		glViewport(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		activateTexture(
+		GLRenderingSystemNS::activateTexture(
 			LightRenderPassSingletonComponent::getInstance().m_TDC,
 			LightRenderPassSingletonComponent::getInstance().m_GLTDC,
 			0);
-		activateTexture(
+		GLRenderingSystemNS::activateTexture(
 			GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTDC,
 			GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLTDC,
 			1);
-		activateTexture(
+		GLRenderingSystemNS::activateTexture(
 			GeometryRenderPassSingletonComponent::getInstance().m_TDCs[3],
 			GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[3],
 			2);
-		RenderingSystemSingletonComponent::getInstance().m_isTAAPingPass = false;
+		GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_isTAAPingPass = false;
 		l_lastFrameTAATDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTDC;
 		l_lastFrameTAAGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLTDC;
 	}
@@ -2805,51 +2893,51 @@ void GLRenderingSystem::updateFinalRenderPass()
 		auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassFBC;
 		glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 		glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-		glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
+		glViewport(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		activateTexture(
+		GLRenderingSystemNS::activateTexture(
 			LightRenderPassSingletonComponent::getInstance().m_TDC,
 			LightRenderPassSingletonComponent::getInstance().m_GLTDC,
 			0);
-		activateTexture(
+		GLRenderingSystemNS::activateTexture(
 			GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTDC,
 			GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLTDC,
 			1);
-		activateTexture(
+		GLRenderingSystemNS::activateTexture(
 			GeometryRenderPassSingletonComponent::getInstance().m_TDCs[3],
 			GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[3],
 			2);
-		RenderingSystemSingletonComponent::getInstance().m_isTAAPingPass = true;
+		GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_isTAAPingPass = true;
 		l_lastFrameTAATDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTDC;
 		l_lastFrameTAAGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLTDC;
 	}
-	updateUniform(
+	GLRenderingSystemNS::updateUniform(
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize,
-		RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+		GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	l_MDC = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::QUAD);
-	l_GLMDC = getGLMeshDataComponent(l_MDC->m_parentEntity);
+	l_GLMDC = GLRenderingSystemNS::getGLMeshDataComponent(l_MDC->m_parentEntity);
 
-	drawMesh(l_MDC);
+	GLRenderingSystemNS::drawMesh(l_MDC);
 
 	// bloom extract pass
 	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassFBC;
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-	glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
+	glViewport(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassSPC);
+	GLRenderingSystemNS::activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassSPC);
 
 	// 1. extract bright part from TAA pass
-	activateTexture(l_lastFrameTAATDC, l_lastFrameTAAGLTDC, 0);
+	GLRenderingSystemNS::activateTexture(l_lastFrameTAATDC, l_lastFrameTAAGLTDC, 0);
 
 	drawMesh(l_MDC);
 
@@ -2866,20 +2954,20 @@ void GLRenderingSystem::updateFinalRenderPass()
 			auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassFBC;
 			glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 			glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-			glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
+			glViewport(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-			glClearColor(0.0, 0.0, 0.0, 0.0);
+			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 			glClear(GL_DEPTH_BUFFER_BIT);
 
-			updateUniform(
+			GLRenderingSystemNS::updateUniform(
 				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_horizontal,
 				true);
 
 			if (l_isFirstIteration)
 			{
-				activateTexture(
+				GLRenderingSystemNS::activateTexture(
 					GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTDC,
 					GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLTDC, 
 					0);
@@ -2887,7 +2975,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 			}
 			else
 			{
-				activateTexture(
+				GLRenderingSystemNS::activateTexture(
 					GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTDC, 
 					GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLTDC,
 					0);
@@ -2902,18 +2990,18 @@ void GLRenderingSystem::updateFinalRenderPass()
 			auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassFBC;
 			glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 			glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-			glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
+			glViewport(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-			glClearColor(0.0, 0.0, 0.0, 0.0);
+			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 			glClear(GL_DEPTH_BUFFER_BIT);
 
-			updateUniform(
+			GLRenderingSystemNS::updateUniform(
 				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_horizontal,
 				false);
 
-			activateTexture(
+			GLRenderingSystemNS::activateTexture(
 				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTDC,
 				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLTDC,
 				0);
@@ -2928,16 +3016,16 @@ void GLRenderingSystem::updateFinalRenderPass()
 	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassFBC;
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-	glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
+	glViewport(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassSPC);
 
-	activateTexture(
+	GLRenderingSystemNS::activateTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_TDCs[3],
 		GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[3],
 		0);
@@ -2952,65 +3040,71 @@ void GLRenderingSystem::updateFinalRenderPass()
 	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassFBC;
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-	glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
+	glViewport(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// copy depth buffer from G-Pass
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_FBC->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_FBC->m_FBO);
-	glBlitFramebuffer(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-	glBlitFramebuffer(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, 0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, 0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassSPC);
 
-	if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
+	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents.size() > 0)
 	{
-		mat4 p = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
-		mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_localTransformVector.getInvertGlobalRotationMatrix();
-		mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_localTransformVector.getInvertGlobalTranslationMatrix();
+		mat4 p = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_projectionMatrix;
+		mat4 r =
+			InnoMath::getInvertRotationMatrix(
+				InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_rot
+			);
+		mat4 t =
+			InnoMath::getInvertTranslationMatrix(
+				InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos
+			);
 
-		updateUniform(
+		GLRenderingSystemNS::updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_p,
 			p);
-		updateUniform(
+		GLRenderingSystemNS::updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_r,
 			r);
-		updateUniform(
+		GLRenderingSystemNS::updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_t,
 			t);
 	}
-	if (GameSystemSingletonComponent::getInstance().m_visibleComponents.size() > 0)
+	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_visibleComponents.size() > 0)
 	{
 		// draw each visibleComponent
-		for (auto& l_visibleComponent : GameSystemSingletonComponent::getInstance().m_visibleComponents)
+		for (auto& l_visibleComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_visibleComponents)
 		{
 			if (l_visibleComponent->m_visiblilityType == visiblilityType::BILLBOARD)
 			{
-				auto l_GlobalPos = InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_localTransformVector.caclGlobalPos();
-				auto l_GlobalCameraPos = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_localTransformVector.caclGlobalPos();
+				auto l_GlobalPos = InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformVector.m_pos;
+				auto l_GlobalCameraPos = InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
 
-				updateUniform(
+				GLRenderingSystemNS::updateUniform(
 					GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_pos,
 					l_GlobalPos.x, l_GlobalPos.y, l_GlobalPos.z);
-				updateUniform(
+				GLRenderingSystemNS::updateUniform(
 					GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_albedo,
 					l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
 				auto l_distanceToCamera = (l_GlobalCameraPos - l_GlobalPos).length();
-				if (l_distanceToCamera > 1.0)
+				if (l_distanceToCamera > 1.0f)
 				{
-					updateUniform(
+					GLRenderingSystemNS::updateUniform(
 						GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_size,
-						(1.0 / l_distanceToCamera) * (9.0 / 16.0), (1.0 / l_distanceToCamera));
+						(1.0f / l_distanceToCamera) * (9.0f / 16.0f), (1.0f / l_distanceToCamera));
 				}
 				else
 				{
-					updateUniform(
+					GLRenderingSystemNS::updateUniform(
 						GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_size,
-						(9.0 / 16.0), 1.0);
+						(9.0f / 16.0f), 1.0f);
 				}
 				// draw each graphic data of visibleComponent
 				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -3025,10 +3119,10 @@ void GLRenderingSystem::updateFinalRenderPass()
 						if (l_normalTextureID != l_textureMap->end())
 						{
 							auto l_TDC = InnoAssetSystem::getTextureDataComponent(l_normalTextureID->second);
-							auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-							activateTexture(l_TDC, l_GLTDC, 0);
+							auto l_GLTDC = GLRenderingSystemNS::getGLTextureDataComponent(l_TDC->m_parentEntity);
+							GLRenderingSystemNS::activateTexture(l_TDC, l_GLTDC, 0);
 						}
-						drawMesh(l_graphicData.first);
+						GLRenderingSystemNS::drawMesh(l_graphicData.first);
 					}
 				}
 			}
@@ -3044,25 +3138,25 @@ void GLRenderingSystem::updateFinalRenderPass()
 	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassFBC;
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-	glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
+	glViewport(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
 	// copy depth buffer from G-Pass
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_FBC->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_FBC->m_FBO);
-	glBlitFramebuffer(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-	glBlitFramebuffer(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, 0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, 0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, 0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassSPC);
 
-	//if (GameSystemSingletonComponent::getInstance().m_cameraComponents.size() > 0)
+	//if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents.size() > 0)
 	//{
-	//	mat4 p = GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_projectionMatrix;
-	//	mat4 r = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
-	//	mat4 t = InnoGameSystem::getTransformComponent(GameSystemSingletonComponent::getInstance().m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
+	//	mat4 p = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_projectionMatrix;
+	//	mat4 r = InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
+	//	mat4 t = InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
 
 	//	updateUniform(
 	//		FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_p,
@@ -3074,7 +3168,7 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//		FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_t,
 	//		t);
 
-	//	for (auto& l_cameraComponent : GameSystemSingletonComponent::getInstance().m_cameraComponents)
+	//	for (auto& l_cameraComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents)
 	//	{
 	//		// draw frustum for cameraComponent
 	//		if (l_cameraComponent->m_drawFrustum)
@@ -3102,10 +3196,10 @@ void GLRenderingSystem::updateFinalRenderPass()
 	//		}
 	//	}
 	//}
-	//if (GameSystemSingletonComponent::getInstance().m_lightComponents.size() > 0)
+	//if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size() > 0)
 	//{
 	//	// draw AABB for lightComponent
-	//	for (auto& l_lightComponent : GameSystemSingletonComponent::getInstance().m_lightComponents)
+	//	for (auto& l_lightComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents)
 	//	{
 	//		if (l_lightComponent->m_drawAABB)
 	//		{
@@ -3165,64 +3259,64 @@ void GLRenderingSystem::updateFinalRenderPass()
 	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassFBC;
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
-	glViewport(0, 0, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x, (GLsizei)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
+	glViewport(0, 0, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, (GLsizei)GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassSPC);
+	GLRenderingSystemNS::activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassSPC);
 
 	// motion blur pass rendering target
-	activateTexture(
+	GLRenderingSystemNS::activateTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassTDC,
 		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLTDC, 
 		0);
 	// sky pass rendering target
-	activateTexture(
+	GLRenderingSystemNS::activateTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassTDC,
 		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLTDC,
 		1);
 	// bloom pass rendering target
-	activateTexture(
+	GLRenderingSystemNS::activateTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTDC,
 		GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLTDC, 
 		2);
 	// billboard pass rendering target
-	activateTexture(
+	GLRenderingSystemNS::activateTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassTDC,
 		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLTDC,
 		3);
 	// debugger pass rendering target
-	activateTexture(
+	GLRenderingSystemNS::activateTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassTDC,
 		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLTDC,
 		4);
 
 	//// draw final pass rectangle
-	drawMesh(l_MDC);
+	GLRenderingSystemNS::drawMesh(l_MDC);
 
 	//// draw again for game build
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-	drawMesh(l_MDC);
+	GLRenderingSystemNS::drawMesh(l_MDC);
 }
 
 bool GLRenderingSystem::terminate()
 {
-	m_objectStatus = objectStatus::SHUTDOWN;
+	GLRenderingSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
 	InnoLogSystem::printLog("GLRenderingSystem has been terminated.");
 	return true;
 }
 
 objectStatus GLRenderingSystem::getStatus()
 {
-	return m_objectStatus;
+	return GLRenderingSystemNS::m_objectStatus;
 }
 
-GLuint GLRenderingSystem::getUniformLocation(GLuint shaderProgram, const std::string & uniformName)
+GLuint GLRenderingSystemNS::getUniformLocation(GLuint shaderProgram, const std::string & uniformName)
 {
 	// @TODO: UBO
 	glUseProgram(shaderProgram);
@@ -3235,47 +3329,47 @@ GLuint GLRenderingSystem::getUniformLocation(GLuint shaderProgram, const std::st
 	return uniformLocation;
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, bool uniformValue)
+void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, bool uniformValue)
 {
 	glUniform1i(uniformLocation, (int)uniformValue);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, int uniformValue)
+void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, int uniformValue)
 {
 	glUniform1i(uniformLocation, uniformValue);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, double uniformValue)
+void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, float uniformValue)
 {
 	glUniform1f(uniformLocation, (GLfloat)uniformValue);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, double x, double y)
+void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, float x, float y)
 {
 	glUniform2f(uniformLocation, (GLfloat)x, (GLfloat)y);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, double x, double y, double z)
+void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, float x, float y, float z)
 {
 	glUniform3f(uniformLocation, (GLfloat)x, (GLfloat)y, (GLfloat)z);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, double x, double y, double z, double w)
+void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, float x, float y, float z, float w)
 {
 	glUniform4f(uniformLocation, (GLfloat)x, (GLfloat)y, (GLfloat)z, (GLfloat)w);
 }
 
-void GLRenderingSystem::updateUniform(const GLint uniformLocation, const mat4 & mat)
+void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const mat4 & mat)
 {
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat.m[0][0]);
+	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat.m00);
 #endif
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-	glUniformMatrix4fv(uniformLocation, 1, GL_TRUE, &mat.m[0][0]);
+	glUniformMatrix4fv(uniformLocation, 1, GL_TRUE, &mat.m00);
 #endif
 }
 
-void GLRenderingSystem::attachTextureToFramebuffer(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, int colorAttachmentIndex, int textureIndex, int mipLevel)
+void GLRenderingSystemNS::attachTextureToFramebuffer(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, int colorAttachmentIndex, int textureIndex, int mipLevel)
 {
 	if (TDC->m_textureType == textureType::CUBEMAP || TDC->m_textureType == textureType::ENVIRONMENT_CAPTURE || TDC->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TDC->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 	{
@@ -3294,12 +3388,12 @@ void GLRenderingSystem::attachTextureToFramebuffer(TextureDataComponent * TDC, G
 	}
 }
 
-void GLRenderingSystem::activateShaderProgram(GLShaderProgramComponent * GLShaderProgramComponent)
+void GLRenderingSystemNS::activateShaderProgram(GLShaderProgramComponent * GLShaderProgramComponent)
 {
 	glUseProgram(GLShaderProgramComponent->m_program);
 }
 
-void GLRenderingSystem::drawMesh(EntityID rhs)
+void GLRenderingSystemNS::drawMesh(EntityID rhs)
 {
 	auto l_MDC = InnoAssetSystem::getMeshDataComponent(rhs);
 	if (l_MDC)
@@ -3308,7 +3402,7 @@ void GLRenderingSystem::drawMesh(EntityID rhs)
 	}
 }
 
-void GLRenderingSystem::drawMesh(MeshDataComponent* MDC)
+void GLRenderingSystemNS::drawMesh(MeshDataComponent* MDC)
 {
 	auto l_GLMDC = getGLMeshDataComponent(MDC->m_parentEntity);
 	if (l_GLMDC)
@@ -3327,7 +3421,7 @@ void GLRenderingSystem::drawMesh(MeshDataComponent* MDC)
 	}
 }
 
-void GLRenderingSystem::activateTexture(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, int activateIndex)
+void GLRenderingSystemNS::activateTexture(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, int activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
 	if (TDC->m_textureType == textureType::CUBEMAP || TDC->m_textureType == textureType::ENVIRONMENT_CAPTURE || TDC->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TDC->m_textureType == textureType::ENVIRONMENT_PREFILTER)

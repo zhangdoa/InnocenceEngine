@@ -8,7 +8,7 @@
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {
 	AllocConsole();
-	freopen("CONOUT$", "w+", stdout);
+	freopen_s(nullptr, "CONOUT$", "w+", stdout);
 #else
 int main(int argc, char *argv[])
 {

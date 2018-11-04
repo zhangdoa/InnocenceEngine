@@ -3,7 +3,7 @@
 #include "../../common/InnoType.h"
 #include "../../common/config.h"
 
-class IRenderingSystem
+INNO_INTERFACE IRenderingSystem
 {
 public:
 	InnoHighLevelSystem_EXPORT virtual bool setup() = 0;

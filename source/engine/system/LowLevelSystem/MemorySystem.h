@@ -10,7 +10,6 @@
 #include "../../component/GLTextureDataComponent.h"
 #include "../../component/GLFrameBufferComponent.h"
 #include "../../component/GLShaderProgramComponent.h"
-#include "../../component/GLTextureDataComponent.h"
 
 #include "../../component/DXMeshDataComponent.h"
 #include "../../component/DXTextureDataComponent.h"
@@ -36,11 +35,21 @@ namespace InnoMemorySystem
 	InputComponent* allocateInputComponent();
 	EnvironmentCaptureComponent* allocateEnvironmentCaptureComponent();
 
+	MeshDataComponent* allocateMeshDataComponent();
+	TextureDataComponent* allocateTextureDataComponent();
+	
+	GLMeshDataComponent* allocateGLMeshDataComponent();
+	GLTextureDataComponent* allocateGLTextureDataComponent();
+	GLFrameBufferComponent* allocateGLFrameBufferComponent();
+	GLShaderProgramComponent* allocateGLShaderProgramComponent();
+
+	DXMeshDataComponent* allocateDXMeshDataComponent();
+	DXTextureDataComponent* allocateDXTextureDataComponent();
 
     template <typename T> T * spawn()
     {
-#pragma message ( "MemorySystem didn't suppose this kind of type now! Need partial specialization!" )
-    };
+		return reinterpret_cast<T *>(allocate(sizeof(T)));
+	};
 
 	template <> TransformComponent * spawn()
 	{
@@ -78,6 +87,54 @@ namespace InnoMemorySystem
 		return t;
 	};
 
+	template <> MeshDataComponent * spawn()
+	{
+		auto t = allocateMeshDataComponent();
+		return t;
+	};
+
+	template <> TextureDataComponent * spawn()
+	{
+		auto t = allocateTextureDataComponent();
+		return t;
+	};
+
+	template <> GLMeshDataComponent * spawn()
+	{
+		auto t = allocateGLMeshDataComponent();
+		return t;
+	};
+
+	template <> GLTextureDataComponent * spawn()
+	{
+		auto t = allocateGLTextureDataComponent();
+		return t;
+	};
+
+	template <> GLFrameBufferComponent * spawn()
+	{
+		auto t = allocateGLFrameBufferComponent();
+		return t;
+	};
+
+	template <> GLShaderProgramComponent * spawn()
+	{
+		auto t = allocateGLShaderProgramComponent();
+		return t;
+	};
+
+	template <> DXMeshDataComponent * spawn()
+	{
+		auto t = allocateDXMeshDataComponent();
+		return t;
+	};
+
+	template <> DXTextureDataComponent * spawn()
+	{
+		auto t = allocateDXTextureDataComponent();
+		return t;
+	};
+
     template <typename T> T * spawn(size_t n)
     {
         return reinterpret_cast<T *>(allocate(n * sizeof(T)));
@@ -98,6 +155,6 @@ namespace InnoMemorySystem
     {
         return reinterpret_cast<T *>(deserializeImpl(sizeof(T), filePath));
     };
-   
+
 	InnoLowLevelSystem_EXPORT objectStatus getStatus();
 };

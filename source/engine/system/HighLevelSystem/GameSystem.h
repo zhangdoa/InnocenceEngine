@@ -30,7 +30,7 @@ namespace InnoGameSystem
 	TransformComponent* getTransformComponent(EntityID parentEntity);
 
 	void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function);
-	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(double)>* function);
+	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function);
 	
 	void saveComponentsCapture();
 
