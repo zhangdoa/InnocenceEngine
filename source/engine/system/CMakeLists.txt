@@ -7,10 +7,10 @@ GENERATE_EXPORT_HEADER (InnoSystem
     EXPORT_FILE_NAME ${CMAKE_SOURCE_DIR}/engine/exports/InnoSystem_Export.h
     STATIC_DEFINE INNO_SYSTEM_BUILT_AS_STATIC
 )
+target_link_libraries(InnoSystem InnoMath)
 
 target_link_libraries(InnoSystem GLAD)
 target_link_libraries(InnoSystem ImGui)
-target_link_libraries(InnoSystem InnoMath)
 
 find_library(ASSIMP assimp)
 target_link_libraries(InnoSystem "${ASSIMP}")
@@ -31,16 +31,16 @@ else ()
 target_link_libraries(InnoSystem "${GLFW}")
 endif (INNO_PLATFORM_LINUX64)
 
-link_directories(${CMAKE_SOURCE_DIR}/game/)
+#link_directories(${CMAKE_SOURCE_DIR}/game/)
 
-if (BUILD_EDITOR)
-target_link_libraries(InnoSystem InnoEditor)
-endif (BUILD_EDITOR)
+#if (BUILD_EDITOR)
+#target_link_libraries(InnoSystem InnoEditor)
+#endif (BUILD_EDITOR)
 
-if(BUILD_GAME)
-target_link_libraries(InnoSystem InnoGame)
-endif (BUILD_GAME)
+#if(BUILD_GAME)
+#target_link_libraries(InnoSystem InnoGame)
+#endif (BUILD_GAME)
 
-if(BUILD_TEST)
-target_link_libraries(InnoSystem InnoTest)
-endif (BUILD_TEST)
+#if(BUILD_TEST)
+#target_link_libraries(InnoSystem InnoTest)
+#endif (BUILD_TEST)

@@ -1,15 +1,15 @@
 #pragma once
-#include "../common/InnoType.h"
 #include "../common/InnoClassTemplate.h"
 #include "../exports/InnoSystem_Export.h"
 #include "ITimeSystem.h"
+#include "ILogSystem.h"
 
 INNO_INTERFACE ICoreSystem
 {
-public: 
-	INNO_POLYMORPHISM_TYPE_CONCRETE(ICoreSystem)
-	INNO_ASSIGNMENT_TYPE_NON_COPYABLE(ICoreSystem)
-	INNO_ASSIGNMENT_TYPE_MOVABLE(ICoreSystem)
+public:
+	INNO_CLASS_INTERFACE_NON_COPYABLE(ICoreSystem);
 
+	INNO_SYSTEM_EXPORT virtual bool setup() = 0;
 	INNO_SYSTEM_EXPORT virtual ITimeSystem* getTimeSystem() = 0;
+	INNO_SYSTEM_EXPORT virtual ILogSystem* getLogSystem() = 0;
 };

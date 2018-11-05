@@ -1,46 +1,38 @@
 #include "CoreSystem.h"
 #include "TimeSystem.h"
+#include "LogSystem.h"
+
+ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE CoreSystemNS
 {
 	std::unique_ptr<ITimeSystem> m_TimeSystem;
+	std::unique_ptr<ILogSystem> m_LogSystem;
 }
 
-INNO_SYSTEM_EXPORT bool CoreSystem::setup()
+INNO_SYSTEM_EXPORT bool InnoCoreSystem::setup()
 {
+	g_pCoreSystem = this;
+
 	CoreSystemNS::m_TimeSystem = std::make_unique<InnoTimeSystem>();
-	if (CoreSystemNS::m_TimeSystem.get())
-	{
-		CoreSystemNS::m_TimeSystem.get()->setup();
-		return true;
-	}
-	else
+	if (!CoreSystemNS::m_TimeSystem.get())
 	{
 		return false;
 	}
+	CoreSystemNS::m_LogSystem = std::make_unique<InnoLogSystem>();
+	if (!CoreSystemNS::m_LogSystem.get())
+	{
+		return false;
+	}
+	return true;
 }
 
-INNO_SYSTEM_EXPORT bool CoreSystem::initialize()
+INNO_SYSTEM_EXPORT ITimeSystem * InnoCoreSystem::getTimeSystem()
 {
-	return INNO_SYSTEM_EXPORT bool();
+	return CoreSystemNS::m_TimeSystem.get();
 }
 
-INNO_SYSTEM_EXPORT bool CoreSystem::update()
+INNO_SYSTEM_EXPORT ILogSystem * InnoCoreSystem::getLogSystem()
 {
-	return INNO_SYSTEM_EXPORT bool();
-}
-
-INNO_SYSTEM_EXPORT bool CoreSystem::terminate()
-{
-	return INNO_SYSTEM_EXPORT bool();
-}
-
-INNO_SYSTEM_EXPORT ITimeSystem * CoreSystem::getTimeSystem()
-{
-	return nullptr;
-}
-
-INNO_SYSTEM_EXPORT objectStatus CoreSystem::getStatus()
-{
-	return INNO_SYSTEM_EXPORT objectStatus();
+	return CoreSystemNS::m_LogSystem.get();
 }

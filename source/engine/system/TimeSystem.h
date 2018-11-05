@@ -3,6 +3,9 @@
 
 class InnoTimeSystem : INNO_IMPLEMENT ITimeSystem
 {
+public:
+	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTimeSystem);
+
 	INNO_SYSTEM_EXPORT bool setup() override;
 	INNO_SYSTEM_EXPORT bool initialize() override;
 	INNO_SYSTEM_EXPORT bool update() override;

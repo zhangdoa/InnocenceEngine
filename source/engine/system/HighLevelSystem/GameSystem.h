@@ -1,5 +1,4 @@
 #pragma once
-#include "../../exports/HighLevelSystem_Export.h"
 #include "../LowLevelSystem/MemorySystem.h"
 #include "../../common/ComponentHeaders.h"
 #include "../../game/InnocenceGarden/PlayerCharacter.h"

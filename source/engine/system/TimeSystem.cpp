@@ -25,7 +25,7 @@ INNO_SYSTEM_EXPORT bool InnoTimeSystem::setup()
 INNO_SYSTEM_EXPORT bool InnoTimeSystem::initialize()
 {
 	InnoTimeSystemNS::m_objectStatus = objectStatus::ALIVE;
-	//g_pCoreSystem->getLogSystem()->printLog("TimeSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog("TimeSystem has been initialized.");
 	return true;
 }
 
@@ -50,7 +50,7 @@ INNO_SYSTEM_EXPORT bool InnoTimeSystem::update()
 INNO_SYSTEM_EXPORT bool InnoTimeSystem::terminate()
 {
 	InnoTimeSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	//g_pCoreSystem->getLogSystem()->printLog("TimeSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog("TimeSystem has been terminated.");
 	return true;
 }
 

@@ -22,8 +22,8 @@ struct timeData
 	unsigned day;
 	unsigned hour;
 	unsigned minute;
-	unsigned second;
-	unsigned millisecond;
+	long long second;
+	long long millisecond;
 };
 
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
