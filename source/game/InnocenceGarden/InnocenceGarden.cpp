@@ -10,8 +10,8 @@ namespace InnocenceGarden
 	TransformComponent* m_rootTransformComponent;
 
 	// player character
-	EntityID m_playerCharacterEntity;
-	PlayerCharacter* m_playerCharacterComponent;
+	EntityID m_playerEntity;
+	PlayerComponent* m_playerComponent;
 
 	// environment capture entity and its components
 	EntityID m_EnvironmentCaptureEntity;
@@ -68,24 +68,30 @@ void InnocenceGarden::setup()
 	m_rootTransformComponent->m_parentEntity = m_rootEntity;
 
 	// setup player character
-	m_playerCharacterComponent = InnoGameSystem::spawn<PlayerCharacter>();
-	m_playerCharacterComponent->setup();
-	m_playerCharacterComponent->getTransformComponent().m_parentTransformComponent = m_rootTransformComponent;
-	m_playerCharacterComponent->getTransformComponent().m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 3.0f, 1.0f);
+	m_playerComponent = InnoGameSystem::spawn<PlayerComponent>();
+	m_playerComponent->m_transformComponent = InnoGameSystem::spawn<TransformComponent>();
+	m_playerComponent->m_transformComponent->m_parentTransformComponent = m_rootTransformComponent;
+	m_playerComponent->m_visibleComponent = InnoGameSystem::spawn<VisibleComponent>();
+	m_playerComponent->m_inputComponent = InnoGameSystem::spawn<InputComponent>();
+	m_playerComponent->m_cameraComponent = InnoGameSystem::spawn<CameraComponent>();
 
-	m_playerCharacterComponent->getCameraComponent().m_drawFrustum = false;
-	m_playerCharacterComponent->getCameraComponent().m_drawAABB = false;
-	InnoGameSystem::registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_S, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveForward);
-	InnoGameSystem::registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_W, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveBackward);
-	InnoGameSystem::registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_A, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveLeft);
-	InnoGameSystem::registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_KEY_D, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_moveRight);
-	InnoGameSystem::registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_MOUSE_BUTTON_RIGHT, buttonStatus::PRESSED }, &m_playerCharacterComponent->f_allowMove);
-	InnoGameSystem::registerButtonStatusCallback(&m_playerCharacterComponent->getInputComponent(), button{ INNO_MOUSE_BUTTON_RIGHT, buttonStatus::RELEASED }, &m_playerCharacterComponent->f_forbidMove);
-	InnoGameSystem::registerMouseMovementCallback(&m_playerCharacterComponent->getInputComponent(), 0, &m_playerCharacterComponent->f_rotateAroundPositiveYAxis);
-	InnoGameSystem::registerMouseMovementCallback(&m_playerCharacterComponent->getInputComponent(), 1, &m_playerCharacterComponent->f_rotateAroundRightAxis);
+	m_playerComponent->setup();
+	m_playerComponent->m_transformComponent->m_parentTransformComponent = m_rootTransformComponent;
+	m_playerComponent->m_transformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 3.0f, 1.0f);
 
-	m_playerCharacterEntity = InnoMath::createEntityID();
-	m_playerCharacterComponent->m_parentEntity = m_playerCharacterEntity;
+	m_playerComponent->m_cameraComponent->m_drawFrustum = false;
+	m_playerComponent->m_cameraComponent->m_drawAABB = false;
+	InnoGameSystem::registerButtonStatusCallback(m_playerComponent->m_inputComponent, button{ INNO_KEY_S, buttonStatus::PRESSED }, &m_playerComponent->f_moveForward);
+	InnoGameSystem::registerButtonStatusCallback(m_playerComponent->m_inputComponent, button{ INNO_KEY_W, buttonStatus::PRESSED }, &m_playerComponent->f_moveBackward);
+	InnoGameSystem::registerButtonStatusCallback(m_playerComponent->m_inputComponent, button{ INNO_KEY_A, buttonStatus::PRESSED }, &m_playerComponent->f_moveLeft);
+	InnoGameSystem::registerButtonStatusCallback(m_playerComponent->m_inputComponent, button{ INNO_KEY_D, buttonStatus::PRESSED }, &m_playerComponent->f_moveRight);
+	InnoGameSystem::registerButtonStatusCallback(m_playerComponent->m_inputComponent, button{ INNO_MOUSE_BUTTON_RIGHT, buttonStatus::PRESSED }, &m_playerComponent->f_allowMove);
+	InnoGameSystem::registerButtonStatusCallback(m_playerComponent->m_inputComponent, button{ INNO_MOUSE_BUTTON_RIGHT, buttonStatus::RELEASED }, &m_playerComponent->f_forbidMove);
+	InnoGameSystem::registerMouseMovementCallback(m_playerComponent->m_inputComponent, 0, &m_playerComponent->f_rotateAroundPositiveYAxis);
+	InnoGameSystem::registerMouseMovementCallback(m_playerComponent->m_inputComponent, 1, &m_playerComponent->f_rotateAroundRightAxis);
+
+	m_playerEntity = InnoMath::createEntityID();
+	m_playerComponent->m_parentEntity = m_playerEntity;
 
 	//setup environment capture component
 	m_environmentCaptureComponent = InnoGameSystem::spawn<EnvironmentCaptureComponent>();

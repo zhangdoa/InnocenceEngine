@@ -2,6 +2,7 @@
 #include "../../exports/HighLevelSystem_Export.h"
 #include "../LowLevelSystem/MemorySystem.h"
 #include "../../common/ComponentHeaders.h"
+#include "../../game/InnocenceGarden/PlayerCharacter.h"
 
 namespace InnoGameSystem
 {
@@ -17,12 +18,19 @@ namespace InnoGameSystem
 	void registerComponents(InputComponent* inputComponent);
 	void registerComponents(EnvironmentCaptureComponent* environmentCaptureComponent);
 
+	void registerComponents(PlayerComponent* playerComponent);
+
 	template <typename T> T * spawn()
 	{
 		auto l_ptr = InnoMemorySystem::spawn<T>();
 		if (l_ptr)
 		{
 			registerComponents(l_ptr);
+			return l_ptr;
+		}
+		else
+		{
+			return nullptr;
 		}
 	};
 

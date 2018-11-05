@@ -4,21 +4,21 @@
 #include "../../engine/component/InputComponent.h"
 #include "../../engine/component/VisibleComponent.h"
 
-class PlayerCharacter
+class PlayerComponent
 {
 public:
-	PlayerCharacter() {};
-	~PlayerCharacter() {};
+	PlayerComponent() {};
+	~PlayerComponent() {};
 
 	void setup();
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	TransformComponent& getTransformComponent();
-	VisibleComponent& getVisibleComponent();
-	CameraComponent& getCameraComponent();
-	InputComponent& getInputComponent();
+	TransformComponent* m_transformComponent;
+	VisibleComponent* m_visibleComponent;
+	InputComponent* m_inputComponent;
+	CameraComponent* m_cameraComponent;
 
 	std::function<void()> f_moveForward;
 	std::function<void()> f_moveBackward;
@@ -31,16 +31,11 @@ public:
 	std::function<void(float)> f_rotateAroundPositiveYAxis;
 	std::function<void(float)> f_rotateAroundRightAxis;
 
-private:
-	TransformComponent m_transformComponent;
-	VisibleComponent m_visibleComponent;
-	InputComponent m_inputComponent;
-	CameraComponent m_cameraComponent;
-
 	float m_moveSpeed = 0;
 	float m_rotateSpeed = 0;
 	bool m_canMove = false;
 
+private:
 	void move(vec4 direction, float length);
 
 	void moveForward();

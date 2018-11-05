@@ -138,6 +138,14 @@ void InnoGameSystem::registerComponents(EnvironmentCaptureComponent * environmen
 	g_GameSystemSingletonComponent->m_EnvironmentCaptureComponentsMap.emplace(environmentCaptureComponent->m_parentEntity, environmentCaptureComponent);
 }
 
+void InnoGameSystem::registerComponents(PlayerComponent * playerComponent)
+{
+	registerComponents(playerComponent->m_transformComponent);
+	registerComponents(playerComponent->m_visibleComponent);
+	registerComponents(playerComponent->m_inputComponent);
+	registerComponents(playerComponent->m_cameraComponent);
+}
+
 std::string InnoGameSystem::getGameName()
 {
 	return InnoGameInstance::getGameName();

@@ -421,7 +421,7 @@ VisibleComponent * InnoMemorySystem::allocateVisibleComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for VisibleComponent at " + std::to_string((int)m_VisibleComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for VisibleComponent at " + std::to_string((size_t)m_VisibleComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -437,7 +437,7 @@ LightComponent * InnoMemorySystem::allocateLightComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for LightComponent at " + std::to_string((int)m_LightComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for LightComponent at " + std::to_string((size_t)m_LightComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -453,7 +453,7 @@ CameraComponent * InnoMemorySystem::allocateCameraComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for CameraComponent at " + std::to_string((int)m_CameraComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for CameraComponent at " + std::to_string((size_t)m_CameraComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -469,7 +469,7 @@ InputComponent * InnoMemorySystem::allocateInputComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for InputComponent at " + std::to_string((int)m_InputComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for InputComponent at " + std::to_string((size_t)m_InputComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -485,7 +485,7 @@ EnvironmentCaptureComponent * InnoMemorySystem::allocateEnvironmentCaptureCompon
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for EnvironmentCaptureComponent at " + std::to_string((int)m_EnvironmentCaptureComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for EnvironmentCaptureComponent at " + std::to_string((size_t)m_EnvironmentCaptureComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -501,7 +501,7 @@ MeshDataComponent * InnoMemorySystem::allocateMeshDataComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for MeshDataComponent at " + std::to_string((int)m_MeshDataComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for MeshDataComponent at " + std::to_string((size_t)m_MeshDataComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -517,7 +517,7 @@ TextureDataComponent * InnoMemorySystem::allocateTextureDataComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for TextureDataComponent at " + std::to_string((int)m_TextureDataComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for TextureDataComponent at " + std::to_string((size_t)m_TextureDataComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -533,7 +533,7 @@ GLMeshDataComponent * InnoMemorySystem::allocateGLMeshDataComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLMeshDataComponent at " + std::to_string((int)m_GLMeshDataComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLMeshDataComponent at " + std::to_string((size_t)m_GLMeshDataComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -549,7 +549,7 @@ GLTextureDataComponent * InnoMemorySystem::allocateGLTextureDataComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLTextureDataComponent at " + std::to_string((int)m_GLTextureDataComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLTextureDataComponent at " + std::to_string((size_t)m_GLTextureDataComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -565,7 +565,7 @@ GLFrameBufferComponent * InnoMemorySystem::allocateGLFrameBufferComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLFrameBufferComponent at " + std::to_string((int)m_GLFrameBufferComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLFrameBufferComponent at " + std::to_string((size_t)m_GLFrameBufferComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -581,7 +581,7 @@ GLShaderProgramComponent * InnoMemorySystem::allocateGLShaderProgramComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLShaderProgramComponent at " + std::to_string((int)m_GLShaderProgramComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for GLShaderProgramComponent at " + std::to_string((size_t)m_GLShaderProgramComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -597,7 +597,7 @@ DXMeshDataComponent * InnoMemorySystem::allocateDXMeshDataComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for DXMeshDataComponent at " + std::to_string((int)m_DXMeshDataComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for DXMeshDataComponent at " + std::to_string((size_t)m_DXMeshDataComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
@@ -613,7 +613,7 @@ DXTextureDataComponent * InnoMemorySystem::allocateDXTextureDataComponent()
 	}
 	else
 	{
-		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for DXTextureDataComponent at " + std::to_string((int)m_DXTextureDataComponentPool.m_PoolFreePtr) + " !");
+		InnoLogSystem::printLog("Error: MemorySystem: Can't allocate memory for DXTextureDataComponent at " + std::to_string((size_t)m_DXTextureDataComponentPool.m_PoolFreePtr) + " !");
 		return nullptr;
 	}
 }
