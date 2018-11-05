@@ -12,7 +12,20 @@ enum class objectStatus
 	ALIVE,
 	SHUTDOWN,
 };
+
 using EntityID = unsigned long;
+
+struct timeData
+{
+	int year;
+	unsigned month;
+	unsigned day;
+	unsigned hour;
+	unsigned minute;
+	unsigned second;
+	unsigned millisecond;
+};
+
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
 // mesh custom types
 enum class meshType { NORMAL, BOUNDING_BOX };

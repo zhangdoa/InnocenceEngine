@@ -1,5 +1,6 @@
 /bin
 /build
+/source/engine/exports
 
 \.DS_Store
 

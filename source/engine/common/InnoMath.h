@@ -278,7 +278,7 @@ public:
 	auto slerp(const TVec4<T>& a, const TVec4<T>& b, T alpha) -> TVec4<T>
 	{
 		T cosOfAngle = a * b;
-		// use nlerp for quaternions which are too close 
+		// use nlerp for quaternions which are too close
 		if (cosOfAngle > tolerance4<T>) {
 			return (a * alpha + b * (one<T>-alpha)).normalize();
 		}
@@ -360,7 +360,7 @@ public:
 		//TVec4 l_conjugatedQuat;
 		//l_conjugatedQuat = conjugate(m_rot);
 
-		// then QV * Q^-1 
+		// then QV * Q^-1
 		//TVec4 l_directionQuat;
 		//l_directionQuat = l_hiddenRotatedQuat * l_conjugatedQuat;
 		//l_directionTVec4.x = l_directionQuat.x;
@@ -591,7 +591,7 @@ public:
 
 		return l_m;
 	}
-#endif 
+#endif
 
 	auto operator*(const T rhs) -> TMat4<T>
 	{
@@ -688,7 +688,7 @@ public:
 	vector4(a matrix1x4) :
 	| x y z w |
 
-	matrix4x4 £º
+	matrix4x4 ï¿½ï¿½
 	[columnIndex][rowIndex]
 	| m00 <-> a00(1.0 / (tan(FOV / 2.0) * HWRatio)) m10 <->  a01(         0.0         ) m20 <->  a02(                   0.0                  ) m30 <->  a03(                   0.0                  ) |
 	| m01 <-> a10(               0.0              ) m11 <->  a11(1.0 / (tan(FOV / 2.0)) m21 <->  a12(                   0.0                  ) m31 <->  a13(                   0.0                  ) |
@@ -710,7 +710,7 @@ public:
 	| z |
 	| w |
 
-	matrix4x4 £º
+	matrix4x4 ï¿½ï¿½
 	[rowIndex][columnIndex]
 	| m00 <-> a00(1.0 / (tan(FOV / 2.0) * HWRatio)) m10 <->  a01(         0.0         ) m20 <->  a02(                   0.0                  ) m30 <->  a03( 0.0) |
 	| m01 <-> a01(               0.0              ) m11 <->  a11(1.0 / (tan(FOV / 2.0)) m21 <->  a21(                   0.0                  ) m31 <->  a31( 0.0) |
@@ -1035,7 +1035,7 @@ namespace InnoMath
 	 vector4(a matrix1x4) :
 	 | x y z w |
 
-	 matrix4x4 £º
+	 matrix4x4 ï¿½ï¿½
 	 [columnIndex][rowIndex]
 	 | m00 <-> a00(1.0) m10 <->  a01(0.0) m20 <->  a02(0.0) m30 <->  a03(0.0) |
 	 | m01 <-> a10(0.0) m11 <->  a11(1.0) m21 <->  a12(0.0) m31 <->  a13(0.0) |
@@ -1061,7 +1061,7 @@ namespace InnoMath
 	 | z |
 	 | w |
 
-	 matrix4x4 £º
+	 matrix4x4 ï¿½ï¿½
 	 [rowIndex][columnIndex]
 	 | m00 <-> a00(1.0) m01 <->  a01(0.0) m02 <->  a02(0.0) m03 <->  a03(Tx ) |
 	 | m10 <-> a10(0.0) m11 <->  a11(1.0) m12 <->  a12(0.0) m13 <->  a13(Ty ) |
@@ -1122,7 +1122,7 @@ namespace InnoMath
 	 vector4(a matrix1x4) :
 	 | x y z w |
 
-	 matrix4x4 £º
+	 matrix4x4 ï¿½ï¿½
 	 [columnIndex][rowIndex]
 	 | m00 <-> a00(1 - 2*qy2 - 2*qz2) m10 <->  a01(2*qx*qy + 2*qz*qw) m20 <->  a02(2*qx*qz - 2*qy*qw) m30 <->  a03(0.0) |
 	 | m01 <-> a10(2*qx*qy - 2*qz*qw) m11 <->  a11(1 - 2*qx2 - 2*qz2) m21 <->  a12(2*qy*qz + 2*qx*qw) m31 <->  a13(0.0) |
@@ -1148,7 +1148,7 @@ namespace InnoMath
 	 | z |
 	 | w |
 
-	 matrix4x4 £º
+	 matrix4x4 ï¿½ï¿½
 	 [rowIndex][columnIndex]
 	 | m00 <-> a00(1 - 2*qy2 - 2*qz2) m01 <->  a01(2*qx*qy - 2*qz*qw) m02 <->  a02(2*qx*qz + 2*qy*qw) m03 <->  a03(0.0) |
 	 | m10 <-> a10(2*qx*qy + 2*qz*qw) m11 <->  a11(1 - 2*qx2 - 2*qz2) m12 <->  a12(2*qy*qz - 2*qx*qw) m13 <->  a13(0.0) |
@@ -1480,7 +1480,10 @@ namespace InnoMath
 		return l_directionTVec4.rotateByQuat(localRot);
 	}
 
-	__declspec(dllexport) EntityID createEntityID();
+	EntityID createEntityID()
+	{
+			return std::rand();
+	};
 }
 
 using vec2 = TVec2<float>;
