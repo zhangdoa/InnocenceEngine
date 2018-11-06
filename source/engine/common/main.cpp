@@ -2,7 +2,7 @@
 #include "config.h"
 #include "InnoApplication.h"
 
-#if defined(INNO_RENDERER_DX)
+#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
 #include <windows.h>
 #include <windowsx.h>
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)

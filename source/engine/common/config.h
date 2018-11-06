@@ -6,11 +6,6 @@
 /* #undef INNO_PLATFORM_LINUX64 */
 /* #undef INNO_PLATFORM_MACOS */
 
-/* #undef INNO_RENDERER_OPENGL */
-#define INNO_RENDERER_DX
-/* #undef INNO_RENDERER_VULKAN */
-/* #undef INNO_RENDERER_METAL */
-
 /* #undef BUILD_EDITOR */
 #define BUILD_GAME
 /* #undef BUILD_TEST */

@@ -33,11 +33,11 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		}
 		g_pCoreSystem->getLogSystem()->printLog("LogSystem setup finished.");
 
-		//if (!InnoMemorySystem::setup())
-		//{
-		//	return false;
-		//}
-		//InnoLogSystem::printLog("MemorySystem setup finished.");
+		if (!g_pCoreSystem->getMemorySystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("MemorySystem setup finished.");
 
 		//if (!InnoTaskSystem::setup())
 		//{

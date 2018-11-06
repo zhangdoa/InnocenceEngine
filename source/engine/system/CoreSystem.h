@@ -9,4 +9,5 @@ public:
 	INNO_SYSTEM_EXPORT bool setup() override;
 	INNO_SYSTEM_EXPORT ITimeSystem* getTimeSystem() override;
 	INNO_SYSTEM_EXPORT ILogSystem* getLogSystem() override;
+	INNO_SYSTEM_EXPORT IMemorySystem* getMemorySystem() override;
 };
