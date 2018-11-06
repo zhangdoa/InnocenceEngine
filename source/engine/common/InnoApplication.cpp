@@ -39,11 +39,11 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		}
 		g_pCoreSystem->getLogSystem()->printLog("MemorySystem setup finished.");
 
-		//if (!InnoTaskSystem::setup())
-		//{
-		//	return false;
-		//}
-		//InnoLogSystem::printLog("TaskSystem setup finished.");
+		if (!g_pCoreSystem->getTaskSystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("TaskSystem setup finished.");
 
 		//if (!InnoGameSystem::setup())
 		//{
@@ -71,7 +71,7 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 
 		m_objectStatus = objectStatus::ALIVE;
 
-		//InnoLogSystem::printLog("Engine setup finished.");
+		g_pCoreSystem->getLogSystem()->printLog("Engine setup finished.");
 		return true;
 	}
 	else
@@ -83,10 +83,26 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 bool InnoApplication::initialize()
 {
 	// @TODO: return value check
-	//InnoTimeSystem::initialize();
-	//InnoLogSystem::initialize();
-	//InnoMemorySystem::initialize();
-	//InnoTaskSystem::initialize();
+	if (!g_pCoreSystem->getTimeSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getLogSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getMemorySystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getTaskSystem()->initialize())
+	{
+		return false;
+	}
+
 	//InnoGameSystem::initialize();
 	//InnoAssetSystem::initialize();
 	//InnoPhysicsSystem::initialize();
@@ -99,10 +115,25 @@ bool InnoApplication::initialize()
 bool InnoApplication::update()
 {
 	// @TODO: return value check
-	//InnoTimeSystem::update();
-	//InnoLogSystem::update();
-	//InnoMemorySystem::update();
-	//InnoTaskSystem::update();
+	if (!g_pCoreSystem->getTimeSystem()->update())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getLogSystem()->update())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getMemorySystem()->update())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getTaskSystem()->update())
+	{
+		return false;
+	}
 
 	//InnoGameSystem::update();
 	//InnoAssetSystem::update();
@@ -132,10 +163,25 @@ bool InnoApplication::terminate()
 	//InnoAssetSystem::terminate();
 	//InnoGameSystem::terminate();
 
-	//InnoMemorySystem::terminate();
-	//InnoTaskSystem::terminate();
-	//InnoLogSystem::terminate();
-	//InnoTimeSystem::terminate();
+	if (!g_pCoreSystem->getTaskSystem()->terminate())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getMemorySystem()->terminate())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getLogSystem()->terminate())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getTimeSystem()->terminate())
+	{
+		return false;
+	}
 
 	m_objectStatus = objectStatus::SHUTDOWN;
 	return true;

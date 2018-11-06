@@ -10,4 +10,5 @@ public:
 	INNO_SYSTEM_EXPORT ITimeSystem* getTimeSystem() override;
 	INNO_SYSTEM_EXPORT ILogSystem* getLogSystem() override;
 	INNO_SYSTEM_EXPORT IMemorySystem* getMemorySystem() override;
+	INNO_SYSTEM_EXPORT ITaskSystem* getTaskSystem() override;
 };
