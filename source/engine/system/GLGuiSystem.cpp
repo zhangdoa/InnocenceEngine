@@ -1,16 +1,18 @@
 #include "GLGuiSystem.h"
-#include "../../component/WindowSystemSingletonComponent.h"
-#include "../../component/GLWindowSystemSingletonComponent.h"
-#include "../../component/ShadowRenderPassSingletonComponent.h"
-#include "../../component/GeometryRenderPassSingletonComponent.h"
-#include "../../component/LightRenderPassSingletonComponent.h"
-#include "../../component/GLFinalRenderPassSingletonComponent.h"
-#include "../../component/RenderingSystemSingletonComponent.h"
+#include "../component/WindowSystemSingletonComponent.h"
+#include "../component/GLWindowSystemSingletonComponent.h"
+#include "../component/ShadowRenderPassSingletonComponent.h"
+#include "../component/GeometryRenderPassSingletonComponent.h"
+#include "../component/LightRenderPassSingletonComponent.h"
+#include "../component/GLFinalRenderPassSingletonComponent.h"
+#include "../component/RenderingSystemSingletonComponent.h"
 
-#include "../../third-party/ImGui/imgui.h"
-#include "../../third-party/ImGui/imgui_impl_glfw_gl3.h"
+#include "../third-party/ImGui/imgui.h"
+#include "../third-party/ImGui/imgui_impl_glfw_gl3.h"
 
-#include "../LowLevelSystem/LogSystem.h"
+#include "ICoreSystem.h"
+
+extern ICoreSystem* g_pCoreSystem;
 
 class ImGuiWrapper
 {
@@ -32,39 +34,44 @@ private:
 	ImGuiWrapper() {};
 };
 
-InnoHighLevelSystem_EXPORT bool GLGuiSystem::setup()
+INNO_PRIVATE_SCOPE GLGuiSystemNS
+{
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+}
+
+INNO_SYSTEM_EXPORT bool GLGuiSystem::setup()
 {
 	ImGuiWrapper::getInstance().setup();
-	m_objectStatus = objectStatus::ALIVE;
+	GLGuiSystemNS::m_objectStatus = objectStatus::ALIVE;
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool GLGuiSystem::initialize()
+INNO_SYSTEM_EXPORT bool GLGuiSystem::initialize()
 {
 	ImGuiWrapper::getInstance().initialize();
-	InnoLogSystem::printLog("GLGuiSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog("GLGuiSystem has been initialized.");
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool GLGuiSystem::update()
+INNO_SYSTEM_EXPORT bool GLGuiSystem::update()
 {
 	ImGuiWrapper::getInstance().update();
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool GLGuiSystem::terminate()
+INNO_SYSTEM_EXPORT bool GLGuiSystem::terminate()
 {
-	m_objectStatus = objectStatus::STANDBY;
+	GLGuiSystemNS::m_objectStatus = objectStatus::STANDBY;
 	ImGuiWrapper::getInstance().terminate();
 
-	m_objectStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("GLGuiSystem has been terminated.");
+	GLGuiSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog("GLGuiSystem has been terminated.");
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT objectStatus GLGuiSystem::getStatus()
+INNO_SYSTEM_EXPORT objectStatus GLGuiSystem::getStatus()
 {
-	return m_objectStatus;
+	return GLGuiSystemNS::m_objectStatus;
 }
 
 void ImGuiWrapper::setup()

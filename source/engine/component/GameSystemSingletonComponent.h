@@ -19,12 +19,12 @@ public:
 	// the AOS here
 	TransformComponent* m_rootTransformComponent;
 
-	std::vector<TransformComponent*> m_transformComponents;
-	std::vector<VisibleComponent*> m_visibleComponents;
-	std::vector<LightComponent*> m_lightComponents;
-	std::vector<CameraComponent*> m_cameraComponents;
-	std::vector<InputComponent*> m_inputComponents;
-	std::vector<EnvironmentCaptureComponent*> m_environmentCaptureComponents;
+	std::vector<TransformComponent*> m_TransformComponents;
+	std::vector<VisibleComponent*> m_VisibleComponents;
+	std::vector<LightComponent*> m_LightComponents;
+	std::vector<CameraComponent*> m_CameraComponents;
+	std::vector<InputComponent*> m_InputComponents;
+	std::vector<EnvironmentCaptureComponent*> m_EnvironmentCaptureComponents;
 
 	std::unordered_map<EntityID, TransformComponent*> m_TransformComponentsMap;
 	std::unordered_multimap<EntityID, VisibleComponent*> m_VisibleComponentsMap;

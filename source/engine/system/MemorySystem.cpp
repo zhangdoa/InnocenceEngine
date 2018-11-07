@@ -52,7 +52,7 @@ public:
 	unsigned char* m_PoolFreePtr = nullptr;
 };
 
-namespace InnoMemorySystemNS
+INNO_PRIVATE_SCOPE InnoMemorySystemNS
 {
 #define componentPoolUniPtr( className ) \
 std::unique_ptr<ComponentPool<className>> m_##className##Pool;

@@ -1,16 +1,24 @@
 #include "GLRenderingSystem.h"
-#include "../../component/EnvironmentRenderPassSingletonComponent.h"
-#include "../../component/ShadowRenderPassSingletonComponent.h"
-#include "../../component/GeometryRenderPassSingletonComponent.h"
-#include "../../component/LightRenderPassSingletonComponent.h"
-#include "../../component/GLFinalRenderPassSingletonComponent.h"
-#include "../../component/RenderingSystemSingletonComponent.h"
-#include "../../component/AssetSystemSingletonComponent.h"
+
 #include <sstream>
-#include "../LowLevelSystem/LogSystem.h"
-#include "../HighLevelSystem/GameSystem.h"
-#include "../../component/GameSystemSingletonComponent.h"
-#include "../HighLevelSystem/AssetSystem.h"
+
+#include "../component/EnvironmentRenderPassSingletonComponent.h"
+#include "../component/ShadowRenderPassSingletonComponent.h"
+#include "../component/GeometryRenderPassSingletonComponent.h"
+#include "../component/LightRenderPassSingletonComponent.h"
+#include "../component/GLFinalRenderPassSingletonComponent.h"
+
+#include "../component/RenderingSystemSingletonComponent.h"
+#include "../component/AssetSystemSingletonComponent.h"
+#include "../component/GameSystemSingletonComponent.h"
+#include "../component/GLRenderingSystemSingletonComponent.h"
+
+#include "../component/MeshDataComponent.h"
+#include "../component/TextureDataComponent.h"
+#include "../component/GLMeshDataComponent.h"
+#include "../component/GLTextureDataComponent.h"
+#include "../component/GLFrameBufferComponent.h"
+#include "../component/GLShaderProgramComponent.h"
 
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {

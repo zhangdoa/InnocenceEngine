@@ -3,7 +3,7 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-namespace InnoTaskSystemNS
+INNO_PRIVATE_SCOPE InnoTaskSystemNS
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 

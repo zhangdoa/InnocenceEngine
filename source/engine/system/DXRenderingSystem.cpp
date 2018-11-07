@@ -1,23 +1,26 @@
 #include "DXRenderingSystem.h"
 
-#include "../../component/DXFinalRenderPassSingletonComponent.h"
-
 #include <sstream>
-#include "../../component/WindowSystemSingletonComponent.h"
-#include "../../component/DXWindowSystemSingletonComponent.h"
-#include "../../component/RenderingSystemSingletonComponent.h"
-#include "../../component/DXRenderingSystemSingletonComponent.h"
-#include "../../component/AssetSystemSingletonComponent.h"
+
+#include "../component/DXFinalRenderPassSingletonComponent.h"
+
+#include "../component/WindowSystemSingletonComponent.h"
+#include "../component/DXWindowSystemSingletonComponent.h"
+#include "../component/RenderingSystemSingletonComponent.h"
+#include "../component/DXRenderingSystemSingletonComponent.h"
+#include "../component/AssetSystemSingletonComponent.h"
+
+#include "../component/MeshDataComponent.h"
+#include "../component/TextureDataComponent.h"
+#include "../component/DXMeshDataComponent.h"
+#include "../component/DXTextureDataComponent.h"
+
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-#include "../LowLevelSystem/LogSystem.h"
-#include "../LowLevelSystem/MemorySystem.h"
-#include "../HighLevelSystem/AssetSystem.h"
-#include "../HighLevelSystem/GameSystem.h"
-#include "../../component/GameSystemSingletonComponent.h"
+#include "../component/GameSystemSingletonComponent.h"
 
 INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
@@ -50,7 +53,7 @@ static DXWindowSystemSingletonComponent* g_DXWindowSystemSingletonComponent;
 static DXRenderingSystemSingletonComponent* g_DXRenderingSystemSingletonComponent;
 }
 
-InnoHighLevelSystem_EXPORT bool DXRenderingSystem::setup()
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 {
 	DXRenderingSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
 	DXRenderingSystemNS::g_DXWindowSystemSingletonComponent = &DXWindowSystemSingletonComponent::getInstance();
@@ -383,7 +386,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::setup()
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXRenderingSystem::initialize()
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::initialize()
 {
 	DXRenderingSystemNS::initializeFinalBlendPass();
 
@@ -391,7 +394,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::initialize()
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXRenderingSystem::update()
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 {
 	if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.size() > 0)
 	{
@@ -419,7 +422,7 @@ InnoHighLevelSystem_EXPORT bool DXRenderingSystem::update()
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXRenderingSystem::terminate()
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::terminate()
 {
 	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
 	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain)

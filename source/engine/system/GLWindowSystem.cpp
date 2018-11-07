@@ -1,9 +1,13 @@
 #include "GLWindowSystem.h"
-#include "../LowLevelSystem/LogSystem.h"
-#include "../HighLevelSystem/InputSystem.h"
-#include "../HighLevelSystem/GameSystem.h"
-#include "../../component/WindowSystemSingletonComponent.h"
-#include "../../component/GLWindowSystemSingletonComponent.h"
+
+#include "../component/WindowSystemSingletonComponent.h"
+#include "../component/GLWindowSystemSingletonComponent.h"
+
+#include "InputSystem.h"
+
+#include "ICoreSystem.h"
+
+extern ICoreSystem* g_pCoreSystem;
 
 class windowCallbackWrapper
 {
@@ -32,15 +36,20 @@ private:
 INNO_PRIVATE_SCOPE GLWindowSystemNS
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-	void hideMouseCursor();
-	void showMouseCursor();
+
+	IInputSystem* m_inputSystem;
 
 	static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
 	static GLWindowSystemSingletonComponent* g_GLWindowSystemSingletonComponent;
+
+	void hideMouseCursor();
+	void showMouseCursor();
 }
 
-InnoHighLevelSystem_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
+INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
+	GLWindowSystemNS::m_inputSystem = new InnoInputSystem();
+
 	GLWindowSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
 	GLWindowSystemNS::g_GLWindowSystemSingletonComponent = &GLWindowSystemSingletonComponent::getInstance();
 
@@ -50,7 +59,7 @@ InnoHighLevelSystem_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPr
 	if (glfwInit() != GL_TRUE)
 	{
 		GLWindowSystemNS::m_objectStatus = objectStatus::STANDBY;
-		InnoLogSystem::printLog("Failed to initialize GLFW.");
+		g_pCoreSystem->getLogSystem()->printLog("Failed to initialize GLFW.");
 		return false;
 	}
 
@@ -66,7 +75,7 @@ InnoHighLevelSystem_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPr
 	glfwMakeContextCurrent(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window);
 	if (GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window == nullptr) {
 		GLWindowSystemNS::m_objectStatus = objectStatus::STANDBY;
-		InnoLogSystem::printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
+		g_pCoreSystem->getLogSystem()->printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
 		glfwTerminate();
 		return false;
 	}
@@ -75,39 +84,39 @@ InnoHighLevelSystem_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPr
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		GLWindowSystemNS::m_objectStatus = objectStatus::STANDBY;
-		InnoLogSystem::printLog("Failed to initialize GLAD.");
+		g_pCoreSystem->getLogSystem()->printLog("Failed to initialize GLAD.");
 		return false;
 	}
 
 	//setup input
 	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
-	InnoInputSystem::setup();
+	GLWindowSystemNS::m_inputSystem->setup();
 
 	GLWindowSystemNS::m_objectStatus = objectStatus::ALIVE;
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool GLWindowSystem::initialize()
+INNO_SYSTEM_EXPORT bool GLWindowSystem::initialize()
 {
 	//initialize window
 	windowCallbackWrapper::getInstance().initialize();
 
 	//initialize input
 	
-	InnoInputSystem::initialize();
+	GLWindowSystemNS::m_inputSystem->initialize();
 
-	InnoLogSystem::printLog("GLWindowSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog("GLWindowSystem has been initialized.");
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool GLWindowSystem::update()
+INNO_SYSTEM_EXPORT bool GLWindowSystem::update()
 {
 	//update window
 	if (GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window == nullptr || glfwWindowShouldClose(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window) != 0)
 	{
 		GLWindowSystemNS::m_objectStatus = objectStatus::STANDBY;
-		InnoLogSystem::printLog("GLWindowSystem: Input error or Window closed.");
+		g_pCoreSystem->getLogSystem()->printLog("GLWindowSystem: Input error or Window closed.");
 	}
 	else
 	{
@@ -156,19 +165,19 @@ InnoHighLevelSystem_EXPORT bool GLWindowSystem::update()
 		}
 	}
 
-	InnoInputSystem::update();
+	GLWindowSystemNS::m_inputSystem->update();
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool GLWindowSystem::terminate()
+INNO_SYSTEM_EXPORT bool GLWindowSystem::terminate()
 {
 	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, GLFW_STICKY_KEYS, GL_FALSE);
 	glfwDestroyWindow(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window);
 	glfwTerminate();
-	InnoLogSystem::printLog("GLWindowSystem: Window closed.");
+	g_pCoreSystem->getLogSystem()->printLog("GLWindowSystem: Window closed.");
 
 	GLWindowSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("GLWindowSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog("GLWindowSystem has been terminated.");
 	return true;
 }
 
@@ -187,7 +196,7 @@ void GLWindowSystemNS::showMouseCursor()
 	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
-InnoHighLevelSystem_EXPORT objectStatus GLWindowSystem::getStatus()
+INNO_SYSTEM_EXPORT objectStatus GLWindowSystem::getStatus()
 {
 	return GLWindowSystemNS::m_objectStatus;
 }
@@ -216,15 +225,15 @@ void windowCallbackWrapper::scrollCallback(GLFWwindow * window, double xoffset, 
 
 void windowCallbackWrapper::framebufferSizeCallbackImpl(GLFWwindow * window, int width, int height)
 {
-	InnoInputSystem::framebufferSizeCallback(width, height);
+	GLWindowSystemNS::m_inputSystem->framebufferSizeCallback(width, height);
 }
 
 void windowCallbackWrapper::mousePositionCallbackImpl(GLFWwindow * window, float mouseXPos, float mouseYPos)
 {
-	InnoInputSystem::mousePositionCallback(mouseXPos, mouseYPos);
+	GLWindowSystemNS::m_inputSystem->mousePositionCallback(mouseXPos, mouseYPos);
 }
 
 void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, float xoffset, float yoffset)
 {
-	InnoInputSystem::scrollCallback(xoffset, yoffset);
+	GLWindowSystemNS::m_inputSystem->scrollCallback(xoffset, yoffset);
 }

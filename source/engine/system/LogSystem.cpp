@@ -5,7 +5,7 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-namespace InnoLogSystemNS
+INNO_PRIVATE_SCOPE InnoLogSystemNS
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 

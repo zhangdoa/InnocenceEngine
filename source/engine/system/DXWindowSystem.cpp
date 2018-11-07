@@ -1,9 +1,13 @@
 #include "DXWindowSystem.h"
-#include "../LowLevelSystem/LogSystem.h"
-#include "../HighLevelSystem/InputSystem.h"
-#include "../HighLevelSystem/GameSystem.h"
-#include "../../component/WindowSystemSingletonComponent.h"
-#include "../../component/DXWindowSystemSingletonComponent.h"
+
+#include "../component/WindowSystemSingletonComponent.h"
+#include "../component/DXWindowSystemSingletonComponent.h"
+
+#include "InputSystem.h"
+
+#include "ICoreSystem.h"
+
+extern ICoreSystem* g_pCoreSystem;
 
 class windowCallbackWrapper
 {
@@ -29,12 +33,17 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 INNO_PRIVATE_SCOPE DXWindowSystemNS
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+
+IInputSystem* m_inputSystem;
+
 static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
 static DXWindowSystemSingletonComponent* g_DXWindowSystemSingletonComponent;
 }
 
-InnoHighLevelSystem_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
+INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
+	DXWindowSystemNS::m_inputSystem = new InnoInputSystem();
+
 	DXWindowSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
 	DXWindowSystemNS::g_DXWindowSystemSingletonComponent = &DXWindowSystemSingletonComponent::getInstance();
 
@@ -85,20 +94,20 @@ InnoHighLevelSystem_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPr
 	// Hide the mouse cursor.
 	// ShowCursor(false);
 
-	InnoInputSystem::setup();
+	DXWindowSystemNS::m_inputSystem->setup();
 
 	DXWindowSystemNS::m_objectStatus = objectStatus::ALIVE;
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXWindowSystem::initialize()
+INNO_SYSTEM_EXPORT bool DXWindowSystem::initialize()
 {
-	InnoInputSystem::initialize();
-	InnoLogSystem::printLog("DXWindowSystem has been initialized.");
+	DXWindowSystemNS::m_inputSystem->initialize();
+	g_pCoreSystem->getLogSystem()->printLog("DXWindowSystem has been initialized.");
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXWindowSystem::update()
+INNO_SYSTEM_EXPORT bool DXWindowSystem::update()
 {
 	//update window
 	MSG msg;
@@ -120,11 +129,11 @@ InnoHighLevelSystem_EXPORT bool DXWindowSystem::update()
 		return false;
 	}
 
-	InnoInputSystem::update();
+	DXWindowSystemNS::m_inputSystem->update();
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT bool DXWindowSystem::terminate()
+INNO_SYSTEM_EXPORT bool DXWindowSystem::terminate()
 {
 	// Show the mouse cursor.
 	ShowCursor(true);
@@ -139,7 +148,7 @@ InnoHighLevelSystem_EXPORT bool DXWindowSystem::terminate()
 	DestroyWindow(DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd);
 	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd = NULL;
 
-	InnoLogSystem::printLog("DXWindowSystem: Window closed.");
+	g_pCoreSystem->getLogSystem()->printLog("DXWindowSystem: Window closed.");
 
 	// Remove the application instance.
 	UnregisterClass(DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_applicationName, DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hInstance);
@@ -149,11 +158,11 @@ InnoHighLevelSystem_EXPORT bool DXWindowSystem::terminate()
 	ApplicationHandle = NULL;
 
 	DXWindowSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("DXWindowSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog("DXWindowSystem has been terminated.");
 	return true;
 }
 
-InnoHighLevelSystem_EXPORT objectStatus DXWindowSystem::getStatus()
+INNO_SYSTEM_EXPORT objectStatus DXWindowSystem::getStatus()
 {
 	return DXWindowSystemNS::m_objectStatus;
 }
@@ -249,7 +258,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 		auto l_mouseCurrentX = GET_X_LPARAM(lparam);
 		auto l_mouseCurrentY = GET_Y_LPARAM(lparam);
-		InnoInputSystem::mousePositionCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
+		DXWindowSystemNS::m_inputSystem->mousePositionCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
 		return 0;
 	}
 	// Any other messages send to the default message handler as our application won't make use of them.
