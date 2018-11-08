@@ -47,7 +47,7 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstan
 	DXWindowSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
 	DXWindowSystemNS::g_DXWindowSystemSingletonComponent = &DXWindowSystemSingletonComponent::getInstance();
 
-	DXWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName = InnoGameSystem::getGameName();
+	DXWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName = g_pCoreSystem->getGameSystem()->getGameName();
 	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hInstance = static_cast<HINSTANCE>(hInstance);
 	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_pScmdline = pScmdline;
 	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_nCmdshow = nCmdshow;

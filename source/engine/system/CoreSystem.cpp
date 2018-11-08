@@ -3,6 +3,8 @@
 #include "LogSystem.h"
 #include "MemorySystem.h"
 #include "TaskSystem.h"
+#include "GameSystem.h"
+#include "VisionSystem.h"
 
 ICoreSystem* g_pCoreSystem;
 
@@ -12,6 +14,8 @@ INNO_PRIVATE_SCOPE CoreSystemNS
 	std::unique_ptr<ILogSystem> m_LogSystem;
 	std::unique_ptr<IMemorySystem> m_MemorySystem;
 	std::unique_ptr<ITaskSystem> m_TaskSystem;
+	std::unique_ptr<IGameSystem> m_GameSystem;
+	std::unique_ptr<IVisionSystem> m_VisionSystem;
 }
 
 INNO_SYSTEM_EXPORT bool InnoCoreSystem::setup()
@@ -38,6 +42,16 @@ INNO_SYSTEM_EXPORT bool InnoCoreSystem::setup()
 	{
 		return false;
 	}
+	CoreSystemNS::m_GameSystem = std::make_unique<InnoGameSystem>();
+	if (!CoreSystemNS::m_TaskSystem.get())
+	{
+		return false;
+	}
+	CoreSystemNS::m_VisionSystem = std::make_unique<InnoVisionSystem>();
+	if (!CoreSystemNS::m_TaskSystem.get())
+	{
+		return false;
+	}
 	return true;
 }
 
@@ -59,4 +73,14 @@ INNO_SYSTEM_EXPORT IMemorySystem * InnoCoreSystem::getMemorySystem()
 INNO_SYSTEM_EXPORT ITaskSystem * InnoCoreSystem::getTaskSystem()
 {
 	return CoreSystemNS::m_TaskSystem.get();
+}
+
+INNO_SYSTEM_EXPORT IGameSystem * InnoCoreSystem::getGameSystem()
+{
+	return 	CoreSystemNS::m_GameSystem.get();
+}
+
+INNO_SYSTEM_EXPORT IVisionSystem * InnoCoreSystem::getVisionSystem()
+{
+	return CoreSystemNS::m_VisionSystem.get();
 }

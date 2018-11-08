@@ -53,7 +53,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 	GLWindowSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
 	GLWindowSystemNS::g_GLWindowSystemSingletonComponent = &GLWindowSystemSingletonComponent::getInstance();
 
-	GLWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName = InnoGameSystem::getGameName();
+	GLWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName = g_pCoreSystem->getGameSystem()->getGameName();
 
 	//setup window
 	if (glfwInit() != GL_TRUE)

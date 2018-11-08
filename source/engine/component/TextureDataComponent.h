@@ -19,6 +19,6 @@ public:
 	int m_textureWidth;
 	int m_textureHeight;
 	texturePixelDataType m_texturePixelDataType;
-	std::vector<void *> m_textureData;
+	std::vector<void*> m_textureData;
 };
 

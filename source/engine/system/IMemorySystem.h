@@ -59,6 +59,8 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLShaderProgramComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXTextureDataComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(Vertex);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(Index);
 
 	template <typename T> T * spawn()
 	{
@@ -93,6 +95,10 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentTemplate(DXMeshDataComponent);
 	template <>
 	INNO_SYSTEM_EXPORT allocateComponentTemplate(DXTextureDataComponent);
+	template <>
+	INNO_SYSTEM_EXPORT allocateComponentTemplate(Vertex);
+	template <>
+	INNO_SYSTEM_EXPORT allocateComponentTemplate(Index);
 
 	template <typename T>  T * spawn(size_t n)
 	{

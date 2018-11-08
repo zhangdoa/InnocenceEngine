@@ -6,3 +6,11 @@ endif (INNO_PLATFORM_WIN32 OR INNO_PLATFORM_WIN64)
 
 add_library(InnoMath InnoMath.h InnoMath.cpp)
 target_link_libraries(InnoMain InnoSystem)
+
+if (INNO_PLATFORM_LINUX64)
+add_custom_target(run
+    COMMAND InnoMain
+    DEPENDS InnoMain
+    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+)
+endif (INNO_PLATFORM_LINUX64)

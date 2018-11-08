@@ -26,6 +26,8 @@ struct timeData
 	long long millisecond;
 };
 
+using Index = unsigned int;
+
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
 // mesh custom types
 enum class meshType { NORMAL, BOUNDING_BOX };

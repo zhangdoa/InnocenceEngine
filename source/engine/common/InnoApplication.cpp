@@ -45,11 +45,11 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		}
 		g_pCoreSystem->getLogSystem()->printLog("TaskSystem setup finished.");
 
-		//if (!InnoGameSystem::setup())
-		//{
-		//	return false;
-		//}
-		//InnoLogSystem::printLog("GameSystem setup finished.");
+		if (!g_pCoreSystem->getGameSystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("GameSystem setup finished.");
 
 		//if (!InnoAssetSystem::setup())
 		//{

@@ -20,6 +20,10 @@
 #include "../component/GLFrameBufferComponent.h"
 #include "../component/GLShaderProgramComponent.h"
 
+#include "ICoreSystem.h"
+
+extern ICoreSystem* g_pCoreSystem;
+
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
 	float RadicalInverse(unsigned int n, unsigned int base);
@@ -137,7 +141,7 @@ void GLRenderingSystemNS::initializeHaltonSampler()
 void GLRenderingSystemNS::initializeEnvironmentRenderPass()
 {
 	// generate and bind framebuffer
-	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -152,7 +156,7 @@ void GLRenderingSystemNS::initializeEnvironmentRenderPass()
 	EnvironmentRenderPassSingletonComponent::getInstance().m_FBC = l_FBC;
 
 	// generate and bind texture
-	auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::ENVIRONMENT_CAPTURE;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGB16F;
@@ -172,7 +176,7 @@ void GLRenderingSystemNS::initializeEnvironmentRenderPass()
 	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassGLTDC = l_GLTDC;
 
 	////
-	l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::ENVIRONMENT_CONVOLUTION;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGB16F;
@@ -192,7 +196,7 @@ void GLRenderingSystemNS::initializeEnvironmentRenderPass()
 	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassGLTDC = l_GLTDC;
 
 	////
-	l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::ENVIRONMENT_PREFILTER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGB16F;
@@ -212,7 +216,7 @@ void GLRenderingSystemNS::initializeEnvironmentRenderPass()
 	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassGLTDC = l_GLTDC;
 
 	////
-	l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RG16F;
@@ -234,14 +238,14 @@ void GLRenderingSystemNS::initializeEnvironmentRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: EnvironmentRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: EnvironmentRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_shaderProgram = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_shaderProgram = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_shaderProgram->m_program = glCreateProgram();
 
@@ -272,7 +276,7 @@ void GLRenderingSystemNS::initializeEnvironmentRenderPass()
 	EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassSPC = l_shaderProgram;
 
 	////
-	l_shaderProgram = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	l_shaderProgram = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_shaderProgram->m_program = glCreateProgram();
 
@@ -302,7 +306,7 @@ void GLRenderingSystemNS::initializeEnvironmentRenderPass()
 	EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassSPC = l_shaderProgram;
 
 	////
-	l_shaderProgram = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	l_shaderProgram = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_shaderProgram->m_program = glCreateProgram();
 
@@ -335,7 +339,7 @@ void GLRenderingSystemNS::initializeEnvironmentRenderPass()
 	EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassSPC = l_shaderProgram;
 
 	////
-	l_shaderProgram = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	l_shaderProgram = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_shaderProgram->m_program = glCreateProgram();
 
@@ -358,7 +362,7 @@ void GLRenderingSystemNS::initializeShadowRenderPass()
 	for (size_t i = 0; i < 4; i++)
 	{
 		// generate and bind framebuffer
-		auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+		auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 		glGenFramebuffers(1, &l_FBC->m_FBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -373,7 +377,7 @@ void GLRenderingSystemNS::initializeShadowRenderPass()
 		ShadowRenderPassSingletonComponent::getInstance().m_FBCs.emplace_back(l_FBC);
 
 		// generate and bind texture
-		auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+		auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 		l_TDC->m_textureType = textureType::SHADOWMAP;
 		l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::DEPTH_COMPONENT;
@@ -407,7 +411,7 @@ void GLRenderingSystemNS::initializeShadowRenderPass()
 		{
 			std::stringstream ss;
 			ss << i;
-			InnoLogSystem::printLog("GLFrameBuffer: ShadowRenderPass level " + ss.str() + " Framebuffer is not completed!");
+			g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: ShadowRenderPass level " + ss.str() + " Framebuffer is not completed!");
 		}
 	}
 
@@ -415,7 +419,7 @@ void GLRenderingSystemNS::initializeShadowRenderPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_GLSPC = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_GLSPC->m_program = glCreateProgram();
 
@@ -446,7 +450,7 @@ void GLRenderingSystemNS::initializeShadowRenderPass()
 void GLRenderingSystemNS::initializeGeometryRenderPass()
 {
 	// generate and bind framebuffer
-	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -463,7 +467,7 @@ void GLRenderingSystemNS::initializeGeometryRenderPass()
 	// generate and bind texture
 	for (size_t i = 0; i < 8; i++)
 	{
-		auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+		auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 		
 		l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 		l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -500,14 +504,14 @@ void GLRenderingSystemNS::initializeGeometryRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: GeometryRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: GeometryRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_GLSPC = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_GLSPC->m_program = glCreateProgram();
 
@@ -623,7 +627,7 @@ void GLRenderingSystemNS::initializeGeometryRenderPass()
 void GLRenderingSystemNS::initializeLightRenderPass()
 {
 	// generate and bind framebuffer
-	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -638,7 +642,7 @@ void GLRenderingSystemNS::initializeLightRenderPass()
 	LightRenderPassSingletonComponent::getInstance().m_FBC = l_FBC;
 
 	// generate and bind texture
-	auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -671,14 +675,14 @@ void GLRenderingSystemNS::initializeLightRenderPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: LightRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: LightRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_GLSPC = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_GLSPC->m_program = glCreateProgram();
 
@@ -779,15 +783,15 @@ void GLRenderingSystemNS::initializeLightRenderPass()
 			getUniformLocation(l_GLSPC->m_program, "uni_shadowSplitPoints[" + ss.str() + "]")
 		);
 	}
-	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size(); i++)
+	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size(); i++)
 	{
-		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
+		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_lightType == lightType::DIRECTIONAL)
 		{
 			for (size_t j = 0; j < 4; j++)
 			{
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitPoints[j],
-					GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_shadowSplitPoints[j]);
+					GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_shadowSplitPoints[j]);
 			}
 		}
 	}
@@ -822,13 +826,13 @@ void GLRenderingSystemNS::initializeLightRenderPass()
 		l_GLSPC->m_program,
 		"uni_dirLight.color");
 	int l_pointLightIndexOffset = 0;
-	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size(); i++)
+	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size(); i++)
 	{
-		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
+		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_lightType == lightType::DIRECTIONAL)
 		{
 			l_pointLightIndexOffset -= 1;
 		}
-		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_lightType == lightType::POINT)
+		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_lightType == lightType::POINT)
 		{
 			std::stringstream ss;
 			ss << i + l_pointLightIndexOffset;
@@ -865,7 +869,7 @@ void GLRenderingSystemNS::initializeFinalRenderPass()
 void GLRenderingSystemNS::initializeSkyPass()
 {
 	// generate and bind framebuffer
-	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -880,7 +884,7 @@ void GLRenderingSystemNS::initializeSkyPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_skyPassFBC = l_FBC;
 
 	// generate and bind texture
-	auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -913,14 +917,14 @@ void GLRenderingSystemNS::initializeSkyPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: SkyRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: SkyRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_GLSPC = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_GLSPC->m_program = glCreateProgram();
 
@@ -957,7 +961,7 @@ void GLRenderingSystemNS::initializeTAAPass()
 {
 	//Ping pass
 	// generate and bind framebuffer
-	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -972,7 +976,7 @@ void GLRenderingSystemNS::initializeTAAPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassFBC = l_FBC;
 
 	// generate and bind texture
-	auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -1005,12 +1009,12 @@ void GLRenderingSystemNS::initializeTAAPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: TAAPingRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: TAAPingRenderPass Framebuffer is not completed!");
 	}
 
 	//Pong pass
 	// generate and bind framebuffer
-	l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -1025,7 +1029,7 @@ void GLRenderingSystemNS::initializeTAAPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassFBC = l_FBC;
 
 	// generate and bind texture
-	l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -1058,14 +1062,14 @@ void GLRenderingSystemNS::initializeTAAPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: TAAPongRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: TAAPongRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_GLSPC = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_GLSPC->m_program = glCreateProgram();
 
@@ -1107,7 +1111,7 @@ void GLRenderingSystemNS::initializeTAAPass()
 void GLRenderingSystemNS::initializeBloomExtractPass()
 {
 	// generate and bind framebuffer
-	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -1122,7 +1126,7 @@ void GLRenderingSystemNS::initializeBloomExtractPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassFBC = l_FBC;
 
 	// generate and bind texture
-	auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -1155,14 +1159,14 @@ void GLRenderingSystemNS::initializeBloomExtractPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: BloomExtractRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: BloomExtractRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_GLSPC = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_GLSPC->m_program = glCreateProgram();
 
@@ -1190,7 +1194,7 @@ void GLRenderingSystemNS::initializeBloomBlurPass()
 {
 	//Ping pass
 	// generate and bind framebuffer
-	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -1205,7 +1209,7 @@ void GLRenderingSystemNS::initializeBloomBlurPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassFBC = l_FBC;
 
 	// generate and bind texture
-	auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -1238,12 +1242,12 @@ void GLRenderingSystemNS::initializeBloomBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: BloomBlurPingRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: BloomBlurPingRenderPass Framebuffer is not completed!");
 	}
 
 	//Pong pass
 	// generate and bind framebuffer
-	l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -1258,7 +1262,7 @@ void GLRenderingSystemNS::initializeBloomBlurPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassFBC = l_FBC;
 
 	// generate and bind texture
-	l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -1291,14 +1295,14 @@ void GLRenderingSystemNS::initializeBloomBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: BloomBlurPongRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: BloomBlurPongRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_GLSPC = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_GLSPC->m_program = glCreateProgram();
 
@@ -1328,7 +1332,7 @@ void GLRenderingSystemNS::initializeBloomBlurPass()
 void GLRenderingSystemNS::initializeMotionBlurPass()
 {
 	// generate and bind framebuffer
-	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -1343,7 +1347,7 @@ void GLRenderingSystemNS::initializeMotionBlurPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassFBC = l_FBC;
 
 	// generate and bind texture
-	auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -1376,14 +1380,14 @@ void GLRenderingSystemNS::initializeMotionBlurPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: MotionBlurRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: MotionBlurRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_GLSPC = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_GLSPC->m_program = glCreateProgram();
 
@@ -1416,7 +1420,7 @@ void GLRenderingSystemNS::initializeMotionBlurPass()
 void GLRenderingSystemNS::initializeBillboardPass()
 {
 	// generate and bind framebuffer
-	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -1431,7 +1435,7 @@ void GLRenderingSystemNS::initializeBillboardPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassFBC = l_FBC;
 
 	// generate and bind texture
-	auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -1464,14 +1468,14 @@ void GLRenderingSystemNS::initializeBillboardPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: BillboardRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: BillboardRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_GLSPC = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_GLSPC->m_program = glCreateProgram();
 
@@ -1516,7 +1520,7 @@ void GLRenderingSystemNS::initializeBillboardPass()
 void GLRenderingSystemNS::initializeDebuggerPass()
 {
 	// generate and bind framebuffer
-	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -1531,7 +1535,7 @@ void GLRenderingSystemNS::initializeDebuggerPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassFBC = l_FBC;
 
 	// generate and bind texture
-	auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -1564,14 +1568,14 @@ void GLRenderingSystemNS::initializeDebuggerPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: BloomExtractRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: BloomExtractRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_GLSPC = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_GLSPC->m_program = glCreateProgram();
 
@@ -1610,7 +1614,7 @@ void GLRenderingSystemNS::initializeDebuggerPass()
 void GLRenderingSystemNS::initializeFinalBlendPass()
 {
 	// generate and bind framebuffer
-	auto l_FBC = InnoMemorySystem::spawn<GLFrameBufferComponent>();
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -1625,7 +1629,7 @@ void GLRenderingSystemNS::initializeFinalBlendPass()
 	GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassFBC = l_FBC;
 
 	// generate and bind texture
-	auto l_TDC = InnoMemorySystem::spawn<TextureDataComponent>();
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
 	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
@@ -1658,14 +1662,14 @@ void GLRenderingSystemNS::initializeFinalBlendPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		InnoLogSystem::printLog("GLFrameBuffer: FinalBlendRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: FinalBlendRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// shader programs and shaders
-	auto l_GLSPC = InnoMemorySystem::spawn<GLShaderProgramComponent>();
+	auto l_GLSPC = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 
 	l_GLSPC->m_program = glCreateProgram();
 
@@ -1718,7 +1722,7 @@ void GLRenderingSystemNS::initializeShader(GLuint& shaderProgram, GLuint& shader
 	shaderID = glCreateShader(shaderType);
 
 	if (shaderID == 0) {
-		InnoLogSystem::printLog("Error: Shader creation failed: memory location invaild when adding shader!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: Shader creation failed: memory location invaild when adding shader!");
 	}
 
 	auto l_shaderCodeContent = InnoAssetSystem::loadShader(shaderFilePath);
@@ -1726,7 +1730,7 @@ void GLRenderingSystemNS::initializeShader(GLuint& shaderProgram, GLuint& shader
 
 	if (l_sourcePointer == nullptr)
 	{
-		InnoLogSystem::printLog("Error: Shader loading failed!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: Shader loading failed!");
 	}
 
 	glShaderSource(shaderID, 1, &l_sourcePointer, NULL);
@@ -1739,48 +1743,48 @@ void GLRenderingSystemNS::initializeShader(GLuint& shaderProgram, GLuint& shader
 
 	if (!l_compileResult)
 	{
-		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
 		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+		g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
 		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
 			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-			InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+			g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
 			return;
 		}
 	}
 
-	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
+	g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
 
 	glAttachShader(shaderProgram, shaderID);
 	glLinkProgram(shaderProgram);
 	glValidateProgram(shaderProgram);
 
-	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
+	g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
 
 	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &l_compileResult);
 	if (!l_compileResult)
 	{
-		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
+		g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
 		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-		InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+		g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
 		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
 			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-			InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+			g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
 		}
 	}
 
-	InnoLogSystem::printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
+	g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
 }
 
 GLMeshDataComponent * GLRenderingSystemNS::addGLMeshDataComponent(EntityID rhs)
 {
-	GLMeshDataComponent* newMesh = InnoMemorySystem::spawn<GLMeshDataComponent>();
+	GLMeshDataComponent* newMesh = g_pCoreSystem->getMemorySystem()->spawn<GLMeshDataComponent>();
 	newMesh->m_parentEntity = rhs;
 	auto l_meshMap = &GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_meshMap;
 	l_meshMap->emplace(std::pair<EntityID, GLMeshDataComponent*>(rhs, newMesh));
@@ -1789,7 +1793,7 @@ GLMeshDataComponent * GLRenderingSystemNS::addGLMeshDataComponent(EntityID rhs)
 
 GLTextureDataComponent * GLRenderingSystemNS::addGLTextureDataComponent(EntityID rhs)
 {
-	GLTextureDataComponent* newTexture = InnoMemorySystem::spawn<GLTextureDataComponent>();
+	GLTextureDataComponent* newTexture = g_pCoreSystem->getMemorySystem()->spawn<GLTextureDataComponent>();
 	newTexture->m_parentEntity = rhs;
 	auto l_textureMap = &GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_textureMap;
 	l_textureMap->emplace(std::pair<EntityID, GLTextureDataComponent*>(rhs, newTexture));
@@ -2128,13 +2132,13 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 	activateShaderProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassSPC);
 	updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p, l_p);
 
-	auto l_MDC = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::CUBE);
+	auto l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::CUBE);
 
 	// activate equiretangular texture and remap equiretangular texture to cubemap
 	auto l_capturePassTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTDC;
 	auto l_capturePassGLTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassGLTDC;
 
-	auto l_equiretangularTDC = InnoAssetSystem::getTextureDataComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_environmentCaptureComponents[0]->m_texturePair.second);
+	auto l_equiretangularTDC = InnoAssetSystem::getTextureDataComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_EnvironmentCaptureComponents[0]->m_texturePair.second);
 	if (l_equiretangularTDC)
 	{
 		auto l_equiretangularGLTDC = getGLTextureDataComponent(l_equiretangularTDC->m_parentEntity);
@@ -2215,7 +2219,7 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 	attachTextureToFramebuffer(l_environmentBRDFLUTTDC, l_environmentBRDFLUTGLTDC, l_FBC, 0, 0, 0);
 
 	// draw environment map BRDF LUT rectangle
-	l_MDC = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::QUAD);
+	l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);
 }
 
@@ -2240,7 +2244,7 @@ void GLRenderingSystemNS::updateShadowRenderPass()
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		for (auto& l_lightComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents)
+		for (auto& l_lightComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents)
 		{
 			if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
 			{
@@ -2250,16 +2254,16 @@ void GLRenderingSystemNS::updateShadowRenderPass()
 					l_lightComponent->m_projectionMatrices[i]);
 				updateUniform(
 					ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_v,
-					InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat.inverse());
+					g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat.inverse());
 
 				// draw each visibleComponent
-				for (auto& l_visibleComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_visibleComponents)
+				for (auto& l_visibleComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_VisibleComponents)
 				{
 					if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
 					{
 						updateUniform(
 							ShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_m,
-							InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
+							g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 
 						// draw each graphic data of visibleComponent
 						for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -2306,9 +2310,9 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 
 	activateShaderProgram(GeometryRenderPassSingletonComponent::getInstance().m_GLSPC);
 
-	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents.size() > 0)
+	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
 	{
-		auto l_mainCamera = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0];
+		auto l_mainCamera = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0];
 		mat4 p_original = l_mainCamera->m_projectionMatrix;
 		mat4 p_jittered = p_original;
 		//TAA jitter for projection matrix
@@ -2321,21 +2325,22 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 		p_jittered.m12 = GLRenderingSystemNS::g_RenderingSystemSingletonComponent->HaltonSampler[l_currentHaltonStep].y / l_RtSize.y;
 		l_currentHaltonStep += 1;
 
+		auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
 		mat4 r =
 			InnoMath::getInvertRotationMatrix(
-				InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_rot
+				l_mainCameraTransformComponent->m_globalTransformVector.m_rot
 			);
 		mat4 t =
 			InnoMath::getInvertTranslationMatrix(
-				InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_pos
+				l_mainCameraTransformComponent->m_globalTransformVector.m_pos
 			);
 		mat4 r_prev =
 			InnoMath::getInvertRotationMatrix(
-				InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_rot
+				l_mainCameraTransformComponent->m_globalTransformVector.m_rot
 			);
 		mat4 t_prev =
 			InnoMath::getInvertTranslationMatrix(
-				InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_pos
+				l_mainCameraTransformComponent->m_globalTransformVector.m_pos
 			);
 
 		updateUniform(
@@ -2359,9 +2364,9 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 
 #ifdef CookTorrance
 		//Cook-Torrance
-		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size() > 0)
+		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size() > 0)
 		{
-			for (auto& l_lightComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents)
+			for (auto& l_lightComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents)
 			{
 				// update light space transformation matrices
 				if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
@@ -2376,7 +2381,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 						l_lightComponent->m_projectionMatrices[3]);
 					updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light,
 						InnoMath::getInvertRotationMatrix(
-							InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_globalTransformVector.m_rot
+							g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformVector.m_rot
 						));
 
 					// draw each visibleComponent
@@ -2388,10 +2393,10 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
-								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
+								g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
-								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix_prev.m_transformationMat);
+								g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix_prev.m_transformationMat);
 
 							// draw each graphic data of visibleComponent
 							for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -2506,10 +2511,10 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
-								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
+								g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 							updateUniform(
 								GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
-								InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix_prev.m_transformationMat);
+								g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix_prev.m_transformationMat);
 
 							// draw each graphic data of visibleComponent
 							for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -2542,7 +2547,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 			{
 				updateUniform(
 					GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
-					InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix());
+					g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix());
 
 				// draw each graphic data of visibleComponent
 				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
@@ -2730,23 +2735,23 @@ void GLRenderingSystemNS::updateLightRenderPass()
 		LightRenderPassSingletonComponent::getInstance().m_uni_isEmissive,
 		false);
 
-	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size() > 0)
+	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size() > 0)
 	{
 		int l_pointLightIndexOffset = 0;
-		auto l_viewPos = InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
-		for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size(); i++)
+		auto l_viewPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
+		for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size(); i++)
 		{
-			auto l_lightPos = InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
+			auto l_lightPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
 
 			auto l_dirLightDirection =
-				InnoMath::getDirection(direction::BACKWARD, InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_parentEntity)->m_localTransformVector.m_rot);
+				InnoMath::getDirection(direction::BACKWARD, g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_parentEntity)->m_localTransformVector.m_rot);
 
-			auto l_lightColor = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_color;
+			auto l_lightColor = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_color;
 			updateUniform(
 				LightRenderPassSingletonComponent::getInstance().m_uni_viewPos,
 				l_viewPos.x, l_viewPos.y, l_viewPos.z);
 
-			if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_lightType == lightType::DIRECTIONAL)
+			if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_lightType == lightType::DIRECTIONAL)
 			{
 				l_pointLightIndexOffset -= 1;
 				updateUniform(
@@ -2759,14 +2764,14 @@ void GLRenderingSystemNS::updateLightRenderPass()
 					LightRenderPassSingletonComponent::getInstance().m_uni_dirLight_color,
 					l_lightColor.x, l_lightColor.y, l_lightColor.z);
 			}
-			else if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_lightType == lightType::POINT)
+			else if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_lightType == lightType::POINT)
 			{
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position[i + l_pointLightIndexOffset],
 					l_lightPos.x, l_lightPos.y, l_lightPos.z);
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_radius[i + l_pointLightIndexOffset],
-					GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents[i]->m_radius);
+					GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_radius);
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_color[i + l_pointLightIndexOffset],
 					l_lightColor.x, l_lightColor.y, l_lightColor.z);
@@ -2774,7 +2779,7 @@ void GLRenderingSystemNS::updateLightRenderPass()
 		}
 	}
 	// draw light pass rectangle
-	auto l_MDC = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::QUAD);
+	auto l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	// 2. draw emissive objects
@@ -2794,7 +2799,7 @@ void GLRenderingSystemNS::updateLightRenderPass()
 		true);
 
 	// draw light pass rectangle
-	l_MDC = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::QUAD);
+	l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	glDisable(GL_STENCIL_TEST);
@@ -2823,16 +2828,16 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 
 	GLRenderingSystemNS::activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC);
 
-	auto l_MDC = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::CUBE);
+	auto l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::CUBE);
 	auto l_GLMDC = GLRenderingSystemNS::getGLMeshDataComponent(l_MDC->m_parentEntity);
 
-	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents.size() > 0)
+	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
 	{
-		auto l_mainCamera = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0];
+		auto l_mainCamera = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0];
 		mat4 p = l_mainCamera->m_projectionMatrix;
 		mat4 r =
 			InnoMath::getInvertRotationMatrix(
-				InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_rot
+				g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_rot
 			);
 
 		GLRenderingSystemNS::updateUniform(
@@ -2845,14 +2850,14 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize,
 			GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-		auto l_eyePos = InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_pos;
+		auto l_eyePos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_pos;
 		GLRenderingSystemNS::updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos,
 			l_eyePos.x, l_eyePos.y, l_eyePos.z);
 
 		auto l_lightDir = InnoMath::getDirection(
 			direction::FORWARD,
-			InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_localTransformVector.m_rot
+			g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity)->m_localTransformVector.m_rot
 		);
 		GLRenderingSystemNS::updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
@@ -2927,7 +2932,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize,
 		GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-	l_MDC = InnoAssetSystem::getDefaultMeshDataComponent(meshShapeType::QUAD);
+	l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::QUAD);
 	l_GLMDC = GLRenderingSystemNS::getGLMeshDataComponent(l_MDC->m_parentEntity);
 
 	GLRenderingSystemNS::drawMesh(l_MDC);
@@ -3063,16 +3068,16 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassSPC);
 
-	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents.size() > 0)
+	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
 	{
-		mat4 p = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_projectionMatrix;
+		mat4 p = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0]->m_projectionMatrix;
 		mat4 r =
 			InnoMath::getInvertRotationMatrix(
-				InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_rot
+				g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_rot
 			);
 		mat4 t =
 			InnoMath::getInvertTranslationMatrix(
-				InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos
+				g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos
 			);
 
 		GLRenderingSystemNS::updateUniform(
@@ -3085,15 +3090,15 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_t,
 			t);
 	}
-	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_visibleComponents.size() > 0)
+	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_VisibleComponents.size() > 0)
 	{
 		// draw each visibleComponent
-		for (auto& l_visibleComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_visibleComponents)
+		for (auto& l_visibleComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_VisibleComponents)
 		{
 			if (l_visibleComponent->m_visiblilityType == visiblilityType::BILLBOARD)
 			{
-				auto l_GlobalPos = InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformVector.m_pos;
-				auto l_GlobalCameraPos = InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
+				auto l_GlobalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformVector.m_pos;
+				auto l_GlobalCameraPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
 
 				GLRenderingSystemNS::updateUniform(
 					GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_pos,
@@ -3160,11 +3165,11 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassSPC);
 
-	//if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents.size() > 0)
+	//if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
 	//{
-	//	mat4 p = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_projectionMatrix;
-	//	mat4 r = InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
-	//	mat4 t = InnoGameSystem::getTransformComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
+	//	mat4 p = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0]->m_projectionMatrix;
+	//	mat4 r = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalRotationMatrix();
+	//	mat4 t = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_transform.getInvertGlobalTranslationMatrix();
 
 	//	updateUniform(
 	//		FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_p,
@@ -3176,7 +3181,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	//		FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_t,
 	//		t);
 
-	//	for (auto& l_cameraComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_cameraComponents)
+	//	for (auto& l_cameraComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents)
 	//	{
 	//		// draw frustum for cameraComponent
 	//		if (l_cameraComponent->m_drawFrustum)
@@ -3204,14 +3209,14 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	//		}
 	//	}
 	//}
-	//if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents.size() > 0)
+	//if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size() > 0)
 	//{
 	//	// draw AABB for lightComponent
-	//	for (auto& l_lightComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_lightComponents)
+	//	for (auto& l_lightComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents)
 	//	{
 	//		if (l_lightComponent->m_drawAABB)
 	//		{
-	//			auto l_lightLocalMat = InnoGameSystem::getTransformComponent(l_lightComponent->m_parentEntity)->m_transform.caclGlobalRotationMatrix();
+	//			auto l_lightLocalMat = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_transform.caclGlobalRotationMatrix();
 	//			updateUniform(
 	//				FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
 	//				l_lightLocalMat);
@@ -3315,7 +3320,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 bool GLRenderingSystem::terminate()
 {
 	GLRenderingSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("GLRenderingSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem has been terminated.");
 	return true;
 }
 
@@ -3331,7 +3336,7 @@ GLuint GLRenderingSystemNS::getUniformLocation(GLuint shaderProgram, const std::
 	int uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 	if (uniformLocation == 0xFFFFFFFF)
 	{
-		InnoLogSystem::printLog("GLRenderingSystem: innoShader: Error: Uniform lost: " + uniformName);
+		g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: Error: Uniform lost: " + uniformName);
 		return -1;
 	}
 	return uniformLocation;

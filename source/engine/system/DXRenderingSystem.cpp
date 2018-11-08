@@ -22,6 +22,10 @@
 
 #include "../component/GameSystemSingletonComponent.h"
 
+#include "ICoreSystem.h"
+
+extern ICoreSystem* g_pCoreSystem;
+
 INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
@@ -81,7 +85,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create DXGI factory!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create DXGI factory!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -90,7 +94,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = factory->EnumAdapters(0, &adapter);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create video card adapter!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create video card adapter!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -99,7 +103,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = adapter->EnumOutputs(0, &adapterOutput);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create monitor adapter!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create monitor adapter!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -108,7 +112,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -120,7 +124,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't fill the display mode list structures!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't fill the display mode list structures!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -143,7 +147,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = adapter->GetDesc(&adapterDesc);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't get the video card adapter description!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't get the video card adapter description!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -155,7 +159,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	error = wcstombs_s(&stringLength, DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_videoCardDescription, 128, adapterDesc.Description, 128);
 	if (error != 0)
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't convert the name of the video card to a character array!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't convert the name of the video card to a character array!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -239,7 +243,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 		D3D11_SDK_VERSION, &swapChainDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the swap chain/D3D device/D3D device context!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the swap chain/D3D device/D3D device context!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -248,7 +252,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't get back buffer pointer!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't get back buffer pointer!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -257,7 +261,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRenderTargetView(backBufferPtr, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create render target view!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create render target view!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -286,7 +290,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(&depthBufferDesc, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilBuffer);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the texture for the depth buffer!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the texture for the depth buffer!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -319,7 +323,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilState(&depthStencilDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the depth stencil state!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the depth stencil state!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -339,7 +343,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilView(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilBuffer, &depthStencilViewDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the depth stencil view!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the depth stencil view!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -363,7 +367,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRasterizerState(&rasterDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create the rasterizer state!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the rasterizer state!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -390,7 +394,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::initialize()
 {
 	DXRenderingSystemNS::initializeFinalBlendPass();
 
-	InnoLogSystem::printLog("DXRenderingSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem has been initialized.");
 	return true;
 }
 
@@ -479,7 +483,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::terminate()
 	}
 
 	DXRenderingSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	InnoLogSystem::printLog("DXRenderingSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem has been terminated.");
 	return true;
 }
 
@@ -506,7 +510,7 @@ void DXRenderingSystemNS::initializeFinalBlendPass()
 	auto result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc, NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create matrix buffer pointer!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create matrix buffer pointer!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return;
 	}
@@ -530,7 +534,7 @@ void DXRenderingSystemNS::initializeFinalBlendPass()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateSamplerState(&DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc, &DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't create texture sampler state!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create texture sampler state!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return;
 	}
@@ -569,22 +573,22 @@ void DXRenderingSystemNS::initializeShader(shaderType shaderType, const std::wst
 			else
 			{
 				MessageBox(DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
-				InnoLogSystem::printLog("Error: Shader creation failed: cannot find shader!");
+				g_pCoreSystem->getLogSystem()->printLog("Error: Shader creation failed: cannot find shader!");
 			}
 
 			return;
 		}
-		InnoLogSystem::printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
+		g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
 
 		// Create the shader from the buffer.
 		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateVertexShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader);
 		if (FAILED(result))
 		{
-			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create vertex shader!");
+			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create vertex shader!");
 			DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 			return;
 		}
-		InnoLogSystem::printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been created.");
+		g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been created.");
 
 		D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
 		unsigned int numElements;
@@ -622,7 +626,7 @@ void DXRenderingSystemNS::initializeShader(shaderType shaderType, const std::wst
 			shaderBuffer->GetBufferSize(), &DXFinalRenderPassSingletonComponent::getInstance().m_layout);
 		if (FAILED(result))
 		{
-			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create shader layout!");
+			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create shader layout!");
 			DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 			return;
 		}
@@ -646,22 +650,22 @@ void DXRenderingSystemNS::initializeShader(shaderType shaderType, const std::wst
 			else
 			{
 				MessageBox(DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
-				InnoLogSystem::printLog("Error: Shader creation failed: cannot find shader!");
+				g_pCoreSystem->getLogSystem()->printLog("Error: Shader creation failed: cannot find shader!");
 			}
 
 			return;
 		}
-		InnoLogSystem::printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
+		g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
 
 		// Create the shader from the buffer.
 		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreatePixelShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader);
 		if (FAILED(result))
 		{
-			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create pixel shader!");
+			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create pixel shader!");
 			DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 			return;
 		}
-		InnoLogSystem::printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been created.");
+		g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been created.");
 		break;
 
 	default:
@@ -695,7 +699,7 @@ void DXRenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HW
 	errorMessage = 0;
 
 	MessageBox(DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
-	InnoLogSystem::printLog("DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
+	g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
 
 DXMeshDataComponent* DXRenderingSystemNS::initializeMeshDataComponent(MeshDataComponent * rhs)
@@ -731,7 +735,7 @@ DXMeshDataComponent* DXRenderingSystemNS::initializeMeshDataComponent(MeshDataCo
 		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &l_ptr->m_vertexBuffer);
 		if (FAILED(result))
 		{
-			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create vbo!");
+			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create vbo!");
 			return nullptr;
 		}
 
@@ -756,7 +760,7 @@ DXMeshDataComponent* DXRenderingSystemNS::initializeMeshDataComponent(MeshDataCo
 		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&indexBufferDesc, &indexData, &l_ptr->m_indexBuffer);
 		if (FAILED(result))
 		{
-			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create ibo!");
+			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create ibo!");
 			return nullptr;
 		}
 		l_ptr->m_objectStatus = objectStatus::ALIVE;
@@ -859,7 +863,7 @@ DXTextureDataComponent* DXRenderingSystemNS::initializeTextureDataComponent(Text
 		hResult = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(&textureDesc, NULL, &l_texture);
 		if (FAILED(hResult))
 		{
-			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create texture!");
+			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create texture!");
 			return nullptr;
 		}
 
@@ -872,7 +876,7 @@ DXTextureDataComponent* DXRenderingSystemNS::initializeTextureDataComponent(Text
 		hResult = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateShaderResourceView(l_texture, &srvDesc, &l_textureView);
 		if (FAILED(hResult))
 		{
-			InnoLogSystem::printLog("Error: DXRenderingSystem: can't create shader resource view for texture!");
+			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create shader resource view for texture!");
 			return nullptr;
 		}
 
@@ -888,7 +892,7 @@ DXTextureDataComponent* DXRenderingSystemNS::initializeTextureDataComponent(Text
 
 DXMeshDataComponent* DXRenderingSystemNS::addDXMeshDataComponent(EntityID rhs)
 {
-	DXMeshDataComponent* newMesh = InnoMemorySystem::spawn<DXMeshDataComponent>();
+	DXMeshDataComponent* newMesh = g_pCoreSystem->getMemorySystem()->spawn<DXMeshDataComponent>();
 	newMesh->m_parentEntity = rhs;
 	auto l_meshMap = &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_meshMap;
 	l_meshMap->emplace(std::pair<EntityID, DXMeshDataComponent*>(rhs, newMesh));
@@ -897,7 +901,7 @@ DXMeshDataComponent* DXRenderingSystemNS::addDXMeshDataComponent(EntityID rhs)
 
 DXTextureDataComponent* DXRenderingSystemNS::addDXTextureDataComponent(EntityID rhs)
 {
-	DXTextureDataComponent* newTexture = InnoMemorySystem::spawn<DXTextureDataComponent>();
+	DXTextureDataComponent* newTexture = g_pCoreSystem->getMemorySystem()->spawn<DXTextureDataComponent>();
 	newTexture->m_parentEntity = rhs;
 	auto l_textureMap = &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_textureMap;
 	l_textureMap->emplace(std::pair<EntityID, DXTextureDataComponent*>(rhs, newTexture));
@@ -945,11 +949,18 @@ void DXRenderingSystemNS::updateFinalBlendPass()
 	// Set the vertex input layout.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
 
-	auto l_mainCamera = GameSystemSingletonComponent::getInstance().m_cameraComponents[0];
+	auto l_mainCamera = GameSystemSingletonComponent::getInstance().m_CameraComponents[0];
+	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
+
 	mat4 p = l_mainCamera->m_projectionMatrix;
-	mat4 r = InnoMath::getInvertRotationMatrix(InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_rot);
-	mat4 t = InnoMath::getInvertTranslationMatrix(InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_pos);
-	mat4 v = p * r * t;
+	mat4 r =
+		InnoMath::getInvertRotationMatrix(
+			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
+		);
+	mat4 t =
+		InnoMath::getInvertTranslationMatrix(
+			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
+		);	mat4 v = p * r * t;
 
 	for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
 	{
@@ -960,7 +971,7 @@ void DXRenderingSystemNS::updateFinalBlendPass()
 			{
 				// Set the shader parameters that it will use for rendering.
 
-				mat4 m = InnoGameSystem::getTransformComponent(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat;
+				mat4 m = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat;
 				auto mvp = v * m;
 
 				updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &mvp);
@@ -1020,7 +1031,7 @@ void DXRenderingSystemNS::updateShaderParameter(shaderType shaderType, ID3D11Buf
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
-		InnoLogSystem::printLog("Error: DXRenderingSystem: can't lock the shader matrix buffer!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't lock the shader matrix buffer!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return;
 	}

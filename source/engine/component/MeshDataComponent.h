@@ -12,12 +12,11 @@ public:
 	EntityID m_parentEntity;
 
 	meshType m_meshType = meshType::NORMAL;
-	std::vector<Vertex> m_vertices;
-	std::vector<unsigned int> m_indices;
+	Vertex* m_vertices;
+	size_t m_verticesSize;
+	Index* m_indices;
 	size_t m_indicesSize;
 
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
-	bool m_calculateNormals = false;
-	bool m_calculateTangents = false;
 };
 

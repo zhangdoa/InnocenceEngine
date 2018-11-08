@@ -191,13 +191,14 @@ vec4 InnoInputSystemNS::calcMousePositionInWorldSpace()
 
 	auto l_mainCamera = InnoInputSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0];
 	auto pCamera = l_mainCamera->m_projectionMatrix;
+	auto l_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
 	auto rCamera =
 		InnoMath::getInvertRotationMatrix(
-			InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_rot
+			l_cameraTransformComponent->m_globalTransformVector.m_rot
 		);
 	auto tCamera =
 		InnoMath::getInvertTranslationMatrix(
-			InnoGameSystem::getTransformComponent(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_pos
+			l_cameraTransformComponent->m_globalTransformVector.m_pos
 		);
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT

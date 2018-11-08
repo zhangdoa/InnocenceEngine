@@ -76,6 +76,11 @@ std::unique_ptr<ComponentPool<className>> m_##className##Pool;
 	componentPoolUniPtr(DXMeshDataComponent);
 	componentPoolUniPtr(DXTextureDataComponent);
 
+	//Memory pool for vertices and indices
+	// @TODO: need more efficient solution
+	std::unique_ptr<ComponentPool<Vertex>> m_VertexPool;
+	std::unique_ptr<ComponentPool<Index>> m_IndexPool;
+
 	static const uint32_t s_BlockSizes[] = {
 		// 4-increments
 		4,  8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48,
@@ -137,6 +142,9 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::setup()
 
 	constructComponentPool(DXMeshDataComponent);
 	constructComponentPool(DXTextureDataComponent);
+
+	InnoMemorySystemNS::m_VertexPool = std::make_unique<ComponentPool<Vertex>>(1024 * 1024 * 1024 *2 );
+	InnoMemorySystemNS::m_IndexPool = std::make_unique<ComponentPool<Index>>(1024 * 1024 * 5);
 
 	InnoMemorySystemNS::m_ChuckPool = std::make_unique<ChuckPool>();
 	// fill the chuck pool with empty marker
@@ -470,6 +478,9 @@ allocateComponentImplDefi(GLShaderProgramComponent)
 
 allocateComponentImplDefi(DXMeshDataComponent)
 allocateComponentImplDefi(DXTextureDataComponent)
+
+allocateComponentImplDefi(Vertex)
+allocateComponentImplDefi(Index)
 
 objectStatus InnoMemorySystem::getStatus()
 {
