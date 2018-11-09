@@ -1725,7 +1725,7 @@ void GLRenderingSystemNS::initializeShader(GLuint& shaderProgram, GLuint& shader
 		g_pCoreSystem->getLogSystem()->printLog("Error: Shader creation failed: memory location invaild when adding shader!");
 	}
 
-	auto l_shaderCodeContent = InnoAssetSystem::loadShader(shaderFilePath);
+	auto l_shaderCodeContent = g_pCoreSystem->getAssetSystem()->loadShader(shaderFilePath);
 	const char* l_sourcePointer = l_shaderCodeContent.c_str();
 
 	if (l_sourcePointer == nullptr)
@@ -1881,7 +1881,7 @@ GLMeshDataComponent* GLRenderingSystemNS::initializeMeshDataComponent(MeshDataCo
 		l_ptr->m_objectStatus = objectStatus::ALIVE;
 		rhs->m_objectStatus = objectStatus::ALIVE;
 
-		InnoAssetSystem::releaseRawDataForMeshDataComponent(rhs->m_parentEntity);
+		g_pCoreSystem->getAssetSystem()->releaseRawDataForMeshDataComponent(rhs->m_parentEntity);
 		return l_ptr;
 	}
 }
@@ -1905,7 +1905,7 @@ GLTextureDataComponent* GLRenderingSystemNS::initializeTextureDataComponent(Text
 			//generate and bind texture object
 			glGenTextures(1, &l_ptr->m_TAO);
 
-			if (rhs->m_textureType == textureType::CUBEMAP || rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+			if (rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 			{
 				glBindTexture(GL_TEXTURE_CUBE_MAP, l_ptr->m_TAO);
 			}
@@ -1922,7 +1922,7 @@ GLTextureDataComponent* GLRenderingSystemNS::initializeTextureDataComponent(Text
 			case textureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
 			case textureWrapMethod::CLAMP_TO_BORDER: l_textureWrapMethod = GL_CLAMP_TO_BORDER; break;
 			}
-			if (rhs->m_textureType == textureType::CUBEMAP || rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+			if (rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 			{
 				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, l_textureWrapMethod);
 				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
@@ -1958,7 +1958,7 @@ GLTextureDataComponent* GLRenderingSystemNS::initializeTextureDataComponent(Text
 			case textureFilterMethod::LINEAR_MIPMAP_LINEAR: l_magFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
 
 			}
-			if (rhs->m_textureType == textureType::CUBEMAP || rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+			if (rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 			{
 				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, l_minFilterParam);
 				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, l_magFilterParam);
@@ -2034,7 +2034,7 @@ GLTextureDataComponent* GLRenderingSystemNS::initializeTextureDataComponent(Text
 			case texturePixelDataType::FLOAT:l_type = GL_FLOAT; break;
 			}
 
-			if (rhs->m_textureType == textureType::CUBEMAP || rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+			if (rhs->m_textureType == textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 			{
 				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, rhs->m_textureWidth, rhs->m_textureHeight, 0, l_dataFormat, l_type, rhs->m_textureData[0]);
 				glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, rhs->m_textureWidth, rhs->m_textureHeight, 0, l_dataFormat, l_type, rhs->m_textureData[1]);
@@ -2056,7 +2056,7 @@ GLTextureDataComponent* GLRenderingSystemNS::initializeTextureDataComponent(Text
 				{
 					glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 				}
-				else if (rhs->m_textureType != textureType::CUBEMAP || rhs->m_textureType != textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType != textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType != textureType::RENDER_BUFFER_SAMPLER)
+				else if (rhs->m_textureType != textureType::ENVIRONMENT_CAPTURE || rhs->m_textureType != textureType::ENVIRONMENT_CONVOLUTION || rhs->m_textureType != textureType::RENDER_BUFFER_SAMPLER)
 				{
 					glGenerateMipmap(GL_TEXTURE_2D);
 				}
@@ -2132,13 +2132,13 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 	activateShaderProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassSPC);
 	updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p, l_p);
 
-	auto l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::CUBE);
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::CUBE);
 
 	// activate equiretangular texture and remap equiretangular texture to cubemap
 	auto l_capturePassTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTDC;
 	auto l_capturePassGLTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassGLTDC;
 
-	auto l_equiretangularTDC = InnoAssetSystem::getTextureDataComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_EnvironmentCaptureComponents[0]->m_texturePair.second);
+	auto l_equiretangularTDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_EnvironmentCaptureComponents[0]->m_texturePair.second);
 	if (l_equiretangularTDC)
 	{
 		auto l_equiretangularGLTDC = getGLTextureDataComponent(l_equiretangularTDC->m_parentEntity);
@@ -2219,7 +2219,7 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 	attachTextureToFramebuffer(l_environmentBRDFLUTTDC, l_environmentBRDFLUTGLTDC, l_FBC, 0, 0, 0);
 
 	// draw environment map BRDF LUT rectangle
-	l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::QUAD);
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);
 }
 
@@ -2410,7 +2410,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 									auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
 									if (l_normalTextureID != l_textureMap->end())
 									{
-										auto l_TDC = InnoAssetSystem::getTextureDataComponent(l_normalTextureID->second);
+										auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_normalTextureID->second);
 										if (l_TDC)
 										{
 											if (l_TDC->m_objectStatus == objectStatus::ALIVE)
@@ -2430,7 +2430,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 									auto l_albedoTextureID = l_textureMap->find(textureType::ALBEDO);
 									if (l_albedoTextureID != l_textureMap->end())
 									{
-										auto l_TDC = InnoAssetSystem::getTextureDataComponent(l_albedoTextureID->second);
+										auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_albedoTextureID->second);
 										if (l_TDC)
 										{
 											if (l_TDC->m_objectStatus == objectStatus::ALIVE)
@@ -2450,7 +2450,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 									auto l_metallicTextureID = l_textureMap->find(textureType::METALLIC);
 									if (l_metallicTextureID != l_textureMap->end())
 									{
-										auto l_TDC = InnoAssetSystem::getTextureDataComponent(l_metallicTextureID->second);
+										auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_metallicTextureID->second);
 										if (l_TDC)
 										{
 											auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
@@ -2467,7 +2467,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 									auto l_roughnessTextureID = l_textureMap->find(textureType::ROUGHNESS);
 									if (l_roughnessTextureID != l_textureMap->end())
 									{
-										auto l_TDC = InnoAssetSystem::getTextureDataComponent(l_roughnessTextureID->second);
+										auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_roughnessTextureID->second);
 										if (l_TDC)
 										{
 											auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
@@ -2484,7 +2484,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 									auto l_aoTextureID = l_textureMap->find(textureType::AMBIENT_OCCLUSION);
 									if (l_aoTextureID != l_textureMap->end())
 									{
-										auto l_TDC = InnoAssetSystem::getTextureDataComponent(l_aoTextureID->second);
+										auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_aoTextureID->second);
 										if (l_TDC)
 										{
 											auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
@@ -2561,7 +2561,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 						auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
 						if (l_normalTextureID != l_textureMap->end())
 						{
-							auto l_TDC = InnoAssetSystem::getTextureDataComponent(l_normalTextureID->second);
+							auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_normalTextureID->second);
 							if (l_TDC)
 							{
 								if (l_TDC->m_objectStatus == objectStatus::ALIVE)
@@ -2581,7 +2581,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 						auto l_diffuseTextureID = l_textureMap->find(textureType::ALBEDO);
 						if (l_diffuseTextureID != l_textureMap->end())
 						{
-							auto l_TDC = InnoAssetSystem::getTextureDataComponent(l_diffuseTextureID->second);
+							auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_diffuseTextureID->second);
 							if (l_TDC)
 							{
 								if (l_TDC->m_objectStatus == objectStatus::ALIVE)
@@ -2601,7 +2601,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 						auto l_specularTextureID = l_textureMap->find(textureType::METALLIC);
 						if (l_specularTextureID != l_textureMap->end())
 						{
-							auto l_TDC = InnoAssetSystem::getTextureDataComponent(l_specularTextureID->second);
+							auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_specularTextureID->second);
 							if (l_TDC)
 							{
 								auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
@@ -2779,7 +2779,7 @@ void GLRenderingSystemNS::updateLightRenderPass()
 		}
 	}
 	// draw light pass rectangle
-	auto l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::QUAD);
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	// 2. draw emissive objects
@@ -2799,7 +2799,7 @@ void GLRenderingSystemNS::updateLightRenderPass()
 		true);
 
 	// draw light pass rectangle
-	l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::QUAD);
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	glDisable(GL_STENCIL_TEST);
@@ -2828,7 +2828,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 
 	GLRenderingSystemNS::activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC);
 
-	auto l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::CUBE);
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::CUBE);
 	auto l_GLMDC = GLRenderingSystemNS::getGLMeshDataComponent(l_MDC->m_parentEntity);
 
 	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
@@ -2932,7 +2932,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize,
 		GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.x, GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_renderTargetSize.y);
 
-	l_MDC = InnoAssetSystem::getMeshDataComponent(meshShapeType::QUAD);
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 	l_GLMDC = GLRenderingSystemNS::getGLMeshDataComponent(l_MDC->m_parentEntity);
 
 	GLRenderingSystemNS::drawMesh(l_MDC);
@@ -3131,7 +3131,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 						auto l_normalTextureID = l_textureMap->find(textureType::ALBEDO);
 						if (l_normalTextureID != l_textureMap->end())
 						{
-							auto l_TDC = InnoAssetSystem::getTextureDataComponent(l_normalTextureID->second);
+							auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_normalTextureID->second);
 							auto l_GLTDC = GLRenderingSystemNS::getGLTextureDataComponent(l_TDC->m_parentEntity);
 							GLRenderingSystemNS::activateTexture(l_TDC, l_GLTDC, 0);
 						}
@@ -3191,7 +3191,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	//			updateUniform(
 	//				FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
 	//				l_cameraLocalMat);
-	//			auto l_mesh = InnoAssetSystem::getMesh(l_cameraComponent->m_FrustumMeshID);
+	//			auto l_mesh = g_pCoreSystem->getAssetSystem()->getMesh(l_cameraComponent->m_FrustumMeshID);
 	//			activateMesh(l_mesh);
 	//			drawMesh(l_mesh);
 	//		}
@@ -3203,7 +3203,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	//			updateUniform(
 	//				FinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
 	//				l_cameraLocalMat);
-	//			auto l_mesh = InnoAssetSystem::getMesh(l_cameraComponent->m_AABBMeshID);
+	//			auto l_mesh = g_pCoreSystem->getAssetSystem()->getMesh(l_cameraComponent->m_AABBMeshID);
 	//			activateMesh(l_mesh);
 	//			drawMesh(l_mesh);
 	//		}
@@ -3222,7 +3222,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	//				l_lightLocalMat);
 	//			for (auto l_AABBMeshID : l_lightComponent->m_AABBMeshIDs)
 	//			{
-	//				auto l_mesh = InnoAssetSystem::getMesh(l_AABBMeshID);
+	//				auto l_mesh = g_pCoreSystem->getAssetSystem()->getMesh(l_AABBMeshID);
 	//				activateMesh(l_mesh);
 	//				drawMesh(l_mesh);
 	//			}
@@ -3253,12 +3253,12 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	//					auto l_normalTextureID = l_textureMap->find(textureType::NORMAL);
 	//					if (l_normalTextureID != l_textureMap->end())
 	//					{
-	//						auto l_textureData = InnoAssetSystem::getTexture(l_normalTextureID->second);
+	//						auto l_textureData = g_pCoreSystem->getAssetSystem()->getTexture(l_normalTextureID->second);
 	//						activateTexture(l_textureData, 0);
 	//					}
 	//				}
 	//				// draw meshes
-	//				auto l_mesh = InnoAssetSystem::getMesh(l_visibleComponent->m_AABBMeshID);
+	//				auto l_mesh = g_pCoreSystem->getAssetSystem()->getMesh(l_visibleComponent->m_AABBMeshID);
 	//				activateMesh(l_mesh);
 	//				drawMesh(l_mesh);
 	//			}
@@ -3384,7 +3384,7 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const mat4 
 
 void GLRenderingSystemNS::attachTextureToFramebuffer(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, int colorAttachmentIndex, int textureIndex, int mipLevel)
 {
-	if (TDC->m_textureType == textureType::CUBEMAP || TDC->m_textureType == textureType::ENVIRONMENT_CAPTURE || TDC->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TDC->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+	if (TDC->m_textureType == textureType::ENVIRONMENT_CAPTURE || TDC->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TDC->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, GLTDC->m_TAO);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TAO, mipLevel);
@@ -3408,7 +3408,7 @@ void GLRenderingSystemNS::activateShaderProgram(GLShaderProgramComponent * GLSha
 
 void GLRenderingSystemNS::drawMesh(EntityID rhs)
 {
-	auto l_MDC = InnoAssetSystem::getMeshDataComponent(rhs);
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(rhs);
 	if (l_MDC)
 	{
 		drawMesh(l_MDC);
@@ -3437,7 +3437,7 @@ void GLRenderingSystemNS::drawMesh(MeshDataComponent* MDC)
 void GLRenderingSystemNS::activateTexture(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, int activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
-	if (TDC->m_textureType == textureType::CUBEMAP || TDC->m_textureType == textureType::ENVIRONMENT_CAPTURE || TDC->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TDC->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+	if (TDC->m_textureType == textureType::ENVIRONMENT_CAPTURE || TDC->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TDC->m_textureType == textureType::ENVIRONMENT_PREFILTER)
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, GLTDC->m_TAO);
 	}

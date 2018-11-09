@@ -1,5 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
+#include "../common/ComponentHeaders.h"
 #include "../common/InnoConcurrency.h"
 
 class GameSystemSingletonComponent

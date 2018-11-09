@@ -985,7 +985,7 @@ void DXRenderingSystemNS::updateFinalBlendPass()
 
 void DXRenderingSystemNS::drawMesh(EntityID rhs)
 {
-	auto l_MDC = InnoAssetSystem::getMeshDataComponent(rhs);
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(rhs);
 	if (l_MDC)
 	{
 		drawMesh(l_MDC);

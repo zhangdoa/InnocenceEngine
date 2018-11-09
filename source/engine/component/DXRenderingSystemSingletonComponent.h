@@ -1,7 +1,7 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../../component/DXMeshDataComponent.h"
-#include "../../component/DXTextureDataComponent.h"
+#include "../component/DXMeshDataComponent.h"
+#include "../component/DXTextureDataComponent.h"
 
 class DXRenderingSystemSingletonComponent
 {

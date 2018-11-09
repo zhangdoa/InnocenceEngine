@@ -12,7 +12,7 @@ class ComponentPool
 public:
 	ComponentPool() : ComponentPool(1024) {
 	};
-	ComponentPool(unsigned int poolTotalCapability) {
+	ComponentPool(unsigned long long poolTotalCapability) {
 		m_poolTotalCapability = poolTotalCapability;
 		m_poolCurrentFreeBlock = poolTotalCapability;
 		m_poolSize = m_poolTotalCapability * sizeof(T);
@@ -23,9 +23,9 @@ public:
 		::delete[] m_poolPtr;
 	};
 
-	unsigned int m_poolTotalCapability = 0;
-	unsigned int m_poolCurrentFreeBlock = 0;
-	unsigned int m_poolSize = 0;
+	unsigned long long m_poolTotalCapability = 0;
+	unsigned long long m_poolCurrentFreeBlock = 0;
+	unsigned long long m_poolSize = 0;
 	unsigned char* m_poolPtr = nullptr;
 	unsigned char* m_poolFreePtr = nullptr;
 };
@@ -36,7 +36,7 @@ class ChuckPool
 public:
 	ChuckPool() : ChuckPool(1024 * 1024 * 64) {
 	};
-	ChuckPool(unsigned int poolSize) {
+	ChuckPool(unsigned long long poolSize) {
 		m_poolSize = poolSize;
 		m_availablePoolSize = poolSize;
 		m_PoolPtr = ::new unsigned char[m_poolSize];
@@ -46,8 +46,8 @@ public:
 		::delete[] m_PoolPtr;
 	};
 
-	unsigned long  m_poolSize = 0;
-	unsigned long  m_availablePoolSize = 0;
+	unsigned long long  m_poolSize = 0;
+	unsigned long long  m_availablePoolSize = 0;
 	unsigned char* m_PoolPtr = nullptr;
 	unsigned char* m_PoolFreePtr = nullptr;
 };
@@ -143,7 +143,7 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::setup()
 	constructComponentPool(DXMeshDataComponent);
 	constructComponentPool(DXTextureDataComponent);
 
-	InnoMemorySystemNS::m_VertexPool = std::make_unique<ComponentPool<Vertex>>(1024 * 1024 * 1024 *2 );
+	InnoMemorySystemNS::m_VertexPool = std::make_unique<ComponentPool<Vertex>>(1024 * 1024 * 1024 * 2 );
 	InnoMemorySystemNS::m_IndexPool = std::make_unique<ComponentPool<Index>>(1024 * 1024 * 5);
 
 	InnoMemorySystemNS::m_ChuckPool = std::make_unique<ChuckPool>();

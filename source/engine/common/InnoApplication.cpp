@@ -51,11 +51,11 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		}
 		g_pCoreSystem->getLogSystem()->printLog("GameSystem setup finished.");
 
-		//if (!InnoAssetSystem::setup())
-		//{
-		//	return false;
-		//}
-		//InnoLogSystem::printLog("AssetSystem setup finished.");
+		if (!g_pCoreSystem->getAssetSystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("AssetSystem setup finished.");
 
 		//if (!InnoPhysicsSystem::setup())
 		//{
@@ -63,11 +63,11 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		//}
 		//InnoLogSystem::printLog("PhysicsSystem setup finished.");
 
-		//if (!InnoVisionSystem::setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
-		//{
-		//	return false;
-		//}
-		//InnoLogSystem::printLog("VisionSystem setup finished.");
+		if (!g_pCoreSystem->getVisionSystem()->setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("VisionSystem setup finished.");
 
 		m_objectStatus = objectStatus::ALIVE;
 
@@ -82,7 +82,6 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 
 bool InnoApplication::initialize()
 {
-	// @TODO: return value check
 	if (!g_pCoreSystem->getTimeSystem()->initialize())
 	{
 		return false;
@@ -103,18 +102,30 @@ bool InnoApplication::initialize()
 		return false;
 	}
 
-	//InnoGameSystem::initialize();
-	//InnoAssetSystem::initialize();
-	//InnoPhysicsSystem::initialize();
-	//InnoVisionSystem::initialize();
+	if (!g_pCoreSystem->getGameSystem()->initialize())
+	{
+		return false;
+	}
 
-	//InnoLogSystem::printLog("Engine has been initialized.");
+	if (!g_pCoreSystem->getAssetSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getVisionSystem()->initialize())
+	{
+		return false;
+	}
+
+	//InnoPhysicsSystem::initialize();
+
+	g_pCoreSystem->getLogSystem()->printLog("Engine has been initialized.");
+
 	return true;
 }
 
 bool InnoApplication::update()
 {
-	// @TODO: return value check
 	if (!g_pCoreSystem->getTimeSystem()->update())
 	{
 		return false;
@@ -135,33 +146,56 @@ bool InnoApplication::update()
 		return false;
 	}
 
-	//InnoGameSystem::update();
-	//InnoAssetSystem::update();
+	if (!g_pCoreSystem->getGameSystem()->update())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getAssetSystem()->update())
+	{
+		return false;
+	}
+
 	//InnoPhysicsSystem::update();
 
-	//if (InnoVisionSystem::getStatus() == objectStatus::ALIVE)
-	//{	
-	//	InnoVisionSystem::update();
-	//	InnoGameSystem::saveComponentsCapture();
-	//	return true;
-	//}
-	//else
-	//{
-	//	m_objectStatus = objectStatus::STANDBY;
-	//	InnoLogSystem::printLog("Engine is stand-by.");
-	//	return false;
-	//}
+	if (g_pCoreSystem->getVisionSystem()->getStatus() == objectStatus::ALIVE)
+	{
+		if (!g_pCoreSystem->getVisionSystem()->update())
+		{
+			return false;
+		}
+		g_pCoreSystem->getGameSystem()->saveComponentsCapture();
+
+		return true;
+	}
+	else
+	{
+		m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog("Engine is stand-by.");
+		return false;
+	}
 	return true;
 }
 
 bool InnoApplication::terminate()
 {
-	// @TODO: return value check
-	//InnoVisionSystem::terminate();
+	if (!g_pCoreSystem->getVisionSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getAssetSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getGameSystem()->initialize())
+	{
+		return false;
+	}
+
 	//InnoPhysicsSystem::terminate();
 
-	//InnoAssetSystem::terminate();
-	//InnoGameSystem::terminate();
 
 	if (!g_pCoreSystem->getTaskSystem()->terminate())
 	{

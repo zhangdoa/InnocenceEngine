@@ -56,7 +56,7 @@ public:
 
 	template <typename T> T * get(EntityID parentEntity)
 	{
-			return getComponentInterfaceCall(T, parentEntity);
+		return getComponentInterfaceCall(T, parentEntity);
 	};
 
 	virtual std::string getGameName() = 0;

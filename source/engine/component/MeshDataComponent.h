@@ -12,9 +12,8 @@ public:
 	EntityID m_parentEntity;
 
 	meshType m_meshType = meshType::NORMAL;
-	Vertex* m_vertices;
-	size_t m_verticesSize;
-	Index* m_indices;
+	std::vector<Vertex> m_vertices;
+	std::vector<Index> m_indices;
 	size_t m_indicesSize;
 
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;

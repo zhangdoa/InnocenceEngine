@@ -33,11 +33,11 @@ public:
 	MeshDataComponent* m_UnitCubeTemplate;
 	MeshDataComponent* m_UnitSphereTemplate;
 
-	TextureDataComponent* m_basicNormalTemplate;
-	TextureDataComponent* m_basicAlbedoTemplate;
-	TextureDataComponent* m_basicMetallicTemplate;
-	TextureDataComponent* m_basicRoughnessTemplate;
-	TextureDataComponent* m_basicAOTemplate;
+	texturePair m_basicNormalTemplate;
+	texturePair m_basicAlbedoTemplate;
+	texturePair m_basicMetallicTemplate;
+	texturePair m_basicRoughnessTemplate;
+	texturePair m_basicAOTemplate;
 
 	std::unordered_map<std::string, modelMap> m_loadedModelMap;
 	std::unordered_map<std::string, texturePair> m_loadedTextureMap;

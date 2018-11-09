@@ -108,7 +108,7 @@ public:
 	template <typename T> void destroy(T *p)
 	{
 		reinterpret_cast<T *>(p)->~T();
-		InnoMemorySystem::free(p);
+		free(p);
 	};
 
 	template <typename T> void serialize(T* p)
