@@ -1,87 +1,78 @@
 #include "InnocenceTest.h"
 
-void InnocenceTest::setup()
+#include "../../engine/system/ICoreSystem.h"
+
+extern ICoreSystem* g_pCoreSystem;
+
+IGameInstance* g_pGameInstance;
+
+namespace InnocenceTestNS
 {
-		GameSystem::setup();
-		addComponentsToMap();
-		testContainer();
-		m_objectStatus = objectStatus::ALIVE;
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+
+	void testMath();
+	void testMemory();
+	void testConcurrency();
+	void testContainer();
 }
 
-void InnocenceTest::initialize()
-{
-	GameSystem::initialize();
-}
-
-void InnocenceTest::update()
-{
-	GameSystem::update();
-}
-
-void InnocenceTest::shutdown()
-{
-	GameSystem::shutdown();
-}
-
-const objectStatus & InnocenceTest::getStatus() const
-{
-	return m_objectStatus;
-}
-
-std::string InnocenceTest::getGameName() const
-{
-	return std::string{ typeid(*this).name() }.substr(std::string{ typeid(*this).name() }.find("class"), std::string::npos);
-}
-
-std::vector<TransformComponent*>& InnocenceTest::getTransformComponents()
-{
-	return m_transformComponents;
-}
-
-std::vector<CameraComponent*>& InnocenceTest::getCameraComponents()
-{
-	return m_cameraComponents;
-}
-
-std::vector<InputComponent*>& InnocenceTest::getInputComponents()
-{
-	return m_inputComponents;
-}
-
-std::vector<LightComponent*>& InnocenceTest::getLightComponents()
-{
-	return m_lightComponents;
-}
-
-std::vector<VisibleComponent*>& InnocenceTest::getVisibleComponents()
-{
-	return m_visibleComponents;
-}
-
-void InnocenceTest::testMath()
-{
-	auto t = g_pMemorySystem->spawn<TransformComponent>();
-}
-
-void InnocenceTest::testMemory()
+InnocenceTest::InnocenceTest(void)
 {
 }
 
-void InnocenceTest::testConcurrency()
+INNO_SYSTEM_EXPORT bool InnocenceTest::setup()
+{
+	InnocenceTestNS::m_objectStatus = objectStatus::ALIVE;
+}
+
+INNO_SYSTEM_EXPORT bool InnocenceTest::initialize()
+{
+	return true;
+}
+
+INNO_SYSTEM_EXPORT bool InnocenceTest::update()
+{
+	return true;
+}
+
+INNO_SYSTEM_EXPORT bool InnocenceTest::terminate()
+{
+	InnocenceTestNS::m_objectStatus = objectStatus::SHUTDOWN;
+}
+
+INNO_SYSTEM_EXPORT objectStatus InnocenceTest::getStatus()
+{
+	return InnocenceTestNS::m_objectStatus;
+}
+
+INNO_SYSTEM_EXPORT std::string InnocenceTest::getGameName()
+{
+	return std::string("InnocenceTest");
+}
+
+void InnocenceTestNS::testMath()
 {
 }
 
-void InnocenceTest::testContainer()
+void InnocenceTestNS::testMemory()
+{
+}
+
+void InnocenceTestNS::testConcurrency()
+{
+}
+
+void InnocenceTestNS::testContainer()
 {
 	innoVector<int> l_innoVectorTest;
 	for (int i = 0; i < 2048; i++)
 	{
 		l_innoVectorTest.push_back(i);
 	}
-	g_pLogSystem->printLog(l_innoVectorTest.size());
+	g_pCoreSystem->getLogSystem()->printLog(l_innoVectorTest.size());
 	for (int i = 0; i < l_innoVectorTest.size(); i++)
 	{
 		l_innoVectorTest.pop_back();
 	}
-	g_pLogSystem->printLog(l_innoVectorTest.size());
+	g_pCoreSystem->getLogSystem()->printLog(l_innoVectorTest.size());
 }

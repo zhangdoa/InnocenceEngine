@@ -1,6 +1,6 @@
 #include "PlayerCharacter.h"
 
-void PlayerComponent::setup()
+void PlayerComponentCollection::setup()
 {
 	m_transformComponent->m_parentEntity = m_parentEntity;
 	m_cameraComponent->m_parentEntity = m_parentEntity;
@@ -16,19 +16,19 @@ void PlayerComponent::setup()
 	m_rotateSpeed = 2.0f;
 	m_canMove = false;
 
-	f_moveForward = std::bind(&PlayerComponent::moveForward, this);
-	f_moveBackward = std::bind(&PlayerComponent::moveBackward, this);
-	f_moveLeft = std::bind(&PlayerComponent::moveLeft, this);
-	f_moveRight = std::bind(&PlayerComponent::moveRight, this);
+	f_moveForward = std::bind(&PlayerComponentCollection::moveForward);
+	f_moveBackward = std::bind(&PlayerComponentCollection::moveBackward);
+	f_moveLeft = std::bind(&PlayerComponentCollection::moveLeft);
+	f_moveRight = std::bind(&PlayerComponentCollection::moveRight);
 
-	f_allowMove = std::bind(&PlayerComponent::allowMove, this);
-	f_forbidMove = std::bind(&PlayerComponent::forbidMove, this);
+	f_allowMove = std::bind(&PlayerComponentCollection::allowMove);
+	f_forbidMove = std::bind(&PlayerComponentCollection::forbidMove);
 
-	f_rotateAroundPositiveYAxis = std::bind(&PlayerComponent::rotateAroundPositiveYAxis, this, std::placeholders::_1);
-	f_rotateAroundRightAxis = std::bind(&PlayerComponent::rotateAroundRightAxis, this, std::placeholders::_1);
+	f_rotateAroundPositiveYAxis = std::bind(&PlayerComponentCollection::rotateAroundPositiveYAxis, std::placeholders::_1);
+	f_rotateAroundRightAxis = std::bind(&PlayerComponentCollection::rotateAroundRightAxis, std::placeholders::_1);
 }
 
-void PlayerComponent::move(vec4 direction, float length)
+void PlayerComponentCollection::move(vec4 direction, float length)
 {
 	if (m_canMove)
 	{
@@ -36,37 +36,37 @@ void PlayerComponent::move(vec4 direction, float length)
 	}
 }
 
-void PlayerComponent::moveForward()
+void PlayerComponentCollection::moveForward()
 {
 	move(InnoMath::getDirection(direction::FORWARD, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
 }
 
-void PlayerComponent::moveBackward()
+void PlayerComponentCollection::moveBackward()
 {
 	move(InnoMath::getDirection(direction::BACKWARD, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
 }
 
-void PlayerComponent::moveLeft()
+void PlayerComponentCollection::moveLeft()
 {
 	move(InnoMath::getDirection(direction::LEFT, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
 }
 
-void PlayerComponent::moveRight()
+void PlayerComponentCollection::moveRight()
 {
 	move(InnoMath::getDirection(direction::RIGHT, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
 }
 
-void PlayerComponent::allowMove()
+void PlayerComponentCollection::allowMove()
 {
 	m_canMove = true;
 }
 
-void PlayerComponent::forbidMove()
+void PlayerComponentCollection::forbidMove()
 {
 	m_canMove = false;
 }
 
-void PlayerComponent::rotateAroundPositiveYAxis(float offset)
+void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
 {
 	if (m_canMove)
 	{
@@ -79,7 +79,7 @@ void PlayerComponent::rotateAroundPositiveYAxis(float offset)
 	}
 }
 
-void PlayerComponent::rotateAroundRightAxis(float offset)
+void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 {
 	if (m_canMove)
 	{

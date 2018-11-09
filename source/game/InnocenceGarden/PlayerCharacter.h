@@ -4,12 +4,8 @@
 #include "../../engine/component/InputComponent.h"
 #include "../../engine/component/VisibleComponent.h"
 
-class PlayerComponent
+namespace PlayerComponentCollection
 {
-public:
-	PlayerComponent() {};
-	~PlayerComponent() {};
-
 	void setup();
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
@@ -35,7 +31,6 @@ public:
 	float m_rotateSpeed = 0;
 	bool m_canMove = false;
 
-private:
 	void move(vec4 direction, float length);
 
 	void moveForward();

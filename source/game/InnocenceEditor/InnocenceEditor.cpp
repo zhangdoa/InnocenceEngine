@@ -1,62 +1,45 @@
 #include "InnocenceEditor.h"
 
-void InnocenceEditor::setup()
+#include "../../engine/system/ICoreSystem.h"
+
+extern ICoreSystem* g_pCoreSystem;
+
+IGameInstance* g_pGameInstance;
+
+namespace InnocenceEditorNS
 {
-	GameSystem::setup();
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 }
 
-void InnocenceEditor::initialize()
+INNO_SYSTEM_EXPORT InnocenceEditor::InnocenceEditor(void)
 {
-	GameSystem::initialize();
+	g_pGameInstance = this;
 }
 
-void InnocenceEditor::update()
+INNO_SYSTEM_EXPORT bool InnocenceEditor::setup()
 {
-	GameSystem::update();
+	InnocenceEditorNS::m_objectStatus = objectStatus::ALIVE;
 }
 
-void InnocenceEditor::shutdown()
+INNO_SYSTEM_EXPORT bool InnocenceEditor::initialize()
 {
-	GameSystem::shutdown();
-	m_objectStatus = objectStatus::SHUTDOWN;
 }
 
-const objectStatus & InnocenceEditor::getStatus() const
+INNO_SYSTEM_EXPORT bool InnocenceEditor::update()
 {
-	return m_objectStatus;
 }
 
-std::string InnocenceEditor::getGameName() const
+INNO_SYSTEM_EXPORT bool InnocenceEditor::terminate()
 {
-#ifdef INNO_PLATFORM_WIN64
-	return std::string{ typeid(*this).name() }.substr(std::string{ typeid(*this).name() }.find("class"), std::string::npos);
-#else
-	return std::string("GameNameWIP");
-#endif // INNO_PLATFORM_WIN64
+	InnocenceEditorNS::m_objectStatus = objectStatus::SHUTDOWN;
 }
 
-std::vector<TransformComponent*>& InnocenceEditor::getTransformComponents()
+INNO_SYSTEM_EXPORT objectStatus InnocenceEditor::getStatus()
 {
-	return m_transformComponents;
+	return InnocenceEditorNS::m_objectStatus;
 }
 
-std::vector<CameraComponent*>& InnocenceEditor::getCameraComponents()
+INNO_SYSTEM_EXPORT std::string InnocenceEditor::getGameName()
 {
-	return m_cameraComponents;
+	return std::string("InnocenceEditor");
 }
-
-std::vector<InputComponent*>& InnocenceEditor::getInputComponents()
-{
-	return m_inputComponents;
-}
-
-std::vector<LightComponent*>& InnocenceEditor::getLightComponents()
-{
-	return m_lightComponents;
-}
-
-std::vector<VisibleComponent*>& InnocenceEditor::getVisibleComponents()
-{
-	return m_visibleComponents;
-}
-

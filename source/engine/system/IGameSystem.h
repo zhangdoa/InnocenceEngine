@@ -59,12 +59,42 @@ public:
 		return getComponentInterfaceCall(T, parentEntity);
 	};
 
-	virtual std::string getGameName() = 0;
+	template <> TransformComponent * get(EntityID parentEntity)
+	{
+		return getComponentInterfaceCall(TransformComponent, parentEntity);
+	};
 
-	virtual	void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function) = 0;
-	virtual void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) = 0;
+	template <> VisibleComponent * get(EntityID parentEntity)
+	{
+		return getComponentInterfaceCall(VisibleComponent, parentEntity);
+	};
 
-	virtual void saveComponentsCapture() = 0;
+	template <> LightComponent * get(EntityID parentEntity)
+	{
+		return getComponentInterfaceCall(LightComponent, parentEntity);
+	};
+
+	template <> CameraComponent * get(EntityID parentEntity)
+	{
+		return getComponentInterfaceCall(CameraComponent, parentEntity);
+	};
+
+	template <> InputComponent * get(EntityID parentEntity)
+	{
+		return getComponentInterfaceCall(InputComponent, parentEntity);
+	};
+
+	template <> EnvironmentCaptureComponent * get(EntityID parentEntity)
+	{
+		return getComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity);
+	};
+
+	INNO_SYSTEM_EXPORT virtual std::string getGameName() = 0;
+
+	INNO_SYSTEM_EXPORT virtual	void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function) = 0;
+	INNO_SYSTEM_EXPORT virtual void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) = 0;
+
+	INNO_SYSTEM_EXPORT virtual void saveComponentsCapture() = 0;
 
 	IMemorySystem* g_pMemorySystem;
 };

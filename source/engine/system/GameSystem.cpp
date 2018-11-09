@@ -2,20 +2,13 @@
 #include "../common/config.h"
 #include "../component/GameSystemSingletonComponent.h"
 
-#if defined (BUILD_EDITOR)
-#include "../../game/InnocenceEditor/InnocenceEditor.h"
-#define InnoGameInstance InnocenceEditor
-#elif defined (BUILD_GAME)
-#include "../../game/InnocenceGarden/InnocenceGarden.h"
-#define InnoGameInstance InnocenceGarden
-#elif defined (BUILD_TEST)
-#include "../../game/InnocenceTest/InnocenceTest.h"
-#define InnoGameInstance InnocenceTest
-#endif
-
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
+
+#include "IGameInstance.h"
+
+extern IGameInstance* g_pGameInstance;
 
 INNO_PRIVATE_SCOPE InnoGameSystemNS
 {
@@ -31,7 +24,7 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 INNO_SYSTEM_EXPORT bool InnoGameSystem::setup()
 {
 	InnoGameSystemNS::g_GameSystemSingletonComponent = &GameSystemSingletonComponent::getInstance();
-	InnoGameInstance::setup();
+	g_pGameInstance->setup();
 	InnoGameSystemNS::sortTransformComponentsVector();
 	InnoGameSystemNS::m_objectStatus = objectStatus::ALIVE;
 	return true;
@@ -70,7 +63,7 @@ void InnoGameSystemNS::updateTransform()
 }
 
 // @TODO: add a cache function for after-rendering business
-void InnoGameSystem::saveComponentsCapture()
+INNO_SYSTEM_EXPORT void InnoGameSystem::saveComponentsCapture()
 {
 	std::for_each(InnoGameSystemNS::g_GameSystemSingletonComponent->m_TransformComponents.begin(), InnoGameSystemNS::g_GameSystemSingletonComponent->m_TransformComponents.end(), [&](TransformComponent* val)
 	{
@@ -80,7 +73,7 @@ void InnoGameSystem::saveComponentsCapture()
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::initialize()
 {
-	InnoGameInstance::initialize();
+	g_pGameInstance->initialize();
 	g_pCoreSystem->getLogSystem()->printLog("GameSystem has been initialized.");
 	return true;
 }
@@ -89,7 +82,7 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 {
 	InnoGameSystemNS::g_GameSystemSingletonComponent->m_asyncTask = &g_pCoreSystem->getTaskSystem()->submit([]()
 	{
-		InnoGameInstance::update();
+		g_pGameInstance->update();
 		InnoGameSystemNS::updateTransform();
 	});
 	return true;
@@ -97,7 +90,7 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 {
-	InnoGameInstance::terminate();
+	g_pGameInstance->terminate();
 	InnoGameSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog("GameSystem has been terminated.");
 	return true;
@@ -117,9 +110,9 @@ spawnComponentImplDefi(CameraComponent)
 spawnComponentImplDefi(InputComponent)
 spawnComponentImplDefi(EnvironmentCaptureComponent)
 
-std::string InnoGameSystem::getGameName()
+INNO_SYSTEM_EXPORT std::string InnoGameSystem::getGameName()
 {
-	return InnoGameInstance::getGameName();
+	return g_pGameInstance->getGameName();
 }
 
 #define getComponentImplDefi( className ) \
@@ -143,7 +136,7 @@ getComponentImplDefi(CameraComponent)
 getComponentImplDefi(InputComponent)
 getComponentImplDefi(EnvironmentCaptureComponent)
 
-void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponent, button boundButton, std::function<void()>* function)
+INNO_SYSTEM_EXPORT void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponent, button boundButton, std::function<void()>* function)
 {
 	auto l_kbuttonStatusCallbackVector = inputComponent->m_buttonStatusCallbackImpl.find(boundButton);
 	if (l_kbuttonStatusCallbackVector != inputComponent->m_buttonStatusCallbackImpl.end())
@@ -156,7 +149,7 @@ void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponen
 	}
 }
 
-void InnoGameSystem::registerMouseMovementCallback(InputComponent * inputComponent, int mouseCode, std::function<void(float)>* function)
+INNO_SYSTEM_EXPORT void InnoGameSystem::registerMouseMovementCallback(InputComponent * inputComponent, int mouseCode, std::function<void(float)>* function)
 {
 	auto l_mouseMovementCallbackVector = inputComponent->m_mouseMovementCallbackImpl.find(mouseCode);
 	if (l_mouseMovementCallbackVector != inputComponent->m_mouseMovementCallbackImpl.end())

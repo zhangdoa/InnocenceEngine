@@ -143,8 +143,8 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::setup()
 	constructComponentPool(DXMeshDataComponent);
 	constructComponentPool(DXTextureDataComponent);
 
-	InnoMemorySystemNS::m_VertexPool = std::make_unique<ComponentPool<Vertex>>(1024 * 1024 * 1024 * 2 );
-	InnoMemorySystemNS::m_IndexPool = std::make_unique<ComponentPool<Index>>(1024 * 1024 * 5);
+	//InnoMemorySystemNS::m_VertexPool = std::make_unique<ComponentPool<Vertex>>(1024 * 1024 * 1024 * 2 );
+	//InnoMemorySystemNS::m_IndexPool = std::make_unique<ComponentPool<Index>>(1024 * 1024 * 5);
 
 	InnoMemorySystemNS::m_ChuckPool = std::make_unique<ChuckPool>();
 	// fill the chuck pool with empty marker

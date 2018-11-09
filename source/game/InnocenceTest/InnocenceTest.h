@@ -1,43 +1,22 @@
 #pragma once
-#include "system/GameSystem.h"
-#include "component/InnoAllocator.h"
+#include "../../engine/system/IGameInstance.h"
 
-#include "interface/ILogSystem.h"
-#include "interface/IMemorySystem.h"
-
-extern ILogSystem* g_pLogSystem;
-extern IMemorySystem* g_pMemorySystem;
-
-class InnocenceTest : public GameSystem
+class InnocenceTest : INNO_IMPLEMENT IGameInstance
 {
 public:
-	InnocenceTest() {};
-	~InnocenceTest() {};
+	InnocenceTest(void);
+	~InnocenceTest(void) = default;
+	InnocenceTest(const InnocenceTest& rhs) = delete;
+	InnocenceTest& operator=(const InnocenceTest& rhs) = delete;
+	InnocenceTest(InnocenceTest&& other) = default;
+	InnocenceTest& operator=(InnocenceTest&& other) = default;
 
-	void setup() override;
-	void initialize() override;
-	void update() override;
-	void terminate() override;
-	const objectStatus& getStatus() const override;
+	INNO_SYSTEM_EXPORT bool setup() override;
+	INNO_SYSTEM_EXPORT bool initialize() override;
+	INNO_SYSTEM_EXPORT bool update() override;
+	INNO_SYSTEM_EXPORT bool terminate() override;
 
-	std::string getGameName() const override;
-	std::vector<TransformComponent*>& getTransformComponents() override;
-	std::vector<CameraComponent*>& getCameraComponents() override;
-	std::vector<InputComponent*>& getInputComponents() override;
-	std::vector<LightComponent*>& getLightComponents() override;
-	std::vector<VisibleComponent*>& getVisibleComponents() override;
+	INNO_SYSTEM_EXPORT objectStatus getStatus() override;
 
-private:
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-
-	void testMath();
-	void testMemory();
-	void testConcurrency();
-	void testContainer();
-
-	std::vector<TransformComponent*> m_transformComponents;
-	std::vector<CameraComponent*> m_cameraComponents;
-	std::vector<InputComponent*> m_inputComponents;
-	std::vector<LightComponent*> m_lightComponents;
-	std::vector<VisibleComponent*> m_visibleComponents;
+	INNO_SYSTEM_EXPORT std::string getGameName() override;
 };

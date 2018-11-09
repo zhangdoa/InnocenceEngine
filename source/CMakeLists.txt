@@ -47,4 +47,4 @@ set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/external/lib/macos)
 endif (INNO_PLATFORM_MACOS)
 
 add_subdirectory("engine")
-# add_subdirectory("game")
+add_subdirectory("game")

@@ -254,6 +254,7 @@ bool InnoAssetSystem::removeMeshDataComponent(EntityID EntityID)
 	else
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error : AssetSystem : can't remove MeshDataComponent by EntityID : " + std::to_string(EntityID) + " !");
+		return false;
 	}
 }
 
@@ -710,20 +711,28 @@ modelMap InnoAssetSystemNS::loadModelFromDisk(const std::string & fileName)
 
 modelMap InnoAssetSystemNS::processAssimpScene(const aiScene* aiScene)
 {
-	auto l_loadedModelMap = modelMap();
+	auto l_loadedModelMapInScene = modelMap();
 	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
 	if (aiScene->mRootNode->mNumMeshes > 0)
 	{
-		l_loadedModelMap.emplace(processAssimpNode(aiScene->mRootNode, aiScene));
+		auto l_loadedModelMapInNode = processAssimpNode(aiScene->mRootNode, aiScene);
+		for (auto pair : l_loadedModelMapInNode)
+		{
+			l_loadedModelMapInScene.emplace(pair);
+		}
 	}
 	for (auto i = (unsigned int)0; i < aiScene->mRootNode->mNumChildren; i++)
 	{
 		if (aiScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
-			l_loadedModelMap.emplace(processAssimpNode(aiScene->mRootNode->mChildren[i], aiScene));
+			auto l_loadedModelMapInNode = processAssimpNode(aiScene->mRootNode->mChildren[i], aiScene);
+			for (auto pair : l_loadedModelMapInNode)
+			{
+				l_loadedModelMapInScene.emplace(pair);
+			}
 		}
 	}
-	return l_loadedModelMap;
+	return l_loadedModelMapInScene;
 }
 
 modelMap InnoAssetSystemNS::processAssimpNode(const aiNode * node, const aiScene * scene)

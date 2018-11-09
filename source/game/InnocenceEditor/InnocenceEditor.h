@@ -1,33 +1,22 @@
 #pragma once
+#include "../../engine/system/IGameInstance.h"
 
-#include "system/GameSystem.h"
-
-class InnocenceEditor : public GameSystem
+class InnocenceEditor : INNO_IMPLEMENT IGameInstance
 {
 public:
-	InnocenceEditor() {};
-	~InnocenceEditor() {};
+	InnocenceEditor(void);
+	~InnocenceEditor(void) = default;
+	InnocenceEditor(const InnocenceEditor& rhs) = delete;
+	InnocenceEditor& operator=(const InnocenceEditor& rhs) = delete;
+	InnocenceEditor(InnocenceEditor&& other) = default;
+	InnocenceEditor& operator=(InnocenceEditor&& other) = default;
 
-	void setup() override;
-	void initialize() override;
-	void update() override;
-	void terminate() override;
-	const objectStatus& getStatus() const override;
+	INNO_SYSTEM_EXPORT bool setup() override;
+	INNO_SYSTEM_EXPORT bool initialize() override;
+	INNO_SYSTEM_EXPORT bool update() override;
+	INNO_SYSTEM_EXPORT bool terminate() override;
 
-	std::string getGameName() const override;
-	std::vector<TransformComponent*>& getTransformComponents() override;
-	std::vector<CameraComponent*>& getCameraComponents() override;
-	std::vector<InputComponent*>& getInputComponents() override;
-	std::vector<LightComponent*>& getLightComponents() override;
-	std::vector<VisibleComponent*>& getVisibleComponents() override;
+	INNO_SYSTEM_EXPORT objectStatus getStatus() override;
 
-
-private:
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-
-	std::vector<TransformComponent*> m_transformComponents;
-	std::vector<CameraComponent*> m_cameraComponents;
-	std::vector<InputComponent*> m_inputComponents;
-	std::vector<LightComponent*> m_lightComponents;
-	std::vector<VisibleComponent*> m_visibleComponents;
+	INNO_SYSTEM_EXPORT std::string getGameName() override;
 };
