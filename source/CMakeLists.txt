@@ -26,10 +26,6 @@ option (INNO_PLATFORM_WIN64 "Windows x86-64 64-bit" OFF)
 option (INNO_PLATFORM_LINUX64 "Linux x86-64 64-bit" OFF)
 option (INNO_PLATFORM_MACOS "MAC x86-64 64-bit" OFF)
 
-option (BUILD_EDITOR "Build editor" OFF)
-option (BUILD_GAME "Build game" OFF)
-option (BUILD_TEST "Build test" OFF)
-
 if (INNO_PLATFORM_WIN32)
 set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/external/lib/win32)
 endif (INNO_PLATFORM_WIN32)

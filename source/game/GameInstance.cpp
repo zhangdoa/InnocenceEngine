@@ -1,4 +1,4 @@
-#include "InnocenceGarden.h"
+#include "GameInstance.h"
 
 #include "../../engine/system/ICoreSystem.h"
 
@@ -138,7 +138,7 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 	}
 }
 
-namespace InnocenceGardenNS
+namespace GameInstanceNS
 {
 	// root entity and its components
 	EntityID m_rootEntity;
@@ -189,29 +189,28 @@ namespace InnocenceGardenNS
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 }
 
-InnocenceGarden::InnocenceGarden(void)
+GameInstance::GameInstance(void)
 {
-	g_pCoreSystem->getGameSystem()->setGameInstance(this);
 }
 
-INNO_GAME_EXPORT bool InnocenceGarden::setup()
+INNO_GAME_EXPORT bool GameInstance::setup()
 {
 	// setup root entity
-	InnocenceGardenNS::m_rootTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
-	InnocenceGardenNS::m_rootTransformComponent->m_parentTransformComponent = nullptr;
+	GameInstanceNS::m_rootTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+	GameInstanceNS::m_rootTransformComponent->m_parentTransformComponent = nullptr;
 
-	InnocenceGardenNS::m_rootEntity = InnoMath::createEntityID();
-	InnocenceGardenNS::m_rootTransformComponent->m_parentEntity = InnocenceGardenNS::m_rootEntity;
+	GameInstanceNS::m_rootEntity = InnoMath::createEntityID();
+	GameInstanceNS::m_rootTransformComponent->m_parentEntity = GameInstanceNS::m_rootEntity;
 
 	// setup player character
 	PlayerComponentCollection::m_transformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
-	PlayerComponentCollection::m_transformComponent->m_parentTransformComponent = InnocenceGardenNS::m_rootTransformComponent;
+	PlayerComponentCollection::m_transformComponent->m_parentTransformComponent = GameInstanceNS::m_rootTransformComponent;
 	PlayerComponentCollection::m_visibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
 	PlayerComponentCollection::m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>();
 	PlayerComponentCollection::m_cameraComponent = g_pCoreSystem->getGameSystem()->spawn<CameraComponent>();
 
 	PlayerComponentCollection::setup();
-	PlayerComponentCollection::m_transformComponent->m_parentTransformComponent = InnocenceGardenNS::m_rootTransformComponent;
+	PlayerComponentCollection::m_transformComponent->m_parentTransformComponent = GameInstanceNS::m_rootTransformComponent;
 	PlayerComponentCollection::m_transformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 3.0f, 1.0f);
 
 	PlayerComponentCollection::m_cameraComponent->m_drawFrustum = false;
@@ -228,125 +227,125 @@ INNO_GAME_EXPORT bool InnocenceGarden::setup()
 	PlayerComponentCollection::m_parentEntity = InnoMath::createEntityID();
 
 	//setup environment capture component
-	InnocenceGardenNS::m_environmentCaptureComponent = g_pCoreSystem->getGameSystem()->spawn<EnvironmentCaptureComponent>();
-	InnocenceGardenNS::m_environmentCaptureComponent->m_cubemapTextureFileName = "ibl//Playa_Sunrise.hdr";
+	GameInstanceNS::m_environmentCaptureComponent = g_pCoreSystem->getGameSystem()->spawn<EnvironmentCaptureComponent>();
+	GameInstanceNS::m_environmentCaptureComponent->m_cubemapTextureFileName = "ibl//Playa_Sunrise.hdr";
 
-	InnocenceGardenNS::m_EnvironmentCaptureEntity = InnoMath::createEntityID();
+	GameInstanceNS::m_EnvironmentCaptureEntity = InnoMath::createEntityID();
 
-	InnocenceGardenNS::m_environmentCaptureComponent->m_parentEntity = InnocenceGardenNS::m_EnvironmentCaptureEntity;
+	GameInstanceNS::m_environmentCaptureComponent->m_parentEntity = GameInstanceNS::m_EnvironmentCaptureEntity;
 
 	//setup directional light
-	InnocenceGardenNS::m_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
-	InnocenceGardenNS::m_directionalLightTransformComponent->m_parentTransformComponent = InnocenceGardenNS::m_rootTransformComponent;
-	InnocenceGardenNS::m_directionalLightTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 0.0f, 1.0f);
-	InnocenceGardenNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
-		InnocenceGardenNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot,
+	GameInstanceNS::m_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+	GameInstanceNS::m_directionalLightTransformComponent->m_parentTransformComponent = GameInstanceNS::m_rootTransformComponent;
+	GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 0.0f, 1.0f);
+	GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+		GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot,
 		vec4(-1.0f, 0.0f, 0.0f, 0.0f),
 		35.0f
 	);
-	InnocenceGardenNS::m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<LightComponent>();
-	InnocenceGardenNS::m_directionalLightComponent->m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	InnocenceGardenNS::m_directionalLightComponent->m_lightType = lightType::DIRECTIONAL;
-	InnocenceGardenNS::m_directionalLightComponent->m_drawAABB = false;
+	GameInstanceNS::m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<LightComponent>();
+	GameInstanceNS::m_directionalLightComponent->m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	GameInstanceNS::m_directionalLightComponent->m_lightType = lightType::DIRECTIONAL;
+	GameInstanceNS::m_directionalLightComponent->m_drawAABB = false;
 
-	InnocenceGardenNS::m_directionalLightEntity = InnoMath::createEntityID();
+	GameInstanceNS::m_directionalLightEntity = InnoMath::createEntityID();
 
-	InnocenceGardenNS::m_directionalLightTransformComponent->m_parentEntity = InnocenceGardenNS::m_directionalLightEntity;
-	InnocenceGardenNS::m_directionalLightComponent->m_parentEntity = InnocenceGardenNS::m_directionalLightEntity;
+	GameInstanceNS::m_directionalLightTransformComponent->m_parentEntity = GameInstanceNS::m_directionalLightEntity;
+	GameInstanceNS::m_directionalLightComponent->m_parentEntity = GameInstanceNS::m_directionalLightEntity;
 
 	//setup landscape
-	InnocenceGardenNS::m_landscapeTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
-	InnocenceGardenNS::m_landscapeTransformComponent->m_parentTransformComponent = InnocenceGardenNS::m_rootTransformComponent;
-	InnocenceGardenNS::m_landscapeTransformComponent->m_localTransformVector.m_scale = vec4(20.0f, 20.0f, 0.1f, 1.0f);
-	InnocenceGardenNS::m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
-		InnocenceGardenNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot,
+	GameInstanceNS::m_landscapeTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+	GameInstanceNS::m_landscapeTransformComponent->m_parentTransformComponent = GameInstanceNS::m_rootTransformComponent;
+	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_scale = vec4(20.0f, 20.0f, 0.1f, 1.0f);
+	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+		GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
 		90.0f
 	);
-	InnocenceGardenNS::m_landscapeVisibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
-	InnocenceGardenNS::m_landscapeVisibleComponent->m_visiblilityType = visiblilityType::STATIC_MESH;
-	InnocenceGardenNS::m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUBE;
+	GameInstanceNS::m_landscapeVisibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
+	GameInstanceNS::m_landscapeVisibleComponent->m_visiblilityType = visiblilityType::STATIC_MESH;
+	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUBE;
 
-	InnocenceGardenNS::m_landscapeEntity = InnoMath::createEntityID();
+	GameInstanceNS::m_landscapeEntity = InnoMath::createEntityID();
 
-	InnocenceGardenNS::m_landscapeTransformComponent->m_parentEntity = InnocenceGardenNS::m_landscapeEntity;
-	InnocenceGardenNS::m_landscapeVisibleComponent->m_parentEntity = InnocenceGardenNS::m_landscapeEntity;
+	GameInstanceNS::m_landscapeTransformComponent->m_parentEntity = GameInstanceNS::m_landscapeEntity;
+	GameInstanceNS::m_landscapeVisibleComponent->m_parentEntity = GameInstanceNS::m_landscapeEntity;
 
-	InnocenceGardenNS::setupLights();
-	InnocenceGardenNS::setupSpheres();
+	GameInstanceNS::setupLights();
+	GameInstanceNS::setupSpheres();
 
 	//setup pawn 1
-	InnocenceGardenNS::m_pawnTransformComponent1 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
-	InnocenceGardenNS::m_pawnTransformComponent1->m_parentTransformComponent = InnocenceGardenNS::m_rootTransformComponent;
-	InnocenceGardenNS::m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	InnocenceGardenNS::m_pawnVisibleComponent1 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
-	InnocenceGardenNS::m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
-	InnocenceGardenNS::m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
-	InnocenceGardenNS::m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
+	GameInstanceNS::m_pawnTransformComponent1 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+	GameInstanceNS::m_pawnTransformComponent1->m_parentTransformComponent = GameInstanceNS::m_rootTransformComponent;
+	GameInstanceNS::m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
+	GameInstanceNS::m_pawnVisibleComponent1 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
+	GameInstanceNS::m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
+	GameInstanceNS::m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
+	GameInstanceNS::m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	//m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
 	//m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
-	InnocenceGardenNS::m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
-	InnocenceGardenNS::m_pawnVisibleComponent1->m_drawAABB = false;
-	InnocenceGardenNS::m_pawnVisibleComponent1->m_useTexture = true;
-	InnocenceGardenNS::m_pawnVisibleComponent1->m_albedo = vec4(0.95f, 0.93f, 0.88f, 1.0f);
-	InnocenceGardenNS::m_pawnVisibleComponent1->m_MRA = vec4(0.0f, 0.35f, 1.0f, 1.0f);
+	GameInstanceNS::m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
+	GameInstanceNS::m_pawnVisibleComponent1->m_drawAABB = false;
+	GameInstanceNS::m_pawnVisibleComponent1->m_useTexture = true;
+	GameInstanceNS::m_pawnVisibleComponent1->m_albedo = vec4(0.95f, 0.93f, 0.88f, 1.0f);
+	GameInstanceNS::m_pawnVisibleComponent1->m_MRA = vec4(0.0f, 0.35f, 1.0f, 1.0f);
 
-	InnocenceGardenNS::m_pawnEntity1 = InnoMath::createEntityID();
+	GameInstanceNS::m_pawnEntity1 = InnoMath::createEntityID();
 
-	InnocenceGardenNS::m_pawnTransformComponent1->m_parentEntity = InnocenceGardenNS::m_pawnEntity1;
-	InnocenceGardenNS::m_pawnVisibleComponent1->m_parentEntity = InnocenceGardenNS::m_pawnEntity1;
+	GameInstanceNS::m_pawnTransformComponent1->m_parentEntity = GameInstanceNS::m_pawnEntity1;
+	GameInstanceNS::m_pawnVisibleComponent1->m_parentEntity = GameInstanceNS::m_pawnEntity1;
 
 	//setup pawn 2
-	InnocenceGardenNS::m_pawnTransformComponent2 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
-	InnocenceGardenNS::m_pawnTransformComponent2->m_parentTransformComponent = InnocenceGardenNS::m_rootTransformComponent;
-	InnocenceGardenNS::m_pawnTransformComponent2->m_localTransformVector.m_scale = vec4(0.01f, 0.01f, 0.01f, 1.0f);
-	InnocenceGardenNS::m_pawnTransformComponent2->m_localTransformVector.m_pos = vec4(0.0f, 0.2f, 3.5f, 1.0f);
-	InnocenceGardenNS::m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
-	InnocenceGardenNS::m_pawnVisibleComponent2->m_visiblilityType = visiblilityType::STATIC_MESH;
-	InnocenceGardenNS::m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::CUSTOM;
-	InnocenceGardenNS::m_pawnVisibleComponent2->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
-	InnocenceGardenNS::m_pawnVisibleComponent2->m_drawAABB = true;
-	InnocenceGardenNS::m_pawnVisibleComponent2->m_modelFileName = "lantern//lantern.obj";
+	GameInstanceNS::m_pawnTransformComponent2 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+	GameInstanceNS::m_pawnTransformComponent2->m_parentTransformComponent = GameInstanceNS::m_rootTransformComponent;
+	GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_scale = vec4(0.01f, 0.01f, 0.01f, 1.0f);
+	GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_pos = vec4(0.0f, 0.2f, 3.5f, 1.0f);
+	GameInstanceNS::m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
+	GameInstanceNS::m_pawnVisibleComponent2->m_visiblilityType = visiblilityType::STATIC_MESH;
+	GameInstanceNS::m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::CUSTOM;
+	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
+	GameInstanceNS::m_pawnVisibleComponent2->m_drawAABB = true;
+	GameInstanceNS::m_pawnVisibleComponent2->m_modelFileName = "lantern//lantern.obj";
 
-	InnocenceGardenNS::m_pawnEntity2 = InnoMath::createEntityID();
+	GameInstanceNS::m_pawnEntity2 = InnoMath::createEntityID();
 
-	InnocenceGardenNS::m_pawnTransformComponent2->m_parentEntity = InnocenceGardenNS::m_pawnEntity2;
-	InnocenceGardenNS::m_pawnVisibleComponent2->m_parentEntity = InnocenceGardenNS::m_pawnEntity2;
+	GameInstanceNS::m_pawnTransformComponent2->m_parentEntity = GameInstanceNS::m_pawnEntity2;
+	GameInstanceNS::m_pawnVisibleComponent2->m_parentEntity = GameInstanceNS::m_pawnEntity2;
 
-	InnocenceGardenNS::m_objectStatus = objectStatus::ALIVE;
+	GameInstanceNS::m_objectStatus = objectStatus::ALIVE;
 	return true;
 }
 
-INNO_GAME_EXPORT bool InnocenceGarden::initialize()
+INNO_GAME_EXPORT bool GameInstance::initialize()
 {
 	return true;
 }
 
-INNO_GAME_EXPORT bool InnocenceGarden::update()
+INNO_GAME_EXPORT bool GameInstance::update()
 {
-	InnocenceGardenNS::temp += 0.02f;
-	InnocenceGardenNS::updateLights(InnocenceGardenNS::temp);
-	InnocenceGardenNS::updateSpheres(InnocenceGardenNS::temp);
+	GameInstanceNS::temp += 0.02f;
+	GameInstanceNS::updateLights(GameInstanceNS::temp);
+	GameInstanceNS::updateSpheres(GameInstanceNS::temp);
 	return true;
 }
 
-INNO_GAME_EXPORT bool InnocenceGarden::terminate()
+INNO_GAME_EXPORT bool GameInstance::terminate()
 {
-	InnocenceGardenNS::m_objectStatus = objectStatus::SHUTDOWN;
+	GameInstanceNS::m_objectStatus = objectStatus::SHUTDOWN;
 	return true;
 }
 
-INNO_GAME_EXPORT objectStatus InnocenceGarden::getStatus()
+INNO_GAME_EXPORT objectStatus GameInstance::getStatus()
 {
-	return InnocenceGardenNS::m_objectStatus;
+	return GameInstanceNS::m_objectStatus;
 }
 
-INNO_GAME_EXPORT std::string InnocenceGarden::getGameName()
+INNO_GAME_EXPORT std::string GameInstance::getGameName()
 {
-	return std::string("InnocenceGarden");
+	return std::string("GameInstance");
 }
 
-void InnocenceGardenNS::setupSpheres()
+void GameInstanceNS::setupSpheres()
 {
 	unsigned int sphereMatrixDim = 8;
 	float sphereBreadthInterval = 4.0f;
@@ -399,7 +398,7 @@ void InnocenceGardenNS::setupSpheres()
 	}
 }
 
-void InnocenceGardenNS::setupLights()
+void GameInstanceNS::setupLights()
 {
 	unsigned int pointLightMatrixDim = 8;
 	float pointLightBreadthInterval = 4.0f;
@@ -441,7 +440,7 @@ void InnocenceGardenNS::setupLights()
 	}
 }
 
-void InnocenceGardenNS::updateLights(float seed)
+void GameInstanceNS::updateLights(float seed)
 {
 	m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
 		m_directionalLightTransformComponent->m_localTransformVector.m_rot,
@@ -461,7 +460,7 @@ void InnocenceGardenNS::updateLights(float seed)
 	}
 }
 
-void InnocenceGardenNS::updateSpheres(float seed)
+void GameInstanceNS::updateSpheres(float seed)
 {
 	auto l_t = InnoMath::rotateInGlobal(
 		m_pawnTransformComponent2->m_localTransformVector.m_pos,
