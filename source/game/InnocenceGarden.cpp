@@ -1,11 +1,142 @@
 #include "InnocenceGarden.h"
-#include "PlayerCharacter.h"
 
 #include "../../engine/system/ICoreSystem.h"
 
-extern ICoreSystem* g_pCoreSystem;
+INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
 
-IGameInstance* g_pGameInstance;
+namespace PlayerComponentCollection
+{
+	void setup();
+
+	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
+
+	TransformComponent* m_transformComponent;
+	VisibleComponent* m_visibleComponent;
+	InputComponent* m_inputComponent;
+	CameraComponent* m_cameraComponent;
+
+	std::function<void()> f_moveForward;
+	std::function<void()> f_moveBackward;
+	std::function<void()> f_moveLeft;
+	std::function<void()> f_moveRight;
+
+	std::function<void()> f_allowMove;
+	std::function<void()> f_forbidMove;
+
+	std::function<void(float)> f_rotateAroundPositiveYAxis;
+	std::function<void(float)> f_rotateAroundRightAxis;
+
+	float m_moveSpeed = 0;
+	float m_rotateSpeed = 0;
+	bool m_canMove = false;
+
+	void move(vec4 direction, float length);
+
+	void moveForward();
+	void moveBackward();
+	void moveLeft();
+	void moveRight();
+
+	void allowMove();
+	void forbidMove();
+
+	void rotateAroundPositiveYAxis(float offset);
+	void rotateAroundRightAxis(float offset);
+};
+
+
+void PlayerComponentCollection::setup()
+{
+	m_transformComponent->m_parentEntity = m_parentEntity;
+	m_cameraComponent->m_parentEntity = m_parentEntity;
+	m_inputComponent->m_parentEntity = m_parentEntity;
+	m_visibleComponent->m_parentEntity = m_parentEntity;
+
+	m_cameraComponent->m_FOVX = 60.0f;
+	m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
+	m_cameraComponent->m_zNear = 0.1f;
+	m_cameraComponent->m_zFar = 200.0f;
+
+	m_moveSpeed = 0.5f;
+	m_rotateSpeed = 2.0f;
+	m_canMove = false;
+
+	f_moveForward = std::bind(&PlayerComponentCollection::moveForward);
+	f_moveBackward = std::bind(&PlayerComponentCollection::moveBackward);
+	f_moveLeft = std::bind(&PlayerComponentCollection::moveLeft);
+	f_moveRight = std::bind(&PlayerComponentCollection::moveRight);
+
+	f_allowMove = std::bind(&PlayerComponentCollection::allowMove);
+	f_forbidMove = std::bind(&PlayerComponentCollection::forbidMove);
+
+	f_rotateAroundPositiveYAxis = std::bind(&PlayerComponentCollection::rotateAroundPositiveYAxis, std::placeholders::_1);
+	f_rotateAroundRightAxis = std::bind(&PlayerComponentCollection::rotateAroundRightAxis, std::placeholders::_1);
+}
+
+void PlayerComponentCollection::move(vec4 direction, float length)
+{
+	if (m_canMove)
+	{
+		m_transformComponent->m_localTransformVector.m_pos = InnoMath::moveTo(m_transformComponent->m_localTransformVector.m_pos, direction, (float)length);
+	}
+}
+
+void PlayerComponentCollection::moveForward()
+{
+	move(InnoMath::getDirection(direction::FORWARD, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
+}
+
+void PlayerComponentCollection::moveBackward()
+{
+	move(InnoMath::getDirection(direction::BACKWARD, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
+}
+
+void PlayerComponentCollection::moveLeft()
+{
+	move(InnoMath::getDirection(direction::LEFT, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
+}
+
+void PlayerComponentCollection::moveRight()
+{
+	move(InnoMath::getDirection(direction::RIGHT, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
+}
+
+void PlayerComponentCollection::allowMove()
+{
+	m_canMove = true;
+}
+
+void PlayerComponentCollection::forbidMove()
+{
+	m_canMove = false;
+}
+
+void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
+{
+	if (m_canMove)
+	{
+		m_transformComponent->m_localTransformVector.m_rot =
+			InnoMath::rotateInLocal(
+				m_transformComponent->m_localTransformVector.m_rot,
+				vec4(0.0f, 1.0f, 0.0f, 0.0f),
+				(float)((-offset * m_rotateSpeed) / 180.0f)* PI<float>
+			);
+	}
+}
+
+void PlayerComponentCollection::rotateAroundRightAxis(float offset)
+{
+	if (m_canMove)
+	{
+		auto l_right = InnoMath::getDirection(direction::RIGHT, m_transformComponent->m_localTransformVector.m_rot);
+		m_transformComponent->m_localTransformVector.m_rot =
+			InnoMath::rotateInLocal(
+				m_transformComponent->m_localTransformVector.m_rot,
+				l_right,
+				(float)((offset * m_rotateSpeed) / 180.0f)* PI<float>);
+	}
+}
 
 namespace InnocenceGardenNS
 {
@@ -60,10 +191,10 @@ namespace InnocenceGardenNS
 
 InnocenceGarden::InnocenceGarden(void)
 {
-	g_pGameInstance = this;
+	g_pCoreSystem->getGameSystem()->setGameInstance(this);
 }
 
-bool InnocenceGarden::setup()
+INNO_GAME_EXPORT bool InnocenceGarden::setup()
 {
 	// setup root entity
 	InnocenceGardenNS::m_rootTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
@@ -186,12 +317,12 @@ bool InnocenceGarden::setup()
 	return true;
 }
 
-bool InnocenceGarden::initialize()
+INNO_GAME_EXPORT bool InnocenceGarden::initialize()
 {
 	return true;
 }
 
-bool InnocenceGarden::update()
+INNO_GAME_EXPORT bool InnocenceGarden::update()
 {
 	InnocenceGardenNS::temp += 0.02f;
 	InnocenceGardenNS::updateLights(InnocenceGardenNS::temp);
@@ -199,13 +330,18 @@ bool InnocenceGarden::update()
 	return true;
 }
 
-bool InnocenceGarden::terminate()
+INNO_GAME_EXPORT bool InnocenceGarden::terminate()
 {
 	InnocenceGardenNS::m_objectStatus = objectStatus::SHUTDOWN;
 	return true;
 }
 
-std::string InnocenceGarden::getGameName()
+INNO_GAME_EXPORT objectStatus InnocenceGarden::getStatus()
+{
+	return InnocenceGardenNS::m_objectStatus;
+}
+
+INNO_GAME_EXPORT std::string InnocenceGarden::getGameName()
 {
 	return std::string("InnocenceGarden");
 }

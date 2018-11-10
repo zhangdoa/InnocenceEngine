@@ -1,6 +1,7 @@
 /bin
 /build
 /source/engine/exports
+/source/game/exports
 
 \.DS_Store
 

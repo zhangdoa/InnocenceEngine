@@ -6,10 +6,6 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-#include "IGameInstance.h"
-
-extern IGameInstance* g_pGameInstance;
-
 INNO_PRIVATE_SCOPE InnoGameSystemNS
 {
 	void sortTransformComponentsVector();
@@ -18,13 +14,14 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
+	IGameInstance* m_GameInstance;
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
 }
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::setup()
 {
 	InnoGameSystemNS::g_GameSystemSingletonComponent = &GameSystemSingletonComponent::getInstance();
-	g_pGameInstance->setup();
+	InnoGameSystemNS::m_GameInstance->setup();
 	InnoGameSystemNS::sortTransformComponentsVector();
 	InnoGameSystemNS::m_objectStatus = objectStatus::ALIVE;
 	return true;
@@ -71,9 +68,14 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::saveComponentsCapture()
 	});
 }
 
+INNO_SYSTEM_EXPORT void InnoGameSystem::setGameInstance(IGameInstance * gameInstance)
+{
+	InnoGameSystemNS::m_GameInstance = gameInstance;
+}
+
 INNO_SYSTEM_EXPORT bool InnoGameSystem::initialize()
 {
-	g_pGameInstance->initialize();
+	InnoGameSystemNS::m_GameInstance->initialize();
 	g_pCoreSystem->getLogSystem()->printLog("GameSystem has been initialized.");
 	return true;
 }
@@ -82,7 +84,7 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 {
 	InnoGameSystemNS::g_GameSystemSingletonComponent->m_asyncTask = &g_pCoreSystem->getTaskSystem()->submit([]()
 	{
-		g_pGameInstance->update();
+		InnoGameSystemNS::m_GameInstance->update();
 		InnoGameSystemNS::updateTransform();
 	});
 	return true;
@@ -90,7 +92,7 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 {
-	g_pGameInstance->terminate();
+	InnoGameSystemNS::m_GameInstance->terminate();
 	InnoGameSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog("GameSystem has been terminated.");
 	return true;
@@ -112,7 +114,7 @@ spawnComponentImplDefi(EnvironmentCaptureComponent)
 
 INNO_SYSTEM_EXPORT std::string InnoGameSystem::getGameName()
 {
-	return g_pGameInstance->getGameName();
+	return InnoGameSystemNS::m_GameInstance->getGameName();
 }
 
 #define getComponentImplDefi( className ) \

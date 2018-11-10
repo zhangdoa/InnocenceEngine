@@ -11,12 +11,12 @@ public:
 	InnocenceGarden(InnocenceGarden&& other) = default;
 	InnocenceGarden& operator=(InnocenceGarden&& other) = default;
 
-	INNO_SYSTEM_EXPORT bool setup() override;
-	INNO_SYSTEM_EXPORT bool initialize() override;
-	INNO_SYSTEM_EXPORT bool update() override;
-	INNO_SYSTEM_EXPORT bool terminate() override;
+	INNO_GAME_EXPORT bool setup() override;
+	INNO_GAME_EXPORT bool initialize() override;
+	INNO_GAME_EXPORT bool update() override;
+	INNO_GAME_EXPORT bool terminate() override;
 
-	INNO_SYSTEM_EXPORT objectStatus getStatus() override;
+	INNO_GAME_EXPORT objectStatus getStatus() override;
 
-	INNO_SYSTEM_EXPORT std::string getGameName() override;
+	INNO_GAME_EXPORT std::string getGameName() override;
 };
