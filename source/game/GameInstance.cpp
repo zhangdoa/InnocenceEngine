@@ -234,7 +234,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_landscapeTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_scale = vec4(20.0f, 20.0f, 0.1f, 1.0f);
 	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
-		GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot,
+		GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
 		90.0f
 	);
@@ -400,7 +400,7 @@ void GameInstanceNS::setupLights()
 
 void GameInstanceNS::updateLights(float seed)
 {
-	m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
 		m_directionalLightTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
 		0.2f
