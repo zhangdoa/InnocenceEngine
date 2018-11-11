@@ -289,6 +289,8 @@ bool InnoAssetSystem::releaseRawDataForMeshDataComponent(EntityID EntityID)
 	if (l_mesh != l_meshMap->end())
 	{
 	// @TODO:
+		l_mesh->second->m_vertices.clear();
+		l_mesh->second->m_vertices.shrink_to_fit();
 		return true;
 	}
 	else
@@ -544,7 +546,6 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	lastLineMeshData->m_meshType = meshType::NORMAL;
 	lastLineMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 	lastLineMeshData->m_objectStatus = objectStatus::STANDBY;
-	g_AssetSystemSingletonComponent->m_uninitializedMeshComponents.push(lastLineMeshData);
 
 	g_AssetSystemSingletonComponent->m_UnitQuadTemplate = addMeshDataComponent();
 	auto lastQuadMeshData = g_AssetSystemSingletonComponent->m_UnitQuadTemplate;
@@ -552,7 +553,6 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	lastQuadMeshData->m_meshType = meshType::NORMAL;
 	lastQuadMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 	lastQuadMeshData->m_objectStatus = objectStatus::STANDBY;
-	g_AssetSystemSingletonComponent->m_uninitializedMeshComponents.push(lastQuadMeshData);
 
 	g_AssetSystemSingletonComponent->m_UnitCubeTemplate = addMeshDataComponent();
 	auto lastCubeMeshData = g_AssetSystemSingletonComponent->m_UnitCubeTemplate;
@@ -560,7 +560,6 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	lastCubeMeshData->m_meshType = meshType::NORMAL;
 	lastCubeMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	lastCubeMeshData->m_objectStatus = objectStatus::STANDBY;
-	g_AssetSystemSingletonComponent->m_uninitializedMeshComponents.push(lastCubeMeshData);
 
 	g_AssetSystemSingletonComponent->m_UnitSphereTemplate = addMeshDataComponent();
 	auto lastSphereMeshData = g_AssetSystemSingletonComponent->m_UnitSphereTemplate;
@@ -568,7 +567,6 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	lastSphereMeshData->m_meshType = meshType::NORMAL;
 	lastSphereMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 	lastSphereMeshData->m_objectStatus = objectStatus::STANDBY;
-	g_AssetSystemSingletonComponent->m_uninitializedMeshComponents.push(lastSphereMeshData);
 }
 
 void InnoAssetSystemNS::loadAssetsForComponents()

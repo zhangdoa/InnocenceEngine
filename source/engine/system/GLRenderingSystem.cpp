@@ -26,6 +26,8 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
+	void initializeDefaultAssets();
+
 	float RadicalInverse(unsigned int n, unsigned int base);
 	void initializeHaltonSampler();
 	void initializeEnvironmentRenderPass();
@@ -73,13 +75,26 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void activateShaderProgram(GLShaderProgramComponent* GLShaderProgramComponent);
 	void drawMesh(EntityID rhs);
 	void drawMesh(MeshDataComponent* MDC);
-	void activateTexture(TextureDataComponent* TDC, GLTextureDataComponent* GLTDC, int activateIndex);
+	void activateTexture(TextureDataComponent* TDC, int activateIndex);
+	void activate2DTexture(GLTextureDataComponent* GLTDC, int activateIndex);
+	void activateCubemapTexture(GLTextureDataComponent* GLTDC, int activateIndex);
 
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
 	static RenderingSystemSingletonComponent* g_RenderingSystemSingletonComponent;
 	static GLRenderingSystemSingletonComponent* g_GLRenderingSystemSingletonComponent;
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+
+	GLMeshDataComponent* m_UnitLineTemplate;
+	GLMeshDataComponent* m_UnitQuadTemplate;
+	GLMeshDataComponent* m_UnitCubeTemplate;
+	GLMeshDataComponent* m_UnitSphereTemplate;
+
+	GLTextureDataComponent* m_basicNormalTemplate;
+	GLTextureDataComponent* m_basicAlbedoTemplate;
+	GLTextureDataComponent* m_basicMetallicTemplate;
+	GLTextureDataComponent* m_basicRoughnessTemplate;
+	GLTextureDataComponent* m_basicAOTemplate;
 }
 
 bool GLRenderingSystem::setup()
@@ -105,6 +120,7 @@ bool GLRenderingSystem::setup()
 
 bool GLRenderingSystem::initialize()
 {
+	GLRenderingSystemNS::initializeDefaultAssets();
 	GLRenderingSystemNS::initializeHaltonSampler();
 	GLRenderingSystemNS::initializeEnvironmentRenderPass();
 	GLRenderingSystemNS::initializeShadowRenderPass();
@@ -113,6 +129,20 @@ bool GLRenderingSystem::initialize()
 	GLRenderingSystemNS::initializeFinalRenderPass();
 
 	return true;
+}
+
+void  GLRenderingSystemNS::initializeDefaultAssets()
+{
+	m_UnitLineTemplate = initializeMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::LINE));
+	m_UnitQuadTemplate = initializeMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD));
+	m_UnitCubeTemplate = initializeMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::CUBE));
+	m_UnitSphereTemplate = initializeMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::SPHERE));
+
+	m_basicNormalTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::NORMAL));
+	m_basicAlbedoTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ALBEDO));
+	m_basicMetallicTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::METALLIC));
+	m_basicRoughnessTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ROUGHNESS));
+	m_basicAOTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::AMBIENT_OCCLUSION));
 }
 
 float GLRenderingSystemNS::RadicalInverse(unsigned int n, unsigned int base) {
@@ -2147,7 +2177,8 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 			if (l_equiretangularTDC->m_objectStatus == objectStatus::ALIVE && l_equiretangularGLTDC->m_objectStatus == objectStatus::ALIVE)
 			{
 				GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_shouldUpdateEnvironmentMap = false;
-				activateTexture(l_equiretangularTDC, l_equiretangularGLTDC, 0);
+
+				activateCubemapTexture(l_equiretangularGLTDC, 0);
 				for (unsigned int i = 0; i < 6; ++i)
 				{
 					updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r, l_v[i]);
@@ -2169,7 +2200,7 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 	auto l_convolutionPassTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTDC;
 	auto l_convolutionPassGLTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassGLTDC;
 
-	activateTexture(l_capturePassTDC, l_capturePassGLTDC, 1);
+	activateCubemapTexture(l_capturePassGLTDC, 1);
 	for (unsigned int i = 0; i < 6; ++i)
 	{
 		updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_r, l_v[i]);
@@ -2186,7 +2217,7 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 
 	auto l_prefilterPassTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTDC;
 	auto l_prefilterPassGLTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassGLTDC;
-	activateTexture(l_prefilterPassTDC, l_capturePassGLTDC, 2);
+	activateCubemapTexture(l_capturePassGLTDC, 2);
 
 	auto l_maxMipLevels = EnvironmentRenderPassSingletonComponent::getInstance().m_maxMipLevels;
 	for (unsigned int mip = 0; mip < l_maxMipLevels; ++mip)
@@ -2413,18 +2444,12 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 										auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_normalTextureID->second);
 										if (l_TDC)
 										{
-											if (l_TDC->m_objectStatus == objectStatus::ALIVE)
-											{
-												auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-												if (l_GLTDC)
-												{
-													if (l_GLTDC->m_objectStatus == objectStatus::ALIVE)
-													{
-														activateTexture(l_TDC, l_GLTDC, 0);
-													}
-												}
-											}
+											activateTexture(l_TDC, 0);
 										}
+									}
+									else
+									{
+										activate2DTexture(GLRenderingSystemNS::m_basicNormalTemplate, 0);
 									}
 									// any albedo?
 									auto l_albedoTextureID = l_textureMap->find(textureType::ALBEDO);
@@ -2433,18 +2458,12 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 										auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_albedoTextureID->second);
 										if (l_TDC)
 										{
-											if (l_TDC->m_objectStatus == objectStatus::ALIVE)
-											{
-												auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-												if (l_GLTDC)
-												{
-													if (l_GLTDC->m_objectStatus == objectStatus::ALIVE)
-													{
-														activateTexture(l_TDC, l_GLTDC, 1);
-													}
-												}
-											}
+											activateTexture(l_TDC, 1);
 										}
+									}
+									else
+									{
+										activate2DTexture(GLRenderingSystemNS::m_basicAlbedoTemplate, 1);
 									}
 									// any metallic?
 									auto l_metallicTextureID = l_textureMap->find(textureType::METALLIC);
@@ -2453,15 +2472,12 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 										auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_metallicTextureID->second);
 										if (l_TDC)
 										{
-											auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-											if (l_GLTDC)
-											{
-												if (l_GLTDC->m_objectStatus == objectStatus::ALIVE)
-												{
-													activateTexture(l_TDC, l_GLTDC, 2);
-												}
-											}
+											activateTexture(l_TDC, 2);
 										}
+									}
+									else
+									{
+										activate2DTexture(GLRenderingSystemNS::m_basicMetallicTemplate, 2);
 									}
 									// any roughness?
 									auto l_roughnessTextureID = l_textureMap->find(textureType::ROUGHNESS);
@@ -2470,15 +2486,12 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 										auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_roughnessTextureID->second);
 										if (l_TDC)
 										{
-											auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-											if (l_GLTDC)
-											{
-												if (l_GLTDC->m_objectStatus == objectStatus::ALIVE)
-												{
-													activateTexture(l_TDC, l_GLTDC, 3);
-												}
-											}
+											activateTexture(l_TDC, 3);
 										}
+									}
+									else
+									{
+										activate2DTexture(GLRenderingSystemNS::m_basicRoughnessTemplate, 3);
 									}
 									// any ao?
 									auto l_aoTextureID = l_textureMap->find(textureType::AMBIENT_OCCLUSION);
@@ -2487,15 +2500,12 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 										auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_aoTextureID->second);
 										if (l_TDC)
 										{
-											auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-											if (l_GLTDC)
-											{
-												if (l_GLTDC->m_objectStatus == objectStatus::ALIVE)
-												{
-													activateTexture(l_TDC, l_GLTDC, 4);
-												}
-											}
+											activateTexture(l_TDC, 4);
 										}
+									}
+									else
+									{
+										activate2DTexture(GLRenderingSystemNS::m_basicAOTemplate, 4);
 									}
 								}
 								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture, l_visibleComponent->m_useTexture);
@@ -2660,73 +2670,59 @@ void GLRenderingSystemNS::updateLightRenderPass()
 #ifdef CookTorrance
 	// Cook-Torrance
 	// world space position + metallic
-	activateTexture(
-		GeometryRenderPassSingletonComponent::getInstance().m_TDCs[0],
+	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[0],
 		0);
 	// normal + roughness
-	activateTexture(
-		GeometryRenderPassSingletonComponent::getInstance().m_TDCs[1],
+	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[1],
 		1);	
 	// albedo + ambient occlusion
-	activateTexture(
-		GeometryRenderPassSingletonComponent::getInstance().m_TDCs[2],
+	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[2],
 		2);
 	// light space position 0
-	activateTexture(
-		GeometryRenderPassSingletonComponent::getInstance().m_TDCs[3],
+	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[3],
 		3);
 	// light space position 1
-	activateTexture(
-		GeometryRenderPassSingletonComponent::getInstance().m_TDCs[4],
+	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[4],
 		4);
 	// light space position 2
-	activateTexture(
-		GeometryRenderPassSingletonComponent::getInstance().m_TDCs[5],
+	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[5],
 		5);
 	// light space position 3
-	activateTexture(
-		GeometryRenderPassSingletonComponent::getInstance().m_TDCs[6],
+	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[6],
 		6);
 	// shadow map 0
-	activateTexture(
-		ShadowRenderPassSingletonComponent::getInstance().m_TDCs[0], 
+	activate2DTexture(
 		ShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[0],
 		7);
 	// shadow map 1
-	activateTexture(
-		ShadowRenderPassSingletonComponent::getInstance().m_TDCs[1],
+	activate2DTexture(
 		ShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[1],
 		8);
 	// shadow map 2
-	activateTexture(
-		ShadowRenderPassSingletonComponent::getInstance().m_TDCs[2],
+	activate2DTexture(
 		ShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[2],
 		9);
 	// shadow map 3
-	activateTexture(
-		ShadowRenderPassSingletonComponent::getInstance().m_TDCs[3],
+	activate2DTexture(
 		ShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[3],
 		10);
 	// irradiance environment map
-	activateTexture(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTDC, 
+	activateCubemapTexture(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassGLTDC,
 		11);
 	// pre-filter specular environment map
-	activateTexture(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTDC,
+	activateCubemapTexture(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassGLTDC,
 		12);
 	// BRDF look-up table
-	activateTexture(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTDC, 
+	activateCubemapTexture(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTGLTDC,
 		13);
 #endif
@@ -2885,16 +2881,13 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		GLRenderingSystemNS::activateTexture(
-			LightRenderPassSingletonComponent::getInstance().m_TDC,
+		GLRenderingSystemNS::activate2DTexture(
 			LightRenderPassSingletonComponent::getInstance().m_GLTDC,
 			0);
-		GLRenderingSystemNS::activateTexture(
-			GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassTDC,
+		GLRenderingSystemNS::activate2DTexture(
 			GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLTDC,
 			1);
-		GLRenderingSystemNS::activateTexture(
-			GeometryRenderPassSingletonComponent::getInstance().m_TDCs[3],
+		GLRenderingSystemNS::activate2DTexture(
 			GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[3],
 			2);
 		GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_isTAAPingPass = false;
@@ -2912,16 +2905,13 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		GLRenderingSystemNS::activateTexture(
-			LightRenderPassSingletonComponent::getInstance().m_TDC,
+		GLRenderingSystemNS::activate2DTexture(
 			LightRenderPassSingletonComponent::getInstance().m_GLTDC,
 			0);
-		GLRenderingSystemNS::activateTexture(
-			GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassTDC,
+		GLRenderingSystemNS::activate2DTexture(
 			GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLTDC,
 			1);
-		GLRenderingSystemNS::activateTexture(
-			GeometryRenderPassSingletonComponent::getInstance().m_TDCs[3],
+		GLRenderingSystemNS::activate2DTexture(
 			GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[3],
 			2);
 		GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_isTAAPingPass = true;
@@ -2950,7 +2940,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	GLRenderingSystemNS::activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassSPC);
 
 	// 1. extract bright part from TAA pass
-	GLRenderingSystemNS::activateTexture(l_lastFrameTAATDC, l_lastFrameTAAGLTDC, 0);
+	GLRenderingSystemNS::activate2DTexture(l_lastFrameTAAGLTDC, 0);
 
 	drawMesh(l_MDC);
 
@@ -2980,16 +2970,14 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 
 			if (l_isFirstIteration)
 			{
-				GLRenderingSystemNS::activateTexture(
-					GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassTDC,
+				GLRenderingSystemNS::activate2DTexture(
 					GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLTDC, 
 					0);
 				l_isFirstIteration = false;
 			}
 			else
 			{
-				GLRenderingSystemNS::activateTexture(
-					GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTDC, 
+				GLRenderingSystemNS::activate2DTexture(
 					GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLTDC,
 					0);
 			}
@@ -3014,8 +3002,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_horizontal,
 				false);
 
-			GLRenderingSystemNS::activateTexture(
-				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassTDC,
+			GLRenderingSystemNS::activate2DTexture(
 				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLTDC,
 				0);
 
@@ -3038,11 +3025,10 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassSPC);
 
-	GLRenderingSystemNS::activateTexture(
-		GeometryRenderPassSingletonComponent::getInstance().m_TDCs[3],
+	GLRenderingSystemNS::activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLTDCs[3],
 		0);
-	activateTexture(l_lastFrameTAATDC, l_lastFrameTAAGLTDC, 1);
+	activate2DTexture(l_lastFrameTAAGLTDC, 1);
 
 	drawMesh(l_MDC);
 
@@ -3132,8 +3118,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 						if (l_normalTextureID != l_textureMap->end())
 						{
 							auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_normalTextureID->second);
-							auto l_GLTDC = GLRenderingSystemNS::getGLTextureDataComponent(l_TDC->m_parentEntity);
-							GLRenderingSystemNS::activateTexture(l_TDC, l_GLTDC, 0);
+							GLRenderingSystemNS::activateTexture(l_TDC, 0);
 						}
 						GLRenderingSystemNS::drawMesh(l_graphicData.first);
 					}
@@ -3282,28 +3267,23 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	GLRenderingSystemNS::activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassSPC);
 
 	// motion blur pass rendering target
-	GLRenderingSystemNS::activateTexture(
-		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassTDC,
+	GLRenderingSystemNS::activate2DTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLTDC, 
 		0);
 	// sky pass rendering target
-	GLRenderingSystemNS::activateTexture(
-		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassTDC,
+	GLRenderingSystemNS::activate2DTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLTDC,
 		1);
 	// bloom pass rendering target
-	GLRenderingSystemNS::activateTexture(
-		GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassTDC,
+	GLRenderingSystemNS::activate2DTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLTDC, 
 		2);
 	// billboard pass rendering target
-	GLRenderingSystemNS::activateTexture(
-		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassTDC,
+	GLRenderingSystemNS::activate2DTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLTDC,
 		3);
 	// debugger pass rendering target
-	GLRenderingSystemNS::activateTexture(
-		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassTDC,
+	GLRenderingSystemNS::activate2DTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLTDC,
 		4);
 
@@ -3434,15 +3414,30 @@ void GLRenderingSystemNS::drawMesh(MeshDataComponent* MDC)
 	}
 }
 
-void GLRenderingSystemNS::activateTexture(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, int activateIndex)
+void GLRenderingSystemNS::activateTexture(TextureDataComponent * TDC, int activateIndex)
+{
+	auto l_GLTDC = getGLTextureDataComponent(TDC->m_parentEntity);
+	if (l_GLTDC)
+	{
+		if (TDC->m_textureType == textureType::ENVIRONMENT_CAPTURE || TDC->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TDC->m_textureType == textureType::ENVIRONMENT_PREFILTER)
+		{
+			activateCubemapTexture(l_GLTDC, activateIndex);
+		}
+		else
+		{
+			activate2DTexture(l_GLTDC, activateIndex);
+		}
+	}
+}
+
+void GLRenderingSystemNS::activate2DTexture(GLTextureDataComponent * GLTDC, int activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
-	if (TDC->m_textureType == textureType::ENVIRONMENT_CAPTURE || TDC->m_textureType == textureType::ENVIRONMENT_CONVOLUTION || TDC->m_textureType == textureType::ENVIRONMENT_PREFILTER)
-	{
-		glBindTexture(GL_TEXTURE_CUBE_MAP, GLTDC->m_TAO);
-	}
-	else
-	{
 		glBindTexture(GL_TEXTURE_2D, GLTDC->m_TAO);
-	}
+}
+
+void GLRenderingSystemNS::activateCubemapTexture(GLTextureDataComponent * GLTDC, int activateIndex)
+{
+	glActiveTexture(GL_TEXTURE0 + activateIndex);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, GLTDC->m_TAO);
 }
