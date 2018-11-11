@@ -47,15 +47,14 @@ namespace PlayerComponentCollection
 
 void PlayerComponentCollection::setup()
 {
-	m_transformComponent->m_parentEntity = m_parentEntity;
-	m_cameraComponent->m_parentEntity = m_parentEntity;
-	m_inputComponent->m_parentEntity = m_parentEntity;
-	m_visibleComponent->m_parentEntity = m_parentEntity;
+	m_transformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 3.0f, 1.0f);
 
 	m_cameraComponent->m_FOVX = 60.0f;
 	m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
 	m_cameraComponent->m_zNear = 0.1f;
 	m_cameraComponent->m_zFar = 200.0f;
+	m_cameraComponent->m_drawFrustum = false;
+	m_cameraComponent->m_drawAABB = false;
 
 	m_moveSpeed = 0.5f;
 	m_rotateSpeed = 2.0f;
@@ -187,18 +186,16 @@ namespace GameInstanceNS
 INNO_GAME_EXPORT bool GameInstance::setup()
 {
 	// setup player character
-	PlayerComponentCollection::m_transformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+	PlayerComponentCollection::m_parentEntity = InnoMath::createEntityID();
+
+	PlayerComponentCollection::m_transformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(PlayerComponentCollection::m_parentEntity);
 	PlayerComponentCollection::m_transformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	PlayerComponentCollection::m_visibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
-	PlayerComponentCollection::m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>();
-	PlayerComponentCollection::m_cameraComponent = g_pCoreSystem->getGameSystem()->spawn<CameraComponent>();
+	PlayerComponentCollection::m_visibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(PlayerComponentCollection::m_parentEntity);
+	PlayerComponentCollection::m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(PlayerComponentCollection::m_parentEntity);
+	PlayerComponentCollection::m_cameraComponent = g_pCoreSystem->getGameSystem()->spawn<CameraComponent>(PlayerComponentCollection::m_parentEntity);
 
 	PlayerComponentCollection::setup();
-	PlayerComponentCollection::m_transformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	PlayerComponentCollection::m_transformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 3.0f, 1.0f);
 
-	PlayerComponentCollection::m_cameraComponent->m_drawFrustum = false;
-	PlayerComponentCollection::m_cameraComponent->m_drawAABB = false;
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_S, buttonStatus::PRESSED }, &PlayerComponentCollection::f_moveForward);
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_W, buttonStatus::PRESSED }, &PlayerComponentCollection::f_moveBackward);
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_A, buttonStatus::PRESSED }, &PlayerComponentCollection::f_moveLeft);
@@ -208,18 +205,16 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(PlayerComponentCollection::m_inputComponent, 0, &PlayerComponentCollection::f_rotateAroundPositiveYAxis);
 	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(PlayerComponentCollection::m_inputComponent, 1, &PlayerComponentCollection::f_rotateAroundRightAxis);
 
-	PlayerComponentCollection::m_parentEntity = InnoMath::createEntityID();
-
 	//setup environment capture component
-	GameInstanceNS::m_environmentCaptureComponent = g_pCoreSystem->getGameSystem()->spawn<EnvironmentCaptureComponent>();
-	GameInstanceNS::m_environmentCaptureComponent->m_cubemapTextureFileName = "ibl//Playa_Sunrise.hdr";
-
 	GameInstanceNS::m_EnvironmentCaptureEntity = InnoMath::createEntityID();
 
-	GameInstanceNS::m_environmentCaptureComponent->m_parentEntity = GameInstanceNS::m_EnvironmentCaptureEntity;
+	GameInstanceNS::m_environmentCaptureComponent = g_pCoreSystem->getGameSystem()->spawn<EnvironmentCaptureComponent>(GameInstanceNS::m_EnvironmentCaptureEntity);
+	GameInstanceNS::m_environmentCaptureComponent->m_cubemapTextureFileName = "ibl//Playa_Sunrise.hdr";
 
 	//setup directional light
-	GameInstanceNS::m_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+	GameInstanceNS::m_directionalLightEntity = InnoMath::createEntityID();
+
+	GameInstanceNS::m_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_directionalLightEntity);
 	GameInstanceNS::m_directionalLightTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 0.0f, 1.0f);
 	GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
@@ -227,18 +222,15 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 		vec4(-1.0f, 0.0f, 0.0f, 0.0f),
 		35.0f
 	);
-	GameInstanceNS::m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<LightComponent>();
+	GameInstanceNS::m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<LightComponent>(GameInstanceNS::m_directionalLightEntity);
 	GameInstanceNS::m_directionalLightComponent->m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	GameInstanceNS::m_directionalLightComponent->m_lightType = lightType::DIRECTIONAL;
 	GameInstanceNS::m_directionalLightComponent->m_drawAABB = false;
 
-	GameInstanceNS::m_directionalLightEntity = InnoMath::createEntityID();
-
-	GameInstanceNS::m_directionalLightTransformComponent->m_parentEntity = GameInstanceNS::m_directionalLightEntity;
-	GameInstanceNS::m_directionalLightComponent->m_parentEntity = GameInstanceNS::m_directionalLightEntity;
-
 	//setup landscape
-	GameInstanceNS::m_landscapeTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+	GameInstanceNS::m_landscapeEntity = InnoMath::createEntityID();
+
+	GameInstanceNS::m_landscapeTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_landscapeEntity);
 	GameInstanceNS::m_landscapeTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_scale = vec4(20.0f, 20.0f, 0.1f, 1.0f);
 	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
@@ -246,23 +238,20 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
 		90.0f
 	);
-	GameInstanceNS::m_landscapeVisibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
+	GameInstanceNS::m_landscapeVisibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_landscapeEntity);
 	GameInstanceNS::m_landscapeVisibleComponent->m_visiblilityType = visiblilityType::STATIC_MESH;
 	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUBE;
 
-	GameInstanceNS::m_landscapeEntity = InnoMath::createEntityID();
-
-	GameInstanceNS::m_landscapeTransformComponent->m_parentEntity = GameInstanceNS::m_landscapeEntity;
-	GameInstanceNS::m_landscapeVisibleComponent->m_parentEntity = GameInstanceNS::m_landscapeEntity;
-
-	GameInstanceNS::setupLights();
-	GameInstanceNS::setupSpheres();
+	//GameInstanceNS::setupLights();
+	//GameInstanceNS::setupSpheres();
 
 	//setup pawn 1
-	GameInstanceNS::m_pawnTransformComponent1 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+	GameInstanceNS::m_pawnEntity1 = InnoMath::createEntityID();
+
+	GameInstanceNS::m_pawnTransformComponent1 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_pawnEntity1);
 	GameInstanceNS::m_pawnTransformComponent1->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	GameInstanceNS::m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	GameInstanceNS::m_pawnVisibleComponent1 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
+	GameInstanceNS::m_pawnVisibleComponent1 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_pawnEntity1);
 	GameInstanceNS::m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
@@ -274,27 +263,19 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnVisibleComponent1->m_albedo = vec4(0.95f, 0.93f, 0.88f, 1.0f);
 	GameInstanceNS::m_pawnVisibleComponent1->m_MRA = vec4(0.0f, 0.35f, 1.0f, 1.0f);
 
-	GameInstanceNS::m_pawnEntity1 = InnoMath::createEntityID();
-
-	GameInstanceNS::m_pawnTransformComponent1->m_parentEntity = GameInstanceNS::m_pawnEntity1;
-	GameInstanceNS::m_pawnVisibleComponent1->m_parentEntity = GameInstanceNS::m_pawnEntity1;
-
 	//setup pawn 2
-	GameInstanceNS::m_pawnTransformComponent2 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+	GameInstanceNS::m_pawnEntity2 = InnoMath::createEntityID();
+
+	GameInstanceNS::m_pawnTransformComponent2 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_pawnEntity2);
 	GameInstanceNS::m_pawnTransformComponent2->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_scale = vec4(0.01f, 0.01f, 0.01f, 1.0f);
 	GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_pos = vec4(0.0f, 0.2f, 3.5f, 1.0f);
-	GameInstanceNS::m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
+	GameInstanceNS::m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_pawnEntity2);
 	GameInstanceNS::m_pawnVisibleComponent2->m_visiblilityType = visiblilityType::STATIC_MESH;
 	GameInstanceNS::m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::CUSTOM;
 	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	GameInstanceNS::m_pawnVisibleComponent2->m_drawAABB = true;
 	GameInstanceNS::m_pawnVisibleComponent2->m_modelFileName = "lantern//lantern.obj";
-
-	GameInstanceNS::m_pawnEntity2 = InnoMath::createEntityID();
-
-	GameInstanceNS::m_pawnTransformComponent2->m_parentEntity = GameInstanceNS::m_pawnEntity2;
-	GameInstanceNS::m_pawnVisibleComponent2->m_parentEntity = GameInstanceNS::m_pawnEntity2;
 
 	GameInstanceNS::m_objectStatus = objectStatus::ALIVE;
 	return true;
@@ -345,21 +326,18 @@ void GameInstanceNS::setupSpheres()
 	}
 	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i++)
 	{
-		m_sphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+		m_sphereEntitys[i] = InnoMath::createEntityID();
+
+		m_sphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_sphereEntitys[i]);
 		m_sphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_sphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_sphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
+		m_sphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_sphereEntitys[i]);
 		m_sphereVisibleComponents[i]->m_visiblilityType = visiblilityType::STATIC_MESH;
 		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::CUSTOM;
 		m_sphereVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 		m_sphereVisibleComponents[i]->m_drawAABB = true;
 		m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 		m_sphereVisibleComponents[i]->m_useTexture = true;
-
-		m_sphereEntitys[i] = InnoMath::createEntityID();
-
-		m_sphereTransformComponents[i]->m_parentEntity = m_sphereEntitys[i];
-		m_sphereVisibleComponents[i]->m_parentEntity = m_sphereEntitys[i];
 	}
 	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i += 4)
 	{
@@ -399,21 +377,17 @@ void GameInstanceNS::setupLights()
 	}
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i++)
 	{
-		m_pointLightTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>();
+		m_pointLightEntitys[i] = InnoMath::createEntityID();
+
+		m_pointLightTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pointLightEntitys[i]);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
-		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<LightComponent>();
-		m_pointLightVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>();
+		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<LightComponent>(m_pointLightEntitys[i]);
+		m_pointLightVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pointLightEntitys[i]);
 		m_pointLightVisibleComponents[i]->m_visiblilityType = visiblilityType::EMISSIVE;
 		m_pointLightVisibleComponents[i]->m_meshShapeType = meshShapeType::SPHERE;
 		m_pointLightVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 		m_pointLightVisibleComponents[i]->m_useTexture = false;
-
-		m_pointLightEntitys[i] = InnoMath::createEntityID();
-
-		m_pointLightTransformComponents[i]->m_parentEntity = m_pointLightEntitys[i];
-		m_pointLightComponents[i]->m_parentEntity = m_pointLightEntitys[i];
-		m_pointLightVisibleComponents[i]->m_parentEntity = m_pointLightEntitys[i];
 	}
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim; i++)
 	{

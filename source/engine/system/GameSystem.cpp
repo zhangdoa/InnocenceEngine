@@ -98,10 +98,11 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 }
 
 #define spawnComponentImplDefi( className ) \
-INNO_SYSTEM_EXPORT void InnoGameSystem::spawnComponent(className* rhs) \
+INNO_SYSTEM_EXPORT void InnoGameSystem::spawnComponent(className* rhs, EntityID parentEntity) \
 { \
+	rhs->m_parentEntity = parentEntity; \
 	InnoGameSystemNS::g_GameSystemSingletonComponent->m_##className##s.emplace_back(rhs); \
-	InnoGameSystemNS::g_GameSystemSingletonComponent->m_##className##sMap.emplace(rhs->m_parentEntity, rhs); \
+	InnoGameSystemNS::g_GameSystemSingletonComponent->m_##className##sMap.emplace(parentEntity, rhs); \
 }
 
 spawnComponentImplDefi(TransformComponent)
@@ -126,6 +127,7 @@ INNO_SYSTEM_EXPORT className* InnoGameSystem::get##className(EntityID parentEnti
 	} \
 	else \
 	{ \
+		g_pCoreSystem->getLogSystem()->printLog("Error : GameSystem : can't find components by EntityID: " + std::to_string(parentEntity) + " !"); \
 		return nullptr; \
 	} \
 }

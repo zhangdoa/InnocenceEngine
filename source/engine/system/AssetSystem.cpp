@@ -98,6 +98,7 @@ INNO_SYSTEM_EXPORT bool InnoAssetSystem::initialize()
 {
 	InnoAssetSystemNS::loadDefaultAssets();
 	// @TODO: more granularly do IO operations
+
 	InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_asyncTaskVector.push_back(g_pCoreSystem->getTaskSystem()->submit([]()
 	{
 		InnoAssetSystemNS::loadAssetsForComponents();
@@ -958,7 +959,7 @@ texturePair InnoAssetSystemNS::loadTextureFromDisk(const std::string& fileName, 
 	}
 	else
 	{
-		auto *data = stbi_load((g_AssetSystemSingletonComponent->m_textureRelativePath + fileName[0]).c_str(), &width, &height, &nrChannels, 0);
+		auto *data = stbi_load((g_AssetSystemSingletonComponent->m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
 			l_textureData->m_textureType = textureType;

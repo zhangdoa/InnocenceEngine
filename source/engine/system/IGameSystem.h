@@ -6,7 +6,7 @@
 #include "IMemorySystem.h"
 
 #define spawnComponentInterfaceDecl( className ) \
-INNO_SYSTEM_EXPORT virtual void spawnComponent(className* rhs) = 0;
+INNO_SYSTEM_EXPORT virtual void spawnComponent(className* rhs, EntityID parentEntity) = 0;
 
 #define getComponentInterfaceDecl( className ) \
 INNO_SYSTEM_EXPORT virtual className* get##className##(EntityID parentEntity) = 0;
@@ -33,12 +33,12 @@ public:
 	spawnComponentInterfaceDecl(InputComponent);
 	spawnComponentInterfaceDecl(EnvironmentCaptureComponent);
 
-	template <typename T> T * spawn()
+	template <typename T> T * spawn(EntityID parentEntity)
 	{
 		auto l_ptr = g_pMemorySystem->spawn<T>();
 		if (l_ptr)
 		{
-			spawnComponent(l_ptr);
+			spawnComponent(l_ptr, parentEntity);
 			return l_ptr;
 		}
 		else

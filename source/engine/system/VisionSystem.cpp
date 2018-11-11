@@ -149,19 +149,24 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::terminate()
 {
-	if (InnoVisionSystemNS::m_windowSystem->getStatus() == objectStatus::ALIVE)
+	if (!InnoVisionSystemNS::m_guiSystem->terminate())
 	{
-		InnoVisionSystemNS::m_guiSystem->terminate();
-		InnoVisionSystemNS::m_renderingSystem->terminate();
-		InnoVisionSystemNS::m_windowSystem->terminate();	
-		InnoVisionSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-		g_pCoreSystem->getLogSystem()->printLog("VisionSystem has been terminated.");
-		return true;
-	}
-	else
-	{
+		g_pCoreSystem->getLogSystem()->printLog("GuiSystem can't be terminated!");
 		return false;
 	}
+	if (!InnoVisionSystemNS::m_renderingSystem->terminate())
+	{
+		g_pCoreSystem->getLogSystem()->printLog("RenderingSystem can't be terminated!");
+		return false;
+	}
+	if (!InnoVisionSystemNS::m_windowSystem->terminate())
+	{
+		g_pCoreSystem->getLogSystem()->printLog("WindowSystem can't be terminated!");
+		return false;
+	}
+	InnoVisionSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog("VisionSystem has been terminated.");
+	return true;
 }
 
 INNO_SYSTEM_EXPORT objectStatus InnoVisionSystem::getStatus()

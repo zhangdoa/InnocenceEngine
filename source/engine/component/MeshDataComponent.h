@@ -14,7 +14,7 @@ public:
 	meshType m_meshType = meshType::NORMAL;
 	std::vector<Vertex> m_vertices;
 	std::vector<Index> m_indices;
-	size_t m_indicesSize;
+	size_t m_indicesSize = 0;
 
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 };

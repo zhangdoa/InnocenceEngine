@@ -2,7 +2,7 @@
 #include "IGameSystem.h"
 
 #define spawnComponentImplDecl( className ) \
-INNO_SYSTEM_EXPORT void spawnComponent(className* rhs) override;
+INNO_SYSTEM_EXPORT void spawnComponent(className* rhs, EntityID parentEntity) override;
 
 #define getComponentImplDecl( className ) \
 INNO_SYSTEM_EXPORT className* get##className##(EntityID parentEntity) override;

@@ -196,8 +196,6 @@ bool InnoApplication::update()
 			return false;
 		}
 		g_pCoreSystem->getGameSystem()->saveComponentsCapture();
-
-		return true;
 	}
 	else
 	{

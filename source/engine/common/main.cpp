@@ -25,13 +25,9 @@ int main(int argc, char *argv[])
 	{
 		if (!InnoApplication::update())
 		{
+			InnoApplication::terminate();
 			return 0;
 		}
-	}
-
-	if (!InnoApplication::terminate())
-	{
-		return 0;
 	}
 
 	return 0;

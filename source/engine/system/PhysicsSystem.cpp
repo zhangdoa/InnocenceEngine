@@ -235,8 +235,6 @@ void InnoPhysicsSystemNS::generateAABB(VisibleComponent & visibleComponent)
 
 	visibleComponent.m_AABB = generateAABB(vec4(maxX, maxY, maxZ, 1.0f), vec4(minX, minY, minZ, 1.0f));
 
-	auto xx = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent.m_parentEntity);
-
 	auto l_worldTm = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent.m_parentEntity)->m_globalTransformMatrix.m_transformationMat;
 
 	//Column-Major memory layout
