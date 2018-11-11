@@ -34,11 +34,10 @@ public:
 	getComponentImplDecl(EnvironmentCaptureComponent);
 
 	INNO_SYSTEM_EXPORT std::string getGameName() override;
+	INNO_SYSTEM_EXPORT TransformComponent* getRootTransformComponent() override;
 
 	INNO_SYSTEM_EXPORT void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function) override;
 	INNO_SYSTEM_EXPORT void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) override;
 	
 	INNO_SYSTEM_EXPORT void saveComponentsCapture() override;
-
-	INNO_SYSTEM_EXPORT void setGameInstance(IGameInstance* gameInstance) override;
 };

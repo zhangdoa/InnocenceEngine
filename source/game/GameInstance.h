@@ -1,10 +1,10 @@
 #pragma once
-#include "../../engine/system/IGameInstance.h"
+#include "IGameInstance.h"
 
 class GameInstance : INNO_IMPLEMENT IGameInstance
 {
 public:
-	GameInstance(void);
+	GameInstance(void) = default;
 	~GameInstance(void) = default;
 	GameInstance(const GameInstance& rhs) = delete;
 	GameInstance& operator=(const GameInstance& rhs) = delete;

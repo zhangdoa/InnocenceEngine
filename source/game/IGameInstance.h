@@ -1,8 +1,8 @@
 #pragma once
-#include "../common/InnoType.h"
-#include "../../game/exports/InnoGame_Export.h"
-#include "../common/InnoClassTemplate.h"
-#include "../common/ComponentHeaders.h"
+#include "../../engine/common/InnoType.h"
+#include "exports/InnoGame_Export.h"
+#include "../../engine/common/InnoClassTemplate.h"
+#include "../../engine/common/ComponentHeaders.h"
 
 INNO_INTERFACE IGameInstance
 {

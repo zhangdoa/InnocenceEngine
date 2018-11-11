@@ -1,5 +1,6 @@
 #include "InnoApplication.h"
 #include "../system/CoreSystem.h"
+#include "../../game/GameInstance.h"
 
 namespace InnoApplication
 {
@@ -7,12 +8,17 @@ namespace InnoApplication
 
 	ICoreSystem* g_pCoreSystem;
 	std::unique_ptr<InnoCoreSystem> m_pCoreSystem;
+	IGameInstance* g_pGameInstance;
+	std::unique_ptr<GameInstance> m_pGameInstance;
 }
 
 bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {	
 	m_pCoreSystem = std::make_unique<InnoCoreSystem>();
 	g_pCoreSystem = m_pCoreSystem.get();
+
+	m_pGameInstance = std::make_unique<GameInstance>();
+	g_pGameInstance = m_pGameInstance.get();
 
 	if (g_pCoreSystem)
 	{
@@ -45,11 +51,20 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		}
 		g_pCoreSystem->getLogSystem()->printLog("TaskSystem setup finished.");
 
+		// @TODO: Time-domain coupling
+		g_pCoreSystem->getGameSystem()->g_pMemorySystem = g_pCoreSystem->getMemorySystem();
+
 		if (!g_pCoreSystem->getGameSystem()->setup())
 		{
 			return false;
 		}
 		g_pCoreSystem->getLogSystem()->printLog("GameSystem setup finished.");
+
+		if (!g_pGameInstance->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("GameInstance setup finished.");
 
 		if (!g_pCoreSystem->getAssetSystem()->setup())
 		{
@@ -57,11 +72,11 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		}
 		g_pCoreSystem->getLogSystem()->printLog("AssetSystem setup finished.");
 
-		//if (!InnoPhysicsSystem::setup())
-		//{
-		//	return false;
-		//}
-		//InnoLogSystem::printLog("PhysicsSystem setup finished.");
+		if (!g_pCoreSystem->getPhysicsSystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("PhysicsSystem setup finished.");
 
 		if (!g_pCoreSystem->getVisionSystem()->setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
 		{
@@ -107,7 +122,17 @@ bool InnoApplication::initialize()
 		return false;
 	}
 
+	if (!g_pGameInstance->initialize())
+	{
+		return false;
+	}
+
 	if (!g_pCoreSystem->getAssetSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getPhysicsSystem()->initialize())
 	{
 		return false;
 	}
@@ -116,8 +141,6 @@ bool InnoApplication::initialize()
 	{
 		return false;
 	}
-
-	//InnoPhysicsSystem::initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog("Engine has been initialized.");
 
@@ -151,12 +174,20 @@ bool InnoApplication::update()
 		return false;
 	}
 
+	if (!g_pGameInstance->update())
+	{
+		return false;
+	}
+
 	if (!g_pCoreSystem->getAssetSystem()->update())
 	{
 		return false;
 	}
 
-	//InnoPhysicsSystem::update();
+	if (!g_pCoreSystem->getPhysicsSystem()->update())
+	{
+		return false;
+	}
 
 	if (g_pCoreSystem->getVisionSystem()->getStatus() == objectStatus::ALIVE)
 	{
@@ -179,23 +210,30 @@ bool InnoApplication::update()
 
 bool InnoApplication::terminate()
 {
-	if (!g_pCoreSystem->getVisionSystem()->initialize())
+	if (!g_pCoreSystem->getVisionSystem()->terminate())
 	{
 		return false;
 	}
 
-	if (!g_pCoreSystem->getAssetSystem()->initialize())
+	if (!g_pCoreSystem->getPhysicsSystem()->terminate())
 	{
 		return false;
 	}
 
-	if (!g_pCoreSystem->getGameSystem()->initialize())
+	if (!g_pCoreSystem->getAssetSystem()->terminate())
 	{
 		return false;
 	}
 
-	//InnoPhysicsSystem::terminate();
+	if (!g_pCoreSystem->getGameSystem()->terminate())
+	{
+		return false;
+	}
 
+	if (!g_pGameInstance->terminate())
+	{
+		return false;
+	}
 
 	if (!g_pCoreSystem->getTaskSystem()->terminate())
 	{

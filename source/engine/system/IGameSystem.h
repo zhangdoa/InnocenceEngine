@@ -4,7 +4,6 @@
 #include "../common/InnoClassTemplate.h"
 #include "../common/ComponentHeaders.h"
 #include "IMemorySystem.h"
-#include "IGameInstance.h"
 
 #define spawnComponentInterfaceDecl( className ) \
 INNO_SYSTEM_EXPORT virtual void spawnComponent(className* rhs) = 0;
@@ -91,13 +90,12 @@ public:
 	};
 
 	INNO_SYSTEM_EXPORT virtual std::string getGameName() = 0;
+	INNO_SYSTEM_EXPORT virtual TransformComponent* getRootTransformComponent() = 0;
 
-	INNO_SYSTEM_EXPORT virtual	void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function) = 0;
+	INNO_SYSTEM_EXPORT virtual void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function) = 0;
 	INNO_SYSTEM_EXPORT virtual void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) = 0;
 
 	INNO_SYSTEM_EXPORT virtual void saveComponentsCapture() = 0;
-
-	INNO_SYSTEM_EXPORT virtual void setGameInstance(IGameInstance* gameInstance) = 0;
 
 	IMemorySystem* g_pMemorySystem;
 };

@@ -7,6 +7,7 @@
 #include "ITaskSystem.h"
 #include "IGameSystem.h"
 #include "IAssetSystem.h"
+#include "IPhysicsSystem.h"
 #include "IVisionSystem.h"
 
 INNO_INTERFACE ICoreSystem
@@ -21,5 +22,6 @@ public:
 	INNO_SYSTEM_EXPORT virtual ITaskSystem* getTaskSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IGameSystem* getGameSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IAssetSystem* getAssetSystem() = 0;
+	INNO_SYSTEM_EXPORT virtual IPhysicsSystem* getPhysicsSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IVisionSystem* getVisionSystem() = 0;
 };

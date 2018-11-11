@@ -17,9 +17,10 @@ public:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	// the AOS here
+	// root TransformComponent
 	TransformComponent* m_rootTransformComponent;
 
+	// the AOS here
 	std::vector<TransformComponent*> m_TransformComponents;
 	std::vector<VisibleComponent*> m_VisibleComponents;
 	std::vector<LightComponent*> m_LightComponents;

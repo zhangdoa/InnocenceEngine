@@ -14,15 +14,23 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-	IGameInstance* m_GameInstance;
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
 }
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::setup()
 {
 	InnoGameSystemNS::g_GameSystemSingletonComponent = &GameSystemSingletonComponent::getInstance();
-	InnoGameSystemNS::m_GameInstance->setup();
-	InnoGameSystemNS::sortTransformComponentsVector();
+
+	// setup root TransformComponent
+	InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent = new TransformComponent();
+	InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_parentTransformComponent = nullptr;
+
+	InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_parentEntity = InnoMath::createEntityID();
+
+	InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_localTransformVector);
+	InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_globalTransformVector = InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_localTransformVector;
+	InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_globalTransformMatrix = InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_localTransformMatrix;
+
 	InnoGameSystemNS::m_objectStatus = objectStatus::ALIVE;
 	return true;
 }
@@ -35,10 +43,6 @@ void InnoGameSystemNS::sortTransformComponentsVector()
 		if (val->m_parentTransformComponent)
 		{
 			val->m_transformHierarchyLevel = val->m_parentTransformComponent->m_transformHierarchyLevel + 1;
-		}
-		else
-		{
-			val->m_transformHierarchyLevel = 0;
 		}
 	});
 	//from top to bottom
@@ -68,14 +72,11 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::saveComponentsCapture()
 	});
 }
 
-INNO_SYSTEM_EXPORT void InnoGameSystem::setGameInstance(IGameInstance * gameInstance)
-{
-	InnoGameSystemNS::m_GameInstance = gameInstance;
-}
-
 INNO_SYSTEM_EXPORT bool InnoGameSystem::initialize()
 {
-	InnoGameSystemNS::m_GameInstance->initialize();
+	InnoGameSystemNS::sortTransformComponentsVector();
+	InnoGameSystemNS::updateTransform();
+
 	g_pCoreSystem->getLogSystem()->printLog("GameSystem has been initialized.");
 	return true;
 }
@@ -84,7 +85,6 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 {
 	InnoGameSystemNS::g_GameSystemSingletonComponent->m_asyncTask = &g_pCoreSystem->getTaskSystem()->submit([]()
 	{
-		InnoGameSystemNS::m_GameInstance->update();
 		InnoGameSystemNS::updateTransform();
 	});
 	return true;
@@ -92,7 +92,6 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 {
-	InnoGameSystemNS::m_GameInstance->terminate();
 	InnoGameSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog("GameSystem has been terminated.");
 	return true;
@@ -114,7 +113,7 @@ spawnComponentImplDefi(EnvironmentCaptureComponent)
 
 INNO_SYSTEM_EXPORT std::string InnoGameSystem::getGameName()
 {
-	return InnoGameSystemNS::m_GameInstance->getGameName();
+	return std::string("TODO");
 }
 
 #define getComponentImplDefi( className ) \
@@ -149,6 +148,11 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::registerButtonStatusCallback(InputCompon
 	{
 		inputComponent->m_buttonStatusCallbackImpl.emplace(boundButton, std::vector<std::function<void()>*>{function});
 	}
+}
+
+INNO_SYSTEM_EXPORT TransformComponent * InnoGameSystem::getRootTransformComponent()
+{
+	return InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent;
 }
 
 INNO_SYSTEM_EXPORT void InnoGameSystem::registerMouseMovementCallback(InputComponent * inputComponent, int mouseCode, std::function<void(float)>* function)
