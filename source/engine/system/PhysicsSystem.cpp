@@ -144,6 +144,7 @@ void InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent * cameraCompon
 		1, 5, 2, 5, 6, 2 };
 }
 
+// @TODO: async
 void InnoPhysicsSystemNS::initializeVisibleComponents()
 {
 	std::for_each(g_GameSystemSingletonComponent->m_VisibleComponents.begin(), g_GameSystemSingletonComponent->m_VisibleComponents.end(),
@@ -196,7 +197,7 @@ void InnoPhysicsSystemNS::generateAABB(VisibleComponent & visibleComponent)
 	float minY = 0;
 	float minZ = 0;
 
-	std::vector<vec4> l_cornerVertices(visibleComponent.m_modelMap.size() * 2);
+	std::vector<vec4> l_cornerVertices;
 
 	for (auto& l_graphicData : visibleComponent.m_modelMap)
 	{

@@ -255,8 +255,8 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
-	//m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
-	//m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
+	GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
+	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
 	GameInstanceNS::m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
 	GameInstanceNS::m_pawnVisibleComponent1->m_drawAABB = false;
 	GameInstanceNS::m_pawnVisibleComponent1->m_useTexture = true;
@@ -400,11 +400,11 @@ void GameInstanceNS::setupLights()
 
 void GameInstanceNS::updateLights(float seed)
 {
-	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
-		m_directionalLightTransformComponent->m_localTransformVector.m_rot,
-		vec4(1.0f, 0.0f, 0.0f, 0.0f),
-		0.2f
-	);
+	//m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+	//	m_directionalLightTransformComponent->m_localTransformVector.m_rot,
+	//	vec4(1.0f, 0.0f, 0.0f, 0.0f),
+	//	0.2f
+	//);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i += 4)
 	{
 		m_pointLightVisibleComponents[i]->m_albedo = vec4((sin(seed + i) + 1.0f) * 5.0f / 2.0f, 0.2 * 5.0f, 0.4 * 5.0f, 1.0f);
