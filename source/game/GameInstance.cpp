@@ -57,7 +57,7 @@ void PlayerComponentCollection::setup()
 	m_cameraComponent->m_drawAABB = false;
 
 	m_moveSpeed = 0.5f;
-	m_rotateSpeed = 2.0f;
+	m_rotateSpeed = 4.0f;
 	m_canMove = false;
 
 	f_moveForward = std::bind(&PlayerComponentCollection::moveForward);
@@ -114,12 +114,12 @@ void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
 {
 	if (m_canMove)
 	{
-		m_transformComponent->m_localTransformVector.m_rot =
-			InnoMath::rotateInLocal(
-				m_transformComponent->m_localTransformVector.m_rot,
-				vec4(0.0f, 1.0f, 0.0f, 0.0f),
-				(float)((-offset * m_rotateSpeed) / 180.0f)* PI<float>
-			);
+		auto dest_rot = InnoMath::rotateInLocal(
+			m_transformComponent->m_localTransformVector.m_rot,
+			vec4(0.0f, 1.0f, 0.0f, 0.0f),
+			(float)((-offset * m_rotateSpeed) / 180.0f)* PI<float>
+		);
+		m_transformComponent->m_localTransformVector.m_rot = dest_rot.slerp(m_transformComponent->m_localTransformVector.m_rot, dest_rot, 0.5);			
 	}
 }
 
@@ -128,11 +128,12 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 	if (m_canMove)
 	{
 		auto l_right = InnoMath::getDirection(direction::RIGHT, m_transformComponent->m_localTransformVector.m_rot);
-		m_transformComponent->m_localTransformVector.m_rot =
-			InnoMath::rotateInLocal(
-				m_transformComponent->m_localTransformVector.m_rot,
-				l_right,
-				(float)((offset * m_rotateSpeed) / 180.0f)* PI<float>);
+		auto dest_rot = InnoMath::rotateInLocal(
+			m_transformComponent->m_localTransformVector.m_rot,
+			l_right,
+			(float)((offset * m_rotateSpeed) / 180.0f)* PI<float>);
+
+		m_transformComponent->m_localTransformVector.m_rot = dest_rot.slerp(m_transformComponent->m_localTransformVector.m_rot, dest_rot, 0.5);
 	}
 }
 
@@ -242,8 +243,8 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_landscapeVisibleComponent->m_visiblilityType = visiblilityType::STATIC_MESH;
 	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUBE;
 
-	//GameInstanceNS::setupLights();
-	//GameInstanceNS::setupSpheres();
+	GameInstanceNS::setupLights();
+	GameInstanceNS::setupSpheres();
 
 	//setup pawn 1
 	GameInstanceNS::m_pawnEntity1 = InnoMath::createEntityID();
@@ -255,7 +256,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
-	GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
+	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
 	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
 	GameInstanceNS::m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
 	GameInstanceNS::m_pawnVisibleComponent1->m_drawAABB = false;

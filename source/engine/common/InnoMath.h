@@ -1480,7 +1480,10 @@ namespace InnoMath
 		return l_directionTVec4.rotateByQuat(localRot);
 	}
 
-	EntityID createEntityID();
+	__forceinline EntityID createEntityID()
+	{
+		return std::rand();
+	}
 }
 
 using vec2 = TVec2<float>;

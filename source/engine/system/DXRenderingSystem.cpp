@@ -38,15 +38,20 @@ DXTextureDataComponent* addDXTextureDataComponent(EntityID rhs);
 DXMeshDataComponent* getDXMeshDataComponent(EntityID rhs);
 DXTextureDataComponent* getDXTextureDataComponent(EntityID rhs);
 
+void initializeGeometryPass();
 void initializeFinalBlendPass();
 
 void initializeShader(shaderType shaderType, const std::wstring & shaderFilePath);
 void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 
+void prepareRenderingData();
+
+void updateGeometryPass();
 void updateFinalBlendPass();
 
 void drawMesh(EntityID rhs);
 void drawMesh(MeshDataComponent* MDC);
+void drawMesh(size_t indicesSize, DXMeshDataComponent * DXMDC);
 
 void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, mat4* parameterValue);
 void beginScene(float r, float g, float b, float a);
@@ -55,6 +60,14 @@ void endScene();
 static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
 static DXWindowSystemSingletonComponent* g_DXWindowSystemSingletonComponent;
 static DXRenderingSystemSingletonComponent* g_DXRenderingSystemSingletonComponent;
+
+mat4 m_CamProj;
+mat4 m_CamRot;
+mat4 m_CamTrans;
+mat4 m_CamViewProj;
+
+std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedMeshComponents;
+std::queue<std::tuple<size_t, mat4, DXMeshDataComponent*>> m_MeshComponentRenderingQueue;
 }
 
 INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
@@ -405,7 +418,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 		MeshDataComponent* l_meshDataComponent;
 		if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
-			DXRenderingSystemNS::initializeMeshDataComponent(l_meshDataComponent);
+			auto l_initializedDXMDC = DXRenderingSystemNS::initializeMeshDataComponent(l_meshDataComponent);
+			DXRenderingSystemNS::m_initializedMeshComponents.emplace(l_initializedDXMDC->m_parentEntity, l_initializedDXMDC);
 		}
 	}
 	//if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
@@ -417,6 +431,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 	//	}
 	//}
 	// Clear the buffers to begin the scene.
+	DXRenderingSystemNS::prepareRenderingData();
+
 	DXRenderingSystemNS::beginScene(0.0f, 0.0f, 0.0f, 0.0f);
 
 	DXRenderingSystemNS::updateFinalBlendPass();
@@ -934,6 +950,48 @@ DXTextureDataComponent * DXRenderingSystemNS::getDXTextureDataComponent(EntityID
 	}
 }
 
+void DXRenderingSystemNS::prepareRenderingData()
+{
+	// camera matrices
+	auto l_mainCamera = GameSystemSingletonComponent::getInstance().m_CameraComponents[0];
+	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
+
+	auto l_p = l_mainCamera->m_projectionMatrix;
+	auto l_r =
+		InnoMath::getInvertRotationMatrix(
+			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
+		);
+	auto l_t =
+		InnoMath::getInvertTranslationMatrix(
+			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
+		);	
+	DXRenderingSystemNS::m_CamProj = l_p;
+	DXRenderingSystemNS::m_CamRot = l_r;
+	DXRenderingSystemNS::m_CamTrans = l_t;
+	DXRenderingSystemNS::m_CamViewProj = l_p * l_r * l_t;
+
+	for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
+	{
+		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
+		{
+			for (auto& l_graphicData : l_visibleComponent->m_modelMap)
+			{
+				auto l_DXMDC = DXRenderingSystemNS::m_initializedMeshComponents.find(l_graphicData.first);
+				if (l_DXMDC != DXRenderingSystemNS::m_initializedMeshComponents.end())
+				{
+					auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_graphicData.first);
+					if (l_MDC)
+					{
+						mat4 m = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat;
+						auto mvp = DXRenderingSystemNS::m_CamViewProj * m;
+						DXRenderingSystemNS::m_MeshComponentRenderingQueue.push(std::tuple<size_t, mat4, DXMeshDataComponent*>(l_MDC->m_indicesSize, std::move(mvp), l_DXMDC->second));
+					}
+				}
+			}
+		}
+	}
+}
+
 void DXRenderingSystemNS::updateFinalBlendPass()
 {
 	// Set the vertex and pixel shaders that will be used to render this triangle.
@@ -949,37 +1007,14 @@ void DXRenderingSystemNS::updateFinalBlendPass()
 	// Set the vertex input layout.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
 
-	auto l_mainCamera = GameSystemSingletonComponent::getInstance().m_CameraComponents[0];
-	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
-
-	mat4 p = l_mainCamera->m_projectionMatrix;
-	mat4 r =
-		InnoMath::getInvertRotationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
-		);
-	mat4 t =
-		InnoMath::getInvertTranslationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
-		);	mat4 v = p * r * t;
-
-	for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
+	while (DXRenderingSystemNS::m_MeshComponentRenderingQueue.size() > 0)
 	{
-		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
-		{
-			// draw each graphic data of visibleComponent
-			for (auto& l_graphicData : l_visibleComponent->m_modelMap)
-			{
-				// Set the shader parameters that it will use for rendering.
+		auto l_tuple = DXRenderingSystemNS::m_MeshComponentRenderingQueue.front();
 
-				mat4 m = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat;
-				auto mvp = v * m;
+		updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &std::get<mat4>(l_tuple));
+		drawMesh(std::get<size_t>(l_tuple), std::get<DXMeshDataComponent*>(l_tuple));
 
-				updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &mvp);
-
-				// draw meshes
-				drawMesh(l_graphicData.first);
-			}
-		}
+		DXRenderingSystemNS::m_MeshComponentRenderingQueue.pop();
 	}
 }
 
@@ -999,23 +1034,28 @@ void DXRenderingSystemNS::drawMesh(MeshDataComponent * MDC)
 	{
 		if (MDC->m_objectStatus == objectStatus::ALIVE && l_DXMDC->m_objectStatus == objectStatus::ALIVE)
 		{
-			unsigned int stride;
-			unsigned int offset;
-
-			// Set vertex buffer stride and offset.
-			stride = sizeof(Vertex);
-			offset = 0;
-
-			// Set the vertex buffer to active in the input assembler so it can be rendered.
-			DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetVertexBuffers(0, 1, &l_DXMDC->m_vertexBuffer, &stride, &offset);
-
-			// Set the index buffer to active in the input assembler so it can be rendered.
-			DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetIndexBuffer(l_DXMDC->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-			// Render the triangle.
-			DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->DrawIndexed((UINT)MDC->m_indicesSize, 0, 0);
+			drawMesh(MDC->m_indicesSize, l_DXMDC);
 		}
 	}
+}
+
+void DXRenderingSystemNS::drawMesh(size_t indicesSize, DXMeshDataComponent * DXMDC)
+{
+	unsigned int stride;
+	unsigned int offset;
+
+	// Set vertex buffer stride and offset.
+	stride = sizeof(Vertex);
+	offset = 0;
+
+	// Set the vertex buffer to active in the input assembler so it can be rendered.
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBuffer, &stride, &offset);
+
+	// Set the index buffer to active in the input assembler so it can be rendered.
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetIndexBuffer(DXMDC->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	// Render the triangle.
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->DrawIndexed((UINT)indicesSize, 0, 0);
 }
 
 void DXRenderingSystemNS::updateShaderParameter(shaderType shaderType, ID3D11Buffer * matrixBuffer, mat4* parameterValue)
@@ -1024,8 +1064,6 @@ void DXRenderingSystemNS::updateShaderParameter(shaderType shaderType, ID3D11Buf
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	DirectX::XMMATRIX* dataPtr;
 	unsigned int bufferNumber;
-
-	//parameterValue = DirectX::XMMatrixTranspose(parameterValue);
 
 	// Lock the constant buffer so it can be written to.
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
