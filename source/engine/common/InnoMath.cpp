@@ -1,6 +1,6 @@
 #include "InnoMath.h"
 
-__declspec(dllexport) EntityID InnoMath::createEntityID()
+EntityID InnoMath::createEntityID()
 {
 	return std::rand();
 }

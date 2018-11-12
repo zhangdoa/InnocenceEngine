@@ -2,7 +2,7 @@
 #include "config.h"
 #include "InnoApplication.h"
 
-#if defined(INNO_RENDERER_DX)
+#if defined(INNO_PLATFORM_WIN32) || defined(INNO_PLATFORM_WIN64)
 #include <windows.h>
 #include <windowsx.h>
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
@@ -25,13 +25,9 @@ int main(int argc, char *argv[])
 	{
 		if (!InnoApplication::update())
 		{
+			InnoApplication::terminate();
 			return 0;
 		}
-	}
-
-	if (!InnoApplication::terminate())
-	{
-		return 0;
 	}
 
 	return 0;

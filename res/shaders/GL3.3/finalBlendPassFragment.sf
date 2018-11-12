@@ -1,0 +1,60 @@
+// shadertype=glsl
+#version 330 core
+
+in vec2 TexCoords;
+out vec4 FragColor;
+
+uniform sampler2D uni_motionBlurPassRT0;
+uniform sampler2D uni_skyPassRT0;
+uniform sampler2D uni_bloomPassRT0;
+uniform sampler2D uni_billboardPassRT0;
+uniform sampler2D uni_debuggerPassRT0;
+
+//Academy Color Encoding System
+//http://www.oscars.org/science-technology/sci-tech-projects/aces
+vec3 acesFilm(const vec3 x) {
+    const float a = 2.51;
+    const float b = 0.03;
+    const float c = 2.43;
+    const float d = 0.59;
+    const float e = 0.14;
+    return clamp((x * (a * x + b)) / (x * (c * x + d ) + e), 0.0, 1.0);
+}
+
+void main()
+{  
+	vec3 finalColor;
+	vec4 lightPassResult = texture(uni_motionBlurPassRT0, TexCoords);
+	vec4 skyPassResult = texture(uni_skyPassRT0, TexCoords);
+	vec4 bloomPassResult = texture(uni_bloomPassRT0, TexCoords);
+	vec4 billboardPassResult = texture(uni_billboardPassRT0, TexCoords);
+	vec4 debuggerPassResult = texture(uni_debuggerPassRT0, TexCoords);
+
+	if(lightPassResult.a == 1.0)
+	{
+		finalColor = lightPassResult.rgb;
+	}
+	else
+	{
+		finalColor = skyPassResult.rgb;
+	}
+
+	// emissive overlay
+	finalColor += bloomPassResult.rgb;
+
+	// billboard overlay
+	finalColor += billboardPassResult.rgb;
+
+	// debugger overlay
+	finalColor += debuggerPassResult.rgb;
+	
+	//HDR to LDR
+	finalColor = acesFilm(finalColor);
+
+	//gamma correction
+	finalColor = pow(finalColor, vec3(1.0 / 2.2));
+
+	FragColor = vec4(finalColor, 1.0);
+}
+
+

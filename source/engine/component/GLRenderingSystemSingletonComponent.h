@@ -1,7 +1,7 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../../component/GLMeshDataComponent.h"
-#include "../../component/GLTextureDataComponent.h"
+#include "../component/GLMeshDataComponent.h"
+#include "../component/GLTextureDataComponent.h"
 
 class GLRenderingSystemSingletonComponent
 {

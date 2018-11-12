@@ -1,6 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../system/HighLevelSystem/GLHeaders.h"
+#include "../system/GLHeaders.h"
 
 class GLMeshDataComponent
 {

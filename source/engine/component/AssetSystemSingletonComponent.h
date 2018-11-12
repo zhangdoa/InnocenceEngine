@@ -28,16 +28,16 @@ public:
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshComponents;
 	ThreadSafeQueue<TextureDataComponent*> m_uninitializedTextureComponents;
 
-	EntityID m_UnitLineTemplate;
-	EntityID m_UnitQuadTemplate;
-	EntityID m_UnitCubeTemplate;
-	EntityID m_UnitSphereTemplate;
+	MeshDataComponent* m_UnitLineTemplate;
+	MeshDataComponent* m_UnitQuadTemplate;
+	MeshDataComponent* m_UnitCubeTemplate;
+	MeshDataComponent* m_UnitSphereTemplate;
 
-	EntityID m_basicNormalTemplate;
-	EntityID m_basicAlbedoTemplate;
-	EntityID m_basicMetallicTemplate;
-	EntityID m_basicRoughnessTemplate;
-	EntityID m_basicAOTemplate;
+	texturePair m_basicNormalTemplate;
+	texturePair m_basicAlbedoTemplate;
+	texturePair m_basicMetallicTemplate;
+	texturePair m_basicRoughnessTemplate;
+	texturePair m_basicAOTemplate;
 
 	std::unordered_map<std::string, modelMap> m_loadedModelMap;
 	std::unordered_map<std::string, texturePair> m_loadedTextureMap;

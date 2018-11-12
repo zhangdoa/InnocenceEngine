@@ -1,0 +1,30 @@
+// shadertype=<glsl>
+#version 330 core
+layout (location = 0) out vec4 uni_motionBlurPassRT0;
+in vec2 thefrag_TexCoord;
+
+uniform sampler2D uni_motionVectorTexture;
+uniform sampler2D uni_TAAPassRT0;
+
+void main()
+{
+    vec2 MotionVector = texture(uni_motionVectorTexture, thefrag_TexCoord).xy / 2.0;
+    if (MotionVector == vec2(0.0, 0.0))
+    {
+    	uni_motionBlurPassRT0 = texture(uni_TAAPassRT0, thefrag_TexCoord);
+    }
+    else
+    {
+	    vec4 Color = vec4(0.0);
+	    vec2 TexCoord = thefrag_TexCoord;
+	    Color += texture(uni_TAAPassRT0, TexCoord) * 0.6;
+	    TexCoord -= MotionVector;
+	    Color += texture(uni_TAAPassRT0, TexCoord) * 0.2;
+	    TexCoord -= MotionVector;
+	    Color += texture(uni_TAAPassRT0, TexCoord) * 0.12;
+	    TexCoord -= MotionVector;
+	    Color += texture(uni_TAAPassRT0, TexCoord) * 0.08;
+	    //use alpha channel as mask
+		  uni_motionBlurPassRT0 = vec4(Color.rgb, 1.0);
+    }
+}

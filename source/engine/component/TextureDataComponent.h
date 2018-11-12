@@ -3,13 +3,12 @@
 class TextureDataComponent
 {
 public:
-	TextureDataComponent() { m_textureID = std::rand(); };
+	TextureDataComponent() {};
 	~TextureDataComponent() {};
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	EntityID m_textureID;
 	textureType m_textureType;
 	textureColorComponentsFormat m_textureColorComponentsFormat;
 	texturePixelDataFormat m_texturePixelDataFormat;
@@ -19,6 +18,6 @@ public:
 	int m_textureWidth;
 	int m_textureHeight;
 	texturePixelDataType m_texturePixelDataType;
-	std::vector<void *> m_textureData;
+	std::vector<void*> m_textureData;
 };
 

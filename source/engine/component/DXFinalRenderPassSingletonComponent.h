@@ -1,6 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../system/HighLevelSystem/DXHeaders.h"
+#include "../system/DXHeaders.h"
 
 
 class DXFinalRenderPassSingletonComponent
