@@ -1,131 +1,257 @@
 #include "InnoApplication.h"
-#include "../exports/LowLevelSystem_Export.h"
-#include "../exports/HighLevelSystem_Export.h"
-#include "../system/LowLevelSystem/TimeSystem.h"
-#include "../system/LowLevelSystem/LogSystem.h"
-#include "../system/LowLevelSystem/MemorySystem.h"
-#include "../system/LowLevelSystem/TaskSystem.h"
-#include "../system/HighLevelSystem/GameSystem.h"
-#include "../system/HighLevelSystem/AssetSystem.h"
-#include "../system/HighLevelSystem/PhysicsSystem.h"
-#include "../system/HighLevelSystem/VisionSystem.h"
+#include "../system/CoreSystem.h"
+#include "../../game/GameInstance.h"
 
 namespace InnoApplication
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+
+	ICoreSystem* g_pCoreSystem;
+	std::unique_ptr<InnoCoreSystem> m_pCoreSystem;
+	IGameInstance* g_pGameInstance;
+	std::unique_ptr<GameInstance> m_pGameInstance;
 }
 
 bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {	
-	if (!InnoTimeSystem::setup())
+	m_pCoreSystem = std::make_unique<InnoCoreSystem>();
+	g_pCoreSystem = m_pCoreSystem.get();
+
+	m_pGameInstance = std::make_unique<GameInstance>();
+	g_pGameInstance = m_pGameInstance.get();
+
+	if (g_pCoreSystem)
+	{
+		if (!g_pCoreSystem->setup())
+		{
+			return false;
+		}
+
+		if (!g_pCoreSystem->getTimeSystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("TimeSystem setup finished.");
+
+		if (!g_pCoreSystem->getLogSystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("LogSystem setup finished.");
+
+		if (!g_pCoreSystem->getMemorySystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("MemorySystem setup finished.");
+
+		if (!g_pCoreSystem->getTaskSystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("TaskSystem setup finished.");
+
+		// @TODO: Time-domain coupling
+		g_pCoreSystem->getGameSystem()->g_pMemorySystem = g_pCoreSystem->getMemorySystem();
+
+		if (!g_pCoreSystem->getGameSystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("GameSystem setup finished.");
+
+		if (!g_pGameInstance->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("GameInstance setup finished.");
+
+		if (!g_pCoreSystem->getAssetSystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("AssetSystem setup finished.");
+
+		if (!g_pCoreSystem->getPhysicsSystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("PhysicsSystem setup finished.");
+
+		if (!g_pCoreSystem->getVisionSystem()->setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog("VisionSystem setup finished.");
+
+		m_objectStatus = objectStatus::ALIVE;
+
+		g_pCoreSystem->getLogSystem()->printLog("Engine setup finished.");
+		return true;
+	}
+	else
 	{
 		return false;
 	}
-	InnoLogSystem::printLog("TimeSystem setup finished.");
-
-	if (!InnoLogSystem::setup())
-	{
-		return false;
-	}
-	InnoLogSystem::printLog("LogSystem setup finished.");
-
-	if (!InnoMemorySystem::setup())
-	{
-		return false;
-	}
-	InnoLogSystem::printLog("MemorySystem setup finished.");
-
-	if (!InnoTaskSystem::setup())
-	{
-		return false;
-	}
-	InnoLogSystem::printLog("TaskSystem setup finished.");
-
-	if (!InnoGameSystem::setup())
-	{
-		return false;
-	}
-	InnoLogSystem::printLog("GameSystem setup finished.");
-
-	if (!InnoAssetSystem::setup())
-	{
-		return false;
-	}
-	InnoLogSystem::printLog("AssetSystem setup finished.");
-
-	if (!InnoPhysicsSystem::setup())
-	{
-		return false;
-	}
-	InnoLogSystem::printLog("PhysicsSystem setup finished.");
-
-	if (!InnoVisionSystem::setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
-	{
-		return false;
-	}
-	InnoLogSystem::printLog("VisionSystem setup finished.");
-
-	m_objectStatus = objectStatus::ALIVE;
-
-	InnoLogSystem::printLog("Engine setup finished.");
-	return true;
 }
 
 bool InnoApplication::initialize()
 {
-	// @TODO: return value check
-	InnoTimeSystem::initialize();
-	InnoLogSystem::initialize();
-	InnoMemorySystem::initialize();
-	InnoTaskSystem::initialize();
-	InnoGameSystem::initialize();
-	InnoAssetSystem::initialize();
-	InnoPhysicsSystem::initialize();
-	InnoVisionSystem::initialize();
+	if (!g_pCoreSystem->getTimeSystem()->initialize())
+	{
+		return false;
+	}
 
-	InnoLogSystem::printLog("Engine has been initialized.");
+	if (!g_pCoreSystem->getLogSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getMemorySystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getTaskSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getGameSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pGameInstance->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getAssetSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getPhysicsSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getVisionSystem()->initialize())
+	{
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog("Engine has been initialized.");
+
 	return true;
 }
 
 bool InnoApplication::update()
 {
-	// @TODO: return value check
-	InnoTimeSystem::update();
-	InnoLogSystem::update();
-	InnoMemorySystem::update();
-	InnoTaskSystem::update();
+	if (!g_pCoreSystem->getTimeSystem()->update())
+	{
+		return false;
+	}
 
-	InnoGameSystem::update();
-	InnoAssetSystem::update();
-	InnoPhysicsSystem::update();
+	if (!g_pCoreSystem->getLogSystem()->update())
+	{
+		return false;
+	}
 
-	if (InnoVisionSystem::getStatus() == objectStatus::ALIVE)
-	{	
-		InnoVisionSystem::update();
-		InnoGameSystem::updateTransform();
-		return true;
+	if (!g_pCoreSystem->getMemorySystem()->update())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getTaskSystem()->update())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getGameSystem()->update())
+	{
+		return false;
+	}
+
+	if (!g_pGameInstance->update())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getAssetSystem()->update())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getPhysicsSystem()->update())
+	{
+		return false;
+	}
+
+	if (g_pCoreSystem->getVisionSystem()->getStatus() == objectStatus::ALIVE)
+	{
+		if (!g_pCoreSystem->getVisionSystem()->update())
+		{
+			return false;
+		}
+		g_pCoreSystem->getGameSystem()->saveComponentsCapture();
 	}
 	else
 	{
 		m_objectStatus = objectStatus::STANDBY;
-		InnoLogSystem::printLog("Engine is stand-by.");
+		g_pCoreSystem->getLogSystem()->printLog("Engine is stand-by.");
 		return false;
 	}
+	return true;
 }
 
 bool InnoApplication::terminate()
 {
-	// @TODO: return value check
-	InnoVisionSystem::terminate();
-	InnoPhysicsSystem::terminate();
+	if (!g_pCoreSystem->getVisionSystem()->terminate())
+	{
+		return false;
+	}
 
-	InnoAssetSystem::terminate();
-	InnoGameSystem::terminate();
+	if (!g_pCoreSystem->getPhysicsSystem()->terminate())
+	{
+		return false;
+	}
 
-	InnoMemorySystem::terminate();
-	InnoTaskSystem::terminate();
-	InnoLogSystem::terminate();
-	InnoTimeSystem::terminate();
+	if (!g_pCoreSystem->getAssetSystem()->terminate())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getGameSystem()->terminate())
+	{
+		return false;
+	}
+
+	if (!g_pGameInstance->terminate())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getTaskSystem()->terminate())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getMemorySystem()->terminate())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getLogSystem()->terminate())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getTimeSystem()->terminate())
+	{
+		return false;
+	}
 
 	m_objectStatus = objectStatus::SHUTDOWN;
 	return true;

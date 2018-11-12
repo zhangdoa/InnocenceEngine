@@ -1,0 +1,21 @@
+// shadertype=<glsl>
+#version 330 core
+
+layout (location = 0) in vec3 in_Position;
+layout (location = 1) in vec2 in_TexCoord;
+
+out vec2 thefrag_TexCoord;
+
+uniform vec3 uni_pos;
+uniform vec2 uni_size;
+uniform mat4 uni_p;
+uniform mat4 uni_r;
+uniform mat4 uni_t;
+
+void main()
+{
+	gl_Position = uni_p * uni_r * uni_t * vec4(uni_pos, 1.0);
+	gl_Position /= gl_Position.w;
+	gl_Position.xy += in_Position.xy * uni_size;
+	thefrag_TexCoord = in_TexCoord;
+}

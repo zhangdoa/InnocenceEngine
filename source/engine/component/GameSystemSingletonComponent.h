@@ -1,5 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
+#include "../common/ComponentHeaders.h"
 #include "../common/InnoConcurrency.h"
 
 class GameSystemSingletonComponent
@@ -16,13 +17,16 @@ public:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	// the SOA here
-	std::vector<TransformComponent*> m_transformComponents;
-	std::vector<VisibleComponent*> m_visibleComponents;
-	std::vector<LightComponent*> m_lightComponents;
-	std::vector<CameraComponent*> m_cameraComponents;
-	std::vector<InputComponent*> m_inputComponents;
-	std::vector<EnvironmentCaptureComponent*> m_environmentCaptureComponents;
+	// root TransformComponent
+	TransformComponent* m_rootTransformComponent;
+
+	// the AOS here
+	std::vector<TransformComponent*> m_TransformComponents;
+	std::vector<VisibleComponent*> m_VisibleComponents;
+	std::vector<LightComponent*> m_LightComponents;
+	std::vector<CameraComponent*> m_CameraComponents;
+	std::vector<InputComponent*> m_InputComponents;
+	std::vector<EnvironmentCaptureComponent*> m_EnvironmentCaptureComponents;
 
 	std::unordered_map<EntityID, TransformComponent*> m_TransformComponentsMap;
 	std::unordered_multimap<EntityID, VisibleComponent*> m_VisibleComponentsMap;

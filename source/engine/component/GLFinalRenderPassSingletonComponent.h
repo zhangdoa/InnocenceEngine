@@ -91,6 +91,7 @@ public:
 	GLFrameBufferComponent* m_debuggerPassFBC;
 	GLShaderProgramComponent* m_debuggerPassSPC;
 	GLuint m_debuggerPassVertexShaderID;
+	GLuint m_debuggerPassGeometryShaderID;
 	GLuint m_debuggerPassFragmentShaderID;
 	TextureDataComponent* m_debuggerPassTDC;
 	GLTextureDataComponent* m_debuggerPassGLTDC;

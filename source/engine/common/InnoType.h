@@ -2,20 +2,39 @@
 #include "../common/stdafx.h"
 #include "../common/config.h"
 
+#define INNO_INTERFACE class
+#define INNO_IMPLEMENT public
+#define INNO_PRIVATE_SCOPE namespace
+
 enum class objectStatus
 {
 	STANDBY,
 	ALIVE,
 	SHUTDOWN,
 };
+
 using EntityID = unsigned long;
+
+struct timeData
+{
+	int year;
+	unsigned month;
+	unsigned day;
+	unsigned hour;
+	unsigned minute;
+	long long second;
+	long long millisecond;
+};
+
+using Index = unsigned int;
+
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
 // mesh custom types
 enum class meshType { NORMAL, BOUNDING_BOX };
 enum class meshShapeType { LINE, QUAD, CUBE, SPHERE, CUSTOM };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 // texture custom types
-enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, ENVIRONMENT_CAPTURE, ENVIRONMENT_CONVOLUTION, ENVIRONMENT_PREFILTER, EQUIRETANGULAR, RENDER_BUFFER_SAMPLER, SHADOWMAP };
+enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, ENVIRONMENT_CAPTURE, ENVIRONMENT_CONVOLUTION, ENVIRONMENT_PREFILTER, EQUIRETANGULAR, RENDER_BUFFER_SAMPLER, SHADOWMAP };
 enum class textureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8, DEPTH_COMPONENT };
 enum class texturePixelDataFormat { RED, RG, RGB, RGBA, DEPTH_COMPONENT };
 enum class texturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, FLOAT };
@@ -81,7 +100,7 @@ struct buttonHasher
 };
 
 using buttonStatusCallbackMap = std::unordered_map<button, std::vector<std::function<void()>*>, buttonHasher>;
-using mouseMovementCallbackMap = std::unordered_map<int, std::vector<std::function<void(double)>*>>;
+using mouseMovementCallbackMap = std::unordered_map<int, std::vector<std::function<void(float)>*>>;
 
 #define INNO_KEY_SPACE              32
 #define INNO_KEY_APOSTROPHE         39  /* ' */

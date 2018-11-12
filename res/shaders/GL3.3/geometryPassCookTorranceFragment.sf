@@ -1,0 +1,70 @@
+// shadertype=glsl
+#version 330 core
+layout (location = 0) out vec4 uni_geometryPassRT0;
+layout (location = 1) out vec4 uni_geometryPassRT1;
+layout (location = 2) out vec4 uni_geometryPassRT2;
+layout (location = 3) out vec4 uni_geometryPassRT3;
+layout (location = 4) out vec4 uni_geometryPassRT4;
+layout (location = 5) out vec4 uni_geometryPassRT5;
+layout (location = 6) out vec4 uni_geometryPassRT6;
+layout (location = 7) out vec4 uni_geometryPassRT7;
+
+in vec4 thefrag_WorldSpacePos;
+in vec4 thefrag_ClipSpacePos_current;
+in vec4 thefrag_ClipSpacePos_previous;
+in vec2 thefrag_TexCoord;
+in vec3 thefrag_Normal;
+in vec4 thefrag_LightSpacePos_0;
+in vec4 thefrag_LightSpacePos_1;
+in vec4 thefrag_LightSpacePos_2;
+in vec4 thefrag_LightSpacePos_3;
+
+uniform sampler2D uni_normalTexture;
+uniform sampler2D uni_albedoTexture;
+uniform sampler2D uni_metallicTexture;
+uniform sampler2D uni_roughnessTexture;
+uniform sampler2D uni_aoTexture;
+
+uniform bool uni_useTexture = true;
+uniform vec3 uni_albedo;
+uniform vec3 uni_MRA;
+
+void main()
+{    
+	// let glsl calculate partial derivatives!
+    vec3 Q1  = dFdx(thefrag_WorldSpacePos.xyz);
+    vec3 Q2  = dFdy(thefrag_WorldSpacePos.xyz);
+    vec2 st1 = dFdx(thefrag_TexCoord);
+    vec2 st2 = dFdy(thefrag_TexCoord);
+
+    vec3 N   = normalize(thefrag_Normal);
+    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 B  = -normalize(cross(N, T));
+
+    mat3 TBN = mat3(T, B, N);
+
+	vec3 WorldSpaceNormal = normalize(TBN * (texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0));
+	vec3 albedo;
+	vec3 MRA;
+	
+	if(uni_useTexture)
+	{	
+		albedo = texture(uni_albedoTexture, thefrag_TexCoord).rgb;
+		MRA = vec3(texture(uni_metallicTexture, thefrag_TexCoord).r, texture(uni_roughnessTexture, thefrag_TexCoord).r, texture(uni_aoTexture, thefrag_TexCoord).r);
+	}
+	else
+	{
+		albedo = uni_albedo;
+		MRA = uni_MRA;
+	}
+
+	uni_geometryPassRT0 = vec4(thefrag_WorldSpacePos.xyz, MRA.r);
+	uni_geometryPassRT1 = vec4(WorldSpaceNormal, MRA.g);
+	uni_geometryPassRT2 = vec4(albedo, MRA.b);
+	vec4 motionVec = thefrag_ClipSpacePos_current/thefrag_ClipSpacePos_current.w - thefrag_ClipSpacePos_previous/thefrag_ClipSpacePos_previous.w;
+	uni_geometryPassRT3 = vec4(motionVec.xyz, 1.0);
+	uni_geometryPassRT4 = thefrag_LightSpacePos_0;
+	uni_geometryPassRT5 = thefrag_LightSpacePos_1;
+	uni_geometryPassRT6 = thefrag_LightSpacePos_2;
+	uni_geometryPassRT7 = thefrag_LightSpacePos_3;
+}
