@@ -26,11 +26,6 @@ For glfw:
 See: source/external/include/GLFW/LICENSE.md
 
 ---------------
-For assimp:
----------------
-See: source/external/include/assimp/LICENSE.md
-
----------------
 For Dear ImGui:
 ---------------
 See: source/engine/third-party/ImGui/LICENSE.txt
