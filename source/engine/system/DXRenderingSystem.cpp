@@ -77,25 +77,22 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent = &DXRenderingSystemSingletonComponent::getInstance();
 
 	HRESULT result;
-	IDXGIFactory* factory;
-	IDXGIAdapter* adapter;
-	IDXGIOutput* adapterOutput;
+	IDXGIFactory* m_factory;
+
+	DXGI_ADAPTER_DESC adapterDesc;
+	IDXGIAdapter* m_adapter;
+	IDXGIOutput* m_adapterOutput;
+
 	unsigned int numModes, i, numerator, denominator;
 	unsigned long long stringLength;
 	DXGI_MODE_DESC* displayModeList;
-	DXGI_ADAPTER_DESC adapterDesc;
+
 	int error;
-	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 	D3D_FEATURE_LEVEL featureLevel;
-	ID3D11Texture2D* backBufferPtr;
-	D3D11_TEXTURE2D_DESC depthBufferDesc;
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
-	D3D11_RASTERIZER_DESC rasterDesc;
-	D3D11_VIEWPORT viewport;
+
 
 	// Create a DirectX graphics interface factory.
-	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
+	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&m_factory);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create DXGI factory!");
@@ -104,7 +101,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Use the factory to create an adapter for the primary graphics interface (video card).
-	result = factory->EnumAdapters(0, &adapter);
+	result = m_factory->EnumAdapters(0, &m_adapter);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create video card adapter!");
@@ -113,7 +110,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Enumerate the primary adapter output (monitor).
-	result = adapter->EnumOutputs(0, &adapterOutput);
+	result = m_adapter->EnumOutputs(0, &m_adapterOutput);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create monitor adapter!");
@@ -122,7 +119,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
-	result = adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
+	result = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
@@ -134,7 +131,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	displayModeList = new DXGI_MODE_DESC[numModes];
 
 	// Now fill the display mode list structures.
-	result = adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList);
+	result = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't fill the display mode list structures!");
@@ -157,7 +154,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Get the adapter (video card) description.
-	result = adapter->GetDesc(&adapterDesc);
+	result = m_adapter->GetDesc(&adapterDesc);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't get the video card adapter description!");
@@ -182,78 +179,78 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	displayModeList = 0;
 
 	// Release the adapter output.
-	adapterOutput->Release();
-	adapterOutput = 0;
+	m_adapterOutput->Release();
+	m_adapterOutput = 0;
 
 	// Release the adapter.
-	adapter->Release();
-	adapter = 0;
+	m_adapter->Release();
+	m_adapter = 0;
 
 	// Release the factory.
-	factory->Release();
-	factory = 0;
+	m_factory->Release();
+	m_factory = 0;
 
 	// Initialize the swap chain description.
-	ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
+	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc, sizeof(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc));
 
 	// Set to a single back buffer.
-	swapChainDesc.BufferCount = 1;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferCount = 1;
 
 	// Set the width and height of the back buffer.
-	swapChainDesc.BufferDesc.Width = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	swapChainDesc.BufferDesc.Height = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.Width = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.Height = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
 
 	// Set regular 32-bit surface for the back buffer.
-	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	// Set the refresh rate of the back buffer.
 	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_vsync_enabled)
 	{
-		swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
-		swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
 	}
 	else
 	{
-		swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
-		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 	}
 
 	// Set the usage of the back buffer.
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 
 	// Set the handle for the window to render to.
-	swapChainDesc.OutputWindow = DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.OutputWindow = DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd;
 
 	// Turn multisampling off.
-	swapChainDesc.SampleDesc.Count = 1;
-	swapChainDesc.SampleDesc.Quality = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.SampleDesc.Count = 1;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.SampleDesc.Quality = 0;
 
 	// Set to full screen or windowed mode.
 	if (DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_fullScreen)
 	{
-		swapChainDesc.Windowed = false;
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.Windowed = false;
 	}
 	else
 	{
-		swapChainDesc.Windowed = true;
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.Windowed = true;
 	}
 
 	// Set the scan line ordering and scaling to unspecified.
-	swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 
 	// Discard the back buffer contents after presenting.
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
 	// Don't set the advanced flags.
-	swapChainDesc.Flags = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.Flags = 0;
 
 	// Set the feature level to DirectX 11.
 	featureLevel = D3D_FEATURE_LEVEL_11_0;
 
 	// Create the swap chain, Direct3D device, and Direct3D device context.
 	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, &featureLevel, 1,
-		D3D11_SDK_VERSION, &swapChainDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext);
+		D3D11_SDK_VERSION, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the swap chain/D3D device/D3D device context!");
@@ -262,7 +259,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Get the pointer to the back buffer.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetTexture);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't get back buffer pointer!");
@@ -271,7 +268,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Create the render target view with the back buffer pointer.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRenderTargetView(backBufferPtr, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRenderTargetView(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetTexture, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create render target view!");
@@ -280,27 +277,27 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Release pointer to the back buffer as we no longer need it.
-	backBufferPtr->Release();
-	backBufferPtr = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetTexture->Release();
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetTexture = 0;
 
 	// Initialize the description of the depth buffer.
-	ZeroMemory(&depthBufferDesc, sizeof(depthBufferDesc));
+	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc, sizeof(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc));
 
 	// Set up the description of the depth buffer.
-	depthBufferDesc.Width = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	depthBufferDesc.Height = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
-	depthBufferDesc.MipLevels = 1;
-	depthBufferDesc.ArraySize = 1;
-	depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthBufferDesc.SampleDesc.Count = 1;
-	depthBufferDesc.SampleDesc.Quality = 0;
-	depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	depthBufferDesc.CPUAccessFlags = 0;
-	depthBufferDesc.MiscFlags = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.Width = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.Height = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.MipLevels = 1;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.ArraySize = 1;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.SampleDesc.Count = 1;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.SampleDesc.Quality = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.CPUAccessFlags = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.MiscFlags = 0;
 
 	// Create the texture for the depth buffer using the filled out description.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(&depthBufferDesc, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilBuffer);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the texture for the depth buffer!");
@@ -309,31 +306,31 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Initialize the description of the stencil state.
-	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc, sizeof(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc));
 
 	// Set up the description of the stencil state.
-	depthStencilDesc.DepthEnable = true;
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.DepthEnable = true;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
-	depthStencilDesc.StencilEnable = true;
-	depthStencilDesc.StencilReadMask = 0xFF;
-	depthStencilDesc.StencilWriteMask = 0xFF;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.StencilEnable = true;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.StencilReadMask = 0xFF;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.StencilWriteMask = 0xFF;
 
 	// Stencil operations if pixel is front-facing.
-	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
 	// Stencil operations if pixel is back-facing.
-	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
 	// Create the depth stencil state.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilState(&depthStencilDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilState(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the depth stencil state!");
@@ -345,15 +342,15 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetDepthStencilState(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState, 1);
 
 	// Initialize the depth stencil view.
-	ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
+	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc, sizeof(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc));
 
 	// Set up the depth stencil view description.
-	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	depthStencilViewDesc.Texture2D.MipSlice = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilView(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilBuffer, &depthStencilViewDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilView(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the depth stencil view!");
@@ -365,19 +362,19 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetRenderTargets(1, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView, DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
 
 	// Setup the raster description which will determine how and what polygons will be drawn.
-	rasterDesc.AntialiasedLineEnable = false;
-	rasterDesc.CullMode = D3D11_CULL_BACK;
-	rasterDesc.DepthBias = 0;
-	rasterDesc.DepthBiasClamp = 0.0f;
-	rasterDesc.DepthClipEnable = true;
-	rasterDesc.FillMode = D3D11_FILL_SOLID;
-	rasterDesc.FrontCounterClockwise = false;
-	rasterDesc.MultisampleEnable = false;
-	rasterDesc.ScissorEnable = false;
-	rasterDesc.SlopeScaledDepthBias = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.AntialiasedLineEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.CullMode = D3D11_CULL_BACK;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.DepthBias = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.DepthBiasClamp = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.DepthClipEnable = true;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.FillMode = D3D11_FILL_SOLID;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.FrontCounterClockwise = false;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.MultisampleEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.ScissorEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.SlopeScaledDepthBias = 0.0f;
 
 	// Create the rasterizer state from the description we just filled out.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRasterizerState(&rasterDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRasterizerState(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the rasterizer state!");
@@ -389,15 +386,15 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetState(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState);
 
 	// Setup the viewport for rendering.
-	viewport.Width = (float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	viewport.Height = (float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.Width = (float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.Height = (float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.MinDepth = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.MaxDepth = 1.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.TopLeftX = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.TopLeftY = 0.0f;
 
 	// Create the viewport.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetViewports(1, &viewport);
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetViewports(1, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport);
 
 	DXRenderingSystemNS::m_objectStatus = objectStatus::ALIVE;
 	return true;
@@ -468,10 +465,10 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::terminate()
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState = 0;
 	}
 
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilBuffer)
+	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilBuffer->Release();
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilBuffer = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture->Release();
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture = 0;
 	}
 
 	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView)
@@ -506,6 +503,10 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::terminate()
 objectStatus DXRenderingSystem::getStatus()
 {
 	return DXRenderingSystemNS::m_objectStatus;
+}
+
+void  DXRenderingSystemNS::initializeGeometryPass()
+{
 }
 
 void DXRenderingSystemNS::initializeFinalBlendPass()

@@ -20,14 +20,28 @@ public:
 	bool m_vsync_enabled;
 	int m_videoCardMemory;
 	char m_videoCardDescription[128];
+
+	DXGI_SWAP_CHAIN_DESC m_swapChainDesc;
 	IDXGISwapChain* m_swapChain;
+
 	ID3D11Device* m_device;
 	ID3D11DeviceContext* m_deviceContext;
+
+	ID3D11Texture2D* m_renderTargetTexture;
 	ID3D11RenderTargetView* m_renderTargetView;
-	ID3D11Texture2D* m_depthStencilBuffer;
+
+	D3D11_TEXTURE2D_DESC m_depthTextureDesc;
+	D3D11_DEPTH_STENCIL_DESC m_depthStencilDesc;
+	ID3D11Texture2D* m_depthStencilTexture;
 	ID3D11DepthStencilState* m_depthStencilState;
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC m_depthStencilViewDesc;
 	ID3D11DepthStencilView* m_depthStencilView;
+
+	D3D11_RASTERIZER_DESC m_rasterDesc;
 	ID3D11RasterizerState* m_rasterState;
+
+	D3D11_VIEWPORT m_viewport;
 
 	std::unordered_map<EntityID, DXMeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, DXTextureDataComponent*> m_textureMap;

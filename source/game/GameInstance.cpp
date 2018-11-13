@@ -182,6 +182,8 @@ namespace GameInstanceNS
 	void updateSpheres(float seed);
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+
+	InnoFuture<void>* m_asyncTask;
 }
 
 INNO_GAME_EXPORT bool GameInstance::setup()
@@ -289,9 +291,14 @@ INNO_GAME_EXPORT bool GameInstance::initialize()
 
 INNO_GAME_EXPORT bool GameInstance::update()
 {
-	GameInstanceNS::temp += 0.02f;
-	GameInstanceNS::updateLights(GameInstanceNS::temp);
-	GameInstanceNS::updateSpheres(GameInstanceNS::temp);
+	GameInstanceNS::m_asyncTask = &g_pCoreSystem->getTaskSystem()->submit([]()
+	{
+		GameInstanceNS::temp += 0.02f;
+		GameInstanceNS::updateLights(GameInstanceNS::temp);
+		GameInstanceNS::updateSpheres(GameInstanceNS::temp);
+	}
+	);
+
 	return true;
 }
 
