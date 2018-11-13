@@ -812,6 +812,9 @@ void GLRenderingSystemNS::initializeLightRenderPass()
 		LightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitPoints.emplace_back(
 			getUniformLocation(l_GLSPC->m_program, "uni_shadowSplitPoints[" + ss.str() + "]")
 		);
+		LightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitAreas.emplace_back(
+			getUniformLocation(l_GLSPC->m_program, "uni_shadowSplitAreas[" + ss.str() + "]")
+		);
 	}
 	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size(); i++)
 	{
@@ -2736,17 +2739,19 @@ void GLRenderingSystemNS::updateLightRenderPass()
 		auto l_viewPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
 		for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size(); i++)
 		{
-			auto l_lightPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
+			auto l_lightComponent = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i];
+			auto l_lightPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformVector.m_pos;
 
 			auto l_dirLightDirection =
-				InnoMath::getDirection(direction::BACKWARD, g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_parentEntity)->m_localTransformVector.m_rot);
+				InnoMath::getDirection(direction::BACKWARD, g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_localTransformVector.m_rot);
 
-			auto l_lightColor = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_color;
+			auto l_lightColor = l_lightComponent->m_color;
+
 			updateUniform(
 				LightRenderPassSingletonComponent::getInstance().m_uni_viewPos,
 				l_viewPos.x, l_viewPos.y, l_viewPos.z);
 
-			if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_lightType == lightType::DIRECTIONAL)
+			if (l_lightComponent->m_lightType == lightType::DIRECTIONAL)
 			{
 				l_pointLightIndexOffset -= 1;
 				updateUniform(
@@ -2758,15 +2763,28 @@ void GLRenderingSystemNS::updateLightRenderPass()
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_dirLight_color,
 					l_lightColor.x, l_lightColor.y, l_lightColor.z);
+
+				for (size_t j = 0; j < 4; j++)
+				{
+					auto l_shadowSplitCorner = vec4(
+						l_lightComponent->m_AABBs[j].m_boundMin.x, 
+						l_lightComponent->m_AABBs[j].m_boundMin.z,
+						l_lightComponent->m_AABBs[j].m_boundMax.x,
+						l_lightComponent->m_AABBs[j].m_boundMax.z
+					);
+					updateUniform(
+						LightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitAreas[j],
+						l_shadowSplitCorner.x, l_shadowSplitCorner.y, l_shadowSplitCorner.z, l_shadowSplitCorner.w);
+				}
 			}
-			else if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_lightType == lightType::POINT)
+			else if (l_lightComponent->m_lightType == lightType::POINT)
 			{
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position[i + l_pointLightIndexOffset],
 					l_lightPos.x, l_lightPos.y, l_lightPos.z);
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_radius[i + l_pointLightIndexOffset],
-					GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_radius);
+					l_lightComponent->m_radius);
 				updateUniform(
 					LightRenderPassSingletonComponent::getInstance().m_uni_pointLights_color[i + l_pointLightIndexOffset],
 					l_lightColor.x, l_lightColor.y, l_lightColor.z);

@@ -18,7 +18,7 @@ struct pointLight {
 
 const float PI = 3.14159265359;
 const int NR_POINT_LIGHTS = 64;
-const int NR_CSM_POINTS = 4;
+const int NR_CSM_SPLITS = 4;
 const float MAX_REFLECTION_LOD = 4.0;
 bool uni_drawCSMSplitedArea = false;
 
@@ -34,7 +34,8 @@ uniform sampler2D uni_shadowMap_0;
 uniform sampler2D uni_shadowMap_1;
 uniform sampler2D uni_shadowMap_2;
 uniform sampler2D uni_shadowMap_3;
-uniform float uni_shadowSplitPoints[NR_CSM_POINTS];
+uniform float uni_shadowSplitPoints[NR_CSM_SPLITS];
+uniform vec4 uni_shadowSplitAreas[NR_CSM_SPLITS];
 
 uniform samplerCube uni_irradianceMap;
 uniform samplerCube uni_preFiltedMap;
@@ -61,7 +62,7 @@ float orenNayarDiffuse(float LdotV,  float NdotL, float NdotV, float roughness)
   return max(0.0, NdotL) * (A + B * s / t);
 }
 
-// Frosbite Engine model
+// Frostbite Engine model
 // ----------------------------------------------------------------------------
 // Specular Fresnel Component
 // ----------------------------------------------------------------------------
@@ -339,31 +340,41 @@ float ShadowCalculation(dirLight light, vec3 normal, vec3 viewPos, vec3 fragPos)
 {
 	vec3 projCoords = vec3(0.0);
 	float shadow = 0.0;
-	vec4 gPassRT4 = texture(uni_geometryPassRT4, TexCoords);
-	vec4 gPassRT5 = texture(uni_geometryPassRT5, TexCoords);
-	vec4 gPassRT6 = texture(uni_geometryPassRT6, TexCoords);
-	vec4 gPassRT7 = texture(uni_geometryPassRT7, TexCoords);
 	
-	float distanceOfViewRatio = gPassRT4.a / (0.1 - 200.0);
+	int splitIndex = 3;
+	for( int i=0; i < NR_CSM_SPLITS; i++ )
+  {
+        if( fragPos.x >= uni_shadowSplitAreas[i].x && 
+            fragPos.z >= uni_shadowSplitAreas[i].y && 
+            fragPos.x <= uni_shadowSplitAreas[i].z && 
+            fragPos.z <= uni_shadowSplitAreas[i].w )
+        {
+					splitIndex = i;
+        }
+  }
 
-	if(distanceOfViewRatio < uni_shadowSplitPoints[0])
+	if(splitIndex == 0)
 	{
-		projCoords = gPassRT4.xyz;
+		vec4 gPassRT = texture(uni_geometryPassRT4, TexCoords);
+		projCoords = gPassRT.xyz;
 		shadow = PCF(projCoords, uni_shadowMap_0, light, normal, viewPos, fragPos);
 	}
-	else if(distanceOfViewRatio < uni_shadowSplitPoints[1])
+	else if(splitIndex == 1)
 	{
-		projCoords = gPassRT5.xyz;
+		vec4 gPassRT = texture(uni_geometryPassRT5, TexCoords);
+		projCoords = gPassRT.xyz;
 		shadow = PCF(projCoords, uni_shadowMap_1, light, normal, viewPos, fragPos);
 	}
-	else if(distanceOfViewRatio < uni_shadowSplitPoints[2])
+	else if(splitIndex == 2)
 	{
-		projCoords = gPassRT6.xyz;
+		vec4 gPassRT = texture(uni_geometryPassRT6, TexCoords);
+		projCoords = gPassRT.xyz;
 		shadow = PCF(projCoords, uni_shadowMap_2, light, normal, viewPos, fragPos);
 	}
-	else if(distanceOfViewRatio < uni_shadowSplitPoints[3])
-	{		
-	  projCoords = gPassRT7.xyz;
+	else if(splitIndex == 3)
+	{
+		vec4 gPassRT = texture(uni_geometryPassRT7, TexCoords);
+		projCoords = gPassRT.xyz;
 		shadow = PCF(projCoords, uni_shadowMap_3, light, normal, viewPos, fragPos);
 	}
 	else
@@ -426,29 +437,41 @@ void main()
 						
 			
 	if(uni_drawCSMSplitedArea)		
-	{
-		vec4 gPassRT4 = texture(uni_geometryPassRT4, TexCoords);
-		vec4 gPassRT5 = texture(uni_geometryPassRT5, TexCoords);
-		vec4 gPassRT6 = texture(uni_geometryPassRT6, TexCoords);
-		vec4 gPassRT7 = texture(uni_geometryPassRT7, TexCoords);
-		
-		float distanceOfViewRatio = gPassRT4.a / (0.1 -200.0);
-		if(distanceOfViewRatio < uni_shadowSplitPoints[0])
+	{	
+		int splitIndex = NR_CSM_SPLITS;
+		for( int i=0; i < NR_CSM_SPLITS; i++ )
+    {
+        if( FragPos.x >= uni_shadowSplitAreas[i].x && 
+            FragPos.z >= uni_shadowSplitAreas[i].y && 
+            FragPos.x <= uni_shadowSplitAreas[i].z && 
+            FragPos.z <= uni_shadowSplitAreas[i].w )
+        {
+					splitIndex = i;
+        }
+    }
+
+		if(splitIndex == 0)
 		{
-			Lo.r += 0.05;
+			Lo.r += 0.1;
 		}
-		else if(distanceOfViewRatio < uni_shadowSplitPoints[1])
+		else if(splitIndex == 1)
 		{
-			Lo.r += 0.05;
-			Lo.g += 0.05;
+			Lo.r += 0.1;
+			Lo.g += 0.1;
 		}
-		else if(distanceOfViewRatio < uni_shadowSplitPoints[2])
+		else if(splitIndex == 2)
 		{
-			Lo.g += 0.05;
+			Lo.g += 0.1;
+		}
+		else if(splitIndex == 3)
+		{
+			Lo.b += 0.1;
 		}
 		else
 		{
-			Lo.b += 0.05;
+			Lo.r += 0.1;
+			Lo.g += 0.1;
+			Lo.b += 0.1;
 		}
 	}
 	uni_lightPassRT0.rgb = Lo;
