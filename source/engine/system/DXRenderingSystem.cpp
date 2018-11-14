@@ -42,7 +42,7 @@ DXTextureDataComponent* getDXTextureDataComponent(EntityID rhs);
 bool initializeGeometryPass();
 bool initializeFinalBlendPass();
 
-void initializeShader(shaderType shaderType, const std::wstring & shaderFilePath);
+ID3D10Blob* loadShaderBuffer(shaderType shaderType, const std::wstring & shaderFilePath);
 void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 
 void prepareRenderingData();
@@ -55,8 +55,9 @@ void drawMesh(MeshDataComponent* MDC);
 void drawMesh(size_t indicesSize, DXMeshDataComponent * DXMDC);
 
 void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, mat4* parameterValue);
-void beginScene(float r, float g, float b, float a);
-void endScene();
+void cleanRTV(vec4 color, ID3D11RenderTargetView* RTV);
+void cleanDSV(ID3D11DepthStencilView* DSV);
+void swapBuffer();
 
 static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
 static DXWindowSystemSingletonComponent* g_DXWindowSystemSingletonComponent;
@@ -331,7 +332,9 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
 	// Create the depth stencil state.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilState(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilState(
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc, 
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the depth stencil state!");
@@ -340,10 +343,12 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Set the depth stencil state.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetDepthStencilState(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState, 1);
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetDepthStencilState(
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState, 1);
 
 	// Initialize the depth stencil view.
-	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc, sizeof(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc));
+	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc, sizeof(
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc));
 
 	// Set up the depth stencil view description.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -351,7 +356,10 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilView(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilView(
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture, 
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc, 
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the depth stencil view!");
@@ -360,7 +368,10 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Bind the render target view and depth stencil buffer to the output render pipeline.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetRenderTargets(1, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView, DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetRenderTargets(
+		1, 
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView, 
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
 
 	// Setup the raster description which will determine how and what polygons will be drawn.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.AntialiasedLineEnable = false;
@@ -375,7 +386,9 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.SlopeScaledDepthBias = 0.0f;
 
 	// Create the rasterizer state from the description we just filled out.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRasterizerState(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRasterizerState(
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc, 
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the rasterizer state!");
@@ -384,18 +397,18 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Now set the rasterizer state.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetState(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState);
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetState(
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState);
 
 	// Setup the viewport for rendering.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.Width = (float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.Height = (float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.Width = 
+		(float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.Height = 
+		(float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.MinDepth = 0.0f;
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.MaxDepth = 1.0f;
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.TopLeftX = 0.0f;
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.TopLeftY = 0.0f;
-
-	// Create the viewport.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetViewports(1, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport);
 
 	DXRenderingSystemNS::m_objectStatus = objectStatus::ALIVE;
 	return true;
@@ -432,12 +445,13 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 	// Clear the buffers to begin the scene.
 	DXRenderingSystemNS::prepareRenderingData();
 
-	DXRenderingSystemNS::beginScene(0.0f, 0.0f, 0.0f, 0.0f);
+	DXRenderingSystemNS::updateGeometryPass();
 
 	DXRenderingSystemNS::updateFinalBlendPass();
 
 	// Present the rendered scene to the screen.
-	DXRenderingSystemNS::endScene();
+	DXRenderingSystemNS::swapBuffer();
+
 	return true;
 }
 
@@ -512,11 +526,14 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	HRESULT result;
 
 	// Initialize the render target texture description.
-	ZeroMemory(&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc, sizeof(DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc));
+	ZeroMemory(&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc, 
+		sizeof(DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc));
 
 	// Setup the render target texture description.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Width = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Height = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
+	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Width = 
+		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
+	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Height = 
+		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.MipLevels = 1;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.ArraySize = 1;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -534,7 +551,10 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	for (auto i = 0; i < l_renderTargetNumbers; i++)
 	{
 		DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures.emplace_back();
-		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc, NULL, &DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures[i]);
+		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(
+			&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc, 
+			NULL, 
+			&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures[i]);
 		if (FAILED(result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create render target texture!");
@@ -544,7 +564,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	}
 
 	// Setup the description of the render target view.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc.Format = DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Format;
+	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc.Format = 
+		DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Format;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc.Texture2D.MipSlice = 0;
 
@@ -554,7 +575,10 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	for (auto i = 0; i < l_renderTargetNumbers; i++)
 	{
 		DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews.emplace_back();
-		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRenderTargetView(DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures[i], &DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc, &DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews[i]);
+		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRenderTargetView(
+			DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures[i], 
+			&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc,
+			&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews[i]);
 		if (FAILED(result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create render target view!");
@@ -564,7 +588,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	}
 
 	// Setup the description of the shader resource view.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.Format = DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Format;
+	DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.Format = 
+		DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Format;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.Texture2D.MipLevels = 1;
@@ -575,7 +600,10 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	for (auto i = 0; i < l_renderTargetNumbers; i++)
 	{
 		DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews.emplace_back();
-		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateShaderResourceView(DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures[i], &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc, &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[i]);
+		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateShaderResourceView(
+			DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures[i], 
+			&DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc,
+			&DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[i]);
 		if (FAILED(result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create shader resource view!");
@@ -585,11 +613,14 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	}
 
 	// Initialize the description of the depth buffer.
-	ZeroMemory(&DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc, sizeof(DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc));
+	ZeroMemory(&DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc, 
+		sizeof(DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc));
 
 	// Set up the description of the depth buffer.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Width = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Height = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
+	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Width = 
+		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
+	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Height = 
+		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.MipLevels = 1;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.ArraySize = 1;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -601,7 +632,10 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.MiscFlags = 0;
 
 	// Create the texture for the depth buffer using the filled out description.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(&DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc, NULL, &DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilBuffer);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(
+		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc, 
+		NULL,
+		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilBuffer);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create the texture for the depth buffer!");
@@ -610,7 +644,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	}
 
 	// Initailze the depth stencil view description.
-	ZeroMemory(&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc, sizeof(DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc));
+	ZeroMemory(&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc, 
+		sizeof(DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc));
 
 	// Set up the depth stencil view description.
 	DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -618,10 +653,13 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilView(DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilBuffer, &DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc, &DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilView(
+		DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilBuffer, 
+		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc, 
+		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the depth stencil view!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create the depth stencil view!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -634,9 +672,68 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	DXGeometryRenderPassSingletonComponent::getInstance().m_viewport.TopLeftX = 0.0f;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_viewport.TopLeftY = 0.0f;
 
-	DXRenderingSystemNS::initializeShader(shaderType::VERTEX, L"..//res//shaders//DX11//geometryPassCookTorranceVertex.sf");
+	ID3D10Blob* l_errorMessage;
+	ID3D10Blob* l_shaderBuffer;
 
-	DXRenderingSystemNS::initializeShader(shaderType::FRAGMENT, L"..//res//shaders//DX11//geometryPassCookTorrancePixel.sf");
+	// Initialize the pointers this function will use to null.
+	l_errorMessage = 0;
+	l_shaderBuffer = 0;
+
+	// Compile the shader code.
+	l_shaderBuffer = loadShaderBuffer(shaderType::VERTEX, L"..//res//shaders//DX11//geometryPassCookTorranceVertex.sf");
+
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateVertexShader(
+		l_shaderBuffer->GetBufferPointer(), l_shaderBuffer->GetBufferSize(),
+		NULL,
+		&DXGeometryRenderPassSingletonComponent::getInstance().m_vertexShader);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create vertex shader!");
+		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		return false;
+	}
+
+	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[3];
+	unsigned int l_numElements;
+
+	// Create the vertex input layout description.
+	l_polygonLayout[0].SemanticName = "POSITION";
+	l_polygonLayout[0].SemanticIndex = 0;
+	l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[0].InputSlot = 0;
+	l_polygonLayout[0].AlignedByteOffset = 0;
+	l_polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[0].InstanceDataStepRate = 0;
+
+	l_polygonLayout[1].SemanticName = "TEXCOORD";
+	l_polygonLayout[1].SemanticIndex = 0;
+	l_polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	l_polygonLayout[1].InputSlot = 0;
+	l_polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[1].InstanceDataStepRate = 0;
+
+	l_polygonLayout[2].SemanticName = "NORMAL";
+	l_polygonLayout[2].SemanticIndex = 0;
+	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	l_polygonLayout[2].InputSlot = 0;
+	l_polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[2].InstanceDataStepRate = 0;
+
+	// Get a count of the elements in the layout.
+	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
+
+	// Create the vertex input layout.
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateInputLayout(
+		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
+		l_shaderBuffer->GetBufferSize(), &DXGeometryRenderPassSingletonComponent::getInstance().m_layout);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create vertex shader layout!");
+		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		return false;
+	}
 
 	// Setup the description of the dynamic matrix constant buffer
 	DXGeometryRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -655,14 +752,97 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 		return false;
 	}
 
+	l_shaderBuffer->Release();
+	l_shaderBuffer = 0;
+
+	// Compile the shader code.
+	l_shaderBuffer = loadShaderBuffer(shaderType::FRAGMENT, L"..//res//shaders//DX11//geometryPassCookTorrancePixel.sf");
+
+	// Create the shader from the buffer.
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreatePixelShader(
+		l_shaderBuffer->GetBufferPointer(), 
+		l_shaderBuffer->GetBufferSize(), 
+		NULL, 
+		&DXGeometryRenderPassSingletonComponent::getInstance().m_pixelShader);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create pixel shader!");
+		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		return false;
+	}
+
+	l_shaderBuffer->Release();
+	l_shaderBuffer = 0;
+
 	return true;
 }
 
 bool DXRenderingSystemNS::initializeFinalBlendPass()
 {
-	DXRenderingSystemNS::initializeShader(shaderType::VERTEX, L"..//res//shaders//DX11//testVertex.sf");
+	HRESULT result;
+	ID3D10Blob* l_errorMessage;
+	ID3D10Blob* l_shaderBuffer;
 
-	DXRenderingSystemNS::initializeShader(shaderType::FRAGMENT, L"..//res//shaders//DX11//testPixel.sf");
+	// Initialize the pointers this function will use to null.
+	l_errorMessage = 0;
+	l_shaderBuffer = 0;
+
+	// Compile the shader code.
+	l_shaderBuffer = loadShaderBuffer(shaderType::VERTEX, L"..//res//shaders//DX11//testVertex.sf");
+
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateVertexShader(
+		l_shaderBuffer->GetBufferPointer(),
+		l_shaderBuffer->GetBufferSize(), 
+		NULL, 
+		&DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: FinalBlendPass: can't create vertex shader!");
+		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		return false;
+	}
+
+	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[3];
+	unsigned int l_numElements;
+
+	// Create the vertex input layout description.
+	l_polygonLayout[0].SemanticName = "POSITION";
+	l_polygonLayout[0].SemanticIndex = 0;
+	l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[0].InputSlot = 0;
+	l_polygonLayout[0].AlignedByteOffset = 0;
+	l_polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[0].InstanceDataStepRate = 0;
+
+	l_polygonLayout[1].SemanticName = "TEXCOORD";
+	l_polygonLayout[1].SemanticIndex = 0;
+	l_polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	l_polygonLayout[1].InputSlot = 0;
+	l_polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[1].InstanceDataStepRate = 0;
+
+	l_polygonLayout[2].SemanticName = "NORMAL";
+	l_polygonLayout[2].SemanticIndex = 0;
+	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	l_polygonLayout[2].InputSlot = 0;
+	l_polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[2].InstanceDataStepRate = 0;
+
+	// Get a count of the elements in the layout.
+	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
+
+	// Create the vertex input layout.
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateInputLayout(
+		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
+		l_shaderBuffer->GetBufferSize(), &DXFinalRenderPassSingletonComponent::getInstance().m_layout);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: FinalBlendPass: can't create vertex shader layout!");
+		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		return false;
+	}
 
 	// Setup the description of the dynamic matrix constant buffer
 	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -673,13 +853,38 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.StructureByteStride = 0;
 
 	// Create the constant buffer pointer
-	auto result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc, NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(
+		&DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc, 
+		NULL,
+		&DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: FinalBlendPass: can't create matrix buffer pointer!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
+
+	l_shaderBuffer->Release();
+	l_shaderBuffer = 0;
+
+	// Compile the shader code.
+	l_shaderBuffer = loadShaderBuffer(shaderType::FRAGMENT, L"..//res//shaders//DX11//testPixel.sf");
+
+	// Create the shader from the buffer.
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreatePixelShader(
+		l_shaderBuffer->GetBufferPointer(), 
+		l_shaderBuffer->GetBufferSize(), 
+		NULL,
+		&DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: FinalBlendPass: can't create pixel shader!");
+		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		return false;
+	}
+
+	l_shaderBuffer->Release();
+	l_shaderBuffer = 0;
 
 	// Create a texture sampler state description.
 	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -697,10 +902,12 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	// Create the texture sampler state.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateSamplerState(&DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc, &DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateSamplerState(
+		&DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc,
+		&DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create texture sampler state!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: FinalBlendPass: can't create texture sampler state!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -708,7 +915,7 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	return true;
 }
 
-void DXRenderingSystemNS::initializeShader(shaderType shaderType, const std::wstring & shaderFilePath)
+ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(shaderType shaderType, const std::wstring & shaderFilePath)
 {
 	auto l_shaderFilePath = shaderFilePath.c_str();
 	auto l_shaderName = std::string(shaderFilePath.begin(), shaderFilePath.end());
@@ -717,131 +924,46 @@ void DXRenderingSystemNS::initializeShader(shaderType shaderType, const std::wst
 	std::reverse(l_shaderName.begin(), l_shaderName.end());
 
 	HRESULT result;
-	ID3D10Blob* errorMessage;
-	ID3D10Blob* shaderBuffer;
+	ID3D10Blob* l_errorMessage;
+	ID3D10Blob* l_shaderBuffer;
 
-	// Initialize the pointers this function will use to null.
-	errorMessage = 0;
-	shaderBuffer = 0;
+	std::string l_shaderTypeName;
 
 	switch (shaderType)
 	{
 	case shaderType::VERTEX:
-		// Compile the shader code.
-		result = D3DCompileFromFile(l_shaderFilePath, NULL, NULL, l_shaderName.c_str(), "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
-			&shaderBuffer, &errorMessage);
-		if (FAILED(result))
-		{
-			// If the shader failed to compile it should have writen something to the error message.
-			if (errorMessage)
-			{
-				OutputShaderErrorMessage(errorMessage, DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, l_shaderName.c_str());
-			}
-			// If there was nothing in the error message then it simply could not find the shader file itself.
-			else
-			{
-				MessageBox(DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
-				g_pCoreSystem->getLogSystem()->printLog("Error: Shader creation failed: cannot find shader!");
-			}
-
-			return;
-		}
-		g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
-
-		// Create the shader from the buffer.
-		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateVertexShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader);
-		if (FAILED(result))
-		{
-			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create vertex shader!");
-			DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
-			return;
-		}
-		g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been created.");
-
-		D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
-		unsigned int numElements;
-
-		// Create the vertex input layout description.
-		polygonLayout[0].SemanticName = "POSITION";
-		polygonLayout[0].SemanticIndex = 0;
-		polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		polygonLayout[0].InputSlot = 0;
-		polygonLayout[0].AlignedByteOffset = 0;
-		polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		polygonLayout[0].InstanceDataStepRate = 0;
-
-		polygonLayout[1].SemanticName = "TEXCOORD";
-		polygonLayout[1].SemanticIndex = 0;
-		polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-		polygonLayout[1].InputSlot = 0;
-		polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-		polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		polygonLayout[1].InstanceDataStepRate = 0;
-
-		polygonLayout[2].SemanticName = "NORMAL";
-		polygonLayout[2].SemanticIndex = 0;
-		polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-		polygonLayout[2].InputSlot = 0;
-		polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-		polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		polygonLayout[2].InstanceDataStepRate = 0;
-
-		// Get a count of the elements in the layout.
-		numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
-
-		// Create the vertex input layout.
-		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateInputLayout(polygonLayout, numElements, shaderBuffer->GetBufferPointer(),
-			shaderBuffer->GetBufferSize(), &DXFinalRenderPassSingletonComponent::getInstance().m_layout);
-		if (FAILED(result))
-		{
-			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create shader layout!");
-			DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
-			return;
-		}
+		l_shaderTypeName = "vs_5_0";
 		break;
-
 	case shaderType::GEOMETRY:
+		l_shaderTypeName = "gs_5_0";
 		break;
-
 	case shaderType::FRAGMENT:
-		// Compile the shader code.
-		result = D3DCompileFromFile(l_shaderFilePath, NULL, NULL, l_shaderName.c_str(), "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
-			&shaderBuffer, &errorMessage);
-		if (FAILED(result))
-		{
-			// If the shader failed to compile it should have writen something to the error message.
-			if (errorMessage)
-			{
-				OutputShaderErrorMessage(errorMessage, DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, l_shaderName.c_str());
-			}
-			// If there was nothing in the error message then it simply could not find the shader file itself.
-			else
-			{
-				MessageBox(DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
-				g_pCoreSystem->getLogSystem()->printLog("Error: Shader creation failed: cannot find shader!");
-			}
-
-			return;
-		}
-		g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
-
-		// Create the shader from the buffer.
-		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreatePixelShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), NULL, &DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader);
-		if (FAILED(result))
-		{
-			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create pixel shader!");
-			DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
-			return;
-		}
-		g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been created.");
+		l_shaderTypeName = "ps_5_0";
 		break;
-
 	default:
 		break;
 	}
 
-	shaderBuffer->Release();
-	shaderBuffer = 0;
+	result = D3DCompileFromFile(l_shaderFilePath, NULL, NULL, l_shaderName.c_str(), l_shaderTypeName.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0,
+		&l_shaderBuffer, &l_errorMessage);
+	if (FAILED(result))
+	{
+		// If the shader failed to compile it should have writen something to the error message.
+		if (l_errorMessage)
+		{
+			OutputShaderErrorMessage(l_errorMessage, DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, l_shaderName.c_str());
+		}
+		// If there was nothing in the error message then it simply could not find the shader file itself.
+		else
+		{
+			MessageBox(DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
+			g_pCoreSystem->getLogSystem()->printLog("Error: Shader creation failed: cannot find shader!");
+		}
+
+		return nullptr;
+	}
+	g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
+	return l_shaderBuffer;
 }
 
 void DXRenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename)
@@ -1144,6 +1266,55 @@ void DXRenderingSystemNS::prepareRenderingData()
 	}
 }
 
+void DXRenderingSystemNS::updateGeometryPass()
+{
+	// Set the vertex and pixel shaders that will be used to render this triangle.
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->VSSetShader(
+		DXGeometryRenderPassSingletonComponent::getInstance().m_vertexShader, 
+		NULL, 
+		0);
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShader(
+		DXGeometryRenderPassSingletonComponent::getInstance().m_pixelShader, 
+		NULL, 
+		0);
+
+	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Set the vertex input layout.
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetInputLayout(DXGeometryRenderPassSingletonComponent::getInstance().m_layout);
+
+	// Set the render buffers to be the render target.
+	// Bind the render target view array and depth stencil buffer to the output render pipeline.
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetRenderTargets(
+		DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews.size(), 
+		&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews[0], 
+		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView[0]);
+
+	// Set the viewport.
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetViewports(
+		1, 
+		&DXGeometryRenderPassSingletonComponent::getInstance().m_viewport);
+
+	// Clear the render buffers.
+	for (auto i : DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews)
+	{
+		DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 1.0f), i);
+	}
+	DXRenderingSystemNS::cleanDSV(DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView);
+
+	// draw
+	while (DXRenderingSystemNS::m_MeshComponentRenderingQueue.size() > 0)
+	{
+		auto l_tuple = DXRenderingSystemNS::m_MeshComponentRenderingQueue.front();
+
+		updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &std::get<mat4>(l_tuple));
+		drawMesh(std::get<size_t>(l_tuple), std::get<DXMeshDataComponent*>(l_tuple));
+
+		DXRenderingSystemNS::m_MeshComponentRenderingQueue.pop();
+	}
+}
+
 void DXRenderingSystemNS::updateFinalBlendPass()
 {
 	// Set the vertex and pixel shaders that will be used to render this triangle.
@@ -1159,15 +1330,14 @@ void DXRenderingSystemNS::updateFinalBlendPass()
 	// Set the vertex input layout.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
 
-	while (DXRenderingSystemNS::m_MeshComponentRenderingQueue.size() > 0)
-	{
-		auto l_tuple = DXRenderingSystemNS::m_MeshComponentRenderingQueue.front();
+	// Set the viewport.
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetViewports(
+		1, 
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport);
 
-		updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &std::get<mat4>(l_tuple));
-		drawMesh(std::get<size_t>(l_tuple), std::get<DXMeshDataComponent*>(l_tuple));
-
-		DXRenderingSystemNS::m_MeshComponentRenderingQueue.pop();
-	}
+	// Clear the render buffers.
+	DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView);
+	DXRenderingSystemNS::cleanDSV(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
 }
 
 void DXRenderingSystemNS::drawMesh(EntityID rhs)
@@ -1251,24 +1421,25 @@ void DXRenderingSystemNS::updateShaderParameter(shaderType shaderType, ID3D11Buf
 	}
 }
 
-void DXRenderingSystemNS::beginScene(float r, float g, float b, float a)
+void DXRenderingSystemNS::cleanRTV(vec4 color, ID3D11RenderTargetView* RTV)
 {
-	float color[4];
+	float l_color[4];
 
 	// Setup the color to clear the buffer to.
-	color[0] = r;
-	color[1] = g;
-	color[2] = b;
-	color[3] = a;
+	l_color[0] = color.x;
+	l_color[1] = color.y;
+	l_color[2] = color.z;
+	l_color[3] = color.w;
 
-	// Clear the back buffer.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->ClearRenderTargetView(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView, color);
-
-	// Clear the depth buffer.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->ClearDepthStencilView(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->ClearRenderTargetView(RTV, l_color);
 }
 
-void DXRenderingSystemNS::endScene()
+void DXRenderingSystemNS::cleanDSV(ID3D11DepthStencilView* DSV)
+{
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+}
+
+void DXRenderingSystemNS::swapBuffer()
 {
 	// Present the back buffer to the screen since rendering is complete.
 	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_vsync_enabled)
