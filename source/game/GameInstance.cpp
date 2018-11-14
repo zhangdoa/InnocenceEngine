@@ -262,9 +262,6 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
 	GameInstanceNS::m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
 	GameInstanceNS::m_pawnVisibleComponent1->m_drawAABB = false;
-	GameInstanceNS::m_pawnVisibleComponent1->m_useTexture = true;
-	GameInstanceNS::m_pawnVisibleComponent1->m_albedo = vec4(0.95f, 0.93f, 0.88f, 1.0f);
-	GameInstanceNS::m_pawnVisibleComponent1->m_MRA = vec4(0.0f, 0.35f, 1.0f, 1.0f);
 
 	//setup pawn 2
 	GameInstanceNS::m_pawnEntity2 = InnoMath::createEntityID();
@@ -345,7 +342,6 @@ void GameInstanceNS::setupSpheres()
 		m_sphereVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 		m_sphereVisibleComponents[i]->m_drawAABB = true;
 		m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
-		m_sphereVisibleComponents[i]->m_useTexture = true;
 	}
 	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i += 4)
 	{
@@ -363,7 +359,6 @@ void GameInstanceNS::setupSpheres()
 		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 		{
 			m_sphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos = vec4((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), 0.0f, (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1), 1.0f);
-			m_sphereVisibleComponents[i * sphereMatrixDim + j]->m_MRA = vec4((float)(i) / (float)(sphereMatrixDim), (float)(j) / (float)(sphereMatrixDim), 1.0f, 1.0f);
 		}
 	}
 }
@@ -395,7 +390,6 @@ void GameInstanceNS::setupLights()
 		m_pointLightVisibleComponents[i]->m_visiblilityType = visiblilityType::EMISSIVE;
 		m_pointLightVisibleComponents[i]->m_meshShapeType = meshShapeType::SPHERE;
 		m_pointLightVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
-		m_pointLightVisibleComponents[i]->m_useTexture = false;
 	}
 	for (auto i = (unsigned int)0; i < pointLightMatrixDim; i++)
 	{
@@ -415,13 +409,9 @@ void GameInstanceNS::updateLights(float seed)
 	//);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i += 4)
 	{
-		m_pointLightVisibleComponents[i]->m_albedo = vec4((sin(seed + i) + 1.0f) * 5.0f / 2.0f, 0.2 * 5.0f, 0.4 * 5.0f, 1.0f);
 		m_pointLightComponents[i]->m_color = vec4((sin(seed + i) + 1.0f) * 5.0f / 2.0f, 0.2 * 5.0f, 0.4 * 5.0f, 1.0f);
-		m_pointLightVisibleComponents[i + 1]->m_albedo = vec4(0.2 * 5.0f, (sin(seed + i) + 1.0f) * 5.0f / 2.0f, 0.4 * 5.0f, 1.0f);
 		m_pointLightComponents[i + 1]->m_color = vec4(0.2 * 5.0f, (sin(seed + i) + 1.0f) * 5.0f / 2.0f, 0.4 * 5.0f, 1.0f);
-		m_pointLightVisibleComponents[i + 2]->m_albedo = vec4(0.2 * 5.0f, 0.4 * 5.0f, (sin(seed + i) + 1.0f) * 5.0f / 2.0f, 1.0f);
 		m_pointLightComponents[i + 2]->m_color = vec4(0.2 * 5.0f, 0.4 * 5.0f, (sin(seed + i) + 1.0f) * 5.0f / 2.0f, 1.0f);
-		m_pointLightVisibleComponents[i + 3]->m_albedo = vec4((sin(seed + i * 2.0f) + 1.0f) * 5.0f / 2.0f, (sin(seed + i * 3.0f) + 1.0f) * 5.0f / 2.0f, (sin(seed + i * 5.0f) + 1.0f) * 5.0f / 2.0f, 1.0f);
 		m_pointLightComponents[i + 3]->m_color = vec4((sin(seed + i * 2.0f) + 1.0f) * 5.0f / 2.0f, (sin(seed + i * 3.0f) + 1.0f) * 5.0f / 2.0f, (sin(seed + i * 5.0f) + 1.0f) * 5.0f / 2.0f, 1.0f);
 	}
 }

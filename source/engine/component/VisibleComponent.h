@@ -16,10 +16,6 @@ public:
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
 
-	bool m_caclNormal = false;
-	bool m_useTexture = true;
-	vec4 m_albedo;
-	vec4 m_MRA;
 	bool m_drawAABB = false;
 	EntityID m_AABBMeshID = 0;
 	AABB m_AABB;

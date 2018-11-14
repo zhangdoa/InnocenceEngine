@@ -47,7 +47,13 @@ public:
 	GLuint m_geometryPass_uni_metallicTexture;
 	GLuint m_geometryPass_uni_roughnessTexture;
 	GLuint m_geometryPass_uni_aoTexture;
-	GLuint m_geometryPass_uni_useTexture;
+
+	GLuint m_geometryPass_uni_useNormalTexture;
+	GLuint m_geometryPass_uni_useAlbedoTexture;
+	GLuint m_geometryPass_uni_useMetallicTexture;
+	GLuint m_geometryPass_uni_useRoughnessTexture;
+	GLuint m_geometryPass_uni_useAOTexture;
+
 	GLuint m_geometryPass_uni_albedo;
 	GLuint m_geometryPass_uni_MRA;
 private:

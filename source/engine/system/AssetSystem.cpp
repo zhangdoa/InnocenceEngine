@@ -35,9 +35,10 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 
 	modelMap processAssimpScene(const aiScene* aiScene);
 	modelMap processAssimpNode(const aiNode * node, const aiScene * scene);
-	EntityID processSingleAssimpMesh(const aiMesh * aiMesh);
-	textureMap processSingleAssimpMaterial(const aiMaterial * aiMaterial);
-	
+	modelPair processSingleAssimpMesh(const aiScene * scene, unsigned int meshIndex);
+	textureMap processSingleAssimpMaterialForTexture(const aiMaterial * aiMaterial);
+	meshColor processSingleAssimpMaterialForColors(const aiMaterial * aiMaterial);
+
 	MeshDataComponent* addMeshDataComponent();
 	TextureDataComponent* addTextureDataComponent(textureType textureType);
 
@@ -747,26 +748,19 @@ modelMap InnoAssetSystemNS::processAssimpNode(const aiNode * node, const aiScene
 	// process each mesh located at the current node
 	for (auto i = (unsigned int)0; i < node->mNumMeshes; i++)
 	{
-
-		auto l_aiMesh = scene->mMeshes[node->mMeshes[i]];
-		auto l_modelPair = modelPair();
-		l_modelPair.first = processSingleAssimpMesh(l_aiMesh);
-
-		// process material
-		if (l_aiMesh->mMaterialIndex > 0)
-		{
-			l_modelPair.second = processSingleAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex]);
-		}
+		auto l_modelPair = processSingleAssimpMesh(scene, node->mMeshes[i]);
 		l_loadedModelMap.emplace(l_modelPair);
 	}
 
 	return l_loadedModelMap;
 }
 
-EntityID InnoAssetSystemNS::processSingleAssimpMesh(const aiMesh * aiMesh)
+modelPair InnoAssetSystemNS::processSingleAssimpMesh(const aiScene * scene, unsigned int meshIndex)
 {
+	auto l_aiMesh = scene->mMeshes[meshIndex];
+
 	auto l_meshData = addMeshDataComponent();
-	auto l_verticesNumber = aiMesh->mNumVertices;
+	auto l_verticesNumber = l_aiMesh->mNumVertices;
 	l_meshData->m_vertices.reserve(l_verticesNumber);
 
 	for (auto i = (unsigned int)0; i < l_verticesNumber; i++)
@@ -774,11 +768,11 @@ EntityID InnoAssetSystemNS::processSingleAssimpMesh(const aiMesh * aiMesh)
 		Vertex l_Vertex;
 
 		// positions
-		if (&aiMesh->mVertices[i] != nullptr)
+		if (&l_aiMesh->mVertices[i] != nullptr)
 		{
-			l_Vertex.m_pos.x = aiMesh->mVertices[i].x;
-			l_Vertex.m_pos.y = aiMesh->mVertices[i].y;
-			l_Vertex.m_pos.z = aiMesh->mVertices[i].z;
+			l_Vertex.m_pos.x = l_aiMesh->mVertices[i].x;
+			l_Vertex.m_pos.y = l_aiMesh->mVertices[i].y;
+			l_Vertex.m_pos.z = l_aiMesh->mVertices[i].z;
 		}
 		else
 		{
@@ -788,12 +782,12 @@ EntityID InnoAssetSystemNS::processSingleAssimpMesh(const aiMesh * aiMesh)
 		}
 
 		// texture coordinates
-		if (aiMesh->mTextureCoords[0])
+		if (l_aiMesh->mTextureCoords[0])
 		{
 			// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
 			// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-			l_Vertex.m_texCoord.x = aiMesh->mTextureCoords[0][i].x;
-			l_Vertex.m_texCoord.y = aiMesh->mTextureCoords[0][i].y;
+			l_Vertex.m_texCoord.x = l_aiMesh->mTextureCoords[0][i].x;
+			l_Vertex.m_texCoord.y = l_aiMesh->mTextureCoords[0][i].y;
 		}
 		else
 		{
@@ -802,11 +796,11 @@ EntityID InnoAssetSystemNS::processSingleAssimpMesh(const aiMesh * aiMesh)
 		}
 
 		// normals
-		if (aiMesh->mNormals)
+		if (l_aiMesh->mNormals)
 		{
-			l_Vertex.m_normal.x = aiMesh->mNormals[i].x;
-			l_Vertex.m_normal.y = aiMesh->mNormals[i].y;
-			l_Vertex.m_normal.z = aiMesh->mNormals[i].z;
+			l_Vertex.m_normal.x = l_aiMesh->mNormals[i].x;
+			l_Vertex.m_normal.y = l_aiMesh->mNormals[i].y;
+			l_Vertex.m_normal.z = l_aiMesh->mNormals[i].z;
 		}
 		else
 		{
@@ -822,16 +816,16 @@ EntityID InnoAssetSystemNS::processSingleAssimpMesh(const aiMesh * aiMesh)
 	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
 	// @TODO: reserve fixed size vector
 
-	for (auto i = (unsigned int)0; i < aiMesh->mNumFaces; i++)
+	for (auto i = (unsigned int)0; i < l_aiMesh->mNumFaces; i++)
 	{
-		aiFace l_face = aiMesh->mFaces[i];
+		aiFace l_face = l_aiMesh->mFaces[i];
 		l_meshData->m_indicesSize += l_face.mNumIndices;
 	}
 	l_meshData->m_indices.reserve(l_meshData->m_indicesSize);
 
-	for (auto i = (unsigned int)0; i < aiMesh->mNumFaces; i++)
+	for (auto i = (unsigned int)0; i < l_aiMesh->mNumFaces; i++)
 	{
-		aiFace l_face = aiMesh->mFaces[i];
+		aiFace l_face = l_aiMesh->mFaces[i];
 		// retrieve all indices of the face and store them in the indices vector
 		for (auto j = (unsigned int)0; j < l_face.mNumIndices; j++)
 		{
@@ -840,10 +834,20 @@ EntityID InnoAssetSystemNS::processSingleAssimpMesh(const aiMesh * aiMesh)
 	}
 	l_meshData->m_indices.shrink_to_fit();
 
+	auto l_modelPair = modelPair();
+	l_modelPair.first = l_meshData->m_parentEntity;
+
+	// process material
+	if (l_aiMesh->mMaterialIndex > 0)
+	{
+		l_modelPair.second = processSingleAssimpMaterialForTexture(scene->mMaterials[l_aiMesh->mMaterialIndex]);
+		l_meshData->m_meshColor = processSingleAssimpMaterialForColors(scene->mMaterials[l_aiMesh->mMaterialIndex]);
+	}
+
 	l_meshData->m_objectStatus = objectStatus::STANDBY;
 	g_AssetSystemSingletonComponent->m_uninitializedMeshComponents.push(l_meshData);
 
-	return l_meshData->m_parentEntity;
+	return l_modelPair;
 }
 
 /*
@@ -854,10 +858,10 @@ aiTextureType::aiTextureType_AMBIENT textureType::ROUGHNESS map_Ka roughness tex
 aiTextureType::aiTextureType_EMISSIVE textureType::AMBIENT_OCCLUSION map_emissive AO texture
 */
 
-textureMap InnoAssetSystemNS::processSingleAssimpMaterial(const aiMaterial * aiMaterial)
+textureMap InnoAssetSystemNS::processSingleAssimpMaterialForTexture(const aiMaterial * aiMaterial)
 {
 	auto l_loadedTextureMap = textureMap();
-
+	
 	for (auto i = (unsigned int)0; i < aiTextureType_UNKNOWN; i++)
 	{
 		if (aiMaterial->GetTextureCount(aiTextureType(i)) > 0)
@@ -867,7 +871,7 @@ textureMap InnoAssetSystemNS::processSingleAssimpMaterial(const aiMaterial * aiM
 			aiString l_AssString;
 			aiMaterial->GetTexture(aiTextureType(i), 0, &l_AssString);
 			std::string l_localPath = std::string(l_AssString.C_Str());
-
+			
 			textureType l_textureType;
 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
@@ -907,6 +911,33 @@ textureMap InnoAssetSystemNS::processSingleAssimpMaterial(const aiMaterial * aiM
 	}
 
 	return l_loadedTextureMap;
+}
+
+meshColor InnoAssetSystemNS::processSingleAssimpMaterialForColors(const aiMaterial * aiMaterial)
+{
+	// albedo (RGB) + Metallic + Roughness + AO + 2 additional data
+	auto l_colorPack = meshColor();
+	auto l_result = aiColor3D();
+	if (aiMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_colorPack.albedo_r = l_result.r;
+		l_colorPack.albedo_g = l_result.g;
+		l_colorPack.albedo_b = l_result.b;
+	}
+	if (aiMaterial->Get(AI_MATKEY_COLOR_SPECULAR, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_colorPack.metallic = l_result.r;
+	}
+	if (aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_colorPack.roughness = l_result.r;
+	}
+	if (aiMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_colorPack.ao = l_result.r;
+	}
+
+	return l_colorPack;
 }
 
 texturePair InnoAssetSystemNS::loadTexture(const std::string& fileName, textureType textureType)

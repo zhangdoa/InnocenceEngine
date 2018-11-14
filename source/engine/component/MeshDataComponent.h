@@ -15,7 +15,7 @@ public:
 	std::vector<Vertex> m_vertices;
 	std::vector<Index> m_indices;
 	size_t m_indicesSize = 0;
-
+	meshColor m_meshColor;
 	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 };
 

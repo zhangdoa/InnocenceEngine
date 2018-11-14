@@ -638,9 +638,21 @@ void GLRenderingSystemNS::initializeGeometryRenderPass()
 	updateUniform(
 		GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_aoTexture,
 		4);
-	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture = getUniformLocation(
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useNormalTexture = getUniformLocation(
 		l_GLSPC->m_program,
-		"uni_useTexture");
+		"uni_useNormalTexture");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_useAlbedoTexture");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useMetallicTexture = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_useMetallicTexture");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useRoughnessTexture = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_useRoughnessTexture");
+	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAOTexture = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_useAOTexture");
 	GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_albedo");
@@ -2447,11 +2459,12 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 										if (l_TDC)
 										{
 											activateTexture(l_TDC, 0);
+											updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useNormalTexture, true);
 										}
 									}
 									else
 									{
-										activate2DTexture(GLRenderingSystemNS::m_basicNormalTemplate, 0);
+										updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useNormalTexture, false);
 									}
 									// any albedo?
 									auto l_albedoTextureID = l_textureMap->find(textureType::ALBEDO);
@@ -2461,11 +2474,12 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 										if (l_TDC)
 										{
 											activateTexture(l_TDC, 1);
+											updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture, true);
 										}
 									}
 									else
 									{
-										activate2DTexture(GLRenderingSystemNS::m_basicAlbedoTemplate, 1);
+										updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture, false);
 									}
 									// any metallic?
 									auto l_metallicTextureID = l_textureMap->find(textureType::METALLIC);
@@ -2475,11 +2489,12 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 										if (l_TDC)
 										{
 											activateTexture(l_TDC, 2);
+											updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useMetallicTexture, true);
 										}
 									}
 									else
 									{
-										activate2DTexture(GLRenderingSystemNS::m_basicMetallicTemplate, 2);
+										updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useMetallicTexture, false);
 									}
 									// any roughness?
 									auto l_roughnessTextureID = l_textureMap->find(textureType::ROUGHNESS);
@@ -2489,11 +2504,12 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 										if (l_TDC)
 										{
 											activateTexture(l_TDC, 3);
+											updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useRoughnessTexture, true);
 										}
 									}
 									else
 									{
-										activate2DTexture(GLRenderingSystemNS::m_basicRoughnessTemplate, 3);
+										updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useRoughnessTexture, false);
 									}
 									// any ao?
 									auto l_aoTextureID = l_textureMap->find(textureType::AMBIENT_OCCLUSION);
@@ -2503,18 +2519,23 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 										if (l_TDC)
 										{
 											activateTexture(l_TDC, 4);
+											updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAOTexture, true);
 										}
 									}
 									else
 									{
-										activate2DTexture(GLRenderingSystemNS::m_basicAOTemplate, 4);
+										updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAOTexture, false);
 									}
 								}
-								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture, l_visibleComponent->m_useTexture);
-								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
-								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA, l_visibleComponent->m_MRA.x, l_visibleComponent->m_MRA.y, l_visibleComponent->m_MRA.z);
 								// draw meshes
-								drawMesh(l_graphicData.first);
+								auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_graphicData.first);
+								if (l_MDC)
+								{
+									updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_MDC->m_meshColor.albedo_r, l_MDC->m_meshColor.albedo_g, l_MDC->m_meshColor.albedo_b);
+									updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA, l_MDC->m_meshColor.metallic, l_MDC->m_meshColor.roughness, l_MDC->m_meshColor.ao);
+
+									drawMesh(l_MDC);
+								}
 							}
 						}
 						else if (l_visibleComponent->m_visiblilityType == visiblilityType::EMISSIVE)
@@ -2531,10 +2552,14 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 							// draw each graphic data of visibleComponent
 							for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 							{
-								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useTexture, l_visibleComponent->m_useTexture);
-								updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
 								// draw meshes
-								drawMesh(l_graphicData.first);
+								auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_graphicData.first);
+								if (l_MDC)
+								{
+									updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_MDC->m_meshColor.albedo_r, l_MDC->m_meshColor.albedo_g, l_MDC->m_meshColor.albedo_b);
+									updateUniform(GeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture, false);
+									drawMesh(l_MDC);
+								}
 							}
 						}
 						else
@@ -3106,9 +3131,9 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 				GLRenderingSystemNS::updateUniform(
 					GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_pos,
 					l_GlobalPos.x, l_GlobalPos.y, l_GlobalPos.z);
-				GLRenderingSystemNS::updateUniform(
-					GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_albedo,
-					l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
+				//GLRenderingSystemNS::updateUniform(
+				//	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_albedo,
+				//	l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
 				auto l_distanceToCamera = (l_GlobalCameraPos - l_GlobalPos).length();
 				if (l_distanceToCamera > 1.0f)
 				{

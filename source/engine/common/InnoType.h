@@ -77,6 +77,18 @@ using textureFileNamePair = std::pair<textureType, std::string>;
 using textureFileNameMap = std::unordered_map<textureType, std::string>;
 #endif
 
+struct meshColor
+{
+	float albedo_r = 1.0f;
+	float albedo_g = 1.0f;
+	float albedo_b = 1.0f;
+	float metallic = 1.0f;
+	float roughness = 1.0f;
+	float ao = 1.0f;
+	float additionalData1 = 1.0f;
+	float additionalData2 = 1.0f;
+};
+
 enum class buttonStatus { RELEASED, PRESSED };
 using buttonStatusMap = std::unordered_map<int, buttonStatus>;
 
