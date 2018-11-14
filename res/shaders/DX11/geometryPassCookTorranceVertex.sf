@@ -1,0 +1,29 @@
+// shadertype=hlsl
+cbuffer MatrixBuffer
+{
+    matrix mvp;
+};
+
+struct VertexInputType
+{
+    float3 position : POSITION;
+    float2 texcoord : TEXCOORD0;
+    float3 normal :NORMAL;
+};
+
+struct PixelInputType
+{
+    float4 thefrag_WorldSpacePos : SV_POSITION;
+    float2 thefrag_TexCoord : TEXCOORD0;
+    float3 thefrag_Normal :NORMAL;
+};
+
+PixelInputType geometryPassCookTorranceVertex(VertexInputType input)
+{
+		PixelInputType output;
+
+    output.thefrag_WorldSpacePos = mul(float4(input.position, 1.0f), mvp);
+    output.thefrag_TexCoord = input.texcoord;
+    
+    return output;
+}
