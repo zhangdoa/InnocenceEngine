@@ -152,12 +152,12 @@ void InnoPhysicsSystemNS::initializeVisibleComponents()
 	{
 		if (i->m_visiblilityType == visiblilityType::EMISSIVE)
 		{
-			generateAABB(*i);
+			//generateAABB(*i);
 			g_RenderingSystemSingletonComponent->m_emissiveVisibleComponents.emplace_back(i);
 		}
 		else if (i->m_visiblilityType == visiblilityType::STATIC_MESH)
 		{
-			generateAABB(*i);
+			//generateAABB(*i);
 			g_RenderingSystemSingletonComponent->m_staticMeshVisibleComponents.emplace_back(i);
 		}
 	}

@@ -40,7 +40,6 @@ public:
 	GLuint m_uni_shadowMap_1;
 	GLuint m_uni_shadowMap_2;
 	GLuint m_uni_shadowMap_3;
-	std::vector<GLuint> m_uni_shadowSplitPoints;
 	std::vector<GLuint> m_uni_shadowSplitAreas;
 
 	GLuint m_uni_irradianceMap;

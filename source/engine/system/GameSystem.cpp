@@ -111,6 +111,7 @@ spawnComponentImplDefi(LightComponent)
 spawnComponentImplDefi(CameraComponent)
 spawnComponentImplDefi(InputComponent)
 spawnComponentImplDefi(EnvironmentCaptureComponent)
+spawnComponentImplDefi(MaterialDataComponent)
 
 INNO_SYSTEM_EXPORT std::string InnoGameSystem::getGameName()
 {
@@ -138,6 +139,7 @@ getComponentImplDefi(LightComponent)
 getComponentImplDefi(CameraComponent)
 getComponentImplDefi(InputComponent)
 getComponentImplDefi(EnvironmentCaptureComponent)
+getComponentImplDefi(MaterialDataComponent);
 
 INNO_SYSTEM_EXPORT void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponent, button boundButton, std::function<void()>* function)
 {

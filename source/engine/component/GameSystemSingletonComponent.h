@@ -27,13 +27,15 @@ public:
 	std::vector<CameraComponent*> m_CameraComponents;
 	std::vector<InputComponent*> m_InputComponents;
 	std::vector<EnvironmentCaptureComponent*> m_EnvironmentCaptureComponents;
-
+	std::vector<MaterialDataComponent*> m_MaterialDataComponents;
+	
 	std::unordered_map<EntityID, TransformComponent*> m_TransformComponentsMap;
 	std::unordered_multimap<EntityID, VisibleComponent*> m_VisibleComponentsMap;
 	std::unordered_multimap<EntityID, LightComponent*> m_LightComponentsMap;
 	std::unordered_multimap<EntityID, CameraComponent*> m_CameraComponentsMap;
 	std::unordered_multimap<EntityID, InputComponent*> m_InputComponentsMap;
 	std::unordered_multimap<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
+	std::unordered_multimap<EntityID, MaterialDataComponent*> m_MaterialDataComponentsMap;
 
 	InnoFuture<void>* m_asyncTask;
 

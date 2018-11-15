@@ -33,6 +33,8 @@ public:
 	spawnComponentInterfaceDecl(InputComponent);
 	spawnComponentInterfaceDecl(EnvironmentCaptureComponent);
 
+	spawnComponentInterfaceDecl(MaterialDataComponent);
+
 	template <typename T> T * spawn(EntityID parentEntity)
 	{
 		auto l_ptr = g_pMemorySystem->spawn<T>();
@@ -53,6 +55,8 @@ public:
 	getComponentInterfaceDecl(CameraComponent);
 	getComponentInterfaceDecl(InputComponent);
 	getComponentInterfaceDecl(EnvironmentCaptureComponent);
+
+	getComponentInterfaceDecl(MaterialDataComponent);
 
 	template <typename T> T * get(EntityID parentEntity)
 	{
@@ -87,6 +91,11 @@ public:
 	template <> EnvironmentCaptureComponent * get(EntityID parentEntity)
 	{
 		return getComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity);
+	};
+
+	template <> MaterialDataComponent * get(EntityID parentEntity)
+	{
+		return getComponentInterfaceCall(MaterialDataComponent, parentEntity);
 	};
 
 	INNO_SYSTEM_EXPORT virtual std::string getGameName() = 0;

@@ -821,24 +821,9 @@ void GLRenderingSystemNS::initializeLightRenderPass()
 	{
 		std::stringstream ss;
 		ss << i;
-		LightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitPoints.emplace_back(
-			getUniformLocation(l_GLSPC->m_program, "uni_shadowSplitPoints[" + ss.str() + "]")
-		);
 		LightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitAreas.emplace_back(
 			getUniformLocation(l_GLSPC->m_program, "uni_shadowSplitAreas[" + ss.str() + "]")
 		);
-	}
-	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size(); i++)
-	{
-		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_lightType == lightType::DIRECTIONAL)
-		{
-			for (size_t j = 0; j < 4; j++)
-			{
-				updateUniform(
-					LightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitPoints[j],
-					GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_shadowSplitPoints[j]);
-			}
-		}
 	}
 	LightRenderPassSingletonComponent::getInstance().m_uni_irradianceMap = getUniformLocation(
 		l_GLSPC->m_program,
@@ -2317,10 +2302,15 @@ void GLRenderingSystemNS::updateShadowRenderPass()
 							g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 
 						// draw each graphic data of visibleComponent
-						for (auto& l_graphicData : l_visibleComponent->m_modelMap)
+						for (auto l_modelPair : l_visibleComponent->m_modelMap)
 						{
 							// draw meshes
-							drawMesh(l_graphicData.first);
+							auto l_MDC = l_modelPair.first;
+							if (l_MDC)
+							{
+								// draw meshes
+								drawMesh(l_MDC);
+							}
 						}
 					}
 				}

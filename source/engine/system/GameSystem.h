@@ -25,13 +25,15 @@ public:
 	spawnComponentImplDecl(CameraComponent);
 	spawnComponentImplDecl(InputComponent);
 	spawnComponentImplDecl(EnvironmentCaptureComponent);
-
+	spawnComponentImplDecl(MaterialDataComponent);
+	
 	getComponentImplDecl(TransformComponent);
 	getComponentImplDecl(VisibleComponent);
 	getComponentImplDecl(LightComponent);
 	getComponentImplDecl(CameraComponent);
 	getComponentImplDecl(InputComponent);
 	getComponentImplDecl(EnvironmentCaptureComponent);
+	getComponentImplDecl(MaterialDataComponent);
 
 	INNO_SYSTEM_EXPORT std::string getGameName() override;
 	INNO_SYSTEM_EXPORT TransformComponent* getRootTransformComponent() override;

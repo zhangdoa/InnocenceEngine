@@ -72,7 +72,19 @@ mat4 m_CamTrans;
 mat4 m_CamViewProj;
 
 std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedMeshComponents;
-std::queue<std::tuple<size_t, mat4, DXMeshDataComponent*>> m_MeshComponentRenderingQueue;
+
+struct renderingDataPack
+{
+	size_t indiceSize;
+	mat4 mvp;
+	DXMeshDataComponent* DXMDC;
+	DXTextureDataComponent* m_basicNormalDXTDC;
+	DXTextureDataComponent* m_basicAlbedoDXTDC;
+	DXTextureDataComponent* m_basicMetallicDXTDC;
+	DXTextureDataComponent* m_basicRoughnessDXTDC;
+	DXTextureDataComponent* m_basicAODXTDC;
+};
+std::queue<renderingDataPack> m_RenderingQueue;
 
 DXMeshDataComponent* m_UnitLineTemplate;
 DXMeshDataComponent* m_UnitQuadTemplate;
@@ -1293,15 +1305,77 @@ void DXRenderingSystemNS::prepareRenderingData()
 		{
 			for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 			{
-				auto l_DXMDC = DXRenderingSystemNS::m_initializedMeshComponents.find(l_graphicData.first->m_parentEntity);
-				if (l_DXMDC != DXRenderingSystemNS::m_initializedMeshComponents.end())
+				auto l_MDC = l_graphicData.first;
+				if (l_MDC)
 				{
-					auto l_MDC = l_graphicData.first;
-					if (l_MDC)
+					auto l_DXMDC = DXRenderingSystemNS::m_initializedMeshComponents.find(l_MDC->m_parentEntity);
+					if (l_DXMDC != DXRenderingSystemNS::m_initializedMeshComponents.end())
 					{
+						renderingDataPack l_renderingDataPack;
+
+						l_renderingDataPack.indiceSize = l_MDC->m_indicesSize;
+
 						mat4 m = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat;
-						auto mvp = DXRenderingSystemNS::m_CamViewProj * m;
-						DXRenderingSystemNS::m_MeshComponentRenderingQueue.push(std::tuple<size_t, mat4, DXMeshDataComponent*>(l_MDC->m_indicesSize, std::move(mvp), l_DXMDC->second));
+						l_renderingDataPack.mvp = DXRenderingSystemNS::m_CamViewProj * m;
+
+						l_renderingDataPack.DXMDC = l_DXMDC->second;
+
+						auto l_textureMap = l_graphicData.second;
+						if (l_textureMap)
+						{
+							// any normal?
+							auto l_TDC = l_textureMap->m_texturePack.m_normalTDC.second;
+							if (l_TDC)
+							{
+								l_renderingDataPack.m_basicNormalDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+							}
+							else
+							{
+								l_renderingDataPack.m_basicNormalDXTDC = m_basicNormalTemplate;
+							}
+							// any albedo?
+							l_TDC = l_textureMap->m_texturePack.m_albedoTDC.second;
+							if (l_TDC)
+							{
+								l_renderingDataPack.m_basicAlbedoDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+							}
+							else
+							{
+								l_renderingDataPack.m_basicAlbedoDXTDC = m_basicAlbedoTemplate;
+							}
+							// any metallic?
+							l_TDC = l_textureMap->m_texturePack.m_metallicTDC.second;
+							if (l_TDC)
+							{
+								l_renderingDataPack.m_basicMetallicDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+							}
+							else
+							{
+								l_renderingDataPack.m_basicMetallicDXTDC = m_basicMetallicTemplate;
+							}
+							// any roughness?
+							l_TDC = l_textureMap->m_texturePack.m_roughnessTDC.second;
+							if (l_TDC)
+							{
+								l_renderingDataPack.m_basicRoughnessDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+							}
+							else
+							{
+								l_renderingDataPack.m_basicRoughnessDXTDC = m_basicRoughnessTemplate;
+							}
+							// any ao?
+							l_TDC = l_textureMap->m_texturePack.m_roughnessTDC.second;
+							if (l_TDC)
+							{
+								l_renderingDataPack.m_basicAODXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+							}
+							else
+							{
+								l_renderingDataPack.m_basicAODXTDC = m_basicAOTemplate;
+							}
+						}
+
+						DXRenderingSystemNS::m_RenderingQueue.push(l_renderingDataPack);
 					}
 				}
 			}
@@ -1350,22 +1424,22 @@ void DXRenderingSystemNS::updateGeometryPass()
 	DXRenderingSystemNS::cleanDSV(DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView);
 
 	// draw
-	while (DXRenderingSystemNS::m_MeshComponentRenderingQueue.size() > 0)
+	while (DXRenderingSystemNS::m_RenderingQueue.size() > 0)
 	{
-		auto l_tuple = DXRenderingSystemNS::m_MeshComponentRenderingQueue.front();
+		auto l_renderPack = DXRenderingSystemNS::m_RenderingQueue.front();
 
-		updateShaderParameter(shaderType::VERTEX, DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer, &std::get<mat4>(l_tuple));
+		updateShaderParameter(shaderType::VERTEX, DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_renderPack.mvp);
 
 		// bind to textures
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &m_basicNormalTemplate->m_SRV);
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(1, 1, &m_basicAlbedoTemplate->m_SRV);
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(2, 1, &m_basicMetallicTemplate->m_SRV);
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(3, 1, &m_basicRoughnessTemplate->m_SRV);
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(4, 1, &m_basicAOTemplate->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &l_renderPack.m_basicNormalDXTDC->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(1, 1, &l_renderPack.m_basicAlbedoDXTDC->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(2, 1, &l_renderPack.m_basicMetallicDXTDC->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(3, 1, &l_renderPack.m_basicRoughnessDXTDC->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(4, 1, &l_renderPack.m_basicAODXTDC->m_SRV);
 
-		drawMesh(std::get<size_t>(l_tuple), std::get<DXMeshDataComponent*>(l_tuple));
+		drawMesh(l_renderPack.indiceSize, l_renderPack.DXMDC);
 
-		DXRenderingSystemNS::m_MeshComponentRenderingQueue.pop();
+		DXRenderingSystemNS::m_RenderingQueue.pop();
 	}
 }
 

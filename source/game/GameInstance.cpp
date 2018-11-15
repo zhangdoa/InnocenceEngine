@@ -368,9 +368,12 @@ void GameInstanceNS::setupLights()
 	unsigned int pointLightMatrixDim = 8;
 	float pointLightBreadthInterval = 4.0f;
 	auto l_containerSize = pointLightMatrixDim * pointLightMatrixDim;
-	m_sphereTransformComponents.reserve(l_containerSize);
-	m_sphereVisibleComponents.reserve(l_containerSize);
-	m_sphereEntitys.reserve(l_containerSize);
+
+	m_pointLightTransformComponents.reserve(l_containerSize);
+	m_pointLightComponents.reserve(l_containerSize);
+	m_pointLightVisibleComponents.reserve(l_containerSize);
+	m_pointLightEntitys.reserve(l_containerSize);
+
 	for (auto i = (unsigned int)0; i < l_containerSize; i++)
 	{
 		m_pointLightTransformComponents.emplace_back();
@@ -378,7 +381,7 @@ void GameInstanceNS::setupLights()
 		m_pointLightVisibleComponents.emplace_back();
 		m_pointLightEntitys.emplace_back();
 	}
-	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i++)
+	for (auto i = (unsigned int)0; i < l_containerSize; i++)
 	{
 		m_pointLightEntitys[i] = InnoMath::createEntityID();
 
@@ -409,7 +412,16 @@ void GameInstanceNS::updateLights(float seed)
 	//);
 	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i += 4)
 	{
-		m_pointLightComponents[i]->m_color = vec4((sin(seed + i) + 1.0f) * 5.0f / 2.0f, 0.2 * 5.0f, 0.4 * 5.0f, 1.0f);
+		auto l_color1 = vec4((sin(seed + i) + 1.0f) * 5.0f / 2.0f, 0.2 * 5.0f, 0.4 * 5.0f, 1.0f);
+
+		m_pointLightComponents[i]->m_color = l_color1;
+		for (auto& j : m_pointLightVisibleComponents[i]->m_modelMap)
+		{
+			j.second->m_meshColor.albedo_r = l_color1.x;
+			j.second->m_meshColor.albedo_g = l_color1.y;
+			j.second->m_meshColor.albedo_b = l_color1.z;
+		}
+		
 		m_pointLightComponents[i + 1]->m_color = vec4(0.2 * 5.0f, (sin(seed + i) + 1.0f) * 5.0f / 2.0f, 0.4 * 5.0f, 1.0f);
 		m_pointLightComponents[i + 2]->m_color = vec4(0.2 * 5.0f, 0.4 * 5.0f, (sin(seed + i) + 1.0f) * 5.0f / 2.0f, 1.0f);
 		m_pointLightComponents[i + 3]->m_color = vec4((sin(seed + i * 2.0f) + 1.0f) * 5.0f / 2.0f, (sin(seed + i * 3.0f) + 1.0f) * 5.0f / 2.0f, (sin(seed + i * 5.0f) + 1.0f) * 5.0f / 2.0f, 1.0f);
