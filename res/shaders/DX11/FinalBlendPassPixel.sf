@@ -1,8 +1,6 @@
 // shadertype=hlsl
 
-Texture2D uni_geometryPassRT0 : register(t0);
-Texture2D uni_geometryPassRT1 : register(t1);
-Texture2D uni_geometryPassRT2 : register(t2);
+Texture2D uni_lightPassRT0 : register(t0);
 
 SamplerState SampleTypePoint: register(s0);
 
@@ -12,8 +10,8 @@ struct PixelInputType
     float2 texcoord : TEXCOORD0;
 };
 
-float4 FinalBlendPassPixel(PixelInputType input) : SV_TARGET
+float4 finalBlendPassPixel(PixelInputType input) : SV_TARGET
 {
-	float4 textureColor = uni_geometryPassRT2.Sample(SampleTypePoint, input.texcoord);
+	float4 textureColor = uni_lightPassRT0.Sample(SampleTypePoint, input.texcoord);
   return textureColor;
 }

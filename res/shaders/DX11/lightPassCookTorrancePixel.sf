@@ -1,0 +1,25 @@
+// shadertype=hlsl
+
+Texture2D uni_geometryPassRT0 : register(t0);
+Texture2D uni_geometryPassRT1 : register(t1);
+Texture2D uni_geometryPassRT2 : register(t2);
+
+SamplerState SampleTypePoint: register(s0);
+
+struct PixelInputType
+{
+    float4 position : SV_POSITION;
+    float2 texcoord : TEXCOORD0;
+};
+
+struct PixelOutputType
+{
+    float4 uni_lightPassRT0 : SV_Target0;
+};
+
+PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
+{
+  PixelOutputType output;
+	output.uni_lightPassRT0 = uni_geometryPassRT2.Sample(SampleTypePoint, input.texcoord);
+	return output;
+}
