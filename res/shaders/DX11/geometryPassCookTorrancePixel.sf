@@ -1,4 +1,13 @@
 // shadertype=hlsl
+
+Texture2D t2d_normal : register(t0);
+Texture2D t2d_albedo : register(t1);
+Texture2D t2d_metallic : register(t2);
+Texture2D t2d_roughness : register(t3);
+Texture2D t2d_ao : register(t4);
+
+SamplerState SampleTypeWrap;
+
 struct PixelInputType
 {
     float4 thefrag_WorldSpacePos : SV_POSITION;
@@ -10,14 +19,24 @@ struct PixelOutputType
 {
     float4 uni_geometryPassRT0 : SV_Target0;
     float4 uni_geometryPassRT1 : SV_Target1;
+    float4 uni_geometryPassRT2 : SV_Target2;
 };
 
 PixelOutputType geometryPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 {
   PixelOutputType output;
 
-	output.uni_geometryPassRT0 = input.thefrag_WorldSpacePos;
-	output.uni_geometryPassRT1 = float4(0.1, 0.2, 0.3, 1.0);
+	output.uni_geometryPassRT0 = float4(
+	input.thefrag_WorldSpacePos.rgb, 
+	t2d_metallic.Sample(SampleTypeWrap, input.thefrag_TexCoord).r);
 	
+	output.uni_geometryPassRT1 = float4(
+	t2d_normal.Sample(SampleTypeWrap, input.thefrag_TexCoord).rgb, 
+	t2d_roughness.Sample(SampleTypeWrap, input.thefrag_TexCoord).r);
+
+	output.uni_geometryPassRT2 = float4(
+	t2d_albedo.Sample(SampleTypeWrap, input.thefrag_TexCoord).rgb, 
+	t2d_ao.Sample(SampleTypeWrap, input.thefrag_TexCoord).r);
+
   return output;
 }

@@ -39,8 +39,11 @@ DXTextureDataComponent* addDXTextureDataComponent(EntityID rhs);
 DXMeshDataComponent* getDXMeshDataComponent(EntityID rhs);
 DXTextureDataComponent* getDXTextureDataComponent(EntityID rhs);
 
+bool initializeDefaultAssets();
 bool initializeGeometryPass();
 bool initializeFinalBlendPass();
+
+bool convertCoordinateFromGLtoDX(MeshDataComponent* MDC);
 
 ID3D10Blob* loadShaderBuffer(shaderType shaderType, const std::wstring & shaderFilePath);
 void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
@@ -70,6 +73,17 @@ mat4 m_CamViewProj;
 
 std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedMeshComponents;
 std::queue<std::tuple<size_t, mat4, DXMeshDataComponent*>> m_MeshComponentRenderingQueue;
+
+DXMeshDataComponent* m_UnitLineTemplate;
+DXMeshDataComponent* m_UnitQuadTemplate;
+DXMeshDataComponent* m_UnitCubeTemplate;
+DXMeshDataComponent* m_UnitSphereTemplate;
+
+DXTextureDataComponent* m_basicNormalTemplate;
+DXTextureDataComponent* m_basicAlbedoTemplate;
+DXTextureDataComponent* m_basicMetallicTemplate;
+DXTextureDataComponent* m_basicRoughnessTemplate;
+DXTextureDataComponent* m_basicAOTemplate;
 }
 
 INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
@@ -416,6 +430,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 
 INNO_SYSTEM_EXPORT bool DXRenderingSystem::initialize()
 {
+	DXRenderingSystemNS::initializeDefaultAssets();
 	DXRenderingSystemNS::initializeGeometryPass();
 	DXRenderingSystemNS::initializeFinalBlendPass();
 
@@ -431,17 +446,16 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 		if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
 			auto l_initializedDXMDC = DXRenderingSystemNS::initializeMeshDataComponent(l_meshDataComponent);
-			DXRenderingSystemNS::m_initializedMeshComponents.emplace(l_initializedDXMDC->m_parentEntity, l_initializedDXMDC);
 		}
 	}
-	//if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
-	//{
-	//	TextureDataComponent* l_textureDataComponent;
-	//	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
-	//	{
-	//		initializeTextureDataComponent(l_textureDataComponent);
-	//	}
-	//}
+	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
+	{
+		TextureDataComponent* l_textureDataComponent;
+		if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
+		{
+			DXRenderingSystemNS::initializeTextureDataComponent(l_textureDataComponent);
+		}
+	}
 	// Clear the buffers to begin the scene.
 	DXRenderingSystemNS::prepareRenderingData();
 
@@ -519,6 +533,43 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::terminate()
 objectStatus DXRenderingSystem::getStatus()
 {
 	return DXRenderingSystemNS::m_objectStatus;
+}
+
+bool  DXRenderingSystemNS::initializeDefaultAssets()
+{
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::LINE);
+	convertCoordinateFromGLtoDX(l_MDC);
+	m_UnitLineTemplate = initializeMeshDataComponent(l_MDC);
+
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
+	convertCoordinateFromGLtoDX(l_MDC);
+	m_UnitQuadTemplate = initializeMeshDataComponent(l_MDC);
+
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::CUBE);
+	convertCoordinateFromGLtoDX(l_MDC);
+	m_UnitCubeTemplate = initializeMeshDataComponent(l_MDC);
+
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::SPHERE);
+	convertCoordinateFromGLtoDX(l_MDC);
+	m_UnitSphereTemplate = initializeMeshDataComponent(l_MDC);
+
+	m_basicNormalTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::NORMAL));
+	m_basicAlbedoTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ALBEDO));
+	m_basicMetallicTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::METALLIC));
+	m_basicRoughnessTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ROUGHNESS));
+	m_basicAOTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::AMBIENT_OCCLUSION));
+
+	return true;
+}
+
+bool  DXRenderingSystemNS::convertCoordinateFromGLtoDX(MeshDataComponent* MDC)
+{
+	for (auto& i : MDC->m_vertices)
+	{
+		i.m_pos.z = (i.m_pos.z + 1.0f) / 2.0f;
+		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
+	}
+	return true;
 }
 
 bool  DXRenderingSystemNS::initializeGeometryPass()
@@ -736,15 +787,15 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	}
 
 	// Setup the description of the dynamic matrix constant buffer
-	DXGeometryRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.ByteWidth = sizeof(DirectX::XMMATRIX);
-	DXGeometryRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.MiscFlags = 0;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.StructureByteStride = 0;
+	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.ByteWidth = sizeof(DirectX::XMMATRIX);
+	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.MiscFlags = 0;
+	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.StructureByteStride = 0;
 
 	// Create the constant buffer pointer
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&DXGeometryRenderPassSingletonComponent::getInstance().m_matrixBufferDesc, NULL, &DXGeometryRenderPassSingletonComponent::getInstance().m_matrixBuffer);
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc, NULL, &DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create matrix buffer pointer!");
@@ -774,6 +825,32 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	l_shaderBuffer->Release();
 	l_shaderBuffer = 0;
 
+	// Create a texture sampler state description.
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MipLODBias = 0.0f;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxAnisotropy = 1;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[0] = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[1] = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[2] = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[3] = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MinLOD = 0;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	// Create the texture sampler state.
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateSamplerState(
+		&DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc,
+		&DXFinalRenderPassSingletonComponent::getInstance().m_samplerState);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create texture sampler state!");
+		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		return false;
+	}
+
 	return true;
 }
 
@@ -788,7 +865,7 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(shaderType::VERTEX, L"..//res//shaders//DX11//testVertex.sf");
+	l_shaderBuffer = loadShaderBuffer(shaderType::VERTEX, L"..//res//shaders//DX11//FinalBlendPassVertex.sf");
 
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateVertexShader(
 		l_shaderBuffer->GetBufferPointer(),
@@ -844,31 +921,11 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 		return false;
 	}
 
-	// Setup the description of the dynamic matrix constant buffer
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.ByteWidth = sizeof(DirectX::XMMATRIX);
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.MiscFlags = 0;
-	DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc.StructureByteStride = 0;
-
-	// Create the constant buffer pointer
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(
-		&DXFinalRenderPassSingletonComponent::getInstance().m_matrixBufferDesc, 
-		NULL,
-		&DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: FinalBlendPass: can't create matrix buffer pointer!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
-		return false;
-	}
-
 	l_shaderBuffer->Release();
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(shaderType::FRAGMENT, L"..//res//shaders//DX11//testPixel.sf");
+	l_shaderBuffer = loadShaderBuffer(shaderType::FRAGMENT, L"..//res//shaders//DX11//FinalBlendPassPixel.sf");
 
 	// Create the shader from the buffer.
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreatePixelShader(
@@ -887,10 +944,10 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	l_shaderBuffer = 0;
 
 	// Create a texture sampler state description.
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MipLODBias = 0.0f;
 	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxAnisotropy = 1;
 	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
@@ -904,7 +961,7 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	// Create the texture sampler state.
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateSamplerState(
 		&DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc,
-		&DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
+		&DXFinalRenderPassSingletonComponent::getInstance().m_samplerState);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: FinalBlendPass: can't create texture sampler state!");
@@ -1055,6 +1112,8 @@ DXMeshDataComponent* DXRenderingSystemNS::initializeMeshDataComponent(MeshDataCo
 		}
 		l_ptr->m_objectStatus = objectStatus::ALIVE;
 		rhs->m_objectStatus = objectStatus::ALIVE;
+
+		DXRenderingSystemNS::m_initializedMeshComponents.emplace(l_ptr->m_parentEntity, l_ptr);
 		return l_ptr;
 	}
 }
@@ -1074,54 +1133,36 @@ DXTextureDataComponent* DXRenderingSystemNS::initializeTextureDataComponent(Text
 
 		// @TODO: Unified internal format
 		// Setup the description of the texture.
+		// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
 		if (rhs->m_textureType == textureType::ALBEDO)
 		{
-			if (rhs->m_texturePixelDataFormat == texturePixelDataFormat::RGB)
-			{
-				l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-			}
-			else if (rhs->m_texturePixelDataFormat == texturePixelDataFormat::RGBA)
-			{
-				l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-			}
+			l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		}
 		else
 		{
-			// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
-			switch (rhs->m_textureColorComponentsFormat)
+			if (rhs->m_texturePixelDataType == texturePixelDataType::UNSIGNED_BYTE)
 			{
-			case textureColorComponentsFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
-			case textureColorComponentsFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
-			case textureColorComponentsFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
-			case textureColorComponentsFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
-
-			case textureColorComponentsFormat::R8: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
-			case textureColorComponentsFormat::RG8: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
-			case textureColorComponentsFormat::RGB8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
-			case textureColorComponentsFormat::RGBA8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
-
-			case textureColorComponentsFormat::R16: l_internalFormat = DXGI_FORMAT_R16_UINT; break;
-			case textureColorComponentsFormat::RG16: l_internalFormat = DXGI_FORMAT_R16G16_UINT; break;
-			case textureColorComponentsFormat::RGB16: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
-			case textureColorComponentsFormat::RGBA16: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
-
-			case textureColorComponentsFormat::R16F: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
-			case textureColorComponentsFormat::RG16F: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
-			case textureColorComponentsFormat::RGB16F: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
-			case textureColorComponentsFormat::RGBA16F: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
-
-			case textureColorComponentsFormat::R32F: l_internalFormat = DXGI_FORMAT_R32_FLOAT; break;
-			case textureColorComponentsFormat::RG32F: l_internalFormat = DXGI_FORMAT_R32G32_FLOAT; break;
-			case textureColorComponentsFormat::RGB32F: l_internalFormat = DXGI_FORMAT_R32G32B32_FLOAT; break;
-			case textureColorComponentsFormat::RGBA32F: l_internalFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
-
-			case textureColorComponentsFormat::SRGB: break;
-			case textureColorComponentsFormat::SRGBA: break;
-			case textureColorComponentsFormat::SRGB8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-			case textureColorComponentsFormat::SRGBA8: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-
-			case textureColorComponentsFormat::DEPTH_COMPONENT: break;
+				switch (rhs->m_texturePixelDataFormat)
+				{
+				case texturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
+				case texturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
+				case texturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+				case texturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+				default: break;
+				}
 			}
+			else if (rhs->m_texturePixelDataType == texturePixelDataType::FLOAT)
+			{
+				switch (rhs->m_texturePixelDataFormat)
+				{
+				case texturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R16_UNORM; break;
+				case texturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UNORM; break;
+				case texturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+				case texturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+				default: break;
+				}
+			}
+			
 		}
 
 		D3D11_TEXTURE2D_DESC textureDesc;
@@ -1147,7 +1188,7 @@ DXTextureDataComponent* DXRenderingSystemNS::initializeTextureDataComponent(Text
 
 		// Create the empty texture.
 		ID3D11Texture2D* l_texture;
-		ID3D11ShaderResourceView* l_textureView;
+		ID3D11ShaderResourceView* l_SRV;
 
 		HRESULT hResult;
 		hResult = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(&textureDesc, NULL, &l_texture);
@@ -1163,7 +1204,7 @@ DXTextureDataComponent* DXRenderingSystemNS::initializeTextureDataComponent(Text
 
 		// Setup the shader resource view description.
 		// Create the shader resource view for the texture.
-		hResult = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateShaderResourceView(l_texture, &srvDesc, &l_textureView);
+		hResult = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateShaderResourceView(l_texture, &srvDesc, &l_SRV);
 		if (FAILED(hResult))
 		{
 			g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create shader resource view for texture!");
@@ -1171,8 +1212,10 @@ DXTextureDataComponent* DXRenderingSystemNS::initializeTextureDataComponent(Text
 		}
 
 		// Generate mipmaps for this texture.
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->GenerateMips(l_ptr->m_textureView);
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->GenerateMips(l_SRV);
 
+		l_ptr->m_texture = l_texture;
+		l_ptr->m_SRV = l_SRV;
 		l_ptr->m_objectStatus = objectStatus::ALIVE;
 		rhs->m_objectStatus = objectStatus::ALIVE;
 
@@ -1278,6 +1321,9 @@ void DXRenderingSystemNS::updateGeometryPass()
 		NULL, 
 		0);
 
+	// Set the sampler state in the pixel shader.
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetSamplers(0, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_samplerState);
+
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1299,7 +1345,7 @@ void DXRenderingSystemNS::updateGeometryPass()
 	// Clear the render buffers.
 	for (auto i : DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews)
 	{
-		DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 1.0f), i);
+		DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), i);
 	}
 	DXRenderingSystemNS::cleanDSV(DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView);
 
@@ -1308,7 +1354,15 @@ void DXRenderingSystemNS::updateGeometryPass()
 	{
 		auto l_tuple = DXRenderingSystemNS::m_MeshComponentRenderingQueue.front();
 
-		updateShaderParameter(shaderType::VERTEX, DXFinalRenderPassSingletonComponent::getInstance().m_matrixBuffer, &std::get<mat4>(l_tuple));
+		updateShaderParameter(shaderType::VERTEX, DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer, &std::get<mat4>(l_tuple));
+
+		// bind to textures
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &m_basicNormalTemplate->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(1, 1, &m_basicAlbedoTemplate->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(2, 1, &m_basicMetallicTemplate->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(3, 1, &m_basicRoughnessTemplate->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(4, 1, &m_basicAOTemplate->m_SRV);
+
 		drawMesh(std::get<size_t>(l_tuple), std::get<DXMeshDataComponent*>(l_tuple));
 
 		DXRenderingSystemNS::m_MeshComponentRenderingQueue.pop();
@@ -1322,13 +1376,20 @@ void DXRenderingSystemNS::updateFinalBlendPass()
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
 
 	// Set the sampler state in the pixel shader.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetSamplers(0, 1, &DXFinalRenderPassSingletonComponent::getInstance().m_sampleState);
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetSamplers(0, 1, &DXFinalRenderPassSingletonComponent::getInstance().m_samplerState);
 
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set the vertex input layout.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
+
+	// Set the render buffers to be the render target.
+	// Bind the render target view array and depth stencil buffer to the output render pipeline.
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetRenderTargets(
+		1,
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView,
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
 
 	// Set the viewport.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetViewports(
@@ -1338,6 +1399,14 @@ void DXRenderingSystemNS::updateFinalBlendPass()
 	// Clear the render buffers.
 	DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView);
 	DXRenderingSystemNS::cleanDSV(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
+
+	// bind to previous pass render target textures
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[0]);
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(1, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[1]);
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(2, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[2]);
+
+	// draw
+	drawMesh(6, m_UnitQuadTemplate);
 }
 
 void DXRenderingSystemNS::drawMesh(EntityID rhs)

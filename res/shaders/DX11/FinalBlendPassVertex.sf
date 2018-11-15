@@ -1,7 +1,4 @@
-cbuffer MatrixBuffer
-{
-    matrix mvp;
-};
+// shadertype=hlsl
 
 struct VertexInputType
 {
@@ -16,11 +13,11 @@ struct PixelInputType
     float2 texcoord : TEXCOORD0;
 };
 
-PixelInputType testVertex(VertexInputType input)
+PixelInputType FinalBlendPassVertex(VertexInputType input)
 {
     PixelInputType output;
 
-    output.position = mul(float4(input.position, 1.0f), mvp);
+    output.position = float4(input.position, 1.0f);
     output.texcoord = input.texcoord;
     
     return output;

@@ -21,11 +21,11 @@ public:
 	ID3D11PixelShader* m_pixelShader;
 	ID3D11InputLayout* m_layout;
 
-	D3D11_BUFFER_DESC m_matrixBufferDesc;
-	ID3D11Buffer* m_matrixBuffer;
+	D3D11_BUFFER_DESC m_constantBufferDesc;
+	ID3D11Buffer* m_constantBuffer;
 
 	D3D11_SAMPLER_DESC m_samplerDesc;
-	ID3D11SamplerState* m_sampleState;
+	ID3D11SamplerState* m_samplerState;
 
 	D3D11_TEXTURE2D_DESC m_renderTargetTextureDesc;
 	std::vector<ID3D11Texture2D*> m_renderTargetTextures;

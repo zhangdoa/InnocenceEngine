@@ -973,7 +973,7 @@ texturePair InnoAssetSystemNS::loadTextureFromDisk(const std::string& fileName, 
 		if (data)
 		{
 			l_textureData->m_textureType = textureType::EQUIRETANGULAR;
-			l_textureData->m_textureColorComponentsFormat = textureColorComponentsFormat::RGB16F;
+			l_textureData->m_textureColorComponentsFormat = textureColorComponentsFormat((unsigned int)textureColorComponentsFormat::R16F + (nrChannels - 1));
 			l_textureData->m_texturePixelDataFormat = texturePixelDataFormat(nrChannels - 1);
 			l_textureData->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
 			l_textureData->m_textureMinFilterMethod = textureFilterMethod::LINEAR;
