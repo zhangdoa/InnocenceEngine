@@ -1,5 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
+#include "TextureDataComponent.h"
 
 class EnvironmentCaptureComponent
 {
@@ -11,5 +12,5 @@ public:
 	EntityID m_parentEntity;
 
 	std::string m_cubemapTextureFileName;
-	texturePair m_texturePair;
+	TextureDataComponent* m_TDC = nullptr;
 };

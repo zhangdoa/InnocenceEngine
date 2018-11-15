@@ -1,6 +1,11 @@
 #pragma once
 #include "../common/InnoType.h"
 #include "../common/InnoMath.h"
+#include "MeshDataComponent.h"
+#include "MaterialDataComponent.h"
+
+using modelPair = std::pair<MeshDataComponent*, MaterialDataComponent*>;
+using modelMap = std::unordered_map<MeshDataComponent*, MaterialDataComponent*>;
 
 class VisibleComponent
 {

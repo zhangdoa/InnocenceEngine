@@ -66,6 +66,7 @@ std::unique_ptr<ComponentPool<className>> m_##className##Pool;
 	componentPoolUniPtr(EnvironmentCaptureComponent);
 
 	componentPoolUniPtr(MeshDataComponent);
+	componentPoolUniPtr(MaterialDataComponent);	
 	componentPoolUniPtr(TextureDataComponent);
 
 	componentPoolUniPtr(GLMeshDataComponent);
@@ -133,6 +134,7 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::setup()
 	constructComponentPool(EnvironmentCaptureComponent);
 
 	constructComponentPool(MeshDataComponent);
+	constructComponentPool(MaterialDataComponent);
 	constructComponentPool(TextureDataComponent);
 
 	constructComponentPool(GLMeshDataComponent);
@@ -469,6 +471,7 @@ allocateComponentImplDefi(InputComponent)
 allocateComponentImplDefi(EnvironmentCaptureComponent)
 
 allocateComponentImplDefi(MeshDataComponent)
+allocateComponentImplDefi(MaterialDataComponent)
 allocateComponentImplDefi(TextureDataComponent)
 
 allocateComponentImplDefi(GLMeshDataComponent)

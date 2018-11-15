@@ -1293,10 +1293,10 @@ void DXRenderingSystemNS::prepareRenderingData()
 		{
 			for (auto& l_graphicData : l_visibleComponent->m_modelMap)
 			{
-				auto l_DXMDC = DXRenderingSystemNS::m_initializedMeshComponents.find(l_graphicData.first);
+				auto l_DXMDC = DXRenderingSystemNS::m_initializedMeshComponents.find(l_graphicData.first->m_parentEntity);
 				if (l_DXMDC != DXRenderingSystemNS::m_initializedMeshComponents.end())
 				{
-					auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_graphicData.first);
+					auto l_MDC = l_graphicData.first;
 					if (l_MDC)
 					{
 						mat4 m = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat;

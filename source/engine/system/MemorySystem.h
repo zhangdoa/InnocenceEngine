@@ -30,6 +30,7 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(InputComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(EnvironmentCaptureComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(MeshDataComponent);
+	INNO_SYSTEM_EXPORT allocateComponentImplDecl(MaterialDataComponent);	
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(TextureDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(GLMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(GLTextureDataComponent);

@@ -1,6 +1,7 @@
 #pragma once
 #include "../common/InnoType.h"
 #include "../component/MeshDataComponent.h"
+#include "../component/MaterialDataComponent.h"
 #include "../component/TextureDataComponent.h"
 
 #include "../common/InnoConcurrency.h"
@@ -23,6 +24,7 @@ public:
     std::unordered_map<std::string, int> m_supportedShaderType = { {"sf", 0} };
 
 	std::unordered_map<EntityID, MeshDataComponent*> m_meshMap;
+	std::unordered_map<EntityID, MaterialDataComponent*> m_materialMap;
 	std::unordered_map<EntityID, TextureDataComponent*> m_textureMap;
 
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshComponents;
@@ -33,14 +35,14 @@ public:
 	MeshDataComponent* m_UnitCubeTemplate;
 	MeshDataComponent* m_UnitSphereTemplate;
 
-	texturePair m_basicNormalTemplate;
-	texturePair m_basicAlbedoTemplate;
-	texturePair m_basicMetallicTemplate;
-	texturePair m_basicRoughnessTemplate;
-	texturePair m_basicAOTemplate;
+	TextureDataComponent* m_basicNormalTemplate;
+	TextureDataComponent* m_basicAlbedoTemplate;
+	TextureDataComponent* m_basicMetallicTemplate;
+	TextureDataComponent* m_basicRoughnessTemplate;
+	TextureDataComponent* m_basicAOTemplate;
 
 	std::unordered_map<std::string, modelMap> m_loadedModelMap;
-	std::unordered_map<std::string, texturePair> m_loadedTextureMap;
+	std::unordered_map<std::string, TextureDataComponent*> m_loadedTextureMap;
 
     const std::string m_textureRelativePath = std::string{"..//res//textures//"};
     const std::string m_modelRelativePath = std::string{"..//res//models//"};

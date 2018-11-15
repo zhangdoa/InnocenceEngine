@@ -62,17 +62,9 @@ struct EnumClassHash
 		return static_cast<std::size_t>(t);
 	}
 };
-using texturePair = std::pair<textureType, EntityID>;
-using textureMap = std::unordered_map<textureType, EntityID, EnumClassHash>;
-using modelPair = std::pair<EntityID, textureMap>;
-using modelMap = std::unordered_map<EntityID, textureMap, EnumClassHash>;
 using textureFileNamePair = std::pair<textureType, std::string>;
 using textureFileNameMap = std::unordered_map<textureType, std::string, EnumClassHash>;
 #else
-using texturePair = std::pair<textureType, EntityID>;
-using textureMap = std::unordered_map<textureType, EntityID>;
-using modelPair = std::pair<EntityID, textureMap>;
-using modelMap = std::unordered_map<EntityID, textureMap>;
 using textureFileNamePair = std::pair<textureType, std::string>;
 using textureFileNameMap = std::unordered_map<textureType, std::string>;
 #endif

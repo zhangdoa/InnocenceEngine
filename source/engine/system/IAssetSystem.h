@@ -25,7 +25,7 @@ public:
 	INNO_SYSTEM_EXPORT virtual bool removeTextureDataComponent(EntityID EntityID) = 0;
 	INNO_SYSTEM_EXPORT virtual bool releaseRawDataForMeshDataComponent(EntityID EntityID) = 0;
 	INNO_SYSTEM_EXPORT virtual bool releaseRawDataForTextureDataComponent(EntityID EntityID) = 0;
-	INNO_SYSTEM_EXPORT virtual vec4 findMaxVertex(EntityID meshID) = 0;
-	INNO_SYSTEM_EXPORT virtual vec4 findMinVertex(EntityID meshID) = 0;
+	INNO_SYSTEM_EXPORT virtual vec4 findMaxVertex(MeshDataComponent* MDC) = 0;
+	INNO_SYSTEM_EXPORT virtual vec4 findMinVertex(MeshDataComponent* MDC) = 0;
 	INNO_SYSTEM_EXPORT virtual std::string loadShader(const std::string& fileName) = 0;
 };

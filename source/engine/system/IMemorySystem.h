@@ -52,6 +52,7 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(InputComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(EnvironmentCaptureComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(MeshDataComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(MaterialDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(TextureDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLTextureDataComponent);
@@ -81,6 +82,8 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentTemplate(EnvironmentCaptureComponent);
 	template <>
 	INNO_SYSTEM_EXPORT allocateComponentTemplate(MeshDataComponent);
+	template <>
+	INNO_SYSTEM_EXPORT allocateComponentTemplate(MaterialDataComponent);
 	template <>
 	INNO_SYSTEM_EXPORT allocateComponentTemplate(TextureDataComponent);
 	template <>

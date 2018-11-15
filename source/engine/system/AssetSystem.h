@@ -21,8 +21,8 @@ public:
 	INNO_SYSTEM_EXPORT bool removeTextureDataComponent(EntityID EntityID) override;
 	INNO_SYSTEM_EXPORT bool releaseRawDataForMeshDataComponent(EntityID EntityID) override;
 	INNO_SYSTEM_EXPORT bool releaseRawDataForTextureDataComponent(EntityID EntityID) override;
-	INNO_SYSTEM_EXPORT vec4 findMaxVertex(EntityID meshID) override;
-	INNO_SYSTEM_EXPORT vec4 findMinVertex(EntityID meshID) override;
+	INNO_SYSTEM_EXPORT vec4 findMaxVertex(MeshDataComponent* MDC) override;
+	INNO_SYSTEM_EXPORT vec4 findMinVertex(MeshDataComponent* MDC) override;
 	INNO_SYSTEM_EXPORT std::string loadShader(const std::string& fileName) override;
 };
 
