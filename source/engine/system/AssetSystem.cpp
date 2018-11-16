@@ -699,7 +699,7 @@ modelMap InnoAssetSystemNS::loadModelFromDisk(const std::string & fileName)
 #if defined INNO_PLATFORM_WIN32 || defined INNO_PLATFORM_WIN64
 	if (std::experimental::filesystem::exists(std::experimental::filesystem::path(InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_modelRelativePath + fileName)))
 	{
-		l_assScene = l_assImporter.ReadFile(InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		l_assScene = l_assImporter.ReadFile(InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
 		// @TODO: serilization
 	}
 	else
@@ -708,7 +708,7 @@ modelMap InnoAssetSystemNS::loadModelFromDisk(const std::string & fileName)
 		return modelMap();
 	}
 #else
-	l_assScene = l_assImporter.ReadFile(InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	l_assScene = l_assImporter.ReadFile(InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
 	if (l_assScene == nullptr)
 	{
 		g_pCoreSystem->getLogSystem()->printLog("AssetSystem: " + fileName + " doesn't exist!");

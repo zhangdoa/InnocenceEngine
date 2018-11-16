@@ -27,11 +27,27 @@ PixelOutputType geometryPassCookTorrancePixel(PixelInputType input) : SV_TARGET
   PixelOutputType output;
 
 	output.uni_geometryPassRT0 = float4(
-	input.thefrag_WorldSpacePos.rgb, 
+	input.thefrag_WorldSpacePos.xyz, 
 	t2d_metallic.Sample(SampleTypeWrap, input.thefrag_TexCoord).r);
 	
-	output.uni_geometryPassRT1 = float4(
-	t2d_normal.Sample(SampleTypeWrap, input.thefrag_TexCoord).rgb, 
+	// get edge vectors of the pixel triangle
+	float3 dp1 = ddx_fine(input.thefrag_WorldSpacePos.xyz);
+	float3 dp2 = ddy_fine(input.thefrag_WorldSpacePos.xyz);
+	float2 duv1 = ddx_fine(input.thefrag_TexCoord);
+	float2 duv2 = ddy_fine(input.thefrag_TexCoord);
+ 
+	// solve the linear system
+	float3 N = input.thefrag_Normal;
+
+	float3 T = normalize(dp1 * duv2.x - dp2 * duv1.x);
+  float3 B = normalize(cross(T, N));
+
+	float3x3 TBN = transpose(float3x3(T, B, N));
+  
+  float3 normalInTangentSpace = t2d_normal.Sample(SampleTypeWrap, input.thefrag_TexCoord).rgb * 2.0f - 1.0f;
+  float3 normalInWorldSpace = normalize(mul(normalInTangentSpace, TBN));
+  output.uni_geometryPassRT1 = float4(
+	normalInWorldSpace,
 	t2d_roughness.Sample(SampleTypeWrap, input.thefrag_TexCoord).r);
 
 	output.uni_geometryPassRT2 = float4(

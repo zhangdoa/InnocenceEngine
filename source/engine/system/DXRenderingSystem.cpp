@@ -60,7 +60,9 @@ void drawMesh(EntityID rhs);
 void drawMesh(MeshDataComponent* MDC);
 void drawMesh(size_t indicesSize, DXMeshDataComponent * DXMDC);
 
-void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, mat4* parameterValue);
+template <class T>
+void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, T* parameterValue);
+
 void cleanRTV(vec4 color, ID3D11RenderTargetView* RTV);
 void cleanDSV(ID3D11DepthStencilView* DSV);
 void swapBuffer();
@@ -69,17 +71,23 @@ static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
 static DXWindowSystemSingletonComponent* g_DXWindowSystemSingletonComponent;
 static DXRenderingSystemSingletonComponent* g_DXRenderingSystemSingletonComponent;
 
+std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedMeshComponents;
+
 mat4 m_CamProj;
 mat4 m_CamRot;
 mat4 m_CamTrans;
-mat4 m_CamViewProj;
+mat4 m_CamRTP;
 
-std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedMeshComponents;
+struct GPassCBufferData
+{
+	mat4 mvp;
+	mat4 m_inv;
+};
 
-struct GPassDataPack
+struct GPassRenderingDataPack
 {
 	size_t indiceSize;
-	mat4 mvp;
+	GPassCBufferData GPassCBuffer;
 	DXMeshDataComponent* DXMDC;
 	DXTextureDataComponent* m_basicNormalDXTDC;
 	DXTextureDataComponent* m_basicAlbedoDXTDC;
@@ -88,7 +96,16 @@ struct GPassDataPack
 	DXTextureDataComponent* m_basicAODXTDC;
 };
 
-std::queue<GPassDataPack> m_GPassRenderingQueue;
+std::queue<GPassRenderingDataPack> m_GPassRenderingDataQueue;
+
+struct LPassCBufferData
+{
+	vec4 viewPos;
+	vec4 lightDir;
+	vec4 color;
+};
+
+LPassCBufferData m_LPassCBufferData;
 
 DXMeshDataComponent* m_UnitLineTemplate;
 DXMeshDataComponent* m_UnitQuadTemplate;
@@ -603,7 +620,6 @@ bool  DXRenderingSystemNS::convertCoordinateFromGLtoDX(MeshDataComponent* MDC)
 {
 	for (auto& i : MDC->m_vertices)
 	{
-		i.m_pos.z = (i.m_pos.z + 1.0f) / 2.0f;
 		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
 	}
 	return true;
@@ -1565,10 +1581,15 @@ void DXRenderingSystemNS::prepareRenderingData()
 		InnoMath::getInvertTranslationMatrix(
 			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
 		);
+
 	DXRenderingSystemNS::m_CamProj = l_p;
 	DXRenderingSystemNS::m_CamRot = l_r;
 	DXRenderingSystemNS::m_CamTrans = l_t;
-	DXRenderingSystemNS::m_CamViewProj = l_p * l_r * l_t;
+	DXRenderingSystemNS::m_CamRTP = l_p * l_r * l_t;
+
+	m_LPassCBufferData.viewPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+	m_LPassCBufferData.lightDir = vec4(1.0f, 0.0f, 0.0f, 0.0f).normalize();
+	m_LPassCBufferData.color = vec4(0.2f, 0.4f, 0.3f, 1.0f);
 
 	for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
 	{
@@ -1582,12 +1603,14 @@ void DXRenderingSystemNS::prepareRenderingData()
 					auto l_DXMDC = DXRenderingSystemNS::m_initializedMeshComponents.find(l_MDC->m_parentEntity);
 					if (l_DXMDC != DXRenderingSystemNS::m_initializedMeshComponents.end())
 					{
-						GPassDataPack l_renderingDataPack;
+						GPassRenderingDataPack l_renderingDataPack;
 
 						l_renderingDataPack.indiceSize = l_MDC->m_indicesSize;
 
-						mat4 m = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat;
-						l_renderingDataPack.mvp = DXRenderingSystemNS::m_CamViewProj * m;
+						auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity);
+						mat4 m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+						l_renderingDataPack.GPassCBuffer.mvp = DXRenderingSystemNS::m_CamRTP * m;
+						l_renderingDataPack.GPassCBuffer.m_inv = m.inverse();
 
 						l_renderingDataPack.DXMDC = l_DXMDC->second;
 
@@ -1646,7 +1669,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 							}
 						}
 
-						DXRenderingSystemNS::m_GPassRenderingQueue.push(l_renderingDataPack);
+						DXRenderingSystemNS::m_GPassRenderingDataQueue.push(l_renderingDataPack);
 					}
 				}
 			}
@@ -1699,11 +1722,11 @@ void DXRenderingSystemNS::updateGeometryPass()
 	DXRenderingSystemNS::cleanDSV(DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView);
 
 	// draw
-	while (DXRenderingSystemNS::m_GPassRenderingQueue.size() > 0)
+	while (DXRenderingSystemNS::m_GPassRenderingDataQueue.size() > 0)
 	{
-		auto l_renderPack = DXRenderingSystemNS::m_GPassRenderingQueue.front();
+		auto l_renderPack = DXRenderingSystemNS::m_GPassRenderingDataQueue.front();
 
-		updateShaderParameter(shaderType::VERTEX, DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_renderPack.mvp);
+		updateShaderParameter<GPassCBufferData>(shaderType::VERTEX, DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_renderPack.GPassCBuffer);
 
 		// bind to textures
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &l_renderPack.m_basicNormalDXTDC->m_SRV);
@@ -1714,7 +1737,7 @@ void DXRenderingSystemNS::updateGeometryPass()
 
 		drawMesh(l_renderPack.indiceSize, l_renderPack.DXMDC);
 
-		DXRenderingSystemNS::m_GPassRenderingQueue.pop();
+		DXRenderingSystemNS::m_GPassRenderingDataQueue.pop();
 	}
 }
 
@@ -1759,7 +1782,11 @@ void DXRenderingSystemNS::updateLightPass()
 	// Clear the render buffers.
 	DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), DXLightRenderPassSingletonComponent::getInstance().m_renderTargetView);
 	DXRenderingSystemNS::cleanDSV(DXLightRenderPassSingletonComponent::getInstance().m_depthStencilView);
+	
+	auto l_renderPack = DXRenderingSystemNS::m_LPassCBufferData;
 
+	updateShaderParameter<LPassCBufferData>(shaderType::FRAGMENT, DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_renderPack);
+	
 	// bind to previous pass render target textures
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[0]);
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(1, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[1]);
@@ -1774,7 +1801,6 @@ void DXRenderingSystemNS::updateFinalBlendPass()
 	// Set Rasterizer State
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetState(
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred);
-
 	// Set the vertex and pixel shaders that will be used to render this triangle.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->VSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader, NULL, 0);
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
@@ -1851,11 +1877,11 @@ void DXRenderingSystemNS::drawMesh(size_t indicesSize, DXMeshDataComponent * DXM
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->DrawIndexed((UINT)indicesSize, 0, 0);
 }
 
-void DXRenderingSystemNS::updateShaderParameter(shaderType shaderType, ID3D11Buffer * matrixBuffer, mat4* parameterValue)
+template <class T>
+void DXRenderingSystemNS::updateShaderParameter(shaderType shaderType, ID3D11Buffer * matrixBuffer, T* parameterValue)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	DirectX::XMMATRIX* dataPtr;
 	unsigned int bufferNumber;
 
 	// Lock the constant buffer so it can be written to.
@@ -1867,9 +1893,9 @@ void DXRenderingSystemNS::updateShaderParameter(shaderType shaderType, ID3D11Buf
 		return;
 	}
 
-	dataPtr = (DirectX::XMMATRIX*)mappedResource.pData;
+	auto dataPtr = reinterpret_cast<T*>(mappedResource.pData);
 
-	*dataPtr = *(DirectX::XMMATRIX*)parameterValue;
+	*dataPtr = *parameterValue;
 
 	// Unlock the constant buffer.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->Unmap(matrixBuffer, 0);

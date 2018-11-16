@@ -338,10 +338,10 @@ void GameInstanceNS::setupSpheres()
 		m_sphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_sphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_sphereEntitys[i]);
 		m_sphereVisibleComponents[i]->m_visiblilityType = visiblilityType::STATIC_MESH;
-		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::CUSTOM;
+		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::CUBE;
 		m_sphereVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 		m_sphereVisibleComponents[i]->m_drawAABB = true;
-		m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
+		//m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 	}
 	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i += 4)
 	{
@@ -438,4 +438,14 @@ void GameInstanceNS::updateSpheres(float seed)
 	);
 	m_pawnTransformComponent2->m_localTransformVector.m_pos = std::get<0>(l_t);
 	m_pawnTransformComponent2->m_globalTransformVector.m_pos = std::get<1>(l_t);
+
+	for (auto i = (unsigned int)0; i < m_sphereTransformComponents.size(); i++)
+	{
+		auto l_t = InnoMath::rotateInLocal(
+			m_sphereTransformComponents[i]->m_localTransformVector.m_rot,
+			vec4(0.0f, 1.0f, 0.0f, 0.0f),
+			0.2f
+		);
+		m_sphereTransformComponents[i]->m_localTransformVector.m_rot = l_t;
+	}
 }

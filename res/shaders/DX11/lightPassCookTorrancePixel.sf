@@ -6,6 +6,13 @@ Texture2D uni_geometryPassRT2 : register(t2);
 
 SamplerState SampleTypePoint: register(s0);
 
+cbuffer LightBuffer
+{
+    float4 viewPos;
+    float4 lightDir;
+    float4 color;
+};
+
 struct PixelInputType
 {
     float4 position : SV_POSITION;
@@ -20,6 +27,34 @@ struct PixelOutputType
 PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 {
   PixelOutputType output;
-	output.uni_lightPassRT0 = uni_geometryPassRT2.Sample(SampleTypePoint, input.texcoord);
+  
+  float4 GPassRT0 = uni_geometryPassRT0.Sample(SampleTypePoint, input.texcoord);
+  float4 GPassRT1 = uni_geometryPassRT1.Sample(SampleTypePoint, input.texcoord);
+  float4 GPassRT2 = uni_geometryPassRT2.Sample(SampleTypePoint, input.texcoord);
+  
+  float3 worldPos = GPassRT0.xyz;
+  float3 N = GPassRT1.xyz;
+	float3 L = normalize(-lightDir.xyz);
+	float3 V = normalize(viewPos.xyz - worldPos);
+	float3 H = normalize(V + L);
+
+	float NdotH = max(dot(N, H), 0.0);
+	float NdotL = max(dot(N, L), 0.0);
+	
+	float3 diffuse = GPassRT2.xyz;
+	float specular = GPassRT2.w;
+	
+	// ambient color
+	float3 ambientColor = diffuse * color.xyz * 0.04;
+
+	// diffuse color
+	float3 diffuseColor = diffuse * NdotL * color.xyz;
+	
+	// specular color
+	float alpha = 32;
+	float3 specularColor = specular * pow(NdotH, alpha) * color.xyz;
+		
+	output.uni_lightPassRT0 = float4(ambientColor + diffuseColor + specularColor, 1.0f);
+	output.uni_lightPassRT0 = GPassRT1;
 	return output;
 }
