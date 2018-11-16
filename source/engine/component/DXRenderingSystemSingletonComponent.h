@@ -38,8 +38,11 @@ public:
 	D3D11_DEPTH_STENCIL_VIEW_DESC m_depthStencilViewDesc;
 	ID3D11DepthStencilView* m_depthStencilView;
 
-	D3D11_RASTERIZER_DESC m_rasterDesc;
-	ID3D11RasterizerState* m_rasterState;
+	D3D11_RASTERIZER_DESC m_rasterDescForward;
+	ID3D11RasterizerState* m_rasterStateForward;
+
+	D3D11_RASTERIZER_DESC m_rasterDescDeferred;
+	ID3D11RasterizerState* m_rasterStateDeferred;
 
 	D3D11_VIEWPORT m_viewport;
 

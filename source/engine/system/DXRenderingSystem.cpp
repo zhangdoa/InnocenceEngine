@@ -87,11 +87,9 @@ struct GPassDataPack
 	DXTextureDataComponent* m_basicRoughnessDXTDC;
 	DXTextureDataComponent* m_basicAODXTDC;
 };
+
 std::queue<GPassDataPack> m_GPassRenderingQueue;
 
-struct LPassDataPack
-{
-};
 DXMeshDataComponent* m_UnitLineTemplate;
 DXMeshDataComponent* m_UnitQuadTemplate;
 DXMeshDataComponent* m_UnitCubeTemplate;
@@ -406,31 +404,49 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
 
 	// Setup the raster description which will determine how and what polygons will be drawn.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.AntialiasedLineEnable = false;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.CullMode = D3D11_CULL_BACK;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.DepthBias = 0;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.DepthBiasClamp = 0.0f;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.DepthClipEnable = true;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.FillMode = D3D11_FILL_SOLID;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.FrontCounterClockwise = true;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.MultisampleEnable = false;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.ScissorEnable = false;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc.SlopeScaledDepthBias = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.AntialiasedLineEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.CullMode = D3D11_CULL_BACK;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.DepthBias = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.DepthBiasClamp = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.DepthClipEnable = true;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.FillMode = D3D11_FILL_SOLID;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.FrontCounterClockwise = true;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.MultisampleEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.ScissorEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.SlopeScaledDepthBias = 0.0f;
 
-	// Create the rasterizer state from the description we just filled out.
+	// Create the rasterizer state for forward pass
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRasterizerState(
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDesc,
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState);
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward,
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateForward);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the rasterizer state!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the rasterizer state for forward pass!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
 
-	// Now set the rasterizer state.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetState(
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState);
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.AntialiasedLineEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.CullMode = D3D11_CULL_NONE;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.DepthBias = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.DepthBiasClamp = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.DepthClipEnable = true;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.FillMode = D3D11_FILL_SOLID;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.FrontCounterClockwise = false;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.MultisampleEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.ScissorEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.SlopeScaledDepthBias = 0.0f;
+
+	// Create the rasterizer state for deferred pass
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRasterizerState(
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred,
+		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: can't create the rasterizer state for deferred pass!");
+		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		return false;
+	}
 
 	// Setup the viewport for rendering.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.Width =
@@ -498,10 +514,10 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::terminate()
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain->SetFullscreenState(false, NULL);
 	}
 
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState)
+	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState->Release();
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterState = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred->Release();
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred = 0;
 	}
 
 	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView)
@@ -1640,6 +1656,10 @@ void DXRenderingSystemNS::prepareRenderingData()
 
 void DXRenderingSystemNS::updateGeometryPass()
 {
+	// Set Rasterizer State
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetState(
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateForward);
+
 	// Set the vertex and pixel shaders that will be used to render this triangle.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->VSSetShader(
 		DXGeometryRenderPassSingletonComponent::getInstance().m_vertexShader,
@@ -1698,8 +1718,13 @@ void DXRenderingSystemNS::updateGeometryPass()
 	}
 }
 
+
 void DXRenderingSystemNS::updateLightPass()
 {
+	// Set Rasterizer State
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetState(
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred);
+
 	// Set the vertex and pixel shaders that will be used to render this triangle.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->VSSetShader(
 		DXLightRenderPassSingletonComponent::getInstance().m_vertexShader,
@@ -1746,6 +1771,10 @@ void DXRenderingSystemNS::updateLightPass()
 
 void DXRenderingSystemNS::updateFinalBlendPass()
 {
+	// Set Rasterizer State
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetState(
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred);
+
 	// Set the vertex and pixel shaders that will be used to render this triangle.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->VSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader, NULL, 0);
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
