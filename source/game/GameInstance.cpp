@@ -56,7 +56,7 @@ void PlayerComponentCollection::setup()
 	m_cameraComponent->m_drawFrustum = false;
 	m_cameraComponent->m_drawAABB = false;
 
-	m_moveSpeed = 0.5f;
+	m_moveSpeed = 0.05f;
 	m_rotateSpeed = 4.0f;
 	m_canMove = false;
 
@@ -223,8 +223,9 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
 		GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot,
 		vec4(-1.0f, 0.0f, 0.0f, 0.0f),
-		35.0f
+		45.0f
 	);
+
 	GameInstanceNS::m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<LightComponent>(GameInstanceNS::m_directionalLightEntity);
 	GameInstanceNS::m_directionalLightComponent->m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	GameInstanceNS::m_directionalLightComponent->m_lightType = lightType::DIRECTIONAL;
@@ -235,6 +236,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 
 	GameInstanceNS::m_landscapeTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_landscapeEntity);
 	GameInstanceNS::m_landscapeTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, -4.0f, 0.0f, 1.0f);
 	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_scale = vec4(20.0f, 20.0f, 0.1f, 1.0f);
 	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
 		GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_rot,
@@ -439,13 +441,13 @@ void GameInstanceNS::updateSpheres(float seed)
 	m_pawnTransformComponent2->m_localTransformVector.m_pos = std::get<0>(l_t);
 	m_pawnTransformComponent2->m_globalTransformVector.m_pos = std::get<1>(l_t);
 
-	for (auto i = (unsigned int)0; i < m_sphereTransformComponents.size(); i++)
-	{
-		auto l_t = InnoMath::rotateInLocal(
-			m_sphereTransformComponents[i]->m_localTransformVector.m_rot,
-			vec4(0.0f, 1.0f, 0.0f, 0.0f),
-			0.2f
-		);
-		m_sphereTransformComponents[i]->m_localTransformVector.m_rot = l_t;
-	}
+	//for (auto i = (unsigned int)0; i < m_sphereTransformComponents.size(); i++)
+	//{
+	//	auto l_t = InnoMath::rotateInLocal(
+	//		m_sphereTransformComponents[i]->m_localTransformVector.m_rot,
+	//		vec4(0.0f, 1.0f, 0.0f, 0.0f),
+	//		0.2f
+	//	);
+	//	m_sphereTransformComponents[i]->m_localTransformVector.m_rot = l_t;
+	//}
 }

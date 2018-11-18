@@ -11,7 +11,7 @@ SamplerState SampleTypeWrap;
 struct PixelInputType
 {
     float4 thefrag_WorldSpacePos : SV_POSITION;
-    float2 thefrag_TexCoord : TEXCOORD0;
+    float2 thefrag_TexCoord : TEXCOORD;
     float3 thefrag_Normal :NORMAL;
 };
 
@@ -37,14 +37,14 @@ PixelOutputType geometryPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	float2 duv2 = ddy_fine(input.thefrag_TexCoord);
  
 	// solve the linear system
-	float3 N = input.thefrag_Normal;
+	float3 N = normalize(input.thefrag_Normal);
 
 	float3 T = normalize(dp1 * duv2.x - dp2 * duv1.x);
-  float3 B = normalize(cross(T, N));
+  float3 B = -normalize(cross(N, T));
 
-	float3x3 TBN = transpose(float3x3(T, B, N));
+	float3x3 TBN = float3x3(T, B, N);
   
-  float3 normalInTangentSpace = t2d_normal.Sample(SampleTypeWrap, input.thefrag_TexCoord).rgb * 2.0f - 1.0f;
+  float3 normalInTangentSpace = normalize(t2d_normal.Sample(SampleTypeWrap, input.thefrag_TexCoord).rgb * 2.0f - 1.0f);
   float3 normalInWorldSpace = normalize(mul(normalInTangentSpace, TBN));
   output.uni_geometryPassRT1 = float4(
 	normalInWorldSpace,

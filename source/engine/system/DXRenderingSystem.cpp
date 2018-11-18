@@ -81,7 +81,7 @@ mat4 m_CamRTP;
 struct GPassCBufferData
 {
 	mat4 mvp;
-	mat4 m_inv;
+	mat4 m_normalMat;
 };
 
 struct GPassRenderingDataPack
@@ -89,6 +89,7 @@ struct GPassRenderingDataPack
 	size_t indiceSize;
 	GPassCBufferData GPassCBuffer;
 	DXMeshDataComponent* DXMDC;
+	meshDrawMethod m_meshDrawMethod;
 	DXTextureDataComponent* m_basicNormalDXTDC;
 	DXTextureDataComponent* m_basicAlbedoDXTDC;
 	DXTextureDataComponent* m_basicMetallicDXTDC;
@@ -422,7 +423,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 
 	// Setup the raster description which will determine how and what polygons will be drawn.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.AntialiasedLineEnable = false;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.CullMode = D3D11_CULL_BACK;
+	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.CullMode = D3D11_CULL_NONE;
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.DepthBias = 0;
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.DepthBiasClamp = 0.0f;
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.DepthClipEnable = true;
@@ -797,7 +798,7 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 		return false;
 	}
 
-	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[3];
+	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[5];
 	unsigned int l_numElements;
 
 	// Create the vertex input layout description.
@@ -817,13 +818,29 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	l_polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	l_polygonLayout[1].InstanceDataStepRate = 0;
 
-	l_polygonLayout[2].SemanticName = "NORMAL";
+	l_polygonLayout[2].SemanticName = "PADA";
 	l_polygonLayout[2].SemanticIndex = 0;
-	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
 	l_polygonLayout[2].InputSlot = 0;
 	l_polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	l_polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	l_polygonLayout[2].InstanceDataStepRate = 0;
+
+	l_polygonLayout[3].SemanticName = "NORMAL";
+	l_polygonLayout[3].SemanticIndex = 0;
+	l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[3].InputSlot = 0;
+	l_polygonLayout[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[3].InstanceDataStepRate = 0;
+
+	l_polygonLayout[4].SemanticName = "PADB";
+	l_polygonLayout[4].SemanticIndex = 0;
+	l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[4].InputSlot = 0;
+	l_polygonLayout[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[4].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
 	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
@@ -832,6 +849,7 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateInputLayout(
 		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
 		l_shaderBuffer->GetBufferSize(), &DXGeometryRenderPassSingletonComponent::getInstance().m_layout);
+
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create vertex shader layout!");
@@ -841,7 +859,7 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 
 	// Setup the description of the dynamic matrix constant buffer
 	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.ByteWidth = sizeof(DirectX::XMMATRIX);
+	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.ByteWidth = sizeof(GPassCBufferData);
 	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.MiscFlags = 0;
@@ -851,7 +869,7 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc, NULL, &DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create matrix buffer pointer!");
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: GeometryPass: can't create constant buffer pointer!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -1060,7 +1078,7 @@ bool  DXRenderingSystemNS::initializeLightPass()
 		return false;
 	}
 
-	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[3];
+	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[5];
 	unsigned int l_numElements;
 
 	// Create the vertex input layout description.
@@ -1080,13 +1098,29 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	l_polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	l_polygonLayout[1].InstanceDataStepRate = 0;
 
-	l_polygonLayout[2].SemanticName = "NORMAL";
+	l_polygonLayout[2].SemanticName = "PADA";
 	l_polygonLayout[2].SemanticIndex = 0;
-	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
 	l_polygonLayout[2].InputSlot = 0;
 	l_polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	l_polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	l_polygonLayout[2].InstanceDataStepRate = 0;
+
+	l_polygonLayout[3].SemanticName = "NORMAL";
+	l_polygonLayout[3].SemanticIndex = 0;
+	l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[3].InputSlot = 0;
+	l_polygonLayout[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[3].InstanceDataStepRate = 0;
+
+	l_polygonLayout[4].SemanticName = "PADB";
+	l_polygonLayout[4].SemanticIndex = 0;
+	l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[4].InputSlot = 0;
+	l_polygonLayout[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[4].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
 	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
@@ -1095,9 +1129,27 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateInputLayout(
 		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
 		l_shaderBuffer->GetBufferSize(), &DXLightRenderPassSingletonComponent::getInstance().m_layout);
+
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: LightPass: can't create vertex shader layout!");
+		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		return false;
+	}
+
+	// Setup the description of the dynamic matrix constant buffer
+	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.ByteWidth = sizeof(LPassCBufferData);
+	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.MiscFlags = 0;
+	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.StructureByteStride = 0;
+
+	// Create the constant buffer pointer
+	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc, NULL, &DXLightRenderPassSingletonComponent::getInstance().m_constantBuffer);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog("Error: DXRenderingSystem: LightPass: can't create constant buffer pointer!");
 		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
 		return false;
 	}
@@ -1178,7 +1230,7 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 		return false;
 	}
 
-	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[3];
+	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[5];
 	unsigned int l_numElements;
 
 	// Create the vertex input layout description.
@@ -1198,13 +1250,29 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	l_polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	l_polygonLayout[1].InstanceDataStepRate = 0;
 
-	l_polygonLayout[2].SemanticName = "NORMAL";
+	l_polygonLayout[2].SemanticName = "PADA";
 	l_polygonLayout[2].SemanticIndex = 0;
-	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
 	l_polygonLayout[2].InputSlot = 0;
 	l_polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	l_polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	l_polygonLayout[2].InstanceDataStepRate = 0;
+
+	l_polygonLayout[3].SemanticName = "NORMAL";
+	l_polygonLayout[3].SemanticIndex = 0;
+	l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[3].InputSlot = 0;
+	l_polygonLayout[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[3].InstanceDataStepRate = 0;
+
+	l_polygonLayout[4].SemanticName = "PADB";
+	l_polygonLayout[4].SemanticIndex = 0;
+	l_polygonLayout[4].Format = DXGI_FORMAT_R32G32_FLOAT;
+	l_polygonLayout[4].InputSlot = 0;
+	l_polygonLayout[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[4].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
 	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
@@ -1588,8 +1656,8 @@ void DXRenderingSystemNS::prepareRenderingData()
 	DXRenderingSystemNS::m_CamRTP = l_p * l_r * l_t;
 
 	m_LPassCBufferData.viewPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-	m_LPassCBufferData.lightDir = vec4(1.0f, 0.0f, 0.0f, 0.0f).normalize();
-	m_LPassCBufferData.color = vec4(0.2f, 0.4f, 0.3f, 1.0f);
+	m_LPassCBufferData.lightDir = vec4(0.0f, -0.5f, -0.5f, 0.0f).normalize();
+	m_LPassCBufferData.color = vec4(1.0f, 1.0f, 0.5f, 1.0f);
 
 	for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
 	{
@@ -1606,12 +1674,11 @@ void DXRenderingSystemNS::prepareRenderingData()
 						GPassRenderingDataPack l_renderingDataPack;
 
 						l_renderingDataPack.indiceSize = l_MDC->m_indicesSize;
-
+						l_renderingDataPack.m_meshDrawMethod = l_MDC->m_meshDrawMethod;
 						auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity);
 						mat4 m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 						l_renderingDataPack.GPassCBuffer.mvp = DXRenderingSystemNS::m_CamRTP * m;
-						l_renderingDataPack.GPassCBuffer.m_inv = m.inverse();
-
+						l_renderingDataPack.GPassCBuffer.m_normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 						l_renderingDataPack.DXMDC = l_DXMDC->second;
 
 						auto l_textureMap = l_graphicData.second;
@@ -1696,9 +1763,6 @@ void DXRenderingSystemNS::updateGeometryPass()
 	// Set the sampler state in the pixel shader.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetSamplers(0, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_samplerState);
 
-	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	// Set the vertex input layout.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetInputLayout(DXGeometryRenderPassSingletonComponent::getInstance().m_layout);
 
@@ -1725,6 +1789,20 @@ void DXRenderingSystemNS::updateGeometryPass()
 	while (DXRenderingSystemNS::m_GPassRenderingDataQueue.size() > 0)
 	{
 		auto l_renderPack = DXRenderingSystemNS::m_GPassRenderingDataQueue.front();
+
+		// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+		D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
+
+		if (l_renderPack.m_meshDrawMethod == meshDrawMethod::TRIANGLE)
+		{
+			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		}
+		else
+		{
+			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+		}
+
+		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
 
 		updateShaderParameter<GPassCBufferData>(shaderType::VERTEX, DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_renderPack.GPassCBuffer);
 
@@ -1783,9 +1861,9 @@ void DXRenderingSystemNS::updateLightPass()
 	DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), DXLightRenderPassSingletonComponent::getInstance().m_renderTargetView);
 	DXRenderingSystemNS::cleanDSV(DXLightRenderPassSingletonComponent::getInstance().m_depthStencilView);
 	
-	auto l_renderPack = DXRenderingSystemNS::m_LPassCBufferData;
+	auto l_LPassCBufferData = DXRenderingSystemNS::m_LPassCBufferData;
 
-	updateShaderParameter<LPassCBufferData>(shaderType::FRAGMENT, DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_renderPack);
+	updateShaderParameter<LPassCBufferData>(shaderType::FRAGMENT, DXLightRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_LPassCBufferData);
 	
 	// bind to previous pass render target textures
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[0]);

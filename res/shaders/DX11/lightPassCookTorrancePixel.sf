@@ -55,6 +55,5 @@ PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	float3 specularColor = specular * pow(NdotH, alpha) * color.xyz;
 		
 	output.uni_lightPassRT0 = float4(ambientColor + diffuseColor + specularColor, 1.0f);
-	output.uni_lightPassRT0 = GPassRT1;
 	return output;
 }

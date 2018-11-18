@@ -1614,11 +1614,11 @@ void GLRenderingSystemNS::initializeDebuggerPass()
 		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassVertexShaderID,
 		GL_VERTEX_SHADER,
 		"GL3.3//debuggerPassVertex.sf");
-	initializeShader(
-		l_GLSPC->m_program,
-		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGeometryShaderID,
-		GL_GEOMETRY_SHADER,
-		"GL3.3//debuggerPassGeometry.sf");
+	//initializeShader(
+	//	l_GLSPC->m_program,
+	//	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGeometryShaderID,
+	//	GL_GEOMETRY_SHADER,
+	//	"GL3.3//debuggerPassGeometry.sf");
 	initializeShader(
 		l_GLSPC->m_program,
 		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassFragmentShaderID,
@@ -2332,9 +2332,9 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 	glStencilMask(0xFF);
 
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
+	//glEnable(GL_CULL_FACE);
+	//glFrontFace(GL_CCW);
+	//glCullFace(GL_BACK);
 
 	// bind to framebuffer
 	auto l_FBC = GeometryRenderPassSingletonComponent::getInstance().m_FBC;
@@ -2544,7 +2544,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 			}
 		}
 
-		glDisable(GL_CULL_FACE);
+		//glDisable(GL_CULL_FACE);
 		glDisable(GL_STENCIL_TEST);
 		glDisable(GL_DEPTH_CLAMP);
 		glDisable(GL_DEPTH_TEST);
@@ -2822,9 +2822,9 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CW);
-	glCullFace(GL_FRONT);
+	//glEnable(GL_CULL_FACE);
+	//glFrontFace(GL_CW);
+	//glCullFace(GL_FRONT);
 
 	// bind to framebuffer
 	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_skyPassFBC;

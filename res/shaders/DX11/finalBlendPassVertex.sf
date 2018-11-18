@@ -2,9 +2,11 @@
 
 struct VertexInputType
 {
-    float3 position : POSITION;
-    float2 texcoord : TEXCOORD0;
-    float3 normal : NORMAL;
+    float4 position : POSITION;
+    float2 texcoord : TEXCOORD;
+    float2 pada : PADA;
+    float4 normal : NORMAL;
+    float4 padb : PADB;
 };
 
 struct PixelInputType
@@ -17,7 +19,7 @@ PixelInputType finalBlendPassVertex(VertexInputType input)
 {
     PixelInputType output;
 
-    output.position = float4(input.position, 1.0f);
+    output.position = input.position;
     output.texcoord = input.texcoord;
     
     return output;

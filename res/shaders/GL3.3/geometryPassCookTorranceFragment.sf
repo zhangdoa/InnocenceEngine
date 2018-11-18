@@ -57,7 +57,7 @@ void main()
 	}
 	else
 	{
-		WorldSpaceNormal = normalize(TBN * vec3(-1.0f, -1.0f, 1.0f));
+		WorldSpaceNormal = normalize(TBN * vec3(0.0f, 0.0f, 1.0f));
 	}	
 	
 	if(uni_useAlbedoTexture)
