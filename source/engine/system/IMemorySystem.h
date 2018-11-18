@@ -12,6 +12,7 @@
 #include "../component/GLTextureDataComponent.h"
 #include "../component/GLFrameBufferComponent.h"
 #include "../component/GLShaderProgramComponent.h"
+#include "../component/GLRenderPassComponent.h"
 
 #include "../component/DXMeshDataComponent.h"
 #include "../component/DXTextureDataComponent.h"
@@ -58,6 +59,7 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLTextureDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLFrameBufferComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLShaderProgramComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLRenderPassComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXTextureDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(Vertex);
@@ -94,6 +96,8 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentTemplate(GLFrameBufferComponent);
 	template <>
 	INNO_SYSTEM_EXPORT allocateComponentTemplate(GLShaderProgramComponent);
+	template <>
+	INNO_SYSTEM_EXPORT allocateComponentTemplate(GLRenderPassComponent);
 	template <>
 	INNO_SYSTEM_EXPORT allocateComponentTemplate(DXMeshDataComponent);
 	template <>

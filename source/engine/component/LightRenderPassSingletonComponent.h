@@ -19,13 +19,11 @@ public:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	GLFrameBufferComponent* m_FBC;
+	GLRenderPassComponent* m_GLRPC;
 
 	GLShaderProgramComponent* m_GLSPC;
 	GLuint m_lightPassVertexShaderID;
 	GLuint m_lightPassFragmentShaderID;
-	TextureDataComponent* m_TDC;
-	GLTextureDataComponent* m_GLTDC;
 
 	GLuint m_uni_geometryPassRT0;
 	GLuint m_uni_geometryPassRT1;

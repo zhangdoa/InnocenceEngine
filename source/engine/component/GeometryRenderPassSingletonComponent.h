@@ -4,6 +4,7 @@
 #include "GLShaderProgramComponent.h"
 #include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
+#include "GLRenderPassComponent.h"
 
 class GeometryRenderPassSingletonComponent
 {
@@ -19,13 +20,11 @@ public:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 	
-	GLFrameBufferComponent* m_FBC;
+	GLRenderPassComponent* m_GLRPC;
 
 	GLShaderProgramComponent* m_GLSPC;
 	GLuint m_geometryPassVertexShaderID;
 	GLuint m_geometryPassFragmentShaderID;
-	std::vector<TextureDataComponent*> m_TDCs;
-	std::vector<GLTextureDataComponent*> m_GLTDCs;
 
 	GLuint m_geometryPass_uni_p_camera_original;
 	GLuint m_geometryPass_uni_p_camera_jittered;

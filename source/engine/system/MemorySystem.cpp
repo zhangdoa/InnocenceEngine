@@ -73,7 +73,8 @@ std::unique_ptr<ComponentPool<className>> m_##className##Pool;
 	componentPoolUniPtr(GLTextureDataComponent);
 	componentPoolUniPtr(GLFrameBufferComponent);
 	componentPoolUniPtr(GLShaderProgramComponent);
-
+	componentPoolUniPtr(GLRenderPassComponent);
+	
 	componentPoolUniPtr(DXMeshDataComponent);
 	componentPoolUniPtr(DXTextureDataComponent);
 
@@ -141,6 +142,7 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::setup()
 	constructComponentPool(GLTextureDataComponent);
 	constructComponentPool(GLFrameBufferComponent);
 	constructComponentPool(GLShaderProgramComponent);
+	constructComponentPool(GLRenderPassComponent);
 
 	constructComponentPool(DXMeshDataComponent);
 	constructComponentPool(DXTextureDataComponent);
@@ -478,6 +480,7 @@ allocateComponentImplDefi(GLMeshDataComponent)
 allocateComponentImplDefi(GLTextureDataComponent)
 allocateComponentImplDefi(GLFrameBufferComponent)
 allocateComponentImplDefi(GLShaderProgramComponent)
+allocateComponentImplDefi(GLRenderPassComponent)
 
 allocateComponentImplDefi(DXMeshDataComponent)
 allocateComponentImplDefi(DXTextureDataComponent)
