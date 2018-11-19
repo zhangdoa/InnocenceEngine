@@ -168,12 +168,11 @@ void InnoPhysicsSystemNS::initializeLightComponents()
 {
 	for (auto& i : g_GameSystemSingletonComponent->m_LightComponents)
 	{
-		i->m_direction = vec4(0.0f, 0.0f, 1.0f, 0.0f);
-		i->m_constantFactor = 1.0f;
-		i->m_linearFactor = 0.14f;
-		i->m_quadraticFactor = 0.07f;
-		setupLightComponentRadius(i);
-		i->m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		if (i->m_lightType == lightType::POINT)
+		{
+			setupLightComponentRadius(i);
+		}
+
 
 		if (i->m_lightType == lightType::DIRECTIONAL)
 		{
@@ -184,8 +183,20 @@ void InnoPhysicsSystemNS::initializeLightComponents()
 
 void InnoPhysicsSystemNS::setupLightComponentRadius(LightComponent * lightComponent)
 {
-	float l_lightMaxIntensity = std::fmax(std::fmax(lightComponent->m_color.x, lightComponent->m_color.y), lightComponent->m_color.z);
-	lightComponent->m_radius = -lightComponent->m_linearFactor + std::sqrt(lightComponent->m_linearFactor * lightComponent->m_linearFactor - 4.0f * lightComponent->m_quadraticFactor * (lightComponent->m_constantFactor - (256.0f / 5.0f) * l_lightMaxIntensity)) / (2.0f * lightComponent->m_quadraticFactor);
+	auto l_RGBColor = lightComponent->m_color.normalize();
+	// "Real-Time Rendering", 4th Edition, p.278
+	// https://en.wikipedia.org/wiki/Relative_luminance
+	// weight with respect to CIE photometric curve
+	auto l_reletiveLuminanceRatio = (0.2126f * l_RGBColor.x + 0.7152f * l_RGBColor.y + 0.0722 * l_RGBColor.z);
+
+	// Luminance (nt) is illuminance (lx) per solid angle, while luminous intensity (cd) is luminous flux (lm) per solid angle, thus for one area unit (m^2), the ratio of nt/lx is same as cd/lm
+	// For omni isotropic light, after the intergration per solid angle, the luminous flux (lm) is 4 pi times the luminous intensity (cd)
+	auto l_weightedLuminousFlux = lightComponent->m_luminousFlux * l_reletiveLuminanceRatio;
+
+	// 1. get luminous efficacy (lm/w), assume 683 lm/w (100% luminous efficiency) always
+	// 2. luminous flux (lm) to radiant flux (w), omitted because linearity assumption in step 1
+	// 3. apply inverse square attenuation law with a low threshold of eye sensitivity at 0.03 lx, in ideal situation, lx could convert back to lm with respect to a sphere surface area 4 * PI * r^2
+	lightComponent->m_radius = std::sqrt(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
 }
 
 void InnoPhysicsSystemNS::generateAABB(VisibleComponent & visibleComponent)
@@ -263,7 +274,6 @@ void InnoPhysicsSystemNS::generateAABB(VisibleComponent & visibleComponent)
 void InnoPhysicsSystemNS::generateAABB(LightComponent & lightComponent)
 {
 	lightComponent.m_AABBs.clear();
-	lightComponent.m_shadowSplitPoints.clear();
 	lightComponent.m_projectionMatrices.clear();
 
 	//1.translate the big frustum to light space
@@ -281,12 +291,10 @@ void InnoPhysicsSystemNS::generateAABB(LightComponent & lightComponent)
 	}
 
 	//2.2 other 16 corner based on e^2i / e^8
-	lightComponent.m_shadowSplitPoints.reserve(4);
 
 	for (size_t i = 0; i < 4; i++)
 	{
 		auto scaleFactor = std::exp(((float)i + 1.0f) * 2.0f / E<float>) / std::exp(8.0f / E<float>);
-		lightComponent.m_shadowSplitPoints.emplace_back(scaleFactor);
 		for (size_t j = 0; j < 4; j++)
 		{
 			auto l_splitedPlaneCornerPos = l_frustumVertices[j].m_pos + (l_frustumVertices[j + 4].m_pos - l_frustumVertices[j].m_pos) * scaleFactor;

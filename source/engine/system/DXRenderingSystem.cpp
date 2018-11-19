@@ -1654,7 +1654,8 @@ void DXRenderingSystemNS::prepareRenderingData()
 	DXRenderingSystemNS::m_CamRTP = l_p * l_r * l_t;
 
 	m_LPassCBufferData.viewPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-	m_LPassCBufferData.lightDir = l_directionalLight->m_direction.normalize();
+	m_LPassCBufferData.lightDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+
 	m_LPassCBufferData.color = l_directionalLight->m_color;
 
 	for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)

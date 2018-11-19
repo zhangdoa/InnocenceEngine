@@ -156,7 +156,7 @@ void main()
 	vec3 color = vec3(0.0);
   
   vec3 eyedir = get_world_normal();
-  vec3 lightdir = uni_lightDir;
+  vec3 lightdir = -uni_lightDir;
   float planetRadius = 6371e3;
   float atmosphereHeight = 100e3;
   vec3 eye_position = uni_eyePos + vec3(0.0, planetRadius, 0.0);

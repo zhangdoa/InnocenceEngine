@@ -222,8 +222,8 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 0.0f, 1.0f);
 	GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
 		GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot,
-		vec4(-1.0f, 0.0f, 0.0f, 0.0f),
-		45.0f
+		vec4(1.0f, 0.0f, 0.0f, 0.0f),
+		-45.0f
 	);
 
 	GameInstanceNS::m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<LightComponent>(GameInstanceNS::m_directionalLightEntity);
@@ -270,14 +270,14 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 
 	GameInstanceNS::m_pawnTransformComponent2 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_pawnEntity2);
 	GameInstanceNS::m_pawnTransformComponent2->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_scale = vec4(0.01f, 0.01f, 0.01f, 1.0f);
+	//GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_scale = vec4(0.01f, 0.01f, 0.01f, 1.0f);
 	GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_pos = vec4(0.0f, 0.2f, 3.5f, 1.0f);
 	GameInstanceNS::m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_pawnEntity2);
 	GameInstanceNS::m_pawnVisibleComponent2->m_visiblilityType = visiblilityType::STATIC_MESH;
 	GameInstanceNS::m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::CUSTOM;
 	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	GameInstanceNS::m_pawnVisibleComponent2->m_drawAABB = true;
-	GameInstanceNS::m_pawnVisibleComponent2->m_modelFileName = "lantern//lantern.obj";
+	GameInstanceNS::m_pawnVisibleComponent2->m_modelFileName = "Orb//Orb.obj";
 
 	GameInstanceNS::m_objectStatus = objectStatus::ALIVE;
 	return true;
@@ -392,6 +392,7 @@ void GameInstanceNS::setupLights()
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
 		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<LightComponent>(m_pointLightEntitys[i]);
 		m_pointLightVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pointLightEntitys[i]);
+		m_pointLightComponents[i]->m_luminousFlux = 1000.0f;
 		m_pointLightVisibleComponents[i]->m_visiblilityType = visiblilityType::EMISSIVE;
 		m_pointLightVisibleComponents[i]->m_meshShapeType = meshShapeType::SPHERE;
 		m_pointLightVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;

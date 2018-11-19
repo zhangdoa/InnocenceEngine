@@ -2085,7 +2085,7 @@ void GLRenderingSystemNS::updateLightRenderPass()
 			auto l_lightPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformVector.m_pos;
 
 			auto l_dirLightDirection =
-				InnoMath::getDirection(direction::BACKWARD, g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_localTransformVector.m_rot);
+				InnoMath::getDirection(direction::BACKWARD, g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformVector.m_rot);
 
 			auto l_lightColor = l_lightComponent->m_color;
 
@@ -2211,8 +2211,8 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 			l_eyePos.x, l_eyePos.y, l_eyePos.z);
 
 		auto l_lightDir = InnoMath::getDirection(
-			direction::FORWARD,
-			g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[0]->m_parentEntity)->m_localTransformVector.m_rot
+			direction::BACKWARD,
+			g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[0]->m_parentEntity)->m_globalTransformVector.m_rot
 		);
 		GLRenderingSystemNS::updateUniform(
 			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
