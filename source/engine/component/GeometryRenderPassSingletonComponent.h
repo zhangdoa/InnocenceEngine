@@ -23,8 +23,6 @@ public:
 	GLRenderPassComponent* m_GLRPC;
 
 	GLShaderProgramComponent* m_GLSPC;
-	GLuint m_geometryPassVertexShaderID;
-	GLuint m_geometryPassFragmentShaderID;
 
 	GLuint m_geometryPass_uni_p_camera_original;
 	GLuint m_geometryPass_uni_p_camera_jittered;

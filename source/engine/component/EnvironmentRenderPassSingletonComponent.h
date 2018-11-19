@@ -22,8 +22,6 @@ public:
 	GLFrameBufferComponent* m_FBC;
 
 	GLShaderProgramComponent* m_capturePassSPC;
-	GLuint m_capturePassVertexShaderID;
-	GLuint m_capturePassFragmentShaderID;
 	TextureDataComponent* m_capturePassTDC;
 	GLTextureDataComponent* m_capturePassGLTDC;
 	GLuint m_capturePass_uni_equirectangularMap;
@@ -31,8 +29,6 @@ public:
 	GLuint m_capturePass_uni_r;
 
 	GLShaderProgramComponent* m_convolutionPassSPC;
-	GLuint m_convolutionPassVertexShaderID;
-	GLuint m_convolutionPassFragmentShaderID;
 	TextureDataComponent* m_convolutionPassTDC;
 	GLTextureDataComponent* m_convolutionPassGLTDC;
 	GLuint m_convolutionPass_uni_capturedCubeMap;
@@ -41,8 +37,6 @@ public:
 	
 	unsigned int m_maxMipLevels = 5;
 	GLShaderProgramComponent* m_preFilterPassSPC;
-	GLuint m_preFilterPassVertexShaderID;
-	GLuint m_preFilterPassFragmentShaderID;
 	TextureDataComponent* m_preFilterPassTDC;
 	GLTextureDataComponent* m_preFilterPassGLTDC;
 	GLuint m_preFilterPass_uni_capturedCubeMap;
@@ -51,8 +45,6 @@ public:
 	GLuint m_preFilterPass_uni_r;
 
 	GLShaderProgramComponent* m_BRDFLUTPassSPC;
-	GLuint m_BRDFLUTPassVertexShaderID;
-	GLuint m_BRDFLUTPassFragmentShaderID;
 	TextureDataComponent* m_BRDFLUTTDC;
 	GLTextureDataComponent* m_BRDFLUTGLTDC;
 private:

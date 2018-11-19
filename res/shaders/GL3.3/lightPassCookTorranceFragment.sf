@@ -48,7 +48,7 @@ uniform pointLight uni_pointLights[NR_POINT_LIGHTS];
 
 uniform bool uni_isEmissive;
 
-// Oren-Nayar diffuse BRDF
+// Oren-Nayar diffuse BRDF [https://github.com/glslify/glsl-diffuse-oren-nayar]
 // ----------------------------------------------------------------------------
 float orenNayarDiffuse(float LdotV,  float NdotL, float NdotV, float roughness) 
 {
@@ -62,8 +62,24 @@ float orenNayarDiffuse(float LdotV,  float NdotL, float NdotV, float roughness)
   return max(0.0, NdotL) * (A + B * s / t);
 }
 
-// Frostbite Engine model
+// Frostbite Engine model [https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf]
 // ----------------------------------------------------------------------------
+// punctual light attenuation
+// ----------------------------------------------------------------------------
+float smoothDistanceAtt(float squaredDistance, float invSqrAttRadius)
+{
+	float factor = squaredDistance * invSqrAttRadius;
+	float smoothFactor = clamp(1.0 - factor * factor, 0.0, 1.0);
+	return smoothFactor * smoothFactor;
+}
+float getDistanceAtt(vec3 unormalizedLightVector, float invSqrAttRadius)
+{
+	float sqrDist = dot(unormalizedLightVector, unormalizedLightVector);
+	float attenuation = 1.0 / (max(sqrDist, 0.0001));
+	//attenuation *= smoothDistanceAtt(sqrDist, invSqrAttRadius);
+
+	return attenuation;
+}
 // Specular Fresnel Component
 // ----------------------------------------------------------------------------
 vec3 Frostbite_fresnelSchlick(vec3 f0, float f90, float u)
@@ -129,10 +145,11 @@ vec3 Frostbite_CalcDirectionalLightRadiance(dirLight light, vec3 albedo, float m
 // ----------------------------------------------------------------------------
 vec3 Frostbite_CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float roughness, vec3 normal, vec3 viewPos, vec3 fragPos, vec3 F0)
 {
-	if(length(light.position - fragPos) < light.radius)
+  vec3 unormalizedL = light.position - fragPos;
+	if(length(unormalizedL) < light.radius)
 	{
 		vec3 N = normalize(normal);
-		vec3 L = normalize(light.position - fragPos);
+		vec3 L = normalize(unormalizedL);
 		vec3 V = normalize(viewPos - fragPos);
 		vec3 H = normalize(V + L);
 
@@ -151,10 +168,11 @@ vec3 Frostbite_CalcPointLightRadiance(pointLight light, vec3 albedo, float metal
 		// Diffuse BRDF
 		float Fd = Frostbite_DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness);    
 
-		float distance = length(light.position - fragPos);
-    float attenuation = 1.0 / (distance * distance);
+    float attenuation = 1.0;
+    float invSqrAttRadius = 1.0 / max(light.radius * light.radius, 0.0001);
+    attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);    
     vec3 radiance = light.color * attenuation;
-  	 
+
     return (Fd * albedo + Fr) * radiance * NdotL / PI;
 	}
 	else
@@ -162,7 +180,7 @@ vec3 Frostbite_CalcPointLightRadiance(pointLight light, vec3 albedo, float metal
 		return vec3(0.0f, 0.0f, 0.0f);
 	}
 }
-// Unreal Engine model
+// Unreal Engine model [https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf]
 // ----------------------------------------------------------------------------
 // Specular Distribution Component
 // ----------------------------------------------------------------------------
@@ -237,12 +255,13 @@ vec3 Unreal_CalcDirectionalLightRadiance(dirLight light, vec3 albedo, float meta
 // ----------------------------------------------------------------------------
 vec3 Unreal_CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic, float roughness, vec3 normal, vec3 viewPos, vec3 fragPos, vec3 F0)
 {
-	if(length(light.position - fragPos) < light.radius)
+  vec3 unormalizedL = light.position - fragPos;
+	if(length(unormalizedL) < light.radius)
 	{
 		vec3 N = normalize(normal);
-    vec3 L = normalize(light.position - fragPos);
+		vec3 L = normalize(unormalizedL);
 		vec3 V = normalize(viewPos - fragPos);
-    vec3 H = normalize(V + L);
+		vec3 H = normalize(V + L);
 
 		float NdotV = max(dot(N , V), 0.0);
 		float NdotH = max(dot(N,  H), 0.0);
@@ -263,8 +282,9 @@ vec3 Unreal_CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic
     vec3 kD = vec3(1.0) - kS;
     kD *= 1.0 - metallic;
      	
-		float distance = length(light.position - fragPos);
-    float attenuation = 1.0 / (distance * distance);
+    float attenuation = 1.0;
+    float invSqrAttRadius = 1.0 / max(light.radius * light.radius, 0.0001);
+    attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
     vec3 radiance = light.color * attenuation;
 
     return ((kD * albedo + specular) * radiance * NdotL) / PI;
@@ -274,6 +294,7 @@ vec3 Unreal_CalcPointLightRadiance(pointLight light, vec3 albedo, float metallic
 		return vec3(0.0f, 0.0f, 0.0f);
 	}
 }
+
 // IBL
 // corrected Fresnel
 // ----------------------------------------------------------------------------
@@ -415,7 +436,7 @@ void main()
 			if(uni_shadingMode == 0)
 			{
 				Lo += Frostbite_CalcDirectionalLightRadiance(uni_dirLight, Albedo, Metallic, Roughness, Normal, uni_viewPos, FragPos, F0);
-	    		//shadow by directional light
+	    	//shadow by directional light
 				Lo *= 1 - ShadowCalculation(uni_dirLight, Normal, uni_viewPos, FragPos);
 				for(int i = 0; i < NR_POINT_LIGHTS; ++i) 
 				{

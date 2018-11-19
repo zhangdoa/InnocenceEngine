@@ -24,8 +24,7 @@ public:
 	std::vector<GLTextureDataComponent*> m_GLTDCs;
 
 	GLShaderProgramComponent* m_SPC;
-	GLuint m_shadowPassVertexShaderID;
-	GLuint m_shadowPassFragmentShaderID;
+
 	GLuint m_shadowPass_uni_p;
 	GLuint m_shadowPass_uni_v;
 	GLuint m_shadowPass_uni_m;

@@ -22,8 +22,6 @@ public:
 	GLRenderPassComponent* m_GLRPC;
 
 	GLShaderProgramComponent* m_GLSPC;
-	GLuint m_lightPassVertexShaderID;
-	GLuint m_lightPassFragmentShaderID;
 
 	GLuint m_uni_geometryPassRT0;
 	GLuint m_uni_geometryPassRT1;

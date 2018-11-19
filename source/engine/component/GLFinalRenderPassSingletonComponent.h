@@ -19,8 +19,6 @@ public:
 
 	GLRenderPassComponent* m_skyPassGLRPC;
 	GLShaderProgramComponent* m_skyPassSPC;
-	GLuint m_skyPassVertexShaderID;
-	GLuint m_skyPassFragmentShaderID;
 	GLuint m_skyPass_uni_p;
 	GLuint m_skyPass_uni_r;
 	GLuint m_skyPass_uni_viewportSize;
@@ -30,8 +28,6 @@ public:
 	GLRenderPassComponent* m_TAAPingPassGLRPC;
 	GLRenderPassComponent* m_TAAPongPassGLRPC;
 	GLShaderProgramComponent* m_TAAPassSPC;
-	GLuint m_TAAPassVertexShaderID;
-	GLuint m_TAAPassFragmentShaderID;
 	GLuint m_TAAPass_uni_lightPassRT0;
 	GLuint m_TAAPass_uni_lastTAAPassRT0;
 	GLuint m_TAAPass_uni_motionVectorTexture;
@@ -39,29 +35,21 @@ public:
 
 	GLRenderPassComponent* m_bloomExtractPassGLRPC;
 	GLShaderProgramComponent* m_bloomExtractPassSPC;
-	GLuint m_bloomExtractPassVertexShaderID;
-	GLuint m_bloomExtractPassFragmentShaderID;
 	GLuint m_bloomExtractPass_uni_TAAPassRT0;
 
 	GLRenderPassComponent* m_bloomBlurPingPassGLRPC;
 	GLRenderPassComponent* m_bloomBlurPongPassGLRPC;
 	GLShaderProgramComponent* m_bloomBlurPassSPC;
-	GLuint m_bloomBlurPassVertexShaderID;
-	GLuint m_bloomBlurPassFragmentShaderID;
 	GLuint m_bloomBlurPass_uni_bloomExtractPassRT0;
 	GLuint m_bloomBlurPass_uni_horizontal;
 
 	GLRenderPassComponent* m_motionBlurPassGLRPC;
 	GLShaderProgramComponent* m_motionBlurPassSPC;
-	GLuint m_motionBlurPassVertexShaderID;
-	GLuint m_motionBlurPassFragmentShaderID;
 	GLuint m_motionBlurPass_uni_motionVectorTexture;
 	GLuint m_motionBlurPass_uni_TAAPassRT0;
 
 	GLRenderPassComponent* m_billboardPassGLRPC;
 	GLShaderProgramComponent* m_billboardPassSPC;
-	GLuint m_billboardPassVertexShaderID;
-	GLuint m_billboardPassFragmentShaderID;
 	GLuint m_billboardPass_uni_texture;
 	GLuint m_billboardPass_uni_p;
 	GLuint m_billboardPass_uni_r;
@@ -72,9 +60,6 @@ public:
 
 	GLRenderPassComponent* m_debuggerPassGLRPC;
 	GLShaderProgramComponent* m_debuggerPassSPC;
-	GLuint m_debuggerPassVertexShaderID;
-	GLuint m_debuggerPassGeometryShaderID;
-	GLuint m_debuggerPassFragmentShaderID;
 	GLuint m_debuggerPass_uni_normalTexture;
 	GLuint m_debuggerPass_uni_p;
 	GLuint m_debuggerPass_uni_r;	
@@ -83,8 +68,6 @@ public:
 
 	GLRenderPassComponent* m_finalBlendPassGLRPC;
 	GLShaderProgramComponent* m_finalBlendPassSPC;
-	GLuint m_finalBlendPassVertexShaderID;
-	GLuint m_finalBlendPassFragmentShaderID;
 	GLuint m_uni_motionBlurPassRT0;
 	GLuint m_uni_skyPassRT0;
 	GLuint m_uni_bloomPassRT0;

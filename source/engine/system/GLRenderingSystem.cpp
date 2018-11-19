@@ -1508,10 +1508,10 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 		mat4().lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
 	};
 
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::CUBE);
+
 	activateShaderProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassSPC);
 	updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p, l_p);
-
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::CUBE);
 
 	// activate equiretangular texture and remap equiretangular texture to cubemap
 	auto l_capturePassTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTDC;
@@ -1527,7 +1527,7 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 			{
 				GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_shouldUpdateEnvironmentMap = false;
 
-				activateCubemapTexture(l_equiretangularGLTDC, 0);
+				activate2DTexture(l_equiretangularGLTDC, 0);
 				for (unsigned int i = 0; i < 6; ++i)
 				{
 					updateUniform(EnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r, l_v[i]);
