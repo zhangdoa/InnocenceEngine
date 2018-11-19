@@ -45,8 +45,6 @@ bool initializeGeometryPass();
 bool initializeLightPass();
 bool initializeFinalBlendPass();
 
-bool convertCoordinateFromGLtoDX(MeshDataComponent* MDC);
-
 ID3D10Blob* loadShaderBuffer(shaderType shaderType, const std::wstring & shaderFilePath);
 void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 
@@ -592,20 +590,27 @@ objectStatus DXRenderingSystem::getStatus()
 
 bool  DXRenderingSystemNS::initializeDefaultAssets()
 {
+	std::function<void(MeshDataComponent* MDC)> f_convertCoordinateFromGLtoDX = [&](MeshDataComponent* MDC) {
+		for (auto& i : MDC->m_vertices)
+		{
+			i.m_texCoord.y = 1.0f - i.m_texCoord.y;
+		}
+	};
+
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::LINE);
-	convertCoordinateFromGLtoDX(l_MDC);
+	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitLineTemplate = initializeMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
-	convertCoordinateFromGLtoDX(l_MDC);
+	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitQuadTemplate = initializeMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::CUBE);
-	convertCoordinateFromGLtoDX(l_MDC);
+	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitCubeTemplate = initializeMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::SPHERE);
-	convertCoordinateFromGLtoDX(l_MDC);
+	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitSphereTemplate = initializeMeshDataComponent(l_MDC);
 
 	m_basicNormalTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::NORMAL));
@@ -614,15 +619,6 @@ bool  DXRenderingSystemNS::initializeDefaultAssets()
 	m_basicRoughnessTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ROUGHNESS));
 	m_basicAOTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::AMBIENT_OCCLUSION));
 
-	return true;
-}
-
-bool  DXRenderingSystemNS::convertCoordinateFromGLtoDX(MeshDataComponent* MDC)
-{
-	for (auto& i : MDC->m_vertices)
-	{
-		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
-	}
 	return true;
 }
 
@@ -1636,9 +1632,11 @@ DXTextureDataComponent * DXRenderingSystemNS::getDXTextureDataComponent(EntityID
 
 void DXRenderingSystemNS::prepareRenderingData()
 {
-	// camera matrices
+	// camera and light
 	auto l_mainCamera = GameSystemSingletonComponent::getInstance().m_CameraComponents[0];
 	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
+	auto l_directionalLight = GameSystemSingletonComponent::getInstance().m_LightComponents[0];
+	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
 
 	auto l_p = l_mainCamera->m_projectionMatrix;
 	auto l_r =
@@ -1656,8 +1654,8 @@ void DXRenderingSystemNS::prepareRenderingData()
 	DXRenderingSystemNS::m_CamRTP = l_p * l_r * l_t;
 
 	m_LPassCBufferData.viewPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-	m_LPassCBufferData.lightDir = vec4(0.0f, -0.5f, -0.5f, 0.0f).normalize();
-	m_LPassCBufferData.color = vec4(1.0f, 1.0f, 0.5f, 1.0f);
+	m_LPassCBufferData.lightDir = l_directionalLight->m_direction.normalize();
+	m_LPassCBufferData.color = l_directionalLight->m_color;
 
 	for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
 	{

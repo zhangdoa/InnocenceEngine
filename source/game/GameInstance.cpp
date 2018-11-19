@@ -325,13 +325,13 @@ void GameInstanceNS::setupSpheres()
 	m_sphereTransformComponents.reserve(l_containerSize);
 	m_sphereVisibleComponents.reserve(l_containerSize);
 	m_sphereEntitys.reserve(l_containerSize);
-	for (auto i = (unsigned int)0; i < l_containerSize; i++)
+	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
 		m_sphereTransformComponents.emplace_back();
 		m_sphereVisibleComponents.emplace_back();
 		m_sphereEntitys.emplace_back();
 	}
-	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i++)
+	for (unsigned int i = 0; i < m_sphereVisibleComponents.size(); i++)
 	{
 		m_sphereEntitys[i] = InnoMath::createEntityID();
 
@@ -340,12 +340,12 @@ void GameInstanceNS::setupSpheres()
 		m_sphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_sphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_sphereEntitys[i]);
 		m_sphereVisibleComponents[i]->m_visiblilityType = visiblilityType::STATIC_MESH;
-		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::CUBE;
-		m_sphereVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
+		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::SPHERE;
+		m_sphereVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 		m_sphereVisibleComponents[i]->m_drawAABB = true;
 		//m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 	}
-	for (auto i = (unsigned int)0; i < m_sphereVisibleComponents.size(); i += 4)
+	for (unsigned int i = 0; i < m_sphereVisibleComponents.size(); i += 4)
 	{
 		//Copper
 		//m_sphereVisibleComponents[i]->m_albedo = vec4(0.95, 0.64, 0.54, 1.0f);
@@ -356,7 +356,7 @@ void GameInstanceNS::setupSpheres()
 		////Silver
 		//m_sphereVisibleComponents[i + 3]->m_albedo = vec4(0.95, 0.93, 0.88, 1.0f);
 	}
-	for (auto i = (unsigned int)0; i < sphereMatrixDim; i++)
+	for (unsigned int i = 0; i < sphereMatrixDim; i++)
 	{
 		for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 		{
@@ -376,14 +376,14 @@ void GameInstanceNS::setupLights()
 	m_pointLightVisibleComponents.reserve(l_containerSize);
 	m_pointLightEntitys.reserve(l_containerSize);
 
-	for (auto i = (unsigned int)0; i < l_containerSize; i++)
+	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
 		m_pointLightTransformComponents.emplace_back();
 		m_pointLightComponents.emplace_back();
 		m_pointLightVisibleComponents.emplace_back();
 		m_pointLightEntitys.emplace_back();
 	}
-	for (auto i = (unsigned int)0; i < l_containerSize; i++)
+	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
 		m_pointLightEntitys[i] = InnoMath::createEntityID();
 
@@ -396,7 +396,7 @@ void GameInstanceNS::setupLights()
 		m_pointLightVisibleComponents[i]->m_meshShapeType = meshShapeType::SPHERE;
 		m_pointLightVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 	}
-	for (auto i = (unsigned int)0; i < pointLightMatrixDim; i++)
+	for (unsigned int i = 0; i < pointLightMatrixDim; i++)
 	{
 		for (auto j = (unsigned int)0; j < pointLightMatrixDim; j++)
 		{
@@ -412,21 +412,33 @@ void GameInstanceNS::updateLights(float seed)
 	//	vec4(1.0f, 0.0f, 0.0f, 0.0f),
 	//	0.2f
 	//);
-	for (auto i = (unsigned int)0; i < m_pointLightComponents.size(); i += 4)
+
+	for (unsigned int i = 0; i < m_pointLightComponents.size(); i += 4)
 	{
 		auto l_color1 = vec4((sin(seed + i) + 1.0f) * 5.0f / 2.0f, 0.2 * 5.0f, 0.4 * 5.0f, 1.0f);
+		auto l_color2 = vec4(0.2 * 5.0f, (sin(seed + i) + 1.0f) * 5.0f / 2.0f, 0.4 * 5.0f, 1.0f);
+		auto l_color3 = vec4(0.2 * 5.0f, 0.4 * 5.0f, (sin(seed + i) + 1.0f) * 5.0f / 2.0f, 1.0f);
+		auto l_color4 = vec4((sin(seed + i * 2.0f) + 1.0f) * 5.0f / 2.0f, (sin(seed + i * 3.0f) + 1.0f) * 5.0f / 2.0f, (sin(seed + i * 5.0f) + 1.0f) * 5.0f / 2.0f, 1.0f);
 
 		m_pointLightComponents[i]->m_color = l_color1;
-		for (auto& j : m_pointLightVisibleComponents[i]->m_modelMap)
+		m_pointLightComponents[i + 1]->m_color = l_color2;
+		m_pointLightComponents[i + 2]->m_color = l_color3;
+		m_pointLightComponents[i + 3]->m_color = l_color4;
+
+		std::function<void(modelMap modelMap, vec4 albedo)> f_setMeshColor = [&](modelMap modelMap, vec4 albedo)
 		{
-			j.second->m_meshColor.albedo_r = l_color1.x;
-			j.second->m_meshColor.albedo_g = l_color1.y;
-			j.second->m_meshColor.albedo_b = l_color1.z;
-		}
-		
-		m_pointLightComponents[i + 1]->m_color = vec4(0.2 * 5.0f, (sin(seed + i) + 1.0f) * 5.0f / 2.0f, 0.4 * 5.0f, 1.0f);
-		m_pointLightComponents[i + 2]->m_color = vec4(0.2 * 5.0f, 0.4 * 5.0f, (sin(seed + i) + 1.0f) * 5.0f / 2.0f, 1.0f);
-		m_pointLightComponents[i + 3]->m_color = vec4((sin(seed + i * 2.0f) + 1.0f) * 5.0f / 2.0f, (sin(seed + i * 3.0f) + 1.0f) * 5.0f / 2.0f, (sin(seed + i * 5.0f) + 1.0f) * 5.0f / 2.0f, 1.0f);
+			for (auto& j : modelMap)
+			{
+				j.second->m_meshColor.albedo_r = albedo.x;
+				j.second->m_meshColor.albedo_g = albedo.y;
+				j.second->m_meshColor.albedo_b = albedo.z;
+			}
+		};
+
+		f_setMeshColor(m_pointLightVisibleComponents[i]->m_modelMap, l_color1);
+		f_setMeshColor(m_pointLightVisibleComponents[i + 1]->m_modelMap, l_color2);
+		f_setMeshColor(m_pointLightVisibleComponents[i + 2]->m_modelMap, l_color3);
+		f_setMeshColor(m_pointLightVisibleComponents[i + 3]->m_modelMap, l_color4);
 	}
 }
 
@@ -441,13 +453,47 @@ void GameInstanceNS::updateSpheres(float seed)
 	m_pawnTransformComponent2->m_localTransformVector.m_pos = std::get<0>(l_t);
 	m_pawnTransformComponent2->m_globalTransformVector.m_pos = std::get<1>(l_t);
 
-	//for (auto i = (unsigned int)0; i < m_sphereTransformComponents.size(); i++)
-	//{
-	//	auto l_t = InnoMath::rotateInLocal(
-	//		m_sphereTransformComponents[i]->m_localTransformVector.m_rot,
-	//		vec4(0.0f, 1.0f, 0.0f, 0.0f),
-	//		0.2f
-	//	);
-	//	m_sphereTransformComponents[i]->m_localTransformVector.m_rot = l_t;
-	//}
+	for (unsigned int i = 0; i < m_sphereTransformComponents.size(); i++)
+	{
+		auto l_t = InnoMath::rotateInLocal(
+			m_sphereTransformComponents[i]->m_localTransformVector.m_rot,
+			vec4(0.0f, 1.0f, 0.0f, 0.0f),
+			0.2f
+		);
+		m_sphereTransformComponents[i]->m_localTransformVector.m_rot = l_t;
+	}
+
+	for (unsigned int i = 0; i < m_sphereVisibleComponents.size(); i += 4)
+	{
+		auto l_albedoFactor1 = (sin(seed / 2.0f + i) + 1.0f) / 2.0f;
+		auto l_albedoFactor2 = (sin(seed / 3.0f + i) + 1.0f) / 2.0f;
+		auto l_albedoFactor3 = (sin(seed / 5.0f + i) + 1.0f) / 2.0f;
+
+		auto l_albedo1 = vec4(l_albedoFactor1, l_albedoFactor2, l_albedoFactor3, 1.0f);
+		auto l_albedo2 = vec4(l_albedoFactor3, l_albedoFactor2, l_albedoFactor1, 1.0f);
+		auto l_albedo3 = vec4(l_albedoFactor2, l_albedoFactor3, l_albedoFactor1, 1.0f);
+		auto l_albedo4 = vec4(l_albedoFactor2, l_albedoFactor1, l_albedoFactor3, 1.0f);
+
+		auto l_MRAFactor1 = (sin(seed / 4.0f + i) + 1.0f) / 2.0f;
+		auto l_MRAFactor2 = (sin(seed / 5.0f + i) + 1.0f) / 2.0f;
+		auto l_MRAFactor3 = (sin(seed / 6.0f + i) + 1.0f) / 2.0f;
+
+		std::function<void(modelMap modelMap, vec4 albedo, vec4 MRA)> f_setMRA = [&](modelMap modelMap, vec4 albedo, vec4 MRA)
+		{
+			for (auto& j : modelMap)
+			{
+				j.second->m_meshColor.albedo_r = albedo.x;
+				j.second->m_meshColor.albedo_g = albedo.y;
+				j.second->m_meshColor.albedo_b = albedo.z;
+				j.second->m_meshColor.metallic = MRA.x;
+				j.second->m_meshColor.roughness = MRA.y;
+				j.second->m_meshColor.ao = MRA.z;
+			}
+		};
+
+		f_setMRA(m_sphereVisibleComponents[i]->m_modelMap, l_albedo1, vec4(l_MRAFactor1, l_MRAFactor2, l_MRAFactor3, 0.0f));
+		f_setMRA(m_sphereVisibleComponents[i + 1]->m_modelMap, l_albedo2, vec4(l_MRAFactor2, l_MRAFactor1, l_MRAFactor3, 0.0f));
+		f_setMRA(m_sphereVisibleComponents[i + 2]->m_modelMap, l_albedo3, vec4(l_MRAFactor3, l_MRAFactor2, l_MRAFactor1, 0.0f));
+		f_setMRA(m_sphereVisibleComponents[i + 3]->m_modelMap, l_albedo4, vec4(l_MRAFactor3, l_MRAFactor1, l_MRAFactor2, 0.0f));
+	}
 }
