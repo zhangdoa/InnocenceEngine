@@ -24,6 +24,73 @@ struct PixelOutputType
     float4 uni_lightPassRT0 : SV_Target0;
 };
 
+static const float PI = 3.14159265359;
+
+// Frostbite Engine model
+// ----------------------------------------------------------------------------
+// Specular Fresnel Component
+// ----------------------------------------------------------------------------
+float3 Frostbite_fresnelSchlick(float3 f0, float f90, float u)
+{
+	return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
+}
+// Diffuse BRDF
+// ----------------------------------------------------------------------------
+float Frostbite_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
+{	
+	float energyBias = lerp(0, 0.5, linearRoughness);
+	float energyFactor = lerp(1.0, 1.0/1.51, linearRoughness);
+	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
+	float3 f0 = float3 (1.0, 1.0, 1.0);
+	float lightScatter = Frostbite_fresnelSchlick(f0, fd90, NdotL).r;
+	float viewScatter = Frostbite_fresnelSchlick(f0, fd90, NdotV).r;
+	return lightScatter * viewScatter * energyFactor;
+}
+// Specular Geometry Component
+// ----------------------------------------------------------------------------
+float Frostbite_V_SmithGGXCorrelated(float NdotL , float NdotV , float alphaG)
+{
+	float alphaG2 = alphaG * alphaG;
+	float Lambda_GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - alphaG2) + alphaG2);
+	float Lambda_GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - alphaG2) + alphaG2);
+	return 0.5 / max((Lambda_GGXV + Lambda_GGXL), 0.00001);
+}
+// Specular Distribution Component
+// ----------------------------------------------------------------------------
+float Frostbite_D_GGX(float NdotH , float roughness)
+{
+	// remapping to Quadratic curve
+  float a = roughness * roughness;
+	float a2 = a * a;
+	float f = ( NdotH * a2 - NdotH ) * NdotH + 1;
+	return a2 / pow(f, 2.0);
+}
+// ----------------------------------------------------------------------------
+float3 Frostbite_CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughness, float3 normal, float3 posWS, float3 F0)
+{
+	float3 N = normalize(normal);
+	float3 L = normalize(-lightDir.xyz);
+	float3 V = normalize(viewPos.xyz - posWS);
+	float3 H = normalize(V + L);
+
+	float NdotV = max(dot(N , V), 0.0);
+	float LdotH = max(dot(L , H), 0.0);
+	float NdotH = max(dot(N , H), 0.0);
+	float NdotL = max(dot(N , L), 0.0);
+
+	// Specular BRDF
+	float f90 = 1.0;
+	float3 F = Frostbite_fresnelSchlick(F0, f90, LdotH);
+	float G = Frostbite_V_SmithGGXCorrelated(NdotV, NdotL, roughness);
+	float D = Frostbite_D_GGX (NdotH, roughness);
+	float3 Fr = F * G * D;
+
+	// Diffuse BRDF
+	float Fd = Frostbite_DisneyDiffuse(NdotV, NdotL, LdotH ,roughness * roughness); 
+
+	return (Fd * albedo + Fr) * color.xyz * NdotL / PI;		
+}
+
 PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 {
   PixelOutputType output;
@@ -32,28 +99,18 @@ PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
   float4 GPassRT1 = uni_geometryPassRT1.Sample(SampleTypePoint, input.texcoord);
   float4 GPassRT2 = uni_geometryPassRT2.Sample(SampleTypePoint, input.texcoord);
   
-  float3 worldPos = GPassRT0.xyz;
-  float3 N = GPassRT1.xyz;
-	float3 L = normalize(-lightDir.xyz);
-	float3 V = normalize(viewPos.xyz - worldPos);
-	float3 H = normalize(V + L);
-
-	float NdotH = max(dot(N, H), 0.0);
-	float NdotL = max(dot(N, L), 0.0);
+  float3 posWS = GPassRT0.xyz;
+  float metallic = GPassRT0.w;
+  float3 normalWS = GPassRT1.xyz;
+  float3 roughness = GPassRT1.w;
+  float3 albedo = GPassRT2.xyz;
+  float3 ao = GPassRT2.w;
+  
+  float3 F0 = float3(0.04, 0.04, 0.04); 
+	F0 = lerp(F0, albedo, metallic);
 	
-	float3 diffuse = GPassRT2.xyz;
-	float specular = GPassRT2.w;
-	
-	// ambient color
-	float3 ambientColor = diffuse * color.xyz * 0.04;
-
-	// diffuse color
-	float3 diffuseColor = diffuse * NdotL * color.xyz;
-	
-	// specular color
-	float alpha = 32;
-	float3 specularColor = specular * pow(NdotH, alpha) * color.xyz;
+  float3 finalColor = Frostbite_CalcDirectionalLightRadiance(albedo, metallic, roughness, normalWS, posWS, F0);
 		
-	output.uni_lightPassRT0 = float4(ambientColor + diffuseColor + specularColor, 1.0f);
+	output.uni_lightPassRT0 = float4(finalColor, 1.0f);
 	return output;
 }
