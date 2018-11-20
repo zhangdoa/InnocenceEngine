@@ -1,6 +1,6 @@
 // shadertype=glsl
 #version 330 core
-out vec4 FragColor;
+layout(location = 0) out vec4 uni_brdfLUT;
 in vec2 TexCoords;
 
 const float PI = 3.14159265359;
@@ -128,8 +128,8 @@ vec4 IntegrateBRDF(float NdotV, float roughness)
 
         if(NdotL > 0.0)
         {
-            float G = GeometrySmith(N, V, L, roughness);
-            float D = Unreal_DistributionGGX(NdotH, roughness);
+            float G = Frostbite_V_SmithGGXCorrelated(NdotV, NdotL, roughness);
+            float D = Frostbite_D_GGX(NdotH, roughness);
             float Fc = pow(1.0 - VdotH, 5.0);
 
             A += (1.0 - Fc) * G;
@@ -147,5 +147,5 @@ vec4 IntegrateBRDF(float NdotV, float roughness)
 void main() 
 {
     vec4 integratedBRDF = IntegrateBRDF(TexCoords.x, TexCoords.y);
-    FragColor = integratedBRDF;
+    uni_brdfLUT = integratedBRDF;
 }

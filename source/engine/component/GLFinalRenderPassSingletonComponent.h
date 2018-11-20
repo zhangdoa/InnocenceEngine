@@ -33,6 +33,11 @@ public:
 	GLuint m_TAAPass_uni_motionVectorTexture;
 	GLuint m_TAAPass_uni_renderTargetSize;
 
+	GLRenderPassComponent* m_TAASharpenPassGLRPC;
+	GLShaderProgramComponent* m_TAASharpenPassSPC;
+	GLuint m_TAASharpenPass_uni_lastTAAPassRT0;
+	GLuint m_TAASharpenPass_uni_renderTargetSize;
+
 	GLRenderPassComponent* m_bloomExtractPassGLRPC;
 	GLShaderProgramComponent* m_bloomExtractPassSPC;
 	GLuint m_bloomExtractPass_uni_TAAPassRT0;

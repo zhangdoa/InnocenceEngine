@@ -49,42 +49,6 @@ void main()
       float contrast = distance(average, currentColor.rgb);		
       float weight = clamp(mix(1.0, contrast, subpixelCorrection) * 0.05, 0.0, 1.0);
       vec3 finalColor = mix(historyColor.rgb, currentColor.rgb, weight);
-      
-    // sharpen the TAA result [Siggraph 2016 "Temporal Antialiasing in Uncharted 4"]
-	  vec2 neighborTexCoordsUp = TexCoords + vec2(0.0f, 1.0f / uni_renderTargetSize.y);
-	  vec2 neighborTexCoordsDown = TexCoords + vec2(0.0f, -1.0f / uni_renderTargetSize.y);
-	  vec2 neighborTexCoordsLeft = TexCoords + vec2(1.0f / uni_renderTargetSize.x, 0.0f);
-	  vec2 neighborTexCoordsRight = TexCoords + vec2(-1.0f / uni_renderTargetSize.x, 0.0f);
-	  
-	  average = vec3(0.0);
-	  validNeighborNum = 0.0;
-	  
-		vec4 neighborColorUp = texture(uni_lastTAAPassRT0, neighborTexCoordsUp);
-		if(neighborColorUp.a != 0.0)
-		{
-			average -= neighborColorUp.rgb;
-			validNeighborNum += 1.0;
-		}
-		vec4 neighborColorDown = texture(uni_lastTAAPassRT0, neighborTexCoordsDown);
-		if(neighborColorDown.a != 0.0)
-		{
-			average -= neighborColorDown.rgb;
-			validNeighborNum += 1.0;
-		}		
-		vec4 neighborColorLeft = texture(uni_lastTAAPassRT0, neighborTexCoordsLeft);
-		if(neighborColorLeft.a != 0.0)
-		{
-			average -= neighborColorLeft.rgb;
-			validNeighborNum += 1.0;
-		}		
-		vec4 neighborColorRight = texture(uni_lastTAAPassRT0, neighborTexCoordsRight);
-		if(neighborColorRight.a != 0.0)
-		{
-			average -= neighborColorRight.rgb;
-			validNeighborNum += 1.0;
-		}		
-
-		//finalColor = finalColor + average + finalColor * validNeighborNum;
 		
 		uni_TAAPassRT0 = vec4(finalColor, 1.0);
 }

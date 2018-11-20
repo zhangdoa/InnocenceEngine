@@ -735,12 +735,19 @@ void InnoAssetSystemNS::assignUnitMesh(meshShapeType meshType, VisibleComponent*
 
 modelMap InnoAssetSystemNS::loadModel(const std::string & fileName)
 {
+	modelMap l_result;
 	// check if this file has already been loaded once
 	auto l_loadedmodelMap = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_loadedModelMap.find(fileName);
 	if (l_loadedmodelMap != InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_loadedModelMap.end())
 	{
 		g_pCoreSystem->getLogSystem()->printLog("AssetSystem: innoMesh: " + fileName + " is already loaded.");
-		return l_loadedmodelMap->second;
+		for (auto& i : l_loadedmodelMap->second)
+		{
+			auto l_material = addMaterialDataComponent();
+			*l_material = *i.second;
+			l_result.emplace(i.first, l_material);
+		}
+		return l_result;
 	}
 	else
 	{

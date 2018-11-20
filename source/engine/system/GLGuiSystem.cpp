@@ -197,7 +197,7 @@ void ImGuiWrapper::update()
 		ImGui::EndChild();
 		ImGui::End();
 
-		auto l_BRDFLUT = ImVec2(512.0, 512.0);
+		auto l_BRDFLUT = ImVec2(128.0, 128.0);
 		ImGui::Begin("BRDF lookup table", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		{
 			ImGui::Image(ImTextureID((GLuint64)EnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));

@@ -48,8 +48,11 @@ public:
 	TextureDataComponent* m_SplitSumLUTTDC;
 	GLTextureDataComponent* m_SplitSumLUTGLTDC;
 
+	GLShaderProgramComponent* m_BRDFLUTMSPassSPC;
 	TextureDataComponent* m_MultiScatteringLUTTDC;
 	GLTextureDataComponent* m_MultiScatteringLUTGLTDC;
+	GLuint m_BRDFLUTMSPass_uni_brdfLUT;
+
 private:
 	EnvironmentRenderPassSingletonComponent() {};
 };

@@ -30,7 +30,7 @@ public:
 	std::vector<VisibleComponent*> m_inFrustumVisibleComponents;
 	std::vector<vec2> HaltonSampler;
 	int currentHaltonStep = 0;
-	int m_MSAAdepth = 0;
+	int m_MSAAdepth = 4;
 
 private:
 	RenderingSystemSingletonComponent() {};

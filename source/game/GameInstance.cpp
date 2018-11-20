@@ -237,7 +237,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_landscapeTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_landscapeEntity);
 	GameInstanceNS::m_landscapeTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, -4.0f, 0.0f, 1.0f);
-	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_scale = vec4(20.0f, 20.0f, 0.1f, 1.0f);
+	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_scale = vec4(200.0f, 200.0f, 0.1f, 1.0f);
 	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
 		GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
@@ -274,7 +274,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_pos = vec4(0.0f, 0.2f, 3.5f, 1.0f);
 	GameInstanceNS::m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_pawnEntity2);
 	GameInstanceNS::m_pawnVisibleComponent2->m_visiblilityType = visiblilityType::STATIC_MESH;
-	GameInstanceNS::m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::CUSTOM;
+	GameInstanceNS::m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::SPHERE;
 	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	GameInstanceNS::m_pawnVisibleComponent2->m_drawAABB = true;
 	//GameInstanceNS::m_pawnVisibleComponent2->m_modelFileName = "Orb//Orb.obj";
@@ -340,21 +340,10 @@ void GameInstanceNS::setupSpheres()
 		m_sphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_sphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_sphereEntitys[i]);
 		m_sphereVisibleComponents[i]->m_visiblilityType = visiblilityType::STATIC_MESH;
-		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::SPHERE;
-		m_sphereVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
+		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::CUSTOM;
+		m_sphereVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 		m_sphereVisibleComponents[i]->m_drawAABB = true;
-		//m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
-	}
-	for (unsigned int i = 0; i < m_sphereVisibleComponents.size(); i += 4)
-	{
-		//Copper
-		//m_sphereVisibleComponents[i]->m_albedo = vec4(0.95, 0.64, 0.54, 1.0f);
-		////Gold
-		//m_sphereVisibleComponents[i + 1]->m_albedo = vec4(1.0f0, 0.71, 0.29, 1.0f);
-		////Iron
-		//m_sphereVisibleComponents[i + 2]->m_albedo = vec4(0.56, 0.57, 0.58, 1.0f);
-		////Silver
-		//m_sphereVisibleComponents[i + 3]->m_albedo = vec4(0.95, 0.93, 0.88, 1.0f);
+		m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 	}
 	for (unsigned int i = 0; i < sphereMatrixDim; i++)
 	{
@@ -456,12 +445,12 @@ void GameInstanceNS::updateSpheres(float seed)
 
 	for (unsigned int i = 0; i < m_sphereTransformComponents.size(); i++)
 	{
-		auto l_t = InnoMath::rotateInLocal(
-			m_sphereTransformComponents[i]->m_localTransformVector.m_rot,
-			vec4(0.0f, 1.0f, 0.0f, 0.0f),
-			0.2f
-		);
-		m_sphereTransformComponents[i]->m_localTransformVector.m_rot = l_t;
+		//auto l_t = InnoMath::rotateInLocal(
+		//	m_sphereTransformComponents[i]->m_localTransformVector.m_rot,
+		//	vec4(0.0f, 1.0f, 0.0f, 0.0f),
+		//	0.2f
+		//);
+		//m_sphereTransformComponents[i]->m_localTransformVector.m_rot = l_t;
 	}
 
 	for (unsigned int i = 0; i < m_sphereVisibleComponents.size(); i += 4)
@@ -475,9 +464,9 @@ void GameInstanceNS::updateSpheres(float seed)
 		auto l_albedo3 = vec4(l_albedoFactor2, l_albedoFactor3, l_albedoFactor1, 1.0f);
 		auto l_albedo4 = vec4(l_albedoFactor2, l_albedoFactor1, l_albedoFactor3, 1.0f);
 
-		auto l_MRAFactor1 = (sin(seed / 4.0f + i) + 1.0f) / 2.0f;
-		auto l_MRAFactor2 = (sin(seed / 5.0f + i) + 1.0f) / 2.0f;
-		auto l_MRAFactor3 = (sin(seed / 6.0f + i) + 1.0f) / 2.0f;
+		auto l_MRAFactor1 = ((sin(seed / 4.0f + i) + 1.0f) / 2.001f);
+		auto l_MRAFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
+		auto l_MRAFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
 
 		std::function<void(modelMap modelMap, vec4 albedo, vec4 MRA)> f_setMRA = [&](modelMap modelMap, vec4 albedo, vec4 MRA)
 		{

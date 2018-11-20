@@ -41,11 +41,13 @@ public:
 	GLuint m_uni_irradianceMap;
 	GLuint m_uni_preFiltedMap;
 	GLuint m_uni_brdfLUT;
+	GLuint m_uni_brdfMSLUT;
+
 	GLuint m_uni_viewPos;
 
-	GLuint m_uni_dirLight_position;
 	GLuint m_uni_dirLight_direction;
 	GLuint m_uni_dirLight_color;
+
 	std::vector<GLuint> m_uni_pointLights_position;
 	std::vector<GLuint> m_uni_pointLights_radius;
 	std::vector<GLuint> m_uni_pointLights_color;
