@@ -45,8 +45,11 @@ public:
 	GLuint m_preFilterPass_uni_r;
 
 	GLShaderProgramComponent* m_BRDFLUTPassSPC;
-	TextureDataComponent* m_BRDFLUTTDC;
-	GLTextureDataComponent* m_BRDFLUTGLTDC;
+	TextureDataComponent* m_SplitSumLUTTDC;
+	GLTextureDataComponent* m_SplitSumLUTGLTDC;
+
+	TextureDataComponent* m_MultiScatteringLUTTDC;
+	GLTextureDataComponent* m_MultiScatteringLUTGLTDC;
 private:
 	EnvironmentRenderPassSingletonComponent() {};
 };

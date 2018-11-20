@@ -1,6 +1,7 @@
 #include "GLGuiSystem.h"
 #include "../component/WindowSystemSingletonComponent.h"
 #include "../component/GLWindowSystemSingletonComponent.h"
+#include "../component/EnvironmentRenderPassSingletonComponent.h"
 #include "../component/ShadowRenderPassSingletonComponent.h"
 #include "../component/GeometryRenderPassSingletonComponent.h"
 #include "../component/LightRenderPassSingletonComponent.h"
@@ -195,6 +196,14 @@ void ImGuiWrapper::update()
 		ImGui::Image(ImTextureID((GLuint64)ShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[3]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 		ImGui::End();
+
+		auto l_BRDFLUT = ImVec2(512.0, 512.0);
+		ImGui::Begin("BRDF lookup table", 0, ImGuiWindowFlags_AlwaysAutoResize);
+		{
+			ImGui::Image(ImTextureID((GLuint64)EnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			zoom(l_zoom, ImTextureID((GLuint64)EnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC->m_TAO), l_renderTargetSize);
+		}
+		ImGui::End();
 	}
 
 	// Rendering
@@ -234,12 +243,12 @@ void ImGuiWrapper::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSiz
 			ImGui::BeginTooltip();
 			float region_sz = 32.0f;
 			float region_x = io.MousePos.x - pos.x - region_sz * 0.5f; if (region_x < 0.0f) region_x = 0.0f; else if (region_x > renderTargetSize.x - region_sz) region_x = renderTargetSize.x - region_sz;
-			float region_y = io.MousePos.y - pos.y - region_sz * 0.5f; if (region_y < 0.0f) region_y = 0.0f; else if (region_y > renderTargetSize.y - region_sz) region_y = renderTargetSize.y - region_sz;
+			float region_y = pos.y - io.MousePos.y - region_sz * 0.5f; if (region_y < 0.0f) region_y = 0.0f; else if (region_y > renderTargetSize.y - region_sz) region_y = renderTargetSize.y - region_sz;
 			float zoom = 4.0f;
 			ImGui::Text("Min: (%.2f, %.2f)", region_x, region_y);
 			ImGui::Text("Max: (%.2f, %.2f)", region_x + region_sz, region_y + region_sz);
-			ImVec2 uv0 = ImVec2((region_x) / renderTargetSize.x, (region_y) / renderTargetSize.y);
-			ImVec2 uv1 = ImVec2((region_x + region_sz) / renderTargetSize.x, (region_y + region_sz) / renderTargetSize.y);
+			ImVec2 uv0 = ImVec2((region_x) / renderTargetSize.x, (region_y + region_sz) / renderTargetSize.y);
+			ImVec2 uv1 = ImVec2((region_x + region_sz) / renderTargetSize.x, (region_y) / renderTargetSize.y);
 			ImGui::Image(textureID, ImVec2(region_sz * zoom, region_sz * zoom), uv0, uv1, ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
 			ImGui::EndTooltip();
 		}

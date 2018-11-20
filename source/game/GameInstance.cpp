@@ -277,7 +277,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::CUSTOM;
 	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
 	GameInstanceNS::m_pawnVisibleComponent2->m_drawAABB = true;
-	GameInstanceNS::m_pawnVisibleComponent2->m_modelFileName = "Orb//Orb.obj";
+	//GameInstanceNS::m_pawnVisibleComponent2->m_modelFileName = "Orb//Orb.obj";
 
 	GameInstanceNS::m_objectStatus = objectStatus::ALIVE;
 	return true;

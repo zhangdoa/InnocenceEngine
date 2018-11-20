@@ -418,8 +418,8 @@ void GLRenderingSystemNS::initializeEnvironmentPass()
 	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureType = textureType::RENDER_BUFFER_SAMPLER;
-	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RG16F;
-	l_TDC->m_texturePixelDataFormat = texturePixelDataFormat::RG;
+	l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat::RGBA16F;
+	l_TDC->m_texturePixelDataFormat = texturePixelDataFormat::RGBA;
 	l_TDC->m_textureMinFilterMethod = textureFilterMethod::LINEAR;
 	l_TDC->m_textureMagFilterMethod = textureFilterMethod::LINEAR;
 	l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
@@ -428,11 +428,11 @@ void GLRenderingSystemNS::initializeEnvironmentPass()
 	l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTDC = l_TDC;
+	EnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTTDC = l_TDC;
 
 	l_GLTDC = initializeTextureDataComponent(l_TDC);
 
-	EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTGLTDC = l_GLTDC;
+	EnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC = l_GLTDC;
 
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -1594,12 +1594,12 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 	glViewport(0, 0, 512, 512);
 	activateShaderProgram(EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassSPC);
 
-	auto l_environmentBRDFLUTTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTTDC;
-	auto l_environmentBRDFLUTGLTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTGLTDC;
+	auto l_environmentBRDFLUTTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTTDC;
+	auto l_environmentBRDFLUTGLTDC = EnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC;
 	attachTextureToFramebuffer(l_environmentBRDFLUTTDC, l_environmentBRDFLUTGLTDC, l_FBC, 0, 0, 0);
 
-	// draw environment map BRDF LUT rectangle
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
+	// draw environment map BRDF LUT rectangle
 	drawMesh(l_MDC);
 }
 
@@ -2067,7 +2067,7 @@ void GLRenderingSystemNS::updateLightRenderPass()
 		12);
 	// BRDF look-up table
 	activateCubemapTexture(
-		EnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTGLTDC,
+		EnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC,
 		13);
 #endif
 
