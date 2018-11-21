@@ -2,6 +2,7 @@
 
 #include "../component/GameSystemSingletonComponent.h"
 #include "../component/WindowSystemSingletonComponent.h"
+#include "../component/AssetSystemSingletonComponent.h"
 #include "../component/PhysicsSystemSingletonComponent.h"
 
 #include "ICoreSystem.h"
@@ -38,6 +39,7 @@ namespace InnoPhysicsSystemNS
 
 	static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
+	static AssetSystemSingletonComponent* g_AssetSystemSingletonComponent;
 	static PhysicsSystemSingletonComponent* g_PhysicsSystemSingletonComponent;
 	vec4 m_sceneBoundMax = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
 	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), 1.0f);
@@ -51,6 +53,7 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::setup()
 {	
 	InnoPhysicsSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
 	InnoPhysicsSystemNS::g_GameSystemSingletonComponent = &GameSystemSingletonComponent::getInstance();
+	InnoPhysicsSystemNS::g_AssetSystemSingletonComponent = &AssetSystemSingletonComponent::getInstance();
 	InnoPhysicsSystemNS::g_PhysicsSystemSingletonComponent = &PhysicsSystemSingletonComponent::getInstance();
 
 	InnoPhysicsSystemNS::m_objectStatus = objectStatus::ALIVE;
@@ -158,10 +161,16 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const mo
 
 	for (auto& l_MDC : modelMap)
 	{
+		physicsData l_physicsData;
+
 		auto l_AABB = generateAABB(l_MDC.first->m_vertices);
 		auto l_MDCforAABB = generateMeshDataComponent(l_AABB);
-		l_MDCforAABB->m_parentEntity = l_MDC.first->m_parentEntity;
-		l_PDC->m_physicsDataMap.emplace(l_MDCforAABB, l_AABB);
+
+		l_physicsData.MDC = l_MDC.first;
+		l_physicsData.wireframeMDC = l_MDCforAABB;
+		l_physicsData.AABB = l_AABB;
+
+		l_PDC->m_physicsDatas.emplace_back(l_physicsData);
 	}
 
 	return l_PDC;
@@ -319,6 +328,7 @@ AABB InnoPhysicsSystemNS::generateAABB(vec4 boundMax, vec4 boundMin)
 MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 {
 	auto l_MDC = g_pCoreSystem->getMemorySystem()->spawn<MeshDataComponent>();
+	l_MDC->m_parentEntity = InnoMath::createEntityID();
 
 	auto boundMax = rhs.m_boundMax;
 	auto boundMin = rhs.m_boundMin;
@@ -358,7 +368,7 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 	l_MDC->m_vertices.reserve(8);
 
 	l_MDC->m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
-
+	
 	for (auto& l_vertexData : l_MDC->m_vertices)
 	{
 		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
@@ -374,6 +384,9 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 		1, 5, 2, 5, 6, 2 };
 
 	l_MDC->m_indicesSize = l_MDC->m_indices.size();
+
+	l_MDC->m_objectStatus = objectStatus::STANDBY;
+	g_AssetSystemSingletonComponent->m_uninitializedMeshComponents.push(l_MDC);
 
 	return l_MDC;
 }
@@ -398,6 +411,7 @@ AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(AABB rhs, mat4 globalTm)
 
 	return l_AABB;
 }
+
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::initialize()
 {
 	InnoPhysicsSystemNS::m_objectStatus = objectStatus::ALIVE;
@@ -438,7 +452,8 @@ void InnoPhysicsSystemNS::updateVisibleComponents()
 		VisibleComponent* l_visibleComponent;
 		if (InnoPhysicsSystemNS::g_PhysicsSystemSingletonComponent->m_uninitializedVisibleComponents.tryPop(l_visibleComponent))
 		{
-			l_visibleComponent->m_PhysicsDataComponent = generatePhysicsDataComponent(l_visibleComponent->m_modelMap);
+			auto l_physicsComponent = generatePhysicsDataComponent(l_visibleComponent->m_modelMap);
+			l_visibleComponent->m_PhysicsDataComponent = l_physicsComponent;
 			InnoPhysicsSystemNS::m_initializedVisibleComponents.emplace_back(l_visibleComponent);
 		}
 	}
@@ -465,9 +480,9 @@ void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
 
 void InnoPhysicsSystemNS::updateCulling()
 {
-	g_PhysicsSystemSingletonComponent->m_selectedMDCs.clear();
 	g_PhysicsSystemSingletonComponent->m_cullingDataPack.clear();
-
+	g_PhysicsSystemSingletonComponent->m_AABBWireframeDataPack.clear();
+	
 	if (g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
 	{
 		Ray l_mouseRay;
@@ -486,13 +501,16 @@ void InnoPhysicsSystemNS::updateCulling()
 
 				if (visibleComponent->m_PhysicsDataComponent)
 				{
-					for (auto& physicsDataMap : visibleComponent->m_PhysicsDataComponent->m_physicsDataMap)
+					for (auto& physicsData : visibleComponent->m_PhysicsDataComponent->m_physicsDatas)
 					{
-						auto l_AABBws = transformAABBtoWorldSpace(physicsDataMap.second, l_globalTm);
+						auto l_AABBws = transformAABBtoWorldSpace(physicsData.AABB, l_globalTm);
 
 						if (InnoMath::intersectCheck(l_AABBws, l_mouseRay))
 						{
-							g_PhysicsSystemSingletonComponent->m_selectedMDCs.emplace_back(physicsDataMap.first->m_parentEntity);
+							AABBWireframeDataPack l_AABBWireframeDataPack;
+							l_AABBWireframeDataPack.m = l_globalTm;
+							l_AABBWireframeDataPack.MDC = physicsData.wireframeMDC;
+							g_PhysicsSystemSingletonComponent->m_AABBWireframeDataPack.emplace_back(l_AABBWireframeDataPack);
 						}
 						if (InnoMath::intersectCheck(l_AABBws, l_cameraAABB))
 						{
@@ -501,7 +519,7 @@ void InnoPhysicsSystemNS::updateCulling()
 							l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 							l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 							l_cullingDataPack.visibleComponentEntityID = visibleComponent->m_parentEntity;
-							l_cullingDataPack.MDCEntityID = physicsDataMap.first->m_parentEntity;
+							l_cullingDataPack.MDCEntityID = physicsData.MDC->m_parentEntity;
 							l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
 							g_PhysicsSystemSingletonComponent->m_cullingDataPack.emplace_back(l_cullingDataPack);
 						}

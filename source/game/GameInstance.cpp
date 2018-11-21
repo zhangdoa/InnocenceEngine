@@ -275,7 +275,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_pawnEntity2);
 	GameInstanceNS::m_pawnVisibleComponent2->m_visiblilityType = visiblilityType::STATIC_MESH;
 	GameInstanceNS::m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::SPHERE;
-	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
+	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 	GameInstanceNS::m_pawnVisibleComponent2->m_drawAABB = true;
 	//GameInstanceNS::m_pawnVisibleComponent2->m_modelFileName = "Orb//Orb.obj";
 
@@ -445,12 +445,12 @@ void GameInstanceNS::updateSpheres(float seed)
 
 	for (unsigned int i = 0; i < m_sphereTransformComponents.size(); i++)
 	{
-		//auto l_t = InnoMath::rotateInLocal(
-		//	m_sphereTransformComponents[i]->m_localTransformVector.m_rot,
-		//	vec4(0.0f, 1.0f, 0.0f, 0.0f),
-		//	0.2f
-		//);
-		//m_sphereTransformComponents[i]->m_localTransformVector.m_rot = l_t;
+		auto l_t = InnoMath::rotateInLocal(
+			m_sphereTransformComponents[i]->m_localTransformVector.m_rot,
+			vec4(0.0f, 1.0f, 0.0f, 0.0f),
+			0.2f
+		);
+		m_sphereTransformComponents[i]->m_localTransformVector.m_rot = l_t;
 	}
 
 	for (unsigned int i = 0; i < m_sphereVisibleComponents.size(); i += 4)

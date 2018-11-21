@@ -12,6 +12,7 @@
 #include "../component/AssetSystemSingletonComponent.h"
 #include "../component/GameSystemSingletonComponent.h"
 #include "../component/GLRenderingSystemSingletonComponent.h"
+#include "../component/PhysicsSystemSingletonComponent.h"
 
 #include "../component/MeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
@@ -1205,18 +1206,21 @@ void GLRenderingSystemNS::initializeDebuggerPass()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//debuggerPassVertex.sf";
-	m_shaderFilePaths.m_GSPath = "GL3.3//debuggerPassGeometry.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//debuggerPassFragment.sf";
+	//m_shaderFilePaths.m_VSPath = "GL3.3//debuggerPassVertex.sf";
+	//m_shaderFilePaths.m_GSPath = "GL3.3//debuggerPassGeometry.sf";
+	//m_shaderFilePaths.m_FSPath = "GL3.3//debuggerPassFragment.sf";
+
+	m_shaderFilePaths.m_VSPath = "GL3.3//wireframeOverlayPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL3.3//wireframeOverlayPassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_normalTexture = getUniformLocation(
-		l_GLSPC->m_program,
-		"uni_normalTexture");
-	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_normalTexture,
-		0);
+	//GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_normalTexture = getUniformLocation(
+	//	l_GLSPC->m_program,
+	//	"uni_normalTexture");
+	//updateUniform(
+	//	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_normalTexture,
+	//	0);
 	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_p = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_p");
@@ -2058,7 +2062,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 
 							drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
 						}
-						else if (l_renderPack.visiblilityType == visiblilityType::STATIC_MESH)
+						else if (l_renderPack.visiblilityType == visiblilityType::EMISSIVE)
 						{
 							glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
 
@@ -2661,119 +2665,129 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	glDisable(GL_DEPTH_TEST);
 
 	// debugger pass
-	//glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LESS);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 
-	//l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLFBC;
-	//f_bindFBC(l_FBC);
+	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLFBC;
+	f_bindFBC(l_FBC);
 
-	//// copy depth buffer from G-Pass
-	//glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC->m_FBO);
-	//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_FBC->m_FBO);
-	//glBlitFramebuffer(0, 0, rtSizeX, rtSizeY, 0, 0, rtSizeX, rtSizeY, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-	//glBlitFramebuffer(0, 0, rtSizeX, rtSizeY, 0, 0, rtSizeX, rtSizeY, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	// copy depth buffer from G-Pass
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC->m_FBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_FBC->m_FBO);
+	glBlitFramebuffer(0, 0, rtSizeX, rtSizeY, 0, 0, rtSizeX, rtSizeY, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, rtSizeX, rtSizeY, 0, 0, rtSizeX, rtSizeY, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
-	//activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassSPC);
+	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassSPC);
 
-	//if (g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
-	//{
-	//	auto l_mainCamera = g_GameSystemSingletonComponent->m_CameraComponents[0];
-	//	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	if (g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
+	{
+		auto l_mainCamera = g_GameSystemSingletonComponent->m_CameraComponents[0];
+		auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
 
-	//	mat4 p = l_mainCamera->m_projectionMatrix;
-	//	mat4 r =
-	//		InnoMath::getInvertRotationMatrix(
-	//			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
-	//		);
-	//	mat4 t =
-	//		InnoMath::getInvertTranslationMatrix(
-	//			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
-	//		);
+		mat4 p = l_mainCamera->m_projectionMatrix;
+		mat4 r =
+			InnoMath::getInvertRotationMatrix(
+				l_mainCameraTransformComponent->m_globalTransformVector.m_rot
+			);
+		mat4 t =
+			InnoMath::getInvertTranslationMatrix(
+				l_mainCameraTransformComponent->m_globalTransformVector.m_pos
+			);
 
-	//	updateUniform(
-	//		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_p,
-	//		p);
-	//	updateUniform(
-	//		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_r,
-	//		r);
-	//	updateUniform(
-	//		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_t,
-	//		t);
+		updateUniform(
+			GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_p,
+			p);
+		updateUniform(
+			GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_r,
+			r);
+		updateUniform(
+			GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_t,
+			t);
 
-	//	for (auto& l_cameraComponent : g_GameSystemSingletonComponent->m_CameraComponents)
-	//	{
-	//		// draw frustum for cameraComponent
-	//		if (l_cameraComponent->m_drawFrustum)
-	//		{
-	//			auto l_cameraLocalMat = InnoMath::generateIdentityMatrix<float>();
-	//			updateUniform(
-	//				GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
-	//				l_cameraLocalMat);
-	//			auto l_mesh = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_cameraComponent->m_FrustumMeshID);
-	//			drawMesh(l_mesh);
-	//		}
-	//		// draw AABB of frustum for cameraComponent
-	//		if (l_cameraComponent->m_drawAABB)
-	//		{
-	//			auto l_cameraLocalMat = InnoMath::generateIdentityMatrix<float>();
-	//			updateUniform(
-	//				GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
-	//				l_cameraLocalMat);
-	//			auto l_mesh = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_cameraComponent->m_AABBMeshID);
-	//			drawMesh(l_mesh);
-	//		}
-	//	}
-	//}
-	//if (g_GameSystemSingletonComponent->m_LightComponents.size() > 0)
-	//{
-	//	// draw AABB for lightComponent
-	//	for (auto& l_lightComponent : g_GameSystemSingletonComponent->m_LightComponents)
-	//	{
-	//		if (l_lightComponent->m_drawAABB)
-	//		{
-	//			updateUniform(
-	//				GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
-	//				g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
-	//			for (auto l_AABBMeshID : l_lightComponent->m_AABBMeshIDs)
-	//			{
-	//				auto l_mesh = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_AABBMeshID);
-	//				drawMesh(l_mesh);
-	//			}
-	//		}
-	//	}
-	//}
-	//for (auto& l_visibleComponent : g_RenderingSystemSingletonComponent->m_inFrustumVisibleComponents)
-	//{
-	//	if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH && l_visibleComponent->m_drawAABB)
-	//	{
-	//		updateUniform(
-	//			GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
-	//			g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
+		//	for (auto& l_cameraComponent : g_GameSystemSingletonComponent->m_CameraComponents)
+		//	{
+		//		// draw frustum for cameraComponent
+		//		if (l_cameraComponent->m_drawFrustum)
+		//		{
+		//			auto l_cameraLocalMat = InnoMath::generateIdentityMatrix<float>();
+		//			updateUniform(
+		//				GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
+		//				l_cameraLocalMat);
+		//			auto l_mesh = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_cameraComponent->m_FrustumMeshID);
+		//			drawMesh(l_mesh);
+		//		}
+		//		// draw AABB of frustum for cameraComponent
+		//		if (l_cameraComponent->m_drawAABB)
+		//		{
+		//			auto l_cameraLocalMat = InnoMath::generateIdentityMatrix<float>();
+		//			updateUniform(
+		//				GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
+		//				l_cameraLocalMat);
+		//			auto l_mesh = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_cameraComponent->m_AABBMeshID);
+		//			drawMesh(l_mesh);
+		//		}
+		//	}
+		//}
+		//if (g_GameSystemSingletonComponent->m_LightComponents.size() > 0)
+		//{
+		//	// draw AABB for lightComponent
+		//	for (auto& l_lightComponent : g_GameSystemSingletonComponent->m_LightComponents)
+		//	{
+		//		if (l_lightComponent->m_drawAABB)
+		//		{
+		//			updateUniform(
+		//				GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
+		//				g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
+		//			for (auto l_AABBMeshID : l_lightComponent->m_AABBMeshIDs)
+		//			{
+		//				auto l_mesh = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_AABBMeshID);
+		//				drawMesh(l_mesh);
+		//			}
+		//		}
+		//	}
+		//}
+		//for (auto& l_visibleComponent : g_RenderingSystemSingletonComponent->m_inFrustumVisibleComponents)
+		//{
+		//	if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH && l_visibleComponent->m_drawAABB)
+		//	{
+		//		updateUniform(
+		//			GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
+		//			g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 
-	//		// draw each graphic data of visibleComponent
-	//		for (auto& l_modelPair : l_visibleComponent->m_modelMap)
-	//		{
-	//			// draw meshes
-	//			auto l_MDC = l_modelPair.first;
-	//			if (l_MDC)
-	//			{
-	//				auto l_textureMap = l_modelPair.second;
-	//				// any normal?
-	//				auto l_TDC = l_textureMap->m_texturePack.m_normalTDC.second;
-	//				if (l_TDC)
-	//				{
-	//					activateTexture(l_TDC, 0);
-	//				}
-	//				else
-	//				{
-	//					activate2DTexture(m_basicNormalTemplate, 0);
-	//				}
-	//				drawMesh(l_MDC);
-	//			}
-	//		}
-	//	}
-	//}
+		//		// draw each graphic data of visibleComponent
+		//		for (auto& l_modelPair : l_visibleComponent->m_modelMap)
+		//		{
+		//			// draw meshes
+		//			auto l_MDC = l_modelPair.first;
+		//			if (l_MDC)
+		//			{
+		//				auto l_textureMap = l_modelPair.second;
+		//				// any normal?
+		//				auto l_TDC = l_textureMap->m_texturePack.m_normalTDC.second;
+		//				if (l_TDC)
+		//				{
+		//					activateTexture(l_TDC, 0);
+		//				}
+		//				else
+		//				{
+		//					activate2DTexture(m_basicNormalTemplate, 0);
+		//				}
+		//				drawMesh(l_MDC);
+		//			}
+		//		}
+		//	}
+		//}
 
+		for (auto& AABBWireframeDataPack : PhysicsSystemSingletonComponent::getInstance().m_AABBWireframeDataPack)
+		{
+			updateUniform(
+				GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
+				AABBWireframeDataPack.m);
+			drawMesh(AABBWireframeDataPack.MDC);
+		}
+	}
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_DEPTH_TEST);
 
 	// final blend pass

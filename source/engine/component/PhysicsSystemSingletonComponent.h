@@ -14,6 +14,12 @@ struct cullingDataPack
 	visiblilityType visiblilityType;
 };
 
+struct AABBWireframeDataPack
+{
+	mat4 m;
+	MeshDataComponent* MDC;
+};
+
 class PhysicsSystemSingletonComponent
 {
 public:
@@ -28,8 +34,8 @@ public:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	std::vector<EntityID> m_selectedMDCs;
 	std::vector<cullingDataPack> m_cullingDataPack;
+	std::vector<AABBWireframeDataPack> m_AABBWireframeDataPack;
 
 	ThreadSafeQueue<VisibleComponent*> m_uninitializedVisibleComponents;
 private:

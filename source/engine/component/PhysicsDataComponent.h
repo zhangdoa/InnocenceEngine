@@ -3,7 +3,12 @@
 #include "../common/InnoMath.h"
 #include "MeshDataComponent.h"
 
-using physicsDataMap = std::unordered_map<MeshDataComponent*, AABB>;
+struct physicsData
+{
+	MeshDataComponent* MDC;
+	MeshDataComponent* wireframeMDC;
+	AABB AABB;
+};
 
 class PhysicsDataComponent
 {
@@ -14,5 +19,5 @@ public:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	physicsDataMap m_physicsDataMap;
+	std::vector<physicsData> m_physicsDatas;
 };
