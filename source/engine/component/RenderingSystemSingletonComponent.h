@@ -1,10 +1,21 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "VisibleComponent.h"
+#include "MeshDataComponent.h"
+#include "MaterialDataComponent.h"
 #include<atomic>
 
 //#define BlinnPhong
 #define CookTorrance
+
+struct renderDataPack
+{
+	mat4 m;
+	mat4 m_prev;
+	mat4 normalMat;
+	MeshDataComponent* MDC;
+	MaterialDataComponent* Material;
+	visiblilityType visiblilityType;
+};
 
 class RenderingSystemSingletonComponent
 {
@@ -24,13 +35,11 @@ public:
 	bool m_shouldUpdateEnvironmentMap = true;
 	bool m_isTAAPingPass = true;
 	vec2 m_renderTargetSize = vec2(1280, 720);
-	std::vector<VisibleComponent*> m_staticMeshVisibleComponents;
-	std::vector<VisibleComponent*> m_emissiveVisibleComponents;
-	std::vector<VisibleComponent*> m_selectedVisibleComponents;
-	std::vector<VisibleComponent*> m_inFrustumVisibleComponents;
 	std::vector<vec2> HaltonSampler;
 	int currentHaltonStep = 0;
 	int m_MSAAdepth = 4;
+
+	std::vector<renderDataPack> m_renderDataPack;
 
 private:
 	RenderingSystemSingletonComponent() {};

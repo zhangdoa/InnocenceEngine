@@ -681,172 +681,6 @@ public:
 
 		return value;
 	}
-	/*
-	Column-Major memory layout and
-	Row-Major vector4 mathematical convention
-
-	vector4(a matrix1x4) :
-	| x y z w |
-
-	matrix4x4 ��
-	[columnIndex][rowIndex]
-	| m00 <-> a00(1.0 / (tan(FOV / 2.0) * HWRatio)) m10 <->  a01(         0.0         ) m20 <->  a02(                   0.0                  ) m30 <->  a03(                   0.0                  ) |
-	| m01 <-> a10(               0.0              ) m11 <->  a11(1.0 / (tan(FOV / 2.0)) m21 <->  a12(                   0.0                  ) m31 <->  a13(                   0.0                  ) |
-	| m02 <-> a20(               0.0              ) m12 <->  a21(         0.0         ) m22 <->  a22(   -(zFar + zNear) / ((zFar - zNear))   ) m32 <->  a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) |
-	| m03 <-> a30(               0.0              ) m13 <->  a31(         0.0         ) m23 <->  a32(                  -1.0                  ) m33 <->  a33(                   1.0                  ) |
-
-	in
-
-	vector4 * matrix4x4 :
-
-	--------------------------------------------
-
-	Row-Major memory layout and
-	Column-Major vector4 mathematical convention
-
-	vector4(a matrix4x1) :
-	| x |
-	| y |
-	| z |
-	| w |
-
-	matrix4x4 ��
-	[rowIndex][columnIndex]
-	| m00 <-> a00(1.0 / (tan(FOV / 2.0) * HWRatio)) m10 <->  a01(         0.0         ) m20 <->  a02(                   0.0                  ) m30 <->  a03( 0.0) |
-	| m01 <-> a01(               0.0              ) m11 <->  a11(1.0 / (tan(FOV / 2.0)) m21 <->  a21(                   0.0                  ) m31 <->  a31( 0.0) |
-	| m02 <-> a02(               0.0              ) m12 <->  a12(         0.0         ) m22 <->  a22(   -(zFar + zNear) / ((zFar - zNear))   ) m32 <->  a32(-1.0) |
-	| m03 <-> a03(               0.0              ) m13 <->  a13(         0.0         ) m23 <->  a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) m33 <->  a33( 1.0) |
-
-	in
-
-	matrix4x4 * vector4 :
-	*/
-
-
-	void initializeToIdentityMatrix()
-	{
-		m00 = one<T>;
-		m11 = one<T>;
-		m22 = one<T>;
-		m33 = one<T>;
-	}
-
-	//Column-Major memory layout
-#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-	void TMat4::initializeToPerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar)
-	{
-		m00 = (one<T> / (tan(FOV / two<T>) * WHRatio));
-		m11 = (one<T> / tan(FOV / two<T>));
-		m22 = (-(zFar + zNear) / ((zFar - zNear)));
-		m23 = -one<T>;
-		m32 = (-(two<T> * zFar * zNear) / ((zFar - zNear)));
-	}
-	//Row-Major memory layout
-#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
-	void initializeToPerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar)
-	{
-		m00 = (one<T> / (tan(FOV / two<T>) * WHRatio));
-		m11 = (one<T> / tan(FOV / two<T>));
-		m22 = (-(zFar + zNear) / ((zFar - zNear)));
-		m23 = (-(two<T> * zFar * zNear) / ((zFar - zNear)));
-		m32 = -one<T>;
-	}
-#endif
-
-	//Column-Major memory layout
-#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-	void initializeToOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar)
-	{
-		m00 = (two<T> / (right - left));
-		m11 = (two<T> / (up - bottom));
-		m22 = (-two<T> / (zFar - zNear));
-		m30 = (-(right + left) / (right - left));
-		m31 = (-(up + bottom) / (up - bottom));
-		m32 = (-(zFar + zNear) / (zFar - zNear));
-		m33 = one<T>;
-	}
-	//Row-Major memory layout
-#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
-	void initializeToOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar)
-	{
-		m00 = (two<T> / (right - left));
-		m03 = (-(right + left) / (right - left));
-		m11 = (two<T> / (up - bottom));
-		m13 = (-(up + bottom) / (up - bottom));
-		m22 = (-two<T> / (zFar - zNear));
-		m23 = (-(zFar + zNear) / (zFar - zNear));
-		m33 = one<T>;
-	}
-#endif
-	//Column-Major memory layout
-#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-	auto lookAt(const TVec4<T> & eyePos, const TVec4<T> & centerPos, const TVec4<T> & upDir) -> TMat4<T>
-	{
-		// @TODO: replace with SIMD impl
-		TMat4<T> l_m;
-		TVec4<T> l_X;
-		TVec4<T> l_Y = upDir;
-		TVec4<T> l_Z = TVec4<T>(centerPos.x - eyePos.x, centerPos.y - eyePos.y, centerPos.z - eyePos.z, T()).normalize();
-
-		l_X = l_Z.cross(l_Y);
-		l_X = l_X.normalize();
-		l_Y = l_X.cross(l_Z);
-		l_Y = l_Y.normalize();
-
-		l_m.m00 = l_X.x;
-		l_m.m01 = l_Y.x;
-		l_m.m02 = -l_Z.x;
-		l_m.m03 = T();
-		l_m.m10 = l_X.y;
-		l_m.m11 = l_Y.y;
-		l_m.m12 = -l_Z.y;
-		l_m.m13 = T();
-		l_m.m20 = l_X.z;
-		l_m.m21 = l_Y.z;
-		l_m.m22 = -l_Z.z;
-		l_m.m23 = T();
-		l_m.m30 = -(l_X * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
-		l_m.m31 = -(l_Y * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
-		l_m.m32 = (l_Z * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
-		l_m.m33 = one<T>;
-
-		return l_m;
-	}
-	//Row-Major memory layout
-#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
-	auto lookAt(const TVec4<T>& eyePos, const TVec4<T>& centerPos, const TVec4<T>& upDir) -> TMat4<T>
-	{
-		// @TODO: replace with SIMD impl
-		TMat4<T> l_m;
-		TVec4<T> l_X;
-		TVec4<T> l_Y = upDir;
-		TVec4<T> l_Z = TVec4<T>(centerPos.x - eyePos.x, centerPos.y - eyePos.y, centerPos.z - eyePos.z, T()).normalize();
-
-		l_X = l_Z.cross(l_Y);
-		l_X = l_X.normalize();
-		l_Y = l_X.cross(l_Z);
-		l_Y = l_Y.normalize();
-
-		l_m.m00 = l_X.x;
-		l_m.m01 = l_X.y;
-		l_m.m02 = l_X.z;
-		l_m.m03 = -(l_X * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
-		l_m.m10 = l_Y.x;
-		l_m.m11 = l_Y.y;
-		l_m.m12 = l_Y.z;
-		l_m.m13 = -(l_Y * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
-		l_m.m20 = -l_Z.x;
-		l_m.m21 = -l_Z.y;
-		l_m.m22 = -l_Z.z;
-		l_m.m23 = (l_Z * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
-		l_m.m30 = T();
-		l_m.m31 = T();
-		l_m.m32 = T();
-		l_m.m33 = one<T>;
-
-		return l_m;
-	}
-#endif
 };
 
 template<class T>
@@ -935,9 +769,7 @@ public:
 		m_pad2(T()),
 		m_pad3(T()),
 		m_boundMin(rhs.m_boundMin),
-		m_boundMax(rhs.m_boundMax),
-		m_vertices(rhs.m_vertices),
-		m_indices(rhs.m_indices) {};
+		m_boundMax(rhs.m_boundMax){};
 	auto operator=(const TAABB<T> & rhs) -> TAABB<T>&
 	{
 		m_center = rhs.m_center;
@@ -947,8 +779,6 @@ public:
 		m_pad3 = T();
 		m_boundMin = rhs.m_boundMin;
 		m_boundMax = rhs.m_boundMax;
-		m_vertices = rhs.m_vertices;
-		m_indices = rhs.m_indices;
 		return *this;
 	}
 	~TAABB() {};
@@ -960,9 +790,6 @@ public:
 	T m_pad3; // 1 * sizeof(T)
 	TVec4<T> m_boundMin; // 4 * sizeof(T)
 	TVec4<T> m_boundMax; // 4 * sizeof(T)
-
-	std::vector<TVertex<T>> m_vertices;
-	std::vector<unsigned int> m_indices;
 };
 
 template<class T>
@@ -1035,7 +862,7 @@ namespace InnoMath
 	 vector4(a matrix1x4) :
 	 | x y z w |
 
-	 matrix4x4 ��
+	 matrix4x4
 	 [columnIndex][rowIndex]
 	 | m00 <-> a00(1.0) m10 <->  a01(0.0) m20 <->  a02(0.0) m30 <->  a03(0.0) |
 	 | m01 <-> a10(0.0) m11 <->  a11(1.0) m21 <->  a12(0.0) m31 <->  a13(0.0) |
@@ -1061,7 +888,7 @@ namespace InnoMath
 	 | z |
 	 | w |
 
-	 matrix4x4 ��
+	 matrix4x4
 	 [rowIndex][columnIndex]
 	 | m00 <-> a00(1.0) m01 <->  a01(0.0) m02 <->  a02(0.0) m03 <->  a03(Tx ) |
 	 | m10 <-> a10(0.0) m11 <->  a11(1.0) m12 <->  a12(0.0) m13 <->  a13(Ty ) |
@@ -1122,7 +949,7 @@ namespace InnoMath
 	 vector4(a matrix1x4) :
 	 | x y z w |
 
-	 matrix4x4 ��
+	 matrix4x4
 	 [columnIndex][rowIndex]
 	 | m00 <-> a00(1 - 2*qy2 - 2*qz2) m10 <->  a01(2*qx*qy + 2*qz*qw) m20 <->  a02(2*qx*qz - 2*qy*qw) m30 <->  a03(0.0) |
 	 | m01 <-> a10(2*qx*qy - 2*qz*qw) m11 <->  a11(1 - 2*qx2 - 2*qz2) m21 <->  a12(2*qy*qz + 2*qx*qw) m31 <->  a13(0.0) |
@@ -1148,7 +975,7 @@ namespace InnoMath
 	 | z |
 	 | w |
 
-	 matrix4x4 ��
+	 matrix4x4
 	 [rowIndex][columnIndex]
 	 | m00 <-> a00(1 - 2*qy2 - 2*qz2) m01 <->  a01(2*qx*qy - 2*qz*qw) m02 <->  a02(2*qx*qz + 2*qy*qw) m03 <->  a03(0.0) |
 	 | m10 <-> a10(2*qx*qy + 2*qz*qw) m11 <->  a11(1 - 2*qx2 - 2*qz2) m12 <->  a12(2*qy*qz - 2*qx*qw) m13 <->  a13(0.0) |
@@ -1237,6 +1064,199 @@ namespace InnoMath
 		l_m.m33 = rhs.w;
 		return l_m;
 	}
+
+	/*
+	Column-Major memory layout and
+	Row-Major vector4 mathematical convention
+
+	vector4(a matrix1x4) :
+	| x y z w |
+
+	matrix4x4
+	[columnIndex][rowIndex]
+	| m00 <-> a00(1.0 / (tan(FOV / 2.0) * HWRatio)) m10 <->  a01(         0.0         ) m20 <->  a02(                   0.0                  ) m30 <->  a03(                   0.0                  ) |
+	| m01 <-> a10(               0.0              ) m11 <->  a11(1.0 / (tan(FOV / 2.0)) m21 <->  a12(                   0.0                  ) m31 <->  a13(                   0.0                  ) |
+	| m02 <-> a20(               0.0              ) m12 <->  a21(         0.0         ) m22 <->  a22(   -(zFar + zNear) / ((zFar - zNear))   ) m32 <->  a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) |
+	| m03 <-> a30(               0.0              ) m13 <->  a31(         0.0         ) m23 <->  a32(                  -1.0                  ) m33 <->  a33(                   1.0                  ) |
+
+	in
+
+	vector4 * matrix4x4 :
+
+	--------------------------------------------
+
+	Row-Major memory layout and
+	Column-Major vector4 mathematical convention
+
+	vector4(a matrix4x1) :
+	| x |
+	| y |
+	| z |
+	| w |
+
+	matrix4x4
+	[rowIndex][columnIndex]
+	| m00 <-> a00(1.0 / (tan(FOV / 2.0) * HWRatio)) m10 <->  a01(         0.0         ) m20 <->  a02(                   0.0                  ) m30 <->  a03( 0.0) |
+	| m01 <-> a01(               0.0              ) m11 <->  a11(1.0 / (tan(FOV / 2.0)) m21 <->  a21(                   0.0                  ) m31 <->  a31( 0.0) |
+	| m02 <-> a02(               0.0              ) m12 <->  a12(         0.0         ) m22 <->  a22(   -(zFar + zNear) / ((zFar - zNear))   ) m32 <->  a32(-1.0) |
+	| m03 <-> a03(               0.0              ) m13 <->  a13(         0.0         ) m23 <->  a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) m33 <->  a33( 1.0) |
+
+	in
+
+	matrix4x4 * vector4 :
+	*/
+
+	template<class T>
+	auto generateIdentityMatrix() ->TMat4<T>
+	{
+		TMat4<T> l_m;
+
+		l_m.m00 = one<T>;
+		l_m.m11 = one<T>;
+		l_m.m22 = one<T>;
+		l_m.m33 = one<T>;
+
+		return l_m;
+	}
+
+	//Column-Major memory layout
+#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
+	template<class T>
+	auto TMat4::generatePerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar) ->TMat4<T>
+	{
+		TMat4<T> l_m;
+
+		l_m.m00 = (one<T> / (tan(FOV / two<T>) * WHRatio));
+		l_m.m11 = (one<T> / tan(FOV / two<T>));
+		l_m.m22 = (-(zFar + zNear) / ((zFar - zNear)));
+		l_m.m23 = -one<T>;
+		l_m.m32 = (-(two<T> * zFar * zNear) / ((zFar - zNear)));
+
+		return l_m;
+	}
+	//Row-Major memory layout
+#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
+	template<class T>
+	auto generatePerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar) ->TMat4<T>
+	{
+		TMat4<T> l_m;
+
+		l_m.m00 = (one<T> / (tan(FOV / two<T>) * WHRatio));
+		l_m.m11 = (one<T> / tan(FOV / two<T>));
+		l_m.m22 = (-(zFar + zNear) / ((zFar - zNear)));
+		l_m.m23 = (-(two<T> * zFar * zNear) / ((zFar - zNear)));
+		l_m.m32 = -one<T>;
+
+		return l_m;
+	}
+#endif
+
+	//Column-Major memory layout
+#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
+	template<class T>
+	auto generateToOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) ->TMat4<T>
+	{
+		TMat4<T> l_m;
+
+		l_m.m00 = (two<T> / (right - left));
+		l_m.m11 = (two<T> / (up - bottom));
+		l_m.m22 = (-two<T> / (zFar - zNear));
+		l_m.m30 = (-(right + left) / (right - left));
+		l_m.m31 = (-(up + bottom) / (up - bottom));
+		l_m.m32 = (-(zFar + zNear) / (zFar - zNear));
+		l_m.m33 = one<T>;
+
+		return l_m;
+	}
+	//Row-Major memory layout
+#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
+	template<class T>
+	auto generateToOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) ->TMat4<T>
+	{
+		TMat4<T> l_m;
+
+		l_m.m00 = (two<T> / (right - left));
+		l_m.m03 = (-(right + left) / (right - left));
+		l_m.m11 = (two<T> / (up - bottom));
+		l_m.m13 = (-(up + bottom) / (up - bottom));
+		l_m.m22 = (-two<T> / (zFar - zNear));
+		l_m.m23 = (-(zFar + zNear) / (zFar - zNear));
+		l_m.m33 = one<T>;
+
+		return l_m;
+	}
+#endif
+	//Column-Major memory layout
+#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
+	template<class T>
+	auto lookAt(const TVec4<T> & eyePos, const TVec4<T> & centerPos, const TVec4<T> & upDir) -> TMat4<T>
+	{
+		// @TODO: replace with SIMD impl
+		TMat4<T> l_m;
+		TVec4<T> l_X;
+		TVec4<T> l_Y = upDir;
+		TVec4<T> l_Z = TVec4<T>(centerPos.x - eyePos.x, centerPos.y - eyePos.y, centerPos.z - eyePos.z, T()).normalize();
+
+		l_X = l_Z.cross(l_Y);
+		l_X = l_X.normalize();
+		l_Y = l_X.cross(l_Z);
+		l_Y = l_Y.normalize();
+
+		l_m.m00 = l_X.x;
+		l_m.m01 = l_Y.x;
+		l_m.m02 = -l_Z.x;
+		l_m.m03 = T();
+		l_m.m10 = l_X.y;
+		l_m.m11 = l_Y.y;
+		l_m.m12 = -l_Z.y;
+		l_m.m13 = T();
+		l_m.m20 = l_X.z;
+		l_m.m21 = l_Y.z;
+		l_m.m22 = -l_Z.z;
+		l_m.m23 = T();
+		l_m.m30 = -(l_X * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m31 = -(l_Y * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m32 = (l_Z * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m33 = one<T>;
+
+		return l_m;
+	}
+	//Row-Major memory layout
+#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
+	template<class T>
+	auto lookAt(const TVec4<T>& eyePos, const TVec4<T>& centerPos, const TVec4<T>& upDir) -> TMat4<T>
+	{
+		// @TODO: replace with SIMD impl
+		TMat4<T> l_m;
+		TVec4<T> l_X;
+		TVec4<T> l_Y = upDir;
+		TVec4<T> l_Z = TVec4<T>(centerPos.x - eyePos.x, centerPos.y - eyePos.y, centerPos.z - eyePos.z, T()).normalize();
+
+		l_X = l_Z.cross(l_Y);
+		l_X = l_X.normalize();
+		l_Y = l_X.cross(l_Z);
+		l_Y = l_Y.normalize();
+
+		l_m.m00 = l_X.x;
+		l_m.m01 = l_X.y;
+		l_m.m02 = l_X.z;
+		l_m.m03 = -(l_X * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m10 = l_Y.x;
+		l_m.m11 = l_Y.y;
+		l_m.m12 = l_Y.z;
+		l_m.m13 = -(l_Y * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m20 = -l_Z.x;
+		l_m.m21 = -l_Z.y;
+		l_m.m22 = -l_Z.z;
+		l_m.m23 = (l_Z * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m30 = T();
+		l_m.m31 = T();
+		l_m.m32 = T();
+		l_m.m33 = one<T>;
+
+		return l_m;
+	}
+#endif
 
 	template<class T>
 	bool intersectCheck(const TAABB<T> & lhs, const TAABB<T> & rhs)

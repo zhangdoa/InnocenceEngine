@@ -17,6 +17,8 @@
 #include "../component/DXMeshDataComponent.h"
 #include "../component/DXTextureDataComponent.h"
 
+#include "../component/PhysicsDataComponent.h"
+
 #define allocateComponentInterfaceDecl( className ) \
 virtual className* allocate##className() = 0;
 
@@ -62,6 +64,7 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLRenderPassComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXTextureDataComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(PhysicsDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(Vertex);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(Index);
 
@@ -102,6 +105,8 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentTemplate(DXMeshDataComponent);
 	template <>
 	INNO_SYSTEM_EXPORT allocateComponentTemplate(DXTextureDataComponent);
+	template <>
+	INNO_SYSTEM_EXPORT allocateComponentTemplate(PhysicsDataComponent);
 	template <>
 	INNO_SYSTEM_EXPORT allocateComponentTemplate(Vertex);
 	template <>

@@ -1,6 +1,7 @@
 #include "VisionSystem.h"
 
 #include "../component/RenderingSystemSingletonComponent.h"
+#include "../component/PhysicsSystemSingletonComponent.h"
 
 #include "DXWindowSystem.h"
 #include "DXRenderingSystem.h"
@@ -23,6 +24,8 @@ INNO_PRIVATE_SCOPE InnoVisionSystemNS
 	bool setupWindow(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow);
 	bool setupRendering();
 	bool setupGui();
+
+	InnoFuture<void>* m_asyncTask;
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 }
@@ -125,6 +128,25 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 {
+	InnoVisionSystemNS::m_asyncTask = &g_pCoreSystem->getTaskSystem()->submit([]()
+	{
+		RenderingSystemSingletonComponent::getInstance().m_renderDataPack.clear();
+		for (auto& i : PhysicsSystemSingletonComponent::getInstance().m_cullingDataPack)
+		{
+			renderDataPack l_renderDataPack;
+			l_renderDataPack.m = i.m;
+			l_renderDataPack.m_prev = i.m_prev;
+			l_renderDataPack.normalMat = i.normalMat;
+			auto l_visibleComponent = g_pCoreSystem->getGameSystem()->get<VisibleComponent>(i.visibleComponentEntityID);
+			auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(i.MDCEntityID);
+			auto l_modelPair = l_visibleComponent->m_modelMap.find(l_MDC);
+			l_renderDataPack.MDC = l_MDC;
+			l_renderDataPack.Material = l_modelPair->second;
+			l_renderDataPack.visiblilityType = i.visiblilityType;
+			RenderingSystemSingletonComponent::getInstance().m_renderDataPack.emplace_back(l_renderDataPack);
+		};
+	});
+
 	InnoVisionSystemNS::m_windowSystem->update();
 
 	if (InnoVisionSystemNS::m_windowSystem->getStatus() == objectStatus::ALIVE)

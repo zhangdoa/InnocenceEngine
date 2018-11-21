@@ -3,6 +3,7 @@
 #include "../component/MeshDataComponent.h"
 #include "../component/MaterialDataComponent.h"
 #include "../component/TextureDataComponent.h"
+#include "../component/VisibleComponent.h"
 
 #include "../common/InnoConcurrency.h"
 class AssetSystemSingletonComponent

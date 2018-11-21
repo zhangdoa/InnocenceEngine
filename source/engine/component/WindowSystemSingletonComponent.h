@@ -38,8 +38,6 @@ public:
 	float m_mouseLastY;
 
 	vec4 m_mousePositionInWorldSpace;
-	Ray m_mouseRay;
-
 private:
 	WindowSystemSingletonComponent() {};
 };

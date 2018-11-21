@@ -78,6 +78,8 @@ std::unique_ptr<ComponentPool<className>> m_##className##Pool;
 	componentPoolUniPtr(DXMeshDataComponent);
 	componentPoolUniPtr(DXTextureDataComponent);
 
+	componentPoolUniPtr(PhysicsDataComponent);
+
 	//Memory pool for vertices and indices
 	// @TODO: need more efficient solution
 	std::unique_ptr<ComponentPool<Vertex>> m_VertexPool;
@@ -146,6 +148,8 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::setup()
 
 	constructComponentPool(DXMeshDataComponent);
 	constructComponentPool(DXTextureDataComponent);
+
+	constructComponentPool(PhysicsDataComponent);
 
 	//InnoMemorySystemNS::m_VertexPool = std::make_unique<ComponentPool<Vertex>>(1024 * 1024 * 1024 * 2 );
 	//InnoMemorySystemNS::m_IndexPool = std::make_unique<ComponentPool<Index>>(1024 * 1024 * 5);
@@ -484,6 +488,8 @@ allocateComponentImplDefi(GLRenderPassComponent)
 
 allocateComponentImplDefi(DXMeshDataComponent)
 allocateComponentImplDefi(DXTextureDataComponent)
+
+allocateComponentImplDefi(PhysicsDataComponent);
 
 allocateComponentImplDefi(Vertex)
 allocateComponentImplDefi(Index)

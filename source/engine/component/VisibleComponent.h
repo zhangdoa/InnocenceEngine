@@ -3,6 +3,7 @@
 #include "../common/InnoMath.h"
 #include "MeshDataComponent.h"
 #include "MaterialDataComponent.h"
+#include "PhysicsDataComponent.h"
 
 using modelPair = std::pair<MeshDataComponent*, MaterialDataComponent*>;
 using modelMap = std::unordered_map<MeshDataComponent*, MaterialDataComponent*>;
@@ -22,11 +23,11 @@ public:
 	textureWrapMethod m_textureWrapMethod = textureWrapMethod::REPEAT;
 
 	bool m_drawAABB = false;
-	EntityID m_AABBMeshID = 0;
-	AABB m_AABB;
 
 	std::string m_modelFileName;
 
 	modelMap m_modelMap;
+
+	PhysicsDataComponent* m_PhysicsDataComponent;
 };
 

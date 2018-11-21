@@ -32,11 +32,12 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 
-DXMeshDataComponent* initializeMeshDataComponent(MeshDataComponent* rhs);
-DXTextureDataComponent* initializeTextureDataComponent(TextureDataComponent* rhs);
+DXMeshDataComponent* generateDXMeshDataComponent(MeshDataComponent* rhs);
+DXTextureDataComponent* generateDXTextureDataComponent(TextureDataComponent* rhs);
 
 DXMeshDataComponent* addDXMeshDataComponent(EntityID rhs);
 DXTextureDataComponent* addDXTextureDataComponent(EntityID rhs);
+
 DXMeshDataComponent* getDXMeshDataComponent(EntityID rhs);
 DXTextureDataComponent* getDXTextureDataComponent(EntityID rhs);
 
@@ -496,7 +497,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 		MeshDataComponent* l_meshDataComponent;
 		if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
-			auto l_initializedDXMDC = DXRenderingSystemNS::initializeMeshDataComponent(l_meshDataComponent);
+			auto l_initializedDXMDC = DXRenderingSystemNS::generateDXMeshDataComponent(l_meshDataComponent);
 		}
 	}
 	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
@@ -504,7 +505,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 		TextureDataComponent* l_textureDataComponent;
 		if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
 		{
-			DXRenderingSystemNS::initializeTextureDataComponent(l_textureDataComponent);
+			DXRenderingSystemNS::generateDXTextureDataComponent(l_textureDataComponent);
 		}
 	}
 	// Clear the buffers to begin the scene.
@@ -599,25 +600,25 @@ bool  DXRenderingSystemNS::initializeDefaultAssets()
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::LINE);
 	f_convertCoordinateFromGLtoDX(l_MDC);
-	m_UnitLineTemplate = initializeMeshDataComponent(l_MDC);
+	m_UnitLineTemplate = generateDXMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 	f_convertCoordinateFromGLtoDX(l_MDC);
-	m_UnitQuadTemplate = initializeMeshDataComponent(l_MDC);
+	m_UnitQuadTemplate = generateDXMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::CUBE);
 	f_convertCoordinateFromGLtoDX(l_MDC);
-	m_UnitCubeTemplate = initializeMeshDataComponent(l_MDC);
+	m_UnitCubeTemplate = generateDXMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::SPHERE);
 	f_convertCoordinateFromGLtoDX(l_MDC);
-	m_UnitSphereTemplate = initializeMeshDataComponent(l_MDC);
+	m_UnitSphereTemplate = generateDXMeshDataComponent(l_MDC);
 
-	m_basicNormalTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::NORMAL));
-	m_basicAlbedoTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ALBEDO));
-	m_basicMetallicTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::METALLIC));
-	m_basicRoughnessTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ROUGHNESS));
-	m_basicAOTemplate = initializeTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::AMBIENT_OCCLUSION));
+	m_basicNormalTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::NORMAL));
+	m_basicAlbedoTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ALBEDO));
+	m_basicMetallicTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::METALLIC));
+	m_basicRoughnessTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ROUGHNESS));
+	m_basicAOTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::AMBIENT_OCCLUSION));
 
 	return true;
 }
@@ -1412,7 +1413,7 @@ void DXRenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HW
 	g_pCoreSystem->getLogSystem()->printLog("DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
 
-DXMeshDataComponent* DXRenderingSystemNS::initializeMeshDataComponent(MeshDataComponent * rhs)
+DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataComponent * rhs)
 {
 	if (rhs->m_objectStatus == objectStatus::ALIVE)
 	{
@@ -1481,7 +1482,7 @@ DXMeshDataComponent* DXRenderingSystemNS::initializeMeshDataComponent(MeshDataCo
 	}
 }
 
-DXTextureDataComponent* DXRenderingSystemNS::initializeTextureDataComponent(TextureDataComponent * rhs)
+DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(TextureDataComponent * rhs)
 {
 	if (rhs->m_objectStatus == objectStatus::ALIVE)
 	{
@@ -1658,89 +1659,71 @@ void DXRenderingSystemNS::prepareRenderingData()
 
 	m_LPassCBufferData.color = l_directionalLight->m_color;
 
-	for (auto& l_visibleComponent : RenderingSystemSingletonComponent::getInstance().m_inFrustumVisibleComponents)
+	for (auto& l_renderDataPack : RenderingSystemSingletonComponent::getInstance().m_renderDataPack)
 	{
-		if (l_visibleComponent->m_visiblilityType == visiblilityType::STATIC_MESH)
+		auto l_DXMDC = DXRenderingSystemNS::m_initializedMeshComponents.find(l_renderDataPack.MDC->m_parentEntity);
+		if (l_DXMDC != DXRenderingSystemNS::m_initializedMeshComponents.end())
 		{
-			for (auto& l_graphicData : l_visibleComponent->m_modelMap)
+			GPassRenderingDataPack l_renderingDataPack;
+
+			l_renderingDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
+			l_renderingDataPack.m_meshDrawMethod = l_renderDataPack.MDC->m_meshDrawMethod;
+			l_renderingDataPack.GPassCBuffer.mvp = DXRenderingSystemNS::m_CamRTP *l_renderDataPack.m;
+			l_renderingDataPack.GPassCBuffer.m_normalMat = l_renderDataPack.normalMat;
+			l_renderingDataPack.DXMDC = l_DXMDC->second;
+			// any normal?
+			auto l_TDC = l_renderDataPack.Material->m_texturePack.m_normalTDC.second;
+			if (l_TDC)
 			{
-				auto l_MDC = l_graphicData.first;
-				if (l_MDC)
-				{
-					auto l_DXMDC = DXRenderingSystemNS::m_initializedMeshComponents.find(l_MDC->m_parentEntity);
-					if (l_DXMDC != DXRenderingSystemNS::m_initializedMeshComponents.end())
-					{
-						GPassRenderingDataPack l_renderingDataPack;
-
-						l_renderingDataPack.indiceSize = l_MDC->m_indicesSize;
-						l_renderingDataPack.m_meshDrawMethod = l_MDC->m_meshDrawMethod;
-						auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity);
-						mat4 m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-						l_renderingDataPack.GPassCBuffer.mvp = DXRenderingSystemNS::m_CamRTP * m;
-						l_renderingDataPack.GPassCBuffer.m_normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-						l_renderingDataPack.DXMDC = l_DXMDC->second;
-
-						auto l_textureMap = l_graphicData.second;
-						if (l_textureMap)
-						{
-							// any normal?
-							auto l_TDC = l_textureMap->m_texturePack.m_normalTDC.second;
-							if (l_TDC)
-							{
-								l_renderingDataPack.m_basicNormalDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
-							}
-							else
-							{
-								l_renderingDataPack.m_basicNormalDXTDC = m_basicNormalTemplate;
-							}
-							// any albedo?
-							l_TDC = l_textureMap->m_texturePack.m_albedoTDC.second;
-							if (l_TDC)
-							{
-								l_renderingDataPack.m_basicAlbedoDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
-							}
-							else
-							{
-								l_renderingDataPack.m_basicAlbedoDXTDC = m_basicAlbedoTemplate;
-							}
-							// any metallic?
-							l_TDC = l_textureMap->m_texturePack.m_metallicTDC.second;
-							if (l_TDC)
-							{
-								l_renderingDataPack.m_basicMetallicDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
-							}
-							else
-							{
-								l_renderingDataPack.m_basicMetallicDXTDC = m_basicMetallicTemplate;
-							}
-							// any roughness?
-							l_TDC = l_textureMap->m_texturePack.m_roughnessTDC.second;
-							if (l_TDC)
-							{
-								l_renderingDataPack.m_basicRoughnessDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
-							}
-							else
-							{
-								l_renderingDataPack.m_basicRoughnessDXTDC = m_basicRoughnessTemplate;
-							}
-							// any ao?
-							l_TDC = l_textureMap->m_texturePack.m_roughnessTDC.second;
-							if (l_TDC)
-							{
-								l_renderingDataPack.m_basicAODXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
-							}
-							else
-							{
-								l_renderingDataPack.m_basicAODXTDC = m_basicAOTemplate;
-							}
-						}
-
-						DXRenderingSystemNS::m_GPassRenderingDataQueue.push(l_renderingDataPack);
-					}
-				}
+				l_renderingDataPack.m_basicNormalDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
 			}
-		}
-	}
+			else
+			{
+				l_renderingDataPack.m_basicNormalDXTDC = m_basicNormalTemplate;
+			}
+			// any albedo?
+			l_TDC = l_renderDataPack.Material->m_texturePack.m_albedoTDC.second;
+			if (l_TDC)
+			{
+				l_renderingDataPack.m_basicAlbedoDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+			}
+			else
+			{
+				l_renderingDataPack.m_basicAlbedoDXTDC = m_basicAlbedoTemplate;
+			}
+			// any metallic?
+			l_TDC = l_renderDataPack.Material->m_texturePack.m_metallicTDC.second;
+			if (l_TDC)
+			{
+				l_renderingDataPack.m_basicMetallicDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+			}
+			else
+			{
+				l_renderingDataPack.m_basicMetallicDXTDC = m_basicMetallicTemplate;
+			}
+			// any roughness?
+			l_TDC = l_renderDataPack.Material->m_texturePack.m_roughnessTDC.second;
+			if (l_TDC)
+			{
+				l_renderingDataPack.m_basicRoughnessDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+			}
+			else
+			{
+				l_renderingDataPack.m_basicRoughnessDXTDC = m_basicRoughnessTemplate;
+			}
+			// any ao?
+			l_TDC = l_renderDataPack.Material->m_texturePack.m_roughnessTDC.second;
+			if (l_TDC)
+			{
+				l_renderingDataPack.m_basicAODXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+			}
+			else
+			{
+				l_renderingDataPack.m_basicAODXTDC = m_basicAOTemplate;
+			}
+			DXRenderingSystemNS::m_GPassRenderingDataQueue.push(l_renderingDataPack);
+		}		
+	}	
 }
 
 void DXRenderingSystemNS::updateGeometryPass()

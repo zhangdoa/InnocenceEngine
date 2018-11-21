@@ -75,7 +75,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 	glfwMakeContextCurrent(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window);
 	if (GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window == nullptr) {
 		GLWindowSystemNS::m_objectStatus = objectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.");
+		g_pCoreSystem->getLogSystem()->printLog("Error: GLWindowSystem: Failed to open GLFW window.");
 		glfwTerminate();
 		return false;
 	}
@@ -84,7 +84,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		GLWindowSystemNS::m_objectStatus = objectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog("Failed to initialize GLAD.");
+		g_pCoreSystem->getLogSystem()->printLog("Error: GLWindowSystem: Failed to initialize GLAD.");
 		return false;
 	}
 
@@ -174,7 +174,6 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::terminate()
 	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, GLFW_STICKY_KEYS, GL_FALSE);
 	glfwDestroyWindow(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window);
 	glfwTerminate();
-	g_pCoreSystem->getLogSystem()->printLog("GLWindowSystem: Window closed.");
 
 	GLWindowSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog("GLWindowSystem has been terminated.");

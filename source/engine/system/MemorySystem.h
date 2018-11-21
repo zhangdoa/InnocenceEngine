@@ -39,6 +39,7 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(GLRenderPassComponent);	
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXTextureDataComponent);
+	INNO_SYSTEM_EXPORT allocateComponentImplDecl(PhysicsDataComponent);	
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(Vertex);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(Index);
 };

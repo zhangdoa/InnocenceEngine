@@ -17,6 +17,7 @@
 #include "STB_Image/stb_image.h"
 #include "../component/AssetSystemSingletonComponent.h"
 #include "../component/GameSystemSingletonComponent.h"
+#include "../component/PhysicsSystemSingletonComponent.h"
 
 #include "ICoreSystem.h"
 
@@ -334,77 +335,6 @@ bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
 
 }
 
-vec4 InnoAssetSystem::findMaxVertex(MeshDataComponent* MDC)
-{
-	auto l_meshDataComponent = MDC;
-	
-	float maxX = 0;
-	float maxY = 0;
-	float maxZ = 0;
-
-	if (l_meshDataComponent)
-	{
-		std::for_each(l_meshDataComponent->m_vertices.begin(), l_meshDataComponent->m_vertices.end(), [&](Vertex val)
-		{
-			if (val.m_pos.x >= maxX)
-			{
-				maxX = val.m_pos.x;
-			};
-
-			if (val.m_pos.y >= maxY)
-			{
-				maxY = val.m_pos.y;
-			};
-
-			if (val.m_pos.z >= maxZ)
-			{
-				maxZ = val.m_pos.z;
-			};
-		});
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog("Error : AssetSystem : no max vertex found in MeshDataComponent: " + std::to_string(MDC->m_parentEntity) + " !");
-	}
-	return vec4(maxX, maxY, maxZ, 1.0f);
-}
-
-vec4 InnoAssetSystem::findMinVertex(MeshDataComponent* MDC)
-{
-	auto l_meshDataComponent = MDC;
-
-	float minX = 0.0f;
-	float minY = 0.0f;
-	float minZ = 0.0f;
-
-	if (l_meshDataComponent)
-	{
-		std::for_each(l_meshDataComponent->m_vertices.begin(), l_meshDataComponent->m_vertices.end(), [&](Vertex val)
-		{
-			if (val.m_pos.x <= minX)
-			{
-				minX = val.m_pos.x;
-			};
-
-			if (val.m_pos.y <= minY)
-			{
-				minY = val.m_pos.y;
-			};
-
-			if (val.m_pos.z <= minZ)
-			{
-				minZ = val.m_pos.z;
-			};
-		});
-
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog("Error : AssetSystem : no minimum vertex found in MeshDataComponent: " + std::to_string(MDC->m_parentEntity) + " !");
-	}
-	return vec4(minX, minY, minZ, 1.0f);
-}
-
 void InnoAssetSystemNS::addUnitCube(MeshDataComponent& meshDataComponent)
 {
 	Vertex l_VertexData_1;
@@ -705,6 +635,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 			{
 				assignUnitMesh(l_visibleComponent->m_meshShapeType, l_visibleComponent);
 			}
+			PhysicsSystemSingletonComponent::getInstance().m_uninitializedVisibleComponents.push(l_visibleComponent);
 			//if (l_visibleComponent->m_drawAABB)
 			//{
 			//	auto l_Mesh = InnoAssetSystemNS::addMeshDataComponent();
