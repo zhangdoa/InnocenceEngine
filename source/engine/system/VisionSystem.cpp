@@ -195,3 +195,9 @@ INNO_SYSTEM_EXPORT objectStatus InnoVisionSystem::getStatus()
 {
 	return InnoVisionSystemNS::m_objectStatus;
 }
+
+INNO_SYSTEM_EXPORT bool InnoVisionSystem::resize()
+{
+	InnoVisionSystemNS::m_renderingSystem->resize();
+	return true;
+}

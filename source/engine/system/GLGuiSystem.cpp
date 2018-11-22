@@ -99,7 +99,7 @@ void ImGuiWrapper::initialize()
 
 void ImGuiWrapper::update()
 {
-	auto l_renderTargetSize = ImVec2((float)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.x / 4.0f, (float)RenderingSystemSingletonComponent::getInstance().m_renderTargetSize.y / 4.0f);
+	auto l_renderTargetSize = ImVec2((float)WindowSystemSingletonComponent::getInstance().m_windowResolution.x / 4.0f, (float)WindowSystemSingletonComponent::getInstance().m_windowResolution.y / 4.0f);
 #ifdef DEBUG
 #ifndef INNO_PLATFORM_LINUX64
 

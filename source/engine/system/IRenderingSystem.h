@@ -14,4 +14,6 @@ public:
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;
 
 	INNO_SYSTEM_EXPORT virtual objectStatus getStatus() = 0;
+
+	INNO_SYSTEM_EXPORT virtual bool resize() = 0;
 };

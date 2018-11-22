@@ -1,5 +1,19 @@
 #pragma once
 #include "../common/InnoType.h"
+
+struct textureDataDesc
+{
+	textureType textureType;
+	textureColorComponentsFormat textureColorComponentsFormat;
+	texturePixelDataFormat texturePixelDataFormat;
+	textureFilterMethod textureMinFilterMethod;
+	textureFilterMethod textureMagFilterMethod;
+	textureWrapMethod textureWrapMethod;
+	unsigned int textureWidth;
+	unsigned int textureHeight;
+	texturePixelDataType texturePixelDataType;
+};
+
 class TextureDataComponent
 {
 public:
@@ -9,15 +23,7 @@ public:
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	textureType m_textureType;
-	textureColorComponentsFormat m_textureColorComponentsFormat;
-	texturePixelDataFormat m_texturePixelDataFormat;
-	textureFilterMethod m_textureMinFilterMethod;
-	textureFilterMethod m_textureMagFilterMethod;
-	textureWrapMethod m_textureWrapMethod;
-	int m_textureWidth;
-	int m_textureHeight;
-	texturePixelDataType m_texturePixelDataType;
+	textureDataDesc m_textureDataDesc;
 	std::vector<void*> m_textureData;
 };
 

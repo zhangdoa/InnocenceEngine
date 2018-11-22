@@ -589,6 +589,11 @@ objectStatus DXRenderingSystem::getStatus()
 	return DXRenderingSystemNS::m_objectStatus;
 }
 
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::resize()
+{
+	return true;
+}
+
 bool  DXRenderingSystemNS::initializeDefaultAssets()
 {
 	std::function<void(MeshDataComponent* MDC)> f_convertCoordinateFromGLtoDX = [&](MeshDataComponent* MDC) {
@@ -1498,15 +1503,15 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 		// @TODO: Unified internal format
 		// Setup the description of the texture.
 		// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
-		if (rhs->m_textureType == textureType::ALBEDO)
+		if (rhs->m_textureDataDesc.textureType == textureType::ALBEDO)
 		{
 			l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		}
 		else
 		{
-			if (rhs->m_texturePixelDataType == texturePixelDataType::UNSIGNED_BYTE)
+			if (rhs->m_textureDataDesc.texturePixelDataType == texturePixelDataType::UNSIGNED_BYTE)
 			{
-				switch (rhs->m_texturePixelDataFormat)
+				switch (rhs->m_textureDataDesc.texturePixelDataFormat)
 				{
 				case texturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
 				case texturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
@@ -1515,9 +1520,9 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 				default: break;
 				}
 			}
-			else if (rhs->m_texturePixelDataType == texturePixelDataType::FLOAT)
+			else if (rhs->m_textureDataDesc.texturePixelDataType == texturePixelDataType::FLOAT)
 			{
-				switch (rhs->m_texturePixelDataFormat)
+				switch (rhs->m_textureDataDesc.texturePixelDataFormat)
 				{
 				case texturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R16_UNORM; break;
 				case texturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UNORM; break;
@@ -1531,8 +1536,8 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 
 		D3D11_TEXTURE2D_DESC textureDesc;
 		ZeroMemory(&textureDesc, sizeof(textureDesc));
-		textureDesc.Height = rhs->m_textureHeight;
-		textureDesc.Width = rhs->m_textureWidth;
+		textureDesc.Height = rhs->m_textureDataDesc.textureHeight;
+		textureDesc.Width = rhs->m_textureDataDesc.textureWidth;
 		textureDesc.MipLevels = 0;
 		textureDesc.ArraySize = 1;
 		textureDesc.Format = l_internalFormat;
@@ -1563,7 +1568,7 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 		}
 
 		unsigned int rowPitch;
-		rowPitch = (rhs->m_textureWidth * 4) * sizeof(unsigned char);
+		rowPitch = (rhs->m_textureDataDesc.textureWidth * 4) * sizeof(unsigned char);
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->UpdateSubresource(l_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
 
 		// Setup the shader resource view description.
@@ -1751,7 +1756,7 @@ void DXRenderingSystemNS::updateGeometryPass()
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetRenderTargets(
-		DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews.size(),
+		(UINT)DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews.size(),
 		&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews[0],
 		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView[0]);
 

@@ -34,7 +34,6 @@ public:
 	std::atomic<bool> m_canRender;
 	bool m_shouldUpdateEnvironmentMap = true;
 	bool m_isTAAPingPass = true;
-	vec2 m_renderTargetSize = vec2(1280, 720);
 	std::vector<vec2> HaltonSampler;
 	int currentHaltonStep = 0;
 	int m_MSAAdepth = 4;

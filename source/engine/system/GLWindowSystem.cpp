@@ -102,8 +102,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::initialize()
 	//initialize window
 	windowCallbackWrapper::getInstance().initialize();
 
-	//initialize input
-	
+	//initialize input	
 	GLWindowSystemNS::m_inputSystem->initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog("GLWindowSystem has been initialized.");

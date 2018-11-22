@@ -4,6 +4,9 @@
 #define allocateComponentImplDecl( className ) \
 className* allocate##className() override;
 
+#define freeComponentImplDecl( className ) \
+void free##className(className* p) override;
+
 class InnoMemorySystem : INNO_IMPLEMENT IMemorySystem
 {
 public:
@@ -42,4 +45,24 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(PhysicsDataComponent);	
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(Vertex);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(Index);
+
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(TransformComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(VisibleComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(LightComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(CameraComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(InputComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(EnvironmentCaptureComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(MeshDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(MaterialDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(TextureDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLMeshDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLTextureDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLFrameBufferComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLShaderProgramComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLRenderPassComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXMeshDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXTextureDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(PhysicsDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(Vertex);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(Index);
 };

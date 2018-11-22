@@ -973,15 +973,15 @@ TextureDataComponent* InnoAssetSystemNS::loadTextureFromDisk(const std::string& 
 		auto *data = stbi_loadf((g_AssetSystemSingletonComponent->m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			l_TDC->m_textureType = textureType::EQUIRETANGULAR;
-			l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat((unsigned int)textureColorComponentsFormat::R16F + (nrChannels - 1));
-			l_TDC->m_texturePixelDataFormat = texturePixelDataFormat(nrChannels - 1);
-			l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-			l_TDC->m_textureMinFilterMethod = textureFilterMethod::LINEAR;
-			l_TDC->m_textureMagFilterMethod = textureFilterMethod::LINEAR;
-			l_TDC->m_textureWidth = width;
-			l_TDC->m_textureHeight = height;
-			l_TDC->m_texturePixelDataType = texturePixelDataType::FLOAT;
+			l_TDC->m_textureDataDesc.textureType = textureType::EQUIRETANGULAR;
+			l_TDC->m_textureDataDesc.textureColorComponentsFormat = textureColorComponentsFormat((unsigned int)textureColorComponentsFormat::R16F + (nrChannels - 1));
+			l_TDC->m_textureDataDesc.texturePixelDataFormat = texturePixelDataFormat(nrChannels - 1);
+			l_TDC->m_textureDataDesc.textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
+			l_TDC->m_textureDataDesc.textureMinFilterMethod = textureFilterMethod::LINEAR;
+			l_TDC->m_textureDataDesc.textureMagFilterMethod = textureFilterMethod::LINEAR;
+			l_TDC->m_textureDataDesc.textureWidth = width;
+			l_TDC->m_textureDataDesc.textureHeight = height;
+			l_TDC->m_textureDataDesc.texturePixelDataType = texturePixelDataType::FLOAT;
 			l_TDC->m_textureData = { data };
 			l_TDC->m_objectStatus = objectStatus::STANDBY;
 			g_AssetSystemSingletonComponent->m_uninitializedTextureComponents.push(l_TDC);
@@ -998,15 +998,15 @@ TextureDataComponent* InnoAssetSystemNS::loadTextureFromDisk(const std::string& 
 		auto *data = stbi_load((g_AssetSystemSingletonComponent->m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
-			l_TDC->m_textureType = textureType;
-			l_TDC->m_textureColorComponentsFormat = textureColorComponentsFormat(nrChannels - 1);
-			l_TDC->m_texturePixelDataFormat = texturePixelDataFormat(nrChannels - 1);
-			l_TDC->m_textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
-			l_TDC->m_textureMinFilterMethod = textureFilterMethod::LINEAR_MIPMAP_LINEAR;
-			l_TDC->m_textureMagFilterMethod = textureFilterMethod::LINEAR;
-			l_TDC->m_textureWidth = width;
-			l_TDC->m_textureHeight = height;
-			l_TDC->m_texturePixelDataType = texturePixelDataType::UNSIGNED_BYTE;
+			l_TDC->m_textureDataDesc.textureType = textureType;
+			l_TDC->m_textureDataDesc.textureColorComponentsFormat = textureColorComponentsFormat(nrChannels - 1);
+			l_TDC->m_textureDataDesc.texturePixelDataFormat = texturePixelDataFormat(nrChannels - 1);
+			l_TDC->m_textureDataDesc.textureWrapMethod = textureWrapMethod::CLAMP_TO_EDGE;
+			l_TDC->m_textureDataDesc.textureMinFilterMethod = textureFilterMethod::LINEAR_MIPMAP_LINEAR;
+			l_TDC->m_textureDataDesc.textureMagFilterMethod = textureFilterMethod::LINEAR;
+			l_TDC->m_textureDataDesc.textureWidth = width;
+			l_TDC->m_textureDataDesc.textureHeight = height;
+			l_TDC->m_textureDataDesc.texturePixelDataType = texturePixelDataType::UNSIGNED_BYTE;
 			l_TDC->m_textureData = { data };
 			l_TDC->m_objectStatus = objectStatus::STANDBY;
 			g_AssetSystemSingletonComponent->m_uninitializedTextureComponents.push(l_TDC);

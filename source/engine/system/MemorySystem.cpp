@@ -494,6 +494,36 @@ allocateComponentImplDefi(PhysicsDataComponent);
 allocateComponentImplDefi(Vertex)
 allocateComponentImplDefi(Index)
 
+#define freeComponentImplDefi( className ) \
+void InnoMemorySystem::free##className(className* p) \
+{ \
+} \
+
+freeComponentImplDefi(TransformComponent)
+freeComponentImplDefi(VisibleComponent)
+freeComponentImplDefi(LightComponent)
+freeComponentImplDefi(CameraComponent)
+freeComponentImplDefi(InputComponent)
+freeComponentImplDefi(EnvironmentCaptureComponent)
+
+freeComponentImplDefi(MeshDataComponent)
+freeComponentImplDefi(MaterialDataComponent)
+freeComponentImplDefi(TextureDataComponent)
+
+freeComponentImplDefi(GLMeshDataComponent)
+freeComponentImplDefi(GLTextureDataComponent)
+freeComponentImplDefi(GLFrameBufferComponent)
+freeComponentImplDefi(GLShaderProgramComponent)
+freeComponentImplDefi(GLRenderPassComponent)
+
+freeComponentImplDefi(DXMeshDataComponent)
+freeComponentImplDefi(DXTextureDataComponent)
+
+freeComponentImplDefi(PhysicsDataComponent);
+
+freeComponentImplDefi(Vertex)
+freeComponentImplDefi(Index)
+
 objectStatus InnoMemorySystem::getStatus()
 {
 	return InnoMemorySystemNS::m_objectStatus;

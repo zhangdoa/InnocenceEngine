@@ -12,4 +12,6 @@ public:
 	INNO_SYSTEM_EXPORT bool terminate() override;
 
 	INNO_SYSTEM_EXPORT objectStatus getStatus() override;
+
+	INNO_SYSTEM_EXPORT bool resize() override;
 };

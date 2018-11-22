@@ -151,6 +151,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::framebufferSizeCallback(int width, int 
 {
 	InnoInputSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x = width;
 	InnoInputSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y = height;
+	g_pCoreSystem->getVisionSystem()->resize();
 }
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::mousePositionCallback(float mouseXPos, float mouseYPos)
@@ -173,7 +174,6 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::scrollCallback(float xoffset, float yof
 	{
 		InnoInputSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0]->m_FOVX -= 1.0f;
 	}
-	//InnoPhysicsSystem::setupCameraComponentProjectionMatrix(InnoGameSystem::getCameraComponents()[0]);
 }
 
 INNO_SYSTEM_EXPORT objectStatus InnoInputSystem::getStatus()
