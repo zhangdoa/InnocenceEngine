@@ -5,7 +5,6 @@ in vec2 TexCoords;
 out vec4 FragColor;
 
 uniform sampler2D uni_motionBlurPassRT0;
-uniform sampler2D uni_skyPassRT0;
 uniform sampler2D uni_bloomPassRT0;
 uniform sampler2D uni_billboardPassRT0;
 uniform sampler2D uni_debuggerPassRT0;
@@ -35,19 +34,12 @@ void main()
 {  
 	vec3 finalColor;
 	vec4 lightPassResult = texture(uni_motionBlurPassRT0, TexCoords);
-	vec4 skyPassResult = texture(uni_skyPassRT0, TexCoords);
 	vec4 bloomPassResult = texture(uni_bloomPassRT0, TexCoords);
 	vec4 billboardPassResult = texture(uni_billboardPassRT0, TexCoords);
 	vec4 debuggerPassResult = texture(uni_debuggerPassRT0, TexCoords);
 
-	if(lightPassResult.a == 1.0)
-	{
-		finalColor = lightPassResult.rgb;
-	}
-	else
-	{
-		finalColor = skyPassResult.rgb;
-	}
+
+	finalColor = lightPassResult.rgb;
 
 	// emissive overlay
 	// finalColor += bloomPassResult.rgb;

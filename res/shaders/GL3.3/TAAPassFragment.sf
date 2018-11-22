@@ -4,22 +4,20 @@ layout (location = 0) out vec4 uni_TAAPassRT0;
 
 in vec2 TexCoords;
 
-uniform sampler2D uni_lightPassRT0;
-uniform sampler2D uni_lastTAAPassRT0;
+uniform sampler2D uni_preTAAPassRT0;
+uniform sampler2D uni_lastFrameTAAPassRT0;
 uniform sampler2D uni_motionVectorTexture;
 uniform vec2 uni_renderTargetSize;
 
 void main()
 {  	
-    vec4 currentColor = texture(uni_lightPassRT0, TexCoords);
-    if(currentColor.a == 0.0)
-    {
-    	discard;
-    }
-    
+    vec4 preTAAPassRT0Result = texture(uni_preTAAPassRT0, TexCoords);
+		
+		vec3 currentColor = preTAAPassRT0Result.rgb;
+		
 		vec2 MotionVector = texture(uni_motionVectorTexture, TexCoords).xy / 2.0;
 		vec2 historyTexCoords = TexCoords - MotionVector;
-		vec4 historyColor = texture(uni_lastTAAPassRT0, historyTexCoords);
+		vec4 historyColor = texture(uni_lastFrameTAAPassRT0, historyTexCoords);
 		
 		vec3 maxNeighbor = vec3(0.0);
 		vec3 minNeighbor = vec3(1.0);
@@ -32,7 +30,7 @@ void main()
 		for (int x = -1; x <= 1; x++) {
 			for (int y = -1; y <= 1; y++) {
 				vec2 neighborTexCoords = TexCoords + vec2(float(x) / uni_renderTargetSize.x, float(y) / uni_renderTargetSize.y);
-				neighborColor = texture(uni_lightPassRT0, neighborTexCoords);
+				neighborColor = texture(uni_preTAAPassRT0, neighborTexCoords);
 					if (neighborColor.a != 0.0)
 					{
 						maxNeighbor = max(maxNeighbor, neighborColor.rgb);

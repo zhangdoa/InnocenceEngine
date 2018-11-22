@@ -25,11 +25,16 @@ public:
 	GLuint m_skyPass_uni_eyePos;	
 	GLuint m_skyPass_uni_lightDir;
 
+	GLRenderPassComponent* m_preTAAPassGLRPC;
+	GLShaderProgramComponent* m_preTAAPassSPC;
+	GLuint m_preTAAPass_uni_lightPassRT0;
+	GLuint m_preTAAPass_uni_skyPassRT0;
+
 	GLRenderPassComponent* m_TAAPingPassGLRPC;
 	GLRenderPassComponent* m_TAAPongPassGLRPC;
 	GLShaderProgramComponent* m_TAAPassSPC;
-	GLuint m_TAAPass_uni_lightPassRT0;
-	GLuint m_TAAPass_uni_lastTAAPassRT0;
+	GLuint m_TAAPass_uni_preTAAPassRT0;
+	GLuint m_TAAPass_uni_lastFrameTAAPassRT0;
 	GLuint m_TAAPass_uni_motionVectorTexture;
 	GLuint m_TAAPass_uni_renderTargetSize;
 
@@ -74,7 +79,6 @@ public:
 	GLRenderPassComponent* m_finalBlendPassGLRPC;
 	GLShaderProgramComponent* m_finalBlendPassSPC;
 	GLuint m_uni_motionBlurPassRT0;
-	GLuint m_uni_skyPassRT0;
 	GLuint m_uni_bloomPassRT0;
 	GLuint m_uni_billboardPassRT0;
 	GLuint m_uni_debuggerPassRT0;
