@@ -896,54 +896,60 @@ void GLRenderingSystemNS::initializeLightPassShaders()
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT2,
 		2);
+	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT3 = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_geometryPassRT3");
+	updateUniform(
+		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT3,
+		3);
 	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT4 = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_geometryPassRT4");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT4,
-		3);
+		4);
 	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT5 = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_geometryPassRT5");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT5,
-		4);
+		5);
 	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT6 = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_geometryPassRT6");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT6,
-		5);
+		6);
 	LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT7 = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_geometryPassRT7");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT7,
-		6);
+		7);
 	LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_0 = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_shadowMap_0");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_0,
-		7);
+		8);
 	LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_1 = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_shadowMap_1");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_1,
-		8);
+		9);
 	LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_2 = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_shadowMap_2");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_2,
-		9);
+		10);
 	LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_3 = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_shadowMap_3");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_3,
-		10);
+		11);
 	for (size_t i = 0; i < 4; i++)
 	{
 		std::stringstream ss;
@@ -957,25 +963,25 @@ void GLRenderingSystemNS::initializeLightPassShaders()
 		"uni_irradianceMap");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_irradianceMap,
-		11);
+		12);
 	LightRenderPassSingletonComponent::getInstance().m_uni_preFiltedMap = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_preFiltedMap");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_preFiltedMap,
-		12);
+		13);
 	LightRenderPassSingletonComponent::getInstance().m_uni_brdfLUT = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_brdfLUT");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_brdfLUT,
-		13);
+		14);
 	LightRenderPassSingletonComponent::getInstance().m_uni_brdfMSLUT = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_brdfMSLUT");
 	updateUniform(
 		LightRenderPassSingletonComponent::getInstance().m_uni_brdfMSLUT,
-		14);
+		15);
 	LightRenderPassSingletonComponent::getInstance().m_uni_viewPos = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_viewPos");
@@ -2286,54 +2292,58 @@ void GLRenderingSystemNS::updateLightRenderPass()
 	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[2],
 		2);
+	// motion vector + transparency
+	activate2DTexture(
+		GeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[3],
+		3);
 	// light space position 0
 	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[4],
-		3);
+		4);
 	// light space position 1
 	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[5],
-		4);
+		5);
 	// light space position 2
 	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[6],
-		5);
+		6);
 	// light space position 3
 	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[7],
-		6);
+		7);
 	// shadow map 0
 	activate2DTexture(
 		ShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[0],
-		7);
+		8);
 	// shadow map 1
 	activate2DTexture(
 		ShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[1],
-		8);
+		9);
 	// shadow map 2
 	activate2DTexture(
 		ShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[2],
-		9);
+		10);
 	// shadow map 3
 	activate2DTexture(
 		ShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[3],
-		10);
+		11);
 	// irradiance environment map
 	activateCubemapTexture(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassGLTDC,
-		11);
+		12);
 	// pre-filter specular environment map
 	activateCubemapTexture(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassGLTDC,
-		12);
+		13);
 	// BRDF look-up table 1
 	activate2DTexture(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC,
-		13);
+		14);
 	// BRDF look-up table 2
 	activate2DTexture(
 		EnvironmentRenderPassSingletonComponent::getInstance().m_MultiScatteringLUTGLTDC,
-		14);
+		15);
 #endif
 
 	updateUniform(

@@ -23,6 +23,7 @@ const float MAX_REFLECTION_LOD = 4.0;
 uniform sampler2D uni_geometryPassRT0;
 uniform sampler2D uni_geometryPassRT1;
 uniform sampler2D uni_geometryPassRT2;
+uniform sampler2D uni_geometryPassRT3;
 uniform sampler2D uni_geometryPassRT4;
 uniform sampler2D uni_geometryPassRT5;
 uniform sampler2D uni_geometryPassRT6;
@@ -165,10 +166,11 @@ vec3 AverangeFresnel(vec3 F0)
 }
 vec3 getFrMS(float NdotL, float NdotV, vec3 F0, float roughness)
 {
+	float alpha = roughness * roughness;
 	vec3 f_averange = AverangeFresnel(F0);
-	float rsF1_averange =  texture(uni_brdfMSLUT, vec2(0.0, roughness)).r;
-	float rsF1_l = texture(uni_brdfLUT, vec2(NdotL, roughness)).b;
-	float rsF1_v = texture(uni_brdfLUT, vec2(NdotV, roughness)).b;
+	float rsF1_averange =  texture(uni_brdfMSLUT, vec2(0.0, alpha)).r;
+	float rsF1_l = texture(uni_brdfLUT, vec2(NdotL, alpha)).b;
+	float rsF1_v = texture(uni_brdfLUT, vec2(NdotV, alpha)).b;
 
 	vec3 frMS = vec3(0.0);
 	float beta1 = 1.0 - rsF1_averange;
@@ -307,7 +309,6 @@ void main()
 	vec4 RT1 = texture(uni_geometryPassRT1, TexCoords);
 	vec4 RT2 = texture(uni_geometryPassRT2, TexCoords);
 
-	uni_lightPassRT0 = vec4(0.0, 0.0, 0.0, 0.0);
 	vec3 FragPos = RT0.rgb;
 	vec3 Normal = RT1.rgb;
 	vec3 Albedo = RT2.rgb;
@@ -342,7 +343,7 @@ void main()
 
 		Lo += getRadiance(NdotV, LdotH, NdotH, NdotL, Roughness, F0, Albedo, uni_dirLight.color);
 
-		//Lo *= 1 - ShadowCalculation(NdotL, FragPos);
+		Lo *= 1 - ShadowCalculation(NdotL, FragPos);
 
 		// punctual point light
 		for (int i = 0; i < NR_POINT_LIGHTS; ++i)
@@ -370,7 +371,7 @@ void main()
 
 		vec3 R = reflect(-V, N);
 
-		Lo += imageBasedLight(N, NdotV, R, Albedo, Metallic, Roughness, AO, F0);
+		//Lo += imageBasedLight(N, NdotV, R, Albedo, Metallic, Roughness, AO, F0);
 	}
 	if (uni_drawCSMSplitedArea)
 	{

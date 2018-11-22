@@ -26,7 +26,7 @@ public:
 	GLuint m_uni_geometryPassRT0;
 	GLuint m_uni_geometryPassRT1;
 	GLuint m_uni_geometryPassRT2;
-
+	GLuint m_uni_geometryPassRT3;
 	GLuint m_uni_geometryPassRT4;
 	GLuint m_uni_geometryPassRT5;
 	GLuint m_uni_geometryPassRT6;

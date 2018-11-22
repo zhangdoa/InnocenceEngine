@@ -42,7 +42,7 @@ void main()
 	finalColor = lightPassResult.rgb;
 
 	// emissive overlay
-	// finalColor += bloomPassResult.rgb;
+	finalColor += bloomPassResult.rgb;
 
 	// billboard overlay
 	finalColor += billboardPassResult.rgb;

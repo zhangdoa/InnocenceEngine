@@ -48,7 +48,11 @@ namespace PlayerComponentCollection
 void PlayerComponentCollection::setup()
 {
 	m_transformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 3.0f, 1.0f);
-
+	m_transformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+		m_transformComponent->m_localTransformVector.m_rot,
+		vec4(0.0f, 1.0f, 0.0f, 0.0f),
+		90.0f
+	);
 	m_cameraComponent->m_FOVX = 60.0f;
 	m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
 	m_cameraComponent->m_zNear = 0.1f;
@@ -223,7 +227,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
 		GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
-		-45.0f
+		-90.0f
 	);
 
 	GameInstanceNS::m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<LightComponent>(GameInstanceNS::m_directionalLightEntity);
@@ -260,7 +264,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
-	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
+	GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
 	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
 	GameInstanceNS::m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
 	GameInstanceNS::m_pawnVisibleComponent1->m_drawAABB = false;
@@ -357,7 +361,7 @@ void GameInstanceNS::setupSpheres()
 void GameInstanceNS::setupLights()
 {
 	unsigned int pointLightMatrixDim = 8;
-	float pointLightBreadthInterval = 4.0f;
+	float pointLightBreadthInterval = 20.0f;
 	auto l_containerSize = pointLightMatrixDim * pointLightMatrixDim;
 
 	m_pointLightTransformComponents.reserve(l_containerSize);
@@ -381,7 +385,7 @@ void GameInstanceNS::setupLights()
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
 		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<LightComponent>(m_pointLightEntitys[i]);
 		m_pointLightVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pointLightEntitys[i]);
-		m_pointLightComponents[i]->m_luminousFlux = 1000.0f;
+		m_pointLightComponents[i]->m_luminousFlux = 400.0f;
 		m_pointLightVisibleComponents[i]->m_visiblilityType = visiblilityType::EMISSIVE;
 		m_pointLightVisibleComponents[i]->m_meshShapeType = meshShapeType::SPHERE;
 		m_pointLightVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
@@ -397,11 +401,11 @@ void GameInstanceNS::setupLights()
 
 void GameInstanceNS::updateLights(float seed)
 {
-	//m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
-	//	m_directionalLightTransformComponent->m_localTransformVector.m_rot,
-	//	vec4(1.0f, 0.0f, 0.0f, 0.0f),
-	//	0.2f
-	//);
+	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+		m_directionalLightTransformComponent->m_localTransformVector.m_rot,
+		vec4(1.0f, 0.0f, 0.0f, 0.0f),
+		0.2f * sin(seed)
+	);
 
 	for (unsigned int i = 0; i < m_pointLightComponents.size(); i += 4)
 	{
@@ -485,5 +489,5 @@ void GameInstanceNS::updateSpheres(float seed)
 		f_setMRA(m_sphereVisibleComponents[i + 1]->m_modelMap, l_albedo2, vec4(l_MRAFactor2, l_MRAFactor1, l_MRAFactor3, 0.0f));
 		f_setMRA(m_sphereVisibleComponents[i + 2]->m_modelMap, l_albedo3, vec4(l_MRAFactor3, l_MRAFactor2, l_MRAFactor1, 0.0f));
 		f_setMRA(m_sphereVisibleComponents[i + 3]->m_modelMap, l_albedo4, vec4(l_MRAFactor3, l_MRAFactor1, l_MRAFactor2, 0.0f));
-	}
+	}	
 }

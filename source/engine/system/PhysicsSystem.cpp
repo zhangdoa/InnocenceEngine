@@ -24,7 +24,8 @@ namespace InnoPhysicsSystemNS
 	void generateAABB(CameraComponent* cameraComponent);
 	AABB generateAABB(const std::vector<Vertex>& vertices);
 	AABB generateAABB(vec4 boundMax, vec4 boundMin);
-
+	std::vector<Vertex> generateAABBVertices(vec4 boundMax, vec4 boundMin);
+	std::vector<Vertex> generateAABBVertices(AABB rhs);
 
 	void updateCameraComponents();
 	void updateLightComponents();
@@ -41,8 +42,8 @@ namespace InnoPhysicsSystemNS
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
 	static AssetSystemSingletonComponent* g_AssetSystemSingletonComponent;
 	static PhysicsSystemSingletonComponent* g_PhysicsSystemSingletonComponent;
-	vec4 m_sceneBoundMax = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
-	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), 1.0f);
+	vec4 m_sceneBoundMax = vec4(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), 1.0f);
+	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
 
 	std::vector<CameraComponent*> m_initializedCameraComponents;
 	std::vector<LightComponent*> m_initializedLightComponents;
@@ -183,7 +184,71 @@ void InnoPhysicsSystemNS::generateAABB(LightComponent * lightComponent)
 
 	//1.translate the big frustum to light space
 	auto l_camera = g_GameSystemSingletonComponent->m_CameraComponents[0];
-	auto l_frustumVertices = l_camera->m_frustumVertices;
+
+	auto l_center = l_camera->m_AABB.m_center;
+	auto l_radius = l_camera->m_AABB.m_sphereRadius;
+
+	//1.1 fit the bounding box to scene
+	// @TODO: better fit to minimum overlapped volume
+	auto l_cameraAABBMax = l_camera->m_AABB.m_boundMax;
+	auto l_cameraAABBMin = l_camera->m_AABB.m_boundMin;
+
+	vec4 l_totalMax;
+	vec4 l_totalMin;
+
+	l_totalMax = l_center + l_radius;
+	l_totalMin = l_center - l_radius;
+	//if (l_cameraAABBMax.x < m_sceneBoundMax.x)
+	//{
+	//	l_totalMax.x = m_sceneBoundMax.x;
+	//}
+	//else
+	//{
+	//	l_totalMax.x = l_cameraAABBMax.x;
+	//}
+	//if (l_cameraAABBMax.y < m_sceneBoundMax.y)
+	//{
+	//	l_totalMax.y = m_sceneBoundMax.y;
+	//}
+	//else
+	//{
+	//	l_totalMax.y = l_cameraAABBMax.y;
+	//}
+	//if (l_cameraAABBMax.z < m_sceneBoundMax.z)
+	//{
+	//	l_totalMax.z = m_sceneBoundMax.z;
+	//}
+	//else
+	//{
+	//	l_totalMax.z = l_cameraAABBMax.z;
+	//}
+
+	//if (l_cameraAABBMin.x > m_sceneBoundMin.x)
+	//{
+	//	l_totalMin.x = m_sceneBoundMin.x;
+	//}
+	//else
+	//{
+	//	l_totalMin.x = l_cameraAABBMin.x;
+	//}
+	//if (l_cameraAABBMin.y > m_sceneBoundMin.y)
+	//{
+	//	l_totalMin.y = m_sceneBoundMin.y;
+	//}
+	//else
+	//{
+	//	l_totalMin.y = l_cameraAABBMin.y;
+	//}
+	//if (l_cameraAABBMin.z > m_sceneBoundMin.z)
+	//{
+	//	l_totalMin.z = m_sceneBoundMin.z;
+	//}
+	//else
+	//{
+	//	l_totalMin.z = l_cameraAABBMin.z;
+	//}
+
+	auto l_frustumVertices = generateAABBVertices(l_totalMax, l_totalMin);
 
 	//2.calculate splited planes' corners
 	std::vector<vec4> l_frustumsCornerPos;
@@ -208,7 +273,7 @@ void InnoPhysicsSystemNS::generateAABB(LightComponent * lightComponent)
 	}
 
 	//2.3 transform to light space
-	auto l_lightRotMat = g_pCoreSystem->getGameSystem()->get<TransformComponent>(lightComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat.inverse();
+	auto l_lightRotMat = g_pCoreSystem->getGameSystem()->get<TransformComponent>(lightComponent->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
 	for (size_t i = 0; i < l_frustumsCornerPos.size(); i++)
 	{
 		//Column-Major memory layout
@@ -325,14 +390,8 @@ AABB InnoPhysicsSystemNS::generateAABB(vec4 boundMax, vec4 boundMin)
 	return l_AABB;
 }
 
-MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
+std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(vec4 boundMax, vec4 boundMin)
 {
-	auto l_MDC = g_pCoreSystem->getMemorySystem()->spawn<MeshDataComponent>();
-	l_MDC->m_parentEntity = InnoMath::createEntityID();
-
-	auto boundMax = rhs.m_boundMax;
-	auto boundMin = rhs.m_boundMin;
-
 	Vertex l_VertexData_1;
 	l_VertexData_1.m_pos = (vec4(boundMax.x, boundMax.y, boundMax.z, 1.0f));
 	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
@@ -365,15 +424,35 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 	l_VertexData_8.m_pos = (vec4(boundMin.x, boundMax.y, boundMin.z, 1.0f));
 	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
 
-	l_MDC->m_vertices.reserve(8);
+	std::vector<Vertex> l_vertices;
 
-	l_MDC->m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
-	
-	for (auto& l_vertexData : l_MDC->m_vertices)
+	l_vertices.reserve(8);
+
+	l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
+
+	for (auto& l_vertexData : l_vertices)
 	{
 		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
 	}
 
+	return std::move(l_vertices);
+}
+
+std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(AABB rhs)
+{
+	auto boundMax = rhs.m_boundMax;
+	auto boundMin = rhs.m_boundMin;
+
+	return std::move(generateAABBVertices(boundMax, boundMin));
+}
+
+MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
+{
+	auto l_MDC = g_pCoreSystem->getMemorySystem()->spawn<MeshDataComponent>();
+	l_MDC->m_parentEntity = InnoMath::createEntityID();
+
+	l_MDC->m_vertices = generateAABBVertices(rhs);
+	
 	l_MDC->m_indices.reserve(36);
 
 	l_MDC->m_indices = { 0, 1, 3, 1, 2, 3,

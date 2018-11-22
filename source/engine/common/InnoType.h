@@ -74,7 +74,7 @@ struct meshColor
 	float albedo_r = 1.0f;
 	float albedo_g = 1.0f;
 	float albedo_b = 1.0f;
-	float metallic = 1.0f;
+	float metallic = 0.0f;
 	float roughness = 1.0f;
 	float ao = 1.0f;
 	float additionalData1 = 1.0f;
