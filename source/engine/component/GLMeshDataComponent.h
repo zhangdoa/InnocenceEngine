@@ -9,7 +9,7 @@ public:
 	~GLMeshDataComponent() {};
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
+	EntityID m_parentEntity = 0;
 
 	GLuint m_VAO = 0;
 	GLuint m_VBO = 0;

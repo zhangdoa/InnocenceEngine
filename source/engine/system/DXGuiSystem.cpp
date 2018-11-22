@@ -17,7 +17,7 @@ INNO_SYSTEM_EXPORT bool DXGuiSystem::setup()
 
 INNO_SYSTEM_EXPORT bool DXGuiSystem::initialize()
 {
-	g_pCoreSystem->getLogSystem()->printLog("DXGuiSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "DXGuiSystem has been initialized.");
 	return true;
 }
 
@@ -30,7 +30,7 @@ INNO_SYSTEM_EXPORT bool DXGuiSystem::terminate()
 {
 	DXGuiSystemNS::m_objectStatus = objectStatus::STANDBY;
 	DXGuiSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog("DXGuiSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "DXGuiSystem has been terminated.");
 	return true;
 }
 

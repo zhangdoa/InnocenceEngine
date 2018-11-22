@@ -15,7 +15,7 @@ public:
 	~VisibleComponent() {};
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
+	EntityID m_parentEntity = 0;
 
 	visiblilityType m_visiblilityType = visiblilityType::INVISIBLE;
 	meshShapeType m_meshShapeType = meshShapeType::QUAD;
@@ -28,6 +28,6 @@ public:
 
 	modelMap m_modelMap;
 
-	PhysicsDataComponent* m_PhysicsDataComponent;
+	PhysicsDataComponent* m_PhysicsDataComponent = 0;
 };
 

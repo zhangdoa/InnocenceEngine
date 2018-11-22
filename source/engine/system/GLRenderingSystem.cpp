@@ -306,7 +306,7 @@ GLRenderPassComponent* GLRenderingSystemNS::addRenderPassComponent(unsigned int 
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GLRenderingSystem: Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -353,7 +353,7 @@ GLShaderProgramComponent* GLRenderingSystemNS::addShaderProgramComponent(const s
 		auto shaderID = glCreateShader(shaderType);
 
 		if (shaderID == 0) {
-			g_pCoreSystem->getLogSystem()->printLog("Error: GLRenderingSystem: innoShader: Shader creation failed! memory location invaild when adding shader!");
+			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GLRenderingSystem: innoShader: Shader creation failed! memory location invaild when adding shader!");
 			return;
 		}
 
@@ -362,7 +362,7 @@ GLShaderProgramComponent* GLRenderingSystemNS::addShaderProgramComponent(const s
 
 		if (l_sourcePointer == nullptr || l_shaderCodeContent.empty())
 		{
-			g_pCoreSystem->getLogSystem()->printLog("Error: GLRenderingSystem: innoShader: " + shaderFilePath + " loading failed!");
+			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " loading failed!");
 			return;
 		}
 
@@ -376,48 +376,48 @@ GLShaderProgramComponent* GLRenderingSystemNS::addShaderProgramComponent(const s
 
 		if (!l_compileResult)
 		{
-			g_pCoreSystem->getLogSystem()->printLog("Error: GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
+			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
 			glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-			g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
 			glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 			if (l_infoLogLength > 0) {
 				std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 				glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-				g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+				g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
 				return;
 			}
 
 			return;
 		}
 
-		g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
 
 		glAttachShader(shaderProgram, shaderID);
 		glLinkProgram(shaderProgram);
 		glValidateProgram(shaderProgram);
 
-		g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
 
 		glGetShaderiv(shaderID, GL_COMPILE_STATUS, &l_compileResult);
 		if (!l_compileResult)
 		{
-			g_pCoreSystem->getLogSystem()->printLog("Error: GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
+			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
 			glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-			g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
 			glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 			if (l_infoLogLength > 0) {
 				std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 				glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-				g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+				g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
 				return;
 			}
 
 			return;
 		}
 
-		g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
 	};
 
 	if (!shaderFilePaths.m_VSPath.empty())
@@ -556,7 +556,7 @@ void GLRenderingSystemNS::initializeEnvironmentPass()
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: EnvironmentRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GLRenderingSystem: EnvironmentRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -708,7 +708,7 @@ void GLRenderingSystemNS::initializeShadowPass()
 		{
 			std::stringstream ss;
 			ss << i;
-			g_pCoreSystem->getLogSystem()->printLog("GLFrameBuffer: ShadowRenderPass level " + ss.str() + " Framebuffer is not completed!");
+			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GLRenderingSystem: ShadowRenderPass level " + ss.str() + " Framebuffer is not completed!");
 		}
 	}
 
@@ -1444,6 +1444,8 @@ GLMeshDataComponent* GLRenderingSystemNS::generateGLMeshDataComponent(MeshDataCo
 		l_ptr->m_objectStatus = objectStatus::ALIVE;
 		rhs->m_objectStatus = objectStatus::ALIVE;
 		m_initializedMeshComponents.emplace(l_ptr->m_parentEntity, l_ptr);
+
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "GLRenderingSystem: VAO " + std::to_string(l_ptr->m_VAO) + " is initialized.");
 		return l_ptr;
 	}
 }
@@ -1635,6 +1637,8 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 	}
 
 	rhs->m_objectStatus = objectStatus::ALIVE;
+
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "GLRenderingSystem: TAO " + std::to_string(rhs->m_TAO) + " is initialized.");
 
 	return true;
 }
@@ -2915,7 +2919,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 bool GLRenderingSystem::terminate()
 {
 	GLRenderingSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog("GLRenderingSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GLRenderingSystem has been terminated.");
 	return true;
 }
 
@@ -2954,7 +2958,7 @@ GLuint GLRenderingSystemNS::getUniformLocation(GLuint shaderProgram, const std::
 	int uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 	if (uniformLocation == 0xFFFFFFFF)
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: GLRenderingSystem: innoShader: Uniform lost: " + uniformName);
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GLRenderingSystem: innoShader: Uniform lost: " + uniformName);
 		return -1;
 	}
 	return uniformLocation;
@@ -3044,13 +3048,16 @@ void GLRenderingSystemNS::drawMesh(MeshDataComponent* MDC)
 
 void GLRenderingSystemNS::drawMesh(size_t indicesSize, meshDrawMethod meshDrawMethod, GLMeshDataComponent* GLMDC)
 {
-	glBindVertexArray(GLMDC->m_VAO);
-	switch (meshDrawMethod)
+	if (GLMDC->m_VAO)
 	{
-	case meshDrawMethod::TRIANGLE: glDrawElements(GL_TRIANGLES, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
-	case meshDrawMethod::TRIANGLE_STRIP: glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
-	default:
-		break;
+		glBindVertexArray(GLMDC->m_VAO);
+		switch (meshDrawMethod)
+		{
+		case meshDrawMethod::TRIANGLE: glDrawElements(GL_TRIANGLES, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
+		case meshDrawMethod::TRIANGLE_STRIP: glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
+		default:
+			break;
+		}
 	}
 }
 

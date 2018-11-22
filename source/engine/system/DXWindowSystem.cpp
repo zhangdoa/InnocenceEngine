@@ -103,7 +103,7 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstan
 INNO_SYSTEM_EXPORT bool DXWindowSystem::initialize()
 {
 	DXWindowSystemNS::m_inputSystem->initialize();
-	g_pCoreSystem->getLogSystem()->printLog("DXWindowSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "DXWindowSystem has been initialized.");
 	return true;
 }
 
@@ -148,7 +148,7 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::terminate()
 	DestroyWindow(DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd);
 	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd = NULL;
 
-	g_pCoreSystem->getLogSystem()->printLog("DXWindowSystem: Window closed.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_WARNING, "DXWindowSystem: Window closed.");
 
 	// Remove the application instance.
 	UnregisterClass(DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_applicationName, DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hInstance);
@@ -158,7 +158,7 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::terminate()
 	ApplicationHandle = NULL;
 
 	DXWindowSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog("DXWindowSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "DXWindowSystem has been terminated.");
 	return true;
 }
 

@@ -11,7 +11,7 @@ public:
 	~LightComponent() {};
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
+	EntityID m_parentEntity = 0;
 
 	lightType m_lightType = lightType::POINT;
 

@@ -106,7 +106,7 @@ INNO_SYSTEM_EXPORT bool InnoAssetSystem::initialize()
 		InnoAssetSystemNS::loadAssetsForComponents();
 	}));
 
-	g_pCoreSystem->getLogSystem()->printLog("AssetSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "AssetSystem has been initialized.");
 	return true;
 }
 
@@ -119,7 +119,7 @@ INNO_SYSTEM_EXPORT bool InnoAssetSystem::terminate()
 {
 	InnoAssetSystemNS::m_objectStatus = objectStatus::STANDBY;
 	InnoAssetSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog("AssetSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "AssetSystem has been terminated.");
 	return true;
 }
 
@@ -182,7 +182,7 @@ MeshDataComponent* InnoAssetSystem::getMeshDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: AssetSystem: can't find MeshDataComponent by EntityID: " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: can't find MeshDataComponent by EntityID: " + std::to_string(EntityID) + " !");
 		return nullptr;
 	}
 }
@@ -196,7 +196,7 @@ TextureDataComponent * InnoAssetSystem::getTextureDataComponent(EntityID EntityI
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: AssetSystem: can't find TextureDataComponent by EntityID: " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: can't find TextureDataComponent by EntityID: " + std::to_string(EntityID) + " !");
 		return nullptr;
 	}
 }
@@ -214,7 +214,7 @@ MeshDataComponent * InnoAssetSystem::getMeshDataComponent(meshShapeType meshShap
 	case meshShapeType::SPHERE:
 		return InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitSphereTemplate; break;
 	case meshShapeType::CUSTOM:
-		g_pCoreSystem->getLogSystem()->printLog("Error: AssetSystem: wrong meshShapeType passed to InnoAssetSystem::getMeshDataComponent() !");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: wrong meshShapeType passed to InnoAssetSystem::getMeshDataComponent() !");
 		return nullptr; break;
 	default:
 		return nullptr; break;
@@ -266,7 +266,7 @@ bool InnoAssetSystem::removeMeshDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: AssetSystem: can't remove MeshDataComponent by EntityID: " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: can't remove MeshDataComponent by EntityID: " + std::to_string(EntityID) + " !");
 		return false;
 	}
 }
@@ -288,7 +288,7 @@ bool InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: AssetSystem: can't remove TextureDataComponent by EntityID: " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: can't remove TextureDataComponent by EntityID: " + std::to_string(EntityID) + " !");
 		return false;
 	}
 
@@ -309,7 +309,7 @@ bool InnoAssetSystem::releaseRawDataForMeshDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: AssetSystem: can't release raw data for MeshDataComponent by EntityID: " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: can't release raw data for MeshDataComponent by EntityID: " + std::to_string(EntityID) + " !");
 		return false;
 	}
 
@@ -329,7 +329,7 @@ bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error : AssetSystem : can't release raw data for TextureDataComponent by EntityID : " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: can't release raw data for TextureDataComponent by EntityID : " + std::to_string(EntityID) + " !");
 		return false;
 	}
 
@@ -671,7 +671,7 @@ modelMap InnoAssetSystemNS::loadModel(const std::string & fileName)
 	auto l_loadedmodelMap = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_loadedModelMap.find(fileName);
 	if (l_loadedmodelMap != InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_loadedModelMap.end())
 	{
-		g_pCoreSystem->getLogSystem()->printLog("AssetSystem: innoMesh: " + fileName + " is already loaded.");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "AssetSystem: innoMesh: " + fileName + " is already loaded.");
 		for (auto& i : l_loadedmodelMap->second)
 		{
 			auto l_material = addMaterialDataComponent();
@@ -702,26 +702,26 @@ modelMap InnoAssetSystemNS::loadModelFromDisk(const std::string & fileName)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog("AssetSystem: " + fileName + " doesn't exist!");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: " + fileName + " doesn't exist!");
 		return modelMap();
 	}
 #else
 	l_assScene = l_assImporter.ReadFile(InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
 	if (l_assScene == nullptr)
 	{
-		g_pCoreSystem->getLogSystem()->printLog("AssetSystem: " + fileName + " doesn't exist!");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: " + fileName + " doesn't exist!");
 		return modelMap();
 	}
 #endif
 	if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 	{
-		g_pCoreSystem->getLogSystem()->printLog("Error: AssetSystem: ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
 		return modelMap();
 	}
 
 	auto l_loadedModelMap = processAssimpScene(l_assScene);
 
-	g_pCoreSystem->getLogSystem()->printLog("AssetSystem: " + fileName + " is loaded for the first time.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "AssetSystem: " + fileName + " is loaded for the first time.");
 
 	return l_loadedModelMap;
 }
@@ -885,7 +885,7 @@ MaterialDataComponent* InnoAssetSystemNS::processSingleAssimpMaterial(const aiMa
 			
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
-				g_pCoreSystem->getLogSystem()->printLog("AssetSystem: ASSIMP: " + l_localPath + " is unknown texture type!");
+				g_pCoreSystem->getLogSystem()->printLog(logType::INNO_WARNING, "AssetSystem: ASSIMP: " + l_localPath + " is unknown texture type!");
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
 			{
@@ -909,7 +909,7 @@ MaterialDataComponent* InnoAssetSystemNS::processSingleAssimpMaterial(const aiMa
 			}
 			else
 			{
-				g_pCoreSystem->getLogSystem()->printLog("AssetSystem: ASSIMP: " + l_localPath + " is unsupported texture type!");
+				g_pCoreSystem->getLogSystem()->printLog(logType::INNO_WARNING, "AssetSystem: ASSIMP: " + l_localPath + " is unsupported texture type!");
 			}
 		}
 	}
@@ -946,7 +946,7 @@ TextureDataComponent* InnoAssetSystemNS::loadTexture(const std::string& fileName
 	auto l_loadedTDC = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_loadedTextureMap.find(fileName);
 	if (l_loadedTDC != InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_loadedTextureMap.end())
 	{
-		g_pCoreSystem->getLogSystem()->printLog("AssetSystem: innoTexture: " + fileName + " is already loaded.");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "AssetSystem: innoTexture: " + fileName + " is already loaded.");
 		return l_loadedTDC->second;
 	}
 	else
@@ -986,11 +986,11 @@ TextureDataComponent* InnoAssetSystemNS::loadTextureFromDisk(const std::string& 
 			l_TDC->m_objectStatus = objectStatus::STANDBY;
 			g_AssetSystemSingletonComponent->m_uninitializedTextureComponents.push(l_TDC);
 
-			g_pCoreSystem->getLogSystem()->printLog("AssetSystem: STB_Image: " + fileName + " is loaded.");
+			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "AssetSystem: STB_Image: " + fileName + " is loaded.");
 		}
 		else
 		{
-			g_pCoreSystem->getLogSystem()->printLog("Error: AssetSystem: STB_Image: Failed to load texture: " + (g_AssetSystemSingletonComponent->m_textureRelativePath + fileName));
+			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: STB_Image: Failed to load texture: " + (g_AssetSystemSingletonComponent->m_textureRelativePath + fileName));
 		}
 	}
 	else
@@ -1011,11 +1011,11 @@ TextureDataComponent* InnoAssetSystemNS::loadTextureFromDisk(const std::string& 
 			l_TDC->m_objectStatus = objectStatus::STANDBY;
 			g_AssetSystemSingletonComponent->m_uninitializedTextureComponents.push(l_TDC);
 
-			g_pCoreSystem->getLogSystem()->printLog("AssetSystem: STB_Image: " + fileName + " is loaded.");
+			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "AssetSystem: STB_Image: " + fileName + " is loaded.");
 		}
 		else
 		{
-			g_pCoreSystem->getLogSystem()->printLog("Error: AssetSystem: STB_Image: Failed to load texture: " + (g_AssetSystemSingletonComponent->m_textureRelativePath + fileName));
+			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: STB_Image: Failed to load texture: " + (g_AssetSystemSingletonComponent->m_textureRelativePath + fileName));
 		}
 	}
 	return l_TDC;

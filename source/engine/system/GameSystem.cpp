@@ -77,7 +77,7 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::initialize()
 	InnoGameSystemNS::sortTransformComponentsVector();
 	InnoGameSystemNS::updateTransform();
 
-	g_pCoreSystem->getLogSystem()->printLog("GameSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GameSystem has been initialized.");
 	return true;
 }
 
@@ -93,7 +93,7 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 {
 	InnoGameSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog("GameSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GameSystem has been terminated.");
 	return true;
 }
 
@@ -115,7 +115,7 @@ spawnComponentImplDefi(MaterialDataComponent)
 
 INNO_SYSTEM_EXPORT std::string InnoGameSystem::getGameName()
 {
-	return std::string("TODO");
+	return std::string("GameInstance");
 }
 
 #define getComponentImplDefi( className ) \
@@ -128,7 +128,7 @@ INNO_SYSTEM_EXPORT className* InnoGameSystem::get##className(EntityID parentEnti
 	} \
 	else \
 	{ \
-		g_pCoreSystem->getLogSystem()->printLog("Error : GameSystem : can't find components by EntityID: " + std::to_string(parentEntity) + " !"); \
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GameSystem : can't find components by EntityID: " + std::to_string(parentEntity) + " !"); \
 		return nullptr; \
 	} \
 }

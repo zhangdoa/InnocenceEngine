@@ -37,7 +37,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::initialize()
 	}
 
 	InnoInputSystemNS::m_objectStatus = objectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog("InputSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "InputSystem has been initialized.");
 }
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::update()
@@ -86,7 +86,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::update()
 INNO_SYSTEM_EXPORT void InnoInputSystem::terminate()
 {
 	InnoInputSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog("InputSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "InputSystem has been terminated.");
 }
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor)

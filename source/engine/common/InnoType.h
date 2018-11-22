@@ -106,6 +106,8 @@ struct buttonHasher
 using buttonStatusCallbackMap = std::unordered_map<button, std::vector<std::function<void()>*>, buttonHasher>;
 using mouseMovementCallbackMap = std::unordered_map<int, std::vector<std::function<void(float)>*>>;
 
+enum class logType { INNO_DEV_VERBOSE, INNO_WARNING, INNO_ERROR, INNO_DEV_SUCCESS };
+
 #define INNO_KEY_SPACE              32
 #define INNO_KEY_APOSTROPHE         39  /* ' */
 #define INNO_KEY_COMMA              44  /* , */

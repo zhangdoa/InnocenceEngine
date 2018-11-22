@@ -21,7 +21,7 @@ public:
 	~TextureDataComponent() {};
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
+	EntityID m_parentEntity = 0;
 
 	textureDataDesc m_textureDataDesc;
 	std::vector<void*> m_textureData;

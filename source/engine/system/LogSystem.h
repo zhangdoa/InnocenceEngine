@@ -15,7 +15,7 @@ public:
 	INNO_SYSTEM_EXPORT void printLog(const vec2& logMessage) override;
 	INNO_SYSTEM_EXPORT void printLog(const vec4& logMessage) override;
 	INNO_SYSTEM_EXPORT void printLog(const mat4& logMessage) override;
-	INNO_SYSTEM_EXPORT void printLog(const std::string& logMessage) override;
+	INNO_SYSTEM_EXPORT void printLog(logType logType, const std::string& logMessage) override;
 
 	INNO_SYSTEM_EXPORT objectStatus getStatus();
 };

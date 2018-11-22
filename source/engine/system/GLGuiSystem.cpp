@@ -50,7 +50,7 @@ INNO_SYSTEM_EXPORT bool GLGuiSystem::setup()
 INNO_SYSTEM_EXPORT bool GLGuiSystem::initialize()
 {
 	ImGuiWrapper::getInstance().initialize();
-	g_pCoreSystem->getLogSystem()->printLog("GLGuiSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GLGuiSystem has been initialized.");
 	return true;
 }
 
@@ -66,7 +66,7 @@ INNO_SYSTEM_EXPORT bool GLGuiSystem::terminate()
 	ImGuiWrapper::getInstance().terminate();
 
 	GLGuiSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog("GLGuiSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GLGuiSystem has been terminated.");
 	return true;
 }
 

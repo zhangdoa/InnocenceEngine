@@ -10,7 +10,7 @@ template <class T>
 class ComponentPool
 {
 public:
-	ComponentPool() : ComponentPool(1024) {
+	ComponentPool() : ComponentPool(16384) {
 	};
 	ComponentPool(unsigned long long poolTotalCapability) {
 		m_poolTotalCapability = poolTotalCapability;
@@ -174,7 +174,7 @@ void InnoMemorySystemNS::createChuck()
 INNO_SYSTEM_EXPORT bool InnoMemorySystem::initialize()
 {
 	InnoMemorySystemNS::m_objectStatus = objectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog("MemorySystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "MemorySystem has been initialized.");
 	return true;
 }
 
@@ -186,7 +186,7 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::update()
 INNO_SYSTEM_EXPORT bool InnoMemorySystem::terminate()
 {
 	InnoMemorySystemNS::m_objectStatus = objectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog("MemorySystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "MemorySystem has been terminated.");
 	return true;
 }
 
@@ -218,7 +218,7 @@ INNO_SYSTEM_EXPORT void * InnoMemorySystem::allocate(unsigned long size)
 	// If no block is found, return nullptr
 	if (!l_suitableChuckPtr)
 	{ 
-		g_pCoreSystem->getLogSystem()->printLog("MemorySystem: Can't allocate memory!");
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "MemorySystem: Can't allocate memory!");
 		return nullptr; 
 	}
 
@@ -464,7 +464,7 @@ className* InnoMemorySystem::allocate##className() \
 	} \
 	else \
 	{ \
-		g_pCoreSystem->getLogSystem()->printLog("!"); \
+		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "MemorySystem: Can't allocate memory for component!"); \
 		return nullptr; \
 	} \
 } \

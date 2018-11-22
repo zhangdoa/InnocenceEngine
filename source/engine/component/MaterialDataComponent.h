@@ -19,7 +19,7 @@ public:
 	~MaterialDataComponent() {};
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
+	EntityID m_parentEntity = 0;
 
 	meshColor m_meshColor;
 	texturePack m_texturePack;

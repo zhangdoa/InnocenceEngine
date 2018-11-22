@@ -9,7 +9,7 @@ public:
 	~MeshDataComponent() {};
 
 	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
+	EntityID m_parentEntity = 0;
 
 	meshType m_meshType = meshType::NORMAL;
 	std::vector<Vertex> m_vertices;

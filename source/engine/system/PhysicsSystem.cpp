@@ -494,7 +494,7 @@ AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(AABB rhs, mat4 globalTm)
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::initialize()
 {
 	InnoPhysicsSystemNS::m_objectStatus = objectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog("PhysicsSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "PhysicsSystem has been initialized.");
 	return true;
 }
 
@@ -626,7 +626,7 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::terminate()
 {
 	InnoPhysicsSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog("PhysicsSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "PhysicsSystem has been terminated.");
 	return true;
 }
 

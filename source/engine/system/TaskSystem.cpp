@@ -58,7 +58,7 @@ INNO_SYSTEM_EXPORT bool InnoTaskSystem::setup()
 
 INNO_SYSTEM_EXPORT bool InnoTaskSystem::initialize()
 {
-	g_pCoreSystem->getLogSystem()->printLog("TaskSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "TaskSystem has been initialized.");
 	return true;
 }
 
@@ -72,7 +72,7 @@ INNO_SYSTEM_EXPORT bool InnoTaskSystem::terminate()
 	InnoTaskSystemNS::m_objectStatus = objectStatus::STANDBY;
 	InnoTaskSystemNS::destroy();
 	InnoTaskSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog("TaskSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "TaskSystem has been terminated.");
 	return true;
 }
 
