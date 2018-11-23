@@ -249,7 +249,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	);
 	GameInstanceNS::m_landscapeVisibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_landscapeEntity);
 	GameInstanceNS::m_landscapeVisibleComponent->m_visiblilityType = visiblilityType::STATIC_MESH;
-	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUBE;
+	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUSTOM;
 
 	GameInstanceNS::setupLights();
 	GameInstanceNS::setupSpheres();
@@ -264,7 +264,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
-	GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
+	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
 	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
 	GameInstanceNS::m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
 	GameInstanceNS::m_pawnVisibleComponent1->m_drawAABB = false;

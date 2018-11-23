@@ -31,7 +31,7 @@ using Index = unsigned int;
 enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
 // mesh custom types
 enum class meshType { NORMAL, BOUNDING_BOX };
-enum class meshShapeType { LINE, QUAD, CUBE, SPHERE, CUSTOM };
+enum class meshShapeType { LINE, QUAD, CUBE, SPHERE, TERRAIN, CUSTOM };
 enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
 // texture custom types
 enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, ENVIRONMENT_CAPTURE, ENVIRONMENT_CONVOLUTION, ENVIRONMENT_PREFILTER, EQUIRETANGULAR, RENDER_BUFFER_SAMPLER, SHADOWMAP };

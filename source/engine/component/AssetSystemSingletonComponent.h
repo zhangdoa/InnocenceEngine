@@ -35,6 +35,7 @@ public:
 	MeshDataComponent* m_UnitQuadTemplate;
 	MeshDataComponent* m_UnitCubeTemplate;
 	MeshDataComponent* m_UnitSphereTemplate;
+	MeshDataComponent* m_Terrain;
 
 	TextureDataComponent* m_basicNormalTemplate;
 	TextureDataComponent* m_basicAlbedoTemplate;

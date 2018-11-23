@@ -1,0 +1,28 @@
+// shadertype=glsl
+#version 330 core
+layout (location = 0) out vec4 uni_terrainPassRT0;
+
+in vec4 thefrag_WorldSpacePos;
+in vec2 thefrag_TexCoord;
+in vec3 thefrag_Normal;
+
+void main()
+{    
+	// let glsl calculate partial derivatives!
+    vec3 Q1  = dFdx(thefrag_WorldSpacePos.xyz);
+    vec3 Q2  = dFdy(thefrag_WorldSpacePos.xyz);
+    vec2 st1 = dFdx(thefrag_TexCoord);
+    vec2 st2 = dFdy(thefrag_TexCoord);
+
+    vec3 N = normalize(thefrag_Normal);
+    vec3 T = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 B = -normalize(cross(N, T));
+
+    mat3 TBN = mat3(T, B, N);
+
+	vec3 WorldSpaceNormal; 
+	
+	WorldSpaceNormal = normalize(TBN * vec3(0.0f, 0.0f, 1.0f));
+
+	uni_terrainPassRT0 = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+}

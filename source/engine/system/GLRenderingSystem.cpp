@@ -5,9 +5,9 @@
 #include "../component/GLEnvironmentRenderPassSingletonComponent.h"
 #include "../component/GLShadowRenderPassSingletonComponent.h"
 #include "../component/GLGeometryRenderPassSingletonComponent.h"
+#include "../component/GLTerrainRenderPassSingletonComponent.h"
 #include "../component/GLLightRenderPassSingletonComponent.h"
 #include "../component/GLFinalRenderPassSingletonComponent.h"
-
 
 #include "../component/AssetSystemSingletonComponent.h"
 #include "../component/GameSystemSingletonComponent.h"
@@ -80,6 +80,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void updateEnvironmentRenderPass();
 	void updateShadowRenderPass();
 	void updateGeometryRenderPass();
+	void updateTerrainRenderPass();
 	void updateLightRenderPass();
 	void updateFinalRenderPass();
 	GLTextureDataComponent* updateSkyPass();
@@ -124,6 +125,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	GLMeshDataComponent* m_UnitQuadTemplate;
 	GLMeshDataComponent* m_UnitCubeTemplate;
 	GLMeshDataComponent* m_UnitSphereTemplate;
+	GLMeshDataComponent* m_terrainGLMDC;
 
 	GLTextureDataComponent* m_basicNormalTemplate;
 	GLTextureDataComponent* m_basicAlbedoTemplate;
@@ -223,6 +225,7 @@ bool GLRenderingSystem::initialize()
 	GLRenderingSystemNS::initializeEnvironmentPass();
 	GLRenderingSystemNS::initializeShadowPass();
 	GLRenderingSystemNS::initializeGeometryPass();
+	GLRenderingSystemNS::initializeTerrainPass();
 	GLRenderingSystemNS::initializeLightPass();
 	GLRenderingSystemNS::initializeFinalPass();
 
@@ -235,6 +238,7 @@ void  GLRenderingSystemNS::initializeDefaultAssets()
 	m_UnitQuadTemplate = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD));
 	m_UnitCubeTemplate = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::CUBE));
 	m_UnitSphereTemplate = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::SPHERE));
+	m_terrainGLMDC = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::TERRAIN));
 
 	m_basicNormalTemplate = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::NORMAL));
 	m_basicAlbedoTemplate = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ALBEDO));
@@ -884,11 +888,34 @@ void GLRenderingSystemNS::initializeGeometryPassShaders()
 
 void GLRenderingSystemNS::initializeTerrainPass()
 {
+	GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC = addRenderPassComponent(1);
 
+	initializeTerrainPassShaders();
 }
 
 void GLRenderingSystemNS::initializeTerrainPassShaders()
 {
+	// shader programs and shaders
+	shaderFilePaths m_shaderFilePaths;
+
+	m_shaderFilePaths.m_VSPath = "GL3.3//terrainPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL3.3//terrainPassFragment.sf";
+
+	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
+
+	GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_p_camera = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_p_camera");
+	GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_r_camera = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_r_camera");
+	GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_t_camera = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_t_camera");
+	GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_m = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_m");
+	GLTerrainRenderPassSingletonComponent::getInstance().m_GLSPC = l_GLSPC;
 }
 
 void GLRenderingSystemNS::initializeLightPass()
@@ -1376,7 +1403,12 @@ void GLRenderingSystemNS::initializeFinalBlendPass()
 	updateUniform(
 		GLFinalRenderPassSingletonComponent::getInstance().m_uni_debuggerPassRT0,
 		3);
-
+	GLFinalRenderPassSingletonComponent::getInstance().m_uni_terrainPassRT0 = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_terrainPassRT0");
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_uni_terrainPassRT0,
+		4);
 	GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassSPC = l_GLSPC;
 }
 
@@ -1705,6 +1737,7 @@ bool GLRenderingSystem::update()
 	}
 	GLRenderingSystemNS::updateShadowRenderPass();
 	GLRenderingSystemNS::updateGeometryRenderPass();
+	GLRenderingSystemNS::updateTerrainRenderPass();
 	GLRenderingSystemNS::updateLightRenderPass();
 	GLRenderingSystemNS::updateFinalRenderPass();
 
@@ -2048,7 +2081,6 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 		mat4 p_original = GLRenderingSystemNS::m_CamProj;
 		mat4 p_jittered = p_original;
 
-
 		if (g_RenderingSystemSingletonComponent->m_useTAA)
 		{
 			//TAA jitter for projection matrix
@@ -2061,6 +2093,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 			p_jittered.m12 = GLRenderingSystemNS::g_RenderingSystemSingletonComponent->HaltonSampler[l_currentHaltonStep].y / rtSizeY;
 			l_currentHaltonStep += 1;
 		}
+
 		mat4 r = GLRenderingSystemNS::m_CamRot;
 		mat4 t = GLRenderingSystemNS::m_CamTrans;
 		mat4 r_prev = GLRenderingSystemNS::m_CamRot_prev;
@@ -2288,6 +2321,56 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 #endif
 		}
 	}
+}
+
+void GLRenderingSystemNS::updateTerrainRenderPass()
+{
+	glEnable(GL_DEPTH_TEST);
+
+	// bind to framebuffer
+	auto l_FBC = GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC;
+	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, rtSizeX, rtSizeY);
+	glViewport(0, 0, rtSizeX, rtSizeY);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC->m_FBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_FBC->m_FBO);
+	glBlitFramebuffer(0, 0, rtSizeX, rtSizeY, 0, 0, rtSizeX, rtSizeY, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, rtSizeX, rtSizeY, 0, 0, rtSizeX, rtSizeY, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+
+	activateShaderProgram(GLTerrainRenderPassSingletonComponent::getInstance().m_GLSPC);
+
+	mat4 p_original = GLRenderingSystemNS::m_CamProj;
+
+	mat4 r = GLRenderingSystemNS::m_CamRot;
+	mat4 t = GLRenderingSystemNS::m_CamTrans;
+	vec4 pos = vec4(-128.0f, 0.0f, -128.0f, 0.0f);
+	mat4 m = InnoMath::toTranslationMatrix(pos);
+	updateUniform(
+		GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_p_camera,
+		p_original);
+	updateUniform(
+		GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_r_camera,
+		r);
+	updateUniform(
+		GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_t_camera,
+		t);
+	updateUniform(
+		GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_m,
+		m);
+
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::TERRAIN);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	drawMesh(l_MDC);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+	glDisable(GL_DEPTH_TEST);
 }
 
 void GLRenderingSystemNS::updateLightRenderPass()
@@ -2975,7 +3058,10 @@ GLTextureDataComponent* GLRenderingSystemNS::updateFinalBlendPass()
 	activate2DTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLTDCs[0],
 		3);
-
+	// terrain pass rendering target
+	activate2DTexture(
+		GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0],
+		4);
 	// draw final pass rectangle
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);

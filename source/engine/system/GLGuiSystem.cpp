@@ -4,6 +4,7 @@
 #include "../component/GLEnvironmentRenderPassSingletonComponent.h"
 #include "../component/GLShadowRenderPassSingletonComponent.h"
 #include "../component/GLGeometryRenderPassSingletonComponent.h"
+#include "../component/GLTerrainRenderPassSingletonComponent.h"
 #include "../component/GLLightRenderPassSingletonComponent.h"
 #include "../component/GLFinalRenderPassSingletonComponent.h"
 #include "../component/RenderingSystemSingletonComponent.h"
@@ -128,14 +129,7 @@ void ImGuiWrapper::update()
 	RenderingSystemSingletonComponent::getInstance().m_useBloom = l_renderingConfig.useBloom;
 
 	if(l_renderingConfig.showRenderPassResult)
-	{
-		ImGui::Begin("Light Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
-		{
-			ImGui::Image(ImTextureID((GLuint64)GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize);
-		}
-		ImGui::End();
-
+	{		
 		ImGui::Begin("Geometry Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		{
 			{
@@ -190,6 +184,20 @@ void ImGuiWrapper::update()
 				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[7]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 				ImGui::EndChild();
 			}
+		}
+		ImGui::End();
+
+		ImGui::Begin("Terrain Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
+		{
+			ImGui::Image(ImTextureID((GLuint64)GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize);
+		}
+		ImGui::End();
+
+		ImGui::Begin("Light Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
+		{
+			ImGui::Image(ImTextureID((GLuint64)GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize);
 		}
 		ImGui::End();
 

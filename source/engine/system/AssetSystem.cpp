@@ -49,6 +49,7 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 	void addUnitSphere(MeshDataComponent& meshDataComponent);
 	void addUnitQuad(MeshDataComponent& meshDataComponent);
 	void addUnitLine(MeshDataComponent& meshDataComponent);
+	void addTerrain(MeshDataComponent& meshDataComponent);
 
 	static AssetSystemSingletonComponent* g_AssetSystemSingletonComponent;
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
@@ -127,7 +128,7 @@ INNO_SYSTEM_EXPORT bool InnoAssetSystem::terminate()
 std::string InnoAssetSystem::loadShader(const std::string & fileName)
 {
 	std::ifstream file;
-	file.open((InnoAssetSystemNS:: g_AssetSystemSingletonComponent->m_shaderRelativePath + fileName).c_str());
+	file.open((InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_shaderRelativePath + fileName).c_str());
 	std::stringstream shaderStream;
 	std::string output;
 
@@ -213,6 +214,8 @@ MeshDataComponent * InnoAssetSystem::getMeshDataComponent(meshShapeType meshShap
 		return InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitCubeTemplate; break;
 	case meshShapeType::SPHERE:
 		return InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitSphereTemplate; break;
+	case meshShapeType::TERRAIN:
+		return InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_Terrain; break;
 	case meshShapeType::CUSTOM:
 		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "AssetSystem: wrong meshShapeType passed to InnoAssetSystem::getMeshDataComponent() !");
 		return nullptr; break;
@@ -281,7 +284,7 @@ bool InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
 		{
 			stbi_image_free(i);
 		}
-		
+
 		g_pCoreSystem->getMemorySystem()->destroy<TextureDataComponent>(l_texture->second);
 		l_textureMap->erase(EntityID);
 		return true;
@@ -300,7 +303,7 @@ bool InnoAssetSystem::releaseRawDataForMeshDataComponent(EntityID EntityID)
 	auto l_mesh = l_meshMap->find(EntityID);
 	if (l_mesh != l_meshMap->end())
 	{
-	// @TODO:
+		// @TODO:
 		l_mesh->second->m_vertices.clear();
 		l_mesh->second->m_vertices.shrink_to_fit();
 		l_mesh->second->m_indices.clear();
@@ -421,10 +424,10 @@ void InnoAssetSystemNS::addUnitCube(MeshDataComponent& meshDataComponent)
 				vec4(vertices[i], vertices[i + 1], vertices[i + 2], 1.0f),
 				vec2(vertices[i + 6], vertices[i + 7]),
 				vec4(vertices[i + 3], vertices[i + 4], vertices[i + 5], 0.0f)
-		)
+			)
 		);
 	}
-	
+
 	//meshDataComponent.m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
 	//for (auto& l_vertexData : meshDataComponent.m_vertices)
@@ -535,6 +538,50 @@ void InnoAssetSystemNS::addUnitLine(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
+void InnoAssetSystemNS::addTerrain(MeshDataComponent& meshDataComponent)
+{
+	auto l_gridSize = 256;
+	auto l_gridSize2 = l_gridSize * l_gridSize;
+
+	meshDataComponent.m_vertices.reserve(l_gridSize2 * 4);
+	meshDataComponent.m_indices.reserve(l_gridSize2 * 6);
+
+	for (auto j = 0; j < l_gridSize; j++)
+	{
+		for (auto i = 0; i < l_gridSize; i++)
+		{
+			Vertex l_VertexData_1;
+			l_VertexData_1.m_pos = vec4((float)(i), 0.0f, (float)(j), 1.0f);
+			l_VertexData_1.m_texCoord = vec2((float)(i + 1) / (float)l_gridSize2, (float)(j + 1) / (float)l_gridSize2);
+			meshDataComponent.m_vertices.emplace_back(l_VertexData_1);
+
+			Vertex l_VertexData_2;
+			l_VertexData_2.m_pos = vec4((float)(i), 0.0f, (float)(j + 1), 1.0f);
+			l_VertexData_2.m_texCoord = vec2((float)(i + 1) / (float)l_gridSize2, (float)(j) / (float)l_gridSize2);
+			meshDataComponent.m_vertices.emplace_back(l_VertexData_2);
+
+			Vertex l_VertexData_3;
+			l_VertexData_3.m_pos = vec4((float)(i + 1), 0.0f, (float)(j + 1), 1.0f);
+			l_VertexData_3.m_texCoord = vec2((float)(i) / (float)l_gridSize2, (float)(j) / (float)l_gridSize2);
+			meshDataComponent.m_vertices.emplace_back(l_VertexData_3);
+
+			Vertex l_VertexData_4;
+			l_VertexData_4.m_pos = vec4((float)(i + 1), 0.0f, (float)(j), 1.0f);
+			l_VertexData_4.m_texCoord = vec2((float)(i) / (float)l_gridSize2, (float)(j + 1) / (float)l_gridSize2);
+			meshDataComponent.m_vertices.emplace_back(l_VertexData_4);
+
+			auto l_gridIndex = 4 * (i) + 4 * l_gridSize * (j);
+			meshDataComponent.m_indices.emplace_back(0 + l_gridIndex);
+			meshDataComponent.m_indices.emplace_back(1 + l_gridIndex);
+			meshDataComponent.m_indices.emplace_back(3 + l_gridIndex);
+			meshDataComponent.m_indices.emplace_back(1 + l_gridIndex);
+			meshDataComponent.m_indices.emplace_back(2 + l_gridIndex);
+			meshDataComponent.m_indices.emplace_back(3 + l_gridIndex);
+		}
+	}
+	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
+}
+
 void InnoAssetSystemNS::loadDefaultAssets()
 {
 	g_AssetSystemSingletonComponent->m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", textureType::NORMAL);
@@ -570,6 +617,13 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	lastSphereMeshData->m_meshType = meshType::NORMAL;
 	lastSphereMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
 	lastSphereMeshData->m_objectStatus = objectStatus::STANDBY;
+
+	g_AssetSystemSingletonComponent->m_Terrain = addMeshDataComponent();
+	auto lastTerrainMeshData = g_AssetSystemSingletonComponent->m_Terrain;
+	InnoAssetSystemNS::addTerrain(*lastTerrainMeshData);
+	lastTerrainMeshData->m_meshType = meshType::NORMAL;
+	lastTerrainMeshData->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
+	lastTerrainMeshData->m_objectStatus = objectStatus::STANDBY;
 }
 
 void InnoAssetSystemNS::loadAssetsForComponents()
@@ -652,15 +706,16 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 
 void InnoAssetSystemNS::assignUnitMesh(meshShapeType meshType, VisibleComponent* visibleComponent)
 {
-    MeshDataComponent* l_UnitMeshTemplate;
-    switch (meshType)
-    {
-            case meshShapeType::LINE: l_UnitMeshTemplate = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitLineTemplate; break;
-            case meshShapeType::QUAD: l_UnitMeshTemplate = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitQuadTemplate; break;
-            case meshShapeType::CUBE: l_UnitMeshTemplate = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitCubeTemplate; break;
-            case meshShapeType::SPHERE: l_UnitMeshTemplate = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitSphereTemplate; break;
-            case meshShapeType::CUSTOM: break;
-    }
+	MeshDataComponent* l_UnitMeshTemplate;
+	switch (meshType)
+	{
+	case meshShapeType::LINE: l_UnitMeshTemplate = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitLineTemplate; break;
+	case meshShapeType::QUAD: l_UnitMeshTemplate = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitQuadTemplate; break;
+	case meshShapeType::CUBE: l_UnitMeshTemplate = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitCubeTemplate; break;
+	case meshShapeType::SPHERE: l_UnitMeshTemplate = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitSphereTemplate; break;
+	case meshShapeType::TERRAIN: l_UnitMeshTemplate = InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_Terrain; break;
+	case meshShapeType::CUSTOM: break;
+	}
 	visibleComponent->m_modelMap.emplace(l_UnitMeshTemplate, addMaterialDataComponent());
 }
 
@@ -685,7 +740,7 @@ modelMap InnoAssetSystemNS::loadModel(const std::string & fileName)
 		auto l_loadedModelMap = loadModelFromDisk(fileName);
 		//mark as loaded
 		InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_loadedModelMap.emplace(fileName, l_loadedModelMap);
-		return l_loadedModelMap;		
+		return l_loadedModelMap;
 	}
 }
 
@@ -882,7 +937,7 @@ MaterialDataComponent* InnoAssetSystemNS::processSingleAssimpMaterial(const aiMa
 			aiString l_AssString;
 			aiMaterial->GetTexture(aiTextureType(i), 0, &l_AssString);
 			std::string l_localPath = std::string(l_AssString.C_Str());
-			
+
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
 				g_pCoreSystem->getLogSystem()->printLog(logType::INNO_WARNING, "AssetSystem: ASSIMP: " + l_localPath + " is unknown texture type!");

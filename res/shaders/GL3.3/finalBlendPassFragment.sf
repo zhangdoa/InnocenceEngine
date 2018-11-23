@@ -8,6 +8,7 @@ uniform sampler2D uni_motionBlurPassRT0;
 uniform sampler2D uni_bloomPassRT0;
 uniform sampler2D uni_billboardPassRT0;
 uniform sampler2D uni_debuggerPassRT0;
+uniform sampler2D uni_terrainPassRT0;
 
 // Academy Color Encoding System [http://www.oscars.org/science-technology/sci-tech-projects/aces]
 vec3 acesFilm(const vec3 x) {
@@ -49,7 +50,8 @@ void main()
 
 	// debugger overlay
 	finalColor += debuggerPassResult.rgb;
-	
+	finalColor += texture(uni_terrainPassRT0, TexCoords).rgb;
+		
 	// HDR to LDR
 	finalColor = acesFilm(finalColor);
 

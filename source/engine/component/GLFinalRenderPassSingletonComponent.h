@@ -82,7 +82,7 @@ public:
 	GLuint m_uni_bloomPassRT0;
 	GLuint m_uni_billboardPassRT0;
 	GLuint m_uni_debuggerPassRT0;
-
+	GLuint m_uni_terrainPassRT0;	
 private:
 	GLFinalRenderPassSingletonComponent() {};
 };
