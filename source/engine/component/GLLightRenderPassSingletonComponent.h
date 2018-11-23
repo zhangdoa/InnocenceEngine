@@ -5,14 +5,14 @@
 #include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
 
-class LightRenderPassSingletonComponent
+class GLLightRenderPassSingletonComponent
 {
 public:
-	~LightRenderPassSingletonComponent() {};
+	~GLLightRenderPassSingletonComponent() {};
 	
-	static LightRenderPassSingletonComponent& getInstance()
+	static GLLightRenderPassSingletonComponent& getInstance()
 	{
-		static LightRenderPassSingletonComponent instance;
+		static GLLightRenderPassSingletonComponent instance;
 		return instance;
 	}
 
@@ -54,5 +54,5 @@ public:
 
 	GLuint m_uni_isEmissive;
 private:
-	LightRenderPassSingletonComponent() {};
+	GLLightRenderPassSingletonComponent() {};
 };

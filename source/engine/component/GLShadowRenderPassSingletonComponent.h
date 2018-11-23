@@ -5,14 +5,14 @@
 #include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
 
-class ShadowRenderPassSingletonComponent
+class GLShadowRenderPassSingletonComponent
 {
 public:
-	~ShadowRenderPassSingletonComponent() {};
+	~GLShadowRenderPassSingletonComponent() {};
 
-	static ShadowRenderPassSingletonComponent& getInstance()
+	static GLShadowRenderPassSingletonComponent& getInstance()
 	{
-		static ShadowRenderPassSingletonComponent instance;
+		static GLShadowRenderPassSingletonComponent instance;
 		return instance;
 	}
 
@@ -29,5 +29,5 @@ public:
 	GLuint m_shadowPass_uni_v;
 	GLuint m_shadowPass_uni_m;
 private:
-	ShadowRenderPassSingletonComponent() {};
+	GLShadowRenderPassSingletonComponent() {};
 };

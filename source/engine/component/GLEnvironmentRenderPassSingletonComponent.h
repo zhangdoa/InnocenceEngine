@@ -5,14 +5,14 @@
 #include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
 
-class EnvironmentRenderPassSingletonComponent
+class GLEnvironmentRenderPassSingletonComponent
 {
 public:
-	~EnvironmentRenderPassSingletonComponent() {};
+	~GLEnvironmentRenderPassSingletonComponent() {};
 	
-	static EnvironmentRenderPassSingletonComponent& getInstance()
+	static GLEnvironmentRenderPassSingletonComponent& getInstance()
 	{
-		static EnvironmentRenderPassSingletonComponent instance;
+		static GLEnvironmentRenderPassSingletonComponent instance;
 		return instance;
 	}
 
@@ -54,5 +54,5 @@ public:
 	GLuint m_BRDFLUTMSPass_uni_brdfLUT;
 
 private:
-	EnvironmentRenderPassSingletonComponent() {};
+	GLEnvironmentRenderPassSingletonComponent() {};
 };
