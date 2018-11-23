@@ -80,6 +80,16 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void updateGeometryRenderPass();
 	void updateLightRenderPass();
 	void updateFinalRenderPass();
+	GLTextureDataComponent* updateSkyPass();
+	GLTextureDataComponent* updatePreTAAPass();
+	GLTextureDataComponent* updateTAAPass(GLTextureDataComponent* inputGLTDC);
+	GLTextureDataComponent* updateTAASharpenPass(GLTextureDataComponent* inputGLTDC);
+	GLTextureDataComponent* updateBloomExtractPass(GLTextureDataComponent* inputGLTDC);
+	GLTextureDataComponent* updateBloomBlurPass(GLTextureDataComponent* inputGLTDC);
+	GLTextureDataComponent* updateMotionBlurPass(GLTextureDataComponent * inputGLTDC);
+	GLTextureDataComponent* updateBillboardPass();
+	GLTextureDataComponent* updateDebuggerPass();
+	GLTextureDataComponent* updateFinalBlendPass();
 
 	GLuint getUniformLocation(GLuint shaderProgram, const std::string& uniformName);
 
@@ -165,6 +175,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	};
 
 	LPassCBufferData m_LPassCBufferData;
+
+	std::function<void(GLFrameBufferComponent*)> f_postProcessingbindFBC;
 }
 
 bool GLRenderingSystem::setup()
@@ -187,6 +199,18 @@ bool GLRenderingSystem::setup()
 
 	GLRenderingSystemNS::rtSizeX = (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x;
 	GLRenderingSystemNS::rtSizeY = (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y;
+
+	GLRenderingSystemNS::f_postProcessingbindFBC = [&](GLFrameBufferComponent* val) {
+		glBindFramebuffer(GL_FRAMEBUFFER, val->m_FBO);
+		glBindRenderbuffer(GL_RENDERBUFFER, val->m_RBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemNS::rtSizeX, GLRenderingSystemNS::rtSizeY);
+		glViewport(0, 0, GLRenderingSystemNS::rtSizeX, GLRenderingSystemNS::rtSizeY);
+
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
+	};
+
 	return true;
 }
 
@@ -1105,7 +1129,7 @@ void GLRenderingSystemNS::initializeTAAPass()
 
 	l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
-	
+
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_preTAAPassRT0 = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_preTAAPassRT0");
@@ -1610,12 +1634,12 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 
 	if (textureDataDesc.textureType == textureType::ENVIRONMENT_CAPTURE || textureDataDesc.textureType == textureType::ENVIRONMENT_CONVOLUTION || textureDataDesc.textureType == textureType::ENVIRONMENT_PREFILTER)
 	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type,textureData[0]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type,textureData[1]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type,textureData[2]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type,textureData[3]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type,textureData[4]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type,textureData[5]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[0]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[1]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[2]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[3]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[4]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[5]);
 	}
 	else
 	{
@@ -1663,7 +1687,7 @@ bool GLRenderingSystem::update()
 	}
 
 	GLRenderingSystemNS::prepareRenderingData();
-	
+
 	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_shouldUpdateEnvironmentMap)
 	{
 		GLRenderingSystemNS::updateEnvironmentRenderPass();
@@ -2436,19 +2460,8 @@ void GLRenderingSystemNS::updateLightRenderPass()
 	glDisable(GL_STENCIL_TEST);
 }
 
-void GLRenderingSystemNS::updateFinalRenderPass()
+GLTextureDataComponent* GLRenderingSystemNS::updateSkyPass()
 {
-	std::function<void(GLFrameBufferComponent*)> f_bindFBC = [&](GLFrameBufferComponent* val) {
-		glBindFramebuffer(GL_FRAMEBUFFER, val->m_FBO);
-		glBindRenderbuffer(GL_RENDERBUFFER, val->m_RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, rtSizeX, rtSizeY);
-		glViewport(0, 0, rtSizeX, rtSizeY);
-
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glClear(GL_DEPTH_BUFFER_BIT);
-	};
-	// sky pass
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
@@ -2458,12 +2471,11 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 
 	// bind to framebuffer
 	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLFBC;
-	f_bindFBC(l_FBC);
+	f_postProcessingbindFBC(l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::CUBE);
-	auto l_GLMDC = getGLMeshDataComponent(l_MDC->m_parentEntity);
 
 	if (g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
 	{
@@ -2503,14 +2515,17 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 
-	// pre TAA pass
-	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC->m_GLFBC;
-	f_bindFBC(l_FBC);
+	return GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLTDCs[0];
+}
+
+GLTextureDataComponent* GLRenderingSystemNS::updatePreTAAPass()
+{
+	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC->m_GLFBC;
+	f_postProcessingbindFBC(l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassSPC);
 
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
-	l_GLMDC = getGLMeshDataComponent(l_MDC->m_parentEntity);
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 
 	activate2DTexture(
 		LightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0],
@@ -2521,11 +2536,17 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 
 	drawMesh(l_MDC);
 
-	// TAA pass
+	return GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC->m_GLTDCs[0];
+}
+
+GLTextureDataComponent* GLRenderingSystemNS::updateTAAPass(GLTextureDataComponent* inputGLTDC)
+{
 	GLTextureDataComponent* l_currentFrameTAAGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC->m_GLTDCs[0];
 	GLTextureDataComponent* l_lastFrameTAAGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC->m_GLTDCs[0];
-	
+
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassSPC);
+
+	GLFrameBufferComponent* l_FBC;
 
 	if (g_RenderingSystemSingletonComponent->m_isTAAPingPass)
 	{
@@ -2542,14 +2563,13 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 		l_lastFrameTAAGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC->m_GLTDCs[0];
 
 		l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC->m_GLFBC;
-		
+
 		g_RenderingSystemSingletonComponent->m_isTAAPingPass = true;
 	}
 
-	f_bindFBC(l_FBC);
+	f_postProcessingbindFBC(l_FBC);
 
-	activate2DTexture(
-		GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC->m_GLTDCs[0],
+	activate2DTexture(inputGLTDC,
 		0);
 	activate2DTexture(
 		l_lastFrameTAAGLTDC,
@@ -2562,46 +2582,68 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize,
 		(float)rtSizeX, (float)rtSizeY);
 
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);
 
-	// TAA sharpen pass
-	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC->m_GLFBC;
-	f_bindFBC(l_FBC);
+	return l_currentFrameTAAGLTDC;
+}
+
+GLTextureDataComponent* GLRenderingSystemNS::updateTAASharpenPass(GLTextureDataComponent * inputGLTDC)
+{
+	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC->m_GLFBC;
+	f_postProcessingbindFBC(l_FBC);
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassSPC);
 
 	activate2DTexture(
-		l_currentFrameTAAGLTDC,
+		inputGLTDC,
 		0);
 
 	updateUniform(
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPass_uni_renderTargetSize,
 		(float)rtSizeX, (float)rtSizeY);
 
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);
 
-	// bloom extract pass
-	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLFBC;
-	f_bindFBC(l_FBC);
+	return GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC->m_GLTDCs[0];
+}
+
+GLTextureDataComponent* GLRenderingSystemNS::updateBloomExtractPass(GLTextureDataComponent * inputGLTDC)
+{
+	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLFBC;
+	f_postProcessingbindFBC(l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassSPC);
 
-	// 1. extract bright part from TAA sharpen pass
-	activate2DTexture(GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC->m_GLTDCs[0], 0);
+	activate2DTexture(inputGLTDC, 0);
 
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);
 
-	// bloom blur pass
+	return GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLTDCs[0];
+}
+
+GLTextureDataComponent* GLRenderingSystemNS::updateBloomBlurPass(GLTextureDataComponent * inputGLTDC)
+{
+	GLTextureDataComponent* l_currentFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
+	GLTextureDataComponent* l_lastFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
+
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPassSPC);
 
 	bool l_isPing = true;
 	bool l_isFirstIteration = true;
 
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
+
 	for (size_t i = 0; i < 5; i++)
 	{
 		if (l_isPing)
 		{
+			l_currentFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
+			l_lastFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
+
 			auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLFBC;
-			f_bindFBC(l_FBC);
+			f_postProcessingbindFBC(l_FBC);
 
 			updateUniform(
 				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_horizontal,
@@ -2610,14 +2652,14 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 			if (l_isFirstIteration)
 			{
 				activate2DTexture(
-					GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLTDCs[0],
+					inputGLTDC,
 					0);
 				l_isFirstIteration = false;
 			}
 			else
 			{
 				activate2DTexture(
-					GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLTDCs[0],
+					l_lastFrameBloomBlurGLTDC,
 					0);
 			}
 
@@ -2627,15 +2669,18 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 		}
 		else
 		{
+			l_currentFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
+			l_lastFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
+
 			auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLFBC;
-			f_bindFBC(l_FBC);
+			f_postProcessingbindFBC(l_FBC);
 
 			updateUniform(
 				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_horizontal,
 				false);
 
 			activate2DTexture(
-				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLTDCs[0],
+				l_lastFrameBloomBlurGLTDC,
 				0);
 
 			drawMesh(l_MDC);
@@ -2644,25 +2689,34 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 		}
 	}
 
-	// motion blur pass
-	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC->m_GLFBC;
-	f_bindFBC(l_FBC);
+	return l_currentFrameBloomBlurGLTDC;
+}
+
+GLTextureDataComponent* GLRenderingSystemNS::updateMotionBlurPass(GLTextureDataComponent * inputGLTDC)
+{
+	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC->m_GLFBC;
+	f_postProcessingbindFBC(l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassSPC);
 
 	activate2DTexture(
 		GeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[3],
 		0);
-	activate2DTexture(GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC->m_GLTDCs[0], 1);
+	activate2DTexture(inputGLTDC, 1);
 
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);
 
-	// billboard pass
+	return GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC->m_GLTDCs[0];
+}
+
+GLTextureDataComponent* GLRenderingSystemNS::updateBillboardPass()
+{
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC->m_GLFBC;
-	f_bindFBC(l_FBC);
+	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC->m_GLFBC;
+	f_postProcessingbindFBC(l_FBC);
 
 	// copy depth buffer from G-Pass
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC->m_FBO);
@@ -2750,12 +2804,16 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 
 	glDisable(GL_DEPTH_TEST);
 
-	// debugger pass
+	return GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC->m_GLTDCs[0];
+}
+
+GLTextureDataComponent* GLRenderingSystemNS::updateDebuggerPass()
+{
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLFBC;
-	f_bindFBC(l_FBC);
+	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLFBC;
+	f_postProcessingbindFBC(l_FBC);
 
 	// copy depth buffer from G-Pass
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC->m_FBO);
@@ -2876,16 +2934,13 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_DEPTH_TEST);
 
-	// final blend pass
-	l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC->m_GLFBC;
-	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, rtSizeX, rtSizeY);
-	glViewport(0, 0, rtSizeX, rtSizeY);
+	return GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLTDCs[0];
+}
 
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glClear(GL_DEPTH_BUFFER_BIT);
+GLTextureDataComponent* GLRenderingSystemNS::updateFinalBlendPass()
+{
+	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC->m_GLFBC;
+	f_postProcessingbindFBC(l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassSPC);
 
@@ -2906,14 +2961,40 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLTDCs[0],
 		3);
 
-	//// draw final pass rectangle
+	// draw final pass rectangle
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
 	drawMesh(l_MDC);
 
-	//// draw again for game build
+	// draw again for game build
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 	drawMesh(l_MDC);
+
+	return GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC->m_GLTDCs[0];
+}
+
+void GLRenderingSystemNS::updateFinalRenderPass()
+{
+	auto skyPassResult = updateSkyPass();
+
+	auto preTAAPassResult = updatePreTAAPass();
+
+	auto TAAPassResult = updateTAAPass(preTAAPassResult);
+
+	auto TAASharpenPassResult = updateTAASharpenPass(TAAPassResult);
+
+	auto bloomExtractPassResult = updateBloomExtractPass(TAASharpenPassResult);
+
+	auto bloomBlurPassResult = updateBloomBlurPass(bloomExtractPassResult);
+
+	updateMotionBlurPass(TAASharpenPassResult);
+
+	updateBillboardPass();
+
+	updateDebuggerPass();
+
+	updateFinalBlendPass();
 }
 
 bool GLRenderingSystem::terminate()
