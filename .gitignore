@@ -2,7 +2,6 @@
 /build
 /source/engine/exports
 /source/game/exports
-/source/external/gitsubmodules
 /source/external/include/assimp
 
 \.DS_Store

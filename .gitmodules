@@ -1,3 +1,4 @@
 [submodule "source/external/gitsubmodules/assimp"]
-	path = source/external/gitsubmodules/assimp
-	url = https://github.com/assimp/assimp
+path = source/external/gitsubmodules/assimp
+url = https://github.com/assimp/assimp
+ignore = dirty
