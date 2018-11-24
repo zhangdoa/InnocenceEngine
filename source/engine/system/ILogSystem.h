@@ -18,7 +18,7 @@ public:
 	INNO_SYSTEM_EXPORT virtual void printLog(const vec2& logMessage) = 0;
 	INNO_SYSTEM_EXPORT virtual void printLog(const vec4& logMessage) = 0;
 	INNO_SYSTEM_EXPORT virtual void printLog(const mat4& logMessage) = 0;
-	INNO_SYSTEM_EXPORT virtual void printLog(logType logType, const std::string& logMessage) = 0;
+	INNO_SYSTEM_EXPORT virtual void printLog(LogType LogType, const std::string& logMessage) = 0;
 
-	INNO_SYSTEM_EXPORT virtual objectStatus getStatus() = 0;
+	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 };

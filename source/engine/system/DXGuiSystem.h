@@ -11,6 +11,6 @@ public:
 	INNO_SYSTEM_EXPORT bool update() override;
 	INNO_SYSTEM_EXPORT bool terminate() override;
 
-	INNO_SYSTEM_EXPORT objectStatus getStatus() override;
+	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 };
 

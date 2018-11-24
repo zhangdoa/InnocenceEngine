@@ -17,7 +17,7 @@ public:
 	INNO_SYSTEM_EXPORT virtual const long long getDeltaTime() = 0;
 	INNO_SYSTEM_EXPORT virtual const long long getCurrentTime() = 0;
 	INNO_SYSTEM_EXPORT virtual const std::tuple<int, unsigned, unsigned> getCivilFromDays(int z) = 0;
-	INNO_SYSTEM_EXPORT virtual const timeData getCurrentTimeInLocal(unsigned int timezone_adjustment = 8) = 0;
+	INNO_SYSTEM_EXPORT virtual const TimeData getCurrentTimeInLocal(unsigned int timezone_adjustment = 8) = 0;
 
-	INNO_SYSTEM_EXPORT virtual objectStatus getStatus() = 0;
+	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 };

@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 	{
 		return 0;
 	}
-	while (InnoApplication::getStatus() == objectStatus::ALIVE)
+	while (InnoApplication::getStatus() == ObjectStatus::ALIVE)
 	{
 		if (!InnoApplication::update())
 		{

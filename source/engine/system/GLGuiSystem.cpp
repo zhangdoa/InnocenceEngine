@@ -48,20 +48,20 @@ private:
 
 INNO_PRIVATE_SCOPE GLGuiSystemNS
 {
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 }
 
 INNO_SYSTEM_EXPORT bool GLGuiSystem::setup()
 {
 	ImGuiWrapper::getInstance().setup();
-	GLGuiSystemNS::m_objectStatus = objectStatus::ALIVE;
+	GLGuiSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool GLGuiSystem::initialize()
 {
 	ImGuiWrapper::getInstance().initialize();
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GLGuiSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLGuiSystem has been initialized.");
 	return true;
 }
 
@@ -73,15 +73,15 @@ INNO_SYSTEM_EXPORT bool GLGuiSystem::update()
 
 INNO_SYSTEM_EXPORT bool GLGuiSystem::terminate()
 {
-	GLGuiSystemNS::m_objectStatus = objectStatus::STANDBY;
+	GLGuiSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 	ImGuiWrapper::getInstance().terminate();
 
-	GLGuiSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GLGuiSystem has been terminated.");
+	GLGuiSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLGuiSystem has been terminated.");
 	return true;
 }
 
-INNO_SYSTEM_EXPORT objectStatus GLGuiSystem::getStatus()
+INNO_SYSTEM_EXPORT ObjectStatus GLGuiSystem::getStatus()
 {
 	return GLGuiSystemNS::m_objectStatus;
 }

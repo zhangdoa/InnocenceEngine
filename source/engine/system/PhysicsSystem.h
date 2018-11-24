@@ -11,5 +11,5 @@ public:
 	INNO_SYSTEM_EXPORT bool update();
 	INNO_SYSTEM_EXPORT bool terminate();
 
-	INNO_SYSTEM_EXPORT objectStatus getStatus();
+	INNO_SYSTEM_EXPORT ObjectStatus getStatus();
 };

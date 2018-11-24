@@ -16,7 +16,7 @@ public:
 		return instance;
 	}
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
 	//window data
@@ -28,9 +28,9 @@ public:
 	const int NUM_KEYCODES = 256;
 	const int NUM_MOUSEBUTTONS = 5;
 
-	buttonStatusMap m_buttonStatus;
-	buttonStatusCallbackMap m_buttonStatusCallback;
-	mouseMovementCallbackMap m_mouseMovementCallback;
+	ButtonStatusMap m_buttonStatus;
+	ButtonStatusCallbackMap m_buttonStatusCallback;
+	MouseMovementCallbackMap m_mouseMovementCallback;
 
 	float m_mouseXOffset;
 	float m_mouseYOffset;

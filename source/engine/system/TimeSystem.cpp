@@ -7,7 +7,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoTimeSystemNS
 {
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	const double m_frameTime = (1.0 / 120.0) * 1000.0 * 1000.0;
 	long long m_gameStartTime;
@@ -24,8 +24,8 @@ INNO_SYSTEM_EXPORT bool InnoTimeSystem::setup()
 
 INNO_SYSTEM_EXPORT bool InnoTimeSystem::initialize()
 {
-	InnoTimeSystemNS::m_objectStatus = objectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "TimeSystem has been initialized.");
+	InnoTimeSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TimeSystem has been initialized.");
 	return true;
 }
 
@@ -38,19 +38,19 @@ INNO_SYSTEM_EXPORT bool InnoTimeSystem::update()
 	if (InnoTimeSystemNS::m_unprocessedTime >= InnoTimeSystemNS::m_frameTime)
 	{
 		InnoTimeSystemNS::m_unprocessedTime -= InnoTimeSystemNS::m_frameTime;
-		InnoTimeSystemNS::m_objectStatus = objectStatus::ALIVE;
+		InnoTimeSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	}
 	else
 	{
-		InnoTimeSystemNS::m_objectStatus = objectStatus::STANDBY;
+		InnoTimeSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 	}
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool InnoTimeSystem::terminate()
 {
-	InnoTimeSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "TimeSystem has been terminated.");
+	InnoTimeSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TimeSystem has been terminated.");
 	return true;
 }
 
@@ -75,7 +75,7 @@ INNO_SYSTEM_EXPORT const std::tuple<int, unsigned, unsigned> InnoTimeSystem::get
 	return std::tuple<int, unsigned, unsigned>(y + (m <= 2), m, d);
 }
 
-INNO_SYSTEM_EXPORT const timeData InnoTimeSystem::getCurrentTimeInLocal(unsigned int timezone_adjustment)
+INNO_SYSTEM_EXPORT const TimeData InnoTimeSystem::getCurrentTimeInLocal(unsigned int timezone_adjustment)
 {
 	typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type> days;
 	auto now = std::chrono::system_clock::now();
@@ -97,7 +97,7 @@ INNO_SYSTEM_EXPORT const timeData InnoTimeSystem::getCurrentTimeInLocal(unsigned
 	// 1970-01-01 0:0:0 UTC as the epoch,
 	// and does not count leap seconds.
 
-	timeData l_timeData;
+	TimeData l_timeData;
 
 	l_timeData.year = std::get<0>(date);
 	l_timeData.month = std::get<1>(date);
@@ -110,7 +110,7 @@ INNO_SYSTEM_EXPORT const timeData InnoTimeSystem::getCurrentTimeInLocal(unsigned
 	return  l_timeData;
 }
 
-INNO_SYSTEM_EXPORT objectStatus InnoTimeSystem::getStatus()
+INNO_SYSTEM_EXPORT ObjectStatus InnoTimeSystem::getStatus()
 {
 	return InnoTimeSystemNS::m_objectStatus;
 }

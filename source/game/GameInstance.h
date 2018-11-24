@@ -16,7 +16,7 @@ public:
 	INNO_GAME_EXPORT bool update() override;
 	INNO_GAME_EXPORT bool terminate() override;
 
-	INNO_GAME_EXPORT objectStatus getStatus() override;
+	INNO_GAME_EXPORT ObjectStatus getStatus() override;
 
 	INNO_GAME_EXPORT std::string getGameName() override;
 };

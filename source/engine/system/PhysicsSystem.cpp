@@ -17,7 +17,7 @@ namespace InnoPhysicsSystemNS
 	void generateLightComponentRadius(LightComponent* lightComponent);
 
 	std::vector<Vertex> generateNDC();
-	PhysicsDataComponent* generatePhysicsDataComponent(const modelMap& modelMap);
+	PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap);
 	MeshDataComponent* generateMeshDataComponent(AABB rhs);
 
 	void generateAABB(LightComponent* lightComponent);
@@ -33,7 +33,7 @@ namespace InnoPhysicsSystemNS
 	AABB transformAABBtoWorldSpace(AABB rhs, mat4 globalTm);
 	void updateSceneAABB(AABB rhs);
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	InnoFuture<void>* m_asyncTask;
 
@@ -56,7 +56,7 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::setup()
 	InnoPhysicsSystemNS::g_AssetSystemSingletonComponent = &AssetSystemSingletonComponent::getInstance();
 	InnoPhysicsSystemNS::g_PhysicsSystemSingletonComponent = &PhysicsSystemSingletonComponent::getInstance();
 
-	InnoPhysicsSystemNS::m_objectStatus = objectStatus::ALIVE;
+	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
 
@@ -141,13 +141,13 @@ void InnoPhysicsSystemNS::generateLightComponentRadius(LightComponent * lightCom
 	lightComponent->m_radius = std::sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
 }
 
-PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const modelMap& modelMap)
+PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelMap& modelMap)
 {
 	auto l_PDC = g_pCoreSystem->getMemorySystem()->spawn<PhysicsDataComponent>();
 
 	for (auto& l_MDC : modelMap)
 	{
-		physicsData l_physicsData;
+		PhysicsData l_physicsData;
 
 		auto l_AABB = generateAABB(l_MDC.first->m_vertices);
 		auto l_MDCforAABB = generateMeshDataComponent(l_AABB);
@@ -386,7 +386,7 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 
 	l_MDC->m_indicesSize = l_MDC->m_indices.size();
 
-	l_MDC->m_objectStatus = objectStatus::STANDBY;
+	l_MDC->m_objectStatus = ObjectStatus::STANDBY;
 	g_AssetSystemSingletonComponent->m_uninitializedMeshComponents.push(l_MDC);
 
 	return l_MDC;
@@ -415,8 +415,8 @@ AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(AABB rhs, mat4 globalTm)
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::initialize()
 {
-	InnoPhysicsSystemNS::m_objectStatus = objectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "PhysicsSystem has been initialized.");
+	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem has been initialized.");
 	return true;
 }
 
@@ -433,11 +433,11 @@ void InnoPhysicsSystemNS::updateLightComponents()
 {
 	for (auto& i : g_GameSystemSingletonComponent->m_LightComponents)
 	{
-		if (i->m_lightType == lightType::POINT)
+		if (i->m_lightType == LightType::POINT)
 		{
 			generateLightComponentRadius(i);
 		}
-		if (i->m_lightType == lightType::DIRECTIONAL)
+		if (i->m_lightType == LightType::DIRECTIONAL)
 		{
 			generateAABB(i);
 		}
@@ -493,7 +493,7 @@ void InnoPhysicsSystemNS::updateCulling()
 		
 		for (auto visibleComponent : m_initializedVisibleComponents)
 		{
-			if (visibleComponent->m_visiblilityType != visiblilityType::INVISIBLE)
+			if (visibleComponent->m_visiblilityType != VisiblilityType::INVISIBLE)
 			{
 				auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
 				auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
@@ -513,7 +513,7 @@ void InnoPhysicsSystemNS::updateCulling()
 						}
 						//if (InnoMath::intersectCheck(l_AABBws, l_cameraAABB))
 						//{
-							cullingDataPack l_cullingDataPack;
+							CullingDataPack l_cullingDataPack;
 							l_cullingDataPack.m = l_globalTm;
 							l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 							l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
@@ -545,12 +545,12 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::terminate()
 {
-	InnoPhysicsSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "PhysicsSystem has been terminated.");
+	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem has been terminated.");
 	return true;
 }
 
-INNO_SYSTEM_EXPORT objectStatus InnoPhysicsSystem::getStatus()
+INNO_SYSTEM_EXPORT ObjectStatus InnoPhysicsSystem::getStatus()
 {
 	return InnoPhysicsSystemNS::m_objectStatus;
 }

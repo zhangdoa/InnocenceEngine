@@ -3,7 +3,7 @@
 #include "../common/InnoMath.h"
 #include "MeshDataComponent.h"
 
-struct physicsData
+struct PhysicsData
 {
 	MeshDataComponent* MDC;
 	MeshDataComponent* wireframeMDC;
@@ -16,8 +16,8 @@ public:
 	PhysicsDataComponent() {};
 	~PhysicsDataComponent() {};
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity = 0;
 
-	std::vector<physicsData> m_physicsDatas;
+	std::vector<PhysicsData> m_physicsDatas;
 };

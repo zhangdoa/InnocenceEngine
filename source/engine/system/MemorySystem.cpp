@@ -106,7 +106,7 @@ std::unique_ptr<ComponentPool<className>> m_##className##Pool;
 
 	std::unique_ptr<ChuckPool> m_ChuckPool;
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	void createChuck();
 }
@@ -177,8 +177,8 @@ void InnoMemorySystemNS::createChuck()
 
 INNO_SYSTEM_EXPORT bool InnoMemorySystem::initialize()
 {
-	InnoMemorySystemNS::m_objectStatus = objectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "MemorySystem has been initialized.");
+	InnoMemorySystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MemorySystem has been initialized.");
 	return true;
 }
 
@@ -189,8 +189,8 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoMemorySystem::terminate()
 {
-	InnoMemorySystemNS::m_objectStatus = objectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "MemorySystem has been terminated.");
+	InnoMemorySystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MemorySystem has been terminated.");
 	return true;
 }
 
@@ -222,7 +222,7 @@ INNO_SYSTEM_EXPORT void * InnoMemorySystem::allocate(unsigned long size)
 	// If no block is found, return nullptr
 	if (!l_suitableChuckPtr)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "MemorySystem: Can't allocate memory!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: Can't allocate memory!");
 		return nullptr;
 	}
 
@@ -468,7 +468,7 @@ className* InnoMemorySystem::allocate##className() \
 	} \
 	else \
 	{ \
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "MemorySystem: Can't allocate memory for component!"); \
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: Can't allocate memory for component!"); \
 		return nullptr; \
 	} \
 } \
@@ -532,7 +532,7 @@ freeComponentImplDefi(PhysicsDataComponent);
 freeComponentImplDefi(Vertex)
 freeComponentImplDefi(Index)
 
-objectStatus InnoMemorySystem::getStatus()
+ObjectStatus InnoMemorySystem::getStatus()
 {
 	return InnoMemorySystemNS::m_objectStatus;
 }

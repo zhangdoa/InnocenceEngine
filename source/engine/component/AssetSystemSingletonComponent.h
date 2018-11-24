@@ -17,7 +17,7 @@ public:
 		return instance;
 	}
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
     std::unordered_map<std::string, int> m_supportedTextureType = { {"png", 0} };
@@ -43,7 +43,7 @@ public:
 	TextureDataComponent* m_basicRoughnessTemplate;
 	TextureDataComponent* m_basicAOTemplate;
 
-	std::unordered_map<std::string, modelMap> m_loadedModelMap;
+	std::unordered_map<std::string, ModelMap> m_loadedModelMap;
 	std::unordered_map<std::string, TextureDataComponent*> m_loadedTextureMap;
 
     const std::string m_textureRelativePath = std::string{"..//res//textures//"};

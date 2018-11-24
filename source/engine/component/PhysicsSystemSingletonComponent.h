@@ -4,14 +4,14 @@
 
 #include "../common/InnoConcurrency.h"
 
-struct cullingDataPack
+struct CullingDataPack
 {
 	mat4 m;
 	mat4 m_prev;
 	mat4 normalMat;
 	EntityID visibleComponentEntityID;
 	EntityID MDCEntityID;
-	visiblilityType visiblilityType;
+	VisiblilityType visiblilityType;
 };
 
 struct AABBWireframeDataPack
@@ -31,10 +31,10 @@ public:
 		return instance;
 	}
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	std::vector<cullingDataPack> m_cullingDataPack;
+	std::vector<CullingDataPack> m_cullingDataPack;
 	std::vector<AABBWireframeDataPack> m_AABBWireframeDataPack;
 
 	ThreadSafeQueue<VisibleComponent*> m_uninitializedVisibleComponents;

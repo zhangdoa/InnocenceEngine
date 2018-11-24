@@ -7,7 +7,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoLogSystemNS
 {
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	std::string getLogTimeHeader()
 	{
@@ -144,15 +144,15 @@ INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(const mat4 & logMessage)
 		<< std::endl;
 }
 
-INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(logType logType, const std::string & logMessage)
+INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(LogType LogType, const std::string & logMessage)
 {
 #if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
-	switch (logType)
+	switch (LogType)
 	{
-	case logType::INNO_DEV_VERBOSE: std::cout << InnoLogSystemNS::blueColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
-	case logType::INNO_WARNING: std::cout << InnoLogSystemNS::yellowColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
-	case logType::INNO_ERROR: std::cout << InnoLogSystemNS::redColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
-	case logType::INNO_DEV_SUCCESS: std::cout << InnoLogSystemNS::greenColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
+	case LogType::INNO_DEV_VERBOSE: std::cout << InnoLogSystemNS::blueColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
+	case LogType::INNO_WARNING: std::cout << InnoLogSystemNS::yellowColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
+	case LogType::INNO_ERROR: std::cout << InnoLogSystemNS::redColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
+	case LogType::INNO_DEV_SUCCESS: std::cout << InnoLogSystemNS::greenColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
 	default: std::cout << InnoLogSystemNS::whiteColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
 	}
 #else
@@ -160,7 +160,7 @@ INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(logType logType, const std::stri
 #endif
 }
 
-INNO_SYSTEM_EXPORT objectStatus InnoLogSystem::getStatus()
+INNO_SYSTEM_EXPORT ObjectStatus InnoLogSystem::getStatus()
 {
 	return InnoLogSystemNS::m_objectStatus;
 }
@@ -172,8 +172,8 @@ INNO_SYSTEM_EXPORT bool InnoLogSystem::setup()
 
 INNO_SYSTEM_EXPORT bool InnoLogSystem::initialize()
 {
-	InnoLogSystemNS::m_objectStatus = objectStatus::ALIVE;
-	printLog(logType::INNO_DEV_SUCCESS, "LogSystem has been initialized.");
+	InnoLogSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	printLog(LogType::INNO_DEV_SUCCESS, "LogSystem has been initialized.");
 	return true;
 }
 
@@ -184,7 +184,7 @@ INNO_SYSTEM_EXPORT bool InnoLogSystem::update()
 		std::string l_log;
 		if (LogSystemSingletonComponent::getInstance().m_log.tryPop(l_log))
 		{
-			printLog(logType::INNO_DEV_VERBOSE, l_log);
+			printLog(LogType::INNO_DEV_VERBOSE, l_log);
 		}
 	}
 	return true;
@@ -192,7 +192,7 @@ INNO_SYSTEM_EXPORT bool InnoLogSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoLogSystem::terminate()
 {
-	InnoLogSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	printLog(logType::INNO_DEV_SUCCESS, "LogSystem has been terminated.");
+	InnoLogSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	printLog(LogType::INNO_DEV_SUCCESS, "LogSystem has been terminated.");
 	return true;
 }

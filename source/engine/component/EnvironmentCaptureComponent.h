@@ -8,7 +8,7 @@ public:
 	EnvironmentCaptureComponent() {};
 	~EnvironmentCaptureComponent() {};
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity = 0;
 
 	std::string m_cubemapTextureFileName;

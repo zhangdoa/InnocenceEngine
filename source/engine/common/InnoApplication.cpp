@@ -4,7 +4,7 @@
 
 namespace InnoApplication
 {
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	ICoreSystem* g_pCoreSystem;
 	std::unique_ptr<InnoCoreSystem> m_pCoreSystem;
@@ -31,25 +31,25 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		{
 			return false;
 		}
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "TimeSystem setup finished.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TimeSystem setup finished.");
 
 		if (!g_pCoreSystem->getLogSystem()->setup())
 		{
 			return false;
 		}
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "LogSystem setup finished.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "LogSystem setup finished.");
 
 		if (!g_pCoreSystem->getMemorySystem()->setup())
 		{
 			return false;
 		}
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "MemorySystem setup finished.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MemorySystem setup finished.");
 
 		if (!g_pCoreSystem->getTaskSystem()->setup())
 		{
 			return false;
 		}
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "TaskSystem setup finished.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem setup finished.");
 
 		// @TODO: Time-domain coupling
 		g_pCoreSystem->getGameSystem()->g_pMemorySystem = g_pCoreSystem->getMemorySystem();
@@ -58,35 +58,35 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		{
 			return false;
 		}
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GameSystem setup finished.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem setup finished.");
 
 		if (!g_pGameInstance->setup())
 		{
 			return false;
 		}
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GameInstance setup finished.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameInstance setup finished.");
 
 		if (!g_pCoreSystem->getAssetSystem()->setup())
 		{
 			return false;
 		}
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "AssetSystem setup finished.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "AssetSystem setup finished.");
 
 		if (!g_pCoreSystem->getPhysicsSystem()->setup())
 		{
 			return false;
 		}
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "PhysicsSystem setup finished.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem setup finished.");
 
 		if (!g_pCoreSystem->getVisionSystem()->setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
 		{
 			return false;
 		}
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "VisionSystem setup finished.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem setup finished.");
 
-		m_objectStatus = objectStatus::ALIVE;
+		m_objectStatus = ObjectStatus::ALIVE;
 
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "Engine setup finished.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine setup finished.");
 		return true;
 	}
 	else
@@ -142,7 +142,7 @@ bool InnoApplication::initialize()
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "Engine has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been initialized.");
 
 	return true;
 }
@@ -189,7 +189,7 @@ bool InnoApplication::update()
 		return false;
 	}
 
-	if (g_pCoreSystem->getVisionSystem()->getStatus() == objectStatus::ALIVE)
+	if (g_pCoreSystem->getVisionSystem()->getStatus() == ObjectStatus::ALIVE)
 	{
 		if (!g_pCoreSystem->getVisionSystem()->update())
 		{
@@ -199,8 +199,8 @@ bool InnoApplication::update()
 	}
 	else
 	{
-		m_objectStatus = objectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_WARNING, "Engine is stand-by.");
+		m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "Engine is stand-by.");
 		return false;
 	}
 	return true;
@@ -253,12 +253,12 @@ bool InnoApplication::terminate()
 		return false;
 	}
 
-	m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "Engine has been terminated.");
+	m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been terminated.");
 	return true;
 }
 
-objectStatus InnoApplication::getStatus()
+ObjectStatus InnoApplication::getStatus()
 {
 	return m_objectStatus;
 }

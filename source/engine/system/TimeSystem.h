@@ -15,7 +15,7 @@ public:
 	INNO_SYSTEM_EXPORT const long long getDeltaTime() override;
 	INNO_SYSTEM_EXPORT const long long getCurrentTime() override;
 	INNO_SYSTEM_EXPORT const std::tuple<int, unsigned, unsigned> getCivilFromDays(int z) override;
-	INNO_SYSTEM_EXPORT const timeData getCurrentTimeInLocal(unsigned int timezone_adjustment = 8) override;
+	INNO_SYSTEM_EXPORT const TimeData getCurrentTimeInLocal(unsigned int timezone_adjustment = 8) override;
 
-	INNO_SYSTEM_EXPORT objectStatus getStatus() override;
+	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 };

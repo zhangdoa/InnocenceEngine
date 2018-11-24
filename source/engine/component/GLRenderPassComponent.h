@@ -11,7 +11,7 @@ public:
 	GLRenderPassComponent() {};
 	~GLRenderPassComponent() {};
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity = 0;
 
 	GLFrameBufferComponent* m_GLFBC = 0;

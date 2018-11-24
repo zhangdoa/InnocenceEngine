@@ -7,14 +7,14 @@
 //#define BlinnPhong
 #define CookTorrance
 
-struct renderDataPack
+struct RenderDataPack
 {
 	mat4 m;
 	mat4 m_prev;
 	mat4 normalMat;
 	MeshDataComponent* MDC;
 	MaterialDataComponent* Material;
-	visiblilityType visiblilityType;
+	VisiblilityType visiblilityType;
 };
 
 class RenderingSystemSingletonComponent
@@ -28,7 +28,7 @@ public:
 		return instance;
 	}
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
 	std::atomic<bool> m_canRender;
@@ -42,7 +42,7 @@ public:
 	bool m_drawTerrain = false;
 	bool m_drawOverlapWireframe = false;
 	
-	std::vector<renderDataPack> m_renderDataPack;
+	std::vector<RenderDataPack> m_renderDataPack;
 
 private:
 	RenderingSystemSingletonComponent() {};

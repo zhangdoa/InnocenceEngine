@@ -7,9 +7,9 @@ public:
 	InputComponent() {};
 	~InputComponent() {};
 	
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity = 0;
 
-	buttonStatusCallbackMap m_buttonStatusCallbackImpl;
-	mouseMovementCallbackMap m_mouseMovementCallbackImpl;
+	ButtonStatusCallbackMap m_buttonStatusCallbackImpl;
+	MouseMovementCallbackMap m_mouseMovementCallbackImpl;
 };

@@ -29,7 +29,7 @@ INNO_PRIVATE_SCOPE InnoVisionSystemNS
 
 	InnoFuture<void>* m_asyncTask;
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 }
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
@@ -37,16 +37,16 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 	std::string l_windowArguments = pScmdline;
 	if (l_windowArguments == "")
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "VisionSystem: No arguments found!");
-		InnoVisionSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: No arguments found!");
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
 	auto l_argPos = l_windowArguments.find("renderer");
 	if (l_argPos == 0)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "VisionSystem: No renderer argument found!");
-		InnoVisionSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: No renderer argument found!");
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -58,7 +58,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 		InnoVisionSystemNS::m_renderingSystem = new DXRenderingSystem();
 		InnoVisionSystemNS::m_guiSystem = new DXGuiSystem();
 		#else
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "VisionSystem: DirectX is only supported on Windows OS!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: DirectX is only supported on Windows OS!");
 		return false;
 		#endif
 	}
@@ -70,23 +70,23 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "VisionSystem: Incorrect renderer argument!");
-		InnoVisionSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: Incorrect renderer argument!");
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 	if (!InnoVisionSystemNS::setupWindow(hInstance, hPrevInstance, pScmdline, nCmdshow))
 	{
-		InnoVisionSystemNS::m_objectStatus = objectStatus::STANDBY;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	};
 	if (!InnoVisionSystemNS::setupRendering())
 	{
-		InnoVisionSystemNS::m_objectStatus = objectStatus::STANDBY;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 	if (!InnoVisionSystemNS::setupGui())
 	{
-		InnoVisionSystemNS::m_objectStatus = objectStatus::STANDBY;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -128,8 +128,8 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 	InnoVisionSystemNS::m_renderingSystem->initialize();
 	InnoVisionSystemNS::m_guiSystem->initialize();
 
-	InnoVisionSystemNS::m_objectStatus = objectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "VisionSystem has been initialized.");
+	InnoVisionSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem has been initialized.");
 	return true;
 }
 
@@ -141,7 +141,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 	RenderingSystemSingletonComponent::getInstance().m_renderDataPack.clear();
 	for (auto& i : PhysicsSystemSingletonComponent::getInstance().m_cullingDataPack)
 	{
-		renderDataPack l_renderDataPack;
+		RenderDataPack l_renderDataPack;
 		l_renderDataPack.m = i.m;
 		l_renderDataPack.m_prev = i.m_prev;
 		l_renderDataPack.normalMat = i.normalMat;
@@ -156,7 +156,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 
 	InnoVisionSystemNS::m_windowSystem->update();
 
-	if (InnoVisionSystemNS::m_windowSystem->getStatus() == objectStatus::ALIVE)
+	if (InnoVisionSystemNS::m_windowSystem->getStatus() == ObjectStatus::ALIVE)
 	{
 		if (RenderingSystemSingletonComponent::getInstance().m_canRender)
 		{
@@ -170,8 +170,8 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_WARNING, "VisionSystem is stand-by.");
-		InnoVisionSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem is stand-by.");
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 }
@@ -180,25 +180,25 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::terminate()
 {
 	if (!InnoVisionSystemNS::m_guiSystem->terminate())
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GuiSystem can't be terminated!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GuiSystem can't be terminated!");
 		return false;
 	}
 	if (!InnoVisionSystemNS::m_renderingSystem->terminate())
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "RenderingSystem can't be terminated!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingSystem can't be terminated!");
 		return false;
 	}
 	if (!InnoVisionSystemNS::m_windowSystem->terminate())
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "WindowSystem can't be terminated!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WindowSystem can't be terminated!");
 		return false;
 	}
-	InnoVisionSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "VisionSystem has been terminated.");
+	InnoVisionSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem has been terminated.");
 	return true;
 }
 
-INNO_SYSTEM_EXPORT objectStatus InnoVisionSystem::getStatus()
+INNO_SYSTEM_EXPORT ObjectStatus InnoVisionSystem::getStatus()
 {
 	return InnoVisionSystemNS::m_objectStatus;
 }

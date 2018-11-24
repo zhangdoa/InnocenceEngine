@@ -4,7 +4,7 @@
 
 struct TransformComponent
 {
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN; // 4 Bytes
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN; // 4 Bytes
 	EntityID m_parentEntity = 0; // 4 Bytes
 
 	// @TODO: k-d tree?

@@ -2,7 +2,7 @@
 #include "../common/InnoType.h"
 #include "../common/InnoMath.h"
 
-enum class lightType {DIRECTIONAL, POINT, SPOT, RECTANGULAR, SPHERE, DISK, TUBE};
+enum class LightType {DIRECTIONAL, POINT, SPOT, RECTANGULAR, SPHERE, DISK, TUBE};
 
 class LightComponent
 {
@@ -10,10 +10,10 @@ public:
 	LightComponent() {};
 	~LightComponent() {};
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity = 0;
 
-	lightType m_lightType = lightType::POINT;
+	LightType m_lightType = LightType::POINT;
 
 	// Unit: Meter (m)
 	float m_radius = 1.0f;

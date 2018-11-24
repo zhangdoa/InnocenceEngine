@@ -8,7 +8,7 @@ namespace PlayerComponentCollection
 {
 	void setup();
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
 	TransformComponent* m_transformComponent;
@@ -155,7 +155,7 @@ namespace GameInstanceNS
 	void updateLights(float seed);
 	void updateSpheres(float seed);
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	InnoFuture<void>* m_asyncTask;
 }
@@ -173,16 +173,16 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 
 	PlayerComponentCollection::setup();
 
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_S, buttonStatus::PRESSED }, &PlayerComponentCollection::f_moveForward);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_W, buttonStatus::PRESSED }, &PlayerComponentCollection::f_moveBackward);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_A, buttonStatus::PRESSED }, &PlayerComponentCollection::f_moveLeft);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_D, buttonStatus::PRESSED }, &PlayerComponentCollection::f_moveRight);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_moveForward);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_moveBackward);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_moveLeft);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_moveRight);
 	
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_SPACE, buttonStatus::PRESSED }, &PlayerComponentCollection::f_speedUp);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_SPACE, buttonStatus::RELEASED }, &PlayerComponentCollection::f_speedDown);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_speedUp);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &PlayerComponentCollection::f_speedDown);
 
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_MOUSE_BUTTON_RIGHT, buttonStatus::PRESSED }, &PlayerComponentCollection::f_allowMove);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_MOUSE_BUTTON_RIGHT, buttonStatus::RELEASED }, &PlayerComponentCollection::f_forbidMove);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_allowMove);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &PlayerComponentCollection::f_forbidMove);
 	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(PlayerComponentCollection::m_inputComponent, 0, &PlayerComponentCollection::f_rotateAroundPositiveYAxis);
 	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(PlayerComponentCollection::m_inputComponent, 1, &PlayerComponentCollection::f_rotateAroundRightAxis);
 
@@ -206,7 +206,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 
 	GameInstanceNS::m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<LightComponent>(GameInstanceNS::m_directionalLightEntity);
 	GameInstanceNS::m_directionalLightComponent->m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	GameInstanceNS::m_directionalLightComponent->m_lightType = lightType::DIRECTIONAL;
+	GameInstanceNS::m_directionalLightComponent->m_lightType = LightType::DIRECTIONAL;
 	GameInstanceNS::m_directionalLightComponent->m_drawAABB = false;
 
 	//setup landscape
@@ -222,8 +222,8 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 		90.0f
 	);
 	GameInstanceNS::m_landscapeVisibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_landscapeEntity);
-	GameInstanceNS::m_landscapeVisibleComponent->m_visiblilityType = visiblilityType::STATIC_MESH;
-	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUBE;
+	GameInstanceNS::m_landscapeVisibleComponent->m_visiblilityType = VisiblilityType::STATIC_MESH;
+	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = MeshShapeType::CUBE;
 
 	GameInstanceNS::setupLights();
 	GameInstanceNS::setupSpheres();
@@ -235,12 +235,12 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnTransformComponent1->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	GameInstanceNS::m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
 	GameInstanceNS::m_pawnVisibleComponent1 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_pawnEntity1);
-	GameInstanceNS::m_pawnVisibleComponent1->m_visiblilityType = visiblilityType::STATIC_MESH;
-	GameInstanceNS::m_pawnVisibleComponent1->m_meshShapeType = meshShapeType::CUSTOM;
-	GameInstanceNS::m_pawnVisibleComponent1->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
+	GameInstanceNS::m_pawnVisibleComponent1->m_visiblilityType = VisiblilityType::STATIC_MESH;
+	GameInstanceNS::m_pawnVisibleComponent1->m_meshShapeType = MeshShapeType::CUSTOM;
+	GameInstanceNS::m_pawnVisibleComponent1->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
 	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
 	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
-	GameInstanceNS::m_pawnVisibleComponent1->m_textureWrapMethod = textureWrapMethod::REPEAT;
+	GameInstanceNS::m_pawnVisibleComponent1->m_textureWrapMethod = TextureWrapMethod::REPEAT;
 	GameInstanceNS::m_pawnVisibleComponent1->m_drawAABB = false;
 
 	//setup pawn 2
@@ -251,13 +251,13 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	//GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_scale = vec4(0.01f, 0.01f, 0.01f, 1.0f);
 	GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_pos = vec4(0.0f, 0.2f, 3.5f, 1.0f);
 	GameInstanceNS::m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_pawnEntity2);
-	GameInstanceNS::m_pawnVisibleComponent2->m_visiblilityType = visiblilityType::STATIC_MESH;
-	GameInstanceNS::m_pawnVisibleComponent2->m_meshShapeType = meshShapeType::SPHERE;
-	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
+	GameInstanceNS::m_pawnVisibleComponent2->m_visiblilityType = VisiblilityType::STATIC_MESH;
+	GameInstanceNS::m_pawnVisibleComponent2->m_meshShapeType = MeshShapeType::SPHERE;
+	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	GameInstanceNS::m_pawnVisibleComponent2->m_drawAABB = true;
 	//GameInstanceNS::m_pawnVisibleComponent2->m_modelFileName = "Orb//Orb.obj";
 
-	GameInstanceNS::m_objectStatus = objectStatus::ALIVE;
+	GameInstanceNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
 
@@ -281,11 +281,11 @@ INNO_GAME_EXPORT bool GameInstance::update()
 
 INNO_GAME_EXPORT bool GameInstance::terminate()
 {
-	GameInstanceNS::m_objectStatus = objectStatus::SHUTDOWN;
+	GameInstanceNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	return true;
 }
 
-INNO_GAME_EXPORT objectStatus GameInstance::getStatus()
+INNO_GAME_EXPORT ObjectStatus GameInstance::getStatus()
 {
 	return GameInstanceNS::m_objectStatus;
 }
@@ -317,9 +317,9 @@ void GameInstanceNS::setupSpheres()
 		m_sphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_sphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_sphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_sphereEntitys[i]);
-		m_sphereVisibleComponents[i]->m_visiblilityType = visiblilityType::STATIC_MESH;
-		m_sphereVisibleComponents[i]->m_meshShapeType = meshShapeType::CUSTOM;
-		m_sphereVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE;
+		m_sphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::STATIC_MESH;
+		m_sphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::CUSTOM;
+		m_sphereVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
 		m_sphereVisibleComponents[i]->m_drawAABB = true;
 		m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 	}
@@ -360,9 +360,9 @@ void GameInstanceNS::setupLights()
 		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<LightComponent>(m_pointLightEntitys[i]);
 		m_pointLightVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pointLightEntitys[i]);
 		m_pointLightComponents[i]->m_luminousFlux = 400.0f;
-		m_pointLightVisibleComponents[i]->m_visiblilityType = visiblilityType::EMISSIVE;
-		m_pointLightVisibleComponents[i]->m_meshShapeType = meshShapeType::SPHERE;
-		m_pointLightVisibleComponents[i]->m_meshDrawMethod = meshDrawMethod::TRIANGLE_STRIP;
+		m_pointLightVisibleComponents[i]->m_visiblilityType = VisiblilityType::EMISSIVE;
+		m_pointLightVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
+		m_pointLightVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	}
 	for (unsigned int i = 0; i < pointLightMatrixDim; i++)
 	{
@@ -393,7 +393,7 @@ void GameInstanceNS::updateLights(float seed)
 		m_pointLightComponents[i + 2]->m_color = l_color3;
 		m_pointLightComponents[i + 3]->m_color = l_color4;
 
-		std::function<void(modelMap modelMap, vec4 albedo)> f_setMeshColor = [&](modelMap modelMap, vec4 albedo)
+		std::function<void(ModelMap modelMap, vec4 albedo)> f_setMeshColor = [&](ModelMap modelMap, vec4 albedo)
 		{
 			for (auto& j : modelMap)
 			{
@@ -446,7 +446,7 @@ void GameInstanceNS::updateSpheres(float seed)
 		auto l_MRAFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
 		auto l_MRAFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
 
-		std::function<void(modelMap modelMap, vec4 albedo, vec4 MRA)> f_setMRA = [&](modelMap modelMap, vec4 albedo, vec4 MRA)
+		std::function<void(ModelMap modelMap, vec4 albedo, vec4 MRA)> f_setMRA = [&](ModelMap modelMap, vec4 albedo, vec4 MRA)
 		{
 			for (auto& j : modelMap)
 			{

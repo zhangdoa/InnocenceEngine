@@ -14,7 +14,7 @@ public:
 	INNO_GAME_EXPORT virtual bool update() = 0;
 	INNO_GAME_EXPORT virtual bool terminate() = 0;
 
-	INNO_GAME_EXPORT virtual objectStatus getStatus() = 0;
+	INNO_GAME_EXPORT virtual ObjectStatus getStatus() = 0;
 
 	INNO_GAME_EXPORT virtual std::string getGameName() = 0;
 };

@@ -15,12 +15,12 @@ public:
 	INNO_SYSTEM_EXPORT virtual bool update() = 0;
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;
 
-	INNO_SYSTEM_EXPORT virtual objectStatus getStatus() = 0;
+	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
 	INNO_SYSTEM_EXPORT virtual MeshDataComponent* getMeshDataComponent(EntityID meshID) = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(EntityID textureID) = 0;
-	INNO_SYSTEM_EXPORT virtual MeshDataComponent* getMeshDataComponent(meshShapeType meshShapeType) = 0;
-	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(textureType textureType) = 0;
+	INNO_SYSTEM_EXPORT virtual MeshDataComponent* getMeshDataComponent(MeshShapeType MeshShapeType) = 0;
+	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(TextureUsageType TextureUsageType) = 0;
 	INNO_SYSTEM_EXPORT virtual bool removeMeshDataComponent(EntityID EntityID) = 0;
 	INNO_SYSTEM_EXPORT virtual bool removeTextureDataComponent(EntityID EntityID) = 0;
 	INNO_SYSTEM_EXPORT virtual bool releaseRawDataForMeshDataComponent(EntityID EntityID) = 0;

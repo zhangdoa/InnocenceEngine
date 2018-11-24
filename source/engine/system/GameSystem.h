@@ -17,7 +17,7 @@ public:
 	INNO_SYSTEM_EXPORT bool update() override;
 	INNO_SYSTEM_EXPORT bool terminate() override;
 
-	INNO_SYSTEM_EXPORT objectStatus getStatus() override;
+	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 
 	spawnComponentImplDecl(TransformComponent);
 	spawnComponentImplDecl(VisibleComponent);
@@ -38,7 +38,7 @@ public:
 	INNO_SYSTEM_EXPORT std::string getGameName() override;
 	INNO_SYSTEM_EXPORT TransformComponent* getRootTransformComponent() override;
 
-	INNO_SYSTEM_EXPORT void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function) override;
+	INNO_SYSTEM_EXPORT void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) override;
 	INNO_SYSTEM_EXPORT void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) override;
 	
 	INNO_SYSTEM_EXPORT void saveComponentsCapture() override;

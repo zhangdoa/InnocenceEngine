@@ -32,7 +32,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 INNO_PRIVATE_SCOPE DXWindowSystemNS
 {
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 IInputSystem* m_inputSystem;
 
@@ -96,14 +96,14 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstan
 
 	DXWindowSystemNS::m_inputSystem->setup();
 
-	DXWindowSystemNS::m_objectStatus = objectStatus::ALIVE;
+	DXWindowSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool DXWindowSystem::initialize()
 {
 	DXWindowSystemNS::m_inputSystem->initialize();
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "DXWindowSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXWindowSystem has been initialized.");
 	return true;
 }
 
@@ -125,7 +125,7 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::update()
 	// If windows signals to end the application then exit out.
 	if (msg.message == WM_QUIT)
 	{
-		DXWindowSystemNS::m_objectStatus = objectStatus::STANDBY;
+		DXWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -148,7 +148,7 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::terminate()
 	DestroyWindow(DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd);
 	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd = NULL;
 
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_WARNING, "DXWindowSystem: Window closed.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "DXWindowSystem: Window closed.");
 
 	// Remove the application instance.
 	UnregisterClass(DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_applicationName, DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hInstance);
@@ -157,12 +157,12 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::terminate()
 	// Release the pointer to this class.
 	ApplicationHandle = NULL;
 
-	DXWindowSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "DXWindowSystem has been terminated.");
+	DXWindowSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXWindowSystem has been terminated.");
 	return true;
 }
 
-INNO_SYSTEM_EXPORT objectStatus DXWindowSystem::getStatus()
+INNO_SYSTEM_EXPORT ObjectStatus DXWindowSystem::getStatus()
 {
 	return DXWindowSystemNS::m_objectStatus;
 }
@@ -203,7 +203,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find((int)wparam);
 		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
 		{
-			l_result->second = buttonStatus::PRESSED;
+			l_result->second = ButtonStatus::PRESSED;
 		}
 		return 0;
 	}
@@ -212,7 +212,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find((int)wparam);
 		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
 		{
-			l_result->second = buttonStatus::RELEASED;
+			l_result->second = ButtonStatus::RELEASED;
 		}
 
 		return 0;
@@ -222,7 +222,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
 		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
 		{
-			l_result->second = buttonStatus::PRESSED;
+			l_result->second = ButtonStatus::PRESSED;
 		}
 		return 0;
 	}
@@ -231,7 +231,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
 		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
 		{
-			l_result->second = buttonStatus::RELEASED;
+			l_result->second = ButtonStatus::RELEASED;
 		}
 		return 0;
 	}
@@ -240,7 +240,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
 		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
 		{
-			l_result->second = buttonStatus::PRESSED;
+			l_result->second = ButtonStatus::PRESSED;
 		}
 		return 0;
 	}
@@ -249,7 +249,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
 		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
 		{
-			l_result->second = buttonStatus::RELEASED;
+			l_result->second = ButtonStatus::RELEASED;
 		}
 		return 0;
 	}

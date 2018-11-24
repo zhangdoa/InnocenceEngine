@@ -12,7 +12,7 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 
 	void updateTransform();
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
 }
@@ -31,7 +31,7 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::setup()
 	InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_globalTransformVector = InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_localTransformVector;
 	InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_globalTransformMatrix = InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_localTransformMatrix;
 
-	InnoGameSystemNS::m_objectStatus = objectStatus::ALIVE;
+	InnoGameSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
 
@@ -77,7 +77,7 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::initialize()
 	InnoGameSystemNS::sortTransformComponentsVector();
 	InnoGameSystemNS::updateTransform();
 
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GameSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem has been initialized.");
 	return true;
 }
 
@@ -92,8 +92,8 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 {
-	InnoGameSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GameSystem has been terminated.");
+	InnoGameSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem has been terminated.");
 	return true;
 }
 
@@ -128,7 +128,7 @@ INNO_SYSTEM_EXPORT className* InnoGameSystem::get##className(EntityID parentEnti
 	} \
 	else \
 	{ \
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GameSystem : can't find components by EntityID: " + std::to_string(parentEntity) + " !"); \
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem : can't find components by EntityID: " + std::to_string(parentEntity) + " !"); \
 		return nullptr; \
 	} \
 }
@@ -141,7 +141,7 @@ getComponentImplDefi(InputComponent)
 getComponentImplDefi(EnvironmentCaptureComponent)
 getComponentImplDefi(MaterialDataComponent);
 
-INNO_SYSTEM_EXPORT void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponent, button boundButton, std::function<void()>* function)
+INNO_SYSTEM_EXPORT void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponent, ButtonData boundButton, std::function<void()>* function)
 {
 	auto l_kbuttonStatusCallbackVector = inputComponent->m_buttonStatusCallbackImpl.find(boundButton);
 	if (l_kbuttonStatusCallbackVector != inputComponent->m_buttonStatusCallbackImpl.end())
@@ -172,7 +172,7 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::registerMouseMovementCallback(InputCompo
 	}
 }
 
-INNO_SYSTEM_EXPORT objectStatus InnoGameSystem::getStatus()
+INNO_SYSTEM_EXPORT ObjectStatus InnoGameSystem::getStatus()
 {
 	return InnoGameSystemNS::m_objectStatus;
 }

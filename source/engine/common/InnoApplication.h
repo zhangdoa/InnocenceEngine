@@ -8,5 +8,5 @@ namespace InnoApplication
 	bool update();
 	bool terminate();
 
-	objectStatus getStatus();
+	ObjectStatus getStatus();
 };

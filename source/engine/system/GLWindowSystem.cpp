@@ -35,7 +35,7 @@ private:
 
 INNO_PRIVATE_SCOPE GLWindowSystemNS
 {
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	IInputSystem* m_inputSystem;
 
@@ -58,8 +58,8 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 	//setup window
 	if (glfwInit() != GL_TRUE)
 	{
-		GLWindowSystemNS::m_objectStatus = objectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GLWindowSystem: Failed to initialize GLFW.");
+		GLWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLWindowSystem: Failed to initialize GLFW.");
 		return false;
 	}
 
@@ -74,8 +74,8 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 	GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window = glfwCreateWindow((int)GLWindowSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x, (int)GLWindowSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y, GLWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName.c_str(), NULL, NULL);
 	glfwMakeContextCurrent(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window);
 	if (GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window == nullptr) {
-		GLWindowSystemNS::m_objectStatus = objectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GLWindowSystem: Failed to open GLFW window.");
+		GLWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLWindowSystem: Failed to open GLFW window.");
 		glfwTerminate();
 		return false;
 	}
@@ -83,8 +83,8 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 	// ---------------------------------------
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
-		GLWindowSystemNS::m_objectStatus = objectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "GLWindowSystem: Failed to initialize GLAD.");
+		GLWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLWindowSystem: Failed to initialize GLAD.");
 		return false;
 	}
 
@@ -93,7 +93,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 
 	GLWindowSystemNS::m_inputSystem->setup();
 
-	GLWindowSystemNS::m_objectStatus = objectStatus::ALIVE;
+	GLWindowSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
 
@@ -105,7 +105,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::initialize()
 	//initialize input	
 	GLWindowSystemNS::m_inputSystem->initialize();
 
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GLWindowSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLWindowSystem has been initialized.");
 	return true;
 }
 
@@ -114,8 +114,8 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::update()
 	//update window
 	if (GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window == nullptr || glfwWindowShouldClose(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window) != 0)
 	{
-		GLWindowSystemNS::m_objectStatus = objectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_WARNING, "GLWindowSystem: Input error or Window closed.");
+		GLWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GLWindowSystem: Input error or Window closed.");
 	}
 	else
 	{
@@ -130,7 +130,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::update()
 				auto l_result = GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
 				if (l_result != GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
 				{
-					l_result->second = buttonStatus::PRESSED;
+					l_result->second = ButtonStatus::PRESSED;
 				}
 			}
 			else
@@ -138,7 +138,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::update()
 				auto l_result = GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
 				if (l_result != GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
 				{
-					l_result->second = buttonStatus::RELEASED;
+					l_result->second = ButtonStatus::RELEASED;
 				}
 			}
 		}
@@ -150,7 +150,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::update()
 				auto l_result = GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
 				if (l_result != GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
 				{
-					l_result->second = buttonStatus::PRESSED;
+					l_result->second = ButtonStatus::PRESSED;
 				}
 			}
 			else
@@ -158,7 +158,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::update()
 				auto l_result = GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
 				if (l_result != GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
 				{
-					l_result->second = buttonStatus::RELEASED;
+					l_result->second = ButtonStatus::RELEASED;
 				}
 			}
 		}
@@ -174,8 +174,8 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::terminate()
 	glfwDestroyWindow(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window);
 	glfwTerminate();
 
-	GLWindowSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "GLWindowSystem has been terminated.");
+	GLWindowSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLWindowSystem has been terminated.");
 	return true;
 }
 
@@ -194,7 +194,7 @@ void GLWindowSystemNS::showMouseCursor()
 	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
-INNO_SYSTEM_EXPORT objectStatus GLWindowSystem::getStatus()
+INNO_SYSTEM_EXPORT ObjectStatus GLWindowSystem::getStatus()
 {
 	return GLWindowSystemNS::m_objectStatus;
 }

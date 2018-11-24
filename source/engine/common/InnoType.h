@@ -11,7 +11,7 @@
 #define INNO_FORCEINLINE __attribute__((always_inline))
 #endif
 
-enum class objectStatus
+enum class ObjectStatus
 {
 	STANDBY,
 	ALIVE,
@@ -20,7 +20,7 @@ enum class objectStatus
 
 using EntityID = unsigned long;
 
-struct timeData
+struct TimeData
 {
 	int year;
 	unsigned month;
@@ -33,30 +33,21 @@ struct timeData
 
 using Index = unsigned int;
 
-enum class visiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
+enum class VisiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
 // mesh custom types
-enum class meshType { NORMAL, BOUNDING_BOX };
-enum class meshShapeType { LINE, QUAD, CUBE, SPHERE, TERRAIN, CUSTOM };
-enum class meshDrawMethod { TRIANGLE, TRIANGLE_STRIP };
+enum class MeshUsageType { NORMAL, BOUNDING_BOX };
+enum class MeshShapeType { LINE, QUAD, CUBE, SPHERE, TERRAIN, CUSTOM };
+enum class MeshPrimitiveTopology { TRIANGLE, TRIANGLE_STRIP };
 // texture custom types
-enum class textureType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, ENVIRONMENT_CAPTURE, ENVIRONMENT_CONVOLUTION, ENVIRONMENT_PREFILTER, EQUIRETANGULAR, RENDER_BUFFER_SAMPLER, SHADOWMAP };
-enum class textureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8, DEPTH_COMPONENT };
-enum class texturePixelDataFormat { RED, RG, RGB, RGBA, DEPTH_COMPONENT };
-enum class texturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, FLOAT };
-enum class textureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER };
-enum class textureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
-enum class textureAssignType { ADD, OVERWRITE };
+enum class TextureUsageType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, ENVIRONMENT_CAPTURE, ENVIRONMENT_CONVOLUTION, ENVIRONMENT_PREFILTER, EQUIRETANGULAR, RENDER_BUFFER_SAMPLER, SHADOWMAP };
+enum class TextureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8, DEPTH_COMPONENT };
+enum class TexturePixelDataFormat { RED, RG, RGB, RGBA, DEPTH_COMPONENT };
+enum class TexturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, FLOAT };
+enum class TextureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER };
+enum class TextureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
+enum class TextureAssignType { ADD, OVERWRITE };
 // shader custom types
-enum class shaderType { VERTEX, GEOMETRY, FRAGMENT };
-using shaderFilePath = std::string;
-using shaderCodeContent = std::string;
-using shaderData = std::tuple<shaderType, shaderFilePath, shaderCodeContent>;
-enum class shaderDrawPolygonType { POINT, LINE, FILL };
-enum class shaderDrawTextureType { FULL, POSITION, NORMAL, ALBEDO, MRA };
-using shaderDrawPair = std::pair<shaderDrawPolygonType, shaderDrawTextureType>;
-// frame and render buffer custom types
-enum class frameBufferType { FORWARD, DEFER, SHADOW_PASS, ENVIRONMENT_PASS, PINGPONG };
-enum class renderBufferType { NONE, DEPTH, STENCIL, DEPTH_AND_STENCIL };
+enum class ShaderType { VERTEX, GEOMETRY, FRAGMENT };
 
 #ifdef INNO_PLATFORM_MACOS
 struct EnumClassHash
@@ -67,14 +58,14 @@ struct EnumClassHash
 		return static_cast<std::size_t>(t);
 	}
 };
-using textureFileNamePair = std::pair<textureType, std::string>;
-using textureFileNameMap = std::unordered_map<textureType, std::string, EnumClassHash>;
+using textureFileNamePair = std::pair<TextureUsageType, std::string>;
+using textureFileNameMap = std::unordered_map<TextureUsageType, std::string, EnumClassHash>;
 #else
-using textureFileNamePair = std::pair<textureType, std::string>;
-using textureFileNameMap = std::unordered_map<textureType, std::string>;
+using TextureFileNamePair = std::pair<TextureUsageType, std::string>;
+using TextureFileNameMap = std::unordered_map<TextureUsageType, std::string>;
 #endif
 
-struct meshColor
+struct MeshCustomMaterial
 {
 	float albedo_r = 1.0f;
 	float albedo_g = 1.0f;
@@ -86,32 +77,32 @@ struct meshColor
 	float additionalData2 = 1.0f;
 };
 
-enum class buttonStatus { RELEASED, PRESSED };
-using buttonStatusMap = std::unordered_map<int, buttonStatus>;
+enum class ButtonStatus { RELEASED, PRESSED };
+using ButtonStatusMap = std::unordered_map<int, ButtonStatus>;
 
-struct button
+struct ButtonData
 {
 	int m_code = 0;
-	buttonStatus m_status = buttonStatus::RELEASED;
+	ButtonStatus m_status = ButtonStatus::RELEASED;
 
-	bool operator==(const button &other) const
+	bool operator==(const ButtonData &other) const
 	{
 		return (m_code == other.m_code && m_status == other.m_status);
 	}
 };
 
-struct buttonHasher
+struct ButtonHasher
 {
-	std::size_t operator()(const button& k) const
+	std::size_t operator()(const ButtonData& k) const
 	{
-		return std::hash<int>()(k.m_code) ^ (std::hash<buttonStatus>()(k.m_status) << 1);
+		return std::hash<int>()(k.m_code) ^ (std::hash<ButtonStatus>()(k.m_status) << 1);
 	}
 };
 
-using buttonStatusCallbackMap = std::unordered_map<button, std::vector<std::function<void()>*>, buttonHasher>;
-using mouseMovementCallbackMap = std::unordered_map<int, std::vector<std::function<void(float)>*>>;
+using ButtonStatusCallbackMap = std::unordered_map<ButtonData, std::vector<std::function<void()>*>, ButtonHasher>;
+using MouseMovementCallbackMap = std::unordered_map<int, std::vector<std::function<void(float)>*>>;
 
-enum class logType { INNO_DEV_VERBOSE, INNO_WARNING, INNO_ERROR, INNO_DEV_SUCCESS };
+enum class LogType { INNO_DEV_VERBOSE, INNO_WARNING, INNO_ERROR, INNO_DEV_SUCCESS };
 
 #define INNO_KEY_SPACE              32
 #define INNO_KEY_APOSTROPHE         39  /* ' */

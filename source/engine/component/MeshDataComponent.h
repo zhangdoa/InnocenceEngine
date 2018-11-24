@@ -8,13 +8,13 @@ public:
 	MeshDataComponent() {};
 	~MeshDataComponent() {};
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity = 0;
 
-	meshType m_meshType = meshType::NORMAL;
+	MeshUsageType m_meshUsageType = MeshUsageType::NORMAL;
 	std::vector<Vertex> m_vertices;
 	std::vector<Index> m_indices;
 	size_t m_indicesSize = 0;
-	meshDrawMethod m_meshDrawMethod = meshDrawMethod::TRIANGLE;
+	MeshPrimitiveTopology m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
 };
 

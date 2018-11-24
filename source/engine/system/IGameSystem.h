@@ -24,7 +24,7 @@ public:
 	INNO_SYSTEM_EXPORT virtual bool update() = 0;
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;
 
-	INNO_SYSTEM_EXPORT virtual objectStatus getStatus() = 0;
+	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
 	spawnComponentInterfaceDecl(TransformComponent);
 	spawnComponentInterfaceDecl(VisibleComponent);
@@ -101,7 +101,7 @@ public:
 	INNO_SYSTEM_EXPORT virtual std::string getGameName() = 0;
 	INNO_SYSTEM_EXPORT virtual TransformComponent* getRootTransformComponent() = 0;
 
-	INNO_SYSTEM_EXPORT virtual void registerButtonStatusCallback(InputComponent* inputComponent, button boundButton, std::function<void()>* function) = 0;
+	INNO_SYSTEM_EXPORT virtual void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) = 0;
 	INNO_SYSTEM_EXPORT virtual void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) = 0;
 
 	INNO_SYSTEM_EXPORT virtual void saveComponentsCapture() = 0;

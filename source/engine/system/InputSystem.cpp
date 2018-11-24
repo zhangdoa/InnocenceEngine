@@ -13,7 +13,7 @@ INNO_PRIVATE_SCOPE InnoInputSystemNS
 	static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 };
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::setup()
@@ -26,7 +26,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::initialize()
 {
 	for (int i = 0; i < InnoInputSystemNS::g_WindowSystemSingletonComponent->NUM_KEYCODES; i++)
 	{
-		InnoInputSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.emplace(i, buttonStatus::RELEASED);
+		InnoInputSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.emplace(i, ButtonStatus::RELEASED);
 	}
 
 	for (size_t i = 0; i < InnoInputSystemNS::g_GameSystemSingletonComponent->m_InputComponents.size(); i++)
@@ -36,15 +36,15 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::initialize()
 		addMouseMovementCallback(InnoInputSystemNS::g_GameSystemSingletonComponent->m_InputComponents[i]->m_mouseMovementCallbackImpl);
 	}
 
-	InnoInputSystemNS::m_objectStatus = objectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "InputSystem has been initialized.");
+	InnoInputSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "InputSystem has been initialized.");
 }
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::update()
 {
 	for (auto i : InnoInputSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus)
 	{
-		auto l_keybinding = InnoInputSystemNS::g_WindowSystemSingletonComponent->m_buttonStatusCallback.find(button{ i.first, i.second });
+		auto l_keybinding = InnoInputSystemNS::g_WindowSystemSingletonComponent->m_buttonStatusCallback.find(ButtonData{ i.first, i.second });
 		if (l_keybinding != InnoInputSystemNS::g_WindowSystemSingletonComponent->m_buttonStatusCallback.end())
 		{
 			for (auto j : l_keybinding->second)
@@ -85,11 +85,11 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::update()
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::terminate()
 {
-	InnoInputSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "InputSystem has been terminated.");
+	InnoInputSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "InputSystem has been terminated.");
 }
 
-INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(button boundButton, std::function<void()>* buttonStatusCallbackFunctor)
+INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(ButtonData boundButton, std::function<void()>* buttonStatusCallbackFunctor)
 {
 	auto l_keyboardInputCallbackFunctionVector = InnoInputSystemNS::g_WindowSystemSingletonComponent->m_buttonStatusCallback.find(boundButton);
 	if (l_keyboardInputCallbackFunctionVector != InnoInputSystemNS::g_WindowSystemSingletonComponent->m_buttonStatusCallback.end())
@@ -102,7 +102,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(button boundBut
 	}
 }
 
-INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(button boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor)
+INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(ButtonData boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor)
 {
 	for (auto i : buttonStatusCallbackFunctor)
 	{
@@ -110,7 +110,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(button boundBut
 	}
 }
 
-INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(buttonStatusCallbackMap & buttonStatusCallbackFunctor)
+INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(ButtonStatusCallbackMap & buttonStatusCallbackFunctor)
 {
 	for (auto i : buttonStatusCallbackFunctor)
 	{
@@ -139,7 +139,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::addMouseMovementCallback(int mouseCode,
 	}
 }
 
-INNO_SYSTEM_EXPORT void InnoInputSystem::addMouseMovementCallback(mouseMovementCallbackMap& mouseMovementCallback)
+INNO_SYSTEM_EXPORT void InnoInputSystem::addMouseMovementCallback(MouseMovementCallbackMap& mouseMovementCallback)
 {
 	for (auto i : mouseMovementCallback)
 	{
@@ -176,7 +176,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::scrollCallback(float xoffset, float yof
 	}
 }
 
-INNO_SYSTEM_EXPORT objectStatus InnoInputSystem::getStatus()
+INNO_SYSTEM_EXPORT ObjectStatus InnoInputSystem::getStatus()
 {
 	return InnoInputSystemNS::m_objectStatus;
 }

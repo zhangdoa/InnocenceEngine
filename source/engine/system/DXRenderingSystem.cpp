@@ -30,7 +30,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 DXMeshDataComponent* generateDXMeshDataComponent(MeshDataComponent* rhs);
 DXTextureDataComponent* generateDXTextureDataComponent(TextureDataComponent* rhs);
@@ -46,7 +46,7 @@ bool initializeGeometryPass();
 bool initializeLightPass();
 bool initializeFinalBlendPass();
 
-ID3D10Blob* loadShaderBuffer(shaderType shaderType, const std::wstring & shaderFilePath);
+ID3D10Blob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
 void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 
 void prepareRenderingData();
@@ -60,7 +60,7 @@ void drawMesh(MeshDataComponent* MDC);
 void drawMesh(size_t indicesSize, DXMeshDataComponent * DXMDC);
 
 template <class T>
-void updateShaderParameter(shaderType shaderType, ID3D11Buffer* matrixBuffer, T* parameterValue);
+void updateShaderParameter(ShaderType shaderType, ID3D11Buffer* matrixBuffer, T* parameterValue);
 
 void cleanRTV(vec4 color, ID3D11RenderTargetView* RTV);
 void cleanDSV(ID3D11DepthStencilView* DSV);
@@ -88,7 +88,7 @@ struct GPassRenderingDataPack
 	size_t indiceSize;
 	GPassCBufferData GPassCBuffer;
 	DXMeshDataComponent* DXMDC;
-	meshDrawMethod m_meshDrawMethod;
+	MeshPrimitiveTopology m_meshDrawMethod;
 	DXTextureDataComponent* m_basicNormalDXTDC;
 	DXTextureDataComponent* m_basicAlbedoDXTDC;
 	DXTextureDataComponent* m_basicMetallicDXTDC;
@@ -144,8 +144,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&m_factory);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create DXGI factory!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXGI factory!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -153,8 +153,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = m_factory->EnumAdapters(0, &m_adapter);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create video card adapter!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create video card adapter!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -162,8 +162,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = m_adapter->EnumOutputs(0, &m_adapterOutput);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create monitor adapter!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create monitor adapter!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -171,8 +171,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -183,8 +183,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't fill the display mode list structures!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't fill the display mode list structures!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -206,8 +206,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = m_adapter->GetDesc(&adapterDesc);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't get the video card adapter description!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get the video card adapter description!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -218,8 +218,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	error = wcstombs_s(&stringLength, DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_videoCardDescription, 128, adapterDesc.Description, 128);
 	if (error != 0)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't convert the name of the video card to a character array!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't convert the name of the video card to a character array!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -302,8 +302,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 		D3D11_SDK_VERSION, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create the swap chain/D3D device/D3D device context!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the swap chain/D3D device/D3D device context!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -311,8 +311,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetTexture);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't get back buffer pointer!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get back buffer pointer!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -320,8 +320,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRenderTargetView(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetTexture, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create render target view!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create render target view!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -349,8 +349,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create the texture for the depth buffer!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the texture for the depth buffer!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -384,8 +384,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create the depth stencil state!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the depth stencil state!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -409,8 +409,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create the depth stencil view!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the depth stencil view!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -438,8 +438,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateForward);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create the rasterizer state for forward pass!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the rasterizer state for forward pass!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -460,8 +460,8 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create the rasterizer state for deferred pass!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the rasterizer state for deferred pass!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -475,7 +475,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.TopLeftX = 0.0f;
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.TopLeftY = 0.0f;
 
-	DXRenderingSystemNS::m_objectStatus = objectStatus::ALIVE;
+	DXRenderingSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
 
@@ -486,7 +486,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::initialize()
 	DXRenderingSystemNS::initializeLightPass();
 	DXRenderingSystemNS::initializeFinalBlendPass();
 
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "DXRenderingSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXRenderingSystem has been initialized.");
 	return true;
 }
 
@@ -579,12 +579,12 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::terminate()
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain = 0;
 	}
 
-	DXRenderingSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "DXRenderingSystem has been terminated.");
+	DXRenderingSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXRenderingSystem has been terminated.");
 	return true;
 }
 
-objectStatus DXRenderingSystem::getStatus()
+ObjectStatus DXRenderingSystem::getStatus()
 {
 	return DXRenderingSystemNS::m_objectStatus;
 }
@@ -603,27 +603,27 @@ bool  DXRenderingSystemNS::initializeDefaultAssets()
 		}
 	};
 
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::LINE);
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE);
 	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitLineTemplate = generateDXMeshDataComponent(l_MDC);
 
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::QUAD);
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitQuadTemplate = generateDXMeshDataComponent(l_MDC);
 
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::CUBE);
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
 	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitCubeTemplate = generateDXMeshDataComponent(l_MDC);
 
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(meshShapeType::SPHERE);
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
 	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitSphereTemplate = generateDXMeshDataComponent(l_MDC);
 
-	m_basicNormalTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::NORMAL));
-	m_basicAlbedoTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ALBEDO));
-	m_basicMetallicTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::METALLIC));
-	m_basicRoughnessTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::ROUGHNESS));
-	m_basicAOTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(textureType::AMBIENT_OCCLUSION));
+	m_basicNormalTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::NORMAL));
+	m_basicAlbedoTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ALBEDO));
+	m_basicMetallicTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::METALLIC));
+	m_basicRoughnessTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
+	m_basicAOTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
 
 	return true;
 }
@@ -664,8 +664,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 			&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures[i]);
 		if (FAILED(result))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create render target texture!");
-			DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create render target texture!");
+			DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 			return false;
 		}
 	}
@@ -688,8 +688,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 			&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews[i]);
 		if (FAILED(result))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create render target view!");
-			DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create render target view!");
+			DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 			return false;
 		}
 	}
@@ -713,8 +713,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 			&DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[i]);
 		if (FAILED(result))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create shader resource view!");
-			DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create shader resource view!");
+			DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 			return false;
 		}
 	}
@@ -745,8 +745,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilBuffer);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create the texture for the depth buffer!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create the texture for the depth buffer!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -766,8 +766,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create the depth stencil view!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create the depth stencil view!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -787,7 +787,7 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(shaderType::VERTEX, L"..//res//shaders//DX11//geometryPassCookTorranceVertex.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"..//res//shaders//DX11//geometryPassCookTorranceVertex.sf");
 
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateVertexShader(
 		l_shaderBuffer->GetBufferPointer(), l_shaderBuffer->GetBufferSize(),
@@ -795,8 +795,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 		&DXGeometryRenderPassSingletonComponent::getInstance().m_vertexShader);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create vertex shader!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create vertex shader!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -854,8 +854,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create vertex shader layout!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create vertex shader layout!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -871,8 +871,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc, NULL, &DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create constant buffer pointer!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create constant buffer pointer!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -880,7 +880,7 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(shaderType::FRAGMENT, L"..//res//shaders//DX11//geometryPassCookTorrancePixel.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"..//res//shaders//DX11//geometryPassCookTorrancePixel.sf");
 
 	// Create the shader from the buffer.
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreatePixelShader(
@@ -890,8 +890,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 		&DXGeometryRenderPassSingletonComponent::getInstance().m_pixelShader);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create pixel shader!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create pixel shader!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -919,8 +919,8 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 		&DXGeometryRenderPassSingletonComponent::getInstance().m_samplerState);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create texture sampler state!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create texture sampler state!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -957,8 +957,8 @@ bool  DXRenderingSystemNS::initializeLightPass()
 		&DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTexture);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create render target texture!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create render target texture!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -975,8 +975,8 @@ bool  DXRenderingSystemNS::initializeLightPass()
 		&DXLightRenderPassSingletonComponent::getInstance().m_renderTargetView);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create render target view!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create render target view!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -994,8 +994,8 @@ bool  DXRenderingSystemNS::initializeLightPass()
 		&DXLightRenderPassSingletonComponent::getInstance().m_shaderResourceView);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create shader resource view!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create shader resource view!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -1025,8 +1025,8 @@ bool  DXRenderingSystemNS::initializeLightPass()
 		&DXLightRenderPassSingletonComponent::getInstance().m_depthStencilBuffer);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create the texture for the depth buffer!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create the texture for the depth buffer!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -1046,8 +1046,8 @@ bool  DXRenderingSystemNS::initializeLightPass()
 		&DXLightRenderPassSingletonComponent::getInstance().m_depthStencilView);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create the depth stencil view!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create the depth stencil view!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -1067,7 +1067,7 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(shaderType::VERTEX, L"..//res//shaders//DX11//lightPassCookTorranceVertex.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"..//res//shaders//DX11//lightPassCookTorranceVertex.sf");
 
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateVertexShader(
 		l_shaderBuffer->GetBufferPointer(), l_shaderBuffer->GetBufferSize(),
@@ -1075,8 +1075,8 @@ bool  DXRenderingSystemNS::initializeLightPass()
 		&DXLightRenderPassSingletonComponent::getInstance().m_vertexShader);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create vertex shader!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create vertex shader!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -1134,8 +1134,8 @@ bool  DXRenderingSystemNS::initializeLightPass()
 
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create vertex shader layout!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create vertex shader layout!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -1151,8 +1151,8 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc, NULL, &DXLightRenderPassSingletonComponent::getInstance().m_constantBuffer);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create constant buffer pointer!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create constant buffer pointer!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -1160,7 +1160,7 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(shaderType::FRAGMENT, L"..//res//shaders//DX11//lightPassCookTorrancePixel.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"..//res//shaders//DX11//lightPassCookTorrancePixel.sf");
 
 	// Create the shader from the buffer.
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreatePixelShader(
@@ -1170,8 +1170,8 @@ bool  DXRenderingSystemNS::initializeLightPass()
 		&DXLightRenderPassSingletonComponent::getInstance().m_pixelShader);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create pixel shader!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create pixel shader!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -1199,8 +1199,8 @@ bool  DXRenderingSystemNS::initializeLightPass()
 		&DXLightRenderPassSingletonComponent::getInstance().m_samplerState);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create texture sampler state!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create texture sampler state!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -1218,7 +1218,7 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(shaderType::VERTEX, L"..//res//shaders//DX11//finalBlendPassVertex.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"..//res//shaders//DX11//finalBlendPassVertex.sf");
 
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateVertexShader(
 		l_shaderBuffer->GetBufferPointer(),
@@ -1227,8 +1227,8 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 		&DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create vertex shader!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create vertex shader!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -1285,8 +1285,8 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 		l_shaderBuffer->GetBufferSize(), &DXFinalRenderPassSingletonComponent::getInstance().m_layout);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create vertex shader layout!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create vertex shader layout!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -1294,7 +1294,7 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(shaderType::FRAGMENT, L"..//res//shaders//DX11//finalBlendPassPixel.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"..//res//shaders//DX11//finalBlendPassPixel.sf");
 
 	// Create the shader from the buffer.
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreatePixelShader(
@@ -1304,8 +1304,8 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 		&DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create pixel shader!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create pixel shader!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
@@ -1333,15 +1333,15 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 		&DXFinalRenderPassSingletonComponent::getInstance().m_samplerState);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create texture sampler state!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create texture sampler state!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
 	return true;
 }
 
-ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(shaderType shaderType, const std::wstring & shaderFilePath)
+ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath)
 {
 	auto l_shaderFilePath = shaderFilePath.c_str();
 	auto l_shaderName = std::string(shaderFilePath.begin(), shaderFilePath.end());
@@ -1357,13 +1357,13 @@ ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(shaderType shaderType, const 
 
 	switch (shaderType)
 	{
-	case shaderType::VERTEX:
+	case ShaderType::VERTEX:
 		l_shaderTypeName = "vs_5_0";
 		break;
-	case shaderType::GEOMETRY:
+	case ShaderType::GEOMETRY:
 		l_shaderTypeName = "gs_5_0";
 		break;
-	case shaderType::FRAGMENT:
+	case ShaderType::FRAGMENT:
 		l_shaderTypeName = "ps_5_0";
 		break;
 	default:
@@ -1383,12 +1383,12 @@ ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(shaderType shaderType, const 
 		else
 		{
 			MessageBox(DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
-			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "Shader creation failed: cannot find shader!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "Shader creation failed: cannot find shader!");
 		}
 
 		return nullptr;
 	}
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_VERBOSE, "DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
 	return l_shaderBuffer;
 }
 
@@ -1415,12 +1415,12 @@ void DXRenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HW
 	errorMessage = 0;
 
 	MessageBox(DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
 
 DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataComponent * rhs)
 {
-	if (rhs->m_objectStatus == objectStatus::ALIVE)
+	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
 		return DXRenderingSystemNS::getDXMeshDataComponent(rhs->m_parentEntity);
 	}
@@ -1451,7 +1451,7 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &l_ptr->m_vertexBuffer);
 		if (FAILED(result))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create vbo!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create vbo!");
 			return nullptr;
 		}
 
@@ -1476,11 +1476,11 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&indexBufferDesc, &indexData, &l_ptr->m_indexBuffer);
 		if (FAILED(result))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create ibo!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create ibo!");
 			return nullptr;
 		}
-		l_ptr->m_objectStatus = objectStatus::ALIVE;
-		rhs->m_objectStatus = objectStatus::ALIVE;
+		l_ptr->m_objectStatus = ObjectStatus::ALIVE;
+		rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 		DXRenderingSystemNS::m_initializedMeshComponents.emplace(l_ptr->m_parentEntity, l_ptr);
 		return l_ptr;
@@ -1489,7 +1489,7 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 
 DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(TextureDataComponent * rhs)
 {
-	if (rhs->m_objectStatus == objectStatus::ALIVE)
+	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
 		return DXRenderingSystemNS::getDXTextureDataComponent(rhs->m_parentEntity);
 	}
@@ -1503,31 +1503,31 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 		// @TODO: Unified internal format
 		// Setup the description of the texture.
 		// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
-		if (rhs->m_textureDataDesc.textureType == textureType::ALBEDO)
+		if (rhs->m_textureDataDesc.textureUsageType == TextureUsageType::ALBEDO)
 		{
 			l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		}
 		else
 		{
-			if (rhs->m_textureDataDesc.texturePixelDataType == texturePixelDataType::UNSIGNED_BYTE)
+			if (rhs->m_textureDataDesc.texturePixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
 			{
 				switch (rhs->m_textureDataDesc.texturePixelDataFormat)
 				{
-				case texturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
-				case texturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
-				case texturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-				case texturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+				case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
+				case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
+				case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+				case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
 				default: break;
 				}
 			}
-			else if (rhs->m_textureDataDesc.texturePixelDataType == texturePixelDataType::FLOAT)
+			else if (rhs->m_textureDataDesc.texturePixelDataType == TexturePixelDataType::FLOAT)
 			{
 				switch (rhs->m_textureDataDesc.texturePixelDataFormat)
 				{
-				case texturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R16_UNORM; break;
-				case texturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UNORM; break;
-				case texturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
-				case texturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+				case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R16_UNORM; break;
+				case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UNORM; break;
+				case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+				case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
 				default: break;
 				}
 			}
@@ -1563,7 +1563,7 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 		hResult = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(&textureDesc, NULL, &l_texture);
 		if (FAILED(hResult))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create texture!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create texture!");
 			return nullptr;
 		}
 
@@ -1576,7 +1576,7 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 		hResult = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateShaderResourceView(l_texture, &srvDesc, &l_SRV);
 		if (FAILED(hResult))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't create shader resource view for texture!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create shader resource view for texture!");
 			return nullptr;
 		}
 
@@ -1585,8 +1585,8 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 
 		l_ptr->m_texture = l_texture;
 		l_ptr->m_SRV = l_SRV;
-		l_ptr->m_objectStatus = objectStatus::ALIVE;
-		rhs->m_objectStatus = objectStatus::ALIVE;
+		l_ptr->m_objectStatus = ObjectStatus::ALIVE;
+		rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 		return l_ptr;
 	}
@@ -1780,7 +1780,7 @@ void DXRenderingSystemNS::updateGeometryPass()
 		// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 		D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
 
-		if (l_renderPack.m_meshDrawMethod == meshDrawMethod::TRIANGLE)
+		if (l_renderPack.m_meshDrawMethod == MeshPrimitiveTopology::TRIANGLE)
 		{
 			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		}
@@ -1791,7 +1791,7 @@ void DXRenderingSystemNS::updateGeometryPass()
 
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
 
-		updateShaderParameter<GPassCBufferData>(shaderType::VERTEX, DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_renderPack.GPassCBuffer);
+		updateShaderParameter<GPassCBufferData>(ShaderType::VERTEX, DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_renderPack.GPassCBuffer);
 
 		// bind to textures
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &l_renderPack.m_basicNormalDXTDC->m_SRV);
@@ -1850,7 +1850,7 @@ void DXRenderingSystemNS::updateLightPass()
 	
 	auto l_LPassCBufferData = DXRenderingSystemNS::m_LPassCBufferData;
 
-	updateShaderParameter<LPassCBufferData>(shaderType::FRAGMENT, DXLightRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_LPassCBufferData);
+	updateShaderParameter<LPassCBufferData>(ShaderType::FRAGMENT, DXLightRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_LPassCBufferData);
 	
 	// bind to previous pass render target textures
 	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[0]);
@@ -1916,7 +1916,7 @@ void DXRenderingSystemNS::drawMesh(MeshDataComponent * MDC)
 	auto l_DXMDC = DXRenderingSystemNS::getDXMeshDataComponent(MDC->m_parentEntity);
 	if (l_DXMDC)
 	{
-		if (MDC->m_objectStatus == objectStatus::ALIVE && l_DXMDC->m_objectStatus == objectStatus::ALIVE)
+		if (MDC->m_objectStatus == ObjectStatus::ALIVE && l_DXMDC->m_objectStatus == ObjectStatus::ALIVE)
 		{
 			drawMesh(MDC->m_indicesSize, l_DXMDC);
 		}
@@ -1943,7 +1943,7 @@ void DXRenderingSystemNS::drawMesh(size_t indicesSize, DXMeshDataComponent * DXM
 }
 
 template <class T>
-void DXRenderingSystemNS::updateShaderParameter(shaderType shaderType, ID3D11Buffer * matrixBuffer, T* parameterValue)
+void DXRenderingSystemNS::updateShaderParameter(ShaderType shaderType, ID3D11Buffer * matrixBuffer, T* parameterValue)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -1953,8 +1953,8 @@ void DXRenderingSystemNS::updateShaderParameter(shaderType shaderType, ID3D11Buf
 	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "DXRenderingSystem: can't lock the shader matrix buffer!");
-		DXRenderingSystemNS::m_objectStatus = objectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't lock the shader matrix buffer!");
+		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return;
 	}
 
@@ -1969,13 +1969,13 @@ void DXRenderingSystemNS::updateShaderParameter(shaderType shaderType, ID3D11Buf
 
 	switch (shaderType)
 	{
-	case shaderType::VERTEX:
+	case ShaderType::VERTEX:
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->VSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
 		break;
-	case shaderType::GEOMETRY:
+	case ShaderType::GEOMETRY:
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->GSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
 		break;
-	case shaderType::FRAGMENT:
+	case ShaderType::FRAGMENT:
 		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
 		break;
 	default:

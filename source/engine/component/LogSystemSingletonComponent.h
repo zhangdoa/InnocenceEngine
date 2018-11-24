@@ -13,7 +13,7 @@ public:
 		return instance;
 	}
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
 ThreadSafeQueue<std::string> m_log; 

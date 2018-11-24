@@ -3,13 +3,13 @@
 #include "../common/InnoMath.h"
 #include "TextureDataComponent.h"
 
-struct texturePack
+struct TexturePack
 {
-	std::pair<textureType, TextureDataComponent*> m_normalTDC = { textureType::NORMAL, nullptr };
-	std::pair<textureType, TextureDataComponent*> m_albedoTDC = { textureType::ALBEDO, nullptr };
-	std::pair<textureType, TextureDataComponent*> m_metallicTDC = { textureType::METALLIC, nullptr };
-	std::pair<textureType, TextureDataComponent*> m_roughnessTDC = { textureType::ROUGHNESS, nullptr };
-	std::pair<textureType, TextureDataComponent*> m_aoTDC = { textureType::AMBIENT_OCCLUSION, nullptr };
+	std::pair<TextureUsageType, TextureDataComponent*> m_normalTDC = { TextureUsageType::NORMAL, nullptr };
+	std::pair<TextureUsageType, TextureDataComponent*> m_albedoTDC = { TextureUsageType::ALBEDO, nullptr };
+	std::pair<TextureUsageType, TextureDataComponent*> m_metallicTDC = { TextureUsageType::METALLIC, nullptr };
+	std::pair<TextureUsageType, TextureDataComponent*> m_roughnessTDC = { TextureUsageType::ROUGHNESS, nullptr };
+	std::pair<TextureUsageType, TextureDataComponent*> m_aoTDC = { TextureUsageType::AMBIENT_OCCLUSION, nullptr };
 };
 
 class MaterialDataComponent
@@ -18,10 +18,10 @@ public:
 	MaterialDataComponent() {};
 	~MaterialDataComponent() {};
 
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity = 0;
 
-	meshColor m_meshColor;
-	texturePack m_texturePack;
+	MeshCustomMaterial m_meshColor;
+	TexturePack m_texturePack;
 };
 

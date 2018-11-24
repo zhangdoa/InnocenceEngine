@@ -5,7 +5,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoTaskSystemNS
 {
-	objectStatus m_objectStatus = objectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	std::atomic_bool m_done = false;
 	ThreadSafeQueue<std::unique_ptr<IThreadTask>> m_workQueue;
@@ -52,13 +52,13 @@ INNO_SYSTEM_EXPORT bool InnoTaskSystem::setup()
 		InnoTaskSystemNS::destroy();
 		throw;
 	}
-	InnoTaskSystemNS::m_objectStatus = objectStatus::ALIVE;
+	InnoTaskSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool InnoTaskSystem::initialize()
 {
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "TaskSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem has been initialized.");
 	return true;
 }
 
@@ -69,14 +69,14 @@ INNO_SYSTEM_EXPORT bool InnoTaskSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoTaskSystem::terminate()
 {
-	InnoTaskSystemNS::m_objectStatus = objectStatus::STANDBY;
+	InnoTaskSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 	InnoTaskSystemNS::destroy();
-	InnoTaskSystemNS::m_objectStatus = objectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(logType::INNO_DEV_SUCCESS, "TaskSystem has been terminated.");
+	InnoTaskSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem has been terminated.");
 	return true;
 }
 
-INNO_SYSTEM_EXPORT objectStatus InnoTaskSystem::getStatus()
+INNO_SYSTEM_EXPORT ObjectStatus InnoTaskSystem::getStatus()
 {
 	return 	InnoTaskSystemNS::m_objectStatus;
 }
