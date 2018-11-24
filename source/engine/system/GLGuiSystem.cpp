@@ -16,7 +16,7 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-struct renderingConfig
+struct RenderingConfig
 {
 	bool useTAA = false;
 	bool useBloom = false;
@@ -114,7 +114,7 @@ void ImGuiWrapper::update()
 #ifdef DEBUG
 #ifndef INNO_PLATFORM_LINUX64
 
-	static renderingConfig l_renderingConfig;
+	static RenderingConfig l_renderingConfig;
 
 	ImGui_ImplGlfwGL3_NewFrame();
 	{

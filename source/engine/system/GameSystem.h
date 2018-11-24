@@ -5,7 +5,7 @@
 INNO_SYSTEM_EXPORT void spawnComponent(className* rhs, EntityID parentEntity) override;
 
 #define getComponentImplDecl( className ) \
-INNO_SYSTEM_EXPORT className* get##className##(EntityID parentEntity) override;
+INNO_SYSTEM_EXPORT className* get##className(EntityID parentEntity) override;
 
 class InnoGameSystem : INNO_IMPLEMENT IGameSystem
 {

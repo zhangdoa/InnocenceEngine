@@ -7,7 +7,7 @@ struct PhysicsData
 {
 	MeshDataComponent* MDC;
 	MeshDataComponent* wireframeMDC;
-	AABB AABB;
+	AABB aabb;
 };
 
 class PhysicsDataComponent

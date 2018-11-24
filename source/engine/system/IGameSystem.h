@@ -60,7 +60,7 @@ public:
 
 	template <typename T> T * get(EntityID parentEntity)
 	{
-		return getComponentInterfaceCall(T, parentEntity);
+		return new T();
 	};
 
 	template <> TransformComponent * get(EntityID parentEntity)

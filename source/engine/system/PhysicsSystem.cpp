@@ -154,7 +154,7 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Mo
 
 		l_physicsData.MDC = l_MDC.first;
 		l_physicsData.wireframeMDC = l_MDCforAABB;
-		l_physicsData.AABB = l_AABB;
+		l_physicsData.aabb = l_AABB;
 
 		l_PDC->m_physicsDatas.emplace_back(l_physicsData);
 	}
@@ -502,7 +502,7 @@ void InnoPhysicsSystemNS::updateCulling()
 				{
 					for (auto& physicsData : visibleComponent->m_PhysicsDataComponent->m_physicsDatas)
 					{
-						auto l_AABBws = transformAABBtoWorldSpace(physicsData.AABB, l_globalTm);
+						auto l_AABBws = transformAABBtoWorldSpace(physicsData.aabb, l_globalTm);
 
 						if (InnoMath::intersectCheck(l_AABBws, l_mouseRay))
 						{

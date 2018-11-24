@@ -8,7 +8,7 @@
 #if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 #define INNO_FORCEINLINE __forceinline
 #else
-#define INNO_FORCEINLINE __attribute__((always_inline))
+#define INNO_FORCEINLINE __attribute__((always_inline)) inline
 #endif
 
 enum class ObjectStatus
