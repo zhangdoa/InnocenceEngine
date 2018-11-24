@@ -1,4 +1,7 @@
 aux_source_directory(. DIR_SRCS)
+if (INNO_PLATFORM_LINUX64 OR INNO_PLATFORM_MACOS)
+list(REMOVE_ITEM DIR_SRCS ./DXGuiSystem.h ./DXGuiSystem.cpp ./DXRenderingSystem.h ./DXRenderingSystem.cpp ./DXWindowSystem.h ./DXWindowSystem.cpp)
+endif (INNO_PLATFORM_LINUX64 OR INNO_PLATFORM_MACOS)
 add_library(InnoSystem SHARED ${DIR_SRCS})
 include (GenerateExportHeader)
 GENERATE_EXPORT_HEADER (InnoSystem
