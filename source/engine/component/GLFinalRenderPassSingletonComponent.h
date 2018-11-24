@@ -29,6 +29,7 @@ public:
 	GLShaderProgramComponent* m_preTAAPassSPC;
 	GLuint m_preTAAPass_uni_lightPassRT0;
 	GLuint m_preTAAPass_uni_skyPassRT0;
+	GLuint m_preTAAPass_uni_terrainPassRT0;
 
 	GLRenderPassComponent* m_TAAPingPassGLRPC;
 	GLRenderPassComponent* m_TAAPongPassGLRPC;
@@ -82,7 +83,7 @@ public:
 	GLuint m_uni_bloomPassRT0;
 	GLuint m_uni_billboardPassRT0;
 	GLuint m_uni_debuggerPassRT0;
-	GLuint m_uni_terrainPassRT0;	
+
 private:
 	GLFinalRenderPassSingletonComponent() {};
 };
