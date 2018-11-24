@@ -1500,7 +1500,7 @@ namespace InnoMath
 		return l_directionTVec4.rotateByQuat(localRot);
 	}
 
-	__forceinline EntityID createEntityID()
+	INNO_FORCEINLINE EntityID createEntityID()
 	{
 		return std::rand();
 	}

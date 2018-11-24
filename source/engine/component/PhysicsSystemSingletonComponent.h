@@ -1,6 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../common/Componentheaders.h"
+#include "../common/ComponentHeaders.h"
 
 #include "../common/InnoConcurrency.h"
 

@@ -14,8 +14,10 @@
 #include "../component/GLShaderProgramComponent.h"
 #include "../component/GLRenderPassComponent.h"
 
+#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 #include "../component/DXMeshDataComponent.h"
 #include "../component/DXTextureDataComponent.h"
+#endif
 
 #include "../component/PhysicsDataComponent.h"
 
@@ -72,8 +74,10 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLFrameBufferComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLShaderProgramComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLRenderPassComponent);
+	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXTextureDataComponent);
+	#endif
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(PhysicsDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(Vertex);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(Index);
@@ -111,10 +115,12 @@ public:
 	INNO_SYSTEM_EXPORT spawnComponentTemplate(GLShaderProgramComponent);
 	template <>
 	INNO_SYSTEM_EXPORT spawnComponentTemplate(GLRenderPassComponent);
+	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	template <>
 	INNO_SYSTEM_EXPORT spawnComponentTemplate(DXMeshDataComponent);
 	template <>
 	INNO_SYSTEM_EXPORT spawnComponentTemplate(DXTextureDataComponent);
+	#endif
 	template <>
 	INNO_SYSTEM_EXPORT spawnComponentTemplate(PhysicsDataComponent);
 	template <>
@@ -141,8 +147,10 @@ public:
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(GLFrameBufferComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(GLShaderProgramComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(GLRenderPassComponent);
+	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXTextureDataComponent);
+	#endif
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(PhysicsDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(Vertex);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(Index);
@@ -181,10 +189,12 @@ public:
 	INNO_SYSTEM_EXPORT destroyComponentTemplate(GLShaderProgramComponent);
 	template <>
 	INNO_SYSTEM_EXPORT destroyComponentTemplate(GLRenderPassComponent);
+	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	template <>
 	INNO_SYSTEM_EXPORT destroyComponentTemplate(DXMeshDataComponent);
 	template <>
 	INNO_SYSTEM_EXPORT destroyComponentTemplate(DXTextureDataComponent);
+	#endif
 	template <>
 	INNO_SYSTEM_EXPORT destroyComponentTemplate(PhysicsDataComponent);
 	template <>

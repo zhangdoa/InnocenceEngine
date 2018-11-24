@@ -66,7 +66,7 @@ std::unique_ptr<ComponentPool<className>> m_##className##Pool;
 	componentPoolUniPtr(EnvironmentCaptureComponent);
 
 	componentPoolUniPtr(MeshDataComponent);
-	componentPoolUniPtr(MaterialDataComponent);	
+	componentPoolUniPtr(MaterialDataComponent);
 	componentPoolUniPtr(TextureDataComponent);
 
 	componentPoolUniPtr(GLMeshDataComponent);
@@ -74,9 +74,11 @@ std::unique_ptr<ComponentPool<className>> m_##className##Pool;
 	componentPoolUniPtr(GLFrameBufferComponent);
 	componentPoolUniPtr(GLShaderProgramComponent);
 	componentPoolUniPtr(GLRenderPassComponent);
-	
+
+	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	componentPoolUniPtr(DXMeshDataComponent);
 	componentPoolUniPtr(DXTextureDataComponent);
+	#endif
 
 	componentPoolUniPtr(PhysicsDataComponent);
 
@@ -125,7 +127,7 @@ public:
 };
 
 INNO_SYSTEM_EXPORT bool InnoMemorySystem::setup()
-{	
+{
 #define constructComponentPool( className ) \
 	InnoMemorySystemNS::m_##className##Pool = std::make_unique<ComponentPool<className>>();
 
@@ -146,8 +148,10 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::setup()
 	constructComponentPool(GLShaderProgramComponent);
 	constructComponentPool(GLRenderPassComponent);
 
+	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	constructComponentPool(DXMeshDataComponent);
 	constructComponentPool(DXTextureDataComponent);
+	#endif
 
 	constructComponentPool(PhysicsDataComponent);
 
@@ -217,9 +221,9 @@ INNO_SYSTEM_EXPORT void * InnoMemorySystem::allocate(unsigned long size)
 
 	// If no block is found, return nullptr
 	if (!l_suitableChuckPtr)
-	{ 
+	{
 		g_pCoreSystem->getLogSystem()->printLog(logType::INNO_ERROR, "MemorySystem: Can't allocate memory!");
-		return nullptr; 
+		return nullptr;
 	}
 
 	// If the block is valid, create a new free block with
@@ -246,7 +250,7 @@ INNO_SYSTEM_EXPORT void * InnoMemorySystem::allocate(unsigned long size)
 
 	// Fill the block with filling flags
 	std::memset(l_suitableChuckPtr_UC + sizeof(Chunk), 0xAB, size);
-	
+
 	unsigned char* l_freeChuckPtr_UC = reinterpret_cast<unsigned char*>(l_freeChuckPtr);
 	std::memcpy(l_freeChuckPtr_UC, &l_freeChuck, sizeof(Chunk));
 
@@ -361,9 +365,9 @@ void * InnoMemorySystem::deserializeImpl(unsigned long size, const std::string &
 	unsigned char* buffer_UC = reinterpret_cast<unsigned char*>(buffer);
 
 	unsigned char* l_ptr = reinterpret_cast<unsigned char*>(allocate(size));
-	
+
 	std::memcpy(l_ptr, buffer_UC, size);
-	
+
 	l_file.close();
 
 	return l_ptr;
@@ -373,7 +377,7 @@ INNO_SYSTEM_EXPORT void InnoMemorySystem::dumpToFile(bool fullDump)
 {
 	std::ofstream l_file;
 	auto l_timeData = g_pCoreSystem->getTimeSystem()->getCurrentTimeInLocal();
-	auto l_timeString = 
+	auto l_timeString =
 		std::to_string(l_timeData.year)
 		+ "-" + std::to_string(l_timeData.month)
 		+ "-" + std::to_string(l_timeData.day)
@@ -486,8 +490,10 @@ allocateComponentImplDefi(GLFrameBufferComponent)
 allocateComponentImplDefi(GLShaderProgramComponent)
 allocateComponentImplDefi(GLRenderPassComponent)
 
+#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 allocateComponentImplDefi(DXMeshDataComponent)
 allocateComponentImplDefi(DXTextureDataComponent)
+#endif
 
 allocateComponentImplDefi(PhysicsDataComponent);
 
@@ -516,8 +522,10 @@ freeComponentImplDefi(GLFrameBufferComponent)
 freeComponentImplDefi(GLShaderProgramComponent)
 freeComponentImplDefi(GLRenderPassComponent)
 
+#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 freeComponentImplDefi(DXMeshDataComponent)
 freeComponentImplDefi(DXTextureDataComponent)
+#endif
 
 freeComponentImplDefi(PhysicsDataComponent);
 

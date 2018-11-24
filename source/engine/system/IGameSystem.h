@@ -9,10 +9,10 @@
 INNO_SYSTEM_EXPORT virtual void spawnComponent(className* rhs, EntityID parentEntity) = 0;
 
 #define getComponentInterfaceDecl( className ) \
-INNO_SYSTEM_EXPORT virtual className* get##className##(EntityID parentEntity) = 0;
+INNO_SYSTEM_EXPORT virtual className* get##className(EntityID parentEntity) = 0;
 
 #define getComponentInterfaceCall( className, parentEntity ) \
-get##className##(parentEntity)
+get##className(parentEntity)
 
 INNO_INTERFACE IGameSystem
 {
