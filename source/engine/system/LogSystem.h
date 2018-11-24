@@ -17,5 +17,5 @@ public:
 	INNO_SYSTEM_EXPORT void printLog(const mat4& logMessage) override;
 	INNO_SYSTEM_EXPORT void printLog(LogType LogType, const std::string& logMessage) override;
 
-	INNO_SYSTEM_EXPORT ObjectStatus getStatus();
+	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 };

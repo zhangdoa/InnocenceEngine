@@ -25,7 +25,7 @@
 virtual className* allocate##className() = 0;
 
 #define spawnComponentTemplate( className ) \
-className* spawn() \
+inline className* IMemorySystem::spawn() \
 { \
 	auto t = allocate##className(); \
 	return t; \
@@ -35,7 +35,7 @@ className* spawn() \
 virtual void free##className(className* p) = 0;
 
 #define destroyComponentTemplate( className ) \
-void destroy(className* p) \
+inline void IMemorySystem::destroy(className* p) \
 { \
 	reinterpret_cast<className*>(p)->~className(); \
 	free##className(p); \
@@ -87,47 +87,6 @@ public:
 		return reinterpret_cast<T *>(allocate(sizeof(T)));
 	};
 
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(TransformComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(VisibleComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(LightComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(CameraComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(InputComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(EnvironmentCaptureComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(MeshDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(MaterialDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(TextureDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(GLMeshDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(GLTextureDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(GLFrameBufferComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(GLShaderProgramComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(GLRenderPassComponent);
-	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(DXMeshDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(DXTextureDataComponent);
-	#endif
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(PhysicsDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(Vertex);
-	template <>
-	INNO_SYSTEM_EXPORT spawnComponentTemplate(Index);
-
 	template <typename T>  T * spawn(size_t n)
 	{
 		return reinterpret_cast<T *>(allocate(n * sizeof(T)));
@@ -161,47 +120,6 @@ public:
 		free(p);
 	};
 
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(TransformComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(VisibleComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(LightComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(CameraComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(InputComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(EnvironmentCaptureComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(MeshDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(MaterialDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(TextureDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(GLMeshDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(GLTextureDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(GLFrameBufferComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(GLShaderProgramComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(GLRenderPassComponent);
-	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(DXMeshDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(DXTextureDataComponent);
-	#endif
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(PhysicsDataComponent);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(Vertex);
-	template <>
-	INNO_SYSTEM_EXPORT destroyComponentTemplate(Index);
-
 	template <typename T> void serialize(T* p)
 	{
 		serializeImpl(p);
@@ -212,3 +130,85 @@ public:
 		return reinterpret_cast<T *>(deserializeImpl(sizeof(T), filePath));
 	};
 };
+
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(TransformComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(VisibleComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(LightComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(CameraComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(InputComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(EnvironmentCaptureComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(MeshDataComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(MaterialDataComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(TextureDataComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(GLMeshDataComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(GLTextureDataComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(GLFrameBufferComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(GLShaderProgramComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(GLRenderPassComponent);
+#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(DXMeshDataComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(DXTextureDataComponent);
+#endif
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(PhysicsDataComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(Vertex);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(Index);
+
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(TransformComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(VisibleComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(LightComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(CameraComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(InputComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(EnvironmentCaptureComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(MeshDataComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(MaterialDataComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(TextureDataComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(GLMeshDataComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(GLTextureDataComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(GLFrameBufferComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(GLShaderProgramComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(GLRenderPassComponent);
+#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(DXMeshDataComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(DXTextureDataComponent);
+#endif
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(PhysicsDataComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(Vertex);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(Index);

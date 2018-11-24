@@ -63,41 +63,6 @@ public:
 		return new T();
 	};
 
-	template <> TransformComponent * get(EntityID parentEntity)
-	{
-		return getComponentInterfaceCall(TransformComponent, parentEntity);
-	};
-
-	template <> VisibleComponent * get(EntityID parentEntity)
-	{
-		return getComponentInterfaceCall(VisibleComponent, parentEntity);
-	};
-
-	template <> LightComponent * get(EntityID parentEntity)
-	{
-		return getComponentInterfaceCall(LightComponent, parentEntity);
-	};
-
-	template <> CameraComponent * get(EntityID parentEntity)
-	{
-		return getComponentInterfaceCall(CameraComponent, parentEntity);
-	};
-
-	template <> InputComponent * get(EntityID parentEntity)
-	{
-		return getComponentInterfaceCall(InputComponent, parentEntity);
-	};
-
-	template <> EnvironmentCaptureComponent * get(EntityID parentEntity)
-	{
-		return getComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity);
-	};
-
-	template <> MaterialDataComponent * get(EntityID parentEntity)
-	{
-		return getComponentInterfaceCall(MaterialDataComponent, parentEntity);
-	};
-
 	INNO_SYSTEM_EXPORT virtual std::string getGameName() = 0;
 	INNO_SYSTEM_EXPORT virtual TransformComponent* getRootTransformComponent() = 0;
 
@@ -107,4 +72,39 @@ public:
 	INNO_SYSTEM_EXPORT virtual void saveComponentsCapture() = 0;
 
 	IMemorySystem* g_pMemorySystem;
+};
+
+template <> inline TransformComponent * IGameSystem::get(EntityID parentEntity)
+{
+	return getComponentInterfaceCall(TransformComponent, parentEntity);
+};
+
+template <> inline VisibleComponent * IGameSystem::get(EntityID parentEntity)
+{
+	return getComponentInterfaceCall(VisibleComponent, parentEntity);
+};
+
+template <> inline LightComponent * IGameSystem::get(EntityID parentEntity)
+{
+	return getComponentInterfaceCall(LightComponent, parentEntity);
+};
+
+template <> inline CameraComponent * IGameSystem::get(EntityID parentEntity)
+{
+	return getComponentInterfaceCall(CameraComponent, parentEntity);
+};
+
+template <> inline InputComponent * IGameSystem::get(EntityID parentEntity)
+{
+	return getComponentInterfaceCall(InputComponent, parentEntity);
+};
+
+template <> inline EnvironmentCaptureComponent * IGameSystem::get(EntityID parentEntity)
+{
+	return getComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity);
+};
+
+template <> inline MaterialDataComponent * IGameSystem::get(EntityID parentEntity)
+{
+	return getComponentInterfaceCall(MaterialDataComponent, parentEntity);
 };

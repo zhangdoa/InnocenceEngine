@@ -9,11 +9,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 {
 	AllocConsole();
 	freopen("CONOUT$", "w+", stdout);
+	if (!InnoApplication::setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
 #else
 int main(int argc, char *argv[])
 {
+	if (!InnoApplication::setup(nullptr, nullptr, nullptr, 0))
 #endif
-	if (!InnoApplication::setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
 	{
 		return 0;
 	}
