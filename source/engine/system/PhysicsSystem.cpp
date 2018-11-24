@@ -13,7 +13,7 @@ namespace InnoPhysicsSystemNS
 {
 	void generateProjectionMatrix(CameraComponent* cameraComponent);
 	void generateRayOfEye(CameraComponent* cameraComponent);
-	void generateFrustumVertices(CameraComponent* cameraComponent);
+	std::vector<Vertex> generateFrustumVertices(CameraComponent* cameraComponent);
 	void generateLightComponentRadius(LightComponent* lightComponent);
 
 	std::vector<Vertex> generateNDC();
@@ -21,7 +21,6 @@ namespace InnoPhysicsSystemNS
 	MeshDataComponent* generateMeshDataComponent(AABB rhs);
 
 	void generateAABB(LightComponent* lightComponent);
-	void generateAABB(CameraComponent* cameraComponent);
 	AABB generateAABB(const std::vector<Vertex>& vertices);
 	AABB generateAABB(vec4 boundMax, vec4 boundMin);
 	std::vector<Vertex> generateAABBVertices(vec4 boundMax, vec4 boundMin);
@@ -75,11 +74,8 @@ void InnoPhysicsSystemNS::generateRayOfEye(CameraComponent * cameraComponent)
 		);
 }
 
-void InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent * cameraComponent)
+std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent * cameraComponent)
 {
-	cameraComponent->m_frustumVertices.clear();
-	cameraComponent->m_frustumIndices.clear();
-
 	auto l_NDC = generateNDC();
 	auto l_pCamera = cameraComponent->m_projectionMatrix;
 
@@ -122,20 +118,9 @@ void InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent * cameraCompon
 	}
 
 	// near clip plane first
-	auto l_containerSize = l_NDC.size();
-	cameraComponent->m_frustumVertices.reserve(l_containerSize);
+	std::reverse(l_NDC.begin(), l_NDC.end());
 
-	for (size_t i = 0; i < l_containerSize; i++)
-	{
-		cameraComponent->m_frustumVertices.emplace_back(l_NDC[l_NDC.size() -  1 - i]);
-	}
-
-	cameraComponent->m_frustumIndices = { 0, 1, 3, 1, 2, 3,
-		4, 5, 0, 5, 1, 0,
-		7, 6, 4, 6, 5, 4,
-		3, 2, 7, 2, 6 ,7,
-		4, 0, 7, 0, 3, 7,
-		1, 5, 2, 5, 6, 2 };
+	return std::move(l_NDC);
 }
 
 void InnoPhysicsSystemNS::generateLightComponentRadius(LightComponent * lightComponent)
@@ -182,73 +167,9 @@ void InnoPhysicsSystemNS::generateAABB(LightComponent * lightComponent)
 	lightComponent->m_AABBs.clear();
 	lightComponent->m_projectionMatrices.clear();
 
-	//1.translate the big frustum to light space
+	//1. get frustum vertices
 	auto l_camera = g_GameSystemSingletonComponent->m_CameraComponents[0];
-
-	auto l_center = l_camera->m_AABB.m_center;
-	auto l_radius = l_camera->m_AABB.m_sphereRadius;
-
-	//1.1 fit the bounding box to scene
-	// @TODO: better fit to minimum overlapped volume
-	auto l_cameraAABBMax = l_camera->m_AABB.m_boundMax;
-	auto l_cameraAABBMin = l_camera->m_AABB.m_boundMin;
-
-	vec4 l_totalMax;
-	vec4 l_totalMin;
-
-	l_totalMax = l_center + l_radius;
-	l_totalMin = l_center - l_radius;
-	//if (l_cameraAABBMax.x < m_sceneBoundMax.x)
-	//{
-	//	l_totalMax.x = m_sceneBoundMax.x;
-	//}
-	//else
-	//{
-	//	l_totalMax.x = l_cameraAABBMax.x;
-	//}
-	//if (l_cameraAABBMax.y < m_sceneBoundMax.y)
-	//{
-	//	l_totalMax.y = m_sceneBoundMax.y;
-	//}
-	//else
-	//{
-	//	l_totalMax.y = l_cameraAABBMax.y;
-	//}
-	//if (l_cameraAABBMax.z < m_sceneBoundMax.z)
-	//{
-	//	l_totalMax.z = m_sceneBoundMax.z;
-	//}
-	//else
-	//{
-	//	l_totalMax.z = l_cameraAABBMax.z;
-	//}
-
-	//if (l_cameraAABBMin.x > m_sceneBoundMin.x)
-	//{
-	//	l_totalMin.x = m_sceneBoundMin.x;
-	//}
-	//else
-	//{
-	//	l_totalMin.x = l_cameraAABBMin.x;
-	//}
-	//if (l_cameraAABBMin.y > m_sceneBoundMin.y)
-	//{
-	//	l_totalMin.y = m_sceneBoundMin.y;
-	//}
-	//else
-	//{
-	//	l_totalMin.y = l_cameraAABBMin.y;
-	//}
-	//if (l_cameraAABBMin.z > m_sceneBoundMin.z)
-	//{
-	//	l_totalMin.z = m_sceneBoundMin.z;
-	//}
-	//else
-	//{
-	//	l_totalMin.z = l_cameraAABBMin.z;
-	//}
-
-	auto l_frustumVertices = generateAABBVertices(l_totalMax, l_totalMin);
+	auto l_frustumVertices = generateFrustumVertices(l_camera);
 
 	//2.calculate splited planes' corners
 	std::vector<vec4> l_frustumsCornerPos;
@@ -260,11 +181,11 @@ void InnoPhysicsSystemNS::generateAABB(LightComponent * lightComponent)
 		l_frustumsCornerPos.emplace_back(l_frustumVertices[i].m_pos);
 	}
 
-	//2.2 other 16 corner based on e^2i / e^8
-
+	auto l_splitFactor = 1.3f;
+	//2.2 other 16 corner based on e^(2 * (i + 1)) / e^8
 	for (size_t i = 0; i < 4; i++)
 	{
-		auto scaleFactor = std::exp(((float)i + 1.0f) * 2.0f / E<float>) / std::exp(8.0f / E<float>);
+		auto scaleFactor = std::exp(((float)i + 1.0f) * l_splitFactor) / std::exp(4.0f * l_splitFactor);
 		for (size_t j = 0; j < 4; j++)
 		{
 			auto l_splitedPlaneCornerPos = l_frustumVertices[j].m_pos + (l_frustumVertices[j + 4].m_pos - l_frustumVertices[j].m_pos) * scaleFactor;
@@ -286,22 +207,19 @@ void InnoPhysicsSystemNS::generateAABB(LightComponent * lightComponent)
 #endif	
 	}
 
-	//3.assemble splited frustums
+	//2.4 assemble splited frustum corners
 	std::vector<Vertex> l_frustumsCornerVertices;
-	auto l_NDC = generateNDC();
-
-	for (size_t i = 0; i < 4; i++)
-	{
-		l_frustumsCornerVertices.insert(l_frustumsCornerVertices.end(), l_NDC.begin(), l_NDC.end());
-	}
+	l_frustumsCornerVertices.reserve(32);
 	for (size_t i = 0; i < 4; i++)
 	{
 		for (size_t j = 0; j < 8; j++)
 		{
+			l_frustumsCornerVertices.emplace_back();
 			l_frustumsCornerVertices[i * 8 + j].m_pos = l_frustumsCornerPos[i * 4 + j];
 		}
 	}
 
+	//2.5 assemble splitted frustums
 	std::vector<std::vector<Vertex>> l_splitedFrustums;
 	l_splitedFrustums.reserve(4);
 
@@ -310,31 +228,35 @@ void InnoPhysicsSystemNS::generateAABB(LightComponent * lightComponent)
 		l_splitedFrustums.emplace_back(std::vector<Vertex>(l_frustumsCornerVertices.begin() + i * 8, l_frustumsCornerVertices.begin() + 8 + i * 8));
 	}
 
-	//4.generate AABBs for the splited frustums
-	lightComponent->m_AABBs.reserve(4);
-
+	//3 generate AABBs for the splited frustums
+	std::vector<AABB> l_AABBs;
+	l_AABBs.reserve(4);
 	for (size_t i = 0; i < 4; i++)
 	{
-		lightComponent->m_AABBs.emplace_back(generateAABB(l_splitedFrustums[i]));
+		l_AABBs.emplace_back(generateAABB(l_splitedFrustums[i]));
 	}
 
+	//3.1 extend AABB to include the sphere
+	for (size_t i = 0; i < 4; i++)
+	{
+		auto l_maxExtendFactor = (l_AABBs[i].m_boundMax - l_AABBs[i].m_center) * l_AABBs[i].m_sphereRadius;
+		auto l_minExtendFactor = (l_AABBs[i].m_boundMin - l_AABBs[i].m_center) * l_AABBs[i].m_sphereRadius;
+		l_AABBs[i] = generateAABB(l_AABBs[i].m_boundMax + l_maxExtendFactor, l_AABBs[i].m_boundMin + l_minExtendFactor);
+	}
+
+	lightComponent->m_AABBs = std::move(l_AABBs);
+
+	//4. generate projection matrices
 	lightComponent->m_projectionMatrices.reserve(4);
 
 	for (size_t i = 0; i < 4; i++)
 	{
 		vec4 l_maxExtents = lightComponent->m_AABBs[i].m_boundMax;
 		vec4 l_minExtents = lightComponent->m_AABBs[i].m_boundMin;
-		vec4 l_center = lightComponent->m_AABBs[i].m_center;
 
 		mat4 p = InnoMath::generateToOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
 		lightComponent->m_projectionMatrices.emplace_back(p);
 	}
-}
-
-void InnoPhysicsSystemNS::generateAABB(CameraComponent* cameraComponent)
-{
-	auto l_frustumCorners = cameraComponent->m_frustumVertices;
-	cameraComponent->m_AABB = generateAABB(l_frustumCorners);
 }
 
 AABB InnoPhysicsSystemNS::generateAABB(const std::vector<Vertex>& vertices)
@@ -504,8 +426,6 @@ void InnoPhysicsSystemNS::updateCameraComponents()
 	{
 		generateProjectionMatrix(i);
 		generateRayOfEye(i);
-		generateFrustumVertices(i);
-		generateAABB(i);
 	}
 }
 
@@ -568,7 +488,7 @@ void InnoPhysicsSystemNS::updateCulling()
 		l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_mouseRay.m_direction = g_WindowSystemSingletonComponent->m_mousePositionInWorldSpace;
 
-		auto l_cameraAABB = g_GameSystemSingletonComponent->m_CameraComponents[0]->m_AABB;
+		//auto l_cameraAABB = g_GameSystemSingletonComponent->m_CameraComponents[0]->m_AABB;
 		auto l_eyeRay = g_GameSystemSingletonComponent->m_CameraComponents[0]->m_rayOfEye;
 		
 		for (auto visibleComponent : m_initializedVisibleComponents)
@@ -591,8 +511,8 @@ void InnoPhysicsSystemNS::updateCulling()
 							l_AABBWireframeDataPack.MDC = physicsData.wireframeMDC;
 							g_PhysicsSystemSingletonComponent->m_AABBWireframeDataPack.emplace_back(l_AABBWireframeDataPack);
 						}
-						if (InnoMath::intersectCheck(l_AABBws, l_cameraAABB))
-						{
+						//if (InnoMath::intersectCheck(l_AABBws, l_cameraAABB))
+						//{
 							cullingDataPack l_cullingDataPack;
 							l_cullingDataPack.m = l_globalTm;
 							l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
@@ -601,7 +521,7 @@ void InnoPhysicsSystemNS::updateCulling()
 							l_cullingDataPack.MDCEntityID = physicsData.MDC->m_parentEntity;
 							l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
 							g_PhysicsSystemSingletonComponent->m_cullingDataPack.emplace_back(l_cullingDataPack);
-						}
+						//}
 
 						updateSceneAABB(l_AABBws);
 					}

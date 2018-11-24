@@ -1744,7 +1744,15 @@ bool GLRenderingSystem::update()
 	}
 	GLRenderingSystemNS::updateShadowRenderPass();
 	GLRenderingSystemNS::updateGeometryRenderPass();
-	GLRenderingSystemNS::updateTerrainRenderPass();
+	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_drawTerrain)
+	{
+		GLRenderingSystemNS::updateTerrainRenderPass();
+	}
+	else
+	{
+		GLRenderingSystemNS::f_cleanFBC(GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC);
+	}
+
 	GLRenderingSystemNS::updateLightRenderPass();
 	GLRenderingSystemNS::updateFinalRenderPass();
 
@@ -3119,7 +3127,14 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 
 	updateBillboardPass();
 
-	updateDebuggerPass();
+	if (g_RenderingSystemSingletonComponent->m_drawOverlapWireframe)
+	{
+		updateDebuggerPass();
+	}
+	else
+	{
+		f_cleanFBC(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLFBC);
+	}
 
 	updateFinalBlendPass();
 }

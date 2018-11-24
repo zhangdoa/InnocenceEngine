@@ -628,29 +628,6 @@ void InnoAssetSystemNS::loadDefaultAssets()
 
 void InnoAssetSystemNS::loadAssetsForComponents()
 {
-	//for (auto& l_cameraComponent : InnoAssetSystemNS::g_GameSystemSingletonComponent->m_CameraComponents)
-	//{
-	//	if (l_cameraComponent->m_drawAABB)
-	//	{
-	//		auto l_Mesh = InnoAssetSystemNS::addMeshDataComponent();
-	//		l_Mesh->m_vertices = l_cameraComponent->m_AABB.m_vertices;
-	//		l_Mesh->m_indices = l_cameraComponent->m_AABB.m_indices;
-	//		l_Mesh->m_indicesSize = l_Mesh->m_indices.size();
-	//		l_Mesh->m_objectStatus = objectStatus::STANDBY;
-	//		g_AssetSystemSingletonComponent->m_uninitializedMeshComponents.push(l_Mesh);
-	//		l_cameraComponent->m_AABBMeshID = l_Mesh->m_parentEntity;
-	//	}
-	//	if (l_cameraComponent->m_drawFrustum)
-	//	{
-	//		auto l_Mesh = InnoAssetSystemNS::addMeshDataComponent();
-	//		l_Mesh->m_vertices = l_cameraComponent->m_frustumVertices;
-	//		l_Mesh->m_indices = l_cameraComponent->m_frustumIndices;
-	//		l_Mesh->m_indicesSize = l_Mesh->m_indices.size();
-	//		l_Mesh->m_objectStatus = objectStatus::STANDBY;
-	//		g_AssetSystemSingletonComponent->m_uninitializedMeshComponents.push(l_Mesh);
-	//		l_cameraComponent->m_FrustumMeshID = l_Mesh->m_parentEntity;
-	//	}
-	//}
 	//for (auto& l_lightComponent : InnoAssetSystemNS::g_GameSystemSingletonComponent->m_LightComponents)
 	//{
 	//	if (l_lightComponent->m_drawAABB)

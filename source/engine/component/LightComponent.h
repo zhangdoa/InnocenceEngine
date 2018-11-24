@@ -26,9 +26,7 @@ public:
 	vec4 m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	bool m_drawAABB = false;
-
 	std::vector<AABB> m_AABBs;
-	std::vector<EntityID> m_AABBMeshIDs;
 
 	std::vector<mat4> m_projectionMatrices;
 };

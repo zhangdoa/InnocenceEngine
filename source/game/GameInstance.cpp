@@ -24,22 +24,18 @@ namespace PlayerComponentCollection
 	std::function<void()> f_allowMove;
 	std::function<void()> f_forbidMove;
 
+	std::function<void()> f_speedUp;
+	std::function<void()> f_speedDown;
+
 	std::function<void(float)> f_rotateAroundPositiveYAxis;
 	std::function<void(float)> f_rotateAroundRightAxis;
 
+	float m_initialSpeed = 0;
 	float m_moveSpeed = 0;
 	float m_rotateSpeed = 0;
 	bool m_canMove = false;
 
 	void move(vec4 direction, float length);
-
-	void moveForward();
-	void moveBackward();
-	void moveLeft();
-	void moveRight();
-
-	void allowMove();
-	void forbidMove();
 
 	void rotateAroundPositiveYAxis(float offset);
 	void rotateAroundRightAxis(float offset);
@@ -60,17 +56,21 @@ void PlayerComponentCollection::setup()
 	m_cameraComponent->m_drawFrustum = false;
 	m_cameraComponent->m_drawAABB = false;
 
-	m_moveSpeed = 0.05f;
+	m_initialSpeed = 0.05f;
+	m_moveSpeed = m_initialSpeed;
 	m_rotateSpeed = 4.0f;
 	m_canMove = false;
 
-	f_moveForward = std::bind(&PlayerComponentCollection::moveForward);
-	f_moveBackward = std::bind(&PlayerComponentCollection::moveBackward);
-	f_moveLeft = std::bind(&PlayerComponentCollection::moveLeft);
-	f_moveRight = std::bind(&PlayerComponentCollection::moveRight);
+	f_moveForward = [&]() { move(InnoMath::getDirection(direction::FORWARD, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+	f_moveBackward = [&]() { move(InnoMath::getDirection(direction::BACKWARD, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+	f_moveLeft = [&]() { move(InnoMath::getDirection(direction::LEFT, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+	f_moveRight = [&]() { move(InnoMath::getDirection(direction::RIGHT, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
 
-	f_allowMove = std::bind(&PlayerComponentCollection::allowMove);
-	f_forbidMove = std::bind(&PlayerComponentCollection::forbidMove);
+	f_speedUp = [&]() { m_moveSpeed = m_initialSpeed * 10.0f; };
+	f_speedDown = [&]() { m_moveSpeed = m_initialSpeed; };
+
+	f_allowMove = [&]() { m_canMove = true; };
+	f_forbidMove = [&]() { m_canMove = false; };
 
 	f_rotateAroundPositiveYAxis = std::bind(&PlayerComponentCollection::rotateAroundPositiveYAxis, std::placeholders::_1);
 	f_rotateAroundRightAxis = std::bind(&PlayerComponentCollection::rotateAroundRightAxis, std::placeholders::_1);
@@ -84,36 +84,6 @@ void PlayerComponentCollection::move(vec4 direction, float length)
 	}
 }
 
-void PlayerComponentCollection::moveForward()
-{
-	move(InnoMath::getDirection(direction::FORWARD, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
-}
-
-void PlayerComponentCollection::moveBackward()
-{
-	move(InnoMath::getDirection(direction::BACKWARD, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
-}
-
-void PlayerComponentCollection::moveLeft()
-{
-	move(InnoMath::getDirection(direction::LEFT, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
-}
-
-void PlayerComponentCollection::moveRight()
-{
-	move(InnoMath::getDirection(direction::RIGHT, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed);
-}
-
-void PlayerComponentCollection::allowMove()
-{
-	m_canMove = true;
-}
-
-void PlayerComponentCollection::forbidMove()
-{
-	m_canMove = false;
-}
-
 void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
 {
 	if (m_canMove)
@@ -123,7 +93,7 @@ void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
 			vec4(0.0f, 1.0f, 0.0f, 0.0f),
 			(float)((-offset * m_rotateSpeed) / 180.0f)* PI<float>
 		);
-		m_transformComponent->m_localTransformVector.m_rot = dest_rot.slerp(m_transformComponent->m_localTransformVector.m_rot, dest_rot, 0.5);			
+		m_transformComponent->m_localTransformVector.m_rot = dest_rot.slerp(m_transformComponent->m_localTransformVector.m_rot, dest_rot, 0.5);
 	}
 }
 
@@ -207,6 +177,10 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_W, buttonStatus::PRESSED }, &PlayerComponentCollection::f_moveBackward);
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_A, buttonStatus::PRESSED }, &PlayerComponentCollection::f_moveLeft);
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_D, buttonStatus::PRESSED }, &PlayerComponentCollection::f_moveRight);
+	
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_SPACE, buttonStatus::PRESSED }, &PlayerComponentCollection::f_speedUp);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_KEY_SPACE, buttonStatus::RELEASED }, &PlayerComponentCollection::f_speedDown);
+
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_MOUSE_BUTTON_RIGHT, buttonStatus::PRESSED }, &PlayerComponentCollection::f_allowMove);
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, button{ INNO_MOUSE_BUTTON_RIGHT, buttonStatus::RELEASED }, &PlayerComponentCollection::f_forbidMove);
 	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(PlayerComponentCollection::m_inputComponent, 0, &PlayerComponentCollection::f_rotateAroundPositiveYAxis);
@@ -249,7 +223,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	);
 	GameInstanceNS::m_landscapeVisibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_landscapeEntity);
 	GameInstanceNS::m_landscapeVisibleComponent->m_visiblilityType = visiblilityType::STATIC_MESH;
-	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUSTOM;
+	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = meshShapeType::CUBE;
 
 	GameInstanceNS::setupLights();
 	GameInstanceNS::setupSpheres();
@@ -489,5 +463,5 @@ void GameInstanceNS::updateSpheres(float seed)
 		f_setMRA(m_sphereVisibleComponents[i + 1]->m_modelMap, l_albedo2, vec4(l_MRAFactor2, l_MRAFactor1, l_MRAFactor3, 0.0f));
 		f_setMRA(m_sphereVisibleComponents[i + 2]->m_modelMap, l_albedo3, vec4(l_MRAFactor3, l_MRAFactor2, l_MRAFactor1, 0.0f));
 		f_setMRA(m_sphereVisibleComponents[i + 3]->m_modelMap, l_albedo4, vec4(l_MRAFactor3, l_MRAFactor1, l_MRAFactor2, 0.0f));
-	}	
+	}
 }

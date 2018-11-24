@@ -21,6 +21,8 @@ struct renderingConfig
 	bool useTAA = false;
 	bool useBloom = false;
 	bool useZoom = false;
+	bool drawTerrain = false;
+	bool drawOverlapWireframe = false;
 	bool showRenderPassResult = false;
 };
 
@@ -121,12 +123,16 @@ void ImGuiWrapper::update()
 		ImGui::Checkbox("Use TAA", &l_renderingConfig.useTAA);
 		ImGui::Checkbox("Use Bloom", &l_renderingConfig.useBloom);
 		ImGui::Checkbox("Use zoom", &l_renderingConfig.useZoom);
+		ImGui::Checkbox("Draw terrain", &l_renderingConfig.drawTerrain);
+		ImGui::Checkbox("Draw overlap wireframe", &l_renderingConfig.drawOverlapWireframe);		
 		ImGui::Checkbox("Show render pass result", &l_renderingConfig.showRenderPassResult);
 		ImGui::End();
 	}
 
 	RenderingSystemSingletonComponent::getInstance().m_useTAA = l_renderingConfig.useTAA;
 	RenderingSystemSingletonComponent::getInstance().m_useBloom = l_renderingConfig.useBloom;
+	RenderingSystemSingletonComponent::getInstance().m_drawTerrain = l_renderingConfig.drawTerrain;
+	RenderingSystemSingletonComponent::getInstance().m_drawOverlapWireframe = l_renderingConfig.drawOverlapWireframe;
 
 	if(l_renderingConfig.showRenderPassResult)
 	{		
@@ -274,17 +280,21 @@ void ImGuiWrapper::update()
 		auto l_shadowPassWindowSize = ImVec2(128.0, 128.0);
 		ImGui::Begin("Shadow Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::BeginChild("Shadow Pass Depth Buffer 0", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+		ImGui::Text("Depth Buffer 0");
 		ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[0]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 		ImGui::SameLine();
 		ImGui::BeginChild("Shadow Pass Depth Buffer 1", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+		ImGui::Text("Depth Buffer 1");
 		ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[1]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 		ImGui::BeginChild("Shadow Pass Depth Buffer 2", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+		ImGui::Text("Depth Buffer 2");
 		ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[2]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 		ImGui::SameLine();
 		ImGui::BeginChild("Shadow Pass Depth Buffer 3", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+		ImGui::Text("Depth Buffer 3");
 		ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[3]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 		ImGui::End();

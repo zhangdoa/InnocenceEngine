@@ -39,7 +39,9 @@ public:
 	int m_MSAAdepth = 4;
 	bool m_useTAA = false;
 	bool m_useBloom = false;
-
+	bool m_drawTerrain = false;
+	bool m_drawOverlapWireframe = false;
+	
 	std::vector<renderDataPack> m_renderDataPack;
 
 private:
