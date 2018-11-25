@@ -79,7 +79,8 @@ mat4 m_CamRTP;
 
 struct GPassCBufferData
 {
-	mat4 mvp;
+	mat4 m;
+	mat4 vp;
 	mat4 m_normalMat;
 };
 
@@ -599,7 +600,7 @@ bool  DXRenderingSystemNS::initializeDefaultAssets()
 	std::function<void(MeshDataComponent* MDC)> f_convertCoordinateFromGLtoDX = [&](MeshDataComponent* MDC) {
 		for (auto& i : MDC->m_vertices)
 		{
-			i.m_texCoord.y = 1.0f - i.m_texCoord.y;
+			i.m_pos.z = -i.m_pos.z;		
 		}
 	};
 
@@ -1660,7 +1661,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 	DXRenderingSystemNS::m_CamRTP = l_p * l_r * l_t;
 
 	m_LPassCBufferData.viewPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-	m_LPassCBufferData.lightDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	m_LPassCBufferData.lightDir = InnoMath::getDirection(direction::FORWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 
 	m_LPassCBufferData.color = l_directionalLight->m_color;
 
@@ -1673,7 +1674,8 @@ void DXRenderingSystemNS::prepareRenderingData()
 
 			l_renderingDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
 			l_renderingDataPack.m_meshDrawMethod = l_renderDataPack.MDC->m_meshDrawMethod;
-			l_renderingDataPack.GPassCBuffer.mvp = DXRenderingSystemNS::m_CamRTP *l_renderDataPack.m;
+			l_renderingDataPack.GPassCBuffer.m = l_renderDataPack.m;
+			l_renderingDataPack.GPassCBuffer.vp = DXRenderingSystemNS::m_CamRTP;
 			l_renderingDataPack.GPassCBuffer.m_normalMat = l_renderDataPack.normalMat;
 			l_renderingDataPack.DXMDC = l_DXMDC->second;
 			// any normal?

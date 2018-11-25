@@ -111,6 +111,6 @@ PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	
   float3 finalColor = Frostbite_CalcDirectionalLightRadiance(albedo, metallic, roughness, normalWS, posWS, F0);
 		
-	output.uni_lightPassRT0 = float4(finalColor, 1.0f);
+	output.uni_lightPassRT0 = float4(finalColor, 1.0);
 	return output;
 }

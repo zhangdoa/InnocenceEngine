@@ -1907,36 +1907,88 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
 
-	activateShaderProgram(GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePassSPC);
-	updateUniform(GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p, l_p);
-
-	// activate equiretangular texture and remap equiretangular texture to cubemap
 	auto l_capturePassTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTDC;
 	auto l_capturePassGLTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePassGLTDC;
 
-	auto l_equiretangularTDC = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_EnvironmentCaptureComponents[0]->m_TDC;
-	if (l_equiretangularTDC)
+	if (0)
 	{
-		auto l_equiretangularGLTDC = getGLTextureDataComponent(l_equiretangularTDC->m_parentEntity);
-		if (l_equiretangularGLTDC)
-		{
-			if (l_equiretangularTDC->m_objectStatus == ObjectStatus::ALIVE && l_equiretangularGLTDC->m_objectStatus == ObjectStatus::ALIVE)
-			{
-				GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_shouldUpdateEnvironmentMap = false;
+		activateShaderProgram(GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePassSPC);
+		updateUniform(GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p, l_p);
 
-				activate2DTexture(l_equiretangularGLTDC, 0);
-				for (unsigned int i = 0; i < 6; ++i)
+		// activate equiretangular texture and remap equiretangular texture to cubemaps
+		auto l_equiretangularTDC = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_EnvironmentCaptureComponents[0]->m_TDC;
+		if (l_equiretangularTDC)
+		{
+			auto l_equiretangularGLTDC = getGLTextureDataComponent(l_equiretangularTDC->m_parentEntity);
+			if (l_equiretangularGLTDC)
+			{
+				if (l_equiretangularTDC->m_objectStatus == ObjectStatus::ALIVE && l_equiretangularGLTDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
-					updateUniform(GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r, l_v[i]);
-					attachTextureToFramebuffer(l_capturePassTDC, l_capturePassGLTDC, l_FBC, 0, i, 0);
-					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-					drawMesh(l_MDC);
+					GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_shouldUpdateEnvironmentMap = false;
+
+					activate2DTexture(l_equiretangularGLTDC, 0);
+					for (unsigned int i = 0; i < 6; ++i)
+					{
+						updateUniform(GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_r, l_v[i]);
+						attachTextureToFramebuffer(l_capturePassTDC, l_capturePassGLTDC, l_FBC, 0, i, 0);
+						glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+						drawMesh(l_MDC);
+					}
+					glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 				}
-				glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 			}
 		}
 	}
+	else
+	{
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
 
+		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
+		mat4 l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 10.0f);
+
+		activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC);
+
+		if (g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
+		{
+			auto l_mainCamera = g_GameSystemSingletonComponent->m_CameraComponents[0];
+
+			updateUniform(
+				GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p,
+				l_p);
+
+			updateUniform(
+				GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize,
+				(float)rtSizeX, (float)rtSizeY);
+
+			auto l_eyePos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_pos;
+			updateUniform(
+				GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos,
+				l_eyePos.x, l_eyePos.y, l_eyePos.z);
+
+			auto l_lightDir = InnoMath::getDirection(
+				direction::BACKWARD,
+				g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemSingletonComponent->m_LightComponents[0]->m_parentEntity)->m_globalTransformVector.m_rot
+			);
+			updateUniform(
+				GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
+				l_lightDir.x, l_lightDir.y, l_lightDir.z);
+
+			for (unsigned int i = 0; i < 6; ++i)
+			{
+				updateUniform(GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r, l_v[i]);
+				attachTextureToFramebuffer(l_capturePassTDC, l_capturePassGLTDC, l_FBC, 0, i, 0);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				drawMesh(l_MDC);
+			}
+			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+			GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_shouldUpdateEnvironmentMap = false;
+		}
+
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+	}
 	// draw environment convolution texture
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
 	glViewport(0, 0, 128, 128);

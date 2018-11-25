@@ -372,7 +372,7 @@ void main()
 
 		vec3 R = reflect(-V, N);
 
-		//Lo += imageBasedLight(N, NdotV, R, Albedo, Metallic, Roughness, AO, F0);
+		Lo += imageBasedLight(N, NdotV, R, Albedo, Metallic, Roughness, AO, F0);
 	}
 	if (uni_drawCSMSplitedArea)
 	{

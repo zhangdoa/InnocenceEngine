@@ -15,16 +15,15 @@ void main()
     }
     else
     {
-	    vec4 Color = vec4(0.0);
-	    vec2 TexCoord = thefrag_TexCoord;
-	    Color += texture(uni_TAAPassRT0, TexCoord) * 0.6;
-	    TexCoord -= MotionVector;
-	    Color += texture(uni_TAAPassRT0, TexCoord) * 0.2;
-	    TexCoord -= MotionVector;
-	    Color += texture(uni_TAAPassRT0, TexCoord) * 0.12;
-	    TexCoord -= MotionVector;
-	    Color += texture(uni_TAAPassRT0, TexCoord) * 0.08;
+       vec4 result = texture(uni_TAAPassRT0, thefrag_TexCoord);
+  		 for (int i = 1; i < 8; ++i) {
+     	 vec2 offset = MotionVector * (float(i) / float(8 - 1));
+      result += texture(uni_TAAPassRT0, thefrag_TexCoord + offset);
+   		}
+ 
+   		result /= float(8);
+   		
 	    //use alpha channel as mask
-		  uni_motionBlurPassRT0 = vec4(Color.rgb, 1.0);
+		  uni_motionBlurPassRT0 = vec4(result.rgb, 1.0);
     }
 }

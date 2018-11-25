@@ -303,7 +303,7 @@ void ImGuiWrapper::update()
 		ImGui::Begin("BRDF lookup table", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		{
 			ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC->m_TAO), l_renderTargetSize);
+			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC->m_TAO), l_BRDFLUT);
 		}
 		ImGui::End();
 	}

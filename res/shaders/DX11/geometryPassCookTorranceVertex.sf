@@ -2,7 +2,8 @@
 
 cbuffer MatrixBuffer
 {
-    matrix mvp;
+    matrix m;
+    matrix vp;
     matrix m_normalMat;
 };
 
@@ -17,7 +18,8 @@ struct VertexInputType
 
 struct PixelInputType
 {
-    float4 thefrag_WorldSpacePos : SV_POSITION;
+    float4 thefrag_ClipSpacePos : SV_POSITION;
+    float3 thefrag_WorldSpacePos : POSITION;
     float2 thefrag_TexCoord : TEXCOORD;
     float3 thefrag_Normal :NORMAL;
 };
@@ -25,8 +27,10 @@ struct PixelInputType
 PixelInputType geometryPassCookTorranceVertex(VertexInputType input)
 {
 		PixelInputType output;
-
-    output.thefrag_WorldSpacePos = mul(input.position, mvp);
+		
+    float4 thefrag_WorldSpacePos = mul(input.position, m);
+    output.thefrag_ClipSpacePos = mul(thefrag_WorldSpacePos, vp);
+    output.thefrag_WorldSpacePos = thefrag_WorldSpacePos.xyz;
     output.thefrag_TexCoord = input.texcoord;
     output.thefrag_Normal = mul(input.normal, m_normalMat).xyz;
     return output;

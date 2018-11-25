@@ -44,11 +44,11 @@ namespace PlayerComponentCollection
 void PlayerComponentCollection::setup()
 {
 	m_transformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 3.0f, 1.0f);
-	m_transformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+	/*m_transformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
 		m_transformComponent->m_localTransformVector.m_rot,
 		vec4(0.0f, 1.0f, 0.0f, 0.0f),
 		90.0f
-	);
+	);*/
 	m_cameraComponent->m_FOVX = 60.0f;
 	m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
 	m_cameraComponent->m_zNear = 0.1f;
@@ -225,9 +225,6 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_landscapeVisibleComponent->m_visiblilityType = VisiblilityType::STATIC_MESH;
 	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = MeshShapeType::CUBE;
 
-	GameInstanceNS::setupLights();
-	GameInstanceNS::setupSpheres();
-
 	//setup pawn 1
 	GameInstanceNS::m_pawnEntity1 = InnoMath::createEntityID();
 
@@ -256,6 +253,9 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	GameInstanceNS::m_pawnVisibleComponent2->m_drawAABB = true;
 	//GameInstanceNS::m_pawnVisibleComponent2->m_modelFileName = "Orb//Orb.obj";
+
+	GameInstanceNS::setupLights();
+	GameInstanceNS::setupSpheres();
 
 	GameInstanceNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
@@ -318,10 +318,10 @@ void GameInstanceNS::setupSpheres()
 		m_sphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_sphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_sphereEntitys[i]);
 		m_sphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::STATIC_MESH;
-		m_sphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::CUSTOM;
+		m_sphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::CUBE;
 		m_sphereVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
 		m_sphereVisibleComponents[i]->m_drawAABB = true;
-		m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
+		//m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 	}
 	for (unsigned int i = 0; i < sphereMatrixDim; i++)
 	{
@@ -407,7 +407,7 @@ void GameInstanceNS::updateLights(float seed)
 		f_setMeshColor(m_pointLightVisibleComponents[i + 1]->m_modelMap, l_color2);
 		f_setMeshColor(m_pointLightVisibleComponents[i + 2]->m_modelMap, l_color3);
 		f_setMeshColor(m_pointLightVisibleComponents[i + 3]->m_modelMap, l_color4);
-	}
+	}	
 }
 
 void GameInstanceNS::updateSpheres(float seed)
@@ -463,5 +463,7 @@ void GameInstanceNS::updateSpheres(float seed)
 		f_setMRA(m_sphereVisibleComponents[i + 1]->m_modelMap, l_albedo2, vec4(l_MRAFactor2, l_MRAFactor1, l_MRAFactor3, 0.0f));
 		f_setMRA(m_sphereVisibleComponents[i + 2]->m_modelMap, l_albedo3, vec4(l_MRAFactor3, l_MRAFactor2, l_MRAFactor1, 0.0f));
 		f_setMRA(m_sphereVisibleComponents[i + 3]->m_modelMap, l_albedo4, vec4(l_MRAFactor3, l_MRAFactor1, l_MRAFactor2, 0.0f));
+		f_setMRA(m_pawnVisibleComponent2->m_modelMap, vec4(1.0f, 1.0f, 1.0f, 1.0f), vec4(0.999f, 0.001f, 1.0f, 0.0f));
 	}
+
 }
