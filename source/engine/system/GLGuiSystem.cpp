@@ -302,8 +302,17 @@ void ImGuiWrapper::update()
 		auto l_BRDFLUT = ImVec2(128.0, 128.0);
 		ImGui::Begin("BRDF lookup table", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		{
-			ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC->m_TAO), l_BRDFLUT);
+			ImGui::BeginChild("IBL LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC->m_TAO), l_BRDFLUT);
+			ImGui::EndChild();
+
+			ImGui::SameLine();
+
+			ImGui::BeginChild("Multi-Scattering LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC->m_TAO), l_BRDFLUT);
+			ImGui::EndChild();
 		}
 		ImGui::End();
 	}

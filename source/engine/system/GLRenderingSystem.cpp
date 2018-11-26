@@ -34,6 +34,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	float RadicalInverse(unsigned int n, unsigned int base);
 	void initializeHaltonSampler();
 	void initializeEnvironmentPass();
+	void initializeBRDFLUTPass();
+	void initializeEnvironmentCapturePass();
 	void initializeShadowPass();
 	void initializeGeometryPass();
 	void initializeGeometryPassShaders();
@@ -78,6 +80,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	void prepareRenderingData();
 	void updateEnvironmentRenderPass();
+	void updateBRDFLUTRenderPass();
+	void updateEnvironmentCaptureRenderPass();
 	void updateShadowRenderPass();
 	void updateGeometryRenderPass();
 	void updateTerrainRenderPass();
@@ -474,7 +478,100 @@ GLShaderProgramComponent* GLRenderingSystemNS::addShaderProgramComponent(const s
 	return l_GLSPC;
 }
 
-void GLRenderingSystemNS::initializeEnvironmentPass()
+void GLRenderingSystemNS::initializeBRDFLUTPass()
+{
+	// generate and bind framebuffer
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
+
+	glGenFramebuffers(1, &l_FBC->m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
+
+	// generate and bind renderbuffer
+	glGenRenderbuffers(1, &l_FBC->m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
+
+	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassFBC = l_FBC;
+
+	// generate and bind texture
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+
+	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_BUFFER_SAMPLER;
+	l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA32F;
+	l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
+	l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	l_TDC->m_textureDataDesc.textureWidth = 512;
+	l_TDC->m_textureDataDesc.textureHeight = 512;
+	l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::DOUBLE;
+	l_TDC->m_textureData = { nullptr };
+
+	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassTDC = l_TDC;
+
+	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
+
+	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC = l_GLTDC;
+
+	////
+	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+
+	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_BUFFER_SAMPLER;
+	l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RG32F;
+	l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RG;
+	l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	l_TDC->m_textureDataDesc.textureWidth = 512;
+	l_TDC->m_textureDataDesc.textureHeight = 512;
+	l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::DOUBLE;
+	l_TDC->m_textureData = { nullptr };
+
+	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassTDC = l_TDC;
+
+	l_GLTDC = generateGLTextureDataComponent(l_TDC);
+
+	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC = l_GLTDC;
+
+	// finally check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: BRDFLUTRenderPass Framebuffer is not completed!");
+	}
+
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// shader programs and shaders
+	shaderFilePaths m_shaderFilePaths;
+
+	////
+	m_shaderFilePaths.m_VSPath = "GL4.0//BRDFLUTPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//BRDFLUTPassFragment.sf";
+
+	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
+
+	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassSPC = l_GLSPC;
+
+	////
+	m_shaderFilePaths.m_VSPath = "GL4.0//BRDFLUTMSPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//BRDFLUTMSPassFragment.sf";
+
+	l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
+
+	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPass_uni_brdfLUT = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_brdfLUT");
+	updateUniform(
+		GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPass_uni_brdfLUT,
+		0);
+
+	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassSPC = l_GLSPC;
+}
+
+void GLRenderingSystemNS::initializeEnvironmentCapturePass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
@@ -489,9 +586,9 @@ void GLRenderingSystemNS::initializeEnvironmentPass()
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
 
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_FBC = l_FBC;
+	GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePassFBC = l_FBC;
 
-	// generate and bind texture
+	////
 	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
 	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::ENVIRONMENT_CAPTURE;
@@ -551,50 +648,10 @@ void GLRenderingSystemNS::initializeEnvironmentPass()
 
 	GLEnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassGLTDC = l_GLTDC;
 
-	////
-	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
-
-	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_BUFFER_SAMPLER;
-	l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
-	l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureDataDesc.textureWidth = 512;
-	l_TDC->m_textureDataDesc.textureHeight = 512;
-	l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
-	l_TDC->m_textureData = { nullptr };
-
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTTDC = l_TDC;
-
-	l_GLTDC = generateGLTextureDataComponent(l_TDC);
-
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC = l_GLTDC;
-
-	////
-	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
-
-	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_BUFFER_SAMPLER;
-	l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RG16F;
-	l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RG;
-	l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureDataDesc.textureWidth = 512;
-	l_TDC->m_textureDataDesc.textureHeight = 512;
-	l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
-	l_TDC->m_textureData = { nullptr };
-
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_MultiScatteringLUTTDC = l_TDC;
-
-	l_GLTDC = generateGLTextureDataComponent(l_TDC);
-
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_MultiScatteringLUTGLTDC = l_GLTDC;
-
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: EnvironmentRenderPass Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: EnvironmentCaptureRenderPass Framebuffer is not completed!");
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -603,8 +660,8 @@ void GLRenderingSystemNS::initializeEnvironmentPass()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//environmentCapturePassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//environmentCapturePassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//environmentCapturePassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//environmentCapturePassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -624,8 +681,8 @@ void GLRenderingSystemNS::initializeEnvironmentPass()
 	GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePassSPC = l_GLSPC;
 
 	////
-	m_shaderFilePaths.m_VSPath = "GL3.3//environmentConvolutionPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//environmentConvolutionPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//environmentConvolutionPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//environmentConvolutionPassFragment.sf";
 
 	l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -645,8 +702,8 @@ void GLRenderingSystemNS::initializeEnvironmentPass()
 	GLEnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassSPC = l_GLSPC;
 
 	////
-	m_shaderFilePaths.m_VSPath = "GL3.3//environmentPreFilterPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//environmentPreFilterPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//environmentPreFilterPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//environmentPreFilterPassFragment.sf";
 
 	l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -666,30 +723,13 @@ void GLRenderingSystemNS::initializeEnvironmentPass()
 		l_GLSPC->m_program,
 		"uni_r");
 
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassSPC = l_GLSPC;
+	GLEnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassSPC = l_GLSPC;	
+}
 
-	////
-	m_shaderFilePaths.m_VSPath = "GL3.3//BRDFLUTPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//BRDFLUTPassFragment.sf";
-
-	l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
-
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassSPC = l_GLSPC;
-
-	////
-	m_shaderFilePaths.m_VSPath = "GL3.3//BRDFLUTMSPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//BRDFLUTMSPassFragment.sf";
-
-	l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
-
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTMSPass_uni_brdfLUT = getUniformLocation(
-		l_GLSPC->m_program,
-		"uni_brdfLUT");
-	updateUniform(
-		GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTMSPass_uni_brdfLUT,
-		0);
-
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTMSPassSPC = l_GLSPC;
+void GLRenderingSystemNS::initializeEnvironmentPass()
+{
+	initializeBRDFLUTPass();
+	initializeEnvironmentCapturePass();
 }
 
 void GLRenderingSystemNS::initializeShadowPass()
@@ -756,8 +796,8 @@ void GLRenderingSystemNS::initializeShadowPass()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//shadowPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//shadowPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//shadowPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//shadowPassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -787,11 +827,11 @@ void GLRenderingSystemNS::initializeGeometryPassShaders()
 	shaderFilePaths m_shaderFilePaths;
 
 #ifdef CookTorrance
-	m_shaderFilePaths.m_VSPath = "GL3.3//geometryPassCookTorranceVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//geometryPassCookTorranceFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//geometryPassCookTorranceVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//geometryPassCookTorranceFragment.sf";
 #elif BlinnPhong
-	m_shaderFilePaths.m_VSPath = "GL3.3//geometryPassBlinnPhongVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//geometryPassBlinnPhongFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//geometryPassBlinnPhongVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//geometryPassBlinnPhongFragment.sf";
 #endif
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
@@ -906,8 +946,8 @@ void GLRenderingSystemNS::initializeTerrainPassShaders()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//terrainPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//terrainPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//terrainPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//terrainPassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -939,11 +979,11 @@ void GLRenderingSystemNS::initializeLightPassShaders()
 	shaderFilePaths m_shaderFilePaths;
 
 #ifdef CookTorrance
-	m_shaderFilePaths.m_VSPath = "GL3.3//lightPassCookTorranceVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//lightPassCookTorranceFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//lightPassCookTorranceVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//lightPassCookTorranceFragment.sf";
 #elif BlinnPhong
-	m_shaderFilePaths.m_VSPath = "GL3.3//lightPassBlinnPhongVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//lightPassBlinnPhongFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//lightPassBlinnPhongVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//lightPassBlinnPhongFragment.sf";
 #endif
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
@@ -1109,8 +1149,8 @@ void GLRenderingSystemNS::initializeSkyPass()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//skyPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//skyPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//skyPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//skyPassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -1150,8 +1190,8 @@ void GLRenderingSystemNS::initializeTAAPass()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//preTAAPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//preTAAPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//preTAAPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//preTAAPassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -1175,8 +1215,8 @@ void GLRenderingSystemNS::initializeTAAPass()
 		2);
 	GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassSPC = l_GLSPC;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//TAAPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//TAAPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//TAAPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//TAAPassFragment.sf";
 
 	l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -1205,8 +1245,8 @@ void GLRenderingSystemNS::initializeTAAPass()
 
 	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassSPC = l_GLSPC;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//TAASharpenPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//TAASharpenPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//TAASharpenPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//TAASharpenPassFragment.sf";
 
 	l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -1230,8 +1270,8 @@ void GLRenderingSystemNS::initializeBloomExtractPass()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//bloomExtractPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//bloomExtractPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//bloomExtractPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//bloomExtractPassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -1256,8 +1296,8 @@ void GLRenderingSystemNS::initializeBloomBlurPass()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//bloomBlurPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//bloomBlurPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//bloomBlurPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//bloomBlurPassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -1281,8 +1321,8 @@ void GLRenderingSystemNS::initializeMotionBlurPass()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//motionBlurPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//motionBlurPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//motionBlurPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//motionBlurPassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -1309,8 +1349,8 @@ void GLRenderingSystemNS::initializeBillboardPass()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//billboardPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//billboardPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//billboardPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//billboardPassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -1349,12 +1389,12 @@ void GLRenderingSystemNS::initializeDebuggerPass()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	//m_shaderFilePaths.m_VSPath = "GL3.3//debuggerPassVertex.sf";
-	//m_shaderFilePaths.m_GSPath = "GL3.3//debuggerPassGeometry.sf";
-	//m_shaderFilePaths.m_FSPath = "GL3.3//debuggerPassFragment.sf";
+	//m_shaderFilePaths.m_VSPath = "GL4.0//debuggerPassVertex.sf";
+	//m_shaderFilePaths.m_GSPath = "GL4.0//debuggerPassGeometry.sf";
+	//m_shaderFilePaths.m_FSPath = "GL4.0//debuggerPassFragment.sf";
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//wireframeOverlayPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//wireframeOverlayPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//wireframeOverlayPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//wireframeOverlayPassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -1387,8 +1427,8 @@ void GLRenderingSystemNS::initializeFinalBlendPass()
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
 
-	m_shaderFilePaths.m_VSPath = "GL3.3//finalBlendPassVertex.sf";
-	m_shaderFilePaths.m_FSPath = "GL3.3//finalBlendPassFragment.sf";
+	m_shaderFilePaths.m_VSPath = "GL4.0//finalBlendPassVertex.sf";
+	m_shaderFilePaths.m_FSPath = "GL4.0//finalBlendPassFragment.sf";
 
 	auto l_GLSPC = addShaderProgramComponent(m_shaderFilePaths);
 
@@ -1680,6 +1720,7 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 	case TexturePixelDataType::UNSIGNED_INT:l_type = GL_UNSIGNED_INT; break;
 	case TexturePixelDataType::INT:l_type = GL_INT; break;
 	case TexturePixelDataType::FLOAT:l_type = GL_FLOAT; break;
+	case TexturePixelDataType::DOUBLE:l_type = GL_FLOAT; break;
 	}
 
 	if (textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CAPTURE || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CONVOLUTION || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_PREFILTER)
@@ -1877,13 +1918,55 @@ void GLRenderingSystemNS::prepareRenderingData()
 	}
 }
 
-void GLRenderingSystemNS::updateEnvironmentRenderPass()
+void GLRenderingSystemNS::updateBRDFLUTRenderPass()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
 	// bind to framebuffer
-	auto l_FBC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_FBC;
+	auto l_FBC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassFBC;
+	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
+
+	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	// draw split-Sum LUT and RsF1 LUT
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
+	glViewport(0, 0, 512, 512);
+	activateShaderProgram(GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassSPC);
+
+	auto l_SplitSumLUTTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassTDC;
+	auto l_SplitSumGLTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC;
+	attachTextureToFramebuffer(l_SplitSumLUTTDC, l_SplitSumGLTDC, l_FBC, 0, 0, 0);
+
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	drawMesh(l_MDC);
+
+	// draw averange RsF1
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
+	glViewport(0, 0, 512, 512);
+	activateShaderProgram(GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassSPC);
+
+	auto l_BRDFLUTMSTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassTDC;
+	auto l_BRDFLUTMSGLTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC;
+	activate2DTexture(l_SplitSumGLTDC, 0);
+
+	attachTextureToFramebuffer(l_BRDFLUTMSTDC, l_BRDFLUTMSGLTDC, l_FBC, 0, 0, 0);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	drawMesh(l_MDC);
+}
+
+void GLRenderingSystemNS::updateEnvironmentCaptureRenderPass()
+{
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
+	// bind to framebuffer
+	auto l_FBC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePassFBC;
+
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
@@ -1910,7 +1993,8 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 	auto l_capturePassTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePassTDC;
 	auto l_capturePassGLTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePassGLTDC;
 
-	if (0)
+	int allowCaptureSkyPass = 0;
+	if (1 - allowCaptureSkyPass)
 	{
 		activateShaderProgram(GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePassSPC);
 		updateUniform(GLEnvironmentRenderPassSingletonComponent::getInstance().m_capturePass_uni_p, l_p);
@@ -1998,7 +2082,7 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 	auto l_convolutionPassTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassTDC;
 	auto l_convolutionPassGLTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPassGLTDC;
 
-	activateCubemapTexture(l_capturePassGLTDC, 1);
+	activateCubemapTexture(l_capturePassGLTDC, 1 - allowCaptureSkyPass);
 	for (unsigned int i = 0; i < 6; ++i)
 	{
 		updateUniform(GLEnvironmentRenderPassSingletonComponent::getInstance().m_convolutionPass_uni_r, l_v[i]);
@@ -2015,7 +2099,7 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 
 	auto l_prefilterPassTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassTDC;
 	auto l_prefilterPassGLTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_preFilterPassGLTDC;
-	activateCubemapTexture(l_capturePassGLTDC, 2);
+	activateCubemapTexture(l_capturePassGLTDC, 2 - allowCaptureSkyPass);
 
 	auto l_maxMipLevels = GLEnvironmentRenderPassSingletonComponent::getInstance().m_maxMipLevels;
 	for (unsigned int mip = 0; mip < l_maxMipLevels; ++mip)
@@ -2037,34 +2121,11 @@ void GLRenderingSystemNS::updateEnvironmentRenderPass()
 			drawMesh(l_MDC);
 		}
 	}
-
-	// draw split-Sum LUT and RsF1 LUT
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
-	glViewport(0, 0, 512, 512);
-	activateShaderProgram(GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassSPC);
-
-	auto l_BRDFLUTTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTTDC;
-	auto l_BRDFLUTGLTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC;
-	attachTextureToFramebuffer(l_BRDFLUTTDC, l_BRDFLUTGLTDC, l_FBC, 0, 0, 0);
-
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	drawMesh(l_MDC);
-
-	// draw averange RsF1
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
-	glViewport(0, 0, 512, 512);
-	activateShaderProgram(GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTMSPassSPC);
-
-	auto l_BRDFLUTMSTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_MultiScatteringLUTTDC;
-	auto l_BRDFLUTMSGLTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_MultiScatteringLUTGLTDC;
-	activate2DTexture(l_BRDFLUTGLTDC, 3);
-
-	attachTextureToFramebuffer(l_BRDFLUTMSTDC, l_BRDFLUTMSGLTDC, l_FBC, 0, 0, 0);
-
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	drawMesh(l_MDC);
+}
+void GLRenderingSystemNS::updateEnvironmentRenderPass()
+{
+	updateBRDFLUTRenderPass();
+	updateEnvironmentCaptureRenderPass();
 }
 
 void GLRenderingSystemNS::updateShadowRenderPass()
@@ -2532,11 +2593,11 @@ void GLRenderingSystemNS::updateLightRenderPass()
 		13);
 	// BRDF look-up table 1
 	activate2DTexture(
-		GLEnvironmentRenderPassSingletonComponent::getInstance().m_SplitSumLUTGLTDC,
+		GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC,
 		14);
 	// BRDF look-up table 2
 	activate2DTexture(
-		GLEnvironmentRenderPassSingletonComponent::getInstance().m_MultiScatteringLUTGLTDC,
+		GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC,
 		15);
 #endif
 

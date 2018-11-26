@@ -1,0 +1,29 @@
+// shadertype=glsl
+#version 400 core
+
+layout (location = 0) in vec3 in_Position;
+layout (location = 1) in vec2 in_TexCoord;
+layout (location = 2) in vec3 in_Normal;
+
+out vec4 thefrag_WorldSpacePos;
+out vec2 thefrag_TexCoord;
+out vec3 thefrag_Normal;
+
+uniform mat4 uni_p_camera;
+uniform mat4 uni_r_camera;
+uniform mat4 uni_t_camera;
+
+uniform mat4 uni_m;
+
+void main()
+{
+	thefrag_WorldSpacePos = uni_m * vec4(in_Position, 1.0);
+	
+	vec4 thefrag_CameraSpacePos = uni_r_camera * uni_t_camera * thefrag_WorldSpacePos;	
+
+	thefrag_TexCoord = in_TexCoord;
+
+	thefrag_Normal = mat3(transpose(inverse(uni_m))) * in_Normal;
+
+	gl_Position = uni_p_camera * thefrag_CameraSpacePos;
+}

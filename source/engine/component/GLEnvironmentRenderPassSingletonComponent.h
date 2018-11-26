@@ -19,7 +19,18 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	GLFrameBufferComponent* m_FBC;
+	GLFrameBufferComponent* m_BRDFLUTPassFBC;
+
+	GLShaderProgramComponent* m_BRDFSplitSumLUTPassSPC;
+	TextureDataComponent* m_BRDFSplitSumLUTPassTDC;
+	GLTextureDataComponent* m_BRDFSplitSumLUTPassGLTDC;
+
+	GLShaderProgramComponent* m_BRDFMSAverageLUTPassSPC;
+	TextureDataComponent* m_BRDFMSAverageLUTPassTDC;
+	GLTextureDataComponent* m_BRDFMSAverageLUTPassGLTDC;
+	GLuint m_BRDFMSAverageLUTPass_uni_brdfLUT;
+
+	GLFrameBufferComponent* m_capturePassFBC;
 
 	GLShaderProgramComponent* m_capturePassSPC;
 	TextureDataComponent* m_capturePassTDC;
@@ -43,15 +54,6 @@ public:
 	GLuint m_preFilterPass_uni_roughness;
 	GLuint m_preFilterPass_uni_p;
 	GLuint m_preFilterPass_uni_r;
-
-	GLShaderProgramComponent* m_BRDFLUTPassSPC;
-	TextureDataComponent* m_SplitSumLUTTDC;
-	GLTextureDataComponent* m_SplitSumLUTGLTDC;
-
-	GLShaderProgramComponent* m_BRDFLUTMSPassSPC;
-	TextureDataComponent* m_MultiScatteringLUTTDC;
-	GLTextureDataComponent* m_MultiScatteringLUTGLTDC;
-	GLuint m_BRDFLUTMSPass_uni_brdfLUT;
 
 private:
 	GLEnvironmentRenderPassSingletonComponent() {};
