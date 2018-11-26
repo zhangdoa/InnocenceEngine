@@ -600,7 +600,7 @@ bool  DXRenderingSystemNS::initializeDefaultAssets()
 	std::function<void(MeshDataComponent* MDC)> f_convertCoordinateFromGLtoDX = [&](MeshDataComponent* MDC) {
 		for (auto& i : MDC->m_vertices)
 		{
-			i.m_pos.z = -i.m_pos.z;		
+			//i.m_pos.z = -i.m_pos.z;		
 		}
 	};
 
@@ -1661,7 +1661,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 	DXRenderingSystemNS::m_CamRTP = l_p * l_r * l_t;
 
 	m_LPassCBufferData.viewPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-	m_LPassCBufferData.lightDir = InnoMath::getDirection(direction::FORWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	m_LPassCBufferData.lightDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 
 	m_LPassCBufferData.color = l_directionalLight->m_color;
 
