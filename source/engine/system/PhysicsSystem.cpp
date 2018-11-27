@@ -50,7 +50,7 @@ namespace InnoPhysicsSystemNS
 }
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::setup()
-{	
+{
 	InnoPhysicsSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
 	InnoPhysicsSystemNS::g_GameSystemSingletonComponent = &GameSystemSingletonComponent::getInstance();
 	InnoPhysicsSystemNS::g_AssetSystemSingletonComponent = &AssetSystemSingletonComponent::getInstance();
@@ -138,7 +138,11 @@ void InnoPhysicsSystemNS::generateLightComponentRadius(LightComponent * lightCom
 	// 1. get luminous efficacy (lm/w), assume 683 lm/w (100% luminous efficiency) always
 	// 2. luminous flux (lm) to radiant flux (w), omitted because linearity assumption in step 1
 	// 3. apply inverse square attenuation law with a low threshold of eye sensitivity at 0.03 lx, in ideal situation, lx could convert back to lm with respect to a sphere surface area 4 * PI * r^2
+#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	lightComponent->m_radius = std::sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
+#else
+	lightComponent->m_radius = sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
+#endif
 }
 
 PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelMap& modelMap)
@@ -204,7 +208,7 @@ void InnoPhysicsSystemNS::generateAABB(LightComponent * lightComponent)
 		//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 		l_frustumsCornerPos[i] = InnoMath::mul(l_lightRotMat, l_frustumsCornerPos[i]);
-#endif	
+#endif
 	}
 
 	//2.4 assemble splited frustum corners
@@ -374,7 +378,7 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 	l_MDC->m_parentEntity = InnoMath::createEntityID();
 
 	l_MDC->m_vertices = generateAABBVertices(rhs);
-	
+
 	l_MDC->m_indices.reserve(36);
 
 	l_MDC->m_indices = { 0, 1, 3, 1, 2, 3,
@@ -463,7 +467,7 @@ void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
 	auto boundMax = rhs.m_boundMax;
 	auto boundMin = rhs.m_boundMin;
 
-	if (boundMax.x > InnoPhysicsSystemNS::m_sceneBoundMax.x 
+	if (boundMax.x > InnoPhysicsSystemNS::m_sceneBoundMax.x
 		&&boundMax.y > InnoPhysicsSystemNS::m_sceneBoundMax.y
 		&&boundMax.z > InnoPhysicsSystemNS::m_sceneBoundMax.z)
 	{
@@ -481,7 +485,7 @@ void InnoPhysicsSystemNS::updateCulling()
 {
 	g_PhysicsSystemSingletonComponent->m_cullingDataPack.clear();
 	g_PhysicsSystemSingletonComponent->m_AABBWireframeDataPack.clear();
-	
+
 	if (g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
 	{
 		Ray l_mouseRay;
@@ -490,7 +494,7 @@ void InnoPhysicsSystemNS::updateCulling()
 
 		//auto l_cameraAABB = g_GameSystemSingletonComponent->m_CameraComponents[0]->m_AABB;
 		auto l_eyeRay = g_GameSystemSingletonComponent->m_CameraComponents[0]->m_rayOfEye;
-		
+
 		for (auto visibleComponent : m_initializedVisibleComponents)
 		{
 			if (visibleComponent->m_visiblilityType != VisiblilityType::INVISIBLE)
@@ -533,13 +537,14 @@ void InnoPhysicsSystemNS::updateCulling()
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
 {
-	InnoPhysicsSystemNS::m_asyncTask = &g_pCoreSystem->getTaskSystem()->submit([]()
+	auto temp = g_pCoreSystem->getTaskSystem()->submit([]()
 	{
 		InnoPhysicsSystemNS::updateCameraComponents();
 		InnoPhysicsSystemNS::updateLightComponents();
 		InnoPhysicsSystemNS::updateVisibleComponents();
 		InnoPhysicsSystemNS::updateCulling();
 	});
+	InnoPhysicsSystemNS::m_asyncTask = &temp;
 	return true;
 }
 

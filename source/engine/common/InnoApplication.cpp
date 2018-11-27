@@ -13,7 +13,7 @@ namespace InnoApplication
 }
 
 bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
-{	
+{
 	m_pCoreSystem = std::make_unique<InnoCoreSystem>();
 	g_pCoreSystem = m_pCoreSystem.get();
 
@@ -26,7 +26,6 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		{
 			return false;
 		}
-
 		if (!g_pCoreSystem->getTimeSystem()->setup())
 		{
 			return false;
@@ -262,4 +261,3 @@ ObjectStatus InnoApplication::getStatus()
 {
 	return m_objectStatus;
 }
-

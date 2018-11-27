@@ -13,7 +13,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 #else
 int main(int argc, char *argv[])
 {
-	if (!InnoApplication::setup(nullptr, nullptr, nullptr, 0))
+	if (!InnoApplication::setup(nullptr, nullptr, argv[1], 0))
 #endif
 	{
 		return 0;

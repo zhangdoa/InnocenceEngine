@@ -70,7 +70,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: Incorrect renderer argument!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: Incorrect renderer argument " + l_rendererArguments + " !");
 		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -135,9 +135,11 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 {
-	InnoVisionSystemNS::m_asyncTask = &g_pCoreSystem->getTaskSystem()->submit([]()
+	auto temp = g_pCoreSystem->getTaskSystem()->submit([]()
 	{
 	});
+	InnoVisionSystemNS::m_asyncTask = &temp;
+
 	RenderingSystemSingletonComponent::getInstance().m_renderDataPack.clear();
 	for (auto& i : PhysicsSystemSingletonComponent::getInstance().m_cullingDataPack)
 	{

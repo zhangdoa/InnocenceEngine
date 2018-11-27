@@ -177,7 +177,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_moveBackward);
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_moveLeft);
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_moveRight);
-	
+
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_speedUp);
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &PlayerComponentCollection::f_speedDown);
 
@@ -268,14 +268,13 @@ INNO_GAME_EXPORT bool GameInstance::initialize()
 
 INNO_GAME_EXPORT bool GameInstance::update()
 {
-	GameInstanceNS::m_asyncTask = &g_pCoreSystem->getTaskSystem()->submit([]()
+	auto temp = g_pCoreSystem->getTaskSystem()->submit([]()
 	{
 		GameInstanceNS::temp += 0.02f;
 		GameInstanceNS::updateLights(GameInstanceNS::temp);
 		GameInstanceNS::updateSpheres(GameInstanceNS::temp);
-	}
-	);
-
+	});
+	GameInstanceNS::m_asyncTask = &temp;
 	return true;
 }
 
@@ -378,7 +377,7 @@ void GameInstanceNS::updateLights(float seed)
 	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
 		m_directionalLightTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
-		0.2f * sin(seed)
+		0.2f * (float)sin(seed)
 	);
 
 	for (unsigned int i = 0; i < m_pointLightComponents.size(); i += 4)
@@ -407,7 +406,7 @@ void GameInstanceNS::updateLights(float seed)
 		f_setMeshColor(m_pointLightVisibleComponents[i + 1]->m_modelMap, l_color2);
 		f_setMeshColor(m_pointLightVisibleComponents[i + 2]->m_modelMap, l_color3);
 		f_setMeshColor(m_pointLightVisibleComponents[i + 3]->m_modelMap, l_color4);
-	}	
+	}
 }
 
 void GameInstanceNS::updateSpheres(float seed)

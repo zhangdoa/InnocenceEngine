@@ -156,7 +156,7 @@ INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(LogType LogType, const std::stri
 	default: std::cout << InnoLogSystemNS::whiteColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
 	}
 #else
-	std::cout << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
+	std::cout << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl;
 #endif
 }
 

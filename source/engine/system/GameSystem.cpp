@@ -83,10 +83,11 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 {
-	InnoGameSystemNS::g_GameSystemSingletonComponent->m_asyncTask = &g_pCoreSystem->getTaskSystem()->submit([]()
+	auto temp = g_pCoreSystem->getTaskSystem()->submit([]()
 	{
 		InnoGameSystemNS::updateTransform();
 	});
+	InnoGameSystemNS::g_GameSystemSingletonComponent->m_asyncTask = &temp;
 	return true;
 }
 

@@ -124,7 +124,7 @@ void ImGuiWrapper::update()
 		ImGui::Checkbox("Use Bloom", &l_renderingConfig.useBloom);
 		ImGui::Checkbox("Use zoom", &l_renderingConfig.useZoom);
 		ImGui::Checkbox("Draw terrain", &l_renderingConfig.drawTerrain);
-		ImGui::Checkbox("Draw overlap wireframe", &l_renderingConfig.drawOverlapWireframe);		
+		ImGui::Checkbox("Draw overlap wireframe", &l_renderingConfig.drawOverlapWireframe);
 		ImGui::Checkbox("Show render pass result", &l_renderingConfig.showRenderPassResult);
 		ImGui::End();
 	}
@@ -135,7 +135,7 @@ void ImGuiWrapper::update()
 	RenderingSystemSingletonComponent::getInstance().m_drawOverlapWireframe = l_renderingConfig.drawOverlapWireframe;
 
 	if(l_renderingConfig.showRenderPassResult)
-	{		
+	{
 		ImGui::Begin("Geometry Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		{
 			{
