@@ -8,8 +8,8 @@ uniform sampler2D uni_brdfLUT;
 // ----------------------------------------------------------------------------
 void main()
 {
-  double averangeRsF1 = 0.0;
-	double currentRsF1 = 0.0;
+  float averangeRsF1 = 0.0;
+	float currentRsF1 = 0.0;
 	const uint textureSize = 512u;
 	// "Real-Time Rendering", 4th edition, pg. 346, "9.8.2 Multiple-Bounce Surface Reflection", "The function $\overline{RsF1}$ is the cosine-weighted average value of RsF1 over the hemisphere"
   for(uint i = 0u; i < textureSize; ++i)

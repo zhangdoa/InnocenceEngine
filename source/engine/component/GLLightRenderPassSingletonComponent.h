@@ -38,8 +38,6 @@ public:
 	GLuint m_uni_shadowMap_3;
 	std::vector<GLuint> m_uni_shadowSplitAreas;
 
-	GLuint m_uni_irradianceMap;
-	GLuint m_uni_preFiltedMap;
 	GLuint m_uni_brdfLUT;
 	GLuint m_uni_brdfMSLUT;
 

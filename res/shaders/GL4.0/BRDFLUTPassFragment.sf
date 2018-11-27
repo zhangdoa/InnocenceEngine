@@ -44,20 +44,9 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
 	vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
 	return normalize(sampleVec);
 }
-// Specular Geometry Component
-// ----------------------------------------------------------------------------
-float Frostbite_V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
-{
-	float alphaG2 = alphaG * alphaG;
-	float NdotV_ = max(NdotV, 0.00001);
-	float	NdotL_ = max(NdotL, 0.00001);
-	float Lambda_GGXV = NdotL_ * sqrt(NdotV_ * NdotV_ * (1.0 - alphaG2) + alphaG2);
-	float Lambda_GGXL = NdotV_ * sqrt(NdotL_ * NdotL_ * (1.0 - alphaG2) + alphaG2);
-	return 0.5 / (Lambda_GGXV + Lambda_GGXL);
-}
 // Specular Distribution Component
 // ----------------------------------------------------------------------------
-float Frostbite_D_GGX(float NdotH , float roughness)
+float Frostbite_D_GGX(float NdotH, float roughness)
 {
 	// remapping to Quadratic curve
   float a = roughness * roughness;
@@ -108,9 +97,9 @@ vec4 IntegrateBRDF(float NdotV, float roughness)
     V.y = 0.0;
     V.z = NdotV;
 
-    double A = 0.0;
-    double B = 0.0; 
-    double RsF1 = 0.0;
+    float A = 0.0;
+    float B = 0.0; 
+    float RsF1 = 0.0;
     
     vec3 N = vec3(0.0, 0.0, 1.0);
     
@@ -126,20 +115,23 @@ vec4 IntegrateBRDF(float NdotV, float roughness)
         float NdotL = max(L.z, 0.0);
         float NdotH = max(H.z, 0.0);
         float VdotH = max(dot(V, H), 0.0);
-
+				
+				
         if(NdotL > 0.0)
         {
-            double G = GeometrySmith(NdotV, NdotL, safe_roughness);
-            double D = Unreal_DistributionGGX(NdotH, safe_roughness);
+        		float NdotV_local = max(dot(N, V), 0.0);
+        		float NdotL_local = max(dot(N, L), 0.0);
+            float G = GeometrySmith(NdotV_local, NdotL_local, safe_roughness);
+            float D = Frostbite_D_GGX(NdotH, safe_roughness);
             float Fc = pow(1.0 - VdotH, 5.0);
 
-            A += ((1.0 - Fc) * G) / float(SAMPLE_COUNT);
-            B += (Fc * G) / float(SAMPLE_COUNT);
-            RsF1 += (G * D) / float(SAMPLE_COUNT);          
+            A += ((1.0 - Fc) * G);
+            B += (Fc * G);
+            RsF1 += G * D / (4.0 * NdotV_local * NdotL_local);
         }
     }
 
-    return vec4(A, B, RsF1, 1.0);
+    return vec4(A / float(SAMPLE_COUNT), B / float(SAMPLE_COUNT), RsF1 / float(SAMPLE_COUNT), 1.0);
 }
 // ----------------------------------------------------------------------------
 void main() 

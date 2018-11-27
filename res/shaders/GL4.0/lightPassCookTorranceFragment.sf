@@ -37,8 +37,6 @@ uniform sampler2D uni_shadowMap_2;
 uniform sampler2D uni_shadowMap_3;
 uniform vec4 uni_shadowSplitAreas[NR_CSM_SPLITS];
 
-uniform samplerCube uni_irradianceMap;
-uniform samplerCube uni_preFiltedMap;
 uniform sampler2D uni_brdfLUT;
 uniform sampler2D uni_brdfMSLUT;
 
@@ -199,31 +197,7 @@ vec3 getRadiance(float NdotV, float LdotH, float NdotH, float NdotL, float rough
 	// Diffuse BRDF
 	vec3 Fd = fd_DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness) * Albedo / PI;
 
-	return (Fd + Fr) * lightRadiance * NdotL;
-}
-// IBL
-// corrected Fresnel
-// ----------------------------------------------------------------------------
-vec3 fr_F_SchlickRoughness(float cosTheta, vec3 F0, float roughness)
-{
-	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
-}
-// ----------------------------------------------------------------------------
-vec3 imageBasedLight(vec3 N, float NdotV, vec3 R, vec3 albedo, float metallic, float roughness, float ao, vec3 F0)
-{
-	vec3 F = fr_F_SchlickRoughness(NdotV, F0, roughness);
-	vec3 kS = fr_F_Schlick(F0, 1.0, NdotV);
-	vec3 kD = 1.0 - kS;
-	kD *= 1.0 - metallic;
-	vec3 irradiance = texture(uni_irradianceMap, N).rgb;
-	vec3 diffuse = irradiance * albedo;
-
-	// sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
-	vec3 prefilteredColor = textureLod(uni_preFiltedMap, R, roughness * MAX_REFLECTION_LOD).rgb;
-	vec2 brdf = texture(uni_brdfLUT, vec2(NdotV, roughness)).rg;
-	vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
-
-	return (kD * diffuse + specular) * ao;
+	return (Fd + Frss) * lightRadiance * NdotL;
 }
 // shadow mapping
 // ----------------------------------------------------------------------------
@@ -370,10 +344,6 @@ void main()
 				Lo += getRadiance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, lightRadiance);
 			}
 		}
-
-		vec3 R = reflect(-V, N);
-
-		Lo += imageBasedLight(N, NdotV, R, Albedo, Metallic, safe_roughness, AO, F0);
 	}
 	if (uni_drawCSMSplitedArea)
 	{
