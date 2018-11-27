@@ -9,7 +9,7 @@ target_link_libraries(InnoMain InnoGame)
 
 if (INNO_PLATFORM_LINUX64)
 add_custom_target(run
-    COMMAND InnoMain
+    COMMAND InnoMain "-renderer GL"
     DEPENDS InnoMain
     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
 )
