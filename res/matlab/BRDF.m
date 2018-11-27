@@ -1,32 +1,31 @@
 1
 
-function [F] = fr_F_Schlick(f0, f90, u)
-	F = f0 + (f90 - f0) * transpose(power(1.0 - u, 5.0));
+function [F] = F_Schlick(f0, f90, u)
+	F = repmat(f0, size(f0, 2), size(f0, 1)) + (f90 - f0) * transpose(power(1.0 - u, 5.0));
 endfunction
 
-function [D] = Frostbite_D_GGX(NdotH, roughness)
+function [D] = D_GGX(NdotH, roughness)
   a = power(roughness, 2.0);
 	a2 = power(a, 2.0);
 	f = power(NdotH, 2.0) * (transpose(a2) - 1.0) + 1.0;
-	D = 1./power(f, 2.0);
-  D = D * a2;
+	D = repmat(a2, size(a2, 2), size(a2, 1)) * transpose(1./power(f, 2.0));
 endfunction
 
-function [G_1] = GeometrySchlickGGX(NdotV, roughness)
+function [G] = G_SchlickGGX(NdotV, roughness)
     a = roughness;
     k = power(a, 2.0);
     nom   = NdotV;
-    denom = NdotV * transpose((1.0 - k)) + k;   
-    G_1 = transpose(nom) / denom;
+    denom = NdotV * transpose((1.0 - k)) + repmat(k, size(k, 2), size(k, 1));
+    G = repmat(nom, size(nom, 2), size(nom, 1)) * transpose(1./ denom);
 endfunction
 
-function [G_2] = GeometrySmith(NdotV, NdotL, roughness)
-    ggx2 = GeometrySchlickGGX(NdotV, roughness);
-    ggx1 = GeometrySchlickGGX(NdotL, roughness);
-    G_2 = ggx1 * ggx2;
+function [V] = V_Smith(NdotV, NdotL, roughness)
+    ggx2 = G_SchlickGGX(NdotV, roughness);
+    ggx1 = G_SchlickGGX(NdotL, roughness);
+    V = ggx1 * transpose(ggx2);
 endfunction
 
 tx = ty = linspace (0, 1, 64)';
 [xx, yy] = meshgrid (tx, ty);
-tz = fr_F_Schlick(tx, 1.0, ty);
+tz = D_GGX(tx, ty);
 mesh (tx, ty, tz);
