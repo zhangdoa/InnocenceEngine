@@ -143,17 +143,26 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 	RenderingSystemSingletonComponent::getInstance().m_renderDataPack.clear();
 	for (auto& i : PhysicsSystemSingletonComponent::getInstance().m_cullingDataPack)
 	{
-		RenderDataPack l_renderDataPack;
-		l_renderDataPack.m = i.m;
-		l_renderDataPack.m_prev = i.m_prev;
-		l_renderDataPack.normalMat = i.normalMat;
 		auto l_visibleComponent = g_pCoreSystem->getGameSystem()->get<VisibleComponent>(i.visibleComponentEntityID);
-		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(i.MDCEntityID);
-		auto l_modelPair = l_visibleComponent->m_modelMap.find(l_MDC);
-		l_renderDataPack.MDC = l_MDC;
-		l_renderDataPack.Material = l_modelPair->second;
-		l_renderDataPack.visiblilityType = i.visiblilityType;
-		RenderingSystemSingletonComponent::getInstance().m_renderDataPack.emplace_back(l_renderDataPack);
+		if (l_visibleComponent != nullptr)
+		{
+			auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(i.MDCEntityID);
+			if (l_MDC != nullptr)
+			{
+				auto l_modelPair = l_visibleComponent->m_modelMap.find(l_MDC);
+				if (l_modelPair != l_visibleComponent->m_modelMap.end())
+				{
+					RenderDataPack l_renderDataPack;
+					l_renderDataPack.m = i.m;
+					l_renderDataPack.m_prev = i.m_prev;
+					l_renderDataPack.normalMat = i.normalMat;
+					l_renderDataPack.MDC = l_MDC;
+					l_renderDataPack.Material = l_modelPair->second;
+					l_renderDataPack.visiblilityType = i.visiblilityType;
+					RenderingSystemSingletonComponent::getInstance().m_renderDataPack.emplace_back(l_renderDataPack);
+				}
+			}
+		}
 	};
 
 	InnoVisionSystemNS::m_windowSystem->update();
