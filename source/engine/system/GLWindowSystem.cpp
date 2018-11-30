@@ -2,36 +2,13 @@
 
 #include "../component/WindowSystemSingletonComponent.h"
 #include "../component/GLWindowSystemSingletonComponent.h"
+#include "GLFWWrapper.h"
 
 #include "InputSystem.h"
 
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
-
-class windowCallbackWrapper
-{
-public:
-	~windowCallbackWrapper() {};
-
-	static windowCallbackWrapper& getInstance()
-	{
-		static windowCallbackWrapper instance;
-		return instance;
-	}
-	void initialize();
-
-	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
-	static void mousePositionCallback(GLFWwindow* window, double mouseXPos, double mouseYPos);
-	static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
-
-	void framebufferSizeCallbackImpl(GLFWwindow* window, int width, int height);
-	void mousePositionCallbackImpl(GLFWwindow* window, float mouseXPos, float mouseYPos);
-	void scrollCallbackImpl(GLFWwindow* window, float xoffset, float yoffset);
-
-private:
-	windowCallbackWrapper() {};
-};
 
 INNO_PRIVATE_SCOPE GLWindowSystemNS
 {
@@ -100,7 +77,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 INNO_SYSTEM_EXPORT bool GLWindowSystem::initialize()
 {
 	//initialize window
-	windowCallbackWrapper::getInstance().initialize();
+	windowCallbackWrapper::getInstance().initialize(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, GLWindowSystemNS::m_inputSystem);
 
 	//initialize input	
 	GLWindowSystemNS::m_inputSystem->initialize();
@@ -197,41 +174,4 @@ void GLWindowSystemNS::showMouseCursor()
 INNO_SYSTEM_EXPORT ObjectStatus GLWindowSystem::getStatus()
 {
 	return GLWindowSystemNS::m_objectStatus;
-}
-
-void windowCallbackWrapper::initialize()
-{
-	glfwSetFramebufferSizeCallback(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, &framebufferSizeCallback);
-	glfwSetCursorPosCallback(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, &mousePositionCallback);
-	glfwSetScrollCallback(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, &scrollCallback);
-}
-
-void windowCallbackWrapper::framebufferSizeCallback(GLFWwindow * window, int width, int height)
-{
-	getInstance().framebufferSizeCallbackImpl(window, width, height);
-}
-
-void windowCallbackWrapper::mousePositionCallback(GLFWwindow * window, double mouseXPos, double mouseYPos)
-{
-	getInstance().mousePositionCallbackImpl(window, (float)mouseXPos, (float)mouseYPos);
-}
-
-void windowCallbackWrapper::scrollCallback(GLFWwindow * window, double xoffset, double yoffset)
-{
-	getInstance().scrollCallbackImpl(window, (float)xoffset, (float)yoffset);
-}
-
-void windowCallbackWrapper::framebufferSizeCallbackImpl(GLFWwindow * window, int width, int height)
-{
-	GLWindowSystemNS::m_inputSystem->framebufferSizeCallback(width, height);
-}
-
-void windowCallbackWrapper::mousePositionCallbackImpl(GLFWwindow * window, float mouseXPos, float mouseYPos)
-{
-	GLWindowSystemNS::m_inputSystem->mousePositionCallback(mouseXPos, mouseYPos);
-}
-
-void windowCallbackWrapper::scrollCallbackImpl(GLFWwindow * window, float xoffset, float yoffset)
-{
-	GLWindowSystemNS::m_inputSystem->scrollCallback(xoffset, yoffset);
 }
