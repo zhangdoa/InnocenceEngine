@@ -52,6 +52,33 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::setup(void* hInstance, void* hPrevInstan
 		return false;
 	}
 
+	VkApplicationInfo appInfo = {};
+	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	appInfo.pApplicationName = VKWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName.c_str();
+	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.pEngineName = "Innocence Engine";
+	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.apiVersion = VK_API_VERSION_1_0;
+
+	VkInstanceCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	createInfo.pApplicationInfo = &appInfo;
+
+	uint32_t glfwExtensionCount = 0;
+	const char** glfwExtensions;
+	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+	createInfo.enabledExtensionCount = glfwExtensionCount;
+	createInfo.ppEnabledExtensionNames = glfwExtensions;
+
+	createInfo.enabledLayerCount = 0;
+
+	if (vkCreateInstance(&createInfo, nullptr, &VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_instance) != VK_SUCCESS) 
+	{
+		VKWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKWindowSystem: Failed to create VkInstance.");
+	}
+
 	//setup input
 	glfwSetInputMode(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
@@ -134,6 +161,8 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::update()
 
 INNO_SYSTEM_EXPORT bool VKWindowSystem::terminate()
 {
+	vkDestroyInstance(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_instance, nullptr);
+
 	glfwSetInputMode(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window, GLFW_STICKY_KEYS, GL_FALSE);
 	glfwDestroyWindow(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window);
 	glfwTerminate();

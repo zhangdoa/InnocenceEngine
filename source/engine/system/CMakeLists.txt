@@ -18,6 +18,9 @@ find_library(ASSIMP assimp)
 target_link_libraries(InnoSystem "${ASSIMP}")
 target_link_libraries(InnoSystem STB_Image)
 
+find_library(VULKAN vulkan-1)
+target_link_libraries(InnoSystem "${VULKAN}")
+
 find_library(GLFW glfw3)
 
 if (INNO_PLATFORM_LINUX64)

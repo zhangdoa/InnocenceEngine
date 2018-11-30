@@ -2,6 +2,9 @@
 #include "../common/InnoType.h"
 #include "../system/GLHeaders.h"
 
+#include "vulkan/vulkan.h"
+#define GLFW_INCLUDE_VULKAN
+
 class VKWindowSystemSingletonComponent
 {
 public:
@@ -18,6 +21,8 @@ public:
 	EntityID m_parentEntity;
 
 	GLFWwindow* m_window;
+
+	VkInstance m_instance;
 
 private:
 	VKWindowSystemSingletonComponent() {};
