@@ -1,5 +1,7 @@
 #!/bin/sh
-rm -rf bin/*
+rm -rf bin
 mkdir bin
-cp build/bin/* bin/
-cp res/* build/
+cp -r build/bin/* bin/
+rm -rf build/res/
+mkdir build/res
+cp -r res/* build/res/
