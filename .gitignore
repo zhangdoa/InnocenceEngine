@@ -3,6 +3,8 @@
 /source/engine/exports
 /source/game/exports
 /source/external/include/assimp
+/source/external/include/GLFW
+/source/external/include/vulkan
 
 \.DS_Store
 
