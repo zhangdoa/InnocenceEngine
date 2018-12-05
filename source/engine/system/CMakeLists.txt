@@ -25,7 +25,7 @@ find_library(VULKAN vulkan-1)
 endif (INNO_PLATFORM_LINUX64)
 target_link_libraries(InnoSystem "${VULKAN}")
 
-find_library(GLFW glfw3)
+find_library(GLFW glfw3dll)
 
 if (INNO_PLATFORM_LINUX64)
 target_link_libraries(InnoSystem "${GLFW}" -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lGL -lm -lpthread)

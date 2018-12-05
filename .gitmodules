@@ -6,3 +6,11 @@
 	path = source/external/gitsubmodules/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers
 	ignore = dirty
+[submodule "source/external/gitsubmodules/bullet3"]
+	path = source/external/gitsubmodules/bullet3
+	url = https://github.com/bulletphysics/bullet3
+	ignore = dirty
+[submodule "source/external/gitsubmodules/glfw"]
+	path = source/external/gitsubmodules/glfw
+	url = https://github.com/glfw/glfw
+	ignore = dirty

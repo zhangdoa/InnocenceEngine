@@ -8,9 +8,5 @@ msbuild Assimp.sln
 xcopy /s/e/y code\Debug\*.dll ..\..\..\dll\win64
 rename code\Debug\assimp-vc140-mt.lib assimp.lib
 xcopy /s/e/y code\Debug\assimp.lib ..\..\..\lib\win64
-
-cd ../
-xcopy /s/e/y include\assimp\* ..\..\include\assimp\
-xcopy /s/e/y build_dll\include\assimp\config.h ..\..\include\assimp\
 pause
 
