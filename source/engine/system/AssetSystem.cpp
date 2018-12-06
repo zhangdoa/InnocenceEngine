@@ -667,16 +667,6 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 				assignUnitMesh(l_visibleComponent->m_meshShapeType, l_visibleComponent);
 			}
 			PhysicsSystemSingletonComponent::getInstance().m_uninitializedVisibleComponents.push(l_visibleComponent);
-			//if (l_visibleComponent->m_drawAABB)
-			//{
-			//	auto l_Mesh = InnoAssetSystemNS::addMeshDataComponent();
-			//	l_Mesh->m_vertices = l_visibleComponent->m_AABB.m_vertices;
-			//	l_Mesh->m_indices = l_visibleComponent->m_AABB.m_indices;
-			//	l_Mesh->m_indicesSize = l_Mesh->m_indices.size();
-			//	l_Mesh->m_objectStatus = ObjectStatus::STANDBY;
-			//	g_AssetSystemSingletonComponent->m_uninitializedMeshComponents.push(l_Mesh);
-			//	l_visibleComponent->m_AABBMeshID = l_Mesh->m_parentEntity;
-			//}
 		}
 	}
 }

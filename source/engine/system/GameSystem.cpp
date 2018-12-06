@@ -38,13 +38,14 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::setup()
 void InnoGameSystemNS::sortTransformComponentsVector()
 {
 	//construct the hierarchy tree
-	std::for_each(InnoGameSystemNS::g_GameSystemSingletonComponent->m_TransformComponents.begin(), g_GameSystemSingletonComponent->m_TransformComponents.end(), [&](TransformComponent* val)
+	for (auto i : InnoGameSystemNS::g_GameSystemSingletonComponent->m_TransformComponents)
 	{
-		if (val->m_parentTransformComponent)
+		if (i->m_parentTransformComponent)
 		{
-			val->m_transformHierarchyLevel = val->m_parentTransformComponent->m_transformHierarchyLevel + 1;
+			i->m_transformHierarchyLevel = i->m_parentTransformComponent->m_transformHierarchyLevel + 1;
 		}
-	});
+
+	}
 	//from top to bottom
 	std::sort(g_GameSystemSingletonComponent->m_TransformComponents.begin(), g_GameSystemSingletonComponent->m_TransformComponents.end(), [&](TransformComponent* a, TransformComponent* b)
 	{

@@ -8,7 +8,7 @@ public:
 	~CameraComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
+	EntityID m_parentEntity = 0;
 
 	float m_FOVX = 0.0;
 	float m_WHRatio = 0.0;
@@ -20,5 +20,5 @@ public:
 	bool m_drawFrustum = false;
 	bool m_drawAABB = false;
 	mat4 m_projectionMatrix;
-	MeshDataComponent* m_frustumMDC;
+	MeshDataComponent* m_frustumMDC = nullptr;
 };

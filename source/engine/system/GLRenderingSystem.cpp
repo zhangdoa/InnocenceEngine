@@ -1598,7 +1598,7 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 		{
 			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 		}
-		else if (textureDataDesc.textureUsageType != TextureUsageType::ENVIRONMENT_CAPTURE || textureDataDesc.textureUsageType != TextureUsageType::ENVIRONMENT_CONVOLUTION || textureDataDesc.textureUsageType != TextureUsageType::RENDER_BUFFER_SAMPLER)
+		else if (textureDataDesc.textureUsageType != TextureUsageType::ENVIRONMENT_CAPTURE && textureDataDesc.textureUsageType != TextureUsageType::ENVIRONMENT_CONVOLUTION && textureDataDesc.textureUsageType != TextureUsageType::RENDER_BUFFER_SAMPLER)
 		{
 			glGenerateMipmap(GL_TEXTURE_2D);
 		}

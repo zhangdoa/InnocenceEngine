@@ -23,7 +23,7 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity = 0;
 
-	TextureDataDesc m_textureDataDesc;
+	TextureDataDesc m_textureDataDesc = TextureDataDesc();
 	std::vector<void*> m_textureData;
 };
 
