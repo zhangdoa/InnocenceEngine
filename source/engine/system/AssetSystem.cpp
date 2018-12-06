@@ -14,7 +14,7 @@
 #include "assimp/Exporter.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
-#include "STB_Image/stb_image.h"
+#include "stb/stb_image.h"
 #include "../component/AssetSystemSingletonComponent.h"
 #include "../component/GameSystemSingletonComponent.h"
 #include "../component/PhysicsSystemSingletonComponent.h"

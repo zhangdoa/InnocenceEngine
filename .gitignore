@@ -5,6 +5,9 @@
 /source/external/include/assimp
 /source/external/include/GLFW
 /source/external/include/vulkan
+/source/external/include/stb
+/source/external/lib
+/source/external/dll
 
 \.DS_Store
 
