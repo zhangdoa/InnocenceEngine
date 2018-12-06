@@ -821,6 +821,13 @@ void GLRenderingSystemNS::initializeTerrainPassShaders()
 	GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_m = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_m");
+	GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_albedoTexture = getUniformLocation(
+		l_GLSPC->m_program,
+		"uni_albedoTexture");
+	updateUniform(
+		GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_albedoTexture,
+		0);
+
 	GLTerrainRenderPassSingletonComponent::getInstance().m_GLSPC = l_GLSPC;
 }
 
@@ -2152,9 +2159,9 @@ void GLRenderingSystemNS::updateTerrainRenderPass()
 		m);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::TERRAIN);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	activate2DTexture(m_basicAlbedoTemplate, 0);
+
 	drawMesh(l_MDC);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	glDisable(GL_DEPTH_TEST);
 }

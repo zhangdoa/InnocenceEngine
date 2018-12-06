@@ -28,6 +28,7 @@ public:
 	GLuint m_terrainPass_uni_r_camera;
 	GLuint m_terrainPass_uni_t_camera;
 	GLuint m_terrainPass_uni_m;
+	GLuint m_terrainPass_uni_albedoTexture;
 
 private:
 	GLTerrainRenderPassSingletonComponent() {};

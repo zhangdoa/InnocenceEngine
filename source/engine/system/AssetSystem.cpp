@@ -552,22 +552,22 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent& meshDataComponent)
 		{
 			Vertex l_VertexData_1;
 			l_VertexData_1.m_pos = vec4((float)(i - l_gridSizehalf), 0.0f, (float)(j - l_gridSizehalf), 1.0f);
-			l_VertexData_1.m_texCoord = vec2((float)(i + 1) / (float)l_gridSize2, (float)(j + 1) / (float)l_gridSize2);
+			l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_1);
 
 			Vertex l_VertexData_2;
 			l_VertexData_2.m_pos = vec4((float)(i - l_gridSizehalf), 0.0f, (float)(j - l_gridSizehalf + 1), 1.0f);
-			l_VertexData_2.m_texCoord = vec2((float)(i + 1) / (float)l_gridSize2, (float)(j) / (float)l_gridSize2);
+			l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_2);
 
 			Vertex l_VertexData_3;
 			l_VertexData_3.m_pos = vec4((float)(i - l_gridSizehalf + 1), 0.0f, (float)(j - l_gridSizehalf + 1), 1.0f);
-			l_VertexData_3.m_texCoord = vec2((float)(i) / (float)l_gridSize2, (float)(j) / (float)l_gridSize2);
+			l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_3);
 
 			Vertex l_VertexData_4;
 			l_VertexData_4.m_pos = vec4((float)(i - l_gridSizehalf + 1), 0.0f, (float)(j - l_gridSizehalf), 1.0f);
-			l_VertexData_4.m_texCoord = vec2((float)(i) / (float)l_gridSize2, (float)(j + 1) / (float)l_gridSize2);
+			l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_4);
 
 			auto l_gridIndex = 4 * (i) + 4 * l_gridSize * (j);
@@ -622,7 +622,7 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	auto lastTerrainMeshData = g_AssetSystemSingletonComponent->m_Terrain;
 	InnoAssetSystemNS::addTerrain(*lastTerrainMeshData);
 	lastTerrainMeshData->m_meshUsageType = MeshUsageType::NORMAL;
-	lastTerrainMeshData->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	lastTerrainMeshData->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
 	lastTerrainMeshData->m_objectStatus = ObjectStatus::STANDBY;
 }
 

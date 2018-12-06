@@ -5,6 +5,7 @@ layout (location = 0) out vec4 uni_terrainPassRT0;
 in vec4 thefrag_WorldSpacePos;
 in vec2 thefrag_TexCoord;
 in vec3 thefrag_Normal;
+uniform sampler2D uni_albedoTexture;
 
 void main()
 {    
@@ -24,5 +25,5 @@ void main()
 	
 	WorldSpaceNormal = normalize(TBN * vec3(0.0f, 0.0f, 1.0f));
 
-	uni_terrainPassRT0 = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	uni_terrainPassRT0 = vec4(texture(uni_albedoTexture, thefrag_TexCoord).rgb, 1.0f);
 }
