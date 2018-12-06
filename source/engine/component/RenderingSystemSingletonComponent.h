@@ -41,7 +41,8 @@ public:
 	bool m_useBloom = false;
 	bool m_drawTerrain = false;
 	bool m_drawOverlapWireframe = false;
-	
+	bool m_reloadShader = false;
+
 	std::vector<RenderDataPack> m_renderDataPack;
 
 private:

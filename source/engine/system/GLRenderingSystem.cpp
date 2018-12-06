@@ -53,6 +53,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void initializeDebuggerPass();
 	void initializeFinalBlendPass();
 
+	void reloadShader();
+
 	GLRenderPassComponent* addRenderPassComponent(unsigned int RTNum);
 	bool resizeGLRenderPassComponent(GLRenderPassComponent* GLRPC);
 

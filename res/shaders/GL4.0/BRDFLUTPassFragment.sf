@@ -44,9 +44,8 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
 	vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
 	return normalize(sampleVec);
 }
-// Specular Distribution Component
 // ----------------------------------------------------------------------------
-float Frostbite_D_GGX(float NdotH, float roughness)
+float D_GGX(float NdotH, float roughness)
 {
 	// remapping to Quadratic curve
   float a = roughness * roughness;
@@ -55,21 +54,7 @@ float Frostbite_D_GGX(float NdotH, float roughness)
 	return a2 / pow(f, 2.0);
 }
 // ----------------------------------------------------------------------------
-float Unreal_DistributionGGX(float NdotH, float roughness)
-{
-	float a = roughness*roughness;
-	// remapping to Quadratic curve
-	float a2 = a * a;
-	float NdotH2 = NdotH*NdotH;
-
-	float nom   = a2;
-	float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-	denom = denom * denom;
-
-	return nom / denom;
-}
-// ----------------------------------------------------------------------------
-float GeometrySchlickGGX(float NdotV, float roughness)
+float G_SchlickGGX(float NdotV, float roughness)
 {
     // note that we use a different k for IBL
     float a = roughness;
@@ -81,10 +66,10 @@ float GeometrySchlickGGX(float NdotV, float roughness)
     return nom / denom;
 }
 // ----------------------------------------------------------------------------
-float GeometrySmith(float NdotV, float NdotL, float roughness)
+float V_Smith(float NdotV, float NdotL, float roughness)
 {
-    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
-    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+    float ggx2 = G_SchlickGGX(NdotV, roughness);
+    float ggx1 = G_SchlickGGX(NdotL, roughness);
 
     return ggx1 * ggx2;
 }
@@ -112,22 +97,20 @@ vec4 IntegrateBRDF(float NdotV, float roughness)
         vec3 H = ImportanceSampleGGX(Xi, N, safe_roughness);
         vec3 L = normalize(2.0 * dot(V, H) * H - V);
 
-        float NdotL = max(L.z, 0.0);
-        float NdotH = max(H.z, 0.0);
-        float VdotH = max(dot(V, H), 0.0);
+        float NdotL = max(L.z, 0.00001);
+        float NdotH = max(H.z, 0.00001);
+        float VdotH = max(dot(V, H), 0.00001);
 				
 				
         if(NdotL > 0.0)
         {
-        		float NdotV_local = max(dot(N, V), 0.0);
-        		float NdotL_local = max(dot(N, L), 0.0);
-            float G = GeometrySmith(NdotV_local, NdotL_local, safe_roughness);
-            float D = Frostbite_D_GGX(NdotH, safe_roughness);
+            float G = V_Smith(NdotV, NdotL, safe_roughness);
+            float D = D_GGX(NdotH, safe_roughness);
             float Fc = pow(1.0 - VdotH, 5.0);
 
             A += ((1.0 - Fc) * G);
             B += (Fc * G);
-            RsF1 += G * D / (4.0 * NdotV_local * NdotL_local);
+            RsF1 += clamp(G * D / (4.0 * NdotV * NdotL), 0.0, 1.0);
         }
     }
 

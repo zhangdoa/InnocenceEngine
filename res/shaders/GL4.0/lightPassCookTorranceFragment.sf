@@ -175,7 +175,7 @@ vec3 getFrMS(float NdotL, float NdotV, vec3 F0, float roughness)
 	float beta2 = 1.0 - rsF1_l;
 	float beta3 = 1.0 - rsF1_v;
 
-	frMS = f_averange * rsF1_averange / (PI * beta1 * (vec3(1.0) - f_averange * beta1));
+	frMS = f_averange * rsF1_averange / (PI * beta1 * (vec3(1.0) - f_averange * beta1) + 0.00001);
 	frMS = frMS * beta2 * beta3;
 	return frMS;
 }
@@ -197,7 +197,7 @@ vec3 getRadiance(float NdotV, float LdotH, float NdotH, float NdotL, float rough
 	// Diffuse BRDF
 	vec3 Fd = fd_DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness) * Albedo / PI;
 
-	return (Fd + Frss) * lightRadiance * NdotL;
+	return (Fd + Fr) * lightRadiance * NdotL;
 }
 // shadow mapping
 // ----------------------------------------------------------------------------

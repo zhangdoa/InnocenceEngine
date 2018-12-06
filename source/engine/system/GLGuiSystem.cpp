@@ -23,6 +23,7 @@ struct RenderingConfig
 	bool useZoom = false;
 	bool drawTerrain = false;
 	bool drawOverlapWireframe = false;
+	bool reloadShader = false;
 	bool showRenderPassResult = false;
 };
 
@@ -125,6 +126,7 @@ void ImGuiWrapper::update()
 		ImGui::Checkbox("Use zoom", &l_renderingConfig.useZoom);
 		ImGui::Checkbox("Draw terrain", &l_renderingConfig.drawTerrain);
 		ImGui::Checkbox("Draw overlap wireframe", &l_renderingConfig.drawOverlapWireframe);
+		ImGui::Checkbox("Reload shader", &l_renderingConfig.reloadShader);		
 		ImGui::Checkbox("Show render pass result", &l_renderingConfig.showRenderPassResult);
 		ImGui::End();
 	}
@@ -133,7 +135,8 @@ void ImGuiWrapper::update()
 	RenderingSystemSingletonComponent::getInstance().m_useBloom = l_renderingConfig.useBloom;
 	RenderingSystemSingletonComponent::getInstance().m_drawTerrain = l_renderingConfig.drawTerrain;
 	RenderingSystemSingletonComponent::getInstance().m_drawOverlapWireframe = l_renderingConfig.drawOverlapWireframe;
-
+	RenderingSystemSingletonComponent::getInstance().m_reloadShader = l_renderingConfig.reloadShader;
+	
 	if(l_renderingConfig.showRenderPassResult)
 	{
 		ImGui::Begin("Geometry Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
