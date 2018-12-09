@@ -2,6 +2,18 @@ aux_source_directory(. DIR_SRCS)
 if (INNO_PLATFORM_LINUX64 OR INNO_PLATFORM_MACOS)
 list(REMOVE_ITEM DIR_SRCS ./DXGuiSystem.h ./DXGuiSystem.cpp ./DXRenderingSystem.h ./DXRenderingSystem.cpp ./DXWindowSystem.h ./DXWindowSystem.cpp)
 endif (INNO_PLATFORM_LINUX64 OR INNO_PLATFORM_MACOS)
+
+if (INNO_PLATFORM_LINUX64)
+find_library(VULKAN vulkan)
+else ()
+find_library(VULKAN vulkan-1)
+endif (INNO_PLATFORM_LINUX64)
+
+if(NOT VULKAN)
+message("No Vulkan pre-compiled library found! Won't compile Vulkan rendering backend.")
+list(REMOVE_ITEM DIR_SRCS ./VKGuiSystem.h ./VKGuiSystem.cpp ./VKRenderingSystem.h ./VKRenderingSystem.cpp ./VKWindowSystem.h ./VKWindowSystem.cpp)
+endif ()
+
 add_library(InnoSystem SHARED ${DIR_SRCS})
 include (GenerateExportHeader)
 GENERATE_EXPORT_HEADER (InnoSystem
@@ -11,19 +23,16 @@ GENERATE_EXPORT_HEADER (InnoSystem
     STATIC_DEFINE INNO_SYSTEM_BUILT_AS_STATIC
 )
 
+if (VULKAN)
+target_link_libraries(InnoSystem "${VULKAN}")
+endif (VULKAN)
+
 target_link_libraries(InnoSystem GLAD)
 target_link_libraries(InnoSystem ImGui)
 
 find_library(ASSIMP assimp)
 target_link_libraries(InnoSystem "${ASSIMP}")
 target_link_libraries(InnoSystem STB_Image)
-
-if (INNO_PLATFORM_LINUX64)
-find_library(VULKAN vulkan)
-else ()
-find_library(VULKAN vulkan-1)
-endif (INNO_PLATFORM_LINUX64)
-target_link_libraries(InnoSystem "${VULKAN}")
 
 if (INNO_PLATFORM_LINUX64)
 find_library(GLFW glfw)

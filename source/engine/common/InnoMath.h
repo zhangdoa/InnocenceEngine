@@ -35,7 +35,6 @@ template<class T>
 class TVec2
 {
 public:
-
 	T x;
 	T y;
 
@@ -128,7 +127,6 @@ template <class T>
 class TVec4
 {
 public:
-
 	T x;
 	T y;
 	T z;
@@ -381,7 +379,6 @@ public:
 
 		return result.normalize();
 	}
-
 };
 
 /*
@@ -769,7 +766,7 @@ public:
 		m_pad2(T()),
 		m_pad3(T()),
 		m_boundMin(rhs.m_boundMin),
-		m_boundMax(rhs.m_boundMax){};
+		m_boundMax(rhs.m_boundMax) {};
 	auto operator=(const TAABB<T> & rhs) -> TAABB<T>&
 	{
 		m_center = rhs.m_center;
@@ -1364,7 +1361,7 @@ namespace InnoMath
 	template<class T>
 	auto moveTo(const TVec4<T> & pos, const TVec4<T> & direction, T length)->TVec4<T>
 	{
-		 return pos + direction * length;
+		return pos + direction * length;
 	}
 
 	template<class T>

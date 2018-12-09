@@ -273,8 +273,8 @@ void  GLRenderingSystemNS::initializeDefaultAssets()
 	m_basicAOTemplate = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
 }
 
-float GLRenderingSystemNS::RadicalInverse(unsigned int n, unsigned int base) {
-
+float GLRenderingSystemNS::RadicalInverse(unsigned int n, unsigned int base) 
+{
 	float val = 0.0f;
 	float invBase = 1.0f / base, invBi = invBase;
 	while (n > 0)
@@ -1489,7 +1489,6 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 	case TextureFilterMethod::NEAREST: l_minFilterParam = GL_NEAREST; break;
 	case TextureFilterMethod::LINEAR: l_minFilterParam = GL_LINEAR; break;
 	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_minFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
-
 	}
 	GLenum l_magFilterParam;
 	switch (textureDataDesc.textureMagFilterMethod)
@@ -1497,7 +1496,6 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 	case TextureFilterMethod::NEAREST: l_magFilterParam = GL_NEAREST; break;
 	case TextureFilterMethod::LINEAR: l_magFilterParam = GL_LINEAR; break;
 	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_magFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
-
 	}
 	if (textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CAPTURE || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CONVOLUTION || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_PREFILTER)
 	{

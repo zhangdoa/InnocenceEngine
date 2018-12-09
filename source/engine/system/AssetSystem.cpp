@@ -294,7 +294,6 @@ bool InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't remove TextureDataComponent by EntityID: " + std::to_string(EntityID) + " !");
 		return false;
 	}
-
 }
 
 bool InnoAssetSystem::releaseRawDataForMeshDataComponent(EntityID EntityID)
@@ -315,7 +314,6 @@ bool InnoAssetSystem::releaseRawDataForMeshDataComponent(EntityID EntityID)
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't release raw data for MeshDataComponent by EntityID: " + std::to_string(EntityID) + " !");
 		return false;
 	}
-
 }
 
 bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
@@ -335,7 +333,6 @@ bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't release raw data for TextureDataComponent by EntityID : " + std::to_string(EntityID) + " !");
 		return false;
 	}
-
 }
 
 void InnoAssetSystemNS::addUnitCube(MeshDataComponent& meshDataComponent)
@@ -979,7 +976,6 @@ TextureDataComponent* InnoAssetSystemNS::loadTexture(const std::string& fileName
 
 		return l_TDC;
 	}
-
 }
 
 TextureDataComponent* InnoAssetSystemNS::loadTextureFromDisk(const std::string& fileName, TextureUsageType TextureUsageType)
