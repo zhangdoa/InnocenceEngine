@@ -13,5 +13,5 @@ cp -R  stb/stb_image.h ../include/stb/
 
 cd ../
 
-mkdir -p dll/unix
-mkdir -p lib/unix
+mkdir -p dll/mac
+mkdir -p lib/mac
