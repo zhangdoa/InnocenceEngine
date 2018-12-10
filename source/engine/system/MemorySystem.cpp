@@ -155,9 +155,6 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::setup()
 
 	constructComponentPool(PhysicsDataComponent);
 
-	//InnoMemorySystemNS::m_VertexPool = std::make_unique<ComponentPool<Vertex>>(1024 * 1024 * 1024 * 2 );
-	//InnoMemorySystemNS::m_IndexPool = std::make_unique<ComponentPool<Index>>(1024 * 1024 * 5);
-
 	InnoMemorySystemNS::m_ChuckPool = std::make_unique<ChuckPool>();
 	// fill the chuck pool with empty marker
 	std::memset(InnoMemorySystemNS::m_ChuckPool->m_PoolPtr, 0xCC, InnoMemorySystemNS::m_ChuckPool->m_poolSize);
@@ -329,44 +326,119 @@ INNO_SYSTEM_EXPORT void InnoMemorySystem::free(void * ptr)
 	std::memset(l_freeChuckPtr_UC + sizeof(Chunk), 0xCC, l_fullFreeBlockSize - sizeof(Chunk));
 }
 
-void InnoMemorySystem::serializeImpl(void * ptr)
+void InnoMemorySystem::serializeImpl(const std::string& fileName, const std::string& className, unsigned long classSize, void* ptr)
 {
 	if (!ptr) return;
 	char* l_ptr_UC = reinterpret_cast<char*>(ptr);
-	Chunk* l_chuckPtr = reinterpret_cast<Chunk*>(l_ptr_UC - sizeof(Chunk));
-	if (l_chuckPtr->m_free) return;
-
-	unsigned long l_fullBlockSize = l_chuckPtr->m_blockSize;
 
 	std::ofstream l_file;
 	// @TODO: just return the streaming data, leave IO for AssetSystem
-	//l_file.open("../serializationTest" + InnoTimeSystem->getCurrentTimeInLocalForOutput() + ".innoAsset", std::ios::out | std::ios::trunc | std::ios::binary);
-	l_file.open("../serializationTest.innoAsset", std::ios::out | std::ios::trunc | std::ios::binary);
-	l_file.write(l_ptr_UC, l_fullBlockSize - sizeof(Chunk));
+	auto l_metaInfo = std::string("[DataType:InnocenceEngineSerializationData]");
+	auto l_time = "[Timestamp:" + std::to_string(g_pCoreSystem->getTimeSystem()->getCurrentTime()) + "]";
+	auto l_classNameChr = "[ClassName:" + className + "]";
+
+	auto x = l_metaInfo.length();
+	l_file.open(fileName + ".innoAsset", std::ios::out | std::ios::trunc | std::ios::binary);
+	l_file.write(l_metaInfo.c_str(), l_metaInfo.length());
+	l_file.write(l_time.c_str(), l_time.length());
+	l_file.write(l_classNameChr.c_str(), l_classNameChr.length());
+	l_file.write(l_ptr_UC, classSize);
 	l_file.close();
 }
 
-void * InnoMemorySystem::deserializeImpl(unsigned long size, const std::string & filePath)
+void* InnoMemorySystem::deserializeImpl(const std::string& fileName)
 {
 	std::ifstream l_file;
-	l_file.open(filePath, std::ios::binary);
+	l_file.open(fileName, std::ios::binary);
+
+	if (!l_file.is_open())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: Can't open file " + fileName + " for deserialization!");
+		return nullptr;
+	}
+
 	// get pointer to associated buffer object
 	std::filebuf* pbuf = l_file.rdbuf();
-
 	// get file size using buffer's members
 	std::size_t l_size = pbuf->pubseekoff(0, l_file.end, l_file.in);
 	pbuf->pubseekpos(0, l_file.in);
 
 	// allocate memory to contain file data
+	// @TODO: new???
 	char* buffer = new char[l_size];
 
 	// get file data
 	pbuf->sgetn(buffer, l_size);
 	unsigned char* buffer_UC = reinterpret_cast<unsigned char*>(buffer);
 
-	unsigned char* l_ptr = reinterpret_cast<unsigned char*>(allocate(size));
+	std::string className;
 
-	std::memcpy(l_ptr, buffer_UC, size);
+	size_t i = 0;
+	size_t j = 1;
+
+	for (i; i < l_size; i++)
+	{
+		if (buffer_UC[i] == *"[")
+		{
+			if (buffer_UC[i + 1] == *"C")
+			{
+				while (buffer_UC[i + j] != *"]")
+				{
+					className.push_back(buffer_UC[i + j]);
+					j++;
+				}
+				break;
+			}
+		}
+	}
+
+	className = className.substr(className.find(":") + 1, std::string::npos);
+
+	unsigned long classSize;
+	unsigned char* l_ptr;
+
+	if (className == getClassName<TransformComponent>())
+	{
+		classSize = sizeof(TransformComponent);
+		l_ptr = reinterpret_cast<unsigned char*>(spawn<TransformComponent>());
+	}
+	else if (className == getClassName<VisibleComponent>())
+	{
+		classSize = sizeof(VisibleComponent);
+		l_ptr = reinterpret_cast<unsigned char*>(spawn<VisibleComponent>());
+	}
+	else if (className == getClassName<LightComponent>())
+	{
+		classSize = sizeof(LightComponent);
+		l_ptr = reinterpret_cast<unsigned char*>(spawn<LightComponent>());
+	}
+	else if (className == getClassName<CameraComponent>())
+	{
+		classSize = sizeof(CameraComponent);
+		l_ptr = reinterpret_cast<unsigned char*>(spawn<CameraComponent>());
+	}
+	else if (className == getClassName<InputComponent>())
+	{
+		classSize = sizeof(InputComponent);
+		l_ptr = reinterpret_cast<unsigned char*>(spawn<InputComponent>());
+	}
+	else if (className == getClassName<EnvironmentCaptureComponent>())
+	{
+		classSize = sizeof(EnvironmentCaptureComponent);
+		l_ptr = reinterpret_cast<unsigned char*>(spawn<EnvironmentCaptureComponent>());
+	}
+	else if (className == getClassName<PhysicsDataComponent>())
+	{
+		classSize = sizeof(PhysicsDataComponent);
+		l_ptr = reinterpret_cast<unsigned char*>(spawn<PhysicsDataComponent>());
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: Unsupported deserialization data type "+ className + " !");
+		return nullptr;
+	}
+
+	std::memcpy(l_ptr, buffer_UC + i + j + 1, classSize);
 
 	l_file.close();
 
@@ -468,7 +540,7 @@ className* InnoMemorySystem::allocate##className() \
 	} \
 	else \
 	{ \
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: Can't allocate memory for component!"); \
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: Can't allocate memory for " + std::string(#className) + " !"); \
 		return nullptr; \
 	} \
 } \
@@ -496,9 +568,6 @@ allocateComponentImplDefi(DXTextureDataComponent)
 #endif
 
 allocateComponentImplDefi(PhysicsDataComponent);
-
-allocateComponentImplDefi(Vertex)
-allocateComponentImplDefi(Index)
 
 #define freeComponentImplDefi( className ) \
 void InnoMemorySystem::free##className(className* p) \
@@ -528,9 +597,6 @@ freeComponentImplDefi(DXTextureDataComponent)
 #endif
 
 freeComponentImplDefi(PhysicsDataComponent);
-
-freeComponentImplDefi(Vertex)
-freeComponentImplDefi(Index)
 
 ObjectStatus InnoMemorySystem::getStatus()
 {

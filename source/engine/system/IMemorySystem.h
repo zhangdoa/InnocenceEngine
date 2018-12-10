@@ -41,6 +41,12 @@ inline void IMemorySystem::destroy(className* p) \
 	free##className(p); \
 };
 
+#define getClassNameTemplate( className ) \
+inline std::string IMemorySystem::getClassName<className>() \
+{ \
+	return std::string(#className); \
+}
+
 INNO_INTERFACE IMemorySystem
 {
 public:
@@ -53,12 +59,11 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
+protected:
 	INNO_SYSTEM_EXPORT virtual void* allocate(unsigned long size) = 0;
 	INNO_SYSTEM_EXPORT virtual void free(void* ptr) = 0;
-	INNO_SYSTEM_EXPORT virtual void serializeImpl(void* ptr) = 0;
-	INNO_SYSTEM_EXPORT virtual void* deserializeImpl(unsigned long size, const std::string& filePath) = 0;
-
-	INNO_SYSTEM_EXPORT virtual void dumpToFile(bool fullDump) = 0;
+	INNO_SYSTEM_EXPORT virtual void serializeImpl(const std::string& fileName, const std::string& className, unsigned long classSize, void* ptr) = 0;
+	INNO_SYSTEM_EXPORT virtual void* deserializeImpl(const std::string& fileName) = 0;
 
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(VisibleComponent);
@@ -79,20 +84,8 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXTextureDataComponent);
 	#endif
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(PhysicsDataComponent);
-	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(Vertex);
-	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(Index);
 
-	template <typename T> T * spawn()
-	{
-		return reinterpret_cast<T *>(allocate(sizeof(T)));
-	};
-
-	template <typename T>  T * spawn(size_t n)
-	{
-		return reinterpret_cast<T *>(allocate(n * sizeof(T)));
-	};
-
-	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(TransformComponent);
+INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(VisibleComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(LightComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(CameraComponent);
@@ -111,8 +104,18 @@ public:
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXTextureDataComponent);
 	#endif
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(PhysicsDataComponent);
-	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(Vertex);
-	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(Index);
+public:
+	INNO_SYSTEM_EXPORT virtual void dumpToFile(bool fullDump) = 0;
+
+	template <typename T> T * spawn()
+	{
+		return reinterpret_cast<T *>(allocate(sizeof(T)));
+	};
+
+	template <typename T>  T * spawn(size_t n)
+	{
+		return reinterpret_cast<T *>(allocate(n * sizeof(T)));
+	};
 
 	template <typename T> void destroy(T* p)
 	{
@@ -120,16 +123,52 @@ public:
 		free(p);
 	};
 
-	template <typename T> void serialize(T* p)
+	template <typename T> void serialize(const std::string& fileName, T* p)
 	{
-		serializeImpl(p);
+		auto className = getClassName<T>();
+		serializeImpl(fileName, className, sizeof(T), p);
 	};
 
-	template <typename T> T* deserialize(const std::string& filePath)
+	template <typename T> T* deserialize(const std::string& fileName)
 	{
-		return reinterpret_cast<T *>(deserializeImpl(sizeof(T), filePath));
+		return reinterpret_cast<T *>(deserializeImpl(fileName));
 	};
+
+	template<typename T> std::string getClassName()
+	{
+		return std::string("Undefined");
+	}
 };
+
+template<>
+getClassNameTemplate(TransformComponent);
+
+template<>
+getClassNameTemplate(VisibleComponent);
+
+template<>
+getClassNameTemplate(LightComponent);
+
+template<>
+getClassNameTemplate(CameraComponent);
+
+template<>
+getClassNameTemplate(InputComponent);
+
+template<>
+getClassNameTemplate(EnvironmentCaptureComponent);
+
+template<>
+getClassNameTemplate(MeshDataComponent);
+
+template<>
+getClassNameTemplate(MaterialDataComponent);
+
+template<>
+getClassNameTemplate(TextureDataComponent);
+
+template<>
+getClassNameTemplate(PhysicsDataComponent);
 
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(TransformComponent);
@@ -167,10 +206,6 @@ INNO_SYSTEM_EXPORT spawnComponentTemplate(DXTextureDataComponent);
 #endif
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(PhysicsDataComponent);
-template <>
-INNO_SYSTEM_EXPORT spawnComponentTemplate(Vertex);
-template <>
-INNO_SYSTEM_EXPORT spawnComponentTemplate(Index);
 
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(TransformComponent);
@@ -208,7 +243,3 @@ INNO_SYSTEM_EXPORT destroyComponentTemplate(DXTextureDataComponent);
 #endif
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(PhysicsDataComponent);
-template <>
-INNO_SYSTEM_EXPORT destroyComponentTemplate(Vertex);
-template <>
-INNO_SYSTEM_EXPORT destroyComponentTemplate(Index);

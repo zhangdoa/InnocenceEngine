@@ -33,8 +33,6 @@ public:
 	spawnComponentInterfaceDecl(InputComponent);
 	spawnComponentInterfaceDecl(EnvironmentCaptureComponent);
 
-	spawnComponentInterfaceDecl(MaterialDataComponent);
-
 	template <typename T> T * spawn(EntityID parentEntity)
 	{
 		auto l_ptr = g_pMemorySystem->spawn<T>();
@@ -49,6 +47,7 @@ public:
 		}
 	};
 
+protected:
 	getComponentInterfaceDecl(TransformComponent);
 	getComponentInterfaceDecl(VisibleComponent);
 	getComponentInterfaceDecl(LightComponent);
@@ -56,8 +55,7 @@ public:
 	getComponentInterfaceDecl(InputComponent);
 	getComponentInterfaceDecl(EnvironmentCaptureComponent);
 
-	getComponentInterfaceDecl(MaterialDataComponent);
-
+public:
 	template <typename T> T * get(EntityID parentEntity)
 	{
 		return new T();
@@ -102,9 +100,4 @@ template <> inline InputComponent * IGameSystem::get(EntityID parentEntity)
 template <> inline EnvironmentCaptureComponent * IGameSystem::get(EntityID parentEntity)
 {
 	return getComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity);
-};
-
-template <> inline MaterialDataComponent * IGameSystem::get(EntityID parentEntity)
-{
-	return getComponentInterfaceCall(MaterialDataComponent, parentEntity);
 };

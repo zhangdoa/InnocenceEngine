@@ -21,8 +21,8 @@ public:
 
 	INNO_SYSTEM_EXPORT void* allocate(unsigned long size) override;
 	INNO_SYSTEM_EXPORT void free(void* ptr) override;
-	INNO_SYSTEM_EXPORT void serializeImpl(void* ptr) override;
-	INNO_SYSTEM_EXPORT void* deserializeImpl(unsigned long size, const std::string& filePath) override;
+	INNO_SYSTEM_EXPORT void serializeImpl(const std::string& fileName, const std::string& className, unsigned long classSize, void* ptr) override;
+	INNO_SYSTEM_EXPORT void* deserializeImpl(const std::string& fileName) override;
 
 	INNO_SYSTEM_EXPORT void dumpToFile(bool fullDump) override;
 
@@ -45,8 +45,6 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXTextureDataComponent);
 	#endif
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(PhysicsDataComponent);
-	INNO_SYSTEM_EXPORT allocateComponentImplDecl(Vertex);
-	INNO_SYSTEM_EXPORT allocateComponentImplDecl(Index);
 
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(VisibleComponent);
@@ -67,6 +65,4 @@ public:
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXTextureDataComponent);
 	#endif
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(PhysicsDataComponent);
-	INNO_SYSTEM_EXPORT freeComponentImplDecl(Vertex);
-	INNO_SYSTEM_EXPORT freeComponentImplDecl(Index);
 };

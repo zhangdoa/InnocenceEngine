@@ -113,7 +113,6 @@ spawnComponentImplDefi(LightComponent)
 spawnComponentImplDefi(CameraComponent)
 spawnComponentImplDefi(InputComponent)
 spawnComponentImplDefi(EnvironmentCaptureComponent)
-spawnComponentImplDefi(MaterialDataComponent)
 
 INNO_SYSTEM_EXPORT std::string InnoGameSystem::getGameName()
 {
@@ -130,7 +129,7 @@ INNO_SYSTEM_EXPORT className* InnoGameSystem::get##className(EntityID parentEnti
 	} \
 	else \
 	{ \
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem : can't find components by EntityID: " + std::to_string(parentEntity) + " !"); \
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem : can't find " + std::string(#className) + " by EntityID: " + std::to_string(parentEntity) + " !"); \
 		return nullptr; \
 	} \
 }
@@ -141,7 +140,6 @@ getComponentImplDefi(LightComponent)
 getComponentImplDefi(CameraComponent)
 getComponentImplDefi(InputComponent)
 getComponentImplDefi(EnvironmentCaptureComponent)
-getComponentImplDefi(MaterialDataComponent);
 
 INNO_SYSTEM_EXPORT void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponent, ButtonData boundButton, std::function<void()>* function)
 {

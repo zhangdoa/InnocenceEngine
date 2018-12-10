@@ -6,7 +6,7 @@ clone_script:
         cd %APPVEYOR_BUILD_FOLDER%
         git checkout -q %APPVEYOR_REPO_COMMIT%
         git submodule update --init --recursive
-before_build:
+build_script:
 - cmd: >-
     @echo | setupWin.bat
 
@@ -15,5 +15,7 @@ before_build:
     @echo | buildGLFWWin64VS15.bat
 
     @echo | buildWin64VS15.bat
-build:
-  verbosity: minimal
+skip_commits:
+  files:
+  - '**/*.md'
+  - 'res/**/*.*'
