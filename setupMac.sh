@@ -6,11 +6,12 @@ cp -R assimp/include/assimp/ ../include/assimp/
 
 cp -R Vulkan-Headers/include/vulkan/ ../include/vulkan/
 
-cp -R  glfw/include/GLFW/ ../include/GLFW/
+cp -R glfw/include/GLFW/ ../include/GLFW/
 
-cp -R  stb/stb_image.h ../include/stb/
+mkdir -p ../include/stb
+cp  stb/stb_image.h ../include/stb/
 
 cd ../
 
-mkdir -p dll/mac
-mkdir -p lib/mac
+mkdir -p dll/macos
+mkdir -p lib/macos
