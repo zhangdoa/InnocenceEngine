@@ -11,40 +11,70 @@
 > "A poet once said, 'The whole universe is in a glass of wine.'"
 > -- Richard Feynman, 1963
 
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_large)
+
 ## How to build
 
 Currently avaliable platforms:
 
 ### Windows:
 
-Windows 10 version 1803:
+Tested under Windows 10 version 1809
 
-Prerequisites: Visual Studio 2017 + CMake 3.10 or higher
+Prerequisites: MSVC 19.00 + CMake 3.10 or higher
 
-Run buildWin64VS15.bat or buildWin32VS15.bat to generate project and build, then run postBuildWin64.bat or postBuildWin32.bat to copy the resources files and dynamic libs for debug usage.
+Run following scripts in a sequence:
+
+``` cmd
+@echo | setupWin.bat
+@echo | buildAssimpWin64VS15.bat
+@echo | buildGLFWWin64VS15.bat
+@echo | buildWin64VS15.bat
+@echo | postBuildWin64.bat
+```
 
 ### Linux:
 
-Ubuntu 18.04 LTS:
+Tested under Ubuntu 18.04 LTS
 
-Prerequisites: CMake 3.10 or higher + OpenGL library(lGL) + GLFW3 library(lglfw3)
+Prerequisites: GCC 7.0 or Clang 6.0 or higher + CMake 3.10 or higher + OpenGL library(lGL)
 
-Run buildLinux64.sh to generate makefiles or buildLinux64-CodeBlocks.sh to get CodeBlocks IDE project, then manually make and build.
+Run following scripts in a sequence:
+
+setupLinux.sh
+
+buildAssimpLinux64.sh
+
+buildGLFWLinux64.sh
+
+buildLinux64.sh or buildLinux64-Clang.sh or buildLinux64-CodeBlocks.sh
+
+postBuildLinux64.sh
 
 ### Mac OSX:
 
-version 10.13.6:
+Tested under version 10.13.6
 
 Prerequisites: CMake 3.10 or higher + XCode 9.4.1 or higher
 
-Run buildMac64-XCode.sh to generate XCode projects and then manually build.
+Run following scripts in a sequence:
+
+setupMac.sh
+
+buildAssimpMac64-Xcode.sh
+
+buildGLFWMac64-Xcode.sh
+
+buildMac64-Xcode.sh
+
+postBuildMac64.sh
 
 ## Features
 
 ### Architecture
 
 [Entity–component–system](https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system)
-
 
 ### Rendering
 
@@ -53,7 +83,6 @@ Run buildMac64-XCode.sh to generate XCode projects and then manually build.
 [Physically based rendering](https://en.wikipedia.org/wiki/Physically_based_rendering)
 
 [Scene graph](https://en.wikipedia.org/wiki/Scene_graph)
-
 
 ## References& Dependencies
 
@@ -68,7 +97,6 @@ Run buildMac64-XCode.sh to generate XCode projects and then manually build.
 [assimp](https://github.com/assimp)
 
 [tinyXML2](https://github.com/leethomason/tinyxml2)
-
 
 ### Assets
 
@@ -96,29 +124,54 @@ Run buildMac64-XCode.sh to generate XCode projects and then manually build.
 
 [API Design for C++ (1st Edition)](https://www.amazon.com/API-Design-C-Martin-Reddy/dp/0123850037)
 
+[Advanced C and C++ Compiling (1st Edition)](https://www.amazon.com/Advanced-C-Compiling-Milan-Stevanovic/dp/1430266678)
+
+[Data Structures and Algorithms in C++ (4th Edition)](https://www.amazon.com/Data-Structures-Algorithms-Adam-Drozdek-ebook/dp/B00B6F0F5S)
+
 [Game Engine Architecture (1st Edition)](https://www.amazon.com/Game-Engine-Architecture-Jason-Gregory/dp/1568814135)
 
 [Game Programming Patterns](https://www.amazon.com/Game-Programming-Patterns-Robert-Nystrom/dp/0990582906)
 
-[Computer Graphics with Open GL (4th Edition)](https://www.amazon.com/Computer-Graphics-Open-GL-4th/dp/0136053580)
+[Game Coding Complete (4th Edition)](https://www.amazon.com/Game-Coding-Complete-Fourth-McShaffry/dp/1133776574)
+
+[Real-Time Rendering (4th Edition)](https://www.amazon.com/Real-Time-Rendering-Fourth-Tomas-Akenine-Mo-ebook/dp/B07FSKB982)
 
 [Physically Based Rendering : From Theory to Implementation(2nd Edition)](https://www.amazon.com/Physically-Based-Rendering-Second-Implementation/dp/0123750792)
 
+[Computer Graphics with Open GL (4th Edition)](https://www.amazon.com/Computer-Graphics-Open-GL-4th/dp/0136053580)
+
+[OpenGL Programming Guide: The Official Guide to Learning OpenGL, Version 4.5 with SPIR-V (9th Edition)](https://www.amazon.com/OpenGL-Programming-Guide-Official-Learning/dp/0134495497)
+
+[Calculus (6th Edition)](https://www.amazon.com/CALCULUS-Sixth-James-Stewart/dp/B00722RNC2)
+
+[Linear Algebra and Its Applications (3rd Edition)](https://www.amazon.com/Linear-Algebra-Its-Applications-3rd/dp/0201709708)
 
 ### Online tutorials& resources
 
-[thebennybox's YouTube channel](https://www.youtube.com/user/thebennybox)
+[Mathematics - Martin Baker](http://www.euclideanspace.com/maths)
+
+[Wolfram MathWorld: The Web's Most Extensive Mathematics Resource](http://mathworld.wolfram.com)
+
+[cppreference.com](https://en.cppreference.com)
+
+[Standard C++](https://isocpp.org)
+
+[Gamasutra](http://www.gamasutra.com)
+
+[Scratchapixel](https://www.scratchapixel.com)
+
+[Advances in Real-Time Rendering in 3D Graphics and Games](http://advances.realtimerendering.com)
 
 [Learn OpenGL](https://learnopengl.com)
 
-[Scratchapixel](https://www.scratchapixel.com)
+[OpenGL Step by Step](http://ogldev.atspace.co.uk)
+
+[RasterTek - DirectX 10, DirectX 11, and DirectX 12 tutorials](http://www.rastertek.com/)
+
+[thebennybox's YouTube channel](https://www.youtube.com/user/thebennybox)
 
 [Randy Gaul's Game Programming Blog](http://www.randygaul.net)
 
 [Sébastien Lagarde's blog](https://seblagarde.wordpress.com)
 
 [Stephen Hill's blog](http://blog.selfshadow.com)
-
-
-## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_large)
