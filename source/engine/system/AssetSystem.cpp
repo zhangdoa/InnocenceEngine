@@ -54,6 +54,23 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 	static AssetSystemSingletonComponent* g_AssetSystemSingletonComponent;
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
 
+	struct DirectoryMetadata
+	{
+		unsigned int depth = 0;
+		DirectoryMetadata* parentDirectory;
+		std::string directoryName;
+	};
+
+	struct AssetMetadata
+	{
+		DirectoryMetadata* parentDirectory;
+		std::string fileName;
+		std::string extension;
+	};
+
+	std::vector<DirectoryMetadata> m_DirectoryMetadatas;
+	std::vector<AssetMetadata> m_AssetMetadatas;
+
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 }
 
@@ -581,6 +598,45 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent& meshDataComponent)
 
 void InnoAssetSystemNS::loadDefaultAssets()
 {
+	auto path = "..//res";
+	namespace fs = std::experimental::filesystem;
+	std::function<void(const fs::path& pathToShow, int level, DirectoryMetadata* parentDirectoryMetadata)> f_directoryTreeBuilder =
+		[&](const fs::path& pathToShow, int level, DirectoryMetadata* parentDirectoryMetadata) {
+		if (fs::exists(pathToShow) && fs::is_directory(pathToShow))
+		{
+			for (const auto& entry : fs::directory_iterator(pathToShow))
+			{
+				if (fs::is_directory(entry.status()))
+				{
+					DirectoryMetadata l_directoryMetadata;
+					l_directoryMetadata.depth = level;
+					l_directoryMetadata.parentDirectory = parentDirectoryMetadata;
+					l_directoryMetadata.directoryName = entry.path().stem().generic_string();
+					InnoAssetSystemNS::m_DirectoryMetadatas.emplace_back(l_directoryMetadata);
+
+					f_directoryTreeBuilder(entry, level + 1, &l_directoryMetadata);
+				}
+				else if (fs::is_regular_file(entry.status()))
+				{
+					AssetMetadata l_assetMetadata;
+					l_assetMetadata.parentDirectory = parentDirectoryMetadata;
+					l_assetMetadata.fileName = entry.path().stem().generic_string();
+					l_assetMetadata.extension = entry.path().extension().generic_string();
+					InnoAssetSystemNS::m_AssetMetadatas.emplace_back(l_assetMetadata);
+				}
+				else
+				{
+
+				}
+			}
+		}
+	};
+
+	f_directoryTreeBuilder("..//res", 0, nullptr);
+
+	auto& x = InnoAssetSystemNS::m_DirectoryMetadatas;
+	auto& y = InnoAssetSystemNS::m_AssetMetadatas;
+
 	g_AssetSystemSingletonComponent->m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", TextureUsageType::NORMAL);
 	g_AssetSystemSingletonComponent->m_basicAlbedoTemplate = loadTextureFromDisk("basic_albedo.png", TextureUsageType::ALBEDO);
 	g_AssetSystemSingletonComponent->m_basicMetallicTemplate = loadTextureFromDisk("basic_metallic.png", TextureUsageType::METALLIC);

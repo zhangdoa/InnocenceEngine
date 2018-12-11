@@ -12,6 +12,10 @@
 #include "../third-party/ImGui/imgui.h"
 #include "../third-party/ImGui/imgui_impl_glfw_gl3.h"
 
+#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#include <experimental/filesystem>
+#endif
+
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -126,7 +130,7 @@ void ImGuiWrapper::update()
 		ImGui::Checkbox("Use zoom", &l_renderingConfig.useZoom);
 		ImGui::Checkbox("Draw terrain", &l_renderingConfig.drawTerrain);
 		ImGui::Checkbox("Draw overlap wireframe", &l_renderingConfig.drawOverlapWireframe);
-		ImGui::Checkbox("Reload shader", &l_renderingConfig.reloadShader);		
+		ImGui::Checkbox("Reload shader", &l_renderingConfig.reloadShader);
 		ImGui::Checkbox("Show render pass result", &l_renderingConfig.showRenderPassResult);
 		ImGui::End();
 	}
@@ -136,8 +140,8 @@ void ImGuiWrapper::update()
 	RenderingSystemSingletonComponent::getInstance().m_drawTerrain = l_renderingConfig.drawTerrain;
 	RenderingSystemSingletonComponent::getInstance().m_drawOverlapWireframe = l_renderingConfig.drawOverlapWireframe;
 	RenderingSystemSingletonComponent::getInstance().m_reloadShader = l_renderingConfig.reloadShader;
-	
-	if(l_renderingConfig.showRenderPassResult)
+
+	if (l_renderingConfig.showRenderPassResult)
 	{
 		ImGui::Begin("Geometry Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		{
@@ -320,6 +324,12 @@ void ImGuiWrapper::update()
 		ImGui::End();
 	}
 
+	{
+		ImGui::Begin("File Explorer", 0, ImGuiWindowFlags_AlwaysAutoResize);
+
+		ImGui::End();
+	}
+
 	// Rendering
 	glViewport(0, 0, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y);
 	ImGui::Render();
@@ -337,7 +347,7 @@ void ImGuiWrapper::update()
 		glViewport(0, 0, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y);
 		ImGui::Render();
 		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
-	}
+}
 #endif
 
 }
