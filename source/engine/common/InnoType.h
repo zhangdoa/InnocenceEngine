@@ -46,6 +46,8 @@ enum class TexturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UN
 enum class TextureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER };
 enum class TextureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
 enum class TextureAssignType { ADD, OVERWRITE };
+
+enum class IconType { OBJ, PNG, SHADER, UNKNOWN };
 // shader custom types
 enum class ShaderType { VERTEX, GEOMETRY, FRAGMENT };
 

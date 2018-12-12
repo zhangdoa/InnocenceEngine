@@ -6,6 +6,22 @@
 #include "../component/VisibleComponent.h"
 
 #include "../common/InnoConcurrency.h"
+
+struct AssetMetadata
+{
+	std::string fileName;
+	std::string extension;
+	IconType iconType;
+};
+
+struct DirectoryMetadata
+{
+	unsigned int depth = 0;
+	std::string directoryName = "root";
+	std::vector<DirectoryMetadata> childrenDirectories;
+	std::vector<AssetMetadata> childrenAssets;
+};
+
 class AssetSystemSingletonComponent
 {
 public:
@@ -43,12 +59,19 @@ public:
 	TextureDataComponent* m_basicRoughnessTemplate;
 	TextureDataComponent* m_basicAOTemplate;
 
+	TextureDataComponent* m_iconTemplate_OBJ;
+	TextureDataComponent* m_iconTemplate_PNG;
+	TextureDataComponent* m_iconTemplate_SHADER;
+	TextureDataComponent* m_iconTemplate_UNKNOWN;
+
 	std::unordered_map<std::string, ModelMap> m_loadedModelMap;
 	std::unordered_map<std::string, TextureDataComponent*> m_loadedTextureMap;
 
     const std::string m_textureRelativePath = std::string{"..//res//textures//"};
     const std::string m_modelRelativePath = std::string{"..//res//models//"};
     const std::string m_shaderRelativePath = std::string{"..//res//shaders//"};
+
+	DirectoryMetadata m_rootDirectoryMetadata;
 
 	std::vector<InnoFuture<void>> m_asyncTaskVector;
 private:

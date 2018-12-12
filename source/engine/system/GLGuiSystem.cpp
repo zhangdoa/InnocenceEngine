@@ -8,6 +8,8 @@
 #include "../component/GLLightRenderPassSingletonComponent.h"
 #include "../component/GLFinalRenderPassSingletonComponent.h"
 #include "../component/RenderingSystemSingletonComponent.h"
+#include "../component/GLRenderingSystemSingletonComponent.h"
+#include "../component/AssetSystemSingletonComponent.h"
 
 #include "../third-party/ImGui/imgui.h"
 #include "../third-party/ImGui/imgui_impl_glfw_gl3.h"
@@ -325,10 +327,59 @@ void ImGuiWrapper::update()
 	}
 
 	{
+		auto l_iconSize = ImVec2(32.0f, 32.0f);
+
+		std::function<ImTextureID(const IconType iconType)> f_getTextID =
+			[&](const IconType iconType) -> ImTextureID
+		{
+			switch (iconType)
+			{
+			case IconType::OBJ:
+				return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_OBJ->m_TAO); break;
+			case IconType::PNG:
+				return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_PNG->m_TAO); break;
+			case IconType::SHADER:
+				return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_SHADER->m_TAO); break;
+			case IconType::UNKNOWN:
+				return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_UNKNOWN->m_TAO); break;
+			default:
+				return nullptr; break;
+			}
+		};
+
+		std::function<void(const AssetMetadata* assetMetadata)> f_assetBuilder =
+			[&](const AssetMetadata* assetMetadata)
+		{
+			ImGui::Image(f_getTextID(assetMetadata->iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::SameLine();
+			ImGui::Text((assetMetadata->fileName + assetMetadata->extension).c_str());
+		};
+
+		std::function<void(const DirectoryMetadata* directoryMetadata)> f_directoryTreeBuilder =
+			[&](const DirectoryMetadata* directoryMetadata)
+		{
+			if (ImGui::TreeNode(directoryMetadata->directoryName.c_str()))
+			{
+				for (auto& i : directoryMetadata->childrenDirectories)
+				{
+					f_directoryTreeBuilder(&i);
+				}
+				for (auto& i : directoryMetadata->childrenAssets)
+				{
+					f_assetBuilder(&i);
+				}
+				ImGui::TreePop();
+			}
+		};
+
 		ImGui::Begin("File Explorer", 0, ImGuiWindowFlags_AlwaysAutoResize);
 
+		auto& x = AssetSystemSingletonComponent::getInstance().m_rootDirectoryMetadata;
+
+		f_directoryTreeBuilder(&AssetSystemSingletonComponent::getInstance().m_rootDirectoryMetadata);
+
 		ImGui::End();
-	}
+				}
 
 	// Rendering
 	glViewport(0, 0, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y);
@@ -347,10 +398,10 @@ void ImGuiWrapper::update()
 		glViewport(0, 0, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y);
 		ImGui::Render();
 		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
-}
+	}
 #endif
 
-}
+				}
 
 void ImGuiWrapper::terminate()
 {

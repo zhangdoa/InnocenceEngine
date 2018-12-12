@@ -20,6 +20,11 @@ public:
 	std::unordered_map<EntityID, GLMeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, GLTextureDataComponent*> m_textureMap;
 
+	GLTextureDataComponent* m_iconTemplate_OBJ;
+	GLTextureDataComponent* m_iconTemplate_PNG;
+	GLTextureDataComponent* m_iconTemplate_SHADER;
+	GLTextureDataComponent* m_iconTemplate_UNKNOWN;
+
 private:
 	GLRenderingSystemSingletonComponent() {};
 };

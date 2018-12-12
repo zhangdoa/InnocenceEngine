@@ -54,23 +54,6 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 	static AssetSystemSingletonComponent* g_AssetSystemSingletonComponent;
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
 
-	struct DirectoryMetadata
-	{
-		unsigned int depth = 0;
-		DirectoryMetadata* parentDirectory;
-		std::string directoryName;
-	};
-
-	struct AssetMetadata
-	{
-		DirectoryMetadata* parentDirectory;
-		std::string fileName;
-		std::string extension;
-	};
-
-	std::vector<DirectoryMetadata> m_DirectoryMetadatas;
-	std::vector<AssetMetadata> m_AssetMetadatas;
-
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 }
 
@@ -219,9 +202,9 @@ TextureDataComponent * InnoAssetSystem::getTextureDataComponent(EntityID EntityI
 	}
 }
 
-MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType MeshShapeType)
+MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType meshShapeType)
 {
-	switch (MeshShapeType)
+	switch (meshShapeType)
 	{
 	case MeshShapeType::LINE:
 		return InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_UnitLineTemplate; break;
@@ -241,9 +224,9 @@ MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType MeshShap
 	}
 }
 
-TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType TextureUsageType)
+TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType textureUsageType)
 {
-	switch (TextureUsageType)
+	switch (textureUsageType)
 	{
 	case TextureUsageType::INVISIBLE:
 		return nullptr; break;
@@ -269,6 +252,23 @@ TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType
 		return nullptr; break;
 	case TextureUsageType::SHADOWMAP:
 		return nullptr; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+INNO_SYSTEM_EXPORT TextureDataComponent* InnoAssetSystem::getTextureDataComponent(IconType iconType)
+{
+	switch (iconType)
+	{
+	case IconType::OBJ:
+		return InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_iconTemplate_OBJ; break;
+	case IconType::PNG:
+		return InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_iconTemplate_PNG; break;
+	case IconType::SHADER:
+		return InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_iconTemplate_SHADER; break;
+	case IconType::UNKNOWN:
+		return InnoAssetSystemNS::g_AssetSystemSingletonComponent->m_iconTemplate_UNKNOWN; break;
 	default:
 		return nullptr; break;
 	}
@@ -584,7 +584,7 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent& meshDataComponent)
 			l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_4);
 
-			auto l_gridIndex = 4 * (i) + 4 * l_gridSize * (j);
+			auto l_gridIndex = 4 * (i)+4 * l_gridSize * (j);
 			meshDataComponent.m_indices.emplace_back(0 + l_gridIndex);
 			meshDataComponent.m_indices.emplace_back(1 + l_gridIndex);
 			meshDataComponent.m_indices.emplace_back(3 + l_gridIndex);
@@ -598,6 +598,26 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent& meshDataComponent)
 
 void InnoAssetSystemNS::loadDefaultAssets()
 {
+	std::function<IconType(const std::string&)> getIconType =
+		[&](const std::string& extension) -> IconType {
+		if (extension == ".obj")
+		{
+			return IconType::OBJ;
+		}
+		else if (extension == ".png")
+		{
+			return IconType::PNG;
+		}
+		else if (extension == ".sf")
+		{
+			return IconType::SHADER;
+		}
+		else
+		{
+			return IconType::UNKNOWN;
+		}
+	};
+
 	auto path = "..//res";
 	namespace fs = std::experimental::filesystem;
 	std::function<void(const fs::path& pathToShow, int level, DirectoryMetadata* parentDirectoryMetadata)> f_directoryTreeBuilder =
@@ -610,19 +630,17 @@ void InnoAssetSystemNS::loadDefaultAssets()
 				{
 					DirectoryMetadata l_directoryMetadata;
 					l_directoryMetadata.depth = level;
-					l_directoryMetadata.parentDirectory = parentDirectoryMetadata;
 					l_directoryMetadata.directoryName = entry.path().stem().generic_string();
-					InnoAssetSystemNS::m_DirectoryMetadatas.emplace_back(l_directoryMetadata);
-
 					f_directoryTreeBuilder(entry, level + 1, &l_directoryMetadata);
+					parentDirectoryMetadata->childrenDirectories.emplace_back(l_directoryMetadata);
 				}
 				else if (fs::is_regular_file(entry.status()))
 				{
 					AssetMetadata l_assetMetadata;
-					l_assetMetadata.parentDirectory = parentDirectoryMetadata;
 					l_assetMetadata.fileName = entry.path().stem().generic_string();
 					l_assetMetadata.extension = entry.path().extension().generic_string();
-					InnoAssetSystemNS::m_AssetMetadatas.emplace_back(l_assetMetadata);
+					l_assetMetadata.iconType = getIconType(l_assetMetadata.extension);
+					parentDirectoryMetadata->childrenAssets.emplace_back(l_assetMetadata);
 				}
 				else
 				{
@@ -632,16 +650,18 @@ void InnoAssetSystemNS::loadDefaultAssets()
 		}
 	};
 
-	f_directoryTreeBuilder("..//res", 0, nullptr);
-
-	auto& x = InnoAssetSystemNS::m_DirectoryMetadatas;
-	auto& y = InnoAssetSystemNS::m_AssetMetadatas;
+	f_directoryTreeBuilder("..//res", 0, &g_AssetSystemSingletonComponent->m_rootDirectoryMetadata);
 
 	g_AssetSystemSingletonComponent->m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", TextureUsageType::NORMAL);
 	g_AssetSystemSingletonComponent->m_basicAlbedoTemplate = loadTextureFromDisk("basic_albedo.png", TextureUsageType::ALBEDO);
 	g_AssetSystemSingletonComponent->m_basicMetallicTemplate = loadTextureFromDisk("basic_metallic.png", TextureUsageType::METALLIC);
 	g_AssetSystemSingletonComponent->m_basicRoughnessTemplate = loadTextureFromDisk("basic_roughness.png", TextureUsageType::ROUGHNESS);
 	g_AssetSystemSingletonComponent->m_basicAOTemplate = loadTextureFromDisk("basic_ao.png", TextureUsageType::AMBIENT_OCCLUSION);
+
+	g_AssetSystemSingletonComponent->m_iconTemplate_OBJ = loadTextureFromDisk("InnoFileTypeIcons_OBJ.png", TextureUsageType::NORMAL);
+	g_AssetSystemSingletonComponent->m_iconTemplate_PNG = loadTextureFromDisk("InnoFileTypeIcons_PNG.png", TextureUsageType::NORMAL);
+	g_AssetSystemSingletonComponent->m_iconTemplate_SHADER = loadTextureFromDisk("InnoFileTypeIcons_SHADER.png", TextureUsageType::NORMAL);
+	g_AssetSystemSingletonComponent->m_iconTemplate_UNKNOWN = loadTextureFromDisk("InnoFileTypeIcons_UNKNOWN.png", TextureUsageType::NORMAL);
 
 	g_AssetSystemSingletonComponent->m_UnitLineTemplate = addMeshDataComponent();
 	auto lastLineMeshData = g_AssetSystemSingletonComponent->m_UnitLineTemplate;
@@ -799,7 +819,7 @@ ModelMap InnoAssetSystemNS::loadModelFromDisk(const std::string & fileName)
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "AssetSystem: " + fileName + " is loaded for the first time.");
 
 	return l_loadedModelMap;
-}
+	}
 
 ModelMap InnoAssetSystemNS::processAssimpScene(const aiScene* aiScene)
 {
