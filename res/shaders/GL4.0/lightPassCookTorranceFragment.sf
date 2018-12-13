@@ -15,6 +15,7 @@ struct pointLight {
 	vec3 color;
 };
 
+const float eps = 0.00001;
 const float PI = 3.14159265359;
 const int NR_POINT_LIGHTS = 64;
 
@@ -73,7 +74,7 @@ float smoothDistanceAtt(float squaredDistance, float invSqrAttRadius)
 float getDistanceAtt(vec3 unormalizedLightVector, float invSqrAttRadius)
 {
 	float sqrDist = dot(unormalizedLightVector, unormalizedLightVector);
-	float attenuation = 1.0 / (max(sqrDist, 0.00001));
+	float attenuation = 1.0 / (max(sqrDist, eps));
 	attenuation *= smoothDistanceAtt(sqrDist, invSqrAttRadius);
 
 	return attenuation;
@@ -88,8 +89,8 @@ vec3 fr_F_Schlick(vec3 f0, float f90, float u)
 // ----------------------------------------------------------------------------
 float fd_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
 {
-	float NdotV_ = max(NdotV, 0.00001);
-	float	NdotL_ = max(NdotL, 0.00001);
+	float NdotV_ = max(NdotV, eps);
+	float	NdotL_ = max(NdotL, eps);
 	float energyBias = mix(0.0, 0.5, linearRoughness);
 	float energyFactor = mix(1.0, 1.0 / 1.51, linearRoughness);
 	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
@@ -103,8 +104,8 @@ float fd_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughn
 float fr_V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
 {
 	float alphaG2 = alphaG * alphaG;
-	float NdotV_ = max(NdotV, 0.00001);
-	float	NdotL_ = max(NdotL, 0.00001);
+	float NdotV_ = max(NdotV, eps);
+	float	NdotL_ = max(NdotL, eps);
 	float Lambda_GGXV = NdotL_ * sqrt(NdotV_ * NdotV_ * (1.0 - alphaG2) + alphaG2);
 	float Lambda_GGXL = NdotV_ * sqrt(NdotL_ * NdotL_ * (1.0 - alphaG2) + alphaG2);
 	return 0.5 / (Lambda_GGXV + Lambda_GGXL);
@@ -175,7 +176,7 @@ vec3 getFrMS(float NdotL, float NdotV, vec3 F0, float roughness)
 	float beta2 = 1.0 - rsF1_l;
 	float beta3 = 1.0 - rsF1_v;
 
-	frMS = f_averange * rsF1_averange / (PI * beta1 * (vec3(1.0) - f_averange * beta1) + 0.00001);
+	frMS = f_averange * rsF1_averange / (PI * beta1 * (vec3(1.0) - f_averange * beta1) + eps);
 	frMS = frMS * beta2 * beta3;
 	return frMS;
 }
@@ -290,7 +291,7 @@ void main()
 
 	float Metallic = RT0.a;
 	float Roughness = RT1.a;
-	float safe_roughness = (Roughness + 0.00001) / 1.00001;
+	float safe_roughness = (Roughness + eps) / (1.0 + eps);
 	float AO = RT2.a;
 
 	vec3 Lo = vec3(0.0);
@@ -328,6 +329,9 @@ void main()
 			float lightRadius = uni_pointLights[i].radius;
 			if (length(unormalizedL) < lightRadius)
 			{
+
+			}
+			
 				L = normalize(unormalizedL);
 				H = normalize(V + L);
 
@@ -336,14 +340,37 @@ void main()
 				NdotL = max(dot(N, L), 0.0);
 
 				float attenuation = 1.0;
-				float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, 0.00001);
+				float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
 				attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
 				vec3 lightRadiance = uni_pointLights[i].color * attenuation;
 
-				Lo += getRadiance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, lightRadiance);
-			}
-		}
+				//Lo += getRadiance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, lightRadiance);
+				
+				// sphere area light
+				float sqrDist = dot(unormalizedL, unormalizedL);
+				
+				float Beta = acos(NdotL);
+				float H2 = sqrt(sqrDist);
+				float h = H2 / lightRadius;
+				float x = sqrt(max(h * h - 1, eps));
+				float y = -x * (1 / tan(Beta));
+				y = clamp(y, -1.0, 1.0);
+				float illuminance = 0;
+
+				if (h * cos (Beta) > 1)
+				{
+					illuminance = cos (Beta) / (h * h);
+				}
+				else
+				{
+					illuminance = (1 / max(PI * h * h, eps))
+					* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
+					+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
+				}
+				illuminance *= PI;
+				Lo += getRadiance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * uni_pointLights[i].color);
+		}		
 	}
 	if (uni_drawCSMSplitedArea)
 	{
