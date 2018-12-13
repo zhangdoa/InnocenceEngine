@@ -396,9 +396,9 @@ void GameInstanceNS::updateLights(float seed)
 		{
 			for (auto& j : modelMap)
 			{
-				j.second->m_meshColor.albedo_r = albedo.x;
-				j.second->m_meshColor.albedo_g = albedo.y;
-				j.second->m_meshColor.albedo_b = albedo.z;
+				j.second->m_meshCustomMaterial.albedo_r = albedo.x;
+				j.second->m_meshCustomMaterial.albedo_g = albedo.y;
+				j.second->m_meshCustomMaterial.albedo_b = albedo.z;
 			}
 		};
 
@@ -449,12 +449,12 @@ void GameInstanceNS::updateSpheres(float seed)
 		{
 			for (auto& j : modelMap)
 			{
-				j.second->m_meshColor.albedo_r = albedo.x;
-				j.second->m_meshColor.albedo_g = albedo.y;
-				j.second->m_meshColor.albedo_b = albedo.z;
-				j.second->m_meshColor.metallic = MRA.x;
-				j.second->m_meshColor.roughness = MRA.y;
-				j.second->m_meshColor.ao = MRA.z;
+				j.second->m_meshCustomMaterial.albedo_r = albedo.x;
+				j.second->m_meshCustomMaterial.albedo_g = albedo.y;
+				j.second->m_meshCustomMaterial.albedo_b = albedo.z;
+				j.second->m_meshCustomMaterial.metallic = MRA.x;
+				j.second->m_meshCustomMaterial.roughness = MRA.y;
+				j.second->m_meshCustomMaterial.ao = MRA.z;
 			}
 		};
 

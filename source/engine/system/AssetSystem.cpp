@@ -1031,7 +1031,7 @@ MaterialDataComponent* InnoAssetSystemNS::processSingleAssimpMaterial(const aiMa
 		l_meshColor.ao = l_result.r;
 	}
 
-	l_loadedMaterialDataComponent->m_meshColor = l_meshColor;
+	l_loadedMaterialDataComponent->m_meshCustomMaterial = l_meshColor;
 
 	return l_loadedMaterialDataComponent;
 }

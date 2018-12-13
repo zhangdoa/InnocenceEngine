@@ -55,8 +55,9 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	void reloadShader();
 
-	GLRenderPassComponent* addRenderPassComponent(unsigned int RTNum);
-	bool resizeGLRenderPassComponent(GLRenderPassComponent* GLRPC);
+	GLRenderPassComponent* addGLRenderPassComponent(unsigned int RTNum, GLFrameBufferDesc glFrameBufferDesc);
+
+	bool resizeGLRenderPassComponent(GLRenderPassComponent* GLRPC, GLFrameBufferDesc glFrameBufferDesc);
 
 	struct shaderFilePaths
 	{
@@ -70,7 +71,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	GLMeshDataComponent* generateGLMeshDataComponent(MeshDataComponent* rhs);
 	GLTextureDataComponent* generateGLTextureDataComponent(TextureDataComponent* rhs);
 
-
+	bool initializeGLMeshDataComponent(GLMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
 	bool initializeGLTextureDataComponent(GLTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
 
 	GLMeshDataComponent* addGLMeshDataComponent(EntityID rhs);
@@ -114,31 +115,31 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void drawMesh(MeshDataComponent* MDC);
 	void drawMesh(size_t indicesSize, MeshPrimitiveTopology MeshPrimitiveTopology, GLMeshDataComponent* GLMDC);
 	void activateTexture(TextureDataComponent* TDC, int activateIndex);
-	void activate2DTexture(GLTextureDataComponent* GLTDC, int activateIndex);
-	void activateCubemapTexture(GLTextureDataComponent* GLTDC, int activateIndex);
+	void activateTexture(GLTextureDataComponent* GLTDC, int activateIndex);
 
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
 	static RenderingSystemSingletonComponent* g_RenderingSystemSingletonComponent;
 	static GLRenderingSystemSingletonComponent* g_GLRenderingSystemSingletonComponent;
 
-	std::unordered_map<EntityID, GLMeshDataComponent*> m_initializedMeshComponents;
+	std::unordered_map<EntityID, GLMeshDataComponent*> m_initializedGLMDC;
+	std::unordered_map<EntityID, GLTextureDataComponent*> m_initializedGLTDC;
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	GLMeshDataComponent* m_UnitLineTemplate;
-	GLMeshDataComponent* m_UnitQuadTemplate;
-	GLMeshDataComponent* m_UnitCubeTemplate;
-	GLMeshDataComponent* m_UnitSphereTemplate;
+	GLMeshDataComponent* m_UnitLineGLMDC;
+	GLMeshDataComponent* m_UnitQuadGLMDC;
+	GLMeshDataComponent* m_UnitCubeGLMDC;
+	GLMeshDataComponent* m_UnitSphereGLMDC;
 	GLMeshDataComponent* m_terrainGLMDC;
 
-	GLTextureDataComponent* m_basicNormalTemplate;
-	GLTextureDataComponent* m_basicAlbedoTemplate;
-	GLTextureDataComponent* m_basicMetallicTemplate;
-	GLTextureDataComponent* m_basicRoughnessTemplate;
-	GLTextureDataComponent* m_basicAOTemplate;
+	GLTextureDataComponent* m_basicNormalGLTDC;
+	GLTextureDataComponent* m_basicAlbedoGLTDC;
+	GLTextureDataComponent* m_basicMetallicGLTDC;
+	GLTextureDataComponent* m_basicRoughnessGLTDC;
+	GLTextureDataComponent* m_basicAOGLTDC;
 
-	GLsizei rtSizeX;
-	GLsizei rtSizeY;
+	GLFrameBufferDesc deferredPassFBDesc = GLFrameBufferDesc();
+	GLFrameBufferDesc shadowPassFBDesc = GLFrameBufferDesc();
 
 	mat4 m_CamProjOriginal;
 	mat4 m_CamProjJittered;
@@ -146,6 +147,23 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	mat4 m_CamTrans;
 	mat4 m_CamRot_prev;
 	mat4 m_CamTrans_prev;
+	vec4 m_CamGlobalPos;
+
+	vec4 m_sunDir;
+	vec4 m_sunColor;
+	mat4 m_sunRot;
+
+	std::vector<mat4> m_CSMProjs;
+	std::vector<vec4> m_CSMSplitCorners;
+	
+	struct PointLightData
+	{
+		vec4 pos;
+		vec4 color;
+		float radius;
+	};
+
+	std::vector<PointLightData> m_PointLightDatas;
 
 	struct GPassCBufferData
 	{
@@ -170,22 +188,13 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 		GLTextureDataComponent* m_basicMetallicGLTDC;
 		GLTextureDataComponent* m_basicRoughnessGLTDC;
 		GLTextureDataComponent* m_basicAOGLTDC;
-		MeshCustomMaterial meshColor;
+		MeshCustomMaterial meshCustomMaterial;
 		VisiblilityType visiblilityType;
 	};
 
 	std::queue<GPassRenderingDataPack> m_GPassRenderingDataQueue;
 
-	struct LPassCBufferData
-	{
-		vec4 viewPos;
-		vec4 lightDir;
-		vec4 color;
-	};
-
-	LPassCBufferData m_LPassCBufferData;
-
-	std::function<void(GLFrameBufferComponent*)> f_bindDeferredFBC;
+	std::function<void(GLFrameBufferComponent*)> f_bindFBC;
 	std::function<void(GLFrameBufferComponent*)> f_cleanFBC;
 	std::function<void(GLFrameBufferComponent*, GLFrameBufferComponent*)> f_copyDepthBuffer;
 	std::function<void(GLFrameBufferComponent*, GLFrameBufferComponent*)> f_copyStencilBuffer;
@@ -197,26 +206,21 @@ bool GLRenderingSystem::setup()
 	GLRenderingSystemNS::g_RenderingSystemSingletonComponent = &RenderingSystemSingletonComponent::getInstance();
 	GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent = &GLRenderingSystemSingletonComponent::getInstance();
 
-	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_MSAAdepth)
-	{
-		// antialiasing
-		glfwWindowHint(GLFW_SAMPLES, GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_MSAAdepth);
-		// MSAA
-		glEnable(GL_MULTISAMPLE);
-	}
-	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	glEnable(GL_PROGRAM_POINT_SIZE);
-	glEnable(GL_TEXTURE_2D);
+	GLRenderingSystemNS::deferredPassFBDesc.renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
+	GLRenderingSystemNS::deferredPassFBDesc.renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
+	GLRenderingSystemNS::deferredPassFBDesc.sizeX = WindowSystemSingletonComponent::getInstance().m_windowResolution.x;
+	GLRenderingSystemNS::deferredPassFBDesc.sizeY = WindowSystemSingletonComponent::getInstance().m_windowResolution.y;
 
-	GLRenderingSystemNS::rtSizeX = (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x;
-	GLRenderingSystemNS::rtSizeY = (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y;
+	GLRenderingSystemNS::shadowPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
+	GLRenderingSystemNS::shadowPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
+	GLRenderingSystemNS::shadowPassFBDesc.sizeX = 2048;
+	GLRenderingSystemNS::shadowPassFBDesc.sizeY = 2048;
 
-	GLRenderingSystemNS::f_bindDeferredFBC = [&](GLFrameBufferComponent* val) {
+	GLRenderingSystemNS::f_bindFBC = [&](GLFrameBufferComponent* val) {
 		GLRenderingSystemNS::f_cleanFBC(val);
 
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, GLRenderingSystemNS::rtSizeX, GLRenderingSystemNS::rtSizeY);
-		glViewport(0, 0, GLRenderingSystemNS::rtSizeX, GLRenderingSystemNS::rtSizeY);
+		glRenderbufferStorage(GL_RENDERBUFFER, val->m_GLFrameBufferDesc.renderBufferInternalFormat, val->m_GLFrameBufferDesc.sizeX, val->m_GLFrameBufferDesc.sizeY);
+		glViewport(0, 0, val->m_GLFrameBufferDesc.sizeX, val->m_GLFrameBufferDesc.sizeY);
 	};
 
 	GLRenderingSystemNS::f_cleanFBC = [&](GLFrameBufferComponent* val) {
@@ -232,14 +236,26 @@ bool GLRenderingSystem::setup()
 	GLRenderingSystemNS::f_copyDepthBuffer = [&](GLFrameBufferComponent* src, GLFrameBufferComponent* dest) {
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_FBO);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
-		glBlitFramebuffer(0, 0, GLRenderingSystemNS::rtSizeX, GLRenderingSystemNS::rtSizeY, 0, 0, GLRenderingSystemNS::rtSizeX, GLRenderingSystemNS::rtSizeY, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	};
 
 	GLRenderingSystemNS::f_copyStencilBuffer = [&](GLFrameBufferComponent* src, GLFrameBufferComponent* dest) {
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_FBO);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
-		glBlitFramebuffer(0, 0, GLRenderingSystemNS::rtSizeX, GLRenderingSystemNS::rtSizeY, 0, 0, GLRenderingSystemNS::rtSizeX, GLRenderingSystemNS::rtSizeY, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+		glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 	};
+
+	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_MSAAdepth)
+	{
+		// antialiasing
+		glfwWindowHint(GLFW_SAMPLES, GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_MSAAdepth);
+		// MSAA
+		glEnable(GL_MULTISAMPLE);
+	}
+	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	glEnable(GL_PROGRAM_POINT_SIZE);
+	glEnable(GL_TEXTURE_2D);
 
 	return true;
 }
@@ -260,17 +276,17 @@ bool GLRenderingSystem::initialize()
 
 void  GLRenderingSystemNS::initializeDefaultAssets()
 {
-	m_UnitLineTemplate = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE));
-	m_UnitQuadTemplate = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD));
-	m_UnitCubeTemplate = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE));
-	m_UnitSphereTemplate = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE));
+	m_UnitLineGLMDC = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE));
+	m_UnitQuadGLMDC = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD));
+	m_UnitCubeGLMDC = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE));
+	m_UnitSphereGLMDC = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE));
 	m_terrainGLMDC = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::TERRAIN));
 
-	m_basicNormalTemplate = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::NORMAL));
-	m_basicAlbedoTemplate = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ALBEDO));
-	m_basicMetallicTemplate = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::METALLIC));
-	m_basicRoughnessTemplate = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
-	m_basicAOTemplate = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
+	m_basicNormalGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::NORMAL));
+	m_basicAlbedoGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ALBEDO));
+	m_basicMetallicGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::METALLIC));
+	m_basicRoughnessGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
+	m_basicAOGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
 
 	g_GLRenderingSystemSingletonComponent->m_iconTemplate_OBJ = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::OBJ));
 	g_GLRenderingSystemSingletonComponent->m_iconTemplate_PNG = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::PNG));
@@ -278,7 +294,7 @@ void  GLRenderingSystemNS::initializeDefaultAssets()
 	g_GLRenderingSystemSingletonComponent->m_iconTemplate_UNKNOWN = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::UNKNOWN));
 }
 
-float GLRenderingSystemNS::RadicalInverse(unsigned int n, unsigned int base) 
+float GLRenderingSystemNS::RadicalInverse(unsigned int n, unsigned int base)
 {
 	float val = 0.0f;
 	float invBase = 1.0f / base, invBi = invBase;
@@ -301,13 +317,18 @@ void GLRenderingSystemNS::initializeHaltonSampler()
 	}
 }
 
-GLRenderPassComponent* GLRenderingSystemNS::addRenderPassComponent(unsigned int RTNum)
+GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned int RTNum, GLFrameBufferDesc glFrameBufferDesc)
 {
 	auto l_GLRPC = g_pCoreSystem->getMemorySystem()->spawn<GLRenderPassComponent>();
 
 	// generate and bind framebuffer
 	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 	l_GLRPC->m_GLFBC = l_FBC;
+
+	l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeX = glFrameBufferDesc.sizeX;
+	l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeY = glFrameBufferDesc.sizeY;
+	l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.renderBufferAttachmentType = glFrameBufferDesc.renderBufferAttachmentType;
+	l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.renderBufferInternalFormat = glFrameBufferDesc.renderBufferInternalFormat;
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -316,8 +337,8 @@ GLRenderPassComponent* GLRenderingSystemNS::addRenderPassComponent(unsigned int 
 	glGenRenderbuffers(1, &l_FBC->m_RBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, rtSizeX, rtSizeY);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.renderBufferAttachmentType, GL_RENDERBUFFER, l_FBC->m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.renderBufferInternalFormat, l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeX, l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeY);
 
 	// generate and bind texture
 	l_GLRPC->m_TDCs.reserve(RTNum);
@@ -332,8 +353,8 @@ GLRenderPassComponent* GLRenderingSystemNS::addRenderPassComponent(unsigned int 
 		l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
 		l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
 		l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-		l_TDC->m_textureDataDesc.textureWidth = rtSizeX;
-		l_TDC->m_textureDataDesc.textureHeight = rtSizeY;
+		l_TDC->m_textureDataDesc.textureWidth = l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeX;
+		l_TDC->m_textureDataDesc.textureHeight = l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeY;
 		l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 		l_TDC->m_textureData = { nullptr };
 
@@ -377,15 +398,18 @@ GLRenderPassComponent* GLRenderingSystemNS::addRenderPassComponent(unsigned int 
 }
 
 
-bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC)
+bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC, GLFrameBufferDesc glFrameBufferDesc)
 {
+	GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeX = glFrameBufferDesc.sizeX;
+	GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeY = glFrameBufferDesc.sizeY;
+
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_GLFBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, GLRPC->m_GLFBC->m_RBO);
 
 	for (unsigned int i = 0; i < GLRPC->m_GLTDCs.size(); i++)
 	{
-		GLRPC->m_TDCs[i]->m_textureDataDesc.textureWidth = rtSizeX;
-		GLRPC->m_TDCs[i]->m_textureDataDesc.textureHeight = rtSizeY;
+		GLRPC->m_TDCs[i]->m_textureDataDesc.textureWidth = GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeX;
+		GLRPC->m_TDCs[i]->m_textureDataDesc.textureHeight = GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeY;
 		GLRPC->m_TDCs[i]->m_objectStatus = ObjectStatus::STANDBY;
 		glDeleteTextures(1, &GLRPC->m_GLTDCs[i]->m_TAO);
 		initializeGLTextureDataComponent(GLRPC->m_GLTDCs[i], GLRPC->m_TDCs[i]->m_textureDataDesc, GLRPC->m_TDCs[i]->m_textureData);
@@ -609,8 +633,8 @@ void GLRenderingSystemNS::initializeShadowPass()
 		glGenRenderbuffers(1, &l_FBC->m_RBO);
 		glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GLRenderingSystemNS::shadowPassFBDesc.renderBufferAttachmentType, GL_RENDERBUFFER, l_FBC->m_RBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, GLRenderingSystemNS::shadowPassFBDesc.renderBufferInternalFormat, GLRenderingSystemNS::shadowPassFBDesc.sizeX, GLRenderingSystemNS::shadowPassFBDesc.sizeY);
 
 		GLShadowRenderPassSingletonComponent::getInstance().m_FBCs.emplace_back(l_FBC);
 
@@ -623,8 +647,8 @@ void GLRenderingSystemNS::initializeShadowPass()
 		l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
 		l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
 		l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
-		l_TDC->m_textureDataDesc.textureWidth = 2048;
-		l_TDC->m_textureDataDesc.textureHeight = 2048;
+		l_TDC->m_textureDataDesc.textureWidth = GLRenderingSystemNS::shadowPassFBDesc.sizeX;
+		l_TDC->m_textureDataDesc.textureHeight = GLRenderingSystemNS::shadowPassFBDesc.sizeY;
 		l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 		l_TDC->m_textureData = { nullptr };
 
@@ -679,7 +703,7 @@ void GLRenderingSystemNS::initializeShadowPass()
 
 void GLRenderingSystemNS::initializeGeometryPass()
 {
-	GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC = addRenderPassComponent(8);
+	GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC = addGLRenderPassComponent(8, deferredPassFBDesc);
 
 	initializeGeometryPassShaders();
 }
@@ -799,7 +823,7 @@ void GLRenderingSystemNS::initializeGeometryPassShaders()
 
 void GLRenderingSystemNS::initializeTerrainPass()
 {
-	GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC = addRenderPassComponent(1);
+	GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	initializeTerrainPassShaders();
 }
@@ -838,7 +862,7 @@ void GLRenderingSystemNS::initializeTerrainPassShaders()
 
 void GLRenderingSystemNS::initializeLightPass()
 {
-	GLLightRenderPassSingletonComponent::getInstance().m_GLRPC = addRenderPassComponent(1);
+	GLLightRenderPassSingletonComponent::getInstance().m_GLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	initializeLightPassShaders();
 }
@@ -959,27 +983,20 @@ void GLRenderingSystemNS::initializeLightPassShaders()
 	GLLightRenderPassSingletonComponent::getInstance().m_uni_dirLight_color = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_dirLight.color");
-	int l_pointLightIndexOffset = 0;
-	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size(); i++)
+
+	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size() - 1; i++)
 	{
-		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_lightType == LightType::DIRECTIONAL)
-		{
-			l_pointLightIndexOffset -= 1;
-		}
-		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i]->m_lightType == LightType::POINT)
-		{
-			std::stringstream ss;
-			ss << i + l_pointLightIndexOffset;
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position.emplace_back(
-				getUniformLocation(l_GLSPC->m_program, "uni_pointLights[" + ss.str() + "].position")
-			);
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_radius.emplace_back(
-				getUniformLocation(l_GLSPC->m_program, "uni_pointLights[" + ss.str() + "].radius")
-			);
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_color.emplace_back(
-				getUniformLocation(l_GLSPC->m_program, "uni_pointLights[" + ss.str() + "].color")
-			);
-		}
+		std::stringstream ss;
+		ss << i;
+		GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position.emplace_back(
+			getUniformLocation(l_GLSPC->m_program, "uni_pointLights[" + ss.str() + "].position")
+		);
+		GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_radius.emplace_back(
+			getUniformLocation(l_GLSPC->m_program, "uni_pointLights[" + ss.str() + "].radius")
+		);
+		GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_color.emplace_back(
+			getUniformLocation(l_GLSPC->m_program, "uni_pointLights[" + ss.str() + "].color")
+		);
 	}
 	GLLightRenderPassSingletonComponent::getInstance().m_uni_isEmissive = getUniformLocation(
 		l_GLSPC->m_program,
@@ -1002,7 +1019,7 @@ void GLRenderingSystemNS::initializeFinalPass()
 
 void GLRenderingSystemNS::initializeSkyPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
@@ -1034,16 +1051,16 @@ void GLRenderingSystemNS::initializeSkyPass()
 void GLRenderingSystemNS::initializeTAAPass()
 {
 	//pre mix pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	//Ping pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	//Pong pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	//Sharpen pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
@@ -1123,7 +1140,7 @@ void GLRenderingSystemNS::initializeTAAPass()
 
 void GLRenderingSystemNS::initializeBloomExtractPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
@@ -1146,10 +1163,10 @@ void GLRenderingSystemNS::initializeBloomExtractPass()
 void GLRenderingSystemNS::initializeBloomBlurPass()
 {
 	//Ping pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	//Pong pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
@@ -1174,7 +1191,7 @@ void GLRenderingSystemNS::initializeBloomBlurPass()
 
 void GLRenderingSystemNS::initializeMotionBlurPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
@@ -1202,7 +1219,7 @@ void GLRenderingSystemNS::initializeMotionBlurPass()
 
 void GLRenderingSystemNS::initializeBillboardPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
@@ -1242,7 +1259,7 @@ void GLRenderingSystemNS::initializeBillboardPass()
 
 void GLRenderingSystemNS::initializeDebuggerPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
@@ -1280,7 +1297,7 @@ void GLRenderingSystemNS::initializeDebuggerPass()
 
 void GLRenderingSystemNS::initializeFinalBlendPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC = addRenderPassComponent(1);
+	GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc);
 
 	// shader programs and shaders
 	shaderFilePaths m_shaderFilePaths;
@@ -1371,53 +1388,10 @@ GLMeshDataComponent* GLRenderingSystemNS::generateGLMeshDataComponent(MeshDataCo
 	{
 		auto l_ptr = addGLMeshDataComponent(rhs->m_parentEntity);
 
-		glGenVertexArrays(1, &l_ptr->m_VAO);
-		glGenBuffers(1, &l_ptr->m_VBO);
-		glGenBuffers(1, &l_ptr->m_IBO);
+		initializeGLMeshDataComponent(l_ptr, rhs->m_vertices, rhs->m_indices);
 
-		std::vector<float> l_verticesBuffer;
-		auto& l_vertices = rhs->m_vertices;
-		auto& l_indices = rhs->m_indices;
-		auto l_containerSize = l_vertices.size() * 8;
-		l_verticesBuffer.reserve(l_containerSize);
-
-		std::for_each(l_vertices.begin(), l_vertices.end(), [&](Vertex val)
-		{
-			l_verticesBuffer.emplace_back((float)val.m_pos.x);
-			l_verticesBuffer.emplace_back((float)val.m_pos.y);
-			l_verticesBuffer.emplace_back((float)val.m_pos.z);
-			l_verticesBuffer.emplace_back((float)val.m_texCoord.x);
-			l_verticesBuffer.emplace_back((float)val.m_texCoord.y);
-			l_verticesBuffer.emplace_back((float)val.m_normal.x);
-			l_verticesBuffer.emplace_back((float)val.m_normal.y);
-			l_verticesBuffer.emplace_back((float)val.m_normal.z);
-		});
-
-		glBindVertexArray(l_ptr->m_VAO);
-
-		glBindBuffer(GL_ARRAY_BUFFER, l_ptr->m_VBO);
-		glBufferData(GL_ARRAY_BUFFER, l_verticesBuffer.size() * sizeof(float), &l_verticesBuffer[0], GL_STATIC_DRAW);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l_ptr->m_IBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, l_indices.size() * sizeof(unsigned int), &l_indices[0], GL_STATIC_DRAW);
-
-		// position attribute, 1st attribution with 3 * sizeof(float) bits of data
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-
-		// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-
-		// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
-
-		l_ptr->m_objectStatus = ObjectStatus::ALIVE;
 		rhs->m_objectStatus = ObjectStatus::ALIVE;
-		m_initializedMeshComponents.emplace(l_ptr->m_parentEntity, l_ptr);
 
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: VAO " + std::to_string(l_ptr->m_VAO) + " is initialized.");
 		return l_ptr;
 	}
 }
@@ -1439,6 +1413,7 @@ GLTextureDataComponent* GLRenderingSystemNS::generateGLTextureDataComponent(Text
 			auto l_ptr = addGLTextureDataComponent(rhs->m_parentEntity);
 
 			initializeGLTextureDataComponent(l_ptr, rhs->m_textureDataDesc, rhs->m_textureData);
+
 			rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 			return l_ptr;
@@ -1446,168 +1421,198 @@ GLTextureDataComponent* GLRenderingSystemNS::generateGLTextureDataComponent(Text
 	}
 }
 
+bool GLRenderingSystemNS::initializeGLMeshDataComponent(GLMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices)
+{
+	std::vector<float> l_verticesBuffer;
+	auto l_containerSize = vertices.size() * 8;
+	l_verticesBuffer.reserve(l_containerSize);
+
+	std::for_each(vertices.begin(), vertices.end(), [&](Vertex val)
+	{
+		l_verticesBuffer.emplace_back((float)val.m_pos.x);
+		l_verticesBuffer.emplace_back((float)val.m_pos.y);
+		l_verticesBuffer.emplace_back((float)val.m_pos.z);
+		l_verticesBuffer.emplace_back((float)val.m_texCoord.x);
+		l_verticesBuffer.emplace_back((float)val.m_texCoord.y);
+		l_verticesBuffer.emplace_back((float)val.m_normal.x);
+		l_verticesBuffer.emplace_back((float)val.m_normal.y);
+		l_verticesBuffer.emplace_back((float)val.m_normal.z);
+	});
+
+	glGenVertexArrays(1, &rhs->m_VAO);
+	glGenBuffers(1, &rhs->m_VBO);
+	glGenBuffers(1, &rhs->m_IBO);
+
+	glBindVertexArray(rhs->m_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, rhs->m_VBO);
+	glBufferData(GL_ARRAY_BUFFER, l_verticesBuffer.size() * sizeof(float), &l_verticesBuffer[0], GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rhs->m_IBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+
+	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+
+	// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+	// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+
+	rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+	m_initializedGLMDC.emplace(rhs->m_parentEntity, rhs);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: VAO " + std::to_string(rhs->m_VAO) + " is initialized.");
+
+	return true;
+}
+
 bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
 {
-	//generate and bind texture object
-	glGenTextures(1, &rhs->m_TAO);
-
+	// texture type
 	if (textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CAPTURE || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CONVOLUTION || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_PREFILTER)
 	{
-		glBindTexture(GL_TEXTURE_CUBE_MAP, rhs->m_TAO);
+		rhs->m_GLTextureDataDesc.textureType = GL_TEXTURE_CUBE_MAP;
 	}
 	else
 	{
-		glBindTexture(GL_TEXTURE_2D, rhs->m_TAO);
+		rhs->m_GLTextureDataDesc.textureType = GL_TEXTURE_2D;
 	}
 
 	// set the texture wrapping parameters
-	GLenum l_textureWrapMethod;
 	switch (textureDataDesc.textureWrapMethod)
 	{
-	case TextureWrapMethod::CLAMP_TO_EDGE: l_textureWrapMethod = GL_CLAMP_TO_EDGE; break;
-	case TextureWrapMethod::REPEAT: l_textureWrapMethod = GL_REPEAT; break;
-	case TextureWrapMethod::CLAMP_TO_BORDER: l_textureWrapMethod = GL_CLAMP_TO_BORDER; break;
-	}
-	if (textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CAPTURE || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CONVOLUTION || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_PREFILTER)
-	{
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, l_textureWrapMethod);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
-	}
-	else if (textureDataDesc.textureUsageType == TextureUsageType::SHADOWMAP)
-	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
-		float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-	}
-	else
-	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, l_textureWrapMethod);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, l_textureWrapMethod);
+	case TextureWrapMethod::CLAMP_TO_EDGE: rhs->m_GLTextureDataDesc.textureWrapMethod = GL_CLAMP_TO_EDGE; break;
+	case TextureWrapMethod::REPEAT: rhs->m_GLTextureDataDesc.textureWrapMethod = GL_REPEAT; break;
+	case TextureWrapMethod::CLAMP_TO_BORDER: rhs->m_GLTextureDataDesc.textureWrapMethod = GL_CLAMP_TO_BORDER; break;
 	}
 
 	// set texture filtering parameters
-	GLenum l_minFilterParam;
 	switch (textureDataDesc.textureMinFilterMethod)
 	{
-	case TextureFilterMethod::NEAREST: l_minFilterParam = GL_NEAREST; break;
-	case TextureFilterMethod::LINEAR: l_minFilterParam = GL_LINEAR; break;
-	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_minFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
+	case TextureFilterMethod::NEAREST: rhs->m_GLTextureDataDesc.minFilterParam = GL_NEAREST; break;
+	case TextureFilterMethod::LINEAR: rhs->m_GLTextureDataDesc.minFilterParam = GL_LINEAR; break;
+	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: rhs->m_GLTextureDataDesc.minFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
 	}
-	GLenum l_magFilterParam;
 	switch (textureDataDesc.textureMagFilterMethod)
 	{
-	case TextureFilterMethod::NEAREST: l_magFilterParam = GL_NEAREST; break;
-	case TextureFilterMethod::LINEAR: l_magFilterParam = GL_LINEAR; break;
-	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_magFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
-	}
-	if (textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CAPTURE || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CONVOLUTION || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_PREFILTER)
-	{
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, l_minFilterParam);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, l_magFilterParam);
-	}
-	else
-	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, l_minFilterParam);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, l_magFilterParam);
+	case TextureFilterMethod::NEAREST: rhs->m_GLTextureDataDesc.magFilterParam = GL_NEAREST; break;
+	case TextureFilterMethod::LINEAR: rhs->m_GLTextureDataDesc.magFilterParam = GL_LINEAR; break;
+	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: rhs->m_GLTextureDataDesc.magFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
 	}
 
 	// set texture formats
-	GLenum l_internalFormat;
-	GLenum l_dataFormat;
-	GLenum l_type;
 	if (textureDataDesc.textureUsageType == TextureUsageType::ALBEDO)
 	{
 		if (textureDataDesc.texturePixelDataFormat == TexturePixelDataFormat::RGB)
 		{
-			l_internalFormat = GL_SRGB;
+			rhs->m_GLTextureDataDesc.internalFormat = GL_SRGB;
 		}
 		else if (textureDataDesc.texturePixelDataFormat == TexturePixelDataFormat::RGBA)
 		{
-			l_internalFormat = GL_SRGB_ALPHA;
+			rhs->m_GLTextureDataDesc.internalFormat = GL_SRGB_ALPHA;
 		}
 	}
 	else
 	{
 		switch (textureDataDesc.textureColorComponentsFormat)
 		{
-		case TextureColorComponentsFormat::RED: l_internalFormat = GL_RED; break;
-		case TextureColorComponentsFormat::RG: l_internalFormat = GL_RG; break;
-		case TextureColorComponentsFormat::RGB: l_internalFormat = GL_RGB; break;
-		case TextureColorComponentsFormat::RGBA: l_internalFormat = GL_RGBA; break;
-		case TextureColorComponentsFormat::R8: l_internalFormat = GL_R8; break;
-		case TextureColorComponentsFormat::RG8: l_internalFormat = GL_RG8; break;
-		case TextureColorComponentsFormat::RGB8: l_internalFormat = GL_RGB8; break;
-		case TextureColorComponentsFormat::RGBA8: l_internalFormat = GL_RGBA8; break;
-		case TextureColorComponentsFormat::R16: l_internalFormat = GL_R16; break;
-		case TextureColorComponentsFormat::RG16: l_internalFormat = GL_RG16; break;
-		case TextureColorComponentsFormat::RGB16: l_internalFormat = GL_RGB16; break;
-		case TextureColorComponentsFormat::RGBA16: l_internalFormat = GL_RGBA16; break;
-		case TextureColorComponentsFormat::R16F: l_internalFormat = GL_R16F; break;
-		case TextureColorComponentsFormat::RG16F: l_internalFormat = GL_RG16F; break;
-		case TextureColorComponentsFormat::RGB16F: l_internalFormat = GL_RGB16F; break;
-		case TextureColorComponentsFormat::RGBA16F: l_internalFormat = GL_RGBA16F; break;
-		case TextureColorComponentsFormat::R32F: l_internalFormat = GL_R32F; break;
-		case TextureColorComponentsFormat::RG32F: l_internalFormat = GL_RG32F; break;
-		case TextureColorComponentsFormat::RGB32F: l_internalFormat = GL_RGB32F; break;
-		case TextureColorComponentsFormat::RGBA32F: l_internalFormat = GL_RGBA32F; break;
-		case TextureColorComponentsFormat::SRGB: l_internalFormat = GL_SRGB; break;
-		case TextureColorComponentsFormat::SRGBA: l_internalFormat = GL_SRGB_ALPHA; break;
-		case TextureColorComponentsFormat::SRGB8: l_internalFormat = GL_SRGB8; break;
-		case TextureColorComponentsFormat::SRGBA8: l_internalFormat = GL_SRGB8_ALPHA8; break;
-		case TextureColorComponentsFormat::DEPTH_COMPONENT: l_internalFormat = GL_DEPTH_COMPONENT; break;
+		case TextureColorComponentsFormat::RED: rhs->m_GLTextureDataDesc.internalFormat = GL_RED; break;
+		case TextureColorComponentsFormat::RG: rhs->m_GLTextureDataDesc.internalFormat = GL_RG; break;
+		case TextureColorComponentsFormat::RGB: rhs->m_GLTextureDataDesc.internalFormat = GL_RGB; break;
+		case TextureColorComponentsFormat::RGBA: rhs->m_GLTextureDataDesc.internalFormat = GL_RGBA; break;
+		case TextureColorComponentsFormat::R8: rhs->m_GLTextureDataDesc.internalFormat = GL_R8; break;
+		case TextureColorComponentsFormat::RG8: rhs->m_GLTextureDataDesc.internalFormat = GL_RG8; break;
+		case TextureColorComponentsFormat::RGB8: rhs->m_GLTextureDataDesc.internalFormat = GL_RGB8; break;
+		case TextureColorComponentsFormat::RGBA8: rhs->m_GLTextureDataDesc.internalFormat = GL_RGBA8; break;
+		case TextureColorComponentsFormat::R16: rhs->m_GLTextureDataDesc.internalFormat = GL_R16; break;
+		case TextureColorComponentsFormat::RG16: rhs->m_GLTextureDataDesc.internalFormat = GL_RG16; break;
+		case TextureColorComponentsFormat::RGB16: rhs->m_GLTextureDataDesc.internalFormat = GL_RGB16; break;
+		case TextureColorComponentsFormat::RGBA16: rhs->m_GLTextureDataDesc.internalFormat = GL_RGBA16; break;
+		case TextureColorComponentsFormat::R16F: rhs->m_GLTextureDataDesc.internalFormat = GL_R16F; break;
+		case TextureColorComponentsFormat::RG16F: rhs->m_GLTextureDataDesc.internalFormat = GL_RG16F; break;
+		case TextureColorComponentsFormat::RGB16F: rhs->m_GLTextureDataDesc.internalFormat = GL_RGB16F; break;
+		case TextureColorComponentsFormat::RGBA16F: rhs->m_GLTextureDataDesc.internalFormat = GL_RGBA16F; break;
+		case TextureColorComponentsFormat::R32F: rhs->m_GLTextureDataDesc.internalFormat = GL_R32F; break;
+		case TextureColorComponentsFormat::RG32F: rhs->m_GLTextureDataDesc.internalFormat = GL_RG32F; break;
+		case TextureColorComponentsFormat::RGB32F: rhs->m_GLTextureDataDesc.internalFormat = GL_RGB32F; break;
+		case TextureColorComponentsFormat::RGBA32F: rhs->m_GLTextureDataDesc.internalFormat = GL_RGBA32F; break;
+		case TextureColorComponentsFormat::SRGB: rhs->m_GLTextureDataDesc.internalFormat = GL_SRGB; break;
+		case TextureColorComponentsFormat::SRGBA: rhs->m_GLTextureDataDesc.internalFormat = GL_SRGB_ALPHA; break;
+		case TextureColorComponentsFormat::SRGB8: rhs->m_GLTextureDataDesc.internalFormat = GL_SRGB8; break;
+		case TextureColorComponentsFormat::SRGBA8: rhs->m_GLTextureDataDesc.internalFormat = GL_SRGB8_ALPHA8; break;
+		case TextureColorComponentsFormat::DEPTH_COMPONENT: rhs->m_GLTextureDataDesc.internalFormat = GL_DEPTH_COMPONENT; break;
 		}
 	}
 	switch (textureDataDesc.texturePixelDataFormat)
 	{
-	case TexturePixelDataFormat::RED:l_dataFormat = GL_RED; break;
-	case TexturePixelDataFormat::RG:l_dataFormat = GL_RG; break;
-	case TexturePixelDataFormat::RGB:l_dataFormat = GL_RGB; break;
-	case TexturePixelDataFormat::RGBA:l_dataFormat = GL_RGBA; break;
-	case TexturePixelDataFormat::DEPTH_COMPONENT:l_dataFormat = GL_DEPTH_COMPONENT; break;
+	case TexturePixelDataFormat::RED:rhs->m_GLTextureDataDesc.pixelDataFormat = GL_RED; break;
+	case TexturePixelDataFormat::RG:rhs->m_GLTextureDataDesc.pixelDataFormat = GL_RG; break;
+	case TexturePixelDataFormat::RGB:rhs->m_GLTextureDataDesc.pixelDataFormat = GL_RGB; break;
+	case TexturePixelDataFormat::RGBA:rhs->m_GLTextureDataDesc.pixelDataFormat = GL_RGBA; break;
+	case TexturePixelDataFormat::DEPTH_COMPONENT:rhs->m_GLTextureDataDesc.pixelDataFormat = GL_DEPTH_COMPONENT; break;
 	}
 	switch (textureDataDesc.texturePixelDataType)
 	{
-	case TexturePixelDataType::UNSIGNED_BYTE:l_type = GL_UNSIGNED_BYTE; break;
-	case TexturePixelDataType::BYTE:l_type = GL_BYTE; break;
-	case TexturePixelDataType::UNSIGNED_SHORT:l_type = GL_UNSIGNED_SHORT; break;
-	case TexturePixelDataType::SHORT:l_type = GL_SHORT; break;
-	case TexturePixelDataType::UNSIGNED_INT:l_type = GL_UNSIGNED_INT; break;
-	case TexturePixelDataType::INT:l_type = GL_INT; break;
-	case TexturePixelDataType::FLOAT:l_type = GL_FLOAT; break;
-	case TexturePixelDataType::DOUBLE:l_type = GL_FLOAT; break;
+	case TexturePixelDataType::UNSIGNED_BYTE:rhs->m_GLTextureDataDesc.pixelDataType = GL_UNSIGNED_BYTE; break;
+	case TexturePixelDataType::BYTE:rhs->m_GLTextureDataDesc.pixelDataType = GL_BYTE; break;
+	case TexturePixelDataType::UNSIGNED_SHORT:rhs->m_GLTextureDataDesc.pixelDataType = GL_UNSIGNED_SHORT; break;
+	case TexturePixelDataType::SHORT:rhs->m_GLTextureDataDesc.pixelDataType = GL_SHORT; break;
+	case TexturePixelDataType::UNSIGNED_INT:rhs->m_GLTextureDataDesc.pixelDataType = GL_UNSIGNED_INT; break;
+	case TexturePixelDataType::INT:rhs->m_GLTextureDataDesc.pixelDataType = GL_INT; break;
+	case TexturePixelDataType::FLOAT:rhs->m_GLTextureDataDesc.pixelDataType = GL_FLOAT; break;
+	case TexturePixelDataType::DOUBLE:rhs->m_GLTextureDataDesc.pixelDataType = GL_FLOAT; break;
 	}
 
-	if (textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CAPTURE || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CONVOLUTION || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_PREFILTER)
+	//generate and bind texture object
+	glGenTextures(1, &rhs->m_TAO);
+
+	glBindTexture(rhs->m_GLTextureDataDesc.textureType, rhs->m_TAO);
+
+	if (rhs->m_GLTextureDataDesc.textureType == GL_TEXTURE_CUBE_MAP)
 	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[0]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[1]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[2]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[3]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[4]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[5]);
+		glTexParameteri(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_WRAP_R, rhs->m_GLTextureDataDesc.textureWrapMethod);
+	}
+	glTexParameteri(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_WRAP_S, rhs->m_GLTextureDataDesc.textureWrapMethod);
+	glTexParameteri(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_WRAP_T, rhs->m_GLTextureDataDesc.textureWrapMethod);
+
+	if (textureDataDesc.textureUsageType == TextureUsageType::SHADOWMAP)
+	{
+		float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		glTexParameterfv(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_BORDER_COLOR, borderColor);
+	}
+
+	glTexParameteri(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_MIN_FILTER, rhs->m_GLTextureDataDesc.minFilterParam);
+	glTexParameteri(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_MAG_FILTER, rhs->m_GLTextureDataDesc.magFilterParam);
+
+	if (rhs->m_GLTextureDataDesc.textureType == GL_TEXTURE_CUBE_MAP)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[1]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[2]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[3]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[4]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[5]);
 	}
 	else
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, l_internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, l_dataFormat, l_type, textureData[0]);
+		glTexImage2D(GL_TEXTURE_2D, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
 	}
 
 	// should generate mipmap or not
-	if (textureDataDesc.textureMinFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	if (rhs->m_GLTextureDataDesc.minFilterParam == GL_LINEAR_MIPMAP_LINEAR)
 	{
-		// @TODO: generalization...
-		if (textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_PREFILTER)
-		{
-			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-		}
-		else if (textureDataDesc.textureUsageType != TextureUsageType::ENVIRONMENT_CAPTURE && textureDataDesc.textureUsageType != TextureUsageType::ENVIRONMENT_CONVOLUTION && textureDataDesc.textureUsageType != TextureUsageType::RENDER_BUFFER_SAMPLER)
-		{
-			glGenerateMipmap(GL_TEXTURE_2D);
-		}
+		glGenerateMipmap(rhs->m_GLTextureDataDesc.textureType);
 	}
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+	m_initializedGLTDC.emplace(rhs->m_parentEntity, rhs);
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: TAO " + std::to_string(rhs->m_TAO) + " is initialized.");
 
@@ -1639,16 +1644,11 @@ bool GLRenderingSystem::update()
 	{
 		GLRenderingSystemNS::updateEnvironmentRenderPass();
 	}
+
 	GLRenderingSystemNS::updateShadowRenderPass();
 	GLRenderingSystemNS::updateGeometryRenderPass();
-	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_drawTerrain)
-	{
-		GLRenderingSystemNS::updateTerrainRenderPass();
-	}
-	else
-	{
-		GLRenderingSystemNS::f_cleanFBC(GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC);
-	}
+
+	GLRenderingSystemNS::updateTerrainRenderPass();
 
 	GLRenderingSystemNS::updateLightRenderPass();
 	GLRenderingSystemNS::updateFinalRenderPass();
@@ -1658,11 +1658,9 @@ bool GLRenderingSystem::update()
 
 void GLRenderingSystemNS::prepareRenderingData()
 {
-	// camera and light
+	// main camera
 	auto l_mainCamera = GameSystemSingletonComponent::getInstance().m_CameraComponents[0];
 	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
-	auto l_directionalLight = GameSystemSingletonComponent::getInstance().m_LightComponents[0];
-	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
 
 	auto l_p = l_mainCamera->m_projectionMatrix;
 	auto l_r =
@@ -1687,8 +1685,8 @@ void GLRenderingSystemNS::prepareRenderingData()
 		{
 			l_currentHaltonStep = 0;
 		}
-		m_CamProjJittered.m02 = g_RenderingSystemSingletonComponent->HaltonSampler[l_currentHaltonStep].x / rtSizeX;
-		m_CamProjJittered.m12 = g_RenderingSystemSingletonComponent->HaltonSampler[l_currentHaltonStep].y / rtSizeY;
+		m_CamProjJittered.m02 = g_RenderingSystemSingletonComponent->HaltonSampler[l_currentHaltonStep].x / deferredPassFBDesc.sizeX;
+		m_CamProjJittered.m12 = g_RenderingSystemSingletonComponent->HaltonSampler[l_currentHaltonStep].y / deferredPassFBDesc.sizeY;
 		l_currentHaltonStep += 1;
 	}
 
@@ -1696,16 +1694,63 @@ void GLRenderingSystemNS::prepareRenderingData()
 	m_CamTrans = l_t;
 	m_CamRot_prev = r_prev;
 	m_CamTrans_prev = t_prev;
+	m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
-	m_LPassCBufferData.viewPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-	m_LPassCBufferData.lightDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	// without sun
+	m_PointLightDatas.clear();
+	m_PointLightDatas.reserve(GameSystemSingletonComponent::getInstance().m_LightComponents.size() - 1);
+	
+	for (auto i : GameSystemSingletonComponent::getInstance().m_LightComponents)
+	{
+		if (i->m_lightType == LightType::DIRECTIONAL)
+		{
+			// sun/directional light
+			auto l_directionalLight = i;
+			auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity);
 
-	m_LPassCBufferData.color = l_directionalLight->m_color;
+			m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+			m_sunColor = l_directionalLight->m_color;
+			m_sunRot = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 
+			auto l_CSMSize = l_directionalLight->m_projectionMatrices.size();
+
+			m_CSMProjs.clear();
+			m_CSMProjs.reserve(l_CSMSize);
+			m_CSMSplitCorners.clear();
+			m_CSMSplitCorners.reserve(l_CSMSize);
+
+			for (size_t j = 0; j < l_directionalLight->m_projectionMatrices.size(); j++)
+			{
+				m_CSMProjs.emplace_back();
+				m_CSMSplitCorners.emplace_back();
+
+				auto l_shadowSplitCorner = vec4(
+					l_directionalLight->m_AABBs[j].m_boundMin.x,
+					l_directionalLight->m_AABBs[j].m_boundMin.z,
+					l_directionalLight->m_AABBs[j].m_boundMax.x,
+					l_directionalLight->m_AABBs[j].m_boundMax.z
+				);
+
+				m_CSMProjs[j] = l_directionalLight->m_projectionMatrices[j];
+				m_CSMSplitCorners[j] = l_shadowSplitCorner;
+			}
+		}
+		// point light
+		else if (i->m_lightType == LightType::POINT)
+		{
+			PointLightData l_PointLightData;
+			l_PointLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+			l_PointLightData.color = i->m_color;
+			l_PointLightData.radius = i->m_radius;
+			m_PointLightDatas.emplace_back(l_PointLightData);
+		}
+	}
+
+	// mesh
 	for (auto& l_renderDataPack : RenderingSystemSingletonComponent::getInstance().m_renderDataPack)
 	{
-		auto l_GLMDC = GLRenderingSystemNS::m_initializedMeshComponents.find(l_renderDataPack.MDC->m_parentEntity);
-		if (l_GLMDC != GLRenderingSystemNS::m_initializedMeshComponents.end())
+		auto l_GLMDC = GLRenderingSystemNS::m_initializedGLMDC.find(l_renderDataPack.MDC->m_parentEntity);
+		if (l_GLMDC != GLRenderingSystemNS::m_initializedGLMDC.end())
 		{
 			GPassRenderingDataPack l_GLRenderDataPack;
 
@@ -1767,7 +1812,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 			{
 				l_GLRenderDataPack.useAOTexture = false;
 			}
-			l_GLRenderDataPack.meshColor = l_material->m_meshColor;
+			l_GLRenderDataPack.meshCustomMaterial = l_material->m_meshCustomMaterial;
 			l_GLRenderDataPack.visiblilityType = l_renderDataPack.visiblilityType;
 			m_GPassRenderingDataQueue.push(l_GLRenderDataPack);
 		}
@@ -1803,7 +1848,7 @@ void GLRenderingSystemNS::updateBRDFLUTRenderPass()
 	attachTextureToFramebuffer(l_MSTDC, l_MSGLTDC, l_FBC, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	activate2DTexture(l_SSGLTDC, 0);
+	activateTexture(l_SSGLTDC, 0);
 	drawMesh(l_MDC);
 
 	RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap = false;
@@ -1835,38 +1880,32 @@ void GLRenderingSystemNS::updateShadowRenderPass()
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		for (auto& l_lightComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents)
+		activateShaderProgram(GLShadowRenderPassSingletonComponent::getInstance().m_SPC);
+		updateUniform(
+			GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_p,
+			m_CSMProjs[i]);
+		updateUniform(
+			GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_v,
+			m_sunRot);
+
+		// draw each visibleComponent
+		for (auto& l_visibleComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_VisibleComponents)
 		{
-			if (l_lightComponent->m_lightType == LightType::DIRECTIONAL)
+			if (l_visibleComponent->m_visiblilityType == VisiblilityType::STATIC_MESH)
 			{
-				activateShaderProgram(GLShadowRenderPassSingletonComponent::getInstance().m_SPC);
 				updateUniform(
-					GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_p,
-					l_lightComponent->m_projectionMatrices[i]);
-				updateUniform(
-					GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_v,
-					g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat.inverse());
+					GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_m,
+					g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 
-				// draw each visibleComponent
-				for (auto& l_visibleComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_VisibleComponents)
+				// draw each graphic data of visibleComponent
+				for (auto l_modelPair : l_visibleComponent->m_modelMap)
 				{
-					if (l_visibleComponent->m_visiblilityType == VisiblilityType::STATIC_MESH)
+					// draw meshes
+					auto l_MDC = l_modelPair.first;
+					if (l_MDC)
 					{
-						updateUniform(
-							GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_m,
-							g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
-
-						// draw each graphic data of visibleComponent
-						for (auto l_modelPair : l_visibleComponent->m_modelMap)
-						{
-							// draw meshes
-							auto l_MDC = l_modelPair.first;
-							if (l_MDC)
-							{
-								// draw meshes
-								drawMesh(l_MDC);
-							}
-						}
+						// draw meshes
+						drawMesh(l_MDC);
 					}
 				}
 			}
@@ -1893,281 +1932,246 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 
 	// bind to framebuffer
 	auto l_FBC = GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC;
-	f_bindDeferredFBC(l_FBC);
+	f_bindFBC(l_FBC);
 
 	activateShaderProgram(GLGeometryRenderPassSingletonComponent::getInstance().m_GLSPC);
 
-	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
-	{
-		mat4 p_original = GLRenderingSystemNS::m_CamProjOriginal;
-		mat4 p_jittered = GLRenderingSystemNS::m_CamProjJittered;
-
-		mat4 r = GLRenderingSystemNS::m_CamRot;
-		mat4 t = GLRenderingSystemNS::m_CamTrans;
-		mat4 r_prev = GLRenderingSystemNS::m_CamRot_prev;
-		mat4 t_prev = GLRenderingSystemNS::m_CamTrans_prev;
-
-		updateUniform(
-			GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_original,
-			p_original);
-		updateUniform(
-			GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_jittered,
-			p_jittered);
-		updateUniform(
-			GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera,
-			r);
-		updateUniform(
-			GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera,
-			t);
-		updateUniform(
-			GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera_prev,
-			r_prev);
-		updateUniform(
-			GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera_prev,
-			t_prev);
+	updateUniform(
+		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_original,
+		m_CamProjOriginal);
+	updateUniform(
+		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_jittered,
+		m_CamProjJittered);
+	updateUniform(
+		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera,
+		m_CamRot);
+	updateUniform(
+		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera,
+		m_CamTrans);
+	updateUniform(
+		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera_prev,
+		m_CamRot_prev);
+	updateUniform(
+		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera_prev,
+		m_CamTrans_prev);
 
 #ifdef CookTorrance
-		//Cook-Torrance
-		if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size() > 0)
+	//Cook-Torrance
+	updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_0,
+		m_CSMProjs[0]);
+	updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_1,
+		m_CSMProjs[1]);
+	updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_2,
+		m_CSMProjs[2]);
+	updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3,
+		m_CSMProjs[3]);
+	updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light,
+		m_sunRot);
+
+	while (GLRenderingSystemNS::m_GPassRenderingDataQueue.size() > 0)
+	{
+		auto l_renderPack = GLRenderingSystemNS::m_GPassRenderingDataQueue.front();
+		if (l_renderPack.visiblilityType == VisiblilityType::STATIC_MESH)
 		{
-			for (auto& l_lightComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents)
+			glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
+
+			// any normal?
+			if (l_renderPack.useNormalTexture)
 			{
-				// update light space transformation matrices
-				if (l_lightComponent->m_lightType == LightType::DIRECTIONAL)
-				{
-					updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_0,
-						l_lightComponent->m_projectionMatrices[0]);
-					updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_1,
-						l_lightComponent->m_projectionMatrices[1]);
-					updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_2,
-						l_lightComponent->m_projectionMatrices[2]);
-					updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3,
-						l_lightComponent->m_projectionMatrices[3]);
-					updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light,
-						InnoMath::getInvertRotationMatrix(
-							g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformVector.m_rot
-						));
-					while (GLRenderingSystemNS::m_GPassRenderingDataQueue.size() > 0)
-					{
-						auto l_renderPack = GLRenderingSystemNS::m_GPassRenderingDataQueue.front();
-						if (l_renderPack.visiblilityType == VisiblilityType::STATIC_MESH)
-						{
-							glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
-							updateUniform(
-								GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
-								l_renderPack.GPassCBuffer.m);
-							updateUniform(
-								GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
-								l_renderPack.GPassCBuffer.m_prev);
-							// any normal?
-							if (l_renderPack.useNormalTexture)
-							{
-								activate2DTexture(l_renderPack.m_basicNormalGLTDC, 0);
-								updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useNormalTexture, true);
-							}
-							else
-							{
-								updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useNormalTexture, false);
-							}
-							// any albedo?
-							if (l_renderPack.useAlbedoTexture)
-							{
-								activate2DTexture(l_renderPack.m_basicAlbedoGLTDC, 1);
-								updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture, true);
-							}
-							else
-							{
-								updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture, false);
-							}
-							// any metallic?
-							if (l_renderPack.useMetallicTexture)
-							{
-								activate2DTexture(l_renderPack.m_basicMetallicGLTDC, 2);
-								updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useMetallicTexture, true);
-							}
-							else
-							{
-								updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useMetallicTexture, false);
-							}
-							// any roughness?
-							if (l_renderPack.useRoughnessTexture)
-							{
-								activate2DTexture(l_renderPack.m_basicRoughnessGLTDC, 3);
-								updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useRoughnessTexture, true);
-							}
-							else
-							{
-								updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useRoughnessTexture, false);
-							}
-							// any ao?
-							if (l_renderPack.useAOTexture)
-							{
-								activate2DTexture(l_renderPack.m_basicAOGLTDC, 4);
-								updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAOTexture, true);
-							}
-							else
-							{
-								updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAOTexture, false);
-							}
-							updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_renderPack.meshColor.albedo_r, l_renderPack.meshColor.albedo_g, l_renderPack.meshColor.albedo_b);
-							updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA, l_renderPack.meshColor.metallic, l_renderPack.meshColor.roughness, l_renderPack.meshColor.ao);
-
-							drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
-						}
-						else if (l_renderPack.visiblilityType == VisiblilityType::EMISSIVE)
-						{
-							glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
-
-							updateUniform(
-								GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
-								l_renderPack.GPassCBuffer.m);
-							updateUniform(
-								GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
-								l_renderPack.GPassCBuffer.m_prev);
-							updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_renderPack.meshColor.albedo_r, l_renderPack.meshColor.albedo_g, l_renderPack.meshColor.albedo_b);
-							updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture, false);
-
-							drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
-						}
-						else
-						{
-							glStencilFunc(GL_ALWAYS, 0x00, 0xFF);
-						}
-						GLRenderingSystemNS::m_GPassRenderingDataQueue.pop();
-					}
-				}
+				activateTexture(l_renderPack.m_basicNormalGLTDC, 0);
+			}
+			// any albedo?
+			if (l_renderPack.useAlbedoTexture)
+			{
+				activateTexture(l_renderPack.m_basicAlbedoGLTDC, 1);
+			}
+			// any metallic?
+			if (l_renderPack.useMetallicTexture)
+			{
+				activateTexture(l_renderPack.m_basicMetallicGLTDC, 2);
+			}
+			// any roughness?
+			if (l_renderPack.useRoughnessTexture)
+			{
+				activateTexture(l_renderPack.m_basicRoughnessGLTDC, 3);
+			}
+			// any ao?
+			if (l_renderPack.useAOTexture)
+			{
+				activateTexture(l_renderPack.m_basicAOGLTDC, 4);
 			}
 
-			//glDisable(GL_CULL_FACE);
-			glDisable(GL_STENCIL_TEST);
-			glDisable(GL_DEPTH_CLAMP);
-			glDisable(GL_DEPTH_TEST);
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-#elif BlinnPhong
-		// draw each visibleComponent
-		for (auto& l_visibleComponent : visibleComponents)
-		{
-			if (l_visibleComponent->m_visiblilityType == VisiblilityType::STATIC_MESH)
-			{
-				updateUniform(
-					GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
-					g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix());
+			updateUniform(
+				GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
+				l_renderPack.GPassCBuffer.m);
+			updateUniform(
+				GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
+				l_renderPack.GPassCBuffer.m_prev);
+			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useNormalTexture, l_renderPack.useNormalTexture);
+			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture, l_renderPack.useAlbedoTexture);
+			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useMetallicTexture, l_renderPack.useMetallicTexture);
+			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useRoughnessTexture, l_renderPack.useRoughnessTexture);
+			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAOTexture, l_renderPack.useAOTexture);
 
-				// draw each graphic data of visibleComponent
-				for (auto& l_graphicData : l_visibleComponent->m_modelMap)
+			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_renderPack.meshCustomMaterial.albedo_r, l_renderPack.meshCustomMaterial.albedo_g, l_renderPack.meshCustomMaterial.albedo_b);
+			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA, l_renderPack.meshCustomMaterial.metallic, l_renderPack.meshCustomMaterial.roughness, l_renderPack.meshCustomMaterial.ao);
+
+			drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
+		}
+		else if (l_renderPack.visiblilityType == VisiblilityType::EMISSIVE)
+		{
+			glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
+
+			updateUniform(
+				GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
+				l_renderPack.GPassCBuffer.m);
+			updateUniform(
+				GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
+				l_renderPack.GPassCBuffer.m_prev);
+			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_renderPack.meshCustomMaterial.albedo_r, l_renderPack.meshCustomMaterial.albedo_g, l_renderPack.meshCustomMaterial.albedo_b);
+			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture, false);
+
+			drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
+		}
+		else
+		{
+			glStencilFunc(GL_ALWAYS, 0x00, 0xFF);
+		}
+		GLRenderingSystemNS::m_GPassRenderingDataQueue.pop();
+	}
+
+	//glDisable(GL_CULL_FACE);
+	glDisable(GL_STENCIL_TEST);
+	glDisable(GL_DEPTH_CLAMP);
+	glDisable(GL_DEPTH_TEST);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#elif BlinnPhong
+	// draw each visibleComponent
+	for (auto& l_visibleComponent : visibleComponents)
+	{
+		if (l_visibleComponent->m_visiblilityType == VisiblilityType::STATIC_MESH)
+		{
+			updateUniform(
+				GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
+				g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix());
+
+			// draw each graphic data of visibleComponent
+			for (auto& l_graphicData : l_visibleComponent->m_modelMap)
+			{
+				//active and bind textures
+				// is there any texture?
+				auto l_textureMap = &l_graphicData.second;
+				if (l_textureMap)
 				{
-					//active and bind textures
-					// is there any texture?
-					auto l_textureMap = &l_graphicData.second;
-					if (l_textureMap)
+					// any normal?
+					auto l_normalTextureID = l_textureMap->find(TextureUsageType::NORMAL);
+					if (l_normalTextureID != l_textureMap->end())
 					{
-						// any normal?
-						auto l_normalTextureID = l_textureMap->find(TextureUsageType::NORMAL);
-						if (l_normalTextureID != l_textureMap->end())
+						auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_normalTextureID->second);
+						if (l_TDC)
 						{
-							auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_normalTextureID->second);
-							if (l_TDC)
-							{
-								if (l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-								{
-									auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-									if (l_GLTDC)
-									{
-										if (l_GLTDC->m_objectStatus == ObjectStatus::ALIVE)
-										{
-											activateTexture(l_TDC, l_GLTDC, 0);
-										}
-									}
-								}
-							}
-						}
-						// any diffuse?
-						auto l_diffuseTextureID = l_textureMap->find(TextureUsageType::ALBEDO);
-						if (l_diffuseTextureID != l_textureMap->end())
-						{
-							auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_diffuseTextureID->second);
-							if (l_TDC)
-							{
-								if (l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-								{
-									auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-									if (l_GLTDC)
-									{
-										if (l_GLTDC->m_objectStatus == ObjectStatus::ALIVE)
-										{
-											activateTexture(l_TDC, l_GLTDC, 1);
-										}
-									}
-								}
-							}
-						}
-						// any specular?
-						auto l_specularTextureID = l_textureMap->find(TextureUsageType::METALLIC);
-						if (l_specularTextureID != l_textureMap->end())
-						{
-							auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_specularTextureID->second);
-							if (l_TDC)
+							if (l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 							{
 								auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
 								if (l_GLTDC)
 								{
 									if (l_GLTDC->m_objectStatus == ObjectStatus::ALIVE)
 									{
-										activateTexture(l_TDC, l_GLTDC, 2);
+										activateTexture(l_TDC, l_GLTDC, 0);
 									}
 								}
 							}
 						}
 					}
-					// draw meshes
-					drawMesh(l_graphicData.first);
+					// any diffuse?
+					auto l_diffuseTextureID = l_textureMap->find(TextureUsageType::ALBEDO);
+					if (l_diffuseTextureID != l_textureMap->end())
+					{
+						auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_diffuseTextureID->second);
+						if (l_TDC)
+						{
+							if (l_TDC->m_objectStatus == ObjectStatus::ALIVE)
+							{
+								auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
+								if (l_GLTDC)
+								{
+									if (l_GLTDC->m_objectStatus == ObjectStatus::ALIVE)
+									{
+										activateTexture(l_TDC, l_GLTDC, 1);
+									}
+								}
+							}
+						}
+					}
+					// any specular?
+					auto l_specularTextureID = l_textureMap->find(TextureUsageType::METALLIC);
+					if (l_specularTextureID != l_textureMap->end())
+					{
+						auto l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(l_specularTextureID->second);
+						if (l_TDC)
+						{
+							auto l_GLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
+							if (l_GLTDC)
+							{
+								if (l_GLTDC->m_objectStatus == ObjectStatus::ALIVE)
+								{
+									activateTexture(l_TDC, l_GLTDC, 2);
+								}
+							}
+						}
+					}
 				}
+				// draw meshes
+				drawMesh(l_graphicData.first);
 			}
 		}
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_DEPTH_CLAMP);
-#endif
-		}
 	}
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_CLAMP);
+#endif
 }
 
 void GLRenderingSystemNS::updateTerrainRenderPass()
 {
-	glEnable(GL_DEPTH_TEST);
+	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_drawTerrain)
+	{
+		glEnable(GL_DEPTH_TEST);
 
-	// bind to framebuffer
-	auto l_FBC = GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC;
-	f_bindDeferredFBC(l_FBC);
+		// bind to framebuffer
+		auto l_FBC = GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC;
+		f_bindFBC(l_FBC);
 
-	f_copyDepthBuffer(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC, l_FBC);
+		f_copyDepthBuffer(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC, l_FBC);
 
-	activateShaderProgram(GLTerrainRenderPassSingletonComponent::getInstance().m_GLSPC);
+		activateShaderProgram(GLTerrainRenderPassSingletonComponent::getInstance().m_GLSPC);
 
-	mat4 p_original = GLRenderingSystemNS::m_CamProjOriginal;
+		mat4 m = InnoMath::generateIdentityMatrix<float>();
 
-	mat4 r = GLRenderingSystemNS::m_CamRot;
-	mat4 t = GLRenderingSystemNS::m_CamTrans;
-	mat4 m = InnoMath::generateIdentityMatrix<float>();
-	updateUniform(
-		GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_p_camera,
-		p_original);
-	updateUniform(
-		GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_r_camera,
-		r);
-	updateUniform(
-		GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_t_camera,
-		t);
-	updateUniform(
-		GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_m,
-		m);
+		updateUniform(
+			GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_p_camera,
+			m_CamProjOriginal);
+		updateUniform(
+			GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_r_camera,
+			m_CamRot);
+		updateUniform(
+			GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_t_camera,
+			m_CamTrans);
+		updateUniform(
+			GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_m,
+			m);
 
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::TERRAIN);
-	activate2DTexture(m_basicAlbedoTemplate, 0);
+		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::TERRAIN);
+		activateTexture(m_basicAlbedoGLTDC, 0);
 
-	drawMesh(l_MDC);
+		drawMesh(l_MDC);
 
-	glDisable(GL_DEPTH_TEST);
-}
+		glDisable(GL_DEPTH_TEST);
+			}
+	else
+	{
+		GLRenderingSystemNS::f_cleanFBC(GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC);
+	}
+		}
 
 void GLRenderingSystemNS::updateLightRenderPass()
 {
@@ -2182,7 +2186,7 @@ void GLRenderingSystemNS::updateLightRenderPass()
 
 	// bind to framebuffer
 	auto l_FBC = GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC;
-	f_bindDeferredFBC(l_FBC);
+	f_bindFBC(l_FBC);
 
 	// 1. opaque objects
 	// copy stencil buffer of opaque objects from G-Pass
@@ -2193,59 +2197,59 @@ void GLRenderingSystemNS::updateLightRenderPass()
 #ifdef CookTorrance
 	// Cook-Torrance
 	// world space position + metallic
-	activate2DTexture(
+	activateTexture(
 		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0],
 		0);
 	// normal + roughness
-	activate2DTexture(
+	activateTexture(
 		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[1],
 		1);
 	// albedo + ambient occlusion
-	activate2DTexture(
+	activateTexture(
 		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[2],
 		2);
 	// motion vector + transparency
-	activate2DTexture(
+	activateTexture(
 		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[3],
 		3);
 	// light space position 0
-	activate2DTexture(
+	activateTexture(
 		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[4],
 		4);
 	// light space position 1
-	activate2DTexture(
+	activateTexture(
 		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[5],
 		5);
 	// light space position 2
-	activate2DTexture(
+	activateTexture(
 		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[6],
 		6);
 	// light space position 3
-	activate2DTexture(
+	activateTexture(
 		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[7],
 		7);
 	// shadow map 0
-	activate2DTexture(
+	activateTexture(
 		GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[0],
 		8);
 	// shadow map 1
-	activate2DTexture(
+	activateTexture(
 		GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[1],
 		9);
 	// shadow map 2
-	activate2DTexture(
+	activateTexture(
 		GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[2],
 		10);
 	// shadow map 3
-	activate2DTexture(
+	activateTexture(
 		GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[3],
 		11);
 	// BRDF look-up table 1
-	activate2DTexture(
+	activateTexture(
 		GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC,
 		12);
 	// BRDF look-up table 2
-	activate2DTexture(
+	activateTexture(
 		GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC,
 		13);
 #endif
@@ -2254,61 +2258,41 @@ void GLRenderingSystemNS::updateLightRenderPass()
 		GLLightRenderPassSingletonComponent::getInstance().m_uni_isEmissive,
 		false);
 
-	if (GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size() > 0)
+	updateUniform(
+		GLLightRenderPassSingletonComponent::getInstance().m_uni_viewPos,
+		m_CamGlobalPos.x, m_CamGlobalPos.y, m_CamGlobalPos.z);
+
+	updateUniform(
+		GLLightRenderPassSingletonComponent::getInstance().m_uni_dirLight_direction,
+		m_sunDir.x, m_sunDir.y, m_sunDir.z);
+	updateUniform(
+		GLLightRenderPassSingletonComponent::getInstance().m_uni_dirLight_color,
+		m_sunColor.x, m_sunColor.y, m_sunColor.z);
+
+	for (size_t j = 0; j < 4; j++)
 	{
-		int l_pointLightIndexOffset = 0;
-		auto l_viewPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GLRenderingSystemNS::g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
-		for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size(); i++)
-		{
-			auto l_lightComponent = GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents[i];
-			auto l_lightPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformVector.m_pos;
-
-			auto l_dirLightDirection =
-				InnoMath::getDirection(direction::BACKWARD, g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformVector.m_rot);
-
-			auto l_lightColor = l_lightComponent->m_color;
-
-			updateUniform(
-				GLLightRenderPassSingletonComponent::getInstance().m_uni_viewPos,
-				l_viewPos.x, l_viewPos.y, l_viewPos.z);
-
-			if (l_lightComponent->m_lightType == LightType::DIRECTIONAL)
-			{
-				l_pointLightIndexOffset -= 1;
-				updateUniform(
-					GLLightRenderPassSingletonComponent::getInstance().m_uni_dirLight_direction,
-					l_dirLightDirection.x, l_dirLightDirection.y, l_dirLightDirection.z);
-				updateUniform(
-					GLLightRenderPassSingletonComponent::getInstance().m_uni_dirLight_color,
-					l_lightColor.x, l_lightColor.y, l_lightColor.z);
-
-				for (size_t j = 0; j < 4; j++)
-				{
-					auto l_shadowSplitCorner = vec4(
-						l_lightComponent->m_AABBs[j].m_boundMin.x,
-						l_lightComponent->m_AABBs[j].m_boundMin.z,
-						l_lightComponent->m_AABBs[j].m_boundMax.x,
-						l_lightComponent->m_AABBs[j].m_boundMax.z
-					);
-					updateUniform(
-						GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitAreas[j],
-						l_shadowSplitCorner.x, l_shadowSplitCorner.y, l_shadowSplitCorner.z, l_shadowSplitCorner.w);
-				}
-			}
-			else if (l_lightComponent->m_lightType == LightType::POINT)
-			{
-				updateUniform(
-					GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position[i + l_pointLightIndexOffset],
-					l_lightPos.x, l_lightPos.y, l_lightPos.z);
-				updateUniform(
-					GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_radius[i + l_pointLightIndexOffset],
-					l_lightComponent->m_radius);
-				updateUniform(
-					GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_color[i + l_pointLightIndexOffset],
-					l_lightColor.x, l_lightColor.y, l_lightColor.z);
-			}
-		}
+		updateUniform(
+			GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitAreas[j],
+			m_CSMSplitCorners[j].x, m_CSMSplitCorners[j].y, m_CSMSplitCorners[j].z, m_CSMSplitCorners[j].w);
 	}
+
+	for (size_t i = 0; i < m_PointLightDatas.size(); i++)
+	{
+		auto l_pos = m_PointLightDatas[i].pos;
+		auto l_color = m_PointLightDatas[i].color;
+		auto l_radius = m_PointLightDatas[i].radius;
+
+		updateUniform(
+			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position[i],
+			l_pos.x, l_pos.y, l_pos.z);
+		updateUniform(
+			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_radius[i],
+			l_radius);
+		updateUniform(
+			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_color[i],
+			l_color.x, l_color.y, l_color.z);
+	}
+
 	// draw light pass rectangle
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
@@ -2345,46 +2329,28 @@ GLTextureDataComponent* GLRenderingSystemNS::updateSkyPass()
 
 	// bind to framebuffer
 	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLFBC;
-	f_bindDeferredFBC(l_FBC);
+	f_bindFBC(l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC);
 
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p,
+		m_CamProjOriginal);
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r,
+		m_CamRot);
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize,
+		(float)deferredPassFBDesc.sizeX, (float)deferredPassFBDesc.sizeY);
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos,
+		m_CamGlobalPos.x, m_CamGlobalPos.y, m_CamGlobalPos.z);
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
+		m_sunDir.x, m_sunDir.y, m_sunDir.z);
+
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
-
-	if (g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
-	{
-		auto l_mainCamera = g_GameSystemSingletonComponent->m_CameraComponents[0];
-		mat4 p = l_mainCamera->m_projectionMatrix;
-		mat4 r =
-			InnoMath::getInvertRotationMatrix(
-				g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_rot
-			);
-
-		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p,
-			p);
-		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r,
-			r);
-		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize,
-			(float)rtSizeX, (float)rtSizeY);
-
-		auto l_eyePos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity)->m_globalTransformVector.m_pos;
-		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos,
-			l_eyePos.x, l_eyePos.y, l_eyePos.z);
-
-		auto l_lightDir = InnoMath::getDirection(
-			direction::BACKWARD,
-			g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemSingletonComponent->m_LightComponents[0]->m_parentEntity)->m_globalTransformVector.m_rot
-		);
-		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
-			l_lightDir.x, l_lightDir.y, l_lightDir.z);
-
-		drawMesh(l_MDC);
-	}
+	drawMesh(l_MDC);
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
@@ -2395,21 +2361,21 @@ GLTextureDataComponent* GLRenderingSystemNS::updateSkyPass()
 GLTextureDataComponent* GLRenderingSystemNS::updatePreTAAPass()
 {
 	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC->m_GLFBC;
-	f_bindDeferredFBC(l_FBC);
+	f_bindFBC(l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassSPC);
 
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-
-	activate2DTexture(
+	activateTexture(
 		GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0],
 		0);
-	activate2DTexture(
+	activateTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLTDCs[0],
 		1);
-	activate2DTexture(
+	activateTexture(
 		GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0],
 		2);
+
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	return GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC->m_GLTDCs[0];
@@ -2443,20 +2409,20 @@ GLTextureDataComponent* GLRenderingSystemNS::updateTAAPass(GLTextureDataComponen
 		g_RenderingSystemSingletonComponent->m_isTAAPingPass = true;
 	}
 
-	f_bindDeferredFBC(l_FBC);
+	f_bindFBC(l_FBC);
 
-	activate2DTexture(inputGLTDC,
+	activateTexture(inputGLTDC,
 		0);
-	activate2DTexture(
+	activateTexture(
 		l_lastFrameTAAGLTDC,
 		1);
-	activate2DTexture(
+	activateTexture(
 		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[3],
 		2);
 
 	updateUniform(
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize,
-		(float)rtSizeX, (float)rtSizeY);
+		(float)deferredPassFBDesc.sizeX, (float)deferredPassFBDesc.sizeY);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
@@ -2467,16 +2433,16 @@ GLTextureDataComponent* GLRenderingSystemNS::updateTAAPass(GLTextureDataComponen
 GLTextureDataComponent* GLRenderingSystemNS::updateTAASharpenPass(GLTextureDataComponent * inputGLTDC)
 {
 	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC->m_GLFBC;
-	f_bindDeferredFBC(l_FBC);
+	f_bindFBC(l_FBC);
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassSPC);
 
-	activate2DTexture(
+	activateTexture(
 		inputGLTDC,
 		0);
 
 	updateUniform(
 		GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPass_uni_renderTargetSize,
-		(float)rtSizeX, (float)rtSizeY);
+		(float)deferredPassFBDesc.sizeX, (float)deferredPassFBDesc.sizeY);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
@@ -2487,11 +2453,11 @@ GLTextureDataComponent* GLRenderingSystemNS::updateTAASharpenPass(GLTextureDataC
 GLTextureDataComponent* GLRenderingSystemNS::updateBloomExtractPass(GLTextureDataComponent * inputGLTDC)
 {
 	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLFBC;
-	f_bindDeferredFBC(l_FBC);
+	f_bindFBC(l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassSPC);
 
-	activate2DTexture(inputGLTDC, 0);
+	activateTexture(inputGLTDC, 0);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
@@ -2519,7 +2485,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBloomBlurPass(GLTextureDataCo
 			l_lastFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
 
 			auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLFBC;
-			f_bindDeferredFBC(l_FBC);
+			f_bindFBC(l_FBC);
 
 			updateUniform(
 				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_horizontal,
@@ -2527,14 +2493,14 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBloomBlurPass(GLTextureDataCo
 
 			if (l_isFirstIteration)
 			{
-				activate2DTexture(
+				activateTexture(
 					inputGLTDC,
 					0);
 				l_isFirstIteration = false;
 			}
 			else
 			{
-				activate2DTexture(
+				activateTexture(
 					l_lastFrameBloomBlurGLTDC,
 					0);
 			}
@@ -2549,13 +2515,13 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBloomBlurPass(GLTextureDataCo
 			l_lastFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
 
 			auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLFBC;
-			f_bindDeferredFBC(l_FBC);
+			f_bindFBC(l_FBC);
 
 			updateUniform(
 				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_horizontal,
 				false);
 
-			activate2DTexture(
+			activateTexture(
 				l_lastFrameBloomBlurGLTDC,
 				0);
 
@@ -2571,14 +2537,14 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBloomBlurPass(GLTextureDataCo
 GLTextureDataComponent* GLRenderingSystemNS::updateMotionBlurPass(GLTextureDataComponent * inputGLTDC)
 {
 	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC->m_GLFBC;
-	f_bindDeferredFBC(l_FBC);
+	f_bindFBC(l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassSPC);
 
-	activate2DTexture(
+	activateTexture(
 		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[3],
 		0);
-	activate2DTexture(inputGLTDC, 1);
+	activateTexture(inputGLTDC, 1);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
@@ -2592,35 +2558,23 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBillboardPass()
 	glDepthFunc(GL_LESS);
 
 	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC->m_GLFBC;
-	f_bindDeferredFBC(l_FBC);
+	f_bindFBC(l_FBC);
 
 	// copy depth buffer from G-Pass
 	f_copyDepthBuffer(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC, l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassSPC);
 
-	if (g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
-	{
-		mat4 p = g_GameSystemSingletonComponent->m_CameraComponents[0]->m_projectionMatrix;
-		mat4 r =
-			InnoMath::getInvertRotationMatrix(
-				g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_rot
-			);
-		mat4 t =
-			InnoMath::getInvertTranslationMatrix(
-				g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos
-			);
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_p,
+		m_CamProjOriginal);
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_r,
+		m_CamRot);
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_t,
+		m_CamTrans);
 
-		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_p,
-			p);
-		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_r,
-			r);
-		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_t,
-			t);
-	}
 	if (g_GameSystemSingletonComponent->m_VisibleComponents.size() > 0)
 	{
 		// draw each visibleComponent
@@ -2629,15 +2583,12 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBillboardPass()
 			if (l_visibleComponent->m_visiblilityType == VisiblilityType::BILLBOARD)
 			{
 				auto l_GlobalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformVector.m_pos;
-				auto l_GlobalCameraPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
 
 				updateUniform(
 					GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_pos,
 					l_GlobalPos.x, l_GlobalPos.y, l_GlobalPos.z);
-				//updateUniform(
-				//	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_albedo,
-				//	l_visibleComponent->m_albedo.x, l_visibleComponent->m_albedo.y, l_visibleComponent->m_albedo.z);
-				auto l_distanceToCamera = (l_GlobalCameraPos - l_GlobalPos).length();
+
+				auto l_distanceToCamera = (m_CamGlobalPos - l_GlobalPos).length();
 				if (l_distanceToCamera > 1.0f)
 				{
 					updateUniform(
@@ -2666,7 +2617,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBillboardPass()
 						}
 						else
 						{
-							activate2DTexture(m_basicNormalTemplate, 0);
+							activateTexture(m_basicNormalGLTDC, 0);
 						}
 						drawMesh(l_MDC);
 					}
@@ -2686,77 +2637,33 @@ GLTextureDataComponent* GLRenderingSystemNS::updateDebuggerPass()
 	glDepthFunc(GL_LESS);
 
 	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLFBC;
-	f_bindDeferredFBC(l_FBC);
+	f_bindFBC(l_FBC);
 
 	// copy depth buffer from G-Pass
 	f_copyDepthBuffer(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC, l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassSPC);
 
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_p,
+		m_CamProjOriginal);
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_r,
+		m_CamRot);
+	updateUniform(
+		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_t,
+		m_CamTrans);
+
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	if (g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
+
+	for (auto& AABBWireframeDataPack : PhysicsSystemSingletonComponent::getInstance().m_AABBWireframeDataPack)
 	{
 		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_p,
-			m_CamProjOriginal);
-		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_r,
-			m_CamRot);
-		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_t,
-			m_CamTrans);
-
-		//	for (auto& l_cameraComponent : g_GameSystemSingletonComponent->m_CameraComponents)
-		//	{
-		//		// draw frustum for cameraComponent
-		//		if (l_cameraComponent->m_drawFrustum)
-		//		{
-		//			auto l_cameraLocalMat = InnoMath::generateIdentityMatrix<float>();
-		//			updateUniform(
-		//				GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
-		//				l_cameraLocalMat);
-		//			auto l_mesh = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_cameraComponent->m_FrustumMeshID);
-		//			drawMesh(l_mesh);
-		//		}
-		//		// draw AABB of frustum for cameraComponent
-		//		if (l_cameraComponent->m_drawAABB)
-		//		{
-		//			auto l_cameraLocalMat = InnoMath::generateIdentityMatrix<float>();
-		//			updateUniform(
-		//				GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
-		//				l_cameraLocalMat);
-		//			auto l_mesh = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_cameraComponent->m_AABBMeshID);
-		//			drawMesh(l_mesh);
-		//		}
-		//	}
-		//}
-		//if (g_GameSystemSingletonComponent->m_LightComponents.size() > 0)
-		//{
-		//	// draw AABB for lightComponent
-		//	for (auto& l_lightComponent : g_GameSystemSingletonComponent->m_LightComponents)
-		//	{
-		//		if (l_lightComponent->m_drawAABB)
-		//		{
-		//			updateUniform(
-		//				GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
-		//				g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_lightComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
-		//			for (auto l_AABBMeshID : l_lightComponent->m_AABBMeshIDs)
-		//			{
-		//				auto l_mesh = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(l_AABBMeshID);
-		//				drawMesh(l_mesh);
-		//			}
-		//		}
-		//	}
-		//}
-		
-		for (auto& AABBWireframeDataPack : PhysicsSystemSingletonComponent::getInstance().m_AABBWireframeDataPack)
-		{
-			updateUniform(
-				GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
-				AABBWireframeDataPack.m);
-			drawMesh(AABBWireframeDataPack.MDC);
-		}
+			GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
+			AABBWireframeDataPack.m);
+		drawMesh(AABBWireframeDataPack.MDC);
 	}
+
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_DEPTH_TEST);
 
@@ -2766,24 +2673,24 @@ GLTextureDataComponent* GLRenderingSystemNS::updateDebuggerPass()
 GLTextureDataComponent* GLRenderingSystemNS::updateFinalBlendPass()
 {
 	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC->m_GLFBC;
-	f_bindDeferredFBC(l_FBC);
+	f_bindFBC(l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassSPC);
 
 	// motion blur pass rendering target
-	activate2DTexture(
+	activateTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC->m_GLTDCs[0],
 		0);
 	// bloom pass rendering target
-	activate2DTexture(
+	activateTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLTDCs[0],
 		1);
 	// billboard pass rendering target
-	activate2DTexture(
+	activateTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC->m_GLTDCs[0],
 		2);
 	// debugger pass rendering target
-	activate2DTexture(
+	activateTexture(
 		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLTDCs[0],
 		3);
 	// draw final pass rectangle
@@ -2863,24 +2770,24 @@ ObjectStatus GLRenderingSystem::getStatus()
 
 INNO_SYSTEM_EXPORT bool GLRenderingSystem::resize()
 {
-	GLRenderingSystemNS::rtSizeX = (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x;
-	GLRenderingSystemNS::rtSizeY = (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y;
+	GLRenderingSystemNS::deferredPassFBDesc.sizeX = WindowSystemSingletonComponent::getInstance().m_windowResolution.x;
+	GLRenderingSystemNS::deferredPassFBDesc.sizeY = WindowSystemSingletonComponent::getInstance().m_windowResolution.y;
 
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLLightRenderPassSingletonComponent::getInstance().m_GLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLLightRenderPassSingletonComponent::getInstance().m_GLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
 
 	return true;
 }
@@ -2940,22 +2847,20 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const mat4 
 
 void GLRenderingSystemNS::attachTextureToFramebuffer(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, int colorAttachmentIndex, int textureIndex, int mipLevel)
 {
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
 	if (TDC->m_textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CAPTURE || TDC->m_textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CONVOLUTION || TDC->m_textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_PREFILTER)
 	{
-		glBindTexture(GL_TEXTURE_CUBE_MAP, GLTDC->m_TAO);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TAO, mipLevel);
 	}
 	else if (TDC->m_textureDataDesc.textureUsageType == TextureUsageType::SHADOWMAP)
 	{
-		glBindTexture(GL_TEXTURE_2D, GLTDC->m_TAO);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TAO, mipLevel);
-	}
+}
 	else
 	{
-		glBindTexture(GL_TEXTURE_2D, GLTDC->m_TAO);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, GLTDC->m_TAO, mipLevel);
 	}
-}
+	}
 
 void GLRenderingSystemNS::activateShaderProgram(GLShaderProgramComponent * GLShaderProgramComponent)
 {
@@ -2998,27 +2903,11 @@ void GLRenderingSystemNS::drawMesh(size_t indicesSize, MeshPrimitiveTopology Mes
 void GLRenderingSystemNS::activateTexture(TextureDataComponent * TDC, int activateIndex)
 {
 	auto l_GLTDC = getGLTextureDataComponent(TDC->m_parentEntity);
-	if (l_GLTDC)
-	{
-		if (TDC->m_textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CAPTURE || TDC->m_textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CONVOLUTION || TDC->m_textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_PREFILTER)
-		{
-			activateCubemapTexture(l_GLTDC, activateIndex);
-		}
-		else
-		{
-			activate2DTexture(l_GLTDC, activateIndex);
-		}
-	}
+	activateTexture(l_GLTDC, activateIndex);
 }
 
-void GLRenderingSystemNS::activate2DTexture(GLTextureDataComponent * GLTDC, int activateIndex)
+void GLRenderingSystemNS::activateTexture(GLTextureDataComponent * GLTDC, int activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
-	glBindTexture(GL_TEXTURE_2D, GLTDC->m_TAO);
-}
-
-void GLRenderingSystemNS::activateCubemapTexture(GLTextureDataComponent * GLTDC, int activateIndex)
-{
-	glActiveTexture(GL_TEXTURE0 + activateIndex);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, GLTDC->m_TAO);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
 }

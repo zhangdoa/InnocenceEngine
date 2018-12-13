@@ -21,7 +21,7 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity = 0;
 
-	MeshCustomMaterial m_meshColor;
+	MeshCustomMaterial m_meshCustomMaterial;
 	TexturePack m_texturePack;
 };
 
