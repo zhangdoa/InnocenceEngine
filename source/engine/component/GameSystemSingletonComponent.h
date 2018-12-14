@@ -43,6 +43,8 @@ public:
 
 	InnoFuture<void>* m_asyncTask;
 
+	bool m_pauseGameUpdate = false;
+
 private:
 	GameSystemSingletonComponent() {};
 };

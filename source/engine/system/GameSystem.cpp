@@ -15,6 +15,7 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
+	IGameInstance* m_gameInstance;
 }
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::setup()
@@ -32,6 +33,13 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::setup()
 	InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_globalTransformMatrix = InnoGameSystemNS::g_GameSystemSingletonComponent->m_rootTransformComponent->m_localTransformMatrix;
 
 	InnoGameSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+
+	if (!InnoGameSystemNS::m_gameInstance->setup())
+	{
+		return false;
+	}
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameInstance setup finished.");
+
 	return true;
 }
 
@@ -73,10 +81,20 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::saveComponentsCapture()
 	});
 }
 
+INNO_SYSTEM_EXPORT void InnoGameSystem::setGameInstance(IGameInstance * rhs)
+{
+	InnoGameSystemNS::m_gameInstance = rhs;
+}
+
 INNO_SYSTEM_EXPORT bool InnoGameSystem::initialize()
 {
 	InnoGameSystemNS::sortTransformComponentsVector();
 	InnoGameSystemNS::updateTransform();
+
+	if (!InnoGameSystemNS::m_gameInstance->initialize())
+	{
+		return false;
+	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem has been initialized.");
 	return true;
@@ -89,11 +107,25 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 		InnoGameSystemNS::updateTransform();
 	});
 	InnoGameSystemNS::g_GameSystemSingletonComponent->m_asyncTask = &temp;
+
+	if (!GameSystemSingletonComponent::getInstance().m_pauseGameUpdate)
+	{
+		if (!InnoGameSystemNS::m_gameInstance->update())
+		{
+			return false;
+		}
+	}
+
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 {
+	if (!InnoGameSystemNS::m_gameInstance->terminate())
+	{
+		return false;
+	}
+
 	InnoGameSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem has been terminated.");
 	return true;

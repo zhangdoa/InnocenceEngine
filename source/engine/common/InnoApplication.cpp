@@ -52,18 +52,13 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 
 		// @TODO: Time-domain coupling
 		g_pCoreSystem->getGameSystem()->g_pMemorySystem = g_pCoreSystem->getMemorySystem();
+		g_pCoreSystem->getGameSystem()->setGameInstance(g_pGameInstance);
 
 		if (!g_pCoreSystem->getGameSystem()->setup())
 		{
 			return false;
 		}
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem setup finished.");
-
-		if (!g_pGameInstance->setup())
-		{
-			return false;
-		}
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameInstance setup finished.");
 
 		if (!g_pCoreSystem->getAssetSystem()->setup())
 		{
@@ -121,11 +116,6 @@ bool InnoApplication::initialize()
 		return false;
 	}
 
-	if (!g_pGameInstance->initialize())
-	{
-		return false;
-	}
-
 	if (!g_pCoreSystem->getAssetSystem()->initialize())
 	{
 		return false;
@@ -169,11 +159,6 @@ bool InnoApplication::update()
 	}
 
 	if (!g_pCoreSystem->getGameSystem()->update())
-	{
-		return false;
-	}
-
-	if (!g_pGameInstance->update())
 	{
 		return false;
 	}
@@ -223,11 +208,6 @@ bool InnoApplication::terminate()
 	}
 
 	if (!g_pCoreSystem->getGameSystem()->terminate())
-	{
-		return false;
-	}
-
-	if (!g_pGameInstance->terminate())
 	{
 		return false;
 	}

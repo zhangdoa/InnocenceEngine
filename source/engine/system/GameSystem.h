@@ -44,4 +44,5 @@ public:
 	INNO_SYSTEM_EXPORT void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) override;
 	
 	INNO_SYSTEM_EXPORT void saveComponentsCapture() override;
+	INNO_SYSTEM_EXPORT void setGameInstance(IGameInstance* rhs) override;
 };

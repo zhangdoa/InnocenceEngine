@@ -1,5 +1,5 @@
 # Innocence Engine
-![Screen capture](https://github.com/zhangdoa/InnocenceEngine/blob/master/Capture_processed.jpg)
+![Screen capture](https://github.com/zhangdoa/InnocenceEngine/blob/master/ScreenCapture.jpg)
 [![Trello website](https://img.shields.io/badge/Trello-Roadmap-00bfff.svg)](https://trello.com/b/iEYu58hu/innocence-engine)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/3c0ea60f7c46491d87236822f6de35a6)](https://www.codacy.com/app/zhangdoa/InnocenceEngine?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=zhangdoa/InnocenceEngine&amp;utm_campaign=Badge_Grade)
 [![CodeFactor](https://www.codefactor.io/repository/github/zhangdoa/innocenceengine/badge)](https://www.codefactor.io/repository/github/zhangdoa/innocenceengine)
@@ -42,15 +42,13 @@ Prerequisites: GCC 7.0 or Clang 6.0 or higher + CMake 3.10 or higher + OpenGL li
 
 Run following scripts in a sequence:
 
-setupLinux.sh
-
-buildAssimpLinux64.sh
-
-buildGLFWLinux64.sh
-
-buildLinux64.sh or buildLinux64-Clang.sh or buildLinux64-CodeBlocks.sh
-
-postBuildLinux64.sh
+``` shell
+echo | setupLinux.sh
+echo | buildAssimpLinux64.sh
+echo | buildGLFWLinux64.sh
+echo | buildLinux64.sh # or buildLinux64-Clang.sh or buildLinux64-CodeBlocks.sh
+echo | postBuildLinux64.sh
+```
 
 ### Mac OSX:
 
@@ -60,15 +58,13 @@ Prerequisites: CMake 3.10 or higher + XCode 9.4.1 or higher
 
 Run following scripts in a sequence:
 
-setupMac.sh
-
-buildAssimpMac64-Xcode.sh
-
-buildGLFWMac64-Xcode.sh
-
-buildMac64-Xcode.sh
-
-postBuildMac64.sh
+``` shell
+echo | setupMac.sh
+echo | buildAssimpMac64-Xcode.sh
+echo | buildGLFWMac64-Xcode.sh
+echo | buildMac64-Xcode.sh
+echo | postBuildMac64.sh
+```
 
 ## Features
 

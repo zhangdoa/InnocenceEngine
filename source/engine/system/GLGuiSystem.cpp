@@ -10,6 +10,7 @@
 #include "../component/RenderingSystemSingletonComponent.h"
 #include "../component/GLRenderingSystemSingletonComponent.h"
 #include "../component/AssetSystemSingletonComponent.h"
+#include "../component/GameSystemSingletonComponent.h"
 
 #include "../third-party/ImGui/imgui.h"
 #include "../third-party/ImGui/imgui_impl_glfw_gl3.h"
@@ -32,6 +33,11 @@ struct RenderingConfig
 	bool drawOverlapWireframe = false;
 	bool reloadShader = false;
 	bool showRenderPassResult = false;
+};
+
+struct GameConfig
+{
+	bool pauseGameUpdate = false;
 };
 
 class ImGuiWrapper
@@ -123,6 +129,7 @@ void ImGuiWrapper::update()
 #ifndef INNO_PLATFORM_LINUX64
 
 	static RenderingConfig l_renderingConfig;
+	static GameConfig l_gameConfig;
 
 	ImGui_ImplGlfwGL3_NewFrame();
 	{
@@ -132,279 +139,278 @@ void ImGuiWrapper::update()
 		ImGui::Checkbox("Use Bloom", &l_renderingConfig.useBloom);
 		ImGui::Checkbox("Use zoom", &l_renderingConfig.useZoom);
 		ImGui::Checkbox("Draw terrain", &l_renderingConfig.drawTerrain);
-		ImGui::Checkbox("Draw sky", &l_renderingConfig.drawSky);		
+		ImGui::Checkbox("Draw sky", &l_renderingConfig.drawSky);
 		ImGui::Checkbox("Draw overlap wireframe", &l_renderingConfig.drawOverlapWireframe);
 		ImGui::Checkbox("Reload shader", &l_renderingConfig.reloadShader);
 		ImGui::Checkbox("Show render pass result", &l_renderingConfig.showRenderPassResult);
-		ImGui::End();
-	}
-
-	RenderingSystemSingletonComponent::getInstance().m_useTAA = l_renderingConfig.useTAA;
-	RenderingSystemSingletonComponent::getInstance().m_useBloom = l_renderingConfig.useBloom;
-	RenderingSystemSingletonComponent::getInstance().m_drawTerrain = l_renderingConfig.drawTerrain;
-	RenderingSystemSingletonComponent::getInstance().m_drawSky = l_renderingConfig.drawSky;	
-	RenderingSystemSingletonComponent::getInstance().m_drawOverlapWireframe = l_renderingConfig.drawOverlapWireframe;
-	RenderingSystemSingletonComponent::getInstance().m_reloadShader = l_renderingConfig.reloadShader;
-
-	if (l_renderingConfig.showRenderPassResult)
-	{
-		ImGui::Begin("Geometry Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
-		{
-			{
-				ImGui::BeginChild("World Space Position(RGB) + Metallic(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("World Space Position(RGB) + Metallic(A)");
-				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-
-				ImGui::SameLine();
-
-				ImGui::BeginChild("World Space Normal(RGB) + Roughness(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("World Space Normal(RGB) + Roughness(A)");
-				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[1]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-			}
-			{
-				ImGui::BeginChild("Albedo(RGB) + Ambient Occlusion(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Albedo(RGB) + Ambient Occlusion(A)");
-				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[2]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-
-				ImGui::SameLine();
-
-				ImGui::BeginChild("Screen Space Motion Vector", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Screen Space Motion Vector");
-				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[3]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-			}
-			{
-				ImGui::BeginChild("Light Space Position 0", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Light Space Position 0");
-				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[4]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-
-				ImGui::SameLine();
-
-				ImGui::BeginChild("Light Space Position 1", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Light Space Position 1");
-				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[5]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-			}
-			{
-				ImGui::BeginChild("Light Space Position 2", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Light Space Position 2");
-				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[6]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-
-				ImGui::SameLine();
-
-				ImGui::BeginChild("Light Space Position 3", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Light Space Position 3");
-				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[7]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-			}
-		}
+		ImGui::Checkbox("Pause game update", &l_gameConfig.pauseGameUpdate);
 		ImGui::End();
 
-		ImGui::Begin("Terrain Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
+		RenderingSystemSingletonComponent::getInstance().m_useTAA = l_renderingConfig.useTAA;
+		RenderingSystemSingletonComponent::getInstance().m_useBloom = l_renderingConfig.useBloom;
+		RenderingSystemSingletonComponent::getInstance().m_drawTerrain = l_renderingConfig.drawTerrain;
+		RenderingSystemSingletonComponent::getInstance().m_drawSky = l_renderingConfig.drawSky;
+		RenderingSystemSingletonComponent::getInstance().m_drawOverlapWireframe = l_renderingConfig.drawOverlapWireframe;
+		RenderingSystemSingletonComponent::getInstance().m_reloadShader = l_renderingConfig.reloadShader;
+
+		GameSystemSingletonComponent::getInstance().m_pauseGameUpdate = l_gameConfig.pauseGameUpdate;
+
+		if (l_renderingConfig.showRenderPassResult)
 		{
-			ImGui::Image(ImTextureID((GLuint64)GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize);
-		}
-		ImGui::End();
-
-		ImGui::Begin("Light Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
-		{
-			ImGui::Image(ImTextureID((GLuint64)GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize);
-		}
-		ImGui::End();
-
-		ImGui::Begin("Final Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
-		{
+			ImGui::Begin("Geometry Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 			{
-				ImGui::BeginChild("Sky Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Sky Pass");
-				ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-
-				ImGui::SameLine();
-
-				ImGui::BeginChild("Pre TAA Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Pre TAA Pass");
-				ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-			}
-			{
-				ImGui::BeginChild("TAA Ping Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("TAA Ping Pass");
-				ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-
-				ImGui::SameLine();
-
-				ImGui::BeginChild("TAA Sharpen Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("TAA Sharpen Pass");
-				ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-			}
-			{
-				ImGui::BeginChild("Bloom Extract Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Bloom Extract Pass");
-				ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-
-				ImGui::SameLine();
-
-				ImGui::BeginChild("Bloom Blur Ping Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Bloom Blur Ping Pass");
-				ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-			}
-			{
-				ImGui::BeginChild("Motion Blur Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Motion Blur Pass");
-				ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-
-				ImGui::SameLine();
-
-				ImGui::BeginChild("Billboard Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Billboard Pass");
-				ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-			}
-			{
-				ImGui::BeginChild("Debugger Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Debugger Pass");
-				ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-
-				ImGui::SameLine();
-
-				ImGui::BeginChild("Final Blend Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Final Blend Pass");
-				ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::EndChild();
-			}
-		}
-		ImGui::End();
-
-		auto l_shadowPassWindowSize = ImVec2(128.0, 128.0);
-		ImGui::Begin("Shadow Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
-		ImGui::BeginChild("Shadow Pass Depth Buffer 0", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Text("Depth Buffer 0");
-		ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[0]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-		ImGui::EndChild();
-		ImGui::SameLine();
-		ImGui::BeginChild("Shadow Pass Depth Buffer 1", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Text("Depth Buffer 1");
-		ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[1]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-		ImGui::EndChild();
-		ImGui::BeginChild("Shadow Pass Depth Buffer 2", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Text("Depth Buffer 2");
-		ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[2]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-		ImGui::EndChild();
-		ImGui::SameLine();
-		ImGui::BeginChild("Shadow Pass Depth Buffer 3", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Text("Depth Buffer 3");
-		ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[3]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-		ImGui::EndChild();
-		ImGui::End();
-
-		auto l_BRDFLUT = ImVec2(128.0, 128.0);
-		ImGui::Begin("BRDF lookup table", 0, ImGuiWindowFlags_AlwaysAutoResize);
-		{
-			ImGui::BeginChild("IBL LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC->m_TAO), l_BRDFLUT);
-			ImGui::EndChild();
-
-			ImGui::SameLine();
-
-			ImGui::BeginChild("Multi-Scattering LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-			zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC->m_TAO), l_BRDFLUT);
-			ImGui::EndChild();
-		}
-		ImGui::End();
-	}
-
-	{
-		auto l_iconSize = ImVec2(32.0f, 32.0f);
-
-		std::function<ImTextureID(const IconType iconType)> f_getTextID =
-			[&](const IconType iconType) -> ImTextureID
-		{
-			switch (iconType)
-			{
-			case IconType::OBJ:
-				return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_OBJ->m_TAO); break;
-			case IconType::PNG:
-				return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_PNG->m_TAO); break;
-			case IconType::SHADER:
-				return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_SHADER->m_TAO); break;
-			case IconType::UNKNOWN:
-				return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_UNKNOWN->m_TAO); break;
-			default:
-				return nullptr; break;
-			}
-		};
-
-		std::function<void(const AssetMetadata* assetMetadata)> f_assetBuilder =
-			[&](const AssetMetadata* assetMetadata)
-		{
-			ImGui::Image(f_getTextID(assetMetadata->iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-			ImGui::SameLine();
-			ImGui::Text((assetMetadata->fileName + assetMetadata->extension).c_str());
-		};
-
-		std::function<void(const DirectoryMetadata* directoryMetadata)> f_directoryTreeBuilder =
-			[&](const DirectoryMetadata* directoryMetadata)
-		{
-			if (ImGui::TreeNode(directoryMetadata->directoryName.c_str()))
-			{
-				for (auto& i : directoryMetadata->childrenDirectories)
 				{
-					f_directoryTreeBuilder(&i);
+					ImGui::BeginChild("World Space Position(RGB) + Metallic(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("World Space Position(RGB) + Metallic(A)");
+					ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+
+					ImGui::SameLine();
+
+					ImGui::BeginChild("World Space Normal(RGB) + Roughness(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("World Space Normal(RGB) + Roughness(A)");
+					ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[1]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
 				}
-				for (auto& i : directoryMetadata->childrenAssets)
 				{
-					f_assetBuilder(&i);
+					ImGui::BeginChild("Albedo(RGB) + Ambient Occlusion(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Albedo(RGB) + Ambient Occlusion(A)");
+					ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[2]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+
+					ImGui::SameLine();
+
+					ImGui::BeginChild("Screen Space Motion Vector", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Screen Space Motion Vector");
+					ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[3]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
 				}
-				ImGui::TreePop();
+				{
+					ImGui::BeginChild("Light Space Position 0", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Light Space Position 0");
+					ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[4]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+
+					ImGui::SameLine();
+
+					ImGui::BeginChild("Light Space Position 1", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Light Space Position 1");
+					ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[5]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+				}
+				{
+					ImGui::BeginChild("Light Space Position 2", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Light Space Position 2");
+					ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[6]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+
+					ImGui::SameLine();
+
+					ImGui::BeginChild("Light Space Position 3", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Light Space Position 3");
+					ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[7]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+				}
 			}
-		};
+			ImGui::End();
 
-		ImGui::Begin("File Explorer", 0, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Begin("Terrain Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
+			{
+				ImGui::Image(ImTextureID((GLuint64)GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+				zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize);
+			}
+			ImGui::End();
 
-		auto& x = AssetSystemSingletonComponent::getInstance().m_rootDirectoryMetadata;
+			ImGui::Begin("Light Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
+			{
+				ImGui::Image(ImTextureID((GLuint64)GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+				zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize);
+			}
+			ImGui::End();
 
-		f_directoryTreeBuilder(&AssetSystemSingletonComponent::getInstance().m_rootDirectoryMetadata);
+			ImGui::Begin("Final Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
+			{
+				{
+					ImGui::BeginChild("Sky Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Sky Pass");
+					ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
 
-		ImGui::End();
+					ImGui::SameLine();
+
+					ImGui::BeginChild("Pre TAA Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Pre TAA Pass");
+					ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
 				}
+				{
+					ImGui::BeginChild("TAA Ping Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("TAA Ping Pass");
+					ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
 
-	// Rendering
-	glViewport(0, 0, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y);
-	ImGui::Render();
-	ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+					ImGui::SameLine();
+
+					ImGui::BeginChild("TAA Sharpen Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("TAA Sharpen Pass");
+					ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+				}
+				{
+					ImGui::BeginChild("Bloom Extract Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Bloom Extract Pass");
+					ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+
+					ImGui::SameLine();
+
+					ImGui::BeginChild("Bloom Blur Ping Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Bloom Blur Ping Pass");
+					ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+				}
+				{
+					ImGui::BeginChild("Motion Blur Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Motion Blur Pass");
+					ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+
+					ImGui::SameLine();
+
+					ImGui::BeginChild("Billboard Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Billboard Pass");
+					ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+				}
+				{
+					ImGui::BeginChild("Debugger Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Debugger Pass");
+					ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+
+					ImGui::SameLine();
+
+					ImGui::BeginChild("Final Blend Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Final Blend Pass");
+					ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+					ImGui::EndChild();
+				}
+			}
+			ImGui::End();
+
+			auto l_shadowPassWindowSize = ImVec2(128.0, 128.0);
+			ImGui::Begin("Shadow Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::BeginChild("Shadow Pass Depth Buffer 0", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Depth Buffer 0");
+			ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[0]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::EndChild();
+			ImGui::SameLine();
+			ImGui::BeginChild("Shadow Pass Depth Buffer 1", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Depth Buffer 1");
+			ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[1]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::EndChild();
+			ImGui::BeginChild("Shadow Pass Depth Buffer 2", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Depth Buffer 2");
+			ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[2]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::EndChild();
+			ImGui::SameLine();
+			ImGui::BeginChild("Shadow Pass Depth Buffer 3", l_shadowPassWindowSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Depth Buffer 3");
+			ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassSingletonComponent::getInstance().m_GLTDCs[3]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::EndChild();
+			ImGui::End();
+
+			auto l_BRDFLUT = ImVec2(128.0, 128.0);
+			ImGui::Begin("BRDF lookup table", 0, ImGuiWindowFlags_AlwaysAutoResize);
+			{
+				ImGui::BeginChild("IBL LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+				ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+				zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC->m_TAO), l_BRDFLUT);
+				ImGui::EndChild();
+
+				ImGui::SameLine();
+
+				ImGui::BeginChild("Multi-Scattering LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+				ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+				zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC->m_TAO), l_BRDFLUT);
+				ImGui::EndChild();
+			}
+			ImGui::End();
+		}
+
+		{
+			auto l_iconSize = ImVec2(32.0f, 32.0f);
+
+			std::function<ImTextureID(const IconType iconType)> f_getTextID =
+				[&](const IconType iconType) -> ImTextureID
+			{
+				switch (iconType)
+				{
+				case IconType::OBJ:
+					return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_OBJ->m_TAO); break;
+				case IconType::PNG:
+					return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_PNG->m_TAO); break;
+				case IconType::SHADER:
+					return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_SHADER->m_TAO); break;
+				case IconType::UNKNOWN:
+					return ImTextureID((GLuint64)GLRenderingSystemSingletonComponent::getInstance().m_iconTemplate_UNKNOWN->m_TAO); break;
+				default:
+					return nullptr; break;
+				}
+			};
+
+			std::function<void(const AssetMetadata* assetMetadata)> f_assetBuilder =
+				[&](const AssetMetadata* assetMetadata)
+			{
+				ImGui::Image(f_getTextID(assetMetadata->iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+				ImGui::SameLine();
+				ImGui::Text((assetMetadata->fileName + assetMetadata->extension).c_str());
+			};
+
+			std::function<void(const DirectoryMetadata* directoryMetadata)> f_directoryTreeBuilder =
+				[&](const DirectoryMetadata* directoryMetadata)
+			{
+				if (ImGui::TreeNode(directoryMetadata->directoryName.c_str()))
+				{
+					for (auto& i : directoryMetadata->childrenDirectories)
+					{
+						f_directoryTreeBuilder(&i);
+					}
+					for (auto& i : directoryMetadata->childrenAssets)
+					{
+						f_assetBuilder(&i);
+					}
+					ImGui::TreePop();
+				}
+			};
+
+			ImGui::Begin("File Explorer", 0, ImGuiWindowFlags_AlwaysAutoResize);
+
+			auto& x = AssetSystemSingletonComponent::getInstance().m_rootDirectoryMetadata;
+
+			f_directoryTreeBuilder(&AssetSystemSingletonComponent::getInstance().m_rootDirectoryMetadata);
+
+			ImGui::End();
+		}
+
+		// Rendering
+		glViewport(0, 0, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y);
+		ImGui::Render();
+		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 #else
 	// @TODO: Linux ImGui WIP
 #endif
 #else
-	ImGui_ImplGlfwGL3_NewFrame();
-	{
-		// @TODO: handle GUI component
-		ImGui::Begin("Main Menu", 0, ImGuiWindowFlags_AlwaysAutoResize);
-		ImGui::Button("Start");
-		ImGui::End();
-		glViewport(0, 0, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y);
-		ImGui::Render();
-		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
-	}
+	// @TODO: handle GUI component
+	ImGui::Begin("Main Menu", 0, ImGuiWindowFlags_AlwaysAutoResize);
+	ImGui::Button("Start");
+	ImGui::End();
+	glViewport(0, 0, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.x, (GLsizei)WindowSystemSingletonComponent::getInstance().m_windowResolution.y);
+	ImGui::Render();
+	ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 #endif
-
-				}
+	}
+}
 
 void ImGuiWrapper::terminate()
 {
