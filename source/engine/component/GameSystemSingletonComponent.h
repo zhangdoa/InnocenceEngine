@@ -23,7 +23,9 @@ public:
 	// the AOS here
 	std::vector<TransformComponent*> m_TransformComponents;
 	std::vector<VisibleComponent*> m_VisibleComponents;
-	std::vector<LightComponent*> m_LightComponents;
+	std::vector<DirectionalLightComponent*> m_DirectionalLightComponents;
+	std::vector<PointLightComponent*> m_PointLightComponents;
+	std::vector<SphereLightComponent*> m_SphereLightComponents;
 	std::vector<CameraComponent*> m_CameraComponents;
 	std::vector<InputComponent*> m_InputComponents;
 	std::vector<EnvironmentCaptureComponent*> m_EnvironmentCaptureComponents;
@@ -31,7 +33,9 @@ public:
 	
 	std::unordered_map<EntityID, TransformComponent*> m_TransformComponentsMap;
 	std::unordered_multimap<EntityID, VisibleComponent*> m_VisibleComponentsMap;
-	std::unordered_multimap<EntityID, LightComponent*> m_LightComponentsMap;
+	std::unordered_multimap<EntityID, DirectionalLightComponent*> m_DirectionalLightComponentsMap;
+	std::unordered_multimap<EntityID, PointLightComponent*> m_PointLightComponentsMap;
+	std::unordered_multimap<EntityID, SphereLightComponent*> m_SphereLightComponentsMap;
 	std::unordered_multimap<EntityID, CameraComponent*> m_CameraComponentsMap;
 	std::unordered_multimap<EntityID, InputComponent*> m_InputComponentsMap;
 	std::unordered_multimap<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;

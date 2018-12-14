@@ -67,7 +67,9 @@ protected:
 
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(VisibleComponent);
-	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(LightComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DirectionalLightComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(PointLightComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(SphereLightComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(CameraComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(InputComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(EnvironmentCaptureComponent);
@@ -87,7 +89,9 @@ protected:
 
 INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(VisibleComponent);
-	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(LightComponent);
+	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DirectionalLightComponent);
+	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(PointLightComponent);
+	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(SphereLightComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(CameraComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(InputComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(EnvironmentCaptureComponent);
@@ -147,7 +151,13 @@ template<>
 getClassNameTemplate(VisibleComponent);
 
 template<>
-getClassNameTemplate(LightComponent);
+getClassNameTemplate(DirectionalLightComponent);
+
+template<>
+getClassNameTemplate(PointLightComponent);
+
+template<>
+getClassNameTemplate(SphereLightComponent);
 
 template<>
 getClassNameTemplate(CameraComponent);
@@ -175,7 +185,11 @@ INNO_SYSTEM_EXPORT spawnComponentTemplate(TransformComponent);
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(VisibleComponent);
 template <>
-INNO_SYSTEM_EXPORT spawnComponentTemplate(LightComponent);
+INNO_SYSTEM_EXPORT spawnComponentTemplate(DirectionalLightComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(PointLightComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(SphereLightComponent);
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(CameraComponent);
 template <>
@@ -212,7 +226,11 @@ INNO_SYSTEM_EXPORT destroyComponentTemplate(TransformComponent);
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(VisibleComponent);
 template <>
-INNO_SYSTEM_EXPORT destroyComponentTemplate(LightComponent);
+INNO_SYSTEM_EXPORT destroyComponentTemplate(DirectionalLightComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(PointLightComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(SphereLightComponent);
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(CameraComponent);
 template <>

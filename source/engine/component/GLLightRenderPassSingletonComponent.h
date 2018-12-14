@@ -47,8 +47,12 @@ public:
 	GLuint m_uni_dirLight_color;
 
 	std::vector<GLuint> m_uni_pointLights_position;
-	std::vector<GLuint> m_uni_pointLights_radius;
-	std::vector<GLuint> m_uni_pointLights_color;
+	std::vector<GLuint> m_uni_pointLights_attenuationRadius;
+	std::vector<GLuint> m_uni_pointLights_luminance;
+
+	std::vector<GLuint> m_uni_sphereLights_position;
+	std::vector<GLuint> m_uni_sphereLights_sphereRadius;
+	std::vector<GLuint> m_uni_sphereLights_luminance;
 
 	GLuint m_uni_isEmissive;
 private:

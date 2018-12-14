@@ -40,6 +40,7 @@ public:
 	bool m_useTAA = false;
 	bool m_useBloom = false;
 	bool m_drawTerrain = false;
+	bool m_drawSky = false;
 	bool m_drawOverlapWireframe = false;
 	bool m_reloadShader = false;
 

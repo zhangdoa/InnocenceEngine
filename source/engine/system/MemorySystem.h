@@ -28,7 +28,9 @@ public:
 
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(VisibleComponent);
-	INNO_SYSTEM_EXPORT allocateComponentImplDecl(LightComponent);
+	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DirectionalLightComponent);
+	INNO_SYSTEM_EXPORT allocateComponentImplDecl(PointLightComponent);
+	INNO_SYSTEM_EXPORT allocateComponentImplDecl(SphereLightComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(CameraComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(InputComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(EnvironmentCaptureComponent);
@@ -48,7 +50,9 @@ public:
 
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(VisibleComponent);
-	INNO_SYSTEM_EXPORT freeComponentImplDecl(LightComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(DirectionalLightComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(PointLightComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(SphereLightComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(CameraComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(InputComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(EnvironmentCaptureComponent);

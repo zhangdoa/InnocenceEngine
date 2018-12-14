@@ -155,15 +155,24 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	std::vector<mat4> m_CSMProjs;
 	std::vector<vec4> m_CSMSplitCorners;
-	
+
 	struct PointLightData
 	{
 		vec4 pos;
-		vec4 color;
-		float radius;
+		vec4 luminance;
+		float attenuationRadius;
 	};
 
 	std::vector<PointLightData> m_PointLightDatas;
+
+	struct SphereLightData
+	{
+		vec4 pos;
+		vec4 luminance;
+		float sphereRadius;
+	};
+
+	std::vector<SphereLightData> m_SphereLightDatas;
 
 	struct GPassCBufferData
 	{
@@ -198,6 +207,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	std::function<void(GLFrameBufferComponent*)> f_cleanFBC;
 	std::function<void(GLFrameBufferComponent*, GLFrameBufferComponent*)> f_copyDepthBuffer;
 	std::function<void(GLFrameBufferComponent*, GLFrameBufferComponent*)> f_copyStencilBuffer;
+	std::function<void(GLFrameBufferComponent*, GLFrameBufferComponent*)> f_copyColorBuffer;
 }
 
 bool GLRenderingSystem::setup()
@@ -243,6 +253,12 @@ bool GLRenderingSystem::setup()
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_FBO);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
 		glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	};
+
+	GLRenderingSystemNS::f_copyColorBuffer = [&](GLFrameBufferComponent* src, GLFrameBufferComponent* dest) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_FBO);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
+		glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	};
 
 	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_MSAAdepth)
@@ -984,20 +1000,36 @@ void GLRenderingSystemNS::initializeLightPassShaders()
 		l_GLSPC->m_program,
 		"uni_dirLight.color");
 
-	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_LightComponents.size() - 1; i++)
+	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_PointLightComponents.size(); i++)
 	{
 		std::stringstream ss;
 		ss << i;
 		GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position.emplace_back(
 			getUniformLocation(l_GLSPC->m_program, "uni_pointLights[" + ss.str() + "].position")
 		);
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_radius.emplace_back(
-			getUniformLocation(l_GLSPC->m_program, "uni_pointLights[" + ss.str() + "].radius")
+		GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_attenuationRadius.emplace_back(
+			getUniformLocation(l_GLSPC->m_program, "uni_pointLights[" + ss.str() + "].attenuationRadius")
 		);
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_color.emplace_back(
-			getUniformLocation(l_GLSPC->m_program, "uni_pointLights[" + ss.str() + "].color")
+		GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_luminance.emplace_back(
+			getUniformLocation(l_GLSPC->m_program, "uni_pointLights[" + ss.str() + "].luminance")
 		);
 	}
+
+	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_SphereLightComponents.size(); i++)
+	{
+		std::stringstream ss;
+		ss << i;
+		GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_position.emplace_back(
+			getUniformLocation(l_GLSPC->m_program, "uni_sphereLights[" + ss.str() + "].position")
+		);
+		GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_sphereRadius.emplace_back(
+			getUniformLocation(l_GLSPC->m_program, "uni_sphereLights[" + ss.str() + "].sphereRadius")
+		);
+		GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_luminance.emplace_back(
+			getUniformLocation(l_GLSPC->m_program, "uni_sphereLights[" + ss.str() + "].luminance")
+		);
+	}
+
 	GLLightRenderPassSingletonComponent::getInstance().m_uni_isEmissive = getUniformLocation(
 		l_GLSPC->m_program,
 		"uni_isEmissive");
@@ -1696,54 +1728,61 @@ void GLRenderingSystemNS::prepareRenderingData()
 	m_CamTrans_prev = t_prev;
 	m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
-	// without sun
-	m_PointLightDatas.clear();
-	m_PointLightDatas.reserve(GameSystemSingletonComponent::getInstance().m_LightComponents.size() - 1);
-	
-	for (auto i : GameSystemSingletonComponent::getInstance().m_LightComponents)
+	// sun/directional light
+	auto l_directionalLight = GameSystemSingletonComponent::getInstance().m_DirectionalLightComponents[0];
+	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
+
+	m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	m_sunColor = l_directionalLight->m_color;
+	m_sunRot = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+
+	auto l_CSMSize = l_directionalLight->m_projectionMatrices.size();
+
+	m_CSMProjs.clear();
+	m_CSMProjs.reserve(l_CSMSize);
+	m_CSMSplitCorners.clear();
+	m_CSMSplitCorners.reserve(l_CSMSize);
+
+	for (size_t j = 0; j < l_directionalLight->m_projectionMatrices.size(); j++)
 	{
-		if (i->m_lightType == LightType::DIRECTIONAL)
-		{
-			// sun/directional light
-			auto l_directionalLight = i;
-			auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity);
+		m_CSMProjs.emplace_back();
+		m_CSMSplitCorners.emplace_back();
 
-			m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
-			m_sunColor = l_directionalLight->m_color;
-			m_sunRot = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+		auto l_shadowSplitCorner = vec4(
+			l_directionalLight->m_AABBs[j].m_boundMin.x,
+			l_directionalLight->m_AABBs[j].m_boundMin.z,
+			l_directionalLight->m_AABBs[j].m_boundMax.x,
+			l_directionalLight->m_AABBs[j].m_boundMax.z
+		);
 
-			auto l_CSMSize = l_directionalLight->m_projectionMatrices.size();
+		m_CSMProjs[j] = l_directionalLight->m_projectionMatrices[j];
+		m_CSMSplitCorners[j] = l_shadowSplitCorner;
+	}
 
-			m_CSMProjs.clear();
-			m_CSMProjs.reserve(l_CSMSize);
-			m_CSMSplitCorners.clear();
-			m_CSMSplitCorners.reserve(l_CSMSize);
+	// point light
+	m_PointLightDatas.clear();
+	m_PointLightDatas.reserve(GameSystemSingletonComponent::getInstance().m_PointLightComponents.size());
 
-			for (size_t j = 0; j < l_directionalLight->m_projectionMatrices.size(); j++)
-			{
-				m_CSMProjs.emplace_back();
-				m_CSMSplitCorners.emplace_back();
-
-				auto l_shadowSplitCorner = vec4(
-					l_directionalLight->m_AABBs[j].m_boundMin.x,
-					l_directionalLight->m_AABBs[j].m_boundMin.z,
-					l_directionalLight->m_AABBs[j].m_boundMax.x,
-					l_directionalLight->m_AABBs[j].m_boundMax.z
-				);
-
-				m_CSMProjs[j] = l_directionalLight->m_projectionMatrices[j];
-				m_CSMSplitCorners[j] = l_shadowSplitCorner;
-			}
-		}
-		// point light
-		else if (i->m_lightType == LightType::POINT)
-		{
+	for (auto i : GameSystemSingletonComponent::getInstance().m_PointLightComponents)
+	{
 			PointLightData l_PointLightData;
 			l_PointLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-			l_PointLightData.color = i->m_color;
-			l_PointLightData.radius = i->m_radius;
+			l_PointLightData.luminance = i->m_color * i->m_luminousFlux;
+			l_PointLightData.attenuationRadius = i->m_attenuationRadius;
 			m_PointLightDatas.emplace_back(l_PointLightData);
-		}
+	}
+
+	// sphere light
+	m_SphereLightDatas.clear();
+	m_SphereLightDatas.reserve(GameSystemSingletonComponent::getInstance().m_SphereLightComponents.size());
+
+	for (auto i : GameSystemSingletonComponent::getInstance().m_SphereLightComponents)
+	{
+		SphereLightData l_SphereLightData;
+		l_SphereLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_SphereLightData.luminance = i->m_color * i->m_luminousFlux;;
+		l_SphereLightData.sphereRadius = i->m_sphereRadius;
+		m_SphereLightDatas.emplace_back(l_SphereLightData);
 	}
 
 	// mesh
@@ -2166,12 +2205,12 @@ void GLRenderingSystemNS::updateTerrainRenderPass()
 		drawMesh(l_MDC);
 
 		glDisable(GL_DEPTH_TEST);
-			}
+	}
 	else
 	{
 		GLRenderingSystemNS::f_cleanFBC(GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC);
 	}
-		}
+}
 
 void GLRenderingSystemNS::updateLightRenderPass()
 {
@@ -2279,18 +2318,35 @@ void GLRenderingSystemNS::updateLightRenderPass()
 	for (size_t i = 0; i < m_PointLightDatas.size(); i++)
 	{
 		auto l_pos = m_PointLightDatas[i].pos;
-		auto l_color = m_PointLightDatas[i].color;
-		auto l_radius = m_PointLightDatas[i].radius;
+		auto l_luminance = m_PointLightDatas[i].luminance;
+		auto l_attenuationRadius = m_PointLightDatas[i].attenuationRadius;
 
 		updateUniform(
 			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position[i],
 			l_pos.x, l_pos.y, l_pos.z);
 		updateUniform(
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_radius[i],
-			l_radius);
+			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_attenuationRadius[i],
+			l_attenuationRadius);
 		updateUniform(
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_color[i],
-			l_color.x, l_color.y, l_color.z);
+			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_luminance[i],
+			l_luminance.x, l_luminance.y, l_luminance.z);
+	}
+
+	for (size_t i = 0; i < m_SphereLightDatas.size(); i++)
+	{
+		auto l_pos = m_SphereLightDatas[i].pos;
+		auto l_luminance = m_SphereLightDatas[i].luminance;
+		auto l_sphereRadius = m_SphereLightDatas[i].sphereRadius;
+
+		updateUniform(
+			GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_position[i],
+			l_pos.x, l_pos.y, l_pos.z);
+		updateUniform(
+			GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_sphereRadius[i],
+			l_sphereRadius);
+		updateUniform(
+			GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_luminance[i],
+			l_luminance.x, l_luminance.y, l_luminance.z);
 	}
 
 	// draw light pass rectangle
@@ -2320,40 +2376,47 @@ void GLRenderingSystemNS::updateLightRenderPass()
 
 GLTextureDataComponent* GLRenderingSystemNS::updateSkyPass()
 {
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
+	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_drawSky)
+	{
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
 
-	//glEnable(GL_CULL_FACE);
-	//glFrontFace(GL_CW);
-	//glCullFace(GL_FRONT);
+		//glEnable(GL_CULL_FACE);
+		//glFrontFace(GL_CW);
+		//glCullFace(GL_FRONT);
 
-	// bind to framebuffer
-	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLFBC;
-	f_bindFBC(l_FBC);
+		// bind to framebuffer
+		auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLFBC;
+		f_bindFBC(l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC);
+		activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC);
 
-	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p,
-		m_CamProjOriginal);
-	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r,
-		m_CamRot);
-	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize,
-		(float)deferredPassFBDesc.sizeX, (float)deferredPassFBDesc.sizeY);
-	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos,
-		m_CamGlobalPos.x, m_CamGlobalPos.y, m_CamGlobalPos.z);
-	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
-		m_sunDir.x, m_sunDir.y, m_sunDir.z);
+		updateUniform(
+			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p,
+			m_CamProjOriginal);
+		updateUniform(
+			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r,
+			m_CamRot);
+		updateUniform(
+			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize,
+			(float)deferredPassFBDesc.sizeX, (float)deferredPassFBDesc.sizeY);
+		updateUniform(
+			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos,
+			m_CamGlobalPos.x, m_CamGlobalPos.y, m_CamGlobalPos.z);
+		updateUniform(
+			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
+			m_sunDir.x, m_sunDir.y, m_sunDir.z);
 
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
-	drawMesh(l_MDC);
+		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
+		drawMesh(l_MDC);
 
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+	}
+	else
+	{
+		GLRenderingSystemNS::f_cleanFBC(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLFBC);
+	}
 
 	return GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLTDCs[0];
 }
@@ -2731,6 +2794,18 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	{
 		auto bloomExtractPassResult = updateBloomExtractPass(bloomInputGLTDC);
 
+		//glEnable(GL_STENCIL_TEST);
+		//glClear(GL_STENCIL_BUFFER_BIT);
+
+		//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		//glStencilFunc(GL_EQUAL, 0x02, 0xFF);
+		//glStencilMask(0x00);
+
+		//f_copyColorBuffer(GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC,
+		//	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLFBC);
+
+		//glDisable(GL_STENCIL_TEST);
+
 		auto bloomBlurPassResult = updateBloomBlurPass(bloomExtractPassResult);
 	}
 	else
@@ -2855,12 +2930,12 @@ void GLRenderingSystemNS::attachTextureToFramebuffer(TextureDataComponent * TDC,
 	else if (TDC->m_textureDataDesc.textureUsageType == TextureUsageType::SHADOWMAP)
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TAO, mipLevel);
-}
+	}
 	else
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, GLTDC->m_TAO, mipLevel);
 	}
-	}
+}
 
 void GLRenderingSystemNS::activateShaderProgram(GLShaderProgramComponent * GLShaderProgramComponent)
 {

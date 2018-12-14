@@ -14,13 +14,14 @@ namespace InnoPhysicsSystemNS
 	void generateProjectionMatrix(CameraComponent* cameraComponent);
 	void generateRayOfEye(CameraComponent* cameraComponent);
 	std::vector<Vertex> generateFrustumVertices(CameraComponent* cameraComponent);
-	void generateLightComponentRadius(LightComponent* lightComponent);
-
+	void generatePointLightComponentAttenuationRadius(PointLightComponent* pointLightComponent);
+	void generateSphereLightComponentScale(SphereLightComponent* sphereLightComponent);
+	
 	std::vector<Vertex> generateNDC();
 	PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap);
 	MeshDataComponent* generateMeshDataComponent(AABB rhs);
 
-	void generateAABB(LightComponent* lightComponent);
+	void generateAABB(DirectionalLightComponent* directionalLightComponent);
 	AABB generateAABB(const std::vector<Vertex>& vertices);
 	AABB generateAABB(vec4 boundMax, vec4 boundMin);
 	std::vector<Vertex> generateAABBVertices(vec4 boundMax, vec4 boundMin);
@@ -44,8 +45,6 @@ namespace InnoPhysicsSystemNS
 	vec4 m_sceneBoundMax = vec4(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), 1.0f);
 	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
 
-	std::vector<CameraComponent*> m_initializedCameraComponents;
-	std::vector<LightComponent*> m_initializedLightComponents;
 	std::vector<VisibleComponent*> m_initializedVisibleComponents;
 }
 
@@ -123,26 +122,32 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent
 	return std::move(l_NDC);
 }
 
-void InnoPhysicsSystemNS::generateLightComponentRadius(LightComponent * lightComponent)
+void InnoPhysicsSystemNS::generatePointLightComponentAttenuationRadius(PointLightComponent* pointLightComponent)
 {
-	auto l_RGBColor = lightComponent->m_color.normalize();
+	auto l_RGBColor = pointLightComponent->m_color.normalize();
 	// "Real-Time Rendering", 4th Edition, p.278
 	// https://en.wikipedia.org/wiki/Relative_luminance
 	// weight with respect to CIE photometric curve
-	auto l_reletiveLuminanceRatio = (0.2126f * l_RGBColor.x + 0.7152f * l_RGBColor.y + 0.0722f * l_RGBColor.z);
+	auto l_relativeLuminanceRatio = (0.2126f * l_RGBColor.x + 0.7152f * l_RGBColor.y + 0.0722f * l_RGBColor.z);
 
 	// Luminance (nt) is illuminance (lx) per solid angle, while luminous intensity (cd) is luminous flux (lm) per solid angle, thus for one area unit (m^2), the ratio of nt/lx is same as cd/lm
 	// For omni isotropic light, after the intergration per solid angle, the luminous flux (lm) is 4 pi times the luminous intensity (cd)
-	auto l_weightedLuminousFlux = lightComponent->m_luminousFlux * l_reletiveLuminanceRatio;
+	auto l_weightedLuminousFlux = pointLightComponent->m_luminousFlux * l_relativeLuminanceRatio;
 
 	// 1. get luminous efficacy (lm/w), assume 683 lm/w (100% luminous efficiency) always
 	// 2. luminous flux (lm) to radiant flux (w), omitted because linearity assumption in step 1
 	// 3. apply inverse square attenuation law with a low threshold of eye sensitivity at 0.03 lx, in ideal situation, lx could convert back to lm with respect to a sphere surface area 4 * PI * r^2
 #if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
-	lightComponent->m_radius = std::sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
+	pointLightComponent->m_attenuationRadius = std::sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
 #else
-	lightComponent->m_radius = sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
+	pointLightComponent->m_attenuationRadius = sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
 #endif
+}
+
+void InnoPhysicsSystemNS::generateSphereLightComponentScale(SphereLightComponent* sphereLightComponent)
+{
+	g_pCoreSystem->getGameSystem()->get<TransformComponent>(sphereLightComponent->m_parentEntity)->m_localTransformVector.m_scale = 
+		vec4(sphereLightComponent->m_sphereRadius, sphereLightComponent->m_sphereRadius, sphereLightComponent->m_sphereRadius, 1.0f);
 }
 
 PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelMap& modelMap)
@@ -166,10 +171,10 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Mo
 	return l_PDC;
 }
 
-void InnoPhysicsSystemNS::generateAABB(LightComponent * lightComponent)
+void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLightComponent)
 {
-	lightComponent->m_AABBs.clear();
-	lightComponent->m_projectionMatrices.clear();
+	directionalLightComponent->m_AABBs.clear();
+	directionalLightComponent->m_projectionMatrices.clear();
 
 	//1. get frustum vertices
 	auto l_camera = g_GameSystemSingletonComponent->m_CameraComponents[0];
@@ -198,7 +203,7 @@ void InnoPhysicsSystemNS::generateAABB(LightComponent * lightComponent)
 	}
 
 	//2.3 transform to light space
-	auto l_lightRotMat = g_pCoreSystem->getGameSystem()->get<TransformComponent>(lightComponent->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
+	auto l_lightRotMat = g_pCoreSystem->getGameSystem()->get<TransformComponent>(directionalLightComponent->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
 	for (size_t i = 0; i < l_frustumsCornerPos.size(); i++)
 	{
 		//Column-Major memory layout
@@ -248,18 +253,18 @@ void InnoPhysicsSystemNS::generateAABB(LightComponent * lightComponent)
 		l_AABBs[i] = generateAABB(l_AABBs[i].m_boundMax + l_maxExtendFactor, l_AABBs[i].m_boundMin + l_minExtendFactor);
 	}
 
-	lightComponent->m_AABBs = std::move(l_AABBs);
+	directionalLightComponent->m_AABBs = std::move(l_AABBs);
 
 	//4. generate projection matrices
-	lightComponent->m_projectionMatrices.reserve(4);
+	directionalLightComponent->m_projectionMatrices.reserve(4);
 
 	for (size_t i = 0; i < 4; i++)
 	{
-		vec4 l_maxExtents = lightComponent->m_AABBs[i].m_boundMax;
-		vec4 l_minExtents = lightComponent->m_AABBs[i].m_boundMin;
+		vec4 l_maxExtents = directionalLightComponent->m_AABBs[i].m_boundMax;
+		vec4 l_minExtents = directionalLightComponent->m_AABBs[i].m_boundMin;
 
 		mat4 p = InnoMath::generateToOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
-		lightComponent->m_projectionMatrices.emplace_back(p);
+		directionalLightComponent->m_projectionMatrices.emplace_back(p);
 	}
 }
 
@@ -435,16 +440,17 @@ void InnoPhysicsSystemNS::updateCameraComponents()
 
 void InnoPhysicsSystemNS::updateLightComponents()
 {
-	for (auto& i : g_GameSystemSingletonComponent->m_LightComponents)
+	for (auto& i : g_GameSystemSingletonComponent->m_DirectionalLightComponents)
 	{
-		if (i->m_lightType == LightType::POINT)
-		{
-			generateLightComponentRadius(i);
-		}
-		if (i->m_lightType == LightType::DIRECTIONAL)
-		{
 			generateAABB(i);
-		}
+	}
+	for (auto& i : g_GameSystemSingletonComponent->m_PointLightComponents)
+	{
+		generatePointLightComponentAttenuationRadius(i);
+	}
+	for (auto& i : g_GameSystemSingletonComponent->m_SphereLightComponents)
+	{
+		generateSphereLightComponentScale(i);
 	}
 }
 

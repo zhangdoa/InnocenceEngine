@@ -109,7 +109,9 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::spawnComponent(className* rhs, EntityID 
 
 spawnComponentImplDefi(TransformComponent)
 spawnComponentImplDefi(VisibleComponent)
-spawnComponentImplDefi(LightComponent)
+spawnComponentImplDefi(DirectionalLightComponent)
+spawnComponentImplDefi(PointLightComponent)
+spawnComponentImplDefi(SphereLightComponent)
 spawnComponentImplDefi(CameraComponent)
 spawnComponentImplDefi(InputComponent)
 spawnComponentImplDefi(EnvironmentCaptureComponent)
@@ -136,7 +138,9 @@ INNO_SYSTEM_EXPORT className* InnoGameSystem::get##className(EntityID parentEnti
 
 getComponentImplDefi(TransformComponent)
 getComponentImplDefi(VisibleComponent)
-getComponentImplDefi(LightComponent)
+getComponentImplDefi(DirectionalLightComponent)
+getComponentImplDefi(PointLightComponent)
+getComponentImplDefi(SphereLightComponent)
 getComponentImplDefi(CameraComponent)
 getComponentImplDefi(InputComponent)
 getComponentImplDefi(EnvironmentCaptureComponent)

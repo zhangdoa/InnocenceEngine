@@ -11,13 +11,20 @@ struct dirLight {
 
 struct pointLight {
 	vec3 position;
-	float radius;
-	vec3 color;
+	float attenuationRadius;
+	vec3 luminance;
+};
+
+struct sphereLight {
+	vec3 position;
+	float sphereRadius;
+	vec3 luminance;
 };
 
 const float eps = 0.00001;
 const float PI = 3.14159265359;
 const int NR_POINT_LIGHTS = 64;
+const int NR_SPHERE_LIGHTS = 64;
 
 const float MAX_REFLECTION_LOD = 4.0;
 
@@ -44,6 +51,7 @@ uniform sampler2D uni_brdfMSLUT;
 uniform vec3 uni_viewPos;
 uniform dirLight uni_dirLight;
 uniform pointLight uni_pointLights[NR_POINT_LIGHTS];
+uniform sphereLight uni_sphereLights[NR_SPHERE_LIGHTS];
 
 uniform bool uni_isEmissive;
 
@@ -322,16 +330,13 @@ void main()
 
 		Lo *= 1 - ShadowCalculation(NdotL, FragPos);
 
-		// punctual point light
+		// point punctual light
 		for (int i = 0; i < NR_POINT_LIGHTS; ++i)
 		{
 			vec3 unormalizedL = uni_pointLights[i].position - FragPos;
-			float lightRadius = uni_pointLights[i].radius;
+			float lightRadius = uni_pointLights[i].attenuationRadius;
 			if (length(unormalizedL) < lightRadius)
 			{
-
-			}
-			
 				L = normalize(unormalizedL);
 				H = normalize(V + L);
 
@@ -342,34 +347,49 @@ void main()
 				float attenuation = 1.0;
 				float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
 				attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
-
-				vec3 lightRadiance = uni_pointLights[i].color * attenuation;
-
-				//Lo += getRadiance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, lightRadiance);
 				
-				// sphere area light
-				float sqrDist = dot(unormalizedL, unormalizedL);
-				
-				float Beta = acos(NdotL);
-				float H2 = sqrt(sqrDist);
-				float h = H2 / lightRadius;
-				float x = sqrt(max(h * h - 1, eps));
-				float y = -x * (1 / tan(Beta));
-				y = clamp(y, -1.0, 1.0);
-				float illuminance = 0;
+				vec3 lightRadiance = uni_pointLights[i].luminance * attenuation;
 
-				if (h * cos (Beta) > 1)
-				{
-					illuminance = cos (Beta) / (h * h);
-				}
-				else
-				{
-					illuminance = (1 / max(PI * h * h, eps))
-					* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
-					+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
-				}
-				illuminance *= PI;
-				Lo += getRadiance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * uni_pointLights[i].color);
+				Lo += getRadiance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, lightRadiance);
+			}
+		}
+		
+		// sphere area light
+		for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
+		{
+			vec3 unormalizedL = uni_sphereLights[i].position - FragPos;
+			float lightRadius = uni_sphereLights[i].sphereRadius;
+
+			L = normalize(unormalizedL);
+			H = normalize(V + L);
+
+			LdotH = max(dot(L, H), 0.0);
+			NdotH = max(dot(N, H), 0.0);
+			NdotL = max(dot(N, L), 0.0);
+						
+			float sqrDist = dot(unormalizedL, unormalizedL);
+				
+			float Beta = acos(NdotL);
+			float H2 = sqrt(sqrDist);
+			float h = H2 / lightRadius;
+			float x = sqrt(max(h * h - 1, eps));
+			float y = -x * (1 / tan(Beta));
+			y = clamp(y, -1.0, 1.0);
+			float illuminance = 0;
+
+			if (h * cos (Beta) > 1)
+			{
+				illuminance = cos (Beta) / (h * h);
+			}
+			else
+			{
+				illuminance = (1 / max(PI * h * h, eps))
+				* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
+				+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
+			}
+			illuminance *= PI;
+			
+			Lo += getRadiance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * uni_sphereLights[i].luminance);
 		}		
 	}
 	if (uni_drawCSMSplitedArea)

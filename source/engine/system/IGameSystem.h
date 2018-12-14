@@ -28,7 +28,9 @@ public:
 
 	spawnComponentInterfaceDecl(TransformComponent);
 	spawnComponentInterfaceDecl(VisibleComponent);
-	spawnComponentInterfaceDecl(LightComponent);
+	spawnComponentInterfaceDecl(DirectionalLightComponent);
+	spawnComponentInterfaceDecl(PointLightComponent);
+	spawnComponentInterfaceDecl(SphereLightComponent);
 	spawnComponentInterfaceDecl(CameraComponent);
 	spawnComponentInterfaceDecl(InputComponent);
 	spawnComponentInterfaceDecl(EnvironmentCaptureComponent);
@@ -50,7 +52,9 @@ public:
 protected:
 	getComponentInterfaceDecl(TransformComponent);
 	getComponentInterfaceDecl(VisibleComponent);
-	getComponentInterfaceDecl(LightComponent);
+	getComponentInterfaceDecl(DirectionalLightComponent);
+	getComponentInterfaceDecl(PointLightComponent);
+	getComponentInterfaceDecl(SphereLightComponent);
 	getComponentInterfaceDecl(CameraComponent);
 	getComponentInterfaceDecl(InputComponent);
 	getComponentInterfaceDecl(EnvironmentCaptureComponent);
@@ -82,9 +86,19 @@ template <> inline VisibleComponent * IGameSystem::get(EntityID parentEntity)
 	return getComponentInterfaceCall(VisibleComponent, parentEntity);
 };
 
-template <> inline LightComponent * IGameSystem::get(EntityID parentEntity)
+template <> inline DirectionalLightComponent * IGameSystem::get(EntityID parentEntity)
 {
-	return getComponentInterfaceCall(LightComponent, parentEntity);
+	return getComponentInterfaceCall(DirectionalLightComponent, parentEntity);
+};
+
+template <> inline PointLightComponent * IGameSystem::get(EntityID parentEntity)
+{
+	return getComponentInterfaceCall(PointLightComponent, parentEntity);
+};
+
+template <> inline SphereLightComponent * IGameSystem::get(EntityID parentEntity)
+{
+	return getComponentInterfaceCall(SphereLightComponent, parentEntity);
 };
 
 template <> inline CameraComponent * IGameSystem::get(EntityID parentEntity)

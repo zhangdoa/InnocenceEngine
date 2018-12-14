@@ -21,14 +21,18 @@ public:
 
 	spawnComponentImplDecl(TransformComponent);
 	spawnComponentImplDecl(VisibleComponent);
-	spawnComponentImplDecl(LightComponent);
+	spawnComponentImplDecl(DirectionalLightComponent);
+	spawnComponentImplDecl(PointLightComponent);
+	spawnComponentImplDecl(SphereLightComponent);
 	spawnComponentImplDecl(CameraComponent);
 	spawnComponentImplDecl(InputComponent);
 	spawnComponentImplDecl(EnvironmentCaptureComponent);
 	
 	getComponentImplDecl(TransformComponent);
 	getComponentImplDecl(VisibleComponent);
-	getComponentImplDecl(LightComponent);
+	getComponentImplDecl(DirectionalLightComponent);
+	getComponentImplDecl(PointLightComponent);
+	getComponentImplDecl(SphereLightComponent);
 	getComponentImplDecl(CameraComponent);
 	getComponentImplDecl(InputComponent);
 	getComponentImplDecl(EnvironmentCaptureComponent);

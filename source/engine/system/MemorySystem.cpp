@@ -60,7 +60,9 @@ std::unique_ptr<ComponentPool<className>> m_##className##Pool;
 	//Memory pool for components
 	componentPoolUniPtr(TransformComponent);
 	componentPoolUniPtr(VisibleComponent);
-	componentPoolUniPtr(LightComponent);
+	componentPoolUniPtr(DirectionalLightComponent);
+	componentPoolUniPtr(PointLightComponent);
+	componentPoolUniPtr(SphereLightComponent);
 	componentPoolUniPtr(CameraComponent);
 	componentPoolUniPtr(InputComponent);
 	componentPoolUniPtr(EnvironmentCaptureComponent);
@@ -133,7 +135,9 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::setup()
 
 	constructComponentPool(TransformComponent);
 	constructComponentPool(VisibleComponent);
-	constructComponentPool(LightComponent);
+	constructComponentPool(DirectionalLightComponent);
+	constructComponentPool(PointLightComponent);
+	constructComponentPool(SphereLightComponent);
 	constructComponentPool(CameraComponent);
 	constructComponentPool(InputComponent);
 	constructComponentPool(EnvironmentCaptureComponent);
@@ -407,10 +411,20 @@ void* InnoMemorySystem::deserializeImpl(const std::string& fileName)
 		classSize = sizeof(VisibleComponent);
 		l_ptr = reinterpret_cast<unsigned char*>(spawn<VisibleComponent>());
 	}
-	else if (className == getClassName<LightComponent>())
+	else if (className == getClassName<DirectionalLightComponent>())
 	{
-		classSize = sizeof(LightComponent);
-		l_ptr = reinterpret_cast<unsigned char*>(spawn<LightComponent>());
+		classSize = sizeof(DirectionalLightComponent);
+		l_ptr = reinterpret_cast<unsigned char*>(spawn<DirectionalLightComponent>());
+	}
+	else if (className == getClassName<PointLightComponent>())
+	{
+		classSize = sizeof(PointLightComponent);
+		l_ptr = reinterpret_cast<unsigned char*>(spawn<PointLightComponent>());
+	}
+	else if (className == getClassName<SphereLightComponent>())
+	{
+		classSize = sizeof(SphereLightComponent);
+		l_ptr = reinterpret_cast<unsigned char*>(spawn<SphereLightComponent>());
 	}
 	else if (className == getClassName<CameraComponent>())
 	{
@@ -547,7 +561,9 @@ className* InnoMemorySystem::allocate##className() \
 
 allocateComponentImplDefi(TransformComponent)
 allocateComponentImplDefi(VisibleComponent)
-allocateComponentImplDefi(LightComponent)
+allocateComponentImplDefi(DirectionalLightComponent);
+allocateComponentImplDefi(PointLightComponent);
+allocateComponentImplDefi(SphereLightComponent);
 allocateComponentImplDefi(CameraComponent)
 allocateComponentImplDefi(InputComponent)
 allocateComponentImplDefi(EnvironmentCaptureComponent)
@@ -576,7 +592,9 @@ void InnoMemorySystem::free##className(className* p) \
 
 freeComponentImplDefi(TransformComponent)
 freeComponentImplDefi(VisibleComponent)
-freeComponentImplDefi(LightComponent)
+freeComponentImplDefi(DirectionalLightComponent);
+freeComponentImplDefi(PointLightComponent);
+freeComponentImplDefi(SphereLightComponent);
 freeComponentImplDefi(CameraComponent)
 freeComponentImplDefi(InputComponent)
 freeComponentImplDefi(EnvironmentCaptureComponent)

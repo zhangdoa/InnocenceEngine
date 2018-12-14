@@ -1642,7 +1642,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 	// camera and light
 	auto l_mainCamera = GameSystemSingletonComponent::getInstance().m_CameraComponents[0];
 	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
-	auto l_directionalLight = GameSystemSingletonComponent::getInstance().m_LightComponents[0];
+	auto l_directionalLight = GameSystemSingletonComponent::getInstance().m_DirectionalLightComponents[0];
 	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
 
 	auto l_p = l_mainCamera->m_projectionMatrix;
