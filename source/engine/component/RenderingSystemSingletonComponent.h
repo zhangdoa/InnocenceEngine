@@ -4,9 +4,6 @@
 #include "MaterialDataComponent.h"
 #include<atomic>
 
-//#define BlinnPhong
-#define CookTorrance
-
 struct RenderDataPack
 {
 	mat4 m;
@@ -16,6 +13,8 @@ struct RenderDataPack
 	MaterialDataComponent* Material;
 	VisiblilityType visiblilityType;
 };
+
+enum class RenderPassType { GPass, TerrainPass, LPass };
 
 class RenderingSystemSingletonComponent
 {
@@ -42,8 +41,7 @@ public:
 	bool m_drawTerrain = false;
 	bool m_drawSky = false;
 	bool m_drawOverlapWireframe = false;
-	bool m_reloadShader = false;
-
+	std::function<void(RenderPassType)> f_reloadShader;
 	std::vector<RenderDataPack> m_renderDataPack;
 
 private:

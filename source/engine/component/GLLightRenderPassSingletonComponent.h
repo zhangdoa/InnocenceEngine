@@ -23,6 +23,12 @@ public:
 
 	GLShaderProgramComponent* m_GLSPC;
 
+#ifdef CookTorrance
+	ShaderFilePaths m_shaderFilePaths = { "GL4.0//lightPassCookTorranceVertex.sf" , "", "GL4.0//lightPassCookTorranceFragment.sf" };
+#elif BlinnPhong
+	ShaderFilePaths m_shaderFilePaths = { "GL4.0//lightPassBlinnPhongVertex.sf" , "", "GL4.0//lightPassBlinnPhongFragment.sf" };
+#endif
+
 	GLuint m_uni_geometryPassRT0;
 	GLuint m_uni_geometryPassRT1;
 	GLuint m_uni_geometryPassRT2;

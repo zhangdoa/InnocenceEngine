@@ -31,7 +31,6 @@ struct RenderingConfig
 	bool drawTerrain = false;
 	bool drawSky = false;
 	bool drawOverlapWireframe = false;
-	bool reloadShader = false;
 	bool showRenderPassResult = false;
 };
 
@@ -141,9 +140,15 @@ void ImGuiWrapper::update()
 		ImGui::Checkbox("Draw terrain", &l_renderingConfig.drawTerrain);
 		ImGui::Checkbox("Draw sky", &l_renderingConfig.drawSky);
 		ImGui::Checkbox("Draw overlap wireframe", &l_renderingConfig.drawOverlapWireframe);
-		ImGui::Checkbox("Reload shader", &l_renderingConfig.reloadShader);
 		ImGui::Checkbox("Show render pass result", &l_renderingConfig.showRenderPassResult);
 		ImGui::Checkbox("Pause game update", &l_gameConfig.pauseGameUpdate);
+		const char* items[] = { "GPass", "TerrainPass", "LPass" };
+		static int item_current = 0;
+		ImGui::Combo("Choose shader", &item_current, items, IM_ARRAYSIZE(items));
+		if (ImGui::Button("Reload Shader"))
+		{
+			RenderingSystemSingletonComponent::getInstance().f_reloadShader(RenderPassType(item_current));
+		}
 		ImGui::End();
 
 		RenderingSystemSingletonComponent::getInstance().m_useTAA = l_renderingConfig.useTAA;
@@ -151,7 +156,6 @@ void ImGuiWrapper::update()
 		RenderingSystemSingletonComponent::getInstance().m_drawTerrain = l_renderingConfig.drawTerrain;
 		RenderingSystemSingletonComponent::getInstance().m_drawSky = l_renderingConfig.drawSky;
 		RenderingSystemSingletonComponent::getInstance().m_drawOverlapWireframe = l_renderingConfig.drawOverlapWireframe;
-		RenderingSystemSingletonComponent::getInstance().m_reloadShader = l_renderingConfig.reloadShader;
 
 		GameSystemSingletonComponent::getInstance().m_pauseGameUpdate = l_gameConfig.pauseGameUpdate;
 

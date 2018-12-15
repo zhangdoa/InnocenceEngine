@@ -51,6 +51,16 @@ enum class IconType { OBJ, PNG, SHADER, UNKNOWN };
 // shader custom types
 enum class ShaderType { VERTEX, GEOMETRY, FRAGMENT };
 
+struct ShaderFilePaths
+{
+	std::string m_VSPath;
+	std::string m_GSPath;
+	std::string m_FSPath;
+};
+
+//#define BlinnPhong
+#define CookTorrance
+
 #ifdef INNO_PLATFORM_MACOS
 struct EnumClassHash
 {
