@@ -17,7 +17,7 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity = 0;
 
-	VisiblilityType m_visiblilityType = VisiblilityType::INVISIBLE;
+	VisiblilityType m_visiblilityType = VisiblilityType::INNO_INVISIBLE;
 	MeshShapeType m_meshShapeType = MeshShapeType::QUAD;
 	MeshPrimitiveTopology m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
 	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::REPEAT;

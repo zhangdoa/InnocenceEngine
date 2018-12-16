@@ -726,7 +726,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 	}
 	for (auto& l_visibleComponent : InnoAssetSystemNS::g_GameSystemSingletonComponent->m_VisibleComponents)
 	{
-		if (l_visibleComponent->m_visiblilityType != VisiblilityType::INVISIBLE)
+		if (l_visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE)
 		{
 			if (l_visibleComponent->m_meshShapeType == MeshShapeType::CUSTOM)
 			{

@@ -49,6 +49,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void initializeLightPassShaders();
 	void bindLightPassUniformLocations(GLShaderProgramComponent* rhs);
 
+
 	void initializeFinalPass();
 
 	void initializeSkyPass();
@@ -1991,7 +1992,7 @@ void GLRenderingSystemNS::updateShadowRenderPass()
 		// draw each visibleComponent
 		for (auto& l_visibleComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_VisibleComponents)
 		{
-			if (l_visibleComponent->m_visiblilityType == VisiblilityType::STATIC_MESH)
+			if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE)
 			{
 				updateUniform(
 					GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_m,
@@ -2071,7 +2072,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 	while (GLRenderingSystemNS::m_GPassRenderingDataQueue.size() > 0)
 	{
 		auto l_renderPack = GLRenderingSystemNS::m_GPassRenderingDataQueue.front();
-		if (l_renderPack.visiblilityType == VisiblilityType::STATIC_MESH)
+		if (l_renderPack.visiblilityType == VisiblilityType::INNO_OPAQUE)
 		{
 			glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
 
@@ -2118,7 +2119,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 
 			drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
 		}
-		else if (l_renderPack.visiblilityType == VisiblilityType::EMISSIVE)
+		else if (l_renderPack.visiblilityType == VisiblilityType::INNO_EMISSIVE)
 		{
 			glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
 
@@ -2704,7 +2705,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBillboardPass()
 		// draw each visibleComponent
 		for (auto& l_visibleComponent : g_GameSystemSingletonComponent->m_VisibleComponents)
 		{
-			if (l_visibleComponent->m_visiblilityType == VisiblilityType::BILLBOARD)
+			if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_BILLBOARD)
 			{
 				auto l_GlobalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformVector.m_pos;
 

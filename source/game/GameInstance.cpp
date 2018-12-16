@@ -227,7 +227,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 		90.0f
 	);
 	GameInstanceNS::m_landscapeVisibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_landscapeEntity);
-	GameInstanceNS::m_landscapeVisibleComponent->m_visiblilityType = VisiblilityType::STATIC_MESH;
+	GameInstanceNS::m_landscapeVisibleComponent->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = MeshShapeType::CUBE;
 
 	//setup pawn 1
@@ -237,7 +237,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnTransformComponent1->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	GameInstanceNS::m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
 	GameInstanceNS::m_pawnVisibleComponent1 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_pawnEntity1);
-	GameInstanceNS::m_pawnVisibleComponent1->m_visiblilityType = VisiblilityType::STATIC_MESH;
+	GameInstanceNS::m_pawnVisibleComponent1->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshShapeType = MeshShapeType::CUSTOM;
 	GameInstanceNS::m_pawnVisibleComponent1->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
 	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
@@ -253,7 +253,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	//GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_scale = vec4(0.01f, 0.01f, 0.01f, 1.0f);
 	GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_pos = vec4(0.0f, 0.2f, 3.5f, 1.0f);
 	GameInstanceNS::m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_pawnEntity2);
-	GameInstanceNS::m_pawnVisibleComponent2->m_visiblilityType = VisiblilityType::STATIC_MESH;
+	GameInstanceNS::m_pawnVisibleComponent2->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 	GameInstanceNS::m_pawnVisibleComponent2->m_meshShapeType = MeshShapeType::CUBE;
 	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
 	GameInstanceNS::m_pawnVisibleComponent2->m_drawAABB = true;
@@ -321,11 +321,11 @@ void GameInstanceNS::setupSpheres()
 		m_sphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_sphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_sphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_sphereEntitys[i]);
-		m_sphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::STATIC_MESH;
+		m_sphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 		m_sphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::CUSTOM;
 		m_sphereVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
 		m_sphereVisibleComponents[i]->m_drawAABB = true;
-		m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
+		//m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 	}
 	for (unsigned int i = 0; i < sphereMatrixDim; i++)
 	{
@@ -364,7 +364,7 @@ void GameInstanceNS::setupLights()
 		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<PointLightComponent>(m_pointLightEntitys[i]);
 		m_pointLightVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pointLightEntitys[i]);
 		m_pointLightComponents[i]->m_luminousFlux = 100.0f;
-		m_pointLightVisibleComponents[i]->m_visiblilityType = VisiblilityType::EMISSIVE;
+		m_pointLightVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_EMISSIVE;
 		m_pointLightVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_pointLightVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	}
@@ -402,7 +402,7 @@ void GameInstanceNS::setupLights()
 		m_sphereLightVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_sphereLightEntitys[i]);
 		m_sphereLightComponents[i]->m_luminousFlux = 40.0f;
 		m_sphereLightComponents[i]->m_sphereRadius = 4.0f;
-		m_sphereLightVisibleComponents[i]->m_visiblilityType = VisiblilityType::EMISSIVE;
+		m_sphereLightVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_EMISSIVE;
 		m_sphereLightVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_sphereLightVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	}

@@ -503,7 +503,7 @@ void InnoPhysicsSystemNS::updateCulling()
 
 		for (auto visibleComponent : m_initializedVisibleComponents)
 		{
-			if (visibleComponent->m_visiblilityType != VisiblilityType::INVISIBLE)
+			if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE)
 			{
 				auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
 				auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;

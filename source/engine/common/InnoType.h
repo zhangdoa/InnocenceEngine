@@ -33,7 +33,7 @@ struct TimeData
 
 using Index = unsigned int;
 
-enum class VisiblilityType { INVISIBLE, BILLBOARD, STATIC_MESH, SKYBOX, GLASSWARE, EMISSIVE };
+enum class VisiblilityType { INNO_INVISIBLE, INNO_BILLBOARD, INNO_OPAQUE, INNO_TRANSPARENT, INNO_EMISSIVE };
 // mesh custom types
 enum class MeshUsageType { NORMAL, BOUNDING_BOX };
 enum class MeshShapeType { LINE, QUAD, CUBE, SPHERE, TERRAIN, CUSTOM };
