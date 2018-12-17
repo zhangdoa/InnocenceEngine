@@ -3,14 +3,14 @@
 #include "GLRenderPassComponent.h"
 #include "GLShaderProgramComponent.h"
 
-class GLShadowRenderPassSingletonComponent
+class GLShadowRenderPassComponent
 {
 public:
-	~GLShadowRenderPassSingletonComponent() {};
+	~GLShadowRenderPassComponent() {};
 
-	static GLShadowRenderPassSingletonComponent& getInstance()
+	static GLShadowRenderPassComponent& get()
 	{
-		static GLShadowRenderPassSingletonComponent instance;
+		static GLShadowRenderPassComponent instance;
 		return instance;
 	}
 
@@ -25,5 +25,5 @@ public:
 	GLuint m_shadowPass_uni_v;
 	GLuint m_shadowPass_uni_m;
 private:
-	GLShadowRenderPassSingletonComponent() {};
+	GLShadowRenderPassComponent() {};
 };

@@ -1,6 +1,6 @@
 #include "LogSystem.h"
 #include <iostream>
-#include "../component/LogSystemSingletonComponent.h"
+#include "../component/LogSystemComponent.h"
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -179,10 +179,10 @@ INNO_SYSTEM_EXPORT bool InnoLogSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool InnoLogSystem::update()
 {
-	if (LogSystemSingletonComponent::getInstance().m_log.size() > 0)
+	if (LogSystemComponent::get().m_log.size() > 0)
 	{
 		std::string l_log;
-		if (LogSystemSingletonComponent::getInstance().m_log.tryPop(l_log))
+		if (LogSystemComponent::get().m_log.tryPop(l_log))
 		{
 			printLog(LogType::INNO_DEV_VERBOSE, l_log);
 		}

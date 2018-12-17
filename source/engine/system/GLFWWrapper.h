@@ -6,7 +6,7 @@ class windowCallbackWrapper
 public:
 	~windowCallbackWrapper() {};
 
-	static windowCallbackWrapper& getInstance()
+	static windowCallbackWrapper& get()
 	{
 		static windowCallbackWrapper instance;
 		return instance;

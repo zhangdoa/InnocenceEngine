@@ -3,14 +3,14 @@
 #include "GLShaderProgramComponent.h"
 #include "GLRenderPassComponent.h"
 
-class GLFinalRenderPassSingletonComponent
+class GLFinalRenderPassComponent
 {
 public:
-	~GLFinalRenderPassSingletonComponent() {};
+	~GLFinalRenderPassComponent() {};
 	
-	static GLFinalRenderPassSingletonComponent& getInstance()
+	static GLFinalRenderPassComponent& get()
 	{
-		static GLFinalRenderPassSingletonComponent instance;
+		static GLFinalRenderPassComponent instance;
 		return instance;
 	}
 
@@ -85,5 +85,5 @@ public:
 	GLuint m_uni_debuggerPassRT0;
 
 private:
-	GLFinalRenderPassSingletonComponent() {};
+	GLFinalRenderPassComponent() {};
 };

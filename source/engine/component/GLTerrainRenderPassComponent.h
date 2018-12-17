@@ -6,14 +6,14 @@
 #include "GLTextureDataComponent.h"
 #include "GLRenderPassComponent.h"
 
-class GLTerrainRenderPassSingletonComponent
+class GLTerrainRenderPassComponent
 {
 public:
-	~GLTerrainRenderPassSingletonComponent() {};
+	~GLTerrainRenderPassComponent() {};
 	
-	static GLTerrainRenderPassSingletonComponent& getInstance()
+	static GLTerrainRenderPassComponent& get()
 	{
-		static GLTerrainRenderPassSingletonComponent instance;
+		static GLTerrainRenderPassComponent instance;
 		return instance;
 	}
 
@@ -33,5 +33,5 @@ public:
 	GLuint m_terrainPass_uni_albedoTexture;
 
 private:
-	GLTerrainRenderPassSingletonComponent() {};
+	GLTerrainRenderPassComponent() {};
 };

@@ -20,14 +20,14 @@ struct AABBWireframeDataPack
 	MeshDataComponent* MDC;
 };
 
-class PhysicsSystemSingletonComponent
+class PhysicsSystemComponent
 {
 public:
-	~PhysicsSystemSingletonComponent() {};
+	~PhysicsSystemComponent() {};
 
-	static PhysicsSystemSingletonComponent& getInstance()
+	static PhysicsSystemComponent& get()
 	{
-		static PhysicsSystemSingletonComponent instance;
+		static PhysicsSystemComponent instance;
 		return instance;
 	}
 
@@ -39,5 +39,5 @@ public:
 
 	ThreadSafeQueue<VisibleComponent*> m_uninitializedVisibleComponents;
 private:
-	PhysicsSystemSingletonComponent() {};
+	PhysicsSystemComponent() {};
 };

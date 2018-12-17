@@ -15,17 +15,17 @@ void windowCallbackWrapper::initialize(GLFWwindow * window, IInputSystem* rhs)
 
 void windowCallbackWrapper::framebufferSizeCallback(GLFWwindow * window, int width, int height)
 {
-	getInstance().framebufferSizeCallbackImpl(window, width, height);
+	get().framebufferSizeCallbackImpl(window, width, height);
 }
 
 void windowCallbackWrapper::mousePositionCallback(GLFWwindow * window, double mouseXPos, double mouseYPos)
 {
-	getInstance().mousePositionCallbackImpl(window, (float)mouseXPos, (float)mouseYPos);
+	get().mousePositionCallbackImpl(window, (float)mouseXPos, (float)mouseYPos);
 }
 
 void windowCallbackWrapper::scrollCallback(GLFWwindow * window, double xoffset, double yoffset)
 {
-	getInstance().scrollCallbackImpl(window, (float)xoffset, (float)yoffset);
+	get().scrollCallbackImpl(window, (float)xoffset, (float)yoffset);
 }
 
 void windowCallbackWrapper::framebufferSizeCallbackImpl(GLFWwindow * window, int width, int height)

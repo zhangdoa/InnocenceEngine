@@ -6,14 +6,14 @@
 #include "GLTextureDataComponent.h"
 #include "GLRenderPassComponent.h"
 
-class GLGeometryRenderPassSingletonComponent
+class GLGeometryRenderPassComponent
 {
 public:
-	~GLGeometryRenderPassSingletonComponent() {};
+	~GLGeometryRenderPassComponent() {};
 	
-	static GLGeometryRenderPassSingletonComponent& getInstance()
+	static GLGeometryRenderPassComponent& get()
 	{
-		static GLGeometryRenderPassSingletonComponent instance;
+		static GLGeometryRenderPassComponent instance;
 		return instance;
 	}
 
@@ -60,5 +60,5 @@ public:
 	GLuint m_geometryPass_uni_albedo;
 	GLuint m_geometryPass_uni_MRA;
 private:
-	GLGeometryRenderPassSingletonComponent() {};
+	GLGeometryRenderPassComponent() {};
 };

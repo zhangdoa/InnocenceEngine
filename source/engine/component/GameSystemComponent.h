@@ -3,14 +3,14 @@
 #include "../common/ComponentHeaders.h"
 #include "../common/InnoConcurrency.h"
 
-class GameSystemSingletonComponent
+class GameSystemComponent
 {
 public:
-	~GameSystemSingletonComponent() {};
+	~GameSystemComponent() {};
 	
-	static GameSystemSingletonComponent& getInstance()
+	static GameSystemComponent& get()
 	{
-		static GameSystemSingletonComponent instance;
+		static GameSystemComponent instance;
 		return instance;
 	}
 
@@ -46,5 +46,5 @@ public:
 	bool m_pauseGameUpdate = false;
 
 private:
-	GameSystemSingletonComponent() {};
+	GameSystemComponent() {};
 };

@@ -1,7 +1,7 @@
 #include "VKWindowSystem.h"
 
-#include "../component/WindowSystemSingletonComponent.h"
-#include "../component/VKWindowSystemSingletonComponent.h"
+#include "../component/WindowSystemComponent.h"
+#include "../component/VKWindowSystemComponent.h"
 #include "GLFWWrapper.h"
 
 #include "InputSystem.h"
@@ -16,8 +16,8 @@ INNO_PRIVATE_SCOPE VKWindowSystemNS
 
 	IInputSystem* m_inputSystem;
 
-	static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
-	static VKWindowSystemSingletonComponent* g_VKWindowSystemSingletonComponent;
+	static WindowSystemComponent* g_WindowSystemComponent;
+	static VKWindowSystemComponent* g_VKWindowSystemComponent;
 
 	void hideMouseCursor();
 	void showMouseCursor();
@@ -27,10 +27,10 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::setup(void* hInstance, void* hPrevInstan
 {
 	VKWindowSystemNS::m_inputSystem = new InnoInputSystem();
 
-	VKWindowSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
-	VKWindowSystemNS::g_VKWindowSystemSingletonComponent = &VKWindowSystemSingletonComponent::getInstance();
+	VKWindowSystemNS::g_WindowSystemComponent = &WindowSystemComponent::get();
+	VKWindowSystemNS::g_VKWindowSystemComponent = &VKWindowSystemComponent::get();
 
-	VKWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName = g_pCoreSystem->getGameSystem()->getGameName();
+	VKWindowSystemNS::g_WindowSystemComponent->m_windowName = g_pCoreSystem->getGameSystem()->getGameName();
 
 	//setup window
 	if (glfwInit() != GL_TRUE)
@@ -43,9 +43,9 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::setup(void* hInstance, void* hPrevInstan
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 	// Open a window
-	VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window = glfwCreateWindow((int)VKWindowSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x, (int)VKWindowSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y, VKWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName.c_str(), NULL, NULL);
-	glfwMakeContextCurrent(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window);
-	if (VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window == nullptr) {
+	VKWindowSystemNS::g_VKWindowSystemComponent->m_window = glfwCreateWindow((int)VKWindowSystemNS::g_WindowSystemComponent->m_windowResolution.x, (int)VKWindowSystemNS::g_WindowSystemComponent->m_windowResolution.y, VKWindowSystemNS::g_WindowSystemComponent->m_windowName.c_str(), NULL, NULL);
+	glfwMakeContextCurrent(VKWindowSystemNS::g_VKWindowSystemComponent->m_window);
+	if (VKWindowSystemNS::g_VKWindowSystemComponent->m_window == nullptr) {
 		VKWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKWindowSystem: Failed to open GLFW window.");
 		glfwTerminate();
@@ -54,7 +54,7 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::setup(void* hInstance, void* hPrevInstan
 
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName = VKWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName.c_str();
+	appInfo.pApplicationName = VKWindowSystemNS::g_WindowSystemComponent->m_windowName.c_str();
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "Innocence Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -73,14 +73,14 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::setup(void* hInstance, void* hPrevInstan
 
 	createInfo.enabledLayerCount = 0;
 
-	if (vkCreateInstance(&createInfo, nullptr, &VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_instance) != VK_SUCCESS) 
+	if (vkCreateInstance(&createInfo, nullptr, &VKWindowSystemNS::g_VKWindowSystemComponent->m_instance) != VK_SUCCESS) 
 	{
 		VKWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKWindowSystem: Failed to create VkInstance.");
 	}
 
 	//setup input
-	glfwSetInputMode(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window, GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetInputMode(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
 	VKWindowSystemNS::m_inputSystem->setup();
 
@@ -91,7 +91,7 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::setup(void* hInstance, void* hPrevInstan
 INNO_SYSTEM_EXPORT bool VKWindowSystem::initialize()
 {
 	//initialize window
-	windowCallbackWrapper::getInstance().initialize(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window, VKWindowSystemNS::m_inputSystem);
+	windowCallbackWrapper::get().initialize(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, VKWindowSystemNS::m_inputSystem);
 
 	//initialize input	
 	VKWindowSystemNS::m_inputSystem->initialize();
@@ -103,7 +103,7 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::initialize()
 INNO_SYSTEM_EXPORT bool VKWindowSystem::update()
 {
 	//update window
-	if (VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window == nullptr || glfwWindowShouldClose(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window) != 0)
+	if (VKWindowSystemNS::g_VKWindowSystemComponent->m_window == nullptr || glfwWindowShouldClose(VKWindowSystemNS::g_VKWindowSystemComponent->m_window) != 0)
 	{
 		VKWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VKWindowSystem: Input error or Window closed.");
@@ -114,40 +114,40 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::update()
 
 		//update input
 		//keyboard
-		for (int i = 0; i < VKWindowSystemNS::g_WindowSystemSingletonComponent->NUM_KEYCODES; i++)
+		for (int i = 0; i < VKWindowSystemNS::g_WindowSystemComponent->NUM_KEYCODES; i++)
 		{
-			if (glfwGetKey(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window, i) == GLFW_PRESS)
+			if (glfwGetKey(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, i) == GLFW_PRESS)
 			{
-				auto l_result = VKWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
-				if (l_result != VKWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+				auto l_result = VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
+				if (l_result != VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 				{
 					l_result->second = ButtonStatus::PRESSED;
 				}
 			}
 			else
 			{
-				auto l_result = VKWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
-				if (l_result != VKWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+				auto l_result = VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
+				if (l_result != VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 				{
 					l_result->second = ButtonStatus::RELEASED;
 				}
 			}
 		}
 		//mouse
-		for (int i = 0; i < VKWindowSystemNS::g_WindowSystemSingletonComponent->NUM_MOUSEBUTTONS; i++)
+		for (int i = 0; i < VKWindowSystemNS::g_WindowSystemComponent->NUM_MOUSEBUTTONS; i++)
 		{
-			if (glfwGetMouseButton(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window, i) == GLFW_PRESS)
+			if (glfwGetMouseButton(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, i) == GLFW_PRESS)
 			{
-				auto l_result = VKWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
-				if (l_result != VKWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+				auto l_result = VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
+				if (l_result != VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 				{
 					l_result->second = ButtonStatus::PRESSED;
 				}
 			}
 			else
 			{
-				auto l_result = VKWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
-				if (l_result != VKWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+				auto l_result = VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
+				if (l_result != VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 				{
 					l_result->second = ButtonStatus::RELEASED;
 				}
@@ -161,10 +161,10 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::update()
 
 INNO_SYSTEM_EXPORT bool VKWindowSystem::terminate()
 {
-	vkDestroyInstance(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_instance, nullptr);
+	vkDestroyInstance(VKWindowSystemNS::g_VKWindowSystemComponent->m_instance, nullptr);
 
-	glfwSetInputMode(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window, GLFW_STICKY_KEYS, GL_FALSE);
-	glfwDestroyWindow(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window);
+	glfwSetInputMode(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, GLFW_STICKY_KEYS, GL_FALSE);
+	glfwDestroyWindow(VKWindowSystemNS::g_VKWindowSystemComponent->m_window);
 	glfwTerminate();
 
 	VKWindowSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
@@ -174,17 +174,17 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::terminate()
 
 void VKWindowSystem::swapBuffer()
 {
-	glfwSwapBuffers(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window);
+	glfwSwapBuffers(VKWindowSystemNS::g_VKWindowSystemComponent->m_window);
 }
 
 void VKWindowSystemNS::hideMouseCursor()
 {
-	glfwSetInputMode(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void VKWindowSystemNS::showMouseCursor()
 {
-	glfwSetInputMode(VKWindowSystemNS::g_VKWindowSystemSingletonComponent->m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	glfwSetInputMode(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 INNO_SYSTEM_EXPORT ObjectStatus VKWindowSystem::getStatus()

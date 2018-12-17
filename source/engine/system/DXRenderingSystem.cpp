@@ -2,15 +2,15 @@
 
 #include <sstream>
 
-#include "../component/DXGeometryRenderPassSingletonComponent.h"
-#include "../component/DXLightRenderPassSingletonComponent.h"
-#include "../component/DXFinalRenderPassSingletonComponent.h"
+#include "../component/DXGeometryRenderPassComponent.h"
+#include "../component/DXLightRenderPassComponent.h"
+#include "../component/DXFinalRenderPassComponent.h"
 
-#include "../component/WindowSystemSingletonComponent.h"
-#include "../component/DXWindowSystemSingletonComponent.h"
-#include "../component/RenderingSystemSingletonComponent.h"
-#include "../component/DXRenderingSystemSingletonComponent.h"
-#include "../component/AssetSystemSingletonComponent.h"
+#include "../component/WindowSystemComponent.h"
+#include "../component/DXWindowSystemComponent.h"
+#include "../component/RenderingSystemComponent.h"
+#include "../component/DXRenderingSystemComponent.h"
+#include "../component/AssetSystemComponent.h"
 
 #include "../component/MeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
@@ -22,7 +22,7 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-#include "../component/GameSystemSingletonComponent.h"
+#include "../component/GameSystemComponent.h"
 
 #include "ICoreSystem.h"
 
@@ -66,9 +66,9 @@ void cleanRTV(vec4 color, ID3D11RenderTargetView* RTV);
 void cleanDSV(ID3D11DepthStencilView* DSV);
 void swapBuffer();
 
-static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
-static DXWindowSystemSingletonComponent* g_DXWindowSystemSingletonComponent;
-static DXRenderingSystemSingletonComponent* g_DXRenderingSystemSingletonComponent;
+static WindowSystemComponent* g_WindowSystemComponent;
+static DXWindowSystemComponent* g_DXWindowSystemComponent;
+static DXRenderingSystemComponent* g_DXRenderingSystemComponent;
 
 std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedMeshComponents;
 
@@ -122,9 +122,9 @@ DXTextureDataComponent* m_basicAOTemplate;
 
 INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 {
-	DXRenderingSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
-	DXRenderingSystemNS::g_DXWindowSystemSingletonComponent = &DXWindowSystemSingletonComponent::getInstance();
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent = &DXRenderingSystemSingletonComponent::getInstance();
+	DXRenderingSystemNS::g_WindowSystemComponent = &WindowSystemComponent::get();
+	DXRenderingSystemNS::g_DXWindowSystemComponent = &DXWindowSystemComponent::get();
+	DXRenderingSystemNS::g_DXRenderingSystemComponent = &DXRenderingSystemComponent::get();
 
 	HRESULT result;
 	IDXGIFactory* m_factory;
@@ -193,9 +193,9 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
 	for (i = 0; i < numModes; i++)
 	{
-		if (displayModeList[i].Width == (unsigned int)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x
+		if (displayModeList[i].Width == (unsigned int)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.x
 			&&
-			displayModeList[i].Height == (unsigned int)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y
+			displayModeList[i].Height == (unsigned int)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.y
 			)
 		{
 			numerator = displayModeList[i].RefreshRate.Numerator;
@@ -213,10 +213,10 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Store the dedicated video card memory in megabytes.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_videoCardMemory = (int)(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_videoCardMemory = (int)(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
 
 	// Convert the name of the video card to a character array and store it.
-	error = wcstombs_s(&stringLength, DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_videoCardDescription, 128, adapterDesc.Description, 128);
+	error = wcstombs_s(&stringLength, DXRenderingSystemNS::g_DXRenderingSystemComponent->m_videoCardDescription, 128, adapterDesc.Description, 128);
 	if (error != 0)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't convert the name of the video card to a character array!");
@@ -241,66 +241,66 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	m_factory = 0;
 
 	// Initialize the swap chain description.
-	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc, sizeof(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc));
+	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc, sizeof(DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc));
 
 	// Set to a single back buffer.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferCount = 1;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.BufferCount = 1;
 
 	// Set the width and height of the back buffer.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.Width = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.Height = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Width = (UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.x;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Height = (UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.y;
 
 	// Set regular 32-bit surface for the back buffer.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	// Set the refresh rate of the back buffer.
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_vsync_enabled)
+	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_vsync_enabled)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
 	}
 	else
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 	}
 
 	// Set the usage of the back buffer.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 
 	// Set the handle for the window to render to.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.OutputWindow = DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.OutputWindow = DXRenderingSystemNS::g_DXWindowSystemComponent->m_hwnd;
 
 	// Turn multisampling off.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.SampleDesc.Count = 1;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.SampleDesc.Quality = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.SampleDesc.Count = 1;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.SampleDesc.Quality = 0;
 
 	// Set to full screen or windowed mode.
-	if (DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_fullScreen)
+	if (DXRenderingSystemNS::g_WindowSystemComponent->m_fullScreen)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.Windowed = false;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.Windowed = false;
 	}
 	else
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.Windowed = true;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.Windowed = true;
 	}
 
 	// Set the scan line ordering and scaling to unspecified.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 
 	// Discard the back buffer contents after presenting.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
 	// Don't set the advanced flags.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc.Flags = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc.Flags = 0;
 
 	// Set the feature level to DirectX 11.
 	featureLevel = D3D_FEATURE_LEVEL_11_0;
 
 	// Create the swap chain, Direct3D device, and Direct3D device context.
 	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, &featureLevel, 1,
-		D3D11_SDK_VERSION, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChainDesc, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext);
+		D3D11_SDK_VERSION, &DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChainDesc, &DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChain, &DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device, NULL, &DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the swap chain/D3D device/D3D device context!");
@@ -309,7 +309,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Get the pointer to the back buffer.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetTexture);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_renderTargetTexture);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get back buffer pointer!");
@@ -318,7 +318,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Create the render target view with the back buffer pointer.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRenderTargetView(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetTexture, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(DXRenderingSystemNS::g_DXRenderingSystemComponent->m_renderTargetTexture, NULL, &DXRenderingSystemNS::g_DXRenderingSystemComponent->m_renderTargetView);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create render target view!");
@@ -327,27 +327,27 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Release pointer to the back buffer as we no longer need it.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetTexture->Release();
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetTexture = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_renderTargetTexture->Release();
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_renderTargetTexture = 0;
 
 	// Initialize the description of the depth buffer.
-	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc, sizeof(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc));
+	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc, sizeof(DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc));
 
 	// Set up the description of the depth buffer.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.Width = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.Height = (UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.MipLevels = 1;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.ArraySize = 1;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.SampleDesc.Count = 1;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.SampleDesc.Quality = 0;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.CPUAccessFlags = 0;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc.MiscFlags = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc.Width = (UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.x;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc.Height = (UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.y;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc.MipLevels = 1;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc.ArraySize = 1;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc.SampleDesc.Count = 1;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc.SampleDesc.Quality = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc.CPUAccessFlags = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc.MiscFlags = 0;
 
 	// Create the texture for the depth buffer using the filled out description.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthTextureDesc, NULL, &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateTexture2D(&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthTextureDesc, NULL, &DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilTexture);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the texture for the depth buffer!");
@@ -356,33 +356,33 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Initialize the description of the stencil state.
-	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc, sizeof(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc));
+	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc, sizeof(DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc));
 
 	// Set up the description of the stencil state.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.DepthEnable = true;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.DepthEnable = true;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.StencilEnable = true;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.StencilReadMask = 0xFF;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.StencilWriteMask = 0xFF;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.StencilEnable = true;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.StencilReadMask = 0xFF;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.StencilWriteMask = 0xFF;
 
 	// Stencil operations if pixel is front-facing.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
 	// Stencil operations if pixel is back-facing.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
 	// Create the depth stencil state.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilState(
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilDesc,
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateDepthStencilState(
+		&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilDesc,
+		&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilState);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the depth stencil state!");
@@ -391,23 +391,23 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Set the depth stencil state.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetDepthStencilState(
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState, 1);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->OMSetDepthStencilState(
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilState, 1);
 
 	// Initialize the depth stencil view.
-	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc, sizeof(
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc));
+	ZeroMemory(&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilViewDesc, sizeof(
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilViewDesc));
 
 	// Set up the depth stencil view description.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilView(
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture,
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilViewDesc,
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateDepthStencilView(
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilTexture,
+		&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilViewDesc,
+		&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilView);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the depth stencil view!");
@@ -416,27 +416,27 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Bind the render target view and depth stencil buffer to the output render pipeline.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetRenderTargets(
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->OMSetRenderTargets(
 		1,
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView,
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
+		&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_renderTargetView,
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilView);
 
 	// Setup the raster description which will determine how and what polygons will be drawn.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.AntialiasedLineEnable = false;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.CullMode = D3D11_CULL_NONE;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.DepthBias = 0;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.DepthBiasClamp = 0.0f;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.DepthClipEnable = true;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.FillMode = D3D11_FILL_SOLID;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.FrontCounterClockwise = true;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.MultisampleEnable = false;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.ScissorEnable = false;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward.SlopeScaledDepthBias = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescForward.AntialiasedLineEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescForward.CullMode = D3D11_CULL_NONE;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescForward.DepthBias = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescForward.DepthBiasClamp = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescForward.DepthClipEnable = true;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescForward.FillMode = D3D11_FILL_SOLID;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescForward.FrontCounterClockwise = true;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescForward.MultisampleEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescForward.ScissorEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescForward.SlopeScaledDepthBias = 0.0f;
 
 	// Create the rasterizer state for forward pass
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRasterizerState(
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescForward,
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateForward);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateRasterizerState(
+		&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescForward,
+		&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterStateForward);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the rasterizer state for forward pass!");
@@ -444,21 +444,21 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 		return false;
 	}
 
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.AntialiasedLineEnable = false;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.CullMode = D3D11_CULL_NONE;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.DepthBias = 0;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.DepthBiasClamp = 0.0f;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.DepthClipEnable = true;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.FillMode = D3D11_FILL_SOLID;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.FrontCounterClockwise = false;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.MultisampleEnable = false;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.ScissorEnable = false;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred.SlopeScaledDepthBias = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescDeferred.AntialiasedLineEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescDeferred.CullMode = D3D11_CULL_NONE;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthBias = 0;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthBiasClamp = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthClipEnable = true;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescDeferred.FillMode = D3D11_FILL_SOLID;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescDeferred.FrontCounterClockwise = false;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescDeferred.MultisampleEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescDeferred.ScissorEnable = false;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescDeferred.SlopeScaledDepthBias = 0.0f;
 
 	// Create the rasterizer state for deferred pass
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRasterizerState(
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterDescDeferred,
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateRasterizerState(
+		&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterDescDeferred,
+		&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterStateDeferred);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the rasterizer state for deferred pass!");
@@ -467,14 +467,14 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 	}
 
 	// Setup the viewport for rendering.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.Width =
-		(float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.Height =
-		(float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.MinDepth = 0.0f;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.MaxDepth = 1.0f;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.TopLeftX = 0.0f;
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport.TopLeftY = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_viewport.Width =
+		(float)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.x;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_viewport.Height =
+		(float)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.y;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_viewport.MinDepth = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_viewport.MaxDepth = 1.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_viewport.TopLeftX = 0.0f;
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_viewport.TopLeftY = 0.0f;
 
 	DXRenderingSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
@@ -493,18 +493,18 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 {
-	if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.size() > 0)
+	if (AssetSystemComponent::get().m_uninitializedMeshComponents.size() > 0)
 	{
 		MeshDataComponent* l_meshDataComponent;
-		if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
+		if (AssetSystemComponent::get().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
 			auto l_initializedDXMDC = DXRenderingSystemNS::generateDXMeshDataComponent(l_meshDataComponent);
 		}
 	}
-	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
+	if (AssetSystemComponent::get().m_uninitializedTextureComponents.size() > 0)
 	{
 		TextureDataComponent* l_textureDataComponent;
-		if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
+		if (AssetSystemComponent::get().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
 		{
 			DXRenderingSystemNS::generateDXTextureDataComponent(l_textureDataComponent);
 		}
@@ -527,57 +527,57 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 INNO_SYSTEM_EXPORT bool DXRenderingSystem::terminate()
 {
 	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain)
+	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChain)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain->SetFullscreenState(false, NULL);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChain->SetFullscreenState(false, NULL);
 	}
 
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred)
+	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterStateDeferred)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred->Release();
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterStateDeferred->Release();
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterStateDeferred = 0;
 	}
 
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView)
+	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilView)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView->Release();
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilView->Release();
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilView = 0;
 	}
 
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState)
+	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilState)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState->Release();
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilState = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilState->Release();
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilState = 0;
 	}
 
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture)
+	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilTexture)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture->Release();
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilTexture = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilTexture->Release();
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilTexture = 0;
 	}
 
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView)
+	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_renderTargetView)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView->Release();
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_renderTargetView->Release();
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_renderTargetView = 0;
 	}
 
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext)
+	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->Release();
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->Release();
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext = 0;
 	}
 
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device)
+	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->Release();
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->Release();
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device = 0;
 	}
 
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain)
+	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChain)
 	{
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain->Release();
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain = 0;
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChain->Release();
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChain = 0;
 	}
 
 	DXRenderingSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
@@ -634,35 +634,35 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	HRESULT result;
 
 	// Initialize the render target texture description.
-	ZeroMemory(&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc,
-		sizeof(DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc));
+	ZeroMemory(&DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc,
+		sizeof(DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc));
 
 	// Setup the render target texture description.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Width =
-		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Height =
-		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.MipLevels = 1;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.ArraySize = 1;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.SampleDesc.Count = 1;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.CPUAccessFlags = 0;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.MiscFlags = 0;
+	DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.Width =
+		(UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.x;
+	DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.Height =
+		(UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.y;
+	DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.MipLevels = 1;
+	DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.ArraySize = 1;
+	DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.SampleDesc.Count = 1;
+	DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.CPUAccessFlags = 0;
+	DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.MiscFlags = 0;
 
 	auto l_renderTargetNumbers = 8;
 
 	// Create the render target textures.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures.reserve(l_renderTargetNumbers);
+	DXGeometryRenderPassComponent::get().m_renderTargetTextures.reserve(l_renderTargetNumbers);
 
 	for (auto i = 0; i < l_renderTargetNumbers; i++)
 	{
-		DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures.emplace_back();
-		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(
-			&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc,
+		DXGeometryRenderPassComponent::get().m_renderTargetTextures.emplace_back();
+		result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateTexture2D(
+			&DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc,
 			NULL,
-			&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures[i]);
+			&DXGeometryRenderPassComponent::get().m_renderTargetTextures[i]);
 		if (FAILED(result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create render target texture!");
@@ -672,21 +672,21 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	}
 
 	// Setup the description of the render target view.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc.Format =
-		DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Format;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc.Texture2D.MipSlice = 0;
+	DXGeometryRenderPassComponent::get().m_renderTargetViewDesc.Format =
+		DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.Format;
+	DXGeometryRenderPassComponent::get().m_renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	DXGeometryRenderPassComponent::get().m_renderTargetViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the render target views.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews.reserve(l_renderTargetNumbers);
+	DXGeometryRenderPassComponent::get().m_renderTargetViews.reserve(l_renderTargetNumbers);
 
 	for (auto i = 0; i < l_renderTargetNumbers; i++)
 	{
-		DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews.emplace_back();
-		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRenderTargetView(
-			DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures[i],
-			&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc,
-			&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews[i]);
+		DXGeometryRenderPassComponent::get().m_renderTargetViews.emplace_back();
+		result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(
+			DXGeometryRenderPassComponent::get().m_renderTargetTextures[i],
+			&DXGeometryRenderPassComponent::get().m_renderTargetViewDesc,
+			&DXGeometryRenderPassComponent::get().m_renderTargetViews[i]);
 		if (FAILED(result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create render target view!");
@@ -696,22 +696,22 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	}
 
 	// Setup the description of the shader resource view.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.Format =
-		DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Format;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.Texture2D.MipLevels = 1;
+	DXGeometryRenderPassComponent::get().m_shaderResourceViewDesc.Format =
+		DXGeometryRenderPassComponent::get().m_renderTargetTextureDesc.Format;
+	DXGeometryRenderPassComponent::get().m_shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	DXGeometryRenderPassComponent::get().m_shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	DXGeometryRenderPassComponent::get().m_shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
 	// Create the shader resource views.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews.reserve(l_renderTargetNumbers);
+	DXGeometryRenderPassComponent::get().m_shaderResourceViews.reserve(l_renderTargetNumbers);
 
 	for (auto i = 0; i < l_renderTargetNumbers; i++)
 	{
-		DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews.emplace_back();
-		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateShaderResourceView(
-			DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetTextures[i],
-			&DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc,
-			&DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[i]);
+		DXGeometryRenderPassComponent::get().m_shaderResourceViews.emplace_back();
+		result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateShaderResourceView(
+			DXGeometryRenderPassComponent::get().m_renderTargetTextures[i],
+			&DXGeometryRenderPassComponent::get().m_shaderResourceViewDesc,
+			&DXGeometryRenderPassComponent::get().m_shaderResourceViews[i]);
 		if (FAILED(result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create shader resource view!");
@@ -721,29 +721,29 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	}
 
 	// Initialize the description of the depth buffer.
-	ZeroMemory(&DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc,
-		sizeof(DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc));
+	ZeroMemory(&DXGeometryRenderPassComponent::get().m_depthBufferDesc,
+		sizeof(DXGeometryRenderPassComponent::get().m_depthBufferDesc));
 
 	// Set up the description of the depth buffer.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Width =
-		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Height =
-		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.MipLevels = 1;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.ArraySize = 1;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.SampleDesc.Count = 1;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.SampleDesc.Quality = 0;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.CPUAccessFlags = 0;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc.MiscFlags = 0;
+	DXGeometryRenderPassComponent::get().m_depthBufferDesc.Width =
+		(UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.x;
+	DXGeometryRenderPassComponent::get().m_depthBufferDesc.Height =
+		(UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.y;
+	DXGeometryRenderPassComponent::get().m_depthBufferDesc.MipLevels = 1;
+	DXGeometryRenderPassComponent::get().m_depthBufferDesc.ArraySize = 1;
+	DXGeometryRenderPassComponent::get().m_depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DXGeometryRenderPassComponent::get().m_depthBufferDesc.SampleDesc.Count = 1;
+	DXGeometryRenderPassComponent::get().m_depthBufferDesc.SampleDesc.Quality = 0;
+	DXGeometryRenderPassComponent::get().m_depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	DXGeometryRenderPassComponent::get().m_depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	DXGeometryRenderPassComponent::get().m_depthBufferDesc.CPUAccessFlags = 0;
+	DXGeometryRenderPassComponent::get().m_depthBufferDesc.MiscFlags = 0;
 
 	// Create the texture for the depth buffer using the filled out description.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(
-		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthBufferDesc,
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateTexture2D(
+		&DXGeometryRenderPassComponent::get().m_depthBufferDesc,
 		NULL,
-		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilBuffer);
+		&DXGeometryRenderPassComponent::get().m_depthStencilBuffer);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create the texture for the depth buffer!");
@@ -752,19 +752,19 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	}
 
 	// Initailze the depth stencil view description.
-	ZeroMemory(&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc,
-		sizeof(DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc));
+	ZeroMemory(&DXGeometryRenderPassComponent::get().m_depthStencilViewDesc,
+		sizeof(DXGeometryRenderPassComponent::get().m_depthStencilViewDesc));
 
 	// Set up the depth stencil view description.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc.Texture2D.MipSlice = 0;
+	DXGeometryRenderPassComponent::get().m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DXGeometryRenderPassComponent::get().m_depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	DXGeometryRenderPassComponent::get().m_depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilView(
-		DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilBuffer,
-		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc,
-		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateDepthStencilView(
+		DXGeometryRenderPassComponent::get().m_depthStencilBuffer,
+		&DXGeometryRenderPassComponent::get().m_depthStencilViewDesc,
+		&DXGeometryRenderPassComponent::get().m_depthStencilView);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create the depth stencil view!");
@@ -773,12 +773,12 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	}
 
 	// Setup the viewport for rendering.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_viewport.Width = (float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_viewport.Height = (float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_viewport.MinDepth = 0.0f;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_viewport.MaxDepth = 1.0f;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_viewport.TopLeftX = 0.0f;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_viewport.TopLeftY = 0.0f;
+	DXGeometryRenderPassComponent::get().m_viewport.Width = (float)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.x;
+	DXGeometryRenderPassComponent::get().m_viewport.Height = (float)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.y;
+	DXGeometryRenderPassComponent::get().m_viewport.MinDepth = 0.0f;
+	DXGeometryRenderPassComponent::get().m_viewport.MaxDepth = 1.0f;
+	DXGeometryRenderPassComponent::get().m_viewport.TopLeftX = 0.0f;
+	DXGeometryRenderPassComponent::get().m_viewport.TopLeftY = 0.0f;
 
 	ID3D10Blob* l_errorMessage;
 	ID3D10Blob* l_shaderBuffer;
@@ -790,10 +790,10 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	// Compile the shader code.
 	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"..//res//shaders//DX11//geometryPassCookTorranceVertex.sf");
 
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateVertexShader(
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateVertexShader(
 		l_shaderBuffer->GetBufferPointer(), l_shaderBuffer->GetBufferSize(),
 		NULL,
-		&DXGeometryRenderPassSingletonComponent::getInstance().m_vertexShader);
+		&DXGeometryRenderPassComponent::get().m_vertexShader);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create vertex shader!");
@@ -849,9 +849,9 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
 
 	// Create the vertex input layout.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateInputLayout(
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateInputLayout(
 		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(), &DXGeometryRenderPassSingletonComponent::getInstance().m_layout);
+		l_shaderBuffer->GetBufferSize(), &DXGeometryRenderPassComponent::get().m_layout);
 
 	if (FAILED(result))
 	{
@@ -861,15 +861,15 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	}
 
 	// Setup the description of the dynamic matrix constant buffer
-	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.ByteWidth = sizeof(GPassCBufferData);
-	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.MiscFlags = 0;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc.StructureByteStride = 0;
+	DXGeometryRenderPassComponent::get().m_constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	DXGeometryRenderPassComponent::get().m_constantBufferDesc.ByteWidth = sizeof(GPassCBufferData);
+	DXGeometryRenderPassComponent::get().m_constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	DXGeometryRenderPassComponent::get().m_constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	DXGeometryRenderPassComponent::get().m_constantBufferDesc.MiscFlags = 0;
+	DXGeometryRenderPassComponent::get().m_constantBufferDesc.StructureByteStride = 0;
 
 	// Create the constant buffer pointer
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&DXGeometryRenderPassSingletonComponent::getInstance().m_constantBufferDesc, NULL, &DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateBuffer(&DXGeometryRenderPassComponent::get().m_constantBufferDesc, NULL, &DXGeometryRenderPassComponent::get().m_constantBuffer);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create constant buffer pointer!");
@@ -884,11 +884,11 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"..//res//shaders//DX11//geometryPassCookTorrancePixel.sf");
 
 	// Create the shader from the buffer.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreatePixelShader(
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreatePixelShader(
 		l_shaderBuffer->GetBufferPointer(),
 		l_shaderBuffer->GetBufferSize(),
 		NULL,
-		&DXGeometryRenderPassSingletonComponent::getInstance().m_pixelShader);
+		&DXGeometryRenderPassComponent::get().m_pixelShader);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create pixel shader!");
@@ -900,24 +900,24 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	l_shaderBuffer = 0;
 
 	// Create a texture sampler state description.
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.MipLODBias = 0.0f;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxAnisotropy = 1;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[0] = 0;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[1] = 0;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[2] = 0;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[3] = 0;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.MinLOD = 0;
-	DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.MipLODBias = 0.0f;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.MaxAnisotropy = 1;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.BorderColor[0] = 0;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.BorderColor[1] = 0;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.BorderColor[2] = 0;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.BorderColor[3] = 0;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.MinLOD = 0;
+	DXGeometryRenderPassComponent::get().m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	// Create the texture sampler state.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateSamplerState(
-		&DXGeometryRenderPassSingletonComponent::getInstance().m_samplerDesc,
-		&DXGeometryRenderPassSingletonComponent::getInstance().m_samplerState);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateSamplerState(
+		&DXGeometryRenderPassComponent::get().m_samplerDesc,
+		&DXGeometryRenderPassComponent::get().m_samplerState);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create texture sampler state!");
@@ -933,29 +933,29 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	HRESULT result;
 
 	// Initialize the render target texture description.
-	ZeroMemory(&DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc,
-		sizeof(DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc));
+	ZeroMemory(&DXLightRenderPassComponent::get().m_renderTargetTextureDesc,
+		sizeof(DXLightRenderPassComponent::get().m_renderTargetTextureDesc));
 
 	// Setup the render target texture description.
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Width =
-		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Height =
-		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.MipLevels = 1;
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.ArraySize = 1;
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.SampleDesc.Count = 1;
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.CPUAccessFlags = 0;
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.MiscFlags = 0;
+	DXLightRenderPassComponent::get().m_renderTargetTextureDesc.Width =
+		(UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.x;
+	DXLightRenderPassComponent::get().m_renderTargetTextureDesc.Height =
+		(UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.y;
+	DXLightRenderPassComponent::get().m_renderTargetTextureDesc.MipLevels = 1;
+	DXLightRenderPassComponent::get().m_renderTargetTextureDesc.ArraySize = 1;
+	DXLightRenderPassComponent::get().m_renderTargetTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	DXLightRenderPassComponent::get().m_renderTargetTextureDesc.SampleDesc.Count = 1;
+	DXLightRenderPassComponent::get().m_renderTargetTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	DXLightRenderPassComponent::get().m_renderTargetTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	DXLightRenderPassComponent::get().m_renderTargetTextureDesc.CPUAccessFlags = 0;
+	DXLightRenderPassComponent::get().m_renderTargetTextureDesc.MiscFlags = 0;
 
 	// Create the render target textures.
 
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(
-		&DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc,
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateTexture2D(
+		&DXLightRenderPassComponent::get().m_renderTargetTextureDesc,
 		NULL,
-		&DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTexture);
+		&DXLightRenderPassComponent::get().m_renderTargetTexture);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create render target texture!");
@@ -964,16 +964,16 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	}
 
 	// Setup the description of the render target view.
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc.Format =
-		DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Format;
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-	DXLightRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc.Texture2D.MipSlice = 0;
+	DXLightRenderPassComponent::get().m_renderTargetViewDesc.Format =
+		DXLightRenderPassComponent::get().m_renderTargetTextureDesc.Format;
+	DXLightRenderPassComponent::get().m_renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	DXLightRenderPassComponent::get().m_renderTargetViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the render target views.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateRenderTargetView(
-		DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTexture,
-		&DXLightRenderPassSingletonComponent::getInstance().m_renderTargetViewDesc,
-		&DXLightRenderPassSingletonComponent::getInstance().m_renderTargetView);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(
+		DXLightRenderPassComponent::get().m_renderTargetTexture,
+		&DXLightRenderPassComponent::get().m_renderTargetViewDesc,
+		&DXLightRenderPassComponent::get().m_renderTargetView);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create render target view!");
@@ -982,17 +982,17 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	}
 
 	// Setup the description of the shader resource view.
-	DXLightRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.Format =
-		DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTextureDesc.Format;
-	DXLightRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	DXLightRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-	DXLightRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc.Texture2D.MipLevels = 1;
+	DXLightRenderPassComponent::get().m_shaderResourceViewDesc.Format =
+		DXLightRenderPassComponent::get().m_renderTargetTextureDesc.Format;
+	DXLightRenderPassComponent::get().m_shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	DXLightRenderPassComponent::get().m_shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	DXLightRenderPassComponent::get().m_shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
 	// Create the shader resource views.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateShaderResourceView(
-		DXLightRenderPassSingletonComponent::getInstance().m_renderTargetTexture,
-		&DXLightRenderPassSingletonComponent::getInstance().m_shaderResourceViewDesc,
-		&DXLightRenderPassSingletonComponent::getInstance().m_shaderResourceView);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateShaderResourceView(
+		DXLightRenderPassComponent::get().m_renderTargetTexture,
+		&DXLightRenderPassComponent::get().m_shaderResourceViewDesc,
+		&DXLightRenderPassComponent::get().m_shaderResourceView);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create shader resource view!");
@@ -1001,29 +1001,29 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	}
 
 	// Initialize the description of the depth buffer.
-	ZeroMemory(&DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc,
-		sizeof(DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc));
+	ZeroMemory(&DXLightRenderPassComponent::get().m_depthBufferDesc,
+		sizeof(DXLightRenderPassComponent::get().m_depthBufferDesc));
 
 	// Set up the description of the depth buffer.
-	DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Width =
-		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Height =
-		(UINT)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc.MipLevels = 1;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc.ArraySize = 1;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc.SampleDesc.Count = 1;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc.SampleDesc.Quality = 0;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc.CPUAccessFlags = 0;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc.MiscFlags = 0;
+	DXLightRenderPassComponent::get().m_depthBufferDesc.Width =
+		(UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.x;
+	DXLightRenderPassComponent::get().m_depthBufferDesc.Height =
+		(UINT)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.y;
+	DXLightRenderPassComponent::get().m_depthBufferDesc.MipLevels = 1;
+	DXLightRenderPassComponent::get().m_depthBufferDesc.ArraySize = 1;
+	DXLightRenderPassComponent::get().m_depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DXLightRenderPassComponent::get().m_depthBufferDesc.SampleDesc.Count = 1;
+	DXLightRenderPassComponent::get().m_depthBufferDesc.SampleDesc.Quality = 0;
+	DXLightRenderPassComponent::get().m_depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	DXLightRenderPassComponent::get().m_depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	DXLightRenderPassComponent::get().m_depthBufferDesc.CPUAccessFlags = 0;
+	DXLightRenderPassComponent::get().m_depthBufferDesc.MiscFlags = 0;
 
 	// Create the texture for the depth buffer using the filled out description.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(
-		&DXLightRenderPassSingletonComponent::getInstance().m_depthBufferDesc,
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateTexture2D(
+		&DXLightRenderPassComponent::get().m_depthBufferDesc,
 		NULL,
-		&DXLightRenderPassSingletonComponent::getInstance().m_depthStencilBuffer);
+		&DXLightRenderPassComponent::get().m_depthStencilBuffer);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create the texture for the depth buffer!");
@@ -1032,19 +1032,19 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	}
 
 	// Initailze the depth stencil view description.
-	ZeroMemory(&DXLightRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc,
-		sizeof(DXLightRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc));
+	ZeroMemory(&DXLightRenderPassComponent::get().m_depthStencilViewDesc,
+		sizeof(DXLightRenderPassComponent::get().m_depthStencilViewDesc));
 
 	// Set up the depth stencil view description.
-	DXLightRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	DXLightRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc.Texture2D.MipSlice = 0;
+	DXLightRenderPassComponent::get().m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DXLightRenderPassComponent::get().m_depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	DXLightRenderPassComponent::get().m_depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateDepthStencilView(
-		DXLightRenderPassSingletonComponent::getInstance().m_depthStencilBuffer,
-		&DXLightRenderPassSingletonComponent::getInstance().m_depthStencilViewDesc,
-		&DXLightRenderPassSingletonComponent::getInstance().m_depthStencilView);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateDepthStencilView(
+		DXLightRenderPassComponent::get().m_depthStencilBuffer,
+		&DXLightRenderPassComponent::get().m_depthStencilViewDesc,
+		&DXLightRenderPassComponent::get().m_depthStencilView);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create the depth stencil view!");
@@ -1053,12 +1053,12 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	}
 
 	// Setup the viewport for rendering.
-	DXLightRenderPassSingletonComponent::getInstance().m_viewport.Width = (float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	DXLightRenderPassSingletonComponent::getInstance().m_viewport.Height = (float)DXRenderingSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
-	DXLightRenderPassSingletonComponent::getInstance().m_viewport.MinDepth = 0.0f;
-	DXLightRenderPassSingletonComponent::getInstance().m_viewport.MaxDepth = 1.0f;
-	DXLightRenderPassSingletonComponent::getInstance().m_viewport.TopLeftX = 0.0f;
-	DXLightRenderPassSingletonComponent::getInstance().m_viewport.TopLeftY = 0.0f;
+	DXLightRenderPassComponent::get().m_viewport.Width = (float)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.x;
+	DXLightRenderPassComponent::get().m_viewport.Height = (float)DXRenderingSystemNS::g_WindowSystemComponent->m_windowResolution.y;
+	DXLightRenderPassComponent::get().m_viewport.MinDepth = 0.0f;
+	DXLightRenderPassComponent::get().m_viewport.MaxDepth = 1.0f;
+	DXLightRenderPassComponent::get().m_viewport.TopLeftX = 0.0f;
+	DXLightRenderPassComponent::get().m_viewport.TopLeftY = 0.0f;
 
 	ID3D10Blob* l_errorMessage;
 	ID3D10Blob* l_shaderBuffer;
@@ -1070,10 +1070,10 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	// Compile the shader code.
 	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"..//res//shaders//DX11//lightPassCookTorranceVertex.sf");
 
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateVertexShader(
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateVertexShader(
 		l_shaderBuffer->GetBufferPointer(), l_shaderBuffer->GetBufferSize(),
 		NULL,
-		&DXLightRenderPassSingletonComponent::getInstance().m_vertexShader);
+		&DXLightRenderPassComponent::get().m_vertexShader);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create vertex shader!");
@@ -1129,9 +1129,9 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
 
 	// Create the vertex input layout.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateInputLayout(
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateInputLayout(
 		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(), &DXLightRenderPassSingletonComponent::getInstance().m_layout);
+		l_shaderBuffer->GetBufferSize(), &DXLightRenderPassComponent::get().m_layout);
 
 	if (FAILED(result))
 	{
@@ -1141,15 +1141,15 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	}
 
 	// Setup the description of the dynamic matrix constant buffer
-	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.ByteWidth = sizeof(LPassCBufferData);
-	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.MiscFlags = 0;
-	DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc.StructureByteStride = 0;
+	DXLightRenderPassComponent::get().m_constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	DXLightRenderPassComponent::get().m_constantBufferDesc.ByteWidth = sizeof(LPassCBufferData);
+	DXLightRenderPassComponent::get().m_constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	DXLightRenderPassComponent::get().m_constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	DXLightRenderPassComponent::get().m_constantBufferDesc.MiscFlags = 0;
+	DXLightRenderPassComponent::get().m_constantBufferDesc.StructureByteStride = 0;
 
 	// Create the constant buffer pointer
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&DXLightRenderPassSingletonComponent::getInstance().m_constantBufferDesc, NULL, &DXLightRenderPassSingletonComponent::getInstance().m_constantBuffer);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateBuffer(&DXLightRenderPassComponent::get().m_constantBufferDesc, NULL, &DXLightRenderPassComponent::get().m_constantBuffer);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create constant buffer pointer!");
@@ -1164,11 +1164,11 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"..//res//shaders//DX11//lightPassCookTorrancePixel.sf");
 
 	// Create the shader from the buffer.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreatePixelShader(
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreatePixelShader(
 		l_shaderBuffer->GetBufferPointer(),
 		l_shaderBuffer->GetBufferSize(),
 		NULL,
-		&DXLightRenderPassSingletonComponent::getInstance().m_pixelShader);
+		&DXLightRenderPassComponent::get().m_pixelShader);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create pixel shader!");
@@ -1180,24 +1180,24 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	l_shaderBuffer = 0;
 
 	// Create a texture sampler state description.
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.MipLODBias = 0.0f;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxAnisotropy = 1;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[0] = 0;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[1] = 0;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[2] = 0;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[3] = 0;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.MinLOD = 0;
-	DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	DXLightRenderPassComponent::get().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	DXLightRenderPassComponent::get().m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	DXLightRenderPassComponent::get().m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	DXLightRenderPassComponent::get().m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	DXLightRenderPassComponent::get().m_samplerDesc.MipLODBias = 0.0f;
+	DXLightRenderPassComponent::get().m_samplerDesc.MaxAnisotropy = 1;
+	DXLightRenderPassComponent::get().m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	DXLightRenderPassComponent::get().m_samplerDesc.BorderColor[0] = 0;
+	DXLightRenderPassComponent::get().m_samplerDesc.BorderColor[1] = 0;
+	DXLightRenderPassComponent::get().m_samplerDesc.BorderColor[2] = 0;
+	DXLightRenderPassComponent::get().m_samplerDesc.BorderColor[3] = 0;
+	DXLightRenderPassComponent::get().m_samplerDesc.MinLOD = 0;
+	DXLightRenderPassComponent::get().m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	// Create the texture sampler state.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateSamplerState(
-		&DXLightRenderPassSingletonComponent::getInstance().m_samplerDesc,
-		&DXLightRenderPassSingletonComponent::getInstance().m_samplerState);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateSamplerState(
+		&DXLightRenderPassComponent::get().m_samplerDesc,
+		&DXLightRenderPassComponent::get().m_samplerState);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create texture sampler state!");
@@ -1221,11 +1221,11 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	// Compile the shader code.
 	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"..//res//shaders//DX11//finalBlendPassVertex.sf");
 
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateVertexShader(
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateVertexShader(
 		l_shaderBuffer->GetBufferPointer(),
 		l_shaderBuffer->GetBufferSize(),
 		NULL,
-		&DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader);
+		&DXFinalRenderPassComponent::get().m_vertexShader);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create vertex shader!");
@@ -1281,9 +1281,9 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
 
 	// Create the vertex input layout.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateInputLayout(
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateInputLayout(
 		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(), &DXFinalRenderPassSingletonComponent::getInstance().m_layout);
+		l_shaderBuffer->GetBufferSize(), &DXFinalRenderPassComponent::get().m_layout);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create vertex shader layout!");
@@ -1298,11 +1298,11 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"..//res//shaders//DX11//finalBlendPassPixel.sf");
 
 	// Create the shader from the buffer.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreatePixelShader(
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreatePixelShader(
 		l_shaderBuffer->GetBufferPointer(),
 		l_shaderBuffer->GetBufferSize(),
 		NULL,
-		&DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader);
+		&DXFinalRenderPassComponent::get().m_pixelShader);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create pixel shader!");
@@ -1314,24 +1314,24 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	l_shaderBuffer = 0;
 
 	// Create a texture sampler state description.
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MipLODBias = 0.0f;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxAnisotropy = 1;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[0] = 0;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[1] = 0;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[2] = 0;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.BorderColor[3] = 0;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MinLOD = 0;
-	DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	DXFinalRenderPassComponent::get().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	DXFinalRenderPassComponent::get().m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	DXFinalRenderPassComponent::get().m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	DXFinalRenderPassComponent::get().m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	DXFinalRenderPassComponent::get().m_samplerDesc.MipLODBias = 0.0f;
+	DXFinalRenderPassComponent::get().m_samplerDesc.MaxAnisotropy = 1;
+	DXFinalRenderPassComponent::get().m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	DXFinalRenderPassComponent::get().m_samplerDesc.BorderColor[0] = 0;
+	DXFinalRenderPassComponent::get().m_samplerDesc.BorderColor[1] = 0;
+	DXFinalRenderPassComponent::get().m_samplerDesc.BorderColor[2] = 0;
+	DXFinalRenderPassComponent::get().m_samplerDesc.BorderColor[3] = 0;
+	DXFinalRenderPassComponent::get().m_samplerDesc.MinLOD = 0;
+	DXFinalRenderPassComponent::get().m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	// Create the texture sampler state.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateSamplerState(
-		&DXFinalRenderPassSingletonComponent::getInstance().m_samplerDesc,
-		&DXFinalRenderPassSingletonComponent::getInstance().m_samplerState);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateSamplerState(
+		&DXFinalRenderPassComponent::get().m_samplerDesc,
+		&DXFinalRenderPassComponent::get().m_samplerState);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create texture sampler state!");
@@ -1378,12 +1378,12 @@ ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const 
 		// If the shader failed to compile it should have writen something to the error message.
 		if (l_errorMessage)
 		{
-			OutputShaderErrorMessage(l_errorMessage, DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, l_shaderName.c_str());
+			OutputShaderErrorMessage(l_errorMessage, DXRenderingSystemNS::g_DXWindowSystemComponent->m_hwnd, l_shaderName.c_str());
 		}
 		// If there was nothing in the error message then it simply could not find the shader file itself.
 		else
 		{
-			MessageBox(DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
+			MessageBox(DXRenderingSystemNS::g_DXWindowSystemComponent->m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "Shader creation failed: cannot find shader!");
 		}
 
@@ -1415,7 +1415,7 @@ void DXRenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HW
 	errorMessage->Release();
 	errorMessage = 0;
 
-	MessageBox(DXRenderingSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
+	MessageBox(DXRenderingSystemNS::g_DXWindowSystemComponent->m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
 
@@ -1449,7 +1449,7 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 
 		// Now create the vertex buffer.
 		HRESULT result;
-		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &l_ptr->m_vertexBuffer);
+		result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &l_ptr->m_vertexBuffer);
 		if (FAILED(result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create vbo!");
@@ -1474,7 +1474,7 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 		indexData.SysMemSlicePitch = 0;
 
 		// Create the index buffer.
-		result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateBuffer(&indexBufferDesc, &indexData, &l_ptr->m_indexBuffer);
+		result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateBuffer(&indexBufferDesc, &indexData, &l_ptr->m_indexBuffer);
 		if (FAILED(result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create ibo!");
@@ -1561,7 +1561,7 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 		ID3D11ShaderResourceView* l_SRV;
 
 		HRESULT hResult;
-		hResult = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateTexture2D(&textureDesc, NULL, &l_texture);
+		hResult = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateTexture2D(&textureDesc, NULL, &l_texture);
 		if (FAILED(hResult))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create texture!");
@@ -1570,11 +1570,11 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 
 		unsigned int rowPitch;
 		rowPitch = (rhs->m_textureDataDesc.textureWidth * 4) * sizeof(unsigned char);
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->UpdateSubresource(l_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->UpdateSubresource(l_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
 
 		// Setup the shader resource view description.
 		// Create the shader resource view for the texture.
-		hResult = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_device->CreateShaderResourceView(l_texture, &srvDesc, &l_SRV);
+		hResult = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_device->CreateShaderResourceView(l_texture, &srvDesc, &l_SRV);
 		if (FAILED(hResult))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create shader resource view for texture!");
@@ -1582,7 +1582,7 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 		}
 
 		// Generate mipmaps for this texture.
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->GenerateMips(l_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->GenerateMips(l_SRV);
 
 		l_ptr->m_texture = l_texture;
 		l_ptr->m_SRV = l_SRV;
@@ -1597,7 +1597,7 @@ DXMeshDataComponent* DXRenderingSystemNS::addDXMeshDataComponent(EntityID rhs)
 {
 	DXMeshDataComponent* newMesh = g_pCoreSystem->getMemorySystem()->spawn<DXMeshDataComponent>();
 	newMesh->m_parentEntity = rhs;
-	auto l_meshMap = &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_meshMap;
+	auto l_meshMap = &DXRenderingSystemNS::g_DXRenderingSystemComponent->m_meshMap;
 	l_meshMap->emplace(std::pair<EntityID, DXMeshDataComponent*>(rhs, newMesh));
 	return newMesh;
 }
@@ -1606,15 +1606,15 @@ DXTextureDataComponent* DXRenderingSystemNS::addDXTextureDataComponent(EntityID 
 {
 	DXTextureDataComponent* newTexture = g_pCoreSystem->getMemorySystem()->spawn<DXTextureDataComponent>();
 	newTexture->m_parentEntity = rhs;
-	auto l_textureMap = &DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_textureMap;
+	auto l_textureMap = &DXRenderingSystemNS::g_DXRenderingSystemComponent->m_textureMap;
 	l_textureMap->emplace(std::pair<EntityID, DXTextureDataComponent*>(rhs, newTexture));
 	return newTexture;
 }
 
 DXMeshDataComponent * DXRenderingSystemNS::getDXMeshDataComponent(EntityID rhs)
 {
-	auto result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_meshMap.find(rhs);
-	if (result != DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_meshMap.end())
+	auto result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_meshMap.find(rhs);
+	if (result != DXRenderingSystemNS::g_DXRenderingSystemComponent->m_meshMap.end())
 	{
 		return result->second;
 	}
@@ -1626,8 +1626,8 @@ DXMeshDataComponent * DXRenderingSystemNS::getDXMeshDataComponent(EntityID rhs)
 
 DXTextureDataComponent * DXRenderingSystemNS::getDXTextureDataComponent(EntityID rhs)
 {
-	auto result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_textureMap.find(rhs);
-	if (result != DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_textureMap.end())
+	auto result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_textureMap.find(rhs);
+	if (result != DXRenderingSystemNS::g_DXRenderingSystemComponent->m_textureMap.end())
 	{
 		return result->second;
 	}
@@ -1640,9 +1640,9 @@ DXTextureDataComponent * DXRenderingSystemNS::getDXTextureDataComponent(EntityID
 void DXRenderingSystemNS::prepareRenderingData()
 {
 	// camera and light
-	auto l_mainCamera = GameSystemSingletonComponent::getInstance().m_CameraComponents[0];
+	auto l_mainCamera = GameSystemComponent::get().m_CameraComponents[0];
 	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
-	auto l_directionalLight = GameSystemSingletonComponent::getInstance().m_DirectionalLightComponents[0];
+	auto l_directionalLight = GameSystemComponent::get().m_DirectionalLightComponents[0];
 	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
 
 	auto l_p = l_mainCamera->m_projectionMatrix;
@@ -1665,7 +1665,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 
 	m_LPassCBufferData.color = l_directionalLight->m_color;
 
-	for (auto& l_renderDataPack : RenderingSystemSingletonComponent::getInstance().m_renderDataPack)
+	for (auto& l_renderDataPack : RenderingSystemComponent::get().m_renderDataPack)
 	{
 		auto l_DXMDC = DXRenderingSystemNS::m_initializedMeshComponents.find(l_renderDataPack.MDC->m_parentEntity);
 		if (l_DXMDC != DXRenderingSystemNS::m_initializedMeshComponents.end())
@@ -1736,43 +1736,43 @@ void DXRenderingSystemNS::prepareRenderingData()
 void DXRenderingSystemNS::updateGeometryPass()
 {
 	// Set Rasterizer State
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetState(
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateForward);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->RSSetState(
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterStateForward);
 
 	// Set the vertex and pixel shaders that will be used to render this triangle.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->VSSetShader(
-		DXGeometryRenderPassSingletonComponent::getInstance().m_vertexShader,
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->VSSetShader(
+		DXGeometryRenderPassComponent::get().m_vertexShader,
 		NULL,
 		0);
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShader(
-		DXGeometryRenderPassSingletonComponent::getInstance().m_pixelShader,
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShader(
+		DXGeometryRenderPassComponent::get().m_pixelShader,
 		NULL,
 		0);
 
 	// Set the sampler state in the pixel shader.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetSamplers(0, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_samplerState);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetSamplers(0, 1, &DXGeometryRenderPassComponent::get().m_samplerState);
 
 	// Set the vertex input layout.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetInputLayout(DXGeometryRenderPassSingletonComponent::getInstance().m_layout);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->IASetInputLayout(DXGeometryRenderPassComponent::get().m_layout);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetRenderTargets(
-		(UINT)DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews.size(),
-		&DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews[0],
-		&DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView[0]);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->OMSetRenderTargets(
+		(UINT)DXGeometryRenderPassComponent::get().m_renderTargetViews.size(),
+		&DXGeometryRenderPassComponent::get().m_renderTargetViews[0],
+		&DXGeometryRenderPassComponent::get().m_depthStencilView[0]);
 
 	// Set the viewport.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetViewports(
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->RSSetViewports(
 		1,
-		&DXGeometryRenderPassSingletonComponent::getInstance().m_viewport);
+		&DXGeometryRenderPassComponent::get().m_viewport);
 
 	// Clear the render buffers.
-	for (auto i : DXGeometryRenderPassSingletonComponent::getInstance().m_renderTargetViews)
+	for (auto i : DXGeometryRenderPassComponent::get().m_renderTargetViews)
 	{
 		DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), i);
 	}
-	DXRenderingSystemNS::cleanDSV(DXGeometryRenderPassSingletonComponent::getInstance().m_depthStencilView);
+	DXRenderingSystemNS::cleanDSV(DXGeometryRenderPassComponent::get().m_depthStencilView);
 
 	// draw
 	while (DXRenderingSystemNS::m_GPassRenderingDataQueue.size() > 0)
@@ -1791,16 +1791,16 @@ void DXRenderingSystemNS::updateGeometryPass()
 			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
 		}
 
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
 
-		updateShaderParameter<GPassCBufferData>(ShaderType::VERTEX, DXGeometryRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_renderPack.GPassCBuffer);
+		updateShaderParameter<GPassCBufferData>(ShaderType::VERTEX, DXGeometryRenderPassComponent::get().m_constantBuffer, &l_renderPack.GPassCBuffer);
 
 		// bind to textures
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &l_renderPack.m_basicNormalDXTDC->m_SRV);
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(1, 1, &l_renderPack.m_basicAlbedoDXTDC->m_SRV);
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(2, 1, &l_renderPack.m_basicMetallicDXTDC->m_SRV);
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(3, 1, &l_renderPack.m_basicRoughnessDXTDC->m_SRV);
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(4, 1, &l_renderPack.m_basicAODXTDC->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(0, 1, &l_renderPack.m_basicNormalDXTDC->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(1, 1, &l_renderPack.m_basicAlbedoDXTDC->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(2, 1, &l_renderPack.m_basicMetallicDXTDC->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(3, 1, &l_renderPack.m_basicRoughnessDXTDC->m_SRV);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(4, 1, &l_renderPack.m_basicAODXTDC->m_SRV);
 
 		drawMesh(l_renderPack.indiceSize, l_renderPack.DXMDC);
 
@@ -1812,52 +1812,52 @@ void DXRenderingSystemNS::updateGeometryPass()
 void DXRenderingSystemNS::updateLightPass()
 {
 	// Set Rasterizer State
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetState(
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->RSSetState(
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterStateDeferred);
 
 	// Set the vertex and pixel shaders that will be used to render this triangle.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->VSSetShader(
-		DXLightRenderPassSingletonComponent::getInstance().m_vertexShader,
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->VSSetShader(
+		DXLightRenderPassComponent::get().m_vertexShader,
 		NULL,
 		0);
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShader(
-		DXLightRenderPassSingletonComponent::getInstance().m_pixelShader,
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShader(
+		DXLightRenderPassComponent::get().m_pixelShader,
 		NULL,
 		0);
 
 	// Set the sampler state in the pixel shader.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetSamplers(0, 1, &DXLightRenderPassSingletonComponent::getInstance().m_samplerState);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetSamplers(0, 1, &DXLightRenderPassComponent::get().m_samplerState);
 
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set the vertex input layout.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetInputLayout(DXLightRenderPassSingletonComponent::getInstance().m_layout);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->IASetInputLayout(DXLightRenderPassComponent::get().m_layout);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetRenderTargets(
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->OMSetRenderTargets(
 		1,
-		&DXLightRenderPassSingletonComponent::getInstance().m_renderTargetView,
-		DXLightRenderPassSingletonComponent::getInstance().m_depthStencilView);
+		&DXLightRenderPassComponent::get().m_renderTargetView,
+		DXLightRenderPassComponent::get().m_depthStencilView);
 
 	// Set the viewport.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetViewports(
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->RSSetViewports(
 		1,
-		&DXLightRenderPassSingletonComponent::getInstance().m_viewport);
+		&DXLightRenderPassComponent::get().m_viewport);
 
 	// Clear the render buffers.
-	DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), DXLightRenderPassSingletonComponent::getInstance().m_renderTargetView);
-	DXRenderingSystemNS::cleanDSV(DXLightRenderPassSingletonComponent::getInstance().m_depthStencilView);
+	DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), DXLightRenderPassComponent::get().m_renderTargetView);
+	DXRenderingSystemNS::cleanDSV(DXLightRenderPassComponent::get().m_depthStencilView);
 	
 	auto l_LPassCBufferData = DXRenderingSystemNS::m_LPassCBufferData;
 
-	updateShaderParameter<LPassCBufferData>(ShaderType::FRAGMENT, DXLightRenderPassSingletonComponent::getInstance().m_constantBuffer, &l_LPassCBufferData);
+	updateShaderParameter<LPassCBufferData>(ShaderType::FRAGMENT, DXLightRenderPassComponent::get().m_constantBuffer, &l_LPassCBufferData);
 	
 	// bind to previous pass render target textures
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[0]);
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(1, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[1]);
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(2, 1, &DXGeometryRenderPassSingletonComponent::getInstance().m_shaderResourceViews[2]);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXGeometryRenderPassComponent::get().m_shaderResourceViews[0]);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(1, 1, &DXGeometryRenderPassComponent::get().m_shaderResourceViews[1]);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(2, 1, &DXGeometryRenderPassComponent::get().m_shaderResourceViews[2]);
 
 	// draw
 	drawMesh(6, m_UnitQuadTemplate);
@@ -1866,39 +1866,39 @@ void DXRenderingSystemNS::updateLightPass()
 void DXRenderingSystemNS::updateFinalBlendPass()
 {
 	// Set Rasterizer State
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetState(
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_rasterStateDeferred);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->RSSetState(
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_rasterStateDeferred);
 	// Set the vertex and pixel shaders that will be used to render this triangle.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->VSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_vertexShader, NULL, 0);
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShader(DXFinalRenderPassSingletonComponent::getInstance().m_pixelShader, NULL, 0);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->VSSetShader(DXFinalRenderPassComponent::get().m_vertexShader, NULL, 0);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShader(DXFinalRenderPassComponent::get().m_pixelShader, NULL, 0);
 
 	// Set the sampler state in the pixel shader.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetSamplers(0, 1, &DXFinalRenderPassSingletonComponent::getInstance().m_samplerState);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetSamplers(0, 1, &DXFinalRenderPassComponent::get().m_samplerState);
 
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set the vertex input layout.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetInputLayout(DXFinalRenderPassSingletonComponent::getInstance().m_layout);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->IASetInputLayout(DXFinalRenderPassComponent::get().m_layout);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->OMSetRenderTargets(
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->OMSetRenderTargets(
 		1,
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView,
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
+		&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_renderTargetView,
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilView);
 
 	// Set the viewport.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->RSSetViewports(
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->RSSetViewports(
 		1,
-		&DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_viewport);
+		&DXRenderingSystemNS::g_DXRenderingSystemComponent->m_viewport);
 
 	// Clear the render buffers.
-	DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_renderTargetView);
-	DXRenderingSystemNS::cleanDSV(DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_depthStencilView);
+	DXRenderingSystemNS::cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), DXRenderingSystemNS::g_DXRenderingSystemComponent->m_renderTargetView);
+	DXRenderingSystemNS::cleanDSV(DXRenderingSystemNS::g_DXRenderingSystemComponent->m_depthStencilView);
 
 	// bind to previous pass render target textures
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXLightRenderPassSingletonComponent::getInstance().m_shaderResourceView);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXLightRenderPassComponent::get().m_shaderResourceView);
 
 	// draw
 	drawMesh(6, m_UnitQuadTemplate);
@@ -1935,13 +1935,13 @@ void DXRenderingSystemNS::drawMesh(size_t indicesSize, DXMeshDataComponent * DXM
 	offset = 0;
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBuffer, &stride, &offset);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBuffer, &stride, &offset);
 
 	// Set the index buffer to active in the input assembler so it can be rendered.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->IASetIndexBuffer(DXMDC->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->IASetIndexBuffer(DXMDC->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	// Render the triangle.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->DrawIndexed((UINT)indicesSize, 0, 0);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->DrawIndexed((UINT)indicesSize, 0, 0);
 }
 
 template <class T>
@@ -1952,7 +1952,7 @@ void DXRenderingSystemNS::updateShaderParameter(ShaderType shaderType, ID3D11Buf
 	unsigned int bufferNumber;
 
 	// Lock the constant buffer so it can be written to.
-	result = DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't lock the shader matrix buffer!");
@@ -1965,20 +1965,20 @@ void DXRenderingSystemNS::updateShaderParameter(ShaderType shaderType, ID3D11Buf
 	*dataPtr = *parameterValue;
 
 	// Unlock the constant buffer.
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->Unmap(matrixBuffer, 0);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->Unmap(matrixBuffer, 0);
 
 	bufferNumber = 0;
 
 	switch (shaderType)
 	{
 	case ShaderType::VERTEX:
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->VSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->VSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
 		break;
 	case ShaderType::GEOMETRY:
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->GSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->GSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
 		break;
 	case ShaderType::FRAGMENT:
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->PSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->PSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
 		break;
 	default:
 		break;
@@ -1995,25 +1995,25 @@ void DXRenderingSystemNS::cleanRTV(vec4 color, ID3D11RenderTargetView* RTV)
 	l_color[2] = color.z;
 	l_color[3] = color.w;
 
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->ClearRenderTargetView(RTV, l_color);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->ClearRenderTargetView(RTV, l_color);
 }
 
 void DXRenderingSystemNS::cleanDSV(ID3D11DepthStencilView* DSV)
 {
-	DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_deviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	DXRenderingSystemNS::g_DXRenderingSystemComponent->m_deviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
 void DXRenderingSystemNS::swapBuffer()
 {
 	// Present the back buffer to the screen since rendering is complete.
-	if (DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_vsync_enabled)
+	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_vsync_enabled)
 	{
 		// Lock to screen refresh rate.
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain->Present(1, 0);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChain->Present(1, 0);
 	}
 	else
 	{
 		// Present as fast as possible.
-		DXRenderingSystemNS::g_DXRenderingSystemSingletonComponent->m_swapChain->Present(0, 0);
+		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChain->Present(0, 0);
 	}
 }

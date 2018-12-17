@@ -5,14 +5,14 @@
 #include "vulkan/vulkan.h"
 #define GLFW_INCLUDE_VULKAN
 
-class VKWindowSystemSingletonComponent
+class VKWindowSystemComponent
 {
 public:
-	~VKWindowSystemSingletonComponent() {};
+	~VKWindowSystemComponent() {};
 	
-	static VKWindowSystemSingletonComponent& getInstance()
+	static VKWindowSystemComponent& get()
 	{
-		static VKWindowSystemSingletonComponent instance;
+		static VKWindowSystemComponent instance;
 
 		return instance;
 	}
@@ -25,5 +25,5 @@ public:
 	VkInstance m_instance;
 
 private:
-	VKWindowSystemSingletonComponent() {};
+	VKWindowSystemComponent() {};
 };

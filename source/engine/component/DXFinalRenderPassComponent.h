@@ -3,14 +3,14 @@
 #include "../system/DXHeaders.h"
 
 
-class DXFinalRenderPassSingletonComponent
+class DXFinalRenderPassComponent
 {
 public:
-	~DXFinalRenderPassSingletonComponent() {};
+	~DXFinalRenderPassComponent() {};
 	
-	static DXFinalRenderPassSingletonComponent& getInstance()
+	static DXFinalRenderPassComponent& get()
 	{
-		static DXFinalRenderPassSingletonComponent instance;
+		static DXFinalRenderPassComponent instance;
 		return instance;
 	}
 
@@ -25,5 +25,5 @@ public:
 	ID3D11SamplerState* m_samplerState;
 
 private:
-	DXFinalRenderPassSingletonComponent() {};
+	DXFinalRenderPassComponent() {};
 };

@@ -1,7 +1,7 @@
 #include "VisionSystem.h"
 
-#include "../component/RenderingSystemSingletonComponent.h"
-#include "../component/PhysicsSystemSingletonComponent.h"
+#include "../component/RenderingSystemComponent.h"
+#include "../component/PhysicsSystemComponent.h"
 
 #if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 #include "DXWindowSystem.h"
@@ -108,7 +108,7 @@ bool InnoVisionSystemNS::setupRendering()
 	{
 		return false;
 	}
-	RenderingSystemSingletonComponent::getInstance().m_canRender = true;
+	RenderingSystemComponent::get().m_canRender = true;
 
 	return true;
 }
@@ -140,8 +140,8 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 	});
 	InnoVisionSystemNS::m_asyncTask = &temp;
 
-	RenderingSystemSingletonComponent::getInstance().m_renderDataPack.clear();
-	for (auto& i : PhysicsSystemSingletonComponent::getInstance().m_cullingDataPack)
+	RenderingSystemComponent::get().m_renderDataPack.clear();
+	for (auto& i : PhysicsSystemComponent::get().m_cullingDataPack)
 	{
 		auto l_visibleComponent = g_pCoreSystem->getGameSystem()->get<VisibleComponent>(i.visibleComponentEntityID);
 		if (l_visibleComponent != nullptr)
@@ -159,7 +159,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 					l_renderDataPack.MDC = l_MDC;
 					l_renderDataPack.Material = l_modelPair->second;
 					l_renderDataPack.visiblilityType = i.visiblilityType;
-					RenderingSystemSingletonComponent::getInstance().m_renderDataPack.emplace_back(l_renderDataPack);
+					RenderingSystemComponent::get().m_renderDataPack.emplace_back(l_renderDataPack);
 				}
 			}
 		}
@@ -169,13 +169,13 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 
 	if (InnoVisionSystemNS::m_windowSystem->getStatus() == ObjectStatus::ALIVE)
 	{
-		if (RenderingSystemSingletonComponent::getInstance().m_canRender)
+		if (RenderingSystemComponent::get().m_canRender)
 		{
-			RenderingSystemSingletonComponent::getInstance().m_canRender = false;
+			RenderingSystemComponent::get().m_canRender = false;
 			InnoVisionSystemNS::m_renderingSystem->update();
 			InnoVisionSystemNS::m_guiSystem->update();
 			InnoVisionSystemNS::m_windowSystem->swapBuffer();
-			RenderingSystemSingletonComponent::getInstance().m_canRender = true;
+			RenderingSystemComponent::get().m_canRender = true;
 		}
 		return true;
 	}

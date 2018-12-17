@@ -5,14 +5,14 @@
 #include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
 
-class GLEnvironmentRenderPassSingletonComponent
+class GLEnvironmentRenderPassComponent
 {
 public:
-	~GLEnvironmentRenderPassSingletonComponent() {};
+	~GLEnvironmentRenderPassComponent() {};
 	
-	static GLEnvironmentRenderPassSingletonComponent& getInstance()
+	static GLEnvironmentRenderPassComponent& get()
 	{
-		static GLEnvironmentRenderPassSingletonComponent instance;
+		static GLEnvironmentRenderPassComponent instance;
 		return instance;
 	}
 
@@ -30,5 +30,5 @@ public:
 	GLTextureDataComponent* m_BRDFMSAverageLUTPassGLTDC;
 	GLuint m_BRDFMSAverageLUTPass_uni_brdfLUT;
 private:
-	GLEnvironmentRenderPassSingletonComponent() {};
+	GLEnvironmentRenderPassComponent() {};
 };

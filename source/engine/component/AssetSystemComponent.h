@@ -22,14 +22,14 @@ struct DirectoryMetadata
 	std::vector<AssetMetadata> childrenAssets;
 };
 
-class AssetSystemSingletonComponent
+class AssetSystemComponent
 {
 public:
-	~AssetSystemSingletonComponent() {};
+	~AssetSystemComponent() {};
 
-	static AssetSystemSingletonComponent& getInstance()
+	static AssetSystemComponent& get()
 	{
-		static AssetSystemSingletonComponent instance;
+		static AssetSystemComponent instance;
 		return instance;
 	}
 
@@ -75,5 +75,5 @@ public:
 
 	std::vector<InnoFuture<void>> m_asyncTaskVector;
 private:
-	AssetSystemSingletonComponent() {};
+	AssetSystemComponent() {};
 };

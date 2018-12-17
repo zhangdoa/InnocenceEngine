@@ -3,14 +3,14 @@
 #include "TextureDataComponent.h"
 #include "DXTextureDataComponent.h"
 
-class DXLightRenderPassSingletonComponent
+class DXGeometryRenderPassComponent
 {
 public:
-	~DXLightRenderPassSingletonComponent() {};
+	~DXGeometryRenderPassComponent() {};
 	
-	static DXLightRenderPassSingletonComponent& getInstance()
+	static DXGeometryRenderPassComponent& get()
 	{
-		static DXLightRenderPassSingletonComponent instance;
+		static DXGeometryRenderPassComponent instance;
 		return instance;
 	}
 
@@ -28,13 +28,13 @@ public:
 	ID3D11SamplerState* m_samplerState;
 
 	D3D11_TEXTURE2D_DESC m_renderTargetTextureDesc;
-	ID3D11Texture2D* m_renderTargetTexture;
+	std::vector<ID3D11Texture2D*> m_renderTargetTextures;
 
 	D3D11_RENDER_TARGET_VIEW_DESC m_renderTargetViewDesc;
-	ID3D11RenderTargetView* m_renderTargetView;
+	std::vector<ID3D11RenderTargetView*> m_renderTargetViews;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC m_shaderResourceViewDesc;
-	ID3D11ShaderResourceView* m_shaderResourceView;
+	std::vector<ID3D11ShaderResourceView*> m_shaderResourceViews;
 
 	D3D11_TEXTURE2D_DESC m_depthBufferDesc;
 	ID3D11Texture2D* m_depthStencilBuffer;
@@ -45,5 +45,5 @@ public:
 	D3D11_VIEWPORT m_viewport;
 
 private:
-	DXLightRenderPassSingletonComponent() {};
+	DXGeometryRenderPassComponent() {};
 };

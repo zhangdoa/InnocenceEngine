@@ -1,9 +1,9 @@
 #include "PhysicsSystem.h"
 
-#include "../component/GameSystemSingletonComponent.h"
-#include "../component/WindowSystemSingletonComponent.h"
-#include "../component/AssetSystemSingletonComponent.h"
-#include "../component/PhysicsSystemSingletonComponent.h"
+#include "../component/GameSystemComponent.h"
+#include "../component/WindowSystemComponent.h"
+#include "../component/AssetSystemComponent.h"
+#include "../component/PhysicsSystemComponent.h"
 
 #include "ICoreSystem.h"
 
@@ -38,10 +38,10 @@ namespace InnoPhysicsSystemNS
 
 	InnoFuture<void>* m_asyncTask;
 
-	static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
-	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
-	static AssetSystemSingletonComponent* g_AssetSystemSingletonComponent;
-	static PhysicsSystemSingletonComponent* g_PhysicsSystemSingletonComponent;
+	static WindowSystemComponent* g_WindowSystemComponent;
+	static GameSystemComponent* g_GameSystemComponent;
+	static AssetSystemComponent* g_AssetSystemComponent;
+	static PhysicsSystemComponent* g_PhysicsSystemComponent;
 	vec4 m_sceneBoundMax = vec4(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), 1.0f);
 	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
 
@@ -50,10 +50,10 @@ namespace InnoPhysicsSystemNS
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::setup()
 {
-	InnoPhysicsSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
-	InnoPhysicsSystemNS::g_GameSystemSingletonComponent = &GameSystemSingletonComponent::getInstance();
-	InnoPhysicsSystemNS::g_AssetSystemSingletonComponent = &AssetSystemSingletonComponent::getInstance();
-	InnoPhysicsSystemNS::g_PhysicsSystemSingletonComponent = &PhysicsSystemSingletonComponent::getInstance();
+	InnoPhysicsSystemNS::g_WindowSystemComponent = &WindowSystemComponent::get();
+	InnoPhysicsSystemNS::g_GameSystemComponent = &GameSystemComponent::get();
+	InnoPhysicsSystemNS::g_AssetSystemComponent = &AssetSystemComponent::get();
+	InnoPhysicsSystemNS::g_PhysicsSystemComponent = &PhysicsSystemComponent::get();
 
 	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
@@ -177,7 +177,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	directionalLightComponent->m_projectionMatrices.clear();
 
 	//1. get frustum vertices
-	auto l_camera = g_GameSystemSingletonComponent->m_CameraComponents[0];
+	auto l_camera = g_GameSystemComponent->m_CameraComponents[0];
 	auto l_frustumVertices = generateFrustumVertices(l_camera);
 
 	//2.calculate splited planes' corners
@@ -396,7 +396,7 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 	l_MDC->m_indicesSize = l_MDC->m_indices.size();
 
 	l_MDC->m_objectStatus = ObjectStatus::STANDBY;
-	g_AssetSystemSingletonComponent->m_uninitializedMeshComponents.push(l_MDC);
+	g_AssetSystemComponent->m_uninitializedMeshComponents.push(l_MDC);
 
 	return l_MDC;
 }
@@ -431,7 +431,7 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::initialize()
 
 void InnoPhysicsSystemNS::updateCameraComponents()
 {
-	for (auto& i : g_GameSystemSingletonComponent->m_CameraComponents)
+	for (auto& i : g_GameSystemComponent->m_CameraComponents)
 	{
 		generateProjectionMatrix(i);
 		generateRayOfEye(i);
@@ -440,15 +440,15 @@ void InnoPhysicsSystemNS::updateCameraComponents()
 
 void InnoPhysicsSystemNS::updateLightComponents()
 {
-	for (auto& i : g_GameSystemSingletonComponent->m_DirectionalLightComponents)
+	for (auto& i : g_GameSystemComponent->m_DirectionalLightComponents)
 	{
 			generateAABB(i);
 	}
-	for (auto& i : g_GameSystemSingletonComponent->m_PointLightComponents)
+	for (auto& i : g_GameSystemComponent->m_PointLightComponents)
 	{
 		generatePointLightComponentAttenuationRadius(i);
 	}
-	for (auto& i : g_GameSystemSingletonComponent->m_SphereLightComponents)
+	for (auto& i : g_GameSystemComponent->m_SphereLightComponents)
 	{
 		generateSphereLightComponentScale(i);
 	}
@@ -456,10 +456,10 @@ void InnoPhysicsSystemNS::updateLightComponents()
 
 void InnoPhysicsSystemNS::updateVisibleComponents()
 {
-	if (InnoPhysicsSystemNS::g_PhysicsSystemSingletonComponent->m_uninitializedVisibleComponents.size() > 0)
+	if (InnoPhysicsSystemNS::g_PhysicsSystemComponent->m_uninitializedVisibleComponents.size() > 0)
 	{
 		VisibleComponent* l_visibleComponent;
-		if (InnoPhysicsSystemNS::g_PhysicsSystemSingletonComponent->m_uninitializedVisibleComponents.tryPop(l_visibleComponent))
+		if (InnoPhysicsSystemNS::g_PhysicsSystemComponent->m_uninitializedVisibleComponents.tryPop(l_visibleComponent))
 		{
 			auto l_physicsComponent = generatePhysicsDataComponent(l_visibleComponent->m_modelMap);
 			l_visibleComponent->m_PhysicsDataComponent = l_physicsComponent;
@@ -489,17 +489,17 @@ void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
 
 void InnoPhysicsSystemNS::updateCulling()
 {
-	g_PhysicsSystemSingletonComponent->m_cullingDataPack.clear();
-	g_PhysicsSystemSingletonComponent->m_AABBWireframeDataPack.clear();
+	g_PhysicsSystemComponent->m_cullingDataPack.clear();
+	g_PhysicsSystemComponent->m_AABBWireframeDataPack.clear();
 
-	if (g_GameSystemSingletonComponent->m_CameraComponents.size() > 0)
+	if (g_GameSystemComponent->m_CameraComponents.size() > 0)
 	{
 		Ray l_mouseRay;
-		l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemSingletonComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_mouseRay.m_direction = g_WindowSystemSingletonComponent->m_mousePositionInWorldSpace;
+		l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_mouseRay.m_direction = g_WindowSystemComponent->m_mousePositionInWorldSpace;
 
-		//auto l_cameraAABB = g_GameSystemSingletonComponent->m_CameraComponents[0]->m_AABB;
-		auto l_eyeRay = g_GameSystemSingletonComponent->m_CameraComponents[0]->m_rayOfEye;
+		//auto l_cameraAABB = g_GameSystemComponent->m_CameraComponents[0]->m_AABB;
+		auto l_eyeRay = g_GameSystemComponent->m_CameraComponents[0]->m_rayOfEye;
 
 		for (auto visibleComponent : m_initializedVisibleComponents)
 		{
@@ -519,7 +519,7 @@ void InnoPhysicsSystemNS::updateCulling()
 							AABBWireframeDataPack l_AABBWireframeDataPack;
 							l_AABBWireframeDataPack.m = l_globalTm;
 							l_AABBWireframeDataPack.MDC = physicsData.wireframeMDC;
-							g_PhysicsSystemSingletonComponent->m_AABBWireframeDataPack.emplace_back(l_AABBWireframeDataPack);
+							g_PhysicsSystemComponent->m_AABBWireframeDataPack.emplace_back(l_AABBWireframeDataPack);
 						}
 						//if (InnoMath::intersectCheck(l_AABBws, l_cameraAABB))
 						//{
@@ -530,7 +530,7 @@ void InnoPhysicsSystemNS::updateCulling()
 							l_cullingDataPack.visibleComponentEntityID = visibleComponent->m_parentEntity;
 							l_cullingDataPack.MDCEntityID = physicsData.MDC->m_parentEntity;
 							l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
-							g_PhysicsSystemSingletonComponent->m_cullingDataPack.emplace_back(l_cullingDataPack);
+							g_PhysicsSystemComponent->m_cullingDataPack.emplace_back(l_cullingDataPack);
 						//}
 
 						updateSceneAABB(l_AABBws);

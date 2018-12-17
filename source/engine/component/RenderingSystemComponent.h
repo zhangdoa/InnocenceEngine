@@ -16,14 +16,14 @@ struct RenderDataPack
 
 enum class RenderPassType { GPass, TerrainPass, LPass };
 
-class RenderingSystemSingletonComponent
+class RenderingSystemComponent
 {
 public:
-	~RenderingSystemSingletonComponent() {};
+	~RenderingSystemComponent() {};
 	
-	static RenderingSystemSingletonComponent& getInstance()
+	static RenderingSystemComponent& get()
 	{
-		static RenderingSystemSingletonComponent instance;
+		static RenderingSystemComponent instance;
 		return instance;
 	}
 
@@ -45,5 +45,5 @@ public:
 	std::vector<RenderDataPack> m_renderDataPack;
 
 private:
-	RenderingSystemSingletonComponent() {};
+	RenderingSystemComponent() {};
 };

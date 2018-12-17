@@ -2,19 +2,19 @@
 
 #include <sstream>
 
-#include "../component/GLEnvironmentRenderPassSingletonComponent.h"
-#include "../component/GLShadowRenderPassSingletonComponent.h"
-#include "../component/GLGeometryRenderPassSingletonComponent.h"
-#include "../component/GLTerrainRenderPassSingletonComponent.h"
-#include "../component/GLLightRenderPassSingletonComponent.h"
-#include "../component/GLFinalRenderPassSingletonComponent.h"
+#include "../component/GLEnvironmentRenderPassComponent.h"
+#include "../component/GLShadowRenderPassComponent.h"
+#include "../component/GLGeometryRenderPassComponent.h"
+#include "../component/GLTerrainRenderPassComponent.h"
+#include "../component/GLLightRenderPassComponent.h"
+#include "../component/GLFinalRenderPassComponent.h"
 
-#include "../component/AssetSystemSingletonComponent.h"
-#include "../component/GameSystemSingletonComponent.h"
-#include "../component/WindowSystemSingletonComponent.h"
-#include "../component/RenderingSystemSingletonComponent.h"
-#include "../component/GLRenderingSystemSingletonComponent.h"
-#include "../component/PhysicsSystemSingletonComponent.h"
+#include "../component/AssetSystemComponent.h"
+#include "../component/GameSystemComponent.h"
+#include "../component/WindowSystemComponent.h"
+#include "../component/RenderingSystemComponent.h"
+#include "../component/GLRenderingSystemComponent.h"
+#include "../component/PhysicsSystemComponent.h"
 
 #include "../component/MeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
@@ -122,9 +122,9 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void activateTexture(TextureDataComponent* TDC, int activateIndex);
 	void activateTexture(GLTextureDataComponent* GLTDC, int activateIndex);
 
-	static GameSystemSingletonComponent* g_GameSystemSingletonComponent;
-	static RenderingSystemSingletonComponent* g_RenderingSystemSingletonComponent;
-	static GLRenderingSystemSingletonComponent* g_GLRenderingSystemSingletonComponent;
+	static GameSystemComponent* g_GameSystemComponent;
+	static RenderingSystemComponent* g_RenderingSystemComponent;
+	static GLRenderingSystemComponent* g_GLRenderingSystemComponent;
 
 	std::unordered_map<EntityID, GLMeshDataComponent*> m_initializedGLMDC;
 	std::unordered_map<EntityID, GLTextureDataComponent*> m_initializedGLTDC;
@@ -147,7 +147,6 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	GLFrameBufferDesc shadowPassFBDesc = GLFrameBufferDesc();
 
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
-
 	TextureDataDesc shadowPassTextureDesc = TextureDataDesc();
 
 	mat4 m_CamProjOriginal;
@@ -231,14 +230,14 @@ bool GLRenderingSystem::initialize()
 
 bool GLRenderingSystemNS::setup()
 {
-	g_GameSystemSingletonComponent = &GameSystemSingletonComponent::getInstance();
-	g_RenderingSystemSingletonComponent = &RenderingSystemSingletonComponent::getInstance();
-	g_GLRenderingSystemSingletonComponent = &GLRenderingSystemSingletonComponent::getInstance();
+	g_GameSystemComponent = &GameSystemComponent::get();
+	g_RenderingSystemComponent = &RenderingSystemComponent::get();
+	g_GLRenderingSystemComponent = &GLRenderingSystemComponent::get();
 
 	deferredPassFBDesc.renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 	deferredPassFBDesc.renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
-	deferredPassFBDesc.sizeX = WindowSystemSingletonComponent::getInstance().m_windowResolution.x;
-	deferredPassFBDesc.sizeY = WindowSystemSingletonComponent::getInstance().m_windowResolution.y;
+	deferredPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
+	deferredPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
 
 	shadowPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	shadowPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
@@ -265,7 +264,7 @@ bool GLRenderingSystemNS::setup()
 	shadowPassTextureDesc.textureHeight = shadowPassFBDesc.sizeY;
 	shadowPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
-	g_RenderingSystemSingletonComponent->f_reloadShader =
+	g_RenderingSystemComponent->f_reloadShader =
 		[&](RenderPassType renderPassType) {
 		reloadGLShaderProgramComponent(renderPassType);
 	};
@@ -305,10 +304,10 @@ bool GLRenderingSystemNS::setup()
 		glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	};
 
-	if (g_RenderingSystemSingletonComponent->m_MSAAdepth)
+	if (g_RenderingSystemComponent->m_MSAAdepth)
 	{
 		// antialiasing
-		glfwWindowHint(GLFW_SAMPLES, g_RenderingSystemSingletonComponent->m_MSAAdepth);
+		glfwWindowHint(GLFW_SAMPLES, g_RenderingSystemComponent->m_MSAAdepth);
 		// MSAA
 		glEnable(GL_MULTISAMPLE);
 	}
@@ -348,10 +347,10 @@ void  GLRenderingSystemNS::initializeDefaultAssets()
 	m_basicRoughnessGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
 	m_basicAOGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
 
-	g_GLRenderingSystemSingletonComponent->m_iconTemplate_OBJ = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::OBJ));
-	g_GLRenderingSystemSingletonComponent->m_iconTemplate_PNG = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::PNG));
-	g_GLRenderingSystemSingletonComponent->m_iconTemplate_SHADER = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::SHADER));
-	g_GLRenderingSystemSingletonComponent->m_iconTemplate_UNKNOWN = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::UNKNOWN));
+	g_GLRenderingSystemComponent->m_iconTemplate_OBJ = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::OBJ));
+	g_GLRenderingSystemComponent->m_iconTemplate_PNG = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::PNG));
+	g_GLRenderingSystemComponent->m_iconTemplate_SHADER = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::SHADER));
+	g_GLRenderingSystemComponent->m_iconTemplate_UNKNOWN = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::UNKNOWN));
 }
 
 float GLRenderingSystemNS::radicalInverse(unsigned int n, unsigned int base)
@@ -373,7 +372,7 @@ void GLRenderingSystemNS::initializeHaltonSampler()
 	// in NDC space
 	for (unsigned int i = 0; i < 16; i++)
 	{
-		g_RenderingSystemSingletonComponent->HaltonSampler.emplace_back(vec2(radicalInverse(i, 2) * 2.0f - 1.0f, radicalInverse(i, 3) * 2.0f - 1.0f));
+		g_RenderingSystemComponent->HaltonSampler.emplace_back(vec2(radicalInverse(i, 2) * 2.0f - 1.0f, radicalInverse(i, 3) * 2.0f - 1.0f));
 	}
 }
 
@@ -503,18 +502,18 @@ bool GLRenderingSystemNS::reloadGLShaderProgramComponent(RenderPassType renderPa
 	switch (renderPassType)
 	{
 	case RenderPassType::GPass: 
-		l_GLSPC = GLGeometryRenderPassSingletonComponent::getInstance().m_GLSPC; 
-		l_shaderFilePaths = GLGeometryRenderPassSingletonComponent::getInstance().m_shaderFilePaths;
+		l_GLSPC = GLGeometryRenderPassComponent::get().m_GLSPC; 
+		l_shaderFilePaths = GLGeometryRenderPassComponent::get().m_shaderFilePaths;
 		f_bindUniformLocations = [](GLShaderProgramComponent* rhs) { bindGeometryPassUniformLocations(rhs); };
 		break;
 	case RenderPassType::TerrainPass: 
-		l_GLSPC = GLTerrainRenderPassSingletonComponent::getInstance().m_GLSPC;
-		l_shaderFilePaths = GLTerrainRenderPassSingletonComponent::getInstance().m_shaderFilePaths;
+		l_GLSPC = GLTerrainRenderPassComponent::get().m_GLSPC;
+		l_shaderFilePaths = GLTerrainRenderPassComponent::get().m_shaderFilePaths;
 		f_bindUniformLocations = [](GLShaderProgramComponent* rhs) { bindTerrainPassUniformLocations(rhs); };
 
 		break;
-	case RenderPassType::LPass: l_GLSPC = GLLightRenderPassSingletonComponent::getInstance().m_GLSPC;
-		l_shaderFilePaths = GLLightRenderPassSingletonComponent::getInstance().m_shaderFilePaths;
+	case RenderPassType::LPass: l_GLSPC = GLLightRenderPassComponent::get().m_GLSPC;
+		l_shaderFilePaths = GLLightRenderPassComponent::get().m_shaderFilePaths;
 		f_bindUniformLocations = [](GLShaderProgramComponent* rhs) { bindLightPassUniformLocations(rhs); };
 		break;
 	default: break;
@@ -562,7 +561,7 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
 
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassFBC = l_FBC;
+	GLEnvironmentRenderPassComponent::get().m_BRDFLUTPassFBC = l_FBC;
 
 	// generate and bind texture
 	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
@@ -578,11 +577,11 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 	l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassTDC = l_TDC;
+	GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassTDC = l_TDC;
 
 	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
 
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC = l_GLTDC;
+	GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassGLTDC = l_GLTDC;
 
 	////
 	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
@@ -598,11 +597,11 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 	l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 	l_TDC->m_textureData = { nullptr };
 
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassTDC = l_TDC;
+	GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassTDC = l_TDC;
 
 	l_GLTDC = generateGLTextureDataComponent(l_TDC);
 
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC = l_GLTDC;
+	GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassGLTDC = l_GLTDC;
 
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -622,7 +621,7 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 
 	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassSPC = rhs;
+	GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassSPC = rhs;
 
 	////
 	m_ShaderFilePaths.m_VSPath = "GL4.0//BRDFLUTMSPassVertex.sf";
@@ -630,14 +629,14 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 
 	rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPass_uni_brdfLUT = getUniformLocation(
+	GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPass_uni_brdfLUT = getUniformLocation(
 		rhs->m_program,
 		"uni_brdfLUT");
 	updateUniform(
-		GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPass_uni_brdfLUT,
+		GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPass_uni_brdfLUT,
 		0);
 
-	GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassSPC = rhs;
+	GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeEnvironmentPass()
@@ -649,7 +648,7 @@ void GLRenderingSystemNS::initializeShadowPass()
 {
 	for (size_t i = 0; i < 4; i++)
 	{
-		GLShadowRenderPassSingletonComponent::getInstance().m_GLRPCs.emplace_back(addGLRenderPassComponent(1, shadowPassFBDesc, shadowPassTextureDesc));
+		GLShadowRenderPassComponent::get().m_GLRPCs.emplace_back(addGLRenderPassComponent(1, shadowPassFBDesc, shadowPassTextureDesc));
 	}
 
 	// shader programs and shaders
@@ -660,22 +659,22 @@ void GLRenderingSystemNS::initializeShadowPass()
 
 	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_p = getUniformLocation(
+	GLShadowRenderPassComponent::get().m_shadowPass_uni_p = getUniformLocation(
 		rhs->m_program,
 		"uni_p");
-	GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_v = getUniformLocation(
+	GLShadowRenderPassComponent::get().m_shadowPass_uni_v = getUniformLocation(
 		rhs->m_program,
 		"uni_v");
-	GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_m = getUniformLocation(
+	GLShadowRenderPassComponent::get().m_shadowPass_uni_m = getUniformLocation(
 		rhs->m_program,
 		"uni_m");
 
-	GLShadowRenderPassSingletonComponent::getInstance().m_SPC = rhs;
+	GLShadowRenderPassComponent::get().m_SPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeGeometryPass()
 {
-	GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC = addGLRenderPassComponent(8, deferredPassFBDesc, deferredPassTextureDesc);
+	GLGeometryRenderPassComponent::get().m_GLRPC = addGLRenderPassComponent(8, deferredPassFBDesc, deferredPassTextureDesc);
 
 	initializeGeometryPassShaders();
 }
@@ -685,104 +684,104 @@ void GLRenderingSystemNS::initializeGeometryPassShaders()
 	// shader programs and shaders
 	auto rhs = addGLShaderProgramComponent(0);
 
-	initializeGLShaderProgramComponent(rhs, GLGeometryRenderPassSingletonComponent::getInstance().m_shaderFilePaths);
+	initializeGLShaderProgramComponent(rhs, GLGeometryRenderPassComponent::get().m_shaderFilePaths);
 
 	bindGeometryPassUniformLocations(rhs);
 
-	GLGeometryRenderPassSingletonComponent::getInstance().m_GLSPC = rhs;
+	GLGeometryRenderPassComponent::get().m_GLSPC = rhs;
 }
 
 void GLRenderingSystemNS::bindGeometryPassUniformLocations(GLShaderProgramComponent* rhs)
 {
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_original = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_camera_original = getUniformLocation(
 		rhs->m_program,
 		"uni_p_camera_original");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_jittered = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_camera_jittered = getUniformLocation(
 		rhs->m_program,
 		"uni_p_camera_jittered");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_r_camera = getUniformLocation(
 		rhs->m_program,
 		"uni_r_camera");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_t_camera = getUniformLocation(
 		rhs->m_program,
 		"uni_t_camera");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_m = getUniformLocation(
 		rhs->m_program,
 		"uni_m");
 #ifdef CookTorrance
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera_prev = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_r_camera_prev = getUniformLocation(
 		rhs->m_program,
 		"uni_r_camera_prev");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera_prev = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_t_camera_prev = getUniformLocation(
 		rhs->m_program,
 		"uni_t_camera_prev");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_m_prev = getUniformLocation(
 		rhs->m_program,
 		"uni_m_prev");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_0 = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_light_0 = getUniformLocation(
 		rhs->m_program,
 		"uni_p_light_0");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_1 = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_light_1 = getUniformLocation(
 		rhs->m_program,
 		"uni_p_light_1");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_2 = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_light_2 = getUniformLocation(
 		rhs->m_program,
 		"uni_p_light_2");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3 = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_light_3 = getUniformLocation(
 		rhs->m_program,
 		"uni_p_light_3");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_v_light = getUniformLocation(
 		rhs->m_program,
 		"uni_v_light");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_normalTexture = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_normalTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_normalTexture");
 	updateUniform(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_normalTexture,
+		GLGeometryRenderPassComponent::get().m_geometryPass_uni_normalTexture,
 		0);
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedoTexture = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_albedoTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_albedoTexture");
 	updateUniform(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedoTexture,
+		GLGeometryRenderPassComponent::get().m_geometryPass_uni_albedoTexture,
 		1);
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_metallicTexture = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_metallicTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_metallicTexture");
 	updateUniform(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_metallicTexture,
+		GLGeometryRenderPassComponent::get().m_geometryPass_uni_metallicTexture,
 		2);
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_roughnessTexture = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_roughnessTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_roughnessTexture");
 	updateUniform(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_roughnessTexture,
+		GLGeometryRenderPassComponent::get().m_geometryPass_uni_roughnessTexture,
 		3);
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_aoTexture = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_aoTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_aoTexture");
 	updateUniform(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_aoTexture,
+		GLGeometryRenderPassComponent::get().m_geometryPass_uni_aoTexture,
 		4);
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useNormalTexture = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_useNormalTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_useNormalTexture");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_useAlbedoTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_useAlbedoTexture");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useMetallicTexture = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_useMetallicTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_useMetallicTexture");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useRoughnessTexture = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_useRoughnessTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_useRoughnessTexture");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAOTexture = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_useAOTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_useAOTexture");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_albedo = getUniformLocation(
 		rhs->m_program,
 		"uni_albedo");
-	GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_geometryPass_uni_MRA = getUniformLocation(
 		rhs->m_program,
 		"uni_MRA");
 #elif BlinnPhong
@@ -792,7 +791,7 @@ void GLRenderingSystemNS::bindGeometryPassUniformLocations(GLShaderProgramCompon
 
 void GLRenderingSystemNS::initializeTerrainPass()
 {
-	GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLTerrainRenderPassComponent::get().m_GLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	initializeTerrainPassShaders();
 }
@@ -802,38 +801,38 @@ void GLRenderingSystemNS::initializeTerrainPassShaders()
 	// shader programs and shaders
 	auto rhs = addGLShaderProgramComponent(0);
 
-	initializeGLShaderProgramComponent(rhs, GLTerrainRenderPassSingletonComponent::getInstance().m_shaderFilePaths);
+	initializeGLShaderProgramComponent(rhs, GLTerrainRenderPassComponent::get().m_shaderFilePaths);
 
 	bindTerrainPassUniformLocations(rhs);
 
-	GLTerrainRenderPassSingletonComponent::getInstance().m_GLSPC = rhs;
+	GLTerrainRenderPassComponent::get().m_GLSPC = rhs;
 }
 
 void GLRenderingSystemNS::bindTerrainPassUniformLocations(GLShaderProgramComponent* rhs)
 {
-	GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_p_camera = getUniformLocation(
+	GLTerrainRenderPassComponent::get().m_terrainPass_uni_p_camera = getUniformLocation(
 		rhs->m_program,
 		"uni_p_camera");
-	GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_r_camera = getUniformLocation(
+	GLTerrainRenderPassComponent::get().m_terrainPass_uni_r_camera = getUniformLocation(
 		rhs->m_program,
 		"uni_r_camera");
-	GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_t_camera = getUniformLocation(
+	GLTerrainRenderPassComponent::get().m_terrainPass_uni_t_camera = getUniformLocation(
 		rhs->m_program,
 		"uni_t_camera");
-	GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_m = getUniformLocation(
+	GLTerrainRenderPassComponent::get().m_terrainPass_uni_m = getUniformLocation(
 		rhs->m_program,
 		"uni_m");
-	GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_albedoTexture = getUniformLocation(
+	GLTerrainRenderPassComponent::get().m_terrainPass_uni_albedoTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_albedoTexture");
 	updateUniform(
-		GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_albedoTexture,
+		GLTerrainRenderPassComponent::get().m_terrainPass_uni_albedoTexture,
 		0);
 }
 
 void GLRenderingSystemNS::initializeLightPass()
 {
-	GLLightRenderPassSingletonComponent::getInstance().m_GLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLLightRenderPassComponent::get().m_GLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	initializeLightPassShaders();
 }
@@ -843,148 +842,148 @@ void GLRenderingSystemNS::initializeLightPassShaders()
 	// shader programs and shaders
 	auto l_GLSPC = addGLShaderProgramComponent(0);
 
-	initializeGLShaderProgramComponent(l_GLSPC, GLLightRenderPassSingletonComponent::getInstance().m_shaderFilePaths);
+	initializeGLShaderProgramComponent(l_GLSPC, GLLightRenderPassComponent::get().m_shaderFilePaths);
 
 	bindLightPassUniformLocations(l_GLSPC);
 
-	GLLightRenderPassSingletonComponent::getInstance().m_GLSPC = l_GLSPC;
+	GLLightRenderPassComponent::get().m_GLSPC = l_GLSPC;
 }
 
 void GLRenderingSystemNS::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
 {
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT0 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_geometryPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_geometryPassRT0");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT0,
+		GLLightRenderPassComponent::get().m_uni_geometryPassRT0,
 		0);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT1 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_geometryPassRT1 = getUniformLocation(
 		rhs->m_program,
 		"uni_geometryPassRT1");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT1,
+		GLLightRenderPassComponent::get().m_uni_geometryPassRT1,
 		1);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT2 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_geometryPassRT2 = getUniformLocation(
 		rhs->m_program,
 		"uni_geometryPassRT2");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT2,
+		GLLightRenderPassComponent::get().m_uni_geometryPassRT2,
 		2);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT3 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_geometryPassRT3 = getUniformLocation(
 		rhs->m_program,
 		"uni_geometryPassRT3");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT3,
+		GLLightRenderPassComponent::get().m_uni_geometryPassRT3,
 		3);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT4 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_geometryPassRT4 = getUniformLocation(
 		rhs->m_program,
 		"uni_geometryPassRT4");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT4,
+		GLLightRenderPassComponent::get().m_uni_geometryPassRT4,
 		4);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT5 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_geometryPassRT5 = getUniformLocation(
 		rhs->m_program,
 		"uni_geometryPassRT5");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT5,
+		GLLightRenderPassComponent::get().m_uni_geometryPassRT5,
 		5);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT6 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_geometryPassRT6 = getUniformLocation(
 		rhs->m_program,
 		"uni_geometryPassRT6");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT6,
+		GLLightRenderPassComponent::get().m_uni_geometryPassRT6,
 		6);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT7 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_geometryPassRT7 = getUniformLocation(
 		rhs->m_program,
 		"uni_geometryPassRT7");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_geometryPassRT7,
+		GLLightRenderPassComponent::get().m_uni_geometryPassRT7,
 		7);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_0 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_shadowMap_0 = getUniformLocation(
 		rhs->m_program,
 		"uni_shadowMap_0");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_0,
+		GLLightRenderPassComponent::get().m_uni_shadowMap_0,
 		8);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_1 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_shadowMap_1 = getUniformLocation(
 		rhs->m_program,
 		"uni_shadowMap_1");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_1,
+		GLLightRenderPassComponent::get().m_uni_shadowMap_1,
 		9);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_2 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_shadowMap_2 = getUniformLocation(
 		rhs->m_program,
 		"uni_shadowMap_2");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_2,
+		GLLightRenderPassComponent::get().m_uni_shadowMap_2,
 		10);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_3 = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_shadowMap_3 = getUniformLocation(
 		rhs->m_program,
 		"uni_shadowMap_3");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowMap_3,
+		GLLightRenderPassComponent::get().m_uni_shadowMap_3,
 		11);
 	for (size_t i = 0; i < 4; i++)
 	{
 		std::stringstream ss;
 		ss << i;
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitAreas.emplace_back(
+		GLLightRenderPassComponent::get().m_uni_shadowSplitAreas.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_shadowSplitAreas[" + ss.str() + "]")
 		);
 	}
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_brdfLUT = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_brdfLUT = getUniformLocation(
 		rhs->m_program,
 		"uni_brdfLUT");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_brdfLUT,
+		GLLightRenderPassComponent::get().m_uni_brdfLUT,
 		12);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_brdfMSLUT = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_brdfMSLUT = getUniformLocation(
 		rhs->m_program,
 		"uni_brdfMSLUT");
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_brdfMSLUT,
+		GLLightRenderPassComponent::get().m_uni_brdfMSLUT,
 		13);
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_viewPos = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_viewPos = getUniformLocation(
 		rhs->m_program,
 		"uni_viewPos");
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_dirLight_direction = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_dirLight_direction = getUniformLocation(
 		rhs->m_program,
 		"uni_dirLight.direction");
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_dirLight_color = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_dirLight_color = getUniformLocation(
 		rhs->m_program,
 		"uni_dirLight.color");
 
-	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_PointLightComponents.size(); i++)
+	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemComponent->m_PointLightComponents.size(); i++)
 	{
 		std::stringstream ss;
 		ss << i;
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position.emplace_back(
+		GLLightRenderPassComponent::get().m_uni_pointLights_position.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_pointLights[" + ss.str() + "].position")
 		);
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_attenuationRadius.emplace_back(
+		GLLightRenderPassComponent::get().m_uni_pointLights_attenuationRadius.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_pointLights[" + ss.str() + "].attenuationRadius")
 		);
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_luminance.emplace_back(
+		GLLightRenderPassComponent::get().m_uni_pointLights_luminance.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_pointLights[" + ss.str() + "].luminance")
 		);
 	}
 
-	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemSingletonComponent->m_SphereLightComponents.size(); i++)
+	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemComponent->m_SphereLightComponents.size(); i++)
 	{
 		std::stringstream ss;
 		ss << i;
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_position.emplace_back(
+		GLLightRenderPassComponent::get().m_uni_sphereLights_position.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_sphereLights[" + ss.str() + "].position")
 		);
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_sphereRadius.emplace_back(
+		GLLightRenderPassComponent::get().m_uni_sphereLights_sphereRadius.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_sphereLights[" + ss.str() + "].sphereRadius")
 		);
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_luminance.emplace_back(
+		GLLightRenderPassComponent::get().m_uni_sphereLights_luminance.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_sphereLights[" + ss.str() + "].luminance")
 		);
 	}
 
-	GLLightRenderPassSingletonComponent::getInstance().m_uni_isEmissive = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_isEmissive = getUniformLocation(
 		rhs->m_program,
 		"uni_isEmissive");
 }
@@ -1003,7 +1002,7 @@ void GLRenderingSystemNS::initializeFinalPass()
 
 void GLRenderingSystemNS::initializeSkyPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_skyPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	// shader programs and shaders
 	ShaderFilePaths m_ShaderFilePaths;
@@ -1013,38 +1012,38 @@ void GLRenderingSystemNS::initializeSkyPass()
 
 	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_skyPass_uni_p = getUniformLocation(
 		rhs->m_program,
 		"uni_p");
-	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_skyPass_uni_r = getUniformLocation(
 		rhs->m_program,
 		"uni_r");
-	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_skyPass_uni_viewportSize = getUniformLocation(
 		rhs->m_program,
 		"uni_viewportSize");
-	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_skyPass_uni_eyePos = getUniformLocation(
 		rhs->m_program,
 		"uni_eyePos");
-	GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_skyPass_uni_lightDir = getUniformLocation(
 		rhs->m_program,
 		"uni_lightDir");
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_skyPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeTAAPass()
 {
 	//pre mix pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_preTAAPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	//Ping pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	//Pong pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	//Sharpen pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_TAASharpenPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	// shader programs and shaders
 	ShaderFilePaths m_ShaderFilePaths;
@@ -1054,76 +1053,76 @@ void GLRenderingSystemNS::initializeTAAPass()
 
 	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPass_uni_lightPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_preTAAPass_uni_lightPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_lightPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPass_uni_lightPassRT0,
+		GLFinalRenderPassComponent::get().m_preTAAPass_uni_lightPassRT0,
 		0);
-	GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPass_uni_skyPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_preTAAPass_uni_skyPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_skyPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPass_uni_skyPassRT0,
+		GLFinalRenderPassComponent::get().m_preTAAPass_uni_skyPassRT0,
 		1);
-	GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPass_uni_terrainPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_preTAAPass_uni_terrainPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_terrainPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPass_uni_terrainPassRT0,
+		GLFinalRenderPassComponent::get().m_preTAAPass_uni_terrainPassRT0,
 		2);
-	GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_preTAAPassSPC = rhs;
 
 	m_ShaderFilePaths.m_VSPath = "GL4.0//TAAPassVertex.sf";
 	m_ShaderFilePaths.m_FSPath = "GL4.0//TAAPassFragment.sf";
 
 	rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_preTAAPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_TAAPass_uni_preTAAPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_preTAAPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_preTAAPassRT0,
+		GLFinalRenderPassComponent::get().m_TAAPass_uni_preTAAPassRT0,
 		0);
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_lastFrameTAAPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_TAAPass_uni_lastFrameTAAPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_lastFrameTAAPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_lastFrameTAAPassRT0,
+		GLFinalRenderPassComponent::get().m_TAAPass_uni_lastFrameTAAPassRT0,
 		1);
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_motionVectorTexture = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_TAAPass_uni_motionVectorTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_motionVectorTexture");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_motionVectorTexture,
+		GLFinalRenderPassComponent::get().m_TAAPass_uni_motionVectorTexture,
 		2);
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_TAAPass_uni_renderTargetSize = getUniformLocation(
 		rhs->m_program,
 		"uni_renderTargetSize");
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_TAAPassSPC = rhs;
 
 	m_ShaderFilePaths.m_VSPath = "GL4.0//TAASharpenPassVertex.sf";
 	m_ShaderFilePaths.m_FSPath = "GL4.0//TAASharpenPassFragment.sf";
 
 	rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPass_uni_lastTAAPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_TAASharpenPass_uni_lastTAAPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_lastTAAPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPass_uni_lastTAAPassRT0,
+		GLFinalRenderPassComponent::get().m_TAASharpenPass_uni_lastTAAPassRT0,
 		0);
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPass_uni_renderTargetSize = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_TAASharpenPass_uni_renderTargetSize = getUniformLocation(
 		rhs->m_program,
 		"uni_renderTargetSize");
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_TAASharpenPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeBloomExtractPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	// shader programs and shaders
 	ShaderFilePaths m_ShaderFilePaths;
@@ -1133,23 +1132,23 @@ void GLRenderingSystemNS::initializeBloomExtractPass()
 
 	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_TAAPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_bloomExtractPass_uni_TAAPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_TAAPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPass_uni_TAAPassRT0,
+		GLFinalRenderPassComponent::get().m_bloomExtractPass_uni_TAAPassRT0,
 		0);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_bloomExtractPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeBloomBlurPass()
 {
 	//Ping pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	//Pong pass
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	// shader programs and shaders
 	ShaderFilePaths m_ShaderFilePaths;
@@ -1159,22 +1158,22 @@ void GLRenderingSystemNS::initializeBloomBlurPass()
 
 	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_bloomExtractPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_bloomBlurPass_uni_bloomExtractPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_bloomExtractPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_bloomExtractPassRT0,
+		GLFinalRenderPassComponent::get().m_bloomBlurPass_uni_bloomExtractPassRT0,
 		0);
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_horizontal = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_bloomBlurPass_uni_horizontal = getUniformLocation(
 		rhs->m_program,
 		"uni_horizontal");
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_bloomBlurPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeMotionBlurPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	// shader programs and shaders
 	ShaderFilePaths m_ShaderFilePaths;
@@ -1184,25 +1183,25 @@ void GLRenderingSystemNS::initializeMotionBlurPass()
 
 	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPass_uni_motionVectorTexture = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_motionBlurPass_uni_motionVectorTexture = getUniformLocation(
 		rhs->m_program,
 		"uni_motionVectorTexture");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPass_uni_motionVectorTexture,
+		GLFinalRenderPassComponent::get().m_motionBlurPass_uni_motionVectorTexture,
 		0);
-	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPass_uni_TAAPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_motionBlurPass_uni_TAAPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_TAAPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPass_uni_TAAPassRT0,
+		GLFinalRenderPassComponent::get().m_motionBlurPass_uni_TAAPassRT0,
 		1);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_motionBlurPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeBillboardPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_billboardPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	// shader programs and shaders
 	ShaderFilePaths m_ShaderFilePaths;
@@ -1212,37 +1211,37 @@ void GLRenderingSystemNS::initializeBillboardPass()
 
 	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_texture = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_billboardPass_uni_texture = getUniformLocation(
 		rhs->m_program,
 		"uni_texture");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_texture,
+		GLFinalRenderPassComponent::get().m_billboardPass_uni_texture,
 		0);
-	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_p = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_billboardPass_uni_p = getUniformLocation(
 		rhs->m_program,
 		"uni_p");
-	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_r = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_billboardPass_uni_r = getUniformLocation(
 		rhs->m_program,
 		"uni_r");
-	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_t = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_billboardPass_uni_t = getUniformLocation(
 		rhs->m_program,
 		"uni_t");
-	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_pos = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_billboardPass_uni_pos = getUniformLocation(
 		rhs->m_program,
 		"uni_pos");
-	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_albedo = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_billboardPass_uni_albedo = getUniformLocation(
 		rhs->m_program,
 		"uni_albedo");
-	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_size = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_billboardPass_uni_size = getUniformLocation(
 		rhs->m_program,
 		"uni_size");
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_billboardPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeDebuggerPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_debuggerPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	// shader programs and shaders
 	ShaderFilePaths m_ShaderFilePaths;
@@ -1256,31 +1255,31 @@ void GLRenderingSystemNS::initializeDebuggerPass()
 
 	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	//GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_normalTexture = getUniformLocation(
+	//GLFinalRenderPassComponent::get().m_debuggerPass_uni_normalTexture = getUniformLocation(
 	//	rhs->m_program,
 	//	"uni_normalTexture");
 	//updateUniform(
-	//	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_normalTexture,
+	//	GLFinalRenderPassComponent::get().m_debuggerPass_uni_normalTexture,
 	//	0);
-	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_p = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_debuggerPass_uni_p = getUniformLocation(
 		rhs->m_program,
 		"uni_p");
-	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_r = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_debuggerPass_uni_r = getUniformLocation(
 		rhs->m_program,
 		"uni_r");
-	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_t = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_debuggerPass_uni_t = getUniformLocation(
 		rhs->m_program,
 		"uni_t");
-	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_debuggerPass_uni_m = getUniformLocation(
 		rhs->m_program,
 		"uni_m");
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_debuggerPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeFinalBlendPass()
 {
-	GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	// shader programs and shaders
 	ShaderFilePaths m_ShaderFilePaths;
@@ -1290,31 +1289,31 @@ void GLRenderingSystemNS::initializeFinalBlendPass()
 
 	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
-	GLFinalRenderPassSingletonComponent::getInstance().m_uni_motionBlurPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_uni_motionBlurPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_motionBlurPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_uni_motionBlurPassRT0,
+		GLFinalRenderPassComponent::get().m_uni_motionBlurPassRT0,
 		0);
-	GLFinalRenderPassSingletonComponent::getInstance().m_uni_bloomPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_uni_bloomPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_bloomPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_uni_bloomPassRT0,
+		GLFinalRenderPassComponent::get().m_uni_bloomPassRT0,
 		1);
-	GLFinalRenderPassSingletonComponent::getInstance().m_uni_billboardPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_uni_billboardPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_billboardPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_uni_billboardPassRT0,
+		GLFinalRenderPassComponent::get().m_uni_billboardPassRT0,
 		2);
-	GLFinalRenderPassSingletonComponent::getInstance().m_uni_debuggerPassRT0 = getUniformLocation(
+	GLFinalRenderPassComponent::get().m_uni_debuggerPassRT0 = getUniformLocation(
 		rhs->m_program,
 		"uni_debuggerPassRT0");
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_uni_debuggerPassRT0,
+		GLFinalRenderPassComponent::get().m_uni_debuggerPassRT0,
 		3);
-	GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_finalBlendPassSPC = rhs;
 }
 
 GLShaderProgramComponent * GLRenderingSystemNS::addGLShaderProgramComponent(EntityID rhs)
@@ -1328,7 +1327,7 @@ GLMeshDataComponent * GLRenderingSystemNS::addGLMeshDataComponent(EntityID rhs)
 {
 	GLMeshDataComponent* newMesh = g_pCoreSystem->getMemorySystem()->spawn<GLMeshDataComponent>();
 	newMesh->m_parentEntity = rhs;
-	auto l_meshMap = &GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_meshMap;
+	auto l_meshMap = &GLRenderingSystemNS::g_GLRenderingSystemComponent->m_meshMap;
 	l_meshMap->emplace(std::pair<EntityID, GLMeshDataComponent*>(rhs, newMesh));
 	return newMesh;
 }
@@ -1337,15 +1336,15 @@ GLTextureDataComponent * GLRenderingSystemNS::addGLTextureDataComponent(EntityID
 {
 	GLTextureDataComponent* newTexture = g_pCoreSystem->getMemorySystem()->spawn<GLTextureDataComponent>();
 	newTexture->m_parentEntity = rhs;
-	auto l_textureMap = &GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_textureMap;
+	auto l_textureMap = &GLRenderingSystemNS::g_GLRenderingSystemComponent->m_textureMap;
 	l_textureMap->emplace(std::pair<EntityID, GLTextureDataComponent*>(rhs, newTexture));
 	return newTexture;
 }
 
 GLMeshDataComponent * GLRenderingSystemNS::getGLMeshDataComponent(EntityID rhs)
 {
-	auto result = GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_meshMap.find(rhs);
-	if (result != GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_meshMap.end())
+	auto result = GLRenderingSystemNS::g_GLRenderingSystemComponent->m_meshMap.find(rhs);
+	if (result != GLRenderingSystemNS::g_GLRenderingSystemComponent->m_meshMap.end())
 	{
 		return result->second;
 	}
@@ -1357,8 +1356,8 @@ GLMeshDataComponent * GLRenderingSystemNS::getGLMeshDataComponent(EntityID rhs)
 
 GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(EntityID rhs)
 {
-	auto result = GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_textureMap.find(rhs);
-	if (result != GLRenderingSystemNS::g_GLRenderingSystemSingletonComponent->m_textureMap.end())
+	auto result = GLRenderingSystemNS::g_GLRenderingSystemComponent->m_textureMap.find(rhs);
+	if (result != GLRenderingSystemNS::g_GLRenderingSystemComponent->m_textureMap.end())
 	{
 		return result->second;
 	}
@@ -1706,18 +1705,18 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 
 bool GLRenderingSystem::update()
 {
-	if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.size() > 0)
+	if (AssetSystemComponent::get().m_uninitializedMeshComponents.size() > 0)
 	{
 		MeshDataComponent* l_meshDataComponent;
-		if (AssetSystemSingletonComponent::getInstance().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
+		if (AssetSystemComponent::get().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
 			GLRenderingSystemNS::generateGLMeshDataComponent(l_meshDataComponent);
 		}
 	}
-	if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.size() > 0)
+	if (AssetSystemComponent::get().m_uninitializedTextureComponents.size() > 0)
 	{
 		TextureDataComponent* l_textureDataComponent;
-		if (AssetSystemSingletonComponent::getInstance().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
+		if (AssetSystemComponent::get().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
 		{
 			GLRenderingSystemNS::generateGLTextureDataComponent(l_textureDataComponent);
 		}
@@ -1725,7 +1724,7 @@ bool GLRenderingSystem::update()
 
 	GLRenderingSystemNS::prepareRenderingData();
 
-	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_shouldUpdateEnvironmentMap)
+	if (GLRenderingSystemNS::g_RenderingSystemComponent->m_shouldUpdateEnvironmentMap)
 	{
 		GLRenderingSystemNS::updateEnvironmentRenderPass();
 	}
@@ -1744,7 +1743,7 @@ bool GLRenderingSystem::update()
 void GLRenderingSystemNS::prepareRenderingData()
 {
 	// main camera
-	auto l_mainCamera = GameSystemSingletonComponent::getInstance().m_CameraComponents[0];
+	auto l_mainCamera = GameSystemComponent::get().m_CameraComponents[0];
 	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
 
 	auto l_p = l_mainCamera->m_projectionMatrix;
@@ -1762,16 +1761,16 @@ void GLRenderingSystemNS::prepareRenderingData()
 	m_CamProjOriginal = l_p;
 	m_CamProjJittered = l_p;
 
-	if (g_RenderingSystemSingletonComponent->m_useTAA)
+	if (g_RenderingSystemComponent->m_useTAA)
 	{
 		//TAA jitter for projection matrix
-		auto& l_currentHaltonStep = g_RenderingSystemSingletonComponent->currentHaltonStep;
+		auto& l_currentHaltonStep = g_RenderingSystemComponent->currentHaltonStep;
 		if (l_currentHaltonStep >= 16)
 		{
 			l_currentHaltonStep = 0;
 		}
-		m_CamProjJittered.m02 = g_RenderingSystemSingletonComponent->HaltonSampler[l_currentHaltonStep].x / deferredPassFBDesc.sizeX;
-		m_CamProjJittered.m12 = g_RenderingSystemSingletonComponent->HaltonSampler[l_currentHaltonStep].y / deferredPassFBDesc.sizeY;
+		m_CamProjJittered.m02 = g_RenderingSystemComponent->HaltonSampler[l_currentHaltonStep].x / deferredPassFBDesc.sizeX;
+		m_CamProjJittered.m12 = g_RenderingSystemComponent->HaltonSampler[l_currentHaltonStep].y / deferredPassFBDesc.sizeY;
 		l_currentHaltonStep += 1;
 	}
 
@@ -1782,7 +1781,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 	m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
 	// sun/directional light
-	auto l_directionalLight = GameSystemSingletonComponent::getInstance().m_DirectionalLightComponents[0];
+	auto l_directionalLight = GameSystemComponent::get().m_DirectionalLightComponents[0];
 	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
 
 	m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
@@ -1814,9 +1813,9 @@ void GLRenderingSystemNS::prepareRenderingData()
 
 	// point light
 	m_PointLightDatas.clear();
-	m_PointLightDatas.reserve(GameSystemSingletonComponent::getInstance().m_PointLightComponents.size());
+	m_PointLightDatas.reserve(GameSystemComponent::get().m_PointLightComponents.size());
 
-	for (auto i : GameSystemSingletonComponent::getInstance().m_PointLightComponents)
+	for (auto i : GameSystemComponent::get().m_PointLightComponents)
 	{
 		PointLightData l_PointLightData;
 		l_PointLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
@@ -1827,9 +1826,9 @@ void GLRenderingSystemNS::prepareRenderingData()
 
 	// sphere light
 	m_SphereLightDatas.clear();
-	m_SphereLightDatas.reserve(GameSystemSingletonComponent::getInstance().m_SphereLightComponents.size());
+	m_SphereLightDatas.reserve(GameSystemComponent::get().m_SphereLightComponents.size());
 
-	for (auto i : GameSystemSingletonComponent::getInstance().m_SphereLightComponents)
+	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
 	{
 		SphereLightData l_SphereLightData;
 		l_SphereLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
@@ -1839,7 +1838,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 	}
 
 	// mesh
-	for (auto& l_renderDataPack : RenderingSystemSingletonComponent::getInstance().m_renderDataPack)
+	for (auto& l_renderDataPack : RenderingSystemComponent::get().m_renderDataPack)
 	{
 		auto l_GLMDC = GLRenderingSystemNS::m_initializedGLMDC.find(l_renderDataPack.MDC->m_parentEntity);
 		if (l_GLMDC != GLRenderingSystemNS::m_initializedGLMDC.end())
@@ -1917,16 +1916,16 @@ void GLRenderingSystemNS::updateBRDFLUTRenderPass()
 	glDisable(GL_CULL_FACE);
 
 	// bind to framebuffer
-	auto l_FBC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFLUTPassFBC;
+	auto l_FBC = GLEnvironmentRenderPassComponent::get().m_BRDFLUTPassFBC;
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
 	glViewport(0, 0, 512, 512);
 
 	// draw split-Sum LUT
-	activateShaderProgram(GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassSPC);
-	auto l_SSTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassTDC;
-	auto l_SSGLTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC;
+	activateShaderProgram(GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassSPC);
+	auto l_SSTDC = GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassTDC;
+	auto l_SSGLTDC = GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassGLTDC;
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	attachTextureToFramebuffer(l_SSTDC, l_SSGLTDC, l_FBC, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -1934,16 +1933,16 @@ void GLRenderingSystemNS::updateBRDFLUTRenderPass()
 	drawMesh(l_MDC);
 
 	// draw averange RsF1 LUT
-	activateShaderProgram(GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassSPC);
-	auto l_MSTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassTDC;
-	auto l_MSGLTDC = GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC;
+	activateShaderProgram(GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassSPC);
+	auto l_MSTDC = GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassTDC;
+	auto l_MSGLTDC = GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassGLTDC;
 	attachTextureToFramebuffer(l_MSTDC, l_MSGLTDC, l_FBC, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	activateTexture(l_SSGLTDC, 0);
 	drawMesh(l_MDC);
 
-	RenderingSystemSingletonComponent::getInstance().m_shouldUpdateEnvironmentMap = false;
+	RenderingSystemComponent::get().m_shouldUpdateEnvironmentMap = false;
 }
 
 void GLRenderingSystemNS::updateEnvironmentRenderPass()
@@ -1960,26 +1959,26 @@ void GLRenderingSystemNS::updateShadowRenderPass()
 	glFrontFace(GL_CCW);
 	glCullFace(GL_FRONT);
 
-	activateShaderProgram(GLShadowRenderPassSingletonComponent::getInstance().m_SPC);
+	activateShaderProgram(GLShadowRenderPassComponent::get().m_SPC);
 	updateUniform(
-		GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_v,
+		GLShadowRenderPassComponent::get().m_shadowPass_uni_v,
 		m_sunRot);
 
 	// draw each lightComponent's shadowmap
-	for (size_t i = 0; i < GLShadowRenderPassSingletonComponent::getInstance().m_GLRPCs.size(); i++)
+	for (size_t i = 0; i < GLShadowRenderPassComponent::get().m_GLRPCs.size(); i++)
 	{
-		f_bindFBC(GLShadowRenderPassSingletonComponent::getInstance().m_GLRPCs[i]->m_GLFBC);
+		f_bindFBC(GLShadowRenderPassComponent::get().m_GLRPCs[i]->m_GLFBC);
 		updateUniform(
-			GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_p,
+			GLShadowRenderPassComponent::get().m_shadowPass_uni_p,
 			m_CSMProjs[i]);
 
 		// draw each visibleComponent
-		for (auto& l_visibleComponent : GLRenderingSystemNS::g_GameSystemSingletonComponent->m_VisibleComponents)
+		for (auto& l_visibleComponent : GLRenderingSystemNS::g_GameSystemComponent->m_VisibleComponents)
 		{
 			if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE)
 			{
 				updateUniform(
-					GLShadowRenderPassSingletonComponent::getInstance().m_shadowPass_uni_m,
+					GLShadowRenderPassComponent::get().m_shadowPass_uni_m,
 					g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 
 				// draw each graphic data of visibleComponent
@@ -2017,41 +2016,41 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 	//glCullFace(GL_BACK);
 
 	// bind to framebuffer
-	auto l_FBC = GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC;
+	auto l_FBC = GLGeometryRenderPassComponent::get().m_GLRPC->m_GLFBC;
 	f_bindFBC(l_FBC);
 
-	activateShaderProgram(GLGeometryRenderPassSingletonComponent::getInstance().m_GLSPC);
+	activateShaderProgram(GLGeometryRenderPassComponent::get().m_GLSPC);
 
 	updateUniform(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_original,
+		GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_camera_original,
 		m_CamProjOriginal);
 	updateUniform(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_camera_jittered,
+		GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_camera_jittered,
 		m_CamProjJittered);
 	updateUniform(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera,
+		GLGeometryRenderPassComponent::get().m_geometryPass_uni_r_camera,
 		m_CamRot);
 	updateUniform(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera,
+		GLGeometryRenderPassComponent::get().m_geometryPass_uni_t_camera,
 		m_CamTrans);
 	updateUniform(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_r_camera_prev,
+		GLGeometryRenderPassComponent::get().m_geometryPass_uni_r_camera_prev,
 		m_CamRot_prev);
 	updateUniform(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_t_camera_prev,
+		GLGeometryRenderPassComponent::get().m_geometryPass_uni_t_camera_prev,
 		m_CamTrans_prev);
 
 #ifdef CookTorrance
 	//Cook-Torrance
-	updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_0,
+	updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_light_0,
 		m_CSMProjs[0]);
-	updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_1,
+	updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_light_1,
 		m_CSMProjs[1]);
-	updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_2,
+	updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_light_2,
 		m_CSMProjs[2]);
-	updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_p_light_3,
+	updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_p_light_3,
 		m_CSMProjs[3]);
-	updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_v_light,
+	updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_v_light,
 		m_sunRot);
 
 	while (GLRenderingSystemNS::m_GPassRenderingDataQueue.size() > 0)
@@ -2088,19 +2087,19 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 			}
 
 			updateUniform(
-				GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
+				GLGeometryRenderPassComponent::get().m_geometryPass_uni_m,
 				l_renderPack.GPassCBuffer.m);
 			updateUniform(
-				GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
+				GLGeometryRenderPassComponent::get().m_geometryPass_uni_m_prev,
 				l_renderPack.GPassCBuffer.m_prev);
-			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useNormalTexture, l_renderPack.useNormalTexture);
-			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture, l_renderPack.useAlbedoTexture);
-			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useMetallicTexture, l_renderPack.useMetallicTexture);
-			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useRoughnessTexture, l_renderPack.useRoughnessTexture);
-			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAOTexture, l_renderPack.useAOTexture);
+			updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_useNormalTexture, l_renderPack.useNormalTexture);
+			updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_useAlbedoTexture, l_renderPack.useAlbedoTexture);
+			updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_useMetallicTexture, l_renderPack.useMetallicTexture);
+			updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_useRoughnessTexture, l_renderPack.useRoughnessTexture);
+			updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_useAOTexture, l_renderPack.useAOTexture);
 
-			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_renderPack.meshCustomMaterial.albedo_r, l_renderPack.meshCustomMaterial.albedo_g, l_renderPack.meshCustomMaterial.albedo_b);
-			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_MRA, l_renderPack.meshCustomMaterial.metallic, l_renderPack.meshCustomMaterial.roughness, l_renderPack.meshCustomMaterial.ao);
+			updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_albedo, l_renderPack.meshCustomMaterial.albedo_r, l_renderPack.meshCustomMaterial.albedo_g, l_renderPack.meshCustomMaterial.albedo_b);
+			updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_MRA, l_renderPack.meshCustomMaterial.metallic, l_renderPack.meshCustomMaterial.roughness, l_renderPack.meshCustomMaterial.ao);
 
 			drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
 		}
@@ -2109,13 +2108,13 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 			glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
 
 			updateUniform(
-				GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
+				GLGeometryRenderPassComponent::get().m_geometryPass_uni_m,
 				l_renderPack.GPassCBuffer.m);
 			updateUniform(
-				GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m_prev,
+				GLGeometryRenderPassComponent::get().m_geometryPass_uni_m_prev,
 				l_renderPack.GPassCBuffer.m_prev);
-			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_albedo, l_renderPack.meshCustomMaterial.albedo_r, l_renderPack.meshCustomMaterial.albedo_g, l_renderPack.meshCustomMaterial.albedo_b);
-			updateUniform(GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_useAlbedoTexture, false);
+			updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_albedo, l_renderPack.meshCustomMaterial.albedo_r, l_renderPack.meshCustomMaterial.albedo_g, l_renderPack.meshCustomMaterial.albedo_b);
+			updateUniform(GLGeometryRenderPassComponent::get().m_geometryPass_uni_useAlbedoTexture, false);
 
 			drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
 		}
@@ -2138,7 +2137,7 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 		if (l_visibleComponent->m_visiblilityType == VisiblilityType::STATIC_MESH)
 		{
 			updateUniform(
-				GLGeometryRenderPassSingletonComponent::getInstance().m_geometryPass_uni_m,
+				GLGeometryRenderPassComponent::get().m_geometryPass_uni_m,
 				g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_transform.caclGlobalTransformationMatrix());
 
 			// draw each graphic data of visibleComponent
@@ -2219,31 +2218,31 @@ void GLRenderingSystemNS::updateGeometryRenderPass()
 
 void GLRenderingSystemNS::updateTerrainRenderPass()
 {
-	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_drawTerrain)
+	if (GLRenderingSystemNS::g_RenderingSystemComponent->m_drawTerrain)
 	{
 		glEnable(GL_DEPTH_TEST);
 
 		// bind to framebuffer
-		auto l_FBC = GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC;
+		auto l_FBC = GLTerrainRenderPassComponent::get().m_GLRPC->m_GLFBC;
 		f_bindFBC(l_FBC);
 
-		f_copyDepthBuffer(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC, l_FBC);
+		f_copyDepthBuffer(GLGeometryRenderPassComponent::get().m_GLRPC->m_GLFBC, l_FBC);
 
-		activateShaderProgram(GLTerrainRenderPassSingletonComponent::getInstance().m_GLSPC);
+		activateShaderProgram(GLTerrainRenderPassComponent::get().m_GLSPC);
 
 		mat4 m = InnoMath::generateIdentityMatrix<float>();
 
 		updateUniform(
-			GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_p_camera,
+			GLTerrainRenderPassComponent::get().m_terrainPass_uni_p_camera,
 			m_CamProjOriginal);
 		updateUniform(
-			GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_r_camera,
+			GLTerrainRenderPassComponent::get().m_terrainPass_uni_r_camera,
 			m_CamRot);
 		updateUniform(
-			GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_t_camera,
+			GLTerrainRenderPassComponent::get().m_terrainPass_uni_t_camera,
 			m_CamTrans);
 		updateUniform(
-			GLTerrainRenderPassSingletonComponent::getInstance().m_terrainPass_uni_m,
+			GLTerrainRenderPassComponent::get().m_terrainPass_uni_m,
 			m);
 
 		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::TERRAIN);
@@ -2255,7 +2254,7 @@ void GLRenderingSystemNS::updateTerrainRenderPass()
 	}
 	else
 	{
-		GLRenderingSystemNS::f_cleanFBC(GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC);
+		GLRenderingSystemNS::f_cleanFBC(GLTerrainRenderPassComponent::get().m_GLRPC->m_GLFBC);
 	}
 }
 
@@ -2271,94 +2270,94 @@ void GLRenderingSystemNS::updateLightRenderPass()
 	glDisable(GL_CULL_FACE);
 
 	// bind to framebuffer
-	auto l_FBC = GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC;
+	auto l_FBC = GLLightRenderPassComponent::get().m_GLRPC->m_GLFBC;
 	f_bindFBC(l_FBC);
 
 	// 1. opaque objects
 	// copy stencil buffer of opaque objects from G-Pass
-	f_copyStencilBuffer(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC, l_FBC);
+	f_copyStencilBuffer(GLGeometryRenderPassComponent::get().m_GLRPC->m_GLFBC, l_FBC);
 
-	activateShaderProgram(GLLightRenderPassSingletonComponent::getInstance().m_GLSPC);
+	activateShaderProgram(GLLightRenderPassComponent::get().m_GLSPC);
 
 #ifdef CookTorrance
 	// Cook-Torrance
 	// world space position + metallic
 	activateTexture(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0],
+		GLGeometryRenderPassComponent::get().m_GLRPC->m_GLTDCs[0],
 		0);
 	// normal + roughness
 	activateTexture(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[1],
+		GLGeometryRenderPassComponent::get().m_GLRPC->m_GLTDCs[1],
 		1);
 	// albedo + ambient occlusion
 	activateTexture(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[2],
+		GLGeometryRenderPassComponent::get().m_GLRPC->m_GLTDCs[2],
 		2);
 	// motion vector + transparency
 	activateTexture(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[3],
+		GLGeometryRenderPassComponent::get().m_GLRPC->m_GLTDCs[3],
 		3);
 	// light space position 0
 	activateTexture(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[4],
+		GLGeometryRenderPassComponent::get().m_GLRPC->m_GLTDCs[4],
 		4);
 	// light space position 1
 	activateTexture(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[5],
+		GLGeometryRenderPassComponent::get().m_GLRPC->m_GLTDCs[5],
 		5);
 	// light space position 2
 	activateTexture(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[6],
+		GLGeometryRenderPassComponent::get().m_GLRPC->m_GLTDCs[6],
 		6);
 	// light space position 3
 	activateTexture(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[7],
+		GLGeometryRenderPassComponent::get().m_GLRPC->m_GLTDCs[7],
 		7);
 	// shadow map 0
 	activateTexture(
-		GLShadowRenderPassSingletonComponent::getInstance().m_GLRPCs[0]->m_GLTDCs[0],
+		GLShadowRenderPassComponent::get().m_GLRPCs[0]->m_GLTDCs[0],
 		8);
 	// shadow map 1
 	activateTexture(
-		GLShadowRenderPassSingletonComponent::getInstance().m_GLRPCs[1]->m_GLTDCs[0],
+		GLShadowRenderPassComponent::get().m_GLRPCs[1]->m_GLTDCs[0],
 		9);
 	// shadow map 2
 	activateTexture(
-		GLShadowRenderPassSingletonComponent::getInstance().m_GLRPCs[2]->m_GLTDCs[0],
+		GLShadowRenderPassComponent::get().m_GLRPCs[2]->m_GLTDCs[0],
 		10);
 	// shadow map 3
 	activateTexture(
-		GLShadowRenderPassSingletonComponent::getInstance().m_GLRPCs[3]->m_GLTDCs[0],
+		GLShadowRenderPassComponent::get().m_GLRPCs[3]->m_GLTDCs[0],
 		11);
 	// BRDF look-up table 1
 	activateTexture(
-		GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFSplitSumLUTPassGLTDC,
+		GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassGLTDC,
 		12);
 	// BRDF look-up table 2
 	activateTexture(
-		GLEnvironmentRenderPassSingletonComponent::getInstance().m_BRDFMSAverageLUTPassGLTDC,
+		GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassGLTDC,
 		13);
 #endif
 
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_isEmissive,
+		GLLightRenderPassComponent::get().m_uni_isEmissive,
 		false);
 
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_viewPos,
+		GLLightRenderPassComponent::get().m_uni_viewPos,
 		m_CamGlobalPos.x, m_CamGlobalPos.y, m_CamGlobalPos.z);
 
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_dirLight_direction,
+		GLLightRenderPassComponent::get().m_uni_dirLight_direction,
 		m_sunDir.x, m_sunDir.y, m_sunDir.z);
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_dirLight_color,
+		GLLightRenderPassComponent::get().m_uni_dirLight_color,
 		m_sunColor.x, m_sunColor.y, m_sunColor.z);
 
 	for (size_t j = 0; j < 4; j++)
 	{
 		updateUniform(
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_shadowSplitAreas[j],
+			GLLightRenderPassComponent::get().m_uni_shadowSplitAreas[j],
 			m_CSMSplitCorners[j].x, m_CSMSplitCorners[j].y, m_CSMSplitCorners[j].z, m_CSMSplitCorners[j].w);
 	}
 
@@ -2369,13 +2368,13 @@ void GLRenderingSystemNS::updateLightRenderPass()
 		auto l_attenuationRadius = m_PointLightDatas[i].attenuationRadius;
 
 		updateUniform(
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_position[i],
+			GLLightRenderPassComponent::get().m_uni_pointLights_position[i],
 			l_pos.x, l_pos.y, l_pos.z);
 		updateUniform(
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_attenuationRadius[i],
+			GLLightRenderPassComponent::get().m_uni_pointLights_attenuationRadius[i],
 			l_attenuationRadius);
 		updateUniform(
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_pointLights_luminance[i],
+			GLLightRenderPassComponent::get().m_uni_pointLights_luminance[i],
 			l_luminance.x, l_luminance.y, l_luminance.z);
 	}
 
@@ -2386,13 +2385,13 @@ void GLRenderingSystemNS::updateLightRenderPass()
 		auto l_sphereRadius = m_SphereLightDatas[i].sphereRadius;
 
 		updateUniform(
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_position[i],
+			GLLightRenderPassComponent::get().m_uni_sphereLights_position[i],
 			l_pos.x, l_pos.y, l_pos.z);
 		updateUniform(
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_sphereRadius[i],
+			GLLightRenderPassComponent::get().m_uni_sphereLights_sphereRadius[i],
 			l_sphereRadius);
 		updateUniform(
-			GLLightRenderPassSingletonComponent::getInstance().m_uni_sphereLights_luminance[i],
+			GLLightRenderPassComponent::get().m_uni_sphereLights_luminance[i],
 			l_luminance.x, l_luminance.y, l_luminance.z);
 	}
 
@@ -2408,10 +2407,10 @@ void GLRenderingSystemNS::updateLightRenderPass()
 	glClear(GL_STENCIL_BUFFER_BIT);
 
 	// copy stencil buffer of emmisive objects from G-Pass
-	f_copyStencilBuffer(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC, l_FBC);
+	f_copyStencilBuffer(GLGeometryRenderPassComponent::get().m_GLRPC->m_GLFBC, l_FBC);
 
 	updateUniform(
-		GLLightRenderPassSingletonComponent::getInstance().m_uni_isEmissive,
+		GLLightRenderPassComponent::get().m_uni_isEmissive,
 		true);
 
 	// draw light pass rectangle
@@ -2423,7 +2422,7 @@ void GLRenderingSystemNS::updateLightRenderPass()
 
 GLTextureDataComponent* GLRenderingSystemNS::updateSkyPass()
 {
-	if (GLRenderingSystemNS::g_RenderingSystemSingletonComponent->m_drawSky)
+	if (GLRenderingSystemNS::g_RenderingSystemComponent->m_drawSky)
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
@@ -2433,25 +2432,25 @@ GLTextureDataComponent* GLRenderingSystemNS::updateSkyPass()
 		//glCullFace(GL_FRONT);
 
 		// bind to framebuffer
-		auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLFBC;
+		auto l_FBC = GLFinalRenderPassComponent::get().m_skyPassGLRPC->m_GLFBC;
 		f_bindFBC(l_FBC);
 
-		activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassSPC);
+		activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassSPC);
 
 		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_p,
+			GLFinalRenderPassComponent::get().m_skyPass_uni_p,
 			m_CamProjOriginal);
 		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_r,
+			GLFinalRenderPassComponent::get().m_skyPass_uni_r,
 			m_CamRot);
 		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_viewportSize,
+			GLFinalRenderPassComponent::get().m_skyPass_uni_viewportSize,
 			(float)deferredPassFBDesc.sizeX, (float)deferredPassFBDesc.sizeY);
 		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_eyePos,
+			GLFinalRenderPassComponent::get().m_skyPass_uni_eyePos,
 			m_CamGlobalPos.x, m_CamGlobalPos.y, m_CamGlobalPos.z);
 		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_skyPass_uni_lightDir,
+			GLFinalRenderPassComponent::get().m_skyPass_uni_lightDir,
 			m_sunDir.x, m_sunDir.y, m_sunDir.z);
 
 		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
@@ -2462,61 +2461,61 @@ GLTextureDataComponent* GLRenderingSystemNS::updateSkyPass()
 	}
 	else
 	{
-		GLRenderingSystemNS::f_cleanFBC(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLFBC);
+		GLRenderingSystemNS::f_cleanFBC(GLFinalRenderPassComponent::get().m_skyPassGLRPC->m_GLFBC);
 	}
 
-	return GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLTDCs[0];
+	return GLFinalRenderPassComponent::get().m_skyPassGLRPC->m_GLTDCs[0];
 }
 
 GLTextureDataComponent* GLRenderingSystemNS::updatePreTAAPass()
 {
-	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC->m_GLFBC;
+	auto l_FBC = GLFinalRenderPassComponent::get().m_preTAAPassGLRPC->m_GLFBC;
 	f_bindFBC(l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_preTAAPassSPC);
 
 	activateTexture(
-		GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0],
+		GLLightRenderPassComponent::get().m_GLRPC->m_GLTDCs[0],
 		0);
 	activateTexture(
-		GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC->m_GLTDCs[0],
+		GLFinalRenderPassComponent::get().m_skyPassGLRPC->m_GLTDCs[0],
 		1);
 	activateTexture(
-		GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[0],
+		GLTerrainRenderPassComponent::get().m_GLRPC->m_GLTDCs[0],
 		2);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
-	return GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC->m_GLTDCs[0];
+	return GLFinalRenderPassComponent::get().m_preTAAPassGLRPC->m_GLTDCs[0];
 }
 
 GLTextureDataComponent* GLRenderingSystemNS::updateTAAPass(GLTextureDataComponent* inputGLTDC)
 {
-	GLTextureDataComponent* l_currentFrameTAAGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC->m_GLTDCs[0];
-	GLTextureDataComponent* l_lastFrameTAAGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC->m_GLTDCs[0];
+	GLTextureDataComponent* l_currentFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
+	GLTextureDataComponent* l_lastFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
 
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_TAAPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_TAAPassSPC);
 
 	GLFrameBufferComponent* l_FBC;
 
-	if (g_RenderingSystemSingletonComponent->m_isTAAPingPass)
+	if (g_RenderingSystemComponent->m_isTAAPingPass)
 	{
-		l_currentFrameTAAGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC->m_GLTDCs[0];
-		l_lastFrameTAAGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC->m_GLTDCs[0];
+		l_currentFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
+		l_lastFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
 
-		l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC->m_GLFBC;
+		l_FBC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLFBC;
 
-		g_RenderingSystemSingletonComponent->m_isTAAPingPass = false;
+		g_RenderingSystemComponent->m_isTAAPingPass = false;
 	}
 	else
 	{
-		l_currentFrameTAAGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC->m_GLTDCs[0];
-		l_lastFrameTAAGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC->m_GLTDCs[0];
+		l_currentFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
+		l_lastFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
 
-		l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC->m_GLFBC;
+		l_FBC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLFBC;
 
-		g_RenderingSystemSingletonComponent->m_isTAAPingPass = true;
+		g_RenderingSystemComponent->m_isTAAPingPass = true;
 	}
 
 	f_bindFBC(l_FBC);
@@ -2527,11 +2526,11 @@ GLTextureDataComponent* GLRenderingSystemNS::updateTAAPass(GLTextureDataComponen
 		l_lastFrameTAAGLTDC,
 		1);
 	activateTexture(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[3],
+		GLGeometryRenderPassComponent::get().m_GLRPC->m_GLTDCs[3],
 		2);
 
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_TAAPass_uni_renderTargetSize,
+		GLFinalRenderPassComponent::get().m_TAAPass_uni_renderTargetSize,
 		(float)deferredPassFBDesc.sizeX, (float)deferredPassFBDesc.sizeY);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
@@ -2542,45 +2541,45 @@ GLTextureDataComponent* GLRenderingSystemNS::updateTAAPass(GLTextureDataComponen
 
 GLTextureDataComponent* GLRenderingSystemNS::updateTAASharpenPass(GLTextureDataComponent * inputGLTDC)
 {
-	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC->m_GLFBC;
+	auto l_FBC = GLFinalRenderPassComponent::get().m_TAASharpenPassGLRPC->m_GLFBC;
 	f_bindFBC(l_FBC);
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_TAASharpenPassSPC);
 
 	activateTexture(
 		inputGLTDC,
 		0);
 
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPass_uni_renderTargetSize,
+		GLFinalRenderPassComponent::get().m_TAASharpenPass_uni_renderTargetSize,
 		(float)deferredPassFBDesc.sizeX, (float)deferredPassFBDesc.sizeY);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
-	return GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC->m_GLTDCs[0];
+	return GLFinalRenderPassComponent::get().m_TAASharpenPassGLRPC->m_GLTDCs[0];
 }
 
 GLTextureDataComponent* GLRenderingSystemNS::updateBloomExtractPass(GLTextureDataComponent * inputGLTDC)
 {
-	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLFBC;
+	auto l_FBC = GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLFBC;
 	f_bindFBC(l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_bloomExtractPassSPC);
 
 	activateTexture(inputGLTDC, 0);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
-	return GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLTDCs[0];
+	return GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLTDCs[0];
 }
 
 GLTextureDataComponent* GLRenderingSystemNS::updateBloomBlurPass(GLTextureDataComponent * inputGLTDC)
 {
-	GLTextureDataComponent* l_currentFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
-	GLTextureDataComponent* l_lastFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
+	GLTextureDataComponent* l_currentFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
+	GLTextureDataComponent* l_lastFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
 
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_bloomBlurPassSPC);
 
 	bool l_isPing = true;
 	bool l_isFirstIteration = true;
@@ -2591,14 +2590,14 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBloomBlurPass(GLTextureDataCo
 	{
 		if (l_isPing)
 		{
-			l_currentFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
-			l_lastFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
+			l_currentFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
+			l_lastFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
 
-			auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLFBC;
+			auto l_FBC = GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLFBC;
 			f_bindFBC(l_FBC);
 
 			updateUniform(
-				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_horizontal,
+				GLFinalRenderPassComponent::get().m_bloomBlurPass_uni_horizontal,
 				true);
 
 			if (l_isFirstIteration)
@@ -2621,14 +2620,14 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBloomBlurPass(GLTextureDataCo
 		}
 		else
 		{
-			l_currentFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
-			l_lastFrameBloomBlurGLTDC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
+			l_currentFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
+			l_lastFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
 
-			auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLFBC;
+			auto l_FBC = GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLFBC;
 			f_bindFBC(l_FBC);
 
 			updateUniform(
-				GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPass_uni_horizontal,
+				GLFinalRenderPassComponent::get().m_bloomBlurPass_uni_horizontal,
 				false);
 
 			activateTexture(
@@ -2646,20 +2645,20 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBloomBlurPass(GLTextureDataCo
 
 GLTextureDataComponent* GLRenderingSystemNS::updateMotionBlurPass(GLTextureDataComponent * inputGLTDC)
 {
-	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC->m_GLFBC;
+	auto l_FBC = GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC->m_GLFBC;
 	f_bindFBC(l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_motionBlurPassSPC);
 
 	activateTexture(
-		GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLTDCs[3],
+		GLGeometryRenderPassComponent::get().m_GLRPC->m_GLTDCs[3],
 		0);
 	activateTexture(inputGLTDC, 1);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
-	return GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC->m_GLTDCs[0];
+	return GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC->m_GLTDCs[0];
 }
 
 GLTextureDataComponent* GLRenderingSystemNS::updateBillboardPass()
@@ -2667,48 +2666,48 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBillboardPass()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC->m_GLFBC;
+	auto l_FBC = GLFinalRenderPassComponent::get().m_billboardPassGLRPC->m_GLFBC;
 	f_bindFBC(l_FBC);
 
 	// copy depth buffer from G-Pass
-	f_copyDepthBuffer(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC, l_FBC);
+	f_copyDepthBuffer(GLGeometryRenderPassComponent::get().m_GLRPC->m_GLFBC, l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_billboardPassSPC);
 
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_p,
+		GLFinalRenderPassComponent::get().m_billboardPass_uni_p,
 		m_CamProjOriginal);
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_r,
+		GLFinalRenderPassComponent::get().m_billboardPass_uni_r,
 		m_CamRot);
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_t,
+		GLFinalRenderPassComponent::get().m_billboardPass_uni_t,
 		m_CamTrans);
 
-	if (g_GameSystemSingletonComponent->m_VisibleComponents.size() > 0)
+	if (g_GameSystemComponent->m_VisibleComponents.size() > 0)
 	{
 		// draw each visibleComponent
-		for (auto& l_visibleComponent : g_GameSystemSingletonComponent->m_VisibleComponents)
+		for (auto& l_visibleComponent : g_GameSystemComponent->m_VisibleComponents)
 		{
 			if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_BILLBOARD)
 			{
 				auto l_GlobalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformVector.m_pos;
 
 				updateUniform(
-					GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_pos,
+					GLFinalRenderPassComponent::get().m_billboardPass_uni_pos,
 					l_GlobalPos.x, l_GlobalPos.y, l_GlobalPos.z);
 
 				auto l_distanceToCamera = (m_CamGlobalPos - l_GlobalPos).length();
 				if (l_distanceToCamera > 1.0f)
 				{
 					updateUniform(
-						GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_size,
+						GLFinalRenderPassComponent::get().m_billboardPass_uni_size,
 						(1.0f / l_distanceToCamera) * (9.0f / 16.0f), (1.0f / l_distanceToCamera));
 				}
 				else
 				{
 					updateUniform(
-						GLFinalRenderPassSingletonComponent::getInstance().m_billboardPass_uni_size,
+						GLFinalRenderPassComponent::get().m_billboardPass_uni_size,
 						(9.0f / 16.0f), 1.0f);
 				}
 				// draw each graphic data of visibleComponent
@@ -2738,7 +2737,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBillboardPass()
 
 	glDisable(GL_DEPTH_TEST);
 
-	return GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC->m_GLTDCs[0];
+	return GLFinalRenderPassComponent::get().m_billboardPassGLRPC->m_GLTDCs[0];
 }
 
 GLTextureDataComponent* GLRenderingSystemNS::updateDebuggerPass()
@@ -2746,30 +2745,30 @@ GLTextureDataComponent* GLRenderingSystemNS::updateDebuggerPass()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLFBC;
+	auto l_FBC = GLFinalRenderPassComponent::get().m_debuggerPassGLRPC->m_GLFBC;
 	f_bindFBC(l_FBC);
 
 	// copy depth buffer from G-Pass
-	f_copyDepthBuffer(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC, l_FBC);
+	f_copyDepthBuffer(GLGeometryRenderPassComponent::get().m_GLRPC->m_GLFBC, l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_debuggerPassSPC);
 
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_p,
+		GLFinalRenderPassComponent::get().m_debuggerPass_uni_p,
 		m_CamProjOriginal);
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_r,
+		GLFinalRenderPassComponent::get().m_debuggerPass_uni_r,
 		m_CamRot);
 	updateUniform(
-		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_t,
+		GLFinalRenderPassComponent::get().m_debuggerPass_uni_t,
 		m_CamTrans);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	for (auto& AABBWireframeDataPack : PhysicsSystemSingletonComponent::getInstance().m_AABBWireframeDataPack)
+	for (auto& AABBWireframeDataPack : PhysicsSystemComponent::get().m_AABBWireframeDataPack)
 	{
 		updateUniform(
-			GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPass_uni_m,
+			GLFinalRenderPassComponent::get().m_debuggerPass_uni_m,
 			AABBWireframeDataPack.m);
 		drawMesh(AABBWireframeDataPack.MDC);
 	}
@@ -2777,31 +2776,31 @@ GLTextureDataComponent* GLRenderingSystemNS::updateDebuggerPass()
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_DEPTH_TEST);
 
-	return GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLTDCs[0];
+	return GLFinalRenderPassComponent::get().m_debuggerPassGLRPC->m_GLTDCs[0];
 }
 
 GLTextureDataComponent* GLRenderingSystemNS::updateFinalBlendPass()
 {
-	auto l_FBC = GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC->m_GLFBC;
+	auto l_FBC = GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC->m_GLFBC;
 	f_bindFBC(l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_finalBlendPassSPC);
 
 	// motion blur pass rendering target
 	activateTexture(
-		GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC->m_GLTDCs[0],
+		GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC->m_GLTDCs[0],
 		0);
 	// bloom pass rendering target
 	activateTexture(
-		GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLTDCs[0],
+		GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLTDCs[0],
 		1);
 	// billboard pass rendering target
 	activateTexture(
-		GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC->m_GLTDCs[0],
+		GLFinalRenderPassComponent::get().m_billboardPassGLRPC->m_GLTDCs[0],
 		2);
 	// debugger pass rendering target
 	activateTexture(
-		GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLTDCs[0],
+		GLFinalRenderPassComponent::get().m_debuggerPassGLRPC->m_GLTDCs[0],
 		3);
 	// draw final pass rectangle
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
@@ -2813,7 +2812,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateFinalBlendPass()
 
 	drawMesh(l_MDC);
 
-	return GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC->m_GLTDCs[0];
+	return GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC->m_GLTDCs[0];
 }
 
 void GLRenderingSystemNS::updateFinalRenderPass()
@@ -2824,7 +2823,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 
 	GLTextureDataComponent* bloomInputGLTDC;
 
-	if (g_RenderingSystemSingletonComponent->m_useTAA)
+	if (g_RenderingSystemComponent->m_useTAA)
 	{
 		auto TAAPassResult = updateTAAPass(preTAAPassResult);
 
@@ -2837,7 +2836,7 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 		bloomInputGLTDC = preTAAPassResult;
 	}
 
-	if (g_RenderingSystemSingletonComponent->m_useBloom)
+	if (g_RenderingSystemComponent->m_useBloom)
 	{
 		auto bloomExtractPassResult = updateBloomExtractPass(bloomInputGLTDC);
 
@@ -2848,8 +2847,8 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 		//glStencilFunc(GL_EQUAL, 0x02, 0xFF);
 		//glStencilMask(0x00);
 
-		//f_copyColorBuffer(GLLightRenderPassSingletonComponent::getInstance().m_GLRPC->m_GLFBC,
-		//	GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLFBC);
+		//f_copyColorBuffer(GLLightRenderPassComponent::get().m_GLRPC->m_GLFBC,
+		//	GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLFBC);
 
 		//glDisable(GL_STENCIL_TEST);
 
@@ -2857,22 +2856,22 @@ void GLRenderingSystemNS::updateFinalRenderPass()
 	}
 	else
 	{
-		f_cleanFBC(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC->m_GLFBC);
-		f_cleanFBC(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC->m_GLFBC);
-		f_cleanFBC(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC->m_GLFBC);
+		f_cleanFBC(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLFBC);
+		f_cleanFBC(GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLFBC);
+		f_cleanFBC(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLFBC);
 	}
 
 	updateMotionBlurPass(bloomInputGLTDC);
 
 	updateBillboardPass();
 
-	if (g_RenderingSystemSingletonComponent->m_drawOverlapWireframe)
+	if (g_RenderingSystemComponent->m_drawOverlapWireframe)
 	{
 		updateDebuggerPass();
 	}
 	else
 	{
-		f_cleanFBC(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC->m_GLFBC);
+		f_cleanFBC(GLFinalRenderPassComponent::get().m_debuggerPassGLRPC->m_GLFBC);
 	}
 
 	updateFinalBlendPass();
@@ -2892,24 +2891,24 @@ ObjectStatus GLRenderingSystem::getStatus()
 
 INNO_SYSTEM_EXPORT bool GLRenderingSystem::resize()
 {
-	GLRenderingSystemNS::deferredPassFBDesc.sizeX = WindowSystemSingletonComponent::getInstance().m_windowResolution.x;
-	GLRenderingSystemNS::deferredPassFBDesc.sizeY = WindowSystemSingletonComponent::getInstance().m_windowResolution.y;
+	GLRenderingSystemNS::deferredPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
+	GLRenderingSystemNS::deferredPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
 
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLGeometryRenderPassSingletonComponent::getInstance().m_GLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLTerrainRenderPassSingletonComponent::getInstance().m_GLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLLightRenderPassSingletonComponent::getInstance().m_GLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_skyPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_preTAAPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_TAAPingPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_TAAPongPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_TAASharpenPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_bloomExtractPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPingPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_bloomBlurPongPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_motionBlurPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_billboardPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_debuggerPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
-	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassSingletonComponent::getInstance().m_finalBlendPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLGeometryRenderPassComponent::get().m_GLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLTerrainRenderPassComponent::get().m_GLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLLightRenderPassComponent::get().m_GLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_skyPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_preTAAPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_TAASharpenPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_billboardPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_debuggerPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
+	GLRenderingSystemNS::resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC, GLRenderingSystemNS::deferredPassFBDesc);
 
 	return true;
 }

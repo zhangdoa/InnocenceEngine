@@ -3,16 +3,16 @@
 #include "../common/InnoMath.h"
 #include "../common/InnoConcurrency.h"
 
-class WindowSystemSingletonComponent
+class WindowSystemComponent
 {
 public:
-	~WindowSystemSingletonComponent() {};
-	WindowSystemSingletonComponent(const WindowSystemSingletonComponent&) = delete;
-	WindowSystemSingletonComponent& operator=(const WindowSystemSingletonComponent&) = delete;
+	~WindowSystemComponent() {};
+	WindowSystemComponent(const WindowSystemComponent&) = delete;
+	WindowSystemComponent& operator=(const WindowSystemComponent&) = delete;
 
-	static WindowSystemSingletonComponent& getInstance()
+	static WindowSystemComponent& get()
 	{
-		static WindowSystemSingletonComponent instance;
+		static WindowSystemComponent instance;
 		return instance;
 	}
 
@@ -39,5 +39,5 @@ public:
 
 	vec4 m_mousePositionInWorldSpace;
 private:
-	WindowSystemSingletonComponent() {};
+	WindowSystemComponent() {};
 };

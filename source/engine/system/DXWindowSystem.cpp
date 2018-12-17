@@ -1,7 +1,7 @@
 #include "DXWindowSystem.h"
 
-#include "../component/WindowSystemSingletonComponent.h"
-#include "../component/DXWindowSystemSingletonComponent.h"
+#include "../component/WindowSystemComponent.h"
+#include "../component/DXWindowSystemComponent.h"
 
 #include "InputSystem.h"
 
@@ -14,7 +14,7 @@ class windowCallbackWrapper
 public:
 	~windowCallbackWrapper() {};
 
-	static windowCallbackWrapper& getInstance()
+	static windowCallbackWrapper& get()
 	{
 		static windowCallbackWrapper instance;
 		return instance;
@@ -36,36 +36,36 @@ INNO_PRIVATE_SCOPE DXWindowSystemNS
 
 IInputSystem* m_inputSystem;
 
-static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
-static DXWindowSystemSingletonComponent* g_DXWindowSystemSingletonComponent;
+static WindowSystemComponent* g_WindowSystemComponent;
+static DXWindowSystemComponent* g_DXWindowSystemComponent;
 }
 
 INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
 	DXWindowSystemNS::m_inputSystem = new InnoInputSystem();
 
-	DXWindowSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
-	DXWindowSystemNS::g_DXWindowSystemSingletonComponent = &DXWindowSystemSingletonComponent::getInstance();
+	DXWindowSystemNS::g_WindowSystemComponent = &WindowSystemComponent::get();
+	DXWindowSystemNS::g_DXWindowSystemComponent = &DXWindowSystemComponent::get();
 
-	DXWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName = g_pCoreSystem->getGameSystem()->getGameName();
-	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hInstance = static_cast<HINSTANCE>(hInstance);
-	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_pScmdline = pScmdline;
-	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_nCmdshow = nCmdshow;
+	DXWindowSystemNS::g_WindowSystemComponent->m_windowName = g_pCoreSystem->getGameSystem()->getGameName();
+	DXWindowSystemNS::g_DXWindowSystemComponent->m_hInstance = static_cast<HINSTANCE>(hInstance);
+	DXWindowSystemNS::g_DXWindowSystemComponent->m_pScmdline = pScmdline;
+	DXWindowSystemNS::g_DXWindowSystemComponent->m_nCmdshow = nCmdshow;
 
 	WNDCLASS wc = {};
 
 	// Get an external pointer to this object.	
-	ApplicationHandle = &windowCallbackWrapper::getInstance();
+	ApplicationHandle = &windowCallbackWrapper::get();
 
 	// Give the application a name.
-	auto l_windowName = std::wstring(DXWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName.begin(), DXWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName.end());
+	auto l_windowName = std::wstring(DXWindowSystemNS::g_WindowSystemComponent->m_windowName.begin(), DXWindowSystemNS::g_WindowSystemComponent->m_windowName.end());
 
 	// Setup the windows class with default settings.
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wc.lpfnWndProc = WindowProc;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
-	wc.hInstance = DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hInstance;
+	wc.hInstance = DXWindowSystemNS::g_DXWindowSystemComponent->m_hInstance;
 	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
@@ -75,21 +75,21 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstan
 	RegisterClass(&wc);
 
 	// Determine the resolution of the clients desktop screen.
-	auto l_screenWidth = (int)DXWindowSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x;
-	auto l_screenHeight = (int)DXWindowSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y;
+	auto l_screenWidth = (int)DXWindowSystemNS::g_WindowSystemComponent->m_windowResolution.x;
+	auto l_screenHeight = (int)DXWindowSystemNS::g_WindowSystemComponent->m_windowResolution.y;
 
 	auto l_posX = (GetSystemMetrics(SM_CXSCREEN) - l_screenWidth) / 2;
 	auto l_posY = (GetSystemMetrics(SM_CYSCREEN) - l_screenHeight) / 2;
 
 	// Create the window with the screen settings and get the handle to it.
-	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd = CreateWindowEx(0, (LPCSTR)l_windowName.c_str(), (LPCSTR)l_windowName.c_str(),
+	DXWindowSystemNS::g_DXWindowSystemComponent->m_hwnd = CreateWindowEx(0, (LPCSTR)l_windowName.c_str(), (LPCSTR)l_windowName.c_str(),
 		WS_OVERLAPPEDWINDOW,
-		l_posX, l_posY, l_screenWidth, l_screenHeight, NULL, NULL, DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hInstance, NULL);
+		l_posX, l_posY, l_screenWidth, l_screenHeight, NULL, NULL, DXWindowSystemNS::g_DXWindowSystemComponent->m_hInstance, NULL);
 
 	// Bring the window up on the screen and set it as main focus.
-	ShowWindow(DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd, DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_nCmdshow);
-	SetForegroundWindow(DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd);
-	SetFocus(DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd);
+	ShowWindow(DXWindowSystemNS::g_DXWindowSystemComponent->m_hwnd, DXWindowSystemNS::g_DXWindowSystemComponent->m_nCmdshow);
+	SetForegroundWindow(DXWindowSystemNS::g_DXWindowSystemComponent->m_hwnd);
+	SetFocus(DXWindowSystemNS::g_DXWindowSystemComponent->m_hwnd);
 
 	// Hide the mouse cursor.
 	// ShowCursor(false);
@@ -139,20 +139,20 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::terminate()
 	ShowCursor(true);
 
 	// Fix the display settings if leaving full screen mode.
-	if (DXWindowSystemNS::g_WindowSystemSingletonComponent->m_fullScreen)
+	if (DXWindowSystemNS::g_WindowSystemComponent->m_fullScreen)
 	{
 		ChangeDisplaySettings(NULL, 0);
 	}
 
 	// Remove the window.
-	DestroyWindow(DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd);
-	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hwnd = NULL;
+	DestroyWindow(DXWindowSystemNS::g_DXWindowSystemComponent->m_hwnd);
+	DXWindowSystemNS::g_DXWindowSystemComponent->m_hwnd = NULL;
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "DXWindowSystem: Window closed.");
 
 	// Remove the application instance.
-	UnregisterClass(DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_applicationName, DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hInstance);
-	DXWindowSystemNS::g_DXWindowSystemSingletonComponent->m_hInstance = NULL;
+	UnregisterClass(DXWindowSystemNS::g_DXWindowSystemComponent->m_applicationName, DXWindowSystemNS::g_DXWindowSystemComponent->m_hInstance);
+	DXWindowSystemNS::g_DXWindowSystemComponent->m_hInstance = NULL;
 
 	// Release the pointer to this class.
 	ApplicationHandle = NULL;
@@ -200,8 +200,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 	case WM_KEYDOWN:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find((int)wparam);
-		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find((int)wparam);
+		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::PRESSED;
 		}
@@ -209,8 +209,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_KEYUP:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find((int)wparam);
-		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find((int)wparam);
+		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::RELEASED;
 		}
@@ -219,8 +219,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_LBUTTONDOWN:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
-		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
+		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::PRESSED;
 		}
@@ -228,8 +228,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_LBUTTONUP:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
-		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
+		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::RELEASED;
 		}
@@ -237,8 +237,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_RBUTTONDOWN:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
-		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
+		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::PRESSED;
 		}
@@ -246,8 +246,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_RBUTTONUP:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
-		if (l_result != DXWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
+		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::RELEASED;
 		}

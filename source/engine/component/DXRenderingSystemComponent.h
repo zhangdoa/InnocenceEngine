@@ -3,14 +3,14 @@
 #include "../component/DXMeshDataComponent.h"
 #include "../component/DXTextureDataComponent.h"
 
-class DXRenderingSystemSingletonComponent
+class DXRenderingSystemComponent
 {
 public:
-	~DXRenderingSystemSingletonComponent() {};
+	~DXRenderingSystemComponent() {};
 	
-	static DXRenderingSystemSingletonComponent& getInstance()
+	static DXRenderingSystemComponent& get()
 	{
-		static DXRenderingSystemSingletonComponent instance;
+		static DXRenderingSystemComponent instance;
 		return instance;
 	}
 
@@ -50,5 +50,5 @@ public:
 	std::unordered_map<EntityID, DXTextureDataComponent*> m_textureMap;
 
 private:
-	DXRenderingSystemSingletonComponent() {};
+	DXRenderingSystemComponent() {};
 };

@@ -3,14 +3,14 @@
 #include "../component/GLMeshDataComponent.h"
 #include "../component/GLTextureDataComponent.h"
 
-class GLRenderingSystemSingletonComponent
+class GLRenderingSystemComponent
 {
 public:
-	~GLRenderingSystemSingletonComponent() {};
+	~GLRenderingSystemComponent() {};
 	
-	static GLRenderingSystemSingletonComponent& getInstance()
+	static GLRenderingSystemComponent& get()
 	{
-		static GLRenderingSystemSingletonComponent instance;
+		static GLRenderingSystemComponent instance;
 		return instance;
 	}
 
@@ -26,5 +26,5 @@ public:
 	GLTextureDataComponent* m_iconTemplate_UNKNOWN;
 
 private:
-	GLRenderingSystemSingletonComponent() {};
+	GLRenderingSystemComponent() {};
 };

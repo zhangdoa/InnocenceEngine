@@ -2,14 +2,14 @@
 #include "../common/InnoType.h"
 #include "../system/GLHeaders.h"
 
-class GLWindowSystemSingletonComponent
+class GLWindowSystemComponent
 {
 public:
-	~GLWindowSystemSingletonComponent() {};
+	~GLWindowSystemComponent() {};
 	
-	static GLWindowSystemSingletonComponent& getInstance()
+	static GLWindowSystemComponent& get()
 	{
-		static GLWindowSystemSingletonComponent instance;
+		static GLWindowSystemComponent instance;
 
 		return instance;
 	}
@@ -20,5 +20,5 @@ public:
 	GLFWwindow* m_window;
 
 private:
-	GLWindowSystemSingletonComponent() {};
+	GLWindowSystemComponent() {};
 };

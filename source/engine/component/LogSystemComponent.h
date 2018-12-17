@@ -2,14 +2,14 @@
 #include "../common/InnoType.h"
 #include <iostream>
 #include "../common/InnoConcurrency.h"
-class LogSystemSingletonComponent
+class LogSystemComponent
 {
 public:
-	~LogSystemSingletonComponent() {};
+	~LogSystemComponent() {};
 	
-	static LogSystemSingletonComponent& getInstance()
+	static LogSystemComponent& get()
 	{
-		static LogSystemSingletonComponent instance;
+		static LogSystemComponent instance;
 		return instance;
 	}
 
@@ -19,5 +19,5 @@ public:
 ThreadSafeQueue<std::string> m_log; 
 
 private:
-	LogSystemSingletonComponent() {};
+	LogSystemComponent() {};
 };

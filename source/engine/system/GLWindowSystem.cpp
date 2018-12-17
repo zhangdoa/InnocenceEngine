@@ -1,7 +1,7 @@
 #include "GLWindowSystem.h"
 
-#include "../component/WindowSystemSingletonComponent.h"
-#include "../component/GLWindowSystemSingletonComponent.h"
+#include "../component/WindowSystemComponent.h"
+#include "../component/GLWindowSystemComponent.h"
 #include "GLFWWrapper.h"
 
 #include "InputSystem.h"
@@ -16,8 +16,8 @@ INNO_PRIVATE_SCOPE GLWindowSystemNS
 
 	IInputSystem* m_inputSystem;
 
-	static WindowSystemSingletonComponent* g_WindowSystemSingletonComponent;
-	static GLWindowSystemSingletonComponent* g_GLWindowSystemSingletonComponent;
+	static WindowSystemComponent* g_WindowSystemComponent;
+	static GLWindowSystemComponent* g_GLWindowSystemComponent;
 
 	void hideMouseCursor();
 	void showMouseCursor();
@@ -27,10 +27,10 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 {
 	GLWindowSystemNS::m_inputSystem = new InnoInputSystem();
 
-	GLWindowSystemNS::g_WindowSystemSingletonComponent = &WindowSystemSingletonComponent::getInstance();
-	GLWindowSystemNS::g_GLWindowSystemSingletonComponent = &GLWindowSystemSingletonComponent::getInstance();
+	GLWindowSystemNS::g_WindowSystemComponent = &WindowSystemComponent::get();
+	GLWindowSystemNS::g_GLWindowSystemComponent = &GLWindowSystemComponent::get();
 
-	GLWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName = g_pCoreSystem->getGameSystem()->getGameName();
+	GLWindowSystemNS::g_WindowSystemComponent->m_windowName = g_pCoreSystem->getGameSystem()->getGameName();
 
 	//setup window
 	if (glfwInit() != GL_TRUE)
@@ -48,9 +48,9 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL
 
 	// Open a window and create its OpenGL context
-	GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window = glfwCreateWindow((int)GLWindowSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.x, (int)GLWindowSystemNS::g_WindowSystemSingletonComponent->m_windowResolution.y, GLWindowSystemNS::g_WindowSystemSingletonComponent->m_windowName.c_str(), NULL, NULL);
-	glfwMakeContextCurrent(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window);
-	if (GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window == nullptr) {
+	GLWindowSystemNS::g_GLWindowSystemComponent->m_window = glfwCreateWindow((int)GLWindowSystemNS::g_WindowSystemComponent->m_windowResolution.x, (int)GLWindowSystemNS::g_WindowSystemComponent->m_windowResolution.y, GLWindowSystemNS::g_WindowSystemComponent->m_windowName.c_str(), NULL, NULL);
+	glfwMakeContextCurrent(GLWindowSystemNS::g_GLWindowSystemComponent->m_window);
+	if (GLWindowSystemNS::g_GLWindowSystemComponent->m_window == nullptr) {
 		GLWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLWindowSystem: Failed to open GLFW window.");
 		glfwTerminate();
@@ -66,7 +66,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 	}
 
 	//setup input
-	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
 	GLWindowSystemNS::m_inputSystem->setup();
 
@@ -77,7 +77,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 INNO_SYSTEM_EXPORT bool GLWindowSystem::initialize()
 {
 	//initialize window
-	windowCallbackWrapper::getInstance().initialize(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, GLWindowSystemNS::m_inputSystem);
+	windowCallbackWrapper::get().initialize(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, GLWindowSystemNS::m_inputSystem);
 
 	//initialize input	
 	GLWindowSystemNS::m_inputSystem->initialize();
@@ -89,7 +89,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::initialize()
 INNO_SYSTEM_EXPORT bool GLWindowSystem::update()
 {
 	//update window
-	if (GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window == nullptr || glfwWindowShouldClose(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window) != 0)
+	if (GLWindowSystemNS::g_GLWindowSystemComponent->m_window == nullptr || glfwWindowShouldClose(GLWindowSystemNS::g_GLWindowSystemComponent->m_window) != 0)
 	{
 		GLWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GLWindowSystem: Input error or Window closed.");
@@ -100,40 +100,40 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::update()
 
 		//update input
 		//keyboard
-		for (int i = 0; i < GLWindowSystemNS::g_WindowSystemSingletonComponent->NUM_KEYCODES; i++)
+		for (int i = 0; i < GLWindowSystemNS::g_WindowSystemComponent->NUM_KEYCODES; i++)
 		{
-			if (glfwGetKey(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, i) == GLFW_PRESS)
+			if (glfwGetKey(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, i) == GLFW_PRESS)
 			{
-				auto l_result = GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
-				if (l_result != GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+				auto l_result = GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
+				if (l_result != GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 				{
 					l_result->second = ButtonStatus::PRESSED;
 				}
 			}
 			else
 			{
-				auto l_result = GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
-				if (l_result != GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+				auto l_result = GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
+				if (l_result != GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 				{
 					l_result->second = ButtonStatus::RELEASED;
 				}
 			}
 		}
 		//mouse
-		for (int i = 0; i < GLWindowSystemNS::g_WindowSystemSingletonComponent->NUM_MOUSEBUTTONS; i++)
+		for (int i = 0; i < GLWindowSystemNS::g_WindowSystemComponent->NUM_MOUSEBUTTONS; i++)
 		{
-			if (glfwGetMouseButton(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, i) == GLFW_PRESS)
+			if (glfwGetMouseButton(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, i) == GLFW_PRESS)
 			{
-				auto l_result = GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
-				if (l_result != GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+				auto l_result = GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
+				if (l_result != GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 				{
 					l_result->second = ButtonStatus::PRESSED;
 				}
 			}
 			else
 			{
-				auto l_result = GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.find(i);
-				if (l_result != GLWindowSystemNS::g_WindowSystemSingletonComponent->m_buttonStatus.end())
+				auto l_result = GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
+				if (l_result != GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
 				{
 					l_result->second = ButtonStatus::RELEASED;
 				}
@@ -147,8 +147,8 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::update()
 
 INNO_SYSTEM_EXPORT bool GLWindowSystem::terminate()
 {
-	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, GLFW_STICKY_KEYS, GL_FALSE);
-	glfwDestroyWindow(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window);
+	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, GLFW_STICKY_KEYS, GL_FALSE);
+	glfwDestroyWindow(GLWindowSystemNS::g_GLWindowSystemComponent->m_window);
 	glfwTerminate();
 
 	GLWindowSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
@@ -158,17 +158,17 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::terminate()
 
 void GLWindowSystem::swapBuffer()
 {
-	glfwSwapBuffers(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window);
+	glfwSwapBuffers(GLWindowSystemNS::g_GLWindowSystemComponent->m_window);
 }
 
 void GLWindowSystemNS::hideMouseCursor()
 {
-	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void GLWindowSystemNS::showMouseCursor()
 {
-	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemSingletonComponent->m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 INNO_SYSTEM_EXPORT ObjectStatus GLWindowSystem::getStatus()

@@ -3,14 +3,14 @@
 #include <windows.h>
 #include <windowsx.h>
 
-class DXWindowSystemSingletonComponent
+class DXWindowSystemComponent
 {
 public:
-	~DXWindowSystemSingletonComponent() {};
+	~DXWindowSystemComponent() {};
 	
-	static DXWindowSystemSingletonComponent& getInstance()
+	static DXWindowSystemComponent& get()
 	{
-		static DXWindowSystemSingletonComponent instance;
+		static DXWindowSystemComponent instance;
 
 		return instance;
 	}
@@ -25,5 +25,5 @@ public:
 	HWND m_hwnd;
 
 private:
-	DXWindowSystemSingletonComponent() {};
+	DXWindowSystemComponent() {};
 };
