@@ -12,3 +12,5 @@
 \.DS_Store
 
 *.innoModel
+
+source/engine/common/config\.h

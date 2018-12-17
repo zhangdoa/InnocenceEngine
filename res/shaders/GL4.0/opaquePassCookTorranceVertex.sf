@@ -1,9 +1,9 @@
 // shadertype=glsl
 #version 400 core
 
-layout (location = 0) in vec3 in_Position;
-layout (location = 1) in vec2 in_TexCoord;
-layout (location = 2) in vec3 in_Normal;
+layout(location = 0) in vec3 in_Position;
+layout(location = 1) in vec2 in_TexCoord;
+layout(location = 2) in vec3 in_Normal;
 
 out vec4 thefrag_WorldSpacePos;
 out vec4 thefrag_ClipSpacePos_current;
@@ -35,31 +35,31 @@ void main()
 	// output the fragment position in world space
 	thefrag_WorldSpacePos = uni_m * vec4(in_Position, 1.0);
 	vec4 thefrag_WorldSpacePos_prev = uni_m_prev * vec4(in_Position, 1.0);
-	
+
 	// output the current and previous fragment position in clip space
 	vec4 thefrag_CameraSpacePos_current = uni_r_camera * uni_t_camera * thefrag_WorldSpacePos;
 	vec4 thefrag_CameraSpacePos_previous = uni_r_camera_prev * uni_t_camera_prev * thefrag_WorldSpacePos_prev;
-	
-	thefrag_ClipSpacePos_current =  uni_p_camera_original * thefrag_CameraSpacePos_current;
-	thefrag_ClipSpacePos_previous =  uni_p_camera_original * thefrag_CameraSpacePos_previous;
-	
+
+	thefrag_ClipSpacePos_current = uni_p_camera_original * thefrag_CameraSpacePos_current;
+	thefrag_ClipSpacePos_previous = uni_p_camera_original * thefrag_CameraSpacePos_previous;
+
 	// output the fragment position in light space
 	thefrag_LightSpacePos_0 = uni_p_light_0 * uni_v_light * thefrag_WorldSpacePos;
-	thefrag_LightSpacePos_0 = thefrag_LightSpacePos_0/thefrag_LightSpacePos_0.w;
-	thefrag_LightSpacePos_0 = vec4(thefrag_LightSpacePos_0.rgb, 1.0f); 
+	thefrag_LightSpacePos_0 = thefrag_LightSpacePos_0 / thefrag_LightSpacePos_0.w;
+	thefrag_LightSpacePos_0 = vec4(thefrag_LightSpacePos_0.rgb, 1.0f);
 
 	thefrag_LightSpacePos_1 = uni_p_light_1 * uni_v_light * thefrag_WorldSpacePos;
-	thefrag_LightSpacePos_1 = thefrag_LightSpacePos_1/thefrag_LightSpacePos_1.w;
-	thefrag_LightSpacePos_1 = vec4(thefrag_LightSpacePos_1.rgb, 1.0f); 
+	thefrag_LightSpacePos_1 = thefrag_LightSpacePos_1 / thefrag_LightSpacePos_1.w;
+	thefrag_LightSpacePos_1 = vec4(thefrag_LightSpacePos_1.rgb, 1.0f);
 
 	thefrag_LightSpacePos_2 = uni_p_light_2 * uni_v_light * thefrag_WorldSpacePos;
-	thefrag_LightSpacePos_2 = thefrag_LightSpacePos_2/thefrag_LightSpacePos_2.w;
-	thefrag_LightSpacePos_2 = vec4(thefrag_LightSpacePos_2.rgb, 1.0f); 
+	thefrag_LightSpacePos_2 = thefrag_LightSpacePos_2 / thefrag_LightSpacePos_2.w;
+	thefrag_LightSpacePos_2 = vec4(thefrag_LightSpacePos_2.rgb, 1.0f);
 
 	thefrag_LightSpacePos_3 = uni_p_light_3 * uni_v_light * thefrag_WorldSpacePos;
-	thefrag_LightSpacePos_3 = thefrag_LightSpacePos_3/thefrag_LightSpacePos_3.w;
-	thefrag_LightSpacePos_3 = vec4(thefrag_LightSpacePos_3.rgb, 1.0f); 
-			
+	thefrag_LightSpacePos_3 = thefrag_LightSpacePos_3 / thefrag_LightSpacePos_3.w;
+	thefrag_LightSpacePos_3 = vec4(thefrag_LightSpacePos_3.rgb, 1.0f);
+
 	// output the texture coordinate
 	thefrag_TexCoord = in_TexCoord;
 

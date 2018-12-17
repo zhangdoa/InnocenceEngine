@@ -137,10 +137,15 @@ namespace GameInstanceNS
 	TransformComponent* m_pawnTransformComponent2;
 	VisibleComponent* m_pawnVisibleComponent2;
 
-	// sphere entities and their components
-	std::vector<EntityID> m_sphereEntitys;
-	std::vector<TransformComponent*> m_sphereTransformComponents;
-	std::vector<VisibleComponent*> m_sphereVisibleComponents;
+	// opaque sphere entities and their components
+	std::vector<EntityID> m_opaqueSphereEntitys;
+	std::vector<TransformComponent*> m_opaqueSphereTransformComponents;
+	std::vector<VisibleComponent*> m_opaqueSphereVisibleComponents;
+
+	// transparent sphere entities and their components
+	std::vector<EntityID> m_transparentSphereEntitys;
+	std::vector<TransformComponent*> m_transparentSphereTransformComponents;
+	std::vector<VisibleComponent*> m_transparentSphereVisibleComponents;
 
 	// punctual point light entities and their components
 	std::vector<EntityID> m_pointLightEntitys;
@@ -304,34 +309,64 @@ void GameInstanceNS::setupSpheres()
 	unsigned int sphereMatrixDim = 8;
 	float sphereBreadthInterval = 4.0f;
 	auto l_containerSize = sphereMatrixDim * sphereMatrixDim;
-	m_sphereTransformComponents.reserve(l_containerSize);
-	m_sphereVisibleComponents.reserve(l_containerSize);
-	m_sphereEntitys.reserve(l_containerSize);
+
+	m_opaqueSphereTransformComponents.reserve(l_containerSize);
+	m_opaqueSphereVisibleComponents.reserve(l_containerSize);
+	m_opaqueSphereEntitys.reserve(l_containerSize);
+
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_sphereTransformComponents.emplace_back();
-		m_sphereVisibleComponents.emplace_back();
-		m_sphereEntitys.emplace_back();
+		m_opaqueSphereTransformComponents.emplace_back();
+		m_opaqueSphereVisibleComponents.emplace_back();
+		m_opaqueSphereEntitys.emplace_back();
 	}
-	for (unsigned int i = 0; i < m_sphereVisibleComponents.size(); i++)
+	for (unsigned int i = 0; i < m_opaqueSphereVisibleComponents.size(); i++)
 	{
-		m_sphereEntitys[i] = InnoMath::createEntityID();
+		m_opaqueSphereEntitys[i] = InnoMath::createEntityID();
 
-		m_sphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_sphereEntitys[i]);
-		m_sphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-		m_sphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_sphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_sphereEntitys[i]);
-		m_sphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
-		m_sphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::CUSTOM;
-		m_sphereVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
-		m_sphereVisibleComponents[i]->m_drawAABB = true;
+		m_opaqueSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_opaqueSphereEntitys[i]);
+		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_opaqueSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_opaqueSphereEntitys[i]);
+		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
+		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
+		m_opaqueSphereVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
+		m_opaqueSphereVisibleComponents[i]->m_drawAABB = true;
 		//m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 	}
 	for (unsigned int i = 0; i < sphereMatrixDim; i++)
 	{
 		for (unsigned int j = 0; j < sphereMatrixDim; j++)
 		{
-			m_sphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos = vec4((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), 0.0f, (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1), 1.0f);
+			m_opaqueSphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos = vec4((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), 0.0f, (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1), 1.0f);
+		}
+	}
+
+	for (unsigned int i = 0; i < l_containerSize; i++)
+	{
+		m_transparentSphereTransformComponents.emplace_back();
+		m_transparentSphereVisibleComponents.emplace_back();
+		m_transparentSphereEntitys.emplace_back();
+	}
+	for (unsigned int i = 0; i < m_transparentSphereVisibleComponents.size(); i++)
+	{
+		m_transparentSphereEntitys[i] = InnoMath::createEntityID();
+
+		m_transparentSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_transparentSphereEntitys[i]);
+		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_transparentSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_transparentSphereEntitys[i]);
+		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_TRANSPARENT;
+		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
+		m_transparentSphereVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
+		m_transparentSphereVisibleComponents[i]->m_drawAABB = true;
+		//m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
+	}
+	for (unsigned int i = 0; i < sphereMatrixDim; i++)
+	{
+		for (unsigned int j = 0; j < sphereMatrixDim; j++)
+		{
+			m_transparentSphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos = vec4((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), 4.0f, (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1), 1.0f);
 		}
 	}
 }
@@ -477,8 +512,21 @@ void GameInstanceNS::updateSpheres(float seed)
 	//	);
 	//	m_sphereTransformComponents[i]->m_localTransformVector.m_rot = l_t;
 	//}
+	std::function<void(ModelMap modelMap, vec4 albedo, vec4 MRA)> f_setMRA = [&](ModelMap modelMap, vec4 albedo, vec4 MRA)
+	{
+		for (auto& j : modelMap)
+		{
+			j.second->m_meshCustomMaterial.albedo_r = albedo.x;
+			j.second->m_meshCustomMaterial.albedo_g = albedo.y;
+			j.second->m_meshCustomMaterial.albedo_b = albedo.z;
+			j.second->m_meshCustomMaterial.metallic = MRA.x;
+			j.second->m_meshCustomMaterial.roughness = MRA.y;
+			j.second->m_meshCustomMaterial.ao = MRA.z;
+			j.second->m_meshCustomMaterial.alpha = albedo.w;
+		}
+	};
 
-	for (unsigned int i = 0; i < m_sphereVisibleComponents.size(); i += 4)
+	for (unsigned int i = 0; i < m_opaqueSphereVisibleComponents.size(); i += 4)
 	{
 		auto l_albedoFactor1 = (sin(seed / 2.0f + i) + 1.0f) / 2.0f;
 		auto l_albedoFactor2 = (sin(seed / 3.0f + i) + 1.0f) / 2.0f;
@@ -493,24 +541,15 @@ void GameInstanceNS::updateSpheres(float seed)
 		auto l_MRAFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
 		auto l_MRAFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
 
-		std::function<void(ModelMap modelMap, vec4 albedo, vec4 MRA)> f_setMRA = [&](ModelMap modelMap, vec4 albedo, vec4 MRA)
-		{
-			for (auto& j : modelMap)
-			{
-				j.second->m_meshCustomMaterial.albedo_r = albedo.x;
-				j.second->m_meshCustomMaterial.albedo_g = albedo.y;
-				j.second->m_meshCustomMaterial.albedo_b = albedo.z;
-				j.second->m_meshCustomMaterial.metallic = MRA.x;
-				j.second->m_meshCustomMaterial.roughness = MRA.y;
-				j.second->m_meshCustomMaterial.ao = MRA.z;
-			}
-		};
-
-		f_setMRA(m_sphereVisibleComponents[i]->m_modelMap, l_albedo1, vec4(l_MRAFactor1, l_MRAFactor2, l_MRAFactor3, 0.0f));
-		f_setMRA(m_sphereVisibleComponents[i + 1]->m_modelMap, l_albedo2, vec4(l_MRAFactor2, l_MRAFactor1, l_MRAFactor3, 0.0f));
-		f_setMRA(m_sphereVisibleComponents[i + 2]->m_modelMap, l_albedo3, vec4(l_MRAFactor3, l_MRAFactor2, l_MRAFactor1, 0.0f));
-		f_setMRA(m_sphereVisibleComponents[i + 3]->m_modelMap, l_albedo4, vec4(l_MRAFactor3, l_MRAFactor1, l_MRAFactor2, 0.0f));
+		f_setMRA(m_opaqueSphereVisibleComponents[i]->m_modelMap, l_albedo1, vec4(l_MRAFactor1, l_MRAFactor2, l_MRAFactor3, 0.0f));
+		f_setMRA(m_opaqueSphereVisibleComponents[i + 1]->m_modelMap, l_albedo2, vec4(l_MRAFactor2, l_MRAFactor1, l_MRAFactor3, 0.0f));
+		f_setMRA(m_opaqueSphereVisibleComponents[i + 2]->m_modelMap, l_albedo3, vec4(l_MRAFactor3, l_MRAFactor2, l_MRAFactor1, 0.0f));
+		f_setMRA(m_opaqueSphereVisibleComponents[i + 3]->m_modelMap, l_albedo4, vec4(l_MRAFactor3, l_MRAFactor1, l_MRAFactor2, 0.0f));
 		f_setMRA(m_pawnVisibleComponent2->m_modelMap, vec4(1.0f, 1.0f, 1.0f, 1.0f), vec4(0.999f, 0.001f, 1.0f, 0.0f));
 	}
-
+	for (unsigned int i = 0; i < m_transparentSphereVisibleComponents.size(); i++)
+	{
+		auto l_albedo = InnoMath::HSVtoRGB(vec4(((sin(seed / 6.0f + i) + 1.0f) / 2.0f) * 360.0f, 1.0f, 1.0f, 0.5f));
+		f_setMRA(m_transparentSphereVisibleComponents[i]->m_modelMap, l_albedo, vec4());
+	}
 }

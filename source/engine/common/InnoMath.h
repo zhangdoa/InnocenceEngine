@@ -1501,6 +1501,39 @@ namespace InnoMath
 	{
 		return std::rand();
 	}
+
+	template<class T>
+	auto HSVtoRGB(const TVec4<T>& HSV) -> TVec4<T>
+	{
+		TVec4<T> RGB;
+		T h = HSV.x, s = HSV.y, v = HSV.z,
+			p, q, t,
+			fract;
+
+		(h == two<T> * halfCircumference<T>) ? (h = zero<T>) : (h /= (halfCircumference<T> / (one<T> + two<T>)));
+		fract = h - floor(h);
+
+		p = v * (one<T> - s);
+		q = v * (one<T> - s * fract);
+		t = v * (one<T> - s * (one<T> - fract));
+
+		if (zero<T> <= h && h < one<T>)
+			RGB = TVec4<T>(v, t, p, one<T>);
+		else if (one<T> <= h && h < two<T>)
+			RGB = TVec4<T>(q, v, p, one<T>);
+		else if (two<T> <= h && h < one<T> + two<T>)
+			RGB = TVec4<T>(p, v, t, one<T>);
+		else if (one<T> +two<T> <= h && h < two<T> + two<T>)
+			RGB = TVec4<T>(p, q, v, one<T>);
+		else if (two<T> +two<T> <= h && h < one<T> + two<T> +two<T>)
+			RGB = TVec4<T>(t, p, v, one<T>);
+		else if (one<T> +two<T> +two<T> <= h && h < two<T> + two<T> +two<T>)
+			RGB = TVec4<T>(v, p, q, one<T>);
+		else
+			RGB = TVec4<T>(zero<T>, zero<T>, zero<T>, one<T>);
+
+		return RGB;
+	}
 }
 
 using vec2 = TVec2<float>;

@@ -10,17 +10,17 @@ SamplerState SampleTypeWrap;
 
 struct PixelInputType
 {
-    float4 thefrag_ClipSpacePos : SV_POSITION;
-    float3 thefrag_WorldSpacePos : POSITION;
-    float2 thefrag_TexCoord : TEXCOORD;
-    float3 thefrag_Normal :NORMAL;
+	float4 thefrag_ClipSpacePos : SV_POSITION;
+	float3 thefrag_WorldSpacePos : POSITION;
+	float2 thefrag_TexCoord : TEXCOORD;
+	float3 thefrag_Normal : NORMAL;
 };
 
 struct PixelOutputType
 {
-    float4 uni_geometryPassRT0 : SV_Target0;
-    float4 uni_geometryPassRT1 : SV_Target1;
-    float4 uni_geometryPassRT2 : SV_Target2;
+	float4 uni_geometryPassRT0 : SV_Target0;
+	float4 uni_geometryPassRT1 : SV_Target1;
+	float4 uni_geometryPassRT2 : SV_Target2;
 };
 
 PixelOutputType geometryPassCookTorrancePixel(PixelInputType input) : SV_TARGET
@@ -28,15 +28,15 @@ PixelOutputType geometryPassCookTorrancePixel(PixelInputType input) : SV_TARGET
   PixelOutputType output;
 
 	output.uni_geometryPassRT0 = float4(
-	input.thefrag_WorldSpacePos, 
+	input.thefrag_WorldSpacePos,
 	t2d_metallic.Sample(SampleTypeWrap, input.thefrag_TexCoord).r);
-	
+
 	// get edge vectors of the pixel triangle
 	float3 dp1 = ddx_fine(input.thefrag_WorldSpacePos);
 	float3 dp2 = ddy_fine(input.thefrag_WorldSpacePos);
 	float2 duv1 = ddx_fine(input.thefrag_TexCoord);
 	float2 duv2 = ddy_fine(input.thefrag_TexCoord);
- 
+
 	// solve the linear system
 	float3 N = normalize(input.thefrag_Normal);
 
@@ -46,7 +46,7 @@ PixelOutputType geometryPassCookTorrancePixel(PixelInputType input) : SV_TARGET
   float3 B = -normalize(dp2perp * duv1.y + dp1perp * duv2.y);
 
 	float3x3 TBN = float3x3(T, B, N);
-  
+
   float3 normalInTangentSpace = normalize(t2d_normal.Sample(SampleTypeWrap, input.thefrag_TexCoord).rgb * 2.0f - 1.0f);
   float3 normalInWorldSpace = normalize(mul(normalInTangentSpace, TBN));
   output.uni_geometryPassRT1 = float4(
@@ -54,7 +54,7 @@ PixelOutputType geometryPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	t2d_roughness.Sample(SampleTypeWrap, input.thefrag_TexCoord).r);
 
 	output.uni_geometryPassRT2 = float4(
-	t2d_albedo.Sample(SampleTypeWrap, input.thefrag_TexCoord).rgb, 
+	t2d_albedo.Sample(SampleTypeWrap, input.thefrag_TexCoord).rgb,
 	t2d_ao.Sample(SampleTypeWrap, input.thefrag_TexCoord).r);
 
   return output;

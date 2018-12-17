@@ -1,15 +1,15 @@
 // shadertype=<glsl>
 #version 400 core
-layout (location = 0) out vec4 uni_billboardPassRT0;
+layout(location = 0) out vec4 uni_billboardPassRT0;
 in vec2 thefrag_TexCoord;
 
 uniform vec3 uni_albedo;
 uniform sampler2D uni_texture;
 
 void main()
-{    
-    vec4 textureColor = texture(uni_texture, thefrag_TexCoord);
-    if(textureColor.a < 0.1)
-        discard;
-    uni_billboardPassRT0 = vec4(normalize(uni_albedo), 1.0);
+{
+	vec4 textureColor = texture(uni_texture, thefrag_TexCoord);
+	if (textureColor.a < 0.1)
+		discard;
+	uni_billboardPassRT0 = vec4(normalize(uni_albedo), 1.0);
 }

@@ -2,36 +2,36 @@
 
 cbuffer MatrixBuffer
 {
-    matrix m;
-    matrix vp;
-    matrix m_normalMat;
+	matrix m;
+	matrix vp;
+	matrix m_normalMat;
 };
 
 struct VertexInputType
 {
-    float4 position : POSITION;
-    float2 texcoord : TEXCOORD;
-    float2 pada : PADA;
-    float4 normal : NORMAL;
-    float4 padb : PADB;
+	float4 position : POSITION;
+	float2 texcoord : TEXCOORD;
+	float2 pada : PADA;
+	float4 normal : NORMAL;
+	float4 padb : PADB;
 };
 
 struct PixelInputType
 {
-    float4 thefrag_ClipSpacePos : SV_POSITION;
-    float3 thefrag_WorldSpacePos : POSITION;
-    float2 thefrag_TexCoord : TEXCOORD;
-    float3 thefrag_Normal :NORMAL;
+	float4 thefrag_ClipSpacePos : SV_POSITION;
+	float3 thefrag_WorldSpacePos : POSITION;
+	float2 thefrag_TexCoord : TEXCOORD;
+	float3 thefrag_Normal : NORMAL;
 };
 
 PixelInputType geometryPassCookTorranceVertex(VertexInputType input)
 {
-		PixelInputType output;
-		
-    float4 thefrag_WorldSpacePos = mul(input.position, m);
-    output.thefrag_ClipSpacePos = mul(thefrag_WorldSpacePos, vp);
-    output.thefrag_WorldSpacePos = thefrag_WorldSpacePos.xyz;
-    output.thefrag_TexCoord = input.texcoord;
-    output.thefrag_Normal = mul(input.normal, m_normalMat).xyz;
-    return output;
+	PixelInputType output;
+
+	float4 thefrag_WorldSpacePos = mul(input.position, m);
+	output.thefrag_ClipSpacePos = mul(thefrag_WorldSpacePos, vp);
+	output.thefrag_WorldSpacePos = thefrag_WorldSpacePos.xyz;
+	output.thefrag_TexCoord = input.texcoord;
+	output.thefrag_Normal = mul(input.normal, m_normalMat).xyz;
+	return output;
 }

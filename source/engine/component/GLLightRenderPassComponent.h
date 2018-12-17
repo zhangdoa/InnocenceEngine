@@ -29,14 +29,14 @@ public:
 	ShaderFilePaths m_shaderFilePaths = { "GL4.0//lightPassBlinnPhongVertex.sf" , "", "GL4.0//lightPassBlinnPhongFragment.sf" };
 #endif
 
-	GLuint m_uni_geometryPassRT0;
-	GLuint m_uni_geometryPassRT1;
-	GLuint m_uni_geometryPassRT2;
-	GLuint m_uni_geometryPassRT3;
-	GLuint m_uni_geometryPassRT4;
-	GLuint m_uni_geometryPassRT5;
-	GLuint m_uni_geometryPassRT6;
-	GLuint m_uni_geometryPassRT7;
+	GLuint m_uni_opaquePassRT0;
+	GLuint m_uni_opaquePassRT1;
+	GLuint m_uni_opaquePassRT2;
+	GLuint m_uni_opaquePassRT3;
+	GLuint m_uni_opaquePassRT4;
+	GLuint m_uni_opaquePassRT5;
+	GLuint m_uni_opaquePassRT6;
+	GLuint m_uni_opaquePassRT7;
 
 	GLuint m_uni_shadowMap_0;
 	GLuint m_uni_shadowMap_1;

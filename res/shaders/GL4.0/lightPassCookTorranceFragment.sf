@@ -28,14 +28,14 @@ const int NR_SPHERE_LIGHTS = 64;
 
 const float MAX_REFLECTION_LOD = 4.0;
 
-uniform sampler2D uni_geometryPassRT0;
-uniform sampler2D uni_geometryPassRT1;
-uniform sampler2D uni_geometryPassRT2;
-uniform sampler2D uni_geometryPassRT3;
-uniform sampler2D uni_geometryPassRT4;
-uniform sampler2D uni_geometryPassRT5;
-uniform sampler2D uni_geometryPassRT6;
-uniform sampler2D uni_geometryPassRT7;
+uniform sampler2D uni_opaquePassRT0;
+uniform sampler2D uni_opaquePassRT1;
+uniform sampler2D uni_opaquePassRT2;
+uniform sampler2D uni_opaquePassRT3;
+uniform sampler2D uni_opaquePassRT4;
+uniform sampler2D uni_opaquePassRT5;
+uniform sampler2D uni_opaquePassRT6;
+uniform sampler2D uni_opaquePassRT7;
 
 const int NR_CSM_SPLITS = 4;
 bool uni_drawCSMSplitedArea = false;
@@ -175,7 +175,7 @@ vec3 getFrMS(float NdotL, float NdotV, vec3 F0, float roughness)
 {
 	float alpha = roughness * roughness;
 	vec3 f_averange = AverangeFresnel(F0);
-	float rsF1_averange =  texture(uni_brdfMSLUT, vec2(0.0, alpha)).r;
+	float rsF1_averange = texture(uni_brdfMSLUT, vec2(0.0, alpha)).r;
 	float rsF1_l = texture(uni_brdfLUT, vec2(NdotL, alpha)).b;
 	float rsF1_v = texture(uni_brdfLUT, vec2(NdotV, alpha)).b;
 
@@ -196,8 +196,8 @@ vec3 getRadiance(float NdotV, float LdotH, float NdotH, float NdotL, float rough
 	vec3 F = fr_F_Schlick(F0, f90, NdotV);
 	float G = fr_V_SmithGGXCorrelated(NdotV, NdotL, roughness);
 	float D = fr_D_GGX(NdotH, roughness);
-	vec3 Frss =  F * D * G / PI;
-	
+	vec3 Frss = F * D * G / PI;
+
 	// Real-Time Rendering", 4th edition, pg. 341, "9.8 BRDF Models for Surface Reflection, the 4 * NdV * NdL has already been cancelled by G function
 	vec3 Frms = getFrMS(NdotL, NdotV, F0, roughness);
 
@@ -257,25 +257,25 @@ float ShadowCalculation(float NdotL, vec3 fragPos)
 
 	if (splitIndex == 0)
 	{
-		vec4 gPassRT = texture(uni_geometryPassRT4, TexCoords);
+		vec4 gPassRT = texture(uni_opaquePassRT4, TexCoords);
 		projCoords = gPassRT.xyz;
 		shadow = PCF(NdotL, projCoords, uni_shadowMap_0);
 	}
 	else if (splitIndex == 1)
 	{
-		vec4 gPassRT = texture(uni_geometryPassRT5, TexCoords);
+		vec4 gPassRT = texture(uni_opaquePassRT5, TexCoords);
 		projCoords = gPassRT.xyz;
 		shadow = PCF(NdotL, projCoords, uni_shadowMap_1);
 	}
 	else if (splitIndex == 2)
 	{
-		vec4 gPassRT = texture(uni_geometryPassRT6, TexCoords);
+		vec4 gPassRT = texture(uni_opaquePassRT6, TexCoords);
 		projCoords = gPassRT.xyz;
 		shadow = PCF(NdotL, projCoords, uni_shadowMap_2);
 	}
 	else if (splitIndex == 3)
 	{
-		vec4 gPassRT = texture(uni_geometryPassRT7, TexCoords);
+		vec4 gPassRT = texture(uni_opaquePassRT7, TexCoords);
 		projCoords = gPassRT.xyz;
 		shadow = PCF(NdotL, projCoords, uni_shadowMap_3);
 	}
@@ -289,9 +289,9 @@ float ShadowCalculation(float NdotL, vec3 fragPos)
 // ----------------------------------------------------------------------------
 void main()
 {
-	vec4 RT0 = texture(uni_geometryPassRT0, TexCoords);
-	vec4 RT1 = texture(uni_geometryPassRT1, TexCoords);
-	vec4 RT2 = texture(uni_geometryPassRT2, TexCoords);
+	vec4 RT0 = texture(uni_opaquePassRT0, TexCoords);
+	vec4 RT1 = texture(uni_opaquePassRT1, TexCoords);
+	vec4 RT2 = texture(uni_opaquePassRT2, TexCoords);
 
 	vec3 FragPos = RT0.rgb;
 	vec3 Normal = RT1.rgb;
@@ -347,13 +347,13 @@ void main()
 				float attenuation = 1.0;
 				float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
 				attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
-				
+
 				vec3 lightRadiance = uni_pointLights[i].luminance * attenuation;
 
 				Lo += getRadiance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, lightRadiance);
 			}
 		}
-		
+
 		// sphere area light
 		for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
 		{
@@ -366,9 +366,9 @@ void main()
 			LdotH = max(dot(L, H), 0.0);
 			NdotH = max(dot(N, H), 0.0);
 			NdotL = max(dot(N, L), 0.0);
-						
+
 			float sqrDist = dot(unormalizedL, unormalizedL);
-				
+
 			float Beta = acos(NdotL);
 			float H2 = sqrt(sqrDist);
 			float h = H2 / lightRadius;
@@ -377,20 +377,20 @@ void main()
 			y = clamp(y, -1.0, 1.0);
 			float illuminance = 0;
 
-			if (h * cos (Beta) > 1)
+			if (h * cos(Beta) > 1)
 			{
-				illuminance = cos (Beta) / (h * h);
+				illuminance = cos(Beta) / (h * h);
 			}
 			else
 			{
 				illuminance = (1 / max(PI * h * h, eps))
-				* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
-				+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
+					* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
+					+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
 			}
 			illuminance *= PI;
-			
+
 			Lo += getRadiance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * uni_sphereLights[i].luminance);
-		}		
+		}
 	}
 	if (uni_drawCSMSplitedArea)
 	{

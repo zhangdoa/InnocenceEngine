@@ -28,6 +28,7 @@ public:
 	GLRenderPassComponent* m_preTAAPassGLRPC;
 	GLShaderProgramComponent* m_preTAAPassSPC;
 	GLuint m_preTAAPass_uni_lightPassRT0;
+	GLuint m_preTAAPass_uni_transparentPassRT0;
 	GLuint m_preTAAPass_uni_skyPassRT0;
 	GLuint m_preTAAPass_uni_terrainPassRT0;
 
