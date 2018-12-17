@@ -1,9 +1,7 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "GLFrameBufferComponent.h"
+#include "GLRenderPassComponent.h"
 #include "GLShaderProgramComponent.h"
-#include "TextureDataComponent.h"
-#include "GLTextureDataComponent.h"
 
 class GLShadowRenderPassSingletonComponent
 {
@@ -19,9 +17,7 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	std::vector<GLFrameBufferComponent*> m_FBCs;
-	std::vector<TextureDataComponent*> m_TDCs;
-	std::vector<GLTextureDataComponent*> m_GLTDCs;
+	std::vector<GLRenderPassComponent*> m_GLRPCs;
 
 	GLShaderProgramComponent* m_SPC;
 
