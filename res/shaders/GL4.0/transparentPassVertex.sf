@@ -9,15 +9,21 @@ out vec4 thefrag_WorldSpacePos;
 out vec2 thefrag_TexCoord;
 out vec3 thefrag_Normal;
 
-uniform mat4 uni_p_camera_original;
-uniform mat4 uni_p_camera_jittered;
-uniform mat4 uni_r_camera;
-uniform mat4 uni_t_camera;
-uniform mat4 uni_r_camera_prev;
-uniform mat4 uni_t_camera_prev;
+layout(row_major) uniform cameraUBO
+{
+	mat4 uni_p_camera_original;
+	mat4 uni_p_camera_jittered;
+	mat4 uni_r_camera;
+	mat4 uni_t_camera;
+	mat4 uni_r_camera_prev;
+	mat4 uni_t_camera_prev;
+};
 
-uniform mat4 uni_m;
-uniform mat4 uni_m_prev;
+layout(row_major) uniform meshUBO
+{
+	mat4 uni_m;
+	mat4 uni_m_prev;
+};
 
 void main()
 {

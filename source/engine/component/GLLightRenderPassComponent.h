@@ -28,24 +28,25 @@ public:
 #elif BlinnPhong
 	ShaderFilePaths m_shaderFilePaths = { "GL4.0//lightPassBlinnPhongVertex.sf" , "", "GL4.0//lightPassBlinnPhongFragment.sf" };
 #endif
+	std::vector<std::string> m_textureUniformNames =
+	{
+		"uni_opaquePassRT0",
+		"uni_opaquePassRT1",
+		"uni_opaquePassRT2",
+		"uni_opaquePassRT3",
+		"uni_opaquePassRT4",
+		"uni_opaquePassRT5",
+		"uni_opaquePassRT6",
+		"uni_opaquePassRT7",
+		"uni_shadowMap_0",
+		"uni_shadowMap_1",
+		"uni_shadowMap_2",
+		"uni_shadowMap_3",
+		"uni_brdfLUT",
+		"uni_brdfMSLUT",
+	};
 
-	GLuint m_uni_opaquePassRT0;
-	GLuint m_uni_opaquePassRT1;
-	GLuint m_uni_opaquePassRT2;
-	GLuint m_uni_opaquePassRT3;
-	GLuint m_uni_opaquePassRT4;
-	GLuint m_uni_opaquePassRT5;
-	GLuint m_uni_opaquePassRT6;
-	GLuint m_uni_opaquePassRT7;
-
-	GLuint m_uni_shadowMap_0;
-	GLuint m_uni_shadowMap_1;
-	GLuint m_uni_shadowMap_2;
-	GLuint m_uni_shadowMap_3;
 	std::vector<GLuint> m_uni_shadowSplitAreas;
-
-	GLuint m_uni_brdfLUT;
-	GLuint m_uni_brdfMSLUT;
 
 	GLuint m_uni_viewPos;
 

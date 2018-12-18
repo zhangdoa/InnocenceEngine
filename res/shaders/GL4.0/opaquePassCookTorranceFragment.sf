@@ -25,13 +25,17 @@ uniform sampler2D uni_metallicTexture;
 uniform sampler2D uni_roughnessTexture;
 uniform sampler2D uni_aoTexture;
 
-uniform bool uni_useNormalTexture = true;
-uniform bool uni_useAlbedoTexture = true;
-uniform bool uni_useMetallicTexture = true;
-uniform bool uni_useRoughnessTexture = true;
-uniform bool uni_useAOTexture = true;
-uniform vec3 uni_albedo;
-uniform vec3 uni_MRA;
+layout(std140) uniform textureUBO
+{
+	vec4 uni_albedo;
+	vec4 uni_MRA;
+	bool uni_useNormalTexture;
+	bool uni_useAlbedoTexture;
+	bool uni_useMetallicTexture;
+	bool uni_useRoughnessTexture;
+	bool uni_useAOTexture;
+};
+
 
 void main()
 {
@@ -76,7 +80,7 @@ void main()
 	}
 	else
 	{
-		albedo = uni_albedo;
+		albedo = uni_albedo.rgb;
 	}
 
 	if (uni_useMetallicTexture)

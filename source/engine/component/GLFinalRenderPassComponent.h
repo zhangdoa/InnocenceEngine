@@ -19,6 +19,8 @@ public:
 
 	GLRenderPassComponent* m_skyPassGLRPC;
 	GLShaderProgramComponent* m_skyPassSPC;
+	ShaderFilePaths m_skyPassShaderFilePaths = { "GL4.0//skyPassVertex.sf" , "", "GL4.0//skyPassFragment.sf" };
+	
 	GLuint m_skyPass_uni_p;
 	GLuint m_skyPass_uni_r;
 	GLuint m_skyPass_uni_viewportSize;
@@ -27,21 +29,39 @@ public:
 
 	GLRenderPassComponent* m_preTAAPassGLRPC;
 	GLShaderProgramComponent* m_preTAAPassSPC;
-	GLuint m_preTAAPass_uni_lightPassRT0;
-	GLuint m_preTAAPass_uni_transparentPassRT0;
-	GLuint m_preTAAPass_uni_skyPassRT0;
-	GLuint m_preTAAPass_uni_terrainPassRT0;
+	ShaderFilePaths m_preTAAPassShaderFilePaths = { "GL4.0//preTAAPassVertex.sf" , "", "GL4.0//preTAAPassFragment.sf" };
+
+	std::vector<std::string> m_preTAAPassUniformNames =
+	{
+		"uni_lightPassRT0",
+		"uni_transparentPassRT0",
+		"uni_skyPassRT0",
+		"uni_terrainPassRT0",
+	};
 
 	GLRenderPassComponent* m_TAAPingPassGLRPC;
 	GLRenderPassComponent* m_TAAPongPassGLRPC;
 	GLShaderProgramComponent* m_TAAPassSPC;
-	GLuint m_TAAPass_uni_preTAAPassRT0;
-	GLuint m_TAAPass_uni_lastFrameTAAPassRT0;
-	GLuint m_TAAPass_uni_motionVectorTexture;
+	ShaderFilePaths m_TAAPassShaderFilePaths = { "GL4.0//TAAPassVertex.sf" , "", "GL4.0//TAAPassFragment.sf" };
+
+	std::vector<std::string> m_TAAPassUniformNames =
+	{
+		"uni_preTAAPassRT0",
+		"uni_lastFrameTAAPassRT0",
+		"uni_motionVectorTexture",
+	};
+
 	GLuint m_TAAPass_uni_renderTargetSize;
 
 	GLRenderPassComponent* m_TAASharpenPassGLRPC;
 	GLShaderProgramComponent* m_TAASharpenPassSPC;
+	ShaderFilePaths m_TAASharpenPassShaderFilePaths = { "GL4.0//TAASharpenPassVertex.sf" , "", "GL4.0//TAASharpenPassFragment.sf" };
+	
+	std::vector<std::string> m_TAASharpenPassUniformNames =
+	{
+		"uni_lastTAAPassRT0",
+	}; 
+	
 	GLuint m_TAASharpenPass_uni_lastTAAPassRT0;
 	GLuint m_TAASharpenPass_uni_renderTargetSize;
 
