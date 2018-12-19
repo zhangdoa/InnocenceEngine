@@ -45,6 +45,8 @@ public:
 	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXTextureDataComponent);
+	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXShaderProgramComponent);
+	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXRenderPassComponent);
 	#endif
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(PhysicsDataComponent);
 
@@ -67,6 +69,8 @@ public:
 	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXTextureDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXShaderProgramComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXRenderPassComponent);
 	#endif
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(PhysicsDataComponent);
 };

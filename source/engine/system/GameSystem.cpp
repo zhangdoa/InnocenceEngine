@@ -52,7 +52,6 @@ void InnoGameSystemNS::sortTransformComponentsVector()
 		{
 			i->m_transformHierarchyLevel = i->m_parentTransformComponent->m_transformHierarchyLevel + 1;
 		}
-
 	}
 	//from top to bottom
 	std::sort(g_GameSystemComponent->m_TransformComponents.begin(), g_GameSystemComponent->m_TransformComponents.end(), [&](TransformComponent* a, TransformComponent* b)

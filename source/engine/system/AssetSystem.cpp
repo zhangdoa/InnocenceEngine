@@ -248,7 +248,7 @@ TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType
 		return nullptr; break;
 	case TextureUsageType::EQUIRETANGULAR:
 		return nullptr; break;
-	case TextureUsageType::RENDER_BUFFER_SAMPLER:
+	case TextureUsageType::RENDER_TARGET:
 		return nullptr; break;
 	case TextureUsageType::SHADOWMAP:
 		return nullptr; break;
@@ -644,7 +644,6 @@ void InnoAssetSystemNS::loadDefaultAssets()
 				}
 				else
 				{
-
 				}
 			}
 		}

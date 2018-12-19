@@ -80,6 +80,8 @@ std::unique_ptr<ComponentPool<className>> m_##className##Pool;
 	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	componentPoolUniPtr(DXMeshDataComponent);
 	componentPoolUniPtr(DXTextureDataComponent);
+	componentPoolUniPtr(DXShaderProgramComponent);
+	componentPoolUniPtr(DXRenderPassComponent);
 	#endif
 
 	componentPoolUniPtr(PhysicsDataComponent);
@@ -155,6 +157,8 @@ INNO_SYSTEM_EXPORT bool InnoMemorySystem::setup()
 	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	constructComponentPool(DXMeshDataComponent);
 	constructComponentPool(DXTextureDataComponent);
+	constructComponentPool(DXShaderProgramComponent);
+	constructComponentPool(DXRenderPassComponent);
 	#endif
 
 	constructComponentPool(PhysicsDataComponent);
@@ -581,9 +585,11 @@ allocateComponentImplDefi(GLRenderPassComponent)
 #if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 allocateComponentImplDefi(DXMeshDataComponent)
 allocateComponentImplDefi(DXTextureDataComponent)
+allocateComponentImplDefi(DXShaderProgramComponent)
+allocateComponentImplDefi(DXRenderPassComponent)
 #endif
 
-allocateComponentImplDefi(PhysicsDataComponent);
+allocateComponentImplDefi(PhysicsDataComponent)
 
 #define freeComponentImplDefi( className ) \
 void InnoMemorySystem::free##className(className* p) \
@@ -612,6 +618,8 @@ freeComponentImplDefi(GLRenderPassComponent)
 #if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 freeComponentImplDefi(DXMeshDataComponent)
 freeComponentImplDefi(DXTextureDataComponent)
+freeComponentImplDefi(DXShaderProgramComponent)
+freeComponentImplDefi(DXRenderPassComponent)
 #endif
 
 freeComponentImplDefi(PhysicsDataComponent);

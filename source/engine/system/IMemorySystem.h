@@ -17,6 +17,8 @@
 #if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 #include "../component/DXMeshDataComponent.h"
 #include "../component/DXTextureDataComponent.h"
+#include "../component/DXShaderProgramComponent.h"
+#include "../component/DXRenderPassComponent.h"
 #endif
 
 #include "../component/PhysicsDataComponent.h"
@@ -84,6 +86,8 @@ protected:
 	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXTextureDataComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXShaderProgramComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXRenderPassComponent);
 	#endif
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(PhysicsDataComponent);
 
@@ -106,6 +110,8 @@ INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(TransformComponent);
 	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXTextureDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXShaderProgramComponent);
+	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXRenderPassComponent);
 	#endif
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(PhysicsDataComponent);
 public:
@@ -217,6 +223,10 @@ template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(DXMeshDataComponent);
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(DXTextureDataComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(DXShaderProgramComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(DXRenderPassComponent);
 #endif
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(PhysicsDataComponent);
@@ -258,6 +268,10 @@ template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(DXMeshDataComponent);
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(DXTextureDataComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(DXShaderProgramComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(DXRenderPassComponent);
 #endif
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(PhysicsDataComponent);

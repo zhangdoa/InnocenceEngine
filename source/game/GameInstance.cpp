@@ -489,7 +489,6 @@ void GameInstanceNS::updateLights(float seed)
 	{
 		i->m_sphereRadius = 4.0f * ((sin(seed) + 1.0f) /2.0f);
 	}
-
 }
 
 void GameInstanceNS::updateSpheres(float seed)
@@ -552,4 +551,5 @@ void GameInstanceNS::updateSpheres(float seed)
 		auto l_albedo = InnoMath::HSVtoRGB(vec4(((sin(seed / 6.0f + i) + 1.0f) / 2.0f) * 360.0f, 1.0f, 1.0f, 0.5f));
 		f_setMRA(m_transparentSphereVisibleComponents[i]->m_modelMap, l_albedo, vec4());
 	}
+	//GameInstanceNS::m_directionalLightComponent->m_color = InnoMath::HSVtoRGB(vec4(((sin(seed / 6.0f) + 1.0f) / 2.0f) * 360.0f, 1.0f, 1.0f, 1.0f));
 }

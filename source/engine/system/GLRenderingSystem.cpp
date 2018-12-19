@@ -331,7 +331,7 @@ bool GLRenderingSystemNS::setup()
 	shadowPassFBDesc.sizeX = 2048;
 	shadowPassFBDesc.sizeY = 2048;
 
-	deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_BUFFER_SAMPLER;
+	deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	deferredPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	deferredPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
 	deferredPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
@@ -667,7 +667,7 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 	// generate and bind texture
 	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
-	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_BUFFER_SAMPLER;
+	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
 	l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
@@ -687,7 +687,7 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 	////
 	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
-	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_BUFFER_SAMPLER;
+	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RG16F;
 	l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RG;
 	l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
@@ -1981,7 +1981,6 @@ void GLRenderingSystemNS::updateShadowRenderPass()
 				}
 			}
 		}
-
 	}
 
 	glDisable(GL_CULL_FACE);
