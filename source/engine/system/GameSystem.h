@@ -45,4 +45,6 @@ public:
 	
 	INNO_SYSTEM_EXPORT void saveComponentsCapture() override;
 	INNO_SYSTEM_EXPORT void setGameInstance(IGameInstance* rhs) override;
+
+	INNO_SYSTEM_EXPORT EntityID createEntity(const std::string& entityName) override;
 };

@@ -50,7 +50,11 @@ public:
 	void initialize();
 	void update();
 	void terminate();
+
+	void showFileExplorer();
+	void showWorldExplorer();
 	void zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize);
+
 	void setRenderingConfig();
 private:
 	ImGuiWrapper() {};
@@ -348,61 +352,9 @@ void ImGuiWrapper::update()
 			ImGui::End();
 		}
 
-		{
-			auto l_iconSize = ImVec2(32.0f, 32.0f);
-
-			std::function<ImTextureID(const IconType iconType)> f_getTextID =
-				[&](const IconType iconType) -> ImTextureID
-			{
-				switch (iconType)
-				{
-				case IconType::OBJ:
-					return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_OBJ->m_TAO); break;
-				case IconType::PNG:
-					return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_PNG->m_TAO); break;
-				case IconType::SHADER:
-					return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_SHADER->m_TAO); break;
-				case IconType::UNKNOWN:
-					return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_UNKNOWN->m_TAO); break;
-				default:
-					return nullptr; break;
-				}
-			};
-
-			std::function<void(const AssetMetadata* assetMetadata)> f_assetBuilder =
-				[&](const AssetMetadata* assetMetadata)
-			{
-				ImGui::Image(f_getTextID(assetMetadata->iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-				ImGui::SameLine();
-				ImGui::Text((assetMetadata->fileName + assetMetadata->extension).c_str());
-			};
-
-			std::function<void(const DirectoryMetadata* directoryMetadata)> f_directoryTreeBuilder =
-				[&](const DirectoryMetadata* directoryMetadata)
-			{
-				if (ImGui::TreeNode(directoryMetadata->directoryName.c_str()))
-				{
-					for (auto& i : directoryMetadata->childrenDirectories)
-					{
-						f_directoryTreeBuilder(&i);
-					}
-					for (auto& i : directoryMetadata->childrenAssets)
-					{
-						f_assetBuilder(&i);
-					}
-					ImGui::TreePop();
-				}
-			};
-
-			ImGui::Begin("File Explorer", 0, ImGuiWindowFlags_AlwaysAutoResize);
-
-			auto& x = AssetSystemComponent::get().m_rootDirectoryMetadata;
-
-			f_directoryTreeBuilder(&AssetSystemComponent::get().m_rootDirectoryMetadata);
-
-			ImGui::End();
-		}
-
+		ImGuiWrapper::get().showFileExplorer();
+		ImGuiWrapper::get().showWorldExplorer();
+		
 		// Rendering
 		glViewport(0, 0, (GLsizei)WindowSystemComponent::get().m_windowResolution.x, (GLsizei)WindowSystemComponent::get().m_windowResolution.y);
 		ImGui::Render();
@@ -427,6 +379,104 @@ void ImGuiWrapper::terminate()
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+}
+
+void ImGuiWrapper::showFileExplorer()
+{
+	auto l_iconSize = ImVec2(32.0f, 32.0f);
+
+	std::function<ImTextureID(const IconType iconType)> f_getTextID =
+		[&](const IconType iconType) -> ImTextureID
+	{
+		switch (iconType)
+		{
+		case IconType::OBJ:
+			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_OBJ->m_TAO); break;
+		case IconType::PNG:
+			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_PNG->m_TAO); break;
+		case IconType::SHADER:
+			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_SHADER->m_TAO); break;
+		case IconType::UNKNOWN:
+			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_UNKNOWN->m_TAO); break;
+		default:
+			return nullptr; break;
+		}
+	};
+
+	std::function<void(AssetMetadata* assetMetadata)> f_assetBuilder =
+		[&](AssetMetadata* assetMetadata)
+	{
+		ImGui::ImageButton(f_getTextID(assetMetadata->iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0), -1, ImColor(0, 0, 0, 255));
+		ImGui::Text((assetMetadata->fileName + assetMetadata->extension).c_str());
+	};
+
+	ImGui::Begin("File Explorer", 0, ImGuiWindowFlags_AlwaysAutoResize);
+
+	static DirectoryMetadata* currentDirectoryMetadata = &AssetSystemComponent::get().m_rootDirectoryMetadata;
+
+	if (ImGui::Button("Return to previous directory"))
+	{
+		if (currentDirectoryMetadata->depth > 0)
+		{
+			currentDirectoryMetadata = currentDirectoryMetadata->parentDirectory;
+		}
+	}
+
+	for (size_t i = 0; i < currentDirectoryMetadata->childrenDirectories.size(); i++)
+	{
+		ImGui::PushID((int)i);
+
+		auto l_currentActivateDir = &currentDirectoryMetadata->childrenDirectories[i];
+
+		if (ImGui::ImageButton(f_getTextID(IconType::UNKNOWN), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0), -1, ImColor(0, 0, 0, 255)))
+		{
+			currentDirectoryMetadata = l_currentActivateDir;
+		}
+		ImGui::Text((l_currentActivateDir->directoryName).c_str());
+		ImGui::PopID();
+	}
+	for (auto& i : currentDirectoryMetadata->childrenAssets)
+	{
+		f_assetBuilder(&i);
+	}
+
+	ImGui::End();
+}
+
+void ImGuiWrapper::showWorldExplorer()
+{
+	ImGui::Begin("World Explorer", 0, ImGuiWindowFlags_AlwaysAutoResize);
+
+	for (auto& i : GameSystemComponent::get().m_enitityNameMap)
+	{
+		if (ImGui::TreeNode(i.second.c_str()))
+		{
+			auto& result = GameSystemComponent::get().m_entityChildrenComponentsNameMap.find(i.first);
+			if (result != GameSystemComponent::get().m_entityChildrenComponentsNameMap.end())
+			{
+				auto l_componentNameMap = result->second;
+
+				static void* selected = nullptr;
+				for (auto& j : l_componentNameMap)
+				{
+					if (ImGui::Selectable(j.second.c_str(), selected == j.first))
+					{
+						selected = j.first;
+					}
+				}
+				ImGui::TreePop();
+			}
+		}
+	}
+	{
+		ImGui::Begin("Property Editor", 0, ImGuiWindowFlags_AlwaysAutoResize);
+		{
+
+		}
+		ImGui::End();
+	}
+
+	ImGui::End();
 }
 
 void ImGuiWrapper::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize)

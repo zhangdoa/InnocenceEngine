@@ -174,7 +174,7 @@ namespace GameInstanceNS
 INNO_GAME_EXPORT bool GameInstance::setup()
 {
 	// setup player character
-	PlayerComponentCollection::m_parentEntity = InnoMath::createEntityID();
+	PlayerComponentCollection::m_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("playerCharacter");
 
 	PlayerComponentCollection::m_transformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(PlayerComponentCollection::m_parentEntity);
 	PlayerComponentCollection::m_transformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
@@ -198,13 +198,13 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(PlayerComponentCollection::m_inputComponent, 1, &PlayerComponentCollection::f_rotateAroundRightAxis);
 
 	//setup environment capture component
-	GameInstanceNS::m_EnvironmentCaptureEntity = InnoMath::createEntityID();
+	GameInstanceNS::m_EnvironmentCaptureEntity = g_pCoreSystem->getGameSystem()->createEntity("environmentCaptureEntity");;
 
 	GameInstanceNS::m_environmentCaptureComponent = g_pCoreSystem->getGameSystem()->spawn<EnvironmentCaptureComponent>(GameInstanceNS::m_EnvironmentCaptureEntity);
 	GameInstanceNS::m_environmentCaptureComponent->m_cubemapTextureFileName = "ibl//Playa_Sunrise.hdr";
 
 	//setup directional light
-	GameInstanceNS::m_directionalLightEntity = InnoMath::createEntityID();
+	GameInstanceNS::m_directionalLightEntity = g_pCoreSystem->getGameSystem()->createEntity("sun");;
 
 	GameInstanceNS::m_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_directionalLightEntity);
 	GameInstanceNS::m_directionalLightTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
@@ -220,7 +220,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_directionalLightComponent->m_drawAABB = false;
 
 	//setup landscape
-	GameInstanceNS::m_landscapeEntity = InnoMath::createEntityID();
+	GameInstanceNS::m_landscapeEntity = g_pCoreSystem->getGameSystem()->createEntity("landscape");;
 
 	GameInstanceNS::m_landscapeTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_landscapeEntity);
 	GameInstanceNS::m_landscapeTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
@@ -236,7 +236,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = MeshShapeType::CUBE;
 
 	//setup pawn 1
-	GameInstanceNS::m_pawnEntity1 = InnoMath::createEntityID();
+	GameInstanceNS::m_pawnEntity1 = g_pCoreSystem->getGameSystem()->createEntity("pawn1");;
 
 	GameInstanceNS::m_pawnTransformComponent1 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_pawnEntity1);
 	GameInstanceNS::m_pawnTransformComponent1->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
@@ -251,7 +251,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 	GameInstanceNS::m_pawnVisibleComponent1->m_drawAABB = false;
 
 	//setup pawn 2
-	GameInstanceNS::m_pawnEntity2 = InnoMath::createEntityID();
+	GameInstanceNS::m_pawnEntity2 = g_pCoreSystem->getGameSystem()->createEntity("pawn2");;
 
 	GameInstanceNS::m_pawnTransformComponent2 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_pawnEntity2);
 	GameInstanceNS::m_pawnTransformComponent2->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
@@ -322,7 +322,7 @@ void GameInstanceNS::setupSpheres()
 	}
 	for (unsigned int i = 0; i < m_opaqueSphereVisibleComponents.size(); i++)
 	{
-		m_opaqueSphereEntitys[i] = InnoMath::createEntityID();
+		m_opaqueSphereEntitys[i] = g_pCoreSystem->getGameSystem()->createEntity("opaqueSphere_" + std::to_string(i));
 
 		m_opaqueSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_opaqueSphereEntitys[i]);
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
@@ -350,7 +350,7 @@ void GameInstanceNS::setupSpheres()
 	}
 	for (unsigned int i = 0; i < m_transparentSphereVisibleComponents.size(); i++)
 	{
-		m_transparentSphereEntitys[i] = InnoMath::createEntityID();
+		m_transparentSphereEntitys[i] = g_pCoreSystem->getGameSystem()->createEntity("transparentSphere_" + std::to_string(i));
 
 		m_transparentSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_transparentSphereEntitys[i]);
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
@@ -391,7 +391,7 @@ void GameInstanceNS::setupLights()
 	}
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_pointLightEntitys[i] = InnoMath::createEntityID();
+		m_pointLightEntitys[i] = g_pCoreSystem->getGameSystem()->createEntity("pointLight_" + std::to_string(i));
 
 		m_pointLightTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pointLightEntitys[i]);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
@@ -429,7 +429,7 @@ void GameInstanceNS::setupLights()
 	}
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_sphereLightEntitys[i] = InnoMath::createEntityID();
+		m_sphereLightEntitys[i] = g_pCoreSystem->getGameSystem()->createEntity("sphereLight_" + std::to_string(i));
 
 		m_sphereLightTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_sphereLightEntitys[i]);
 		m_sphereLightTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();

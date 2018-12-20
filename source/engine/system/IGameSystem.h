@@ -76,6 +76,8 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual void setGameInstance(IGameInstance* rhs) = 0;
 
+	INNO_SYSTEM_EXPORT virtual EntityID createEntity(const std::string& entityName) = 0;
+
 	IMemorySystem* g_pMemorySystem;
 };
 

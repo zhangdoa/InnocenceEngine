@@ -86,11 +86,6 @@ std::unique_ptr<ComponentPool<className>> m_##className##Pool;
 
 	componentPoolUniPtr(PhysicsDataComponent);
 
-	//Memory pool for vertices and indices
-	// @TODO: need more efficient solution
-	std::unique_ptr<ComponentPool<Vertex>> m_VertexPool;
-	std::unique_ptr<ComponentPool<Index>> m_IndexPool;
-
 	static const uint32_t s_BlockSizes[] = {
 		// 4-increments
 		4,  8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48,

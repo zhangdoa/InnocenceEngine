@@ -633,7 +633,7 @@ void InnoAssetSystemNS::loadDefaultAssets()
 				if (fs::is_directory(entry.status()))
 				{
 					DirectoryMetadata l_directoryMetadata;
-					l_directoryMetadata.depth = level;
+					l_directoryMetadata.depth = level + 1;
 					l_directoryMetadata.directoryName = entry.path().stem().generic_string();
 					f_directoryTreeBuilder(entry, level + 1, &l_directoryMetadata);
 					parentDirectoryMetadata->childrenDirectories.emplace_back(l_directoryMetadata);
@@ -646,14 +646,21 @@ void InnoAssetSystemNS::loadDefaultAssets()
 					l_assetMetadata.iconType = getIconType(l_assetMetadata.extension);
 					parentDirectoryMetadata->childrenAssets.emplace_back(l_assetMetadata);
 				}
-				else
-				{
-				}
 			}
 		}
 	};
 
+	std::function<void(DirectoryMetadata* directoryMetadata)> f_assignParentDirectory =
+		[&](DirectoryMetadata* directoryMetadata){
+		for (auto& i : directoryMetadata->childrenDirectories)
+		{
+			i.parentDirectory = directoryMetadata;
+			f_assignParentDirectory(&i);
+		}
+	};
+
 	f_directoryTreeBuilder("..//res", 0, &g_AssetSystemComponent->m_rootDirectoryMetadata);
+	f_assignParentDirectory(&g_AssetSystemComponent->m_rootDirectoryMetadata);
 
 	g_AssetSystemComponent->m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", TextureUsageType::NORMAL);
 	g_AssetSystemComponent->m_basicAlbedoTemplate = loadTextureFromDisk("basic_albedo.png", TextureUsageType::ALBEDO);

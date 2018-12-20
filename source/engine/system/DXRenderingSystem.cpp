@@ -712,7 +712,7 @@ DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned in
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create render target view!");
 			DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
-			return false;
+			return nullptr;
 		}
 	}
 
@@ -742,7 +742,7 @@ DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned in
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the texture for the depth buffer!");
 		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
-		return false;
+		return nullptr;
 	}
 
 	// Initailze the depth stencil view description.
@@ -763,7 +763,7 @@ DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned in
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the depth stencil view!");
 		DXRenderingSystemNS::m_objectStatus = ObjectStatus::STANDBY;
-		return false;
+		return nullptr;
 	}
 
 	// Setup the viewport for rendering.

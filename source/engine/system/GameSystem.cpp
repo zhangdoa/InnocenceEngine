@@ -62,7 +62,6 @@ void InnoGameSystemNS::sortTransformComponentsVector()
 
 void InnoGameSystemNS::updateTransform()
 {
-	// @TODO: update from hierarchy's top to down
 	std::for_each(InnoGameSystemNS::g_GameSystemComponent->m_TransformComponents.begin(), InnoGameSystemNS::g_GameSystemComponent->m_TransformComponents.end(), [&](TransformComponent* val)
 	{
 		val->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_localTransformVector);
@@ -83,6 +82,26 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::saveComponentsCapture()
 INNO_SYSTEM_EXPORT void InnoGameSystem::setGameInstance(IGameInstance * rhs)
 {
 	InnoGameSystemNS::m_gameInstance = rhs;
+}
+
+INNO_SYSTEM_EXPORT EntityID InnoGameSystem::createEntity(const std::string & entityName)
+{
+	auto result = std::find_if(
+		InnoGameSystemNS::g_GameSystemComponent->m_enitityNameMap.begin(),
+		InnoGameSystemNS::g_GameSystemComponent->m_enitityNameMap.end(),
+		[&](auto& val) -> bool {
+		return val.second == entityName;
+	});
+
+	if (result != InnoGameSystemNS::g_GameSystemComponent->m_enitityNameMap.end())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: duplicated entity name!");
+		return 0;
+	}
+
+	auto l_entityID = InnoMath::createEntityID();
+	InnoGameSystemNS::g_GameSystemComponent->m_enitityNameMap.emplace(l_entityID, entityName);
+	return l_entityID;
 }
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::initialize()
@@ -136,6 +155,21 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::spawnComponent(className* rhs, EntityID 
 	rhs->m_parentEntity = parentEntity; \
 	InnoGameSystemNS::g_GameSystemComponent->m_##className##s.emplace_back(rhs); \
 	InnoGameSystemNS::g_GameSystemComponent->m_##className##sMap.emplace(parentEntity, rhs); \
+\
+	auto indexOfTheComponent = InnoGameSystemNS::g_GameSystemComponent->m_##className##s.size(); \
+\
+	auto& result = InnoGameSystemNS::g_GameSystemComponent->m_entityChildrenComponentsNameMap.find(parentEntity); \
+	if (result != InnoGameSystemNS::g_GameSystemComponent->m_entityChildrenComponentsNameMap.end()) \
+	{ \
+		auto l_componentNameMap = &result->second; \
+		l_componentNameMap->emplace(rhs, std::string(#className) + "_" + std::to_string(indexOfTheComponent)); \
+	} \
+	else \
+	{ \
+		auto l_componentNameMap = componentNameMap(); \
+		l_componentNameMap.emplace(rhs, std::string(#className) + "_" + std::to_string(indexOfTheComponent)); \
+		InnoGameSystemNS::g_GameSystemComponent->m_entityChildrenComponentsNameMap.emplace(parentEntity, std::move(l_componentNameMap)); \
+	} \
 }
 
 spawnComponentImplDefi(TransformComponent)
@@ -152,6 +186,7 @@ INNO_SYSTEM_EXPORT std::string InnoGameSystem::getGameName()
 	return std::string("GameInstance");
 }
 
+// @TODO: return multiple instances
 #define getComponentImplDefi( className ) \
 INNO_SYSTEM_EXPORT className* InnoGameSystem::get##className(EntityID parentEntity) \
 { \
