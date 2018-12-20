@@ -18,3 +18,7 @@
 	path = source/external/gitsubmodules/stb
 	url = https://github.com/nothings/stb
 	ignore = dirty
+[submodule "source/external/gitsubmodules/imgui"]
+	path = source/external/gitsubmodules/imgui
+	url = https://github.com/ocornut/imgui
+	ignore = dirty

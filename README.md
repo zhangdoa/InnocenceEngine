@@ -84,13 +84,15 @@ echo | postBuildMac64.sh
 
 ### Third-party libraries
 
+[assimp](https://github.com/assimp)
+
 [GLFW](https://github.com/glfw/glfw)
 
 [GLAD](https://github.com/Dav1dde/glad) 
 
-[stb](https://github.com/nothings/stb)
+[dear imgui](https://github.com/ocornut/imgui)
 
-[assimp](https://github.com/assimp)
+[stb](https://github.com/nothings/stb)
 
 [tinyXML2](https://github.com/leethomason/tinyxml2)
 

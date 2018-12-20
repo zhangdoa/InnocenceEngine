@@ -13,11 +13,8 @@
 #include "../component/GameSystemComponent.h"
 
 #include "../third-party/ImGui/imgui.h"
-#include "../third-party/ImGui/imgui_impl_glfw_gl3.h"
-
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
-#include <experimental/filesystem>
-#endif
+#include "../third-party/ImGui/imgui_impl_glfw.h"
+#include "../third-party/ImGui/imgui_impl_opengl3.h"
 
 #include "ICoreSystem.h"
 
@@ -107,11 +104,11 @@ void ImGuiWrapper::setup()
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
-	ImGui_ImplGlfwGL3_Init(GLWindowSystemComponent::get().m_window, true);
+	ImGui_ImplGlfw_InitForOpenGL(GLWindowSystemComponent::get().m_window, true);
+	ImGui_ImplOpenGL3_Init(NULL);
 
 	// Setup style
 	ImGui::StyleColorsDark();
-	//ImGui::StyleColorsClassic();
 
 	// Load Fonts
 	io.Fonts->AddFontFromFileTTF("..//res//fonts//FreeSans.otf", 16.0f);
@@ -130,7 +127,9 @@ void ImGuiWrapper::update()
 	static RenderingConfig l_renderingConfig;
 	static GameConfig l_gameConfig;
 
-	ImGui_ImplGlfwGL3_NewFrame();
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
 	{
 		ImGui::Begin("Profiler", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -407,7 +406,7 @@ void ImGuiWrapper::update()
 		// Rendering
 		glViewport(0, 0, (GLsizei)WindowSystemComponent::get().m_windowResolution.x, (GLsizei)WindowSystemComponent::get().m_windowResolution.y);
 		ImGui::Render();
-		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #else
 	// @TODO: Linux ImGui WIP
 #endif
@@ -425,6 +424,9 @@ void ImGuiWrapper::update()
 
 void ImGuiWrapper::terminate()
 {
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 }
 
 void ImGuiWrapper::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize)
