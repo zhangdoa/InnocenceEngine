@@ -141,7 +141,7 @@ bool DXRenderingSystemNS::setup()
 	IDXGIAdapter* m_adapter;
 	IDXGIOutput* m_adapterOutput;
 
-	unsigned int numModes, i, numerator, denominator;
+	unsigned int numModes, numerator, denominator;
 	unsigned long long stringLength;
 	DXGI_MODE_DESC* displayModeList;
 
@@ -198,7 +198,7 @@ bool DXRenderingSystemNS::setup()
 
 	// Now go through all the display modes and find the one that matches the screen width and height.
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
-	for (i = 0; i < numModes; i++)
+	for (unsigned int i = 0; i < numModes; i++)
 	{
 		if (displayModeList[i].Width == (unsigned int)g_WindowSystemComponent->m_windowResolution.x
 			&&

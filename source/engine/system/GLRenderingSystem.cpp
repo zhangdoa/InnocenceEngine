@@ -934,7 +934,7 @@ void GLRenderingSystemNS::bindLightPassUniformLocations(GLShaderProgramComponent
 		rhs->m_program,
 		"uni_dirLight.color");
 
-	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemComponent->m_PointLightComponents.size(); i++)
+	for (size_t i = 0; i < GLRenderingSystemNS::g_GameSystemComponent->m_PointLightComponents.size(); i++)
 	{
 		std::stringstream ss;
 		ss << i;
@@ -949,7 +949,7 @@ void GLRenderingSystemNS::bindLightPassUniformLocations(GLShaderProgramComponent
 		);
 	}
 
-	for (auto i = (unsigned int)0; i < GLRenderingSystemNS::g_GameSystemComponent->m_SphereLightComponents.size(); i++)
+	for (size_t i = 0; i < GLRenderingSystemNS::g_GameSystemComponent->m_SphereLightComponents.size(); i++)
 	{
 		std::stringstream ss;
 		ss << i;
@@ -1969,7 +1969,7 @@ void GLRenderingSystemNS::updateShadowRenderPass()
 					g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 
 				// draw each graphic data of visibleComponent
-				for (auto l_modelPair : l_visibleComponent->m_modelMap)
+				for (auto& l_modelPair : l_visibleComponent->m_modelMap)
 				{
 					// draw meshes
 					auto l_MDC = l_modelPair.first;

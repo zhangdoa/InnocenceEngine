@@ -42,12 +42,12 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::initialize()
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::update()
 {
-	for (auto i : InnoInputSystemNS::g_WindowSystemComponent->m_buttonStatus)
+	for (auto& i : InnoInputSystemNS::g_WindowSystemComponent->m_buttonStatus)
 	{
-		auto l_keybinding = InnoInputSystemNS::g_WindowSystemComponent->m_buttonStatusCallback.find(ButtonData{ i.first, i.second });
+		auto& l_keybinding = InnoInputSystemNS::g_WindowSystemComponent->m_buttonStatusCallback.find(ButtonData{ i.first, i.second });
 		if (l_keybinding != InnoInputSystemNS::g_WindowSystemComponent->m_buttonStatusCallback.end())
 		{
-			for (auto j : l_keybinding->second)
+			for (auto& j : l_keybinding->second)
 			{
 				if (j)
 				{
@@ -61,14 +61,14 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::update()
 	{
 		if (InnoInputSystemNS::g_WindowSystemComponent->m_mouseXOffset != 0)
 		{
-			for (auto j : InnoInputSystemNS::g_WindowSystemComponent->m_mouseMovementCallback.find(0)->second)
+			for (auto& j : InnoInputSystemNS::g_WindowSystemComponent->m_mouseMovementCallback.find(0)->second)
 			{
 				(*j)(InnoInputSystemNS::g_WindowSystemComponent->m_mouseXOffset);
 			};
 		}
 		if (InnoInputSystemNS::g_WindowSystemComponent->m_mouseYOffset != 0)
 		{
-			for (auto j : InnoInputSystemNS::g_WindowSystemComponent->m_mouseMovementCallback.find(1)->second)
+			for (auto& j : InnoInputSystemNS::g_WindowSystemComponent->m_mouseMovementCallback.find(1)->second)
 			{
 				(*j)(InnoInputSystemNS::g_WindowSystemComponent->m_mouseYOffset);
 			};
@@ -104,7 +104,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(ButtonData boun
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(ButtonData boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor)
 {
-	for (auto i : buttonStatusCallbackFunctor)
+	for (auto& i : buttonStatusCallbackFunctor)
 	{
 		addButtonStatusCallback(boundButton, i);
 	}
@@ -112,7 +112,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(ButtonData boun
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::addButtonStatusCallback(ButtonStatusCallbackMap & buttonStatusCallbackFunctor)
 {
-	for (auto i : buttonStatusCallbackFunctor)
+	for (auto& i : buttonStatusCallbackFunctor)
 	{
 		addButtonStatusCallback(i.first, i.second);
 	}
@@ -133,7 +133,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::addMouseMovementCallback(int mouseCode,
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::addMouseMovementCallback(int mouseCode, std::vector<std::function<void(float)>*>& mouseMovementCallback)
 {
-	for (auto i : mouseMovementCallback)
+	for (auto& i : mouseMovementCallback)
 	{
 		addMouseMovementCallback(mouseCode, i);
 	}
@@ -141,7 +141,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::addMouseMovementCallback(int mouseCode,
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::addMouseMovementCallback(MouseMovementCallbackMap& mouseMovementCallback)
 {
-	for (auto i : mouseMovementCallback)
+	for (auto& i : mouseMovementCallback)
 	{
 		addMouseMovementCallback(i.first, i.second);
 	}

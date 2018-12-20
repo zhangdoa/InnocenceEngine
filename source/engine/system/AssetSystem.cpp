@@ -431,6 +431,8 @@ void InnoAssetSystemNS::addUnitCube(MeshDataComponent& meshDataComponent)
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
 	};
 
+	meshDataComponent.m_vertices.reserve(288);
+
 	for (size_t i = 0; i < 288; i += 8)
 	{
 		meshDataComponent.m_vertices.emplace_back(
@@ -448,6 +450,8 @@ void InnoAssetSystemNS::addUnitCube(MeshDataComponent& meshDataComponent)
 	//{
 	//	l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
 	//}
+
+	meshDataComponent.m_indices.reserve(36);
 
 	for (unsigned int i = 0; i < 36; i++)
 	{
@@ -827,17 +831,17 @@ ModelMap InnoAssetSystemNS::processAssimpScene(const aiScene* aiScene)
 	if (aiScene->mRootNode->mNumMeshes > 0)
 	{
 		auto l_loadedModelMapInNode = processAssimpNode(aiScene->mRootNode, aiScene);
-		for (auto pair : l_loadedModelMapInNode)
+		for (auto& pair : l_loadedModelMapInNode)
 		{
 			l_loadedModelMapInScene.emplace(pair);
 		}
 	}
-	for (auto i = (unsigned int)0; i < aiScene->mRootNode->mNumChildren; i++)
+	for (unsigned int i = 0; i < aiScene->mRootNode->mNumChildren; i++)
 	{
 		if (aiScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
 			auto l_loadedModelMapInNode = processAssimpNode(aiScene->mRootNode->mChildren[i], aiScene);
-			for (auto pair : l_loadedModelMapInNode)
+			for (auto& pair : l_loadedModelMapInNode)
 			{
 				l_loadedModelMapInScene.emplace(pair);
 			}
@@ -850,7 +854,7 @@ ModelMap InnoAssetSystemNS::processAssimpNode(const aiNode * node, const aiScene
 {
 	auto l_loadedModelMap = ModelMap();
 	// process each mesh located at the current node
-	for (auto i = (unsigned int)0; i < node->mNumMeshes; i++)
+	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		auto l_modelPair = processSingleAssimpMesh(scene, node->mMeshes[i]);
 		l_loadedModelMap.emplace(l_modelPair);
@@ -867,7 +871,7 @@ ModelPair InnoAssetSystemNS::processSingleAssimpMesh(const aiScene * scene, unsi
 	auto l_verticesNumber = l_aiMesh->mNumVertices;
 	l_meshData->m_vertices.reserve(l_verticesNumber);
 
-	for (auto i = (unsigned int)0; i < l_verticesNumber; i++)
+	for (unsigned int i = 0; i < l_verticesNumber; i++)
 	{
 		Vertex l_Vertex;
 
@@ -918,25 +922,22 @@ ModelPair InnoAssetSystemNS::processSingleAssimpMesh(const aiScene * scene, unsi
 	l_meshData->m_vertices.shrink_to_fit();
 
 	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-	// @TODO: reserve fixed size vector
-
-	for (auto i = (unsigned int)0; i < l_aiMesh->mNumFaces; i++)
+	for (unsigned int i = 0; i < l_aiMesh->mNumFaces; i++)
 	{
 		aiFace l_face = l_aiMesh->mFaces[i];
 		l_meshData->m_indicesSize += l_face.mNumIndices;
 	}
 	l_meshData->m_indices.reserve(l_meshData->m_indicesSize);
 
-	for (auto i = (unsigned int)0; i < l_aiMesh->mNumFaces; i++)
+	for (unsigned int i = 0; i < l_aiMesh->mNumFaces; i++)
 	{
 		aiFace l_face = l_aiMesh->mFaces[i];
 		// retrieve all indices of the face and store them in the indices vector
-		for (auto j = (unsigned int)0; j < l_face.mNumIndices; j++)
+		for (unsigned int j = 0; j < l_face.mNumIndices; j++)
 		{
 			l_meshData->m_indices.emplace_back(l_face.mIndices[j]);
 		}
 	}
-	l_meshData->m_indices.shrink_to_fit();
 
 	auto l_modelPair = ModelPair();
 	l_modelPair.first = l_meshData;
@@ -969,7 +970,7 @@ MaterialDataComponent* InnoAssetSystemNS::processSingleAssimpMaterial(const aiMa
 {
 	auto l_loadedMaterialDataComponent = addMaterialDataComponent();
 
-	for (auto i = (unsigned int)0; i < aiTextureType_UNKNOWN; i++)
+	for (unsigned int i = 0; i < aiTextureType_UNKNOWN; i++)
 	{
 		if (aiMaterial->GetTextureCount(aiTextureType(i)) > 0)
 		{

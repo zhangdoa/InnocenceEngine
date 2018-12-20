@@ -332,7 +332,7 @@ void GameInstanceNS::setupSpheres()
 		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_opaqueSphereVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 		m_opaqueSphereVisibleComponents[i]->m_drawAABB = true;
-		//m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
+		//m_opaqueSphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 	}
 	for (unsigned int i = 0; i < sphereMatrixDim; i++)
 	{
