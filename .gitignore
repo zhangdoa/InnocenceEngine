@@ -13,4 +13,6 @@
 
 *.innoModel
 
-source/engine/common/config\.h
+/source/engine/common/config.h
+/source/engine/third-party/ImGui/*.h
+/source/engine/third-party/ImGui/*.cpp
