@@ -38,6 +38,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void initializeHaltonSampler();
 
 	void initializeEnvironmentPass();
+	void initializeEnvironmentCapturePass();
 	void initializeBRDFLUTPass();
 
 	void initializeShadowPass();
@@ -72,7 +73,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void initializeFinalBlendPass();
 
 	GLRenderPassComponent* addGLRenderPassComponent(unsigned int RTNum, GLFrameBufferDesc glFrameBufferDesc, TextureDataDesc RTDesc);
-
+	void addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, int colorAttachmentIndex, int textureIndex, int mipLevel);
+	void setDrawBuffers(unsigned int RTNum);
 	bool resizeGLRenderPassComponent(GLRenderPassComponent* GLRPC, GLFrameBufferDesc glFrameBufferDesc);
 
 	GLMeshDataComponent* generateGLMeshDataComponent(MeshDataComponent* rhs);
@@ -96,6 +98,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	void updateEnvironmentRenderPass();
 	void updateBRDFLUTRenderPass();
+	void updateEnvironmentCaptureRenderPass();
 
 	void updateShadowRenderPass();
 
@@ -191,9 +194,12 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	GLFrameBufferDesc deferredPassFBDesc = GLFrameBufferDesc();
 	GLFrameBufferDesc shadowPassFBDesc = GLFrameBufferDesc();
+	GLFrameBufferDesc envCapturePassFBDesc = GLFrameBufferDesc();
 
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 	TextureDataDesc shadowPassTextureDesc = TextureDataDesc();
+	TextureDataDesc BRDFLUTSplitSummingTextureDesc = TextureDataDesc();
+	TextureDataDesc BRDFLUTAverangeMSTextureDesc = TextureDataDesc();
 
 	mat4 m_CamProjOriginal;
 	mat4 m_CamProjJittered;
@@ -331,6 +337,11 @@ bool GLRenderingSystemNS::setup()
 	shadowPassFBDesc.sizeX = 2048;
 	shadowPassFBDesc.sizeY = 2048;
 
+	envCapturePassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
+	envCapturePassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
+	envCapturePassFBDesc.sizeX = 2048;
+	envCapturePassFBDesc.sizeY = 2048;
+
 	deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	deferredPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	deferredPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
@@ -350,6 +361,26 @@ bool GLRenderingSystemNS::setup()
 	shadowPassTextureDesc.textureWidth = shadowPassFBDesc.sizeX;
 	shadowPassTextureDesc.textureHeight = shadowPassFBDesc.sizeY;
 	shadowPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+
+	BRDFLUTSplitSummingTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	BRDFLUTSplitSummingTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
+	BRDFLUTSplitSummingTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
+	BRDFLUTSplitSummingTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	BRDFLUTSplitSummingTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	BRDFLUTSplitSummingTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	BRDFLUTSplitSummingTextureDesc.textureWidth = 512;
+	BRDFLUTSplitSummingTextureDesc.textureHeight = 512;
+	BRDFLUTSplitSummingTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+
+	BRDFLUTAverangeMSTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	BRDFLUTAverangeMSTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RG16F;
+	BRDFLUTAverangeMSTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RG;
+	BRDFLUTAverangeMSTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	BRDFLUTAverangeMSTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	BRDFLUTAverangeMSTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	BRDFLUTAverangeMSTextureDesc.textureWidth = 512;
+	BRDFLUTAverangeMSTextureDesc.textureHeight = 512;
+	BRDFLUTAverangeMSTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
 	g_RenderingSystemComponent->f_reloadShader =
 		[&](RenderPassType renderPassType) {
@@ -555,6 +586,37 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 	return l_GLRPC;
 }
 
+void GLRenderingSystemNS::addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, int colorAttachmentIndex, int textureIndex, int mipLevel)
+{
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+
+	l_TDC->m_textureDataDesc = RTDesc;
+	l_TDC->m_textureData = { nullptr };
+
+	GLRPC->m_TDCs.emplace_back(l_TDC);
+
+	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
+
+	attachTextureToFramebuffer(
+		l_TDC,
+		l_GLTDC,
+		GLRPC->m_GLFBC,
+		colorAttachmentIndex, textureIndex, mipLevel
+	);
+
+	GLRPC->m_GLTDCs.emplace_back(l_GLTDC);
+}
+
+void GLRenderingSystemNS::setDrawBuffers(unsigned int RTNum)
+{
+	std::vector<unsigned int> l_colorAttachments;
+	for (unsigned int i = 0; i < RTNum; ++i)
+	{
+		l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
+	}
+	glDrawBuffers((GLsizei)l_colorAttachments.size(), &l_colorAttachments[0]);
+}
+
 bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC, GLFrameBufferDesc glFrameBufferDesc)
 {
 	GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeX = glFrameBufferDesc.sizeX;
@@ -645,6 +707,7 @@ bool GLRenderingSystemNS::reloadGLShaderProgramComponent(RenderPassType renderPa
 void GLRenderingSystemNS::initializeEnvironmentPass()
 {
 	initializeBRDFLUTPass();
+	initializeEnvironmentCapturePass();
 }
 
 void GLRenderingSystemNS::initializeBRDFLUTPass()
@@ -667,15 +730,7 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 	// generate and bind texture
 	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
-	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
-	l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureDataDesc.textureWidth = 512;
-	l_TDC->m_textureDataDesc.textureHeight = 512;
-	l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	l_TDC->m_textureDataDesc = BRDFLUTSplitSummingTextureDesc;
 	l_TDC->m_textureData = { nullptr };
 
 	GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassTDC = l_TDC;
@@ -687,15 +742,7 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 	////
 	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
-	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RG16F;
-	l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RG;
-	l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureDataDesc.textureWidth = 512;
-	l_TDC->m_textureDataDesc.textureHeight = 512;
-	l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	l_TDC->m_textureDataDesc = BRDFLUTAverangeMSTextureDesc;
 	l_TDC->m_textureData = { nullptr };
 
 	GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassTDC = l_TDC;
@@ -738,6 +785,53 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 		0);
 
 	GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassSPC = rhs;
+}
+
+void GLRenderingSystemNS::initializeEnvironmentCapturePass()
+{
+	// generate and bind framebuffer
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
+
+	glGenFramebuffers(1, &l_FBC->m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
+
+	// generate and bind renderbuffer
+	glGenRenderbuffers(1, &l_FBC->m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
+
+	GLEnvironmentRenderPassComponent::get().m_capturePassFBC = l_FBC;
+
+	// generate and bind texture
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+
+	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::ENVIRONMENT_CAPTURE;
+	l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
+	l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
+	l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	l_TDC->m_textureDataDesc.textureWidth = 2048;
+	l_TDC->m_textureDataDesc.textureHeight = 2048;
+	l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+	GLEnvironmentRenderPassComponent::get().m_capturePassTDC = l_TDC;
+
+	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
+
+	GLEnvironmentRenderPassComponent::get().m_capturePassGLTDC = l_GLTDC;
+
+	// finally check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: EnvironmentCaptureRenderPass Framebuffer is not completed!");
+	}
+
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void GLRenderingSystemNS::initializeShadowPass()
@@ -1928,13 +2022,70 @@ void GLRenderingSystemNS::updateBRDFLUTRenderPass()
 	glClear(GL_DEPTH_BUFFER_BIT);
 	activateTexture(l_SSGLTDC, 0);
 	drawMesh(l_MDC);
+}
 
-	RenderingSystemComponent::get().m_shouldUpdateEnvironmentMap = false;
+void GLRenderingSystemNS::updateEnvironmentCaptureRenderPass()
+{
+	// bind to framebuffer
+	auto l_FBC = GLEnvironmentRenderPassComponent::get().m_capturePassFBC;
+	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
+	glViewport(0, 0, 2048, 2048);
+
+	mat4 l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 10.0f);
+	std::vector<mat4> l_v =
+	{
+		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
+		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
+		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
+	};
+
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
+
+	auto l_capturePassTDC = GLEnvironmentRenderPassComponent::get().m_capturePassTDC;
+	auto l_capturePassGLTDC = GLEnvironmentRenderPassComponent::get().m_capturePassGLTDC;
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassSPC);
+
+		updateUniform(
+			GLFinalRenderPassComponent::get().m_skyPass_uni_p,
+			l_p);
+
+		updateUniform(
+			GLFinalRenderPassComponent::get().m_skyPass_uni_viewportSize,
+			2048.0f, 2048.0f);
+
+		updateUniform(
+			GLFinalRenderPassComponent::get().m_skyPass_uni_eyePos,
+			m_CamGlobalPos.x, m_CamGlobalPos.y, m_CamGlobalPos.z);
+		updateUniform(
+			GLFinalRenderPassComponent::get().m_skyPass_uni_lightDir,
+			m_sunDir.x, m_sunDir.y, m_sunDir.z);
+
+		for (unsigned int i = 0; i < 6; ++i)
+		{
+			updateUniform(GLFinalRenderPassComponent::get().m_skyPass_uni_r, l_v[i]);
+			attachTextureToFramebuffer(l_capturePassTDC, l_capturePassGLTDC, l_FBC, 0, i, 0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			drawMesh(l_MDC);
+		}
+
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
 }
 
 void GLRenderingSystemNS::updateEnvironmentRenderPass()
 {
 	updateBRDFLUTRenderPass();
+	updateEnvironmentCaptureRenderPass();
+	RenderingSystemComponent::get().m_shouldUpdateEnvironmentMap = false;
 }
 
 void GLRenderingSystemNS::updateShadowRenderPass()

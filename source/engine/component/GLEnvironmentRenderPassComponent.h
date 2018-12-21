@@ -29,6 +29,11 @@ public:
 	TextureDataComponent* m_BRDFMSAverageLUTPassTDC;
 	GLTextureDataComponent* m_BRDFMSAverageLUTPassGLTDC;
 	GLuint m_BRDFMSAverageLUTPass_uni_brdfLUT;
+
+	GLFrameBufferComponent* m_capturePassFBC;
+	TextureDataComponent* m_capturePassTDC;
+	GLTextureDataComponent* m_capturePassGLTDC;
+
 private:
 	GLEnvironmentRenderPassComponent() {};
 };
