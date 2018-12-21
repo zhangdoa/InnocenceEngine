@@ -149,6 +149,32 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 	return true;
 }
 
+template<typename T>
+componentType getComponentType();
+
+#define getComponentTypeDefi( className ) \
+componentType getComponentType<className>() \
+{ \
+	return componentType::##className; \
+}
+
+template<>
+getComponentTypeDefi(TransformComponent)
+template<>
+getComponentTypeDefi(VisibleComponent)
+template<>
+getComponentTypeDefi(DirectionalLightComponent)
+template<>
+getComponentTypeDefi(PointLightComponent)
+template<>
+getComponentTypeDefi(SphereLightComponent)
+template<>
+getComponentTypeDefi(CameraComponent)
+template<>
+getComponentTypeDefi(InputComponent)
+template<>
+getComponentTypeDefi(EnvironmentCaptureComponent)
+
 #define spawnComponentImplDefi( className ) \
 INNO_SYSTEM_EXPORT void InnoGameSystem::spawnComponent(className* rhs, EntityID parentEntity) \
 { \
@@ -157,18 +183,21 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::spawnComponent(className* rhs, EntityID 
 	InnoGameSystemNS::g_GameSystemComponent->m_##className##sMap.emplace(parentEntity, rhs); \
 \
 	auto indexOfTheComponent = InnoGameSystemNS::g_GameSystemComponent->m_##className##s.size(); \
+	auto l_componentName = std::string(#className) + "_" + std::to_string(indexOfTheComponent); \
+	auto l_componentType = getComponentType<className>(); \
+	auto l_componentMetaData = componentMetadata(l_componentType, l_componentName); \
 \
-	auto& result = InnoGameSystemNS::g_GameSystemComponent->m_entityChildrenComponentsNameMap.find(parentEntity); \
-	if (result != InnoGameSystemNS::g_GameSystemComponent->m_entityChildrenComponentsNameMap.end()) \
+	auto& result = InnoGameSystemNS::g_GameSystemComponent->m_enitityChildrenComponentsMetadataMap.find(parentEntity); \
+	if (result != InnoGameSystemNS::g_GameSystemComponent->m_enitityChildrenComponentsMetadataMap.end()) \
 	{ \
-		auto l_componentNameMap = &result->second; \
-		l_componentNameMap->emplace(rhs, std::string(#className) + "_" + std::to_string(indexOfTheComponent)); \
+		auto l_componentMetadataMap = &result->second; \
+		l_componentMetadataMap->emplace(rhs, l_componentMetaData); \
 	} \
 	else \
 	{ \
-		auto l_componentNameMap = componentNameMap(); \
-		l_componentNameMap.emplace(rhs, std::string(#className) + "_" + std::to_string(indexOfTheComponent)); \
-		InnoGameSystemNS::g_GameSystemComponent->m_entityChildrenComponentsNameMap.emplace(parentEntity, std::move(l_componentNameMap)); \
+		auto l_componentMetadataMap = componentMetadataMap(); \
+		l_componentMetadataMap.emplace(rhs, l_componentMetaData); \
+		InnoGameSystemNS::g_GameSystemComponent->m_enitityChildrenComponentsMetadataMap.emplace(parentEntity, std::move(l_componentMetadataMap)); \
 	} \
 }
 

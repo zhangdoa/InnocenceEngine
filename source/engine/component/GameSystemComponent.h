@@ -3,8 +3,10 @@
 #include "../common/ComponentHeaders.h"
 #include "../common/InnoConcurrency.h"
 
-using componentNameMap = std::unordered_map<void*, std::string>;
-using enitityChildrenComponentsNameMap = std::unordered_map<EntityID, componentNameMap>;
+enum class componentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SphereLightComponent, CameraComponent, InputComponent, EnvironmentCaptureComponent };
+using componentMetadata = std::pair<componentType, std::string>;
+using componentMetadataMap = std::unordered_map<void*, componentMetadata>;
+using enitityChildrenComponentsMetadataMap = std::unordered_map<EntityID, componentMetadataMap>;
 using enitityNameMap = std::unordered_map<EntityID, std::string>;
 
 class GameSystemComponent
@@ -43,7 +45,7 @@ public:
 	std::unordered_multimap<EntityID, InputComponent*> m_InputComponentsMap;
 	std::unordered_multimap<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
 
-	enitityChildrenComponentsNameMap m_entityChildrenComponentsNameMap;
+	enitityChildrenComponentsMetadataMap m_enitityChildrenComponentsMetadataMap;
 	enitityNameMap m_enitityNameMap;
 
 	InnoFuture<void>* m_asyncTask;

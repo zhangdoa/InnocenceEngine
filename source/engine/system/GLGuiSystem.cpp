@@ -58,6 +58,31 @@ public:
 	void setRenderingConfig();
 private:
 	ImGuiWrapper() {};
+
+	void showTransformComponentPropertyEditor(void* rhs)
+	{
+		auto l_rhs = reinterpret_cast<TransformComponent*>(rhs);
+
+		ImGui::Text("Transform Hierarchy Level: %.i", l_rhs->m_transformHierarchyLevel);
+
+		ImGui::Text("Local Transform Vector");
+
+		static float float_min = std::numeric_limits<float>::min();
+		static float float_max = std::numeric_limits<float>::max();
+
+		static float pos[4];
+		pos[0] = l_rhs->m_localTransformVector.m_pos.x;
+		pos[1] = l_rhs->m_localTransformVector.m_pos.y;
+		pos[2] = l_rhs->m_localTransformVector.m_pos.z;
+		pos[3] = 0.0f;
+
+		if (ImGui::DragFloat3("Position", pos, 0.0001f, float_min, float_max))
+		{
+			l_rhs->m_localTransformVector.m_pos.x = pos[0];
+			l_rhs->m_localTransformVector.m_pos.y = pos[1];
+			l_rhs->m_localTransformVector.m_pos.z = pos[2];
+		}
+	}
 };
 
 INNO_PRIVATE_SCOPE GLGuiSystemNS
@@ -354,7 +379,7 @@ void ImGuiWrapper::update()
 
 		ImGuiWrapper::get().showFileExplorer();
 		ImGuiWrapper::get().showWorldExplorer();
-		
+
 		// Rendering
 		glViewport(0, 0, (GLsizei)WindowSystemComponent::get().m_windowResolution.x, (GLsizei)WindowSystemComponent::get().m_windowResolution.y);
 		ImGui::Render();
@@ -383,7 +408,7 @@ void ImGuiWrapper::terminate()
 
 void ImGuiWrapper::showFileExplorer()
 {
-	auto l_iconSize = ImVec2(32.0f, 32.0f);
+	auto l_iconSize = ImVec2(48.0f, 48.0f);
 
 	std::function<ImTextureID(const IconType iconType)> f_getTextID =
 		[&](const IconType iconType) -> ImTextureID
@@ -403,18 +428,11 @@ void ImGuiWrapper::showFileExplorer()
 		}
 	};
 
-	std::function<void(AssetMetadata* assetMetadata)> f_assetBuilder =
-		[&](AssetMetadata* assetMetadata)
-	{
-		ImGui::ImageButton(f_getTextID(assetMetadata->iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0), -1, ImColor(0, 0, 0, 255));
-		ImGui::Text((assetMetadata->fileName + assetMetadata->extension).c_str());
-	};
-
-	ImGui::Begin("File Explorer", 0, ImGuiWindowFlags_AlwaysAutoResize);
+	ImGui::Begin("File Explorer", 0);
 
 	static DirectoryMetadata* currentDirectoryMetadata = &AssetSystemComponent::get().m_rootDirectoryMetadata;
 
-	if (ImGui::Button("Return to previous directory"))
+	if (ImGui::Button("Return"))
 	{
 		if (currentDirectoryMetadata->depth > 0)
 		{
@@ -422,22 +440,53 @@ void ImGuiWrapper::showFileExplorer()
 		}
 	}
 
+	ImGuiStyle& style = ImGui::GetStyle();
+	float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+
 	for (size_t i = 0; i < currentDirectoryMetadata->childrenDirectories.size(); i++)
 	{
 		ImGui::PushID((int)i);
 
 		auto l_currentActivateDir = &currentDirectoryMetadata->childrenDirectories[i];
 
-		if (ImGui::ImageButton(f_getTextID(IconType::UNKNOWN), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0), -1, ImColor(0, 0, 0, 255)))
+		ImGui::BeginGroup();
 		{
-			currentDirectoryMetadata = l_currentActivateDir;
+			if (ImGui::ImageButton(f_getTextID(IconType::UNKNOWN), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0), -1, ImColor(0, 0, 0, 255)))
+			{
+				currentDirectoryMetadata = l_currentActivateDir;
+			}
+			ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + l_iconSize.x);
+			ImGui::Text((l_currentActivateDir->directoryName).c_str());
+			ImGui::PopTextWrapPos();
 		}
-		ImGui::Text((l_currentActivateDir->directoryName).c_str());
+		ImGui::EndGroup();
+
+		float last_button_x2 = ImGui::GetItemRectMax().x;
+		float next_button_x2 = last_button_x2 + style.ItemSpacing.x + l_iconSize.x;
+		if (next_button_x2 < window_visible_x2)
+		{
+			ImGui::SameLine();
+		}
+
 		ImGui::PopID();
 	}
 	for (auto& i : currentDirectoryMetadata->childrenAssets)
 	{
-		f_assetBuilder(&i);
+		ImGui::BeginGroup();
+		{
+			ImGui::ImageButton(f_getTextID(i.iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0), -1, ImColor(0, 0, 0, 255));
+			ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + l_iconSize.x);
+			ImGui::Text((i.fileName + i.extension).c_str());
+			ImGui::PopTextWrapPos();
+		}
+		ImGui::EndGroup();
+
+		float last_button_x2 = ImGui::GetItemRectMax().x;
+		float next_button_x2 = last_button_x2 + style.ItemSpacing.x + l_iconSize.x;
+		if (next_button_x2 < window_visible_x2)
+		{
+			ImGui::SameLine();
+		}
 	}
 
 	ImGui::End();
@@ -445,37 +494,46 @@ void ImGuiWrapper::showFileExplorer()
 
 void ImGuiWrapper::showWorldExplorer()
 {
-	ImGui::Begin("World Explorer", 0, ImGuiWindowFlags_AlwaysAutoResize);
+	ImGui::Begin("World Explorer", 0);
+
+	static void* selectedComponent = nullptr;
+	static componentType selectedComponentType;
 
 	for (auto& i : GameSystemComponent::get().m_enitityNameMap)
 	{
 		if (ImGui::TreeNode(i.second.c_str()))
 		{
-			auto& result = GameSystemComponent::get().m_entityChildrenComponentsNameMap.find(i.first);
-			if (result != GameSystemComponent::get().m_entityChildrenComponentsNameMap.end())
+			auto& result = GameSystemComponent::get().m_enitityChildrenComponentsMetadataMap.find(i.first);
+			if (result != GameSystemComponent::get().m_enitityChildrenComponentsMetadataMap.end())
 			{
-				auto l_componentNameMap = result->second;
+				auto& l_componentNameMap = result->second;
 
-				static void* selected = nullptr;
 				for (auto& j : l_componentNameMap)
 				{
-					if (ImGui::Selectable(j.second.c_str(), selected == j.first))
+					if (ImGui::Selectable(j.second.second.c_str(), selectedComponent == j.first))
 					{
-						selected = j.first;
+						selectedComponent = j.first;
+						selectedComponentType = j.second.first;
 					}
 				}
 				ImGui::TreePop();
 			}
 		}
 	}
+	ImGui::End();
+
+	ImGui::Begin("Property Editor", 0);
 	{
-		ImGui::Begin("Property Editor", 0, ImGuiWindowFlags_AlwaysAutoResize);
+		if (selectedComponent)
 		{
-
+			switch (selectedComponentType)
+			{
+			case componentType::TransformComponent:showTransformComponentPropertyEditor(selectedComponent); break;
+			default:
+				break;
+			}
 		}
-		ImGui::End();
 	}
-
 	ImGui::End();
 }
 
