@@ -15,13 +15,13 @@ void main()
 	}
 	else
 	{
-		vec4 result = texture(uni_TAAPassRT0, thefrag_TexCoord);
-		for (int i = 1; i < 8; ++i) {
-			vec2 offset = MotionVector * (float(i) / float(8 - 1));
+		vec4 result;
+		for (int i = 0; i < 4; i++) {
+			vec2 offset = MotionVector * (float(i) / 4.0f);
 			result += texture(uni_TAAPassRT0, thefrag_TexCoord + offset);
 		}
 
-		result /= float(8);
+		result /= 4.0f;
 
 		//use alpha channel as mask
 		uni_motionBlurPassRT0 = vec4(result.rgb, 1.0);
