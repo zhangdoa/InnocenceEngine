@@ -400,47 +400,47 @@ void* InnoMemorySystem::deserializeImpl(const std::string& fileName)
 	unsigned long classSize;
 	unsigned char* l_ptr;
 
-	if (className == getClassName<TransformComponent>())
+	if (className == InnoUtility::getClassName<TransformComponent>())
 	{
 		classSize = sizeof(TransformComponent);
 		l_ptr = reinterpret_cast<unsigned char*>(spawn<TransformComponent>());
 	}
-	else if (className == getClassName<VisibleComponent>())
+	else if (className == InnoUtility::getClassName<VisibleComponent>())
 	{
 		classSize = sizeof(VisibleComponent);
 		l_ptr = reinterpret_cast<unsigned char*>(spawn<VisibleComponent>());
 	}
-	else if (className == getClassName<DirectionalLightComponent>())
+	else if (className == InnoUtility::getClassName<DirectionalLightComponent>())
 	{
 		classSize = sizeof(DirectionalLightComponent);
 		l_ptr = reinterpret_cast<unsigned char*>(spawn<DirectionalLightComponent>());
 	}
-	else if (className == getClassName<PointLightComponent>())
+	else if (className == InnoUtility::getClassName<PointLightComponent>())
 	{
 		classSize = sizeof(PointLightComponent);
 		l_ptr = reinterpret_cast<unsigned char*>(spawn<PointLightComponent>());
 	}
-	else if (className == getClassName<SphereLightComponent>())
+	else if (className == InnoUtility::getClassName<SphereLightComponent>())
 	{
 		classSize = sizeof(SphereLightComponent);
 		l_ptr = reinterpret_cast<unsigned char*>(spawn<SphereLightComponent>());
 	}
-	else if (className == getClassName<CameraComponent>())
+	else if (className == InnoUtility::getClassName<CameraComponent>())
 	{
 		classSize = sizeof(CameraComponent);
 		l_ptr = reinterpret_cast<unsigned char*>(spawn<CameraComponent>());
 	}
-	else if (className == getClassName<InputComponent>())
+	else if (className == InnoUtility::getClassName<InputComponent>())
 	{
 		classSize = sizeof(InputComponent);
 		l_ptr = reinterpret_cast<unsigned char*>(spawn<InputComponent>());
 	}
-	else if (className == getClassName<EnvironmentCaptureComponent>())
+	else if (className == InnoUtility::getClassName<EnvironmentCaptureComponent>())
 	{
 		classSize = sizeof(EnvironmentCaptureComponent);
 		l_ptr = reinterpret_cast<unsigned char*>(spawn<EnvironmentCaptureComponent>());
 	}
-	else if (className == getClassName<PhysicsDataComponent>())
+	else if (className == InnoUtility::getClassName<PhysicsDataComponent>())
 	{
 		classSize = sizeof(PhysicsDataComponent);
 		l_ptr = reinterpret_cast<unsigned char*>(spawn<PhysicsDataComponent>());

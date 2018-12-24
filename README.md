@@ -94,7 +94,7 @@ echo | postBuildMac64.sh
 
 [stb](https://github.com/nothings/stb)
 
-[tinyXML2](https://github.com/leethomason/tinyxml2)
+[JSON for Modern C++](https://github.com/nlohmann/json)
 
 ### Assets
 

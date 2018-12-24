@@ -43,12 +43,6 @@ inline void IMemorySystem::destroy(className* p) \
 	free##className(p); \
 };
 
-#define getClassNameTemplate( className ) \
-inline std::string IMemorySystem::getClassName<className>() \
-{ \
-	return std::string(#className); \
-}
-
 INNO_INTERFACE IMemorySystem
 {
 public:
@@ -143,48 +137,7 @@ public:
 	{
 		return reinterpret_cast<T *>(deserializeImpl(fileName));
 	};
-
-	template<typename T> std::string getClassName()
-	{
-		return std::string("Undefined");
-	}
 };
-
-template<>
-getClassNameTemplate(TransformComponent);
-
-template<>
-getClassNameTemplate(VisibleComponent);
-
-template<>
-getClassNameTemplate(DirectionalLightComponent);
-
-template<>
-getClassNameTemplate(PointLightComponent);
-
-template<>
-getClassNameTemplate(SphereLightComponent);
-
-template<>
-getClassNameTemplate(CameraComponent);
-
-template<>
-getClassNameTemplate(InputComponent);
-
-template<>
-getClassNameTemplate(EnvironmentCaptureComponent);
-
-template<>
-getClassNameTemplate(MeshDataComponent);
-
-template<>
-getClassNameTemplate(MaterialDataComponent);
-
-template<>
-getClassNameTemplate(TextureDataComponent);
-
-template<>
-getClassNameTemplate(PhysicsDataComponent);
 
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(TransformComponent);
