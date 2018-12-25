@@ -44,6 +44,8 @@ public:
 		"uni_shadowMap_3",
 		"uni_brdfLUT",
 		"uni_brdfMSLUT",
+		"uni_irradianceMap",
+		"uni_preFiltedMap"
 	};
 
 	std::vector<GLuint> m_uni_shadowSplitAreas;

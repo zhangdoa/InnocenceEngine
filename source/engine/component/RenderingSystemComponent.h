@@ -31,7 +31,6 @@ public:
 	EntityID m_parentEntity;
 
 	std::atomic<bool> m_canRender;
-	bool m_shouldUpdateEnvironmentMap = true;
 	bool m_isTAAPingPass = true;
 	std::vector<vec2> HaltonSampler;
 	int currentHaltonStep = 0;
@@ -42,6 +41,7 @@ public:
 	bool m_drawSky = false;
 	bool m_drawOverlapWireframe = false;
 	std::function<void(RenderPassType)> f_reloadShader;
+	std::function<void()> f_captureEnvironment;	
 	std::vector<RenderDataPack> m_renderDataPack;
 
 private:

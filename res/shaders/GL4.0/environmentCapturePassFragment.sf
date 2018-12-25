@@ -1,22 +1,30 @@
 // shadertype=glsl
 #version 400 core
 out vec4 FragColor;
-in vec3 TexCoords;
+in vec2 thefrag_TexCoord;
 
-uniform sampler2D uni_equirectangularMap;
-
-const vec2 invAtan = vec2(0.1591, 0.3183);
-vec2 SampleSphericalMap(vec3 v)
-{
-	vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
-	uv *= invAtan;
-	uv += 0.5;
-	return uv;
-}
+uniform sampler2D uni_albedoTexture;
+uniform bool uni_useAlbedoTexture;
+uniform vec4 uni_albedo;
 
 void main()
 {
-	vec2 uv = SampleSphericalMap(normalize(TexCoords));
-	vec3 color = texture(uni_equirectangularMap, uv).rgb;
-	FragColor = vec4(color, 1.0);
+	vec3 albedo;
+
+	if (uni_useAlbedoTexture)
+	{
+		vec4 albedoTexture = texture(uni_albedoTexture, thefrag_TexCoord);
+		float transparency = albedoTexture.a;
+		if (transparency < 0.1)
+		{
+			discard;
+		}
+		albedo = albedoTexture.rgb;
+	}
+	else
+	{
+		albedo = uni_albedo.rgb;
+	}
+
+	FragColor = vec4(albedo, 1.0);
 }

@@ -240,11 +240,7 @@ TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType
 		return InnoAssetSystemNS::g_AssetSystemComponent->m_basicRoughnessTemplate; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
 		return InnoAssetSystemNS::g_AssetSystemComponent->m_basicAOTemplate; break;
-	case TextureUsageType::ENVIRONMENT_CAPTURE:
-		return nullptr; break;
-	case TextureUsageType::ENVIRONMENT_CONVOLUTION:
-		return nullptr; break;
-	case TextureUsageType::ENVIRONMENT_PREFILTER:
+	case TextureUsageType::CUBEMAP:
 		return nullptr; break;
 	case TextureUsageType::EQUIRETANGULAR:
 		return nullptr; break;

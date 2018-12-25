@@ -100,10 +100,10 @@ void PlayerComponentCollection::setup()
 	m_rotateSpeed = 4.0f;
 	m_canMove = false;
 
-	f_moveForward = [&]() { move(InnoMath::getDirection(direction::BACKWARD, m_pawnTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-	f_moveBackward = [&]() { move(InnoMath::getDirection(direction::FORWARD, m_pawnTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-	f_moveLeft = [&]() { move(InnoMath::getDirection(direction::RIGHT, m_pawnTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-	f_moveRight = [&]() { move(InnoMath::getDirection(direction::LEFT, m_pawnTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+	f_moveForward = [&]() { move(InnoMath::getDirection(direction::FORWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+	f_moveBackward = [&]() { move(InnoMath::getDirection(direction::BACKWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+	f_moveLeft = [&]() { move(InnoMath::getDirection(direction::LEFT, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+	f_moveRight = [&]() { move(InnoMath::getDirection(direction::RIGHT, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
 
 	f_speedUp = [&]() { m_moveSpeed = m_initialSpeed * 10.0f; };
 	f_speedDown = [&]() { m_moveSpeed = m_initialSpeed; };
@@ -162,7 +162,8 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 namespace GameInstanceNS
 {
 	// environment capture entity and its components
-	EntityID m_EnvironmentCaptureEntity;
+	EntityID m_environmentCaptureEntity;
+	TransformComponent* m_environmentCaptureTransformComponent;
 	EnvironmentCaptureComponent* m_environmentCaptureComponent;
 
 	// directional light/ sun entity and its components
@@ -209,6 +210,7 @@ namespace GameInstanceNS
 
 	float temp = 0.0f;
 
+	bool setup();
 	void setupSpheres();
 	void setupLights();
 	void updateLights(float seed);
@@ -219,82 +221,92 @@ namespace GameInstanceNS
 	InnoFuture<void>* m_asyncTask;
 }
 
-INNO_GAME_EXPORT bool GameInstance::setup()
+bool GameInstanceNS::setup()
 {
-	// setup player character
-	PlayerComponentCollection::setup();
-
 	//setup environment capture component
-	GameInstanceNS::m_EnvironmentCaptureEntity = g_pCoreSystem->getGameSystem()->createEntity("environmentCaptureEntity");;
-
-	GameInstanceNS::m_environmentCaptureComponent = g_pCoreSystem->getGameSystem()->spawn<EnvironmentCaptureComponent>(GameInstanceNS::m_EnvironmentCaptureEntity);
-	GameInstanceNS::m_environmentCaptureComponent->m_cubemapTextureFileName = "ibl//Playa_Sunrise.hdr";
+	m_environmentCaptureEntity = g_pCoreSystem->getGameSystem()->createEntity("environmentCaptureEntity");;
+	m_environmentCaptureTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_environmentCaptureEntity);
+	m_environmentCaptureTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+	m_environmentCaptureTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 20.0f, 0.0f, 1.0f);
+	m_environmentCaptureComponent = g_pCoreSystem->getGameSystem()->spawn<EnvironmentCaptureComponent>(m_environmentCaptureEntity);
+	m_environmentCaptureComponent->m_cubemapTextureFileName = "ibl//Playa_Sunrise.hdr";
 
 	//setup directional light
-	GameInstanceNS::m_directionalLightEntity = g_pCoreSystem->getGameSystem()->createEntity("sun");;
+	m_directionalLightEntity = g_pCoreSystem->getGameSystem()->createEntity("sun");;
 
-	GameInstanceNS::m_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_directionalLightEntity);
-	GameInstanceNS::m_directionalLightTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 0.0f, 1.0f);
-	GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
-		GameInstanceNS::m_directionalLightTransformComponent->m_localTransformVector.m_rot,
+	m_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_directionalLightEntity);
+	m_directionalLightTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+	m_directionalLightTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 0.0f, 1.0f);
+	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+		m_directionalLightTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
 		-90.0f
 	);
 
-	GameInstanceNS::m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<DirectionalLightComponent>(GameInstanceNS::m_directionalLightEntity);
-	GameInstanceNS::m_directionalLightComponent->m_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	GameInstanceNS::m_directionalLightComponent->m_drawAABB = false;
+	m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<DirectionalLightComponent>(m_directionalLightEntity);
+	m_directionalLightComponent->m_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	m_directionalLightComponent->m_drawAABB = false;
 
 	//setup landscape
-	GameInstanceNS::m_landscapeEntity = g_pCoreSystem->getGameSystem()->createEntity("landscape");;
+	m_landscapeEntity = g_pCoreSystem->getGameSystem()->createEntity("landscape");;
 
-	GameInstanceNS::m_landscapeTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_landscapeEntity);
-	GameInstanceNS::m_landscapeTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, -4.0f, 0.0f, 1.0f);
-	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_scale = vec4(200.0f, 200.0f, 0.1f, 1.0f);
-	GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
-		GameInstanceNS::m_landscapeTransformComponent->m_localTransformVector.m_rot,
+	m_landscapeTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_landscapeEntity);
+	m_landscapeTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+	m_landscapeTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, -4.0f, 0.0f, 1.0f);
+	m_landscapeTransformComponent->m_localTransformVector.m_scale = vec4(200.0f, 200.0f, 0.1f, 1.0f);
+	m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+		m_landscapeTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
 		90.0f
 	);
-	GameInstanceNS::m_landscapeVisibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_landscapeEntity);
-	GameInstanceNS::m_landscapeVisibleComponent->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
-	GameInstanceNS::m_landscapeVisibleComponent->m_meshShapeType = MeshShapeType::CUBE;
+	m_landscapeVisibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_landscapeEntity);
+	m_landscapeVisibleComponent->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
+	m_landscapeVisibleComponent->m_meshShapeType = MeshShapeType::CUBE;
 
 	//setup pawn 1
-	GameInstanceNS::m_pawnEntity1 = g_pCoreSystem->getGameSystem()->createEntity("pawn1");;
+	m_pawnEntity1 = g_pCoreSystem->getGameSystem()->createEntity("pawn1");;
 
-	GameInstanceNS::m_pawnTransformComponent1 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_pawnEntity1);
-	GameInstanceNS::m_pawnTransformComponent1->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	GameInstanceNS::m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	GameInstanceNS::m_pawnVisibleComponent1 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_pawnEntity1);
-	GameInstanceNS::m_pawnVisibleComponent1->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
-	GameInstanceNS::m_pawnVisibleComponent1->m_meshShapeType = MeshShapeType::CUSTOM;
-	GameInstanceNS::m_pawnVisibleComponent1->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
-	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
-	//GameInstanceNS::m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
-	GameInstanceNS::m_pawnVisibleComponent1->m_textureWrapMethod = TextureWrapMethod::REPEAT;
-	GameInstanceNS::m_pawnVisibleComponent1->m_drawAABB = false;
+	m_pawnTransformComponent1 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pawnEntity1);
+	m_pawnTransformComponent1->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+	m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
+	m_pawnVisibleComponent1 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pawnEntity1);
+	m_pawnVisibleComponent1->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
+	m_pawnVisibleComponent1->m_meshShapeType = MeshShapeType::CUSTOM;
+	m_pawnVisibleComponent1->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
+	//m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
+	//m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
+	m_pawnVisibleComponent1->m_textureWrapMethod = TextureWrapMethod::REPEAT;
+	m_pawnVisibleComponent1->m_drawAABB = false;
 
 	//setup pawn 2
-	GameInstanceNS::m_pawnEntity2 = g_pCoreSystem->getGameSystem()->createEntity("pawn2");;
+	m_pawnEntity2 = g_pCoreSystem->getGameSystem()->createEntity("pawn2");;
 
-	GameInstanceNS::m_pawnTransformComponent2 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(GameInstanceNS::m_pawnEntity2);
-	GameInstanceNS::m_pawnTransformComponent2->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	//GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_scale = vec4(0.01f, 0.01f, 0.01f, 1.0f);
-	GameInstanceNS::m_pawnTransformComponent2->m_localTransformVector.m_pos = vec4(0.0f, 0.2f, 3.5f, 1.0f);
-	GameInstanceNS::m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(GameInstanceNS::m_pawnEntity2);
-	GameInstanceNS::m_pawnVisibleComponent2->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
-	GameInstanceNS::m_pawnVisibleComponent2->m_meshShapeType = MeshShapeType::CUBE;
-	GameInstanceNS::m_pawnVisibleComponent2->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
-	GameInstanceNS::m_pawnVisibleComponent2->m_drawAABB = true;
-	//GameInstanceNS::m_pawnVisibleComponent2->m_modelFileName = "Orb//Orb.obj";
+	m_pawnTransformComponent2 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pawnEntity2);
+	m_pawnTransformComponent2->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+	//m_pawnTransformComponent2->m_localTransformVector.m_scale = vec4(0.01f, 0.01f, 0.01f, 1.0f);
+	m_pawnTransformComponent2->m_localTransformVector.m_pos = vec4(0.0f, 0.2f, 3.5f, 1.0f);
+	m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pawnEntity2);
+	m_pawnVisibleComponent2->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
+	m_pawnVisibleComponent2->m_meshShapeType = MeshShapeType::CUBE;
+	m_pawnVisibleComponent2->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
+	m_pawnVisibleComponent2->m_drawAABB = true;
+	//m_pawnVisibleComponent2->m_modelFileName = "Orb//Orb.obj";
 
-	GameInstanceNS::setupLights();
-	GameInstanceNS::setupSpheres();
+	setupLights();
+	setupSpheres();
 
-	GameInstanceNS::m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::ALIVE;
+
+	return true;
+}
+
+INNO_GAME_EXPORT bool GameInstance::setup()
+{
+	// setup player character
+	PlayerComponentCollection::setup();
+	// setup others
+	GameInstanceNS::setup();
+
 	return true;
 }
 

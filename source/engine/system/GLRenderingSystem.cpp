@@ -194,12 +194,14 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	GLFrameBufferDesc deferredPassFBDesc = GLFrameBufferDesc();
 	GLFrameBufferDesc shadowPassFBDesc = GLFrameBufferDesc();
-	GLFrameBufferDesc envCapturePassFBDesc = GLFrameBufferDesc();
 
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 	TextureDataDesc shadowPassTextureDesc = TextureDataDesc();
 	TextureDataDesc BRDFLUTSplitSummingTextureDesc = TextureDataDesc();
 	TextureDataDesc BRDFLUTAverangeMSTextureDesc = TextureDataDesc();
+	TextureDataDesc EnvCapPassTextureDesc = TextureDataDesc();
+	TextureDataDesc EnvConvPassTextureDesc = TextureDataDesc();
+	TextureDataDesc EnvPreFilterPassTextureDesc = TextureDataDesc();
 
 	mat4 m_CamProjOriginal;
 	mat4 m_CamProjJittered;
@@ -273,6 +275,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	};
 
 	std::queue<GPassOpaqueRenderDataPack> m_GPassOpaqueRenderDataQueue;
+	std::queue<GPassOpaqueRenderDataPack> m_GPassOpaqueRenderDataQueue_copy;
 
 	struct GPassTransparentRenderDataPack
 	{
@@ -337,11 +340,6 @@ bool GLRenderingSystemNS::setup()
 	shadowPassFBDesc.sizeX = 2048;
 	shadowPassFBDesc.sizeY = 2048;
 
-	envCapturePassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-	envCapturePassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
-	envCapturePassFBDesc.sizeX = 2048;
-	envCapturePassFBDesc.sizeY = 2048;
-
 	deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	deferredPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	deferredPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
@@ -382,9 +380,44 @@ bool GLRenderingSystemNS::setup()
 	BRDFLUTAverangeMSTextureDesc.textureHeight = 512;
 	BRDFLUTAverangeMSTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
+	EnvCapPassTextureDesc.textureUsageType = TextureUsageType::CUBEMAP;
+	EnvCapPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
+	EnvCapPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
+	EnvCapPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	EnvCapPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	EnvCapPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
+	EnvCapPassTextureDesc.textureWidth = 2048;
+	EnvCapPassTextureDesc.textureHeight = 2048;
+	EnvCapPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+
+	EnvConvPassTextureDesc.textureUsageType = TextureUsageType::CUBEMAP;
+	EnvConvPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
+	EnvConvPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
+	EnvConvPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	EnvConvPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	EnvConvPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
+	EnvConvPassTextureDesc.textureWidth = 128;
+	EnvConvPassTextureDesc.textureHeight = 128;
+	EnvConvPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+
+	EnvPreFilterPassTextureDesc.textureUsageType = TextureUsageType::CUBEMAP;
+	EnvPreFilterPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
+	EnvPreFilterPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
+	EnvPreFilterPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+	EnvPreFilterPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	EnvPreFilterPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
+	EnvPreFilterPassTextureDesc.textureWidth = 128;
+	EnvPreFilterPassTextureDesc.textureHeight = 128;
+	EnvPreFilterPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+
 	g_RenderingSystemComponent->f_reloadShader =
 		[&](RenderPassType renderPassType) {
 		reloadGLShaderProgramComponent(renderPassType);
+	};
+
+	g_RenderingSystemComponent->f_captureEnvironment =
+		[]() {
+		updateEnvironmentRenderPass();
 	};
 
 	f_bindFBC = [&](GLFrameBufferComponent* val) {
@@ -429,7 +462,7 @@ bool GLRenderingSystemNS::setup()
 		// MSAA
 		glEnable(GL_MULTISAMPLE);
 	}
-	
+
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(MessageCallback, 0);
 
@@ -654,8 +687,8 @@ bool GLRenderingSystemNS::reloadGLShaderProgramComponent(RenderPassType renderPa
 
 	switch (renderPassType)
 	{
-	case RenderPassType::OpaquePass: 
-		l_GLSPC = GLGeometryRenderPassComponent::get().m_opaquePass_GLSPC; 
+	case RenderPassType::OpaquePass:
+		l_GLSPC = GLGeometryRenderPassComponent::get().m_opaquePass_GLSPC;
 		l_shaderFilePaths = GLGeometryRenderPassComponent::get().m_opaquePass_shaderFilePaths;
 		f_bindUniformLocations = [](GLShaderProgramComponent* rhs) { bindOpaquePassUniformLocations(rhs); };
 		break;
@@ -664,11 +697,10 @@ bool GLRenderingSystemNS::reloadGLShaderProgramComponent(RenderPassType renderPa
 		l_shaderFilePaths = GLGeometryRenderPassComponent::get().m_transparentPass_shaderFilePaths;
 		f_bindUniformLocations = [](GLShaderProgramComponent* rhs) { bindTransparentPassUniformLocations(rhs); };
 		break;
-	case RenderPassType::TerrainPass: 
+	case RenderPassType::TerrainPass:
 		l_GLSPC = GLTerrainRenderPassComponent::get().m_GLSPC;
 		l_shaderFilePaths = GLTerrainRenderPassComponent::get().m_shaderFilePaths;
 		f_bindUniformLocations = [](GLShaderProgramComponent* rhs) { bindTerrainPassUniformLocations(rhs); };
-
 		break;
 	case RenderPassType::LightPass: l_GLSPC = GLLightRenderPassComponent::get().m_GLSPC;
 		l_shaderFilePaths = GLLightRenderPassComponent::get().m_shaderFilePaths;
@@ -805,17 +837,10 @@ void GLRenderingSystemNS::initializeEnvironmentCapturePass()
 	GLEnvironmentRenderPassComponent::get().m_capturePassFBC = l_FBC;
 
 	// generate and bind texture
+	// Capture pass
 	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
-	l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::ENVIRONMENT_CAPTURE;
-	l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
-	l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	l_TDC->m_textureDataDesc.textureWidth = 2048;
-	l_TDC->m_textureDataDesc.textureHeight = 2048;
-	l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	l_TDC->m_textureDataDesc = EnvCapPassTextureDesc;
 	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
 	GLEnvironmentRenderPassComponent::get().m_capturePassTDC = l_TDC;
@@ -823,6 +848,99 @@ void GLRenderingSystemNS::initializeEnvironmentCapturePass()
 	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
 
 	GLEnvironmentRenderPassComponent::get().m_capturePassGLTDC = l_GLTDC;
+
+	// Convolution pass
+	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+
+	l_TDC->m_textureDataDesc = EnvConvPassTextureDesc;
+	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+	GLEnvironmentRenderPassComponent::get().m_convPassTDC = l_TDC;
+
+	l_GLTDC = generateGLTextureDataComponent(l_TDC);
+
+	GLEnvironmentRenderPassComponent::get().m_convPassGLTDC = l_GLTDC;
+
+	// Pre-filter pass
+	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+
+	l_TDC->m_textureDataDesc = EnvPreFilterPassTextureDesc;
+	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+	GLEnvironmentRenderPassComponent::get().m_preFilterPassTDC = l_TDC;
+
+	l_GLTDC = generateGLTextureDataComponent(l_TDC);
+
+	GLEnvironmentRenderPassComponent::get().m_preFilterPassGLTDC = l_GLTDC;
+
+	// capture pass shader
+	auto rhs = addGLShaderProgramComponent(0);
+	initializeGLShaderProgramComponent(rhs, GLEnvironmentRenderPassComponent::get().m_capturePassShaderFilePaths);
+
+	GLEnvironmentRenderPassComponent::get().m_capturePass_uni_albedoTexture = getUniformLocation(
+		rhs->m_program,
+		"uni_albedoTexture");
+	updateUniform(
+		GLEnvironmentRenderPassComponent::get().m_capturePass_uni_albedoTexture,
+		0);
+	GLEnvironmentRenderPassComponent::get().m_capturePass_uni_p = getUniformLocation(
+		rhs->m_program,
+		"uni_p");
+	GLEnvironmentRenderPassComponent::get().m_capturePass_uni_v = getUniformLocation(
+		rhs->m_program,
+		"uni_v");
+	GLEnvironmentRenderPassComponent::get().m_capturePass_uni_m = getUniformLocation(
+		rhs->m_program,
+		"uni_m");
+	GLEnvironmentRenderPassComponent::get().m_capturePass_uni_useAlbedoTexture = getUniformLocation(
+			rhs->m_program,
+			"uni_useAlbedoTexture");
+	GLEnvironmentRenderPassComponent::get().m_capturePass_uni_albedo = getUniformLocation(
+		rhs->m_program,
+		"uni_albedo");
+
+	GLEnvironmentRenderPassComponent::get().m_capturePassSPC = rhs;
+
+	// conv pass shader
+	rhs = addGLShaderProgramComponent(0);
+	initializeGLShaderProgramComponent(rhs, GLEnvironmentRenderPassComponent::get().m_convPassShaderFilePaths);
+
+	GLEnvironmentRenderPassComponent::get().m_convPass_uni_capturedCubeMap = getUniformLocation(
+		rhs->m_program,
+		"uni_capturedCubeMap");
+	updateUniform(
+		GLEnvironmentRenderPassComponent::get().m_convPass_uni_capturedCubeMap,
+		0);
+	GLEnvironmentRenderPassComponent::get().m_convPass_uni_p = getUniformLocation(
+		rhs->m_program,
+		"uni_p");
+	GLEnvironmentRenderPassComponent::get().m_convPass_uni_r = getUniformLocation(
+		rhs->m_program,
+		"uni_r");
+
+	GLEnvironmentRenderPassComponent::get().m_convPassSPC = rhs;
+
+	// pre-filter pass shader
+	rhs = addGLShaderProgramComponent(0);
+	initializeGLShaderProgramComponent(rhs, GLEnvironmentRenderPassComponent::get().m_preFilterPassShaderFilePaths);
+
+	GLEnvironmentRenderPassComponent::get().m_preFilterPass_uni_capturedCubeMap = getUniformLocation(
+		rhs->m_program,
+		"uni_capturedCubeMap");
+	updateUniform(
+		GLEnvironmentRenderPassComponent::get().m_preFilterPass_uni_capturedCubeMap,
+		0);
+	GLEnvironmentRenderPassComponent::get().m_preFilterPass_uni_p = getUniformLocation(
+		rhs->m_program,
+		"uni_p");
+	GLEnvironmentRenderPassComponent::get().m_preFilterPass_uni_r = getUniformLocation(
+		rhs->m_program,
+		"uni_r");
+	GLEnvironmentRenderPassComponent::get().m_preFilterPass_uni_roughness = getUniformLocation(
+		rhs->m_program,
+		"uni_roughness");
+
+	GLEnvironmentRenderPassComponent::get().m_preFilterPassSPC = rhs;
 
 	// finally check if framebuffer is complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -842,7 +960,7 @@ void GLRenderingSystemNS::initializeShadowPass()
 	}
 
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(0); 
+	auto rhs = addGLShaderProgramComponent(0);
 	initializeGLShaderProgramComponent(rhs, GLShadowRenderPassComponent::get().m_shaderFilePaths);
 
 	GLShadowRenderPassComponent::get().m_shadowPass_uni_p = getUniformLocation(
@@ -867,7 +985,7 @@ void GLRenderingSystemNS::initializeGeometryPass()
 void GLRenderingSystemNS::initializeOpaquePass()
 {
 	GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC = addGLRenderPassComponent(8, deferredPassFBDesc, deferredPassTextureDesc);
-	
+
 	// UBO
 	auto l_UBO = generateUBO(sizeof(GPassCameraUBOData));
 	GLGeometryRenderPassComponent::get().m_cameraUBO = l_UBO;
@@ -890,7 +1008,7 @@ void GLRenderingSystemNS::initializeOpaquePassShaders()
 	auto rhs = addGLShaderProgramComponent(0);
 
 	initializeGLShaderProgramComponent(rhs, GLGeometryRenderPassComponent::get().m_opaquePass_shaderFilePaths);
- 	
+
 	bindOpaquePassUniformLocations(rhs);
 
 	GLGeometryRenderPassComponent::get().m_opaquePass_GLSPC = rhs;
@@ -943,7 +1061,7 @@ void GLRenderingSystemNS::bindTransparentPassUniformLocations(GLShaderProgramCom
 		"uni_albedo");
 	GLGeometryRenderPassComponent::get().m_transparentPass_uni_viewPos = getUniformLocation(
 		rhs->m_program,
-		"uni_viewPos");	
+		"uni_viewPos");
 }
 
 void GLRenderingSystemNS::initializeTerrainPass()
@@ -1080,8 +1198,8 @@ void GLRenderingSystemNS::initializeSkyPass()
 	GLFinalRenderPassComponent::get().m_skyPassGLRPC = addGLRenderPassComponent(1, deferredPassFBDesc, deferredPassTextureDesc);
 
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(0); 
-	
+	auto rhs = addGLShaderProgramComponent(0);
+
 	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_skyPassShaderFilePaths);
 
 	GLFinalRenderPassComponent::get().m_skyPass_uni_p = getUniformLocation(
@@ -1119,8 +1237,8 @@ void GLRenderingSystemNS::initializeTAAPass()
 
 	// shader programs and shaders
 	// pre mix pass
-	auto rhs = addGLShaderProgramComponent(0); 
-	
+	auto rhs = addGLShaderProgramComponent(0);
+
 	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_preTAAPassShaderFilePaths);
 
 	updateTextureUniformLocations(rhs->m_program, GLFinalRenderPassComponent::get().m_preTAAPassUniformNames);
@@ -1128,8 +1246,8 @@ void GLRenderingSystemNS::initializeTAAPass()
 	GLFinalRenderPassComponent::get().m_preTAAPassSPC = rhs;
 
 	// TAA pass	
-	rhs = addGLShaderProgramComponent(0); 
-	
+	rhs = addGLShaderProgramComponent(0);
+
 	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_TAAPassShaderFilePaths);
 
 	updateTextureUniformLocations(rhs->m_program, GLFinalRenderPassComponent::get().m_TAAPassUniformNames);
@@ -1141,8 +1259,8 @@ void GLRenderingSystemNS::initializeTAAPass()
 	GLFinalRenderPassComponent::get().m_TAAPassSPC = rhs;
 
 	// Sharpen pass
-	rhs = addGLShaderProgramComponent(0); 
-	
+	rhs = addGLShaderProgramComponent(0);
+
 	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_TAASharpenPassShaderFilePaths);
 
 	updateTextureUniformLocations(rhs->m_program, GLFinalRenderPassComponent::get().m_TAASharpenPassUniformNames);
@@ -1593,7 +1711,7 @@ bool GLRenderingSystemNS::initializeGLMeshDataComponent(GLMeshDataComponent * rh
 bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
 {
 	// texture type
-	if (textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CAPTURE || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CONVOLUTION || textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_PREFILTER)
+	if (textureDataDesc.textureUsageType == TextureUsageType::CUBEMAP)
 	{
 		rhs->m_GLTextureDataDesc.textureType = GL_TEXTURE_CUBE_MAP;
 	}
@@ -1758,11 +1876,6 @@ bool GLRenderingSystem::update()
 
 	GLRenderingSystemNS::prepareRenderingData();
 
-	if (GLRenderingSystemNS::g_RenderingSystemComponent->m_shouldUpdateEnvironmentMap)
-	{
-		GLRenderingSystemNS::updateEnvironmentRenderPass();
-	}
-
 	GLRenderingSystemNS::updateShadowRenderPass();
 	GLRenderingSystemNS::updateGeometryRenderPass();
 
@@ -1777,7 +1890,7 @@ bool GLRenderingSystem::update()
 void GLRenderingSystemNS::prepareRenderingData()
 {
 	// main camera
-	auto l_mainCamera = GameSystemComponent::get().m_CameraComponents[0];
+	auto l_mainCamera = g_GameSystemComponent->m_CameraComponents[0];
 	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
 
 	auto l_p = l_mainCamera->m_projectionMatrix;
@@ -1813,7 +1926,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 	m_CamRot_prev = r_prev;
 	m_CamTrans_prev = t_prev;
 	m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-	
+
 	//UBO
 	m_GPassCameraUBOData.m_CamProjJittered = m_CamProjJittered;
 	m_GPassCameraUBOData.m_CamProjOriginal = m_CamProjOriginal;
@@ -1823,7 +1936,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 	m_GPassCameraUBOData.m_CamTrans_prev = m_CamTrans_prev;
 
 	// sun/directional light
-	auto l_directionalLight = GameSystemComponent::get().m_DirectionalLightComponents[0];
+	auto l_directionalLight = g_GameSystemComponent->m_DirectionalLightComponents[0];
 	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
 
 	m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
@@ -1862,9 +1975,9 @@ void GLRenderingSystemNS::prepareRenderingData()
 
 	// point light
 	m_PointLightDatas.clear();
-	m_PointLightDatas.reserve(GameSystemComponent::get().m_PointLightComponents.size());
+	m_PointLightDatas.reserve(g_GameSystemComponent->m_PointLightComponents.size());
 
-	for (auto i : GameSystemComponent::get().m_PointLightComponents)
+	for (auto i : g_GameSystemComponent->m_PointLightComponents)
 	{
 		PointLightData l_PointLightData;
 		l_PointLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
@@ -1875,9 +1988,9 @@ void GLRenderingSystemNS::prepareRenderingData()
 
 	// sphere light
 	m_SphereLightDatas.clear();
-	m_SphereLightDatas.reserve(GameSystemComponent::get().m_SphereLightComponents.size());
+	m_SphereLightDatas.reserve(g_GameSystemComponent->m_SphereLightComponents.size());
 
-	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
+	for (auto i : g_GameSystemComponent->m_SphereLightComponents)
 	{
 		SphereLightData l_SphereLightData;
 		l_SphereLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
@@ -1887,7 +2000,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 	}
 
 	// mesh
-	for (auto& l_renderDataPack : RenderingSystemComponent::get().m_renderDataPack)
+	for (auto& l_renderDataPack : g_RenderingSystemComponent->m_renderDataPack)
 	{
 		auto l_GLMDC = GLRenderingSystemNS::m_initializedGLMDC.find(l_renderDataPack.MDC->m_parentEntity);
 		if (l_GLMDC != GLRenderingSystemNS::m_initializedGLMDC.end())
@@ -1989,6 +2102,9 @@ void GLRenderingSystemNS::prepareRenderingData()
 			}
 		}
 	}
+
+	// copy for environment capture
+	m_GPassOpaqueRenderDataQueue_copy = m_GPassOpaqueRenderDataQueue;
 }
 
 void GLRenderingSystemNS::updateBRDFLUTRenderPass()
@@ -2033,15 +2149,19 @@ void GLRenderingSystemNS::updateEnvironmentCaptureRenderPass()
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
 	glViewport(0, 0, 2048, 2048);
 
+	auto l_mainCapture = g_GameSystemComponent->m_EnvironmentCaptureComponents[0];
+	auto l_mainCaptureTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCapture->m_parentEntity);
+	//auto l_capturePos = l_mainCaptureTransformComponent->m_localTransformVector.m_pos;
+	auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	mat4 l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 10.0f);
 	std::vector<mat4> l_v =
 	{
-		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f,  0.0f,  0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
-		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
-		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f,  1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f,  0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
+		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(1.0f,  0.0f,  0.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(-1.0f,  0.0f,  0.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  1.0f,  0.0f, 0.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
+		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f, -1.0f,  0.0f, 0.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
+		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  0.0f,  1.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  0.0f, -1.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
 	};
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
@@ -2049,10 +2169,14 @@ void GLRenderingSystemNS::updateEnvironmentCaptureRenderPass()
 	auto l_capturePassTDC = GLEnvironmentRenderPassComponent::get().m_capturePassTDC;
 	auto l_capturePassGLTDC = GLEnvironmentRenderPassComponent::get().m_capturePassGLTDC;
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
+	// draw sky
+	// @TODO: optimize
+	if (g_RenderingSystemComponent->m_drawSky)
+	{
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
 
-	activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassSPC);
+		activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassSPC);
 
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_p,
@@ -2076,16 +2200,94 @@ void GLRenderingSystemNS::updateEnvironmentCaptureRenderPass()
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			drawMesh(l_MDC);
 		}
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+	}
 
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
+	// draw opaque meshes
+	activateShaderProgram(GLEnvironmentRenderPassComponent::get().m_capturePassSPC);
+	updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_p, l_p);
+
+	for (unsigned int i = 0; i < 6; ++i)
+	{
+		auto l_copy = m_GPassOpaqueRenderDataQueue_copy;
+		updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_v, l_v[i]);
+		attachTextureToFramebuffer(l_capturePassTDC, l_capturePassGLTDC, l_FBC, 0, i, 0);
+		while (l_copy.size() > 0)
+		{
+			auto l_renderPack = l_copy.front();
+			if (l_renderPack.visiblilityType == VisiblilityType::INNO_OPAQUE)
+			{
+				if (l_renderPack.m_GPassTextureUBOData.useAlbedoTexture)
+				{
+					activateTexture(l_renderPack.m_basicAlbedoGLTDC, 0);
+				}
+				updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_m, l_renderPack.m_GPassMeshUBOData.m);
+				updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_useAlbedoTexture, l_renderPack.m_GPassTextureUBOData.useAlbedoTexture);
+				updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_albedo, l_renderPack.m_GPassTextureUBOData.albedo.x, l_renderPack.m_GPassTextureUBOData.albedo.y, l_renderPack.m_GPassTextureUBOData.albedo.z, l_renderPack.m_GPassTextureUBOData.albedo.w);
+
+				drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
+			}
+			l_copy.pop();
+		}
+	}
+
+	// draw conv pass
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
+	glViewport(0, 0, 128, 128);
+	activateShaderProgram(GLEnvironmentRenderPassComponent::get().m_convPassSPC);
+	updateUniform(GLEnvironmentRenderPassComponent::get().m_convPass_uni_p, l_p);
+
+	auto l_convPassTDC = GLEnvironmentRenderPassComponent::get().m_convPassTDC;
+	auto l_convPassGLTDC = GLEnvironmentRenderPassComponent::get().m_convPassGLTDC;
+
+	activateTexture(l_capturePassGLTDC, 1);
+
+	for (unsigned int i = 0; i < 6; ++i)
+	{
+		updateUniform(GLEnvironmentRenderPassComponent::get().m_convPass_uni_r, l_v[i]);
+		attachTextureToFramebuffer(l_convPassTDC, l_convPassGLTDC, l_FBC, 0, i, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		drawMesh(l_MDC);
+	}
+
+	// draw pre-filter pass
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
+	glViewport(0, 0, 128, 128);
+	activateShaderProgram(GLEnvironmentRenderPassComponent::get().m_preFilterPassSPC);
+	updateUniform(GLEnvironmentRenderPassComponent::get().m_preFilterPass_uni_p, l_p);
+
+	auto l_preFilterPassTDC = GLEnvironmentRenderPassComponent::get().m_preFilterPassTDC;
+	auto l_preFilterPassGLTDC = GLEnvironmentRenderPassComponent::get().m_preFilterPassGLTDC;
+
+	activateTexture(l_convPassGLTDC, 2);
+
+	unsigned int l_maxMipLevels = 5;
+	for (unsigned int mip = 0; mip < l_maxMipLevels; ++mip)
+	{
+		// resize framebuffer according to mip-level size.	
+		unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
+		unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
+
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, mipWidth, mipHeight);
+		glViewport(0, 0, mipWidth, mipHeight);
+
+		float roughness = (float)mip / (float)(l_maxMipLevels - 1);
+		updateUniform(GLEnvironmentRenderPassComponent::get().m_preFilterPass_uni_roughness, roughness);
+		for (unsigned int i = 0; i < 6; ++i)
+		{
+			updateUniform(GLEnvironmentRenderPassComponent::get().m_preFilterPass_uni_r, l_v[i]);
+			attachTextureToFramebuffer(l_preFilterPassTDC, l_preFilterPassGLTDC, l_FBC, 0, i, mip);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			drawMesh(l_MDC);
+		}
+	}
 }
 
 void GLRenderingSystemNS::updateEnvironmentRenderPass()
 {
 	updateBRDFLUTRenderPass();
 	updateEnvironmentCaptureRenderPass();
-	RenderingSystemComponent::get().m_shouldUpdateEnvironmentMap = false;
 }
 
 void GLRenderingSystemNS::updateShadowRenderPass()
@@ -2395,6 +2597,14 @@ void GLRenderingSystemNS::updateLightRenderPass()
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassGLTDC,
 		13);
+	// Irradiance env cubemap
+	activateTexture(
+		GLEnvironmentRenderPassComponent::get().m_convPassGLTDC,
+		14);
+	// pre-filtered specular env cubemap
+	activateTexture(
+		GLEnvironmentRenderPassComponent::get().m_preFilterPassGLTDC,
+		15);
 #endif
 
 	updateUniform(
@@ -3077,7 +3287,7 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const mat4 
 void GLRenderingSystemNS::attachTextureToFramebuffer(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, int colorAttachmentIndex, int textureIndex, int mipLevel)
 {
 	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
-	if (TDC->m_textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CAPTURE || TDC->m_textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_CONVOLUTION || TDC->m_textureDataDesc.textureUsageType == TextureUsageType::ENVIRONMENT_PREFILTER)
+	if (TDC->m_textureDataDesc.textureUsageType == TextureUsageType::CUBEMAP)
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TAO, mipLevel);
 	}

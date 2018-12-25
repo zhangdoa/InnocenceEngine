@@ -177,6 +177,10 @@ void ImGuiWrapper::update()
 		{
 			RenderingSystemComponent::get().f_reloadShader(RenderPassType(item_current));
 		}
+		if (ImGui::Button("Capture environment"))
+		{
+			RenderingSystemComponent::get().f_captureEnvironment();
+		}
 		ImGui::End();
 
 		RenderingSystemComponent::get().m_useTAA = l_renderingConfig.useTAA;
