@@ -1905,7 +1905,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 				auto l_material = l_renderDataPack.Material;
 				// any normal?
 				auto l_TDC = l_material->m_texturePack.m_normalTDC.second;
-				if (l_TDC)
+				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
 					l_GLRenderDataPack.m_basicNormalGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
 				}
@@ -1915,7 +1915,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 				}
 				// any albedo?
 				l_TDC = l_material->m_texturePack.m_albedoTDC.second;
-				if (l_TDC)
+				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
 					l_GLRenderDataPack.m_basicAlbedoGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
 				}
@@ -1925,7 +1925,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 				}
 				// any metallic?
 				l_TDC = l_material->m_texturePack.m_metallicTDC.second;
-				if (l_TDC)
+				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
 					l_GLRenderDataPack.m_basicMetallicGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
 				}
@@ -1935,7 +1935,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 				}
 				// any roughness?
 				l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
-				if (l_TDC)
+				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
 					l_GLRenderDataPack.m_basicRoughnessGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
 				}
@@ -1945,7 +1945,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 				}
 				// any ao?
 				l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
-				if (l_TDC)
+				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
 					l_GLRenderDataPack.m_basicAOGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
 				}

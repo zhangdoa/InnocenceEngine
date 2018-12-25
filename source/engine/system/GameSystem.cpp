@@ -17,7 +17,7 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	bool setup();
 	bool loadScene();
 	bool saveScene();
-	
+
 	std::string getEntityName(EntityID entityID);
 
 	void to_json(json& j, const enitityNamePair& p);
@@ -25,6 +25,12 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	void to_json(json& j, const TransformVector& p);
 
 	void to_json(json& j, const VisibleComponent& p);
+	void to_json(json& j, const CameraComponent& p);
+
+	void to_json(json& j, const vec4& p);
+	void to_json(json& j, const DirectionalLightComponent& p);
+	void to_json(json& j, const PointLightComponent& p);
+	void to_json(json& j, const SphereLightComponent& p);
 
 	template<typename T>
 	bool saveComponentData(json& topLevel, T* rhs);
@@ -57,6 +63,14 @@ inline bool saveComponentData<className>(json& topLevel, className* rhs) \
 	saveComponentDataDefi(TransformComponent);
 	template<>
 	saveComponentDataDefi(VisibleComponent);
+	template<>
+	saveComponentDataDefi(CameraComponent);
+	template<>
+	saveComponentDataDefi(DirectionalLightComponent);
+	template<>
+	saveComponentDataDefi(PointLightComponent);
+	template<>
+	saveComponentDataDefi(SphereLightComponent);
 
 	void sortTransformComponentsVector();
 
@@ -85,29 +99,52 @@ void InnoGameSystemNS::to_json(json& j, const TransformVector& p)
 		{
 			"Position",
 			{
-				"X", p.m_pos.x
-			},
-			{
-				"Y", p.m_pos.y
-			},
-			{
-				"Z", p.m_pos.z
-			}
+				{
+					"X", p.m_pos.x
+				},
+				{
+					"Y", p.m_pos.y
+				},
+				{
+					"Z", p.m_pos.z
+				}
+			}		
 		},
 		{
 			"Rotation",
 			{
-				"X", p.m_rot.x
-			},
-			{
-				"Y", p.m_rot.y
-			},
-			{
-				"Z", p.m_rot.z
-			},
-			{
-				"W", p.m_rot.w
-			}
+				{
+					"X", p.m_rot.x
+				},
+				{
+					"Y", p.m_rot.y
+				},
+				{
+					"Z", p.m_rot.z
+				},
+				{
+					"W", p.m_rot.w
+				}
+			}		
+		}
+	};
+}
+
+void InnoGameSystemNS::to_json(json& j, const vec4& p)
+{
+	j = json
+	{
+		{
+				"R", p.x
+		},
+		{
+				"G", p.y
+		},
+		{
+				"B", p.z
+		},
+		{
+				"A", p.w
 		}
 	};
 }
@@ -140,7 +177,60 @@ void InnoGameSystemNS::to_json(json& j, const VisibleComponent& p)
 		{"MeshPrimitiveTopology", p.m_meshDrawMethod},
 		{"TextureWrapMethod", p.m_textureWrapMethod},
 		{"drawAABB", p.m_drawAABB},
-		{"ModelFileName", p.m_modelFileName},		
+		{"ModelFileName", p.m_modelFileName},
+	};
+}
+
+void InnoGameSystemNS::to_json(json& j, const CameraComponent& p)
+{
+	j = json
+	{
+		{"ComponentType", InnoUtility::getComponentType<CameraComponent>()},
+		{"FOVX", p.m_FOVX},
+		{"WHRatio", p.m_WHRatio},
+		{"ZNear", p.m_zNear},
+		{"ZFar", p.m_zFar},
+	};
+}
+
+void InnoGameSystemNS::to_json(json& j, const DirectionalLightComponent& p)
+{
+	json color;
+	to_json(color, p.m_color);
+
+	j = json
+	{
+		{"ComponentType", InnoUtility::getComponentType<DirectionalLightComponent>()},
+		{"LuminousFlux", p.m_luminousFlux},
+		{"Color", color},
+		{"drawAABB", p.m_drawAABB},
+	};
+}
+
+void InnoGameSystemNS::to_json(json& j, const PointLightComponent& p)
+{
+	json color;
+	to_json(color, p.m_color);
+
+	j = json
+	{
+		{"ComponentType", InnoUtility::getComponentType<PointLightComponent>()},
+		{"LuminousFlux", p.m_luminousFlux},
+		{"Color", color},
+	};
+}
+
+void InnoGameSystemNS::to_json(json& j, const SphereLightComponent& p)
+{
+	json color;
+	to_json(color, p.m_color);
+
+	j = json
+	{
+		{"ComponentType", InnoUtility::getComponentType<SphereLightComponent>()},
+		{"SphereRadius", p.m_sphereRadius},
+		{"LuminousFlux", p.m_luminousFlux},
+		{"Color", color},
 	};
 }
 
@@ -174,6 +264,22 @@ bool InnoGameSystemNS::saveScene()
 	{
 		saveComponentData(topLevel, i);
 	}
+	for (auto i : g_GameSystemComponent->m_CameraComponents)
+	{
+		saveComponentData(topLevel, i);
+	}
+	for (auto i : g_GameSystemComponent->m_DirectionalLightComponents)
+	{
+		saveComponentData(topLevel, i);
+	}
+	for (auto i : g_GameSystemComponent->m_PointLightComponents)
+	{
+		saveComponentData(topLevel, i);
+	}
+	for (auto i : g_GameSystemComponent->m_SphereLightComponents)
+	{
+		saveComponentData(topLevel, i);
+	}
 
 	o << std::setw(4) << topLevel << std::endl;
 	o.close();
@@ -193,7 +299,7 @@ std::string InnoGameSystemNS::getEntityName(EntityID entityID)
 
 	if (result == InnoGameSystemNS::g_GameSystemComponent->m_enitityNameMap.end())
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity name by ID " + std::to_string(entityID) +" !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity name by ID " + std::to_string(entityID) + " !");
 		return "AbnormalEntity";
 	}
 

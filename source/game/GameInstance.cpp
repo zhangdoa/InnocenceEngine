@@ -9,9 +9,11 @@ namespace PlayerComponentCollection
 	void setup();
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
+	EntityID m_cameraParentEntity;
+	EntityID m_pawnParentEntity;
 
-	TransformComponent* m_transformComponent;
+	TransformComponent* m_cameraTransformComponent;
+	TransformComponent* m_pawnTransformComponent;
 	VisibleComponent* m_visibleComponent;
 	InputComponent* m_inputComponent;
 	CameraComponent* m_cameraComponent;
@@ -43,12 +45,49 @@ namespace PlayerComponentCollection
 
 void PlayerComponentCollection::setup()
 {
-	m_transformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 3.0f, 1.0f);
-	/*m_transformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
-		m_transformComponent->m_localTransformVector.m_rot,
+	m_pawnParentEntity = g_pCoreSystem->getGameSystem()->createEntity("playerCharacterPawn");
+	m_cameraParentEntity = g_pCoreSystem->getGameSystem()->createEntity("playerCharacterCamera");
+
+	m_pawnTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pawnParentEntity);
+	m_pawnTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+	m_pawnTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+		m_pawnTransformComponent->m_localTransformVector.m_rot,
 		vec4(0.0f, 1.0f, 0.0f, 0.0f),
-		90.0f
-	);*/
+		180.0f
+	);
+	m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_cameraParentEntity);
+	m_cameraTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+	m_cameraTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 3.0f, 2.0f, 1.0f);
+	m_cameraTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+		m_cameraTransformComponent->m_localTransformVector.m_rot,
+		vec4(1.0f, 0.0f, 0.0f, 0.0f),
+		-45.0f
+	);
+
+	m_visibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pawnParentEntity);
+	m_visibleComponent->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
+	m_visibleComponent->m_meshShapeType = MeshShapeType::CUSTOM;
+	m_visibleComponent->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
+	//m_visibleComponent->m_modelFileName = "cat//cat.obj";
+	m_visibleComponent->m_textureWrapMethod = TextureWrapMethod::REPEAT;
+	m_visibleComponent->m_drawAABB = false;
+
+	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_cameraParentEntity);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
+
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
+
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
+	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 0, &f_rotateAroundPositiveYAxis);
+	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 1, &f_rotateAroundRightAxis);
+
+	m_cameraComponent = g_pCoreSystem->getGameSystem()->spawn<CameraComponent>(m_cameraParentEntity);
+
 	m_cameraComponent->m_FOVX = 60.0f;
 	m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
 	m_cameraComponent->m_zNear = 0.1f;
@@ -61,10 +100,10 @@ void PlayerComponentCollection::setup()
 	m_rotateSpeed = 4.0f;
 	m_canMove = false;
 
-	f_moveForward = [&]() { move(InnoMath::getDirection(direction::FORWARD, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-	f_moveBackward = [&]() { move(InnoMath::getDirection(direction::BACKWARD, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-	f_moveLeft = [&]() { move(InnoMath::getDirection(direction::LEFT, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-	f_moveRight = [&]() { move(InnoMath::getDirection(direction::RIGHT, m_transformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+	f_moveForward = [&]() { move(InnoMath::getDirection(direction::BACKWARD, m_pawnTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+	f_moveBackward = [&]() { move(InnoMath::getDirection(direction::FORWARD, m_pawnTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+	f_moveLeft = [&]() { move(InnoMath::getDirection(direction::RIGHT, m_pawnTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+	f_moveRight = [&]() { move(InnoMath::getDirection(direction::LEFT, m_pawnTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
 
 	f_speedUp = [&]() { m_moveSpeed = m_initialSpeed * 10.0f; };
 	f_speedDown = [&]() { m_moveSpeed = m_initialSpeed; };
@@ -72,15 +111,16 @@ void PlayerComponentCollection::setup()
 	f_allowMove = [&]() { m_canMove = true; };
 	f_forbidMove = [&]() { m_canMove = false; };
 
-	f_rotateAroundPositiveYAxis = std::bind(&PlayerComponentCollection::rotateAroundPositiveYAxis, std::placeholders::_1);
-	f_rotateAroundRightAxis = std::bind(&PlayerComponentCollection::rotateAroundRightAxis, std::placeholders::_1);
+	f_rotateAroundPositiveYAxis = std::bind(&rotateAroundPositiveYAxis, std::placeholders::_1);
+	f_rotateAroundRightAxis = std::bind(&rotateAroundRightAxis, std::placeholders::_1);
 }
 
 void PlayerComponentCollection::move(vec4 direction, float length)
 {
 	if (m_canMove)
 	{
-		m_transformComponent->m_localTransformVector.m_pos = InnoMath::moveTo(m_transformComponent->m_localTransformVector.m_pos, direction, (float)length);
+		m_pawnTransformComponent->m_localTransformVector.m_pos = InnoMath::moveTo(m_pawnTransformComponent->m_localTransformVector.m_pos, direction, (float)length);
+		m_cameraTransformComponent->m_localTransformVector.m_pos = InnoMath::moveTo(m_cameraTransformComponent->m_localTransformVector.m_pos, direction, (float)length);
 	}
 }
 
@@ -88,12 +128,20 @@ void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
 {
 	if (m_canMove)
 	{
-		auto dest_rot = InnoMath::rotateInLocal(
-			m_transformComponent->m_localTransformVector.m_rot,
-			vec4(0.0f, 1.0f, 0.0f, 0.0f),
-			(float)((-offset * m_rotateSpeed) / 180.0f)* PI<float>
+		auto camera_dest_rot = InnoMath::rotateInLocal(
+			m_cameraTransformComponent->m_localTransformVector.m_rot,
+		vec4(0.0f, 1.0f, 0.0f, 0.0f),
+		(float)((-offset * m_rotateSpeed) / 180.0f)* PI<float>
 		);
-		m_transformComponent->m_localTransformVector.m_rot = dest_rot.slerp(m_transformComponent->m_localTransformVector.m_rot, dest_rot, 0.5);
+
+		m_cameraTransformComponent->m_localTransformVector.m_rot = camera_dest_rot.slerp(m_cameraTransformComponent->m_localTransformVector.m_rot, camera_dest_rot, 0.5);
+
+		//auto pawn_dest_rot = InnoMath::rotateInLocal(
+		//	m_pawnTransformComponent->m_localTransformVector.m_rot,
+		//	vec4(0.0f, 1.0f, 0.0f, 0.0f),
+		//	(float)((-offset * m_rotateSpeed) / 180.0f)* PI<float>
+		//);
+		//m_pawnTransformComponent->m_localTransformVector.m_rot = pawn_dest_rot.slerp(m_pawnTransformComponent->m_localTransformVector.m_rot, pawn_dest_rot, 0.5);
 	}
 }
 
@@ -101,13 +149,13 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 {
 	if (m_canMove)
 	{
-		auto l_right = InnoMath::getDirection(direction::RIGHT, m_transformComponent->m_localTransformVector.m_rot);
+		auto l_right = InnoMath::getDirection(direction::RIGHT, m_cameraTransformComponent->m_localTransformVector.m_rot);
 		auto dest_rot = InnoMath::rotateInLocal(
-			m_transformComponent->m_localTransformVector.m_rot,
+			m_cameraTransformComponent->m_localTransformVector.m_rot,
 			l_right,
 			(float)((offset * m_rotateSpeed) / 180.0f)* PI<float>);
 
-		m_transformComponent->m_localTransformVector.m_rot = dest_rot.slerp(m_transformComponent->m_localTransformVector.m_rot, dest_rot, 0.5);
+		m_cameraTransformComponent->m_localTransformVector.m_rot = dest_rot.slerp(m_cameraTransformComponent->m_localTransformVector.m_rot, dest_rot, 0.5);
 	}
 }
 
@@ -174,28 +222,7 @@ namespace GameInstanceNS
 INNO_GAME_EXPORT bool GameInstance::setup()
 {
 	// setup player character
-	PlayerComponentCollection::m_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("playerCharacter");
-
-	PlayerComponentCollection::m_transformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(PlayerComponentCollection::m_parentEntity);
-	PlayerComponentCollection::m_transformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	PlayerComponentCollection::m_visibleComponent = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(PlayerComponentCollection::m_parentEntity);
-	PlayerComponentCollection::m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(PlayerComponentCollection::m_parentEntity);
-	PlayerComponentCollection::m_cameraComponent = g_pCoreSystem->getGameSystem()->spawn<CameraComponent>(PlayerComponentCollection::m_parentEntity);
-
 	PlayerComponentCollection::setup();
-
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_moveForward);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_moveBackward);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_moveLeft);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_moveRight);
-
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_speedUp);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &PlayerComponentCollection::f_speedDown);
-
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &PlayerComponentCollection::f_allowMove);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(PlayerComponentCollection::m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &PlayerComponentCollection::f_forbidMove);
-	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(PlayerComponentCollection::m_inputComponent, 0, &PlayerComponentCollection::f_rotateAroundPositiveYAxis);
-	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(PlayerComponentCollection::m_inputComponent, 1, &PlayerComponentCollection::f_rotateAroundRightAxis);
 
 	//setup environment capture component
 	GameInstanceNS::m_EnvironmentCaptureEntity = g_pCoreSystem->getGameSystem()->createEntity("environmentCaptureEntity");;
