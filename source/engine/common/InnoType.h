@@ -48,6 +48,9 @@ enum class TextureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
 enum class TextureAssignType { ADD, OVERWRITE };
 
 enum class IconType { OBJ, PNG, SHADER, UNKNOWN };
+
+enum class RenderPassType { OpaquePass, TransparentPass, TerrainPass, LightPass };
+
 // shader custom types
 enum class ShaderType { VERTEX, GEOMETRY, FRAGMENT };
 

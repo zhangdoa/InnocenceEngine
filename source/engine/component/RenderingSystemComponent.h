@@ -14,8 +14,6 @@ struct RenderDataPack
 	VisiblilityType visiblilityType;
 };
 
-enum class RenderPassType { OpaquePass, TransparentPass, TerrainPass, LightPass };
-
 class RenderingSystemComponent
 {
 public:
