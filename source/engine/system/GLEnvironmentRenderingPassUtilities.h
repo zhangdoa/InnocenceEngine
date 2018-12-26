@@ -5,5 +5,5 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
 	void initializeEnvironmentPass();
 
-	void updateEnvironmentRenderPass();
+	void updateEnvironmentPass();
 }

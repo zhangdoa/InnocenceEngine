@@ -52,7 +52,7 @@ void GLRenderingSystemNS::initializeShadowPass()
 	GLShadowRenderPassComponent::get().m_SPC = rhs;
 }
 
-void GLRenderingSystemNS::updateShadowRenderPass()
+void GLRenderingSystemNS::updateShadowPass()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);

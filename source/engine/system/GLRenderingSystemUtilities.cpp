@@ -549,59 +549,27 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 	return true;
 }
 
-bool GLRenderingSystemNS::reloadGLShaderProgramComponent(RenderPassType renderPassType)
+bool GLRenderingSystemNS::deleteShaderProgram(GLShaderProgramComponent* rhs)
 {
-	GLShaderProgramComponent* l_GLSPC;
-	ShaderFilePaths l_shaderFilePaths;
-	std::function<void(GLShaderProgramComponent*)> f_bindUniformLocations;
+	if (rhs->m_VSID)
+	{
+		glDetachShader(rhs->m_program, rhs->m_VSID);
+		glDeleteShader(rhs->m_VSID);
+	}
+	if (rhs->m_GSID)
+	{
+		glDetachShader(rhs->m_program, rhs->m_GSID);
+		glDeleteShader(rhs->m_GSID);
+	}
+	if (rhs->m_FSID)
+	{
+		glDetachShader(rhs->m_program, rhs->m_FSID);
+		glDeleteShader(rhs->m_FSID);
+	}
 
-	//switch (renderPassType)
-	//{
-	//case RenderPassType::OpaquePass:
-	//	l_GLSPC = GLGeometryRenderPassComponent::get().m_opaquePass_GLSPC;
-	//	l_shaderFilePaths = GLGeometryRenderPassComponent::get().m_opaquePass_shaderFilePaths;
-	//	f_bindUniformLocations = [](GLShaderProgramComponent* rhs) { bindOpaquePassUniformLocations(rhs); };
-	//	break;
-	//case RenderPassType::TransparentPass:
-	//	l_GLSPC = GLGeometryRenderPassComponent::get().m_transparentPass_GLSPC;
-	//	l_shaderFilePaths = GLGeometryRenderPassComponent::get().m_transparentPass_shaderFilePaths;
-	//	f_bindUniformLocations = [](GLShaderProgramComponent* rhs) { bindTransparentPassUniformLocations(rhs); };
-	//	break;
-	//case RenderPassType::TerrainPass:
-	//	l_GLSPC = GLTerrainRenderPassComponent::get().m_GLSPC;
-	//	l_shaderFilePaths = GLTerrainRenderPassComponent::get().m_shaderFilePaths;
-	//	f_bindUniformLocations = [](GLShaderProgramComponent* rhs) { bindTerrainPassUniformLocations(rhs); };
-	//	break;
-	//case RenderPassType::LightPass: l_GLSPC = GLLightRenderPassComponent::get().m_GLSPC;
-	//	l_shaderFilePaths = GLLightRenderPassComponent::get().m_shaderFilePaths;
-	//	f_bindUniformLocations = [](GLShaderProgramComponent* rhs) { bindLightPassUniformLocations(rhs); };
-	//	break;
-	//default: break;
-	//}
+	glDeleteProgram(rhs->m_program);
 
-	//if (l_GLSPC->m_VSID)
-	//{
-	//	glDetachShader(l_GLSPC->m_program, l_GLSPC->m_VSID);
-	//	glDeleteShader(l_GLSPC->m_VSID);
-	//}
-	//if (l_GLSPC->m_GSID)
-	//{
-	//	glDetachShader(l_GLSPC->m_program, l_GLSPC->m_GSID);
-	//	glDeleteShader(l_GLSPC->m_GSID);
-	//}
-	//if (l_GLSPC->m_FSID)
-	//{
-	//	glDetachShader(l_GLSPC->m_program, l_GLSPC->m_FSID);
-	//	glDeleteShader(l_GLSPC->m_FSID);
-	//}
-
-	//glDeleteProgram(l_GLSPC->m_program);
-
-	//initializeGLShaderProgramComponent(l_GLSPC, l_shaderFilePaths);
-
-	//f_bindUniformLocations(l_GLSPC);
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: shader reloaded.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: shader deleted.");
 
 	return true;
 }

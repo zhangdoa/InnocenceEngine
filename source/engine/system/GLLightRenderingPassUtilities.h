@@ -5,5 +5,9 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
 	void initializeLightPass();
 
-	void updateLightRenderPass();
+	void updateLightPass();
+
+	bool resizeLightPass();
+
+	bool reloadLightPassShaders();
 }

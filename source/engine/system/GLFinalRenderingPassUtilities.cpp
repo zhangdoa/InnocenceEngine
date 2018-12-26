@@ -16,13 +16,21 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
 	void initializeSkyPass();
+	void bindSkyPassUniformLocations();
 	void initializeTAAPass();
+	void bindTAAPassUniformLocations();
 	void initializeBloomExtractPass();
+	void bindBloomExtractPassUniformLocations();
 	void initializeBloomBlurPass();
+	void bindBloomBlurPassUniformLocations();
 	void initializeMotionBlurPass();
+	void bindMotionBlurUniformLocations();
 	void initializeBillboardPass();
+	void bindBillboardPassUniformLocations();
 	void initializeDebuggerPass();
+	void bindDebuggerPassUniformLocations();
 	void initializeFinalBlendPass();
+	void bindFinalBlendPassUniformLocations();
 
 	GLTextureDataComponent* updateSkyPass();
 	GLTextureDataComponent* updatePreTAAPass();
@@ -57,23 +65,28 @@ void GLRenderingSystemNS::initializeSkyPass()
 
 	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_skyPassShaderFilePaths);
 
+	GLFinalRenderPassComponent::get().m_skyPassGLSPC = rhs;
+
+	bindSkyPassUniformLocations();
+}
+
+void  GLRenderingSystemNS::bindSkyPassUniformLocations()
+{
 	GLFinalRenderPassComponent::get().m_skyPass_uni_p = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_skyPassGLSPC->m_program,
 		"uni_p");
 	GLFinalRenderPassComponent::get().m_skyPass_uni_r = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_skyPassGLSPC->m_program,
 		"uni_r");
 	GLFinalRenderPassComponent::get().m_skyPass_uni_viewportSize = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_skyPassGLSPC->m_program,
 		"uni_viewportSize");
 	GLFinalRenderPassComponent::get().m_skyPass_uni_eyePos = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_skyPassGLSPC->m_program,
 		"uni_eyePos");
 	GLFinalRenderPassComponent::get().m_skyPass_uni_lightDir = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_skyPassGLSPC->m_program,
 		"uni_lightDir");
-
-	GLFinalRenderPassComponent::get().m_skyPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeTAAPass()
@@ -96,35 +109,40 @@ void GLRenderingSystemNS::initializeTAAPass()
 
 	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_preTAAPassShaderFilePaths);
 
-	updateTextureUniformLocations(rhs->m_program, GLFinalRenderPassComponent::get().m_preTAAPassUniformNames);
-
-	GLFinalRenderPassComponent::get().m_preTAAPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_preTAAPassGLSPC = rhs;
 
 	// TAA pass	
 	rhs = addGLShaderProgramComponent(0);
 
 	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_TAAPassShaderFilePaths);
 
-	updateTextureUniformLocations(rhs->m_program, GLFinalRenderPassComponent::get().m_TAAPassUniformNames);
-
-	GLFinalRenderPassComponent::get().m_TAAPass_uni_renderTargetSize = getUniformLocation(
-		rhs->m_program,
-		"uni_renderTargetSize");
-
-	GLFinalRenderPassComponent::get().m_TAAPassSPC = rhs;
+	GLFinalRenderPassComponent::get().m_TAAPassGLSPC = rhs;
 
 	// Sharpen pass
 	rhs = addGLShaderProgramComponent(0);
 
 	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_TAASharpenPassShaderFilePaths);
 
-	updateTextureUniformLocations(rhs->m_program, GLFinalRenderPassComponent::get().m_TAASharpenPassUniformNames);
+	GLFinalRenderPassComponent::get().m_TAASharpenPassGLSPC = rhs;
 
-	GLFinalRenderPassComponent::get().m_TAASharpenPass_uni_renderTargetSize = getUniformLocation(
-		rhs->m_program,
+	bindTAAPassUniformLocations();
+}
+
+void GLRenderingSystemNS::bindTAAPassUniformLocations()
+{
+	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_preTAAPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_preTAAPassUniformNames);
+
+	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_TAAPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_TAAPassUniformNames);
+	
+	GLFinalRenderPassComponent::get().m_TAAPass_uni_renderTargetSize = getUniformLocation(
+		GLFinalRenderPassComponent::get().m_TAAPassGLSPC->m_program,
 		"uni_renderTargetSize");
 
-	GLFinalRenderPassComponent::get().m_TAASharpenPassSPC = rhs;
+	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_TAASharpenPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_TAASharpenPassUniformNames);
+
+	GLFinalRenderPassComponent::get().m_TAASharpenPass_uni_renderTargetSize = getUniformLocation(
+		GLFinalRenderPassComponent::get().m_TAASharpenPassGLSPC->m_program,
+		"uni_renderTargetSize");
 }
 
 void GLRenderingSystemNS::initializeBloomExtractPass()
@@ -132,21 +150,18 @@ void GLRenderingSystemNS::initializeBloomExtractPass()
 	GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	// shader programs and shaders
-	ShaderFilePaths m_ShaderFilePaths;
+	auto rhs = addGLShaderProgramComponent(0); 
+	
+	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_bloomExtractPassShaderFilePaths);
 
-	m_ShaderFilePaths.m_VSPath = "GL4.0//bloomExtractPassVertex.sf";
-	m_ShaderFilePaths.m_FSPath = "GL4.0//bloomExtractPassFragment.sf";
+	GLFinalRenderPassComponent::get().m_bloomExtractPassGLSPC = rhs;
 
-	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
+	bindBloomExtractPassUniformLocations();
+}
 
-	GLFinalRenderPassComponent::get().m_bloomExtractPass_uni_TAAPassRT0 = getUniformLocation(
-		rhs->m_program,
-		"uni_TAAPassRT0");
-	updateUniform(
-		GLFinalRenderPassComponent::get().m_bloomExtractPass_uni_TAAPassRT0,
-		0);
-
-	GLFinalRenderPassComponent::get().m_bloomExtractPassSPC = rhs;
+void GLRenderingSystemNS::bindBloomExtractPassUniformLocations()
+{
+	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_bloomExtractPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_bloomExtractPassUniformNames);
 }
 
 void GLRenderingSystemNS::initializeBloomBlurPass()
@@ -158,24 +173,22 @@ void GLRenderingSystemNS::initializeBloomBlurPass()
 	GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	// shader programs and shaders
-	ShaderFilePaths m_ShaderFilePaths;
+	auto rhs = addGLShaderProgramComponent(0);
 
-	m_ShaderFilePaths.m_VSPath = "GL4.0//bloomBlurPassVertex.sf";
-	m_ShaderFilePaths.m_FSPath = "GL4.0//bloomBlurPassFragment.sf";
+	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_bloomBlurPassShaderFilePaths);
 
-	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
+	GLFinalRenderPassComponent::get().m_bloomBlurPassGLSPC = rhs;
 
-	GLFinalRenderPassComponent::get().m_bloomBlurPass_uni_bloomExtractPassRT0 = getUniformLocation(
-		rhs->m_program,
-		"uni_bloomExtractPassRT0");
-	updateUniform(
-		GLFinalRenderPassComponent::get().m_bloomBlurPass_uni_bloomExtractPassRT0,
-		0);
+	bindBloomBlurPassUniformLocations();
+}
+
+void GLRenderingSystemNS::bindBloomBlurPassUniformLocations()
+{
+	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_bloomBlurPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_bloomBlurPassUniformNames);
+
 	GLFinalRenderPassComponent::get().m_bloomBlurPass_uni_horizontal = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_bloomBlurPassGLSPC->m_program,
 		"uni_horizontal");
-
-	GLFinalRenderPassComponent::get().m_bloomBlurPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeMotionBlurPass()
@@ -183,27 +196,18 @@ void GLRenderingSystemNS::initializeMotionBlurPass()
 	GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	// shader programs and shaders
-	ShaderFilePaths m_ShaderFilePaths;
+	auto rhs = addGLShaderProgramComponent(0);
 
-	m_ShaderFilePaths.m_VSPath = "GL4.0//motionBlurPassVertex.sf";
-	m_ShaderFilePaths.m_FSPath = "GL4.0//motionBlurPassFragment.sf";
+	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_motionBlurPassShaderFilePaths);
 
-	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
+	GLFinalRenderPassComponent::get().m_motionBlurPassGLSPC = rhs;
 
-	GLFinalRenderPassComponent::get().m_motionBlurPass_uni_motionVectorTexture = getUniformLocation(
-		rhs->m_program,
-		"uni_motionVectorTexture");
-	updateUniform(
-		GLFinalRenderPassComponent::get().m_motionBlurPass_uni_motionVectorTexture,
-		0);
-	GLFinalRenderPassComponent::get().m_motionBlurPass_uni_TAAPassRT0 = getUniformLocation(
-		rhs->m_program,
-		"uni_TAAPassRT0");
-	updateUniform(
-		GLFinalRenderPassComponent::get().m_motionBlurPass_uni_TAAPassRT0,
-		1);
+	bindMotionBlurUniformLocations();
+}
 
-	GLFinalRenderPassComponent::get().m_motionBlurPassSPC = rhs;
+void GLRenderingSystemNS::bindMotionBlurUniformLocations()
+{
+	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_motionBlurPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_motionBlurPassUniformNames);
 }
 
 void GLRenderingSystemNS::initializeBillboardPass()
@@ -211,39 +215,37 @@ void GLRenderingSystemNS::initializeBillboardPass()
 	GLFinalRenderPassComponent::get().m_billboardPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	// shader programs and shaders
-	ShaderFilePaths m_ShaderFilePaths;
+	auto rhs = addGLShaderProgramComponent(0);
 
-	m_ShaderFilePaths.m_VSPath = "GL4.0//billboardPassVertex.sf";
-	m_ShaderFilePaths.m_FSPath = "GL4.0//billboardPassFragment.sf";
+	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_billboardPassShaderFilePaths);
 
-	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
+	GLFinalRenderPassComponent::get().m_billboardPassGLSPC = rhs;
 
-	GLFinalRenderPassComponent::get().m_billboardPass_uni_texture = getUniformLocation(
-		rhs->m_program,
-		"uni_texture");
-	updateUniform(
-		GLFinalRenderPassComponent::get().m_billboardPass_uni_texture,
-		0);
+	bindBillboardPassUniformLocations();
+}
+
+void GLRenderingSystemNS::bindBillboardPassUniformLocations()
+{
+	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_billboardPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_billboardPassUniformNames);
+
 	GLFinalRenderPassComponent::get().m_billboardPass_uni_p = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_billboardPassGLSPC->m_program,
 		"uni_p");
 	GLFinalRenderPassComponent::get().m_billboardPass_uni_r = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_billboardPassGLSPC->m_program,
 		"uni_r");
 	GLFinalRenderPassComponent::get().m_billboardPass_uni_t = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_billboardPassGLSPC->m_program,
 		"uni_t");
 	GLFinalRenderPassComponent::get().m_billboardPass_uni_pos = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_billboardPassGLSPC->m_program,
 		"uni_pos");
 	GLFinalRenderPassComponent::get().m_billboardPass_uni_albedo = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_billboardPassGLSPC->m_program,
 		"uni_albedo");
 	GLFinalRenderPassComponent::get().m_billboardPass_uni_size = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_billboardPassGLSPC->m_program,
 		"uni_size");
-
-	GLFinalRenderPassComponent::get().m_billboardPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeDebuggerPass()
@@ -251,37 +253,31 @@ void GLRenderingSystemNS::initializeDebuggerPass()
 	GLFinalRenderPassComponent::get().m_debuggerPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	// shader programs and shaders
-	ShaderFilePaths m_ShaderFilePaths;
+	auto rhs = addGLShaderProgramComponent(0);
+	
+	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_debuggerPassShaderFilePaths);
+	
+	GLFinalRenderPassComponent::get().m_debuggerPassGLSPC = rhs;
 
-	//m_ShaderFilePaths.m_VSPath = "GL4.0//debuggerPassVertex.sf";
-	//m_ShaderFilePaths.m_GSPath = "GL4.0//debuggerPassGeometry.sf";
-	//m_ShaderFilePaths.m_FSPath = "GL4.0//debuggerPassFragment.sf";
+	bindDebuggerPassUniformLocations();
+}
 
-	m_ShaderFilePaths.m_VSPath = "GL4.0//wireframeOverlayPassVertex.sf";
-	m_ShaderFilePaths.m_FSPath = "GL4.0//wireframeOverlayPassFragment.sf";
+void GLRenderingSystemNS::bindDebuggerPassUniformLocations()
+{
+	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_debuggerPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_debuggerPassUniformNames);
 
-	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
-
-	//GLFinalRenderPassComponent::get().m_debuggerPass_uni_normalTexture = getUniformLocation(
-	//	rhs->m_program,
-	//	"uni_normalTexture");
-	//updateUniform(
-	//	GLFinalRenderPassComponent::get().m_debuggerPass_uni_normalTexture,
-	//	0);
 	GLFinalRenderPassComponent::get().m_debuggerPass_uni_p = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_debuggerPassGLSPC->m_program,
 		"uni_p");
 	GLFinalRenderPassComponent::get().m_debuggerPass_uni_r = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_debuggerPassGLSPC->m_program,
 		"uni_r");
 	GLFinalRenderPassComponent::get().m_debuggerPass_uni_t = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_debuggerPassGLSPC->m_program,
 		"uni_t");
 	GLFinalRenderPassComponent::get().m_debuggerPass_uni_m = getUniformLocation(
-		rhs->m_program,
+		GLFinalRenderPassComponent::get().m_debuggerPassGLSPC->m_program,
 		"uni_m");
-
-	GLFinalRenderPassComponent::get().m_debuggerPassSPC = rhs;
 }
 
 void GLRenderingSystemNS::initializeFinalBlendPass()
@@ -289,41 +285,21 @@ void GLRenderingSystemNS::initializeFinalBlendPass()
 	GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	// shader programs and shaders
-	ShaderFilePaths m_ShaderFilePaths;
+	auto rhs = addGLShaderProgramComponent(0);
 
-	m_ShaderFilePaths.m_VSPath = "GL4.0//finalBlendPassVertex.sf";
-	m_ShaderFilePaths.m_FSPath = "GL4.0//finalBlendPassFragment.sf";
+	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_finalBlendPassShaderFilePaths);
 
-	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
+	GLFinalRenderPassComponent::get().m_finalBlendPassGLSPC = rhs;
 
-	GLFinalRenderPassComponent::get().m_uni_motionBlurPassRT0 = getUniformLocation(
-		rhs->m_program,
-		"uni_motionBlurPassRT0");
-	updateUniform(
-		GLFinalRenderPassComponent::get().m_uni_motionBlurPassRT0,
-		0);
-	GLFinalRenderPassComponent::get().m_uni_bloomPassRT0 = getUniformLocation(
-		rhs->m_program,
-		"uni_bloomPassRT0");
-	updateUniform(
-		GLFinalRenderPassComponent::get().m_uni_bloomPassRT0,
-		1);
-	GLFinalRenderPassComponent::get().m_uni_billboardPassRT0 = getUniformLocation(
-		rhs->m_program,
-		"uni_billboardPassRT0");
-	updateUniform(
-		GLFinalRenderPassComponent::get().m_uni_billboardPassRT0,
-		2);
-	GLFinalRenderPassComponent::get().m_uni_debuggerPassRT0 = getUniformLocation(
-		rhs->m_program,
-		"uni_debuggerPassRT0");
-	updateUniform(
-		GLFinalRenderPassComponent::get().m_uni_debuggerPassRT0,
-		3);
-	GLFinalRenderPassComponent::get().m_finalBlendPassSPC = rhs;
+	bindFinalBlendPassUniformLocations();
 }
 
-void GLRenderingSystemNS::updateFinalRenderPass()
+void GLRenderingSystemNS::bindFinalBlendPassUniformLocations()
+{
+	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_finalBlendPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_finalBlendPassUniformNames);
+}
+
+void GLRenderingSystemNS::updateFinalPass()
 {
 	auto skyPassResult = updateSkyPass();
 
@@ -400,7 +376,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateSkyPass()
 		auto l_FBC = GLFinalRenderPassComponent::get().m_skyPassGLRPC->m_GLFBC;
 		bindFBC(l_FBC);
 
-		activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassSPC);
+		activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassGLSPC);
 
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_p,
@@ -437,7 +413,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updatePreTAAPass()
 	auto l_FBC = GLFinalRenderPassComponent::get().m_preTAAPassGLRPC->m_GLFBC;
 	bindFBC(l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassComponent::get().m_preTAAPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_preTAAPassGLSPC);
 
 	activateTexture(
 		GLLightRenderPassComponent::get().m_GLRPC->m_GLTDCs[0],
@@ -463,7 +439,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateTAAPass(GLTextureDataComponen
 	GLTextureDataComponent* l_currentFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
 	GLTextureDataComponent* l_lastFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
 
-	activateShaderProgram(GLFinalRenderPassComponent::get().m_TAAPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_TAAPassGLSPC);
 
 	GLFrameBufferComponent* l_FBC;
 
@@ -511,7 +487,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateTAASharpenPass(GLTextureDataC
 {
 	auto l_FBC = GLFinalRenderPassComponent::get().m_TAASharpenPassGLRPC->m_GLFBC;
 	bindFBC(l_FBC);
-	activateShaderProgram(GLFinalRenderPassComponent::get().m_TAASharpenPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_TAASharpenPassGLSPC);
 
 	activateTexture(
 		inputGLTDC,
@@ -532,7 +508,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBloomExtractPass(GLTextureDat
 	auto l_FBC = GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLFBC;
 	bindFBC(l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassComponent::get().m_bloomExtractPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_bloomExtractPassGLSPC);
 
 	activateTexture(inputGLTDC, 0);
 
@@ -547,7 +523,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBloomBlurPass(GLTextureDataCo
 	GLTextureDataComponent* l_currentFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
 	GLTextureDataComponent* l_lastFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
 
-	activateShaderProgram(GLFinalRenderPassComponent::get().m_bloomBlurPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_bloomBlurPassGLSPC);
 
 	bool l_isPing = true;
 	bool l_isFirstIteration = true;
@@ -616,7 +592,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateMotionBlurPass(GLTextureDataC
 	auto l_FBC = GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC->m_GLFBC;
 	bindFBC(l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassComponent::get().m_motionBlurPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_motionBlurPassGLSPC);
 
 	activateTexture(
 		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[3],
@@ -640,7 +616,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBillboardPass()
 	// copy depth buffer from G-Pass
 	copyDepthBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC, l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassComponent::get().m_billboardPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_billboardPassGLSPC);
 
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_billboardPass_uni_p,
@@ -719,7 +695,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateDebuggerPass()
 	// copy depth buffer from G-Pass
 	copyDepthBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC, l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassComponent::get().m_debuggerPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_debuggerPassGLSPC);
 
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_debuggerPass_uni_p,
@@ -752,7 +728,7 @@ GLTextureDataComponent* GLRenderingSystemNS::updateFinalBlendPass()
 	auto l_FBC = GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC->m_GLFBC;
 	bindFBC(l_FBC);
 
-	activateShaderProgram(GLFinalRenderPassComponent::get().m_finalBlendPassSPC);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_finalBlendPassGLSPC);
 
 	// motion blur pass rendering target
 	activateTexture(
@@ -781,4 +757,58 @@ GLTextureDataComponent* GLRenderingSystemNS::updateFinalBlendPass()
 	drawMesh(l_MDC);
 
 	return GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC->m_GLTDCs[0];
+}
+
+bool GLRenderingSystemNS::resizeFinalPass()
+{
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_skyPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_preTAAPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_TAASharpenPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_billboardPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_debuggerPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+
+	return true;
+}
+
+bool GLRenderingSystemNS::reloadFinalPassShaders()
+{
+	deleteShaderProgram(GLFinalRenderPassComponent::get().m_skyPassGLSPC);
+	deleteShaderProgram(GLFinalRenderPassComponent::get().m_preTAAPassGLSPC);
+	deleteShaderProgram(GLFinalRenderPassComponent::get().m_TAAPassGLSPC);
+	deleteShaderProgram(GLFinalRenderPassComponent::get().m_TAASharpenPassGLSPC);
+	deleteShaderProgram(GLFinalRenderPassComponent::get().m_bloomExtractPassGLSPC);
+	deleteShaderProgram(GLFinalRenderPassComponent::get().m_bloomBlurPassGLSPC);
+	deleteShaderProgram(GLFinalRenderPassComponent::get().m_motionBlurPassGLSPC);
+	deleteShaderProgram(GLFinalRenderPassComponent::get().m_billboardPassGLSPC);
+	deleteShaderProgram(GLFinalRenderPassComponent::get().m_debuggerPassGLSPC);
+	deleteShaderProgram(GLFinalRenderPassComponent::get().m_finalBlendPassGLSPC);
+
+	initializeGLShaderProgramComponent(GLFinalRenderPassComponent::get().m_skyPassGLSPC, GLFinalRenderPassComponent::get().m_skyPassShaderFilePaths);
+	initializeGLShaderProgramComponent(GLFinalRenderPassComponent::get().m_preTAAPassGLSPC, GLFinalRenderPassComponent::get().m_preTAAPassShaderFilePaths);
+	initializeGLShaderProgramComponent(GLFinalRenderPassComponent::get().m_TAAPassGLSPC, GLFinalRenderPassComponent::get().m_TAAPassShaderFilePaths);
+	initializeGLShaderProgramComponent(GLFinalRenderPassComponent::get().m_TAASharpenPassGLSPC, GLFinalRenderPassComponent::get().m_TAASharpenPassShaderFilePaths);
+	initializeGLShaderProgramComponent(GLFinalRenderPassComponent::get().m_bloomExtractPassGLSPC, GLFinalRenderPassComponent::get().m_bloomExtractPassShaderFilePaths);
+	initializeGLShaderProgramComponent(GLFinalRenderPassComponent::get().m_bloomBlurPassGLSPC, GLFinalRenderPassComponent::get().m_bloomBlurPassShaderFilePaths);
+	initializeGLShaderProgramComponent(GLFinalRenderPassComponent::get().m_motionBlurPassGLSPC, GLFinalRenderPassComponent::get().m_motionBlurPassShaderFilePaths);
+	initializeGLShaderProgramComponent(GLFinalRenderPassComponent::get().m_billboardPassGLSPC, GLFinalRenderPassComponent::get().m_billboardPassShaderFilePaths);
+	initializeGLShaderProgramComponent(GLFinalRenderPassComponent::get().m_debuggerPassGLSPC, GLFinalRenderPassComponent::get().m_billboardPassShaderFilePaths);
+	initializeGLShaderProgramComponent(GLFinalRenderPassComponent::get().m_finalBlendPassGLSPC, GLFinalRenderPassComponent::get().m_finalBlendPassShaderFilePaths);
+
+	bindSkyPassUniformLocations();
+	bindTAAPassUniformLocations();
+	bindBloomExtractPassUniformLocations();
+	bindBloomBlurPassUniformLocations();
+	bindMotionBlurUniformLocations();
+	bindBillboardPassUniformLocations();
+	bindDebuggerPassUniformLocations();
+	bindFinalBlendPassUniformLocations();
+
+	return true;
 }

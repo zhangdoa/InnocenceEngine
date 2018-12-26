@@ -110,12 +110,30 @@ bool GLRenderingSystemNS::setup()
 
 	RenderingSystemComponent::get().f_reloadShader =
 		[&](RenderPassType renderPassType) {
-		reloadGLShaderProgramComponent(renderPassType);
+		switch (renderPassType)
+		{
+		case RenderPassType::OpaquePass:
+			reloadOpaquePassShaders();
+			break;
+		case RenderPassType::TransparentPass:
+			reloadTransparentPassShaders();
+			break;
+		case RenderPassType::TerrainPass:
+			reloadTerrainPassShaders();
+			break;
+		case RenderPassType::LightPass:
+			reloadLightPassShaders();
+			break;
+		case RenderPassType::FinalPass:
+			reloadFinalPassShaders();
+			break;
+		default: break;
+		}
 	};
 
 	RenderingSystemComponent::get().f_captureEnvironment =
 		[]() {
-		updateEnvironmentRenderPass();
+		updateEnvironmentPass();
 	};
 
 	if (RenderingSystemComponent::get().m_MSAAdepth)
@@ -214,10 +232,10 @@ bool GLRenderingSystemNS::update()
 
 	prepareRenderingData();
 
-	updateShadowRenderPass();
-	updateGeometryRenderPass();
-	updateLightRenderPass();
-	updateFinalRenderPass();
+	updateShadowPass();
+	updateGeometryPass();
+	updateLightPass();
+	updateFinalPass();
 
 	return true;
 }
@@ -454,22 +472,9 @@ bool GLRenderingSystemNS::resize()
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
 
-	//resizeGLRenderPassComponent(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLTerrainRenderPassComponent::get().m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLLightRenderPassComponent::get().m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_skyPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_preTAAPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_TAASharpenPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_billboardPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_debuggerPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	//resizeGLRenderPassComponent(GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGeometryPass();
+	resizeLightPass();
+	resizeFinalPass();
 
 	return true;
 }

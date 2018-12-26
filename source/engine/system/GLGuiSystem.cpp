@@ -170,7 +170,7 @@ void ImGuiWrapper::update()
 		ImGui::Checkbox("Draw overlap wireframe", &l_renderingConfig.drawOverlapWireframe);
 		ImGui::Checkbox("Show render pass result", &l_renderingConfig.showRenderPassResult);
 		ImGui::Checkbox("Pause game update", &l_gameConfig.pauseGameUpdate);
-		const char* items[] = { "OpaquePass", "TransparentPass", "TerrainPass", "LightPass" };
+		const char* items[] = { "OpaquePass", "TransparentPass", "TerrainPass", "LightPass", "FinalPass" };
 		static int item_current = 0;
 		ImGui::Combo("Choose shader", &item_current, items, IM_ARRAYSIZE(items));
 		if (ImGui::Button("Reload Shader"))

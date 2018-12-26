@@ -87,7 +87,7 @@ void GLRenderingSystemNS::bindLightPassUniformLocations(GLShaderProgramComponent
 		"uni_isEmissive");
 }
 
-void GLRenderingSystemNS::updateLightRenderPass()
+void GLRenderingSystemNS::updateLightPass()
 {
 	glDisable(GL_DEPTH_TEST);
 
@@ -255,4 +255,22 @@ void GLRenderingSystemNS::updateLightRenderPass()
 	drawMesh(l_MDC);
 
 	glDisable(GL_STENCIL_TEST);
+}
+
+bool GLRenderingSystemNS::resizeLightPass()
+{
+	resizeGLRenderPassComponent(GLLightRenderPassComponent::get().m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+
+	return true;
+}
+
+bool GLRenderingSystemNS::reloadLightPassShaders()
+{
+	deleteShaderProgram(GLLightRenderPassComponent::get().m_GLSPC);
+
+	initializeGLShaderProgramComponent(GLLightRenderPassComponent::get().m_GLSPC, GLLightRenderPassComponent::get().m_shaderFilePaths);
+
+	bindLightPassUniformLocations(GLLightRenderPassComponent::get().m_GLSPC);
+
+	return true;
 }

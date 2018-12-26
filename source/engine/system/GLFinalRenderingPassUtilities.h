@@ -5,5 +5,9 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
 	void initializeFinalPass();
 
-	void updateFinalRenderPass();
+	void updateFinalPass();
+
+	bool resizeFinalPass();
+
+	bool reloadFinalPassShaders();
 }

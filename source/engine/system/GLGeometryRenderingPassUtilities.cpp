@@ -24,11 +24,11 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void initializeTerrainPassShaders();
 	void bindTerrainPassUniformLocations(GLShaderProgramComponent* rhs);
 
-	void updateGeometryRenderPass();
-	void updateOpaqueRenderPass();
-	void updateTransparentRenderPass();
+	void updateGeometryPass();
+	void updateOpaquePass();
+	void updateTransparentPass();
 
-	void updateTerrainRenderPass();
+	void updateTerrainPass();
 }
 
 void GLRenderingSystemNS::initializeGeometryPass()
@@ -161,14 +161,14 @@ void GLRenderingSystemNS::bindTerrainPassUniformLocations(GLShaderProgramCompone
 		0);
 }
 
-void GLRenderingSystemNS::updateGeometryRenderPass()
+void GLRenderingSystemNS::updateGeometryPass()
 {
-	updateOpaqueRenderPass();
-	updateTransparentRenderPass();
-	updateTerrainRenderPass();
+	updateOpaquePass();
+	updateTransparentPass();
+	updateTerrainPass();
 }
 
-void GLRenderingSystemNS::updateOpaqueRenderPass()
+void GLRenderingSystemNS::updateOpaquePass()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -256,7 +256,7 @@ void GLRenderingSystemNS::updateOpaqueRenderPass()
 #endif
 }
 
-void GLRenderingSystemNS::updateTransparentRenderPass()
+void GLRenderingSystemNS::updateTransparentPass()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -297,7 +297,7 @@ void GLRenderingSystemNS::updateTransparentRenderPass()
 	glDisable(GL_DEPTH_TEST);
 }
 
-void GLRenderingSystemNS::updateTerrainRenderPass()
+void GLRenderingSystemNS::updateTerrainPass()
 {
 	if (RenderingSystemComponent::get().m_drawTerrain)
 	{
@@ -337,4 +337,46 @@ void GLRenderingSystemNS::updateTerrainRenderPass()
 	{
 		cleanFBC(GLTerrainRenderPassComponent::get().m_GLRPC->m_GLFBC);
 	}
+}
+
+bool GLRenderingSystemNS::resizeGeometryPass()
+{
+	resizeGLRenderPassComponent(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(GLTerrainRenderPassComponent::get().m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+
+	return true;
+}
+
+bool GLRenderingSystemNS::reloadOpaquePassShaders()
+{
+	deleteShaderProgram(GLGeometryRenderPassComponent::get().m_opaquePass_GLSPC);
+
+	initializeGLShaderProgramComponent(GLGeometryRenderPassComponent::get().m_opaquePass_GLSPC, GLGeometryRenderPassComponent::get().m_opaquePass_shaderFilePaths);
+
+	bindOpaquePassUniformLocations(GLGeometryRenderPassComponent::get().m_opaquePass_GLSPC);
+
+	return true;
+}
+
+bool GLRenderingSystemNS::reloadTransparentPassShaders()
+{
+	deleteShaderProgram(GLGeometryRenderPassComponent::get().m_transparentPass_GLSPC);
+
+	initializeGLShaderProgramComponent(GLGeometryRenderPassComponent::get().m_transparentPass_GLSPC, GLGeometryRenderPassComponent::get().m_transparentPass_shaderFilePaths);
+
+	bindTransparentPassUniformLocations(GLGeometryRenderPassComponent::get().m_transparentPass_GLSPC);
+
+	return true;
+}
+
+bool GLRenderingSystemNS::reloadTerrainPassShaders()
+{
+	deleteShaderProgram(GLTerrainRenderPassComponent::get().m_GLSPC);
+
+	initializeGLShaderProgramComponent(GLTerrainRenderPassComponent::get().m_GLSPC, GLTerrainRenderPassComponent::get().m_shaderFilePaths);
+
+	bindTransparentPassUniformLocations(GLTerrainRenderPassComponent::get().m_GLSPC);
+
+	return true;
 }

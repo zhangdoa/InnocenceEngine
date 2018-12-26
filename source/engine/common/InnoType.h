@@ -49,7 +49,7 @@ enum class TextureAssignType { ADD, OVERWRITE };
 
 enum class IconType { OBJ, PNG, SHADER, UNKNOWN };
 
-enum class RenderPassType { OpaquePass, TransparentPass, TerrainPass, LightPass };
+enum class RenderPassType { OpaquePass, TransparentPass, TerrainPass, LightPass, FinalPass };
 
 // shader custom types
 enum class ShaderType { VERTEX, GEOMETRY, FRAGMENT };

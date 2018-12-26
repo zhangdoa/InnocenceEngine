@@ -26,7 +26,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	GLShaderProgramComponent* addGLShaderProgramComponent(EntityID rhs);
 
-	bool reloadGLShaderProgramComponent(RenderPassType renderPassType);
+	bool deleteShaderProgram(GLShaderProgramComponent* rhs);
 
 	GLMeshDataComponent* addGLMeshDataComponent(EntityID rhs);
 	GLTextureDataComponent* addGLTextureDataComponent(EntityID rhs);

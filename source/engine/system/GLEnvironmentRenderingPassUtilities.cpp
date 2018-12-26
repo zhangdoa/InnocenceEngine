@@ -15,8 +15,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void initializeBRDFLUTPass();
 	void initializeEnvironmentCapturePass();
 
-	void updateBRDFLUTRenderPass();
-	void updateEnvironmentCaptureRenderPass();
+	void updateBRDFLUTPass();
+	void updateEnvironmentCapturePass();
 
 	TextureDataDesc BRDFLUTSplitSummingTextureDesc = TextureDataDesc();
 	TextureDataDesc BRDFLUTAverangeMSTextureDesc = TextureDataDesc();
@@ -291,13 +291,13 @@ void GLRenderingSystemNS::initializeEnvironmentCapturePass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLRenderingSystemNS::updateEnvironmentRenderPass()
+void GLRenderingSystemNS::updateEnvironmentPass()
 {
-	updateBRDFLUTRenderPass();
-	updateEnvironmentCaptureRenderPass();
+	updateBRDFLUTPass();
+	updateEnvironmentCapturePass();
 }
 
-void GLRenderingSystemNS::updateBRDFLUTRenderPass()
+void GLRenderingSystemNS::updateBRDFLUTPass()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -330,7 +330,7 @@ void GLRenderingSystemNS::updateBRDFLUTRenderPass()
 	drawMesh(l_MDC);
 }
 
-void GLRenderingSystemNS::updateEnvironmentCaptureRenderPass()
+void GLRenderingSystemNS::updateEnvironmentCapturePass()
 {
 	// bind to framebuffer
 	auto l_FBC = GLEnvironmentRenderPassComponent::get().m_capturePassFBC;
@@ -366,7 +366,7 @@ void GLRenderingSystemNS::updateEnvironmentCaptureRenderPass()
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
 
-		activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassSPC);
+		activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassGLSPC);
 
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_p,

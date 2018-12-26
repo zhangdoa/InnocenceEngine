@@ -5,5 +5,5 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
 	void initializeShadowPass();
 
-	void updateShadowRenderPass();
+	void updateShadowPass();
 }
