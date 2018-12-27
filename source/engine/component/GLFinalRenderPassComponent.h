@@ -51,8 +51,6 @@ public:
 		"uni_motionVectorTexture",
 	};
 
-	GLuint m_TAAPass_uni_renderTargetSize;
-
 	GLRenderPassComponent* m_TAASharpenPassGLRPC;
 	GLShaderProgramComponent* m_TAASharpenPassGLSPC;
 	ShaderFilePaths m_TAASharpenPassShaderFilePaths = { "GL4.0//TAASharpenPassVertex.sf", "", "GL4.0//TAASharpenPassFragment.sf" };
@@ -62,9 +60,6 @@ public:
 		"uni_lastTAAPassRT0",
 	}; 
 	
-	GLuint m_TAASharpenPass_uni_lastTAAPassRT0;
-	GLuint m_TAASharpenPass_uni_renderTargetSize;
-
 	GLRenderPassComponent* m_bloomExtractPassGLRPC;
 	GLShaderProgramComponent* m_bloomExtractPassGLSPC;
 	ShaderFilePaths m_bloomExtractPassShaderFilePaths = { "GL4.0//bloomExtractPassVertex.sf", "", "GL4.0//bloomExtractPassFragment.sf" };
@@ -133,7 +128,7 @@ public:
 
 	std::vector<std::string> m_finalBlendPassUniformNames =
 	{
-		"uni_motionBlurPassRT0",
+		"uni_basePassRT0",
 		"uni_bloomPassRT0",
 		"uni_billboardPassRT0",
 		"uni_debuggerPassRT0",

@@ -8,7 +8,10 @@ uniform sampler2D uni_TAAPassRT0;
 
 void main()
 {
-	vec2 MotionVector = texture(uni_motionVectorTexture, thefrag_TexCoord).xy / 2.0;
+	vec2 texelSize = 1.0 / vec2(textureSize(uni_TAAPassRT0, 0));
+	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
+	vec2 MotionVector = texture(uni_motionVectorTexture, screenTexCoords).xy * 2.0;
+
 	if (MotionVector == vec2(0.0, 0.0))
 	{
 		uni_motionBlurPassRT0 = texture(uni_TAAPassRT0, thefrag_TexCoord);

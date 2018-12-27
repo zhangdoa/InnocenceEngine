@@ -32,12 +32,20 @@ namespace PlayerComponentCollection
 	std::function<void(float)> f_rotateAroundPositiveYAxis;
 	std::function<void(float)> f_rotateAroundRightAxis;
 
-	float m_initialSpeed = 0;
+	float m_initialMoveSpeed = 0;
 	float m_moveSpeed = 0;
 	float m_rotateSpeed = 0;
 	bool m_canMove = false;
+	bool m_canSlerp = false;
 
 	void move(vec4 direction, float length);
+	vec4 m_targetPawnPos;
+	vec4 m_targetCameraPos;
+	vec4 m_targetCameraRot;
+	vec4 m_targetCameraRotX;
+	vec4 m_targetCameraRotY;
+
+	void updatePlayer();
 
 	void rotateAroundPositiveYAxis(float offset);
 	void rotateAroundRightAxis(float offset);
@@ -50,7 +58,7 @@ void PlayerComponentCollection::setup()
 
 	m_pawnTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pawnParentEntity);
 	m_pawnTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	m_pawnTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+	m_pawnTransformComponent->m_localTransformVector.m_rot = InnoMath::caclRotatedLocalRotator(
 		m_pawnTransformComponent->m_localTransformVector.m_rot,
 		vec4(0.0f, 1.0f, 0.0f, 0.0f),
 		180.0f
@@ -58,7 +66,7 @@ void PlayerComponentCollection::setup()
 	m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_cameraParentEntity);
 	m_cameraTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	m_cameraTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 3.0f, 2.0f, 1.0f);
-	m_cameraTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+	m_cameraTransformComponent->m_localTransformVector.m_rot = InnoMath::caclRotatedLocalRotator(
 		m_cameraTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
 		-45.0f
@@ -95,18 +103,24 @@ void PlayerComponentCollection::setup()
 	m_cameraComponent->m_drawFrustum = false;
 	m_cameraComponent->m_drawAABB = false;
 
-	m_initialSpeed = 0.05f;
-	m_moveSpeed = m_initialSpeed;
-	m_rotateSpeed = 4.0f;
+	m_initialMoveSpeed = 0.5f;
+	m_moveSpeed = m_initialMoveSpeed;
+	m_rotateSpeed = 10.0f;
 	m_canMove = false;
+
+	m_targetPawnPos = m_pawnTransformComponent->m_localTransformVector.m_pos;
+	m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
+	m_targetCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
+	m_targetCameraRotX = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	m_targetCameraRotY = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	f_moveForward = [&]() { move(InnoMath::getDirection(direction::FORWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
 	f_moveBackward = [&]() { move(InnoMath::getDirection(direction::BACKWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
 	f_moveLeft = [&]() { move(InnoMath::getDirection(direction::LEFT, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
 	f_moveRight = [&]() { move(InnoMath::getDirection(direction::RIGHT, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
 
-	f_speedUp = [&]() { m_moveSpeed = m_initialSpeed * 10.0f; };
-	f_speedDown = [&]() { m_moveSpeed = m_initialSpeed; };
+	f_speedUp = [&]() { m_moveSpeed = m_initialMoveSpeed * 10.0f; };
+	f_speedDown = [&]() { m_moveSpeed = m_initialMoveSpeed; };
 
 	f_allowMove = [&]() { m_canMove = true; };
 	f_forbidMove = [&]() { m_canMove = false; };
@@ -119,8 +133,11 @@ void PlayerComponentCollection::move(vec4 direction, float length)
 {
 	if (m_canMove)
 	{
-		m_pawnTransformComponent->m_localTransformVector.m_pos = InnoMath::moveTo(m_pawnTransformComponent->m_localTransformVector.m_pos, direction, (float)length);
-		m_cameraTransformComponent->m_localTransformVector.m_pos = InnoMath::moveTo(m_cameraTransformComponent->m_localTransformVector.m_pos, direction, (float)length);
+		auto l_currentPawnPos = m_pawnTransformComponent->m_localTransformVector.m_pos;
+		m_targetPawnPos = InnoMath::moveTo(l_currentPawnPos, direction, length);
+
+		auto l_currentCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
+		m_targetCameraPos = InnoMath::moveTo(l_currentCameraPos, direction, length);
 	}
 }
 
@@ -128,20 +145,17 @@ void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
 {
 	if (m_canMove)
 	{
-		auto camera_dest_rot = InnoMath::rotateInLocal(
-			m_cameraTransformComponent->m_localTransformVector.m_rot,
+		m_canSlerp = false;
+
+		m_targetCameraRotY = InnoMath::getQuatRotator(
 		vec4(0.0f, 1.0f, 0.0f, 0.0f),
-		(float)((-offset * m_rotateSpeed) / 180.0f)* PI<float>
+		((-offset * m_rotateSpeed) / 180.0f)* PI<float>
 		);
+		auto l_currentCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
+		m_targetCameraRot = m_targetCameraRotY.quatMul(m_targetCameraRot);
 
-		m_cameraTransformComponent->m_localTransformVector.m_rot = camera_dest_rot.slerp(m_cameraTransformComponent->m_localTransformVector.m_rot, camera_dest_rot, 0.5);
-
-		//auto pawn_dest_rot = InnoMath::rotateInLocal(
-		//	m_pawnTransformComponent->m_localTransformVector.m_rot,
-		//	vec4(0.0f, 1.0f, 0.0f, 0.0f),
-		//	(float)((-offset * m_rotateSpeed) / 180.0f)* PI<float>
-		//);
-		//m_pawnTransformComponent->m_localTransformVector.m_rot = pawn_dest_rot.slerp(m_pawnTransformComponent->m_localTransformVector.m_rot, pawn_dest_rot, 0.5);
+		m_canSlerp = true;
+		m_cameraTransformComponent->m_localTransformVector.m_rot = m_targetCameraRotY.quatMul(m_cameraTransformComponent->m_localTransformVector.m_rot);
 	}
 }
 
@@ -149,13 +163,18 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 {
 	if (m_canMove)
 	{
-		auto l_right = InnoMath::getDirection(direction::RIGHT, m_cameraTransformComponent->m_localTransformVector.m_rot);
-		auto dest_rot = InnoMath::rotateInLocal(
-			m_cameraTransformComponent->m_localTransformVector.m_rot,
-			l_right,
-			(float)((offset * m_rotateSpeed) / 180.0f)* PI<float>);
+		m_canSlerp = false;
 
-		m_cameraTransformComponent->m_localTransformVector.m_rot = dest_rot.slerp(m_cameraTransformComponent->m_localTransformVector.m_rot, dest_rot, 0.5);
+		auto l_right = InnoMath::getDirection(direction::RIGHT, m_cameraTransformComponent->m_localTransformVector.m_rot);
+		m_targetCameraRotX = InnoMath::getQuatRotator(
+			l_right,
+			((offset * m_rotateSpeed) / 180.0f)* PI<float>
+		);
+		auto l_currentCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
+		m_targetCameraRot = m_targetCameraRotX.quatMul(m_targetCameraRot);
+
+		m_canSlerp = true;
+		m_cameraTransformComponent->m_localTransformVector.m_rot = m_targetCameraRotX.quatMul(m_cameraTransformComponent->m_localTransformVector.m_rot);
 	}
 }
 
@@ -237,7 +256,7 @@ bool GameInstanceNS::setup()
 	m_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_directionalLightEntity);
 	m_directionalLightTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	m_directionalLightTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 4.0f, 0.0f, 1.0f);
-	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::caclRotatedLocalRotator(
 		m_directionalLightTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
 		-90.0f
@@ -254,7 +273,7 @@ bool GameInstanceNS::setup()
 	m_landscapeTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	m_landscapeTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, -4.0f, 0.0f, 1.0f);
 	m_landscapeTransformComponent->m_localTransformVector.m_scale = vec4(200.0f, 200.0f, 0.1f, 1.0f);
-	m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+	m_landscapeTransformComponent->m_localTransformVector.m_rot = InnoMath::caclRotatedLocalRotator(
 		m_landscapeTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
 		90.0f
@@ -268,11 +287,11 @@ bool GameInstanceNS::setup()
 
 	m_pawnTransformComponent1 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pawnEntity1);
 	m_pawnTransformComponent1->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
+	//m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
 	m_pawnVisibleComponent1 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pawnEntity1);
 	m_pawnVisibleComponent1->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
-	m_pawnVisibleComponent1->m_meshShapeType = MeshShapeType::CUSTOM;
-	m_pawnVisibleComponent1->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
+	m_pawnVisibleComponent1->m_meshShapeType = MeshShapeType::SPHERE;
+	m_pawnVisibleComponent1->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	//m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
 	//m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
 	m_pawnVisibleComponent1->m_textureWrapMethod = TextureWrapMethod::REPEAT;
@@ -322,6 +341,7 @@ INNO_GAME_EXPORT bool GameInstance::update()
 		GameInstanceNS::temp += 0.02f;
 		GameInstanceNS::updateLights(GameInstanceNS::temp);
 		GameInstanceNS::updateSpheres(GameInstanceNS::temp);
+		PlayerComponentCollection::updatePlayer();
 	});
 	GameInstanceNS::m_asyncTask = &temp;
 	return true;
@@ -491,7 +511,7 @@ void GameInstanceNS::setupLights()
 
 void GameInstanceNS::updateLights(float seed)
 {
-	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::rotateInLocal(
+	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::caclRotatedLocalRotator(
 		m_directionalLightTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
 		0.2f * (float)sin(seed)
@@ -532,6 +552,7 @@ void GameInstanceNS::updateLights(float seed)
 
 void GameInstanceNS::updateSpheres(float seed)
 {
+	m_pawnTransformComponent1->m_localTransformVector.m_pos = m_pawnTransformComponent1->m_localTransformVector.m_pos + vec4(sin(seed * 2.0f) * 0.5f, 0.0f, 0.0f, 0.0f);
 	//auto l_t = InnoMath::rotateInGlobal(
 	//	m_pawnTransformComponent2->m_localTransformVector.m_pos,
 	//	m_pawnTransformComponent2->m_globalTransformVector.m_pos,
@@ -591,4 +612,31 @@ void GameInstanceNS::updateSpheres(float seed)
 		f_setMRA(m_transparentSphereVisibleComponents[i]->m_modelMap, l_albedo, vec4());
 	}
 	//GameInstanceNS::m_directionalLightComponent->m_color = InnoMath::HSVtoRGB(vec4(((sin(seed / 6.0f) + 1.0f) / 2.0f) * 360.0f, 1.0f, 1.0f, 1.0f));
+}
+
+void PlayerComponentCollection::updatePlayer()
+{
+	auto l_currentPawnPos = m_pawnTransformComponent->m_localTransformVector.m_pos;
+
+	if (l_currentPawnPos != m_targetPawnPos)
+	{
+		m_pawnTransformComponent->m_localTransformVector.m_pos = InnoMath::lerp(l_currentPawnPos, m_targetPawnPos, 0.8f);
+	}
+
+	auto l_currentCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
+
+	if (l_currentCameraPos != m_targetCameraPos)
+	{
+		m_cameraTransformComponent->m_localTransformVector.m_pos = InnoMath::lerp(l_currentCameraPos, m_targetCameraPos, 0.8f);
+	}
+
+	//if (m_canSlerp)
+	//{
+	//	auto l_currentCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
+
+	//	if (l_currentCameraRot != m_targetCameraRot)
+	//	{
+	//		m_cameraTransformComponent->m_localTransformVector.m_rot = InnoMath::slerp(l_currentCameraRot, m_targetCameraRot, 0.8f);
+	//	}
+	//}
 }

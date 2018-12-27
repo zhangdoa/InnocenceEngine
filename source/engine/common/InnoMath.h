@@ -268,49 +268,6 @@ public:
 		return TVec4(x / l_length, y / l_length, z / l_length, w / l_length);
 	}
 
-	auto lerp(const TVec4<T>& a, const TVec4<T>& b, T alpha) -> TVec4<T>
-	{
-		return a * alpha + b * (one<T> -alpha);
-	}
-
-	auto slerp(const TVec4<T>& a, const TVec4<T>& b, T alpha) -> TVec4<T>
-	{
-		T cosOfAngle = a * b;
-		// use nlerp for quaternions which are too close
-		if (cosOfAngle > tolerance4<T>) {
-			return (a * alpha + b * (one<T>-alpha)).normalize();
-		}
-		// for shorter path
-		if (cosOfAngle < T()) {
-			auto theta_0 = acos(-cosOfAngle);
-			auto theta = theta_0 * alpha;
-			auto sin_theta = sin(theta);
-			auto sin_theta_0 = sin(theta_0);
-
-			auto s0 = sin_theta / sin_theta_0;
-			auto s1 = cos(theta) + cosOfAngle * sin_theta / sin_theta_0;
-
-			return (a * -one<T> * s0) + (b * s1);
-		}
-		else
-		{
-			auto theta_0 = acos(cosOfAngle);
-			auto theta = theta_0 * alpha;
-			auto sin_theta = std::sin(theta);
-			auto sin_theta_0 = std::sin(theta_0);
-
-			auto s0 = sin_theta / sin_theta_0;
-			auto s1 = std::cos(theta) - cosOfAngle * sin_theta / sin_theta_0;
-
-			return (a * s0) + (b * s1);
-		}
-	}
-
-	auto nlerp(const TVec4<T>& a, const TVec4<T>& b, T alpha) -> TVec4<T>
-	{
-		return (a * alpha + b * (one<T> -alpha)).normalize();
-	}
-
 	bool operator!=(const TVec4<T> & rhs)
 	{
 		// @TODO: replace with SIMD impl
@@ -342,7 +299,7 @@ public:
 		return !(*this != rhs);
 	}
 
-	auto rotateByQuat(const TVec4<T> & rhs) -> TVec4<T>
+	auto rotateDirectionByQuat(const TVec4<T> & rhs) -> TVec4<T>
 	{
 		// V' = QVQ^-1, for unit quaternion, the conjugated quaternion is as same as the inverse quaternion
 
@@ -823,6 +780,52 @@ enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
 
 namespace InnoMath
 {
+	template<class T>
+	auto lerp(const TVec4<T>& a, const TVec4<T>& b, T alpha) -> TVec4<T>
+	{
+		return a * alpha + b * (one<T> -alpha);
+	}
+
+	template<class T>
+	auto slerp(const TVec4<T>& a, const TVec4<T>& b, T alpha) -> TVec4<T>
+	{
+		T cosOfAngle = a * b;
+		// use nlerp for quaternions which are too close
+		if (cosOfAngle > tolerance4<T>) {
+			return (a * alpha + b * (one<T>-alpha)).normalize();
+		}
+		// for shorter path
+		if (cosOfAngle < T()) {
+			auto theta_0 = acos(-cosOfAngle);
+			auto theta = theta_0 * alpha;
+			auto sin_theta = sin(theta);
+			auto sin_theta_0 = sin(theta_0);
+
+			auto s0 = sin_theta / sin_theta_0;
+			auto s1 = cos(theta) + cosOfAngle * sin_theta / sin_theta_0;
+
+			return ((a * -one<T> * s0) + (b * s1)).normalize();
+}
+		else
+		{
+			auto theta_0 = acos(cosOfAngle);
+			auto theta = theta_0 * alpha;
+			auto sin_theta = std::sin(theta);
+			auto sin_theta_0 = std::sin(theta_0);
+
+			auto s0 = sin_theta / sin_theta_0;
+			auto s1 = std::cos(theta) - cosOfAngle * sin_theta / sin_theta_0;
+
+			return ((a * s0) + (b * s1)).normalize();
+		}
+	}
+
+	template<class T>
+	auto nlerp(const TVec4<T>& a, const TVec4<T>& b, T alpha) -> TVec4<T>
+	{
+		return (a * alpha + b * (one<T> -alpha)).normalize();
+	}
+
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto mul(const TVec4<T> & lhs, const TMat4<T> & rhs) -> TVec4<T>
@@ -1365,29 +1368,31 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto rotateInLocal(const TVec4<T> & localRot, const TVec4<T> & axis, T angle)->TVec4<T>
+	auto getQuatRotator(const TVec4<T> & axis, T angle)->TVec4<T>
 	{
 		TVec4<T> normalizedAxis = axis;
 		normalizedAxis = normalizedAxis.normalize();
 		T sinHalfAngle = std::sin((angle * PI<T> / halfCircumference<T>) / two<T>);
 		T cosHalfAngle = std::cos((angle * PI<T> / halfCircumference<T>) / two<T>);
 
-		return TVec4<T>(normalizedAxis.x * sinHalfAngle, normalizedAxis.y * sinHalfAngle, normalizedAxis.z * sinHalfAngle, cosHalfAngle).quatMul(localRot);
+		return TVec4<T>(normalizedAxis.x * sinHalfAngle, normalizedAxis.y * sinHalfAngle, normalizedAxis.z * sinHalfAngle, cosHalfAngle);
 	}
 
 	template<class T>
-	auto rotateInGlobal(const TVec4<T> & localPos, const TVec4<T> & globalPos, const TVec4<T> & axis, T angle)->std::tuple<TVec4<T>, TVec4<T>>
+	auto caclRotatedLocalRotator(const TVec4<T> & localRot, const TVec4<T> & axis, T angle)->TVec4<T>
 	{
-		TVec4<T> normalizedAxis = axis;
-		normalizedAxis = normalizedAxis.normalize();
-		T sinHalfAngle = std::sin((angle * PI<T> / halfCircumference<T>) / two<T>);
-		T cosHalfAngle = std::cos((angle * PI<T> / halfCircumference<T>) / two<T>);
-		auto l_rotator = TVec4<T>(normalizedAxis.x * sinHalfAngle, normalizedAxis.y * sinHalfAngle, normalizedAxis.z * sinHalfAngle, cosHalfAngle);
+		return getQuatRotator(axis, angle).quatMul(localRot);
+	}
+
+	template<class T>
+	auto caclRotatedGlobalPositions(const TVec4<T> & localPos, const TVec4<T> & globalPos, const TVec4<T> & axis, T angle)->std::tuple<TVec4<T>, TVec4<T>>
+	{
+		auto l_rotator = getQuatRotator(axis, angle);
 
 		auto l_globalPos = globalPos;
 		l_globalPos.w = T();
 
-		l_globalPos = l_globalPos.rotateByQuat(l_rotator);
+		l_globalPos = l_globalPos.rotateDirectionByQuat(l_rotator);
 		l_globalPos.w = one<T>;
 
 		auto l_delta = l_globalPos - globalPos;
@@ -1494,7 +1499,7 @@ namespace InnoMath
 		case LEFT:l_directionTVec4 = TVec4<T>(-1.0f, 0.0f, 0.0f, 0.0f); break;
 		}
 
-		return l_directionTVec4.rotateByQuat(localRot);
+		return l_directionTVec4.rotateDirectionByQuat(localRot);
 	}
 
 	INNO_FORCEINLINE EntityID createEntityID()

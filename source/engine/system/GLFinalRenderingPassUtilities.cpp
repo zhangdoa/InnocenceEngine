@@ -41,7 +41,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	GLTextureDataComponent* updateMotionBlurPass(GLTextureDataComponent * inputGLTDC);
 	GLTextureDataComponent* updateBillboardPass();
 	GLTextureDataComponent* updateDebuggerPass();
-	GLTextureDataComponent* updateFinalBlendPass();
+	GLTextureDataComponent* updateFinalBlendPass(GLTextureDataComponent * inputGLTDC);
 }
 
 void GLRenderingSystemNS::initializeFinalPass()
@@ -133,16 +133,6 @@ void GLRenderingSystemNS::bindTAAPassUniformLocations()
 	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_preTAAPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_preTAAPassUniformNames);
 
 	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_TAAPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_TAAPassUniformNames);
-	
-	GLFinalRenderPassComponent::get().m_TAAPass_uni_renderTargetSize = getUniformLocation(
-		GLFinalRenderPassComponent::get().m_TAAPassGLSPC->m_program,
-		"uni_renderTargetSize");
-
-	updateTextureUniformLocations(GLFinalRenderPassComponent::get().m_TAASharpenPassGLSPC->m_program, GLFinalRenderPassComponent::get().m_TAASharpenPassUniformNames);
-
-	GLFinalRenderPassComponent::get().m_TAASharpenPass_uni_renderTargetSize = getUniformLocation(
-		GLFinalRenderPassComponent::get().m_TAASharpenPassGLSPC->m_program,
-		"uni_renderTargetSize");
 }
 
 void GLRenderingSystemNS::initializeBloomExtractPass()
@@ -305,24 +295,20 @@ void GLRenderingSystemNS::updateFinalPass()
 
 	auto preTAAPassResult = updatePreTAAPass();
 
-	GLTextureDataComponent* bloomInputGLTDC;
+	GLTextureDataComponent* finalInputGLTDC;
+
+	finalInputGLTDC = updateMotionBlurPass(preTAAPassResult);
 
 	if (RenderingSystemComponent::get().m_useTAA)
 	{
-		auto TAAPassResult = updateTAAPass(preTAAPassResult);
+		auto TAAPassResult = updateTAAPass(finalInputGLTDC);
 
-		auto TAASharpenPassResult = updateTAASharpenPass(TAAPassResult);
-
-		bloomInputGLTDC = TAASharpenPassResult;
-	}
-	else
-	{
-		bloomInputGLTDC = preTAAPassResult;
+		finalInputGLTDC = updateTAASharpenPass(TAAPassResult);
 	}
 
 	if (RenderingSystemComponent::get().m_useBloom)
 	{
-		auto bloomExtractPassResult = updateBloomExtractPass(bloomInputGLTDC);
+		auto bloomExtractPassResult = updateBloomExtractPass(finalInputGLTDC);
 
 		//glEnable(GL_STENCIL_TEST);
 		//glClear(GL_STENCIL_BUFFER_BIT);
@@ -336,7 +322,7 @@ void GLRenderingSystemNS::updateFinalPass()
 
 		//glDisable(GL_STENCIL_TEST);
 
-		auto bloomBlurPassResult = updateBloomBlurPass(bloomExtractPassResult);
+		updateBloomBlurPass(bloomExtractPassResult);
 	}
 	else
 	{
@@ -344,8 +330,6 @@ void GLRenderingSystemNS::updateFinalPass()
 		cleanFBC(GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLFBC);
 		cleanFBC(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLFBC);
 	}
-
-	updateMotionBlurPass(bloomInputGLTDC);
 
 	updateBillboardPass();
 
@@ -358,7 +342,7 @@ void GLRenderingSystemNS::updateFinalPass()
 		cleanFBC(GLFinalRenderPassComponent::get().m_debuggerPassGLRPC->m_GLFBC);
 	}
 
-	updateFinalBlendPass();
+	updateFinalBlendPass(finalInputGLTDC);
 }
 
 GLTextureDataComponent* GLRenderingSystemNS::updateSkyPass()
@@ -473,10 +457,6 @@ GLTextureDataComponent* GLRenderingSystemNS::updateTAAPass(GLTextureDataComponen
 		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[3],
 		2);
 
-	updateUniform(
-		GLFinalRenderPassComponent::get().m_TAAPass_uni_renderTargetSize,
-		(float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX, (float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY);
-
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
@@ -492,10 +472,6 @@ GLTextureDataComponent* GLRenderingSystemNS::updateTAASharpenPass(GLTextureDataC
 	activateTexture(
 		inputGLTDC,
 		0);
-
-	updateUniform(
-		GLFinalRenderPassComponent::get().m_TAASharpenPass_uni_renderTargetSize,
-		(float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX, (float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
@@ -723,16 +699,16 @@ GLTextureDataComponent* GLRenderingSystemNS::updateDebuggerPass()
 	return GLFinalRenderPassComponent::get().m_debuggerPassGLRPC->m_GLTDCs[0];
 }
 
-GLTextureDataComponent* GLRenderingSystemNS::updateFinalBlendPass()
+GLTextureDataComponent* GLRenderingSystemNS::updateFinalBlendPass(GLTextureDataComponent * inputGLTDC)
 {
 	auto l_FBC = GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC->m_GLFBC;
 	bindFBC(l_FBC);
 
 	activateShaderProgram(GLFinalRenderPassComponent::get().m_finalBlendPassGLSPC);
 
-	// motion blur pass rendering target
+	// last pass rendering target as the mixing background
 	activateTexture(
-		GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC->m_GLTDCs[0],
+		inputGLTDC,
 		0);
 	// bloom pass rendering target
 	activateTexture(

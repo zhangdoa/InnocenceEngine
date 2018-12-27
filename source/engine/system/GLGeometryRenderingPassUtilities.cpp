@@ -6,6 +6,8 @@
 #include "../component/RenderingSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
 
+#include <random>
+
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -15,6 +17,12 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void initializeOpaquePass();
 	void initializeOpaquePassShaders();
 	void bindOpaquePassUniformLocations(GLShaderProgramComponent* rhs);
+
+	void initializeSSAOPass();
+	void initializeSSAOPassShaders();
+	void bindSSAOPassUniformLocations(GLShaderProgramComponent* rhs);
+
+	void generateRandomNoise();
 
 	void initializeTransparentPass();
 	void initializeTransparentPassShaders();
@@ -26,6 +34,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	void updateGeometryPass();
 	void updateOpaquePass();
+	void updateSSAOPass();
 	void updateTransparentPass();
 
 	void updateTerrainPass();
@@ -34,6 +43,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 void GLRenderingSystemNS::initializeGeometryPass()
 {
 	initializeOpaquePass();
+	initializeSSAOPass();
 	initializeTransparentPass();
 	initializeTerrainPass();
 }
@@ -81,10 +91,99 @@ void GLRenderingSystemNS::bindOpaquePassUniformLocations(GLShaderProgramComponen
 	bindUniformBlock(GLGeometryRenderPassComponent::get().m_textureUBO, sizeof(GPassTextureUBOData), rhs->m_program, "textureUBO", 3);
 
 #ifdef CookTorrance
-	updateTextureUniformLocations(rhs->m_program, GLGeometryRenderPassComponent::get().m_textureUniformNames);
+	updateTextureUniformLocations(rhs->m_program, GLGeometryRenderPassComponent::get().m_opaquePassTextureUniformNames);
 #elif BlinnPhong
 	// @TODO: texture uniforms
 #endif
+}
+
+void GLRenderingSystemNS::initializeSSAOPass()
+{
+	GLGeometryRenderPassComponent::get().m_SSAOPass_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+
+	initializeSSAOPassShaders();
+
+	generateRandomNoise();
+}
+
+void GLRenderingSystemNS::initializeSSAOPassShaders()
+{
+	// shader programs and shaders
+	auto rhs = addGLShaderProgramComponent(0);
+
+	initializeGLShaderProgramComponent(rhs, GLGeometryRenderPassComponent::get().m_SSAOPass_shaderFilePaths);
+
+	bindSSAOPassUniformLocations(rhs);
+
+	GLGeometryRenderPassComponent::get().m_SSAOPass_GLSPC = rhs;
+}
+
+void GLRenderingSystemNS::bindSSAOPassUniformLocations(GLShaderProgramComponent * rhs)
+{
+	updateTextureUniformLocations(rhs->m_program, GLGeometryRenderPassComponent::get().m_SSAOPassTextureUniformNames);
+
+	GLGeometryRenderPassComponent::get().m_SSAOPass_uni_p = getUniformLocation(
+		rhs->m_program,
+		"uni_p");
+	for (size_t i = 0; i < 64; i++)
+	{
+		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_samples.emplace_back(
+			getUniformLocation(rhs->m_program, "uni_samples[" + std::to_string(i) + "]")
+		);
+	}
+}
+
+void GLRenderingSystemNS::generateRandomNoise()
+{
+	std::uniform_real_distribution<GLfloat> randomFloats(0.0f, 1.0f); // generates random floats between 0.0 and 1.0
+	std::default_random_engine generator;
+	for (unsigned int i = 0; i < 64; ++i)
+	{
+		auto sample = vec4(randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator), 0.0f);
+		sample = sample.normalize();
+		sample = sample * randomFloats(generator);
+		float scale = float(i) / 64.0f;
+
+		// scale samples s.t. they're more aligned to center of kernel
+		auto alpha = scale * scale;
+		scale = 0.1f * alpha + 1.0f * (1.0f - alpha);
+		sample = sample * scale;
+		GLGeometryRenderPassComponent::get().ssaoKernel.push_back(sample);
+	}
+
+	for (unsigned int i = 0; i < 16; i++)
+	{
+		auto noise = vec4(randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator) * 2.0f - 1.0f, 0.0f, 0.0f); // rotate around z-axis (in tangent space)
+		GLGeometryRenderPassComponent::get().ssaoNoise.push_back(noise);
+	}
+
+	GLGeometryRenderPassComponent::get().m_noiseTDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+
+	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB32F;
+	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
+	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
+	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
+	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
+	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureWidth = 4;
+	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureHeight = 4;
+	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+
+	std::vector<float> l_pixelBuffer;
+	auto l_containerSize = GLGeometryRenderPassComponent::get().ssaoNoise.size() * 4;
+	l_pixelBuffer.reserve(l_containerSize);
+
+	std::for_each(GLGeometryRenderPassComponent::get().ssaoNoise.begin(), GLGeometryRenderPassComponent::get().ssaoNoise.end(), [&](vec4 val)
+	{
+		l_pixelBuffer.emplace_back(val.x);
+		l_pixelBuffer.emplace_back(val.y);
+		l_pixelBuffer.emplace_back(val.z);
+		l_pixelBuffer.emplace_back(val.w);
+	});
+
+	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureData.emplace_back(&l_pixelBuffer[0]);
+
+	GLGeometryRenderPassComponent::get().m_noiseGLTDC = generateGLTextureDataComponent(GLGeometryRenderPassComponent::get().m_noiseTDC);
 }
 
 void GLRenderingSystemNS::initializeTransparentPass()
@@ -164,6 +263,7 @@ void GLRenderingSystemNS::bindTerrainPassUniformLocations(GLShaderProgramCompone
 void GLRenderingSystemNS::updateGeometryPass()
 {
 	updateOpaquePass();
+	updateSSAOPass();
 	updateTransparentPass();
 	updateTerrainPass();
 }
@@ -254,6 +354,34 @@ void GLRenderingSystemNS::updateOpaquePass()
 
 #elif BlinnPhong
 #endif
+}
+
+void GLRenderingSystemNS::updateSSAOPass()
+{
+	// bind to framebuffer
+	auto l_FBC = GLGeometryRenderPassComponent::get().m_SSAOPass_GLRPC->m_GLFBC;
+	bindFBC(l_FBC);
+
+	activateShaderProgram(GLGeometryRenderPassComponent::get().m_SSAOPass_GLSPC);
+
+	activateTexture(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[0], 0);
+	activateTexture(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[1], 1);
+	activateTexture(GLGeometryRenderPassComponent::get().m_noiseGLTDC, 2);
+
+	updateUniform(
+		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_p,
+		GLRenderingSystemComponent::get().m_CamProjOriginal);
+
+	for (size_t i = 0; i < GLGeometryRenderPassComponent::get().m_SSAOPass_uni_samples.size(); i++)
+	{
+		auto l_kernel = GLGeometryRenderPassComponent::get().ssaoKernel[i];
+		updateUniform(
+			GLGeometryRenderPassComponent::get().m_SSAOPass_uni_samples[i],
+			l_kernel.x, l_kernel.y, l_kernel.z);
+	}
+
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	drawMesh(l_MDC);
 }
 
 void GLRenderingSystemNS::updateTransparentPass()

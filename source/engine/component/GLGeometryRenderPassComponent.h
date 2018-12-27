@@ -35,7 +35,7 @@ public:
 
 	GLuint m_textureUBO;
 
-	std::vector<std::string> m_textureUniformNames =
+	std::vector<std::string> m_opaquePassTextureUniformNames =
 	{
 		"uni_normalTexture",
 		"uni_albedoTexture",
@@ -43,6 +43,29 @@ public:
 		"uni_roughnessTexture",
 		"uni_aoTexture",
 	};
+
+	GLRenderPassComponent* m_SSAOPass_GLRPC;
+
+	GLShaderProgramComponent* m_SSAOPass_GLSPC;
+
+	ShaderFilePaths m_SSAOPass_shaderFilePaths = { "GL4.0//SSAOPassVertex.sf" , "", "GL4.0//SSAOPassFragment.sf" };
+
+	GLuint m_SSAOPass_uni_p;
+
+	std::vector<GLuint> m_SSAOPass_uni_samples;
+
+	std::vector<std::string> m_SSAOPassTextureUniformNames =
+	{
+		"uni_Position",
+		"uni_Normal",
+		"uni_texNoise",
+	};
+
+	std::vector<vec4> ssaoKernel;
+	std::vector<vec4> ssaoNoise;
+
+	TextureDataComponent* m_noiseTDC;
+	GLTextureDataComponent* m_noiseGLTDC;
 
 	GLRenderPassComponent* m_transparentPass_GLRPC;
 

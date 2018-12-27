@@ -4,7 +4,7 @@
 in vec2 TexCoords;
 out vec4 FragColor;
 
-uniform sampler2D uni_motionBlurPassRT0;
+uniform sampler2D uni_basePassRT0;
 uniform sampler2D uni_bloomPassRT0;
 uniform sampler2D uni_billboardPassRT0;
 uniform sampler2D uni_debuggerPassRT0;
@@ -33,12 +33,12 @@ vec3 accurateLinearToSRGB(in vec3 linearCol)
 void main()
 {
 	vec3 finalColor;
-	vec4 lightPassResult = texture(uni_motionBlurPassRT0, TexCoords);
+	vec4 basePassResult = texture(uni_basePassRT0, TexCoords);
 	vec4 bloomPassResult = texture(uni_bloomPassRT0, TexCoords);
 	vec4 billboardPassResult = texture(uni_billboardPassRT0, TexCoords);
 	vec4 debuggerPassResult = texture(uni_debuggerPassRT0, TexCoords);
 
-	finalColor = lightPassResult.rgb;
+	finalColor = basePassResult.rgb;
 
 	// emissive overlay
 	finalColor += bloomPassResult.rgb;
