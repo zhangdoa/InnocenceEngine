@@ -434,12 +434,9 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 	});
 	InnoGameSystemNS::g_GameSystemComponent->m_asyncTask = &temp;
 
-	if (!GameSystemComponent::get().m_pauseGameUpdate)
+	if (!InnoGameSystemNS::m_gameInstance->update(GameSystemComponent::get().m_pauseGameUpdate))
 	{
-		if (!InnoGameSystemNS::m_gameInstance->update())
-		{
-			return false;
-		}
+		return false;
 	}
 
 	return true;

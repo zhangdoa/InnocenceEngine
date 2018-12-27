@@ -151,11 +151,9 @@ void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
 		vec4(0.0f, 1.0f, 0.0f, 0.0f),
 		((-offset * m_rotateSpeed) / 180.0f)* PI<float>
 		);
-		auto l_currentCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
 		m_targetCameraRot = m_targetCameraRotY.quatMul(m_targetCameraRot);
 
 		m_canSlerp = true;
-		m_cameraTransformComponent->m_localTransformVector.m_rot = m_targetCameraRotY.quatMul(m_cameraTransformComponent->m_localTransformVector.m_rot);
 	}
 }
 
@@ -165,16 +163,14 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 	{
 		m_canSlerp = false;
 
-		auto l_right = InnoMath::getDirection(direction::RIGHT, m_cameraTransformComponent->m_localTransformVector.m_rot);
+		auto l_right = InnoMath::getDirection(direction::RIGHT, m_targetCameraRot);
 		m_targetCameraRotX = InnoMath::getQuatRotator(
 			l_right,
 			((offset * m_rotateSpeed) / 180.0f)* PI<float>
 		);
-		auto l_currentCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
 		m_targetCameraRot = m_targetCameraRotX.quatMul(m_targetCameraRot);
 
 		m_canSlerp = true;
-		m_cameraTransformComponent->m_localTransformVector.m_rot = m_targetCameraRotX.quatMul(m_cameraTransformComponent->m_localTransformVector.m_rot);
 	}
 }
 
@@ -232,6 +228,7 @@ namespace GameInstanceNS
 	bool setup();
 	void setupSpheres();
 	void setupLights();
+	void update(bool pause);
 	void updateLights(float seed);
 	void updateSpheres(float seed);
 
@@ -259,7 +256,7 @@ bool GameInstanceNS::setup()
 	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::caclRotatedLocalRotator(
 		m_directionalLightTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
-		-90.0f
+		-10.0f
 	);
 
 	m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<DirectionalLightComponent>(m_directionalLightEntity);
@@ -334,14 +331,13 @@ INNO_GAME_EXPORT bool GameInstance::initialize()
 	return true;
 }
 
-INNO_GAME_EXPORT bool GameInstance::update()
+INNO_GAME_EXPORT bool GameInstance::update(bool pause)
 {
-	auto temp = g_pCoreSystem->getTaskSystem()->submit([]()
+	GameInstanceNS::update(pause);
+
+	auto temp = g_pCoreSystem->getTaskSystem()->submit([&]()
 	{
-		GameInstanceNS::temp += 0.02f;
-		GameInstanceNS::updateLights(GameInstanceNS::temp);
-		GameInstanceNS::updateSpheres(GameInstanceNS::temp);
-		PlayerComponentCollection::updatePlayer();
+
 	});
 	GameInstanceNS::m_asyncTask = &temp;
 	return true;
@@ -509,6 +505,17 @@ void GameInstanceNS::setupLights()
 	}
 }
 
+void GameInstanceNS::update(bool pause)
+{
+	if (!pause)
+	{
+		GameInstanceNS::temp += 0.02f;
+		GameInstanceNS::updateLights(GameInstanceNS::temp);
+		GameInstanceNS::updateSpheres(GameInstanceNS::temp);
+	}
+	PlayerComponentCollection::updatePlayer();
+}
+
 void GameInstanceNS::updateLights(float seed)
 {
 	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::caclRotatedLocalRotator(
@@ -616,27 +623,35 @@ void GameInstanceNS::updateSpheres(float seed)
 
 void PlayerComponentCollection::updatePlayer()
 {
+	bool l_smoothInterp = true;
 	auto l_currentPawnPos = m_pawnTransformComponent->m_localTransformVector.m_pos;
-
-	if (l_currentPawnPos != m_targetPawnPos)
-	{
-		m_pawnTransformComponent->m_localTransformVector.m_pos = InnoMath::lerp(l_currentPawnPos, m_targetPawnPos, 0.8f);
-	}
-
 	auto l_currentCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
+	auto l_currentCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
 
-	if (l_currentCameraPos != m_targetCameraPos)
+	if (l_smoothInterp)
 	{
-		m_cameraTransformComponent->m_localTransformVector.m_pos = InnoMath::lerp(l_currentCameraPos, m_targetCameraPos, 0.8f);
+		if (l_currentPawnPos != m_targetPawnPos)
+		{
+			m_pawnTransformComponent->m_localTransformVector.m_pos = InnoMath::lerp(l_currentPawnPos, m_targetPawnPos, 0.85f);
+		}
+
+		if (l_currentCameraPos != m_targetCameraPos)
+		{
+			m_cameraTransformComponent->m_localTransformVector.m_pos = InnoMath::lerp(l_currentCameraPos, m_targetCameraPos, 0.85f);
+		}
+
+		if (m_canSlerp)
+		{
+			if (l_currentCameraRot != m_targetCameraRot)
+			{
+				m_cameraTransformComponent->m_localTransformVector.m_rot = InnoMath::slerp(l_currentCameraRot, m_targetCameraRot, 0.8f);
+			}
+		}
 	}
-
-	//if (m_canSlerp)
-	//{
-	//	auto l_currentCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
-
-	//	if (l_currentCameraRot != m_targetCameraRot)
-	//	{
-	//		m_cameraTransformComponent->m_localTransformVector.m_rot = InnoMath::slerp(l_currentCameraRot, m_targetCameraRot, 0.8f);
-	//	}
-	//}
+	else
+	{
+		m_pawnTransformComponent->m_localTransformVector.m_pos = m_targetPawnPos;
+		m_cameraTransformComponent->m_localTransformVector.m_pos = m_targetCameraPos;
+		m_cameraTransformComponent->m_localTransformVector.m_rot = m_targetCameraRot;
+	}
 }
