@@ -10,4 +10,6 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	bool resizeFinalPass();
 
 	bool reloadFinalPassShaders();
+
+	GLTextureDataComponent* updateBloomBlurPass(GLTextureDataComponent* inputGLTDC);
 }

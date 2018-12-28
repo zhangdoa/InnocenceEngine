@@ -32,6 +32,7 @@ uniform sampler2D uni_opaquePassRT0;
 uniform sampler2D uni_opaquePassRT1;
 uniform sampler2D uni_opaquePassRT2;
 uniform sampler2D uni_opaquePassRT3;
+uniform sampler2D uni_SSAOPassRT0;
 
 const int NR_CSM_SPLITS = 4;
 uniform mat4 uni_dirLight_rot;
@@ -330,6 +331,7 @@ void main()
 	float Roughness = RT1.a;
 	float safe_roughness = (Roughness + eps) / (1.0 + eps);
 	float AO = RT2.a;
+	float SSAO = texture(uni_SSAOPassRT0, TexCoords).x;
 
 	vec3 Lo = vec3(0.0);
 

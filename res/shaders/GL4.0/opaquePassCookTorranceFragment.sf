@@ -4,7 +4,6 @@ layout(location = 0) out vec4 uni_geometryPassRT0;
 layout(location = 1) out vec4 uni_geometryPassRT1;
 layout(location = 2) out vec4 uni_geometryPassRT2;
 layout(location = 3) out vec4 uni_geometryPassRT3;
-layout(location = 4) out vec4 uni_geometryPassRT4;
 
 in vec4 thefrag_WorldSpacePos;
 in vec4 thefrag_ClipSpacePos_current;
@@ -31,22 +30,6 @@ layout(std140) uniform textureUBO
 
 void main()
 {
-	// get edge vectors of the pixel triangle
-	vec3 dp1 = dFdx(thefrag_WorldSpacePos.xyz);
-	vec3 dp2 = dFdy(thefrag_WorldSpacePos.xyz);
-	vec2 duv1 = dFdx(thefrag_TexCoord);
-	vec2 duv2 = dFdy(thefrag_TexCoord);
-
-	// solve the linear system
-	vec3 N = normalize(thefrag_Normal);
-	vec3 dp2perp = cross(dp2, N);
-	vec3 dp1perp = cross(N, dp1);
-	vec3 T = normalize(dp2perp * duv1.x + dp1perp * duv2.x);
-	vec3 B = normalize(dp2perp * duv1.y + dp1perp * duv2.y);
-
-	mat3 TBN = mat3(T, B, N);
-
-	vec3 TangentSpaceNormal;
 	vec3 WorldSpaceNormal;
 	vec3 albedo;
 	float transparency = 1.0;
@@ -54,14 +37,28 @@ void main()
 
 	if (uni_useNormalTexture)
 	{
-		TangentSpaceNormal = texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0;
+		// get edge vectors of the pixel triangle
+		vec3 dp1 = dFdx(thefrag_WorldSpacePos.xyz);
+		vec3 dp2 = dFdy(thefrag_WorldSpacePos.xyz);
+		vec2 duv1 = dFdx(thefrag_TexCoord);
+		vec2 duv2 = dFdy(thefrag_TexCoord);
+
+		// solve the linear system
+		vec3 N = normalize(thefrag_Normal);
+		vec3 dp2perp = cross(dp2, N);
+		vec3 dp1perp = cross(N, dp1);
+		vec3 T = normalize(dp2perp * duv1.x + dp1perp * duv2.x);
+		vec3 B = normalize(dp2perp * duv1.y + dp1perp * duv2.y);
+
+		mat3 TBN = mat3(T, B, N);
+
+		vec3 TangentSpaceNormal = texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0;
+		WorldSpaceNormal = normalize(TBN * TangentSpaceNormal);
 	}
 	else
 	{
-		TangentSpaceNormal = vec3(0.0f, 0.0f, 1.0f);
+		WorldSpaceNormal = normalize(thefrag_Normal);
 	}
-
-	WorldSpaceNormal = normalize(TBN * TangentSpaceNormal);
 
 	if (uni_useAlbedoTexture)
 	{
@@ -110,5 +107,4 @@ void main()
 	uni_geometryPassRT2 = vec4(albedo, MRA.b);
 	vec4 motionVec = (thefrag_ClipSpacePos_current / thefrag_ClipSpacePos_current.w - thefrag_ClipSpacePos_previous / thefrag_ClipSpacePos_previous.w);
 	uni_geometryPassRT3 = vec4(motionVec.xyz, transparency);
-	uni_geometryPassRT4 = vec4(TangentSpaceNormal, 1.0f);
 }

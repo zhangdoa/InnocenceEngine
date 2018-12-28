@@ -221,12 +221,6 @@ void ImGuiWrapper::update()
 					ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[3]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 					ImGui::EndChild();
 				}
-				{
-					ImGui::BeginChild("Tangent Space Normal", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-					ImGui::Text("Tangent Space Normal");
-					ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[4]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-					ImGui::EndChild();
-				}
 			}
 			ImGui::End();
 

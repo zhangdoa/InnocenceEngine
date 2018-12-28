@@ -123,7 +123,7 @@ void GLRenderingSystemNS::updateLightPass()
 	activateTexture(
 		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[0],
 		0);
-	// normal + roughness
+	// world space normal + roughness
 	activateTexture(
 		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[1],
 		1);
@@ -135,38 +135,42 @@ void GLRenderingSystemNS::updateLightPass()
 	activateTexture(
 		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[3],
 		3);
+	// SSAO
+	activateTexture(
+		GLGeometryRenderPassComponent::get().m_SSAOPass_GLRPC->m_GLTDCs[0],
+		4);
 	// shadow map 0
 	activateTexture(
 		GLShadowRenderPassComponent::get().m_GLRPCs[0]->m_GLTDCs[0],
-		4);
+		5);
 	// shadow map 1
 	activateTexture(
 		GLShadowRenderPassComponent::get().m_GLRPCs[1]->m_GLTDCs[0],
-		5);
+		6);
 	// shadow map 2
 	activateTexture(
 		GLShadowRenderPassComponent::get().m_GLRPCs[2]->m_GLTDCs[0],
-		6);
+		7);
 	// shadow map 3
 	activateTexture(
 		GLShadowRenderPassComponent::get().m_GLRPCs[3]->m_GLTDCs[0],
-		7);
+		8);
 	// BRDF look-up table 1
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassGLTDC,
-		8);
+		9);
 	// BRDF look-up table 2
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassGLTDC,
-		9);
+		10);
 	// Irradiance env cubemap
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_convPassGLTDC,
-		10);
+		11);
 	// pre-filtered specular env cubemap
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_preFilterPassGLTDC,
-		11);
+		12);
 #endif
 
 	updateUniform(
