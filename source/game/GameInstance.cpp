@@ -335,11 +335,6 @@ INNO_GAME_EXPORT bool GameInstance::update(bool pause)
 {
 	GameInstanceNS::update(pause);
 
-	auto temp = g_pCoreSystem->getTaskSystem()->submit([&]()
-	{
-
-	});
-	GameInstanceNS::m_asyncTask = &temp;
 	return true;
 }
 
@@ -509,9 +504,13 @@ void GameInstanceNS::update(bool pause)
 {
 	if (!pause)
 	{
-		GameInstanceNS::temp += 0.02f;
-		GameInstanceNS::updateLights(GameInstanceNS::temp);
-		GameInstanceNS::updateSpheres(GameInstanceNS::temp);
+		auto tempTask = g_pCoreSystem->getTaskSystem()->submit([&]()
+		{
+			temp += 0.02f;
+			updateLights(temp);
+			updateSpheres(temp);
+		});
+		m_asyncTask = &tempTask;
 	}
 	PlayerComponentCollection::updatePlayer();
 }

@@ -121,10 +121,13 @@ void GLRenderingSystemNS::bindSSAOPassUniformLocations(GLShaderProgramComponent 
 	GLGeometryRenderPassComponent::get().m_SSAOPass_uni_p = getUniformLocation(
 		rhs->m_program,
 		"uni_p");
-	GLGeometryRenderPassComponent::get().m_SSAOPass_uni_v = getUniformLocation(
+	GLGeometryRenderPassComponent::get().m_SSAOPass_uni_r = getUniformLocation(
 		rhs->m_program,
-		"uni_v");
-	
+		"uni_r");
+	GLGeometryRenderPassComponent::get().m_SSAOPass_uni_t = getUniformLocation(
+		rhs->m_program,
+		"uni_t");
+
 	for (size_t i = 0; i < 64; i++)
 	{
 		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_samples.emplace_back(
@@ -369,8 +372,11 @@ void GLRenderingSystemNS::updateSSAOPass()
 		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_p,
 		GLRenderingSystemComponent::get().m_CamProjOriginal);
 	updateUniform(
-		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_v,
-		GLRenderingSystemComponent::get().m_CamTrans * GLRenderingSystemComponent::get().m_CamRot);
+		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_r,
+		GLRenderingSystemComponent::get().m_CamRot);
+	updateUniform(
+		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_t,
+		GLRenderingSystemComponent::get().m_CamTrans);
 
 	for (size_t i = 0; i < GLGeometryRenderPassComponent::get().m_SSAOPass_uni_samples.size(); i++)
 	{

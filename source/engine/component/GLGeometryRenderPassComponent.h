@@ -50,8 +50,9 @@ public:
 	ShaderFilePaths m_SSAOPass_shaderFilePaths = { "GL4.0//SSAOPassVertex.sf" , "", "GL4.0//SSAOPassFragment.sf" };
 
 	GLuint m_SSAOPass_uni_p;
-	GLuint m_SSAOPass_uni_v;
-	
+	GLuint m_SSAOPass_uni_r;
+	GLuint m_SSAOPass_uni_t;
+
 	std::vector<GLuint> m_SSAOPass_uni_samples;
 
 	std::vector<std::string> m_SSAOPassTextureUniformNames =
