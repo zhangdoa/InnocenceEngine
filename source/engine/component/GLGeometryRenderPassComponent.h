@@ -31,7 +31,6 @@ public:
 #endif
 	GLuint m_cameraUBO;
 	GLuint m_meshUBO;
-	GLuint m_lightUBO;
 
 	GLuint m_textureUBO;
 

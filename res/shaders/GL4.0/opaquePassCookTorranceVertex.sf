@@ -8,10 +8,6 @@ layout(location = 2) in vec3 in_Normal;
 out vec4 thefrag_WorldSpacePos;
 out vec4 thefrag_ClipSpacePos_current;
 out vec4 thefrag_ClipSpacePos_previous;
-out vec4 thefrag_LightSpacePos_0;
-out vec4 thefrag_LightSpacePos_1;
-out vec4 thefrag_LightSpacePos_2;
-out vec4 thefrag_LightSpacePos_3;
 out vec2 thefrag_TexCoord;
 out vec3 thefrag_Normal;
 
@@ -23,15 +19,6 @@ layout(row_major) uniform cameraUBO
 	mat4 uni_t_camera;
 	mat4 uni_r_camera_prev;
 	mat4 uni_t_camera_prev;
-};
-
-layout(row_major) uniform lightUBO
-{
-	mat4 uni_p_light_0;
-	mat4 uni_p_light_1;
-	mat4 uni_p_light_2;
-	mat4 uni_p_light_3;
-	mat4 uni_v_light;
 };
 
 layout(row_major) uniform meshUBO
@@ -52,23 +39,6 @@ void main()
 
 	thefrag_ClipSpacePos_current = uni_p_camera_original * thefrag_CameraSpacePos_current;
 	thefrag_ClipSpacePos_previous = uni_p_camera_original * thefrag_CameraSpacePos_previous;
-
-	// output the fragment position in light space
-	thefrag_LightSpacePos_0 = uni_p_light_0 * uni_v_light * thefrag_WorldSpacePos;
-	thefrag_LightSpacePos_0 = thefrag_LightSpacePos_0 / thefrag_LightSpacePos_0.w;
-	thefrag_LightSpacePos_0 = vec4(thefrag_LightSpacePos_0.rgb, 1.0f);
-
-	thefrag_LightSpacePos_1 = uni_p_light_1 * uni_v_light * thefrag_WorldSpacePos;
-	thefrag_LightSpacePos_1 = thefrag_LightSpacePos_1 / thefrag_LightSpacePos_1.w;
-	thefrag_LightSpacePos_1 = vec4(thefrag_LightSpacePos_1.rgb, 1.0f);
-
-	thefrag_LightSpacePos_2 = uni_p_light_2 * uni_v_light * thefrag_WorldSpacePos;
-	thefrag_LightSpacePos_2 = thefrag_LightSpacePos_2 / thefrag_LightSpacePos_2.w;
-	thefrag_LightSpacePos_2 = vec4(thefrag_LightSpacePos_2.rgb, 1.0f);
-
-	thefrag_LightSpacePos_3 = uni_p_light_3 * uni_v_light * thefrag_WorldSpacePos;
-	thefrag_LightSpacePos_3 = thefrag_LightSpacePos_3 / thefrag_LightSpacePos_3.w;
-	thefrag_LightSpacePos_3 = vec4(thefrag_LightSpacePos_3.rgb, 1.0f);
 
 	// output the texture coordinate
 	thefrag_TexCoord = in_TexCoord;

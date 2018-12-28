@@ -50,14 +50,11 @@ void GLRenderingSystemNS::initializeGeometryPass()
 
 void GLRenderingSystemNS::initializeOpaquePass()
 {
-	GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC = addGLRenderPassComponent(8, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC = addGLRenderPassComponent(5, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	// UBO
 	auto l_UBO = generateUBO(sizeof(GPassCameraUBOData));
 	GLGeometryRenderPassComponent::get().m_cameraUBO = l_UBO;
-
-	l_UBO = generateUBO(sizeof(GPassLightUBOData));
-	GLGeometryRenderPassComponent::get().m_lightUBO = l_UBO;
 
 	l_UBO = generateUBO(sizeof(GPassMeshUBOData));
 	GLGeometryRenderPassComponent::get().m_meshUBO = l_UBO;
@@ -84,11 +81,9 @@ void GLRenderingSystemNS::bindOpaquePassUniformLocations(GLShaderProgramComponen
 {
 	bindUniformBlock(GLGeometryRenderPassComponent::get().m_cameraUBO, sizeof(GPassCameraUBOData), rhs->m_program, "cameraUBO", 0);
 
-	bindUniformBlock(GLGeometryRenderPassComponent::get().m_lightUBO, sizeof(GPassLightUBOData), rhs->m_program, "lightUBO", 1);
+	bindUniformBlock(GLGeometryRenderPassComponent::get().m_meshUBO, sizeof(GPassMeshUBOData), rhs->m_program, "meshUBO", 1);
 
-	bindUniformBlock(GLGeometryRenderPassComponent::get().m_meshUBO, sizeof(GPassMeshUBOData), rhs->m_program, "meshUBO", 2);
-
-	bindUniformBlock(GLGeometryRenderPassComponent::get().m_textureUBO, sizeof(GPassTextureUBOData), rhs->m_program, "textureUBO", 3);
+	bindUniformBlock(GLGeometryRenderPassComponent::get().m_textureUBO, sizeof(GPassTextureUBOData), rhs->m_program, "textureUBO", 2);
 
 #ifdef CookTorrance
 	updateTextureUniformLocations(rhs->m_program, GLGeometryRenderPassComponent::get().m_opaquePassTextureUniformNames);
@@ -291,9 +286,6 @@ void GLRenderingSystemNS::updateOpaquePass()
 	updateUBO(GLGeometryRenderPassComponent::get().m_cameraUBO, GLRenderingSystemComponent::get().m_GPassCameraUBOData);
 
 #ifdef CookTorrance
-	//Cook-Torrance
-	updateUBO(GLGeometryRenderPassComponent::get().m_lightUBO, GLRenderingSystemComponent::get().m_GPassLightUBOData);
-
 	while (GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue.size() > 0)
 	{
 		auto l_renderPack = GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue.front();
@@ -365,7 +357,7 @@ void GLRenderingSystemNS::updateSSAOPass()
 	activateShaderProgram(GLGeometryRenderPassComponent::get().m_SSAOPass_GLSPC);
 
 	activateTexture(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[0], 0);
-	activateTexture(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[1], 1);
+	activateTexture(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[4], 1);
 	activateTexture(GLGeometryRenderPassComponent::get().m_noiseGLTDC, 2);
 
 	updateUniform(

@@ -32,18 +32,18 @@ uniform sampler2D uni_opaquePassRT0;
 uniform sampler2D uni_opaquePassRT1;
 uniform sampler2D uni_opaquePassRT2;
 uniform sampler2D uni_opaquePassRT3;
-uniform sampler2D uni_opaquePassRT4;
-uniform sampler2D uni_opaquePassRT5;
-uniform sampler2D uni_opaquePassRT6;
-uniform sampler2D uni_opaquePassRT7;
 
 const int NR_CSM_SPLITS = 4;
+uniform mat4 uni_dirLight_rot;
+uniform mat4 uni_dirLightProjs[NR_CSM_SPLITS];
+uniform vec4 uni_shadowSplitAreas[NR_CSM_SPLITS];
+
 bool uni_drawCSMSplitedArea = false;
+
 uniform sampler2D uni_shadowMap_0;
 uniform sampler2D uni_shadowMap_1;
 uniform sampler2D uni_shadowMap_2;
 uniform sampler2D uni_shadowMap_3;
-uniform vec4 uni_shadowSplitAreas[NR_CSM_SPLITS];
 
 uniform sampler2D uni_brdfLUT;
 uniform sampler2D uni_brdfMSLUT;
@@ -282,35 +282,37 @@ float ShadowCalculation(float NdotL, vec3 fragPos)
 		}
 	}
 
-	if (splitIndex == 0)
-	{
-		vec4 gPassRT = texture(uni_opaquePassRT4, TexCoords);
-		projCoords = gPassRT.xyz;
-		shadow = PCF(NdotL, projCoords, uni_shadowMap_0);
-	}
-	else if (splitIndex == 1)
-	{
-		vec4 gPassRT = texture(uni_opaquePassRT5, TexCoords);
-		projCoords = gPassRT.xyz;
-		shadow = PCF(NdotL, projCoords, uni_shadowMap_1);
-	}
-	else if (splitIndex == 2)
-	{
-		vec4 gPassRT = texture(uni_opaquePassRT6, TexCoords);
-		projCoords = gPassRT.xyz;
-		shadow = PCF(NdotL, projCoords, uni_shadowMap_2);
-	}
-	else if (splitIndex == 3)
-	{
-		vec4 gPassRT = texture(uni_opaquePassRT7, TexCoords);
-		projCoords = gPassRT.xyz;
-		shadow = PCF(NdotL, projCoords, uni_shadowMap_3);
-	}
-	else
+	if (splitIndex == NR_CSM_SPLITS)
 	{
 		shadow = 0.0;
 	}
+	else
+	{
+		vec4 lightSpacePos = uni_dirLightProjs[splitIndex] * uni_dirLight_rot * vec4(fragPos, 1.0f);
+		lightSpacePos = lightSpacePos / lightSpacePos.w;
+		projCoords = lightSpacePos.xyz;
 
+		if (splitIndex == 0)
+		{
+			shadow = PCF(NdotL, projCoords, uni_shadowMap_0);
+		}
+		else if (splitIndex == 1)
+		{
+			shadow = PCF(NdotL, projCoords, uni_shadowMap_1);
+		}
+		else if (splitIndex == 2)
+		{
+			shadow = PCF(NdotL, projCoords, uni_shadowMap_2);
+		}
+		else if (splitIndex == 3)
+		{
+			shadow = PCF(NdotL, projCoords, uni_shadowMap_3);
+		}
+		else
+		{
+			shadow = 0.0;
+		}
+	}
 	return shadow;
 }
 // ----------------------------------------------------------------------------

@@ -34,10 +34,6 @@ public:
 		"uni_opaquePassRT1",
 		"uni_opaquePassRT2",
 		"uni_opaquePassRT3",
-		"uni_opaquePassRT4",
-		"uni_opaquePassRT5",
-		"uni_opaquePassRT6",
-		"uni_opaquePassRT7",
 		"uni_shadowMap_0",
 		"uni_shadowMap_1",
 		"uni_shadowMap_2",
@@ -49,11 +45,12 @@ public:
 	};
 
 	std::vector<GLuint> m_uni_shadowSplitAreas;
-
+	std::vector<GLuint> m_uni_dirLightProjs;	
 	GLuint m_uni_viewPos;
 
 	GLuint m_uni_dirLight_direction;
-	GLuint m_uni_dirLight_color;
+	GLuint m_uni_dirLight_color; 
+	GLuint m_uni_dirLight_rot;
 
 	std::vector<GLuint> m_uni_pointLights_position;
 	std::vector<GLuint> m_uni_pointLights_attenuationRadius;

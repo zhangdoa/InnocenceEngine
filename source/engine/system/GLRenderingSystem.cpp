@@ -319,13 +319,6 @@ void GLRenderingSystemNS::prepareRenderingData()
 		GLRenderingSystemComponent::get().m_CSMSplitCorners[j] = l_shadowSplitCorner;
 	}
 
-	//UBO
-	GLRenderingSystemComponent::get().m_GPassLightUBOData.uni_p_light_0 = l_directionalLight->m_projectionMatrices[0];
-	GLRenderingSystemComponent::get().m_GPassLightUBOData.uni_p_light_1 = l_directionalLight->m_projectionMatrices[1];
-	GLRenderingSystemComponent::get().m_GPassLightUBOData.uni_p_light_2 = l_directionalLight->m_projectionMatrices[2];
-	GLRenderingSystemComponent::get().m_GPassLightUBOData.uni_p_light_3 = l_directionalLight->m_projectionMatrices[3];
-	GLRenderingSystemComponent::get().m_GPassLightUBOData.uni_v_light = GLRenderingSystemComponent::get().m_sunRot;
-
 	// point light
 	GLRenderingSystemComponent::get().m_PointLightDatas.clear();
 	GLRenderingSystemComponent::get().m_PointLightDatas.reserve(GameSystemComponent::get().m_PointLightComponents.size());

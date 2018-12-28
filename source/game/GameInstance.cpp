@@ -264,7 +264,7 @@ bool GameInstanceNS::setup()
 	m_directionalLightComponent->m_drawAABB = false;
 
 	//setup landscape
-	m_landscapeEntity = g_pCoreSystem->getGameSystem()->createEntity("landscape");;
+	m_landscapeEntity = g_pCoreSystem->getGameSystem()->createEntity("landscape");
 
 	m_landscapeTransformComponent = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_landscapeEntity);
 	m_landscapeTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
@@ -284,11 +284,11 @@ bool GameInstanceNS::setup()
 
 	m_pawnTransformComponent1 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pawnEntity1);
 	m_pawnTransformComponent1->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	//m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
+	m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
 	m_pawnVisibleComponent1 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pawnEntity1);
 	m_pawnVisibleComponent1->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
-	m_pawnVisibleComponent1->m_meshShapeType = MeshShapeType::SPHERE;
-	m_pawnVisibleComponent1->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_pawnVisibleComponent1->m_meshShapeType = MeshShapeType::CUSTOM;
+	m_pawnVisibleComponent1->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
 	//m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
 	//m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
 	m_pawnVisibleComponent1->m_textureWrapMethod = TextureWrapMethod::REPEAT;
@@ -303,8 +303,8 @@ bool GameInstanceNS::setup()
 	m_pawnTransformComponent2->m_localTransformVector.m_pos = vec4(0.0f, 0.2f, 3.5f, 1.0f);
 	m_pawnVisibleComponent2 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pawnEntity2);
 	m_pawnVisibleComponent2->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
-	m_pawnVisibleComponent2->m_meshShapeType = MeshShapeType::CUBE;
-	m_pawnVisibleComponent2->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
+	m_pawnVisibleComponent2->m_meshShapeType = MeshShapeType::SPHERE;
+	m_pawnVisibleComponent2->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_pawnVisibleComponent2->m_drawAABB = true;
 	//m_pawnVisibleComponent2->m_modelFileName = "Orb//Orb.obj";
 
@@ -559,7 +559,7 @@ void GameInstanceNS::updateLights(float seed)
 
 void GameInstanceNS::updateSpheres(float seed)
 {
-	m_pawnTransformComponent1->m_localTransformVector.m_pos = m_pawnTransformComponent1->m_localTransformVector.m_pos + vec4(sin(seed * 2.0f) * 0.5f, 0.0f, 0.0f, 0.0f);
+	m_pawnTransformComponent2->m_localTransformVector.m_pos = m_pawnTransformComponent2->m_localTransformVector.m_pos + vec4(sin(seed * 2.0f) * 0.5f, 0.0f, 0.0f, 0.0f);
 	//auto l_t = InnoMath::rotateInGlobal(
 	//	m_pawnTransformComponent2->m_localTransformVector.m_pos,
 	//	m_pawnTransformComponent2->m_globalTransformVector.m_pos,

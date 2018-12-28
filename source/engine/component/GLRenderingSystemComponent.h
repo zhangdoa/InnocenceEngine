@@ -57,15 +57,6 @@ struct GPassTransparentRenderDataPack
 	VisiblilityType visiblilityType;
 };
 
-struct GPassLightUBOData
-{
-	mat4 uni_p_light_0;
-	mat4 uni_p_light_1;
-	mat4 uni_p_light_2;
-	mat4 uni_p_light_3;
-	mat4 uni_v_light;
-};
-
 struct PointLightData
 {
 	vec4 pos;
@@ -130,8 +121,6 @@ public:
 	std::vector<vec4> m_CSMSplitCorners;
 
 	GPassCameraUBOData m_GPassCameraUBOData;
-
-	GPassLightUBOData m_GPassLightUBOData;
 
 	std::queue<GPassOpaqueRenderDataPack> m_GPassOpaqueRenderDataQueue;
 	std::queue<GPassOpaqueRenderDataPack> m_GPassOpaqueRenderDataQueue_copy;

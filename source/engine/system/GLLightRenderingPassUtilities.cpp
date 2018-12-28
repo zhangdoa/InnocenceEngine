@@ -46,6 +46,12 @@ void GLRenderingSystemNS::bindLightPassUniformLocations(GLShaderProgramComponent
 			getUniformLocation(rhs->m_program, "uni_shadowSplitAreas[" + std::to_string(i) + "]")
 		);
 	}
+	for (size_t i = 0; i < 4; i++)
+	{
+		GLLightRenderPassComponent::get().m_uni_dirLightProjs.emplace_back(
+			getUniformLocation(rhs->m_program, "uni_dirLightProjs[" + std::to_string(i) + "]")
+		);
+	}
 	GLLightRenderPassComponent::get().m_uni_viewPos = getUniformLocation(
 		rhs->m_program,
 		"uni_viewPos");
@@ -55,7 +61,10 @@ void GLRenderingSystemNS::bindLightPassUniformLocations(GLShaderProgramComponent
 	GLLightRenderPassComponent::get().m_uni_dirLight_color = getUniformLocation(
 		rhs->m_program,
 		"uni_dirLight.color");
-
+	GLLightRenderPassComponent::get().m_uni_dirLight_rot = getUniformLocation(
+		rhs->m_program,
+		"uni_dirLight_rot");
+	
 	for (size_t i = 0; i < GameSystemComponent::get().m_PointLightComponents.size(); i++)
 	{
 		GLLightRenderPassComponent::get().m_uni_pointLights_position.emplace_back(
@@ -126,54 +135,38 @@ void GLRenderingSystemNS::updateLightPass()
 	activateTexture(
 		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[3],
 		3);
-	// light space position 0
-	activateTexture(
-		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[4],
-		4);
-	// light space position 1
-	activateTexture(
-		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[5],
-		5);
-	// light space position 2
-	activateTexture(
-		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[6],
-		6);
-	// light space position 3
-	activateTexture(
-		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[7],
-		7);
 	// shadow map 0
 	activateTexture(
 		GLShadowRenderPassComponent::get().m_GLRPCs[0]->m_GLTDCs[0],
-		8);
+		4);
 	// shadow map 1
 	activateTexture(
 		GLShadowRenderPassComponent::get().m_GLRPCs[1]->m_GLTDCs[0],
-		9);
+		5);
 	// shadow map 2
 	activateTexture(
 		GLShadowRenderPassComponent::get().m_GLRPCs[2]->m_GLTDCs[0],
-		10);
+		6);
 	// shadow map 3
 	activateTexture(
 		GLShadowRenderPassComponent::get().m_GLRPCs[3]->m_GLTDCs[0],
-		11);
+		7);
 	// BRDF look-up table 1
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassGLTDC,
-		12);
+		8);
 	// BRDF look-up table 2
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassGLTDC,
-		13);
+		9);
 	// Irradiance env cubemap
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_convPassGLTDC,
-		14);
+		10);
 	// pre-filtered specular env cubemap
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_preFilterPassGLTDC,
-		15);
+		11);
 #endif
 
 	updateUniform(
@@ -190,14 +183,22 @@ void GLRenderingSystemNS::updateLightPass()
 	updateUniform(
 		GLLightRenderPassComponent::get().m_uni_dirLight_color,
 		GLRenderingSystemComponent::get().m_sunColor.x, GLRenderingSystemComponent::get().m_sunColor.y, GLRenderingSystemComponent::get().m_sunColor.z);
+	updateUniform(
+		GLLightRenderPassComponent::get().m_uni_dirLight_rot,
+		GLRenderingSystemComponent::get().m_sunRot);
 
+	for (size_t j = 0; j < 4; j++)
+	{
+		updateUniform(
+			GLLightRenderPassComponent::get().m_uni_dirLightProjs[j],
+			GLRenderingSystemComponent::get().m_CSMProjs[j]);
+	}
 	for (size_t j = 0; j < 4; j++)
 	{
 		updateUniform(
 			GLLightRenderPassComponent::get().m_uni_shadowSplitAreas[j],
 			GLRenderingSystemComponent::get().m_CSMSplitCorners[j].x, GLRenderingSystemComponent::get().m_CSMSplitCorners[j].y, GLRenderingSystemComponent::get().m_CSMSplitCorners[j].z, GLRenderingSystemComponent::get().m_CSMSplitCorners[j].w);
 	}
-
 	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_PointLightDatas.size(); i++)
 	{
 		auto l_pos = GLRenderingSystemComponent::get().m_PointLightDatas[i].pos;

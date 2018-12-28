@@ -5,19 +5,12 @@ layout(location = 1) out vec4 uni_geometryPassRT1;
 layout(location = 2) out vec4 uni_geometryPassRT2;
 layout(location = 3) out vec4 uni_geometryPassRT3;
 layout(location = 4) out vec4 uni_geometryPassRT4;
-layout(location = 5) out vec4 uni_geometryPassRT5;
-layout(location = 6) out vec4 uni_geometryPassRT6;
-layout(location = 7) out vec4 uni_geometryPassRT7;
 
 in vec4 thefrag_WorldSpacePos;
 in vec4 thefrag_ClipSpacePos_current;
 in vec4 thefrag_ClipSpacePos_previous;
 in vec2 thefrag_TexCoord;
 in vec3 thefrag_Normal;
-in vec4 thefrag_LightSpacePos_0;
-in vec4 thefrag_LightSpacePos_1;
-in vec4 thefrag_LightSpacePos_2;
-in vec4 thefrag_LightSpacePos_3;
 
 uniform sampler2D uni_normalTexture;
 uniform sampler2D uni_albedoTexture;
@@ -36,7 +29,6 @@ layout(std140) uniform textureUBO
 	bool uni_useAOTexture;
 };
 
-
 void main()
 {
 	// get edge vectors of the pixel triangle
@@ -54,6 +46,7 @@ void main()
 
 	mat3 TBN = mat3(T, B, N);
 
+	vec3 TangentSpaceNormal;
 	vec3 WorldSpaceNormal;
 	vec3 albedo;
 	float transparency = 1.0;
@@ -61,12 +54,14 @@ void main()
 
 	if (uni_useNormalTexture)
 	{
-		WorldSpaceNormal = normalize(TBN * (texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0));
+		TangentSpaceNormal = texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0;
 	}
 	else
 	{
-		WorldSpaceNormal = normalize(TBN * vec3(0.0f, 0.0f, 1.0f));
+		TangentSpaceNormal = vec3(0.0f, 0.0f, 1.0f);
 	}
+
+	WorldSpaceNormal = normalize(TBN * TangentSpaceNormal);
 
 	if (uni_useAlbedoTexture)
 	{
@@ -115,8 +110,5 @@ void main()
 	uni_geometryPassRT2 = vec4(albedo, MRA.b);
 	vec4 motionVec = (thefrag_ClipSpacePos_current / thefrag_ClipSpacePos_current.w - thefrag_ClipSpacePos_previous / thefrag_ClipSpacePos_previous.w);
 	uni_geometryPassRT3 = vec4(motionVec.xyz, transparency);
-	uni_geometryPassRT4 = thefrag_LightSpacePos_0;
-	uni_geometryPassRT5 = thefrag_LightSpacePos_1;
-	uni_geometryPassRT6 = thefrag_LightSpacePos_2;
-	uni_geometryPassRT7 = thefrag_LightSpacePos_3;
+	uni_geometryPassRT4 = vec4(TangentSpaceNormal, 1.0f);
 }
