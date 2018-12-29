@@ -5,26 +5,28 @@ in vec2 thefrag_TexCoord;
 
 uniform sampler2D uni_motionVectorTexture;
 uniform sampler2D uni_TAAPassRT0;
+const int MAX_SAMPLES = 16;
 
 void main()
 {
 	vec2 texelSize = 1.0 / vec2(textureSize(uni_TAAPassRT0, 0));
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
-	vec2 MotionVector = texture(uni_motionVectorTexture, screenTexCoords).xy * 2.0;
+	vec2 MotionVector = texture(uni_motionVectorTexture, screenTexCoords).xy;
 
 	if (MotionVector == vec2(0.0, 0.0))
 	{
-		uni_motionBlurPassRT0 = texture(uni_TAAPassRT0, thefrag_TexCoord);
+		uni_motionBlurPassRT0 = texture(uni_TAAPassRT0, screenTexCoords);
 	}
 	else
 	{
-		vec4 result;
-		for (int i = 0; i < 4; i++) {
-			vec2 offset = MotionVector * (float(i) / 4.0f);
-			result += texture(uni_TAAPassRT0, thefrag_TexCoord + offset);
+		vec4 result = texture(uni_TAAPassRT0, screenTexCoords);
+
+		for (int i = 0; i < MAX_SAMPLES; i++) {
+			vec2 offset = MotionVector * (float(i) / float(MAX_SAMPLES - 1) - 0.5);
+			result += texture(uni_TAAPassRT0, screenTexCoords + offset);
 		}
 
-		result /= 4.0f;
+		result /= float(MAX_SAMPLES);
 
 		//use alpha channel as mask
 		uni_motionBlurPassRT0 = vec4(result.rgb, 1.0);

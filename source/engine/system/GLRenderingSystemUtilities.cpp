@@ -251,6 +251,8 @@ GLTextureDataComponent* GLRenderingSystemNS::generateGLTextureDataComponent(Text
 
 			rhs->m_objectStatus = ObjectStatus::ALIVE;
 
+			g_pCoreSystem->getAssetSystem()->releaseRawDataForTextureDataComponent(rhs->m_parentEntity);
+
 			return l_ptr;
 		}
 	}
@@ -264,7 +266,7 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 		[&](GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string & shaderFilePath) {
 		shaderID = glCreateShader(shaderType);
 
-		if (shaderID == 0) 
+		if (shaderID == 0)
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: Shader creation failed! memory location invaild when adding shader!");
 			return;
@@ -297,7 +299,7 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
 			glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
-			if (l_infoLogLength > 0) 
+			if (l_infoLogLength > 0)
 			{
 				std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 				glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);

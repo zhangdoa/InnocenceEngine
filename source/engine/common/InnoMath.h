@@ -23,6 +23,9 @@ template<class T>
 T zero = T(0.0L);
 
 template<class T>
+T half = T(0.5L);
+
+template<class T>
 T one = T(1.0L);
 
 template<class T>
@@ -30,6 +33,9 @@ T two = T(2.0L);
 
 template<class T>
 T halfCircumference = T(180.0L);
+
+template<class T>
+T fullCircumference = T(360.0L);
 
 template<class T>
 class TVec2
@@ -1505,6 +1511,64 @@ namespace InnoMath
 	INNO_FORCEINLINE EntityID createEntityID()
 	{
 		return std::rand();
+	}
+
+	template<class T>
+	auto radianToAngle(T radian) -> T
+	{
+		return radian * fullCircumference<T> / PI<T>;
+	}
+
+	template<class T>
+	auto angleToRadian(T angle) -> T
+	{
+		return angle * PI<T> / fullCircumference<T>;
+	}
+
+	template<class T>
+	auto quatToEulerAngle(const TVec4<T>& rhs) -> TVec4<T>
+	{
+		// roll (x-axis rotation)
+		T sinr_cosp = +two<T> * (rhs.w * rhs.x + rhs.y * rhs.z);
+		T cosr_cosp = +one<T> - two<T> * (rhs.x * rhs.x + rhs.y * rhs.y);
+		T roll = std::atan2(sinr_cosp, cosr_cosp);
+
+		// pitch (y-axis rotation)
+		T sinp = +two<T> * (rhs.w * rhs.y - rhs.z * rhs.x);
+		T pitch;
+		if (std::fabs(sinp) >= one<T>)
+		{
+			pitch = std::copysign(PI<T> / two<T>, sinp); // use 90 degrees if out of range
+		}
+		else
+		{
+			pitch = std::asin(sinp);
+		}
+
+		// yaw (z-axis rotation)
+		T siny_cosp = +two<T> * (rhs.w * rhs.z + rhs.x * rhs.y);
+		T cosy_cosp = +one<T> - two<T> * (rhs.y * rhs.y + rhs.z * rhs.z);
+		T yaw = std::atan2(siny_cosp, cosy_cosp);
+
+		return TVec4<T>(roll, pitch, yaw, zero<T>);
+	}
+
+	template<class T>
+	auto eulerAngleToQuat(T roll, T pitch, T yaw) -> TVec4<T>
+	{
+		// Abbreviations for the various angular functions
+		T cy = std::cos(yaw * half<T>);
+		T sy = std::sin(yaw * half<T>);
+		T cp = std::cos(pitch * half<T>);
+		T sp = std::sin(pitch * half<T>);
+		T cr = std::cos(roll * half<T>);
+		T sr = std::sin(roll * half<T>);
+
+		T w = cy * cp * cr + sy * sp * sr;
+		T x = cy * cp * sr - sy * sp * cr;
+		T y = sy * cp * sr + cy * sp * cr;
+		T z = sy * cp * cr - cy * sp * sr;
+		return TVec4<T>(x, y, z, w);
 	}
 
 	template<class T>

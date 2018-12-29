@@ -151,12 +151,14 @@ void GLRenderingSystemNS::generateRandomNoise()
 		auto alpha = scale * scale;
 		scale = 0.1f + 0.9f * alpha;
 		sample = sample * scale;
+
 		GLGeometryRenderPassComponent::get().ssaoKernel.push_back(sample);
 	}
 
 	for (unsigned int i = 0; i < 16; i++)
 	{
 		auto noise = vec4(randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator) * 2.0f - 1.0f, 0.0f, 0.0f); // rotate around z-axis (in tangent space)
+		noise = noise.normalize();
 		GLGeometryRenderPassComponent::get().ssaoNoise.push_back(noise);
 	}
 

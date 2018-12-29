@@ -82,6 +82,97 @@ private:
 			l_rhs->m_localTransformVector.m_pos.y = pos[1];
 			l_rhs->m_localTransformVector.m_pos.z = pos[2];
 		}
+
+		static float rot_min = 0.0f;
+		static float rot_max = 360.0f;
+
+		static float rot[4];
+		vec4 eulerAngles = InnoMath::quatToEulerAngle(l_rhs->m_localTransformVector.m_rot);
+		rot[0] = InnoMath::radianToAngle(eulerAngles.x);
+		rot[1] = InnoMath::radianToAngle(eulerAngles.y);
+		rot[2] = InnoMath::radianToAngle(eulerAngles.z);
+		rot[3] = 0.0f;
+
+		if (ImGui::DragFloat3("Rotation", rot, 0.01f, rot_min, rot_max))
+		{
+			auto roll = InnoMath::angleToRadian(rot[0]);
+			auto pitch = InnoMath::angleToRadian(rot[1]);
+			auto yaw = InnoMath::angleToRadian(rot[2]);
+
+			l_rhs->m_localTransformVector.m_rot = InnoMath::eulerAngleToQuat(roll, pitch, yaw);
+		}
+	}
+	void showVisiableComponentPropertyEditor(void* rhs)
+	{
+		auto l_rhs = reinterpret_cast<VisibleComponent*>(rhs);
+
+		static MaterialDataComponent* selectedComponent = nullptr;
+
+		{
+			ImGui::BeginChild("Children MaterialDataComponents", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.2f, 360.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+			{
+				for (auto& i : l_rhs->m_modelMap)
+				{
+					if (ImGui::Selectable(std::to_string(i.first->m_parentEntity).c_str(), selectedComponent == i.second))
+					{
+						selectedComponent = i.second;
+					}
+				}
+			}
+			ImGui::EndChild();
+		}
+
+		ImGui::SameLine();
+
+		{
+			if (selectedComponent)
+			{
+				ImGui::BeginChild("MaterialDataComponent Editor", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.8f, 360.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+				{
+					auto l_material = &selectedComponent->m_meshCustomMaterial;
+
+					static float float_min = 0.0f;
+					static float float_max = 1.0f;
+
+					static ImVec4 albedo = ImColor(l_material->albedo_r, l_material->albedo_g, l_material->albedo_b, l_material->alpha);
+
+					if (ImGui::ColorPicker4("Albedo Color", (float*)&albedo, ImGuiColorEditFlags_RGB))
+					{
+						l_material->albedo_r = albedo.x;
+						l_material->albedo_g = albedo.y;
+						l_material->albedo_b = albedo.z;
+						l_material->alpha = albedo.w;
+					}
+
+					ImGui::SameLine();
+
+					const ImVec2 small_slider_size(18, 180);
+	
+					static float metallic;
+					if (ImGui::VSliderFloat("Metallic", small_slider_size, &metallic, 0.0f, 1.0f, ""))
+					{
+						l_material->metallic = metallic;
+					}
+
+					ImGui::SameLine();
+
+					static float roughness;
+					if (ImGui::VSliderFloat("Roughness", small_slider_size, &roughness, 0.0f, 1.0f, ""))
+					{
+						l_material->roughness = roughness;
+					}
+
+					ImGui::SameLine();
+
+					static float ao;
+					if (ImGui::VSliderFloat("Ambient Occlusion", small_slider_size, &ao, 0.0f, 1.0f, ""))
+					{
+						l_material->ao = ao;
+					}
+				}
+				ImGui::EndChild();
+			}
+		}
 	}
 };
 
@@ -503,8 +594,8 @@ void ImGuiWrapper::showWorldExplorer()
 						selectedComponentType = j.second.first;
 					}
 				}
-				ImGui::TreePop();
 			}
+			ImGui::TreePop();
 		}
 	}
 	ImGui::End();
@@ -515,7 +606,8 @@ void ImGuiWrapper::showWorldExplorer()
 		{
 			switch (selectedComponentType)
 			{
-			case componentType::TransformComponent:showTransformComponentPropertyEditor(selectedComponent); break;
+			case componentType::TransformComponent: showTransformComponentPropertyEditor(selectedComponent); break;
+			case componentType::VisibleComponent: showVisiableComponentPropertyEditor(selectedComponent); break;
 			default:
 				break;
 			}

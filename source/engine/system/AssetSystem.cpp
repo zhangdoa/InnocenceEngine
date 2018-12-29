@@ -728,7 +728,10 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 	//}
 	for (auto& l_environmentCaptureComponent : InnoAssetSystemNS::g_GameSystemComponent->m_EnvironmentCaptureComponents)
 	{
-		l_environmentCaptureComponent->m_TDC = InnoAssetSystemNS::loadTexture(l_environmentCaptureComponent->m_cubemapTextureFileName, TextureUsageType::EQUIRETANGULAR);
+		if (!l_environmentCaptureComponent->m_cubemapTextureFileName.empty())
+		{
+			l_environmentCaptureComponent->m_TDC = InnoAssetSystemNS::loadTexture(l_environmentCaptureComponent->m_cubemapTextureFileName, TextureUsageType::EQUIRETANGULAR);
+		}
 	}
 	for (auto& l_visibleComponent : InnoAssetSystemNS::g_GameSystemComponent->m_VisibleComponents)
 	{
@@ -1065,9 +1068,11 @@ TextureDataComponent* InnoAssetSystemNS::loadTextureFromDisk(const std::string& 
 	// load image, flip texture
 	stbi_set_flip_vertically_on_load(true);
 
+	auto l_filePath = g_AssetSystemComponent->m_textureRelativePath + fileName;
+
 	if (TextureUsageType == TextureUsageType::EQUIRETANGULAR)
 	{
-		auto *data = stbi_loadf((g_AssetSystemComponent->m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
+		auto *data = stbi_loadf(l_filePath.c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
 			l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::EQUIRETANGULAR;
@@ -1092,7 +1097,7 @@ TextureDataComponent* InnoAssetSystemNS::loadTextureFromDisk(const std::string& 
 	}
 	else
 	{
-		auto *data = stbi_load((g_AssetSystemComponent->m_textureRelativePath + fileName).c_str(), &width, &height, &nrChannels, 0);
+		auto *data = stbi_load(l_filePath.c_str(), &width, &height, &nrChannels, 0);
 		if (data)
 		{
 			l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType;
