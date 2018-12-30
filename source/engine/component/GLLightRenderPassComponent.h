@@ -34,7 +34,7 @@ public:
 		"uni_opaquePassRT1",
 		"uni_opaquePassRT2",
 		"uni_opaquePassRT3",
-		"uni_SSAOPassRT0",
+		"uni_SSAOBlurPassRT0",
 		"uni_shadowMap_0",
 		"uni_shadowMap_1",
 		"uni_shadowMap_2",

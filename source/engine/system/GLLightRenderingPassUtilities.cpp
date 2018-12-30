@@ -135,7 +135,7 @@ void GLRenderingSystemNS::updateLightPass()
 		3);
 	// SSAO
 	activateTexture(
-		GLGeometryRenderPassComponent::get().m_SSAOPass_GLRPC->m_GLTDCs[0],
+		GLGeometryRenderPassComponent::get().m_SSAOBlurPass_GLRPC->m_GLTDCs[0],
 		4);
 	// shadow map 0
 	activateTexture(

@@ -37,6 +37,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	GLTextureDataComponent* updateTAAPass(GLTextureDataComponent* inputGLTDC);
 	GLTextureDataComponent* updateTAASharpenPass(GLTextureDataComponent* inputGLTDC);
 	GLTextureDataComponent* updateBloomExtractPass(GLTextureDataComponent* inputGLTDC);
+	GLTextureDataComponent* updateBloomBlurPass(GLTextureDataComponent* inputGLTDC);
 	GLTextureDataComponent* updateMotionBlurPass(GLTextureDataComponent * inputGLTDC);
 	GLTextureDataComponent* updateBillboardPass();
 	GLTextureDataComponent* updateDebuggerPass();

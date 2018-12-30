@@ -68,6 +68,17 @@ public:
 	TextureDataComponent* m_noiseTDC;
 	GLTextureDataComponent* m_noiseGLTDC;
 
+	GLRenderPassComponent* m_SSAOBlurPass_GLRPC;
+
+	GLShaderProgramComponent* m_SSAOBlurPass_GLSPC;
+
+	ShaderFilePaths m_SSAOBlurPass_shaderFilePaths = { "GL4.0//SSAOBlurPassVertex.sf" , "", "GL4.0//SSAOBlurPassFragment.sf" };
+
+	std::vector<std::string> m_SSAOBlurPassTextureUniformNames =
+	{
+		"uni_SSAOPassRT0",
+	};
+
 	GLRenderPassComponent* m_transparentPass_GLRPC;
 
 	GLShaderProgramComponent* m_transparentPass_GLSPC;

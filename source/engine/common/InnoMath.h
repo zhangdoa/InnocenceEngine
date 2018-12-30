@@ -11,13 +11,13 @@ template<class T>
 const static T E = T(2.71828182845904523536028747135266249L);
 
 template<class T>
-T tolerance2 = T(0.95L);
+T epsilon2 = T(0.01L);
 
 template<class T>
-T tolerance4 = T(0.9995L);
+T epsilon4 = T(0.0001L);
 
 template<class T>
-T tolerance8 = T(0.99999995L);
+T epsilon8 = T(0.00000001L);
 
 template<class T>
 T zero = T(0.0L);
@@ -785,7 +785,7 @@ namespace InnoMath
 	{
 		T cosOfAngle = a * b;
 		// use nlerp for quaternions which are too close
-		if (cosOfAngle > tolerance4<T>) {
+		if (cosOfAngle > one<T> - epsilon4<T>) {
 			return (a * alpha + b * (one<T>-alpha)).normalize();
 		}
 		// for shorter path
@@ -1590,6 +1590,31 @@ namespace InnoMath
 			RGB = TVec4<T>(zero<T>, zero<T>, zero<T>, one<T>);
 
 		return RGB;
+	}
+
+	template<class T>
+	bool isCloseEnough(const TVec4<T>& lhs, const TVec4<T>& rhs)
+	{
+		if (std::abs(lhs.x - rhs.x) > epsilon4<T>)
+		{
+			return false;
+		}
+		if (std::abs(lhs.y - rhs.y) > epsilon4<T>)
+		{
+			return false;
+		}
+		if (std::abs(lhs.z - rhs.z) > epsilon4<T>)
+		{
+			return false;
+		}
+		if (std::abs(lhs.w - rhs.w) > epsilon4<T>)
+		{
+			return false;
+		}
+		else
+		{
+			return true;
+		}
 	}
 }
 

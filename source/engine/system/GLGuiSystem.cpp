@@ -320,6 +320,8 @@ void ImGuiWrapper::update()
 			{
 				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_SSAOPass_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 				zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_SSAOPass_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize);
+				
+				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_SSAOBlurPass_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 
 				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_noiseGLTDC->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			}
