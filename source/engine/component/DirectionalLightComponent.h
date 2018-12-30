@@ -19,7 +19,9 @@ public:
 	vec4 m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	bool m_drawAABB = false;
-	std::vector<AABB> m_AABBs;
+
+	// in World space
+	std::vector<AABB> m_AABBsInWorldSpace;
 
 	std::vector<mat4> m_projectionMatrices;
 };

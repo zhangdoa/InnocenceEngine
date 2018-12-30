@@ -27,6 +27,7 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
+protected:
 	spawnComponentInterfaceDecl(TransformComponent);
 	spawnComponentInterfaceDecl(VisibleComponent);
 	spawnComponentInterfaceDecl(DirectionalLightComponent);
@@ -36,6 +37,7 @@ public:
 	spawnComponentInterfaceDecl(InputComponent);
 	spawnComponentInterfaceDecl(EnvironmentCaptureComponent);
 
+public:
 	template <typename T> T * spawn(EntityID parentEntity)
 	{
 		auto l_ptr = g_pMemorySystem->spawn<T>();

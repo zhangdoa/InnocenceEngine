@@ -35,8 +35,8 @@ uniform sampler2D uni_opaquePassRT3;
 uniform sampler2D uni_SSAOPassRT0;
 
 const int NR_CSM_SPLITS = 4;
-uniform mat4 uni_dirLight_rot;
 uniform mat4 uni_dirLightProjs[NR_CSM_SPLITS];
+uniform mat4 uni_dirLightViews[NR_CSM_SPLITS];
 uniform vec4 uni_shadowSplitAreas[NR_CSM_SPLITS];
 
 bool uni_drawCSMSplitedArea = false;
@@ -289,7 +289,7 @@ float ShadowCalculation(float NdotL, vec3 fragPos)
 	}
 	else
 	{
-		vec4 lightSpacePos = uni_dirLightProjs[splitIndex] * uni_dirLight_rot * vec4(fragPos, 1.0f);
+		vec4 lightSpacePos = uni_dirLightProjs[splitIndex] * uni_dirLightViews[splitIndex] * vec4(fragPos, 1.0f);
 		lightSpacePos = lightSpacePos / lightSpacePos.w;
 		projCoords = lightSpacePos.xyz;
 
@@ -429,6 +429,15 @@ void main()
 	}
 	if (uni_drawCSMSplitedArea)
 	{
+		vec3 N = normalize(Normal);
+
+		vec3 L = normalize(-uni_dirLight.direction);
+		float NdotL = max(dot(N, L), 0.0);
+
+		Lo = vec3(NdotL);
+
+		Lo *= 1 - ShadowCalculation(NdotL, FragPos);
+
 		int splitIndex = NR_CSM_SPLITS;
 		for (int i = 0; i < NR_CSM_SPLITS; i++)
 		{

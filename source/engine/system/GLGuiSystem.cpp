@@ -11,6 +11,7 @@
 #include "../component/GLRenderingSystemComponent.h"
 #include "../component/AssetSystemComponent.h"
 #include "../component/GameSystemComponent.h"
+#include "../component/PhysicsSystemComponent.h"
 
 #include "../third-party/ImGui/imgui.h"
 #include "../third-party/ImGui/imgui_impl_glfw.h"

@@ -118,6 +118,7 @@ public:
 	mat4 m_sunRot;
 
 	std::vector<mat4> m_CSMProjs;
+	std::vector<mat4> m_CSMViews;
 	std::vector<vec4> m_CSMSplitCorners;
 
 	GPassCameraUBOData m_GPassCameraUBOData;

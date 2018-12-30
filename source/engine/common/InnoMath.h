@@ -716,27 +716,18 @@ class TAABB
 public:
 	TAABB() noexcept :
 		m_center(TVec4<T>(T(), T(), T(), one<T>)),
-		m_sphereRadius(T()),
-		m_pad1(T()),
-		m_pad2(T()),
-		m_pad3(T()),
+		m_extend(TVec4<T>(T(), T(), T(), one<T>)),
 		m_boundMin(TVec4<T>(T(), T(), T(), one<T>)),
 		m_boundMax(TVec4<T>(T(), T(), T(), one<T>)) {};
 	TAABB(const TAABB<T>& rhs) :
 		m_center(rhs.m_center),
-		m_sphereRadius(rhs.m_sphereRadius),
-		m_pad1(T()),
-		m_pad2(T()),
-		m_pad3(T()),
+		m_extend(rhs.m_extend),
 		m_boundMin(rhs.m_boundMin),
 		m_boundMax(rhs.m_boundMax) {};
 	auto operator=(const TAABB<T> & rhs) -> TAABB<T>&
 	{
 		m_center = rhs.m_center;
-		m_sphereRadius = rhs.m_sphereRadius;
-		m_pad1 = T();
-		m_pad2 = T();
-		m_pad3 = T();
+		m_extend = rhs.m_extend;
 		m_boundMin = rhs.m_boundMin;
 		m_boundMax = rhs.m_boundMax;
 		return *this;
@@ -744,10 +735,7 @@ public:
 	~TAABB() {};
 
 	TVec4<T> m_center; // 4 * sizeof(T)
-	T m_sphereRadius; // 1 * sizeof(T)
-	T m_pad1; // 1 * sizeof(T)
-	T m_pad2; // 1 * sizeof(T)
-	T m_pad3; // 1 * sizeof(T)
+	TVec4<T> m_extend; // 4 * sizeof(T)
 	TVec4<T> m_boundMin; // 4 * sizeof(T)
 	TVec4<T> m_boundMax; // 4 * sizeof(T)
 };
@@ -1267,15 +1255,15 @@ namespace InnoMath
 	template<class T>
 	bool intersectCheck(const TAABB<T> & lhs, const TAABB<T> & rhs)
 	{
-		if (rhs.m_center.x - lhs.m_center.x > rhs.m_sphereRadius + lhs.m_sphereRadius)
+		if (std::abs(rhs.m_center.x - lhs.m_center.x) > (rhs.m_extend.x + lhs.m_extend.x) / two<T>)
 		{
 			return false;
 		}
-		if (rhs.m_center.y - lhs.m_center.y > rhs.m_sphereRadius + lhs.m_sphereRadius)
+		if (std::abs(rhs.m_center.y - lhs.m_center.y) > (rhs.m_extend.y + lhs.m_extend.y) / two<T>)
 		{
 			return false;
 		}
-		if (rhs.m_center.z - lhs.m_center.z > rhs.m_sphereRadius + lhs.m_sphereRadius)
+		if (std::abs(rhs.m_center.z - lhs.m_center.z) > (rhs.m_extend.z + lhs.m_extend.z) / two<T>)
 		{
 			return false;
 		}

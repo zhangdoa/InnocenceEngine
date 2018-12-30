@@ -5,7 +5,6 @@ template <typename T>
 class innoAllocator
 {
 public:
-
 	typedef size_t size_type;
 	typedef ptrdiff_t difference_type;
 	typedef T* pointer;

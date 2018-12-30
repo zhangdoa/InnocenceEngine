@@ -302,21 +302,31 @@ void GLRenderingSystemNS::prepareRenderingData()
 	GLRenderingSystemComponent::get().m_CSMProjs.reserve(l_CSMSize);
 	GLRenderingSystemComponent::get().m_CSMSplitCorners.clear();
 	GLRenderingSystemComponent::get().m_CSMSplitCorners.reserve(l_CSMSize);
+	GLRenderingSystemComponent::get().m_CSMViews.clear();
+	GLRenderingSystemComponent::get().m_CSMViews.reserve(l_CSMSize);
 
 	for (size_t j = 0; j < l_directionalLight->m_projectionMatrices.size(); j++)
 	{
 		GLRenderingSystemComponent::get().m_CSMProjs.emplace_back();
 		GLRenderingSystemComponent::get().m_CSMSplitCorners.emplace_back();
+		GLRenderingSystemComponent::get().m_CSMViews.emplace_back();
 
 		auto l_shadowSplitCorner = vec4(
-			l_directionalLight->m_AABBs[j].m_boundMin.x,
-			l_directionalLight->m_AABBs[j].m_boundMin.z,
-			l_directionalLight->m_AABBs[j].m_boundMax.x,
-			l_directionalLight->m_AABBs[j].m_boundMax.z
+			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.x,
+			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.z,
+			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.x,
+			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.z
 		);
 
 		GLRenderingSystemComponent::get().m_CSMProjs[j] = l_directionalLight->m_projectionMatrices[j];
 		GLRenderingSystemComponent::get().m_CSMSplitCorners[j] = l_shadowSplitCorner;
+
+		auto l_center = l_directionalLight->m_AABBsInWorldSpace[j].m_center;
+		auto l_extend = l_directionalLight->m_AABBsInWorldSpace[j].m_extend;
+		auto l_lightDir = GLRenderingSystemComponent::get().m_sunDir;
+		auto l_lightPos = l_center - l_lightDir * l_extend.x;
+
+		GLRenderingSystemComponent::get().m_CSMViews[j] = InnoMath::lookAt(l_lightPos, l_center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
 	}
 
 	// point light

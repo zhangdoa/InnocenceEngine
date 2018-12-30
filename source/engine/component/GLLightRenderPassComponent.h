@@ -9,7 +9,7 @@ class GLLightRenderPassComponent
 {
 public:
 	~GLLightRenderPassComponent() {};
-	
+
 	static GLLightRenderPassComponent& get()
 	{
 		static GLLightRenderPassComponent instance;
@@ -46,11 +46,13 @@ public:
 	};
 
 	std::vector<GLuint> m_uni_shadowSplitAreas;
-	std::vector<GLuint> m_uni_dirLightProjs;	
+	std::vector<GLuint> m_uni_dirLightProjs;
+	std::vector<GLuint> m_uni_dirLightViews;
+
 	GLuint m_uni_viewPos;
 
 	GLuint m_uni_dirLight_direction;
-	GLuint m_uni_dirLight_color; 
+	GLuint m_uni_dirLight_color;
 	GLuint m_uni_dirLight_rot;
 
 	std::vector<GLuint> m_uni_pointLights_position;

@@ -62,9 +62,6 @@ void GLRenderingSystemNS::updateShadowPass()
 	glCullFace(GL_FRONT);
 
 	activateShaderProgram(GLShadowRenderPassComponent::get().m_SPC);
-	updateUniform(
-		GLShadowRenderPassComponent::get().m_shadowPass_uni_v,
-		GLRenderingSystemComponent::get().m_sunRot);
 
 	// draw each lightComponent's shadowmap
 	for (size_t i = 0; i < GLShadowRenderPassComponent::get().m_GLRPCs.size(); i++)
@@ -73,6 +70,10 @@ void GLRenderingSystemNS::updateShadowPass()
 		updateUniform(
 			GLShadowRenderPassComponent::get().m_shadowPass_uni_p,
 			GLRenderingSystemComponent::get().m_CSMProjs[i]);
+
+		updateUniform(
+			GLShadowRenderPassComponent::get().m_shadowPass_uni_v,
+			GLRenderingSystemComponent::get().m_CSMViews[i]);
 
 		// draw each visibleComponent
 		for (auto& l_visibleComponent : GameSystemComponent::get().m_VisibleComponents)

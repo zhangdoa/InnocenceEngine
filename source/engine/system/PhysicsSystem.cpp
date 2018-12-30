@@ -11,6 +11,8 @@ extern ICoreSystem* g_pCoreSystem;
 
 namespace InnoPhysicsSystemNS
 {
+	bool setup();
+
 	void generateProjectionMatrix(CameraComponent* cameraComponent);
 	void generateRayOfEye(CameraComponent* cameraComponent);
 	std::vector<Vertex> generateFrustumVertices(CameraComponent* cameraComponent);
@@ -46,17 +48,60 @@ namespace InnoPhysicsSystemNS
 	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
 
 	std::vector<VisibleComponent*> m_initializedVisibleComponents;
+
+	InputComponent* m_inputComponent;
+	std::function<void()> f_mouseSelect;
+}
+
+bool InnoPhysicsSystemNS::setup()
+{
+	g_WindowSystemComponent = &WindowSystemComponent::get();
+	g_GameSystemComponent = &GameSystemComponent::get();
+	g_AssetSystemComponent = &AssetSystemComponent::get();
+	g_PhysicsSystemComponent = &PhysicsSystemComponent::get();
+
+	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(0);
+	f_mouseSelect = [&]() {
+		if (g_GameSystemComponent->m_CameraComponents.size() > 0)
+		{
+			Ray l_mouseRay;
+			l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
+			l_mouseRay.m_direction = g_WindowSystemComponent->m_mousePositionInWorldSpace;
+
+			for (auto visibleComponent : m_initializedVisibleComponents)
+			{
+				if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE)
+				{
+					auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
+					auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+
+					if (visibleComponent->m_PhysicsDataComponent)
+					{
+						for (auto& physicsData : visibleComponent->m_PhysicsDataComponent->m_physicsDatas)
+						{
+							auto l_AABBws = transformAABBtoWorldSpace(physicsData.aabb, l_globalTm);
+
+							if (InnoMath::intersectCheck(l_AABBws, l_mouseRay))
+							{
+								g_PhysicsSystemComponent->m_selectedVisibleComponent = visibleComponent;
+							}
+						}
+					}
+				}
+			}
+		}
+	};
+
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
+	
+	m_objectStatus = ObjectStatus::ALIVE;
+
+	return true;
 }
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::setup()
 {
-	InnoPhysicsSystemNS::g_WindowSystemComponent = &WindowSystemComponent::get();
-	InnoPhysicsSystemNS::g_GameSystemComponent = &GameSystemComponent::get();
-	InnoPhysicsSystemNS::g_AssetSystemComponent = &AssetSystemComponent::get();
-	InnoPhysicsSystemNS::g_PhysicsSystemComponent = &PhysicsSystemComponent::get();
-
-	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::ALIVE;
-	return true;
+	return InnoPhysicsSystemNS::setup();
 }
 
 void InnoPhysicsSystemNS::generateProjectionMatrix(CameraComponent * cameraComponent)
@@ -173,7 +218,7 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Mo
 
 void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLightComponent)
 {
-	directionalLightComponent->m_AABBs.clear();
+	directionalLightComponent->m_AABBsInWorldSpace.clear();
 	directionalLightComponent->m_projectionMatrices.clear();
 
 	//1. get frustum vertices
@@ -190,11 +235,10 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 		l_frustumsCornerPos.emplace_back(l_frustumVertices[i].m_pos);
 	}
 
-	auto l_splitFactor = 1.3f;
-	//2.2 other 16 corner based on e^(2 * (i + 1)) / e^8
+	//2.2 other 16 corner based on e^((i + 1)) / e^4
 	for (size_t i = 0; i < 4; i++)
 	{
-		auto scaleFactor = std::exp(((float)i + 1.0f) * l_splitFactor) / std::exp(4.0f * l_splitFactor);
+		auto scaleFactor = std::exp(((float)i + 1.0f)) / std::exp(4.0f);
 		for (size_t j = 0; j < 4; j++)
 		{
 			auto l_splitedPlaneCornerPos = l_frustumVertices[j].m_pos + (l_frustumVertices[j + 4].m_pos - l_frustumVertices[j].m_pos) * scaleFactor;
@@ -202,21 +246,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 		}
 	}
 
-	//2.3 transform to light space
-	auto l_lightRotMat = g_pCoreSystem->getGameSystem()->get<TransformComponent>(directionalLightComponent->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
-	for (size_t i = 0; i < l_frustumsCornerPos.size(); i++)
-	{
-		//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_frustumsCornerPos[i] = InnoMath::mul(l_frustumsCornerPos[i], l_lightRotMat);
-#endif
-		//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_frustumsCornerPos[i] = InnoMath::mul(l_lightRotMat, l_frustumsCornerPos[i]);
-#endif
-	}
-
-	//2.4 assemble splited frustum corners
+	//2.3 assemble splited frustum corners
 	std::vector<Vertex> l_frustumsCornerVertices;
 	l_frustumsCornerVertices.reserve(32);
 	for (size_t i = 0; i < 4; i++)
@@ -228,7 +258,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 		}
 	}
 
-	//2.5 assemble splitted frustums
+	//2.4 assemble splitted frustums
 	std::vector<std::vector<Vertex>> l_splitedFrustums;
 	l_splitedFrustums.reserve(4);
 
@@ -248,24 +278,33 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	//3.1 extend AABB to include the sphere
 	for (size_t i = 0; i < 4; i++)
 	{
-		auto l_maxExtendFactor = (l_AABBs[i].m_boundMax - l_AABBs[i].m_center) * l_AABBs[i].m_sphereRadius;
-		auto l_minExtendFactor = (l_AABBs[i].m_boundMin - l_AABBs[i].m_center) * l_AABBs[i].m_sphereRadius;
-		l_AABBs[i] = generateAABB(l_AABBs[i].m_boundMax + l_maxExtendFactor, l_AABBs[i].m_boundMin + l_minExtendFactor);
+		auto sphereRadius = (l_AABBs[i].m_boundMax - l_AABBs[i].m_center).length();
+		//sphereRadius = std::ceil(sphereRadius * 16.0f) / 16.0f;
+		auto l_boundMax = vec4(l_AABBs[i].m_center.x + sphereRadius, l_AABBs[i].m_center.y + sphereRadius, l_AABBs[i].m_center.z + sphereRadius, 1.0f);
+		auto l_boundMin = vec4(l_AABBs[i].m_center.x - sphereRadius, l_AABBs[i].m_center.y - sphereRadius, l_AABBs[i].m_center.z - sphereRadius, 1.0f);
+		l_AABBs[i] = generateAABB(l_boundMax, l_boundMin);
 	}
-
-	directionalLightComponent->m_AABBs = std::move(l_AABBs);
 
 	//4. generate projection matrices
 	directionalLightComponent->m_projectionMatrices.reserve(4);
 
 	for (size_t i = 0; i < 4; i++)
 	{
-		vec4 l_maxExtents = directionalLightComponent->m_AABBs[i].m_boundMax;
-		vec4 l_minExtents = directionalLightComponent->m_AABBs[i].m_boundMin;
+		auto sphereRadius = l_AABBs[i].m_boundMax.x - l_AABBs[i].m_center.x;
 
-		mat4 p = InnoMath::generateToOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
+		//vec4 l_maxExtents = l_AABBs[i].m_boundMax;
+		//vec4 l_minExtents = l_AABBs[i].m_boundMin;
+
+		vec4 l_maxExtents = vec4(sphereRadius, sphereRadius, sphereRadius, 1.0f);
+		vec4 l_minExtents = l_maxExtents * -1.0f;
+
+		vec4 cascadeExtents = l_maxExtents - l_minExtents;
+		mat4 p = InnoMath::generateToOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, 0.0f, cascadeExtents.z);
 		directionalLightComponent->m_projectionMatrices.emplace_back(p);
 	}
+
+	//5. save the AABB for bound area detection
+	directionalLightComponent->m_AABBsInWorldSpace = std::move(l_AABBs);
 }
 
 AABB InnoPhysicsSystemNS::generateAABB(const std::vector<Vertex>& vertices)
@@ -315,8 +354,8 @@ AABB InnoPhysicsSystemNS::generateAABB(vec4 boundMax, vec4 boundMin)
 	l_AABB.m_boundMin = boundMin;
 	l_AABB.m_boundMax = boundMax;
 
-	l_AABB.m_center = (l_AABB.m_boundMax + l_AABB.m_boundMin) * 0.5f;
-	l_AABB.m_sphereRadius = std::max<float>(std::max<float>((l_AABB.m_boundMax.x - l_AABB.m_boundMin.x) / 2.0f, (l_AABB.m_boundMax.y - l_AABB.m_boundMin.y) / 2.0f), (l_AABB.m_boundMax.z - l_AABB.m_boundMin.z) / 2.0f);
+	l_AABB.m_center = (boundMax + boundMin) * 0.5f;
+	l_AABB.m_extend = boundMax - boundMin;
 
 	return l_AABB;
 }
@@ -417,7 +456,8 @@ AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(AABB rhs, mat4 globalTm)
 	l_AABB.m_boundMin = InnoMath::mul(globalTm, rhs.m_boundMin);
 	l_AABB.m_center = InnoMath::mul(globalTm, rhs.m_center);
 #endif
-	l_AABB.m_sphereRadius = std::max<float>(std::max<float>((l_AABB.m_boundMax.x - l_AABB.m_boundMin.x) / 2.0f, (l_AABB.m_boundMax.y - l_AABB.m_boundMin.y) / 2.0f), (l_AABB.m_boundMax.z - l_AABB.m_boundMin.z) / 2.0f);
+
+	l_AABB.m_extend = l_AABB.m_boundMax - l_AABB.m_boundMin;
 
 	return l_AABB;
 }
@@ -514,13 +554,6 @@ void InnoPhysicsSystemNS::updateCulling()
 					{
 						auto l_AABBws = transformAABBtoWorldSpace(physicsData.aabb, l_globalTm);
 
-						if (InnoMath::intersectCheck(l_AABBws, l_mouseRay))
-						{
-							AABBWireframeDataPack l_AABBWireframeDataPack;
-							l_AABBWireframeDataPack.m = l_globalTm;
-							l_AABBWireframeDataPack.MDC = physicsData.wireframeMDC;
-							g_PhysicsSystemComponent->m_AABBWireframeDataPack.emplace_back(l_AABBWireframeDataPack);
-						}
 						//if (InnoMath::intersectCheck(l_AABBws, l_cameraAABB))
 						//{
 							CullingDataPack l_cullingDataPack;

@@ -45,13 +45,14 @@ void GLRenderingSystemNS::bindLightPassUniformLocations(GLShaderProgramComponent
 		GLLightRenderPassComponent::get().m_uni_shadowSplitAreas.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_shadowSplitAreas[" + std::to_string(i) + "]")
 		);
-	}
-	for (size_t i = 0; i < 4; i++)
-	{
 		GLLightRenderPassComponent::get().m_uni_dirLightProjs.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_dirLightProjs[" + std::to_string(i) + "]")
 		);
+		GLLightRenderPassComponent::get().m_uni_dirLightViews.emplace_back(
+			getUniformLocation(rhs->m_program, "uni_dirLightViews[" + std::to_string(i) + "]")
+		);	
 	}
+
 	GLLightRenderPassComponent::get().m_uni_viewPos = getUniformLocation(
 		rhs->m_program,
 		"uni_viewPos");
@@ -61,9 +62,6 @@ void GLRenderingSystemNS::bindLightPassUniformLocations(GLShaderProgramComponent
 	GLLightRenderPassComponent::get().m_uni_dirLight_color = getUniformLocation(
 		rhs->m_program,
 		"uni_dirLight.color");
-	GLLightRenderPassComponent::get().m_uni_dirLight_rot = getUniformLocation(
-		rhs->m_program,
-		"uni_dirLight_rot");
 	
 	for (size_t i = 0; i < GameSystemComponent::get().m_PointLightComponents.size(); i++)
 	{
@@ -187,22 +185,21 @@ void GLRenderingSystemNS::updateLightPass()
 	updateUniform(
 		GLLightRenderPassComponent::get().m_uni_dirLight_color,
 		GLRenderingSystemComponent::get().m_sunColor.x, GLRenderingSystemComponent::get().m_sunColor.y, GLRenderingSystemComponent::get().m_sunColor.z);
-	updateUniform(
-		GLLightRenderPassComponent::get().m_uni_dirLight_rot,
-		GLRenderingSystemComponent::get().m_sunRot);
 
-	for (size_t j = 0; j < 4; j++)
-	{
-		updateUniform(
-			GLLightRenderPassComponent::get().m_uni_dirLightProjs[j],
-			GLRenderingSystemComponent::get().m_CSMProjs[j]);
-	}
 	for (size_t j = 0; j < 4; j++)
 	{
 		updateUniform(
 			GLLightRenderPassComponent::get().m_uni_shadowSplitAreas[j],
 			GLRenderingSystemComponent::get().m_CSMSplitCorners[j].x, GLRenderingSystemComponent::get().m_CSMSplitCorners[j].y, GLRenderingSystemComponent::get().m_CSMSplitCorners[j].z, GLRenderingSystemComponent::get().m_CSMSplitCorners[j].w);
+
+		updateUniform(
+			GLLightRenderPassComponent::get().m_uni_dirLightProjs[j],
+			GLRenderingSystemComponent::get().m_CSMProjs[j]);
+		updateUniform(
+			GLLightRenderPassComponent::get().m_uni_dirLightViews[j],
+			GLRenderingSystemComponent::get().m_CSMViews[j]);
 	}
+
 	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_PointLightDatas.size(); i++)
 	{
 		auto l_pos = GLRenderingSystemComponent::get().m_PointLightDatas[i].pos;

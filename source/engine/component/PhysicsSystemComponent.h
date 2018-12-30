@@ -38,6 +38,8 @@ public:
 	std::vector<AABBWireframeDataPack> m_AABBWireframeDataPack;
 
 	ThreadSafeQueue<VisibleComponent*> m_uninitializedVisibleComponents;
+
+	VisibleComponent* m_selectedVisibleComponent;
 private:
 	PhysicsSystemComponent() {};
 };
