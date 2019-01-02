@@ -57,6 +57,13 @@ struct GPassTransparentRenderDataPack
 	VisiblilityType visiblilityType;
 };
 
+struct BillboardPassRenderDataPack
+{
+	vec4 globalPos;
+	float distanceToCamera;
+	WorldEditorIconType iconType;
+};
+
 struct PointLightData
 {
 	vec4 pos;
@@ -89,6 +96,10 @@ public:
 	GLTextureDataComponent* m_iconTemplate_PNG;
 	GLTextureDataComponent* m_iconTemplate_SHADER;
 	GLTextureDataComponent* m_iconTemplate_UNKNOWN;
+
+	GLTextureDataComponent* m_iconTemplate_DirectionalLight;
+	GLTextureDataComponent* m_iconTemplate_PointLight;
+	GLTextureDataComponent* m_iconTemplate_SphereLight;
 
 	GLFrameBufferDesc deferredPassFBDesc = GLFrameBufferDesc();
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
@@ -127,6 +138,8 @@ public:
 	std::queue<GPassOpaqueRenderDataPack> m_GPassOpaqueRenderDataQueue_copy;
 
 	std::queue<GPassTransparentRenderDataPack> m_GPassTransparentRenderDataQueue;
+
+	std::queue<BillboardPassRenderDataPack> m_BillboardPassRenderDataQueue;
 
 	std::vector<PointLightData> m_PointLightDatas;
 

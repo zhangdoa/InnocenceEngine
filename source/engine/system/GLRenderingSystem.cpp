@@ -34,6 +34,9 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void initializeHaltonSampler();
 
 	void prepareRenderingData();
+	bool prepareGPassData();
+	bool prepareLightPassData();
+	bool prepareBillboardPassData();
 
 	void GLAPIENTRY
 		MessageCallback(GLenum source,
@@ -182,10 +185,14 @@ void  GLRenderingSystemNS::initializeDefaultAssets()
 	GLRenderingSystemComponent::get().m_basicRoughnessGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
 	GLRenderingSystemComponent::get().m_basicAOGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
 
-	GLRenderingSystemComponent::get().m_iconTemplate_OBJ = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::OBJ));
-	GLRenderingSystemComponent::get().m_iconTemplate_PNG = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::PNG));
-	GLRenderingSystemComponent::get().m_iconTemplate_SHADER = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::SHADER));
-	GLRenderingSystemComponent::get().m_iconTemplate_UNKNOWN = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(IconType::UNKNOWN));
+	GLRenderingSystemComponent::get().m_iconTemplate_OBJ = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::OBJ));
+	GLRenderingSystemComponent::get().m_iconTemplate_PNG = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::PNG));
+	GLRenderingSystemComponent::get().m_iconTemplate_SHADER = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::SHADER));
+	GLRenderingSystemComponent::get().m_iconTemplate_UNKNOWN = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::UNKNOWN));
+
+	GLRenderingSystemComponent::get().m_iconTemplate_DirectionalLight = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT));
+	GLRenderingSystemComponent::get().m_iconTemplate_PointLight = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT));
+	GLRenderingSystemComponent::get().m_iconTemplate_SphereLight = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT));
 }
 
 float GLRenderingSystemNS::radicalInverse(unsigned int n, unsigned int base)
@@ -280,6 +287,19 @@ void GLRenderingSystemNS::prepareRenderingData()
 	GLRenderingSystemComponent::get().m_CamTrans_prev = t_prev;
 	GLRenderingSystemComponent::get().m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
+	prepareGPassData();
+
+	prepareLightPassData();
+
+	prepareBillboardPassData();
+
+	// copy for environment capture
+	GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue_copy = GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue;
+}
+
+
+bool GLRenderingSystemNS::prepareGPassData()
+{
 	//UBO
 	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjJittered = GLRenderingSystemComponent::get().m_CamProjJittered;
 	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjOriginal = GLRenderingSystemComponent::get().m_CamProjOriginal;
@@ -288,74 +308,6 @@ void GLRenderingSystemNS::prepareRenderingData()
 	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot_prev = GLRenderingSystemComponent::get().m_CamRot_prev;
 	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans_prev = GLRenderingSystemComponent::get().m_CamTrans_prev;
 
-	// sun/directional light
-	auto l_directionalLight = GameSystemComponent::get().m_DirectionalLightComponents[0];
-	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
-
-	GLRenderingSystemComponent::get().m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
-	GLRenderingSystemComponent::get().m_sunColor = l_directionalLight->m_color;
-	GLRenderingSystemComponent::get().m_sunRot = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
-
-	auto l_CSMSize = l_directionalLight->m_projectionMatrices.size();
-
-	GLRenderingSystemComponent::get().m_CSMProjs.clear();
-	GLRenderingSystemComponent::get().m_CSMProjs.reserve(l_CSMSize);
-	GLRenderingSystemComponent::get().m_CSMSplitCorners.clear();
-	GLRenderingSystemComponent::get().m_CSMSplitCorners.reserve(l_CSMSize);
-	GLRenderingSystemComponent::get().m_CSMViews.clear();
-	GLRenderingSystemComponent::get().m_CSMViews.reserve(l_CSMSize);
-
-	for (size_t j = 0; j < l_directionalLight->m_projectionMatrices.size(); j++)
-	{
-		GLRenderingSystemComponent::get().m_CSMProjs.emplace_back();
-		GLRenderingSystemComponent::get().m_CSMSplitCorners.emplace_back();
-		GLRenderingSystemComponent::get().m_CSMViews.emplace_back();
-
-		auto l_shadowSplitCorner = vec4(
-			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.x,
-			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.z,
-			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.x,
-			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.z
-		);
-
-		GLRenderingSystemComponent::get().m_CSMProjs[j] = l_directionalLight->m_projectionMatrices[j];
-		GLRenderingSystemComponent::get().m_CSMSplitCorners[j] = l_shadowSplitCorner;
-
-		auto l_center = l_directionalLight->m_AABBsInWorldSpace[j].m_center;
-		auto l_extend = l_directionalLight->m_AABBsInWorldSpace[j].m_extend;
-		auto l_lightDir = GLRenderingSystemComponent::get().m_sunDir;
-		auto l_lightPos = l_center - l_lightDir * l_extend.x;
-
-		GLRenderingSystemComponent::get().m_CSMViews[j] = InnoMath::lookAt(l_lightPos, l_center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
-	}
-
-	// point light
-	GLRenderingSystemComponent::get().m_PointLightDatas.clear();
-	GLRenderingSystemComponent::get().m_PointLightDatas.reserve(GameSystemComponent::get().m_PointLightComponents.size());
-
-	for (auto i : GameSystemComponent::get().m_PointLightComponents)
-	{
-		PointLightData l_PointLightData;
-		l_PointLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_PointLightData.luminance = i->m_color * i->m_luminousFlux;
-		l_PointLightData.attenuationRadius = i->m_attenuationRadius;
-		GLRenderingSystemComponent::get().m_PointLightDatas.emplace_back(l_PointLightData);
-	}
-
-	// sphere light
-	GLRenderingSystemComponent::get().m_SphereLightDatas.clear();
-	GLRenderingSystemComponent::get().m_SphereLightDatas.reserve(GameSystemComponent::get().m_SphereLightComponents.size());
-
-	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
-	{
-		SphereLightData l_SphereLightData;
-		l_SphereLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_SphereLightData.luminance = i->m_color * i->m_luminousFlux;;
-		l_SphereLightData.sphereRadius = i->m_sphereRadius;
-		GLRenderingSystemComponent::get().m_SphereLightDatas.emplace_back(l_SphereLightData);
-	}
-
-	// mesh
 	for (auto& l_renderDataPack : RenderingSystemComponent::get().m_renderDataPack)
 	{
 		auto l_GLMDC = getGLMeshDataComponent(l_renderDataPack.MDC->m_parentEntity);
@@ -459,8 +411,114 @@ void GLRenderingSystemNS::prepareRenderingData()
 		}
 	}
 
-	// copy for environment capture
-	GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue_copy = GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue;
+	return true;
+}
+
+bool GLRenderingSystemNS::prepareLightPassData()
+{
+	// sun/directional light
+	auto l_directionalLight = GameSystemComponent::get().m_DirectionalLightComponents[0];
+	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
+
+	GLRenderingSystemComponent::get().m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	GLRenderingSystemComponent::get().m_sunColor = l_directionalLight->m_color;
+	GLRenderingSystemComponent::get().m_sunRot = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+
+	auto l_CSMSize = l_directionalLight->m_projectionMatrices.size();
+
+	GLRenderingSystemComponent::get().m_CSMProjs.clear();
+	GLRenderingSystemComponent::get().m_CSMProjs.reserve(l_CSMSize);
+	GLRenderingSystemComponent::get().m_CSMSplitCorners.clear();
+	GLRenderingSystemComponent::get().m_CSMSplitCorners.reserve(l_CSMSize);
+	GLRenderingSystemComponent::get().m_CSMViews.clear();
+	GLRenderingSystemComponent::get().m_CSMViews.reserve(l_CSMSize);
+
+	for (size_t j = 0; j < l_directionalLight->m_projectionMatrices.size(); j++)
+	{
+		GLRenderingSystemComponent::get().m_CSMProjs.emplace_back();
+		GLRenderingSystemComponent::get().m_CSMSplitCorners.emplace_back();
+		GLRenderingSystemComponent::get().m_CSMViews.emplace_back();
+
+		auto l_shadowSplitCorner = vec4(
+			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.x,
+			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.z,
+			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.x,
+			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.z
+		);
+
+		GLRenderingSystemComponent::get().m_CSMProjs[j] = l_directionalLight->m_projectionMatrices[j];
+		GLRenderingSystemComponent::get().m_CSMSplitCorners[j] = l_shadowSplitCorner;
+
+		auto l_center = l_directionalLight->m_AABBsInWorldSpace[j].m_center;
+		auto l_extend = l_directionalLight->m_AABBsInWorldSpace[j].m_extend;
+		auto l_lightDir = GLRenderingSystemComponent::get().m_sunDir;
+		auto l_lightPos = l_center - l_lightDir * l_extend.x;
+
+		GLRenderingSystemComponent::get().m_CSMViews[j] = InnoMath::lookAt(l_lightPos, l_center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	}
+
+	// point light
+	GLRenderingSystemComponent::get().m_PointLightDatas.clear();
+	GLRenderingSystemComponent::get().m_PointLightDatas.reserve(GameSystemComponent::get().m_PointLightComponents.size());
+
+	for (auto i : GameSystemComponent::get().m_PointLightComponents)
+	{
+		PointLightData l_PointLightData;
+		l_PointLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_PointLightData.luminance = i->m_color * i->m_luminousFlux;
+		l_PointLightData.attenuationRadius = i->m_attenuationRadius;
+		GLRenderingSystemComponent::get().m_PointLightDatas.emplace_back(l_PointLightData);
+	}
+
+	// sphere light
+	GLRenderingSystemComponent::get().m_SphereLightDatas.clear();
+	GLRenderingSystemComponent::get().m_SphereLightDatas.reserve(GameSystemComponent::get().m_SphereLightComponents.size());
+
+	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
+	{
+		SphereLightData l_SphereLightData;
+		l_SphereLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_SphereLightData.luminance = i->m_color * i->m_luminousFlux;;
+		l_SphereLightData.sphereRadius = i->m_sphereRadius;
+		GLRenderingSystemComponent::get().m_SphereLightDatas.emplace_back(l_SphereLightData);
+	}
+
+	return true;
+}
+
+bool GLRenderingSystemNS::prepareBillboardPassData()
+{
+	for (auto i : GameSystemComponent::get().m_DirectionalLightComponents)
+	{
+		BillboardPassRenderDataPack l_GLRenderDataPack;
+		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_GLRenderDataPack.distanceToCamera = (GLRenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.iconType = WorldEditorIconType::DIRECTIONAL_LIGHT;
+
+		GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.emplace(l_GLRenderDataPack);
+	}
+
+	for (auto i : GameSystemComponent::get().m_PointLightComponents)
+	{
+		BillboardPassRenderDataPack l_GLRenderDataPack;
+		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_GLRenderDataPack.distanceToCamera = (GLRenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.iconType = WorldEditorIconType::POINT_LIGHT;
+
+		GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.emplace(l_GLRenderDataPack);
+	}
+
+	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
+	{
+		BillboardPassRenderDataPack l_GLRenderDataPack;
+		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_GLRenderDataPack.distanceToCamera = (GLRenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.iconType = WorldEditorIconType::SPHERE_LIGHT;
+
+		GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.emplace(l_GLRenderDataPack);
+	}
+
+	return true;
 }
 
 bool GLRenderingSystemNS::terminate()

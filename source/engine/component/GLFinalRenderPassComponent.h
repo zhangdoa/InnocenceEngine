@@ -104,7 +104,6 @@ public:
 	GLuint m_billboardPass_uni_r;
 	GLuint m_billboardPass_uni_t;
 	GLuint m_billboardPass_uni_pos;
-	GLuint m_billboardPass_uni_albedo;
 	GLuint m_billboardPass_uni_size;
 
 	GLRenderPassComponent* m_debuggerPassGLRPC;

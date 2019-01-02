@@ -491,18 +491,18 @@ void ImGuiWrapper::showFileExplorer()
 {
 	auto l_iconSize = ImVec2(48.0f, 48.0f);
 
-	std::function<ImTextureID(const IconType iconType)> f_getTextID =
-		[&](const IconType iconType) -> ImTextureID
+	std::function<ImTextureID(const FileExplorerIconType iconType)> f_getTextID =
+		[&](const FileExplorerIconType iconType) -> ImTextureID
 	{
 		switch (iconType)
 		{
-		case IconType::OBJ:
+		case FileExplorerIconType::OBJ:
 			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_OBJ->m_TAO); break;
-		case IconType::PNG:
+		case FileExplorerIconType::PNG:
 			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_PNG->m_TAO); break;
-		case IconType::SHADER:
+		case FileExplorerIconType::SHADER:
 			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_SHADER->m_TAO); break;
-		case IconType::UNKNOWN:
+		case FileExplorerIconType::UNKNOWN:
 			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_UNKNOWN->m_TAO); break;
 		default:
 			return nullptr; break;
@@ -532,7 +532,7 @@ void ImGuiWrapper::showFileExplorer()
 
 		ImGui::BeginGroup();
 		{
-			if (ImGui::ImageButton(f_getTextID(IconType::UNKNOWN), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0), -1, ImColor(0, 0, 0, 255)))
+			if (ImGui::ImageButton(f_getTextID(FileExplorerIconType::UNKNOWN), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0), -1, ImColor(0, 0, 0, 255)))
 			{
 				currentDirectoryMetadata = l_currentActivateDir;
 			}

@@ -17,7 +17,8 @@ public:
 	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(EntityID textureID) override;
 	INNO_SYSTEM_EXPORT MeshDataComponent* getMeshDataComponent(MeshShapeType MeshShapeType) override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(TextureUsageType TextureUsageType) override;
-	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(IconType iconType) override;
+	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) override;
+	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
 	INNO_SYSTEM_EXPORT bool removeMeshDataComponent(EntityID EntityID) override;
 	INNO_SYSTEM_EXPORT bool removeTextureDataComponent(EntityID EntityID) override;
 	INNO_SYSTEM_EXPORT bool releaseRawDataForMeshDataComponent(EntityID EntityID) override;

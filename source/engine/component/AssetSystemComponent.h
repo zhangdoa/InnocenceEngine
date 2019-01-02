@@ -11,7 +11,7 @@ struct AssetMetadata
 {
 	std::string fileName;
 	std::string extension;
-	IconType iconType;
+	FileExplorerIconType iconType;
 };
 
 struct DirectoryMetadata
@@ -64,6 +64,10 @@ public:
 	TextureDataComponent* m_iconTemplate_PNG;
 	TextureDataComponent* m_iconTemplate_SHADER;
 	TextureDataComponent* m_iconTemplate_UNKNOWN;
+
+	TextureDataComponent* m_iconTemplate_DirectionalLight;
+	TextureDataComponent* m_iconTemplate_PointLight;
+	TextureDataComponent* m_iconTemplate_SphereLight;
 
 	std::unordered_map<std::string, ModelMap> m_loadedModelMap;
 	std::unordered_map<std::string, TextureDataComponent*> m_loadedTextureMap;

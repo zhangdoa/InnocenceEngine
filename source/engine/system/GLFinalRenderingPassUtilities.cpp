@@ -230,9 +230,6 @@ void GLRenderingSystemNS::bindBillboardPassUniformLocations()
 	GLFinalRenderPassComponent::get().m_billboardPass_uni_pos = getUniformLocation(
 		GLFinalRenderPassComponent::get().m_billboardPassGLSPC->m_program,
 		"uni_pos");
-	GLFinalRenderPassComponent::get().m_billboardPass_uni_albedo = getUniformLocation(
-		GLFinalRenderPassComponent::get().m_billboardPassGLSPC->m_program,
-		"uni_albedo");
 	GLFinalRenderPassComponent::get().m_billboardPass_uni_size = getUniformLocation(
 		GLFinalRenderPassComponent::get().m_billboardPassGLSPC->m_program,
 		"uni_size");
@@ -604,55 +601,47 @@ GLTextureDataComponent* GLRenderingSystemNS::updateBillboardPass()
 		GLFinalRenderPassComponent::get().m_billboardPass_uni_t,
 		GLRenderingSystemComponent::get().m_CamTrans);
 
-	if (GameSystemComponent::get().m_VisibleComponents.size() > 0)
+	while (GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.size() > 0)
 	{
-		// draw each visibleComponent
-		for (auto& l_visibleComponent : GameSystemComponent::get().m_VisibleComponents)
+		auto l_renderPack = GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.front();
+
+		auto l_GlobalPos = l_renderPack.globalPos;
+
+		updateUniform(
+			GLFinalRenderPassComponent::get().m_billboardPass_uni_pos,
+			l_GlobalPos.x, l_GlobalPos.y, l_GlobalPos.z);
+
+		auto l_distanceToCamera = l_renderPack.distanceToCamera;
+
+		if (l_distanceToCamera > 1.0f)
 		{
-			if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_BILLBOARD)
-			{
-				auto l_GlobalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformVector.m_pos;
-
-				updateUniform(
-					GLFinalRenderPassComponent::get().m_billboardPass_uni_pos,
-					l_GlobalPos.x, l_GlobalPos.y, l_GlobalPos.z);
-
-				auto l_distanceToCamera = (GLRenderingSystemComponent::get().m_CamGlobalPos - l_GlobalPos).length();
-				if (l_distanceToCamera > 1.0f)
-				{
-					updateUniform(
-						GLFinalRenderPassComponent::get().m_billboardPass_uni_size,
-						(1.0f / l_distanceToCamera) * (9.0f / 16.0f), (1.0f / l_distanceToCamera));
-				}
-				else
-				{
-					updateUniform(
-						GLFinalRenderPassComponent::get().m_billboardPass_uni_size,
-						(9.0f / 16.0f), 1.0f);
-				}
-				// draw each graphic data of visibleComponent
-				for (auto& l_modelPair : l_visibleComponent->m_modelMap)
-				{
-					// draw meshes
-					auto l_MDC = l_modelPair.first;
-					if (l_MDC)
-					{
-						auto l_textureMap = l_modelPair.second;
-						// any normal?
-						auto l_TDC = l_textureMap->m_texturePack.m_normalTDC.second;
-						if (l_TDC)
-						{
-							activateTexture(l_TDC, 0);
-						}
-						else
-						{
-							activateTexture(GLRenderingSystemComponent::get().m_basicNormalGLTDC, 0);
-						}
-						drawMesh(l_MDC);
-					}
-				}
-			}
+			updateUniform(
+				GLFinalRenderPassComponent::get().m_billboardPass_uni_size,
+				(1.0f / l_distanceToCamera) * (9.0f / 16.0f), (1.0f / l_distanceToCamera));
 		}
+		else
+		{
+			updateUniform(
+				GLFinalRenderPassComponent::get().m_billboardPass_uni_size,
+				(9.0f / 16.0f), 1.0f);
+		}
+		
+		GLTextureDataComponent* l_iconTexture;
+
+		switch (l_renderPack.iconType)
+		{
+			case WorldEditorIconType::DIRECTIONAL_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_DirectionalLight; break;
+			case WorldEditorIconType::POINT_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_PointLight; break;
+			case WorldEditorIconType::SPHERE_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_SphereLight; break;
+			default:
+				break;
+		}
+
+		activateTexture(l_iconTexture, 0);
+
+		drawMesh(6, MeshPrimitiveTopology::TRIANGLE_STRIP, GLRenderingSystemComponent::get().m_UnitQuadGLMDC);
+
+		GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.pop();
 	}
 
 	glDisable(GL_DEPTH_TEST);

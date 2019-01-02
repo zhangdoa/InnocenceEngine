@@ -253,18 +253,33 @@ TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType
 	}
 }
 
-INNO_SYSTEM_EXPORT TextureDataComponent* InnoAssetSystem::getTextureDataComponent(IconType iconType)
+INNO_SYSTEM_EXPORT TextureDataComponent* InnoAssetSystem::getTextureDataComponent(FileExplorerIconType iconType)
 {
 	switch (iconType)
 	{
-	case IconType::OBJ:
+	case FileExplorerIconType::OBJ:
 		return InnoAssetSystemNS::g_AssetSystemComponent->m_iconTemplate_OBJ; break;
-	case IconType::PNG:
+	case FileExplorerIconType::PNG:
 		return InnoAssetSystemNS::g_AssetSystemComponent->m_iconTemplate_PNG; break;
-	case IconType::SHADER:
+	case FileExplorerIconType::SHADER:
 		return InnoAssetSystemNS::g_AssetSystemComponent->m_iconTemplate_SHADER; break;
-	case IconType::UNKNOWN:
+	case FileExplorerIconType::UNKNOWN:
 		return InnoAssetSystemNS::g_AssetSystemComponent->m_iconTemplate_UNKNOWN; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(WorldEditorIconType iconType)
+{
+	switch (iconType)
+	{
+	case WorldEditorIconType::DIRECTIONAL_LIGHT:
+		return InnoAssetSystemNS::g_AssetSystemComponent->m_iconTemplate_DirectionalLight; break;
+	case WorldEditorIconType::POINT_LIGHT:
+		return InnoAssetSystemNS::g_AssetSystemComponent->m_iconTemplate_PointLight; break;
+	case WorldEditorIconType::SPHERE_LIGHT:
+		return InnoAssetSystemNS::g_AssetSystemComponent->m_iconTemplate_SphereLight; break;
 	default:
 		return nullptr; break;
 	}
@@ -598,23 +613,23 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent& meshDataComponent)
 
 void InnoAssetSystemNS::loadDefaultAssets()
 {
-	std::function<IconType(const std::string&)> getIconType =
-		[&](const std::string& extension) -> IconType {
+	std::function<FileExplorerIconType(const std::string&)> getIconType =
+		[&](const std::string& extension) -> FileExplorerIconType {
 		if (extension == ".obj")
 		{
-			return IconType::OBJ;
+			return FileExplorerIconType::OBJ;
 		}
 		else if (extension == ".png")
 		{
-			return IconType::PNG;
+			return FileExplorerIconType::PNG;
 		}
 		else if (extension == ".sf")
 		{
-			return IconType::SHADER;
+			return FileExplorerIconType::SHADER;
 		}
 		else
 		{
-			return IconType::UNKNOWN;
+			return FileExplorerIconType::UNKNOWN;
 		}
 	};
 
@@ -668,6 +683,10 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	g_AssetSystemComponent->m_iconTemplate_PNG = loadTextureFromDisk("InnoFileTypeIcons_PNG.png", TextureUsageType::NORMAL);
 	g_AssetSystemComponent->m_iconTemplate_SHADER = loadTextureFromDisk("InnoFileTypeIcons_SHADER.png", TextureUsageType::NORMAL);
 	g_AssetSystemComponent->m_iconTemplate_UNKNOWN = loadTextureFromDisk("InnoFileTypeIcons_UNKNOWN.png", TextureUsageType::NORMAL);
+
+	g_AssetSystemComponent->m_iconTemplate_DirectionalLight = loadTextureFromDisk("InnoWorldEditorIcons_DirectionalLight.png", TextureUsageType::NORMAL);
+	g_AssetSystemComponent->m_iconTemplate_PointLight = loadTextureFromDisk("InnoWorldEditorIcons_PointLight.png", TextureUsageType::NORMAL);
+	g_AssetSystemComponent->m_iconTemplate_SphereLight = loadTextureFromDisk("InnoWorldEditorIcons_SphereLight.png", TextureUsageType::NORMAL);
 
 	g_AssetSystemComponent->m_UnitLineTemplate = addMeshDataComponent();
 	auto lastLineMeshData = g_AssetSystemComponent->m_UnitLineTemplate;

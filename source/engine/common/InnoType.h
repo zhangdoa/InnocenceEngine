@@ -33,11 +33,11 @@ struct TimeData
 
 using Index = unsigned int;
 
-enum class VisiblilityType { INNO_INVISIBLE, INNO_BILLBOARD, INNO_OPAQUE, INNO_TRANSPARENT, INNO_EMISSIVE };
+enum class VisiblilityType { INNO_INVISIBLE, INNO_BILLBOARD, INNO_OPAQUE, INNO_TRANSPARENT, INNO_EMISSIVE, INNO_DEBUG };
 // mesh custom types
 enum class MeshUsageType { NORMAL, BOUNDING_BOX };
 enum class MeshShapeType { LINE, QUAD, CUBE, SPHERE, TERRAIN, CUSTOM };
-enum class MeshPrimitiveTopology { TRIANGLE, TRIANGLE_STRIP };
+enum class MeshPrimitiveTopology { POINT, LINE, TRIANGLE, TRIANGLE_STRIP };
 // texture custom types
 enum class TextureUsageType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, CUBEMAP, EQUIRETANGULAR, RENDER_TARGET, SHADOWMAP };
 enum class TextureColorComponentsFormat { RED, RG, RGB, RGBA, R8, RG8, RGB8, RGBA8, R16, RG16, RGB16, RGBA16, R16F, RG16F, RGB16F, RGBA16F, R32F, RG32F, RGB32F, RGBA32F, SRGB, SRGBA, SRGB8, SRGBA8, DEPTH_COMPONENT };
@@ -47,7 +47,8 @@ enum class TextureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER };
 enum class TextureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
 enum class TextureAssignType { ADD, OVERWRITE };
 
-enum class IconType { OBJ, PNG, SHADER, UNKNOWN };
+enum class FileExplorerIconType { OBJ, PNG, SHADER, UNKNOWN };
+enum class WorldEditorIconType { DIRECTIONAL_LIGHT, POINT_LIGHT, SPHERE_LIGHT, UNKNOWN };
 
 enum class RenderPassType { OpaquePass, TransparentPass, TerrainPass, LightPass, FinalPass };
 

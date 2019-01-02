@@ -729,6 +729,8 @@ void GLRenderingSystemNS::drawMesh(size_t indicesSize, MeshPrimitiveTopology Mes
 		glBindVertexArray(GLMDC->m_VAO);
 		switch (MeshPrimitiveTopology)
 		{
+		case MeshPrimitiveTopology::POINT: glDrawElements(GL_POINTS, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
+		case MeshPrimitiveTopology::LINE: glDrawElements(GL_LINE, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
 		case MeshPrimitiveTopology::TRIANGLE: glDrawElements(GL_TRIANGLES, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
 		case MeshPrimitiveTopology::TRIANGLE_STRIP: glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
 		default:
