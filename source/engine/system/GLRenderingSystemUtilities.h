@@ -23,6 +23,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	bool initializeGLShaderProgramComponent(GLShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
 	bool initializeGLMeshDataComponent(GLMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
 	bool initializeGLTextureDataComponent(GLTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
+	GLTextureDataDesc getGLTextureDataDesc(const TextureDataDesc& textureDataDesc);
 
 	GLShaderProgramComponent* addGLShaderProgramComponent(EntityID rhs);
 

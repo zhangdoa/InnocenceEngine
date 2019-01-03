@@ -17,7 +17,8 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	GLRenderPassComponent* m_GLRPC;
+	GLRenderPassComponent* m_DirLight_GLRPC;
+	GLRenderPassComponent* m_PointLight_GLRPC;
 
 	GLShaderProgramComponent* m_SPC;
 

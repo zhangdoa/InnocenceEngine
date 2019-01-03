@@ -1,5 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
+#include "../common/InnoMath.h"
 
 struct TextureDataDesc
 {
@@ -12,6 +13,7 @@ struct TextureDataDesc
 	unsigned int textureWidth;
 	unsigned int textureHeight;
 	TexturePixelDataType texturePixelDataType;
+	vec4 borderColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 };
 
 class TextureDataComponent

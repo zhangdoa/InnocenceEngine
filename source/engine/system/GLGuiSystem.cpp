@@ -421,7 +421,7 @@ void ImGuiWrapper::update()
 			auto l_shadowPassWindowSize = ImVec2(512.0, 512.0);
 			ImGui::Begin("Shadow Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 			ImGui::Text("Depth Buffer");
-			ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassComponent::get().m_GLRPC->m_GLTDCs[0]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassComponent::get().m_DirLight_GLRPC->m_GLTDCs[0]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::End();
 
 			auto l_BRDFLUT = ImVec2(128.0, 128.0);

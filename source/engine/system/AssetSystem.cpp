@@ -246,8 +246,6 @@ TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType
 		return nullptr; break;
 	case TextureUsageType::RENDER_TARGET:
 		return nullptr; break;
-	case TextureUsageType::SHADOWMAP:
-		return nullptr; break;
 	default:
 		return nullptr; break;
 	}

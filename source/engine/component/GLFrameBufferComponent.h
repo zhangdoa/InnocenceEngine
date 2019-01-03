@@ -8,6 +8,7 @@ struct GLFrameBufferDesc
 	GLenum renderBufferInternalFormat = 0;
 	GLsizei sizeX = 0;
 	GLsizei sizeY = 0;
+	bool drawColorBuffers = true;
 };
 
 class GLFrameBufferComponent

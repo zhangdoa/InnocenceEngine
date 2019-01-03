@@ -139,7 +139,7 @@ void GLRenderingSystemNS::updateLightPass()
 		4);
 	// shadow map
 	activateTexture(
-		GLShadowRenderPassComponent::get().m_GLRPC->m_GLTDCs[0],
+		GLShadowRenderPassComponent::get().m_DirLight_GLRPC->m_GLTDCs[0],
 		5);
 	// BRDF look-up table 1
 	activateTexture(
