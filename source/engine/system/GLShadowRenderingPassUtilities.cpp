@@ -30,10 +30,7 @@ void GLRenderingSystemNS::initializeShadowPass()
 	shadowPassTextureDesc.textureHeight = shadowPassFBDesc.sizeY;
 	shadowPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
-	for (size_t i = 0; i < 4; i++)
-	{
-		GLShadowRenderPassComponent::get().m_GLRPCs.emplace_back(addGLRenderPassComponent(1, shadowPassFBDesc, shadowPassTextureDesc));
-	}
+	GLShadowRenderPassComponent::get().m_GLRPC = addGLRenderPassComponent(1, shadowPassFBDesc, shadowPassTextureDesc);
 
 	// shader programs and shaders
 	auto rhs = addGLShaderProgramComponent(0);
@@ -63,36 +60,49 @@ void GLRenderingSystemNS::updateShadowPass()
 
 	activateShaderProgram(GLShadowRenderPassComponent::get().m_SPC);
 
-	// draw each lightComponent's shadowmap
-	for (size_t i = 0; i < GLShadowRenderPassComponent::get().m_GLRPCs.size(); i++)
+	auto l_GLFBC = GLShadowRenderPassComponent::get().m_GLRPC->m_GLFBC;
+	auto sizeX = l_GLFBC->m_GLFrameBufferDesc.sizeX;
+	auto sizeY = l_GLFBC->m_GLFrameBufferDesc.sizeY;
+
+	cleanFBC(l_GLFBC);
+	glRenderbufferStorage(GL_RENDERBUFFER, l_GLFBC->m_GLFrameBufferDesc.renderBufferInternalFormat, sizeX, sizeY);
+
+	unsigned int splitCount = 0;
+
+	for (unsigned int i = 0; i < 2; i++)
 	{
-		bindFBC(GLShadowRenderPassComponent::get().m_GLRPCs[i]->m_GLFBC);
-		updateUniform(
-			GLShadowRenderPassComponent::get().m_shadowPass_uni_p,
-			GLRenderingSystemComponent::get().m_CSMProjs[i]);
-
-		updateUniform(
-			GLShadowRenderPassComponent::get().m_shadowPass_uni_v,
-			GLRenderingSystemComponent::get().m_CSMViews[i]);
-
-		// draw each visibleComponent
-		for (auto& l_visibleComponent : GameSystemComponent::get().m_VisibleComponents)
+		for (unsigned int j = 0; j < 2; j++)
 		{
-			if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE)
-			{
-				updateUniform(
-					GLShadowRenderPassComponent::get().m_shadowPass_uni_m,
-					g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
+			glViewport(i * sizeX / 2, j * sizeY / 2, sizeX / 2, sizeY / 2);
+			updateUniform(
+				GLShadowRenderPassComponent::get().m_shadowPass_uni_p,
+				GLRenderingSystemComponent::get().m_CSMProjs[splitCount]);
 
-				// draw each graphic data of visibleComponent
-				for (auto& l_modelPair : l_visibleComponent->m_modelMap)
+			updateUniform(
+				GLShadowRenderPassComponent::get().m_shadowPass_uni_v,
+				GLRenderingSystemComponent::get().m_CSMViews[splitCount]);
+
+			splitCount++;
+
+			// draw each visibleComponent
+			for (auto& l_visibleComponent : GameSystemComponent::get().m_VisibleComponents)
+			{
+				if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE)
 				{
-					// draw meshes
-					auto l_MDC = l_modelPair.first;
-					if (l_MDC)
+					updateUniform(
+						GLShadowRenderPassComponent::get().m_shadowPass_uni_m,
+						g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
+
+					// draw each graphic data of visibleComponent
+					for (auto& l_modelPair : l_visibleComponent->m_modelMap)
 					{
 						// draw meshes
-						drawMesh(l_MDC);
+						auto l_MDC = l_modelPair.first;
+						if (l_MDC)
+						{
+							// draw meshes
+							drawMesh(l_MDC);
+						}
 					}
 				}
 			}

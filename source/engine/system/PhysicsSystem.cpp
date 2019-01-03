@@ -62,6 +62,8 @@ bool InnoPhysicsSystemNS::setup()
 
 	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(0);
 	f_mouseSelect = [&]() {
+		g_PhysicsSystemComponent->m_AABBWireframeDataPack.clear();
+
 		if (g_GameSystemComponent->m_CameraComponents.size() > 0)
 		{
 			Ray l_mouseRay;
@@ -83,7 +85,11 @@ bool InnoPhysicsSystemNS::setup()
 
 							if (InnoMath::intersectCheck(l_AABBws, l_mouseRay))
 							{
+								AABBWireframeDataPack l_dataPack;
 								g_PhysicsSystemComponent->m_selectedVisibleComponent = visibleComponent;
+								l_dataPack.m = l_globalTm;
+								l_dataPack.MDC = physicsData.wireframeMDC;
+								g_PhysicsSystemComponent->m_AABBWireframeDataPack.emplace_back(l_dataPack);
 							}
 						}
 					}
@@ -530,7 +536,6 @@ void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
 void InnoPhysicsSystemNS::updateCulling()
 {
 	g_PhysicsSystemComponent->m_cullingDataPack.clear();
-	g_PhysicsSystemComponent->m_AABBWireframeDataPack.clear();
 
 	if (g_GameSystemComponent->m_CameraComponents.size() > 0)
 	{

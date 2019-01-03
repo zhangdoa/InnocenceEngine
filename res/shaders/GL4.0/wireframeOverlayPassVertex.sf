@@ -11,5 +11,6 @@ uniform mat4 uni_m;
 
 void main()
 {
-	gl_Position = uni_p * uni_r * uni_t * uni_m * vec4(in_Position, 1.0);
+	vec4 pos = vec4(in_Position, 1.0);
+	gl_Position = uni_p * uni_r * uni_t * uni_m * pos;
 }

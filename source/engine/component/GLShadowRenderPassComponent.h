@@ -17,7 +17,7 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	std::vector<GLRenderPassComponent*> m_GLRPCs;
+	GLRenderPassComponent* m_GLRPC;
 
 	GLShaderProgramComponent* m_SPC;
 

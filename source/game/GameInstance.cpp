@@ -260,6 +260,7 @@ bool GameInstanceNS::setup()
 	);
 
 	m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<DirectionalLightComponent>(m_directionalLightEntity);
+	//m_directionalLightComponent->m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	m_directionalLightComponent->m_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	m_directionalLightComponent->m_drawAABB = false;
 
