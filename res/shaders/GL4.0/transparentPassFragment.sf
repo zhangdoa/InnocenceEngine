@@ -1,15 +1,51 @@
 // shadertype=glsl
 #version 400 core
-layout(location = 0, index = 0) out vec4 outputColor0;
-layout(location = 0, index = 1) out vec4 outputColor1;
+layout(location = 0) out vec4 uni_transparentPassRT0;
+layout(location = 1) out vec4 uni_transparentPassRT1;
 
 in vec4 thefrag_WorldSpacePos;
 in vec3 thefrag_Normal;
 in vec2 thefrag_TexCoord;
 
+struct dirLight {
+	vec3 direction;
+	vec3 color;
+};
+uniform dirLight uni_dirLight;
+
 uniform vec4 uni_albedo;
 uniform vec3 uni_viewPos;
 
+const float eps = 0.00001;
+const float PI = 3.14159265359;
+
+// Specular Fresnel Component
+// ----------------------------------------------------------------------------
+vec3 fr_F_Schlick(vec3 f0, float f90, float u)
+{
+	return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
+}
+// Specular Visibility Component
+// ----------------------------------------------------------------------------
+float fr_V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
+{
+	float alphaG2 = alphaG * alphaG;
+	float NdotV_ = max(NdotV, eps);
+	float NdotL_ = max(NdotL, eps);
+	float Lambda_GGXV = NdotL_ * sqrt(NdotV_ * NdotV_ * (1.0 - alphaG2) + alphaG2);
+	float Lambda_GGXL = NdotV_ * sqrt(NdotL_ * NdotL_ * (1.0 - alphaG2) + alphaG2);
+	return 0.5 / (Lambda_GGXV + Lambda_GGXL);
+}
+// Specular Distribution Component
+// ----------------------------------------------------------------------------
+float fr_D_GGX(float NdotH, float roughness)
+{
+	// remapping to Quadratic curve
+	float a = roughness * roughness;
+	float a2 = a * a;
+	float f = (NdotH * a2 - NdotH) * NdotH + 1;
+	return a2 / (pow(f, 2.0));
+}
 void main()
 {
 	// get edge vectors of the pixel triangle
@@ -30,19 +66,34 @@ void main()
 	vec3 WorldSpaceNormal;
 	WorldSpaceNormal = normalize(TBN * vec3(0.0f, 0.0f, 1.0f));
 
+	N = WorldSpaceNormal;
 	vec3 V = normalize(uni_viewPos - thefrag_WorldSpacePos.xyz);
-	float NdotV = max(dot(WorldSpaceNormal, V), 0.0);
+	vec3 L = normalize(-uni_dirLight.direction);
+	vec3 H = normalize(V + L);
+	float NdotV = max(dot(N, V), 0.0);
+	float NdotH = max(dot(N, H), 0.0);
+	float NdotL = max(dot(N, L), 0.0);
 
-	vec3 transmittance;
-	transmittance = uni_albedo.rgb;
+	vec3 F0 = uni_albedo.rgb;
 
-	float thickness = 0.1f;
-	float d = thickness / max(NdotV, 0.00001);
+	// Specular BRDF
+	float roughness = 0.2f;
+	float f90 = 1.0;
+	vec3 F = fr_F_Schlick(F0, f90, NdotV);
+	float G = fr_V_SmithGGXCorrelated(NdotV, NdotL, roughness);
+	float D = fr_D_GGX(NdotH, roughness);
+	vec3 Frss = F0 * D * G / PI;
 
-	vec3 sigma = -(log(transmittance) / 4.0f);
+	// "Real-Time Rendering", 4th edition, pg. 624, "14.5.1 Coverage and Transmittance"
+	float thickness = 8.0f;
+	float d = thickness / max(NdotV, eps);
+
+	vec3 sigma = -(log(F0));
 
 	vec3 Tr = exp(-sigma * d);
+	vec3 Cs = Frss * uni_dirLight.color * uni_albedo.rgb;
 
-	outputColor0 = vec4(transmittance, 1.0f);
-	outputColor1 = vec4(1.0f - (Tr + 1.0f) * uni_albedo.a, 1.0f);
+	uni_transparentPassRT0 = vec4(Cs * uni_albedo.rgb, uni_albedo.a);
+	// alpha channel as the mask
+	uni_transparentPassRT1 = vec4((1.0f - uni_albedo.a + Tr * uni_albedo.a), 1.0f);
 }

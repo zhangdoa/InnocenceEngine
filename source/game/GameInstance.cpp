@@ -99,7 +99,7 @@ void PlayerComponentCollection::setup()
 	m_cameraComponent->m_FOVX = 60.0f;
 	m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
 	m_cameraComponent->m_zNear = 0.1f;
-	m_cameraComponent->m_zFar = 200.0f;
+	m_cameraComponent->m_zFar = 20000.0f;
 	m_cameraComponent->m_drawFrustum = false;
 	m_cameraComponent->m_drawAABB = false;
 
@@ -215,13 +215,11 @@ namespace GameInstanceNS
 	std::vector<EntityID> m_pointLightEntitys;
 	std::vector<TransformComponent*> m_pointLightTransformComponents;
 	std::vector<PointLightComponent*> m_pointLightComponents;
-	std::vector<VisibleComponent*> m_pointLightVisibleComponents;
 
 	// area sphere light entities and their components
 	std::vector<EntityID> m_sphereLightEntitys;
 	std::vector<TransformComponent*> m_sphereLightTransformComponents;
 	std::vector<SphereLightComponent*> m_sphereLightComponents;
-	std::vector<VisibleComponent*> m_sphereLightVisibleComponents;
 
 	float temp = 0.0f;
 
@@ -256,12 +254,12 @@ bool GameInstanceNS::setup()
 	m_directionalLightTransformComponent->m_localTransformVector.m_rot = InnoMath::caclRotatedLocalRotator(
 		m_directionalLightTransformComponent->m_localTransformVector.m_rot,
 		vec4(1.0f, 0.0f, 0.0f, 0.0f),
-		-10.0f
+		-90.0f
 	);
 
 	m_directionalLightComponent = g_pCoreSystem->getGameSystem()->spawn<DirectionalLightComponent>(m_directionalLightEntity);
-	//m_directionalLightComponent->m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	m_directionalLightComponent->m_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	m_directionalLightComponent->m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	//m_directionalLightComponent->m_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	m_directionalLightComponent->m_drawAABB = false;
 
 	//setup landscape
@@ -285,13 +283,13 @@ bool GameInstanceNS::setup()
 
 	m_pawnTransformComponent1 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pawnEntity1);
 	m_pawnTransformComponent1->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
 	m_pawnVisibleComponent1 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pawnEntity1);
-	m_pawnVisibleComponent1->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
+	m_pawnVisibleComponent1->m_visiblilityType = VisiblilityType::INNO_TRANSPARENT;
 	m_pawnVisibleComponent1->m_meshShapeType = MeshShapeType::CUSTOM;
 	m_pawnVisibleComponent1->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
+	//m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
 	//m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
-	//m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
+	m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
 	m_pawnVisibleComponent1->m_textureWrapMethod = TextureWrapMethod::REPEAT;
 	m_pawnVisibleComponent1->m_drawAABB = false;
 
@@ -411,7 +409,7 @@ void GameInstanceNS::setupSpheres()
 		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_transparentSphereVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 		m_transparentSphereVisibleComponents[i]->m_drawAABB = true;
-		//m_sphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
+		//m_transparentSphereVisibleComponents[i]->m_modelFileName = "Orb//Orb.obj";
 	}
 	for (unsigned int i = 0; i < sphereMatrixDim; i++)
 	{
@@ -430,14 +428,12 @@ void GameInstanceNS::setupLights()
 
 	m_pointLightTransformComponents.reserve(l_containerSize);
 	m_pointLightComponents.reserve(l_containerSize);
-	m_pointLightVisibleComponents.reserve(l_containerSize);
 	m_pointLightEntitys.reserve(l_containerSize);
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
 		m_pointLightTransformComponents.emplace_back();
 		m_pointLightComponents.emplace_back();
-		m_pointLightVisibleComponents.emplace_back();
 		m_pointLightEntitys.emplace_back();
 	}
 	for (unsigned int i = 0; i < l_containerSize; i++)
@@ -448,11 +444,7 @@ void GameInstanceNS::setupLights()
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
 		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<PointLightComponent>(m_pointLightEntitys[i]);
-		m_pointLightVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pointLightEntitys[i]);
 		m_pointLightComponents[i]->m_luminousFlux = 100.0f;
-		m_pointLightVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_EMISSIVE;
-		m_pointLightVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
-		m_pointLightVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	}
 	for (unsigned int i = 0; i < pointLightMatrixDim; i++)
 	{
@@ -468,14 +460,12 @@ void GameInstanceNS::setupLights()
 
 	m_sphereLightTransformComponents.reserve(l_containerSize);
 	m_sphereLightComponents.reserve(l_containerSize);
-	m_sphereLightVisibleComponents.reserve(l_containerSize);
 	m_sphereLightEntitys.reserve(l_containerSize);
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
 		m_sphereLightTransformComponents.emplace_back();
 		m_sphereLightComponents.emplace_back();
-		m_sphereLightVisibleComponents.emplace_back();
 		m_sphereLightEntitys.emplace_back();
 	}
 	for (unsigned int i = 0; i < l_containerSize; i++)
@@ -485,12 +475,8 @@ void GameInstanceNS::setupLights()
 		m_sphereLightTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_sphereLightEntitys[i]);
 		m_sphereLightTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_sphereLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<SphereLightComponent>(m_sphereLightEntitys[i]);
-		m_sphereLightVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_sphereLightEntitys[i]);
 		m_sphereLightComponents[i]->m_luminousFlux = 40.0f;
 		m_sphereLightComponents[i]->m_sphereRadius = 4.0f;
-		m_sphereLightVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_EMISSIVE;
-		m_sphereLightVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
-		m_sphereLightVisibleComponents[i]->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	}
 	for (unsigned int i = 0; i < sphereLightMatrixDim; i++)
 	{
@@ -545,11 +531,6 @@ void GameInstanceNS::updateLights(float seed)
 				j.second->m_meshCustomMaterial.albedo_b = albedo.z;
 			}
 		};
-
-		f_setMeshColor(m_pointLightVisibleComponents[i]->m_modelMap, l_color1);
-		f_setMeshColor(m_pointLightVisibleComponents[i + 1]->m_modelMap, l_color2);
-		f_setMeshColor(m_pointLightVisibleComponents[i + 2]->m_modelMap, l_color3);
-		f_setMeshColor(m_pointLightVisibleComponents[i + 3]->m_modelMap, l_color4);
 	}
 	for (auto i : m_sphereLightComponents)
 	{
@@ -615,7 +596,8 @@ void GameInstanceNS::updateSpheres(float seed)
 	}
 	for (unsigned int i = 0; i < m_transparentSphereVisibleComponents.size(); i++)
 	{
-		auto l_albedo = InnoMath::HSVtoRGB(vec4(((sin(seed / 6.0f + i) + 1.0f) / 2.0f) * 360.0f, 1.0f, 1.0f, 0.5f));
+		auto l_albedo = InnoMath::HSVtoRGB(vec4(((sin(seed / 12.0f + i) + 1.0f) / 2.0f) * 360.0f, 1.0f, 1.0f, 1.0f));
+		l_albedo.w = 0.9f;
 		f_setMRA(m_transparentSphereVisibleComponents[i]->m_modelMap, l_albedo, vec4());
 	}
 	//GameInstanceNS::m_directionalLightComponent->m_color = InnoMath::HSVtoRGB(vec4(((sin(seed / 6.0f) + 1.0f) / 2.0f) * 360.0f, 1.0f, 1.0f, 1.0f));
@@ -630,19 +612,19 @@ void PlayerComponentCollection::updatePlayer()
 
 	if (l_smoothInterp)
 	{
-		if (l_currentPawnPos != m_targetPawnPos)
+		if (!InnoMath::isCloseEnough(l_currentPawnPos, m_targetPawnPos))
 		{
 			m_pawnTransformComponent->m_localTransformVector.m_pos = InnoMath::lerp(l_currentPawnPos, m_targetPawnPos, 0.85f);
 		}
 
-		if (l_currentCameraPos != m_targetCameraPos)
+		if (!InnoMath::isCloseEnough(l_currentCameraPos, m_targetCameraPos))
 		{
 			m_cameraTransformComponent->m_localTransformVector.m_pos = InnoMath::lerp(l_currentCameraPos, m_targetCameraPos, 0.85f);
 		}
 
 		if (m_canSlerp)
 		{
-			if (l_currentCameraRot != m_targetCameraRot)
+			if (!InnoMath::isCloseEnough(l_currentCameraRot, m_targetCameraRot))
 			{
 				m_cameraTransformComponent->m_localTransformVector.m_rot = InnoMath::slerp(l_currentCameraRot, m_targetCameraRot, 0.8f);
 			}

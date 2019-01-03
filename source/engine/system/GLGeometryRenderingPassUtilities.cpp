@@ -224,7 +224,7 @@ void GLRenderingSystemNS::bindSSAOBlurPassUniformLocations(GLShaderProgramCompon
 
 void GLRenderingSystemNS::initializeTransparentPass()
 {
-	GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC = addGLRenderPassComponent(2, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	initializeTransparentPassShaders();
 }
@@ -253,6 +253,12 @@ void GLRenderingSystemNS::bindTransparentPassUniformLocations(GLShaderProgramCom
 	GLGeometryRenderPassComponent::get().m_transparentPass_uni_viewPos = getUniformLocation(
 		rhs->m_program,
 		"uni_viewPos");
+	GLGeometryRenderPassComponent::get().m_transparentPass_uni_dirLight_direction = getUniformLocation(
+		rhs->m_program,
+		"uni_dirLight.direction");
+	GLGeometryRenderPassComponent::get().m_transparentPass_uni_dirLight_color = getUniformLocation(
+		rhs->m_program,
+		"uni_dirLight.color");
 }
 
 void GLRenderingSystemNS::initializeTerrainPass()
@@ -444,7 +450,7 @@ void GLRenderingSystemNS::updateTransparentPass()
 	glEnable(GL_DEPTH_CLAMP);
 
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC1_COLOR);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// bind to framebuffer
 	auto l_FBC = GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC->m_GLFBC;
@@ -459,6 +465,12 @@ void GLRenderingSystemNS::updateTransparentPass()
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_transparentPass_uni_viewPos,
 		GLRenderingSystemComponent::get().m_CamGlobalPos.x, GLRenderingSystemComponent::get().m_CamGlobalPos.y, GLRenderingSystemComponent::get().m_CamGlobalPos.z);
+	updateUniform(
+		GLGeometryRenderPassComponent::get().m_transparentPass_uni_dirLight_direction,
+		GLRenderingSystemComponent::get().m_sunDir.x, GLRenderingSystemComponent::get().m_sunDir.y, GLRenderingSystemComponent::get().m_sunDir.z);
+	updateUniform(
+		GLGeometryRenderPassComponent::get().m_transparentPass_uni_dirLight_color,
+		GLRenderingSystemComponent::get().m_sunColor.x, GLRenderingSystemComponent::get().m_sunColor.y, GLRenderingSystemComponent::get().m_sunColor.z);
 
 	while (GLRenderingSystemComponent::get().m_GPassTransparentRenderDataQueue.size() > 0)
 	{

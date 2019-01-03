@@ -724,25 +724,6 @@ void InnoAssetSystemNS::loadDefaultAssets()
 
 void InnoAssetSystemNS::loadAssetsForComponents()
 {
-	//for (auto& l_lightComponent : InnoAssetSystemNS::g_GameSystemComponent->m_LightComponents)
-	//{
-	//	if (l_lightComponent->m_drawAABB)
-	//	{
-	//		auto l_containerSize = l_lightComponent->m_AABBs.size();
-	//		l_lightComponent->m_AABBMeshIDs.reserve(l_containerSize);
-	//		
-	//		for (size_t i = 0; i < l_containerSize; i++)
-	//		{
-	//			auto l_Mesh = InnoAssetSystemNS::addMeshDataComponent();
-	//			l_Mesh->m_vertices = l_lightComponent->m_AABBs[i].m_vertices;
-	//			l_Mesh->m_indices = l_lightComponent->m_AABBs[i].m_indices;
-	//			l_Mesh->m_indicesSize = l_Mesh->m_indices.size();
-	//			l_Mesh->m_objectStatus = ObjectStatus::STANDBY;
-	//			g_AssetSystemComponent->m_uninitializedMeshComponents.push(l_Mesh);
-	//			l_lightComponent->m_AABBMeshIDs.emplace_back(l_Mesh->m_parentEntity);
-	//		}
-	//	}
-	//}
 	for (auto& l_environmentCaptureComponent : InnoAssetSystemNS::g_GameSystemComponent->m_EnvironmentCaptureComponents)
 	{
 		if (!l_environmentCaptureComponent->m_cubemapTextureFileName.empty())

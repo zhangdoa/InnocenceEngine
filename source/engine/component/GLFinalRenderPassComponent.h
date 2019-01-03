@@ -35,6 +35,7 @@ public:
 	{
 		"uni_lightPassRT0",
 		"uni_transparentPassRT0",
+		"uni_transparentPassRT1",
 		"uni_skyPassRT0",
 		"uni_terrainPassRT0",
 	};

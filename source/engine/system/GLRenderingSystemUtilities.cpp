@@ -725,8 +725,7 @@ void GLRenderingSystemNS::attachTextureToFramebuffer(TextureDataComponent * TDC,
 		else
 		{
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, GLTDC->m_TAO, mipLevel);
-		}
-		
+		}		
 	}
 }
 

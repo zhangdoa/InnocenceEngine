@@ -87,7 +87,8 @@ public:
 
 	GLuint m_transparentPass_uni_albedo;
 	GLuint m_transparentPass_uni_viewPos;
-
+	GLuint m_transparentPass_uni_dirLight_direction;
+	GLuint m_transparentPass_uni_dirLight_color;
 private:
 	GLGeometryRenderPassComponent() {};
 };

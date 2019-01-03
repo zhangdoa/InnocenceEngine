@@ -150,7 +150,7 @@ private:
 					const ImVec2 small_slider_size(18, 180);
 	
 					static float metallic;
-					if (ImGui::VSliderFloat("Metallic", small_slider_size, &metallic, 0.0f, 1.0f, ""))
+					if (ImGui::VSliderFloat("Metallic", small_slider_size, &metallic, float_min, float_max, ""))
 					{
 						l_material->metallic = metallic;
 					}
@@ -158,7 +158,7 @@ private:
 					ImGui::SameLine();
 
 					static float roughness;
-					if (ImGui::VSliderFloat("Roughness", small_slider_size, &roughness, 0.0f, 1.0f, ""))
+					if (ImGui::VSliderFloat("Roughness", small_slider_size, &roughness, float_min, float_max, ""))
 					{
 						l_material->roughness = roughness;
 					}
@@ -166,7 +166,7 @@ private:
 					ImGui::SameLine();
 
 					static float ao;
-					if (ImGui::VSliderFloat("Ambient Occlusion", small_slider_size, &ao, 0.0f, 1.0f, ""))
+					if (ImGui::VSliderFloat("Ambient Occlusion", small_slider_size, &ao, float_min, float_max, ""))
 					{
 						l_material->ao = ao;
 					}
@@ -329,8 +329,17 @@ void ImGuiWrapper::update()
 
 			ImGui::Begin("Transparent Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 			{
+				ImGui::BeginChild("Albedo (RGB) + transparency factor (A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+				ImGui::Text("Albedo (RGB) + transparency factor (A)");
 				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 				zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize);
+				ImGui::EndChild();
+
+				ImGui::BeginChild("Transmittance factor (RGB) + blend mask (A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+				ImGui::Text("Transmittance factor (RGB) + blend mask (A)");
+				ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC->m_GLTDCs[1]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+				zoom(l_renderingConfig.useZoom, ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC->m_GLTDCs[1]->m_TAO), l_renderTargetSize);
+				ImGui::EndChild();
 			}
 			ImGui::End();
 

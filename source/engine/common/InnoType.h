@@ -90,7 +90,7 @@ struct MeshCustomMaterial
 	float roughness = 1.0f;
 	float ao = 1.0f;
 	float alpha = 1.0f;
-	float additionalData2 = 1.0f;
+	float thickness = 1.0f;
 };
 
 enum class ButtonStatus { RELEASED, PRESSED };

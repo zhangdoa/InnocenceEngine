@@ -403,11 +403,14 @@ GLTextureDataComponent* GLRenderingSystemNS::updatePreTAAPass()
 		GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC->m_GLTDCs[0],
 		1);
 	activateTexture(
-		GLFinalRenderPassComponent::get().m_skyPassGLRPC->m_GLTDCs[0],
+		GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC->m_GLTDCs[1],
 		2);
 	activateTexture(
-		GLTerrainRenderPassComponent::get().m_GLRPC->m_GLTDCs[0],
+		GLFinalRenderPassComponent::get().m_skyPassGLRPC->m_GLTDCs[0],
 		3);
+	activateTexture(
+		GLTerrainRenderPassComponent::get().m_GLRPC->m_GLTDCs[0],
+		4);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
