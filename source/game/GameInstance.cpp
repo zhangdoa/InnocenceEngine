@@ -99,7 +99,7 @@ void PlayerComponentCollection::setup()
 	m_cameraComponent->m_FOVX = 60.0f;
 	m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
 	m_cameraComponent->m_zNear = 0.1f;
-	m_cameraComponent->m_zFar = 20000.0f;
+	m_cameraComponent->m_zFar = 2000.0f;
 	m_cameraComponent->m_drawFrustum = false;
 	m_cameraComponent->m_drawAABB = false;
 
@@ -201,6 +201,11 @@ namespace GameInstanceNS
 	TransformComponent* m_pawnTransformComponent2;
 	VisibleComponent* m_pawnVisibleComponent2;
 
+	// pawn entity 3 and its components
+	EntityID m_pawnEntity3;
+	TransformComponent* m_pawnTransformComponent3;
+	VisibleComponent* m_pawnVisibleComponent3;
+
 	// opaque sphere entities and their components
 	std::vector<EntityID> m_opaqueSphereEntitys;
 	std::vector<TransformComponent*> m_opaqueSphereTransformComponents;
@@ -279,7 +284,7 @@ bool GameInstanceNS::setup()
 	m_landscapeVisibleComponent->m_meshShapeType = MeshShapeType::CUBE;
 
 	//setup pawn 1
-	m_pawnEntity1 = g_pCoreSystem->getGameSystem()->createEntity("pawn1");;
+	m_pawnEntity1 = g_pCoreSystem->getGameSystem()->createEntity("TransparentTest");
 
 	m_pawnTransformComponent1 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pawnEntity1);
 	m_pawnTransformComponent1->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
@@ -287,14 +292,13 @@ bool GameInstanceNS::setup()
 	m_pawnVisibleComponent1->m_visiblilityType = VisiblilityType::INNO_TRANSPARENT;
 	m_pawnVisibleComponent1->m_meshShapeType = MeshShapeType::CUSTOM;
 	m_pawnVisibleComponent1->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
-	//m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	//m_pawnVisibleComponent1->m_modelFileName = "sponza//sponza.obj";
-	m_pawnVisibleComponent1->m_modelFileName = "cat//cat.obj";
+	m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(5.0f, 5.0f, 5.0f, 1.0f);
+	//m_pawnVisibleComponent1->m_modelFileName = "bunny//bunny.obj";
 	m_pawnVisibleComponent1->m_textureWrapMethod = TextureWrapMethod::REPEAT;
 	m_pawnVisibleComponent1->m_drawAABB = false;
 
 	//setup pawn 2
-	m_pawnEntity2 = g_pCoreSystem->getGameSystem()->createEntity("pawn2");;
+	m_pawnEntity2 = g_pCoreSystem->getGameSystem()->createEntity("pawn2");
 
 	m_pawnTransformComponent2 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pawnEntity2);
 	m_pawnTransformComponent2->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
@@ -306,6 +310,20 @@ bool GameInstanceNS::setup()
 	m_pawnVisibleComponent2->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_pawnVisibleComponent2->m_drawAABB = true;
 	//m_pawnVisibleComponent2->m_modelFileName = "Orb//Orb.obj";
+
+	//setup pawn 3
+	m_pawnEntity3 = g_pCoreSystem->getGameSystem()->createEntity("Sponza");
+
+	m_pawnTransformComponent3 = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pawnEntity3);
+	m_pawnTransformComponent3->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+	m_pawnVisibleComponent3 = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_pawnEntity3);
+	m_pawnVisibleComponent3->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
+	m_pawnVisibleComponent3->m_meshShapeType = MeshShapeType::CUSTOM;
+	m_pawnVisibleComponent3->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
+	m_pawnTransformComponent3->m_localTransformVector.m_scale = vec4(0.1f, 0.1f, 0.1f, 1.0f);
+	//m_pawnVisibleComponent3->m_modelFileName = "sponza//sponza.obj";
+	m_pawnVisibleComponent3->m_textureWrapMethod = TextureWrapMethod::REPEAT;
+	m_pawnVisibleComponent3->m_drawAABB = false;
 
 	setupLights();
 	setupSpheres();

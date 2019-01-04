@@ -449,12 +449,9 @@ bool GLRenderingSystemNS::prepareLightPassData()
 		GLRenderingSystemComponent::get().m_CSMProjs[j] = l_directionalLight->m_projectionMatrices[j];
 		GLRenderingSystemComponent::get().m_CSMSplitCorners[j] = l_shadowSplitCorner;
 
-		auto l_center = l_directionalLight->m_AABBsInWorldSpace[j].m_center;
-		auto l_extend = l_directionalLight->m_AABBsInWorldSpace[j].m_extend;
-		auto l_lightDir = GLRenderingSystemComponent::get().m_sunDir;
-		auto l_lightPos = l_center - l_lightDir * l_extend.x;
+		auto l_lightRotMat = l_directionalLightTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
 
-		GLRenderingSystemComponent::get().m_CSMViews[j] = InnoMath::lookAt(l_lightPos, l_center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
+		GLRenderingSystemComponent::get().m_CSMViews[j] = l_lightRotMat;
 	}
 
 	// point light

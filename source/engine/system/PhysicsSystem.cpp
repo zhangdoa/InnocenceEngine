@@ -24,6 +24,7 @@ namespace InnoPhysicsSystemNS
 	MeshDataComponent* generateMeshDataComponent(AABB rhs);
 
 	void generateAABB(DirectionalLightComponent* directionalLightComponent);
+	std::vector<AABB> frustumsVerticesToAABBs(const std::vector<Vertex>& frustumsVertices);
 	AABB generateAABB(const std::vector<Vertex>& vertices);
 	AABB generateAABB(vec4 boundMax, vec4 boundMin);
 	std::vector<Vertex> generateAABBVertices(vec4 boundMax, vec4 boundMin);
@@ -231,28 +232,76 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	auto l_camera = g_GameSystemComponent->m_CameraComponents[0];
 	auto l_frustumVertices = generateFrustumVertices(l_camera);
 
-	//2.calculate splited planes' corners
+	//2.calculate AABBs in world space
+	auto l_AABBsWS = frustumsVerticesToAABBs(l_frustumVertices);
+
+	//3. save the AABB for bound area detection
+	directionalLightComponent->m_AABBsInWorldSpace = std::move(l_AABBsWS);
+
+	//4. transform frustum vertices to light space
+	auto l_lightRotMat = g_pCoreSystem->getGameSystem()->get<TransformComponent>(directionalLightComponent->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
+	for (size_t i = 0; i < l_frustumVertices.size(); i++)
+	{
+		//Column-Major memory layout	
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT	
+		l_frustumVertices[i].m_pos = InnoMath::mul(l_frustumVertices[i].m_pos, l_lightRotMat);
+#endif	
+		//Row-Major memory layout	
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT	
+		l_frustumVertices[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVertices[i].m_pos);
+#endif	
+	}
+
+	//5.calculate AABBs in light space
+	auto l_AABBsLS = frustumsVerticesToAABBs(l_frustumVertices);
+
+	//6. extend AABB to include the sphere
+	for (size_t i = 0; i < 4; i++)
+	{
+		auto sphereRadius = (l_AABBsLS[i].m_boundMax - l_AABBsLS[i].m_center).length();
+		auto l_boundMax = l_AABBsLS[i].m_center + sphereRadius;
+		l_boundMax.w = 1.0f;
+		auto l_boundMin = l_AABBsLS[i].m_center - sphereRadius;
+		l_boundMin.w = 1.0f;
+		l_AABBsLS[i] = generateAABB(l_boundMax, l_boundMin);
+	}
+
+	//7. generate projection matrices
+	directionalLightComponent->m_projectionMatrices.reserve(4);
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		vec4 l_maxExtents = l_AABBsLS[i].m_boundMax;
+		vec4 l_minExtents = l_AABBsLS[i].m_boundMin;
+
+		mat4 p = InnoMath::generateToOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
+		directionalLightComponent->m_projectionMatrices.emplace_back(p);
+	}
+}
+
+std::vector<AABB> InnoPhysicsSystemNS::frustumsVerticesToAABBs(const std::vector<Vertex>& frustumsVertices)
+{
 	std::vector<vec4> l_frustumsCornerPos;
 	l_frustumsCornerPos.reserve(20);
 
-	//2.1 first 4 corner
+	//1. first 4 corner
 	for (size_t i = 0; i < 4; i++)
 	{
-		l_frustumsCornerPos.emplace_back(l_frustumVertices[i].m_pos);
+		l_frustumsCornerPos.emplace_back(frustumsVertices[i].m_pos);
 	}
 
-	//2.2 other 16 corner based on e^((i + 1)) / e^4
+	//2. other 16 corner based on 1 / e^(3 - i)
 	for (size_t i = 0; i < 4; i++)
 	{
-		auto scaleFactor = std::exp(((float)i + 1.0f)) / std::exp(4.0f);
+		auto scaleFactor = 1.0f / std::exp(float(3 - i));
 		for (size_t j = 0; j < 4; j++)
 		{
-			auto l_splitedPlaneCornerPos = l_frustumVertices[j].m_pos + (l_frustumVertices[j + 4].m_pos - l_frustumVertices[j].m_pos) * scaleFactor;
+			auto l_splitedPlaneCornerPos = frustumsVertices[j].m_pos + (frustumsVertices[j + 4].m_pos - frustumsVertices[j].m_pos) * scaleFactor;
 			l_frustumsCornerPos.emplace_back(l_splitedPlaneCornerPos);
 		}
 	}
 
-	//2.3 assemble splited frustum corners
+	//3. assemble splited frustum corners
 	std::vector<Vertex> l_frustumsCornerVertices;
 	l_frustumsCornerVertices.reserve(32);
 	for (size_t i = 0; i < 4; i++)
@@ -264,7 +313,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 		}
 	}
 
-	//2.4 assemble splitted frustums
+	//4. assemble splitted frustums
 	std::vector<std::vector<Vertex>> l_splitedFrustums;
 	l_splitedFrustums.reserve(4);
 
@@ -273,44 +322,16 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 		l_splitedFrustums.emplace_back(std::vector<Vertex>(l_frustumsCornerVertices.begin() + i * 8, l_frustumsCornerVertices.begin() + 8 + i * 8));
 	}
 
-	//3 generate AABBs for the splited frustums
+	//5. generate AABBs for the splited frustums
 	std::vector<AABB> l_AABBs;
 	l_AABBs.reserve(4);
+
 	for (size_t i = 0; i < 4; i++)
 	{
 		l_AABBs.emplace_back(generateAABB(l_splitedFrustums[i]));
 	}
 
-	//3.1 extend AABB to include the sphere
-	for (size_t i = 0; i < 4; i++)
-	{
-		auto sphereRadius = (l_AABBs[i].m_boundMax - l_AABBs[i].m_center).length();
-		//sphereRadius = std::ceil(sphereRadius * 16.0f) / 16.0f;
-		auto l_boundMax = vec4(l_AABBs[i].m_center.x + sphereRadius, l_AABBs[i].m_center.y + sphereRadius, l_AABBs[i].m_center.z + sphereRadius, 1.0f);
-		auto l_boundMin = vec4(l_AABBs[i].m_center.x - sphereRadius, l_AABBs[i].m_center.y - sphereRadius, l_AABBs[i].m_center.z - sphereRadius, 1.0f);
-		l_AABBs[i] = generateAABB(l_boundMax, l_boundMin);
-	}
-
-	//4. generate projection matrices
-	directionalLightComponent->m_projectionMatrices.reserve(4);
-
-	for (size_t i = 0; i < 4; i++)
-	{
-		auto sphereRadius = l_AABBs[i].m_boundMax.x - l_AABBs[i].m_center.x;
-
-		//vec4 l_maxExtents = l_AABBs[i].m_boundMax;
-		//vec4 l_minExtents = l_AABBs[i].m_boundMin;
-
-		vec4 l_maxExtents = vec4(sphereRadius, sphereRadius, sphereRadius, 1.0f);
-		vec4 l_minExtents = l_maxExtents * -1.0f;
-
-		vec4 cascadeExtents = l_maxExtents - l_minExtents;
-		mat4 p = InnoMath::generateToOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, 0.0f, cascadeExtents.z);
-		directionalLightComponent->m_projectionMatrices.emplace_back(p);
-	}
-
-	//5. save the AABB for bound area detection
-	directionalLightComponent->m_AABBsInWorldSpace = std::move(l_AABBs);
+	return l_AABBs;
 }
 
 AABB InnoPhysicsSystemNS::generateAABB(const std::vector<Vertex>& vertices)
