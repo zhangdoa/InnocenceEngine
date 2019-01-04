@@ -110,7 +110,7 @@ private:
 		static MaterialDataComponent* selectedComponent = nullptr;
 
 		{
-			ImGui::BeginChild("Children MaterialDataComponents", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.2f, 360.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+			ImGui::BeginChild("Children MaterialDataComponents", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.3f, 400.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
 			{
 				for (auto& i : l_rhs->m_modelMap)
 				{
@@ -128,7 +128,7 @@ private:
 		{
 			if (selectedComponent)
 			{
-				ImGui::BeginChild("MaterialDataComponent Editor", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.8f, 360.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+				ImGui::BeginChild("MaterialDataComponent Editor", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.7f, 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 				{
 					auto l_material = &selectedComponent->m_meshCustomMaterial;
 
@@ -145,30 +145,33 @@ private:
 						l_material->alpha = albedo.w;
 					}
 
-					ImGui::SameLine();
-
 					const ImVec2 small_slider_size(18, 180);
 	
 					static float metallic;
-					if (ImGui::VSliderFloat("Metallic", small_slider_size, &metallic, float_min, float_max, ""))
+					if (ImGui::SliderFloat("Metallic", &metallic, float_min, float_max, ""))
 					{
 						l_material->metallic = metallic;
 					}
 
-					ImGui::SameLine();
-
 					static float roughness;
-					if (ImGui::VSliderFloat("Roughness", small_slider_size, &roughness, float_min, float_max, ""))
+					if (ImGui::SliderFloat("Roughness", &roughness, float_min, float_max, ""))
 					{
 						l_material->roughness = roughness;
 					}
 
-					ImGui::SameLine();
-
 					static float ao;
-					if (ImGui::VSliderFloat("Ambient Occlusion", small_slider_size, &ao, float_min, float_max, ""))
+					if (ImGui::SliderFloat("Ambient Occlusion", &ao, float_min, float_max, ""))
 					{
 						l_material->ao = ao;
+					}
+
+					if (l_rhs->m_visiblilityType == VisiblilityType::INNO_TRANSPARENT)
+					{
+						static float thickness;
+						if (ImGui::SliderFloat("Thickness", &thickness, float_min, float_max, ""))
+						{
+							l_material->thickness = thickness;
+						}
 					}
 				}
 				ImGui::EndChild();

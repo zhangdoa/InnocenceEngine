@@ -250,6 +250,9 @@ void GLRenderingSystemNS::bindTransparentPassUniformLocations(GLShaderProgramCom
 	GLGeometryRenderPassComponent::get().m_transparentPass_uni_albedo = getUniformLocation(
 		rhs->m_program,
 		"uni_albedo");
+	GLGeometryRenderPassComponent::get().m_transparentPass_uni_TR = getUniformLocation(
+		rhs->m_program,
+		"uni_TR");	
 	GLGeometryRenderPassComponent::get().m_transparentPass_uni_viewPos = getUniformLocation(
 		rhs->m_program,
 		"uni_viewPos");
@@ -479,6 +482,7 @@ void GLRenderingSystemNS::updateTransparentPass()
 		updateUBO(GLGeometryRenderPassComponent::get().m_meshUBO, l_renderPack.m_GPassMeshUBOData);
 
 		updateUniform(GLGeometryRenderPassComponent::get().m_transparentPass_uni_albedo, l_renderPack.meshCustomMaterial.albedo_r, l_renderPack.meshCustomMaterial.albedo_g, l_renderPack.meshCustomMaterial.albedo_b, l_renderPack.meshCustomMaterial.alpha);
+		updateUniform(GLGeometryRenderPassComponent::get().m_transparentPass_uni_TR, l_renderPack.meshCustomMaterial.thickness, l_renderPack.meshCustomMaterial.roughness, 0.0f, 0.0f);
 
 		drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
 

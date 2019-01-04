@@ -86,6 +86,7 @@ public:
 	ShaderFilePaths m_transparentPass_shaderFilePaths = { "GL4.0//transparentPassVertex.sf" , "", "GL4.0//transparentPassFragment.sf" };
 
 	GLuint m_transparentPass_uni_albedo;
+	GLuint m_transparentPass_uni_TR;
 	GLuint m_transparentPass_uni_viewPos;
 	GLuint m_transparentPass_uni_dirLight_direction;
 	GLuint m_transparentPass_uni_dirLight_color;
