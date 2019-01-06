@@ -282,7 +282,7 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 			return;
 		}
 
-		auto l_shaderCodeContent = g_pCoreSystem->getAssetSystem()->loadShader(shaderFilePath);
+		auto l_shaderCodeContent = g_pCoreSystem->getFileSystem()->loadTextFile(shaderFilePath);
 		const char* l_sourcePointer = l_shaderCodeContent.c_str();
 
 		if (l_sourcePointer == nullptr || l_shaderCodeContent.empty())

@@ -124,21 +124,6 @@ INNO_SYSTEM_EXPORT bool InnoAssetSystem::terminate()
 	return true;
 }
 
-// @TODO: merge to a text file parser
-std::string InnoAssetSystem::loadShader(const std::string & fileName)
-{
-	std::ifstream file;
-	file.open((InnoAssetSystemNS::g_AssetSystemComponent->m_shaderRelativePath + fileName).c_str());
-	std::stringstream shaderStream;
-	std::string output;
-
-	shaderStream << file.rdbuf();
-	output = shaderStream.str();
-	file.close();
-
-	return output;
-}
-
 ObjectStatus InnoAssetSystem::getStatus()
 {
 	return InnoAssetSystemNS::m_objectStatus;
@@ -350,7 +335,7 @@ bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
 	{
 		for (auto& i : l_texture->second->m_textureData)
 		{
-			stbi_image_free(i);
+			//stbi_image_free(i);
 		}
 		return true;
 	}

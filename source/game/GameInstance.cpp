@@ -293,7 +293,7 @@ bool GameInstanceNS::setup()
 	m_pawnVisibleComponent1->m_meshShapeType = MeshShapeType::CUSTOM;
 	m_pawnVisibleComponent1->m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
 	m_pawnTransformComponent1->m_localTransformVector.m_scale = vec4(5.0f, 5.0f, 5.0f, 1.0f);
-	//m_pawnVisibleComponent1->m_modelFileName = "bunny//bunny.obj";
+	m_pawnVisibleComponent1->m_modelFileName = "bunny//bunny.obj";
 	m_pawnVisibleComponent1->m_textureWrapMethod = TextureWrapMethod::REPEAT;
 	m_pawnVisibleComponent1->m_drawAABB = false;
 

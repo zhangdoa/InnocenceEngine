@@ -11,6 +11,7 @@ public:
 	INNO_SYSTEM_EXPORT ILogSystem* getLogSystem() override;
 	INNO_SYSTEM_EXPORT IMemorySystem* getMemorySystem() override;
 	INNO_SYSTEM_EXPORT ITaskSystem* getTaskSystem() override;
+	INNO_SYSTEM_EXPORT IFileSystem* getFileSystem() override;
 	INNO_SYSTEM_EXPORT IGameSystem* getGameSystem() override;
 	INNO_SYSTEM_EXPORT IAssetSystem* getAssetSystem() override;
 	INNO_SYSTEM_EXPORT IPhysicsSystem* getPhysicsSystem() override;

@@ -58,8 +58,6 @@ public:
 protected:
 	INNO_SYSTEM_EXPORT virtual void* allocate(unsigned long size) = 0;
 	INNO_SYSTEM_EXPORT virtual void free(void* ptr) = 0;
-	INNO_SYSTEM_EXPORT virtual void serializeImpl(const std::string& fileName, const std::string& className, unsigned long classSize, void* ptr) = 0;
-	INNO_SYSTEM_EXPORT virtual void* deserializeImpl(const std::string& fileName) = 0;
 
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(VisibleComponent);
@@ -125,17 +123,6 @@ public:
 	{
 		reinterpret_cast<T*>(p)->~T();
 		free(p);
-	};
-
-	template <typename T> void serialize(const std::string& fileName, T* p)
-	{
-		auto className = getClassName<T>();
-		serializeImpl(fileName, className, sizeof(T), p);
-	};
-
-	template <typename T> T* deserialize(const std::string& fileName)
-	{
-		return reinterpret_cast<T *>(deserializeImpl(fileName));
 	};
 };
 

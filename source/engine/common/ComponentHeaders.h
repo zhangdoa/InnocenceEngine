@@ -8,7 +8,7 @@
 #include "../component/InputComponent.h"
 #include "../component/EnvironmentCaptureComponent.h"
 
-enum class componentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SphereLightComponent, CameraComponent, InputComponent, EnvironmentCaptureComponent };
+enum class componentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SphereLightComponent, CameraComponent, InputComponent, EnvironmentCaptureComponent, PhysicsDataComponent, MeshDataComponent, MaterialDataComponent, TextureDataComponent};
 
 namespace InnoUtility
 {
@@ -40,13 +40,13 @@ inline std::string getClassName<className>() \
 		template<>
 	getClassNameTemplate(EnvironmentCaptureComponent);
 		template<>
+	getClassNameTemplate(PhysicsDataComponent);
+		template<>
 	getClassNameTemplate(MeshDataComponent);
 		template<>
 	getClassNameTemplate(MaterialDataComponent);
 		template<>
 	getClassNameTemplate(TextureDataComponent);
-		template<>
-	getClassNameTemplate(PhysicsDataComponent);
 
 	template<typename T>
 	componentType getComponentType();
@@ -73,4 +73,12 @@ inline componentType getComponentType<className>() \
 	getComponentTypeDefi(InputComponent);
 	template<>
 	getComponentTypeDefi(EnvironmentCaptureComponent);
+	template<>
+	getComponentTypeDefi(PhysicsDataComponent);
+	template<>
+	getComponentTypeDefi(MeshDataComponent);
+	template<>
+	getComponentTypeDefi(MaterialDataComponent);
+	template<>
+	getComponentTypeDefi(TextureDataComponent);
 }

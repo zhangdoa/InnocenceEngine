@@ -3,6 +3,7 @@
 #include "LogSystem.h"
 #include "MemorySystem.h"
 #include "TaskSystem.h"
+#include "FileSystem.h"
 #include "GameSystem.h"
 #include "AssetSystem.h"
 #include "PhysicsSystem.h"
@@ -16,6 +17,7 @@ INNO_PRIVATE_SCOPE CoreSystemNS
 	std::unique_ptr<ILogSystem> m_LogSystem;
 	std::unique_ptr<IMemorySystem> m_MemorySystem;
 	std::unique_ptr<ITaskSystem> m_TaskSystem;
+	std::unique_ptr<IFileSystem> m_FileSystem;
 	std::unique_ptr<IGameSystem> m_GameSystem;
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
 	std::unique_ptr<IPhysicsSystem> m_PhysicsSystem;
@@ -43,6 +45,11 @@ INNO_SYSTEM_EXPORT bool InnoCoreSystem::setup()
 	}
 	CoreSystemNS::m_TaskSystem = std::make_unique<InnoTaskSystem>();
 	if (!CoreSystemNS::m_TaskSystem.get())
+	{
+		return false;
+	}
+	CoreSystemNS::m_FileSystem = std::make_unique<InnoFileSystem>();
+	if (!CoreSystemNS::m_FileSystem.get())
 	{
 		return false;
 	}
@@ -87,6 +94,11 @@ INNO_SYSTEM_EXPORT IMemorySystem * InnoCoreSystem::getMemorySystem()
 INNO_SYSTEM_EXPORT ITaskSystem * InnoCoreSystem::getTaskSystem()
 {
 	return CoreSystemNS::m_TaskSystem.get();
+}
+
+INNO_SYSTEM_EXPORT IFileSystem * InnoCoreSystem::getFileSystem()
+{
+	return 	CoreSystemNS::m_FileSystem.get();
 }
 
 INNO_SYSTEM_EXPORT IGameSystem * InnoCoreSystem::getGameSystem()

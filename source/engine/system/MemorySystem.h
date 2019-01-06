@@ -21,8 +21,6 @@ public:
 
 	INNO_SYSTEM_EXPORT void* allocate(unsigned long size) override;
 	INNO_SYSTEM_EXPORT void free(void* ptr) override;
-	INNO_SYSTEM_EXPORT void serializeImpl(const std::string& fileName, const std::string& className, unsigned long classSize, void* ptr) override;
-	INNO_SYSTEM_EXPORT void* deserializeImpl(const std::string& fileName) override;
 
 	INNO_SYSTEM_EXPORT void dumpToFile(bool fullDump) override;
 
