@@ -10,13 +10,17 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-INNO_PRIVATE_SCOPE GLRenderingSystemNS
+using namespace GLRenderingSystemNS;
+
+INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 {
 	void initializeBRDFLUTPass();
 	void initializeEnvironmentCapturePass();
 
 	void updateBRDFLUTPass();
 	void updateEnvironmentCapturePass();
+
+	EntityID m_entityID;
 
 	TextureDataDesc BRDFLUTSplitSummingTextureDesc = TextureDataDesc();
 	TextureDataDesc BRDFLUTAverangeMSTextureDesc = TextureDataDesc();
@@ -25,8 +29,10 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	TextureDataDesc EnvPreFilterPassTextureDesc = TextureDataDesc();
 }
 
-void GLRenderingSystemNS::initializeEnvironmentPass()
+void GLEnvironmentRenderingPassUtilities::initialize()
 {
+	m_entityID = InnoMath::createEntityID();
+
 	BRDFLUTSplitSummingTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	BRDFLUTSplitSummingTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	BRDFLUTSplitSummingTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
@@ -81,7 +87,7 @@ void GLRenderingSystemNS::initializeEnvironmentPass()
 	initializeEnvironmentCapturePass();
 }
 
-void GLRenderingSystemNS::initializeBRDFLUTPass()
+void GLEnvironmentRenderingPassUtilities::initializeBRDFLUTPass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
@@ -138,7 +144,8 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 	m_ShaderFilePaths.m_VSPath = "GL4.0//BRDFLUTPassVertex.sf";
 	m_ShaderFilePaths.m_FSPath = "GL4.0//BRDFLUTPassFragment.sf";
 
-	auto rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
+	auto rhs = addGLShaderProgramComponent(m_entityID); 
+	initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
 	GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassSPC = rhs;
 
@@ -146,7 +153,8 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 	m_ShaderFilePaths.m_VSPath = "GL4.0//BRDFLUTMSPassVertex.sf";
 	m_ShaderFilePaths.m_FSPath = "GL4.0//BRDFLUTMSPassFragment.sf";
 
-	rhs = addGLShaderProgramComponent(0); initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
+	rhs = addGLShaderProgramComponent(m_entityID); 
+	initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
 	GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPass_uni_brdfLUT = getUniformLocation(
 		rhs->m_program,
@@ -158,7 +166,7 @@ void GLRenderingSystemNS::initializeBRDFLUTPass()
 	GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassSPC = rhs;
 }
 
-void GLRenderingSystemNS::initializeEnvironmentCapturePass()
+void GLEnvironmentRenderingPassUtilities::initializeEnvironmentCapturePass()
 {
 	// generate and bind framebuffer
 	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
@@ -213,7 +221,7 @@ void GLRenderingSystemNS::initializeEnvironmentCapturePass()
 	GLEnvironmentRenderPassComponent::get().m_preFilterPassGLTDC = l_GLTDC;
 
 	// capture pass shader
-	auto rhs = addGLShaderProgramComponent(0);
+	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, GLEnvironmentRenderPassComponent::get().m_capturePassShaderFilePaths);
 
 	GLEnvironmentRenderPassComponent::get().m_capturePass_uni_albedoTexture = getUniformLocation(
@@ -241,7 +249,7 @@ void GLRenderingSystemNS::initializeEnvironmentCapturePass()
 	GLEnvironmentRenderPassComponent::get().m_capturePassSPC = rhs;
 
 	// conv pass shader
-	rhs = addGLShaderProgramComponent(0);
+	rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, GLEnvironmentRenderPassComponent::get().m_convPassShaderFilePaths);
 
 	GLEnvironmentRenderPassComponent::get().m_convPass_uni_capturedCubeMap = getUniformLocation(
@@ -260,7 +268,7 @@ void GLRenderingSystemNS::initializeEnvironmentCapturePass()
 	GLEnvironmentRenderPassComponent::get().m_convPassSPC = rhs;
 
 	// pre-filter pass shader
-	rhs = addGLShaderProgramComponent(0);
+	rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, GLEnvironmentRenderPassComponent::get().m_preFilterPassShaderFilePaths);
 
 	GLEnvironmentRenderPassComponent::get().m_preFilterPass_uni_capturedCubeMap = getUniformLocation(
@@ -291,13 +299,13 @@ void GLRenderingSystemNS::initializeEnvironmentCapturePass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GLRenderingSystemNS::updateEnvironmentPass()
+void GLEnvironmentRenderingPassUtilities::update()
 {
 	updateBRDFLUTPass();
 	updateEnvironmentCapturePass();
 }
 
-void GLRenderingSystemNS::updateBRDFLUTPass()
+void GLEnvironmentRenderingPassUtilities::updateBRDFLUTPass()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -330,7 +338,7 @@ void GLRenderingSystemNS::updateBRDFLUTPass()
 	drawMesh(l_MDC);
 }
 
-void GLRenderingSystemNS::updateEnvironmentCapturePass()
+void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 {
 	// bind to framebuffer
 	auto l_FBC = GLEnvironmentRenderPassComponent::get().m_capturePassFBC;

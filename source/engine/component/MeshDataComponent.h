@@ -9,7 +9,7 @@ public:
 	~MeshDataComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	MeshUsageType m_meshUsageType = MeshUsageType::NORMAL;
 	MeshPrimitiveTopology m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;

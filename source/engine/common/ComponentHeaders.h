@@ -8,8 +8,6 @@
 #include "../component/InputComponent.h"
 #include "../component/EnvironmentCaptureComponent.h"
 
-enum class componentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SphereLightComponent, CameraComponent, InputComponent, EnvironmentCaptureComponent, PhysicsDataComponent, MeshDataComponent, MaterialDataComponent, TextureDataComponent};
-
 namespace InnoUtility
 {
 	template<typename T> std::string getClassName()

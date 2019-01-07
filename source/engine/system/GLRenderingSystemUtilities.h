@@ -1,6 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
-#include <queue>
+#include "../common/InnoClassTemplate.h"
 
 #include "../component/MeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
@@ -25,15 +25,15 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	bool initializeGLTextureDataComponent(GLTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
 	GLTextureDataDesc getGLTextureDataDesc(const TextureDataDesc& textureDataDesc);
 
-	GLShaderProgramComponent* addGLShaderProgramComponent(EntityID rhs);
+	GLShaderProgramComponent* addGLShaderProgramComponent(const EntityID& rhs);
 
 	bool deleteShaderProgram(GLShaderProgramComponent* rhs);
 
-	GLMeshDataComponent* addGLMeshDataComponent(EntityID rhs);
-	GLTextureDataComponent* addGLTextureDataComponent(EntityID rhs);
+	GLMeshDataComponent* addGLMeshDataComponent(const EntityID& rhs);
+	GLTextureDataComponent* addGLTextureDataComponent(const EntityID& rhs);
 
-	GLMeshDataComponent* getGLMeshDataComponent(EntityID rhs);
-	GLTextureDataComponent* getGLTextureDataComponent(EntityID rhs);
+	GLMeshDataComponent* getGLMeshDataComponent(const EntityID& rhs);
+	GLTextureDataComponent* getGLTextureDataComponent(const EntityID& rhs);
 
 	GLuint getUniformLocation(GLuint shaderProgram, const std::string& uniformName);
 	GLuint getUniformBlockIndex(GLuint shaderProgram, const std::string& uniformBlockName);
@@ -59,7 +59,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	void attachTextureToFramebuffer(TextureDataComponent* TDC, GLTextureDataComponent* GLTextureDataComponent, GLFrameBufferComponent* GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel);
 	void activateShaderProgram(GLShaderProgramComponent* GLShaderProgramComponent);
-	void drawMesh(EntityID rhs);
+	void drawMesh(const EntityID& rhs);
 	void drawMesh(MeshDataComponent* MDC);
 	void drawMesh(size_t indicesSize, MeshPrimitiveTopology MeshPrimitiveTopology, GLMeshDataComponent* GLMDC);
 	void activateTexture(TextureDataComponent* TDC, int activateIndex);

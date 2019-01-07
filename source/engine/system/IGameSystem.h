@@ -7,10 +7,10 @@
 #include "../../game/IGameInstance.h"
 
 #define spawnComponentInterfaceDecl( className ) \
-INNO_SYSTEM_EXPORT virtual void spawnComponent(className* rhs, EntityID parentEntity) = 0;
+INNO_SYSTEM_EXPORT virtual void spawnComponent(className* rhs, const EntityID& parentEntity) = 0;
 
 #define getComponentInterfaceDecl( className ) \
-INNO_SYSTEM_EXPORT virtual className* get##className(EntityID parentEntity) = 0;
+INNO_SYSTEM_EXPORT virtual className* get##className(const EntityID& parentEntity) = 0;
 
 #define getComponentInterfaceCall( className, parentEntity ) \
 get##className(parentEntity)
@@ -38,7 +38,7 @@ protected:
 	spawnComponentInterfaceDecl(EnvironmentCaptureComponent);
 
 public:
-	template <typename T> T * spawn(EntityID parentEntity)
+	template <typename T> T * spawn(const EntityID& parentEntity)
 	{
 		auto l_ptr = g_pMemorySystem->spawn<T>();
 		if (l_ptr)
@@ -63,7 +63,7 @@ protected:
 	getComponentInterfaceDecl(EnvironmentCaptureComponent);
 
 public:
-	template <typename T> T * get(EntityID parentEntity)
+	template <typename T> T * get(const EntityID& parentEntity)
 	{
 		return new T();
 	};
@@ -79,46 +79,47 @@ public:
 	INNO_SYSTEM_EXPORT virtual void setGameInstance(IGameInstance* rhs) = 0;
 
 	INNO_SYSTEM_EXPORT virtual EntityID createEntity(const std::string& entityName) = 0;
+	INNO_SYSTEM_EXPORT virtual std::string getEntityName(const EntityID & entityID) = 0;
 
 	IMemorySystem* g_pMemorySystem;
 };
 
-template <> inline TransformComponent * IGameSystem::get(EntityID parentEntity)
+template <> inline TransformComponent * IGameSystem::get(const EntityID& parentEntity)
 {
 	return getComponentInterfaceCall(TransformComponent, parentEntity);
 };
 
-template <> inline VisibleComponent * IGameSystem::get(EntityID parentEntity)
+template <> inline VisibleComponent * IGameSystem::get(const EntityID& parentEntity)
 {
 	return getComponentInterfaceCall(VisibleComponent, parentEntity);
 };
 
-template <> inline DirectionalLightComponent * IGameSystem::get(EntityID parentEntity)
+template <> inline DirectionalLightComponent * IGameSystem::get(const EntityID& parentEntity)
 {
 	return getComponentInterfaceCall(DirectionalLightComponent, parentEntity);
 };
 
-template <> inline PointLightComponent * IGameSystem::get(EntityID parentEntity)
+template <> inline PointLightComponent * IGameSystem::get(const EntityID& parentEntity)
 {
 	return getComponentInterfaceCall(PointLightComponent, parentEntity);
 };
 
-template <> inline SphereLightComponent * IGameSystem::get(EntityID parentEntity)
+template <> inline SphereLightComponent * IGameSystem::get(const EntityID& parentEntity)
 {
 	return getComponentInterfaceCall(SphereLightComponent, parentEntity);
 };
 
-template <> inline CameraComponent * IGameSystem::get(EntityID parentEntity)
+template <> inline CameraComponent * IGameSystem::get(const EntityID& parentEntity)
 {
 	return getComponentInterfaceCall(CameraComponent, parentEntity);
 };
 
-template <> inline InputComponent * IGameSystem::get(EntityID parentEntity)
+template <> inline InputComponent * IGameSystem::get(const EntityID& parentEntity)
 {
 	return getComponentInterfaceCall(InputComponent, parentEntity);
 };
 
-template <> inline EnvironmentCaptureComponent * IGameSystem::get(EntityID parentEntity)
+template <> inline EnvironmentCaptureComponent * IGameSystem::get(const EntityID& parentEntity)
 {
 	return getComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity);
 };

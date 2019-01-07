@@ -1,13 +1,13 @@
 #pragma once
 #include "../common/InnoType.h"
 
-INNO_PRIVATE_SCOPE GLRenderingSystemNS
+INNO_PRIVATE_SCOPE GLFinalRenderingPassUtilities
 {
-	void initializeFinalPass();
+	void initialize();
 
-	void updateFinalPass();
+	void update();
 
-	bool resizeFinalPass();
+	bool resize();
 
 	bool reloadFinalPassShaders();
 }

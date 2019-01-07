@@ -17,7 +17,7 @@ public:
 	~PhysicsDataComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	std::vector<PhysicsData> m_physicsDatas;
 };

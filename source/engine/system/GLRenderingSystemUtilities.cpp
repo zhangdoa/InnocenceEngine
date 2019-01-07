@@ -172,14 +172,14 @@ bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GL
 	return true;
 }
 
-GLShaderProgramComponent * GLRenderingSystemNS::addGLShaderProgramComponent(EntityID rhs)
+GLShaderProgramComponent * GLRenderingSystemNS::addGLShaderProgramComponent(const EntityID& rhs)
 {
 	GLShaderProgramComponent* newShaderProgram = g_pCoreSystem->getMemorySystem()->spawn<GLShaderProgramComponent>();
 	newShaderProgram->m_parentEntity = rhs;
 	return newShaderProgram;
 }
 
-GLMeshDataComponent * GLRenderingSystemNS::addGLMeshDataComponent(EntityID rhs)
+GLMeshDataComponent * GLRenderingSystemNS::addGLMeshDataComponent(const EntityID& rhs)
 {
 	GLMeshDataComponent* newMesh = g_pCoreSystem->getMemorySystem()->spawn<GLMeshDataComponent>();
 	newMesh->m_parentEntity = rhs;
@@ -188,7 +188,7 @@ GLMeshDataComponent * GLRenderingSystemNS::addGLMeshDataComponent(EntityID rhs)
 	return newMesh;
 }
 
-GLTextureDataComponent * GLRenderingSystemNS::addGLTextureDataComponent(EntityID rhs)
+GLTextureDataComponent * GLRenderingSystemNS::addGLTextureDataComponent(const EntityID& rhs)
 {
 	GLTextureDataComponent* newTexture = g_pCoreSystem->getMemorySystem()->spawn<GLTextureDataComponent>();
 	newTexture->m_parentEntity = rhs;
@@ -197,7 +197,7 @@ GLTextureDataComponent * GLRenderingSystemNS::addGLTextureDataComponent(EntityID
 	return newTexture;
 }
 
-GLMeshDataComponent * GLRenderingSystemNS::getGLMeshDataComponent(EntityID rhs)
+GLMeshDataComponent * GLRenderingSystemNS::getGLMeshDataComponent(const EntityID& rhs)
 {
 	auto result = m_meshMap.find(rhs);
 	if (result != m_meshMap.end())
@@ -210,7 +210,7 @@ GLMeshDataComponent * GLRenderingSystemNS::getGLMeshDataComponent(EntityID rhs)
 	}
 }
 
-GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(EntityID rhs)
+GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(const EntityID& rhs)
 {
 	auto result = m_textureMap.find(rhs);
 	if (result != m_textureMap.end())
@@ -734,7 +734,7 @@ void GLRenderingSystemNS::activateShaderProgram(GLShaderProgramComponent * GLSha
 	glUseProgram(GLShaderProgramComponent->m_program);
 }
 
-void GLRenderingSystemNS::drawMesh(EntityID rhs)
+void GLRenderingSystemNS::drawMesh(const EntityID& rhs)
 {
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(rhs);
 	if (l_MDC)

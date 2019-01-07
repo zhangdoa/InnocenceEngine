@@ -8,7 +8,7 @@ public:
 	~CameraComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	float m_FOVX = 0.0;
 	float m_WHRatio = 0.0;

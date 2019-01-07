@@ -9,7 +9,7 @@ public:
 	~PointLightComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	// Unit: Meter (m)
 	float m_attenuationRadius = 1.0f;

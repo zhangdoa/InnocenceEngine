@@ -3,12 +3,6 @@
 #include "../common/ComponentHeaders.h"
 #include "../common/InnoConcurrency.h"
 
-using componentMetadataPair = std::pair<componentType, std::string>;
-using componentMetadataMap = std::unordered_map<void*, componentMetadataPair>;
-using enitityChildrenComponentsMetadataMap = std::unordered_map<EntityID, componentMetadataMap>;
-using enitityNamePair = std::pair<EntityID, std::string>;
-using enitityNameMap = std::unordered_map<EntityID, std::string>;
-
 class GameSystemComponent
 {
 public:

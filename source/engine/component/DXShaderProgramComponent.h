@@ -9,7 +9,7 @@ public:
 	~DXShaderProgramComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	ID3D11VertexShader* m_vertexShader = 0;
 	ID3D11PixelShader* m_pixelShader = 0;

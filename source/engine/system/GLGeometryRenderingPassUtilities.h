@@ -1,13 +1,13 @@
 #pragma once
 #include "../common/InnoType.h"
 
-INNO_PRIVATE_SCOPE GLRenderingSystemNS
+INNO_PRIVATE_SCOPE GLGeometryRenderingPassUtilities
 {
-	void initializeGeometryPass();
+	void initialize();
 
-	void updateGeometryPass();
+	void update();
 
-	bool resizeGeometryPass();
+	bool resize();
 
 	bool reloadOpaquePassShaders();
 

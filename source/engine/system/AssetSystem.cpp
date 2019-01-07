@@ -1,15 +1,7 @@
 #include "AssetSystem.h"
 
-#include "../common/config.h"
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
-#include <experimental/filesystem>
-#endif
-
 #include "../common/ComponentHeaders.h"
 
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include "assimp/Importer.hpp"
 #include "assimp/Exporter.hpp"
 #include "assimp/scene.h"
@@ -18,6 +10,8 @@
 #include "../component/AssetSystemComponent.h"
 #include "../component/GameSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
+
+namespace fs = std::filesystem;
 
 #include "ICoreSystem.h"
 
@@ -168,7 +162,7 @@ MeshDataComponent* InnoAssetSystem::getMeshDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't find MeshDataComponent by EntityID: " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't find MeshDataComponent by EntityID: " + EntityID + " !");
 		return nullptr;
 	}
 }
@@ -182,7 +176,7 @@ TextureDataComponent * InnoAssetSystem::getTextureDataComponent(EntityID EntityI
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't find TextureDataComponent by EntityID: " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't find TextureDataComponent by EntityID: " + EntityID + " !");
 		return nullptr;
 	}
 }
@@ -280,7 +274,7 @@ bool InnoAssetSystem::removeMeshDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't remove MeshDataComponent by EntityID: " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't remove MeshDataComponent by EntityID: " + EntityID + " !");
 		return false;
 	}
 }
@@ -302,7 +296,7 @@ bool InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't remove TextureDataComponent by EntityID: " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't remove TextureDataComponent by EntityID: " + EntityID + " !");
 		return false;
 	}
 }
@@ -322,7 +316,7 @@ bool InnoAssetSystem::releaseRawDataForMeshDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't release raw data for MeshDataComponent by EntityID: " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't release raw data for MeshDataComponent by EntityID: " + EntityID + " !");
 		return false;
 	}
 }
@@ -341,7 +335,7 @@ bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't release raw data for TextureDataComponent by EntityID : " + std::to_string(EntityID) + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't release raw data for TextureDataComponent by EntityID : " + EntityID + " !");
 		return false;
 	}
 }
@@ -617,7 +611,7 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	};
 
 	auto path = "..//res";
-	namespace fs = std::experimental::filesystem;
+
 	std::function<void(const fs::path& pathToShow, int level, DirectoryMetadata* parentDirectoryMetadata)> f_directoryTreeBuilder =
 		[&](const fs::path& pathToShow, int level, DirectoryMetadata* parentDirectoryMetadata) {
 		if (fs::exists(pathToShow) && fs::is_directory(pathToShow))
@@ -1064,9 +1058,9 @@ TextureDataComponent* InnoAssetSystemNS::loadTextureFromDisk(const std::string& 
 			l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
 			l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
 			l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+			l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 			l_TDC->m_textureDataDesc.textureWidth = width;
 			l_TDC->m_textureDataDesc.textureHeight = height;
-			l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 			l_TDC->m_textureData = { data };
 			l_TDC->m_objectStatus = ObjectStatus::STANDBY;
 			g_AssetSystemComponent->m_uninitializedTextureComponents.push(l_TDC);

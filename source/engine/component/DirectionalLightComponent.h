@@ -9,7 +9,7 @@ public:
 	~DirectionalLightComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	// Unit: Lumen (lm)
 	float m_luminousFlux = 1.0f;

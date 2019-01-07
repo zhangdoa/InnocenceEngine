@@ -18,7 +18,7 @@ public:
 	~GLFrameBufferComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	GLuint m_FBO = 0;
 	GLuint m_RBO = 0;

@@ -18,7 +18,15 @@ enum class ObjectStatus
 	SHUTDOWN,
 };
 
-using EntityID = unsigned long;
+using EntityID = std::string;
+
+enum class componentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SphereLightComponent, CameraComponent, InputComponent, EnvironmentCaptureComponent, PhysicsDataComponent, MeshDataComponent, MaterialDataComponent, TextureDataComponent };
+
+using componentMetadataPair = std::pair<componentType, std::string>;
+using componentMetadataMap = std::unordered_map<void*, componentMetadataPair>;
+using enitityChildrenComponentsMetadataMap = std::unordered_map<EntityID, componentMetadataMap>;
+using enitityNamePair = std::pair<EntityID, std::string>;
+using enitityNameMap = std::unordered_map<EntityID, std::string>;
 
 struct TimeData
 {

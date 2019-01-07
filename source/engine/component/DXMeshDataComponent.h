@@ -9,7 +9,7 @@ public:
 	~DXMeshDataComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	ID3D11Buffer* m_vertexBuffer = 0;
 	ID3D11Buffer* m_indexBuffer = 0;

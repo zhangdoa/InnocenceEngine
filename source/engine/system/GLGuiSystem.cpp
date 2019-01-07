@@ -607,7 +607,7 @@ void ImGuiWrapper::showVisiableComponentPropertyEditor(void * rhs)
 		{
 			for (auto& i : l_rhs->m_modelMap)
 			{
-				if (ImGui::Selectable(std::to_string(i.first->m_parentEntity).c_str(), selectedComponent == i.second))
+				if (ImGui::Selectable(i.first->m_parentEntity.c_str(), selectedComponent == i.second))
 				{
 					selectedComponent = i.second;
 				}

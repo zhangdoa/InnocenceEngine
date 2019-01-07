@@ -12,7 +12,7 @@ public:
 	~GLRenderPassComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	GLFrameBufferComponent* m_GLFBC = 0;
 	std::vector<TextureDataComponent*> m_TDCs;

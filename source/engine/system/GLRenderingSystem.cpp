@@ -34,7 +34,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void initializeHaltonSampler();
 
 	void prepareRenderingData();
-	bool prepareGPassData();
+	bool prepareGeometryPassData();
 	bool prepareLightPassData();
 	bool prepareBillboardPassData();
 
@@ -116,19 +116,19 @@ bool GLRenderingSystemNS::setup()
 		switch (renderPassType)
 		{
 		case RenderPassType::OpaquePass:
-			reloadOpaquePassShaders();
+			GLGeometryRenderingPassUtilities::reloadOpaquePassShaders();
 			break;
 		case RenderPassType::TransparentPass:
-			reloadTransparentPassShaders();
+			GLGeometryRenderingPassUtilities::reloadTransparentPassShaders();
 			break;
 		case RenderPassType::TerrainPass:
-			reloadTerrainPassShaders();
+			GLGeometryRenderingPassUtilities::reloadTerrainPassShaders();
 			break;
 		case RenderPassType::LightPass:
-			reloadLightPassShaders();
+			GLLightRenderingPassUtilities::reloadLightPassShaders();
 			break;
 		case RenderPassType::FinalPass:
-			reloadFinalPassShaders();
+			GLFinalRenderingPassUtilities::reloadFinalPassShaders();
 			break;
 		default: break;
 		}
@@ -136,7 +136,7 @@ bool GLRenderingSystemNS::setup()
 
 	RenderingSystemComponent::get().f_captureEnvironment =
 		[]() {
-		updateEnvironmentPass();
+		GLEnvironmentRenderingPassUtilities::update();
 	};
 
 	if (RenderingSystemComponent::get().m_MSAAdepth)
@@ -162,11 +162,11 @@ bool GLRenderingSystemNS::initialize()
 {
 	initializeDefaultAssets();
 	initializeHaltonSampler();
-	initializeEnvironmentPass();
-	initializeShadowPass();
-	initializeGeometryPass();
-	initializeLightPass();
-	initializeFinalPass();
+	GLEnvironmentRenderingPassUtilities::initialize();
+	GLShadowRenderingPassUtilities::initialize();
+	GLGeometryRenderingPassUtilities::initialize();
+	GLLightRenderingPassUtilities::initialize();
+	GLFinalRenderingPassUtilities::initialize();
 
 	return true;
 }
@@ -239,10 +239,10 @@ bool GLRenderingSystemNS::update()
 
 	prepareRenderingData();
 
-	updateShadowPass();
-	updateGeometryPass();
-	updateLightPass();
-	updateFinalPass();
+	GLShadowRenderingPassUtilities::update();
+	GLGeometryRenderingPassUtilities::update();
+	GLLightRenderingPassUtilities::update();
+	GLFinalRenderingPassUtilities::update();
 
 	return true;
 }
@@ -287,7 +287,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 	GLRenderingSystemComponent::get().m_CamTrans_prev = t_prev;
 	GLRenderingSystemComponent::get().m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
-	prepareGPassData();
+	prepareGeometryPassData();
 
 	prepareLightPassData();
 
@@ -298,7 +298,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 }
 
 
-bool GLRenderingSystemNS::prepareGPassData()
+bool GLRenderingSystemNS::prepareGeometryPassData()
 {
 	//UBO
 	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjJittered = GLRenderingSystemComponent::get().m_CamProjJittered;
@@ -530,9 +530,9 @@ bool GLRenderingSystemNS::resize()
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
 
-	resizeGeometryPass();
-	resizeLightPass();
-	resizeFinalPass();
+	GLGeometryRenderingPassUtilities::resize();
+	GLLightRenderingPassUtilities::resize();
+	GLFinalRenderingPassUtilities::resize();
 
 	return true;
 }

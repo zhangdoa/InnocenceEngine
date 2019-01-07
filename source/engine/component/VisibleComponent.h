@@ -15,7 +15,7 @@ public:
 	~VisibleComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	VisiblilityType m_visiblilityType = VisiblilityType::INNO_INVISIBLE;
 	MeshShapeType m_meshShapeType = MeshShapeType::QUAD;

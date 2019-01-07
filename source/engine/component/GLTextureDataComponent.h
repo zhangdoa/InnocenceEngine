@@ -21,7 +21,7 @@ public:
 	~GLTextureDataComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	GLuint m_TAO = 0;
 	GLTextureDataDesc m_GLTextureDataDesc = GLTextureDataDesc();

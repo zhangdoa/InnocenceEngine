@@ -1498,7 +1498,22 @@ namespace InnoMath
 
 	INNO_FORCEINLINE EntityID createEntityID()
 	{
-		return std::rand();
+		std::stringstream ss;
+		for (unsigned int i = 0; i < 16; i++) {
+			auto rc = []() -> unsigned char {
+				std::random_device rd;
+				std::mt19937 gen(rd());
+				std::uniform_int_distribution<> dis(0, 255);
+				return static_cast<unsigned char>(dis(gen));
+			};
+			std::stringstream hexstream;
+			hexstream << std::hex << int(rc());
+			auto hex = hexstream.str();
+			ss << (hex.length() < 2 ? '0' + hex : hex);
+		}
+
+		EntityID result = ss.str();
+		return result;
 	}
 
 	template<class T>

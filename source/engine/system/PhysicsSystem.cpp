@@ -38,6 +38,7 @@ namespace InnoPhysicsSystemNS
 	void updateSceneAABB(AABB rhs);
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	EntityID m_entityID;
 
 	InnoFuture<void>* m_asyncTask;
 
@@ -56,12 +57,14 @@ namespace InnoPhysicsSystemNS
 
 bool InnoPhysicsSystemNS::setup()
 {
+	m_entityID = InnoMath::createEntityID();
+
 	g_WindowSystemComponent = &WindowSystemComponent::get();
 	g_GameSystemComponent = &GameSystemComponent::get();
 	g_AssetSystemComponent = &AssetSystemComponent::get();
 	g_PhysicsSystemComponent = &PhysicsSystemComponent::get();
 
-	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(0);
+	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_entityID);
 	f_mouseSelect = [&]() {
 		g_PhysicsSystemComponent->m_AABBWireframeDataPack.clear();
 

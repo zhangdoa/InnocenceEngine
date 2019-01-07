@@ -7,7 +7,9 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-INNO_PRIVATE_SCOPE GLRenderingSystemNS
+using namespace GLRenderingSystemNS;
+
+INNO_PRIVATE_SCOPE GLShadowRenderingPassUtilities
 {
 	GLFrameBufferDesc DirLightShadowPassFBDesc = GLFrameBufferDesc();
 	TextureDataDesc DirLightShadowPassTextureDesc = TextureDataDesc();
@@ -15,11 +17,15 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	GLFrameBufferDesc PointLightShadowPassFBDesc = GLFrameBufferDesc();
 	TextureDataDesc PointLightShadowPassTextureDesc = TextureDataDesc();
 
+	EntityID m_entityID;
+
 	void drawAllMeshDataComponents();
 }
 
-void GLRenderingSystemNS::initializeShadowPass()
+void GLShadowRenderingPassUtilities::initialize()
 {
+	m_entityID = InnoMath::createEntityID();
+
 	DirLightShadowPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	DirLightShadowPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
 	DirLightShadowPassFBDesc.sizeX = 2048;
@@ -59,7 +65,7 @@ void GLRenderingSystemNS::initializeShadowPass()
 	GLShadowRenderPassComponent::get().m_PointLight_GLRPC = addGLRenderPassComponent(1, PointLightShadowPassFBDesc, PointLightShadowPassTextureDesc);
 
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(0);
+	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, GLShadowRenderPassComponent::get().m_shaderFilePaths);
 
 	GLShadowRenderPassComponent::get().m_shadowPass_uni_p = getUniformLocation(
@@ -75,7 +81,7 @@ void GLRenderingSystemNS::initializeShadowPass()
 	GLShadowRenderPassComponent::get().m_SPC = rhs;
 }
 
-void GLRenderingSystemNS::drawAllMeshDataComponents()
+void GLShadowRenderingPassUtilities::drawAllMeshDataComponents()
 {
 	for (auto& l_visibleComponent : GameSystemComponent::get().m_VisibleComponents)
 	{
@@ -100,7 +106,7 @@ void GLRenderingSystemNS::drawAllMeshDataComponents()
 	}
 }
 
-void GLRenderingSystemNS::updateShadowPass()
+void GLShadowRenderingPassUtilities::update()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);

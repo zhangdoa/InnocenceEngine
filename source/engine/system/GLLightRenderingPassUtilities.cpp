@@ -11,23 +11,29 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-INNO_PRIVATE_SCOPE GLRenderingSystemNS
+using namespace GLRenderingSystemNS;
+
+INNO_PRIVATE_SCOPE GLLightRenderingPassUtilities
 {
 	void initializeLightPassShaders();
 	void bindLightPassUniformLocations(GLShaderProgramComponent* rhs);
+
+	EntityID m_entityID;
 }
 
-void GLRenderingSystemNS::initializeLightPass()
+void GLLightRenderingPassUtilities::initialize()
 {
+	m_entityID = InnoMath::createEntityID();
+
 	GLLightRenderPassComponent::get().m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	initializeLightPassShaders();
 }
 
-void GLRenderingSystemNS::initializeLightPassShaders()
+void GLLightRenderingPassUtilities::initializeLightPassShaders()
 {
 	// shader programs and shaders
-	auto l_GLSPC = addGLShaderProgramComponent(0);
+	auto l_GLSPC = addGLShaderProgramComponent(m_entityID);
 
 	initializeGLShaderProgramComponent(l_GLSPC, GLLightRenderPassComponent::get().m_shaderFilePaths);
 
@@ -36,7 +42,7 @@ void GLRenderingSystemNS::initializeLightPassShaders()
 	GLLightRenderPassComponent::get().m_GLSPC = l_GLSPC;
 }
 
-void GLRenderingSystemNS::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
+void GLLightRenderingPassUtilities::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
 {
 	updateTextureUniformLocations(rhs->m_program, GLLightRenderPassComponent::get().m_textureUniformNames);
 
@@ -94,7 +100,7 @@ void GLRenderingSystemNS::bindLightPassUniformLocations(GLShaderProgramComponent
 		"uni_isEmissive");
 }
 
-void GLRenderingSystemNS::updateLightPass()
+void GLLightRenderingPassUtilities::update()
 {
 	glDisable(GL_DEPTH_TEST);
 
@@ -247,14 +253,14 @@ void GLRenderingSystemNS::updateLightPass()
 	glDisable(GL_STENCIL_TEST);
 }
 
-bool GLRenderingSystemNS::resizeLightPass()
+bool GLLightRenderingPassUtilities::resize()
 {
 	resizeGLRenderPassComponent(GLLightRenderPassComponent::get().m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
 
 	return true;
 }
 
-bool GLRenderingSystemNS::reloadLightPassShaders()
+bool GLLightRenderingPassUtilities::reloadLightPassShaders()
 {
 	deleteShaderProgram(GLLightRenderPassComponent::get().m_GLSPC);
 

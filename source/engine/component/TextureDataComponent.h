@@ -10,9 +10,9 @@ struct TextureDataDesc
 	TextureFilterMethod textureMinFilterMethod;
 	TextureFilterMethod textureMagFilterMethod;
 	TextureWrapMethod textureWrapMethod;
+	TexturePixelDataType texturePixelDataType;
 	unsigned int textureWidth;
 	unsigned int textureHeight;
-	TexturePixelDataType texturePixelDataType;
 	vec4 borderColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 };
 
@@ -23,7 +23,7 @@ public:
 	~TextureDataComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity = 0;
+	EntityID m_parentEntity;
 
 	TextureDataDesc m_textureDataDesc = TextureDataDesc();
 	std::vector<void*> m_textureData;

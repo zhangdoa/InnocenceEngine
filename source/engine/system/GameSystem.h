@@ -2,10 +2,10 @@
 #include "IGameSystem.h"
 
 #define spawnComponentImplDecl( className ) \
-INNO_SYSTEM_EXPORT void spawnComponent(className* rhs, EntityID parentEntity) override;
+INNO_SYSTEM_EXPORT void spawnComponent(className* rhs, const EntityID& parentEntity) override;
 
 #define getComponentImplDecl( className ) \
-INNO_SYSTEM_EXPORT className* get##className(EntityID parentEntity) override;
+INNO_SYSTEM_EXPORT className* get##className(const EntityID& parentEntity) override;
 
 class InnoGameSystem : INNO_IMPLEMENT IGameSystem
 {
@@ -47,4 +47,5 @@ public:
 	INNO_SYSTEM_EXPORT void setGameInstance(IGameInstance* rhs) override;
 
 	INNO_SYSTEM_EXPORT EntityID createEntity(const std::string& entityName) override;
+	INNO_SYSTEM_EXPORT std::string getEntityName(const EntityID & entityID) override;
 };
