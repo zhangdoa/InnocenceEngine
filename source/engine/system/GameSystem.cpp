@@ -207,7 +207,7 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::spawnComponent(className* rhs, const Ent
 	auto l_componentType = InnoUtility::getComponentType<className>(); \
 	auto l_componentMetaDataPair = componentMetadataPair(l_componentType, l_componentName); \
 \
-	auto& result = InnoGameSystemNS::g_GameSystemComponent->m_enitityChildrenComponentsMetadataMap.find(parentEntity); \
+	auto result = InnoGameSystemNS::g_GameSystemComponent->m_enitityChildrenComponentsMetadataMap.find(parentEntity); \
 	if (result != InnoGameSystemNS::g_GameSystemComponent->m_enitityChildrenComponentsMetadataMap.end()) \
 	{ \
 		auto l_componentMetadataMap = &result->second; \

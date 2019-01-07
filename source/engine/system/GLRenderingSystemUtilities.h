@@ -41,13 +41,13 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void bindUniformBlock(GLuint UBO, GLuint UBOSize, GLuint program, const std::string & uniformBlockName, GLuint uniformBlockBindingPoint);
 	void updateTextureUniformLocations(GLuint program, const std::vector<std::string>& UniformNames);
 
+	void updateUBOImpl(const GLint& UBO, size_t size, const void* UBOValue);
+
 	template<typename T>
 	void updateUBO(const GLint& UBO, const T& UBOValue)
 	{
 		updateUBOImpl(UBO, sizeof(T), &UBOValue);
 	}
-
-	void updateUBOImpl(const GLint& UBO, size_t size, const void* UBOValue);
 
 	void updateUniform(const GLint uniformLocation, bool uniformValue);
 	void updateUniform(const GLint uniformLocation, int uniformValue);

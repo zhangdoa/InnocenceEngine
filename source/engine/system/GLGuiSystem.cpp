@@ -490,11 +490,11 @@ void ImGuiWrapper::showWorldExplorer()
 	static void* selectedComponent = nullptr;
 	static componentType selectedComponentType;
 
-	for (auto& i : GameSystemComponent::get().m_enitityNameMap)
+	for (auto i : GameSystemComponent::get().m_enitityNameMap)
 	{
 		if (ImGui::TreeNode(i.second.c_str()))
 		{
-			auto& result = GameSystemComponent::get().m_enitityChildrenComponentsMetadataMap.find(i.first);
+			auto result = GameSystemComponent::get().m_enitityChildrenComponentsMetadataMap.find(i.first);
 			if (result != GameSystemComponent::get().m_enitityChildrenComponentsMetadataMap.end())
 			{
 				auto& l_componentNameMap = result->second;

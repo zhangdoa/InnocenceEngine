@@ -35,6 +35,7 @@ INNO_PRIVATE_SCOPE InnoVisionSystemNS
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
 	std::string l_windowArguments = pScmdline;
+
 	if (l_windowArguments == "")
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: No arguments found!");
@@ -51,6 +52,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 	}
 
 	std::string l_rendererArguments = l_windowArguments.substr(l_argPos + 9);
+
 	if (l_rendererArguments == "DX")
 	{
 		#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32

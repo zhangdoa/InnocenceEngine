@@ -1,3 +1,4 @@
+#!/bin/sh
 cd source/external/gitsubmodules/glfw
 
 mkdir build_dll

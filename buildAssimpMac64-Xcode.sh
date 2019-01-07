@@ -1,3 +1,4 @@
+#!/bin/sh
 cd source/external/gitsubmodules/assimp
 
 mkdir build_dll

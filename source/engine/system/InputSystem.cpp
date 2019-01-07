@@ -44,7 +44,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::update()
 {
 	for (auto& i : InnoInputSystemNS::g_WindowSystemComponent->m_buttonStatus)
 	{
-		auto& l_keybinding = InnoInputSystemNS::g_WindowSystemComponent->m_buttonStatusCallback.find(ButtonData{ i.first, i.second });
+		auto l_keybinding = InnoInputSystemNS::g_WindowSystemComponent->m_buttonStatusCallback.find(ButtonData{ i.first, i.second });
 		if (l_keybinding != InnoInputSystemNS::g_WindowSystemComponent->m_buttonStatusCallback.end())
 		{
 			for (auto& j : l_keybinding->second)

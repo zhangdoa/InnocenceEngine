@@ -853,7 +853,7 @@ void* InnoFileSystem::loadComponentFromDiskImpl(const std::string& fileName)
 
 	l_file.close();
 
-	delete buffer;
+	delete[] buffer;
 
 	return l_ptr;
 }

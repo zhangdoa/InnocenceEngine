@@ -38,7 +38,7 @@ Run following scripts in a sequence:
 
 Tested under Ubuntu 18.04 LTS
 
-Prerequisites: GCC 7.0 or Clang 6.0 or higher + CMake 3.10 or higher + OpenGL library(lGL)
+Prerequisites: GCC 7.0 or Clang 7.0 or higher + CMake 3.10 or higher + OpenGL library(lGL)
 
 Run following scripts in a sequence:
 
@@ -54,7 +54,7 @@ echo | postBuildLinux64.sh
 
 Tested under version 10.13.6
 
-Prerequisites: CMake 3.10 or higher + XCode 9.4.1 or higher
+Prerequisites: CMake 3.10 or higher + Clang 7.0 or higher
 
 Run following scripts in a sequence:
 
@@ -62,7 +62,7 @@ Run following scripts in a sequence:
 echo | setupMac.sh
 echo | buildAssimpMac64-Xcode.sh
 echo | buildGLFWMac64-Xcode.sh
-echo | buildMac64-Xcode.sh
+echo | buildMac64.sh
 echo | postBuildMac64.sh
 ```
 

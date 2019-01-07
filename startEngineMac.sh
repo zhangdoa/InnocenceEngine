@@ -1,2 +1,3 @@
 #!/bin/sh
-bin/Debug/InnoMain "-renderer GL"
+cd bin
+./InnoMain "-renderer GL"
