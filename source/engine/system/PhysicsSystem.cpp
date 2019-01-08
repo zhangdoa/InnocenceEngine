@@ -55,7 +55,7 @@ namespace InnoPhysicsSystemNS
 
 bool InnoPhysicsSystemNS::setup()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_entityID = g_pCoreSystem->getGameSystem()->createEntity("PhysicsSystemPicker");
 
 	g_WindowSystemComponent = &WindowSystemComponent::get();
 	g_GameSystemComponent = &GameSystemComponent::get();
@@ -63,6 +63,7 @@ bool InnoPhysicsSystemNS::setup()
 	g_PhysicsSystemComponent = &PhysicsSystemComponent::get();
 
 	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_entityID);
+
 	f_mouseSelect = [&]() {
 		g_PhysicsSystemComponent->m_AABBWireframeDataPack.clear();
 

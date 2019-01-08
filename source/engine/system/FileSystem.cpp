@@ -112,6 +112,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	template<>
 	saveComponentDataDefi(EnvironmentCaptureComponent);
 
+	bool loadJsonDataFromDisk(const std::string & fileName, json & data);
 	bool saveJsonDataToDisk(const std::string & fileName, const json & data);
 
 	bool prepareForLoadingScene(const std::string& fileName);
@@ -164,6 +165,8 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	std::vector<InnoFuture<void>> m_asyncTask;
 
 	std::string m_nextLoadingScene;
+	std::string m_currentScene;
+
 	ThreadSafeQueue <std::pair<TransformComponent*, std::string>> m_orphanTransformComponents;
 	ThreadSafeQueue <std::pair<CameraComponent*, std::string>> m_orphanCameraComponents;
 	ThreadSafeQueue <std::pair<InputComponent*, std::string>> m_orphanInputComponents;
@@ -420,6 +423,23 @@ void InnoFileSystemNS::from_json(const json & j, EnvironmentCaptureComponent & p
 	p.m_cubemapTextureFileName = j["CubemapName"];
 }
 
+
+bool InnoFileSystemNS::loadJsonDataFromDisk(const std::string & fileName, json & data)
+{
+	std::ifstream i(fileName);
+
+	if (!i.is_open())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't open scene : " + fileName + " !");
+		return false;
+	}
+
+	i >> data;
+	i.close();
+
+	return true;
+}
+
 bool InnoFileSystemNS::saveJsonDataToDisk(const std::string & fileName, const json & data)
 {
 	std::ofstream o;
@@ -440,19 +460,17 @@ bool InnoFileSystemNS::prepareForLoadingScene(const std::string& fileName)
 
 bool InnoFileSystemNS::loadScene(const std::string& fileName)
 {
-	std::ifstream i(fileName);
-
-	if (!i.is_open())
+	if (m_currentScene == fileName)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't open scene : " + fileName + " !");
-
-		return false;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: scene " + fileName + " has already loaded now.");
+		return true;
 	}
 
 	json j;
-	i >> j;
-
-	i.close();
+	if (!loadJsonDataFromDisk(fileName, j))
+	{
+		return false;
+	}
 
 	cleanScene();
 
@@ -462,7 +480,7 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 	{
 		if (i["EntityName"] != "RootTransform")
 		{
-			GameSystemComponent::get().m_enitityNameMap.erase(i["EntityID"]);
+			g_pCoreSystem->getGameSystem()->removeEntity(i["EntityName"]);
 
 			auto l_EntityID = g_pCoreSystem->getGameSystem()->createEntity(i["EntityName"]);
 
@@ -537,6 +555,8 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 	}
 
 	g_pCoreSystem->getAssetSystem()->loadAssetsForComponents();
+
+	m_currentScene = fileName;
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene " + fileName + " has been loaded.");
 
@@ -1024,110 +1044,9 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::saveScene(const std::string & fileName)
 
 void InnoFileSystem::saveComponentToDiskImpl(componentType type, size_t classSize, void* ptr, const std::string& fileName)
 {
-	if (!ptr) return;
-	char* l_ptr_raw = reinterpret_cast<char*>(ptr);
-	unsigned int l_engineVer = 7;
-	auto l_time = g_pCoreSystem->getTimeSystem()->getCurrentTime();
-
-	std::ofstream l_file;
-	l_file.open(fileName + ".InnoAsset", std::ios::out | std::ios::trunc | std::ios::binary);
-	l_file.write((char*)&type, sizeof(type));
-	l_file.write((char*)&l_engineVer, sizeof(l_engineVer));
-	l_file.write((char*)&l_time, sizeof(l_time));
-	l_file.write(l_ptr_raw, classSize);
-
-	l_file.close();
 }
 
 void* InnoFileSystem::loadComponentFromDiskImpl(const std::string& fileName)
 {
-	std::ifstream l_file;
-	l_file.open(fileName + ".InnoAsset", std::ios::binary);
-
-	if (!l_file.is_open())
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: Can't open file " + fileName + " for deserialization!");
-		return nullptr;
-	}
-
-	// get pointer to associated buffer object
-	std::filebuf* pbuf = l_file.rdbuf();
-	// get file size using buffer's members
-	std::size_t l_size = pbuf->pubseekoff(0, l_file.end, l_file.in);
-	pbuf->pubseekpos(0, l_file.in);
-
-	// allocate memory to contain file data
-	// @TODO: new???
-	char* buffer = new char[l_size];
-
-	// get file data
-	pbuf->sgetn(buffer, l_size);
-
-	char* l_ptr;
-	auto l_classType = *(componentType*)buffer;
-	size_t classSize;
-
-	switch (l_classType)
-	{
-	case componentType::TransformComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<TransformComponent>());
-		classSize = sizeof(TransformComponent);
-		break;
-	case componentType::VisibleComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<VisibleComponent>());
-		classSize = sizeof(VisibleComponent);
-		break;
-	case componentType::DirectionalLightComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<DirectionalLightComponent>());
-		classSize = sizeof(DirectionalLightComponent);
-		break;
-	case componentType::PointLightComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<PointLightComponent>());
-		classSize = sizeof(PointLightComponent);
-		break;
-	case componentType::SphereLightComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<SphereLightComponent>());
-		classSize = sizeof(SphereLightComponent);
-		break;
-	case componentType::CameraComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<CameraComponent>());
-		classSize = sizeof(CameraComponent);
-		break;
-	case componentType::InputComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<InputComponent>());
-		classSize = sizeof(InputComponent);
-		break;
-	case componentType::EnvironmentCaptureComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<EnvironmentCaptureComponent>());
-		classSize = sizeof(EnvironmentCaptureComponent);
-		break;
-	case componentType::PhysicsDataComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<PhysicsDataComponent>());
-		classSize = sizeof(PhysicsDataComponent);
-		break;
-	case componentType::MeshDataComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<MeshDataComponent>());
-		classSize = sizeof(MeshDataComponent);
-		break;
-	case componentType::MaterialDataComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<MaterialDataComponent>());
-		classSize = sizeof(MaterialDataComponent);
-		break;
-	case componentType::TextureDataComponent:
-		l_ptr = reinterpret_cast<char*>(g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>());
-		classSize = sizeof(TextureDataComponent);
-		break;
-	default:
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: Unsupported deserialization data type " + std::to_string((int)l_classType) + " !");
-		return nullptr;
-		break;
-	}
-
-	std::memcpy(l_ptr, buffer + 16, classSize);
-
-	l_file.close();
-
-	delete[] buffer;
-
-	return l_ptr;
+	return nullptr;
 }

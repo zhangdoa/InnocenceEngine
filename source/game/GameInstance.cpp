@@ -53,13 +53,6 @@ void PlayerComponentCollection::setup()
 	m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntityID("playerCharacterCamera");
 
 	m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
-	m_cameraTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	m_cameraTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 3.0f, 2.0f, 1.0f);
-	m_cameraTransformComponent->m_localTransformVector.m_rot = InnoMath::caclRotatedLocalRotator(
-		m_cameraTransformComponent->m_localTransformVector.m_rot,
-		vec4(1.0f, 0.0f, 0.0f, 0.0f),
-		-45.0f
-	);
 
 	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_cameraParentEntity);
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
@@ -180,7 +173,7 @@ bool GameInstanceNS::setup()
 	m_environmentCaptureTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_environmentCaptureEntity);
 	m_environmentCaptureTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 	m_environmentCaptureTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 20.0f, 0.0f, 1.0f);
-	m_environmentCaptureComponent = g_pCoreSystem->getGameSystem()->spawn<EnvironmentCaptureComponent>(m_environmentCaptureEntity);
+	m_environmentCaptureComponent = g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>(m_environmentCaptureEntity);
 	m_environmentCaptureComponent->m_cubemapTextureFileName = "ibl//Playa_Sunrise.hdr";
 
 	m_objectStatus = ObjectStatus::ALIVE;

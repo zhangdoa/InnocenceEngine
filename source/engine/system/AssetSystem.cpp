@@ -708,7 +708,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 	{
 		if (!l_environmentCaptureComponent->m_cubemapTextureFileName.empty())
 		{
-			l_environmentCaptureComponent->m_TDC = InnoAssetSystemNS::loadTexture(l_environmentCaptureComponent->m_cubemapTextureFileName, TextureUsageType::EQUIRETANGULAR);
+			//l_environmentCaptureComponent->m_TDC = InnoAssetSystemNS::loadTexture(l_environmentCaptureComponent->m_cubemapTextureFileName, TextureUsageType::EQUIRETANGULAR);
 		}
 	}
 	for (auto& l_visibleComponent : GameSystemComponent::get().m_VisibleComponents)
@@ -719,7 +719,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 			{
 				if (l_visibleComponent->m_modelFileName != "")
 				{
-					l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
+					//l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
 				}
 			}
 			else

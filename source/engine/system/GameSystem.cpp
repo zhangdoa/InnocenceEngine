@@ -15,7 +15,7 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 
 	void sortTransformComponentsVector();
 
-	void updateTransform();
+	void updateTransformComponent();
 
 	EntityID createEntity(const std::string & entityName);
 
@@ -115,7 +115,7 @@ void InnoGameSystemNS::sortTransformComponentsVector()
 	});
 }
 
-void InnoGameSystemNS::updateTransform()
+void InnoGameSystemNS::updateTransformComponent()
 {
 	std::for_each(GameSystemComponent::get().m_TransformComponents.begin(), GameSystemComponent::get().m_TransformComponents.end(), [&](TransformComponent* val)
 	{
@@ -150,7 +150,7 @@ EntityID InnoGameSystemNS::createEntity(const std::string & entityName)
 
 	if (result != GameSystemComponent::get().m_enitityNameMap.end())
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: duplicated entity name!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: duplicated entity name " + entityName + " !");
 		return 0;
 	}
 
@@ -163,6 +163,22 @@ EntityID InnoGameSystemNS::createEntity(const std::string & entityName)
 INNO_SYSTEM_EXPORT EntityID InnoGameSystem::createEntity(const std::string & entityName)
 {
 	return InnoGameSystemNS::createEntity(entityName);
+}
+
+INNO_SYSTEM_EXPORT bool InnoGameSystem::removeEntity(const std::string & entityName)
+{
+	for (auto i : GameSystemComponent::get().m_enitityNameMap)
+	{
+		if (i.second == entityName)
+		{
+			GameSystemComponent::get().m_enitityNameMap.erase(i.first);
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GameSystem: entity " + entityName + " has been removed.");
+			return true;
+		}
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GameSystem: can't remove entity " + entityName + " !");
+	return false;
 }
 
 INNO_SYSTEM_EXPORT std::string InnoGameSystem::getEntityName(const EntityID & entityID)
@@ -178,7 +194,7 @@ INNO_SYSTEM_EXPORT EntityID InnoGameSystem::getEntityID(const std::string & enti
 INNO_SYSTEM_EXPORT bool InnoGameSystem::initialize()
 {
 	InnoGameSystemNS::sortTransformComponentsVector();
-	InnoGameSystemNS::updateTransform();
+	InnoGameSystemNS::updateTransformComponent();
 
 	if (!InnoGameSystemNS::m_gameInstance->initialize())
 	{
@@ -193,7 +209,7 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 {
 	auto temp = g_pCoreSystem->getTaskSystem()->submit([]()
 	{
-		InnoGameSystemNS::updateTransform();
+		InnoGameSystemNS::updateTransformComponent();
 	});
 	GameSystemComponent::get().m_asyncTask = &temp;
 

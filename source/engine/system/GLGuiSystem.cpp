@@ -64,6 +64,9 @@ private:
 	void showRenderResult(RenderingConfig & renderingConfig);
 	void showTransformComponentPropertyEditor(void* rhs);
 	void showVisiableComponentPropertyEditor(void* rhs);
+	void showDirectionalLightComponentPropertyEditor(void* rhs);
+	void showPointLightComponentPropertyEditor(void* rhs);
+	void showSphereLightComponentPropertyEditor(void* rhs);
 
 	InnoFuture<void>* m_asyncTask;
 
@@ -529,6 +532,9 @@ void ImGuiWrapper::showWorldExplorer()
 			{
 			case componentType::TransformComponent: showTransformComponentPropertyEditor(selectedComponent); break;
 			case componentType::VisibleComponent: showVisiableComponentPropertyEditor(selectedComponent); break;
+			case componentType::DirectionalLightComponent: showDirectionalLightComponentPropertyEditor(selectedComponent); break;
+			case componentType::PointLightComponent: showPointLightComponentPropertyEditor(selectedComponent); break;
+			case componentType::SphereLightComponent: showSphereLightComponentPropertyEditor(selectedComponent); break;
 			default:
 				break;
 			}
@@ -584,8 +590,8 @@ void ImGuiWrapper::showTransformComponentPropertyEditor(void * rhs)
 		l_rhs->m_localTransformVector.m_pos.z = pos[2];
 	}
 
-	static float rot_min = 0.0f;
-	static float rot_max = 360.0f;
+	static float rot_min = -180.0f;
+	static float rot_max = 180.0f;
 
 	static float rot[4];
 	vec4 eulerAngles = InnoMath::quatToEulerAngle(l_rhs->m_localTransformVector.m_rot);
@@ -648,28 +654,29 @@ void ImGuiWrapper::showVisiableComponentPropertyEditor(void * rhs)
 
 				const ImVec2 small_slider_size(18, 180);
 
-				static float metallic;
-				if (ImGui::SliderFloat("Metallic", &metallic, float_min, float_max, ""))
+				auto tt = ImGui::GetCursorPos().x;
+				static float metallic = l_material->metallic;
+				if (ImGui::DragFloat("Metallic", &metallic, 0.01f, float_min, float_max))
 				{
 					l_material->metallic = metallic;
 				}
 
-				static float roughness;
-				if (ImGui::SliderFloat("Roughness", &roughness, float_min, float_max, ""))
+				static float roughness = l_material->roughness;
+				if (ImGui::DragFloat("Roughness", &roughness, 0.01f, float_min, float_max))
 				{
 					l_material->roughness = roughness;
 				}
 
-				static float ao;
-				if (ImGui::SliderFloat("Ambient Occlusion", &ao, float_min, float_max, ""))
+				static float ao = l_material->ao;
+				if (ImGui::DragFloat("Ambient Occlusion", &ao, 0.01f, float_min, float_max))
 				{
 					l_material->ao = ao;
 				}
 
 				if (l_rhs->m_visiblilityType == VisiblilityType::INNO_TRANSPARENT)
 				{
-					static float thickness;
-					if (ImGui::SliderFloat("Thickness", &thickness, float_min, float_max, ""))
+					static float thickness = l_material->thickness;
+					if (ImGui::DragFloat("Thickness", &thickness, 0.01f, float_min, float_max))
 					{
 						l_material->thickness = thickness;
 					}
@@ -678,4 +685,78 @@ void ImGuiWrapper::showVisiableComponentPropertyEditor(void * rhs)
 			ImGui::EndChild();
 		}
 	}
+}
+
+void ImGuiWrapper::showDirectionalLightComponentPropertyEditor(void * rhs)
+{
+	auto l_rhs = reinterpret_cast<DirectionalLightComponent*>(rhs);
+	ImGui::BeginChild("DirectionalLightComponent Editor", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+	{
+		static ImVec4 radiance = ImColor(l_rhs->m_color.x, l_rhs->m_color.y, l_rhs->m_color.z, l_rhs->m_color.w);
+
+		if (ImGui::ColorPicker4("Radiance Color", (float*)&radiance, ImGuiColorEditFlags_RGB))
+		{
+			l_rhs->m_color.x = radiance.x;
+			l_rhs->m_color.y = radiance.y;
+			l_rhs->m_color.z = radiance.z;
+			l_rhs->m_color.w = radiance.w;
+		}
+		static float luminousFlux = l_rhs->m_luminousFlux;
+		if (ImGui::DragFloat("Luminous Flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
+		{
+			l_rhs->m_luminousFlux = luminousFlux;
+		}
+	}
+	ImGui::EndChild();
+}
+
+void ImGuiWrapper::showPointLightComponentPropertyEditor(void * rhs)
+{
+	auto l_rhs = reinterpret_cast<PointLightComponent*>(rhs);
+	ImGui::BeginChild("DirectionalLightComponent Editor", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+	{
+		static ImVec4 radiance = ImColor(l_rhs->m_color.x, l_rhs->m_color.y, l_rhs->m_color.z, l_rhs->m_color.w);
+
+		if (ImGui::ColorPicker4("Radiance Color", (float*)&radiance, ImGuiColorEditFlags_RGB))
+		{
+			l_rhs->m_color.x = radiance.x;
+			l_rhs->m_color.y = radiance.y;
+			l_rhs->m_color.z = radiance.z;
+			l_rhs->m_color.w = radiance.w;
+		}
+		static float luminousFlux = l_rhs->m_luminousFlux;
+		if (ImGui::DragFloat("Luminous Flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
+		{
+			l_rhs->m_luminousFlux = luminousFlux;
+		}
+	}
+	ImGui::EndChild();
+}
+
+void ImGuiWrapper::showSphereLightComponentPropertyEditor(void * rhs)
+{
+	auto l_rhs = reinterpret_cast<SphereLightComponent*>(rhs);
+	ImGui::BeginChild("DirectionalLightComponent Editor", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+	{
+		static ImVec4 radiance = ImColor(l_rhs->m_color.x, l_rhs->m_color.y, l_rhs->m_color.z, l_rhs->m_color.w);
+
+		if (ImGui::ColorPicker4("Radiance Color", (float*)&radiance, ImGuiColorEditFlags_RGB))
+		{
+			l_rhs->m_color.x = radiance.x;
+			l_rhs->m_color.y = radiance.y;
+			l_rhs->m_color.z = radiance.z;
+			l_rhs->m_color.w = radiance.w;
+		}
+		static float luminousFlux = l_rhs->m_luminousFlux;
+		if (ImGui::DragFloat("Luminous Flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
+		{
+			l_rhs->m_luminousFlux = luminousFlux;
+		}
+		static float sphereRadius = l_rhs->m_sphereRadius;
+		if (ImGui::DragFloat("Sphere Radius", &sphereRadius, 0.01f, 0.1f, 10000.0f))
+		{
+			l_rhs->m_sphereRadius = sphereRadius;
+		}
+	}
+	ImGui::EndChild();
 }

@@ -48,6 +48,7 @@ public:
 	INNO_SYSTEM_EXPORT void setGameInstance(IGameInstance* rhs) override;
 
 	INNO_SYSTEM_EXPORT EntityID createEntity(const std::string& entityName) override;
+	INNO_SYSTEM_EXPORT bool removeEntity(const std::string& entityName) override;
 	INNO_SYSTEM_EXPORT std::string getEntityName(const EntityID & entityID) override;
 	INNO_SYSTEM_EXPORT EntityID getEntityID(const std::string & entityName) override;
 

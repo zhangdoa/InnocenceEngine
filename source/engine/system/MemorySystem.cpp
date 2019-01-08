@@ -237,6 +237,8 @@ bool InnoMemorySystem::free##className(className* p) \
 	l_freeChuck->m_prev = InnoMemorySystemNS::m_##className##CurrentFreeChunk; \
 	l_freeChuck->m_next = InnoMemorySystemNS::m_##className##CurrentFreeChunk->m_next; \
 	InnoMemorySystemNS::m_##className##CurrentFreeChunk->m_next = l_freeChuck; \
+	/*finally wipe away all the old data*/ \
+	std::memset(p, 0, sizeof(##className)); \
 \
 	return true; \
 } \

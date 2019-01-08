@@ -84,6 +84,7 @@ public:
 	INNO_SYSTEM_EXPORT virtual void setGameInstance(IGameInstance* rhs) = 0;
 
 	INNO_SYSTEM_EXPORT virtual EntityID createEntity(const std::string& entityName) = 0;
+	INNO_SYSTEM_EXPORT virtual bool removeEntity(const std::string& entityName) = 0;
 	INNO_SYSTEM_EXPORT virtual std::string getEntityName(const EntityID & entityID) = 0;
 	INNO_SYSTEM_EXPORT virtual EntityID getEntityID(const std::string & entityName) = 0;
 
