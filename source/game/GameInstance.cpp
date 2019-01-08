@@ -46,13 +46,23 @@ namespace PlayerComponentCollection
 
 	void rotateAroundPositiveYAxis(float offset);
 	void rotateAroundRightAxis(float offset);
+
+	std::function<void()> f_sceneLoadingCallback;
 };
 
 void PlayerComponentCollection::setup()
 {
-	m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntityID("playerCharacterCamera");
+	f_sceneLoadingCallback = [&]() { 
+		m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntityID("playerCharacterCamera");
+		m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
+		m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
+		m_targetCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
+		m_targetCameraRotX = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		m_targetCameraRotY = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	};
+	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
 
-	m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
+	f_sceneLoadingCallback();
 
 	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_cameraParentEntity);
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
@@ -81,11 +91,6 @@ void PlayerComponentCollection::setup()
 	m_moveSpeed = m_initialMoveSpeed;
 	m_rotateSpeed = 10.0f;
 	m_canMove = false;
-
-	m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
-	m_targetCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
-	m_targetCameraRotX = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	m_targetCameraRotY = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	f_moveForward = [&]() { move(InnoMath::getDirection(direction::FORWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
 	f_moveBackward = [&]() { move(InnoMath::getDirection(direction::BACKWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };

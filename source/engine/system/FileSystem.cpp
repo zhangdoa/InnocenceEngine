@@ -65,7 +65,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	void from_json(const json& j, EnvironmentCaptureComponent& p);
 
 	template<typename T>
-	void loadComponentData(const json& j, const EntityID& entityID)
+	inline void loadComponentData(const json& j, const EntityID& entityID)
 	{
 		auto l_result = g_pCoreSystem->getGameSystem()->spawn<T>(entityID);
 
@@ -163,6 +163,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	}
 
 	std::vector<InnoFuture<void>> m_asyncTask;
+	std::vector<std::function<void()>*> m_sceneLoadingCallbacks;
 
 	std::string m_nextLoadingScene;
 	std::string m_currentScene;
@@ -555,6 +556,11 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 	}
 
 	g_pCoreSystem->getAssetSystem()->loadAssetsForComponents();
+
+	for (auto i : m_sceneLoadingCallbacks)
+	{
+		(*i)();
+	}
 
 	m_currentScene = fileName;
 
@@ -1042,11 +1048,8 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::saveScene(const std::string & fileName)
 	return InnoFileSystemNS::saveScene(fileName);
 }
 
-void InnoFileSystem::saveComponentToDiskImpl(componentType type, size_t classSize, void* ptr, const std::string& fileName)
+INNO_SYSTEM_EXPORT bool InnoFileSystem::addSceneLoadingCallback(std::function<void()>* functor)
 {
-}
-
-void* InnoFileSystem::loadComponentFromDiskImpl(const std::string& fileName)
-{
-	return nullptr;
+	InnoFileSystemNS::m_sceneLoadingCallbacks.emplace_back(functor);
+	return true;
 }
