@@ -12,4 +12,6 @@ public:
 	INNO_SYSTEM_EXPORT bool terminate();
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus();
+
+	INNO_SYSTEM_EXPORT void generatePhysicsData() override;
 };

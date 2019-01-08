@@ -1,5 +1,6 @@
 #include "VisionSystem.h"
 
+#include "../component/GameSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
 
@@ -141,6 +142,11 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 	{
 	});
 	InnoVisionSystemNS::m_asyncTask = &temp;
+
+	if (GameSystemComponent::get().m_isLoadingScene)
+	{
+		return true;
+	}
 
 	RenderingSystemComponent::get().m_renderDataPack.clear();
 	for (auto& i : PhysicsSystemComponent::get().m_cullingDataPack)

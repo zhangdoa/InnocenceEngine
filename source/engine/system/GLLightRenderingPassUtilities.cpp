@@ -4,7 +4,6 @@
 #include "../component/GLShadowRenderPassComponent.h"
 #include "../component/GLEnvironmentRenderPassComponent.h"
 #include "../component/GLGeometryRenderPassComponent.h"
-#include "../component/GameSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
 
 #include "ICoreSystem.h"
@@ -69,7 +68,7 @@ void GLLightRenderingPassUtilities::bindLightPassUniformLocations(GLShaderProgra
 		rhs->m_program,
 		"uni_dirLight.color");
 	
-	for (size_t i = 0; i < GameSystemComponent::get().m_PointLightComponents.size(); i++)
+	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_maxPointLights; i++)
 	{
 		GLLightRenderPassComponent::get().m_uni_pointLights_position.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_pointLights[" + std::to_string(i) + "].position")
@@ -82,7 +81,7 @@ void GLLightRenderingPassUtilities::bindLightPassUniformLocations(GLShaderProgra
 		);
 	}
 
-	for (size_t i = 0; i < GameSystemComponent::get().m_SphereLightComponents.size(); i++)
+	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_maxSphereLights; i++)
 	{
 		GLLightRenderPassComponent::get().m_uni_sphereLights_position.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_sphereLights[" + std::to_string(i) + "].position")

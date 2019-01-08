@@ -141,8 +141,10 @@ public:
 
 	std::queue<BillboardPassRenderDataPack> m_BillboardPassRenderDataQueue;
 
+	const unsigned int m_maxPointLights = 64;
 	std::vector<PointLightData> m_PointLightDatas;
 
+	const unsigned int m_maxSphereLights = 64;
 	std::vector<SphereLightData> m_SphereLightDatas;
 
 private:

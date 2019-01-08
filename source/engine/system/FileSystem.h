@@ -15,6 +15,10 @@ public:
 
 	INNO_SYSTEM_EXPORT std::string loadTextFile(const std::string& fileName) override;
 
+	INNO_SYSTEM_EXPORT bool loadDefaultScene() override;
+	INNO_SYSTEM_EXPORT bool loadScene(const std::string& fileName) override;
+	INNO_SYSTEM_EXPORT bool saveScene(const std::string& fileName) override;
+
 protected:
 	INNO_SYSTEM_EXPORT void saveComponentToDiskImpl(componentType type, size_t classSize, void* ptr, const std::string& fileName) override;
 	INNO_SYSTEM_EXPORT void* loadComponentFromDiskImpl(const std::string& fileName) override;

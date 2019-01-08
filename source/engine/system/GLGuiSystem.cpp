@@ -212,6 +212,14 @@ void ImGuiWrapper::showApplicationProfiler()
 	{
 		RenderingSystemComponent::get().f_captureEnvironment();
 	}
+	if (ImGui::Button("Save scene"))
+	{
+		g_pCoreSystem->getFileSystem()->saveScene("..//res//scenes//test.InnoScene");
+	}
+	if (ImGui::Button("Load scene"))
+	{
+		g_pCoreSystem->getFileSystem()->loadScene("..//res//scenes//test.InnoScene");
+	}
 	ImGui::End();
 
 	if (l_renderingConfig.showRenderPassResult)

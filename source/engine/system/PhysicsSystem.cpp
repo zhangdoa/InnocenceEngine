@@ -49,8 +49,6 @@ namespace InnoPhysicsSystemNS
 	vec4 m_sceneBoundMax = vec4(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), 1.0f);
 	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
 
-	std::vector<VisibleComponent*> m_initializedVisibleComponents;
-
 	InputComponent* m_inputComponent;
 	std::function<void()> f_mouseSelect;
 }
@@ -74,7 +72,7 @@ bool InnoPhysicsSystemNS::setup()
 			l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
 			l_mouseRay.m_direction = g_WindowSystemComponent->m_mousePositionInWorldSpace;
 
-			for (auto visibleComponent : m_initializedVisibleComponents)
+			for (auto visibleComponent : GameSystemComponent::get().m_VisibleComponents)
 			{
 				if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE)
 				{
@@ -465,7 +463,7 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 	l_MDC->m_indicesSize = l_MDC->m_indices.size();
 
 	l_MDC->m_objectStatus = ObjectStatus::STANDBY;
-	g_AssetSystemComponent->m_uninitializedMeshComponents.push(l_MDC);
+	//g_AssetSystemComponent->m_uninitializedMeshComponents.push(l_MDC);
 
 	return l_MDC;
 }
@@ -526,16 +524,6 @@ void InnoPhysicsSystemNS::updateLightComponents()
 
 void InnoPhysicsSystemNS::updateVisibleComponents()
 {
-	if (InnoPhysicsSystemNS::g_PhysicsSystemComponent->m_uninitializedVisibleComponents.size() > 0)
-	{
-		VisibleComponent* l_visibleComponent;
-		if (InnoPhysicsSystemNS::g_PhysicsSystemComponent->m_uninitializedVisibleComponents.tryPop(l_visibleComponent))
-		{
-			auto l_physicsComponent = generatePhysicsDataComponent(l_visibleComponent->m_modelMap);
-			l_visibleComponent->m_PhysicsDataComponent = l_physicsComponent;
-			InnoPhysicsSystemNS::m_initializedVisibleComponents.emplace_back(l_visibleComponent);
-		}
-	}
 }
 
 void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
@@ -570,9 +558,9 @@ void InnoPhysicsSystemNS::updateCulling()
 		//auto l_cameraAABB = g_GameSystemComponent->m_CameraComponents[0]->m_AABB;
 		auto l_eyeRay = g_GameSystemComponent->m_CameraComponents[0]->m_rayOfEye;
 
-		for (auto visibleComponent : m_initializedVisibleComponents)
+		for (auto visibleComponent : GameSystemComponent::get().m_VisibleComponents)
 		{
-			if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE)
+			if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE && visibleComponent->m_objectStatus == ObjectStatus::ALIVE)
 			{
 				auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
 				auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
@@ -605,6 +593,11 @@ void InnoPhysicsSystemNS::updateCulling()
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
 {
+	if (GameSystemComponent::get().m_isLoadingScene)
+	{
+		return true;
+	}
+
 	auto temp = g_pCoreSystem->getTaskSystem()->submit([]()
 	{
 		InnoPhysicsSystemNS::updateCameraComponents();
@@ -612,7 +605,9 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
 		InnoPhysicsSystemNS::updateVisibleComponents();
 		InnoPhysicsSystemNS::updateCulling();
 	});
+
 	InnoPhysicsSystemNS::m_asyncTask = &temp;
+
 	return true;
 }
 
@@ -626,6 +621,16 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::terminate()
 INNO_SYSTEM_EXPORT ObjectStatus InnoPhysicsSystem::getStatus()
 {
 	return InnoPhysicsSystemNS::m_objectStatus;
+}
+
+INNO_SYSTEM_EXPORT void InnoPhysicsSystem::generatePhysicsData()
+{
+	for (auto l_visibleComponent : GameSystemComponent::get().m_VisibleComponents)
+	{
+		auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(l_visibleComponent->m_modelMap);
+		l_visibleComponent->m_PhysicsDataComponent = l_physicsComponent;
+		l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
+	}
 }
 
 std::vector<Vertex> InnoPhysicsSystemNS::generateNDC()

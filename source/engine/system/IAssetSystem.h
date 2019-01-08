@@ -17,6 +17,9 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
+	INNO_SYSTEM_EXPORT virtual void loadDefaultAssets() = 0;
+	INNO_SYSTEM_EXPORT virtual void loadAssetsForComponents() = 0;
+
 	INNO_SYSTEM_EXPORT virtual MeshDataComponent* getMeshDataComponent(EntityID meshID) = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(EntityID textureID) = 0;
 	INNO_SYSTEM_EXPORT virtual MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) = 0;

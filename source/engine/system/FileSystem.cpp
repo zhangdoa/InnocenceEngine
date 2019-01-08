@@ -1,5 +1,8 @@
 #include "FileSystem.h"
-#include "../component/GameSystemComponent.h"
+
+#include"../component/GameSystemComponent.h"
+#include"../component/AssetSystemComponent.h"
+#include "../component/RenderingSystemComponent.h"
 
 #include "json/json.hpp"
 using json = nlohmann::json;
@@ -31,8 +34,6 @@ namespace fs = std::filesystem;
 
 #include "../component/PhysicsDataComponent.h"
 
-#include"../component/AssetSystemComponent.h"
-
 #include "../../engine/system/ICoreSystem.h"
 
 INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
@@ -44,16 +45,32 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	std::string loadTextFile(const std::string & fileName);
 
 	void to_json(json& j, const enitityNamePair& p);
+
 	void to_json(json& j, const TransformComponent& p);
 	void to_json(json& j, const TransformVector& p);
-
 	void to_json(json& j, const VisibleComponent& p);
-	void to_json(json& j, const CameraComponent& p);
-
 	void to_json(json& j, const vec4& p);
 	void to_json(json& j, const DirectionalLightComponent& p);
 	void to_json(json& j, const PointLightComponent& p);
 	void to_json(json& j, const SphereLightComponent& p);
+	void to_json(json& j, const EnvironmentCaptureComponent& p);
+
+	void from_json(const json& j, TransformComponent& p);
+	void from_json(const json& j, TransformVector& p);
+	void from_json(const json& j, VisibleComponent& p);
+	void from_json(const json& j, vec4& p);
+	void from_json(const json& j, DirectionalLightComponent& p);
+	void from_json(const json& j, PointLightComponent& p);
+	void from_json(const json& j, SphereLightComponent& p);
+	void from_json(const json& j, EnvironmentCaptureComponent& p);
+
+	template<typename T>
+	void loadComponentData(const json& j, const EntityID& entityID)
+	{
+		auto l_result = g_pCoreSystem->getGameSystem()->spawn<T>(entityID);
+
+		from_json(j, *l_result);
+	}
 
 	template<typename T>
 	bool saveComponentData(json& topLevel, T* rhs);
@@ -87,15 +104,20 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	template<>
 	saveComponentDataDefi(VisibleComponent);
 	template<>
-	saveComponentDataDefi(CameraComponent);
-	template<>
 	saveComponentDataDefi(DirectionalLightComponent);
 	template<>
 	saveComponentDataDefi(PointLightComponent);
 	template<>
 	saveComponentDataDefi(SphereLightComponent);
+	template<>
+	saveComponentDataDefi(EnvironmentCaptureComponent);
 
 	bool saveJsonDataToDisk(const std::string & fileName, const json & data);
+
+	bool prepareForLoadingScene(const std::string& fileName);
+	bool loadScene(const std::string& fileName);
+	bool cleanScene();
+	bool saveScene(const std::string& fileName);
 
 	std::string convertModelFromDisk(const std::string & fileName, const std::string & exportPath);
 	json processAssimpScene(const aiScene* aiScene, const std::string & exportPath);
@@ -106,67 +128,6 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	json processSingleAssimpMaterial(const aiMaterial * aiMaterial, const std::string & exportPath);
 	EntityID loadTextureFromDisk(const std::string& fileName, TextureUsageType TextureUsageType, const std::string & exportPath);
 
-	bool loadScene(const std::string& fileName)
-	{
-		// @TODO: impl
-		std::ifstream i(fileName);
-		json j;
-		i >> j;
-
-		auto l_sceneName = j["SceneName"];
-
-		for (auto& i : j["SceneEntities"])
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, i["EntityName"]);
-		}
-
-		return true;
-	}
-
-	bool saveScene(const std::string& fileName)
-	{
-		json topLevel;
-		topLevel["SceneName"] = fileName;
-
-		// save entities name and ID
-		for (auto& i : GameSystemComponent::get().m_enitityNameMap)
-		{
-			json j;
-			to_json(j, i);
-			topLevel["SceneEntities"].emplace_back(j);
-		}
-
-		// save childern components
-		for (auto i : GameSystemComponent::get().m_TransformComponents)
-		{
-			saveComponentData(topLevel, i);
-		}
-		for (auto i : GameSystemComponent::get().m_VisibleComponents)
-		{
-			saveComponentData(topLevel, i);
-		}
-		for (auto i : GameSystemComponent::get().m_CameraComponents)
-		{
-			saveComponentData(topLevel, i);
-		}
-		for (auto i : GameSystemComponent::get().m_DirectionalLightComponents)
-		{
-			saveComponentData(topLevel, i);
-		}
-		for (auto i : GameSystemComponent::get().m_PointLightComponents)
-		{
-			saveComponentData(topLevel, i);
-		}
-		for (auto i : GameSystemComponent::get().m_SphereLightComponents)
-		{
-			saveComponentData(topLevel, i);
-		}
-
-		saveJsonDataToDisk(fileName, topLevel);
-
-		return true;
-	}
-
 	bool serialize(std::ostream& os, void* ptr, size_t size)
 	{
 		os.write((char*)ptr, size);
@@ -174,37 +135,14 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	}
 
 	template<typename T>
-	bool serialize(std::ostream& os, const std::vector<T>& vector)
+	bool serializeVector(std::ostream& os, const std::vector<T>& vector)
 	{
 		serialize(os, (void*)&vector[0], vector.size() * sizeof(T));
 		return true;
 	}
 
-	bool saveToDisk(const MeshDataComponent* MDC)
-	{
-		auto fileName = MDC->m_parentEntity;
-		std::ofstream l_file(fileName + ".InnoMesh", std::ios::binary);
-		serialize(l_file, MDC->m_vertices);
-		l_file.close();
-
-		return true;
-	}
-
-	bool saveToDisk(const TextureDataComponent* TDC)
-	{
-		auto fileName = TDC->m_parentEntity;
-		std::ofstream l_file(fileName + ".InnoTexture", std::ios::binary);
-		for (auto i : TDC->m_textureData)
-		{
-			serialize(l_file, i, TDC->m_textureDataDesc.textureWidth * TDC->m_textureDataDesc.textureHeight);
-		}
-		l_file.close();
-
-		return true;
-	}
-
 	template<typename T>
-	auto deserialize(const std::string& fileName) -> std::vector<T>
+	auto deserializeVector(const std::string& fileName) -> std::vector<T>
 	{
 		std::ifstream l_file(fileName, std::ios::binary);
 
@@ -222,7 +160,13 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		l_file.close();
 		return l_result;
 	}
+
 	std::vector<InnoFuture<void>> m_asyncTask;
+
+	std::string m_nextLoadingScene;
+	ThreadSafeQueue <std::pair<TransformComponent*, std::string>> m_orphanTransformComponents;
+	ThreadSafeQueue <std::pair<CameraComponent*, std::string>> m_orphanCameraComponents;
+	ThreadSafeQueue <std::pair<InputComponent*, std::string>> m_orphanInputComponents;
 }
 
 std::string InnoFileSystemNS::loadTextFile(const std::string & fileName)
@@ -281,6 +225,20 @@ void InnoFileSystemNS::to_json(json& j, const TransformVector& p)
 					"W", p.m_rot.w
 				}
 			}
+		},
+		{
+			"Scale",
+			{
+				{
+					"X", p.m_scale.x
+				},
+				{
+					"Y", p.m_scale.y
+				},
+				{
+					"Z", p.m_scale.z
+				},
+			}
 		}
 	};
 }
@@ -336,18 +294,6 @@ void InnoFileSystemNS::to_json(json& j, const VisibleComponent& p)
 	};
 }
 
-void InnoFileSystemNS::to_json(json& j, const CameraComponent& p)
-{
-	j = json
-	{
-		{"ComponentType", InnoUtility::getComponentType<CameraComponent>()},
-		{"FOVX", p.m_FOVX},
-		{"WHRatio", p.m_WHRatio},
-		{"ZNear", p.m_zNear},
-		{"ZFar", p.m_zFar},
-	};
-}
-
 void InnoFileSystemNS::to_json(json& j, const DirectionalLightComponent& p)
 {
 	json color;
@@ -389,12 +335,313 @@ void InnoFileSystemNS::to_json(json& j, const SphereLightComponent& p)
 	};
 }
 
+void InnoFileSystemNS::to_json(json& j, const EnvironmentCaptureComponent& p)
+{
+	j = json
+	{ 
+		{"ComponentType", InnoUtility::getComponentType<EnvironmentCaptureComponent>()},
+		{"CubemapName", p.m_cubemapTextureFileName},
+	};
+}
+
+void InnoFileSystemNS::from_json(const json & j, TransformComponent & p)
+{
+	from_json(j["LocalTransformVector"], p.m_localTransformVector);
+	auto l_parentTransformComponentEntityName = j["ParentTransformComponentEntityName"];
+	if (l_parentTransformComponentEntityName == "RootTransform")
+	{
+		p.m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+	}
+	else
+	{
+		// JSON is an order-irrelevant format, so the parent transform component would always be instanciated in random point, then it's necessary to assign it later
+		m_orphanTransformComponents.push({ &p, l_parentTransformComponentEntityName });
+	}
+}
+
+void InnoFileSystemNS::from_json(const json & j, TransformVector & p)
+{
+	p.m_pos.x = j["Position"]["X"];
+	p.m_pos.y = j["Position"]["Y"];
+	p.m_pos.z = j["Position"]["Z"];
+	p.m_pos.w = 1.0f;
+
+	p.m_rot.x = j["Rotation"]["X"];
+	p.m_rot.y = j["Rotation"]["Y"];
+	p.m_rot.z = j["Rotation"]["Z"];
+	p.m_rot.w = j["Rotation"]["W"];
+
+	p.m_scale.x = j["Scale"]["X"];
+	p.m_scale.y = j["Scale"]["Y"];
+	p.m_scale.z = j["Scale"]["Z"];
+	p.m_scale.w = 1.0f;
+}
+
+void InnoFileSystemNS::from_json(const json & j, VisibleComponent & p)
+{
+	p.m_visiblilityType = j["VisiblilityType"];
+	p.m_meshShapeType = j["MeshShapeType"];
+	p.m_meshDrawMethod = j["MeshPrimitiveTopology"];
+	p.m_textureWrapMethod = j["TextureWrapMethod"];
+	p.m_drawAABB = j["drawAABB"];
+	p.m_modelFileName = j["ModelFileName"];
+}
+
+void InnoFileSystemNS::from_json(const json & j, vec4 & p)
+{
+	p.x = j["R"];
+	p.y = j["G"];
+	p.z = j["B"];
+	p.w = j["A"];
+}
+
+void InnoFileSystemNS::from_json(const json & j, DirectionalLightComponent & p)
+{
+	p.m_luminousFlux = j["LuminousFlux"];
+	p.m_drawAABB = j["drawAABB"];
+	from_json(j["Color"], p.m_color);
+}
+
+void InnoFileSystemNS::from_json(const json & j, PointLightComponent & p)
+{
+	p.m_luminousFlux = j["LuminousFlux"];
+	from_json(j["Color"], p.m_color);
+}
+
+void InnoFileSystemNS::from_json(const json & j, SphereLightComponent & p)
+{
+	p.m_luminousFlux = j["LuminousFlux"];
+	p.m_sphereRadius = j["SphereRadius"];
+	from_json(j["Color"], p.m_color);
+}
+
+void InnoFileSystemNS::from_json(const json & j, EnvironmentCaptureComponent & p)
+{
+	p.m_cubemapTextureFileName = j["CubemapName"];
+}
+
 bool InnoFileSystemNS::saveJsonDataToDisk(const std::string & fileName, const json & data)
 {
 	std::ofstream o;
 	o.open(fileName, std::ios::out | std::ios::trunc);
 	o << std::setw(4) << data << std::endl;
 	o.close();
+
+	return true;
+}
+
+bool InnoFileSystemNS::prepareForLoadingScene(const std::string& fileName)
+{
+	m_nextLoadingScene = fileName;
+	GameSystemComponent::get().m_isLoadingScene = true;
+
+	return true;
+}
+
+bool InnoFileSystemNS::loadScene(const std::string& fileName)
+{
+	std::ifstream i(fileName);
+
+	if (!i.is_open())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't open scene : " + fileName + " !");
+
+		return false;
+	}
+
+	json j;
+	i >> j;
+
+	i.close();
+
+	cleanScene();
+
+	auto l_sceneName = j["SceneName"];
+
+	for (auto& i : j["SceneEntities"])
+	{
+		if (i["EntityName"] != "RootTransform")
+		{
+			GameSystemComponent::get().m_enitityNameMap.erase(i["EntityID"]);
+
+			auto l_EntityID = g_pCoreSystem->getGameSystem()->createEntity(i["EntityName"]);
+
+			for (auto& k : i["ChildrenComponents"])
+			{
+				switch (componentType(k["ComponentType"]))
+				{
+				case componentType::TransformComponent: loadComponentData<TransformComponent>(k, l_EntityID);
+					break;
+				case componentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_EntityID);
+					break;
+				case componentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_EntityID);
+					break;
+				case componentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_EntityID);
+					break;
+				case componentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_EntityID);
+					break;
+				case componentType::CameraComponent:
+					break;
+				case componentType::InputComponent:
+					break;
+				case componentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_EntityID);
+					break;
+				case componentType::PhysicsDataComponent:
+					break;
+				case componentType::MeshDataComponent:
+					break;
+				case componentType::MaterialDataComponent:
+					break;
+				case componentType::TextureDataComponent:
+					break;
+				default:
+					break;
+				}
+			}
+		}
+	}
+
+	while (InnoFileSystemNS::m_orphanTransformComponents.size() > 0)
+	{
+		std::pair<TransformComponent*, std::string> l_orphan;
+		if (InnoFileSystemNS::m_orphanTransformComponents.tryPop(l_orphan))
+		{
+			auto t = g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_pCoreSystem->getGameSystem()->getEntityID(l_orphan.second));
+			if (t)
+			{
+				l_orphan.first->m_parentTransformComponent = t;
+			}
+			else
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't find TransformComponent with entity name" + l_orphan.second + " !");
+			}
+		}
+	}
+	while (InnoFileSystemNS::m_orphanCameraComponents.size() > 0)
+	{
+		std::pair<CameraComponent*, std::string> l_orphan;
+		if (InnoFileSystemNS::m_orphanCameraComponents.tryPop(l_orphan))
+		{
+			l_orphan.first->m_parentEntity = g_pCoreSystem->getGameSystem()->getEntityID(l_orphan.second);
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: reattached CameraComponent to entity " + l_orphan.second + ".");
+		}
+	}
+	while (InnoFileSystemNS::m_orphanInputComponents.size() > 0)
+	{
+		std::pair<InputComponent*, std::string> l_orphan;
+		if (InnoFileSystemNS::m_orphanInputComponents.tryPop(l_orphan))
+		{
+			l_orphan.first->m_parentEntity = g_pCoreSystem->getGameSystem()->getEntityID(l_orphan.second);
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: reattached InputComponent to entity " + l_orphan.second + ".");
+		}
+	}
+
+	g_pCoreSystem->getAssetSystem()->loadAssetsForComponents();
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene " + fileName + " has been loaded.");
+
+	return true;
+}
+
+bool InnoFileSystemNS::cleanScene()
+{
+	// cache components which can't be serilized currently
+	for (auto i : GameSystemComponent::get().m_CameraComponents)
+	{
+		m_orphanCameraComponents.push(std::pair<CameraComponent*, std::string>(i, g_pCoreSystem->getGameSystem()->getEntityName(i->m_parentEntity)));
+	}
+	for (auto i : GameSystemComponent::get().m_InputComponents)
+	{
+		m_orphanInputComponents.push(std::pair<InputComponent*, std::string>(i, g_pCoreSystem->getGameSystem()->getEntityName(i->m_parentEntity)));
+	}
+
+	for (auto i : GameSystemComponent::get().m_TransformComponents)
+	{
+		g_pCoreSystem->getGameSystem()->destroy(i);
+	}
+	GameSystemComponent::get().m_TransformComponents.clear();
+	GameSystemComponent::get().m_TransformComponentsMap.clear();
+
+	for (auto i : GameSystemComponent::get().m_VisibleComponents)
+	{
+		g_pCoreSystem->getGameSystem()->destroy(i);
+	}
+	GameSystemComponent::get().m_VisibleComponents.clear();
+	GameSystemComponent::get().m_VisibleComponentsMap.clear();
+
+	for (auto i : GameSystemComponent::get().m_DirectionalLightComponents)
+	{
+		g_pCoreSystem->getGameSystem()->destroy(i);
+	}
+	GameSystemComponent::get().m_DirectionalLightComponents.clear();
+	GameSystemComponent::get().m_DirectionalLightComponentsMap.clear();
+
+	for (auto i : GameSystemComponent::get().m_PointLightComponents)
+	{
+		g_pCoreSystem->getGameSystem()->destroy(i);
+	}
+	GameSystemComponent::get().m_PointLightComponents.clear();
+	GameSystemComponent::get().m_PointLightComponentsMap.clear();
+
+	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
+	{
+		g_pCoreSystem->getGameSystem()->destroy(i);
+	}
+	GameSystemComponent::get().m_SphereLightComponents.clear();
+	GameSystemComponent::get().m_SphereLightComponentsMap.clear();
+
+	for (auto i : GameSystemComponent::get().m_EnvironmentCaptureComponents)
+	{
+		g_pCoreSystem->getGameSystem()->destroy(i);
+	}
+	GameSystemComponent::get().m_EnvironmentCaptureComponents.clear();
+	GameSystemComponent::get().m_EnvironmentCaptureComponentsMap.clear();
+
+	return true;
+}
+
+bool InnoFileSystemNS::saveScene(const std::string& fileName)
+{
+	json topLevel;
+	topLevel["SceneName"] = fileName;
+
+	// save entities name and ID
+	for (auto& i : GameSystemComponent::get().m_enitityNameMap)
+	{
+		json j;
+		to_json(j, i);
+		topLevel["SceneEntities"].emplace_back(j);
+	}
+
+	// save childern components
+	for (auto i : GameSystemComponent::get().m_TransformComponents)
+	{
+		saveComponentData(topLevel, i);
+	}
+	for (auto i : GameSystemComponent::get().m_VisibleComponents)
+	{
+		saveComponentData(topLevel, i);
+	}
+	for (auto i : GameSystemComponent::get().m_DirectionalLightComponents)
+	{
+		saveComponentData(topLevel, i);
+	}
+	for (auto i : GameSystemComponent::get().m_PointLightComponents)
+	{
+		saveComponentData(topLevel, i);
+	}
+	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
+	{
+		saveComponentData(topLevel, i);
+	}
+	for (auto i : GameSystemComponent::get().m_EnvironmentCaptureComponents)
+	{
+		saveComponentData(topLevel, i);
+	}
+
+	saveJsonDataToDisk(fileName, topLevel);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene " + fileName + " has been saved.");
 
 	return true;
 }
@@ -411,12 +658,12 @@ std::string InnoFileSystemNS::convertModelFromDisk(const std::string & fileName,
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: " + fileName + " doesn't exist!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: " + fileName + " doesn't exist!");
 		return std::string();
 	}
 	if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
 		return std::string();
 	}
 
@@ -424,7 +671,7 @@ std::string InnoFileSystemNS::convertModelFromDisk(const std::string & fileName,
 	auto l_result = processAssimpScene(l_assScene, exportPath);
 	saveJsonDataToDisk(exportPath + l_exportFileName + ".InnoAsset", l_result);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "AssetSystem: " + fileName + " has been converted.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: " + fileName + " has been converted.");
 
 	return l_exportFileName;
 }
@@ -547,7 +794,7 @@ EntityID InnoFileSystemNS::processMeshVertices(const aiMesh * aiMesh, const std:
 
 	auto l_exportFileName = InnoMath::createEntityID();
 	std::ofstream l_file(exportPath + l_exportFileName + ".InnoMeshVertices", std::ios::binary);
-	serialize(l_file, l_vertices);
+	serializeVector(l_file, l_vertices);
 	l_file.close();
 
 	return l_exportFileName;
@@ -579,7 +826,7 @@ EntityID InnoFileSystemNS::processMeshIndices(const aiMesh* aiMesh, const std::s
 	auto l_exportFileName = InnoMath::createEntityID();
 
 	std::ofstream l_file(exportPath + l_exportFileName + ".InnoMeshIndices", std::ios::binary);
-	serialize(l_file, l_indices);
+	serializeVector(l_file, l_indices);
 	l_file.close();
 
 	return l_exportFileName;
@@ -607,7 +854,7 @@ json InnoFileSystemNS::processSingleAssimpMaterial(const aiMaterial * aiMaterial
 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "AssetSystem: ASSIMP: " + l_localPath + " is unknown texture type!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: ASSIMP: " + l_localPath + " is unknown texture type!");
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
 			{
@@ -631,7 +878,7 @@ json InnoFileSystemNS::processSingleAssimpMaterial(const aiMaterial * aiMaterial
 			}
 			else
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "AssetSystem: ASSIMP: " + l_localPath + " is unsupported texture type!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: ASSIMP: " + l_localPath + " is unsupported texture type!");
 			}
 		}
 	}
@@ -720,6 +967,8 @@ EntityID InnoFileSystemNS::loadTextureFromDisk(const std::string& fileName, Text
 
 INNO_SYSTEM_EXPORT bool InnoFileSystem::setup()
 {
+	g_pCoreSystem->getAssetSystem()->loadDefaultAssets();
+
 	InnoFileSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 
 	return true;
@@ -732,20 +981,11 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool InnoFileSystem::update()
 {
-	static bool cond = true;
-
-	if (cond)
+	if (GameSystemComponent::get().m_isLoadingScene)
 	{
-		InnoFileSystemNS::m_asyncTask.push_back(g_pCoreSystem->getTaskSystem()->submit([]()
-		{
-			InnoFileSystemNS::saveScene("..//res//scenes//test.InnoScene");
-			InnoFileSystemNS::loadScene("..//res//scenes//test.InnoScene");
-			InnoFileSystemNS::convertModelFromDisk("..//res//models//Orb//Orb.obj", "..//res//convertedAssets//");
-		})
-		);
-		cond = false;
+		InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene);
+		GameSystemComponent::get().m_isLoadingScene = false;
 	}
-
 	return true;
 }
 
@@ -764,6 +1004,22 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoFileSystem::getStatus()
 std::string InnoFileSystem::loadTextFile(const std::string & fileName)
 {
 	return InnoFileSystemNS::loadTextFile(fileName);
+}
+
+INNO_SYSTEM_EXPORT bool InnoFileSystem::loadDefaultScene()
+{
+	InnoFileSystemNS::loadScene("..//res//scenes//default.InnoScene");
+	return true;
+}
+
+INNO_SYSTEM_EXPORT bool InnoFileSystem::loadScene(const std::string & fileName)
+{
+	return InnoFileSystemNS::prepareForLoadingScene(fileName);
+}
+
+INNO_SYSTEM_EXPORT bool InnoFileSystem::saveScene(const std::string & fileName)
+{
+	return InnoFileSystemNS::saveScene(fileName);
 }
 
 void InnoFileSystem::saveComponentToDiskImpl(componentType type, size_t classSize, void* ptr, const std::string& fileName)

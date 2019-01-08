@@ -34,13 +34,13 @@ inline className* IMemorySystem::spawn() \
 };
 
 #define freeComponentInterfaceDecl( className ) \
-virtual void free##className(className* p) = 0;
+virtual bool free##className(className* p) = 0;
 
 #define destroyComponentTemplate( className ) \
-inline void IMemorySystem::destroy(className* p) \
+inline bool IMemorySystem::destroy(className* p) \
 { \
 	reinterpret_cast<className*>(p)->~className(); \
-	free##className(p); \
+	return free##className(p); \
 };
 
 INNO_INTERFACE IMemorySystem
@@ -56,9 +56,6 @@ public:
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
 protected:
-	INNO_SYSTEM_EXPORT virtual void* allocate(unsigned long size) = 0;
-	INNO_SYSTEM_EXPORT virtual void free(void* ptr) = 0;
-
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(VisibleComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DirectionalLightComponent);
@@ -107,8 +104,6 @@ INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(TransformComponent);
 	#endif
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(PhysicsDataComponent);
 public:
-	INNO_SYSTEM_EXPORT virtual void dumpToFile(bool fullDump) = 0;
-
 	template <typename T> T * spawn()
 	{
 		return reinterpret_cast<T *>(allocate(sizeof(T)));
@@ -119,10 +114,10 @@ public:
 		return reinterpret_cast<T *>(allocate(n * sizeof(T)));
 	};
 
-	template <typename T> void destroy(T* p)
+	template <typename T> bool destroy(T* p)
 	{
 		reinterpret_cast<T*>(p)->~T();
-		free(p);
+		return free(p);
 	};
 };
 

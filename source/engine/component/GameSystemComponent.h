@@ -46,6 +46,8 @@ public:
 
 	bool m_pauseGameUpdate = false;
 
+	std::atomic<bool> m_isLoadingScene = false;
+
 private:
 	GameSystemComponent() {};
 };

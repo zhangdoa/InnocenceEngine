@@ -6,8 +6,8 @@
 #include "IMemorySystem.h"
 #include "../../game/IGameInstance.h"
 
-#define spawnComponentInterfaceDecl( className ) \
-INNO_SYSTEM_EXPORT virtual void spawnComponent(className* rhs, const EntityID& parentEntity) = 0;
+#define registerComponentInterfaceDecl( className ) \
+INNO_SYSTEM_EXPORT virtual void registerComponent(className* rhs, const EntityID& parentEntity) = 0;
 
 #define getComponentInterfaceDecl( className ) \
 INNO_SYSTEM_EXPORT virtual className* get##className(const EntityID& parentEntity) = 0;
@@ -28,14 +28,14 @@ public:
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
 protected:
-	spawnComponentInterfaceDecl(TransformComponent);
-	spawnComponentInterfaceDecl(VisibleComponent);
-	spawnComponentInterfaceDecl(DirectionalLightComponent);
-	spawnComponentInterfaceDecl(PointLightComponent);
-	spawnComponentInterfaceDecl(SphereLightComponent);
-	spawnComponentInterfaceDecl(CameraComponent);
-	spawnComponentInterfaceDecl(InputComponent);
-	spawnComponentInterfaceDecl(EnvironmentCaptureComponent);
+	registerComponentInterfaceDecl(TransformComponent);
+	registerComponentInterfaceDecl(VisibleComponent);
+	registerComponentInterfaceDecl(DirectionalLightComponent);
+	registerComponentInterfaceDecl(PointLightComponent);
+	registerComponentInterfaceDecl(SphereLightComponent);
+	registerComponentInterfaceDecl(CameraComponent);
+	registerComponentInterfaceDecl(InputComponent);
+	registerComponentInterfaceDecl(EnvironmentCaptureComponent);
 
 public:
 	template <typename T> T * spawn(const EntityID& parentEntity)
@@ -43,13 +43,18 @@ public:
 		auto l_ptr = g_pMemorySystem->spawn<T>();
 		if (l_ptr)
 		{
-			spawnComponent(l_ptr, parentEntity);
+			registerComponent(l_ptr, parentEntity);
 			return l_ptr;
 		}
 		else
 		{
 			return nullptr;
 		}
+	};
+
+	template <typename T> bool destroy(T* rhs)
+	{
+		return g_pMemorySystem->destroy<T>(rhs);
 	};
 
 protected:
@@ -65,7 +70,7 @@ protected:
 public:
 	template <typename T> T * get(const EntityID& parentEntity)
 	{
-		return new T();
+		return nullptr;
 	};
 
 	INNO_SYSTEM_EXPORT virtual std::string getGameName() = 0;
@@ -80,6 +85,7 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual EntityID createEntity(const std::string& entityName) = 0;
 	INNO_SYSTEM_EXPORT virtual std::string getEntityName(const EntityID & entityID) = 0;
+	INNO_SYSTEM_EXPORT virtual EntityID getEntityID(const std::string & entityName) = 0;
 
 	IMemorySystem* g_pMemorySystem;
 };

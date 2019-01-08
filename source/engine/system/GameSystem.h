@@ -1,8 +1,8 @@
 #pragma once
 #include "IGameSystem.h"
 
-#define spawnComponentImplDecl( className ) \
-INNO_SYSTEM_EXPORT void spawnComponent(className* rhs, const EntityID& parentEntity) override;
+#define registerComponentImplDecl( className ) \
+INNO_SYSTEM_EXPORT void registerComponent(className* rhs, const EntityID& parentEntity) override;
 
 #define getComponentImplDecl( className ) \
 INNO_SYSTEM_EXPORT className* get##className(const EntityID& parentEntity) override;
@@ -19,14 +19,14 @@ public:
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 
-	spawnComponentImplDecl(TransformComponent);
-	spawnComponentImplDecl(VisibleComponent);
-	spawnComponentImplDecl(DirectionalLightComponent);
-	spawnComponentImplDecl(PointLightComponent);
-	spawnComponentImplDecl(SphereLightComponent);
-	spawnComponentImplDecl(CameraComponent);
-	spawnComponentImplDecl(InputComponent);
-	spawnComponentImplDecl(EnvironmentCaptureComponent);
+	registerComponentImplDecl(TransformComponent);
+	registerComponentImplDecl(VisibleComponent);
+	registerComponentImplDecl(DirectionalLightComponent);
+	registerComponentImplDecl(PointLightComponent);
+	registerComponentImplDecl(SphereLightComponent);
+	registerComponentImplDecl(CameraComponent);
+	registerComponentImplDecl(InputComponent);
+	registerComponentImplDecl(EnvironmentCaptureComponent);
 	
 	getComponentImplDecl(TransformComponent);
 	getComponentImplDecl(VisibleComponent);
@@ -38,6 +38,7 @@ public:
 	getComponentImplDecl(EnvironmentCaptureComponent);
 
 	INNO_SYSTEM_EXPORT std::string getGameName() override;
+
 	INNO_SYSTEM_EXPORT TransformComponent* getRootTransformComponent() override;
 
 	INNO_SYSTEM_EXPORT void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) override;
@@ -48,4 +49,6 @@ public:
 
 	INNO_SYSTEM_EXPORT EntityID createEntity(const std::string& entityName) override;
 	INNO_SYSTEM_EXPORT std::string getEntityName(const EntityID & entityID) override;
+	INNO_SYSTEM_EXPORT EntityID getEntityID(const std::string & entityName) override;
+
 };

@@ -5,7 +5,7 @@
 className* allocate##className() override;
 
 #define freeComponentImplDecl( className ) \
-void free##className(className* p) override;
+bool free##className(className* p) override;
 
 class InnoMemorySystem : INNO_IMPLEMENT IMemorySystem
 {
@@ -18,11 +18,6 @@ public:
 	INNO_SYSTEM_EXPORT bool terminate() override;
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
-
-	INNO_SYSTEM_EXPORT void* allocate(unsigned long size) override;
-	INNO_SYSTEM_EXPORT void free(void* ptr) override;
-
-	INNO_SYSTEM_EXPORT void dumpToFile(bool fullDump) override;
 
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(VisibleComponent);
