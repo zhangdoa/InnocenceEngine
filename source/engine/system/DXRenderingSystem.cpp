@@ -644,7 +644,7 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"..//res//shaders//DX11//geometryPassCookTorranceVertex.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"DX11//geometryPassCookTorranceVertex.sf");
 
 	result = g_DXRenderingSystemComponent->m_device->CreateVertexShader(
 		l_shaderBuffer->GetBufferPointer(), l_shaderBuffer->GetBufferSize(),
@@ -737,7 +737,7 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"..//res//shaders//DX11//geometryPassCookTorrancePixel.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"DX11//geometryPassCookTorrancePixel.sf");
 
 	// Create the shader from the buffer.
 	result = g_DXRenderingSystemComponent->m_device->CreatePixelShader(
@@ -799,7 +799,7 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"..//res//shaders//DX11//lightPassCookTorranceVertex.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"DX11//lightPassCookTorranceVertex.sf");
 
 	result = g_DXRenderingSystemComponent->m_device->CreateVertexShader(
 		l_shaderBuffer->GetBufferPointer(), l_shaderBuffer->GetBufferSize(),
@@ -892,7 +892,7 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"..//res//shaders//DX11//lightPassCookTorrancePixel.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"DX11//lightPassCookTorrancePixel.sf");
 
 	// Create the shader from the buffer.
 	result = g_DXRenderingSystemComponent->m_device->CreatePixelShader(
@@ -950,7 +950,7 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"..//res//shaders//DX11//finalBlendPassVertex.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"DX11//finalBlendPassVertex.sf");
 
 	result = g_DXRenderingSystemComponent->m_device->CreateVertexShader(
 		l_shaderBuffer->GetBufferPointer(),
@@ -1026,7 +1026,7 @@ bool DXRenderingSystemNS::initializeFinalBlendPass()
 	l_shaderBuffer = 0;
 
 	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"..//res//shaders//DX11//finalBlendPassPixel.sf");
+	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"DX11//finalBlendPassPixel.sf");
 
 	// Create the shader from the buffer.
 	result = g_DXRenderingSystemComponent->m_device->CreatePixelShader(

@@ -15,11 +15,11 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
 	std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedMeshComponents;
+	const std::wstring m_shaderRelativePath = L"..//res//shaders//";
 }
 
 ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath)
 {
-	auto l_shaderFilePath = shaderFilePath.c_str();
 	auto l_shaderName = std::string(shaderFilePath.begin(), shaderFilePath.end());
 	std::reverse(l_shaderName.begin(), l_shaderName.end());
 	l_shaderName = l_shaderName.substr(l_shaderName.find(".") + 1, l_shaderName.find("//") - l_shaderName.find(".") - 1);
@@ -46,7 +46,7 @@ ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const 
 		break;
 	}
 
-	result = D3DCompileFromFile(l_shaderFilePath, NULL, NULL, l_shaderName.c_str(), l_shaderTypeName.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0,
+	result = D3DCompileFromFile((m_shaderRelativePath + shaderFilePath).c_str(), NULL, NULL, l_shaderName.c_str(), l_shaderTypeName.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0,
 		&l_shaderBuffer, &l_errorMessage);
 	if (FAILED(result))
 	{

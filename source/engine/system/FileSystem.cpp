@@ -41,6 +41,8 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
+	std::string loadTextFile(const std::string & fileName);
+
 	void to_json(json& j, const enitityNamePair& p);
 	void to_json(json& j, const TransformComponent& p);
 	void to_json(json& j, const TransformVector& p);
@@ -107,6 +109,17 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	bool loadScene(const std::string& fileName)
 	{
 		// @TODO: impl
+		std::ifstream i(fileName);
+		json j;
+		i >> j;
+
+		auto l_sceneName = j["SceneName"];
+
+		for (auto& i : j["SceneEntities"])
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, i["EntityName"]);
+		}
+
 		return true;
 	}
 
@@ -210,6 +223,20 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		return l_result;
 	}
 	std::vector<InnoFuture<void>> m_asyncTask;
+}
+
+std::string InnoFileSystemNS::loadTextFile(const std::string & fileName)
+{
+	std::ifstream file;
+	file.open((fileName).c_str());
+	std::stringstream shaderStream;
+	std::string output;
+
+	shaderStream << file.rdbuf();
+	output = shaderStream.str();
+	file.close();
+
+	return output;
 }
 
 void InnoFileSystemNS::to_json(json& j, const enitityNamePair& p)
@@ -736,16 +763,7 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoFileSystem::getStatus()
 
 std::string InnoFileSystem::loadTextFile(const std::string & fileName)
 {
-	std::ifstream file;
-	file.open((AssetSystemComponent::get().m_shaderRelativePath + fileName).c_str());
-	std::stringstream shaderStream;
-	std::string output;
-
-	shaderStream << file.rdbuf();
-	output = shaderStream.str();
-	file.close();
-
-	return output;
+	return InnoFileSystemNS::loadTextFile(fileName);
 }
 
 void InnoFileSystem::saveComponentToDiskImpl(componentType type, size_t classSize, void* ptr, const std::string& fileName)

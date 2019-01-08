@@ -74,7 +74,6 @@ public:
 
     const std::string m_textureRelativePath = std::string{"..//res//textures//"};
     const std::string m_modelRelativePath = std::string{"..//res//models//"};
-    const std::string m_shaderRelativePath = std::string{"..//res//shaders//"};
 
 	DirectoryMetadata m_rootDirectoryMetadata;
 

@@ -12,6 +12,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	std::unordered_map<EntityID, GLMeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, GLTextureDataComponent*> m_textureMap;
+
+	const std::string m_shaderRelativePath = std::string{ "..//res//shaders//" };
 }
 
 GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned int RTNum, GLFrameBufferDesc glFrameBufferDesc, TextureDataDesc RTDesc)
@@ -282,7 +284,7 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 			return;
 		}
 
-		auto l_shaderCodeContent = g_pCoreSystem->getFileSystem()->loadTextFile(shaderFilePath);
+		auto l_shaderCodeContent = g_pCoreSystem->getFileSystem()->loadTextFile(m_shaderRelativePath + shaderFilePath);
 		const char* l_sourcePointer = l_shaderCodeContent.c_str();
 
 		if (l_sourcePointer == nullptr || l_shaderCodeContent.empty())
