@@ -66,4 +66,6 @@ public:
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXRenderPassComponent);
 	#endif
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(PhysicsDataComponent);
+
+	INNO_SYSTEM_EXPORT void* allocateRawMemory(size_t size) override;
 };

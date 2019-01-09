@@ -39,6 +39,38 @@ public:
 	unsigned char* m_poolPtr = nullptr;
 };
 
+class MemoryWatchdog
+{
+public:
+	static MemoryWatchdog& get()
+	{
+		static MemoryWatchdog instance;
+
+		return instance;
+	}
+
+	bool recordRawMemoryUsage(void* ptr, size_t size)
+	{
+		auto l_result = m_memo.find(ptr);
+		if (l_result != m_memo.end())
+		{
+			std::stringstream ss;
+			ss << ptr;
+			std::string name = ss.str();
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: MemoryWatchdog: allocate collision happened at " + name + " !");
+			return false;
+		}
+		else
+		{
+			m_memo.emplace(ptr, size);
+			return true;
+		}
+	}
+
+private:
+	std::unordered_map<void*, size_t> m_memo;
+};
+
 INNO_PRIVATE_SCOPE InnoMemorySystemNS
 {
 #define allocateInitialFreeChucksDefi( className ) \
@@ -274,4 +306,11 @@ freeComponentImplDefi(PhysicsDataComponent)
 ObjectStatus InnoMemorySystem::getStatus()
 {
 	return InnoMemorySystemNS::m_objectStatus;
+}
+
+INNO_SYSTEM_EXPORT void * InnoMemorySystem::allocateRawMemory(size_t size)
+{
+	auto m_Ptr = ::new char[size];
+	MemoryWatchdog::get().recordRawMemoryUsage(m_Ptr, size);
+	return m_Ptr;
 }

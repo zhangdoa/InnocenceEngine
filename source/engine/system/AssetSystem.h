@@ -16,6 +16,9 @@ public:
 	INNO_SYSTEM_EXPORT void loadDefaultAssets() override;
 	INNO_SYSTEM_EXPORT void loadAssetsForComponents() override;
 
+	INNO_SYSTEM_EXPORT MeshDataComponent* addMeshDataComponent() override;
+	INNO_SYSTEM_EXPORT MaterialDataComponent* addMaterialDataComponent() override;
+	INNO_SYSTEM_EXPORT TextureDataComponent* addTextureDataComponent() override;
 	INNO_SYSTEM_EXPORT MeshDataComponent* getMeshDataComponent(EntityID meshID) override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(EntityID textureID) override;
 	INNO_SYSTEM_EXPORT MeshDataComponent* getMeshDataComponent(MeshShapeType MeshShapeType) override;

@@ -3,6 +3,7 @@
 #include "../exports/InnoSystem_Export.h"
 #include "../common/InnoClassTemplate.h"
 #include "../component/MeshDataComponent.h"
+#include "../component/MaterialDataComponent.h"
 #include "../component/TextureDataComponent.h"
 
 INNO_INTERFACE IAssetSystem
@@ -20,6 +21,9 @@ public:
 	INNO_SYSTEM_EXPORT virtual void loadDefaultAssets() = 0;
 	INNO_SYSTEM_EXPORT virtual void loadAssetsForComponents() = 0;
 
+	INNO_SYSTEM_EXPORT virtual MeshDataComponent* addMeshDataComponent() = 0;
+	INNO_SYSTEM_EXPORT virtual MaterialDataComponent* addMaterialDataComponent() = 0;
+	INNO_SYSTEM_EXPORT virtual TextureDataComponent* addTextureDataComponent() = 0;
 	INNO_SYSTEM_EXPORT virtual MeshDataComponent* getMeshDataComponent(EntityID meshID) = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(EntityID textureID) = 0;
 	INNO_SYSTEM_EXPORT virtual MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) = 0;

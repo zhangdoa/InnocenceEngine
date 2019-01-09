@@ -9,6 +9,7 @@
 
 struct AssetMetadata
 {
+	std::string fullPath;
 	std::string fileName;
 	std::string extension;
 	FileExplorerIconType iconType;
@@ -36,10 +37,6 @@ public:
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
-
-    std::unordered_map<std::string, int> m_supportedTextureType = { {"png", 0} };
-    std::unordered_map<std::string, int> m_supportedModelType = { {"obj", 0}, {"innoModel", 0} };
-    std::unordered_map<std::string, int> m_supportedShaderType = { {"sf", 0} };
 
 	std::unordered_map<EntityID, MeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, MaterialDataComponent*> m_materialMap;
@@ -76,8 +73,6 @@ public:
     const std::string m_modelRelativePath = std::string{"..//res//models//"};
 
 	DirectoryMetadata m_rootDirectoryMetadata;
-
-	std::vector<InnoFuture<void>> m_asyncTaskVector;
 private:
 	AssetSystemComponent() {};
 };

@@ -7,6 +7,9 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoTimeSystemNS
 {
+	const long long getCurrentTimeInMillSec();
+	const std::tuple<int, unsigned, unsigned> getCivilFromDays(int z);
+
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	const double m_frameTime = (1.0 / 120.0) * 1000.0 * 1000.0;
@@ -15,6 +18,32 @@ INNO_PRIVATE_SCOPE InnoTimeSystemNS
 	long long m_deltaTime;
 	double m_unprocessedTime;
 };
+
+const std::tuple<int, unsigned, unsigned> InnoTimeSystemNS::getCivilFromDays(int z)
+{
+	static_assert(
+		std::numeric_limits<unsigned>::digits >= 18,
+		"This algorithm has not been ported to a 16 bit unsigned integer");
+	static_assert(
+		std::numeric_limits<int>::digits >= 20,
+		"This algorithm has not been ported to a 16 bit signed integer");
+	z += 719468;
+	const int era = (z >= 0 ? z : z - 146096) / 146097;
+	const unsigned doe = static_cast<unsigned>(z - era * 146097); // [0, 146096]
+	const unsigned yoe =
+		(doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;      // [0, 399]
+	const int y = static_cast<int>(yoe) + era * 400;
+	const unsigned doy = doe - (365 * yoe + yoe / 4 - yoe / 100); // [0, 365]
+	const unsigned mp = (5 * doy + 2) / 153;                      // [0, 11]
+	const unsigned d = doy - (153 * mp + 2) / 5 + 1;              // [1, 31]
+	const unsigned m = (mp < 10 ? mp + 3 : mp - 9);               // [1, 12]
+	return std::tuple<int, unsigned, unsigned>(y + (m <= 2), m, d);
+}
+
+const long long InnoTimeSystemNS::getCurrentTimeInMillSec()
+{
+	return (std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1));
+}
 
 INNO_SYSTEM_EXPORT bool InnoTimeSystem::setup()
 {
@@ -54,28 +83,7 @@ INNO_SYSTEM_EXPORT bool InnoTimeSystem::terminate()
 	return true;
 }
 
-INNO_SYSTEM_EXPORT const std::tuple<int, unsigned, unsigned> InnoTimeSystem::getCivilFromDays(int z)
-{
-	static_assert(
-		std::numeric_limits<unsigned>::digits >= 18,
-		"This algorithm has not been ported to a 16 bit unsigned integer");
-	static_assert(
-		std::numeric_limits<int>::digits >= 20,
-		"This algorithm has not been ported to a 16 bit signed integer");
-	z += 719468;
-	const int era = (z >= 0 ? z : z - 146096) / 146097;
-	const unsigned doe = static_cast<unsigned>(z - era * 146097); // [0, 146096]
-	const unsigned yoe =
-		(doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;      // [0, 399]
-	const int y = static_cast<int>(yoe) + era * 400;
-	const unsigned doy = doe - (365 * yoe + yoe / 4 - yoe / 100); // [0, 365]
-	const unsigned mp = (5 * doy + 2) / 153;                      // [0, 11]
-	const unsigned d = doy - (153 * mp + 2) / 5 + 1;              // [1, 31]
-	const unsigned m = (mp < 10 ? mp + 3 : mp - 9);               // [1, 12]
-	return std::tuple<int, unsigned, unsigned>(y + (m <= 2), m, d);
-}
-
-INNO_SYSTEM_EXPORT const TimeData InnoTimeSystem::getCurrentTimeInLocal(unsigned int timezone_adjustment)
+INNO_SYSTEM_EXPORT const TimeData InnoTimeSystem::getCurrentTime(unsigned int timezone_adjustment)
 {
 	typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type> days;
 	auto now = std::chrono::system_clock::now();
@@ -92,7 +100,7 @@ INNO_SYSTEM_EXPORT const TimeData InnoTimeSystem::getCurrentTimeInLocal(unsigned
 	std::chrono::seconds s = std::chrono::duration_cast<std::chrono::seconds>(tp);
 	tp -= s;
 
-	auto date = getCivilFromDays(d.count());
+	auto date = InnoTimeSystemNS::getCivilFromDays(d.count());
 	// assumes that system_clock uses
 	// 1970-01-01 0:0:0 UTC as the epoch,
 	// and does not count leap seconds.
@@ -115,17 +123,7 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoTimeSystem::getStatus()
 	return InnoTimeSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT const long long InnoTimeSystem::getStartTime()
-{
-	return InnoTimeSystemNS::m_gameStartTime;
-}
-
 INNO_SYSTEM_EXPORT const long long InnoTimeSystem::getDeltaTime()
 {
 	return InnoTimeSystemNS::m_deltaTime;
-}
-
-INNO_SYSTEM_EXPORT const long long InnoTimeSystem::getCurrentTime()
-{
-	return (std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1));
 }

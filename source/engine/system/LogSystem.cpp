@@ -11,7 +11,7 @@ INNO_PRIVATE_SCOPE InnoLogSystemNS
 
 	std::string getLogTimeHeader()
 	{
-		auto l_timeData = g_pCoreSystem->getTimeSystem()->getCurrentTimeInLocal();
+		auto l_timeData = g_pCoreSystem->getTimeSystem()->getCurrentTime();
 		return
 			"["
 			+ std::to_string(l_timeData.year)

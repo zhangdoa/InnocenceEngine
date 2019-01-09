@@ -106,12 +106,7 @@ INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(TransformComponent);
 public:
 	template <typename T> T * spawn()
 	{
-		return reinterpret_cast<T *>(allocate(sizeof(T)));
-	};
-
-	template <typename T>  T * spawn(size_t n)
-	{
-		return reinterpret_cast<T *>(allocate(n * sizeof(T)));
+		return nullptr;
 	};
 
 	template <typename T> bool destroy(T* p)
@@ -119,6 +114,8 @@ public:
 		reinterpret_cast<T*>(p)->~T();
 		return free(p);
 	};
+
+	INNO_SYSTEM_EXPORT virtual void* allocateRawMemory(size_t size) = 0;
 };
 
 template <>

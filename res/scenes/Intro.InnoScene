@@ -1,0 +1,411 @@
+{
+    "SceneEntities": [
+        {
+            "EntityID": "86a206efb60358850abd20bcef20ab7b",
+            "EntityName": "RootTransform"
+        },
+        {
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 0,
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": -7.953461647033691,
+                            "Y": 3.4993772506713867,
+                            "Z": 6.944637298583984
+                        },
+                        "Rotation": {
+                            "W": -0.8605334758758545,
+                            "X": 0.2304096668958664,
+                            "Y": 0.4388464093208313,
+                            "Z": 0.11750523746013641
+                        },
+                        "Scale": {
+                            "X": 1.0,
+                            "Y": 1.0,
+                            "Z": 1.0
+                        }
+                    },
+                    "ParentTransformComponentEntityName": "RootTransform"
+                }
+            ],
+            "EntityID": "c7767c77fb4d2faa714d41ec0a5b2c3c",
+            "EntityName": "playerCharacterCamera"
+        },
+        {
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 0,
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 0.0,
+                            "Y": 4.0,
+                            "Z": 0.0
+                        },
+                        "Rotation": {
+                            "W": 0.7071315050125122,
+                            "X": -0.7070821523666382,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Scale": {
+                            "X": 1.0,
+                            "Y": 1.0,
+                            "Z": 1.0
+                        }
+                    },
+                    "ParentTransformComponentEntityName": "RootTransform"
+                },
+                {
+                    "Color": {
+                        "A": 1.0,
+                        "B": 0.4069966673851013,
+                        "G": 0.624454140663147,
+                        "R": 0.19633494317531586
+                    },
+                    "ComponentType": 2,
+                    "LuminousFlux": 1.0,
+                    "drawAABB": false
+                }
+            ],
+            "EntityID": "c799fd5a9fc76798426f81b435503933",
+            "EntityName": "sun"
+        },
+        {
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 0,
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Rotation": {
+                            "W": 1.0,
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Scale": {
+                            "X": 0.10000000149011612,
+                            "Y": 0.10000000149011612,
+                            "Z": 0.10000000149011612
+                        }
+                    },
+                    "ParentTransformComponentEntityName": "RootTransform"
+                },
+                {
+                    "ComponentType": 1,
+                    "MeshPrimitiveTopology": 2,
+                    "MeshShapeType": 5,
+                    "ModelFileName": "",
+                    "TextureWrapMethod": 1,
+                    "VisiblilityType": 2,
+                    "drawAABB": false
+                }
+            ],
+            "EntityID": "8ea532398c01965f10a331ac09e9443c",
+            "EntityName": "Sponza"
+        },
+        {
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 0,
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 0.0,
+                            "Y": -4.0,
+                            "Z": 0.0
+                        },
+                        "Rotation": {
+                            "W": 0.7071068286895752,
+                            "X": 0.7071068286895752,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Scale": {
+                            "X": 200.0,
+                            "Y": 200.0,
+                            "Z": 0.10000000149011612
+                        }
+                    },
+                    "ParentTransformComponentEntityName": "RootTransform"
+                },
+                {
+                    "ComponentType": 1,
+                    "MeshPrimitiveTopology": 2,
+                    "MeshShapeType": 2,
+                    "ModelFileName": "",
+                    "TextureWrapMethod": 1,
+                    "VisiblilityType": 2,
+                    "drawAABB": false
+                }
+            ],
+            "EntityID": "6b33551b6481c221d7f9c3f864ddbe84",
+            "EntityName": "landscape"
+        },
+        {
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 0,
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 2.0,
+                            "Y": 1.0,
+                            "Z": -5.0
+                        },
+                        "Rotation": {
+                            "W": 1.0,
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Scale": {
+                            "X": 1.0,
+                            "Y": 1.0,
+                            "Z": 1.0
+                        }
+                    },
+                    "ParentTransformComponentEntityName": "RootTransform"
+                },
+                {
+                    "ComponentType": 1,
+                    "MeshPrimitiveTopology": 3,
+                    "MeshShapeType": 3,
+                    "ModelFileName": "",
+                    "TextureWrapMethod": 1,
+                    "VisiblilityType": 2,
+                    "drawAABB": true
+                }
+            ],
+            "EntityID": "299fe750bcaae7c8a339734df2107ec0",
+            "EntityName": "opaqueSphere"
+        },
+        {
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 0,
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 0.0,
+                            "Y": 20.0,
+                            "Z": 0.0
+                        },
+                        "Rotation": {
+                            "W": 1.0,
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Scale": {
+                            "X": 1.0,
+                            "Y": 1.0,
+                            "Z": 1.0
+                        }
+                    },
+                    "ParentTransformComponentEntityName": "RootTransform"
+                },
+                {
+                    "ComponentType": 7,
+                    "CubemapName": "ibl//Playa_Sunrise.hdr"
+                }
+            ],
+            "EntityID": "4af43c32e21884b23f054f737d0a7fa6",
+            "EntityName": "environmentCaptureEntity"
+        },
+        {
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 0,
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Rotation": {
+                            "W": 1.0,
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Scale": {
+                            "X": 5.0,
+                            "Y": 5.0,
+                            "Z": 5.0
+                        }
+                    },
+                    "ParentTransformComponentEntityName": "RootTransform"
+                },
+                {
+                    "ComponentType": 1,
+                    "MeshPrimitiveTopology": 2,
+                    "MeshShapeType": 5,
+                    "ModelFileName": "",
+                    "TextureWrapMethod": 1,
+                    "VisiblilityType": 3,
+                    "drawAABB": false
+                }
+            ],
+            "EntityID": "51d881209d8dabc5615bf628af3a1360",
+            "EntityName": "TransparentTest"
+        },
+        {
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 0,
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 0.019999999552965164,
+                            "Y": 0.20000000298023224,
+                            "Z": 3.5
+                        },
+                        "Rotation": {
+                            "W": 1.0,
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Scale": {
+                            "X": 1.0,
+                            "Y": 1.0,
+                            "Z": 1.0
+                        }
+                    },
+                    "ParentTransformComponentEntityName": "RootTransform"
+                },
+                {
+                    "ComponentType": 1,
+                    "MeshPrimitiveTopology": 3,
+                    "MeshShapeType": 3,
+                    "ModelFileName": "",
+                    "TextureWrapMethod": 1,
+                    "VisiblilityType": 2,
+                    "drawAABB": true
+                }
+            ],
+            "EntityID": "57c34c8b40ae8cc700f68d269c3c6ed4",
+            "EntityName": "pawn2"
+        },
+        {
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 0,
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": -4.0,
+                            "Y": 3.0,
+                            "Z": -7.0
+                        },
+                        "Rotation": {
+                            "W": 1.0,
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Scale": {
+                            "X": 0.10000000149011612,
+                            "Y": 0.10000000149011612,
+                            "Z": 0.10000000149011612
+                        }
+                    },
+                    "ParentTransformComponentEntityName": "RootTransform"
+                },
+                {
+                    "Color": {
+                        "A": 1.0,
+                        "B": 0.1604660600423813,
+                        "G": 0.1604660600423813,
+                        "R": 0.8165938854217529
+                    },
+                    "ComponentType": 3,
+                    "LuminousFlux": 120.0
+                }
+            ],
+            "EntityID": "256d281978d3a203df061f1a9dd3cb8f",
+            "EntityName": "pointLight"
+        },
+        {
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 0,
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": -6.0,
+                            "Y": 25.0,
+                            "Z": 2.0
+                        },
+                        "Rotation": {
+                            "W": 1.0,
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Scale": {
+                            "X": 3.200000047683716,
+                            "Y": 3.200000047683716,
+                            "Z": 3.200000047683716
+                        }
+                    },
+                    "ParentTransformComponentEntityName": "RootTransform"
+                },
+                {
+                    "Color": {
+                        "A": 1.0,
+                        "B": 0.5240174531936646,
+                        "G": 0.0457657165825367,
+                        "R": 0.3256159722805023
+                    },
+                    "ComponentType": 4,
+                    "LuminousFlux": 60.0,
+                    "SphereRadius": 3.200000047683716
+                }
+            ],
+            "EntityID": "322b102b25f40858342663d6cf877716",
+            "EntityName": "sphereLight"
+        },
+        {
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 0,
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 4.0,
+                            "Y": 2.0,
+                            "Z": 1.0
+                        },
+                        "Rotation": {
+                            "W": 1.0,
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0
+                        },
+                        "Scale": {
+                            "X": 1.0,
+                            "Y": 1.0,
+                            "Z": 1.0
+                        }
+                    },
+                    "ParentTransformComponentEntityName": "RootTransform"
+                },
+                {
+                    "ComponentType": 1,
+                    "MeshPrimitiveTopology": 3,
+                    "MeshShapeType": 3,
+                    "ModelFileName": "",
+                    "TextureWrapMethod": 1,
+                    "VisiblilityType": 3,
+                    "drawAABB": true
+                }
+            ],
+            "EntityID": "36ed9d5582cfd1a436af75bf1b71d4b5",
+            "EntityName": "transparentSphere"
+        },
+        {
+            "EntityID": "20f5bf8db931c62dd1c457d66d010321",
+            "EntityName": "PhysicsSystemPicker"
+        }
+    ],
+    "SceneName": "..//res//scenes//Intro.InnoScene"
+}

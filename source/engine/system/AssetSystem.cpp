@@ -46,38 +46,9 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 	void addTerrain(MeshDataComponent& meshDataComponent);
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+
+	std::vector<InnoFuture<void>> m_asyncTaskVector;
 }
-
-class IMeshRawData
-{
-public:
-	IMeshRawData() {};
-	virtual ~IMeshRawData() {};
-
-	virtual int getNumVertices() const = 0;
-	virtual int getNumFaces() const = 0;
-	virtual int getNumIndicesInFace(int faceIndex) const = 0;
-	virtual vec4 getVertices(unsigned int index) const = 0;
-	virtual vec2 getTextureCoords(unsigned int index) const = 0;
-	virtual vec4 getNormals(unsigned int index) const = 0;
-	virtual int getIndices(int faceIndex, int index) const = 0;
-};
-
-class assimpMeshRawData : public IMeshRawData
-{
-public:
-	assimpMeshRawData() {};
-	~assimpMeshRawData() {};
-
-	int getNumVertices() const;
-	int getNumFaces() const;
-	int getNumIndicesInFace(int faceIndex) const;
-	vec4 getVertices(unsigned int index) const;
-	vec2 getTextureCoords(unsigned int index) const;
-	vec4 getNormals(unsigned int index) const;
-	int getIndices(int faceIndex, int index) const;
-	aiMesh* m_aiMesh = 0;
-};
 
 INNO_SYSTEM_EXPORT bool InnoAssetSystem::setup()
 {
@@ -118,10 +89,25 @@ INNO_SYSTEM_EXPORT void InnoAssetSystem::loadAssetsForComponents()
 {
 	// @TODO: more granularly do IO operations
 
-	AssetSystemComponent::get().m_asyncTaskVector.push_back(g_pCoreSystem->getTaskSystem()->submit([]()
+	InnoAssetSystemNS::m_asyncTaskVector.push_back(g_pCoreSystem->getTaskSystem()->submit([]()
 	{
 		InnoAssetSystemNS::loadAssetsForComponents();
 	}));
+}
+
+INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::addMeshDataComponent()
+{
+	return InnoAssetSystemNS::addMeshDataComponent();
+}
+
+INNO_SYSTEM_EXPORT MaterialDataComponent * InnoAssetSystem::addMaterialDataComponent()
+{
+	return InnoAssetSystemNS::addMaterialDataComponent();
+}
+
+INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::addTextureDataComponent()
+{
+	return InnoAssetSystemNS::addTextureDataComponent();
 }
 
 MeshDataComponent* InnoAssetSystemNS::addMeshDataComponent()
@@ -648,7 +634,7 @@ void InnoAssetSystemNS::loadDefaultAssets()
 		}
 	};
 
-	f_directoryTreeBuilder("..//res", 0, &AssetSystemComponent::get().m_rootDirectoryMetadata);
+	f_directoryTreeBuilder(path, 0, &AssetSystemComponent::get().m_rootDirectoryMetadata);
 	f_assignParentDirectory(&AssetSystemComponent::get().m_rootDirectoryMetadata);
 
 	AssetSystemComponent::get().m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", TextureUsageType::NORMAL);
@@ -1099,39 +1085,4 @@ TextureDataComponent* InnoAssetSystemNS::loadTextureFromDisk(const std::string& 
 		}
 	}
 	return l_TDC;
-}
-
-int assimpMeshRawData::getNumVertices() const
-{
-	return m_aiMesh->mNumVertices;
-}
-
-int assimpMeshRawData::getNumFaces() const
-{
-	return m_aiMesh->mNumFaces;
-}
-
-int assimpMeshRawData::getNumIndicesInFace(int faceIndex) const
-{
-	return m_aiMesh->mFaces[faceIndex].mNumIndices;
-}
-
-vec4 assimpMeshRawData::getVertices(unsigned int index) const
-{
-	return vec4(m_aiMesh->mVertices[index].x, m_aiMesh->mVertices[index].y, m_aiMesh->mVertices[index].z, 1.0);
-}
-
-vec2 assimpMeshRawData::getTextureCoords(unsigned int index) const
-{
-	return vec2(m_aiMesh->mTextureCoords[0][index].x, m_aiMesh->mTextureCoords[0][index].y);
-}
-
-vec4 assimpMeshRawData::getNormals(unsigned int index) const
-{
-	return vec4(m_aiMesh->mNormals[index].x, m_aiMesh->mNormals[index].y, m_aiMesh->mNormals[index].z, 0.0);
-}
-
-int assimpMeshRawData::getIndices(int faceIndex, int index) const
-{
-	return m_aiMesh->mFaces[faceIndex].mIndices[index];
 }
