@@ -151,7 +151,7 @@ bool GLRenderingSystemNS::setup()
 #ifndef INNO_PLATFORM_MACOS
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(MessageCallback, 0);
-#endif // !1
+#endif // !INNO_PLATFORM_MACOS
 
 	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);

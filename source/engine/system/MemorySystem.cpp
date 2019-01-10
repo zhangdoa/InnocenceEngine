@@ -15,11 +15,11 @@ public:
 	freeChunk* m_prev = nullptr;
 };
 
-template <class T, unsigned long long capability>
+template <class T, unsigned long long TCapability>
 class objectPool
 {
 public:
-	objectPool() : objectPool(capability)
+	objectPool() : objectPool(TCapability)
 	{
 	};
 
@@ -95,7 +95,7 @@ bool allocateInitialFreeChucksFor##className() \
 \
 		l_prevFreeChunk = l_newFreeChunk; \
 		l_chuckUC += sizeof(freeChunk); \
-		l_componentUC += sizeof(##className); \
+		l_componentUC += sizeof(className); \
 	} \
 \
 	m_##className##CurrentFreeChunk = reinterpret_cast<freeChunk*>(m_##className##FreeChunkPool->m_poolPtr); \
@@ -107,7 +107,7 @@ bool allocateInitialFreeChucksFor##className() \
 std::unique_ptr<objectPool<className, size>> m_##className##Pool = std::make_unique<objectPool<className, size>>(); \
 std::unique_ptr<objectPool<freeChunk, size>> m_##className##FreeChunkPool = std::make_unique<objectPool<freeChunk, size>>(); \
 freeChunk* m_##className##CurrentFreeChunk; \
-allocateInitialFreeChucksDefi(className) 
+allocateInitialFreeChucksDefi(className)
 
 	// Memory pool for components
 	objectPoolUniPtr(TransformComponent, 16384);
@@ -262,7 +262,7 @@ bool InnoMemorySystem::free##className(className* p) \
 { \
 	/* get pointer distance between this object and the head of the pool*/ \
 	auto l_offset = reinterpret_cast<unsigned char*>(p) - InnoMemorySystemNS::m_##className##Pool->m_poolPtr; \
-	auto l_index = l_offset / sizeof(##className); \
+	auto l_index = l_offset / sizeof(className); \
 	auto l_freeChuck = new(InnoMemorySystemNS::m_##className##FreeChunkPool->m_poolPtr + l_index * sizeof(freeChunk)) freeChunk(); \
 	/* now insert after the current free chunk*/ \
 	l_freeChuck->m_target = p; \
@@ -270,7 +270,7 @@ bool InnoMemorySystem::free##className(className* p) \
 	l_freeChuck->m_next = InnoMemorySystemNS::m_##className##CurrentFreeChunk->m_next; \
 	InnoMemorySystemNS::m_##className##CurrentFreeChunk->m_next = l_freeChuck; \
 	/*finally wipe away all the old data*/ \
-	std::memset(p, 0, sizeof(##className)); \
+	std::memset(p, 0, sizeof(className)); \
 \
 	return true; \
 } \

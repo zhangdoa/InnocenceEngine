@@ -84,28 +84,37 @@ INNO_PRIVATE_SCOPE GLGuiSystemNS
 
 INNO_SYSTEM_EXPORT bool GLGuiSystem::setup()
 {
+	#ifndef INNO_PLATFORM_MACOS
 	ImGuiWrapper::get().setup();
+	#endif // !INNO_PLATFORM_MACOS
+
 	GLGuiSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool GLGuiSystem::initialize()
 {
+	#ifndef INNO_PLATFORM_MACOS
 	ImGuiWrapper::get().initialize();
+	#endif // !INNO_PLATFORM_MACOS
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLGuiSystem has been initialized.");
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool GLGuiSystem::update()
 {
+	#ifndef INNO_PLATFORM_MACOS
 	ImGuiWrapper::get().update();
+	#endif // !INNO_PLATFORM_MACOS
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool GLGuiSystem::terminate()
 {
 	GLGuiSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+	#ifndef INNO_PLATFORM_MACOS
 	ImGuiWrapper::get().terminate();
+	#endif // !INNO_PLATFORM_MACOS
 
 	GLGuiSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLGuiSystem has been terminated.");
@@ -202,7 +211,7 @@ void ImGuiWrapper::update()
 		showFileExplorer();
 		showWorldExplorer();
 #else
-	// @TODO: Linux ImGui WIP
+	// @TODO: Linux & MacOS ImGui WIP
 #endif
 #else
 	// @TODO: handle GUI component
@@ -549,7 +558,7 @@ void ImGuiWrapper::showFileExplorer()
 					else if (i.extension == ".InnoScene")
 					{
 						l_fileFullPath = i.fullPath;
-						l_SceneLoadingPopMenuOpened = true;						
+						l_SceneLoadingPopMenuOpened = true;
 					}
 				}
 			}

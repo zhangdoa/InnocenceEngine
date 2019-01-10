@@ -27,7 +27,7 @@ public:
 	registerComponentImplDecl(CameraComponent);
 	registerComponentImplDecl(InputComponent);
 	registerComponentImplDecl(EnvironmentCaptureComponent);
-	
+
 	getComponentImplDecl(TransformComponent);
 	getComponentImplDecl(VisibleComponent);
 	getComponentImplDecl(DirectionalLightComponent);
@@ -43,7 +43,7 @@ public:
 
 	INNO_SYSTEM_EXPORT void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) override;
 	INNO_SYSTEM_EXPORT void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) override;
-	
+
 	INNO_SYSTEM_EXPORT void saveComponentsCapture() override;
 	INNO_SYSTEM_EXPORT void setGameInstance(IGameInstance* rhs) override;
 
@@ -51,5 +51,4 @@ public:
 	INNO_SYSTEM_EXPORT bool removeEntity(const std::string& entityName) override;
 	INNO_SYSTEM_EXPORT std::string getEntityName(const EntityID & entityID) override;
 	INNO_SYSTEM_EXPORT EntityID getEntityID(const std::string & entityName) override;
-
 };

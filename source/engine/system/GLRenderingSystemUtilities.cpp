@@ -294,6 +294,7 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 		}
 
 		auto l_shaderCodeContent = g_pCoreSystem->getFileSystem()->loadTextFile(m_shaderRelativePath + shaderFilePath);
+
 		const char* l_sourcePointer = l_shaderCodeContent.c_str();
 
 		if (l_sourcePointer == nullptr || l_shaderCodeContent.empty())
@@ -736,7 +737,7 @@ void GLRenderingSystemNS::attachTextureToFramebuffer(TextureDataComponent * TDC,
 		else
 		{
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, GLTDC->m_TAO, mipLevel);
-		}		
+		}
 	}
 }
 

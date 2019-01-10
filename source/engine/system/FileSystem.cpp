@@ -1295,5 +1295,4 @@ bool InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const std::string & file
 
 		return false;
 	}
-
 }
