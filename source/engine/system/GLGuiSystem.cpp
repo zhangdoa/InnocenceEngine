@@ -68,6 +68,10 @@ private:
 	void showPointLightComponentPropertyEditor(void* rhs);
 	void showSphereLightComponentPropertyEditor(void* rhs);
 
+	ImTextureID getFileExplorerIconTextureID(const FileExplorerIconType iconType);
+	void showAssetConvertPopWindow(bool &l_popMenuOpened, std::string &l_fileFullPath);
+	void showSceneLoadingPopWindow(bool &l_popMenuOpened, std::string &l_fileFullPath);
+
 	InnoFuture<void>* m_asyncTask;
 
 	std::atomic<bool> m_canRender = false;
@@ -207,10 +211,10 @@ void ImGuiWrapper::update()
 	ImGui::End();
 #endif
 	}
-	ImGui::Render();
-	// Rendering
-	glViewport(0, 0, (GLsizei)WindowSystemComponent::get().m_windowResolution.x, (GLsizei)WindowSystemComponent::get().m_windowResolution.y);
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+ImGui::Render();
+// Rendering
+glViewport(0, 0, (GLsizei)WindowSystemComponent::get().m_windowResolution.x, (GLsizei)WindowSystemComponent::get().m_windowResolution.y);
+ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void ImGuiWrapper::showApplicationProfiler()
@@ -274,14 +278,6 @@ void ImGuiWrapper::showApplicationProfiler()
 		g_pCoreSystem->getFileSystem()->loadScene(scene_filePath);
 	}
 
-	static char importAsset_filePath[128] = "..//res//models//Orb//Orb.obj";
-	ImGui::InputText("Import asset file path", importAsset_filePath, IM_ARRAYSIZE(importAsset_filePath));
-	static char exportAsset_filePath[128] = "..//res//convertedAssets//";
-	ImGui::InputText("Export asset file path", exportAsset_filePath, IM_ARRAYSIZE(exportAsset_filePath));
-	if (ImGui::Button("Convert asset"))
-	{
-		g_pCoreSystem->getFileSystem()->convertModel(importAsset_filePath, exportAsset_filePath);
-	}
 	if (l_renderingConfig.showRenderPassResult)
 	{
 		showRenderResult(l_renderingConfig);
@@ -467,27 +463,26 @@ void ImGuiWrapper::terminate()
 	ImGui::DestroyContext();
 }
 
+ImTextureID ImGuiWrapper::getFileExplorerIconTextureID (const FileExplorerIconType iconType)
+{
+	switch (iconType)
+	{
+	case FileExplorerIconType::OBJ:
+		return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_OBJ->m_TAO); break;
+	case FileExplorerIconType::PNG:
+		return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_PNG->m_TAO); break;
+	case FileExplorerIconType::SHADER:
+		return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_SHADER->m_TAO); break;
+	case FileExplorerIconType::UNKNOWN:
+		return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_UNKNOWN->m_TAO); break;
+	default:
+		return nullptr; break;
+	}
+};
+
 void ImGuiWrapper::showFileExplorer()
 {
 	auto l_iconSize = ImVec2(48.0f, 48.0f);
-
-	std::function<ImTextureID(const FileExplorerIconType iconType)> f_getTextID =
-		[&](const FileExplorerIconType iconType) -> ImTextureID
-	{
-		switch (iconType)
-		{
-		case FileExplorerIconType::OBJ:
-			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_OBJ->m_TAO); break;
-		case FileExplorerIconType::PNG:
-			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_PNG->m_TAO); break;
-		case FileExplorerIconType::SHADER:
-			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_SHADER->m_TAO); break;
-		case FileExplorerIconType::UNKNOWN:
-			return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_UNKNOWN->m_TAO); break;
-		default:
-			return nullptr; break;
-		}
-	};
 
 	ImGui::Begin("File Explorer", 0);
 
@@ -512,9 +507,12 @@ void ImGuiWrapper::showFileExplorer()
 
 		ImGui::BeginGroup();
 		{
-			if (ImGui::ImageButton(f_getTextID(FileExplorerIconType::UNKNOWN), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0), -1, ImColor(0, 0, 0, 255)))
+			ImGui::Image(getFileExplorerIconTextureID(FileExplorerIconType::UNKNOWN), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			{
-				currentDirectoryMetadata = l_currentActivateDir;
+				if (ImGui::OpenPopupOnItemClick("Directory Left-click", 0))
+				{
+					currentDirectoryMetadata = l_currentActivateDir;
+				}
 			}
 			ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + l_iconSize.x);
 			ImGui::Text((l_currentActivateDir->directoryName).c_str());
@@ -531,12 +529,29 @@ void ImGuiWrapper::showFileExplorer()
 
 		ImGui::PopID();
 	}
+
+	static bool l_AssetConvertPopMenuOpened = false;
+	static bool l_SceneLoadingPopMenuOpened = false;
+	static std::string l_fileFullPath;
 	for (auto& i : currentDirectoryMetadata->childrenAssets)
 	{
 		ImGui::BeginGroup();
 		{
-			if (ImGui::ImageButton(f_getTextID(i.iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0), -1, ImColor(0, 0, 0, 255)))
+			ImGui::Image(getFileExplorerIconTextureID(i.iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			{
+				if (ImGui::OpenPopupOnItemClick("Asset Right-click", 1))
+				{
+					if (i.extension == ".obj")
+					{
+						l_fileFullPath = i.fullPath;
+						l_AssetConvertPopMenuOpened = true;
+					}
+					else if (i.extension == ".InnoScene")
+					{
+						l_fileFullPath = i.fullPath;
+						l_SceneLoadingPopMenuOpened = true;						
+					}
+				}
 			}
 			ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + l_iconSize.x);
 			ImGui::Text((i.fileName + i.extension).c_str());
@@ -552,7 +567,64 @@ void ImGuiWrapper::showFileExplorer()
 		}
 	}
 
+	if (l_AssetConvertPopMenuOpened)
+	{
+		showAssetConvertPopWindow(l_AssetConvertPopMenuOpened, l_fileFullPath);
+	}
+	if (l_SceneLoadingPopMenuOpened)
+	{
+		showSceneLoadingPopWindow(l_SceneLoadingPopMenuOpened, l_fileFullPath);
+	}
+
 	ImGui::End();
+}
+
+void ImGuiWrapper::showAssetConvertPopWindow(bool &l_popMenuOpened, std::string &l_fileFullPath)
+{
+	ImGui::OpenPopup("Convert Asset");
+
+	if (ImGui::BeginPopupModal("Convert Asset", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		static char exportAsset_filePath[128] = "..//res//convertedAssets//";
+		ImGui::InputText("Export asset file path", exportAsset_filePath, IM_ARRAYSIZE(exportAsset_filePath));
+
+		ImGui::Separator();
+
+		if (ImGui::Button("Convert", ImVec2(120, 0))) {
+			l_popMenuOpened = false;
+			g_pCoreSystem->getFileSystem()->convertModel(l_fileFullPath, exportAsset_filePath);
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+			l_popMenuOpened = false;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+}
+
+void ImGuiWrapper::showSceneLoadingPopWindow(bool &l_popMenuOpened, std::string &l_fileFullPath)
+{
+	ImGui::OpenPopup("Load scene");
+
+	if (ImGui::BeginPopupModal("Load scene", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+
+		ImGui::Separator();
+
+		if (ImGui::Button("Load", ImVec2(120, 0))) {
+			l_popMenuOpened = false;
+			g_pCoreSystem->getFileSystem()->loadScene(l_fileFullPath);
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+			l_popMenuOpened = false;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
 }
 
 void ImGuiWrapper::showWorldExplorer()
@@ -675,6 +747,21 @@ void ImGuiWrapper::showVisiableComponentPropertyEditor(void * rhs)
 {
 	auto l_rhs = reinterpret_cast<VisibleComponent*>(rhs);
 
+	const char* meshPrimitiveTopology_items[] = { "Point", "Line", "Triangle", "Triangle-strip" };
+	static int meshPrimitiveTopology_item_current = (int)l_rhs->m_meshPrimitiveTopology;
+	if (ImGui::Combo("Mesh primitive topology", &meshPrimitiveTopology_item_current, meshPrimitiveTopology_items, IM_ARRAYSIZE(meshPrimitiveTopology_items)))
+	{
+		l_rhs->m_meshPrimitiveTopology = MeshPrimitiveTopology(meshPrimitiveTopology_item_current);
+	}
+
+	static char modelFileName[128];
+	ImGui::InputText("Model file name", modelFileName, IM_ARRAYSIZE(modelFileName));
+
+	if (ImGui::Button("Save"))
+	{
+		l_rhs->m_modelFileName = modelFileName;
+	}
+
 	static MaterialDataComponent* selectedComponent = nullptr;
 
 	{
@@ -705,7 +792,7 @@ void ImGuiWrapper::showVisiableComponentPropertyEditor(void * rhs)
 
 				static ImVec4 albedo = ImColor(l_material->albedo_r, l_material->albedo_g, l_material->albedo_b, l_material->alpha);
 
-				if (ImGui::ColorPicker4("Albedo Color", (float*)&albedo, ImGuiColorEditFlags_RGB))
+				if (ImGui::ColorPicker4("Albedo color", (float*)&albedo, ImGuiColorEditFlags_RGB))
 				{
 					l_material->albedo_r = albedo.x;
 					l_material->albedo_g = albedo.y;
@@ -755,7 +842,7 @@ void ImGuiWrapper::showDirectionalLightComponentPropertyEditor(void * rhs)
 	{
 		static ImVec4 radiance = ImColor(l_rhs->m_color.x, l_rhs->m_color.y, l_rhs->m_color.z, l_rhs->m_color.w);
 
-		if (ImGui::ColorPicker4("Radiance Color", (float*)&radiance, ImGuiColorEditFlags_RGB))
+		if (ImGui::ColorPicker4("Radiance color", (float*)&radiance, ImGuiColorEditFlags_RGB))
 		{
 			l_rhs->m_color.x = radiance.x;
 			l_rhs->m_color.y = radiance.y;
@@ -763,7 +850,7 @@ void ImGuiWrapper::showDirectionalLightComponentPropertyEditor(void * rhs)
 			l_rhs->m_color.w = radiance.w;
 		}
 		static float luminousFlux = l_rhs->m_luminousFlux;
-		if (ImGui::DragFloat("Luminous Flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
+		if (ImGui::DragFloat("Luminous flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
 		{
 			l_rhs->m_luminousFlux = luminousFlux;
 		}
@@ -778,7 +865,7 @@ void ImGuiWrapper::showPointLightComponentPropertyEditor(void * rhs)
 	{
 		static ImVec4 radiance = ImColor(l_rhs->m_color.x, l_rhs->m_color.y, l_rhs->m_color.z, l_rhs->m_color.w);
 
-		if (ImGui::ColorPicker4("Radiance Color", (float*)&radiance, ImGuiColorEditFlags_RGB))
+		if (ImGui::ColorPicker4("Radiance color", (float*)&radiance, ImGuiColorEditFlags_RGB))
 		{
 			l_rhs->m_color.x = radiance.x;
 			l_rhs->m_color.y = radiance.y;
@@ -786,7 +873,7 @@ void ImGuiWrapper::showPointLightComponentPropertyEditor(void * rhs)
 			l_rhs->m_color.w = radiance.w;
 		}
 		static float luminousFlux = l_rhs->m_luminousFlux;
-		if (ImGui::DragFloat("Luminous Flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
+		if (ImGui::DragFloat("Luminous flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
 		{
 			l_rhs->m_luminousFlux = luminousFlux;
 		}
@@ -801,7 +888,7 @@ void ImGuiWrapper::showSphereLightComponentPropertyEditor(void * rhs)
 	{
 		static ImVec4 radiance = ImColor(l_rhs->m_color.x, l_rhs->m_color.y, l_rhs->m_color.z, l_rhs->m_color.w);
 
-		if (ImGui::ColorPicker4("Radiance Color", (float*)&radiance, ImGuiColorEditFlags_RGB))
+		if (ImGui::ColorPicker4("Radiance color", (float*)&radiance, ImGuiColorEditFlags_RGB))
 		{
 			l_rhs->m_color.x = radiance.x;
 			l_rhs->m_color.y = radiance.y;
@@ -809,12 +896,12 @@ void ImGuiWrapper::showSphereLightComponentPropertyEditor(void * rhs)
 			l_rhs->m_color.w = radiance.w;
 		}
 		static float luminousFlux = l_rhs->m_luminousFlux;
-		if (ImGui::DragFloat("Luminous Flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
+		if (ImGui::DragFloat("Luminous flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
 		{
 			l_rhs->m_luminousFlux = luminousFlux;
 		}
 		static float sphereRadius = l_rhs->m_sphereRadius;
-		if (ImGui::DragFloat("Sphere Radius", &sphereRadius, 0.01f, 0.1f, 10000.0f))
+		if (ImGui::DragFloat("Sphere radius", &sphereRadius, 0.01f, 0.1f, 10000.0f))
 		{
 			l_rhs->m_sphereRadius = sphereRadius;
 		}

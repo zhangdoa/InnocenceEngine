@@ -258,15 +258,23 @@ GLTextureDataComponent* GLRenderingSystemNS::generateGLTextureDataComponent(Text
 		}
 		else
 		{
-			auto l_ptr = addGLTextureDataComponent(rhs->m_parentEntity);
+			if (rhs->m_textureData.size() > 0)
+			{
+				auto l_ptr = addGLTextureDataComponent(rhs->m_parentEntity);
 
-			initializeGLTextureDataComponent(l_ptr, rhs->m_textureDataDesc, rhs->m_textureData);
+				initializeGLTextureDataComponent(l_ptr, rhs->m_textureDataDesc, rhs->m_textureData);
 
-			rhs->m_objectStatus = ObjectStatus::ALIVE;
+				rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-			g_pCoreSystem->getAssetSystem()->releaseRawDataForTextureDataComponent(rhs->m_parentEntity);
+				g_pCoreSystem->getAssetSystem()->releaseRawDataForTextureDataComponent(rhs->m_parentEntity);
 
-			return l_ptr;
+				return l_ptr;
+			}
+			else
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GLRenderingSystem: try to generate GLTextureDataComponent without raw data!");
+				return nullptr;
+			}
 		}
 	}
 }

@@ -609,6 +609,7 @@ void InnoAssetSystemNS::loadFolderData()
 				else if (fs::is_regular_file(entry.status()))
 				{
 					AssetMetadata l_assetMetadata;
+					l_assetMetadata.fullPath = entry.path().generic_string();
 					l_assetMetadata.fileName = entry.path().stem().generic_string();
 					l_assetMetadata.extension = entry.path().extension().generic_string();
 					l_assetMetadata.iconType = getIconType(l_assetMetadata.extension);
@@ -792,10 +793,16 @@ TextureDataComponent* InnoAssetSystemNS::loadTexture(const std::string& fileName
 	else
 	{
 		auto l_TDC = addTextureDataComponent();
-		g_pCoreSystem->getFileSystem()->loadAsset(fileName, *l_TDC);
-		l_TDC->m_textureDataDesc.textureUsageType = textureUsageType;
-		AssetSystemComponent::get().m_loadedTextureMap.emplace(fileName, l_TDC);
-		AssetSystemComponent::get().m_uninitializedTextureComponents.push(l_TDC);
+		if (g_pCoreSystem->getFileSystem()->loadAsset(fileName, *l_TDC))
+		{
+			l_TDC->m_textureDataDesc.textureUsageType = textureUsageType;
+			AssetSystemComponent::get().m_loadedTextureMap.emplace(fileName, l_TDC);
+			AssetSystemComponent::get().m_uninitializedTextureComponents.push(l_TDC);
+		}
+		else
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't load " + fileName + "!");
+		}
 		return l_TDC;
 	}
 }

@@ -19,7 +19,7 @@ public:
 
 	VisiblilityType m_visiblilityType = VisiblilityType::INNO_INVISIBLE;
 	MeshShapeType m_meshShapeType = MeshShapeType::QUAD;
-	MeshPrimitiveTopology m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
+	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::REPEAT;
 
 	bool m_drawAABB = false;
