@@ -24,5 +24,8 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual bool addSceneLoadingCallback(std::function<void()>* functor) = 0;
 
-	INNO_SYSTEM_EXPORT virtual bool convertAsset(const std::string & fileName, const std::string & exportPath) = 0;
+	INNO_SYSTEM_EXPORT virtual bool convertModel(const std::string & fileName, const std::string & exportPath) = 0;
+
+	INNO_SYSTEM_EXPORT virtual bool loadAsset(const std::string & fileName, ModelMap& modelMap) = 0;
+	INNO_SYSTEM_EXPORT virtual bool loadAsset(const std::string & fileName, TextureDataComponent& TDC) = 0;
 };

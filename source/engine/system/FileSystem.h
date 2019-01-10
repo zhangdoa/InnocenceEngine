@@ -21,5 +21,8 @@ public:
 
 	INNO_SYSTEM_EXPORT bool addSceneLoadingCallback(std::function<void()>* functor) override;
 
-	INNO_SYSTEM_EXPORT bool convertAsset(const std::string & fileName, const std::string & exportPath) override;
+	INNO_SYSTEM_EXPORT bool convertModel(const std::string & fileName, const std::string & exportPath) override;
+
+	INNO_SYSTEM_EXPORT bool loadAsset(const std::string & fileName, ModelMap& modelMap) override;
+	INNO_SYSTEM_EXPORT bool loadAsset(const std::string & fileName, TextureDataComponent& TDC) override;
 };

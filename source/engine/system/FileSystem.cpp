@@ -42,31 +42,29 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 {
 	namespace AssimpWrapper
 	{
-		bool convertModelFromDisk(const std::string & fileName, const std::string & exportPath);
-		json processAssimpScene(const aiScene* aiScene, const std::string & exportPath);
-		json processAssimpNode(const aiNode * node, const aiScene * scene, const std::string & exportPath);
-		json processAssimpMesh(const aiScene * scene, unsigned int meshIndex, const std::string & exportPath);
-		EntityID processMeshVertices(const aiMesh * aiMesh, const std::string & exportPath);
-		EntityID processMeshIndices(const aiMesh * aiMesh, const std::string & exportPath);
-		json processAssimpMaterial(const aiMaterial * aiMaterial, const std::string & exportPath);
-		json loadTextureFromDisk(const std::string& fileName, TextureUsageType TextureUsageType, const std::string & exportPath);
+		bool convertModel(const std::string & fileName, const std::string & exportPath);
+		json processAssimpScene(const aiScene* aiScene);
+		json processAssimpNode(const aiNode * node, const aiScene * scene);
+		json processAssimpMesh(const aiScene * scene, unsigned int meshIndex);
+		EntityID processMeshVertices(const aiMesh * aiMesh);
+		EntityID processMeshIndices(const aiMesh * aiMesh);
+		json processAssimpMaterial(const aiMaterial * aiMaterial);
+		json processTextureData(const std::string & fileName, TextureUsageType textureUsageType);
 	};
 
 	namespace ModelLoader
 	{
-		ModelMap loadModel(const std::string & fileName);
-		ModelMap loadModelFromDisk(const std::string & fileName);
-		ModelMap processSceneJsonData(const json& j);
-		ModelMap processNodeJsonData(const json& j);
+		bool loadModelFromDisk(const std::string & fileName, ModelMap& modelMap);
+		bool processSceneJsonData(const json & j, ModelMap& modelMap);
+		bool processNodeJsonData(const json & j, ModelMap& modelMap);
 		ModelPair processMeshJsonData(const json& j);
 		MaterialDataComponent* processMaterialJsonData(const json& j);
-		TextureDataComponent* processTextureJsonData(const json& j);
-		TextureDataComponent* loadTextureFromDisk(const EntityID& fileName, size_t size);
+		bool loadTextureFromDisk(const std::string & fileName, TextureDataComponent& TDC);
 	}
 
 	std::string loadTextFile(const std::string & fileName);
 
-	bool convertAsset(const std::string & fileName, const std::string & exportPath);
+	bool convertModel(const std::string & fileName, const std::string & exportPath);
 
 	void to_json(json& j, const enitityNamePair& p);
 
@@ -163,10 +161,10 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		// get file size using buffer's members
 		std::size_t l_size = pbuf->pubseekoff(0, is.end, is.in);
 		pbuf->pubseekpos(0, is.in);
+		auto rhs = std::vector<T>(l_size / sizeof(T));
 
-		vector.reserve(l_size / sizeof(T));
-
-		pbuf->sgetn((char*)&vector[0], l_size);
+		pbuf->sgetn((char*)&rhs[0], l_size);
+		vector = std::move(rhs);
 		return true;
 	}
 
@@ -197,15 +195,26 @@ std::string InnoFileSystemNS::loadTextFile(const std::string & fileName)
 	return output;
 }
 
-bool InnoFileSystemNS::convertAsset(const std::string & fileName, const std::string & exportPath)
+bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::string & exportPath)
 {
-	auto tempTask = g_pCoreSystem->getTaskSystem()->submit([=]()
+	auto l_extension = fs::path(fileName).extension().generic_string();
+	if (l_extension == ".obj")
 	{
-		AssimpWrapper::convertModelFromDisk(fileName, exportPath);
-	});
+		auto tempTask = g_pCoreSystem->getTaskSystem()->submit([=]()
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: converting " + fileName + " ...");
+			AssimpWrapper::convertModel(fileName, exportPath);
+		});
 
-	m_asyncTaskVector.emplace_back(std::move(tempTask));
+		m_asyncTaskVector.emplace_back(std::move(tempTask));
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: " + fileName + " is not supported!");
 
+		return false;
+	}
 	return true;
 }
 
@@ -759,27 +768,34 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::addSceneLoadingCallback(std::function<vo
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoFileSystem::convertAsset(const std::string & fileName, const std::string & exportPath)
+INNO_SYSTEM_EXPORT bool InnoFileSystem::convertModel(const std::string & fileName, const std::string & exportPath)
+{
+	return InnoFileSystemNS::convertModel(fileName, exportPath);
+}
+
+INNO_SYSTEM_EXPORT bool InnoFileSystem::loadAsset(const std::string & fileName, ModelMap& modelMap)
 {
 	auto l_extension = fs::path(fileName).extension().generic_string();
-	if (l_extension == ".obj")
+	if (l_extension == ".InnoModel")
 	{
-		InnoFileSystemNS::convertAsset(fileName, exportPath);
-		return true;
+		return InnoFileSystemNS::ModelLoader::loadModelFromDisk(fileName, modelMap);
 	}
 	else
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: " + fileName + " is not supported!");
-
 		return false;
 	}
 }
 
+INNO_SYSTEM_EXPORT bool InnoFileSystem::loadAsset(const std::string & fileName, TextureDataComponent& TDC)
+{
+	return InnoFileSystemNS::ModelLoader::loadTextureFromDisk(fileName, TDC);
+}
 
-bool InnoFileSystemNS::AssimpWrapper::convertModelFromDisk(const std::string & fileName, const std::string & exportPath)
+bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName, const std::string & exportPath)
 {
 	auto l_exportFileName = fs::path(fileName).stem().generic_string();
-	auto l_exportFileFullPath = exportPath + l_exportFileName + ".InnoAsset";
+	auto l_exportFileFullPath = exportPath + l_exportFileName + ".InnoModel";
 
 	if (fs::exists(fs::path(l_exportFileFullPath)))
 	{
@@ -806,7 +822,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModelFromDisk(const std::string & f
 		return false;
 	}
 
-	auto l_result = processAssimpScene(l_assScene, exportPath);
+	auto l_result = processAssimpScene(l_assScene);
 	saveJsonDataToDisk(l_exportFileFullPath, l_result);
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: " + fileName + " has been converted.");
@@ -814,7 +830,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModelFromDisk(const std::string & f
 	return true;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene, const std::string & exportPath)
+json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene)
 {
 	auto l_timeData = g_pCoreSystem->getTimeSystem()->getCurrentTime();
 	auto l_timeDataStr =
@@ -835,19 +851,19 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
 	if (aiScene->mRootNode->mNumMeshes > 0)
 	{
-		l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode, aiScene, exportPath));
+		l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode, aiScene));
 	}
 	for (unsigned int i = 0; i < aiScene->mRootNode->mNumChildren; i++)
 	{
 		if (aiScene->mRootNode->mChildren[i]->mNumMeshes > 0)
 		{
-			l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode->mChildren[i], aiScene, exportPath));
+			l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode->mChildren[i], aiScene));
 		}
 	}
 	return l_sceneData;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpNode(const aiNode * node, const aiScene * scene, const std::string & exportPath)
+json InnoFileSystemNS::AssimpWrapper::processAssimpNode(const aiNode * node, const aiScene * scene)
 {
 	json l_nodeData;
 
@@ -856,13 +872,13 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpNode(const aiNode * node, con
 	// process each mesh located at the current node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
-		l_nodeData["Meshes"].emplace_back(processAssimpMesh(scene, node->mMeshes[i], exportPath));
+		l_nodeData["Meshes"].emplace_back(processAssimpMesh(scene, node->mMeshes[i]));
 	}
 
 	return l_nodeData;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, unsigned int meshIndex, const std::string & exportPath)
+json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, unsigned int meshIndex)
 {
 	json l_meshData;
 
@@ -871,22 +887,22 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, u
 	l_meshData["MeshName"] = *l_aiMesh->mName.C_Str();
 	l_meshData["VeticesNumber"] = l_aiMesh->mNumVertices;
 
-	auto l_verticesFileName = processMeshVertices(l_aiMesh, exportPath);
+	auto l_verticesFileName = processMeshVertices(l_aiMesh);
 	l_meshData["MeshVerticesFile"] = l_verticesFileName.c_str();
 
-	auto l_indicesFileName = processMeshIndices(l_aiMesh, exportPath);
+	auto l_indicesFileName = processMeshIndices(l_aiMesh);
 	l_meshData["MeshIndicesFile"] = l_indicesFileName.c_str();
 
 	// process material
 	if (l_aiMesh->mMaterialIndex > 0)
 	{
-		l_meshData["Material"] = processAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex], exportPath);
+		l_meshData["Material"] = processAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex]);
 	}
 
 	return l_meshData;
 }
 
-EntityID InnoFileSystemNS::AssimpWrapper::processMeshVertices(const aiMesh * aiMesh, const std::string & exportPath)
+EntityID InnoFileSystemNS::AssimpWrapper::processMeshVertices(const aiMesh * aiMesh)
 {
 	auto l_verticesNumber = aiMesh->mNumVertices;
 
@@ -944,15 +960,26 @@ EntityID InnoFileSystemNS::AssimpWrapper::processMeshVertices(const aiMesh * aiM
 
 	l_vertices.shrink_to_fit();
 
-	auto l_exportFileName = InnoMath::createEntityID();
-	std::ofstream l_file(exportPath + l_exportFileName + ".InnoMeshVertices", std::ios::binary);
+	std::string l_exportFileName;
+
+	if (aiMesh->mName.length)
+	{
+		l_exportFileName = aiMesh->mName.C_Str();
+	}
+	else
+	{
+		l_exportFileName = InnoMath::createEntityID();
+	}
+
+	auto l_exportFileFullPath = "..//res//convertedAssets//" + l_exportFileName + ".InnoRaw";
+	std::ofstream l_file(l_exportFileFullPath, std::ios::binary);
 	serializeVector(l_file, l_vertices);
 	l_file.close();
 
-	return l_exportFileName;
+	return l_exportFileFullPath;
 }
 
-EntityID InnoFileSystemNS::AssimpWrapper::processMeshIndices(const aiMesh* aiMesh, const std::string & exportPath)
+EntityID InnoFileSystemNS::AssimpWrapper::processMeshIndices(const aiMesh* aiMesh)
 {
 	std::vector<Index> l_indices;
 	size_t l_indiceSize = 0;
@@ -975,9 +1002,9 @@ EntityID InnoFileSystemNS::AssimpWrapper::processMeshIndices(const aiMesh* aiMes
 		}
 	}
 
-	auto l_exportFileName = InnoMath::createEntityID();
-
-	std::ofstream l_file(exportPath + l_exportFileName + ".InnoMeshIndices", std::ios::binary);
+	auto l_exportFileID = InnoMath::createEntityID();
+	auto l_exportFileName = "..//res//convertedAssets//" + l_exportFileID + ".InnoRaw";
+	std::ofstream l_file(l_exportFileName, std::ios::binary);
 	serializeVector(l_file, l_indices);
 	l_file.close();
 
@@ -990,9 +1017,15 @@ aiTextureType::aiTextureType_DIFFUSE TextureUsageType::ALBEDO map_Kd albedo text
 aiTextureType::aiTextureType_SPECULAR TextureUsageType::METALLIC map_Ks metallic texture
 aiTextureType::aiTextureType_AMBIENT TextureUsageType::ROUGHNESS map_Ka roughness texture
 aiTextureType::aiTextureType_EMISSIVE TextureUsageType::AMBIENT_OCCLUSION map_emissive AO texture
+aiTextureType::AI_MATKEY_COLOR_DIFFUSE Kd Albedo RGB
+aiTextureType::AI_MATKEY_COLOR_TRANSPARENT Ks Alpha A
+aiTextureType::AI_MATKEY_COLOR_SPECULAR Ka Metallic
+aiTextureType::AI_MATKEY_COLOR_AMBIENT Ke Roughness
+aiTextureType::AI_MATKEY_COLOR_EMISSIVE AO
+aiTextureType::AI_MATKEY_COLOR_REFLECTIVE Thickness
 */
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * aiMaterial, const std::string & exportPath)
+json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * aiMaterial)
 {
 	json l_materialData;
 
@@ -1010,23 +1043,23 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
 			{
-				l_materialData["Textures"].emplace_back(loadTextureFromDisk(l_localPath, TextureUsageType::NORMAL, exportPath));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureUsageType::NORMAL));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_DIFFUSE)
 			{
-				l_materialData["Textures"].emplace_back(loadTextureFromDisk(l_localPath, TextureUsageType::ALBEDO, exportPath));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureUsageType::ALBEDO));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_SPECULAR)
 			{
-				l_materialData["Textures"].emplace_back(loadTextureFromDisk(l_localPath, TextureUsageType::METALLIC, exportPath));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureUsageType::METALLIC));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_AMBIENT)
 			{
-				l_materialData["Textures"].emplace_back(loadTextureFromDisk(l_localPath, TextureUsageType::ROUGHNESS, exportPath));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureUsageType::ROUGHNESS));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_EMISSIVE)
 			{
-				l_materialData["Textures"].emplace_back(loadTextureFromDisk(l_localPath, TextureUsageType::AMBIENT_OCCLUSION, exportPath));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureUsageType::AMBIENT_OCCLUSION));
 			}
 			else
 			{
@@ -1046,26 +1079,184 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 			{"B", l_result.b},
 		};
 	}
+	else
+	{
+		l_materialData["Albedo"] =
+		{
+			{"R", 1.0f},
+			{"G", 1.0f},
+			{"B", 1.0f},
+		};
+	}
+	if (aiMaterial->Get(AI_MATKEY_COLOR_TRANSPARENT, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_materialData["Albedo"]["A"] =l_result.r;
+	}
+	else
+	{
+		l_materialData["Albedo"]["A"] = 1.0f;
+	}
 	if (aiMaterial->Get(AI_MATKEY_COLOR_SPECULAR, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
 		l_materialData["Metallic"] = l_result.r;
+	}
+	else
+	{
+		l_materialData["Metallic"] = 0.5f;
 	}
 	if (aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
 		l_materialData["Roughness"] = l_result.r;
 	}
+	else
+	{
+		l_materialData["Roughness"] = 0.5f;
+	}
 	if (aiMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
 		l_materialData["AO"] = l_result.r;
 	}
-
+	else
+	{
+		l_materialData["AO"] = 1.0f;
+	}
+	if (aiMaterial->Get(AI_MATKEY_COLOR_REFLECTIVE, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_materialData["Thickness"] = l_result.r;
+	}
+	else
+	{
+		l_materialData["Thickness"] = 1.0f;
+	}
 	return l_materialData;
 }
 
-json InnoFileSystemNS::AssimpWrapper::loadTextureFromDisk(const std::string& fileName, TextureUsageType TextureUsageType, const std::string & exportPath)
+json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fileName, TextureUsageType textureUsageType)
 {
-	json l_textureData;
+	json j;
 
+	j["TextureUsageType"] = textureUsageType;
+	j["TextureFile"] = fileName;
+
+	return j;
+}
+
+bool InnoFileSystemNS::ModelLoader::loadModelFromDisk(const std::string & fileName, ModelMap& modelMap)
+{
+	json j;
+
+	if (loadJsonDataFromDisk(fileName, j))
+	{
+		return processSceneJsonData(j, modelMap);
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: ModelLoader: can't load " + fileName + "!");
+		return false;
+	}
+}
+
+bool InnoFileSystemNS::ModelLoader::processSceneJsonData(const json & j, ModelMap& modelMap)
+{
+	for (auto i : j["Nodes"])
+	{
+		processNodeJsonData(i, modelMap);
+	}
+
+	return true;
+}
+
+bool InnoFileSystemNS::ModelLoader::processNodeJsonData(const json & j, ModelMap& modelMap)
+{
+	for (auto i : j["Meshes"])
+	{
+		modelMap.emplace(processMeshJsonData(i));
+	}
+
+	return true;
+}
+
+ModelPair InnoFileSystemNS::ModelLoader::processMeshJsonData(const json & j)
+{
+	auto l_verticesFileName = j["MeshVerticesFile"].get<std::string>();
+
+	std::ifstream l_verticesFile(l_verticesFileName, std::ios::binary);
+
+	if (!l_verticesFile.is_open())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_verticesFileName + "!");
+		return ModelPair();
+	}
+
+	auto l_MeshDC = g_pCoreSystem->getAssetSystem()->addMeshDataComponent();
+
+	deserializeVector(l_verticesFile, l_MeshDC->m_vertices);
+	l_verticesFile.close();
+
+	auto l_indicesFileName = j["MeshIndicesFile"].get<std::string>();
+
+	std::ifstream l_indicesFile(l_indicesFileName, std::ios::binary);
+
+	if (!l_indicesFile.is_open())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_indicesFileName + "!");
+		return ModelPair();
+	}
+
+	deserializeVector(l_indicesFile, l_MeshDC->m_indices);
+	l_indicesFile.close();
+
+	l_MeshDC->m_indicesSize = l_MeshDC->m_indices.size();
+	l_MeshDC->m_objectStatus = ObjectStatus::STANDBY;
+
+	ModelPair l_result;
+
+	l_result.first = l_MeshDC;
+	l_result.second = processMaterialJsonData(j["Material"]);
+
+	return l_result;
+}
+
+MaterialDataComponent * InnoFileSystemNS::ModelLoader::processMaterialJsonData(const json & j)
+{
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->addMaterialDataComponent();
+
+	if (j.find("Textures") != j.end())
+	{
+		for (auto i : j["Textures"])
+		{
+			auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
+
+			l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType(i["TextureUsageType"]);
+			loadTextureFromDisk(i["TextureFile"], *l_TDC);
+
+			switch (l_TDC->m_textureDataDesc.textureUsageType)
+			{
+			case TextureUsageType::NORMAL: l_MDC->m_texturePack.m_normalTDC.second = l_TDC; break;
+			case TextureUsageType::ALBEDO: l_MDC->m_texturePack.m_albedoTDC.second = l_TDC; break;
+			case TextureUsageType::METALLIC: l_MDC->m_texturePack.m_metallicTDC.second = l_TDC; break;
+			case TextureUsageType::ROUGHNESS: l_MDC->m_texturePack.m_roughnessTDC.second = l_TDC; break;
+			case TextureUsageType::AMBIENT_OCCLUSION: l_MDC->m_texturePack.m_aoTDC.second = l_TDC; break;
+			default:
+				break;
+			}
+		}
+	}
+
+	l_MDC->m_meshCustomMaterial.albedo_r = j["Albedo"]["R"];
+	l_MDC->m_meshCustomMaterial.albedo_g = j["Albedo"]["G"];
+	l_MDC->m_meshCustomMaterial.albedo_b = j["Albedo"]["B"];
+	l_MDC->m_meshCustomMaterial.alpha = j["Albedo"]["A"];
+	l_MDC->m_meshCustomMaterial.metallic = j["Metallic"];
+	l_MDC->m_meshCustomMaterial.roughness = j["Roughness"];
+	l_MDC->m_meshCustomMaterial.ao = j["AO"];
+	l_MDC->m_meshCustomMaterial.thickness = j["Thickness"];
+
+	return l_MDC;
+}
+
+bool InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const std::string & fileName, TextureDataComponent& TDC)
+{
 	int width, height, nrChannels;
 
 	// load image, flip texture
@@ -1084,168 +1275,25 @@ json InnoFileSystemNS::AssimpWrapper::loadTextureFromDisk(const std::string& fil
 	}
 	if (l_rawData)
 	{
-		auto l_exportFileName = InnoMath::createEntityID();
+		TDC.m_textureDataDesc.textureColorComponentsFormat = l_isHDR ? TextureColorComponentsFormat((unsigned int)TextureColorComponentsFormat::R16F + (nrChannels - 1)) : TextureColorComponentsFormat((nrChannels - 1));
+		TDC.m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
+		TDC.m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+		TDC.m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+		TDC.m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+		TDC.m_textureDataDesc.texturePixelDataType = l_isHDR ? TexturePixelDataType::FLOAT : TexturePixelDataType::UNSIGNED_BYTE;
+		TDC.m_textureDataDesc.textureWidth = width;
+		TDC.m_textureDataDesc.textureHeight = height;
+		TDC.m_textureData.emplace_back(l_rawData);
 
-		l_textureData["TextureUsageType"] = TextureUsageType;
-		l_textureData["TextureColorComponentsFormat"] = l_isHDR ? TextureColorComponentsFormat((unsigned int)TextureColorComponentsFormat::R16F + (nrChannels - 1)) : TextureColorComponentsFormat((nrChannels - 1));
-		l_textureData["TexturePixelDataFormat"] = TexturePixelDataFormat(nrChannels - 1);
-		l_textureData["TextureWrapMethod"] = TextureWrapMethod::CLAMP_TO_EDGE;
-		l_textureData["TextureMinFilterMethod"] = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
-		l_textureData["TextureMagFilterMethod"] = TextureFilterMethod::LINEAR;
-		l_textureData["TexturePixelDataType"] = l_isHDR ? TexturePixelDataType::FLOAT : TexturePixelDataType::UNSIGNED_BYTE;
-		l_textureData["TextureWidth"] = width;
-		l_textureData["TextureHeight"] = height;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssimpWrapper: STB_Image: " + fileName + " has been loaded.");
 
-		std::ofstream l_file(exportPath + l_exportFileName + ".InnoTexture", std::ios::binary);
-		serialize(l_file, l_rawData, width * height);
-		l_file.close();
-
-		l_textureData["TextureFile"] = l_exportFileName;
-
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssimpWrapper: STB_Image: " + fileName + " has been converted.");
-
-		return l_textureData;
+		return true;
 	}
 	else
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: AssimpWrapper: STB_Image: Failed to load texture: " + fileName);
 
-		return l_textureData;
-	}
-}
-
-ModelMap InnoFileSystemNS::ModelLoader::loadModel(const std::string & fileName)
-{
-	return ModelMap();
-}
-
-ModelMap InnoFileSystemNS::ModelLoader::loadModelFromDisk(const std::string & fileName)
-{
-	return ModelMap();
-}
-
-ModelMap InnoFileSystemNS::ModelLoader::processSceneJsonData(const json & j)
-{
-	return ModelMap();
-}
-
-ModelMap InnoFileSystemNS::ModelLoader::processNodeJsonData(const json & j)
-{
-	return ModelMap();
-}
-
-ModelPair InnoFileSystemNS::ModelLoader::processMeshJsonData(const json & j)
-{
-	auto l_verticesFileName = j["MeshVerticesFile"].get<std::string>();
-
-	std::ifstream l_verticesFile(l_verticesFileName + ".InnoMeshVertices", std::ios::binary);
-
-	if (!l_verticesFile.is_open())
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: ModelLoader: can't open mesh vertices file " + l_verticesFileName + " !");
+		return false;
 	}
 
-	auto l_MeshDC = g_pCoreSystem->getAssetSystem()->addMeshDataComponent();
-
-	deserializeVector(l_verticesFile, l_MeshDC->m_vertices);
-	l_verticesFile.close();
-
-	auto l_indicesFileName = j["MeshIndicesFile"].get<std::string>();
-
-	std::ifstream l_indicesFile(l_indicesFileName + ".InnoMeshIndices", std::ios::binary);
-
-	if (!l_indicesFile.is_open())
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: ModelLoader: can't open mesh indices file " + l_indicesFileName + " !");
-	}
-
-	deserializeVector(l_indicesFile, l_MeshDC->m_indices);
-	l_indicesFile.close();
-
-	l_MeshDC->m_indicesSize = l_MeshDC->m_indices.size();
-
-	ModelPair l_result;
-
-	l_result.first = l_MeshDC;
-	l_result.second = processMaterialJsonData(j["Material"]);
-
-	return l_result;
-}
-
-MaterialDataComponent * InnoFileSystemNS::ModelLoader::processMaterialJsonData(const json & j)
-{
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->addMaterialDataComponent();
-
-	for (auto i : j["Textures"])
-	{
-		auto l_TDC = processTextureJsonData(i);
-		switch (l_TDC->m_textureDataDesc.textureUsageType)
-		{
-		case TextureUsageType::NORMAL: l_MDC->m_texturePack.m_normalTDC.second = l_TDC; break;
-		case TextureUsageType::ALBEDO: l_MDC->m_texturePack.m_albedoTDC.second = l_TDC; break;
-		case TextureUsageType::METALLIC: l_MDC->m_texturePack.m_metallicTDC.second = l_TDC; break;
-		case TextureUsageType::ROUGHNESS: l_MDC->m_texturePack.m_roughnessTDC.second = l_TDC; break;
-		case TextureUsageType::AMBIENT_OCCLUSION: l_MDC->m_texturePack.m_aoTDC.second = l_TDC; break;
-		default:
-			break;
-		}		
-	}
-
-	l_MDC->m_meshCustomMaterial.albedo_r = j["Albedo"]["R"];
-	l_MDC->m_meshCustomMaterial.albedo_g = j["Albedo"]["G"];
-	l_MDC->m_meshCustomMaterial.albedo_b = j["Albedo"]["B"];
-	l_MDC->m_meshCustomMaterial.alpha = j["Albedo"]["A"] ? j["Albedo"]["A"] : 1.0f;
-	l_MDC->m_meshCustomMaterial.metallic = j["Metallic"] ? j["Metallic"] : 0.5f;
-	l_MDC->m_meshCustomMaterial.roughness = j["Roughness"] ? j["Roughness"] : 0.5f;
-	l_MDC->m_meshCustomMaterial.ao = j["AO"];
-	l_MDC->m_meshCustomMaterial.thickness = j["Thickness"] ? j["Thickness"] : 1.0f;
-
-	return l_MDC;
-}
-
-TextureDataComponent * InnoFileSystemNS::ModelLoader::processTextureJsonData(const json & j)
-{
-	TextureDataDesc l_TextureDataDesc;
-
-	l_TextureDataDesc.textureUsageType = TextureUsageType(j["TextureUsageType"]);
-	l_TextureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat(j["TextureColorComponentsFormat"]);
-	l_TextureDataDesc.texturePixelDataFormat = TexturePixelDataFormat(j["TexturePixelDataFormat"]);
-	l_TextureDataDesc.textureWrapMethod = TextureWrapMethod(j["TextureWrapMethod"]);
-	l_TextureDataDesc.textureMinFilterMethod = TextureFilterMethod(j["TextureMinFilterMethod"]);
-	l_TextureDataDesc.textureMagFilterMethod = TextureFilterMethod(j["TextureMagFilterMethod"]);
-	l_TextureDataDesc.texturePixelDataType = TexturePixelDataType(j["TexturePixelDataType"]);
-	l_TextureDataDesc.textureWidth = j["TextureWidth"];
-	l_TextureDataDesc.textureHeight = j["TextureHeight"];
-
-	auto l_TDC = loadTextureFromDisk(j["TextureFile"], l_TextureDataDesc.textureWidth * l_TextureDataDesc.textureHeight);
-
-	if (l_TDC)
-	{
-		l_TDC->m_textureDataDesc = l_TextureDataDesc;
-	}
-
-	return l_TDC;
-}
-
-TextureDataComponent * InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const EntityID & fileName, size_t size)
-{
-	std::ifstream l_file(fileName + ".InnoTexture", std::ios::binary);
-
-	if (!l_file.is_open())
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: ModelLoader: can't open texture file " + fileName + "!");
-		return nullptr;
-	}
-
-	auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
-
-	auto l_rawTextureDataPtr = g_pCoreSystem->getMemorySystem()->allocateRawMemory(size);
-
-	deserialize(l_file, l_rawTextureDataPtr);
-
-	l_file.close();
-
-	l_TDC->m_textureData.emplace_back(l_rawTextureDataPtr);
-
-	return l_TDC;
 }

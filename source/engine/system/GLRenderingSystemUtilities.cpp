@@ -253,6 +253,7 @@ GLTextureDataComponent* GLRenderingSystemNS::generateGLTextureDataComponent(Text
 	{
 		if (rhs->m_textureDataDesc.textureUsageType == TextureUsageType::INVISIBLE)
 		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GLRenderingSystem: try to generate GLTextureDataComponent for TextureUsageType::INVISIBLE type!");
 			return nullptr;
 		}
 		else

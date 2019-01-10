@@ -628,9 +628,12 @@ INNO_SYSTEM_EXPORT void InnoPhysicsSystem::generatePhysicsData()
 {
 	for (auto l_visibleComponent : GameSystemComponent::get().m_VisibleComponents)
 	{
-		auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(l_visibleComponent->m_modelMap);
-		l_visibleComponent->m_PhysicsDataComponent = l_physicsComponent;
-		l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
+		if (l_visibleComponent->m_objectStatus == ObjectStatus::STANDBY)
+		{
+			auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(l_visibleComponent->m_modelMap);
+			l_visibleComponent->m_PhysicsDataComponent = l_physicsComponent;
+			l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
+		}
 	}
 }
 

@@ -280,7 +280,7 @@ void ImGuiWrapper::showApplicationProfiler()
 	ImGui::InputText("Export asset file path", exportAsset_filePath, IM_ARRAYSIZE(exportAsset_filePath));
 	if (ImGui::Button("Convert asset"))
 	{
-		g_pCoreSystem->getFileSystem()->convertAsset(importAsset_filePath, exportAsset_filePath);
+		g_pCoreSystem->getFileSystem()->convertModel(importAsset_filePath, exportAsset_filePath);
 	}
 	if (l_renderingConfig.showRenderPassResult)
 	{

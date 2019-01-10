@@ -19,19 +19,12 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoAssetSystemNS
 {
+	void loadFolderData();
 	void loadDefaultAssets();
 	void loadAssetsForComponents();
 
 	ModelMap loadModel(const std::string& fileName);
-	ModelMap loadModelFromDisk(const std::string & fileName);
-
-	TextureDataComponent* loadTexture(const std::string& fileName, TextureUsageType TextureUsageType);
-	TextureDataComponent* loadTextureFromDisk(const std::string& fileName, TextureUsageType TextureUsageType);
-
-	ModelMap processAssimpScene(const aiScene* aiScene);
-	ModelMap processAssimpNode(const aiNode * node, const aiScene * scene);
-	ModelPair processSingleAssimpMesh(const aiScene * scene, unsigned int meshIndex);
-	MaterialDataComponent* processSingleAssimpMaterial(const aiMaterial * aiMaterial);
+	TextureDataComponent* loadTexture(const std::string& fileName, TextureUsageType textureUsageType);
 
 	MeshDataComponent* addMeshDataComponent();
 	MaterialDataComponent* addMaterialDataComponent();
@@ -575,7 +568,7 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
-void InnoAssetSystemNS::loadDefaultAssets()
+void InnoAssetSystemNS::loadFolderData()
 {
 	std::function<FileExplorerIconType(const std::string&)> getIconType =
 		[&](const std::string& extension) -> FileExplorerIconType {
@@ -626,7 +619,7 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	};
 
 	std::function<void(DirectoryMetadata* directoryMetadata)> f_assignParentDirectory =
-		[&](DirectoryMetadata* directoryMetadata){
+		[&](DirectoryMetadata* directoryMetadata) {
 		for (auto& i : directoryMetadata->childrenDirectories)
 		{
 			i.parentDirectory = directoryMetadata;
@@ -636,21 +629,26 @@ void InnoAssetSystemNS::loadDefaultAssets()
 
 	f_directoryTreeBuilder(path, 0, &AssetSystemComponent::get().m_rootDirectoryMetadata);
 	f_assignParentDirectory(&AssetSystemComponent::get().m_rootDirectoryMetadata);
+}
 
-	AssetSystemComponent::get().m_basicNormalTemplate = loadTextureFromDisk("basic_normal.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_basicAlbedoTemplate = loadTextureFromDisk("basic_albedo.png", TextureUsageType::ALBEDO);
-	AssetSystemComponent::get().m_basicMetallicTemplate = loadTextureFromDisk("basic_metallic.png", TextureUsageType::METALLIC);
-	AssetSystemComponent::get().m_basicRoughnessTemplate = loadTextureFromDisk("basic_roughness.png", TextureUsageType::ROUGHNESS);
-	AssetSystemComponent::get().m_basicAOTemplate = loadTextureFromDisk("basic_ao.png", TextureUsageType::AMBIENT_OCCLUSION);
+void InnoAssetSystemNS::loadDefaultAssets()
+{
+	InnoAssetSystemNS::loadFolderData();
 
-	AssetSystemComponent::get().m_iconTemplate_OBJ = loadTextureFromDisk("InnoFileTypeIcons_OBJ.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_iconTemplate_PNG = loadTextureFromDisk("InnoFileTypeIcons_PNG.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_iconTemplate_SHADER = loadTextureFromDisk("InnoFileTypeIcons_SHADER.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_iconTemplate_UNKNOWN = loadTextureFromDisk("InnoFileTypeIcons_UNKNOWN.png", TextureUsageType::NORMAL);
+	AssetSystemComponent::get().m_basicNormalTemplate = loadTexture("..//res//textures//basic_normal.png", TextureUsageType::NORMAL);
+	AssetSystemComponent::get().m_basicAlbedoTemplate = loadTexture("..//res//textures//basic_albedo.png", TextureUsageType::ALBEDO);
+	AssetSystemComponent::get().m_basicMetallicTemplate = loadTexture("..//res//textures//basic_metallic.png", TextureUsageType::METALLIC);
+	AssetSystemComponent::get().m_basicRoughnessTemplate = loadTexture("..//res//textures//basic_roughness.png", TextureUsageType::ROUGHNESS);
+	AssetSystemComponent::get().m_basicAOTemplate = loadTexture("..//res//textures//basic_ao.png", TextureUsageType::AMBIENT_OCCLUSION);
 
-	AssetSystemComponent::get().m_iconTemplate_DirectionalLight = loadTextureFromDisk("InnoWorldEditorIcons_DirectionalLight.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_iconTemplate_PointLight = loadTextureFromDisk("InnoWorldEditorIcons_PointLight.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_iconTemplate_SphereLight = loadTextureFromDisk("InnoWorldEditorIcons_SphereLight.png", TextureUsageType::NORMAL);
+	AssetSystemComponent::get().m_iconTemplate_OBJ = loadTexture("..//res//textures//InnoFileTypeIcons_OBJ.png", TextureUsageType::NORMAL);
+	AssetSystemComponent::get().m_iconTemplate_PNG = loadTexture("..//res//textures//InnoFileTypeIcons_PNG.png", TextureUsageType::NORMAL);
+	AssetSystemComponent::get().m_iconTemplate_SHADER = loadTexture("..//res//textures//InnoFileTypeIcons_SHADER.png", TextureUsageType::NORMAL);
+	AssetSystemComponent::get().m_iconTemplate_UNKNOWN = loadTexture("..//res//textures//InnoFileTypeIcons_UNKNOWN.png", TextureUsageType::NORMAL);
+
+	AssetSystemComponent::get().m_iconTemplate_DirectionalLight = loadTexture("..//res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureUsageType::NORMAL);
+	AssetSystemComponent::get().m_iconTemplate_PointLight = loadTexture("..//res//textures//InnoWorldEditorIcons_PointLight.png", TextureUsageType::NORMAL);
+	AssetSystemComponent::get().m_iconTemplate_SphereLight = loadTexture("..//res//textures//InnoWorldEditorIcons_SphereLight.png", TextureUsageType::NORMAL);
 
 	AssetSystemComponent::get().m_UnitLineTemplate = addMeshDataComponent();
 	auto lastLineMeshData = AssetSystemComponent::get().m_UnitLineTemplate;
@@ -705,7 +703,8 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 			{
 				if (l_visibleComponent->m_modelFileName != "")
 				{
-					//l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
+					l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
+					l_visibleComponent->m_objectStatus = ObjectStatus::STANDBY;
 				}
 			}
 			else
@@ -730,17 +729,19 @@ void InnoAssetSystemNS::assignUnitMesh(MeshShapeType MeshUsageType, VisibleCompo
 	case MeshShapeType::CUSTOM: break;
 	}
 	visibleComponent->m_modelMap.emplace(l_UnitMeshTemplate, addMaterialDataComponent());
+	visibleComponent->m_objectStatus = ObjectStatus::STANDBY;
 }
 
 ModelMap InnoAssetSystemNS::loadModel(const std::string & fileName)
 {
 	ModelMap l_result;
 	// check if this file has already been loaded once
-	auto l_loadedmodelMap = AssetSystemComponent::get().m_loadedModelMap.find(fileName);
-	if (l_loadedmodelMap != AssetSystemComponent::get().m_loadedModelMap.end())
+	auto l_loadedModelMap = AssetSystemComponent::get().m_loadedModelMap.find(fileName);
+	if (l_loadedModelMap != AssetSystemComponent::get().m_loadedModelMap.end())
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "AssetSystem: innoMesh: " + fileName + " is already loaded.");
-		for (auto& i : l_loadedmodelMap->second)
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "AssetSystem: " + fileName + " has been already loaded.");
+		// Just copy new materials
+		for (auto& i : l_loadedModelMap->second)
 		{
 			auto l_material = addMaterialDataComponent();
 			*l_material = *i.second;
@@ -750,339 +751,51 @@ ModelMap InnoAssetSystemNS::loadModel(const std::string & fileName)
 	}
 	else
 	{
-		auto l_loadedModelMap = loadModelFromDisk(fileName);
-		//mark as loaded
-		AssetSystemComponent::get().m_loadedModelMap.emplace(fileName, l_loadedModelMap);
-		return l_loadedModelMap;
+		g_pCoreSystem->getFileSystem()->loadAsset(fileName, l_result);
+		AssetSystemComponent::get().m_loadedModelMap.emplace(fileName, l_result);
+		for (auto i : l_result)
+		{
+			AssetSystemComponent::get().m_uninitializedMeshComponents.push(i.first);		
+			if (i.second->m_texturePack.m_normalTDC.second)
+			{
+				AssetSystemComponent::get().m_uninitializedTextureComponents.push(i.second->m_texturePack.m_normalTDC.second);
+			}
+			if (i.second->m_texturePack.m_albedoTDC.second)
+			{
+				AssetSystemComponent::get().m_uninitializedTextureComponents.push(i.second->m_texturePack.m_albedoTDC.second);
+			}
+			if (i.second->m_texturePack.m_metallicTDC.second)
+			{
+				AssetSystemComponent::get().m_uninitializedTextureComponents.push(i.second->m_texturePack.m_metallicTDC.second);
+			}
+			if (i.second->m_texturePack.m_roughnessTDC.second)
+			{
+				AssetSystemComponent::get().m_uninitializedTextureComponents.push(i.second->m_texturePack.m_roughnessTDC.second);
+			}
+			if (i.second->m_texturePack.m_aoTDC.second)
+			{
+				AssetSystemComponent::get().m_uninitializedTextureComponents.push(i.second->m_texturePack.m_aoTDC.second);
+			}
+		}
+		return l_result;
 	}
 }
 
-ModelMap InnoAssetSystemNS::loadModelFromDisk(const std::string & fileName)
-{
-	// read file via ASSIMP
-	Assimp::Importer l_assImporter;
-	const aiScene* l_assScene;
-#if defined INNO_PLATFORM_WIN32 || defined INNO_PLATFORM_WIN64
-	if (std::experimental::filesystem::exists(std::experimental::filesystem::path(AssetSystemComponent::get().m_modelRelativePath + fileName)))
-	{
-		l_assScene = l_assImporter.ReadFile(AssetSystemComponent::get().m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
-		// @TODO: serilization
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: " + fileName + " doesn't exist!");
-		return ModelMap();
-	}
-#else
-	l_assScene = l_assImporter.ReadFile(AssetSystemComponent::get().m_modelRelativePath + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
-	if (l_assScene == nullptr)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: " + fileName + " doesn't exist!");
-		return ModelMap();
-	}
-#endif
-	if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: ASSIMP: " + std::string{ l_assImporter.GetErrorString() });
-		return ModelMap();
-	}
-
-	auto l_loadedModelMap = processAssimpScene(l_assScene);
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "AssetSystem: " + fileName + " is loaded for the first time.");
-
-	return l_loadedModelMap;
-	}
-
-ModelMap InnoAssetSystemNS::processAssimpScene(const aiScene* aiScene)
-{
-	auto l_loadedModelMapInScene = ModelMap();
-	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
-	if (aiScene->mRootNode->mNumMeshes > 0)
-	{
-		auto l_loadedModelMapInNode = processAssimpNode(aiScene->mRootNode, aiScene);
-		for (auto& pair : l_loadedModelMapInNode)
-		{
-			l_loadedModelMapInScene.emplace(pair);
-		}
-	}
-	for (unsigned int i = 0; i < aiScene->mRootNode->mNumChildren; i++)
-	{
-		if (aiScene->mRootNode->mChildren[i]->mNumMeshes > 0)
-		{
-			auto l_loadedModelMapInNode = processAssimpNode(aiScene->mRootNode->mChildren[i], aiScene);
-			for (auto& pair : l_loadedModelMapInNode)
-			{
-				l_loadedModelMapInScene.emplace(pair);
-			}
-		}
-	}
-	return l_loadedModelMapInScene;
-}
-
-ModelMap InnoAssetSystemNS::processAssimpNode(const aiNode * node, const aiScene * scene)
-{
-	auto l_loadedModelMap = ModelMap();
-	// process each mesh located at the current node
-	for (unsigned int i = 0; i < node->mNumMeshes; i++)
-	{
-		auto l_modelPair = processSingleAssimpMesh(scene, node->mMeshes[i]);
-		l_loadedModelMap.emplace(l_modelPair);
-	}
-
-	return l_loadedModelMap;
-}
-
-ModelPair InnoAssetSystemNS::processSingleAssimpMesh(const aiScene * scene, unsigned int meshIndex)
-{
-	auto l_aiMesh = scene->mMeshes[meshIndex];
-
-	auto l_meshData = addMeshDataComponent();
-	auto l_verticesNumber = l_aiMesh->mNumVertices;
-	l_meshData->m_vertices.reserve(l_verticesNumber);
-
-	for (unsigned int i = 0; i < l_verticesNumber; i++)
-	{
-		Vertex l_Vertex;
-
-		// positions
-		if (&l_aiMesh->mVertices[i] != nullptr)
-		{
-			l_Vertex.m_pos.x = l_aiMesh->mVertices[i].x;
-			l_Vertex.m_pos.y = l_aiMesh->mVertices[i].y;
-			l_Vertex.m_pos.z = l_aiMesh->mVertices[i].z;
-		}
-		else
-		{
-			l_Vertex.m_pos.x = 0.0f;
-			l_Vertex.m_pos.y = 0.0f;
-			l_Vertex.m_pos.z = 0.0f;
-		}
-
-		// texture coordinates
-		if (l_aiMesh->mTextureCoords[0])
-		{
-			// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
-			// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-			l_Vertex.m_texCoord.x = l_aiMesh->mTextureCoords[0][i].x;
-			l_Vertex.m_texCoord.y = l_aiMesh->mTextureCoords[0][i].y;
-		}
-		else
-		{
-			l_Vertex.m_texCoord.x = 0.0f;
-			l_Vertex.m_texCoord.y = 0.0f;
-		}
-
-		// normals
-		if (l_aiMesh->mNormals)
-		{
-			l_Vertex.m_normal.x = l_aiMesh->mNormals[i].x;
-			l_Vertex.m_normal.y = l_aiMesh->mNormals[i].y;
-			l_Vertex.m_normal.z = l_aiMesh->mNormals[i].z;
-		}
-		else
-		{
-			l_Vertex.m_normal.x = 0.0f;
-			l_Vertex.m_normal.y = 0.0f;
-			l_Vertex.m_normal.z = 0.0f;
-		}
-		l_meshData->m_vertices.emplace_back(l_Vertex);
-	}
-
-	l_meshData->m_vertices.shrink_to_fit();
-
-	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-	for (unsigned int i = 0; i < l_aiMesh->mNumFaces; i++)
-	{
-		aiFace l_face = l_aiMesh->mFaces[i];
-		l_meshData->m_indicesSize += l_face.mNumIndices;
-	}
-	l_meshData->m_indices.reserve(l_meshData->m_indicesSize);
-
-	for (unsigned int i = 0; i < l_aiMesh->mNumFaces; i++)
-	{
-		aiFace l_face = l_aiMesh->mFaces[i];
-		// retrieve all indices of the face and store them in the indices vector
-		for (unsigned int j = 0; j < l_face.mNumIndices; j++)
-		{
-			l_meshData->m_indices.emplace_back(l_face.mIndices[j]);
-		}
-	}
-
-	auto l_modelPair = ModelPair();
-	l_modelPair.first = l_meshData;
-
-	// process material
-	if (l_aiMesh->mMaterialIndex > 0)
-	{
-		l_modelPair.second = processSingleAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex]);
-	}
-	else
-	{
-		l_modelPair.second = addMaterialDataComponent();
-	}
-
-	l_meshData->m_objectStatus = ObjectStatus::STANDBY;
-	AssetSystemComponent::get().m_uninitializedMeshComponents.push(l_meshData);
-
-	return l_modelPair;
-}
-
-/*
-aiTextureType::aiTextureType_NORMALS TextureUsageType::NORMAL map_Kn normal map texture
-aiTextureType::aiTextureType_DIFFUSE TextureUsageType::ALBEDO map_Kd albedo texture
-aiTextureType::aiTextureType_SPECULAR TextureUsageType::METALLIC map_Ks metallic texture
-aiTextureType::aiTextureType_AMBIENT TextureUsageType::ROUGHNESS map_Ka roughness texture
-aiTextureType::aiTextureType_EMISSIVE TextureUsageType::AMBIENT_OCCLUSION map_emissive AO texture
-*/
-
-MaterialDataComponent* InnoAssetSystemNS::processSingleAssimpMaterial(const aiMaterial * aiMaterial)
-{
-	auto l_loadedMaterialDataComponent = addMaterialDataComponent();
-
-	for (unsigned int i = 0; i < aiTextureType_UNKNOWN; i++)
-	{
-		if (aiMaterial->GetTextureCount(aiTextureType(i)) > 0)
-		{
-			aiString l_AssString;
-			aiMaterial->GetTexture(aiTextureType(i), 0, &l_AssString);
-			std::string l_localPath = std::string(l_AssString.C_Str());
-
-			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
-			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "AssetSystem: ASSIMP: " + l_localPath + " is unknown texture type!");
-			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
-			{
-				l_loadedMaterialDataComponent->m_texturePack.m_normalTDC.second = loadTexture(l_localPath, TextureUsageType::NORMAL);
-			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_DIFFUSE)
-			{
-				l_loadedMaterialDataComponent->m_texturePack.m_albedoTDC.second = loadTexture(l_localPath, TextureUsageType::ALBEDO);
-			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_SPECULAR)
-			{
-				l_loadedMaterialDataComponent->m_texturePack.m_metallicTDC.second = loadTexture(l_localPath, TextureUsageType::METALLIC);
-			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_AMBIENT)
-			{
-				l_loadedMaterialDataComponent->m_texturePack.m_roughnessTDC.second = loadTexture(l_localPath, TextureUsageType::ROUGHNESS);
-			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_EMISSIVE)
-			{
-				l_loadedMaterialDataComponent->m_texturePack.m_aoTDC.second = loadTexture(l_localPath, TextureUsageType::AMBIENT_OCCLUSION);
-			}
-			else
-			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "AssetSystem: ASSIMP: " + l_localPath + " is unsupported texture type!");
-			}
-		}
-	}
-
-	// albedo (RGB) + Metallic + Roughness + AO + 2 additional data
-	auto l_meshColor = MeshCustomMaterial();
-	auto l_result = aiColor3D();
-	if (aiMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, l_result) == aiReturn::aiReturn_SUCCESS)
-	{
-		l_meshColor.albedo_r = l_result.r;
-		l_meshColor.albedo_g = l_result.g;
-		l_meshColor.albedo_b = l_result.b;
-	}
-	if (aiMaterial->Get(AI_MATKEY_COLOR_SPECULAR, l_result) == aiReturn::aiReturn_SUCCESS)
-	{
-		l_meshColor.metallic = l_result.r;
-	}
-	if (aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, l_result) == aiReturn::aiReturn_SUCCESS)
-	{
-		l_meshColor.roughness = l_result.r;
-	}
-	if (aiMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, l_result) == aiReturn::aiReturn_SUCCESS)
-	{
-		l_meshColor.ao = l_result.r;
-	}
-
-	l_loadedMaterialDataComponent->m_meshCustomMaterial = l_meshColor;
-
-	return l_loadedMaterialDataComponent;
-}
-
-TextureDataComponent* InnoAssetSystemNS::loadTexture(const std::string& fileName, TextureUsageType TextureUsageType)
+TextureDataComponent* InnoAssetSystemNS::loadTexture(const std::string& fileName, TextureUsageType textureUsageType)
 {
 	auto l_loadedTDC = AssetSystemComponent::get().m_loadedTextureMap.find(fileName);
 	if (l_loadedTDC != AssetSystemComponent::get().m_loadedTextureMap.end())
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "AssetSystem: innoTexture: " + fileName + " is already loaded.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "AssetSystem: " + fileName + " has been already loaded.");
 		return l_loadedTDC->second;
 	}
 	else
 	{
-		auto l_TDC = InnoAssetSystemNS::loadTextureFromDisk(fileName, TextureUsageType);
-
+		auto l_TDC = addTextureDataComponent();
+		g_pCoreSystem->getFileSystem()->loadAsset(fileName, *l_TDC);
+		l_TDC->m_textureDataDesc.textureUsageType = textureUsageType;
 		AssetSystemComponent::get().m_loadedTextureMap.emplace(fileName, l_TDC);
-
+		AssetSystemComponent::get().m_uninitializedTextureComponents.push(l_TDC);
 		return l_TDC;
 	}
-}
-
-TextureDataComponent* InnoAssetSystemNS::loadTextureFromDisk(const std::string& fileName, TextureUsageType TextureUsageType)
-{
-	auto l_TDC = InnoAssetSystemNS::addTextureDataComponent();
-	int width, height, nrChannels;
-
-	// load image, flip texture
-	stbi_set_flip_vertically_on_load(true);
-
-	auto l_filePath = AssetSystemComponent::get().m_textureRelativePath + fileName;
-
-	if (TextureUsageType == TextureUsageType::EQUIRETANGULAR)
-	{
-		auto *data = stbi_loadf(l_filePath.c_str(), &width, &height, &nrChannels, 0);
-		if (data)
-		{
-			l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType::EQUIRETANGULAR;
-			l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat((unsigned int)TextureColorComponentsFormat::R16F + (nrChannels - 1));
-			l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
-			l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-			l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-			l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-			l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
-			l_TDC->m_textureDataDesc.textureWidth = width;
-			l_TDC->m_textureDataDesc.textureHeight = height;
-			l_TDC->m_textureData = { data };
-			l_TDC->m_objectStatus = ObjectStatus::STANDBY;
-			AssetSystemComponent::get().m_uninitializedTextureComponents.push(l_TDC);
-
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "AssetSystem: STB_Image: " + fileName + " is loaded.");
-		}
-		else
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: STB_Image: Failed to load texture: " + (AssetSystemComponent::get().m_textureRelativePath + fileName));
-		}
-	}
-	else
-	{
-		auto *data = stbi_load(l_filePath.c_str(), &width, &height, &nrChannels, 0);
-		if (data)
-		{
-			l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType;
-			l_TDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat(nrChannels - 1);
-			l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
-			l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-			l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
-			l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-			l_TDC->m_textureDataDesc.textureWidth = width;
-			l_TDC->m_textureDataDesc.textureHeight = height;
-			l_TDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
-			l_TDC->m_textureData = { data };
-			l_TDC->m_objectStatus = ObjectStatus::STANDBY;
-			AssetSystemComponent::get().m_uninitializedTextureComponents.push(l_TDC);
-
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "AssetSystem: STB_Image: " + fileName + " is loaded.");
-		}
-		else
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: STB_Image: Failed to load texture: " + (AssetSystemComponent::get().m_textureRelativePath + fileName));
-		}
-	}
-	return l_TDC;
 }
