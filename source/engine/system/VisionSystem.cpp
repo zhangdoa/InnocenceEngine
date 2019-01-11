@@ -14,6 +14,10 @@
 #include "GLRenderingSystem.h"
 #include "GLGuiSystem.h"
 
+#include "VKWindowSystem.h"
+#include "VKRenderingSystem.h"
+#include "VKGuiSystem.h"
+
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -70,6 +74,12 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 		InnoVisionSystemNS::m_windowSystem = new GLWindowSystem();
 		InnoVisionSystemNS::m_renderingSystem = new GLRenderingSystem();
 		InnoVisionSystemNS::m_guiSystem = new GLGuiSystem();
+	}
+	else if (l_rendererArguments == "VK")
+	{
+		InnoVisionSystemNS::m_windowSystem = new VKWindowSystem();
+		InnoVisionSystemNS::m_renderingSystem = new VKRenderingSystem();
+		InnoVisionSystemNS::m_guiSystem = new VKGuiSystem();
 	}
 	else
 	{
