@@ -22,8 +22,6 @@ public:
 
 	GLFWwindow* m_window;
 
-	VkInstance m_instance;
-
 private:
 	VKWindowSystemComponent() {};
 };
