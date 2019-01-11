@@ -95,14 +95,15 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	DXTextureDataComponent* m_basicMetallicTemplate;
 	DXTextureDataComponent* m_basicRoughnessTemplate;
 	DXTextureDataComponent* m_basicAOTemplate;
+
+	bool createPhysicalDevices();
+	bool createSwapChain();
+	bool createBackBuffer();
+	bool createRasterizer();
 }
 
-bool DXRenderingSystemNS::setup()
+bool DXRenderingSystemNS::createPhysicalDevices()
 {
-	g_WindowSystemComponent = &WindowSystemComponent::get();
-	g_DXWindowSystemComponent = &DXWindowSystemComponent::get();
-	g_DXRenderingSystemComponent = &DXRenderingSystemComponent::get();
-
 	HRESULT result;
 	IDXGIFactory* m_factory;
 
@@ -110,12 +111,9 @@ bool DXRenderingSystemNS::setup()
 	IDXGIAdapter* m_adapter;
 	IDXGIOutput* m_adapterOutput;
 
-	unsigned int numModes, numerator, denominator;
+	unsigned int numModes;
 	unsigned long long stringLength;
 	DXGI_MODE_DESC* displayModeList;
-
-	int error;
-	D3D_FEATURE_LEVEL featureLevel;
 
 	// Create a DirectX graphics interface factory.
 	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&m_factory);
@@ -174,8 +172,8 @@ bool DXRenderingSystemNS::setup()
 			displayModeList[i].Height == (unsigned int)g_WindowSystemComponent->m_windowResolution.y
 			)
 		{
-			numerator = displayModeList[i].RefreshRate.Numerator;
-			denominator = displayModeList[i].RefreshRate.Denominator;
+			g_DXRenderingSystemComponent->m_refreshRate.x = displayModeList[i].RefreshRate.Numerator;
+			g_DXRenderingSystemComponent->m_refreshRate.y = displayModeList[i].RefreshRate.Denominator;
 		}
 	}
 
@@ -192,8 +190,7 @@ bool DXRenderingSystemNS::setup()
 	g_DXRenderingSystemComponent->m_videoCardMemory = (int)(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
 
 	// Convert the name of the video card to a character array and store it.
-	error = wcstombs_s(&stringLength, g_DXRenderingSystemComponent->m_videoCardDescription, 128, adapterDesc.Description, 128);
-	if (error != 0)
+	if (wcstombs_s(&stringLength, g_DXRenderingSystemComponent->m_videoCardDescription, 128, adapterDesc.Description, 128) != 0)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't convert the name of the video card to a character array!");
 		m_objectStatus = ObjectStatus::STANDBY;
@@ -216,6 +213,14 @@ bool DXRenderingSystemNS::setup()
 	m_factory->Release();
 	m_factory = 0;
 
+	return true;
+}
+
+bool DXRenderingSystemNS::createSwapChain()
+{
+	HRESULT result;
+	D3D_FEATURE_LEVEL featureLevel;
+
 	// Initialize the swap chain description.
 	ZeroMemory(&g_DXRenderingSystemComponent->m_swapChainDesc, sizeof(g_DXRenderingSystemComponent->m_swapChainDesc));
 
@@ -232,8 +237,8 @@ bool DXRenderingSystemNS::setup()
 	// Set the refresh rate of the back buffer.
 	if (g_DXRenderingSystemComponent->m_vsync_enabled)
 	{
-		g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
-		g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
+		g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = g_DXRenderingSystemComponent->m_refreshRate.x;
+		g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = g_DXRenderingSystemComponent->m_refreshRate.y;
 	}
 	else
 	{
@@ -283,6 +288,13 @@ bool DXRenderingSystemNS::setup()
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	return true;
+}
+
+bool DXRenderingSystemNS::createBackBuffer()
+{
+	HRESULT result;
 
 	// Get the pointer to the back buffer.
 	result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&g_DXRenderingSystemComponent->m_renderTargetTexture);
@@ -397,6 +409,13 @@ bool DXRenderingSystemNS::setup()
 		&g_DXRenderingSystemComponent->m_renderTargetView,
 		g_DXRenderingSystemComponent->m_depthStencilView);
 
+	return true;
+}
+
+bool DXRenderingSystemNS::createRasterizer()
+{
+	HRESULT result;
+
 	// Setup the raster description which will determine how and what polygons will be drawn.
 	g_DXRenderingSystemComponent->m_rasterDescForward.AntialiasedLineEnable = false;
 	g_DXRenderingSystemComponent->m_rasterDescForward.CullMode = D3D11_CULL_NONE;
@@ -452,6 +471,21 @@ bool DXRenderingSystemNS::setup()
 	g_DXRenderingSystemComponent->m_viewport.TopLeftX = 0.0f;
 	g_DXRenderingSystemComponent->m_viewport.TopLeftY = 0.0f;
 
+	return true;
+}
+
+bool DXRenderingSystemNS::setup()
+{
+	g_WindowSystemComponent = &WindowSystemComponent::get();
+	g_DXWindowSystemComponent = &DXWindowSystemComponent::get();
+	g_DXRenderingSystemComponent = &DXRenderingSystemComponent::get();
+
+	bool result = true;
+	result = result && createPhysicalDevices();
+	result = result && createSwapChain();
+	result = result && createBackBuffer();
+	result = result && createRasterizer();
+
 	// Setup the description of the deferred pass.
 	deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	deferredPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
@@ -468,7 +502,7 @@ bool DXRenderingSystemNS::setup()
 	deferredPassRTVDesc.Texture2D.MipSlice = 0;
 
 	m_objectStatus = ObjectStatus::ALIVE;
-	return true;
+	return result;
 }
 
 INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()

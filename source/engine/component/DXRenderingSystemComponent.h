@@ -18,6 +18,8 @@ public:
 	EntityID m_parentEntity;
 
 	bool m_vsync_enabled;
+	TVec2<unsigned int> m_refreshRate = TVec2<unsigned int>(0, 1);
+
 	int m_videoCardMemory;
 	char m_videoCardDescription[128];
 
