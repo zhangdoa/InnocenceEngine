@@ -58,7 +58,7 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstan
 	ApplicationHandle = &windowCallbackWrapper::get();
 
 	// Give the application a name.
-	auto l_windowName = std::wstring(DXWindowSystemNS::g_WindowSystemComponent->m_windowName.begin(), DXWindowSystemNS::g_WindowSystemComponent->m_windowName.end());
+	auto l_windowName = DXWindowSystemNS::g_WindowSystemComponent->m_windowName;
 
 	// Setup the windows class with default settings.
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;

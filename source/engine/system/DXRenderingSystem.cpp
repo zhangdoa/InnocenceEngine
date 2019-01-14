@@ -37,6 +37,10 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 	D3D11_RENDER_TARGET_VIEW_DESC deferredPassRTVDesc = D3D11_RENDER_TARGET_VIEW_DESC();
 
+	ShaderFilePaths m_GeometryPassShaderFilePaths = { "DX11//geometryPassCookTorranceVertex.sf" , "", "DX11//geometryPassCookTorrancePixel.sf" };
+	ShaderFilePaths m_LightPassShaderFilePaths = { "DX11//lightPassCookTorranceVertex.sf" , "", "DX11//lightPassCookTorrancePixel.sf" };
+	ShaderFilePaths m_FinalPassShaderFilePaths = { "DX11//finalBlendPassVertex.sf" , "", "DX11//finalBlendPassPixel.sf" };
+
 	void prepareRenderingData();
 
 	void updateGeometryPass();
@@ -632,26 +636,16 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::resize()
 
 bool  DXRenderingSystemNS::initializeDefaultAssets()
 {
-	std::function<void(MeshDataComponent* MDC)> f_convertCoordinateFromGLtoDX = [&](MeshDataComponent* MDC) {
-		for (auto& i : MDC->m_vertices)
-		{
-		}
-	};
-
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE);
-	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitLineTemplate = generateDXMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitQuadTemplate = generateDXMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
-	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitCubeTemplate = generateDXMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
-	f_convertCoordinateFromGLtoDX(l_MDC);
 	m_UnitSphereTemplate = generateDXMeshDataComponent(l_MDC);
 
 	m_basicNormalTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::NORMAL));
@@ -668,89 +662,6 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	DXGeometryRenderPassComponent::get().m_DXRPC = addDXRenderPassComponent(8, deferredPassRTVDesc, deferredPassTextureDesc);
 	DXGeometryRenderPassComponent::get().m_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
 
-	HRESULT result;
-
-	ID3D10Blob* l_errorMessage;
-	ID3D10Blob* l_shaderBuffer;
-
-	// Initialize the pointers this function will use to null.
-	l_errorMessage = 0;
-	l_shaderBuffer = 0;
-
-	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"DX11//geometryPassCookTorranceVertex.sf");
-
-	result = g_DXRenderingSystemComponent->m_device->CreateVertexShader(
-		l_shaderBuffer->GetBufferPointer(), l_shaderBuffer->GetBufferSize(),
-		NULL,
-		&DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShader);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create vertex shader!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[5];
-	unsigned int l_numElements;
-
-	// Create the vertex input layout description.
-	l_polygonLayout[0].SemanticName = "POSITION";
-	l_polygonLayout[0].SemanticIndex = 0;
-	l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_polygonLayout[0].InputSlot = 0;
-	l_polygonLayout[0].AlignedByteOffset = 0;
-	l_polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[0].InstanceDataStepRate = 0;
-
-	l_polygonLayout[1].SemanticName = "TEXCOORD";
-	l_polygonLayout[1].SemanticIndex = 0;
-	l_polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	l_polygonLayout[1].InputSlot = 0;
-	l_polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[1].InstanceDataStepRate = 0;
-
-	l_polygonLayout[2].SemanticName = "PADA";
-	l_polygonLayout[2].SemanticIndex = 0;
-	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
-	l_polygonLayout[2].InputSlot = 0;
-	l_polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[2].InstanceDataStepRate = 0;
-
-	l_polygonLayout[3].SemanticName = "NORMAL";
-	l_polygonLayout[3].SemanticIndex = 0;
-	l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_polygonLayout[3].InputSlot = 0;
-	l_polygonLayout[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[3].InstanceDataStepRate = 0;
-
-	l_polygonLayout[4].SemanticName = "PADB";
-	l_polygonLayout[4].SemanticIndex = 0;
-	l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_polygonLayout[4].InputSlot = 0;
-	l_polygonLayout[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[4].InstanceDataStepRate = 0;
-
-	// Get a count of the elements in the layout.
-	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
-
-	// Create the vertex input layout.
-	result = g_DXRenderingSystemComponent->m_device->CreateInputLayout(
-		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(), &DXGeometryRenderPassComponent::get().m_DXSPC->m_layout);
-
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create vertex shader layout!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	// Setup the description of the dynamic matrix constant buffer
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.ByteWidth = sizeof(GPassCBufferData);
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -758,38 +669,6 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.MiscFlags = 0;
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.StructureByteStride = 0;
 
-	// Create the constant buffer pointer
-	result = g_DXRenderingSystemComponent->m_device->CreateBuffer(&DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc, NULL, &DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBuffer);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create constant buffer pointer!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	l_shaderBuffer->Release();
-	l_shaderBuffer = 0;
-
-	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"DX11//geometryPassCookTorrancePixel.sf");
-
-	// Create the shader from the buffer.
-	result = g_DXRenderingSystemComponent->m_device->CreatePixelShader(
-		l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(),
-		NULL,
-		&DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShader);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create pixel shader!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	l_shaderBuffer->Release();
-	l_shaderBuffer = 0;
-
-	// Create a texture sampler state description.
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -804,18 +683,7 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.MinLOD = 0;
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	// Create the texture sampler state.
-	result = g_DXRenderingSystemComponent->m_device->CreateSamplerState(
-		&DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc,
-		&DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerState);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: GeometryPass: can't create texture sampler state!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	return true;
+	return initializeDXShaderProgramComponent(DXGeometryRenderPassComponent::get().m_DXSPC, m_GeometryPassShaderFilePaths);
 }
 
 bool  DXRenderingSystemNS::initializeLightPass()
@@ -823,89 +691,6 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	DXLightRenderPassComponent::get().m_DXRPC = addDXRenderPassComponent(1, deferredPassRTVDesc, deferredPassTextureDesc);
 	DXLightRenderPassComponent::get().m_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
 
-	HRESULT result;
-
-	ID3D10Blob* l_errorMessage;
-	ID3D10Blob* l_shaderBuffer;
-
-	// Initialize the pointers this function will use to null.
-	l_errorMessage = 0;
-	l_shaderBuffer = 0;
-
-	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"DX11//lightPassCookTorranceVertex.sf");
-
-	result = g_DXRenderingSystemComponent->m_device->CreateVertexShader(
-		l_shaderBuffer->GetBufferPointer(), l_shaderBuffer->GetBufferSize(),
-		NULL,
-		&DXLightRenderPassComponent::get().m_DXSPC->m_vertexShader);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create vertex shader!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[5];
-	unsigned int l_numElements;
-
-	// Create the vertex input layout description.
-	l_polygonLayout[0].SemanticName = "POSITION";
-	l_polygonLayout[0].SemanticIndex = 0;
-	l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_polygonLayout[0].InputSlot = 0;
-	l_polygonLayout[0].AlignedByteOffset = 0;
-	l_polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[0].InstanceDataStepRate = 0;
-
-	l_polygonLayout[1].SemanticName = "TEXCOORD";
-	l_polygonLayout[1].SemanticIndex = 0;
-	l_polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	l_polygonLayout[1].InputSlot = 0;
-	l_polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[1].InstanceDataStepRate = 0;
-
-	l_polygonLayout[2].SemanticName = "PADA";
-	l_polygonLayout[2].SemanticIndex = 0;
-	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
-	l_polygonLayout[2].InputSlot = 0;
-	l_polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[2].InstanceDataStepRate = 0;
-
-	l_polygonLayout[3].SemanticName = "NORMAL";
-	l_polygonLayout[3].SemanticIndex = 0;
-	l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_polygonLayout[3].InputSlot = 0;
-	l_polygonLayout[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[3].InstanceDataStepRate = 0;
-
-	l_polygonLayout[4].SemanticName = "PADB";
-	l_polygonLayout[4].SemanticIndex = 0;
-	l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_polygonLayout[4].InputSlot = 0;
-	l_polygonLayout[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[4].InstanceDataStepRate = 0;
-
-	// Get a count of the elements in the layout.
-	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
-
-	// Create the vertex input layout.
-	result = g_DXRenderingSystemComponent->m_device->CreateInputLayout(
-		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(), &DXLightRenderPassComponent::get().m_DXSPC->m_layout);
-
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create vertex shader layout!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	// Setup the description of the dynamic matrix constant buffer
 	DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.ByteWidth = sizeof(LPassCBufferData);
 	DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -913,38 +698,6 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.MiscFlags = 0;
 	DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.StructureByteStride = 0;
 
-	// Create the constant buffer pointer
-	result = g_DXRenderingSystemComponent->m_device->CreateBuffer(&DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc, NULL, &DXLightRenderPassComponent::get().m_DXSPC->m_constantBuffer);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create constant buffer pointer!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	l_shaderBuffer->Release();
-	l_shaderBuffer = 0;
-
-	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"DX11//lightPassCookTorrancePixel.sf");
-
-	// Create the shader from the buffer.
-	result = g_DXRenderingSystemComponent->m_device->CreatePixelShader(
-		l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(),
-		NULL,
-		&DXLightRenderPassComponent::get().m_DXSPC->m_pixelShader);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create pixel shader!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	l_shaderBuffer->Release();
-	l_shaderBuffer = 0;
-
-	// Create a texture sampler state description.
 	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -959,152 +712,29 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.MinLOD = 0;
 	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	// Create the texture sampler state.
-	result = g_DXRenderingSystemComponent->m_device->CreateSamplerState(
-		&DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc,
-		&DXLightRenderPassComponent::get().m_DXSPC->m_samplerState);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: LightPass: can't create texture sampler state!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	return true;
+	return initializeDXShaderProgramComponent(DXLightRenderPassComponent::get().m_DXSPC, m_LightPassShaderFilePaths);
 }
 
 bool DXRenderingSystemNS::initializeFinalBlendPass()
 {
-	HRESULT result;
-	ID3D10Blob* l_errorMessage;
-	ID3D10Blob* l_shaderBuffer;
-
-	// Initialize the pointers this function will use to null.
-	l_errorMessage = 0;
-	l_shaderBuffer = 0;
-
-	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, L"DX11//finalBlendPassVertex.sf");
-
-	result = g_DXRenderingSystemComponent->m_device->CreateVertexShader(
-		l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(),
-		NULL,
-		&DXFinalRenderPassComponent::get().m_vertexShader);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create vertex shader!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[5];
-	unsigned int l_numElements;
-
-	// Create the vertex input layout description.
-	l_polygonLayout[0].SemanticName = "POSITION";
-	l_polygonLayout[0].SemanticIndex = 0;
-	l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_polygonLayout[0].InputSlot = 0;
-	l_polygonLayout[0].AlignedByteOffset = 0;
-	l_polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[0].InstanceDataStepRate = 0;
-
-	l_polygonLayout[1].SemanticName = "TEXCOORD";
-	l_polygonLayout[1].SemanticIndex = 0;
-	l_polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	l_polygonLayout[1].InputSlot = 0;
-	l_polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[1].InstanceDataStepRate = 0;
-
-	l_polygonLayout[2].SemanticName = "PADA";
-	l_polygonLayout[2].SemanticIndex = 0;
-	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
-	l_polygonLayout[2].InputSlot = 0;
-	l_polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[2].InstanceDataStepRate = 0;
-
-	l_polygonLayout[3].SemanticName = "NORMAL";
-	l_polygonLayout[3].SemanticIndex = 0;
-	l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_polygonLayout[3].InputSlot = 0;
-	l_polygonLayout[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[3].InstanceDataStepRate = 0;
-
-	l_polygonLayout[4].SemanticName = "PADB";
-	l_polygonLayout[4].SemanticIndex = 0;
-	l_polygonLayout[4].Format = DXGI_FORMAT_R32G32_FLOAT;
-	l_polygonLayout[4].InputSlot = 0;
-	l_polygonLayout[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_polygonLayout[4].InstanceDataStepRate = 0;
-
-	// Get a count of the elements in the layout.
-	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
-
-	// Create the vertex input layout.
-	result = g_DXRenderingSystemComponent->m_device->CreateInputLayout(
-		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(), &DXFinalRenderPassComponent::get().m_layout);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create vertex shader layout!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	l_shaderBuffer->Release();
-	l_shaderBuffer = 0;
-
-	// Compile the shader code.
-	l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, L"DX11//finalBlendPassPixel.sf");
-
-	// Create the shader from the buffer.
-	result = g_DXRenderingSystemComponent->m_device->CreatePixelShader(
-		l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(),
-		NULL,
-		&DXFinalRenderPassComponent::get().m_pixelShader);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create pixel shader!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	l_shaderBuffer->Release();
-	l_shaderBuffer = 0;
+	DXFinalRenderPassComponent::get().m_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
 
 	// Create a texture sampler state description.
-	DXFinalRenderPassComponent::get().m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	DXFinalRenderPassComponent::get().m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXFinalRenderPassComponent::get().m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXFinalRenderPassComponent::get().m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXFinalRenderPassComponent::get().m_samplerDesc.MipLODBias = 0.0f;
-	DXFinalRenderPassComponent::get().m_samplerDesc.MaxAnisotropy = 1;
-	DXFinalRenderPassComponent::get().m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	DXFinalRenderPassComponent::get().m_samplerDesc.BorderColor[0] = 0;
-	DXFinalRenderPassComponent::get().m_samplerDesc.BorderColor[1] = 0;
-	DXFinalRenderPassComponent::get().m_samplerDesc.BorderColor[2] = 0;
-	DXFinalRenderPassComponent::get().m_samplerDesc.BorderColor[3] = 0;
-	DXFinalRenderPassComponent::get().m_samplerDesc.MinLOD = 0;
-	DXFinalRenderPassComponent::get().m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.MipLODBias = 0.0f;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxAnisotropy = 1;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[0] = 0;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[1] = 0;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[2] = 0;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[3] = 0;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.MinLOD = 0;
+	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	// Create the texture sampler state.
-	result = g_DXRenderingSystemComponent->m_device->CreateSamplerState(
-		&DXFinalRenderPassComponent::get().m_samplerDesc,
-		&DXFinalRenderPassComponent::get().m_samplerState);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: FinalBlendPass: can't create texture sampler state!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	return true;
+	return initializeDXShaderProgramComponent(DXFinalRenderPassComponent::get().m_DXSPC, m_FinalPassShaderFilePaths);;
 }
 
 void DXRenderingSystemNS::prepareRenderingData()
@@ -1209,21 +839,7 @@ void DXRenderingSystemNS::updateGeometryPass()
 	g_DXRenderingSystemComponent->m_deviceContext->RSSetState(
 		g_DXRenderingSystemComponent->m_rasterStateForward);
 
-	// Set the vertex and pixel shaders that will be used to render this triangle.
-	g_DXRenderingSystemComponent->m_deviceContext->VSSetShader(
-		DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShader,
-		NULL,
-		0);
-	g_DXRenderingSystemComponent->m_deviceContext->PSSetShader(
-		DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShader,
-		NULL,
-		0);
-
-	// Set the sampler state in the pixel shader.
-	g_DXRenderingSystemComponent->m_deviceContext->PSSetSamplers(0, 1, &DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerState);
-
-	// Set the vertex input layout.
-	g_DXRenderingSystemComponent->m_deviceContext->IASetInputLayout(DXGeometryRenderPassComponent::get().m_DXSPC->m_layout);
+	activateDXShaderProgramComponent(DXGeometryRenderPassComponent::get().m_DXSPC);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
@@ -1249,7 +865,7 @@ void DXRenderingSystemNS::updateGeometryPass()
 	{
 		auto l_renderPack = m_GPassRenderingDataQueue.front();
 
-		// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+		// Set the type of primitive that should be rendered from this vertex buffer.
 		D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
 
 		if (l_renderPack.m_meshDrawMethod == MeshPrimitiveTopology::TRIANGLE)
@@ -1284,24 +900,9 @@ void DXRenderingSystemNS::updateLightPass()
 	g_DXRenderingSystemComponent->m_deviceContext->RSSetState(
 		g_DXRenderingSystemComponent->m_rasterStateDeferred);
 
-	// Set the vertex and pixel shaders that will be used to render this triangle.
-	g_DXRenderingSystemComponent->m_deviceContext->VSSetShader(
-		DXLightRenderPassComponent::get().m_DXSPC->m_vertexShader,
-		NULL,
-		0);
-	g_DXRenderingSystemComponent->m_deviceContext->PSSetShader(
-		DXLightRenderPassComponent::get().m_DXSPC->m_pixelShader,
-		NULL,
-		0);
+	activateDXShaderProgramComponent(DXLightRenderPassComponent::get().m_DXSPC);
 
-	// Set the sampler state in the pixel shader.
-	g_DXRenderingSystemComponent->m_deviceContext->PSSetSamplers(0, 1, &DXLightRenderPassComponent::get().m_DXSPC->m_samplerState);
-
-	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 	g_DXRenderingSystemComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// Set the vertex input layout.
-	g_DXRenderingSystemComponent->m_deviceContext->IASetInputLayout(DXLightRenderPassComponent::get().m_DXSPC->m_layout);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
@@ -1315,7 +916,6 @@ void DXRenderingSystemNS::updateLightPass()
 		1,
 		&DXLightRenderPassComponent::get().m_DXRPC->m_viewport);
 
-	// Clear the render buffers.
 	// Clear the render buffers.
 	for (auto i : DXLightRenderPassComponent::get().m_DXRPC->m_renderTargetViews)
 	{
@@ -1341,18 +941,10 @@ void DXRenderingSystemNS::updateFinalBlendPass()
 	// Set Rasterizer State
 	g_DXRenderingSystemComponent->m_deviceContext->RSSetState(
 		g_DXRenderingSystemComponent->m_rasterStateDeferred);
-	// Set the vertex and pixel shaders that will be used to render this triangle.
-	g_DXRenderingSystemComponent->m_deviceContext->VSSetShader(DXFinalRenderPassComponent::get().m_vertexShader, NULL, 0);
-	g_DXRenderingSystemComponent->m_deviceContext->PSSetShader(DXFinalRenderPassComponent::get().m_pixelShader, NULL, 0);
 
-	// Set the sampler state in the pixel shader.
-	g_DXRenderingSystemComponent->m_deviceContext->PSSetSamplers(0, 1, &DXFinalRenderPassComponent::get().m_samplerState);
+	activateDXShaderProgramComponent(DXFinalRenderPassComponent::get().m_DXSPC);
 
-	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 	g_DXRenderingSystemComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// Set the vertex input layout.
-	g_DXRenderingSystemComponent->m_deviceContext->IASetInputLayout(DXFinalRenderPassComponent::get().m_layout);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.

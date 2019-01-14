@@ -16,6 +16,9 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
 	std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedMeshComponents;
 	const std::wstring m_shaderRelativePath = L"..//res//shaders//";
+
+	bool initializeVertexShader(DXShaderProgramComponent* rhs, const std::wstring& VSShaderPath);
+	bool initializePixelShader(DXShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
 }
 
 ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath)
@@ -68,6 +71,146 @@ ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const 
 	return l_shaderBuffer;
 }
 
+bool DXRenderingSystemNS::initializeVertexShader(DXShaderProgramComponent* rhs, const std::wstring& VSShaderPath)
+{
+	// Compile the shader code.
+	auto l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, VSShaderPath);
+
+	auto result = DXRenderingSystemComponent::get().m_device->CreateVertexShader(
+		l_shaderBuffer->GetBufferPointer(), l_shaderBuffer->GetBufferSize(),
+		NULL,
+		&rhs->m_vertexShader);
+
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create vertex shader!");
+		return false;
+	}
+
+	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[5];
+	unsigned int l_numElements;
+
+	// Create the vertex input layout description.
+	l_polygonLayout[0].SemanticName = "POSITION";
+	l_polygonLayout[0].SemanticIndex = 0;
+	l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[0].InputSlot = 0;
+	l_polygonLayout[0].AlignedByteOffset = 0;
+	l_polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[0].InstanceDataStepRate = 0;
+
+	l_polygonLayout[1].SemanticName = "TEXCOORD";
+	l_polygonLayout[1].SemanticIndex = 0;
+	l_polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	l_polygonLayout[1].InputSlot = 0;
+	l_polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[1].InstanceDataStepRate = 0;
+
+	l_polygonLayout[2].SemanticName = "PADA";
+	l_polygonLayout[2].SemanticIndex = 0;
+	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
+	l_polygonLayout[2].InputSlot = 0;
+	l_polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[2].InstanceDataStepRate = 0;
+
+	l_polygonLayout[3].SemanticName = "NORMAL";
+	l_polygonLayout[3].SemanticIndex = 0;
+	l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[3].InputSlot = 0;
+	l_polygonLayout[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[3].InstanceDataStepRate = 0;
+
+	l_polygonLayout[4].SemanticName = "PADB";
+	l_polygonLayout[4].SemanticIndex = 0;
+	l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[4].InputSlot = 0;
+	l_polygonLayout[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_polygonLayout[4].InstanceDataStepRate = 0;
+
+	// Get a count of the elements in the layout.
+	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
+
+	// Create the vertex input layout.
+	result = DXRenderingSystemComponent::get().m_device->CreateInputLayout(
+		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
+		l_shaderBuffer->GetBufferSize(), &rhs->m_inputLayout);
+
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create vertex shader layout!");
+		return false;
+	}
+	
+	if (rhs->m_constantBufferDesc.ByteWidth > 0)
+	{
+		// Create the constant buffer pointer
+		result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&rhs->m_constantBufferDesc, NULL, &rhs->m_constantBuffer);
+
+		if (FAILED(result))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create constant buffer pointer!");
+			return false;
+		}
+	}
+
+	l_shaderBuffer->Release();
+	l_shaderBuffer = 0;
+
+	return true;
+}
+
+bool DXRenderingSystemNS::initializePixelShader(DXShaderProgramComponent* rhs, const std::wstring& PSShaderPath)
+{
+	// Compile the shader code.
+	auto l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, PSShaderPath);
+
+	// Create the shader from the buffer.
+	auto result = DXRenderingSystemComponent::get().m_device->CreatePixelShader(
+		l_shaderBuffer->GetBufferPointer(),
+		l_shaderBuffer->GetBufferSize(),
+		NULL,
+		&rhs->m_pixelShader);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create pixel shader!");
+		return false;
+	}
+
+	// Create the texture sampler state.
+	result = DXRenderingSystemComponent::get().m_device->CreateSamplerState(
+		&rhs->m_samplerDesc,
+		&rhs->m_samplerState);
+
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create texture sampler state!");
+		return false;
+	}
+
+	l_shaderBuffer->Release();
+	l_shaderBuffer = 0;
+
+	return true;
+}
+
+bool DXRenderingSystemNS::initializeDXShaderProgramComponent(DXShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths)
+{
+	bool l_result = true;
+	if (shaderFilePaths.m_VSPath != "")
+	{
+		l_result = l_result && initializeVertexShader(rhs, std::wstring(shaderFilePaths.m_VSPath.begin(), shaderFilePaths.m_VSPath.end()));
+	}
+	if (shaderFilePaths.m_FSPath != "")
+	{
+		l_result = l_result && initializePixelShader(rhs, std::wstring(shaderFilePaths.m_FSPath.begin(), shaderFilePaths.m_FSPath.end()));
+	}
+	return l_result;
+}
+
 void DXRenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename)
 {
 	char* compileErrors;
@@ -92,6 +235,31 @@ void DXRenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HW
 
 	MessageBox(DXWindowSystemComponent::get().m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
+}
+
+
+bool DXRenderingSystemNS::activateDXShaderProgramComponent(DXShaderProgramComponent * rhs)
+{
+	if(rhs->m_vertexShader)
+	{
+		DXRenderingSystemComponent::get().m_deviceContext->VSSetShader(
+			rhs->m_vertexShader,
+			NULL,
+			0);
+
+		DXRenderingSystemComponent::get().m_deviceContext->IASetInputLayout(rhs->m_inputLayout);
+	}
+	if (rhs->m_pixelShader)
+	{
+		DXRenderingSystemComponent::get().m_deviceContext->PSSetShader(
+			rhs->m_pixelShader,
+			NULL,
+			0);
+
+		DXRenderingSystemComponent::get().m_deviceContext->PSSetSamplers(0, 1, &rhs->m_samplerState);
+	}
+
+	return true;
 }
 
 DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned int RTNum, D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc)
@@ -231,7 +399,6 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 		vertexBufferDesc.StructureByteStride = 0;
 
 		// Give the subresource structure a pointer to the vertex data.
-		// @TODO: InnoMath's vec4 is 32bit while XMFLOAT4 is 16bit
 		D3D11_SUBRESOURCE_DATA vertexData;
 		ZeroMemory(&vertexData, sizeof(vertexData));
 		vertexData.pSysMem = &rhs->m_vertices[0];
@@ -251,7 +418,7 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 		D3D11_BUFFER_DESC indexBufferDesc;
 		ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		indexBufferDesc.ByteWidth = sizeof(unsigned long) * (UINT)rhs->m_indices.size();
+		indexBufferDesc.ByteWidth = (UINT)(rhs->m_indices.size() * sizeof(unsigned int));
 		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		indexBufferDesc.CPUAccessFlags = 0;
 		indexBufferDesc.MiscFlags = 0;

@@ -619,7 +619,6 @@ void ImGuiWrapper::showSceneLoadingPopWindow(bool &l_popMenuOpened, std::string 
 
 	if (ImGui::BeginPopupModal("Load scene", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-
 		ImGui::Separator();
 
 		if (ImGui::Button("Load", ImVec2(120, 0))) {

@@ -5,6 +5,7 @@
 #include "../component/TextureDataComponent.h"
 #include "../component/DXMeshDataComponent.h"
 #include "../component/DXTextureDataComponent.h"
+#include "../component/DXShaderProgramComponent.h"
 #include "../component/DXRenderPassComponent.h"
 
 INNO_PRIVATE_SCOPE DXRenderingSystemNS
@@ -27,6 +28,10 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	void drawMesh(EntityID rhs);
 	void drawMesh(MeshDataComponent* MDC);
 	void drawMesh(size_t indicesSize, DXMeshDataComponent * DXMDC);
+
+	bool initializeDXShaderProgramComponent(DXShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
+
+	bool activateDXShaderProgramComponent(DXShaderProgramComponent* rhs);
 
 	template <class T>
 	void updateShaderParameter(ShaderType shaderType, ID3D11Buffer* matrixBuffer, T* parameterValue)

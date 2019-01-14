@@ -13,7 +13,7 @@ public:
 
 	ID3D11VertexShader* m_vertexShader = 0;
 	ID3D11PixelShader* m_pixelShader = 0;
-	ID3D11InputLayout* m_layout = 0;
+	ID3D11InputLayout* m_inputLayout = 0;
 
 	D3D11_BUFFER_DESC m_constantBufferDesc = D3D11_BUFFER_DESC();
 	ID3D11Buffer* m_constantBuffer = 0;
