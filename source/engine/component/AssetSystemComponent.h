@@ -42,9 +42,6 @@ public:
 	std::unordered_map<EntityID, MaterialDataComponent*> m_materialMap;
 	std::unordered_map<EntityID, TextureDataComponent*> m_textureMap;
 
-	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshComponents;
-	ThreadSafeQueue<TextureDataComponent*> m_uninitializedTextureComponents;
-
 	MeshDataComponent* m_UnitLineTemplate;
 	MeshDataComponent* m_UnitQuadTemplate;
 	MeshDataComponent* m_UnitCubeTemplate;
@@ -65,9 +62,6 @@ public:
 	TextureDataComponent* m_iconTemplate_DirectionalLight;
 	TextureDataComponent* m_iconTemplate_PointLight;
 	TextureDataComponent* m_iconTemplate_SphereLight;
-
-	std::unordered_map<std::string, ModelMap> m_loadedModelMap;
-	std::unordered_map<std::string, TextureDataComponent*> m_loadedTextureMap;
 
     const std::string m_textureRelativePath = std::string{"..//res//textures//"};
     const std::string m_modelRelativePath = std::string{"..//res//models//"};

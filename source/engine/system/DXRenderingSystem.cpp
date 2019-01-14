@@ -8,7 +8,7 @@
 #include "../component/DXWindowSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "../component/DXRenderingSystemComponent.h"
-#include "../component/AssetSystemComponent.h"
+#include "../component/FileSystemComponent.h"
 
 #include "DXRenderingSystemUtilities.h"
 
@@ -527,18 +527,18 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 {
-	if (AssetSystemComponent::get().m_uninitializedMeshComponents.size() > 0)
+	if (FileSystemComponent::get().m_uninitializedMeshComponents.size() > 0)
 	{
 		MeshDataComponent* l_meshDataComponent;
-		if (AssetSystemComponent::get().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
+		if (FileSystemComponent::get().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
 			auto l_initializedDXMDC = DXRenderingSystemNS::generateDXMeshDataComponent(l_meshDataComponent);
 		}
 	}
-	if (AssetSystemComponent::get().m_uninitializedTextureComponents.size() > 0)
+	if (FileSystemComponent::get().m_uninitializedTextureComponents.size() > 0)
 	{
 		TextureDataComponent* l_textureDataComponent;
-		if (AssetSystemComponent::get().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
+		if (FileSystemComponent::get().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
 		{
 			DXRenderingSystemNS::generateDXTextureDataComponent(l_textureDataComponent);
 		}

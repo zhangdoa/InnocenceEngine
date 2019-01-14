@@ -24,7 +24,7 @@ namespace InnoPhysicsSystemNS
 	MeshDataComponent* generateMeshDataComponent(AABB rhs);
 
 	void generateAABB(DirectionalLightComponent* directionalLightComponent);
-	std::vector<AABB> frustumsVerticesToAABBs(const std::vector<Vertex>& frustumsVertices);
+	std::vector<AABB> frustumsVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors);
 	AABB generateAABB(const std::vector<Vertex>& vertices);
 	AABB generateAABB(vec4 boundMax, vec4 boundMin);
 	std::vector<Vertex> generateAABBVertices(vec4 boundMax, vec4 boundMin);
@@ -230,12 +230,14 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	directionalLightComponent->m_AABBsInWorldSpace.clear();
 	directionalLightComponent->m_projectionMatrices.clear();
 
-	//1. get frustum vertices
+	//1. get frustum vertices and the maxium draw distance
 	auto l_camera = g_GameSystemComponent->m_CameraComponents[0];
 	auto l_frustumVertices = generateFrustumVertices(l_camera);
+	auto l_distance = l_camera->m_zFar - l_camera->m_zNear;
+	std::vector<float> l_CSMSplitFactors = { 20.48f / l_distance, 128.0f / l_distance, 1024.0f / l_distance, 1.0f};
 
 	//2.calculate AABBs in world space
-	auto l_AABBsWS = frustumsVerticesToAABBs(l_frustumVertices);
+	auto l_AABBsWS = frustumsVerticesToAABBs(l_frustumVertices, l_CSMSplitFactors);
 
 	//3. save the AABB for bound area detection
 	directionalLightComponent->m_AABBsInWorldSpace = std::move(l_AABBsWS);
@@ -245,7 +247,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	for (size_t i = 0; i < l_frustumVertices.size(); i++)
 	{
 		//Column-Major memory layout	
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT	
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 		l_frustumVertices[i].m_pos = InnoMath::mul(l_frustumVertices[i].m_pos, l_lightRotMat);
 #endif	
 		//Row-Major memory layout	
@@ -255,7 +257,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	}
 
 	//5.calculate AABBs in light space
-	auto l_AABBsLS = frustumsVerticesToAABBs(l_frustumVertices);
+	auto l_AABBsLS = frustumsVerticesToAABBs(l_frustumVertices, l_CSMSplitFactors);
 
 	//6. extend AABB to include the sphere
 	for (size_t i = 0; i < 4; i++)
@@ -281,7 +283,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	}
 }
 
-std::vector<AABB> InnoPhysicsSystemNS::frustumsVerticesToAABBs(const std::vector<Vertex>& frustumsVertices)
+std::vector<AABB> InnoPhysicsSystemNS::frustumsVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors)
 {
 	std::vector<vec4> l_frustumsCornerPos;
 	l_frustumsCornerPos.reserve(20);
@@ -292,13 +294,13 @@ std::vector<AABB> InnoPhysicsSystemNS::frustumsVerticesToAABBs(const std::vector
 		l_frustumsCornerPos.emplace_back(frustumsVertices[i].m_pos);
 	}
 
-	//2. other 16 corner based on 1 / e^(3 - i)
+	//2. other 16 corner based on the split factors
 	for (size_t i = 0; i < 4; i++)
 	{
-		auto scaleFactor = 1.0f / std::exp(float(3 - i));
 		for (size_t j = 0; j < 4; j++)
 		{
-			auto l_splitedPlaneCornerPos = frustumsVertices[j].m_pos + (frustumsVertices[j + 4].m_pos - frustumsVertices[j].m_pos) * scaleFactor;
+			auto l_direction = (frustumsVertices[j + 4].m_pos - frustumsVertices[j].m_pos);
+			auto l_splitedPlaneCornerPos = frustumsVertices[j].m_pos + l_direction * splitFactors[i];
 			l_frustumsCornerPos.emplace_back(l_splitedPlaneCornerPos);
 		}
 	}

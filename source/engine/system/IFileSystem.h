@@ -26,6 +26,6 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual bool convertModel(const std::string & fileName, const std::string & exportPath) = 0;
 
-	INNO_SYSTEM_EXPORT virtual bool loadAsset(const std::string & fileName, ModelMap& modelMap) = 0;
-	INNO_SYSTEM_EXPORT virtual bool loadAsset(const std::string & fileName, TextureDataComponent& TDC) = 0;
+	INNO_SYSTEM_EXPORT virtual ModelMap loadModel(const std::string & fileName) = 0;
+	INNO_SYSTEM_EXPORT virtual TextureDataComponent* loadTexture(const std::string & fileName) = 0;
 };

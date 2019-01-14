@@ -735,74 +735,13 @@ void InnoAssetSystemNS::assignUnitMesh(MeshShapeType MeshUsageType, VisibleCompo
 
 ModelMap InnoAssetSystemNS::loadModel(const std::string & fileName)
 {
-	ModelMap l_result;
-	// check if this file has already been loaded once
-	auto l_loadedModelMap = AssetSystemComponent::get().m_loadedModelMap.find(fileName);
-	if (l_loadedModelMap != AssetSystemComponent::get().m_loadedModelMap.end())
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "AssetSystem: " + fileName + " has been already loaded.");
-		// Just copy new materials
-		for (auto& i : l_loadedModelMap->second)
-		{
-			auto l_material = addMaterialDataComponent();
-			*l_material = *i.second;
-			l_result.emplace(i.first, l_material);
-		}
-		return l_result;
-	}
-	else
-	{
-		g_pCoreSystem->getFileSystem()->loadAsset(fileName, l_result);
-		AssetSystemComponent::get().m_loadedModelMap.emplace(fileName, l_result);
-		for (auto i : l_result)
-		{
-			AssetSystemComponent::get().m_uninitializedMeshComponents.push(i.first);		
-			if (i.second->m_texturePack.m_normalTDC.second)
-			{
-				AssetSystemComponent::get().m_uninitializedTextureComponents.push(i.second->m_texturePack.m_normalTDC.second);
-			}
-			if (i.second->m_texturePack.m_albedoTDC.second)
-			{
-				AssetSystemComponent::get().m_uninitializedTextureComponents.push(i.second->m_texturePack.m_albedoTDC.second);
-			}
-			if (i.second->m_texturePack.m_metallicTDC.second)
-			{
-				AssetSystemComponent::get().m_uninitializedTextureComponents.push(i.second->m_texturePack.m_metallicTDC.second);
-			}
-			if (i.second->m_texturePack.m_roughnessTDC.second)
-			{
-				AssetSystemComponent::get().m_uninitializedTextureComponents.push(i.second->m_texturePack.m_roughnessTDC.second);
-			}
-			if (i.second->m_texturePack.m_aoTDC.second)
-			{
-				AssetSystemComponent::get().m_uninitializedTextureComponents.push(i.second->m_texturePack.m_aoTDC.second);
-			}
-		}
-		return l_result;
-	}
+	auto l_result = g_pCoreSystem->getFileSystem()->loadModel(fileName);
+	return l_result;
 }
 
 TextureDataComponent* InnoAssetSystemNS::loadTexture(const std::string& fileName, TextureUsageType textureUsageType)
 {
-	auto l_loadedTDC = AssetSystemComponent::get().m_loadedTextureMap.find(fileName);
-	if (l_loadedTDC != AssetSystemComponent::get().m_loadedTextureMap.end())
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "AssetSystem: " + fileName + " has been already loaded.");
-		return l_loadedTDC->second;
-	}
-	else
-	{
-		auto l_TDC = addTextureDataComponent();
-		if (g_pCoreSystem->getFileSystem()->loadAsset(fileName, *l_TDC))
-		{
-			l_TDC->m_textureDataDesc.textureUsageType = textureUsageType;
-			AssetSystemComponent::get().m_loadedTextureMap.emplace(fileName, l_TDC);
-			AssetSystemComponent::get().m_uninitializedTextureComponents.push(l_TDC);
-		}
-		else
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't load " + fileName + "!");
-		}
-		return l_TDC;
-	}
+	auto l_TDC = g_pCoreSystem->getFileSystem()->loadTexture(fileName);
+	l_TDC->m_textureDataDesc.textureUsageType = textureUsageType;
+	return l_TDC;
 }

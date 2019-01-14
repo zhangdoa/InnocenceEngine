@@ -23,6 +23,6 @@ public:
 
 	INNO_SYSTEM_EXPORT bool convertModel(const std::string & fileName, const std::string & exportPath) override;
 
-	INNO_SYSTEM_EXPORT bool loadAsset(const std::string & fileName, ModelMap& modelMap) override;
-	INNO_SYSTEM_EXPORT bool loadAsset(const std::string & fileName, TextureDataComponent& TDC) override;
+	INNO_SYSTEM_EXPORT ModelMap loadModel(const std::string & fileName) override;
+	INNO_SYSTEM_EXPORT TextureDataComponent* loadTexture(const std::string & fileName) override;
 };

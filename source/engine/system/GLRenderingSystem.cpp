@@ -8,7 +8,7 @@
 #include "GLLightRenderingPassUtilities.h"
 #include "GLFinalRenderingPassUtilities.h"
 
-#include "../component/AssetSystemComponent.h"
+#include "../component/FileSystemComponent.h"
 #include "../component/GameSystemComponent.h"
 #include "../component/WindowSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
@@ -223,18 +223,18 @@ void GLRenderingSystemNS::initializeHaltonSampler()
 
 bool GLRenderingSystemNS::update()
 {
-	if (AssetSystemComponent::get().m_uninitializedMeshComponents.size() > 0)
+	if (FileSystemComponent::get().m_uninitializedMeshComponents.size() > 0)
 	{
 		MeshDataComponent* l_meshDataComponent;
-		if (AssetSystemComponent::get().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
+		if (FileSystemComponent::get().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
 			generateGLMeshDataComponent(l_meshDataComponent);
 		}
 	}
-	if (AssetSystemComponent::get().m_uninitializedTextureComponents.size() > 0)
+	if (FileSystemComponent::get().m_uninitializedTextureComponents.size() > 0)
 	{
 		TextureDataComponent* l_textureDataComponent;
-		if (AssetSystemComponent::get().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
+		if (FileSystemComponent::get().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
 		{
 			generateGLTextureDataComponent(l_textureDataComponent);
 		}

@@ -1,7 +1,7 @@
 #include "FileSystem.h"
 
 #include"../component/GameSystemComponent.h"
-#include"../component/AssetSystemComponent.h"
+#include"../component/FileSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 
 #include "json/json.hpp"
@@ -54,12 +54,13 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 	namespace ModelLoader
 	{
-		bool loadModelFromDisk(const std::string & fileName, ModelMap& modelMap);
-		bool processSceneJsonData(const json & j, ModelMap& modelMap);
-		bool processNodeJsonData(const json & j, ModelMap& modelMap);
+		ModelMap loadModelFromDisk(const std::string & fileName);
+		ModelMap processSceneJsonData(const json & j);
+		ModelMap processNodeJsonData(const json & j);
 		ModelPair processMeshJsonData(const json& j);
 		MaterialDataComponent* processMaterialJsonData(const json& j);
-		bool loadTextureFromDisk(const std::string & fileName, TextureDataComponent& TDC);
+		TextureDataComponent* loadTexture(const std::string& fileName);
+		TextureDataComponent* loadTextureFromDisk(const std::string & fileName);
 	}
 
 	std::string loadTextFile(const std::string & fileName);
@@ -773,23 +774,23 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::convertModel(const std::string & fileNam
 	return InnoFileSystemNS::convertModel(fileName, exportPath);
 }
 
-INNO_SYSTEM_EXPORT bool InnoFileSystem::loadAsset(const std::string & fileName, ModelMap& modelMap)
+INNO_SYSTEM_EXPORT ModelMap InnoFileSystem::loadModel(const std::string & fileName)
 {
 	auto l_extension = fs::path(fileName).extension().generic_string();
 	if (l_extension == ".InnoModel")
 	{
-		return InnoFileSystemNS::ModelLoader::loadModelFromDisk(fileName, modelMap);
+		return InnoFileSystemNS::ModelLoader::loadModelFromDisk(fileName);
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: " + fileName + " is not supported!");
-		return false;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + fileName + " is not supported!");
+		return ModelMap();
 	}
 }
 
-INNO_SYSTEM_EXPORT bool InnoFileSystem::loadAsset(const std::string & fileName, TextureDataComponent& TDC)
+INNO_SYSTEM_EXPORT TextureDataComponent* InnoFileSystem::loadTexture(const std::string & fileName)
 {
-	return InnoFileSystemNS::ModelLoader::loadTextureFromDisk(fileName, TDC);
+	return InnoFileSystemNS::ModelLoader::loadTexture(fileName);
 }
 
 bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName, const std::string & exportPath)
@@ -799,7 +800,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 
 	if (fs::exists(fs::path(l_exportFileFullPath)))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: " + fileName + " has already been converted!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + fileName + " has already been converted!");
 		return true;
 	}
 
@@ -813,7 +814,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: " + fileName + " doesn't exist!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: AssimpWrapper: " + fileName + " doesn't exist!");
 		return false;
 	}
 	if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
@@ -825,7 +826,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 	auto l_result = processAssimpScene(l_assScene);
 	saveJsonDataToDisk(l_exportFileFullPath, l_result);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: " + fileName + " has been converted.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssimpWrapper: " + fileName + " has been converted.");
 
 	return true;
 }
@@ -1039,7 +1040,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: ASSIMP: " + l_localPath + " is unknown texture type!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + l_localPath + " is unknown texture type!");
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
 			{
@@ -1063,7 +1064,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 			}
 			else
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: ASSIMP: " + l_localPath + " is unsupported texture type!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + l_localPath + " is unsupported texture type!");
 			}
 		}
 	}
@@ -1141,78 +1142,117 @@ json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fil
 	return j;
 }
 
-bool InnoFileSystemNS::ModelLoader::loadModelFromDisk(const std::string & fileName, ModelMap& modelMap)
+ModelMap InnoFileSystemNS::ModelLoader::loadModelFromDisk(const std::string & fileName)
 {
+	ModelMap l_result;
+
+	// check if this file has already been loaded once
+	auto l_loadedModelMap = FileSystemComponent::get().m_loadedModelMap.find(fileName);
+	if (l_loadedModelMap != FileSystemComponent::get().m_loadedModelMap.end())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: " + fileName + " has been already loaded.");
+		// Just copy new materials
+		for (auto& i : l_loadedModelMap->second)
+		{
+			auto l_material = g_pCoreSystem->getAssetSystem()->addMaterialDataComponent();
+			*l_material = *i.second;
+			l_result.emplace(i.first, l_material);
+		}
+		return l_result;
+	}
+
 	json j;
 
 	if (loadJsonDataFromDisk(fileName, j))
 	{
-		return processSceneJsonData(j, modelMap);
+		l_result = std::move(processSceneJsonData(j));
+		FileSystemComponent::get().m_loadedModelMap.emplace(fileName, l_result);
 	}
 	else
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: ModelLoader: can't load " + fileName + "!");
-		return false;
 	}
+
+	return l_result;
 }
 
-bool InnoFileSystemNS::ModelLoader::processSceneJsonData(const json & j, ModelMap& modelMap)
+ModelMap InnoFileSystemNS::ModelLoader::processSceneJsonData(const json & j)
 {
+	ModelMap l_SceneResult;
+
 	for (auto i : j["Nodes"])
 	{
-		processNodeJsonData(i, modelMap);
+		auto l_nodeResult = std::move(processNodeJsonData(i));
+		for (auto i : l_nodeResult)
+		{
+			l_SceneResult.emplace(i);
+		}
 	}
 
-	return true;
+	return l_SceneResult;
 }
 
-bool InnoFileSystemNS::ModelLoader::processNodeJsonData(const json & j, ModelMap& modelMap)
+ModelMap InnoFileSystemNS::ModelLoader::processNodeJsonData(const json & j)
 {
+	ModelMap l_nodeResult;
+
 	for (auto i : j["Meshes"])
 	{
-		modelMap.emplace(processMeshJsonData(i));
+		l_nodeResult.emplace(processMeshJsonData(i));
 	}
 
-	return true;
+	return l_nodeResult;
 }
 
 ModelPair InnoFileSystemNS::ModelLoader::processMeshJsonData(const json & j)
 {
-	auto l_verticesFileName = j["MeshVerticesFile"].get<std::string>();
-
-	std::ifstream l_verticesFile(l_verticesFileName, std::ios::binary);
-
-	if (!l_verticesFile.is_open())
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_verticesFileName + "!");
-		return ModelPair();
-	}
-
-	auto l_MeshDC = g_pCoreSystem->getAssetSystem()->addMeshDataComponent();
-
-	deserializeVector(l_verticesFile, l_MeshDC->m_vertices);
-	l_verticesFile.close();
-
-	auto l_indicesFileName = j["MeshIndicesFile"].get<std::string>();
-
-	std::ifstream l_indicesFile(l_indicesFileName, std::ios::binary);
-
-	if (!l_indicesFile.is_open())
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_indicesFileName + "!");
-		return ModelPair();
-	}
-
-	deserializeVector(l_indicesFile, l_MeshDC->m_indices);
-	l_indicesFile.close();
-
-	l_MeshDC->m_indicesSize = l_MeshDC->m_indices.size();
-	l_MeshDC->m_objectStatus = ObjectStatus::STANDBY;
-
 	ModelPair l_result;
 
-	l_result.first = l_MeshDC;
-	l_result.second = processMaterialJsonData(j["Material"]);
+	auto l_verticesFileName = j["MeshVerticesFile"].get<std::string>();
+
+	auto l_loadedModelPair = FileSystemComponent::get().m_loadedModelPair.find(l_verticesFileName);
+	if (l_loadedModelPair != FileSystemComponent::get().m_loadedModelPair.end())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: " + l_verticesFileName + " has been already loaded.");
+		l_result = l_loadedModelPair->second;
+	}
+	else
+	{
+		std::ifstream l_verticesFile(l_verticesFileName, std::ios::binary);
+
+		if (!l_verticesFile.is_open())
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_verticesFileName + "!");
+			return ModelPair();
+		}
+
+		auto l_MeshDC = g_pCoreSystem->getAssetSystem()->addMeshDataComponent();
+
+		deserializeVector(l_verticesFile, l_MeshDC->m_vertices);
+		l_verticesFile.close();
+
+		auto l_indicesFileName = j["MeshIndicesFile"].get<std::string>();
+
+		std::ifstream l_indicesFile(l_indicesFileName, std::ios::binary);
+
+		if (!l_indicesFile.is_open())
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_indicesFileName + "!");
+			return ModelPair();
+		}
+
+		deserializeVector(l_indicesFile, l_MeshDC->m_indices);
+		l_indicesFile.close();
+
+		l_MeshDC->m_indicesSize = l_MeshDC->m_indices.size();
+		l_MeshDC->m_objectStatus = ObjectStatus::STANDBY;
+
+		l_result.first = l_MeshDC;
+		l_result.second = processMaterialJsonData(j["Material"]);
+
+		FileSystemComponent::get().m_loadedModelPair.emplace(l_verticesFileName, l_result);
+		FileSystemComponent::get().m_uninitializedMeshComponents.push(l_MeshDC);
+	}
 
 	return l_result;
 }
@@ -1225,13 +1265,12 @@ MaterialDataComponent * InnoFileSystemNS::ModelLoader::processMaterialJsonData(c
 	{
 		for (auto i : j["Textures"])
 		{
-			auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
-
+			auto l_TDC = loadTexture(i["TextureFile"]);
 			l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType(i["TextureUsageType"]);
-			loadTextureFromDisk(i["TextureFile"], *l_TDC);
 
 			switch (l_TDC->m_textureDataDesc.textureUsageType)
 			{
+				
 			case TextureUsageType::NORMAL: l_MDC->m_texturePack.m_normalTDC.second = l_TDC; break;
 			case TextureUsageType::ALBEDO: l_MDC->m_texturePack.m_albedoTDC.second = l_TDC; break;
 			case TextureUsageType::METALLIC: l_MDC->m_texturePack.m_metallicTDC.second = l_TDC; break;
@@ -1255,7 +1294,25 @@ MaterialDataComponent * InnoFileSystemNS::ModelLoader::processMaterialJsonData(c
 	return l_MDC;
 }
 
-bool InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const std::string & fileName, TextureDataComponent& TDC)
+TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTexture(const std::string& fileName)
+{
+	TextureDataComponent* l_TDC;
+
+	auto l_loadedTDC = FileSystemComponent::get().m_loadedTexture.find(fileName);
+	if (l_loadedTDC != FileSystemComponent::get().m_loadedTexture.end())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: " + fileName + " has been already loaded.");
+		l_TDC = l_loadedTDC->second;
+	}
+	else
+	{
+		l_TDC = loadTextureFromDisk(fileName);
+	}
+
+	return l_TDC;
+}
+
+TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const std::string & fileName)
 {
 	int width, height, nrChannels;
 
@@ -1275,24 +1332,29 @@ bool InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const std::string & file
 	}
 	if (l_rawData)
 	{
-		TDC.m_textureDataDesc.textureColorComponentsFormat = l_isHDR ? TextureColorComponentsFormat((unsigned int)TextureColorComponentsFormat::R16F + (nrChannels - 1)) : TextureColorComponentsFormat((nrChannels - 1));
-		TDC.m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
-		TDC.m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-		TDC.m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
-		TDC.m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-		TDC.m_textureDataDesc.texturePixelDataType = l_isHDR ? TexturePixelDataType::FLOAT : TexturePixelDataType::UNSIGNED_BYTE;
-		TDC.m_textureDataDesc.textureWidth = width;
-		TDC.m_textureDataDesc.textureHeight = height;
-		TDC.m_textureData.emplace_back(l_rawData);
+		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssimpWrapper: STB_Image: " + fileName + " has been loaded.");
+		l_TDC->m_textureDataDesc.textureColorComponentsFormat = l_isHDR ? TextureColorComponentsFormat((unsigned int)TextureColorComponentsFormat::R16F + (nrChannels - 1)) : TextureColorComponentsFormat((nrChannels - 1));
+		l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
+		l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+		l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+		l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+		l_TDC->m_textureDataDesc.texturePixelDataType = l_isHDR ? TexturePixelDataType::FLOAT : TexturePixelDataType::UNSIGNED_BYTE;
+		l_TDC->m_textureDataDesc.textureWidth = width;
+		l_TDC->m_textureDataDesc.textureHeight = height;
+		l_TDC->m_textureData.emplace_back(l_rawData);
 
-		return true;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: STB_Image: " + fileName + " has been loaded.");
+
+		FileSystemComponent::get().m_loadedTexture.emplace(fileName, l_TDC);
+		FileSystemComponent::get().m_uninitializedTextureComponents.push(l_TDC);
+
+		return l_TDC;
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: AssimpWrapper: STB_Image: Failed to load texture: " + fileName);
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: ModelLoader: STB_Image: Failed to load texture: " + fileName);
 
-		return false;
+		return nullptr;
 	}
 }
