@@ -760,7 +760,7 @@ void GLRenderingSystemNS::drawMesh(MeshDataComponent* MDC)
 	auto l_GLMDC = getGLMeshDataComponent(MDC->m_parentEntity);
 	if (l_GLMDC)
 	{
-		drawMesh(MDC->m_indicesSize, MDC->m_meshDrawMethod, l_GLMDC);
+		drawMesh(MDC->m_indicesSize, MDC->m_meshPrimitiveTopology, l_GLMDC);
 	}
 }
 

@@ -175,7 +175,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 					l_renderDataPack.m_prev = i.m_prev;
 					l_renderDataPack.normalMat = i.normalMat;
 					l_renderDataPack.MDC = l_MDC;
-					l_renderDataPack.Material = l_modelPair->second;
+					l_renderDataPack.material = l_modelPair->second;
 					l_renderDataPack.visiblilityType = i.visiblilityType;
 					RenderingSystemComponent::get().m_renderDataPack.emplace_back(l_renderDataPack);
 				}

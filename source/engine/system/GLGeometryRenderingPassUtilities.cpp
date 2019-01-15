@@ -341,57 +341,57 @@ void GLGeometryRenderingPassUtilities::updateOpaquePass()
 	updateUBO(GLGeometryRenderPassComponent::get().m_cameraUBO, GLRenderingSystemComponent::get().m_GPassCameraUBOData);
 
 #ifdef CookTorrance
-	while (GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue.size() > 0)
+	while (GLRenderingSystemComponent::get().m_opaquePassDataQueue.size() > 0)
 	{
-		auto l_renderPack = GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue.front();
+		auto l_renderPack = GLRenderingSystemComponent::get().m_opaquePassDataQueue.front();
 		if (l_renderPack.visiblilityType == VisiblilityType::INNO_OPAQUE)
 		{
 			glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
 
 			// any normal?
-			if (l_renderPack.m_GPassTextureUBOData.useNormalTexture)
+			if (l_renderPack.textureUBOData.useNormalTexture)
 			{
-				activateTexture(l_renderPack.m_basicNormalGLTDC, 0);
+				activateTexture(l_renderPack.normalGLTDC, 0);
 			}
 			// any albedo?
-			if (l_renderPack.m_GPassTextureUBOData.useAlbedoTexture)
+			if (l_renderPack.textureUBOData.useAlbedoTexture)
 			{
-				activateTexture(l_renderPack.m_basicAlbedoGLTDC, 1);
+				activateTexture(l_renderPack.albedoGLTDC, 1);
 			}
 			// any metallic?
-			if (l_renderPack.m_GPassTextureUBOData.useMetallicTexture)
+			if (l_renderPack.textureUBOData.useMetallicTexture)
 			{
-				activateTexture(l_renderPack.m_basicMetallicGLTDC, 2);
+				activateTexture(l_renderPack.metallicGLTDC, 2);
 			}
 			// any roughness?
-			if (l_renderPack.m_GPassTextureUBOData.useRoughnessTexture)
+			if (l_renderPack.textureUBOData.useRoughnessTexture)
 			{
-				activateTexture(l_renderPack.m_basicRoughnessGLTDC, 3);
+				activateTexture(l_renderPack.roughnessGLTDC, 3);
 			}
 			// any ao?
-			if (l_renderPack.m_GPassTextureUBOData.useAOTexture)
+			if (l_renderPack.textureUBOData.useAOTexture)
 			{
-				activateTexture(l_renderPack.m_basicAOGLTDC, 4);
+				activateTexture(l_renderPack.AOGLTDC, 4);
 			}
 
-			updateUBO(GLGeometryRenderPassComponent::get().m_meshUBO, l_renderPack.m_GPassMeshUBOData);
-			updateUBO(GLGeometryRenderPassComponent::get().m_textureUBO, l_renderPack.m_GPassTextureUBOData);
-			drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
+			updateUBO(GLGeometryRenderPassComponent::get().m_meshUBO, l_renderPack.meshUBOData);
+			updateUBO(GLGeometryRenderPassComponent::get().m_textureUBO, l_renderPack.textureUBOData);
+			drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
 		}
 		else if (l_renderPack.visiblilityType == VisiblilityType::INNO_EMISSIVE)
 		{
 			glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
 
-			updateUBO(GLGeometryRenderPassComponent::get().m_meshUBO, l_renderPack.m_GPassMeshUBOData);
-			updateUBO(GLGeometryRenderPassComponent::get().m_textureUBO, l_renderPack.m_GPassTextureUBOData);
+			updateUBO(GLGeometryRenderPassComponent::get().m_meshUBO, l_renderPack.meshUBOData);
+			updateUBO(GLGeometryRenderPassComponent::get().m_textureUBO, l_renderPack.textureUBOData);
 
-			drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
+			drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
 		}
 		else
 		{
 			glStencilFunc(GL_ALWAYS, 0x00, 0xFF);
 		}
-		GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue.pop();
+		GLRenderingSystemComponent::get().m_opaquePassDataQueue.pop();
 	}
 
 	//glDisable(GL_CULL_FACE);
@@ -479,18 +479,18 @@ void GLGeometryRenderingPassUtilities::updateTransparentPass()
 		GLGeometryRenderPassComponent::get().m_transparentPass_uni_dirLight_color,
 		GLRenderingSystemComponent::get().m_sunColor.x, GLRenderingSystemComponent::get().m_sunColor.y, GLRenderingSystemComponent::get().m_sunColor.z);
 
-	while (GLRenderingSystemComponent::get().m_GPassTransparentRenderDataQueue.size() > 0)
+	while (GLRenderingSystemComponent::get().m_transparentPassDataQueue.size() > 0)
 	{
-		auto l_renderPack = GLRenderingSystemComponent::get().m_GPassTransparentRenderDataQueue.front();
+		auto l_renderPack = GLRenderingSystemComponent::get().m_transparentPassDataQueue.front();
 
-		updateUBO(GLGeometryRenderPassComponent::get().m_meshUBO, l_renderPack.m_GPassMeshUBOData);
+		updateUBO(GLGeometryRenderPassComponent::get().m_meshUBO, l_renderPack.meshUBOData);
 
 		updateUniform(GLGeometryRenderPassComponent::get().m_transparentPass_uni_albedo, l_renderPack.meshCustomMaterial.albedo_r, l_renderPack.meshCustomMaterial.albedo_g, l_renderPack.meshCustomMaterial.albedo_b, l_renderPack.meshCustomMaterial.alpha);
 		updateUniform(GLGeometryRenderPassComponent::get().m_transparentPass_uni_TR, l_renderPack.meshCustomMaterial.thickness, l_renderPack.meshCustomMaterial.roughness, 0.0f, 0.0f);
 
-		drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
+		drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
 
-		GLRenderingSystemComponent::get().m_GPassTransparentRenderDataQueue.pop();
+		GLRenderingSystemComponent::get().m_transparentPassDataQueue.pop();
 	}
 
 	glDisable(GL_BLEND);

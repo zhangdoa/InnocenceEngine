@@ -297,7 +297,7 @@ void GLRenderingSystemNS::prepareRenderingData()
 	prepareBillboardPassData();
 
 	// copy for environment capture
-	GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue_copy = GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue;
+	GLRenderingSystemComponent::get().m_opaquePassDataQueue_copy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
 }
 
 
@@ -318,73 +318,73 @@ bool GLRenderingSystemNS::prepareGeometryPassData()
 		{
 			if (l_renderDataPack.visiblilityType == VisiblilityType::INNO_OPAQUE || l_renderDataPack.visiblilityType == VisiblilityType::INNO_EMISSIVE)
 			{
-				GPassOpaqueRenderDataPack l_GLRenderDataPack;
+				OpaquePassDataPack l_GLRenderDataPack;
 
 				l_GLRenderDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
-				l_GLRenderDataPack.m_meshDrawMethod = l_renderDataPack.MDC->m_meshDrawMethod;
-				l_GLRenderDataPack.m_GPassMeshUBOData.m = l_renderDataPack.m;
-				l_GLRenderDataPack.m_GPassMeshUBOData.m_prev = l_renderDataPack.m_prev;
+				l_GLRenderDataPack.meshPrimitiveTopology = l_renderDataPack.MDC->m_meshPrimitiveTopology;
+				l_GLRenderDataPack.meshUBOData.m = l_renderDataPack.m;
+				l_GLRenderDataPack.meshUBOData.m_prev = l_renderDataPack.m_prev;
 				l_GLRenderDataPack.GLMDC = l_GLMDC;
 
-				auto l_material = l_renderDataPack.Material;
+				auto l_material = l_renderDataPack.material;
 				// any normal?
 				auto l_TDC = l_material->m_texturePack.m_normalTDC.second;
 				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
-					l_GLRenderDataPack.m_basicNormalGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
+					l_GLRenderDataPack.normalGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
 				}
 				else
 				{
-					l_GLRenderDataPack.m_GPassTextureUBOData.useNormalTexture = false;
+					l_GLRenderDataPack.textureUBOData.useNormalTexture = false;
 				}
 				// any albedo?
 				l_TDC = l_material->m_texturePack.m_albedoTDC.second;
 				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
-					l_GLRenderDataPack.m_basicAlbedoGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
+					l_GLRenderDataPack.albedoGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
 				}
 				else
 				{
-					l_GLRenderDataPack.m_GPassTextureUBOData.useAlbedoTexture = false;
+					l_GLRenderDataPack.textureUBOData.useAlbedoTexture = false;
 				}
 				// any metallic?
 				l_TDC = l_material->m_texturePack.m_metallicTDC.second;
 				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
-					l_GLRenderDataPack.m_basicMetallicGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
+					l_GLRenderDataPack.metallicGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
 				}
 				else
 				{
-					l_GLRenderDataPack.m_GPassTextureUBOData.useMetallicTexture = false;
+					l_GLRenderDataPack.textureUBOData.useMetallicTexture = false;
 				}
 				// any roughness?
 				l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
 				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
-					l_GLRenderDataPack.m_basicRoughnessGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
+					l_GLRenderDataPack.roughnessGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
 				}
 				else
 				{
-					l_GLRenderDataPack.m_GPassTextureUBOData.useRoughnessTexture = false;
+					l_GLRenderDataPack.textureUBOData.useRoughnessTexture = false;
 				}
 				// any ao?
 				l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
 				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
-					l_GLRenderDataPack.m_basicAOGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
+					l_GLRenderDataPack.AOGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
 				}
 				else
 				{
-					l_GLRenderDataPack.m_GPassTextureUBOData.useAOTexture = false;
+					l_GLRenderDataPack.textureUBOData.useAOTexture = false;
 				}
 
-				l_GLRenderDataPack.m_GPassTextureUBOData.albedo = vec4(
+				l_GLRenderDataPack.textureUBOData.albedo = vec4(
 					l_material->m_meshCustomMaterial.albedo_r,
 					l_material->m_meshCustomMaterial.albedo_g,
 					l_material->m_meshCustomMaterial.albedo_b,
 					1.0f
 				);
-				l_GLRenderDataPack.m_GPassTextureUBOData.MRA = vec4(
+				l_GLRenderDataPack.textureUBOData.MRA = vec4(
 					l_material->m_meshCustomMaterial.metallic,
 					l_material->m_meshCustomMaterial.roughness,
 					l_material->m_meshCustomMaterial.ao,
@@ -393,23 +393,23 @@ bool GLRenderingSystemNS::prepareGeometryPassData()
 
 				l_GLRenderDataPack.visiblilityType = l_renderDataPack.visiblilityType;
 
-				GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue.push(l_GLRenderDataPack);
+				GLRenderingSystemComponent::get().m_opaquePassDataQueue.push(l_GLRenderDataPack);
 			}
 			else if (l_renderDataPack.visiblilityType == VisiblilityType::INNO_TRANSPARENT)
 			{
-				GPassTransparentRenderDataPack l_GLRenderDataPack;
+				TransparentPassDataPack l_GLRenderDataPack;
 
 				l_GLRenderDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
-				l_GLRenderDataPack.m_meshDrawMethod = l_renderDataPack.MDC->m_meshDrawMethod;
-				l_GLRenderDataPack.m_GPassMeshUBOData.m = l_renderDataPack.m;
-				l_GLRenderDataPack.m_GPassMeshUBOData.m_prev = l_renderDataPack.m_prev;
+				l_GLRenderDataPack.meshPrimitiveTopology = l_renderDataPack.MDC->m_meshPrimitiveTopology;
+				l_GLRenderDataPack.meshUBOData.m = l_renderDataPack.m;
+				l_GLRenderDataPack.meshUBOData.m_prev = l_renderDataPack.m_prev;
 				l_GLRenderDataPack.GLMDC = l_GLMDC;
 
-				auto l_material = l_renderDataPack.Material;
+				auto l_material = l_renderDataPack.material;
 
 				l_GLRenderDataPack.meshCustomMaterial = l_material->m_meshCustomMaterial;
 				l_GLRenderDataPack.visiblilityType = l_renderDataPack.visiblilityType;
-				GLRenderingSystemComponent::get().m_GPassTransparentRenderDataQueue.push(l_GLRenderDataPack);
+				GLRenderingSystemComponent::get().m_transparentPassDataQueue.push(l_GLRenderDataPack);
 			}
 		}
 	}
@@ -490,32 +490,32 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 {
 	for (auto i : GameSystemComponent::get().m_DirectionalLightComponents)
 	{
-		BillboardPassRenderDataPack l_GLRenderDataPack;
+		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_GLRenderDataPack.distanceToCamera = (GLRenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::DIRECTIONAL_LIGHT;
 
-		GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.emplace(l_GLRenderDataPack);
+		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
 	}
 
 	for (auto i : GameSystemComponent::get().m_PointLightComponents)
 	{
-		BillboardPassRenderDataPack l_GLRenderDataPack;
+		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_GLRenderDataPack.distanceToCamera = (GLRenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::POINT_LIGHT;
 
-		GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.emplace(l_GLRenderDataPack);
+		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
 	}
 
 	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
 	{
-		BillboardPassRenderDataPack l_GLRenderDataPack;
+		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_GLRenderDataPack.distanceToCamera = (GLRenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::SPHERE_LIGHT;
 
-		GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.emplace(l_GLRenderDataPack);
+		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
 	}
 
 	return true;

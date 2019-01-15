@@ -1336,7 +1336,7 @@ TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const s
 
 		l_TDC->m_textureDataDesc.textureColorComponentsFormat = l_isHDR ? TextureColorComponentsFormat((unsigned int)TextureColorComponentsFormat::R16F + (nrChannels - 1)) : TextureColorComponentsFormat((nrChannels - 1));
 		l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
-		l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+		l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
 		l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
 		l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
 		l_TDC->m_textureDataDesc.texturePixelDataType = l_isHDR ? TexturePixelDataType::FLOAT : TexturePixelDataType::UNSIGNED_BYTE;

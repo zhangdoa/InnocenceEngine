@@ -610,9 +610,9 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBillboardPass()
 		GLFinalRenderPassComponent::get().m_billboardPass_uni_t,
 		GLRenderingSystemComponent::get().m_CamTrans);
 
-	while (GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.size() > 0)
+	while (GLRenderingSystemComponent::get().m_billboardPassDataQueue.size() > 0)
 	{
-		auto l_renderPack = GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.front();
+		auto l_renderPack = GLRenderingSystemComponent::get().m_billboardPassDataQueue.front();
 
 		auto l_GlobalPos = l_renderPack.globalPos;
 
@@ -650,7 +650,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBillboardPass()
 
 		drawMesh(6, MeshPrimitiveTopology::TRIANGLE_STRIP, GLRenderingSystemComponent::get().m_UnitQuadGLMDC);
 
-		GLRenderingSystemComponent::get().m_BillboardPassRenderDataQueue.pop();
+		GLRenderingSystemComponent::get().m_billboardPassDataQueue.pop();
 	}
 
 	glDisable(GL_DEPTH_TEST);

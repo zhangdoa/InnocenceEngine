@@ -145,14 +145,14 @@ bool DXRenderingSystemNS::initializeVertexShader(DXShaderProgramComponent* rhs, 
 		return false;
 	}
 	
-	if (rhs->m_constantBufferDesc.ByteWidth > 0)
+	if (rhs->m_vertexShaderCBufferDesc.ByteWidth > 0)
 	{
 		// Create the constant buffer pointer
-		result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&rhs->m_constantBufferDesc, NULL, &rhs->m_constantBuffer);
+		result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&rhs->m_vertexShaderCBufferDesc, NULL, &rhs->m_vertexShaderCBuffer);
 
 		if (FAILED(result))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create constant buffer pointer!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create constant buffer pointer for vertex shader!");
 			return false;
 		}
 	}
@@ -178,6 +178,18 @@ bool DXRenderingSystemNS::initializePixelShader(DXShaderProgramComponent* rhs, c
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create pixel shader!");
 		return false;
+	}
+
+	if (rhs->m_pixelShaderCBufferDesc.ByteWidth > 0)
+	{
+		// Create the constant buffer pointer
+		result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&rhs->m_pixelShaderCBufferDesc, NULL, &rhs->m_pixelShaderCBuffer);
+
+		if (FAILED(result))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create constant buffer pointer for pixel shader!");
+			return false;
+		}
 	}
 
 	// Create the texture sampler state.

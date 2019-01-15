@@ -10,7 +10,7 @@ struct RenderDataPack
 	mat4 m_prev;
 	mat4 normalMat;
 	MeshDataComponent* MDC;
-	MaterialDataComponent* Material;
+	MaterialDataComponent* material;
 	VisiblilityType visiblilityType;
 };
 

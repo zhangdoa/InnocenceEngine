@@ -32,32 +32,32 @@ struct GPassTextureUBOData
 	int useAOTexture = true;
 };
 
-struct GPassOpaqueRenderDataPack
+struct OpaquePassDataPack
 {
 	size_t indiceSize;
-	GPassMeshUBOData m_GPassMeshUBOData;
+	GPassMeshUBOData meshUBOData;
 	GLMeshDataComponent* GLMDC;
-	MeshPrimitiveTopology m_meshDrawMethod;
-	GPassTextureUBOData m_GPassTextureUBOData;
-	GLTextureDataComponent* m_basicNormalGLTDC;
-	GLTextureDataComponent* m_basicAlbedoGLTDC;
-	GLTextureDataComponent* m_basicMetallicGLTDC;
-	GLTextureDataComponent* m_basicRoughnessGLTDC;
-	GLTextureDataComponent* m_basicAOGLTDC;
+	MeshPrimitiveTopology meshPrimitiveTopology;
+	GPassTextureUBOData textureUBOData;
+	GLTextureDataComponent* normalGLTDC;
+	GLTextureDataComponent* albedoGLTDC;
+	GLTextureDataComponent* metallicGLTDC;
+	GLTextureDataComponent* roughnessGLTDC;
+	GLTextureDataComponent* AOGLTDC;
 	VisiblilityType visiblilityType;
 };
 
-struct GPassTransparentRenderDataPack
+struct TransparentPassDataPack
 {
 	size_t indiceSize;
-	GPassMeshUBOData m_GPassMeshUBOData;
+	GPassMeshUBOData meshUBOData;
 	GLMeshDataComponent* GLMDC;
-	MeshPrimitiveTopology m_meshDrawMethod;
+	MeshPrimitiveTopology meshPrimitiveTopology;
 	MeshCustomMaterial meshCustomMaterial;
 	VisiblilityType visiblilityType;
 };
 
-struct BillboardPassRenderDataPack
+struct BillboardPassDataPack
 {
 	vec4 globalPos;
 	float distanceToCamera;
@@ -134,12 +134,12 @@ public:
 
 	GPassCameraUBOData m_GPassCameraUBOData;
 
-	std::queue<GPassOpaqueRenderDataPack> m_GPassOpaqueRenderDataQueue;
-	std::queue<GPassOpaqueRenderDataPack> m_GPassOpaqueRenderDataQueue_copy;
+	std::queue<OpaquePassDataPack> m_opaquePassDataQueue;
+	std::queue<OpaquePassDataPack> m_opaquePassDataQueue_copy;
 
-	std::queue<GPassTransparentRenderDataPack> m_GPassTransparentRenderDataQueue;
+	std::queue<TransparentPassDataPack> m_transparentPassDataQueue;
 
-	std::queue<BillboardPassRenderDataPack> m_BillboardPassRenderDataQueue;
+	std::queue<BillboardPassDataPack> m_billboardPassDataQueue;
 
 	const unsigned int m_maxPointLights = 64;
 	std::vector<PointLightData> m_PointLightDatas;

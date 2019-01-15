@@ -408,7 +408,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 
 	for (unsigned int i = 0; i < 6; ++i)
 	{
-		auto l_copy = GLRenderingSystemComponent::get().m_GPassOpaqueRenderDataQueue_copy;
+		auto l_copy = GLRenderingSystemComponent::get().m_opaquePassDataQueue_copy;
 		updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_v, l_v[i]);
 		attachTextureToFramebuffer(l_capturePassTDC, l_capturePassGLTDC, l_FBC, 0, i, 0);
 		while (l_copy.size() > 0)
@@ -416,15 +416,15 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 			auto l_renderPack = l_copy.front();
 			if (l_renderPack.visiblilityType == VisiblilityType::INNO_OPAQUE)
 			{
-				if (l_renderPack.m_GPassTextureUBOData.useAlbedoTexture)
+				if (l_renderPack.textureUBOData.useAlbedoTexture)
 				{
-					activateTexture(l_renderPack.m_basicAlbedoGLTDC, 0);
+					activateTexture(l_renderPack.albedoGLTDC, 0);
 				}
-				updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_m, l_renderPack.m_GPassMeshUBOData.m);
-				updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_useAlbedoTexture, l_renderPack.m_GPassTextureUBOData.useAlbedoTexture);
-				updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_albedo, l_renderPack.m_GPassTextureUBOData.albedo.x, l_renderPack.m_GPassTextureUBOData.albedo.y, l_renderPack.m_GPassTextureUBOData.albedo.z, l_renderPack.m_GPassTextureUBOData.albedo.w);
+				updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_m, l_renderPack.meshUBOData.m);
+				updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_useAlbedoTexture, l_renderPack.textureUBOData.useAlbedoTexture);
+				updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_albedo, l_renderPack.textureUBOData.albedo.x, l_renderPack.textureUBOData.albedo.y, l_renderPack.textureUBOData.albedo.z, l_renderPack.textureUBOData.albedo.w);
 
-				drawMesh(l_renderPack.indiceSize, l_renderPack.m_meshDrawMethod, l_renderPack.GLMDC);
+				drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
 			}
 			l_copy.pop();
 		}

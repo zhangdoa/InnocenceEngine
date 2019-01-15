@@ -2,6 +2,7 @@
 
 #include "../component/WindowSystemComponent.h"
 #include "../component/DXWindowSystemComponent.h"
+#include "../component/DXRenderingSystemComponent.h"
 
 #include "InputSystem.h"
 
@@ -169,6 +170,17 @@ INNO_SYSTEM_EXPORT ObjectStatus DXWindowSystem::getStatus()
 
 void DXWindowSystem::swapBuffer()
 {
+	// Present the back buffer to the screen since rendering is complete.
+	if (DXRenderingSystemComponent::get().m_vsync_enabled)
+	{
+		// Lock to screen refresh rate.
+		DXRenderingSystemComponent::get().m_swapChain->Present(1, 0);
+	}
+	else
+	{
+		// Present as fast as possible.
+		DXRenderingSystemComponent::get().m_swapChain->Present(0, 0);
+	}
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -194,8 +206,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 }
 
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 {
+	ImGui_ImplWin32_WndProcHandler(hwnd, umsg, wparam, lparam);
+
 	switch (umsg)
 	{
 	case WM_KEYDOWN:

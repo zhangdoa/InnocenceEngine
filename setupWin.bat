@@ -12,6 +12,9 @@ xcopy /y stb\stb_image.h ..\include\stb\
 xcopy /y imgui\*.h ..\..\engine\third-party\ImGui\
 xcopy /y imgui\*.cpp ..\..\engine\third-party\ImGui\
 
+xcopy /y imgui\examples\imgui_impl_win32.h ..\..\engine\third-party\ImGui\
+xcopy /y imgui\examples\imgui_impl_win32.cpp ..\..\engine\third-party\ImGui\
+
 xcopy /y imgui\examples\imgui_impl_dx11.h ..\..\engine\third-party\ImGui\
 xcopy /y imgui\examples\imgui_impl_dx11.cpp ..\..\engine\third-party\ImGui\
 

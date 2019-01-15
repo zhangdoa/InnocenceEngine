@@ -17,7 +17,7 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	bool m_vsync_enabled;
+	bool m_vsync_enabled = true;
 	TVec2<unsigned int> m_refreshRate = TVec2<unsigned int>(0, 1);
 
 	int m_videoCardMemory;
@@ -50,6 +50,26 @@ public:
 
 	std::unordered_map<EntityID, DXMeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, DXTextureDataComponent*> m_textureMap;
+	
+	DXMeshDataComponent* m_UnitLineDXMDC;
+	DXMeshDataComponent* m_UnitQuadDXMDC;
+	DXMeshDataComponent* m_UnitCubeDXMDC;
+	DXMeshDataComponent* m_UnitSphereDXMDC;
+
+	DXTextureDataComponent* m_iconTemplate_OBJ;
+	DXTextureDataComponent* m_iconTemplate_PNG;
+	DXTextureDataComponent* m_iconTemplate_SHADER;
+	DXTextureDataComponent* m_iconTemplate_UNKNOWN;
+
+	DXTextureDataComponent* m_iconTemplate_DirectionalLight;
+	DXTextureDataComponent* m_iconTemplate_PointLight;
+	DXTextureDataComponent* m_iconTemplate_SphereLight;
+
+	DXTextureDataComponent* m_basicNormalDXTDC;
+	DXTextureDataComponent* m_basicAlbedoDXTDC;
+	DXTextureDataComponent* m_basicMetallicDXTDC;
+	DXTextureDataComponent* m_basicRoughnessDXTDC;
+	DXTextureDataComponent* m_basicAODXTDC;
 
 private:
 	DXRenderingSystemComponent() {};

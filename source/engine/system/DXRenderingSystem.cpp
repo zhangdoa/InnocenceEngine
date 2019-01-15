@@ -47,8 +47,6 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	void updateLightPass();
 	void updateFinalBlendPass();
 
-	void swapBuffer();
-
 	static WindowSystemComponent* g_WindowSystemComponent;
 	static DXWindowSystemComponent* g_DXWindowSystemComponent;
 	static DXRenderingSystemComponent* g_DXRenderingSystemComponent;
@@ -58,24 +56,39 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	mat4 m_CamTrans;
 	mat4 m_CamRTP;
 
-	struct GPassCBufferData
+	struct GPassMeshCBufferData
 	{
 		mat4 m;
 		mat4 vp;
 		mat4 m_normalMat;
 	};
 
+	struct GPassTextureCBufferData
+	{
+		vec4 albedo;
+		vec4 MRA;
+		int useNormalTexture = true;
+		int useAlbedoTexture = true;
+		int useMetallicTexture = true;
+		int useRoughnessTexture = true;
+		int useAOTexture = true;
+		int padding1 = true;
+		int padding2 = true;
+		int padding3 = true;
+	};
+
 	struct GPassRenderingDataPack
 	{
 		size_t indiceSize;
-		GPassCBufferData GPassCBuffer;
+		GPassMeshCBufferData meshCBuffer;
+		GPassTextureCBufferData textureCBuffer;
 		DXMeshDataComponent* DXMDC;
-		MeshPrimitiveTopology m_meshDrawMethod;
-		DXTextureDataComponent* m_basicNormalDXTDC;
-		DXTextureDataComponent* m_basicAlbedoDXTDC;
-		DXTextureDataComponent* m_basicMetallicDXTDC;
-		DXTextureDataComponent* m_basicRoughnessDXTDC;
-		DXTextureDataComponent* m_basicAODXTDC;
+		MeshPrimitiveTopology meshPrimitiveTopology;
+		DXTextureDataComponent* normalDXTDC;
+		DXTextureDataComponent* albedoDXTDC;
+		DXTextureDataComponent* metallicDXTDC;
+		DXTextureDataComponent* roughnessDXTDC;
+		DXTextureDataComponent* AODXTDC;
 	};
 
 	std::queue<GPassRenderingDataPack> m_GPassRenderingDataQueue;
@@ -88,17 +101,6 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	};
 
 	LPassCBufferData m_LPassCBufferData;
-
-	DXMeshDataComponent* m_UnitLineTemplate;
-	DXMeshDataComponent* m_UnitQuadTemplate;
-	DXMeshDataComponent* m_UnitCubeTemplate;
-	DXMeshDataComponent* m_UnitSphereTemplate;
-
-	DXTextureDataComponent* m_basicNormalTemplate;
-	DXTextureDataComponent* m_basicAlbedoTemplate;
-	DXTextureDataComponent* m_basicMetallicTemplate;
-	DXTextureDataComponent* m_basicRoughnessTemplate;
-	DXTextureDataComponent* m_basicAOTemplate;
 
 	bool createPhysicalDevices();
 	bool createSwapChain();
@@ -552,9 +554,6 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 
 	DXRenderingSystemNS::updateFinalBlendPass();
 
-	// Present the rendered scene to the screen.
-	DXRenderingSystemNS::swapBuffer();
-
 	return true;
 }
 
@@ -637,22 +636,32 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::resize()
 bool  DXRenderingSystemNS::initializeDefaultAssets()
 {
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE);
-	m_UnitLineTemplate = generateDXMeshDataComponent(l_MDC);
+	g_DXRenderingSystemComponent->m_UnitLineDXMDC = generateDXMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-	m_UnitQuadTemplate = generateDXMeshDataComponent(l_MDC);
+	g_DXRenderingSystemComponent->m_UnitQuadDXMDC = generateDXMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
-	m_UnitCubeTemplate = generateDXMeshDataComponent(l_MDC);
+	g_DXRenderingSystemComponent->m_UnitCubeDXMDC = generateDXMeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
-	m_UnitSphereTemplate = generateDXMeshDataComponent(l_MDC);
+	g_DXRenderingSystemComponent->m_UnitSphereDXMDC = generateDXMeshDataComponent(l_MDC);
 
-	m_basicNormalTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::NORMAL));
-	m_basicAlbedoTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ALBEDO));
-	m_basicMetallicTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::METALLIC));
-	m_basicRoughnessTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
-	m_basicAOTemplate = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
+	g_DXRenderingSystemComponent->m_basicNormalDXTDC = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::NORMAL));
+	g_DXRenderingSystemComponent->m_basicAlbedoDXTDC = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ALBEDO));
+	g_DXRenderingSystemComponent->m_basicMetallicDXTDC = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::METALLIC));
+	g_DXRenderingSystemComponent->m_basicRoughnessDXTDC = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
+	g_DXRenderingSystemComponent->m_basicAODXTDC = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
+
+	g_DXRenderingSystemComponent->m_iconTemplate_OBJ = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::OBJ));
+	g_DXRenderingSystemComponent->m_iconTemplate_PNG = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::PNG));
+	g_DXRenderingSystemComponent->m_iconTemplate_SHADER = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::SHADER));
+	g_DXRenderingSystemComponent->m_iconTemplate_UNKNOWN = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::UNKNOWN));
+
+	g_DXRenderingSystemComponent->m_iconTemplate_DirectionalLight = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT));
+	g_DXRenderingSystemComponent->m_iconTemplate_PointLight = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT));
+	g_DXRenderingSystemComponent->m_iconTemplate_SphereLight = generateDXTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT));
+
 
 	return true;
 }
@@ -662,12 +671,19 @@ bool  DXRenderingSystemNS::initializeGeometryPass()
 	DXGeometryRenderPassComponent::get().m_DXRPC = addDXRenderPassComponent(8, deferredPassRTVDesc, deferredPassTextureDesc);
 	DXGeometryRenderPassComponent::get().m_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
 
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.ByteWidth = sizeof(GPassCBufferData);
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.MiscFlags = 0;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.StructureByteStride = 0;
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.ByteWidth = sizeof(GPassMeshCBufferData);
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.MiscFlags = 0;
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.StructureByteStride = 0;
+
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.ByteWidth = sizeof(GPassTextureCBufferData);
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.MiscFlags = 0;
+	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.StructureByteStride = 0;
 
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -691,12 +707,12 @@ bool  DXRenderingSystemNS::initializeLightPass()
 	DXLightRenderPassComponent::get().m_DXRPC = addDXRenderPassComponent(1, deferredPassRTVDesc, deferredPassTextureDesc);
 	DXLightRenderPassComponent::get().m_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
 
-	DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.ByteWidth = sizeof(LPassCBufferData);
-	DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.MiscFlags = 0;
-	DXLightRenderPassComponent::get().m_DXSPC->m_constantBufferDesc.StructureByteStride = 0;
+	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.ByteWidth = sizeof(LPassCBufferData);
+	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.MiscFlags = 0;
+	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.StructureByteStride = 0;
 
 	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -773,61 +789,77 @@ void DXRenderingSystemNS::prepareRenderingData()
 			GPassRenderingDataPack l_renderingDataPack;
 
 			l_renderingDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
-			l_renderingDataPack.m_meshDrawMethod = l_renderDataPack.MDC->m_meshDrawMethod;
-			l_renderingDataPack.GPassCBuffer.m = l_renderDataPack.m;
-			l_renderingDataPack.GPassCBuffer.vp = m_CamRTP;
-			l_renderingDataPack.GPassCBuffer.m_normalMat = l_renderDataPack.normalMat;
+			l_renderingDataPack.meshPrimitiveTopology = l_renderDataPack.MDC->m_meshPrimitiveTopology;
+			l_renderingDataPack.meshCBuffer.m = l_renderDataPack.m;
+			l_renderingDataPack.meshCBuffer.vp = m_CamRTP;
+			l_renderingDataPack.meshCBuffer.m_normalMat = l_renderDataPack.normalMat;
 			l_renderingDataPack.DXMDC = l_DXMDC;
+
+			auto l_material = l_renderDataPack.material;
 			// any normal?
-			auto l_TDC = l_renderDataPack.Material->m_texturePack.m_normalTDC.second;
-			if (l_TDC)
+			auto l_TDC = l_material->m_texturePack.m_normalTDC.second;
+			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_renderingDataPack.m_basicNormalDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+				l_renderingDataPack.normalDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
-				l_renderingDataPack.m_basicNormalDXTDC = m_basicNormalTemplate;
+				l_renderingDataPack.textureCBuffer.useNormalTexture = false;
 			}
 			// any albedo?
-			l_TDC = l_renderDataPack.Material->m_texturePack.m_albedoTDC.second;
-			if (l_TDC)
+			l_TDC = l_material->m_texturePack.m_albedoTDC.second;
+			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_renderingDataPack.m_basicAlbedoDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+				l_renderingDataPack.albedoDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
-				l_renderingDataPack.m_basicAlbedoDXTDC = m_basicAlbedoTemplate;
+				l_renderingDataPack.textureCBuffer.useAlbedoTexture = false;
 			}
 			// any metallic?
-			l_TDC = l_renderDataPack.Material->m_texturePack.m_metallicTDC.second;
-			if (l_TDC)
+			l_TDC = l_material->m_texturePack.m_metallicTDC.second;
+			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_renderingDataPack.m_basicMetallicDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+				l_renderingDataPack.metallicDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
-				l_renderingDataPack.m_basicMetallicDXTDC = m_basicMetallicTemplate;
+				l_renderingDataPack.textureCBuffer.useMetallicTexture = false;
 			}
 			// any roughness?
-			l_TDC = l_renderDataPack.Material->m_texturePack.m_roughnessTDC.second;
-			if (l_TDC)
+			l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
+			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_renderingDataPack.m_basicRoughnessDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+				l_renderingDataPack.roughnessDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
-				l_renderingDataPack.m_basicRoughnessDXTDC = m_basicRoughnessTemplate;
+				l_renderingDataPack.textureCBuffer.useRoughnessTexture = false;
 			}
 			// any ao?
-			l_TDC = l_renderDataPack.Material->m_texturePack.m_roughnessTDC.second;
-			if (l_TDC)
+			l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
+			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_renderingDataPack.m_basicAODXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+				l_renderingDataPack.AODXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
-				l_renderingDataPack.m_basicAODXTDC = m_basicAOTemplate;
+				l_renderingDataPack.textureCBuffer.useAOTexture = false;
 			}
+
+			l_renderingDataPack.textureCBuffer.albedo = vec4(
+				l_material->m_meshCustomMaterial.albedo_r,
+				l_material->m_meshCustomMaterial.albedo_g,
+				l_material->m_meshCustomMaterial.albedo_b,
+				1.0f
+			);
+			l_renderingDataPack.textureCBuffer.MRA = vec4(
+				l_material->m_meshCustomMaterial.metallic,
+				l_material->m_meshCustomMaterial.roughness,
+				l_material->m_meshCustomMaterial.ao,
+				1.0f
+			);
+
 			m_GPassRenderingDataQueue.push(l_renderingDataPack);
 		}
 	}
@@ -868,7 +900,7 @@ void DXRenderingSystemNS::updateGeometryPass()
 		// Set the type of primitive that should be rendered from this vertex buffer.
 		D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
 
-		if (l_renderPack.m_meshDrawMethod == MeshPrimitiveTopology::TRIANGLE)
+		if (l_renderPack.meshPrimitiveTopology == MeshPrimitiveTopology::TRIANGLE)
 		{
 			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		}
@@ -879,14 +911,35 @@ void DXRenderingSystemNS::updateGeometryPass()
 
 		g_DXRenderingSystemComponent->m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
 
-		updateShaderParameter<GPassCBufferData>(ShaderType::VERTEX, DXGeometryRenderPassComponent::get().m_DXSPC->m_constantBuffer, &l_renderPack.GPassCBuffer);
-
+		updateShaderParameter<GPassMeshCBufferData>(ShaderType::VERTEX, DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBuffer, &l_renderPack.meshCBuffer);
+		updateShaderParameter<GPassTextureCBufferData>(ShaderType::FRAGMENT, DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBuffer, &l_renderPack.textureCBuffer);
+		
 		// bind to textures
-		g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(0, 1, &l_renderPack.m_basicNormalDXTDC->m_SRV);
-		g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(1, 1, &l_renderPack.m_basicAlbedoDXTDC->m_SRV);
-		g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(2, 1, &l_renderPack.m_basicMetallicDXTDC->m_SRV);
-		g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(3, 1, &l_renderPack.m_basicRoughnessDXTDC->m_SRV);
-		g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(4, 1, &l_renderPack.m_basicAODXTDC->m_SRV);
+		// any normal?
+		if (l_renderPack.textureCBuffer.useNormalTexture)
+		{
+			g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(0, 1, &l_renderPack.normalDXTDC->m_SRV);
+		}
+		// any albedo?
+		if (l_renderPack.textureCBuffer.useAlbedoTexture)
+		{
+			g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(1, 1, &l_renderPack.albedoDXTDC->m_SRV);
+		}
+		// any metallic?
+		if (l_renderPack.textureCBuffer.useMetallicTexture)
+		{
+			g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(2, 1, &l_renderPack.metallicDXTDC->m_SRV);
+		}
+		// any roughness?
+		if (l_renderPack.textureCBuffer.useRoughnessTexture)
+		{
+			g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(3, 1, &l_renderPack.roughnessDXTDC->m_SRV);
+		}
+		// any ao?
+		if (l_renderPack.textureCBuffer.useAOTexture)
+		{
+			g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(4, 1, &l_renderPack.AODXTDC->m_SRV);
+		}
 
 		drawMesh(l_renderPack.indiceSize, l_renderPack.DXMDC);
 
@@ -925,7 +978,7 @@ void DXRenderingSystemNS::updateLightPass()
 
 	auto l_LPassCBufferData = m_LPassCBufferData;
 
-	updateShaderParameter<LPassCBufferData>(ShaderType::FRAGMENT, DXLightRenderPassComponent::get().m_DXSPC->m_constantBuffer, &l_LPassCBufferData);
+	updateShaderParameter<LPassCBufferData>(ShaderType::FRAGMENT, DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBuffer, &l_LPassCBufferData);
 
 	// bind to previous pass render target textures
 	g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXGeometryRenderPassComponent::get().m_DXRPC->m_DXTDCs[0]->m_SRV);
@@ -933,7 +986,7 @@ void DXRenderingSystemNS::updateLightPass()
 	g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(2, 1, &DXGeometryRenderPassComponent::get().m_DXRPC->m_DXTDCs[2]->m_SRV);
 
 	// draw
-	drawMesh(6, m_UnitQuadTemplate);
+	drawMesh(6, g_DXRenderingSystemComponent->m_UnitQuadDXMDC);
 }
 
 void DXRenderingSystemNS::updateFinalBlendPass()
@@ -966,20 +1019,5 @@ void DXRenderingSystemNS::updateFinalBlendPass()
 	g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXLightRenderPassComponent::get().m_DXRPC->m_DXTDCs[0]->m_SRV);
 
 	// draw
-	drawMesh(6, m_UnitQuadTemplate);
-}
-
-void DXRenderingSystemNS::swapBuffer()
-{
-	// Present the back buffer to the screen since rendering is complete.
-	if (DXRenderingSystemNS::g_DXRenderingSystemComponent->m_vsync_enabled)
-	{
-		// Lock to screen refresh rate.
-		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChain->Present(1, 0);
-	}
-	else
-	{
-		// Present as fast as possible.
-		DXRenderingSystemNS::g_DXRenderingSystemComponent->m_swapChain->Present(0, 0);
-	}
+	drawMesh(6, g_DXRenderingSystemComponent->m_UnitQuadDXMDC);
 }

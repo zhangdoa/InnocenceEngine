@@ -12,7 +12,7 @@ public:
 	EntityID m_parentEntity;
 
 	MeshUsageType m_meshUsageType = MeshUsageType::NORMAL;
-	MeshPrimitiveTopology m_meshDrawMethod = MeshPrimitiveTopology::TRIANGLE;
+	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	size_t m_indicesSize = 0;
 	std::vector<Vertex> m_vertices;
 	std::vector<Index> m_indices;
