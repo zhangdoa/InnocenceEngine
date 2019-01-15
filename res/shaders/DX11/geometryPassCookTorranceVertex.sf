@@ -1,6 +1,6 @@
 // shadertype=hlsl
 
-cbuffer MatrixBuffer
+cbuffer meshCBuffer
 {
 	matrix m;
 	matrix vp;
