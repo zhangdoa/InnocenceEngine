@@ -424,7 +424,7 @@ bool GLRenderingSystemNS::prepareLightPassData()
 	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
 
 	GLRenderingSystemComponent::get().m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
-	GLRenderingSystemComponent::get().m_sunColor = l_directionalLight->m_color;
+	GLRenderingSystemComponent::get().m_sunLuminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
 	GLRenderingSystemComponent::get().m_sunRot = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 
 	auto l_CSMSize = l_directionalLight->m_projectionMatrices.size();

@@ -30,25 +30,25 @@ static const float PI = 3.14159265359;
 // ----------------------------------------------------------------------------
 // Specular Fresnel Component
 // ----------------------------------------------------------------------------
-float3 Frostbite_fresnelSchlick(float3 f0, float f90, float u)
+float3 fresnelSchlick(float3 f0, float f90, float u)
 {
 	return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
 }
 // Diffuse BRDF
 // ----------------------------------------------------------------------------
-float Frostbite_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
+float DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
 {
 	float energyBias = lerp(0, 0.5, linearRoughness);
 	float energyFactor = lerp(1.0, 1.0 / 1.51, linearRoughness);
 	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
 	float3 f0 = float3(1.0, 1.0, 1.0);
-	float lightScatter = Frostbite_fresnelSchlick(f0, fd90, NdotL).r;
-	float viewScatter = Frostbite_fresnelSchlick(f0, fd90, NdotV).r;
+	float lightScatter = fresnelSchlick(f0, fd90, NdotL).r;
+	float viewScatter = fresnelSchlick(f0, fd90, NdotV).r;
 	return lightScatter * viewScatter * energyFactor;
 }
 // Specular Geometry Component
 // ----------------------------------------------------------------------------
-float Frostbite_V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
+float V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
 {
 	float alphaG2 = alphaG * alphaG;
 	float Lambda_GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - alphaG2) + alphaG2);
@@ -57,7 +57,7 @@ float Frostbite_V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
 }
 // Specular Distribution Component
 // ----------------------------------------------------------------------------
-float Frostbite_D_GGX(float NdotH, float roughness)
+float D_GGX(float NdotH, float roughness)
 {
 	// remapping to Quadratic curve
 	float a = roughness * roughness;
@@ -65,12 +65,29 @@ float Frostbite_D_GGX(float NdotH, float roughness)
 	float f = (NdotH * a2 - NdotH) * NdotH + 1;
 	return a2 / pow(f, 2.0);
 }
+// BRDF
 // ----------------------------------------------------------------------------
-float3 Frostbite_CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughness, float3 normal, float3 posWS, float3 F0)
+float3 CalcBRDF(float3 albedo, float metallic, float roughness, float3 F0, float NdotV, float LdotH, float NdotH, float NdotL)
 {
-	float3 N = normalize(normal);
+	// Specular BRDF
+	float F90 = 1.0;
+	float3 F = fresnelSchlick(F0, F90, LdotH);
+	float G = V_SmithGGXCorrelated(NdotV, NdotL, roughness);
+	float D = D_GGX(NdotH, roughness);
+	float3 Fr = F * G * D;
+
+	// Diffuse BRDF
+	float Fd = DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness);
+	
+	float3 BRDF = (Fd * albedo + Fr) / PI;
+
+	return BRDF;
+}
+//Directional light irradiance
+// ----------------------------------------------------------------------------
+float3 CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughness, float3 F0, float3 N, float3 V)
+{
 	float3 L = normalize(-lightDir.xyz);
-	float3 V = normalize(viewPos.xyz - posWS);
 	float3 H = normalize(V + L);
 
 	float NdotV = max(dot(N, V), 0.0);
@@ -78,19 +95,8 @@ float3 Frostbite_CalcDirectionalLightRadiance(float3 albedo, float metallic, flo
 	float NdotH = max(dot(N, H), 0.0);
 	float NdotL = max(dot(N, L), 0.0);
 
-	// Specular BRDF
-	float f90 = 1.0;
-	float3 F = Frostbite_fresnelSchlick(F0, f90, LdotH);
-	float G = Frostbite_V_SmithGGXCorrelated(NdotV, NdotL, roughness);
-	float D = Frostbite_D_GGX(NdotH, roughness);
-	float3 Fr = F * G * D;
-
-	// Diffuse BRDF
-	float Fd = Frostbite_DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness);
-
-	return (Fd * albedo + Fr) * color.xyz * NdotL / PI;
+	return CalcBRDF(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL) * color.xyz * NdotL;
 }
-
 // Spherical-Gaussians
 // ----------------------------------------------------------------------------
 struct SG
@@ -196,11 +202,23 @@ SG MakeSphereSG(in float3 lightDir, in float radius, in float3 intensity, in flo
 	return sg;
 }
 
+SG DirectionalLightToSG(in float3 lightDir, in float3 intensity)
+{
+	SG sg;
+
+	float lne = -2.230258509299f; // ln(0.1)
+	sg.axis = normalize(lightDir);
+	sg.sharpness = -lne;
+	sg.amplitude = intensity;
+
+	return sg;
+}
+
 float3 SG_CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughness, float3 normal, float3 posWS, float3 F0)
 {
-	SG pointLight = MakeSphereSG(normalize(-lightDir.xyz), 5, 2, 100);
+	SG directionalLight = DirectionalLightToSG(normalize(-lightDir.xyz), 20);
 
-	return SGDiffusePunctual(pointLight, normal, albedo) * color.xyz;
+	return SGDiffusePunctual(directionalLight, normal, albedo) * color.xyz;
 }
 
 PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
@@ -221,11 +239,14 @@ PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	float3 F0 = float3(0.04, 0.04, 0.04);
 	F0 = lerp(F0, albedo, metallic);
 
+	float3 N = normalize(normalWS);
+	float3 V = normalize(viewPos.xyz - posWS);
+
 	float3 finalColor;
 
-	finalColor = Frostbite_CalcDirectionalLightRadiance(albedo, metallic, roughness, normalWS, posWS, F0);
+	finalColor = CalcDirectionalLightRadiance(albedo, metallic, roughness, F0, N, V);
 
-	finalColor = SG_CalcDirectionalLightRadiance(albedo, metallic, roughness, normalWS, posWS, F0);
+	//finalColor = SG_CalcDirectionalLightRadiance(albedo, metallic, roughness, normalWS, posWS, F0);
 
 	output.uni_lightPassRT0 = float4(finalColor, 1.0);
 	return output;

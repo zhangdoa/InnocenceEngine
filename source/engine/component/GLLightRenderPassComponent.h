@@ -35,7 +35,8 @@ public:
 		"uni_opaquePassRT2",
 		"uni_opaquePassRT3",
 		"uni_SSAOBlurPassRT0",
-		"uni_shadowMap",
+		"uni_directionalLightShadowMap",
+		"uni_pointLightShadowMap",
 		"uni_brdfLUT",
 		"uni_brdfMSLUT",
 		"uni_irradianceMap",
@@ -49,7 +50,7 @@ public:
 	GLuint m_uni_viewPos;
 
 	GLuint m_uni_dirLight_direction;
-	GLuint m_uni_dirLight_color;
+	GLuint m_uni_dirLight_luminance;
 	GLuint m_uni_dirLight_rot;
 
 	std::vector<GLuint> m_uni_pointLights_position;

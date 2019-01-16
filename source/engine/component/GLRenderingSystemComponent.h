@@ -125,7 +125,7 @@ public:
 	vec4 m_CamGlobalPos;
 
 	vec4 m_sunDir;
-	vec4 m_sunColor;
+	vec4 m_sunLuminance;
 	mat4 m_sunRot;
 
 	std::vector<mat4> m_CSMProjs;

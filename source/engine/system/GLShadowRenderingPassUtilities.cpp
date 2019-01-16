@@ -175,9 +175,6 @@ void GLShadowRenderingPassUtilities::update()
 		drawAllMeshDataComponents();
 	}
 
-
-
-
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 }

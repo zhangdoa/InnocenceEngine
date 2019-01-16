@@ -477,7 +477,7 @@ void GLGeometryRenderingPassUtilities::updateTransparentPass()
 		GLRenderingSystemComponent::get().m_sunDir.x, GLRenderingSystemComponent::get().m_sunDir.y, GLRenderingSystemComponent::get().m_sunDir.z);
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_transparentPass_uni_dirLight_color,
-		GLRenderingSystemComponent::get().m_sunColor.x, GLRenderingSystemComponent::get().m_sunColor.y, GLRenderingSystemComponent::get().m_sunColor.z);
+		GLRenderingSystemComponent::get().m_sunLuminance.x, GLRenderingSystemComponent::get().m_sunLuminance.y, GLRenderingSystemComponent::get().m_sunLuminance.z);
 
 	while (GLRenderingSystemComponent::get().m_transparentPassDataQueue.size() > 0)
 	{

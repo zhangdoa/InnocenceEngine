@@ -64,9 +64,9 @@ void GLLightRenderingPassUtilities::bindLightPassUniformLocations(GLShaderProgra
 	GLLightRenderPassComponent::get().m_uni_dirLight_direction = getUniformLocation(
 		rhs->m_program,
 		"uni_dirLight.direction");
-	GLLightRenderPassComponent::get().m_uni_dirLight_color = getUniformLocation(
+	GLLightRenderPassComponent::get().m_uni_dirLight_luminance = getUniformLocation(
 		rhs->m_program,
-		"uni_dirLight.color");
+		"uni_dirLight.luminance");
 	
 	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_maxPointLights; i++)
 	{
@@ -176,8 +176,8 @@ void GLLightRenderingPassUtilities::update()
 		GLLightRenderPassComponent::get().m_uni_dirLight_direction,
 		GLRenderingSystemComponent::get().m_sunDir.x, GLRenderingSystemComponent::get().m_sunDir.y, GLRenderingSystemComponent::get().m_sunDir.z);
 	updateUniform(
-		GLLightRenderPassComponent::get().m_uni_dirLight_color,
-		GLRenderingSystemComponent::get().m_sunColor.x, GLRenderingSystemComponent::get().m_sunColor.y, GLRenderingSystemComponent::get().m_sunColor.z);
+		GLLightRenderPassComponent::get().m_uni_dirLight_luminance,
+		GLRenderingSystemComponent::get().m_sunLuminance.x, GLRenderingSystemComponent::get().m_sunLuminance.y, GLRenderingSystemComponent::get().m_sunLuminance.z);
 
 	for (size_t j = 0; j < 4; j++)
 	{
