@@ -2,7 +2,7 @@
 
 #include "../component/GameSystemComponent.h"
 #include "../component/WindowSystemComponent.h"
-#include "../component/AssetSystemComponent.h"
+#include "../component/FileSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
 
 #include "ICoreSystem.h"
@@ -42,10 +42,6 @@ namespace InnoPhysicsSystemNS
 
 	InnoFuture<void>* m_asyncTask;
 
-	static WindowSystemComponent* g_WindowSystemComponent;
-	static GameSystemComponent* g_GameSystemComponent;
-	static AssetSystemComponent* g_AssetSystemComponent;
-	static PhysicsSystemComponent* g_PhysicsSystemComponent;
 	vec4 m_sceneBoundMax = vec4(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), 1.0f);
 	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
 
@@ -57,21 +53,16 @@ bool InnoPhysicsSystemNS::setup()
 {
 	m_entityID = g_pCoreSystem->getGameSystem()->createEntity("PhysicsSystemPicker");
 
-	g_WindowSystemComponent = &WindowSystemComponent::get();
-	g_GameSystemComponent = &GameSystemComponent::get();
-	g_AssetSystemComponent = &AssetSystemComponent::get();
-	g_PhysicsSystemComponent = &PhysicsSystemComponent::get();
-
 	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_entityID);
 
 	f_mouseSelect = [&]() {
-		g_PhysicsSystemComponent->m_AABBWireframeDataPack.clear();
+		PhysicsSystemComponent::get().m_AABBWireframeDataPack.clear();
 
-		if (g_GameSystemComponent->m_CameraComponents.size() > 0)
+		if (GameSystemComponent::get().m_CameraComponents.size() > 0)
 		{
 			Ray l_mouseRay;
-			l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
-			l_mouseRay.m_direction = g_WindowSystemComponent->m_mousePositionInWorldSpace;
+			l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GameSystemComponent::get().m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
+			l_mouseRay.m_direction = WindowSystemComponent::get().m_mousePositionInWorldSpace;
 
 			for (auto visibleComponent : GameSystemComponent::get().m_VisibleComponents)
 			{
@@ -89,10 +80,10 @@ bool InnoPhysicsSystemNS::setup()
 							if (InnoMath::intersectCheck(l_AABBws, l_mouseRay))
 							{
 								AABBWireframeDataPack l_dataPack;
-								g_PhysicsSystemComponent->m_selectedVisibleComponent = visibleComponent;
+								PhysicsSystemComponent::get().m_selectedVisibleComponent = visibleComponent;
 								l_dataPack.m = l_globalTm;
 								l_dataPack.MDC = physicsData.wireframeMDC;
-								g_PhysicsSystemComponent->m_AABBWireframeDataPack.emplace_back(l_dataPack);
+								PhysicsSystemComponent::get().m_AABBWireframeDataPack.emplace_back(l_dataPack);
 							}
 						}
 					}
@@ -231,7 +222,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	directionalLightComponent->m_projectionMatrices.clear();
 
 	//1. get frustum vertices and the maxium draw distance
-	auto l_camera = g_GameSystemComponent->m_CameraComponents[0];
+	auto l_camera = GameSystemComponent::get().m_CameraComponents[0];
 	auto l_frustumVertices = generateFrustumVertices(l_camera);
 	auto l_distance = l_camera->m_zFar - l_camera->m_zNear;
 	std::vector<float> l_CSMSplitFactors = { 20.48f / l_distance, 128.0f / l_distance, 1024.0f / l_distance, 1.0f};
@@ -466,7 +457,7 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 	l_MDC->m_indicesSize = l_MDC->m_indices.size();
 
 	l_MDC->m_objectStatus = ObjectStatus::STANDBY;
-	//g_AssetSystemComponent->m_uninitializedMeshComponents.push(l_MDC);
+	FileSystemComponent::get().m_uninitializedMeshComponents.push(l_MDC);
 
 	return l_MDC;
 }
@@ -502,7 +493,7 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::initialize()
 
 void InnoPhysicsSystemNS::updateCameraComponents()
 {
-	for (auto& i : g_GameSystemComponent->m_CameraComponents)
+	for (auto& i : GameSystemComponent::get().m_CameraComponents)
 	{
 		generateProjectionMatrix(i);
 		generateRayOfEye(i);
@@ -511,15 +502,15 @@ void InnoPhysicsSystemNS::updateCameraComponents()
 
 void InnoPhysicsSystemNS::updateLightComponents()
 {
-	for (auto& i : g_GameSystemComponent->m_DirectionalLightComponents)
+	for (auto& i : GameSystemComponent::get().m_DirectionalLightComponents)
 	{
 			generateAABB(i);
 	}
-	for (auto& i : g_GameSystemComponent->m_PointLightComponents)
+	for (auto& i : GameSystemComponent::get().m_PointLightComponents)
 	{
 		generatePointLightComponentAttenuationRadius(i);
 	}
-	for (auto& i : g_GameSystemComponent->m_SphereLightComponents)
+	for (auto& i : GameSystemComponent::get().m_SphereLightComponents)
 	{
 		generateSphereLightComponentScale(i);
 	}
@@ -550,16 +541,16 @@ void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
 
 void InnoPhysicsSystemNS::updateCulling()
 {
-	g_PhysicsSystemComponent->m_cullingDataPack.clear();
+	PhysicsSystemComponent::get().m_cullingDataPack.clear();
 
-	if (g_GameSystemComponent->m_CameraComponents.size() > 0)
+	if (GameSystemComponent::get().m_CameraComponents.size() > 0)
 	{
 		Ray l_mouseRay;
-		l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_GameSystemComponent->m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_mouseRay.m_direction = g_WindowSystemComponent->m_mousePositionInWorldSpace;
+		l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GameSystemComponent::get().m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_mouseRay.m_direction = WindowSystemComponent::get().m_mousePositionInWorldSpace;
 
-		//auto l_cameraAABB = g_GameSystemComponent->m_CameraComponents[0]->m_AABB;
-		auto l_eyeRay = g_GameSystemComponent->m_CameraComponents[0]->m_rayOfEye;
+		//auto l_cameraAABB = GameSystemComponent::get().m_CameraComponents[0]->m_AABB;
+		auto l_eyeRay = GameSystemComponent::get().m_CameraComponents[0]->m_rayOfEye;
 
 		for (auto visibleComponent : GameSystemComponent::get().m_VisibleComponents)
 		{
@@ -583,7 +574,7 @@ void InnoPhysicsSystemNS::updateCulling()
 							l_cullingDataPack.visibleComponentEntityID = visibleComponent->m_parentEntity;
 							l_cullingDataPack.MDCEntityID = physicsData.MDC->m_parentEntity;
 							l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
-							g_PhysicsSystemComponent->m_cullingDataPack.emplace_back(l_cullingDataPack);
+							PhysicsSystemComponent::get().m_cullingDataPack.emplace_back(l_cullingDataPack);
 						//}
 
 						updateSceneAABB(l_AABBws);

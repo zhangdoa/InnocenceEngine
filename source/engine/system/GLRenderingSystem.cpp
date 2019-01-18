@@ -13,7 +13,6 @@
 #include "../component/WindowSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
-#include "../component/PhysicsSystemComponent.h"
 
 #include "ICoreSystem.h"
 

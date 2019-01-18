@@ -2,14 +2,8 @@
 
 #include "../common/ComponentHeaders.h"
 
-#include "assimp/Importer.hpp"
-#include "assimp/Exporter.hpp"
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
-#include "stb/stb_image.h"
 #include "../component/AssetSystemComponent.h"
 #include "../component/GameSystemComponent.h"
-#include "../component/PhysicsSystemComponent.h"
 
 namespace fs = std::filesystem;
 
@@ -267,7 +261,7 @@ bool InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
 	{
 		for (auto& i : l_texture->second->m_textureData)
 		{
-			stbi_image_free(i);
+			// @TODO
 		}
 
 		g_pCoreSystem->getMemorySystem()->destroy<TextureDataComponent>(l_texture->second);
@@ -309,7 +303,7 @@ bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
 	{
 		for (auto& i : l_texture->second->m_textureData)
 		{
-			//stbi_image_free(i);
+			// @TODO:
 		}
 		return true;
 	}

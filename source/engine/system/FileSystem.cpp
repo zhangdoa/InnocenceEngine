@@ -1,29 +1,13 @@
 #include "FileSystem.h"
 
-#include"../component/GameSystemComponent.h"
 #include"../component/FileSystemComponent.h"
-#include "../component/RenderingSystemComponent.h"
+#include"../component/GameSystemComponent.h"
 
 #include "json/json.hpp"
 using json = nlohmann::json;
 
 #include "../component/MeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
-
-#include "../component/GLMeshDataComponent.h"
-#include "../component/GLTextureDataComponent.h"
-#include "../component/GLFrameBufferComponent.h"
-#include "../component/GLShaderProgramComponent.h"
-#include "../component/GLRenderPassComponent.h"
-
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
-#include "../component/DXMeshDataComponent.h"
-#include "../component/DXTextureDataComponent.h"
-#include "../component/DXShaderProgramComponent.h"
-#include "../component/DXRenderPassComponent.h"
-#endif
-
-#include "../component/PhysicsDataComponent.h"
 
 #include "../../engine/system/ICoreSystem.h"
 

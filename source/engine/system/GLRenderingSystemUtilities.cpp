@@ -1,5 +1,4 @@
 #include "GLRenderingSystemUtilities.h"
-#include "../component/GLRenderingSystemComponent.h"
 
 #include "ICoreSystem.h"
 
