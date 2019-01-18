@@ -122,7 +122,7 @@ void ImGuiWrapper::update()
 	ImGui::End();
 #endif
 	}
-	ImGui::Render();
+ImGui::Render();
 }
 
 void ImGuiWrapper::terminate()

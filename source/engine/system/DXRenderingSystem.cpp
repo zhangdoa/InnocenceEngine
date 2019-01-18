@@ -913,7 +913,7 @@ void DXRenderingSystemNS::updateGeometryPass()
 
 		updateShaderParameter<GPassMeshCBufferData>(ShaderType::VERTEX, DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBuffer, &l_renderPack.meshCBuffer);
 		updateShaderParameter<GPassTextureCBufferData>(ShaderType::FRAGMENT, DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBuffer, &l_renderPack.textureCBuffer);
-		
+
 		// bind to textures
 		// any normal?
 		if (l_renderPack.textureCBuffer.useNormalTexture)

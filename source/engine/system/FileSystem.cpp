@@ -1075,7 +1075,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 	}
 	if (aiMaterial->Get(AI_MATKEY_COLOR_TRANSPARENT, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
-		l_materialData["Albedo"]["A"] =l_result.r;
+		l_materialData["Albedo"]["A"] = l_result.r;
 	}
 	else
 	{
@@ -1254,7 +1254,7 @@ MaterialDataComponent * InnoFileSystemNS::ModelLoader::processMaterialJsonData(c
 
 			switch (l_TDC->m_textureDataDesc.textureUsageType)
 			{
-				
+
 			case TextureUsageType::NORMAL: l_MDC->m_texturePack.m_normalTDC.second = l_TDC; break;
 			case TextureUsageType::ALBEDO: l_MDC->m_texturePack.m_albedoTDC.second = l_TDC; break;
 			case TextureUsageType::METALLIC: l_MDC->m_texturePack.m_metallicTDC.second = l_TDC; break;

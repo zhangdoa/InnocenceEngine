@@ -146,8 +146,8 @@ void GLFinalRenderingPassUtilities::initializeBloomExtractPass()
 	GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID); 
-	
+	auto rhs = addGLShaderProgramComponent(m_entityID);
+
 	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_bloomExtractPassShaderFilePaths);
 
 	GLFinalRenderPassComponent::get().m_bloomExtractPassGLSPC = rhs;
@@ -247,9 +247,9 @@ void GLFinalRenderingPassUtilities::initializeDebuggerPass()
 
 	// shader programs and shaders
 	auto rhs = addGLShaderProgramComponent(m_entityID);
-	
+
 	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_debuggerPassShaderFilePaths);
-	
+
 	GLFinalRenderPassComponent::get().m_debuggerPassGLSPC = rhs;
 
 	bindDebuggerPassUniformLocations();
@@ -634,16 +634,16 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBillboardPass()
 				GLFinalRenderPassComponent::get().m_billboardPass_uni_size,
 				(9.0f / 16.0f), 1.0f);
 		}
-		
+
 		GLTextureDataComponent* l_iconTexture;
 
 		switch (l_renderPack.iconType)
 		{
-			case WorldEditorIconType::DIRECTIONAL_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_DirectionalLight; break;
-			case WorldEditorIconType::POINT_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_PointLight; break;
-			case WorldEditorIconType::SPHERE_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_SphereLight; break;
-			default:
-				break;
+		case WorldEditorIconType::DIRECTIONAL_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_DirectionalLight; break;
+		case WorldEditorIconType::POINT_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_PointLight; break;
+		case WorldEditorIconType::SPHERE_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_SphereLight; break;
+		default:
+			break;
 		}
 
 		activateTexture(l_iconTexture, 0);

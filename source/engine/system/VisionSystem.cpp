@@ -60,14 +60,14 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 
 	if (l_rendererArguments == "DX")
 	{
-		#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
 		InnoVisionSystemNS::m_windowSystem = new DXWindowSystem();
 		InnoVisionSystemNS::m_renderingSystem = new DXRenderingSystem();
 		InnoVisionSystemNS::m_guiSystem = new DXGuiSystem();
-		#else
+#else
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: DirectX is only supported on Windows OS!");
 		return false;
-		#endif
+#endif
 	}
 	else if (l_rendererArguments == "GL")
 	{

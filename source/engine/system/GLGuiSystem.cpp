@@ -30,7 +30,7 @@ INNO_PRIVATE_SCOPE GLGuiSystemNS
 
 INNO_SYSTEM_EXPORT bool GLGuiSystem::setup()
 {
-	#ifndef INNO_PLATFORM_MACOS
+#ifndef INNO_PLATFORM_MACOS
 	GLGuiSystemNS::f_ShowRenderPassResult = GLGuiSystemNS::showRenderResult;
 	GLGuiSystemNS::f_GetFileExplorerIconTextureID = GLGuiSystemNS::getFileExplorerIconTextureID;
 
@@ -38,7 +38,7 @@ INNO_SYSTEM_EXPORT bool GLGuiSystem::setup()
 
 	ImGuiWrapper::get().addShowRenderPassResultCallback(&GLGuiSystemNS::f_ShowRenderPassResult);
 	ImGuiWrapper::get().addGetFileExplorerIconTextureIDCallback(&GLGuiSystemNS::f_GetFileExplorerIconTextureID);
-	#endif // !INNO_PLATFORM_MACOS
+#endif // !INNO_PLATFORM_MACOS
 
 	GLGuiSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
@@ -49,9 +49,9 @@ INNO_SYSTEM_EXPORT bool GLGuiSystem::initialize()
 	ImGui_ImplGlfw_InitForOpenGL(GLWindowSystemComponent::get().m_window, true);
 	ImGui_ImplOpenGL3_Init(NULL);
 
-	#ifndef INNO_PLATFORM_MACOS
+#ifndef INNO_PLATFORM_MACOS
 	ImGuiWrapper::get().initialize();
-	#endif // !INNO_PLATFORM_MACOS
+#endif // !INNO_PLATFORM_MACOS
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLGuiSystem has been initialized.");
 	return true;
@@ -59,7 +59,7 @@ INNO_SYSTEM_EXPORT bool GLGuiSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool GLGuiSystem::update()
 {
-	#ifndef INNO_PLATFORM_MACOS
+#ifndef INNO_PLATFORM_MACOS
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 
@@ -68,7 +68,7 @@ INNO_SYSTEM_EXPORT bool GLGuiSystem::update()
 	// Rendering
 	glViewport(0, 0, (GLsizei)WindowSystemComponent::get().m_windowResolution.x, (GLsizei)WindowSystemComponent::get().m_windowResolution.y);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-	#endif // !INNO_PLATFORM_MACOS
+#endif // !INNO_PLATFORM_MACOS
 
 	return true;
 }
@@ -77,12 +77,12 @@ INNO_SYSTEM_EXPORT bool GLGuiSystem::terminate()
 {
 	GLGuiSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 
-	#ifndef INNO_PLATFORM_MACOS
+#ifndef INNO_PLATFORM_MACOS
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 
 	ImGuiWrapper::get().terminate();
-	#endif // !INNO_PLATFORM_MACOS
+#endif // !INNO_PLATFORM_MACOS
 
 	GLGuiSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLGuiSystem has been terminated.");

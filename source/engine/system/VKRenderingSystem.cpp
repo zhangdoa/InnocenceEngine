@@ -433,7 +433,7 @@ bool VKRenderingSystemNS::createLogicalDevice()
 	std::set<uint32_t> l_uniqueQueueFamilies = { l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value() };
 
 	float l_queuePriority = 1.0f;
-	for (uint32_t queueFamily : l_uniqueQueueFamilies) 
+	for (uint32_t queueFamily : l_uniqueQueueFamilies)
 	{
 		VkDeviceQueueCreateInfo l_queueCreateInfo = {};
 		l_queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;

@@ -18,7 +18,7 @@ namespace InnoPhysicsSystemNS
 	std::vector<Vertex> generateFrustumVertices(CameraComponent* cameraComponent);
 	void generatePointLightComponentAttenuationRadius(PointLightComponent* pointLightComponent);
 	void generateSphereLightComponentScale(SphereLightComponent* sphereLightComponent);
-	
+
 	std::vector<Vertex> generateNDC();
 	PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap);
 	MeshDataComponent* generateMeshDataComponent(AABB rhs);
@@ -93,7 +93,7 @@ bool InnoPhysicsSystemNS::setup()
 	};
 
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
-	
+
 	m_objectStatus = ObjectStatus::ALIVE;
 
 	return true;
@@ -115,7 +115,7 @@ void InnoPhysicsSystemNS::generateRayOfEye(CameraComponent * cameraComponent)
 	cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(
 		direction::BACKWARD,
 		g_pCoreSystem->getGameSystem()->get<TransformComponent>(cameraComponent->m_parentEntity)->m_localTransformVector.m_rot
-		);
+	);
 }
 
 std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent * cameraComponent)
@@ -191,7 +191,7 @@ void InnoPhysicsSystemNS::generatePointLightComponentAttenuationRadius(PointLigh
 
 void InnoPhysicsSystemNS::generateSphereLightComponentScale(SphereLightComponent* sphereLightComponent)
 {
-	g_pCoreSystem->getGameSystem()->get<TransformComponent>(sphereLightComponent->m_parentEntity)->m_localTransformVector.m_scale = 
+	g_pCoreSystem->getGameSystem()->get<TransformComponent>(sphereLightComponent->m_parentEntity)->m_localTransformVector.m_scale =
 		vec4(sphereLightComponent->m_sphereRadius, sphereLightComponent->m_sphereRadius, sphereLightComponent->m_sphereRadius, 1.0f);
 }
 
@@ -225,7 +225,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	auto l_camera = GameSystemComponent::get().m_CameraComponents[0];
 	auto l_frustumVertices = generateFrustumVertices(l_camera);
 	auto l_distance = l_camera->m_zFar - l_camera->m_zNear;
-	std::vector<float> l_CSMSplitFactors = { 20.48f / l_distance, 128.0f / l_distance, 1024.0f / l_distance, 1.0f};
+	std::vector<float> l_CSMSplitFactors = { 20.48f / l_distance, 128.0f / l_distance, 1024.0f / l_distance, 1.0f };
 
 	//2.calculate AABBs in world space
 	auto l_AABBsWS = frustumsVerticesToAABBs(l_frustumVertices, l_CSMSplitFactors);
@@ -504,7 +504,7 @@ void InnoPhysicsSystemNS::updateLightComponents()
 {
 	for (auto& i : GameSystemComponent::get().m_DirectionalLightComponents)
 	{
-			generateAABB(i);
+		generateAABB(i);
 	}
 	for (auto& i : GameSystemComponent::get().m_PointLightComponents)
 	{
@@ -567,14 +567,14 @@ void InnoPhysicsSystemNS::updateCulling()
 
 						//if (InnoMath::intersectCheck(l_AABBws, l_cameraAABB))
 						//{
-							CullingDataPack l_cullingDataPack;
-							l_cullingDataPack.m = l_globalTm;
-							l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-							l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-							l_cullingDataPack.visibleComponentEntityID = visibleComponent->m_parentEntity;
-							l_cullingDataPack.MDCEntityID = physicsData.MDC->m_parentEntity;
-							l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
-							PhysicsSystemComponent::get().m_cullingDataPack.emplace_back(l_cullingDataPack);
+						CullingDataPack l_cullingDataPack;
+						l_cullingDataPack.m = l_globalTm;
+						l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+						l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+						l_cullingDataPack.visibleComponentEntityID = visibleComponent->m_parentEntity;
+						l_cullingDataPack.MDCEntityID = physicsData.MDC->m_parentEntity;
+						l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
+						PhysicsSystemComponent::get().m_cullingDataPack.emplace_back(l_cullingDataPack);
 						//}
 
 						updateSceneAABB(l_AABBws);

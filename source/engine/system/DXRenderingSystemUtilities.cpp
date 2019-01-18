@@ -144,7 +144,7 @@ bool DXRenderingSystemNS::initializeVertexShader(DXShaderProgramComponent* rhs, 
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create vertex shader layout!");
 		return false;
 	}
-	
+
 	if (rhs->m_vertexShaderCBufferDesc.ByteWidth > 0)
 	{
 		// Create the constant buffer pointer
@@ -252,7 +252,7 @@ void DXRenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HW
 
 bool DXRenderingSystemNS::activateDXShaderProgramComponent(DXShaderProgramComponent * rhs)
 {
-	if(rhs->m_vertexShader)
+	if (rhs->m_vertexShader)
 	{
 		DXRenderingSystemComponent::get().m_deviceContext->VSSetShader(
 			rhs->m_vertexShader,

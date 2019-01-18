@@ -47,7 +47,7 @@ bool VKWindowSystemNS::setup(void* hInstance, void* hPrevInstance, char* pScmdli
 
 	// Open a window
 	g_VKWindowSystemComponent->m_window = glfwCreateWindow((int)g_WindowSystemComponent->m_windowResolution.x, (int)g_WindowSystemComponent->m_windowResolution.y, g_WindowSystemComponent->m_windowName.c_str(), NULL, NULL);
-	
+
 	glfwMakeContextCurrent(g_VKWindowSystemComponent->m_window);
 
 	if (g_VKWindowSystemComponent->m_window == nullptr) {

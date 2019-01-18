@@ -1,6 +1,6 @@
 #include "GLFWWrapper.h"
 
-namespace windowCallbackWrapperNS 
+namespace windowCallbackWrapperNS
 {
 	IInputSystem* m_IInputSystem;
 }

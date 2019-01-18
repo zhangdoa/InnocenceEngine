@@ -711,6 +711,57 @@ public:
 };
 
 template<class T>
+class TSphere
+{
+public:
+	TSphere() noexcept :
+		m_center(TVec4<T>(T(), T(), T(), one<T>)),
+		m_radius(T())
+	{};
+	TSphere(const TSphere<T>& rhs) :
+		m_center(rhs.m_center),
+		m_radius(rhs.m_radius) {};
+	auto operator=(const TSphere<T> & rhs) -> TSphere<T>&
+	{
+		m_center = rhs.m_center;
+		m_radius = rhs.m_radius;
+		return *this;
+	}
+	~TSphere() {};
+
+	TVec4<T> m_center; // 4 * sizeof(T)
+	T m_radius; // 1 * sizeof(T)
+};
+
+template<class T>
+class TPlane
+{
+public:
+	TPlane() noexcept :
+		m_normal(TVec4<T>(T(), T(), T(), one<T>)),
+		m_distance(T())
+	{};
+	TPlane(const TPlane<T>& rhs) :
+		m_normal(rhs.m_normal),
+		m_distance(rhs.m_distance) {};
+	TPlane(const TVec4<T>& a, const TVec4<T>& b, const TVec4<T>& c)
+	{
+		m_normal = ((b - a).cross(c - a)).normalize();
+		m_distance = m_normal * a;
+	};
+	auto operator=(const TPlane<T> & rhs) -> TPlane<T>&
+	{
+		m_normal = rhs.m_normal;
+		m_distance = rhs.m_distance;
+		return *this;
+	}
+	~TPlane() {};
+
+	TVec4<T> m_normal; // 4 * sizeof(T)
+	T m_distance; // 1 * sizeof(T)
+};
+
+template<class T>
 class TAABB
 {
 public:
@@ -1251,6 +1302,49 @@ namespace InnoMath
 		return l_m;
 	}
 #endif
+
+	template<class T>
+	bool intersectCheck(const TVec4<T> & lhs, const TSphere<T> & rhs)
+	{
+		auto l_length = (lhs - rhs.m_center).length();
+		if (l_length > rhs.m_radius)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	template<class T>
+	bool intersectCheck(const TVec4<T> & lhs, const TAABB<T> & rhs)
+	{
+		if (std::abs(rhs.m_center.x - lhs.x) > (rhs.m_extend.x) / two<T>)
+		{
+			return false;
+		}
+		if (std::abs(rhs.m_center.y - lhs.y) > (rhs.m_extend.y) / two<T>)
+		{
+			return false;
+		}
+		if (std::abs(rhs.m_center.z - lhs.z) > (rhs.m_extend.z) / two<T>)
+		{
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
+
+	template<class T>
+	bool intersectCheck(const TVec4<T> & lhs, const TPlane<T> & rhs)
+	{
+		auto l_length = lhs * rhs.m_normal;
+		if (l_length != rhs.m_distance)
+		{
+			return false;
+		}
+		return true;
+	}
 
 	template<class T>
 	bool intersectCheck(const TAABB<T> & lhs, const TAABB<T> & rhs)

@@ -256,7 +256,7 @@ void GLGeometryRenderingPassUtilities::bindTransparentPassUniformLocations(GLSha
 		"uni_albedo");
 	GLGeometryRenderPassComponent::get().m_transparentPass_uni_TR = getUniformLocation(
 		rhs->m_program,
-		"uni_TR");	
+		"uni_TR");
 	GLGeometryRenderPassComponent::get().m_transparentPass_uni_viewPos = getUniformLocation(
 		rhs->m_program,
 		"uni_viewPos");

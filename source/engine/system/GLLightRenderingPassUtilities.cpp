@@ -55,7 +55,7 @@ void GLLightRenderingPassUtilities::bindLightPassUniformLocations(GLShaderProgra
 		);
 		GLLightRenderPassComponent::get().m_uni_dirLightViews.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_dirLightViews[" + std::to_string(i) + "]")
-		);	
+		);
 	}
 
 	GLLightRenderPassComponent::get().m_uni_viewPos = getUniformLocation(
@@ -67,7 +67,7 @@ void GLLightRenderingPassUtilities::bindLightPassUniformLocations(GLShaderProgra
 	GLLightRenderPassComponent::get().m_uni_dirLight_luminance = getUniformLocation(
 		rhs->m_program,
 		"uni_dirLight.luminance");
-	
+
 	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_maxPointLights; i++)
 	{
 		GLLightRenderPassComponent::get().m_uni_pointLights_position.emplace_back(

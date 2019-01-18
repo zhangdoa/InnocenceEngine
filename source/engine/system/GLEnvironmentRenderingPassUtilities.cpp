@@ -144,7 +144,7 @@ void GLEnvironmentRenderingPassUtilities::initializeBRDFLUTPass()
 	m_ShaderFilePaths.m_VSPath = "GL4.0//BRDFLUTPassVertex.sf";
 	m_ShaderFilePaths.m_FSPath = "GL4.0//BRDFLUTPassFragment.sf";
 
-	auto rhs = addGLShaderProgramComponent(m_entityID); 
+	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
 	GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassSPC = rhs;
@@ -153,7 +153,7 @@ void GLEnvironmentRenderingPassUtilities::initializeBRDFLUTPass()
 	m_ShaderFilePaths.m_VSPath = "GL4.0//BRDFLUTMSPassVertex.sf";
 	m_ShaderFilePaths.m_FSPath = "GL4.0//BRDFLUTMSPassFragment.sf";
 
-	rhs = addGLShaderProgramComponent(m_entityID); 
+	rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
 
 	GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPass_uni_brdfLUT = getUniformLocation(
