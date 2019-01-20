@@ -299,7 +299,6 @@ void GLRenderingSystemNS::prepareRenderingData()
 	GLRenderingSystemComponent::get().m_opaquePassDataQueue_copy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
 }
 
-
 bool GLRenderingSystemNS::prepareGeometryPassData()
 {
 	//UBO

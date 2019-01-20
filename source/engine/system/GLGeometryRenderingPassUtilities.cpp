@@ -225,7 +225,6 @@ void GLGeometryRenderingPassUtilities::bindSSAOBlurPassUniformLocations(GLShader
 	updateTextureUniformLocations(rhs->m_program, GLGeometryRenderPassComponent::get().m_SSAOBlurPassTextureUniformNames);
 }
 
-
 void GLGeometryRenderingPassUtilities::initializeTransparentPass()
 {
 	GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC = addGLRenderPassComponent(2, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);

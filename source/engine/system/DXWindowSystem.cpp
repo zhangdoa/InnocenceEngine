@@ -55,7 +55,7 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstan
 
 	WNDCLASS wc = {};
 
-	// Get an external pointer to this object.	
+	// Get an external pointer to this object.
 	ApplicationHandle = &windowCallbackWrapper::get();
 
 	// Give the application a name.

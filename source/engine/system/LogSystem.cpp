@@ -63,7 +63,6 @@ INNO_PRIVATE_SCOPE InnoLogSystemNS
 #endif
 }
 
-
 INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(double logMessage)
 {
 	std::cout << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl;

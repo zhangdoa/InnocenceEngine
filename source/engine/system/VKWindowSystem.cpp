@@ -42,7 +42,7 @@ bool VKWindowSystemNS::setup(void* hInstance, void* hPrevInstance, char* pScmdli
 		return false;
 	}
 
-	// bind Vulkan API hook later 
+	// bind Vulkan API hook later
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 	// Open a window
@@ -77,7 +77,7 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::initialize()
 	//initialize window
 	windowCallbackWrapper::get().initialize(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, VKWindowSystemNS::m_inputSystem);
 
-	//initialize input	
+	//initialize input
 	VKWindowSystemNS::m_inputSystem->initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKWindowSystem has been initialized.");

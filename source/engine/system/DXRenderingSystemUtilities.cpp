@@ -11,7 +11,6 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-
 INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
 	std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedMeshComponents;
@@ -248,7 +247,6 @@ void DXRenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HW
 	MessageBox(DXWindowSystemComponent::get().m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
-
 
 bool DXRenderingSystemNS::activateDXShaderProgramComponent(DXShaderProgramComponent * rhs)
 {

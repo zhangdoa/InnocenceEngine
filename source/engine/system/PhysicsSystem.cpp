@@ -237,14 +237,14 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	auto l_lightRotMat = g_pCoreSystem->getGameSystem()->get<TransformComponent>(directionalLightComponent->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
 	for (size_t i = 0; i < l_frustumVertices.size(); i++)
 	{
-		//Column-Major memory layout	
+		//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 		l_frustumVertices[i].m_pos = InnoMath::mul(l_frustumVertices[i].m_pos, l_lightRotMat);
-#endif	
-		//Row-Major memory layout	
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT	
+#endif
+		//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 		l_frustumVertices[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVertices[i].m_pos);
-#endif	
+#endif
 	}
 
 	//5.calculate AABBs in light space

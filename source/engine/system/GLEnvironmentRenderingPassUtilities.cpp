@@ -463,7 +463,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 	unsigned int l_maxMipLevels = 5;
 	for (unsigned int mip = 0; mip < l_maxMipLevels; ++mip)
 	{
-		// resize framebuffer according to mip-level size.	
+		// resize framebuffer according to mip-level size.
 		unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
 		unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
 

@@ -159,7 +159,6 @@ EntityID InnoGameSystemNS::createEntity(const std::string & entityName)
 	return l_entityID;
 }
 
-
 INNO_SYSTEM_EXPORT EntityID InnoGameSystem::createEntity(const std::string & entityName)
 {
 	return InnoGameSystemNS::createEntity(entityName);

@@ -52,7 +52,7 @@ namespace PlayerComponentCollection
 
 void PlayerComponentCollection::setup()
 {
-	f_sceneLoadingCallback = [&]() { 
+	f_sceneLoadingCallback = [&]() {
 		m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntityID("playerCharacterCamera");
 		m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
 		m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;

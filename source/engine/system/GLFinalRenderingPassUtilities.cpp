@@ -117,7 +117,7 @@ void GLFinalRenderingPassUtilities::initializeTAAPass()
 
 	GLFinalRenderPassComponent::get().m_preTAAPassGLSPC = rhs;
 
-	// TAA pass	
+	// TAA pass
 	rhs = addGLShaderProgramComponent(m_entityID);
 
 	initializeGLShaderProgramComponent(rhs, GLFinalRenderPassComponent::get().m_TAAPassShaderFilePaths);
