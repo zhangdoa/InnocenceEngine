@@ -11,7 +11,7 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	MeshUsageType m_meshUsageType = MeshUsageType::NORMAL;
+	MeshUsageType m_meshUsageType = MeshUsageType::STATIC;
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	size_t m_indicesSize = 0;
 	std::vector<Vertex> m_vertices;

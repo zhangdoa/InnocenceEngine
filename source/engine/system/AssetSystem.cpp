@@ -648,35 +648,35 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	AssetSystemComponent::get().m_UnitLineTemplate = addMeshDataComponent();
 	auto lastLineMeshData = AssetSystemComponent::get().m_UnitLineTemplate;
 	InnoAssetSystemNS::addUnitLine(*lastLineMeshData);
-	lastLineMeshData->m_meshUsageType = MeshUsageType::NORMAL;
+	lastLineMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastLineMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	lastLineMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
 	AssetSystemComponent::get().m_UnitQuadTemplate = addMeshDataComponent();
 	auto lastQuadMeshData = AssetSystemComponent::get().m_UnitQuadTemplate;
 	InnoAssetSystemNS::addUnitQuad(*lastQuadMeshData);
-	lastQuadMeshData->m_meshUsageType = MeshUsageType::NORMAL;
+	lastQuadMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastQuadMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	lastQuadMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
 	AssetSystemComponent::get().m_UnitCubeTemplate = addMeshDataComponent();
 	auto lastCubeMeshData = AssetSystemComponent::get().m_UnitCubeTemplate;
 	InnoAssetSystemNS::addUnitCube(*lastCubeMeshData);
-	lastCubeMeshData->m_meshUsageType = MeshUsageType::NORMAL;
+	lastCubeMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastCubeMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	lastCubeMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
 	AssetSystemComponent::get().m_UnitSphereTemplate = addMeshDataComponent();
 	auto lastSphereMeshData = AssetSystemComponent::get().m_UnitSphereTemplate;
 	InnoAssetSystemNS::addUnitSphere(*lastSphereMeshData);
-	lastSphereMeshData->m_meshUsageType = MeshUsageType::NORMAL;
+	lastSphereMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastSphereMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	lastSphereMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
 	AssetSystemComponent::get().m_Terrain = addMeshDataComponent();
 	auto lastTerrainMeshData = AssetSystemComponent::get().m_Terrain;
 	InnoAssetSystemNS::addTerrain(*lastTerrainMeshData);
-	lastTerrainMeshData->m_meshUsageType = MeshUsageType::NORMAL;
+	lastTerrainMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastTerrainMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	lastTerrainMeshData->m_objectStatus = ObjectStatus::STANDBY;
 }

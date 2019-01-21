@@ -30,8 +30,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		json processAssimpScene(const aiScene* aiScene);
 		json processAssimpNode(const aiNode * node, const aiScene * scene);
 		json processAssimpMesh(const aiScene * scene, unsigned int meshIndex);
-		EntityID processMeshVertices(const aiMesh * aiMesh);
-		EntityID processMeshIndices(const aiMesh * aiMesh);
+		std::pair<EntityID, size_t> processMeshData(const aiMesh * aiMesh);
 		json processAssimpMaterial(const aiMaterial * aiMaterial);
 		json processTextureData(const std::string & fileName, TextureUsageType textureUsageType);
 	};
@@ -135,6 +134,20 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		std::size_t l_size = pbuf->pubseekoff(0, is.end, is.in);
 		pbuf->pubseekpos(0, is.in);
 		pbuf->sgetn((char*)ptr, l_size);
+		return true;
+	}
+
+	template<typename T>
+	bool deserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, std::vector<T>& vector)
+	{
+		// get pointer to associated buffer object
+		auto pbuf = is.rdbuf();
+		pbuf->pubseekpos(startPos, is.in);
+
+		auto rhs = std::vector<T>(size / sizeof(T));
+
+		pbuf->sgetn((char*)&rhs[0], size);
+		vector = std::move(rhs);
 		return true;
 	}
 
@@ -870,13 +883,10 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, u
 	auto l_aiMesh = scene->mMeshes[meshIndex];
 
 	l_meshData["MeshName"] = *l_aiMesh->mName.C_Str();
-	l_meshData["VeticesNumber"] = l_aiMesh->mNumVertices;
-
-	auto l_verticesFileName = processMeshVertices(l_aiMesh);
-	l_meshData["MeshVerticesFile"] = l_verticesFileName.c_str();
-
-	auto l_indicesFileName = processMeshIndices(l_aiMesh);
-	l_meshData["MeshIndicesFile"] = l_indicesFileName.c_str();
+	l_meshData["VerticesNumber"] = l_aiMesh->mNumVertices;
+	auto l_meshFileName = processMeshData(l_aiMesh);
+	l_meshData["MeshFile"] = l_meshFileName.first.c_str();
+	l_meshData["IndicesNumber"] = l_meshFileName.second;
 
 	// process material
 	if (l_aiMesh->mMaterialIndex > 0)
@@ -887,7 +897,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, u
 	return l_meshData;
 }
 
-EntityID InnoFileSystemNS::AssimpWrapper::processMeshVertices(const aiMesh * aiMesh)
+std::pair<EntityID, size_t> InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh)
 {
 	auto l_verticesNumber = aiMesh->mNumVertices;
 
@@ -943,7 +953,27 @@ EntityID InnoFileSystemNS::AssimpWrapper::processMeshVertices(const aiMesh * aiM
 		l_vertices.emplace_back(l_Vertex);
 	}
 
-	l_vertices.shrink_to_fit();
+	std::vector<Index> l_indices;
+	size_t l_indiceSize = 0;
+
+	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+	for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
+	{
+		aiFace l_face = aiMesh->mFaces[i];
+		l_indiceSize += l_face.mNumIndices;
+	}
+
+	l_indices.reserve(l_indiceSize);
+
+	for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
+	{
+		aiFace l_face = aiMesh->mFaces[i];
+		// retrieve all indices of the face and store them in the indices vector
+		for (unsigned int j = 0; j < l_face.mNumIndices; j++)
+		{
+			l_indices.emplace_back(l_face.mIndices[j]);
+		}
+	}
 
 	std::string l_exportFileName;
 
@@ -957,43 +987,15 @@ EntityID InnoFileSystemNS::AssimpWrapper::processMeshVertices(const aiMesh * aiM
 	}
 
 	auto l_exportFileFullPath = "..//res//convertedAssets//" + l_exportFileName + ".InnoRaw";
+
 	std::ofstream l_file(l_exportFileFullPath, std::ios::binary);
+
 	serializeVector(l_file, l_vertices);
-	l_file.close();
-
-	return l_exportFileFullPath;
-}
-
-EntityID InnoFileSystemNS::AssimpWrapper::processMeshIndices(const aiMesh* aiMesh)
-{
-	std::vector<Index> l_indices;
-	size_t l_indiceSize = 0;
-
-	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-	for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
-	{
-		aiFace l_face = aiMesh->mFaces[i];
-		l_indiceSize += l_face.mNumIndices;
-	}
-	l_indices.reserve(l_indiceSize);
-
-	for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
-	{
-		aiFace l_face = aiMesh->mFaces[i];
-		// retrieve all indices of the face and store them in the indices vector
-		for (unsigned int j = 0; j < l_face.mNumIndices; j++)
-		{
-			l_indices.emplace_back(l_face.mIndices[j]);
-		}
-	}
-
-	auto l_exportFileID = InnoMath::createEntityID();
-	auto l_exportFileName = "..//res//convertedAssets//" + l_exportFileID + ".InnoRaw";
-	std::ofstream l_file(l_exportFileName, std::ios::binary);
 	serializeVector(l_file, l_indices);
+
 	l_file.close();
 
-	return l_exportFileName;
+	return std::pair<EntityID, size_t>(l_exportFileFullPath, l_indiceSize);
 }
 
 /*
@@ -1192,41 +1194,35 @@ ModelPair InnoFileSystemNS::ModelLoader::processMeshJsonData(const json & j)
 {
 	ModelPair l_result;
 
-	auto l_verticesFileName = j["MeshVerticesFile"].get<std::string>();
+	auto l_meshFileName = j["MeshFile"].get<std::string>();
 
-	auto l_loadedModelPair = FileSystemComponent::get().m_loadedModelPair.find(l_verticesFileName);
+	auto l_loadedModelPair = FileSystemComponent::get().m_loadedModelPair.find(l_meshFileName);
 	if (l_loadedModelPair != FileSystemComponent::get().m_loadedModelPair.end())
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: " + l_verticesFileName + " has been already loaded.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: " + l_meshFileName + " has been already loaded.");
 		l_result = l_loadedModelPair->second;
 	}
 	else
 	{
-		std::ifstream l_verticesFile(l_verticesFileName, std::ios::binary);
+		std::ifstream l_meshFile(l_meshFileName, std::ios::binary);
 
-		if (!l_verticesFile.is_open())
+		if (!l_meshFile.is_open())
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_verticesFileName + "!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_meshFileName + "!");
 			return ModelPair();
 		}
 
 		auto l_MeshDC = g_pCoreSystem->getAssetSystem()->addMeshDataComponent();
 
-		deserializeVector(l_verticesFile, l_MeshDC->m_vertices);
-		l_verticesFile.close();
+		size_t l_verticesNumber = j["VerticesNumber"];
+		size_t l_indicesNumber = j["IndicesNumber"];
 
-		auto l_indicesFileName = j["MeshIndicesFile"].get<std::string>();
+		deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_MeshDC->m_vertices);
 
-		std::ifstream l_indicesFile(l_indicesFileName, std::ios::binary);
 
-		if (!l_indicesFile.is_open())
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_indicesFileName + "!");
-			return ModelPair();
-		}
+		deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_MeshDC->m_indices);
 
-		deserializeVector(l_indicesFile, l_MeshDC->m_indices);
-		l_indicesFile.close();
+		l_meshFile.close();
 
 		l_MeshDC->m_indicesSize = l_MeshDC->m_indices.size();
 		l_MeshDC->m_objectStatus = ObjectStatus::STANDBY;
@@ -1234,7 +1230,7 @@ ModelPair InnoFileSystemNS::ModelLoader::processMeshJsonData(const json & j)
 		l_result.first = l_MeshDC;
 		l_result.second = processMaterialJsonData(j["Material"]);
 
-		FileSystemComponent::get().m_loadedModelPair.emplace(l_verticesFileName, l_result);
+		FileSystemComponent::get().m_loadedModelPair.emplace(l_meshFileName, l_result);
 		FileSystemComponent::get().m_uninitializedMeshComponents.push(l_MeshDC);
 	}
 

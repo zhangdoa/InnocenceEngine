@@ -43,7 +43,7 @@ using Index = unsigned int;
 
 enum class VisiblilityType { INNO_INVISIBLE, INNO_BILLBOARD, INNO_OPAQUE, INNO_TRANSPARENT, INNO_EMISSIVE, INNO_DEBUG };
 // mesh custom types
-enum class MeshUsageType { NORMAL, BOUNDING_BOX };
+enum class MeshUsageType { STATIC, DYNAMIC };
 enum class MeshShapeType { LINE, QUAD, CUBE, SPHERE, TERRAIN, CUSTOM };
 enum class MeshPrimitiveTopology { POINT, LINE, TRIANGLE, TRIANGLE_STRIP };
 // texture custom types
