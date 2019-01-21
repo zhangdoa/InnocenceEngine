@@ -1,8 +1,8 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../common/InnoMath.h"
 #include "../exports/InnoSystem_Export.h"
 #include "../common/InnoClassTemplate.h"
+#include "../component/VisibleComponent.h"
 
 INNO_INTERFACE IPhysicsSystem
 {
@@ -16,5 +16,5 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
-	INNO_SYSTEM_EXPORT virtual void generatePhysicsData() = 0;
+	INNO_SYSTEM_EXPORT virtual void generatePhysicsData(VisibleComponent* visibleComponent) = 0;
 };

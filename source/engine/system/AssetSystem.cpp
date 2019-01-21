@@ -74,12 +74,7 @@ INNO_SYSTEM_EXPORT void InnoAssetSystem::loadDefaultAssets()
 
 INNO_SYSTEM_EXPORT void InnoAssetSystem::loadAssetsForComponents()
 {
-	// @TODO: more granularly do IO operations
-
-	InnoAssetSystemNS::m_asyncTaskVector.push_back(g_pCoreSystem->getTaskSystem()->submit([]()
-	{
-		InnoAssetSystemNS::loadAssetsForComponents();
-	}));
+	InnoAssetSystemNS::loadAssetsForComponents();
 }
 
 INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::addMeshDataComponent()
@@ -697,18 +692,22 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 			if (l_visibleComponent->m_meshShapeType == MeshShapeType::CUSTOM)
 			{
 				if (l_visibleComponent->m_modelFileName != "")
-				{
-					l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
-					l_visibleComponent->m_objectStatus = ObjectStatus::STANDBY;
+				{	
+					InnoAssetSystemNS::m_asyncTaskVector.emplace_back(g_pCoreSystem->getTaskSystem()->submit([&]()
+					{
+						l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
+						l_visibleComponent->m_objectStatus = ObjectStatus::STANDBY;
+						g_pCoreSystem->getPhysicsSystem()->generatePhysicsData(l_visibleComponent);
+					}));
 				}
 			}
 			else
 			{
 				assignUnitMesh(l_visibleComponent->m_meshShapeType, l_visibleComponent);
+				g_pCoreSystem->getPhysicsSystem()->generatePhysicsData(l_visibleComponent);
 			}
 		}
 	}
-	g_pCoreSystem->getPhysicsSystem()->generatePhysicsData();
 }
 
 void InnoAssetSystemNS::assignUnitMesh(MeshShapeType MeshUsageType, VisibleComponent* visibleComponent)

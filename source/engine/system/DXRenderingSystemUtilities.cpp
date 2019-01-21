@@ -1,7 +1,5 @@
 #include "DXRenderingSystemUtilities.h"
 
-#include <sstream>
-
 #include "../component/WindowSystemComponent.h"
 #include "../component/DXWindowSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"

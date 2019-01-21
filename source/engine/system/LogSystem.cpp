@@ -1,5 +1,4 @@
 #include "LogSystem.h"
-#include <iostream>
 #include "../component/LogSystemComponent.h"
 #include "ICoreSystem.h"
 

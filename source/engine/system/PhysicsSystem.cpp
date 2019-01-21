@@ -617,16 +617,18 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoPhysicsSystem::getStatus()
 	return InnoPhysicsSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT void InnoPhysicsSystem::generatePhysicsData()
+INNO_SYSTEM_EXPORT void InnoPhysicsSystem::generatePhysicsData(VisibleComponent* visibleComponent)
 {
-	for (auto l_visibleComponent : GameSystemComponent::get().m_VisibleComponents)
+	if (visibleComponent->m_objectStatus == ObjectStatus::STANDBY)
 	{
-		if (l_visibleComponent->m_objectStatus == ObjectStatus::STANDBY)
-		{
-			auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(l_visibleComponent->m_modelMap);
-			l_visibleComponent->m_PhysicsDataComponent = l_physicsComponent;
-			l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
-		}
+		auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(visibleComponent->m_modelMap);
+		visibleComponent->m_PhysicsDataComponent = l_physicsComponent;
+		visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for VisibleComponent " + visibleComponent->m_parentEntity + ".");
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "PhysicsSystem: PhysicsDataComponent has already been generated for VisibleComponent " + visibleComponent->m_parentEntity + "!");
 	}
 }
 

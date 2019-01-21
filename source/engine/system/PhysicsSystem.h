@@ -13,5 +13,5 @@ public:
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 
-	INNO_SYSTEM_EXPORT void generatePhysicsData() override;
+	INNO_SYSTEM_EXPORT void generatePhysicsData(VisibleComponent* visibleComponent) override;
 };
