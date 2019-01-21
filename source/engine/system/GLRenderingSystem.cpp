@@ -320,6 +320,7 @@ bool GLRenderingSystemNS::prepareGeometryPassData()
 
 				l_GLRenderDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
 				l_GLRenderDataPack.meshPrimitiveTopology = l_renderDataPack.MDC->m_meshPrimitiveTopology;
+				l_GLRenderDataPack.meshShapeType = l_renderDataPack.MDC->m_meshShapeType;
 				l_GLRenderDataPack.meshUBOData.m = l_renderDataPack.m;
 				l_GLRenderDataPack.meshUBOData.m_prev = l_renderDataPack.m_prev;
 				l_GLRenderDataPack.GLMDC = l_GLMDC;
@@ -399,6 +400,7 @@ bool GLRenderingSystemNS::prepareGeometryPassData()
 
 				l_GLRenderDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
 				l_GLRenderDataPack.meshPrimitiveTopology = l_renderDataPack.MDC->m_meshPrimitiveTopology;
+				l_GLRenderDataPack.meshShapeType = l_renderDataPack.MDC->m_meshShapeType;
 				l_GLRenderDataPack.meshUBOData.m = l_renderDataPack.m;
 				l_GLRenderDataPack.meshUBOData.m_prev = l_renderDataPack.m_prev;
 				l_GLRenderDataPack.GLMDC = l_GLMDC;

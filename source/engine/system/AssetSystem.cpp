@@ -311,38 +311,6 @@ bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
 
 void InnoAssetSystemNS::addUnitCube(MeshDataComponent& meshDataComponent)
 {
-	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
-
-	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = vec4(1.0f, -1.0f, 1.0f, 1.0f);
-	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
-
-	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = vec4(-1.0f, -1.0f, 1.0f, 1.0f);
-	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
-
-	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = vec4(-1.0f, 1.0f, 1.0f, 1.0f);
-	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
-
-	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = vec4(1.0f, 1.0f, -1.0f, 1.0f);
-	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
-
-	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = vec4(1.0f, -1.0f, -1.0f, 1.0f);
-	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
-
-	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = vec4(-1.0f, -1.0f, -1.0f, 1.0f);
-	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
-
-	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = vec4(-1.0f, 1.0f, -1.0f, 1.0f);
-	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
-
 	float vertices[] = {
 		// positions          // normals           // texture coords
 		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
@@ -401,26 +369,12 @@ void InnoAssetSystemNS::addUnitCube(MeshDataComponent& meshDataComponent)
 		);
 	}
 
-	//meshDataComponent.m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
-
-	//for (auto& l_vertexData : meshDataComponent.m_vertices)
-	//{
-	//	l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
-	//}
-
 	meshDataComponent.m_indices.reserve(36);
 
 	for (unsigned int i = 0; i < 36; i++)
 	{
 		meshDataComponent.m_indices.emplace_back(i);
 	}
-
-	//meshDataComponent.m_indices = { 0, 3, 1, 1, 3, 2,
-	//	4, 0, 5, 5, 0, 1,
-	//	7, 4, 6, 6, 4, 5,
-	//	3, 7, 2, 2, 7 ,6,
-	//	4, 7, 0, 0, 7, 3,
-	//	1, 2, 5, 5, 2, 6 };
 
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
@@ -645,6 +599,7 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	InnoAssetSystemNS::addUnitLine(*lastLineMeshData);
 	lastLineMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastLineMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	lastLineMeshData->m_meshShapeType = MeshShapeType::LINE;
 	lastLineMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
 	AssetSystemComponent::get().m_UnitQuadTemplate = addMeshDataComponent();
@@ -652,6 +607,7 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	InnoAssetSystemNS::addUnitQuad(*lastQuadMeshData);
 	lastQuadMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastQuadMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	lastLineMeshData->m_meshShapeType = MeshShapeType::QUAD;
 	lastQuadMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
 	AssetSystemComponent::get().m_UnitCubeTemplate = addMeshDataComponent();
@@ -659,6 +615,7 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	InnoAssetSystemNS::addUnitCube(*lastCubeMeshData);
 	lastCubeMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastCubeMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	lastLineMeshData->m_meshShapeType = MeshShapeType::CUBE;
 	lastCubeMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
 	AssetSystemComponent::get().m_UnitSphereTemplate = addMeshDataComponent();
@@ -666,6 +623,7 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	InnoAssetSystemNS::addUnitSphere(*lastSphereMeshData);
 	lastSphereMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastSphereMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	lastLineMeshData->m_meshShapeType = MeshShapeType::SPHERE;
 	lastSphereMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
 	AssetSystemComponent::get().m_Terrain = addMeshDataComponent();

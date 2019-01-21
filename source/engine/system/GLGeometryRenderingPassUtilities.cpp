@@ -327,9 +327,8 @@ void GLGeometryRenderingPassUtilities::updateOpaquePass()
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 	glStencilMask(0xFF);
 
-	//glEnable(GL_CULL_FACE);
-	//glFrontFace(GL_CCW);
-	//glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 
 	// bind to framebuffer
 	auto l_FBC = GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC;
@@ -343,6 +342,14 @@ void GLGeometryRenderingPassUtilities::updateOpaquePass()
 	while (GLRenderingSystemComponent::get().m_opaquePassDataQueue.size() > 0)
 	{
 		auto l_renderPack = GLRenderingSystemComponent::get().m_opaquePassDataQueue.front();
+		if (l_renderPack.meshShapeType != MeshShapeType::CUSTOM)
+		{
+			glFrontFace(GL_CW);
+		}
+		else
+		{
+			glFrontFace(GL_CCW);
+		}
 		if (l_renderPack.visiblilityType == VisiblilityType::INNO_OPAQUE)
 		{
 			glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
@@ -393,7 +400,7 @@ void GLGeometryRenderingPassUtilities::updateOpaquePass()
 		GLRenderingSystemComponent::get().m_opaquePassDataQueue.pop();
 	}
 
-	//glDisable(GL_CULL_FACE);
+	glDisable(GL_CULL_FACE);
 	glDisable(GL_STENCIL_TEST);
 	glDisable(GL_DEPTH_CLAMP);
 	glDisable(GL_DEPTH_TEST);

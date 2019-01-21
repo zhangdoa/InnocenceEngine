@@ -38,6 +38,7 @@ struct OpaquePassDataPack
 	GPassMeshUBOData meshUBOData;
 	GLMeshDataComponent* GLMDC;
 	MeshPrimitiveTopology meshPrimitiveTopology;
+	MeshShapeType meshShapeType;
 	GPassTextureUBOData textureUBOData;
 	GLTextureDataComponent* normalGLTDC;
 	GLTextureDataComponent* albedoGLTDC;
@@ -53,6 +54,7 @@ struct TransparentPassDataPack
 	GPassMeshUBOData meshUBOData;
 	GLMeshDataComponent* GLMDC;
 	MeshPrimitiveTopology meshPrimitiveTopology;
+	MeshShapeType meshShapeType;
 	MeshCustomMaterial meshCustomMaterial;
 	VisiblilityType visiblilityType;
 };

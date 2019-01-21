@@ -165,15 +165,15 @@ void GLShadowRenderingPassUtilities::update()
 		GLShadowRenderPassComponent::get().m_shadowPass_uni_p,
 		l_p);
 
-	for (unsigned int i = 0; i < 6; ++i)
-	{
-		updateUniform(GLShadowRenderPassComponent::get().m_shadowPass_uni_v, l_v[i]);
-		attachTextureToFramebuffer(GLShadowRenderPassComponent::get().m_PointLight_GLRPC->m_TDCs[0], GLShadowRenderPassComponent::get().m_PointLight_GLRPC->m_GLTDCs[0], l_GLFBC, 0, i, 0);
+	//for (unsigned int i = 0; i < 6; ++i)
+	//{
+	//	updateUniform(GLShadowRenderPassComponent::get().m_shadowPass_uni_v, l_v[i]);
+	//	attachTextureToFramebuffer(GLShadowRenderPassComponent::get().m_PointLight_GLRPC->m_TDCs[0], GLShadowRenderPassComponent::get().m_PointLight_GLRPC->m_GLTDCs[0], l_GLFBC, 0, i, 0);
 
-		glClear(GL_DEPTH_BUFFER_BIT);
+	//	glClear(GL_DEPTH_BUFFER_BIT);
 
-		drawAllMeshDataComponents();
-	}
+	//	drawAllMeshDataComponents();
+	//}
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);

@@ -13,6 +13,7 @@ public:
 
 	MeshUsageType m_meshUsageType = MeshUsageType::STATIC;
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	MeshShapeType m_meshShapeType = MeshShapeType::LINE;
 	size_t m_indicesSize = 0;
 	std::vector<Vertex> m_vertices;
 	std::vector<Index> m_indices;
