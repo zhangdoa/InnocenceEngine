@@ -6,6 +6,13 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
+	GLenum getTextureType(TextureUsageType rhs);
+	GLenum getTextureWrapMethod(TextureWrapMethod rhs);
+	GLenum getTextureFilterParam(TextureFilterMethod rhs);
+	GLenum getTextureInternalFormat(TextureColorComponentsFormat rhs);
+	GLenum getTexturePixelDataFormat(TexturePixelDataFormat rhs);
+	GLenum getTexturePixelDataType(TexturePixelDataType rhs);
+
 	std::unordered_map<EntityID, GLMeshDataComponent*> m_initializedGLMDC;
 	std::unordered_map<EntityID, GLTextureDataComponent*> m_initializedGLTDC;
 
@@ -483,41 +490,127 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 	return true;
 }
 
+GLenum GLRenderingSystemNS::getTextureType(TextureUsageType rhs)
+{
+	if (rhs == TextureUsageType::CUBEMAP)
+	{
+		return GL_TEXTURE_CUBE_MAP;
+	}
+	else
+	{
+		return GL_TEXTURE_2D;
+	}
+}
+
+GLenum GLRenderingSystemNS::getTextureWrapMethod(TextureWrapMethod rhs)
+{
+	GLenum result;
+
+	switch (rhs)
+	{
+	case TextureWrapMethod::CLAMP_TO_EDGE: result = GL_CLAMP_TO_EDGE; break;
+	case TextureWrapMethod::REPEAT: result = GL_REPEAT; break;
+	case TextureWrapMethod::CLAMP_TO_BORDER: result = GL_CLAMP_TO_BORDER; break;
+	}
+
+	return result;
+}
+
+GLenum GLRenderingSystemNS::getTextureFilterParam(TextureFilterMethod rhs)
+{
+	GLenum result;
+
+	switch (rhs)
+	{
+	case TextureFilterMethod::NEAREST: result = GL_NEAREST; break;
+	case TextureFilterMethod::LINEAR: result = GL_LINEAR; break;
+	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: result = GL_LINEAR_MIPMAP_LINEAR; break;
+	}
+
+	return result;
+}
+
+GLenum GLRenderingSystemNS::getTextureInternalFormat(TextureColorComponentsFormat rhs)
+{
+	GLenum result;
+
+	switch (rhs)
+	{
+	case TextureColorComponentsFormat::RED: result = GL_RED; break;
+	case TextureColorComponentsFormat::RG: result = GL_RG; break;
+	case TextureColorComponentsFormat::RGB: result = GL_RGB; break;
+	case TextureColorComponentsFormat::RGBA: result = GL_RGBA; break;
+	case TextureColorComponentsFormat::R8: result = GL_R8; break;
+	case TextureColorComponentsFormat::RG8: result = GL_RG8; break;
+	case TextureColorComponentsFormat::RGB8: result = GL_RGB8; break;
+	case TextureColorComponentsFormat::RGBA8: result = GL_RGBA8; break;
+	case TextureColorComponentsFormat::R16: result = GL_R16; break;
+	case TextureColorComponentsFormat::RG16: result = GL_RG16; break;
+	case TextureColorComponentsFormat::RGB16: result = GL_RGB16; break;
+	case TextureColorComponentsFormat::RGBA16: result = GL_RGBA16; break;
+	case TextureColorComponentsFormat::R16F: result = GL_R16F; break;
+	case TextureColorComponentsFormat::RG16F: result = GL_RG16F; break;
+	case TextureColorComponentsFormat::RGB16F: result = GL_RGB16F; break;
+	case TextureColorComponentsFormat::RGBA16F: result = GL_RGBA16F; break;
+	case TextureColorComponentsFormat::R32F: result = GL_R32F; break;
+	case TextureColorComponentsFormat::RG32F: result = GL_RG32F; break;
+	case TextureColorComponentsFormat::RGB32F: result = GL_RGB32F; break;
+	case TextureColorComponentsFormat::RGBA32F: result = GL_RGBA32F; break;
+	case TextureColorComponentsFormat::SRGB: result = GL_SRGB; break;
+	case TextureColorComponentsFormat::SRGBA: result = GL_SRGB_ALPHA; break;
+	case TextureColorComponentsFormat::SRGB8: result = GL_SRGB8; break;
+	case TextureColorComponentsFormat::SRGBA8: result = GL_SRGB8_ALPHA8; break;
+	case TextureColorComponentsFormat::DEPTH_COMPONENT: result = GL_DEPTH_COMPONENT; break;
+	}
+
+	return result;
+}
+
+GLenum GLRenderingSystemNS::getTexturePixelDataFormat(TexturePixelDataFormat rhs)
+{
+	GLenum result;
+
+	switch (rhs)
+	{
+	case TexturePixelDataFormat::RED:result = GL_RED; break;
+	case TexturePixelDataFormat::RG:result = GL_RG; break;
+	case TexturePixelDataFormat::RGB:result = GL_RGB; break;
+	case TexturePixelDataFormat::RGBA:result = GL_RGBA; break;
+	case TexturePixelDataFormat::DEPTH_COMPONENT:result = GL_DEPTH_COMPONENT; break;
+	}
+
+	return result;
+}
+
+GLenum GLRenderingSystemNS::getTexturePixelDataType(TexturePixelDataType rhs)
+{
+	GLenum result;
+
+	switch (rhs)
+	{
+	case TexturePixelDataType::UNSIGNED_BYTE:result = GL_UNSIGNED_BYTE; break;
+	case TexturePixelDataType::BYTE:result = GL_BYTE; break;
+	case TexturePixelDataType::UNSIGNED_SHORT:result = GL_UNSIGNED_SHORT; break;
+	case TexturePixelDataType::SHORT:result = GL_SHORT; break;
+	case TexturePixelDataType::UNSIGNED_INT:result = GL_UNSIGNED_INT; break;
+	case TexturePixelDataType::INT:result = GL_INT; break;
+	case TexturePixelDataType::FLOAT:result = GL_FLOAT; break;
+	case TexturePixelDataType::DOUBLE:result = GL_FLOAT; break;
+	}
+
+	return result;
+}
+
 GLTextureDataDesc GLRenderingSystemNS::getGLTextureDataDesc(const TextureDataDesc& textureDataDesc)
 {
 	GLTextureDataDesc l_result;
 
-	// texture type
-	if (textureDataDesc.textureUsageType == TextureUsageType::CUBEMAP)
-	{
-		l_result.textureType = GL_TEXTURE_CUBE_MAP;
-	}
-	else
-	{
-		l_result.textureType = GL_TEXTURE_2D;
-	}
+	l_result.textureType = getTextureType(textureDataDesc.textureUsageType);
 
-	// set the texture wrapping parameters
-	switch (textureDataDesc.textureWrapMethod)
-	{
-	case TextureWrapMethod::CLAMP_TO_EDGE: l_result.textureWrapMethod = GL_CLAMP_TO_EDGE; break;
-	case TextureWrapMethod::REPEAT: l_result.textureWrapMethod = GL_REPEAT; break;
-	case TextureWrapMethod::CLAMP_TO_BORDER: l_result.textureWrapMethod = GL_CLAMP_TO_BORDER; break;
-	}
+	l_result.textureWrapMethod = getTextureWrapMethod(textureDataDesc.textureWrapMethod);
 
-	// set texture filtering parameters
-	switch (textureDataDesc.textureMinFilterMethod)
-	{
-	case TextureFilterMethod::NEAREST: l_result.minFilterParam = GL_NEAREST; break;
-	case TextureFilterMethod::LINEAR: l_result.minFilterParam = GL_LINEAR; break;
-	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_result.minFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
-	}
-	switch (textureDataDesc.textureMagFilterMethod)
-	{
-	case TextureFilterMethod::NEAREST: l_result.magFilterParam = GL_NEAREST; break;
-	case TextureFilterMethod::LINEAR: l_result.magFilterParam = GL_LINEAR; break;
-	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_result.magFilterParam = GL_LINEAR_MIPMAP_LINEAR; break;
-	}
+	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.textureMinFilterMethod);
+	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.textureMagFilterMethod);
 
 	// set texture formats
 	if (textureDataDesc.textureUsageType == TextureUsageType::ALBEDO)
@@ -533,54 +626,12 @@ GLTextureDataDesc GLRenderingSystemNS::getGLTextureDataDesc(const TextureDataDes
 	}
 	else
 	{
-		switch (textureDataDesc.textureColorComponentsFormat)
-		{
-		case TextureColorComponentsFormat::RED: l_result.internalFormat = GL_RED; break;
-		case TextureColorComponentsFormat::RG: l_result.internalFormat = GL_RG; break;
-		case TextureColorComponentsFormat::RGB: l_result.internalFormat = GL_RGB; break;
-		case TextureColorComponentsFormat::RGBA: l_result.internalFormat = GL_RGBA; break;
-		case TextureColorComponentsFormat::R8: l_result.internalFormat = GL_R8; break;
-		case TextureColorComponentsFormat::RG8: l_result.internalFormat = GL_RG8; break;
-		case TextureColorComponentsFormat::RGB8: l_result.internalFormat = GL_RGB8; break;
-		case TextureColorComponentsFormat::RGBA8: l_result.internalFormat = GL_RGBA8; break;
-		case TextureColorComponentsFormat::R16: l_result.internalFormat = GL_R16; break;
-		case TextureColorComponentsFormat::RG16: l_result.internalFormat = GL_RG16; break;
-		case TextureColorComponentsFormat::RGB16: l_result.internalFormat = GL_RGB16; break;
-		case TextureColorComponentsFormat::RGBA16: l_result.internalFormat = GL_RGBA16; break;
-		case TextureColorComponentsFormat::R16F: l_result.internalFormat = GL_R16F; break;
-		case TextureColorComponentsFormat::RG16F: l_result.internalFormat = GL_RG16F; break;
-		case TextureColorComponentsFormat::RGB16F: l_result.internalFormat = GL_RGB16F; break;
-		case TextureColorComponentsFormat::RGBA16F: l_result.internalFormat = GL_RGBA16F; break;
-		case TextureColorComponentsFormat::R32F: l_result.internalFormat = GL_R32F; break;
-		case TextureColorComponentsFormat::RG32F: l_result.internalFormat = GL_RG32F; break;
-		case TextureColorComponentsFormat::RGB32F: l_result.internalFormat = GL_RGB32F; break;
-		case TextureColorComponentsFormat::RGBA32F: l_result.internalFormat = GL_RGBA32F; break;
-		case TextureColorComponentsFormat::SRGB: l_result.internalFormat = GL_SRGB; break;
-		case TextureColorComponentsFormat::SRGBA: l_result.internalFormat = GL_SRGB_ALPHA; break;
-		case TextureColorComponentsFormat::SRGB8: l_result.internalFormat = GL_SRGB8; break;
-		case TextureColorComponentsFormat::SRGBA8: l_result.internalFormat = GL_SRGB8_ALPHA8; break;
-		case TextureColorComponentsFormat::DEPTH_COMPONENT: l_result.internalFormat = GL_DEPTH_COMPONENT; break;
-		}
+		l_result.internalFormat = getTextureInternalFormat(textureDataDesc.textureColorComponentsFormat);
 	}
-	switch (textureDataDesc.texturePixelDataFormat)
-	{
-	case TexturePixelDataFormat::RED:l_result.pixelDataFormat = GL_RED; break;
-	case TexturePixelDataFormat::RG:l_result.pixelDataFormat = GL_RG; break;
-	case TexturePixelDataFormat::RGB:l_result.pixelDataFormat = GL_RGB; break;
-	case TexturePixelDataFormat::RGBA:l_result.pixelDataFormat = GL_RGBA; break;
-	case TexturePixelDataFormat::DEPTH_COMPONENT:l_result.pixelDataFormat = GL_DEPTH_COMPONENT; break;
-	}
-	switch (textureDataDesc.texturePixelDataType)
-	{
-	case TexturePixelDataType::UNSIGNED_BYTE:l_result.pixelDataType = GL_UNSIGNED_BYTE; break;
-	case TexturePixelDataType::BYTE:l_result.pixelDataType = GL_BYTE; break;
-	case TexturePixelDataType::UNSIGNED_SHORT:l_result.pixelDataType = GL_UNSIGNED_SHORT; break;
-	case TexturePixelDataType::SHORT:l_result.pixelDataType = GL_SHORT; break;
-	case TexturePixelDataType::UNSIGNED_INT:l_result.pixelDataType = GL_UNSIGNED_INT; break;
-	case TexturePixelDataType::INT:l_result.pixelDataType = GL_INT; break;
-	case TexturePixelDataType::FLOAT:l_result.pixelDataType = GL_FLOAT; break;
-	case TexturePixelDataType::DOUBLE:l_result.pixelDataType = GL_FLOAT; break;
-	}
+
+	l_result.pixelDataFormat = getTexturePixelDataFormat(textureDataDesc.texturePixelDataFormat);
+
+	l_result.pixelDataType = getTexturePixelDataType(textureDataDesc.texturePixelDataType);
 
 	l_result.boardColor[0] = textureDataDesc.borderColor.x;
 	l_result.boardColor[1] = textureDataDesc.borderColor.y;
@@ -726,7 +777,7 @@ void GLRenderingSystemNS::attachTextureToFramebuffer(TextureDataComponent * TDC,
 		{
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TAO, mipLevel);
 		}
-	}
+}
 	else
 	{
 		if (TDC->m_textureDataDesc.texturePixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
