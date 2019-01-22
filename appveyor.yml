@@ -10,11 +10,11 @@ build_script:
 - cmd: >-
     @echo | setupWin.bat
 
-    @echo | buildAssimpWin64VS15.bat
+    @echo | buildAssimpWin-VS15.bat
 
-    @echo | buildGLFWWin64VS15.bat
+    @echo | buildGLFWWin-VS15.bat
 
-    @echo | buildWin64VS15.bat
+    @echo | buildWin-VS15.bat
 skip_commits:
   files:
   - '**/*.md'
