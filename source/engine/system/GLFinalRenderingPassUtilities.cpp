@@ -635,7 +635,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBillboardPass()
 				(9.0f / 16.0f), 1.0f);
 		}
 
-		GLTextureDataComponent* l_iconTexture;
+		GLTextureDataComponent* l_iconTexture = 0;
 
 		switch (l_renderPack.iconType)
 		{

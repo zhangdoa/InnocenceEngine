@@ -147,10 +147,10 @@ bool GLRenderingSystemNS::setup()
 	}
 
 	// Thanks Jobs left us these nice piece of codes
-#ifndef INNO_PLATFORM_MACOS
+#ifndef INNO_PLATFORM_MAC
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(MessageCallback, 0);
-#endif // !INNO_PLATFORM_MACOS
+#endif // !INNO_PLATFORM_MAC
 
 	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);

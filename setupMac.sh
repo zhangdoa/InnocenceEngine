@@ -34,5 +34,5 @@ cp json/single_include/nlohmann/json.hpp ../include/json/
 
 cd ../
 
-mkdir -p dll/macos
-mkdir -p lib/macos
+mkdir -p dll/mac
+mkdir -p lib/mac

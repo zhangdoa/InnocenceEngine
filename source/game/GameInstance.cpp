@@ -34,6 +34,7 @@ namespace PlayerComponentCollection
 	float m_rotateSpeed = 0;
 	bool m_canMove = false;
 	bool m_canSlerp = false;
+	bool m_smoothInterp = true;
 
 	void move(vec4 direction, float length);
 	vec4 m_targetPawnPos;
@@ -254,11 +255,10 @@ void GameInstanceNS::updateSpheres(float seed)
 
 void PlayerComponentCollection::updatePlayer()
 {
-	bool l_smoothInterp = true;
 	auto l_currentCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
 	auto l_currentCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
 
-	if (l_smoothInterp)
+	if (m_smoothInterp)
 	{
 		if (!InnoMath::isCloseEnough(l_currentCameraPos, m_targetCameraPos))
 		{

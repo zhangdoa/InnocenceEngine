@@ -28,10 +28,10 @@ Run following scripts in a sequence:
 
 ``` cmd
 @echo | setupWin.bat
-@echo | buildAssimpWin64VS15.bat
-@echo | buildGLFWWin64VS15.bat
-@echo | buildWin64VS15.bat
-@echo | postBuildWin64.bat
+@echo | buildAssimpWin-VS15.bat
+@echo | buildGLFWWin-VS15.bat
+@echo | buildWin-VS15.bat
+@echo | postBuildWin.bat
 ```
 
 ### Linux:
@@ -44,10 +44,10 @@ Run following scripts in a sequence:
 
 ``` shell
 echo | setupLinux.sh
-echo | buildAssimpLinux64.sh
-echo | buildGLFWLinux64.sh
-echo | buildLinux64.sh # or buildLinux64-Clang.sh or buildLinux64-CodeBlocks.sh
-echo | postBuildLinux64.sh
+echo | buildAssimpLinux.sh
+echo | buildGLFWLinux.sh
+echo | buildLinux.sh # or buildLinux-Clang.sh or buildLinux-CodeBlocks.sh
+echo | postBuildLinux.sh
 ```
 
 ### Mac OSX:
@@ -60,10 +60,10 @@ Run following scripts in a sequence:
 
 ``` shell
 echo | setupMac.sh
-echo | buildAssimpMac64-Xcode.sh
-echo | buildGLFWMac64-Xcode.sh
-echo | buildMac64.sh
-echo | postBuildMac64.sh
+echo | buildAssimpMac-Xcode.sh
+echo | buildGLFWMac-Xcode.sh
+echo | buildMac.sh
+echo | postBuildMac.sh
 ```
 
 ## Features

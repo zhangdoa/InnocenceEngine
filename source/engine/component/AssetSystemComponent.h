@@ -19,7 +19,7 @@ struct DirectoryMetadata
 {
 	unsigned int depth = 0;
 	std::string directoryName = "root";
-	DirectoryMetadata* parentDirectory;
+	DirectoryMetadata* parentDirectory = 0;
 	std::vector<DirectoryMetadata> childrenDirectories;
 	std::vector<AssetMetadata> childrenAssets;
 };

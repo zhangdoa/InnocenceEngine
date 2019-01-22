@@ -14,7 +14,7 @@
 #include "../component/GLShaderProgramComponent.h"
 #include "../component/GLRenderPassComponent.h"
 
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 #include "../component/DXMeshDataComponent.h"
 #include "../component/DXTextureDataComponent.h"
 #include "../component/DXShaderProgramComponent.h"
@@ -72,7 +72,7 @@ protected:
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLFrameBufferComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLShaderProgramComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLRenderPassComponent);
-	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+	#if defined INNO_PLATFORM_WIN
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXTextureDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXShaderProgramComponent);
@@ -96,7 +96,7 @@ INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(GLFrameBufferComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(GLShaderProgramComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(GLRenderPassComponent);
-	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+	#if defined INNO_PLATFORM_WIN
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXTextureDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXShaderProgramComponent);
@@ -150,7 +150,7 @@ template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(GLShaderProgramComponent);
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(GLRenderPassComponent);
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(DXMeshDataComponent);
 template <>
@@ -195,7 +195,7 @@ template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(GLShaderProgramComponent);
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(GLRenderPassComponent);
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(DXMeshDataComponent);
 template <>

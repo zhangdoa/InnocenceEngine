@@ -35,7 +35,7 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(GLFrameBufferComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(GLShaderProgramComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(GLRenderPassComponent);
-	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+	#if defined INNO_PLATFORM_WIN
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXTextureDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXShaderProgramComponent);
@@ -59,7 +59,7 @@ public:
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLFrameBufferComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLShaderProgramComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLRenderPassComponent);
-	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+	#if defined INNO_PLATFORM_WIN
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXTextureDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXShaderProgramComponent);

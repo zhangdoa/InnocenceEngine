@@ -72,12 +72,10 @@ INNO_SYSTEM_EXPORT bool DXGuiSystem::terminate()
 {
 	DXGuiSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 
-#ifndef INNO_PLATFORM_MACOS
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 
 	ImGuiWrapper::get().terminate();
-#endif // !INNO_PLATFORM_MACOS
 
 	DXGuiSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXGuiSystem has been terminated.");

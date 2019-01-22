@@ -23,7 +23,7 @@ INNO_PRIVATE_SCOPE InnoLogSystemNS
 			+ "]";
 	}
 
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 	inline std::ostream& redColor(std::ostream &s)
 	{
 		HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -144,7 +144,7 @@ INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(const mat4 & logMessage)
 
 INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(LogType LogType, const std::string & logMessage)
 {
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 	switch (LogType)
 	{
 	case LogType::INNO_DEV_VERBOSE: std::cout << InnoLogSystemNS::blueColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;

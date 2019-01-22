@@ -5,6 +5,8 @@
 #include "../component/FileSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
 
+//#include "Bullet3Wrapper.h"
+
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -94,6 +96,8 @@ bool InnoPhysicsSystemNS::setup()
 
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
 
+	//Bullet3Wrapper::get().setup();
+
 	m_objectStatus = ObjectStatus::ALIVE;
 
 	return true;
@@ -182,7 +186,7 @@ void InnoPhysicsSystemNS::generatePointLightComponentAttenuationRadius(PointLigh
 	// 1. get luminous efficacy (lm/w), assume 683 lm/w (100% luminous efficiency) always
 	// 2. luminous flux (lm) to radiant flux (w), omitted because linearity assumption in step 1
 	// 3. apply inverse square attenuation law with a low threshold of eye sensitivity at 0.03 lx, in ideal situation, lx could convert back to lm with respect to a sphere surface area 4 * PI * r^2
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 	pointLightComponent->m_attenuationRadius = std::sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
 #else
 	pointLightComponent->m_attenuationRadius = sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
@@ -594,6 +598,7 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
 
 	auto temp = g_pCoreSystem->getTaskSystem()->submit([]()
 	{
+
 		InnoPhysicsSystemNS::updateCameraComponents();
 		InnoPhysicsSystemNS::updateLightComponents();
 		InnoPhysicsSystemNS::updateVisibleComponents();

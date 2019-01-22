@@ -129,7 +129,7 @@ allocateInitialFreeChucksDefi(className)
 	objectPoolUniPtr(GLShaderProgramComponent, 16384);
 	objectPoolUniPtr(GLRenderPassComponent, 16384);
 
-	#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+	#if defined INNO_PLATFORM_WIN
 	objectPoolUniPtr(DXMeshDataComponent, 16384);
 	objectPoolUniPtr(DXTextureDataComponent, 16384);
 	objectPoolUniPtr(DXShaderProgramComponent, 16384);
@@ -167,7 +167,7 @@ bool InnoMemorySystemNS::setup()
 	constructObjectPool(GLShaderProgramComponent, 16384);
 	constructObjectPool(GLRenderPassComponent, 16384);
 
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 	constructObjectPool(DXMeshDataComponent, 16384);
 	constructObjectPool(DXTextureDataComponent, 16384);
 	constructObjectPool(DXShaderProgramComponent, 16384);
@@ -248,7 +248,7 @@ allocateComponentImplDefi(GLFrameBufferComponent)
 allocateComponentImplDefi(GLShaderProgramComponent)
 allocateComponentImplDefi(GLRenderPassComponent)
 
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 allocateComponentImplDefi(DXMeshDataComponent)
 allocateComponentImplDefi(DXTextureDataComponent)
 allocateComponentImplDefi(DXShaderProgramComponent)
@@ -270,7 +270,7 @@ bool InnoMemorySystem::free##className(className* p) \
 	l_freeChuck->m_next = InnoMemorySystemNS::m_##className##CurrentFreeChunk->m_next; \
 	InnoMemorySystemNS::m_##className##CurrentFreeChunk->m_next = l_freeChuck; \
 	/*finally wipe away all the old data*/ \
-	std::memset(p, 0, sizeof(className)); \
+	std::memset((void*)p, 0, sizeof(className)); \
 \
 	return true; \
 } \
@@ -294,7 +294,7 @@ freeComponentImplDefi(GLFrameBufferComponent)
 freeComponentImplDefi(GLShaderProgramComponent)
 freeComponentImplDefi(GLRenderPassComponent)
 
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 freeComponentImplDefi(DXMeshDataComponent)
 freeComponentImplDefi(DXTextureDataComponent)
 freeComponentImplDefi(DXShaderProgramComponent)

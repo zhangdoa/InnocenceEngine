@@ -33,7 +33,7 @@ xcopy /y json\single_include\nlohmann\json.hpp ..\include\json\
 
 cd ../
 
-mkdir dll\win64
-mkdir lib\win64
+mkdir dll\win
+mkdir lib\win
 
 pause

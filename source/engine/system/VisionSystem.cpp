@@ -4,7 +4,7 @@
 #include "../component/RenderingSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
 
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 #include "DXWindowSystem.h"
 #include "DXRenderingSystem.h"
 #include "DXGuiSystem.h"
@@ -60,7 +60,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 
 	if (l_rendererArguments == "DX")
 	{
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 		InnoVisionSystemNS::m_windowSystem = new DXWindowSystem();
 		InnoVisionSystemNS::m_renderingSystem = new DXRenderingSystem();
 		InnoVisionSystemNS::m_guiSystem = new DXGuiSystem();

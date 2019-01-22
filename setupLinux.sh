@@ -32,5 +32,5 @@ cp json/single_include/nlohmann/json.hpp ../include/json/
 
 cd ../
 
-mkdir -p dll/unix
-mkdir -p lib/unix
+mkdir -p dll/linux
+mkdir -p lib/linux

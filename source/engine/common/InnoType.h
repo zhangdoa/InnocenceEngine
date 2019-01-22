@@ -5,7 +5,7 @@
 #define INNO_INTERFACE class
 #define INNO_IMPLEMENT public
 #define INNO_PRIVATE_SCOPE namespace
-#if defined INNO_PLATFORM_WIN64 || defined INNO_PLATFORM_WIN32
+#if defined INNO_PLATFORM_WIN
 #define INNO_FORCEINLINE __forceinline
 #else
 #define INNO_FORCEINLINE __attribute__((always_inline)) inline
@@ -73,7 +73,7 @@ struct ShaderFilePaths
 //#define BlinnPhong
 #define CookTorrance
 
-#ifdef INNO_PLATFORM_MACOS
+#ifdef INNO_PLATFORM_MAC
 struct EnumClassHash
 {
 	template <typename T>
