@@ -44,7 +44,7 @@ endif (INNO_PLATFORM_LINUX)
 target_link_libraries(InnoSystem "${GLFW}")
 
 if (INNO_PLATFORM_LINUX)
-target_link_libraries(InnoSystem -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lGL -lm -lpthread)
+target_link_libraries(InnoSystem -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lGL -lm -lpthread -lstdc++fs)
 elseif (INNO_PLATFORM_MAC)
 #find_library(IRRXML IrrXML)
 find_library(COCOA Cocoa)

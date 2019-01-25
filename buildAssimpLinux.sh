@@ -7,4 +7,4 @@ cmake -DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DASSIMP_BUILD_TESTS=OFF -G "Unix Makefile
 make
 
 cp include/assimp/config.h ../../../include/assimp/
-cp code/Debug/*.so ../../../lib/linux
+cp code/*.so ../../../lib/linux

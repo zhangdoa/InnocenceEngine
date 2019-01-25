@@ -6,4 +6,4 @@ cd build_dll
 cmake -DBUILD_SHARED_LIBS=ON -G "Unix Makefiles" ../
 make
 
-cp src/Debug/*.so ../../../lib/linux
+cp src/*.so ../../../lib/linux

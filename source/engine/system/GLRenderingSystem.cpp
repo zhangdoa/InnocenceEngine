@@ -37,8 +37,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	bool prepareLightPassData();
 	bool prepareBillboardPassData();
 
-	void GLAPIENTRY
-		MessageCallback(GLenum source,
+	void MessageCallback(GLenum source,
 			GLenum type,
 			GLuint id,
 			GLenum severity,

@@ -668,7 +668,6 @@ bool GLRenderingSystemNS::deleteShaderProgram(GLShaderProgramComponent* rhs)
 
 GLuint GLRenderingSystemNS::getUniformLocation(GLuint shaderProgram, const std::string & uniformName)
 {
-	// @TODO: UBO
 	glUseProgram(shaderProgram);
 	int uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 	if (uniformLocation == 0xFFFFFFFF)
@@ -696,7 +695,7 @@ GLuint GLRenderingSystemNS::generateUBO(GLuint UBOSize)
 	GLuint l_ubo;
 	glGenBuffers(1, &l_ubo);
 	glBindBuffer(GL_UNIFORM_BUFFER, l_ubo);
-	glBufferData(GL_UNIFORM_BUFFER, UBOSize, NULL, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, UBOSize, NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	return l_ubo;

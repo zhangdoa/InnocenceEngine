@@ -38,7 +38,7 @@ Run following scripts in a sequence:
 
 Tested under Ubuntu 18.04 LTS
 
-Prerequisites: GCC 7.0 or Clang 7.0 or higher + CMake 3.10 or higher + OpenGL library(lGL)
+Prerequisites: GCC 8.0 or Clang 7.0 or higher + CMake 3.10 or higher + OpenGL library(lGL)
 
 Run following scripts in a sequence:
 
@@ -88,7 +88,7 @@ echo | postBuildMac.sh
 
 [GLFW](https://github.com/glfw/glfw)
 
-[GLAD](https://github.com/Dav1dde/glad) 
+[GLAD](https://github.com/Dav1dde/glad)
 
 [dear imgui](https://github.com/ocornut/imgui)
 

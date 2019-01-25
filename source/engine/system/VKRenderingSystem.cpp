@@ -131,7 +131,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Validation Layer£º " + std::string(pCallbackData->pMessage));
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Validation Layerï¿½ï¿½ " + std::string(pCallbackData->pMessage));
 		return VK_FALSE;
 	}
 

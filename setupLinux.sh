@@ -1,6 +1,8 @@
 #!/bin/sh
 git submodule update
 
+cd source/external/gitsubmodules
+
 mkdir -p ../include/assimp
 cp -R assimp/include/assimp/ ../include/assimp/
 
