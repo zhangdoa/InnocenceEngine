@@ -322,7 +322,7 @@ void GLEnvironmentRenderingPassUtilities::updateBRDFLUTPass()
 	auto l_SSTDC = GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassTDC;
 	auto l_SSGLTDC = GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassGLTDC;
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-	attachTextureToFramebuffer(l_SSTDC, l_SSGLTDC, l_FBC, 0, 0, 0);
+	attachColorRT(l_SSTDC, l_SSGLTDC, l_FBC, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	drawMesh(l_MDC);
@@ -331,7 +331,7 @@ void GLEnvironmentRenderingPassUtilities::updateBRDFLUTPass()
 	activateShaderProgram(GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassSPC);
 	auto l_MSTDC = GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassTDC;
 	auto l_MSGLTDC = GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassGLTDC;
-	attachTextureToFramebuffer(l_MSTDC, l_MSGLTDC, l_FBC, 0, 0, 0);
+	attachColorRT(l_MSTDC, l_MSGLTDC, l_FBC, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	activateTexture(l_SSGLTDC, 0);
@@ -394,7 +394,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 		for (unsigned int i = 0; i < 6; ++i)
 		{
 			updateUniform(GLFinalRenderPassComponent::get().m_skyPass_uni_r, l_v[i]);
-			attachTextureToFramebuffer(l_capturePassTDC, l_capturePassGLTDC, l_FBC, 0, i, 0);
+			attachCubemapColorRT(l_capturePassTDC, l_capturePassGLTDC, l_FBC, 0, i, 0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			drawMesh(l_MDC);
 		}
@@ -410,7 +410,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 	{
 		auto l_copy = GLRenderingSystemComponent::get().m_opaquePassDataQueue_copy;
 		updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_v, l_v[i]);
-		attachTextureToFramebuffer(l_capturePassTDC, l_capturePassGLTDC, l_FBC, 0, i, 0);
+		attachCubemapColorRT(l_capturePassTDC, l_capturePassGLTDC, l_FBC, 0, i, 0);
 		while (l_copy.size() > 0)
 		{
 			auto l_renderPack = l_copy.front();
@@ -444,7 +444,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 	for (unsigned int i = 0; i < 6; ++i)
 	{
 		updateUniform(GLEnvironmentRenderPassComponent::get().m_convPass_uni_r, l_v[i]);
-		attachTextureToFramebuffer(l_convPassTDC, l_convPassGLTDC, l_FBC, 0, i, 0);
+		attachCubemapColorRT(l_convPassTDC, l_convPassGLTDC, l_FBC, 0, i, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		drawMesh(l_MDC);
 	}
@@ -475,7 +475,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 		for (unsigned int i = 0; i < 6; ++i)
 		{
 			updateUniform(GLEnvironmentRenderPassComponent::get().m_preFilterPass_uni_r, l_v[i]);
-			attachTextureToFramebuffer(l_preFilterPassTDC, l_preFilterPassGLTDC, l_FBC, 0, i, mip);
+			attachCubemapColorRT(l_preFilterPassTDC, l_preFilterPassGLTDC, l_FBC, 0, i, mip);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			drawMesh(l_MDC);
 		}

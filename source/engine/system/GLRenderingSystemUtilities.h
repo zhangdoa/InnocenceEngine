@@ -13,7 +13,7 @@
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
 	GLRenderPassComponent* addGLRenderPassComponent(unsigned int RTNum, GLFrameBufferDesc glFrameBufferDesc, TextureDataDesc RTDesc);
-	void addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, int colorAttachmentIndex, int textureIndex, int mipLevel);
+	void addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex);
 	void setDrawBuffers(unsigned int RTNum);
 	bool resizeGLRenderPassComponent(GLRenderPassComponent* GLRPC, GLFrameBufferDesc glFrameBufferDesc);
 
@@ -57,8 +57,12 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void updateUniform(const GLint uniformLocation, float x, float y, float z, float w);
 	void updateUniform(const GLint uniformLocation, const mat4& mat);
 
-	void attachTextureToFramebuffer(TextureDataComponent* TDC, GLTextureDataComponent* GLTextureDataComponent, GLFrameBufferComponent* GLFrameBufferComponent, int colorAttachmentIndex, int textureIndex, int mipLevel);
+	void attachDepthRT(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC);
+	void attachCubemapDepthRT(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int textureIndex, unsigned int mipLevel);
+	void attachColorRT(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int colorAttachmentIndex);
+	void attachCubemapColorRT(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel);
 	void activateShaderProgram(GLShaderProgramComponent* GLShaderProgramComponent);
+
 	void drawMesh(const EntityID& rhs);
 	void drawMesh(MeshDataComponent* MDC);
 	void drawMesh(size_t indicesSize, MeshPrimitiveTopology MeshPrimitiveTopology, GLMeshDataComponent* GLMDC);
@@ -69,5 +73,5 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void cleanFBC(GLFrameBufferComponent* val);
 	void copyDepthBuffer(GLFrameBufferComponent* src, GLFrameBufferComponent* dest);
 	void copyStencilBuffer(GLFrameBufferComponent* src, GLFrameBufferComponent* dest);
-	void copyColorBuffer (GLFrameBufferComponent* src, GLFrameBufferComponent* dest);
+	void copyColorBuffer(GLFrameBufferComponent* src, GLFrameBufferComponent* dest);
 }

@@ -14,9 +14,11 @@
 #include "GLRenderingSystem.h"
 #include "GLGuiSystem.h"
 
+#if defined INNO_PLATFORM_LINUX
 #include "VKWindowSystem.h"
 #include "VKRenderingSystem.h"
 #include "VKGuiSystem.h"
+#endif
 
 #include "ICoreSystem.h"
 
@@ -77,9 +79,14 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 	}
 	else if (l_rendererArguments == "VK")
 	{
+#if defined INNO_PLATFORM_LINUX
 		InnoVisionSystemNS::m_windowSystem = new VKWindowSystem();
 		InnoVisionSystemNS::m_renderingSystem = new VKRenderingSystem();
 		InnoVisionSystemNS::m_guiSystem = new VKGuiSystem();
+#else
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: Vulkan is only supported on Linux OS!");
+		return false;
+#endif
 	}
 	else
 	{
