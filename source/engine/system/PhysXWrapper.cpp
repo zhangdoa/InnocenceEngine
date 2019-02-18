@@ -1,5 +1,7 @@
 #include "PhysXWrapper.h"
 
+#include "PxPhysicsAPI.h"
+
 INNO_PRIVATE_SCOPE PhysXWrapperNS
 {
 	void setup();

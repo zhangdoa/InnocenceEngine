@@ -17,6 +17,8 @@
 #include<functional>
 #include <algorithm>
 
+#include <cassert>
+
 #include <iostream>
 #include <fstream>
 #include <sstream>

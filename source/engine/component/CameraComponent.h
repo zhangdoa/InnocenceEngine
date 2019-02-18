@@ -16,6 +16,7 @@ public:
 	float m_zFar = 0.0;
 
 	Ray m_rayOfEye;
+	Frustum m_frustum;
 	bool m_drawRay = false;
 	bool m_drawFrustum = false;
 	bool m_drawAABB = false;

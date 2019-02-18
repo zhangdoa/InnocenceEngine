@@ -744,11 +744,6 @@ public:
 	TPlane(const TPlane<T>& rhs) :
 		m_normal(rhs.m_normal),
 		m_distance(rhs.m_distance) {};
-	TPlane(const TVec4<T>& a, const TVec4<T>& b, const TVec4<T>& c)
-	{
-		m_normal = ((b - a).cross(c - a)).normalize();
-		m_distance = m_normal * a;
-	};
 	auto operator=(const TPlane<T> & rhs) -> TPlane<T>&
 	{
 		m_normal = rhs.m_normal;
@@ -789,6 +784,38 @@ public:
 	TVec4<T> m_extend; // 4 * sizeof(T)
 	TVec4<T> m_boundMin; // 4 * sizeof(T)
 	TVec4<T> m_boundMax; // 4 * sizeof(T)
+};
+
+template<class T>
+class TFrustum
+{
+public:
+	TFrustum() noexcept	{};
+	TFrustum(const TFrustum<T>& rhs) :
+		m_px(rhs.m_px),
+		m_nx(rhs.m_nx),
+		m_py(rhs.m_py),
+		m_ny(rhs.m_ny),
+		m_pz(rhs.m_pz),
+		m_nz(rhs.m_nz) {};
+	auto operator=(const TFrustum<T> & rhs) -> TFrustum<T>&
+	{
+		m_px = rhs.m_px;
+		m_nx = rhs.m_nx;
+		m_py = rhs.m_py;
+		m_ny = rhs.m_ny;
+		m_pz = rhs.m_pz;
+		m_nz = rhs.m_nz;
+		return *this;
+	}
+	~TFrustum() {};
+
+	TPlane<T> m_px; // 5 * sizeof(T)
+	TPlane<T> m_nx; // 5 * sizeof(T)
+	TPlane<T> m_py; // 5 * sizeof(T)
+	TPlane<T> m_ny; // 5 * sizeof(T)
+	TPlane<T> m_pz; // 5 * sizeof(T)
+	TPlane<T> m_nz; // 5 * sizeof(T)
 };
 
 template<class T>
@@ -1304,49 +1331,6 @@ namespace InnoMath
 #endif
 
 	template<class T>
-	bool intersectCheck(const TVec4<T> & lhs, const TSphere<T> & rhs)
-	{
-		auto l_length = (lhs - rhs.m_center).length();
-		if (l_length > rhs.m_radius)
-		{
-			return false;
-		}
-		return true;
-	}
-
-	template<class T>
-	bool intersectCheck(const TVec4<T> & lhs, const TAABB<T> & rhs)
-	{
-		if (std::abs(rhs.m_center.x - lhs.x) > (rhs.m_extend.x) / two<T>)
-		{
-			return false;
-		}
-		if (std::abs(rhs.m_center.y - lhs.y) > (rhs.m_extend.y) / two<T>)
-		{
-			return false;
-		}
-		if (std::abs(rhs.m_center.z - lhs.z) > (rhs.m_extend.z) / two<T>)
-		{
-			return false;
-		}
-		else
-		{
-			return true;
-		}
-	}
-
-	template<class T>
-	bool intersectCheck(const TVec4<T> & lhs, const TPlane<T> & rhs)
-	{
-		auto l_length = lhs * rhs.m_normal;
-		if (l_length != rhs.m_distance)
-		{
-			return false;
-		}
-		return true;
-	}
-
-	template<class T>
 	bool intersectCheck(const TAABB<T> & lhs, const TAABB<T> & rhs)
 	{
 		if (std::abs(rhs.m_center.x - lhs.m_center.x) > (rhs.m_extend.x + lhs.m_extend.x) / two<T>)
@@ -1422,6 +1406,49 @@ namespace InnoMath
 			return true;
 		}
 		return false;
+	}
+
+	template<class T>
+	bool isPointOnSphere(const TVec4<T> & lhs, const TSphere<T> & rhs)
+	{
+		auto l_length = (lhs - rhs.m_center).length();
+		if (l_length != rhs.m_radius)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	template<class T>
+	bool isPointOnPlane(const TVec4<T> & lhs, const TPlane<T> & rhs)
+	{
+		auto l_dot = lhs * rhs.m_normal;
+		if (l_dot != rhs.m_distance)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	template<class T>
+	bool isPointInAABB(const TVec4<T> & lhs, const TAABB<T> & rhs)
+	{
+		if (std::abs(rhs.m_center.x - lhs.x) > (rhs.m_extend.x) / two<T>)
+		{
+			return false;
+		}
+		if (std::abs(rhs.m_center.y - lhs.y) > (rhs.m_extend.y) / two<T>)
+		{
+			return false;
+		}
+		if (std::abs(rhs.m_center.z - lhs.z) > (rhs.m_extend.z) / two<T>)
+		{
+			return false;
+		}
+		else
+		{
+			return true;
+		}
 	}
 
 	template<class T, class U>
@@ -1725,6 +1752,79 @@ namespace InnoMath
 			return true;
 		}
 	}
+
+	template<class T>
+	auto generateNDC() -> std::vector<TVertex<T>>
+	{
+		TVertex<T> l_VertexData_1;
+		l_VertexData_1.m_pos = TVec4<T>(one<T>, one<T>, one<T>, one<T>);
+		l_VertexData_1.m_texCoord = TVec2<T>(one<T>, one<T>);
+
+		TVertex<T> l_VertexData_2;
+		l_VertexData_2.m_pos = TVec4<T>(one<T>, -one<T>, one<T>, one<T>);
+		l_VertexData_2.m_texCoord = TVec2<T>(one<T>, zero<T>);
+
+		TVertex<T> l_VertexData_3;
+		l_VertexData_3.m_pos = TVec4<T>(-one<T>, -one<T>, one<T>, one<T>);
+		l_VertexData_3.m_texCoord = TVec2<T>(zero<T>, zero<T>);
+
+		TVertex<T> l_VertexData_4;
+		l_VertexData_4.m_pos = TVec4<T>(-one<T>, one<T>, one<T>, one<T>);
+		l_VertexData_4.m_texCoord = TVec2<T>(zero<T>, one<T>);
+
+		TVertex<T> l_VertexData_5;
+		l_VertexData_5.m_pos = TVec4<T>(one<T>, one<T>, -one<T>, one<T>);
+		l_VertexData_5.m_texCoord = TVec2<T>(one<T>, one<T>);
+
+		TVertex<T> l_VertexData_6;
+		l_VertexData_6.m_pos = TVec4<T>(one<T>, -one<T>, -one<T>, one<T>);
+		l_VertexData_6.m_texCoord = TVec2<T>(one<T>, zero<T>);
+
+		TVertex<T> l_VertexData_7;
+		l_VertexData_7.m_pos = TVec4<T>(-one<T>, -one<T>, -one<T>, one<T>);
+		l_VertexData_7.m_texCoord = TVec2<T>(zero<T>, zero<T>);
+
+		TVertex<T> l_VertexData_8;
+		l_VertexData_8.m_pos = TVec4<T>(-one<T>, one<T>, -one<T>, one<T>);
+		l_VertexData_8.m_texCoord = TVec2<T>(zero<T>, one<T>);
+
+		std::vector<TVertex<T>> l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
+
+		for (auto& l_vertexData : l_vertices)
+		{
+			l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, zero<T>).normalize();
+		}
+
+		return l_vertices;
+	}
+
+	template<class T>
+	auto makePlane(const TVec4<T>& a, const TVec4<T>& b, const TVec4<T>& c) -> TPlane<T>
+	{
+		TPlane<T> l_result;
+
+		l_result.m_normal = ((b - a).cross(c - a)).normalize();
+		l_result.m_distance = l_result.m_normal * a;
+
+		return l_result;
+	};
+
+	template<class T>
+	auto makeFrustum(const std::vector<TVertex<T>>& vertices) -> TFrustum<T>
+	{
+		assert(vertices.size() == 8);
+
+		TFrustum<T> l_result;
+
+		l_result.m_px = makePlane(vertices[0].m_pos, vertices[1].m_pos, vertices[5].m_pos);
+		l_result.m_nx = makePlane(vertices[3].m_pos, vertices[7].m_pos, vertices[6].m_pos);
+		l_result.m_py = makePlane(vertices[0].m_pos, vertices[4].m_pos, vertices[7].m_pos);
+		l_result.m_ny = makePlane(vertices[1].m_pos, vertices[2].m_pos, vertices[6].m_pos);
+		l_result.m_pz = makePlane(vertices[0].m_pos, vertices[3].m_pos, vertices[2].m_pos);
+		l_result.m_nz = makePlane(vertices[4].m_pos, vertices[5].m_pos, vertices[6].m_pos);
+
+		return l_result;
+	};
 }
 
 using vec2 = TVec2<float>;
@@ -1733,5 +1833,7 @@ using mat4 = TMat4<float>;
 using Vertex = TVertex<float>;
 using Ray = TRay<float>;
 using AABB = TAABB<float>;
+using Sphere = TSphere<float>;
+using Frustum = TFrustum<float>;
 using TransformVector = TTransformVector<float>;
 using TransformMatrix = TTransformMatrix<float>;

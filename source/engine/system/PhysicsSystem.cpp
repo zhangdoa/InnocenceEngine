@@ -5,7 +5,7 @@
 #include "../component/FileSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
 
-//#include "Bullet3Wrapper.h"
+//#include "PhysXWrapper.h"
 
 #include "ICoreSystem.h"
 
@@ -18,10 +18,10 @@ namespace InnoPhysicsSystemNS
 	void generateProjectionMatrix(CameraComponent* cameraComponent);
 	void generateRayOfEye(CameraComponent* cameraComponent);
 	std::vector<Vertex> generateFrustumVertices(CameraComponent* cameraComponent);
+	void generateFrustum(CameraComponent* cameraComponent);
 	void generatePointLightComponentAttenuationRadius(PointLightComponent* pointLightComponent);
 	void generateSphereLightComponentScale(SphereLightComponent* sphereLightComponent);
 
-	std::vector<Vertex> generateNDC();
 	PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap);
 	MeshDataComponent* generateMeshDataComponent(AABB rhs);
 
@@ -31,6 +31,7 @@ namespace InnoPhysicsSystemNS
 	AABB generateAABB(vec4 boundMax, vec4 boundMin);
 	std::vector<Vertex> generateAABBVertices(vec4 boundMax, vec4 boundMin);
 	std::vector<Vertex> generateAABBVertices(AABB rhs);
+	Sphere generateSphere(AABB rhs);
 
 	void updateCameraComponents();
 	void updateLightComponents();
@@ -96,7 +97,7 @@ bool InnoPhysicsSystemNS::setup()
 
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
 
-	//Bullet3Wrapper::get().setup();
+	//PhysXWrapper::get().setup();
 
 	m_objectStatus = ObjectStatus::ALIVE;
 
@@ -124,12 +125,12 @@ void InnoPhysicsSystemNS::generateRayOfEye(CameraComponent * cameraComponent)
 
 std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent * cameraComponent)
 {
-	auto l_NDC = generateNDC();
-	auto l_pCamera = cameraComponent->m_projectionMatrix;
-
 	auto l_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(cameraComponent->m_parentEntity);
 	auto l_rCamera = InnoMath::toRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
+	auto l_pCamera = cameraComponent->m_projectionMatrix;
+
+	auto l_NDC = InnoMath::generateNDC<float>();
 
 	for (auto& l_vertexData : l_NDC)
 	{
@@ -171,6 +172,11 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent
 	return std::move(l_NDC);
 }
 
+void InnoPhysicsSystemNS::generateFrustum(CameraComponent * cameraComponent)
+{
+	cameraComponent->m_frustum = InnoMath::makeFrustum(generateFrustumVertices(cameraComponent));
+}
+
 void InnoPhysicsSystemNS::generatePointLightComponentAttenuationRadius(PointLightComponent* pointLightComponent)
 {
 	auto l_RGBColor = pointLightComponent->m_color.normalize();
@@ -209,10 +215,12 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Mo
 
 		auto l_AABB = generateAABB(l_MDC.first->m_vertices);
 		auto l_MDCforAABB = generateMeshDataComponent(l_AABB);
+		auto l_sphere = generateSphere(l_AABB);
 
 		l_physicsData.MDC = l_MDC.first;
 		l_physicsData.wireframeMDC = l_MDCforAABB;
 		l_physicsData.aabb = l_AABB;
+		l_physicsData.sphere = l_sphere;
 
 		l_PDC->m_physicsDatas.emplace_back(l_physicsData);
 	}
@@ -442,6 +450,14 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(AABB rhs)
 	return std::move(generateAABBVertices(boundMax, boundMin));
 }
 
+Sphere InnoPhysicsSystemNS::generateSphere(AABB rhs)
+{
+	Sphere l_result;
+	l_result.m_center = rhs.m_center;
+	l_result.m_radius = (rhs.m_boundMax - rhs.m_center).length();
+	return l_result;
+}
+
 MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 {
 	auto l_MDC = g_pCoreSystem->getMemorySystem()->spawn<MeshDataComponent>();
@@ -501,6 +517,7 @@ void InnoPhysicsSystemNS::updateCameraComponents()
 	{
 		generateProjectionMatrix(i);
 		generateRayOfEye(i);
+		generateFrustum(i);
 	}
 }
 
@@ -553,7 +570,7 @@ void InnoPhysicsSystemNS::updateCulling()
 		l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GameSystemComponent::get().m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_mouseRay.m_direction = WindowSystemComponent::get().m_mousePositionInWorldSpace;
 
-		//auto l_cameraAABB = GameSystemComponent::get().m_CameraComponents[0]->m_AABB;
+		auto l_cameraFrustum = GameSystemComponent::get().m_CameraComponents[0]->m_frustum;
 		auto l_eyeRay = GameSystemComponent::get().m_CameraComponents[0]->m_rayOfEye;
 
 		for (auto visibleComponent : GameSystemComponent::get().m_VisibleComponents)
@@ -635,48 +652,4 @@ INNO_SYSTEM_EXPORT void InnoPhysicsSystem::generatePhysicsData(VisibleComponent*
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "PhysicsSystem: PhysicsDataComponent has already been generated for VisibleComponent " + visibleComponent->m_parentEntity + "!");
 	}
-}
-
-std::vector<Vertex> InnoPhysicsSystemNS::generateNDC()
-{
-	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
-
-	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = vec4(1.0f, -1.0f, 1.0f, 1.0f);
-	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
-
-	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = vec4(-1.0f, -1.0f, 1.0f, 1.0f);
-	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
-
-	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = vec4(-1.0f, 1.0f, 1.0f, 1.0f);
-	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
-
-	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = vec4(1.0f, 1.0f, -1.0f, 1.0f);
-	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
-
-	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = vec4(1.0f, -1.0f, -1.0f, 1.0f);
-	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
-
-	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = vec4(-1.0f, -1.0f, -1.0f, 1.0f);
-	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
-
-	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = vec4(-1.0f, 1.0f, -1.0f, 1.0f);
-	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
-
-	std::vector<Vertex> l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
-
-	for (auto& l_vertexData : l_vertices)
-	{
-		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
-	}
-
-	return l_vertices;
 }

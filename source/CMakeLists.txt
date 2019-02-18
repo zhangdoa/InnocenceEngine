@@ -17,7 +17,7 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 # compiler config file
 configure_file ("${CMAKE_SOURCE_DIR}/engine/common/config.h.in" "${CMAKE_SOURCE_DIR}/engine/common/config.h" @ONLY)
 
-include_directories("external/include")
+include_directories("external/include" "external/gitsubmodules/PhysX/physx/include" "external/gitsubmodules/PhysX/pxshared/include")
 
 option (USE_ROW_MAJOR_MEMORY_LAYOUT "use Row-Major memory layout" ON)
 option (USE_COLUMN_MAJOR_MEMORY_LAYOUT "use Column-Major memory layout" OFF)

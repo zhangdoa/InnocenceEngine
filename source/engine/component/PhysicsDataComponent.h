@@ -8,6 +8,7 @@ struct PhysicsData
 	MeshDataComponent* MDC;
 	MeshDataComponent* wireframeMDC;
 	AABB aabb;
+	Sphere sphere;
 };
 
 class PhysicsDataComponent
