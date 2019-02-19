@@ -66,6 +66,14 @@ struct BillboardPassDataPack
 	WorldEditorIconType iconType;
 };
 
+struct DebuggerPassDataPack
+{
+	mat4 m;
+	size_t indiceSize;
+	GLMeshDataComponent* GLMDC;
+	MeshPrimitiveTopology meshPrimitiveTopology;
+};
+
 struct PointLightData
 {
 	vec4 pos;
@@ -142,6 +150,8 @@ public:
 	std::queue<TransparentPassDataPack> m_transparentPassDataQueue;
 
 	std::queue<BillboardPassDataPack> m_billboardPassDataQueue;
+
+	std::queue<DebuggerPassDataPack> m_debuggerPassDataQueue;
 
 	const unsigned int m_maxPointLights = 64;
 	std::vector<PointLightData> m_PointLightDatas;

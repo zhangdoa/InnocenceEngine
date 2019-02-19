@@ -682,15 +682,20 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateDebuggerPass()
 		GLRenderingSystemComponent::get().m_CamTrans);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-	for (auto& AABBWireframeDataPack : PhysicsSystemComponent::get().m_AABBWireframeDataPack)
+	while (GLRenderingSystemComponent::get().m_debuggerPassDataQueue.size() > 0)
 	{
+		auto l_renderPack = GLRenderingSystemComponent::get().m_debuggerPassDataQueue.front();
+
+		auto l_m = l_renderPack.m;
+
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_debuggerPass_uni_m,
-			AABBWireframeDataPack.m);
-		drawMesh(AABBWireframeDataPack.MDC);
-	}
+			l_m);
 
+		drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
+
+		GLRenderingSystemComponent::get().m_debuggerPassDataQueue.pop();
+	}
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_DEPTH_TEST);
 

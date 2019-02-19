@@ -189,6 +189,8 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 			}
 		}
 	};
+	
+	RenderingSystemComponent::get().m_selectedVisibleComponent = PhysicsSystemComponent::get().m_selectedVisibleComponent;
 
 	InnoVisionSystemNS::m_windowSystem->update();
 

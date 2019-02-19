@@ -191,7 +191,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 		RenderingSystemComponent::get().f_captureEnvironment();
 	}
 
-	static char scene_filePath[128] = "..//res//scenes//test.InnoScene";
+	static char scene_filePath[128] = "..//res//scenes//Intro.InnoScene";
 	ImGui::InputText("Scene file path", scene_filePath, IM_ARRAYSIZE(scene_filePath));
 
 	if (ImGui::Button("Save scene"))

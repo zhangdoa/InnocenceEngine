@@ -14,12 +14,6 @@ struct CullingDataPack
 	VisiblilityType visiblilityType;
 };
 
-struct AABBWireframeDataPack
-{
-	mat4 m;
-	MeshDataComponent* MDC;
-};
-
 class PhysicsSystemComponent
 {
 public:
@@ -35,7 +29,6 @@ public:
 	EntityID m_parentEntity;
 
 	std::vector<CullingDataPack> m_cullingDataPack;
-	std::vector<AABBWireframeDataPack> m_AABBWireframeDataPack;
 
 	VisibleComponent* m_selectedVisibleComponent;
 private:

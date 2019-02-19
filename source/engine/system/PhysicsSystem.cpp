@@ -59,7 +59,7 @@ bool InnoPhysicsSystemNS::setup()
 	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_entityID);
 
 	f_mouseSelect = [&]() {
-		PhysicsSystemComponent::get().m_AABBWireframeDataPack.clear();
+		PhysicsSystemComponent::get().m_selectedVisibleComponent = nullptr;
 
 		if (GameSystemComponent::get().m_CameraComponents.size() > 0)
 		{
@@ -82,11 +82,8 @@ bool InnoPhysicsSystemNS::setup()
 
 							if (InnoMath::intersectCheck(l_AABBws, l_mouseRay))
 							{
-								AABBWireframeDataPack l_dataPack;
 								PhysicsSystemComponent::get().m_selectedVisibleComponent = visibleComponent;
-								l_dataPack.m = l_globalTm;
-								l_dataPack.MDC = physicsData.wireframeMDC;
-								PhysicsSystemComponent::get().m_AABBWireframeDataPack.emplace_back(l_dataPack);
+								break;
 							}
 						}
 					}

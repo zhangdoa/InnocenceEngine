@@ -36,6 +36,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	bool prepareGeometryPassData();
 	bool prepareLightPassData();
 	bool prepareBillboardPassData();
+	bool prepareDebuggerPassData();
 
 	void MessageCallback(GLenum source,
 			GLenum type,
@@ -294,6 +295,8 @@ void GLRenderingSystemNS::prepareRenderingData()
 
 	prepareBillboardPassData();
 
+	prepareDebuggerPassData();
+
 	// copy for environment capture
 	GLRenderingSystemComponent::get().m_opaquePassDataQueue_copy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
 }
@@ -517,6 +520,28 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
 	}
 
+	return true;
+}
+
+bool GLRenderingSystemNS::prepareDebuggerPassData()
+{
+	if (RenderingSystemComponent::get().m_selectedVisibleComponent)
+	{
+		for (auto i : RenderingSystemComponent::get().m_selectedVisibleComponent->m_modelMap)
+		{
+			DebuggerPassDataPack l_GLRenderDataPack;
+
+			auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(RenderingSystemComponent::get().m_selectedVisibleComponent->m_parentEntity);
+			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+
+			l_GLRenderDataPack.m = l_globalTm;
+			l_GLRenderDataPack.GLMDC = getGLMeshDataComponent(i.first->m_parentEntity);
+			l_GLRenderDataPack.indiceSize = i.first->m_indicesSize;
+			l_GLRenderDataPack.meshPrimitiveTopology = i.first->m_meshPrimitiveTopology;
+
+			GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
+		}
+	}
 	return true;
 }
 

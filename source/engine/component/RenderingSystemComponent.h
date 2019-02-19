@@ -1,5 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
+#include "VisibleComponent.h"
 #include "MeshDataComponent.h"
 #include "MaterialDataComponent.h"
 #include<atomic>
@@ -42,6 +43,7 @@ public:
 	std::function<void()> f_captureEnvironment;	
 	std::vector<RenderDataPack> m_renderDataPack;
 
+	VisibleComponent* m_selectedVisibleComponent;
 private:
 	RenderingSystemComponent() {};
 };
