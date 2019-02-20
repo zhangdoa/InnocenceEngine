@@ -15,6 +15,10 @@ using namespace GLRenderingSystemNS;
 
 INNO_PRIVATE_SCOPE GLGeometryRenderingPassUtilities
 {
+	void initializeEarlyZPass();
+	void initializeEarlyZPassShaders();
+	void bindEarlyZPassUniformLocations(GLShaderProgramComponent* rhs);
+	
 	void initializeOpaquePass();
 	void initializeOpaquePassShaders();
 	void bindOpaquePassUniformLocations(GLShaderProgramComponent* rhs);
@@ -38,6 +42,7 @@ INNO_PRIVATE_SCOPE GLGeometryRenderingPassUtilities
 	void bindTerrainPassUniformLocations(GLShaderProgramComponent* rhs);
 
 	void updateGeometryPass();
+	void updateEarlyZPass();
 	void updateOpaquePass();
 	void updateSSAOPass();
 	void updateSSAOBlurPass();
@@ -51,12 +56,39 @@ INNO_PRIVATE_SCOPE GLGeometryRenderingPassUtilities
 void GLGeometryRenderingPassUtilities::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
-
+	
+	initializeEarlyZPass();
 	initializeOpaquePass();
 	initializeSSAOPass();
 	initializeSSAOBlurPass();
 	initializeTransparentPass();
 	initializeTerrainPass();
+}
+
+void GLGeometryRenderingPassUtilities::initializeEarlyZPass()
+{
+	GLGeometryRenderPassComponent::get().m_earlyZPass_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().depthOnlyPassFBDesc, GLRenderingSystemComponent::get().depthOnlyPassTextureDesc);
+
+	initializeEarlyZPassShaders();
+}
+
+void GLGeometryRenderingPassUtilities::initializeEarlyZPassShaders()
+{	
+	// shader programs and shaders
+	auto rhs = addGLShaderProgramComponent(m_entityID);
+
+	initializeGLShaderProgramComponent(rhs, GLGeometryRenderPassComponent::get().m_earlyZPass_shaderFilePaths);
+
+	bindEarlyZPassUniformLocations(rhs);
+
+	GLGeometryRenderPassComponent::get().m_earlyZPass_GLSPC = rhs;
+}
+
+void GLGeometryRenderingPassUtilities::bindEarlyZPassUniformLocations(GLShaderProgramComponent* rhs)
+{
+	bindUniformBlock(GLGeometryRenderPassComponent::get().m_cameraUBO, sizeof(GPassCameraUBOData), rhs->m_program, "cameraUBO", 0);
+
+	bindUniformBlock(GLGeometryRenderPassComponent::get().m_meshUBO, sizeof(GPassMeshUBOData), rhs->m_program, "meshUBO", 1);
 }
 
 void GLGeometryRenderingPassUtilities::initializeOpaquePass()
@@ -310,6 +342,7 @@ void GLGeometryRenderingPassUtilities::bindTerrainPassUniformLocations(GLShaderP
 
 void GLGeometryRenderingPassUtilities::update()
 {
+	updateEarlyZPass();
 	updateOpaquePass();
 	updateSSAOPass();
 	updateSSAOBlurPass();
@@ -317,11 +350,62 @@ void GLGeometryRenderingPassUtilities::update()
 	updateTerrainPass();
 }
 
-void GLGeometryRenderingPassUtilities::updateOpaquePass()
+void GLGeometryRenderingPassUtilities::updateEarlyZPass()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_DEPTH_CLAMP);
+	glDepthMask(GL_TRUE);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	// bind to framebuffer
+	auto l_FBC = GLGeometryRenderPassComponent::get().m_earlyZPass_GLRPC->m_GLFBC;
+	bindFBC(l_FBC);
+
+	activateShaderProgram(GLGeometryRenderPassComponent::get().m_earlyZPass_GLSPC);
+
+	updateUBO(GLGeometryRenderPassComponent::get().m_cameraUBO, GLRenderingSystemComponent::get().m_GPassCameraUBOData);
+
+	auto l_queueCopy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
+
+	while (l_queueCopy.size() > 0)
+	{
+		auto l_renderPack = l_queueCopy.front();
+		if (l_renderPack.meshShapeType != MeshShapeType::CUSTOM)
+		{
+			glFrontFace(GL_CW);
+		}
+		else
+		{
+			glFrontFace(GL_CCW);
+		}
+		if (l_renderPack.visiblilityType == VisiblilityType::INNO_OPAQUE)
+		{
+			updateUBO(GLGeometryRenderPassComponent::get().m_meshUBO, l_renderPack.meshUBOData);
+
+			drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
+		}
+		else if (l_renderPack.visiblilityType == VisiblilityType::INNO_EMISSIVE)
+		{
+			updateUBO(GLGeometryRenderPassComponent::get().m_meshUBO, l_renderPack.meshUBOData);
+
+			drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
+		}
+		else
+		{
+		}
+		l_queueCopy.pop();
+	}
+}
+
+void GLGeometryRenderingPassUtilities::updateOpaquePass()
+{
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glEnable(GL_DEPTH_CLAMP);
+	glDepthMask(GL_FALSE);
 
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -333,6 +417,8 @@ void GLGeometryRenderingPassUtilities::updateOpaquePass()
 	// bind to framebuffer
 	auto l_FBC = GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC;
 	bindFBC(l_FBC);
+
+	copyDepthBuffer(GLGeometryRenderPassComponent::get().m_earlyZPass_GLRPC->m_GLFBC, GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC);
 
 	activateShaderProgram(GLGeometryRenderPassComponent::get().m_opaquePass_GLSPC);
 
@@ -402,6 +488,7 @@ void GLGeometryRenderingPassUtilities::updateOpaquePass()
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_STENCIL_TEST);
+	glDepthMask(GL_TRUE);
 	glDisable(GL_DEPTH_CLAMP);
 	glDisable(GL_DEPTH_TEST);
 
@@ -548,6 +635,7 @@ void GLGeometryRenderingPassUtilities::updateTerrainPass()
 
 bool GLGeometryRenderingPassUtilities::resize()
 {
+	resizeGLRenderPassComponent(GLGeometryRenderPassComponent::get().m_earlyZPass_GLRPC, GLRenderingSystemComponent::get().depthOnlyPassFBDesc);
 	resizeGLRenderPassComponent(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
 	resizeGLRenderPassComponent(GLGeometryRenderPassComponent::get().m_SSAOPass_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
 	resizeGLRenderPassComponent(GLGeometryRenderPassComponent::get().m_SSAOBlurPass_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);

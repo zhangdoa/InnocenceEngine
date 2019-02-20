@@ -111,6 +111,9 @@ public:
 	GLTextureDataComponent* m_iconTemplate_PointLight;
 	GLTextureDataComponent* m_iconTemplate_SphereLight;
 
+	GLFrameBufferDesc depthOnlyPassFBDesc = GLFrameBufferDesc();
+	TextureDataDesc depthOnlyPassTextureDesc = TextureDataDesc();
+
 	GLFrameBufferDesc deferredPassFBDesc = GLFrameBufferDesc();
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 

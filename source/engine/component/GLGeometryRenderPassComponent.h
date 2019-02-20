@@ -20,6 +20,12 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
+	GLRenderPassComponent* m_earlyZPass_GLRPC;
+
+	GLShaderProgramComponent* m_earlyZPass_GLSPC;
+
+	ShaderFilePaths m_earlyZPass_shaderFilePaths = { "GL4.0//earlyZPassVertex.sf" , "", "GL4.0//earlyZPassFragment.sf" };
+
 	GLRenderPassComponent* m_opaquePass_GLRPC;
 
 	GLShaderProgramComponent* m_opaquePass_GLSPC;

@@ -97,6 +97,12 @@ INNO_SYSTEM_EXPORT ObjectStatus GLGuiSystem::getStatus()
 void GLGuiSystemNS::showRenderResult(RenderingConfig & renderingConfig)
 {
 	auto l_renderTargetSize = ImVec2((float)WindowSystemComponent::get().m_windowResolution.x / 4.0f, (float)WindowSystemComponent::get().m_windowResolution.y / 4.0f);
+	
+	ImGui::Begin("Early-Z Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
+	{
+		ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_earlyZPass_GLRPC->m_GLTDCs[0]), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+	}
+	ImGui::End();
 
 	ImGui::Begin("Opaque Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	{

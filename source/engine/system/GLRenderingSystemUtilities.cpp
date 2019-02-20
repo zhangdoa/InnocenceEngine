@@ -29,11 +29,7 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 	// generate and bind framebuffer
 	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
 	l_GLRPC->m_GLFBC = l_FBC;
-
-	l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeX = glFrameBufferDesc.sizeX;
-	l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeY = glFrameBufferDesc.sizeY;
-	l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.renderBufferAttachmentType = glFrameBufferDesc.renderBufferAttachmentType;
-	l_GLRPC->m_GLFBC->m_GLFrameBufferDesc.renderBufferInternalFormat = glFrameBufferDesc.renderBufferInternalFormat;
+	l_GLRPC->m_GLFBC->m_GLFrameBufferDesc = glFrameBufferDesc;
 
 	glGenFramebuffers(1, &l_FBC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
@@ -61,6 +57,7 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 		l_TDC->m_textureDataDesc.textureWidth = RTDesc.textureWidth;
 		l_TDC->m_textureDataDesc.textureHeight = RTDesc.textureHeight;
 		l_TDC->m_textureDataDesc.texturePixelDataType = RTDesc.texturePixelDataType;
+
 		if (RTDesc.textureUsageType == TextureUsageType::CUBEMAP)
 		{
 			l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
@@ -82,12 +79,23 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 
 		if (!(RTDesc.textureUsageType == TextureUsageType::CUBEMAP))
 		{
-			attachColorRT(
-				l_TDC,
-				l_GLTDC,
-				l_FBC,
-				i
-			);
+			if (RTDesc.texturePixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+			{
+				attachDepthRT(
+					l_TDC,
+					l_GLTDC,
+					l_FBC
+				);
+			}
+			else
+			{
+				attachColorRT(
+					l_TDC,
+					l_GLTDC,
+					l_FBC,
+					i
+				);
+			}
 		}
 
 		l_GLRPC->m_GLTDCs.emplace_back(l_GLTDC);
@@ -109,9 +117,10 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 	}
 
 	// finally check if framebuffer is complete
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	auto l_result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (l_result != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: Framebuffer is not completed!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: Framebuffer is not completed: " + std::to_string(l_result));
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -153,25 +162,36 @@ void GLRenderingSystemNS::setDrawBuffers(unsigned int RTNum)
 
 bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC, GLFrameBufferDesc glFrameBufferDesc)
 {
-	GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeX = glFrameBufferDesc.sizeX;
-	GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeY = glFrameBufferDesc.sizeY;
+	GLRPC->m_GLFBC->m_GLFrameBufferDesc = glFrameBufferDesc;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_GLFBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, GLRPC->m_GLFBC->m_RBO);
 
 	for (unsigned int i = 0; i < GLRPC->m_GLTDCs.size(); i++)
 	{
-		GLRPC->m_TDCs[i]->m_textureDataDesc.textureWidth = GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeX;
-		GLRPC->m_TDCs[i]->m_textureDataDesc.textureHeight = GLRPC->m_GLFBC->m_GLFrameBufferDesc.sizeY;
+		GLRPC->m_TDCs[i]->m_textureDataDesc.textureWidth = glFrameBufferDesc.sizeX;
+		GLRPC->m_TDCs[i]->m_textureDataDesc.textureHeight = glFrameBufferDesc.sizeY;
 		GLRPC->m_TDCs[i]->m_objectStatus = ObjectStatus::STANDBY;
 		glDeleteTextures(1, &GLRPC->m_GLTDCs[i]->m_TAO);
 		initializeGLTextureDataComponent(GLRPC->m_GLTDCs[i], GLRPC->m_TDCs[i]->m_textureDataDesc, GLRPC->m_TDCs[i]->m_textureData);
-		attachColorRT(
-			GLRPC->m_TDCs[i],
-			GLRPC->m_GLTDCs[i],
-			GLRPC->m_GLFBC,
-			i
-		);
+		if (glFrameBufferDesc.drawColorBuffers)
+		{
+			attachColorRT(
+				GLRPC->m_TDCs[i],
+				GLRPC->m_GLTDCs[i],
+				GLRPC->m_GLFBC,
+				i
+			);
+		}
+		else
+		{
+			// @TODO: it's not a binary classfication problem
+			attachDepthRT(
+				GLRPC->m_TDCs[i],
+				GLRPC->m_GLTDCs[i],
+				GLRPC->m_GLFBC
+			);
+		}
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);

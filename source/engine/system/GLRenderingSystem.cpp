@@ -95,10 +95,27 @@ INNO_SYSTEM_EXPORT bool GLRenderingSystem::resize()
 
 bool GLRenderingSystemNS::setup()
 {
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.drawColorBuffers = false;
+
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureWidth = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureHeight = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+
 	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
+	GLRenderingSystemComponent::get().deferredPassFBDesc.drawColorBuffers = true;
 
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
@@ -554,6 +571,9 @@ bool GLRenderingSystemNS::terminate()
 
 bool GLRenderingSystemNS::resize()
 {
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
+
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
 
