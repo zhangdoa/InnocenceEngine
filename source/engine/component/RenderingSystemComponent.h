@@ -44,6 +44,8 @@ public:
 	std::vector<RenderDataPack> m_renderDataPack;
 
 	VisibleComponent* m_selectedVisibleComponent;
+	std::vector<Sphere> m_debugSpheres;
+	std::vector<Plane> m_debugPlanes;
 private:
 	RenderingSystemComponent() {};
 };

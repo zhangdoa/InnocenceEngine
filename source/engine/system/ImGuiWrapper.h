@@ -9,7 +9,7 @@ struct RenderingConfig
 	bool useZoom = false;
 	bool drawTerrain = false;
 	bool drawSky = false;
-	bool drawOverlapWireframe = false;
+	bool drawDebugObject = false;
 	bool showRenderPassResult = false;
 };
 

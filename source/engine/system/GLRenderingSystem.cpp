@@ -559,6 +559,51 @@ bool GLRenderingSystemNS::prepareDebuggerPassData()
 			GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
 		}
 	}
+
+	auto l_sphereMDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
+
+	if (RenderingSystemComponent::get().m_debugSpheres.size() > 0)
+	{
+		for (auto i : RenderingSystemComponent::get().m_debugSpheres)
+		{
+			DebuggerPassDataPack l_GLRenderDataPack;
+
+			auto l_t = InnoMath::toTranslationMatrix(i.m_center);
+			auto l_s = InnoMath::toScaleMatrix(vec4(i.m_radius, i.m_radius, i.m_radius, 1.0f));
+			auto l_m = l_t * l_s;
+
+			l_GLRenderDataPack.m = l_m;
+			l_GLRenderDataPack.GLMDC = GLRenderingSystemComponent::get().m_UnitSphereGLMDC;
+			l_GLRenderDataPack.indiceSize = l_sphereMDC->m_indicesSize;
+			l_GLRenderDataPack.meshPrimitiveTopology = l_sphereMDC->m_meshPrimitiveTopology;
+
+			GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
+		}
+	}
+
+	auto l_planeMDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+
+	if (RenderingSystemComponent::get().m_debugPlanes.size() > 0)
+	{
+		for (auto i : RenderingSystemComponent::get().m_debugPlanes)
+		{
+			DebuggerPassDataPack l_GLRenderDataPack;
+
+			auto l_p = i.m_normal * i.m_distance;
+			auto l_t = InnoMath::toTranslationMatrix(l_p);
+			//@TODO: forward vector to rot
+			auto l_r = InnoMath::toRotationMatrix(i.m_normal);
+			auto l_m = l_t * l_r;
+
+			l_GLRenderDataPack.m = l_m;
+			l_GLRenderDataPack.GLMDC = GLRenderingSystemComponent::get().m_UnitQuadGLMDC;
+			l_GLRenderDataPack.indiceSize = l_planeMDC->m_indicesSize;
+			l_GLRenderDataPack.meshPrimitiveTopology = l_planeMDC->m_meshPrimitiveTopology;
+
+			GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
+		}
+	}
+
 	return true;
 }
 

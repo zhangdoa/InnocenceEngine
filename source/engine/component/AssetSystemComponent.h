@@ -42,17 +42,17 @@ public:
 	std::unordered_map<EntityID, MaterialDataComponent*> m_materialMap;
 	std::unordered_map<EntityID, TextureDataComponent*> m_textureMap;
 
-	MeshDataComponent* m_UnitLineTemplate;
-	MeshDataComponent* m_UnitQuadTemplate;
-	MeshDataComponent* m_UnitCubeTemplate;
-	MeshDataComponent* m_UnitSphereTemplate;
-	MeshDataComponent* m_Terrain;
+	MeshDataComponent* m_UnitLineMDC;
+	MeshDataComponent* m_UnitQuadMDC;
+	MeshDataComponent* m_UnitCubeMDC;
+	MeshDataComponent* m_UnitSphereMDC;
+	MeshDataComponent* m_TerrainMDC;
 
-	TextureDataComponent* m_basicNormalTemplate;
-	TextureDataComponent* m_basicAlbedoTemplate;
-	TextureDataComponent* m_basicMetallicTemplate;
-	TextureDataComponent* m_basicRoughnessTemplate;
-	TextureDataComponent* m_basicAOTemplate;
+	TextureDataComponent* m_basicNormalTDC;
+	TextureDataComponent* m_basicAlbedoTDC;
+	TextureDataComponent* m_basicMetallicTDC;
+	TextureDataComponent* m_basicRoughnessTDC;
+	TextureDataComponent* m_basicAOTDC;
 
 	TextureDataComponent* m_iconTemplate_OBJ;
 	TextureDataComponent* m_iconTemplate_PNG;
@@ -62,9 +62,6 @@ public:
 	TextureDataComponent* m_iconTemplate_DirectionalLight;
 	TextureDataComponent* m_iconTemplate_PointLight;
 	TextureDataComponent* m_iconTemplate_SphereLight;
-
-    const std::string m_textureRelativePath = std::string{"..//res//textures//"};
-    const std::string m_modelRelativePath = std::string{"..//res//models//"};
 
 	DirectoryMetadata m_rootDirectoryMetadata;
 private:

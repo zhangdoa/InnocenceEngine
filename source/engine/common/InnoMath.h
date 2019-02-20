@@ -1226,7 +1226,7 @@ namespace InnoMath
 	//Column-Major memory layout
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
-	auto generateToOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) ->TMat4<T>
+	auto generateOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) ->TMat4<T>
 	{
 		TMat4<T> l_m;
 
@@ -1243,7 +1243,7 @@ namespace InnoMath
 	//Row-Major memory layout
 #elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
-	auto generateToOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) ->TMat4<T>
+	auto generateOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) ->TMat4<T>
 	{
 		TMat4<T> l_m;
 
@@ -1834,6 +1834,7 @@ using Vertex = TVertex<float>;
 using Ray = TRay<float>;
 using AABB = TAABB<float>;
 using Sphere = TSphere<float>;
+using Plane = TPlane<float>;
 using Frustum = TFrustum<float>;
 using TransformVector = TTransformVector<float>;
 using TransformMatrix = TTransformMatrix<float>;

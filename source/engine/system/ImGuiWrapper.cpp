@@ -165,9 +165,9 @@ void ImGuiWrapperNS::showApplicationProfiler()
 	{
 		RenderingSystemComponent::get().m_drawSky = l_renderingConfig.drawSky;
 	}
-	if (ImGui::Checkbox("Draw overlap wireframe", &l_renderingConfig.drawOverlapWireframe))
+	if (ImGui::Checkbox("Draw debug object", &l_renderingConfig.drawDebugObject))
 	{
-		RenderingSystemComponent::get().m_drawOverlapWireframe = l_renderingConfig.drawOverlapWireframe;
+		RenderingSystemComponent::get().m_drawOverlapWireframe = l_renderingConfig.drawDebugObject;
 	}
 	if (ImGui::Checkbox("Pause game update", &l_gameConfig.pauseGameUpdate))
 	{

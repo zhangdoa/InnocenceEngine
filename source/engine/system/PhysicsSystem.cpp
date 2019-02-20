@@ -22,16 +22,20 @@ namespace InnoPhysicsSystemNS
 	void generatePointLightComponentAttenuationRadius(PointLightComponent* pointLightComponent);
 	void generateSphereLightComponentScale(SphereLightComponent* sphereLightComponent);
 
-	PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap);
-	MeshDataComponent* generateMeshDataComponent(AABB rhs);
-
 	void generateAABB(DirectionalLightComponent* directionalLightComponent);
 	std::vector<AABB> frustumsVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors);
+
 	AABB generateAABB(const std::vector<Vertex>& vertices);
 	AABB generateAABB(vec4 boundMax, vec4 boundMin);
+	Sphere generateBoundSphere(AABB rhs);
+
 	std::vector<Vertex> generateAABBVertices(vec4 boundMax, vec4 boundMin);
 	std::vector<Vertex> generateAABBVertices(AABB rhs);
-	Sphere generateSphere(AABB rhs);
+
+	MeshDataComponent* generateMeshDataComponent(AABB rhs);
+	MeshDataComponent* generateMeshDataComponent(Frustum rhs);
+
+	PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap);
 
 	void updateCameraComponents();
 	void updateLightComponents();
@@ -202,29 +206,6 @@ void InnoPhysicsSystemNS::generateSphereLightComponentScale(SphereLightComponent
 		vec4(sphereLightComponent->m_sphereRadius, sphereLightComponent->m_sphereRadius, sphereLightComponent->m_sphereRadius, 1.0f);
 }
 
-PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelMap& modelMap)
-{
-	auto l_PDC = g_pCoreSystem->getMemorySystem()->spawn<PhysicsDataComponent>();
-
-	for (auto& l_MDC : modelMap)
-	{
-		PhysicsData l_physicsData;
-
-		auto l_AABB = generateAABB(l_MDC.first->m_vertices);
-		auto l_MDCforAABB = generateMeshDataComponent(l_AABB);
-		auto l_sphere = generateSphere(l_AABB);
-
-		l_physicsData.MDC = l_MDC.first;
-		l_physicsData.wireframeMDC = l_MDCforAABB;
-		l_physicsData.aabb = l_AABB;
-		l_physicsData.sphere = l_sphere;
-
-		l_PDC->m_physicsDatas.emplace_back(l_physicsData);
-	}
-
-	return l_PDC;
-}
-
 void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLightComponent)
 {
 	directionalLightComponent->m_AABBsInWorldSpace.clear();
@@ -278,7 +259,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 		vec4 l_maxExtents = l_AABBsLS[i].m_boundMax;
 		vec4 l_minExtents = l_AABBsLS[i].m_boundMin;
 
-		mat4 p = InnoMath::generateToOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
+		mat4 p = InnoMath::generateOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
 		directionalLightComponent->m_projectionMatrices.emplace_back(p);
 	}
 }
@@ -391,6 +372,14 @@ AABB InnoPhysicsSystemNS::generateAABB(vec4 boundMax, vec4 boundMin)
 	return l_AABB;
 }
 
+Sphere InnoPhysicsSystemNS::generateBoundSphere(AABB rhs)
+{
+	Sphere l_result;
+	l_result.m_center = rhs.m_center;
+	l_result.m_radius = (rhs.m_boundMax - rhs.m_center).length();
+	return l_result;
+}
+
 std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(vec4 boundMax, vec4 boundMin)
 {
 	Vertex l_VertexData_1;
@@ -447,14 +436,6 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(AABB rhs)
 	return std::move(generateAABBVertices(boundMax, boundMin));
 }
 
-Sphere InnoPhysicsSystemNS::generateSphere(AABB rhs)
-{
-	Sphere l_result;
-	l_result.m_center = rhs.m_center;
-	l_result.m_radius = (rhs.m_boundMax - rhs.m_center).length();
-	return l_result;
-}
-
 MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 {
 	auto l_MDC = g_pCoreSystem->getMemorySystem()->spawn<MeshDataComponent>();
@@ -477,6 +458,34 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 	FileSystemComponent::get().m_uninitializedMeshComponents.push(l_MDC);
 
 	return l_MDC;
+}
+
+MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(Frustum rhs)
+{
+	return nullptr;
+}
+
+PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelMap& modelMap)
+{
+	auto l_PDC = g_pCoreSystem->getMemorySystem()->spawn<PhysicsDataComponent>();
+
+	for (auto& l_MDC : modelMap)
+	{
+		PhysicsData l_physicsData;
+
+		auto l_AABB = generateAABB(l_MDC.first->m_vertices);
+		auto l_MDCforAABB = generateMeshDataComponent(l_AABB);
+		auto l_sphere = generateBoundSphere(l_AABB);
+
+		l_physicsData.MDC = l_MDC.first;
+		l_physicsData.wireframeMDC = l_MDCforAABB;
+		l_physicsData.aabb = l_AABB;
+		l_physicsData.sphere = l_sphere;
+
+		l_PDC->m_physicsDatas.emplace_back(l_physicsData);
+	}
+
+	return l_PDC;
 }
 
 AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(AABB rhs, mat4 globalTm)

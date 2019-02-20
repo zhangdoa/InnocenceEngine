@@ -696,6 +696,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateDebuggerPass()
 
 		GLRenderingSystemComponent::get().m_debuggerPassDataQueue.pop();
 	}
+
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_DEPTH_TEST);
 

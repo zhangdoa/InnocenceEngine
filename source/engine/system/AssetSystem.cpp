@@ -155,15 +155,15 @@ MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType meshShap
 	switch (meshShapeType)
 	{
 	case MeshShapeType::LINE:
-		return AssetSystemComponent::get().m_UnitLineTemplate; break;
+		return AssetSystemComponent::get().m_UnitLineMDC; break;
 	case MeshShapeType::QUAD:
-		return AssetSystemComponent::get().m_UnitQuadTemplate; break;
+		return AssetSystemComponent::get().m_UnitQuadMDC; break;
 	case MeshShapeType::CUBE:
-		return AssetSystemComponent::get().m_UnitCubeTemplate; break;
+		return AssetSystemComponent::get().m_UnitCubeMDC; break;
 	case MeshShapeType::SPHERE:
-		return AssetSystemComponent::get().m_UnitSphereTemplate; break;
+		return AssetSystemComponent::get().m_UnitSphereMDC; break;
 	case MeshShapeType::TERRAIN:
-		return AssetSystemComponent::get().m_Terrain; break;
+		return AssetSystemComponent::get().m_TerrainMDC; break;
 	case MeshShapeType::CUSTOM:
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: wrong MeshShapeType passed to InnoAssetSystem::getMeshDataComponent() !");
 		return nullptr; break;
@@ -179,15 +179,15 @@ TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType
 	case TextureUsageType::INVISIBLE:
 		return nullptr; break;
 	case TextureUsageType::NORMAL:
-		return AssetSystemComponent::get().m_basicNormalTemplate; break;
+		return AssetSystemComponent::get().m_basicNormalTDC; break;
 	case TextureUsageType::ALBEDO:
-		return AssetSystemComponent::get().m_basicAlbedoTemplate; break;
+		return AssetSystemComponent::get().m_basicAlbedoTDC; break;
 	case TextureUsageType::METALLIC:
-		return AssetSystemComponent::get().m_basicMetallicTemplate; break;
+		return AssetSystemComponent::get().m_basicMetallicTDC; break;
 	case TextureUsageType::ROUGHNESS:
-		return AssetSystemComponent::get().m_basicRoughnessTemplate; break;
+		return AssetSystemComponent::get().m_basicRoughnessTDC; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
-		return AssetSystemComponent::get().m_basicAOTemplate; break;
+		return AssetSystemComponent::get().m_basicAOTDC; break;
 	case TextureUsageType::CUBEMAP:
 		return nullptr; break;
 	case TextureUsageType::EQUIRETANGULAR:
@@ -579,11 +579,11 @@ void InnoAssetSystemNS::loadDefaultAssets()
 {
 	InnoAssetSystemNS::loadFolderData();
 
-	AssetSystemComponent::get().m_basicNormalTemplate = loadTexture("..//res//textures//basic_normal.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_basicAlbedoTemplate = loadTexture("..//res//textures//basic_albedo.png", TextureUsageType::ALBEDO);
-	AssetSystemComponent::get().m_basicMetallicTemplate = loadTexture("..//res//textures//basic_metallic.png", TextureUsageType::METALLIC);
-	AssetSystemComponent::get().m_basicRoughnessTemplate = loadTexture("..//res//textures//basic_roughness.png", TextureUsageType::ROUGHNESS);
-	AssetSystemComponent::get().m_basicAOTemplate = loadTexture("..//res//textures//basic_ao.png", TextureUsageType::AMBIENT_OCCLUSION);
+	AssetSystemComponent::get().m_basicNormalTDC = loadTexture("..//res//textures//basic_normal.png", TextureUsageType::NORMAL);
+	AssetSystemComponent::get().m_basicAlbedoTDC = loadTexture("..//res//textures//basic_albedo.png", TextureUsageType::ALBEDO);
+	AssetSystemComponent::get().m_basicMetallicTDC = loadTexture("..//res//textures//basic_metallic.png", TextureUsageType::METALLIC);
+	AssetSystemComponent::get().m_basicRoughnessTDC = loadTexture("..//res//textures//basic_roughness.png", TextureUsageType::ROUGHNESS);
+	AssetSystemComponent::get().m_basicAOTDC = loadTexture("..//res//textures//basic_ao.png", TextureUsageType::AMBIENT_OCCLUSION);
 
 	AssetSystemComponent::get().m_iconTemplate_OBJ = loadTexture("..//res//textures//InnoFileTypeIcons_OBJ.png", TextureUsageType::NORMAL);
 	AssetSystemComponent::get().m_iconTemplate_PNG = loadTexture("..//res//textures//InnoFileTypeIcons_PNG.png", TextureUsageType::NORMAL);
@@ -594,40 +594,40 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	AssetSystemComponent::get().m_iconTemplate_PointLight = loadTexture("..//res//textures//InnoWorldEditorIcons_PointLight.png", TextureUsageType::NORMAL);
 	AssetSystemComponent::get().m_iconTemplate_SphereLight = loadTexture("..//res//textures//InnoWorldEditorIcons_SphereLight.png", TextureUsageType::NORMAL);
 
-	AssetSystemComponent::get().m_UnitLineTemplate = addMeshDataComponent();
-	auto lastLineMeshData = AssetSystemComponent::get().m_UnitLineTemplate;
+	AssetSystemComponent::get().m_UnitLineMDC = addMeshDataComponent();
+	auto lastLineMeshData = AssetSystemComponent::get().m_UnitLineMDC;
 	InnoAssetSystemNS::addUnitLine(*lastLineMeshData);
 	lastLineMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastLineMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	lastLineMeshData->m_meshShapeType = MeshShapeType::LINE;
 	lastLineMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
-	AssetSystemComponent::get().m_UnitQuadTemplate = addMeshDataComponent();
-	auto lastQuadMeshData = AssetSystemComponent::get().m_UnitQuadTemplate;
+	AssetSystemComponent::get().m_UnitQuadMDC = addMeshDataComponent();
+	auto lastQuadMeshData = AssetSystemComponent::get().m_UnitQuadMDC;
 	InnoAssetSystemNS::addUnitQuad(*lastQuadMeshData);
 	lastQuadMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastQuadMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	lastLineMeshData->m_meshShapeType = MeshShapeType::QUAD;
 	lastQuadMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
-	AssetSystemComponent::get().m_UnitCubeTemplate = addMeshDataComponent();
-	auto lastCubeMeshData = AssetSystemComponent::get().m_UnitCubeTemplate;
+	AssetSystemComponent::get().m_UnitCubeMDC = addMeshDataComponent();
+	auto lastCubeMeshData = AssetSystemComponent::get().m_UnitCubeMDC;
 	InnoAssetSystemNS::addUnitCube(*lastCubeMeshData);
 	lastCubeMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastCubeMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	lastLineMeshData->m_meshShapeType = MeshShapeType::CUBE;
 	lastCubeMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
-	AssetSystemComponent::get().m_UnitSphereTemplate = addMeshDataComponent();
-	auto lastSphereMeshData = AssetSystemComponent::get().m_UnitSphereTemplate;
+	AssetSystemComponent::get().m_UnitSphereMDC = addMeshDataComponent();
+	auto lastSphereMeshData = AssetSystemComponent::get().m_UnitSphereMDC;
 	InnoAssetSystemNS::addUnitSphere(*lastSphereMeshData);
 	lastSphereMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastSphereMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	lastLineMeshData->m_meshShapeType = MeshShapeType::SPHERE;
 	lastSphereMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
-	AssetSystemComponent::get().m_Terrain = addMeshDataComponent();
-	auto lastTerrainMeshData = AssetSystemComponent::get().m_Terrain;
+	AssetSystemComponent::get().m_TerrainMDC = addMeshDataComponent();
+	auto lastTerrainMeshData = AssetSystemComponent::get().m_TerrainMDC;
 	InnoAssetSystemNS::addTerrain(*lastTerrainMeshData);
 	lastTerrainMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastTerrainMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
@@ -673,11 +673,11 @@ void InnoAssetSystemNS::assignUnitMesh(MeshShapeType MeshUsageType, VisibleCompo
 	MeshDataComponent* l_UnitMeshTemplate;
 	switch (MeshUsageType)
 	{
-	case MeshShapeType::LINE: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitLineTemplate; break;
-	case MeshShapeType::QUAD: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitQuadTemplate; break;
-	case MeshShapeType::CUBE: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitCubeTemplate; break;
-	case MeshShapeType::SPHERE: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitSphereTemplate; break;
-	case MeshShapeType::TERRAIN: l_UnitMeshTemplate = AssetSystemComponent::get().m_Terrain; break;
+	case MeshShapeType::LINE: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitLineMDC; break;
+	case MeshShapeType::QUAD: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitQuadMDC; break;
+	case MeshShapeType::CUBE: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitCubeMDC; break;
+	case MeshShapeType::SPHERE: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitSphereMDC; break;
+	case MeshShapeType::TERRAIN: l_UnitMeshTemplate = AssetSystemComponent::get().m_TerrainMDC; break;
 	case MeshShapeType::CUSTOM: break;
 	}
 	visibleComponent->m_modelMap.emplace(l_UnitMeshTemplate, addMaterialDataComponent());
