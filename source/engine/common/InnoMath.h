@@ -927,6 +927,20 @@ namespace InnoMath
 		return l_TVec4;
 	}
 #endif
+
+	template<class T>
+	auto generateIdentityMatrix() ->TMat4<T>
+	{
+		TMat4<T> l_m;
+
+		l_m.m00 = one<T>;
+		l_m.m11 = one<T>;
+		l_m.m22 = one<T>;
+		l_m.m33 = one<T>;
+
+		return l_m;
+	}
+
 	/*
 	 Column-Major memory layout and
 	 Row-Major vector4 mathematical convention
@@ -1130,11 +1144,153 @@ namespace InnoMath
 	{
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
+
 		l_m.m00 = rhs.x;
 		l_m.m11 = rhs.y;
 		l_m.m22 = rhs.z;
 		l_m.m33 = rhs.w;
+
 		return l_m;
+	}
+
+	//Column-Major memory layout
+#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
+	template<class T>
+	auto toPosVector(const TMat4<T>& rhs) -> TVec4<T>
+	{
+		// @TODO: replace with SIMD impl
+		TVec4<T> l_result;
+
+		l_result.x = l_m.m30;
+		l_result.y = l_m.m31;
+		l_result.z = l_m.m32;
+		l_result.w = one<T>;
+
+		return l_result;
+	}
+	//Row-Major memory layout
+#elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
+	template<class T>
+	auto toPosVector(const TMat4<T>& rhs) -> TVec4<T>
+	{
+		// @TODO: replace with SIMD impl
+		TVec4<T> l_result;
+
+		l_result.x = l_m.m03;
+		l_result.y = l_m.m13;
+		l_result.z = l_m.m23;
+		l_result.w = one<T>;
+
+		return l_result;
+	}
+#endif
+
+	//Column-Major memory layout
+#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
+	template<class T>
+	auto toRotationVector(const TVec4<T>& rhs) -> TMat4<T>
+	{
+		// @TODO: replace with SIMD impl
+		TVec4<T> l_result;
+
+		T trace = rhs.m00 + rhs.m11 + rhs.m22;
+		if (trace > zero<T>)
+		{
+			T s = half<T> / std::sqrt(trace + one<T>);
+			l_result.w = half<T> * half<T> / s;
+			l_result.x = (rhs.m12 - rhs.m21) * s;
+			l_result.y = (rhs.m20 - rhs.m02) * s;
+			l_result.z = (rhs.m01 - rhs.m10) * s;
+		}
+		else {
+			if (rhs.m00 > rhs.m11 && rhs.m00 > rhs.m22)
+			{
+				T s = two<T> * sqrtf(one<T> +rhs.m00 - rhs.m11 - rhs.m22);
+				l_result.w = (rhs.m12 - rhs.m21) / s;
+				l_result.x = half<T> * half<T> * s;
+				l_result.y = (rhs.m10 + rhs.m01) / s;
+				l_result.z = (rhs.m20 + rhs.m02) / s;
+			}
+			else if (rhs.m11 > rhs.m22)
+			{
+				T s = two<T> * sqrtf(one<T> +rhs.m11 - rhs.m00 - rhs.m22);
+				l_result.w = (rhs.m20 - rhs.m02) / s;
+				l_result.x = (rhs.m10 + rhs.m01) / s;
+				l_result.y = half<T> * half<T> * s;
+				l_result.z = (rhs.m21 + rhs.m12) / s;
+			}
+			else
+			{
+				T s = two<T> * sqrtf(one<T> +rhs.m22 - rhs.m00 - rhs.m11);
+				l_result.w = (rhs.m01 - rhs.m10) / s;
+				l_result.x = (rhs.m20 + rhs.m02) / s;
+				l_result.y = (rhs.m21 + rhs.m12) / s;
+				l_result.z = half<T> * half<T> * s;
+			}
+		}
+
+		return l_result;
+	}
+	//Row-Major memory layout
+#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
+	template<class T>
+	auto toRotationVector(const TMat4<T>& rhs) -> TVec4<T>
+	{
+		// @TODO: replace with SIMD impl
+		TVec4<T> l_result;
+
+		T trace = rhs.m00 + rhs.m11 + rhs.m22;
+		if (trace > zero<T>) 
+		{
+			T s = half<T> / std::sqrt(trace + one<T>);
+			l_result.w = half<T> * half<T> / s;
+			l_result.x = (rhs.m21 - rhs.m12) * s;
+			l_result.y = (rhs.m02 - rhs.m20) * s;
+			l_result.z = (rhs.m10 - rhs.m01) * s;
+		}
+		else {
+			if (rhs.m00 > rhs.m11 && rhs.m00 > rhs.m22) 
+			{
+				T s = two<T> * sqrtf(one<T> + rhs.m00 - rhs.m11 - rhs.m22);
+				l_result.w = (rhs.m21 - rhs.m12) / s;
+				l_result.x = half<T> * half<T> * s;
+				l_result.y = (rhs.m01 + rhs.m10) / s;
+				l_result.z = (rhs.m02 + rhs.m20) / s;
+			}
+			else if (rhs.m11 > rhs.m22) 
+			{
+				T s = two<T> * sqrtf(one<T> + rhs.m11 - rhs.m00 - rhs.m22);
+				l_result.w = (rhs.m02 - rhs.m20) / s;
+				l_result.x = (rhs.m01 + rhs.m10) / s;
+				l_result.y = half<T> * half<T> * s;
+				l_result.z = (rhs.m12 + rhs.m21) / s;
+			}
+			else 
+			{
+				T s = two<T> * sqrtf(one<T> + rhs.m22 - rhs.m00 - rhs.m11);
+				l_result.w = (rhs.m10 - rhs.m01) / s;
+				l_result.x = (rhs.m02 + rhs.m20) / s;
+				l_result.y = (rhs.m12 + rhs.m21) / s;
+				l_result.z = half<T> * half<T> * s;
+			}
+		}
+
+		return l_result;
+	}
+#endif
+
+	template<class T>
+	auto toScaleVector(const TMat4<T>& rhs) -> TVec4<T>
+	{
+		// @TODO: replace with SIMD impl
+		TVec4<T> l_result;
+
+		l_result.x = l_m.m00;
+		l_result.y = l_m.m11;
+		l_result.z = l_m.m22;
+		l_result.w = l_m.m33;
+
+		return l_result;
 	}
 
 	/*
@@ -1177,19 +1333,6 @@ namespace InnoMath
 
 	matrix4x4 * vector4 :
 	*/
-
-	template<class T>
-	auto generateIdentityMatrix() ->TMat4<T>
-	{
-		TMat4<T> l_m;
-
-		l_m.m00 = one<T>;
-		l_m.m11 = one<T>;
-		l_m.m22 = one<T>;
-		l_m.m33 = one<T>;
-
-		return l_m;
-	}
 
 	//Column-Major memory layout
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)

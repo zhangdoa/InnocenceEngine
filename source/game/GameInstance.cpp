@@ -152,11 +152,6 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 
 namespace GameInstanceNS
 {
-	// environment capture entity and its components
-	EntityID m_environmentCaptureEntity;
-	TransformComponent* m_environmentCaptureTransformComponent;
-	EnvironmentCaptureComponent* m_environmentCaptureComponent;
-
 	float temp = 0.0f;
 
 	bool setup();
@@ -168,6 +163,7 @@ namespace GameInstanceNS
 	void updateLights(float seed);
 	void updateSpheres(float seed);
 
+	void runTest(unsigned int testTime, std::function<bool()> testCase);
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	InnoFuture<void>* m_asyncTask;
@@ -175,12 +171,30 @@ namespace GameInstanceNS
 
 bool GameInstanceNS::setup()
 {
-	m_environmentCaptureEntity = g_pCoreSystem->getGameSystem()->getEntityID("environmentCaptureEntity");
-	m_environmentCaptureTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_environmentCaptureEntity);
-	m_environmentCaptureTransformComponent->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
-	m_environmentCaptureTransformComponent->m_localTransformVector.m_pos = vec4(0.0f, 20.0f, 0.0f, 1.0f);
-	m_environmentCaptureComponent = g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>(m_environmentCaptureEntity);
-	m_environmentCaptureComponent->m_cubemapTextureFileName = "ibl//Playa_Sunrise.hdr";
+	auto l_testQuatToMat = []() -> bool {
+		std::default_random_engine generator;
+
+		std::uniform_real_distribution<GLfloat> randomAxis(0.0f, 1.0f);
+		auto axisSample = vec4(randomAxis(generator) * 2.0f - 1.0f, randomAxis(generator) * 2.0f - 1.0f, randomAxis(generator) * 2.0f - 1.0f, 0.0f);
+		axisSample = axisSample.normalize();
+
+		std::uniform_real_distribution<GLfloat> randomAngle(0.0f, 360.0f);
+		auto angleSample = randomAngle(generator);
+
+		vec4 originalRot = InnoMath::getQuatRotator(axisSample, angleSample);
+		mat4 rotMat = InnoMath::toRotationMatrix(originalRot);
+		auto resultRot = InnoMath::toRotationVector(rotMat);
+
+		auto testResult = true;
+			testResult &= (std::abs(std::abs(originalRot.w) - std::abs(resultRot.w)) < epsilon4<float>);
+			testResult &= (std::abs(std::abs(originalRot.x) - std::abs(resultRot.x)) < epsilon4<float>);
+			testResult &= (std::abs(std::abs(originalRot.y) - std::abs(resultRot.y)) < epsilon4<float>);
+			testResult &= (std::abs(std::abs(originalRot.z) - std::abs(resultRot.z)) < epsilon4<float>);
+
+			return testResult;
+	};
+
+	runTest(512, l_testQuatToMat);
 
 	m_objectStatus = ObjectStatus::ALIVE;
 
@@ -252,6 +266,20 @@ void GameInstanceNS::updateLights(float seed)
 void GameInstanceNS::updateSpheres(float seed)
 {
 }
+
+void GameInstanceNS::runTest(unsigned int testTime, std::function<bool()> testCase)
+{
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Start test...");
+	for (unsigned int i = 0; i < testTime; i++)
+	{
+		auto l_result = testCase();
+		if (!l_result)
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "Test failure.");
+		}
+	}
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Finished test for " + std::to_string(testTime) + " times.");
+}   
 
 void PlayerComponentCollection::updatePlayer()
 {
