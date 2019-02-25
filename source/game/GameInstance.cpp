@@ -186,12 +186,12 @@ bool GameInstanceNS::setup()
 		auto resultRot = InnoMath::toRotationVector(rotMat);
 
 		auto testResult = true;
-			testResult &= (std::abs(std::abs(originalRot.w) - std::abs(resultRot.w)) < epsilon4<float>);
-			testResult &= (std::abs(std::abs(originalRot.x) - std::abs(resultRot.x)) < epsilon4<float>);
-			testResult &= (std::abs(std::abs(originalRot.y) - std::abs(resultRot.y)) < epsilon4<float>);
-			testResult &= (std::abs(std::abs(originalRot.z) - std::abs(resultRot.z)) < epsilon4<float>);
+		testResult &= (std::abs(std::abs(originalRot.w) - std::abs(resultRot.w)) < epsilon4<float>);
+		testResult &= (std::abs(std::abs(originalRot.x) - std::abs(resultRot.x)) < epsilon4<float>);
+		testResult &= (std::abs(std::abs(originalRot.y) - std::abs(resultRot.y)) < epsilon4<float>);
+		testResult &= (std::abs(std::abs(originalRot.z) - std::abs(resultRot.z)) < epsilon4<float>);
 
-			return testResult;
+		return testResult;
 	};
 
 	runTest(512, l_testQuatToMat);
@@ -279,7 +279,7 @@ void GameInstanceNS::runTest(unsigned int testTime, std::function<bool()> testCa
 		}
 	}
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Finished test for " + std::to_string(testTime) + " times.");
-}   
+}
 
 void PlayerComponentCollection::updatePlayer()
 {

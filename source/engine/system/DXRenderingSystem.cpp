@@ -1,8 +1,8 @@
 #include "DXRenderingSystem.h"
 
-#include "../component/DXGeometryRenderPassComponent.h"
-#include "../component/DXLightRenderPassComponent.h"
-#include "../component/DXFinalRenderPassComponent.h"
+#include "DXGeometryRenderingPassUtilities.h"
+#include "DXLightRenderingPassUtilities.h"
+#include "DXFinalRenderingPassUtilities.h"
 
 #include "../component/WindowSystemComponent.h"
 #include "../component/DXWindowSystemComponent.h"
@@ -30,22 +30,8 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	bool terminate();
 
 	bool initializeDefaultAssets();
-	bool initializeGeometryPass();
-	bool initializeLightPass();
-	bool initializeFinalBlendPass();
-
-	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
-	D3D11_RENDER_TARGET_VIEW_DESC deferredPassRTVDesc = D3D11_RENDER_TARGET_VIEW_DESC();
-
-	ShaderFilePaths m_GeometryPassShaderFilePaths = { "DX11//geometryPassCookTorranceVertex.sf" , "", "DX11//geometryPassCookTorrancePixel.sf" };
-	ShaderFilePaths m_LightPassShaderFilePaths = { "DX11//lightPassCookTorranceVertex.sf" , "", "DX11//lightPassCookTorrancePixel.sf" };
-	ShaderFilePaths m_FinalPassShaderFilePaths = { "DX11//finalBlendPassVertex.sf" , "", "DX11//finalBlendPassPixel.sf" };
 
 	void prepareRenderingData();
-
-	void updateGeometryPass();
-	void updateLightPass();
-	void updateFinalBlendPass();
 
 	static WindowSystemComponent* g_WindowSystemComponent;
 	static DXWindowSystemComponent* g_DXWindowSystemComponent;
@@ -55,52 +41,6 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	mat4 m_CamRot;
 	mat4 m_CamTrans;
 	mat4 m_CamRTP;
-
-	struct GPassMeshCBufferData
-	{
-		mat4 m;
-		mat4 vp;
-		mat4 m_normalMat;
-	};
-
-	struct GPassTextureCBufferData
-	{
-		vec4 albedo;
-		vec4 MRA;
-		int useNormalTexture = true;
-		int useAlbedoTexture = true;
-		int useMetallicTexture = true;
-		int useRoughnessTexture = true;
-		int useAOTexture = true;
-		int padding1 = true;
-		int padding2 = true;
-		int padding3 = true;
-	};
-
-	struct GPassRenderingDataPack
-	{
-		size_t indiceSize;
-		GPassMeshCBufferData meshCBuffer;
-		GPassTextureCBufferData textureCBuffer;
-		DXMeshDataComponent* DXMDC;
-		MeshPrimitiveTopology meshPrimitiveTopology;
-		DXTextureDataComponent* normalDXTDC;
-		DXTextureDataComponent* albedoDXTDC;
-		DXTextureDataComponent* metallicDXTDC;
-		DXTextureDataComponent* roughnessDXTDC;
-		DXTextureDataComponent* AODXTDC;
-	};
-
-	std::queue<GPassRenderingDataPack> m_GPassRenderingDataQueue;
-
-	struct LPassCBufferData
-	{
-		vec4 viewPos;
-		vec4 lightDir;
-		vec4 color;
-	};
-
-	LPassCBufferData m_LPassCBufferData;
 
 	bool createPhysicalDevices();
 	bool createSwapChain();
@@ -493,19 +433,19 @@ bool DXRenderingSystemNS::setup()
 	result = result && createRasterizer();
 
 	// Setup the description of the deferred pass.
-	deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	deferredPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
-	deferredPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	deferredPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
-	deferredPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
-	deferredPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	deferredPassTextureDesc.textureWidth = g_WindowSystemComponent->m_windowResolution.x;
-	deferredPassTextureDesc.textureHeight = g_WindowSystemComponent->m_windowResolution.y;
-	deferredPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureWidth = g_WindowSystemComponent->m_windowResolution.x;
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureHeight = g_WindowSystemComponent->m_windowResolution.y;
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
-	deferredPassRTVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	deferredPassRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-	deferredPassRTVDesc.Texture2D.MipSlice = 0;
+	DXRenderingSystemComponent::get().deferredPassRTVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	DXRenderingSystemComponent::get().deferredPassRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	DXRenderingSystemComponent::get().deferredPassRTVDesc.Texture2D.MipSlice = 0;
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	return result;
@@ -519,9 +459,9 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
 INNO_SYSTEM_EXPORT bool DXRenderingSystem::initialize()
 {
 	DXRenderingSystemNS::initializeDefaultAssets();
-	DXRenderingSystemNS::initializeGeometryPass();
-	DXRenderingSystemNS::initializeLightPass();
-	DXRenderingSystemNS::initializeFinalBlendPass();
+	DXGeometryRenderingPassUtilities::initialize();
+	DXLightRenderingPassUtilities::initialize();
+	DXFinalRenderingPassUtilities::initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXRenderingSystem has been initialized.");
 	return true;
@@ -548,11 +488,11 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 	// Clear the buffers to begin the scene.
 	DXRenderingSystemNS::prepareRenderingData();
 
-	DXRenderingSystemNS::updateGeometryPass();
+	DXGeometryRenderingPassUtilities::update();
 
-	DXRenderingSystemNS::updateLightPass();
+	DXLightRenderingPassUtilities::update();
 
-	DXRenderingSystemNS::updateFinalBlendPass();
+	DXFinalRenderingPassUtilities::update();
 
 	return true;
 }
@@ -665,93 +605,6 @@ bool  DXRenderingSystemNS::initializeDefaultAssets()
 	return true;
 }
 
-bool  DXRenderingSystemNS::initializeGeometryPass()
-{
-	DXGeometryRenderPassComponent::get().m_DXRPC = addDXRenderPassComponent(8, deferredPassRTVDesc, deferredPassTextureDesc);
-	DXGeometryRenderPassComponent::get().m_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
-
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.ByteWidth = sizeof(GPassMeshCBufferData);
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.MiscFlags = 0;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBufferDesc.StructureByteStride = 0;
-
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.ByteWidth = sizeof(GPassTextureCBufferData);
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.MiscFlags = 0;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.StructureByteStride = 0;
-
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.MipLODBias = 0.0f;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxAnisotropy = 1;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[0] = 0;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[1] = 0;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[2] = 0;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[3] = 0;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.MinLOD = 0;
-	DXGeometryRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	return initializeDXShaderProgramComponent(DXGeometryRenderPassComponent::get().m_DXSPC, m_GeometryPassShaderFilePaths);
-}
-
-bool  DXRenderingSystemNS::initializeLightPass()
-{
-	DXLightRenderPassComponent::get().m_DXRPC = addDXRenderPassComponent(1, deferredPassRTVDesc, deferredPassTextureDesc);
-	DXLightRenderPassComponent::get().m_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
-
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.ByteWidth = sizeof(LPassCBufferData);
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.MiscFlags = 0;
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.StructureByteStride = 0;
-
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.MipLODBias = 0.0f;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxAnisotropy = 1;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[0] = 0;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[1] = 0;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[2] = 0;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[3] = 0;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.MinLOD = 0;
-	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	return initializeDXShaderProgramComponent(DXLightRenderPassComponent::get().m_DXSPC, m_LightPassShaderFilePaths);
-}
-
-bool DXRenderingSystemNS::initializeFinalBlendPass()
-{
-	DXFinalRenderPassComponent::get().m_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
-
-	// Create a texture sampler state description.
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.MipLODBias = 0.0f;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxAnisotropy = 1;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[0] = 0;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[1] = 0;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[2] = 0;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.BorderColor[3] = 0;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.MinLOD = 0;
-	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	return initializeDXShaderProgramComponent(DXFinalRenderPassComponent::get().m_DXSPC, m_FinalPassShaderFilePaths);;
-}
-
 void DXRenderingSystemNS::prepareRenderingData()
 {
 	// camera and light
@@ -775,10 +628,10 @@ void DXRenderingSystemNS::prepareRenderingData()
 	m_CamTrans = l_t;
 	m_CamRTP = l_p * l_r * l_t;
 
-	m_LPassCBufferData.viewPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-	m_LPassCBufferData.lightDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	DXRenderingSystemComponent::get().m_LPassCBufferData.viewPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+	DXRenderingSystemComponent::get().m_LPassCBufferData.lightDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 
-	m_LPassCBufferData.color = l_directionalLight->m_color;
+	DXRenderingSystemComponent::get().m_LPassCBufferData.color = l_directionalLight->m_color;
 
 	for (auto& l_renderDataPack : RenderingSystemComponent::get().m_renderDataPack)
 	{
@@ -859,164 +712,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 				1.0f
 			);
 
-			m_GPassRenderingDataQueue.push(l_renderingDataPack);
+			DXRenderingSystemComponent::get().m_GPassRenderingDataQueue.push(l_renderingDataPack);
 		}
 	}
-}
-
-void DXRenderingSystemNS::updateGeometryPass()
-{
-	// Set Rasterizer State
-	g_DXRenderingSystemComponent->m_deviceContext->RSSetState(
-		g_DXRenderingSystemComponent->m_rasterStateForward);
-
-	activateDXShaderProgramComponent(DXGeometryRenderPassComponent::get().m_DXSPC);
-
-	// Set the render buffers to be the render target.
-	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	g_DXRenderingSystemComponent->m_deviceContext->OMSetRenderTargets(
-		(unsigned int)DXGeometryRenderPassComponent::get().m_DXRPC->m_renderTargetViews.size(),
-		&DXGeometryRenderPassComponent::get().m_DXRPC->m_renderTargetViews[0],
-		DXGeometryRenderPassComponent::get().m_DXRPC->m_depthStencilView);
-
-	// Set the viewport.
-	g_DXRenderingSystemComponent->m_deviceContext->RSSetViewports(
-		1,
-		&DXGeometryRenderPassComponent::get().m_DXRPC->m_viewport);
-
-	// Clear the render buffers.
-	for (auto i : DXGeometryRenderPassComponent::get().m_DXRPC->m_renderTargetViews)
-	{
-		cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), i);
-	}
-	cleanDSV(DXGeometryRenderPassComponent::get().m_DXRPC->m_depthStencilView);
-
-	// draw
-	while (m_GPassRenderingDataQueue.size() > 0)
-	{
-		auto l_renderPack = m_GPassRenderingDataQueue.front();
-
-		// Set the type of primitive that should be rendered from this vertex buffer.
-		D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
-
-		if (l_renderPack.meshPrimitiveTopology == MeshPrimitiveTopology::TRIANGLE)
-		{
-			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		}
-		else
-		{
-			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-		}
-
-		g_DXRenderingSystemComponent->m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
-
-		updateShaderParameter<GPassMeshCBufferData>(ShaderType::VERTEX, DXGeometryRenderPassComponent::get().m_DXSPC->m_vertexShaderCBuffer, &l_renderPack.meshCBuffer);
-		updateShaderParameter<GPassTextureCBufferData>(ShaderType::FRAGMENT, DXGeometryRenderPassComponent::get().m_DXSPC->m_pixelShaderCBuffer, &l_renderPack.textureCBuffer);
-
-		// bind to textures
-		// any normal?
-		if (l_renderPack.textureCBuffer.useNormalTexture)
-		{
-			g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(0, 1, &l_renderPack.normalDXTDC->m_SRV);
-		}
-		// any albedo?
-		if (l_renderPack.textureCBuffer.useAlbedoTexture)
-		{
-			g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(1, 1, &l_renderPack.albedoDXTDC->m_SRV);
-		}
-		// any metallic?
-		if (l_renderPack.textureCBuffer.useMetallicTexture)
-		{
-			g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(2, 1, &l_renderPack.metallicDXTDC->m_SRV);
-		}
-		// any roughness?
-		if (l_renderPack.textureCBuffer.useRoughnessTexture)
-		{
-			g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(3, 1, &l_renderPack.roughnessDXTDC->m_SRV);
-		}
-		// any ao?
-		if (l_renderPack.textureCBuffer.useAOTexture)
-		{
-			g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(4, 1, &l_renderPack.AODXTDC->m_SRV);
-		}
-
-		drawMesh(l_renderPack.indiceSize, l_renderPack.DXMDC);
-
-		m_GPassRenderingDataQueue.pop();
-	}
-}
-
-void DXRenderingSystemNS::updateLightPass()
-{
-	// Set Rasterizer State
-	g_DXRenderingSystemComponent->m_deviceContext->RSSetState(
-		g_DXRenderingSystemComponent->m_rasterStateDeferred);
-
-	activateDXShaderProgramComponent(DXLightRenderPassComponent::get().m_DXSPC);
-
-	g_DXRenderingSystemComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// Set the render buffers to be the render target.
-	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	g_DXRenderingSystemComponent->m_deviceContext->OMSetRenderTargets(
-		(unsigned int)DXLightRenderPassComponent::get().m_DXRPC->m_renderTargetViews.size(),
-		&DXLightRenderPassComponent::get().m_DXRPC->m_renderTargetViews[0],
-		DXLightRenderPassComponent::get().m_DXRPC->m_depthStencilView);
-
-	// Set the viewport.
-	g_DXRenderingSystemComponent->m_deviceContext->RSSetViewports(
-		1,
-		&DXLightRenderPassComponent::get().m_DXRPC->m_viewport);
-
-	// Clear the render buffers.
-	for (auto i : DXLightRenderPassComponent::get().m_DXRPC->m_renderTargetViews)
-	{
-		cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), i);
-	}
-	cleanDSV(DXLightRenderPassComponent::get().m_DXRPC->m_depthStencilView);
-
-	auto l_LPassCBufferData = m_LPassCBufferData;
-
-	updateShaderParameter<LPassCBufferData>(ShaderType::FRAGMENT, DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBuffer, &l_LPassCBufferData);
-
-	// bind to previous pass render target textures
-	g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXGeometryRenderPassComponent::get().m_DXRPC->m_DXTDCs[0]->m_SRV);
-	g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(1, 1, &DXGeometryRenderPassComponent::get().m_DXRPC->m_DXTDCs[1]->m_SRV);
-	g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(2, 1, &DXGeometryRenderPassComponent::get().m_DXRPC->m_DXTDCs[2]->m_SRV);
-
-	// draw
-	drawMesh(6, g_DXRenderingSystemComponent->m_UnitQuadDXMDC);
-}
-
-void DXRenderingSystemNS::updateFinalBlendPass()
-{
-	// Set Rasterizer State
-	g_DXRenderingSystemComponent->m_deviceContext->RSSetState(
-		g_DXRenderingSystemComponent->m_rasterStateDeferred);
-
-	activateDXShaderProgramComponent(DXFinalRenderPassComponent::get().m_DXSPC);
-
-	g_DXRenderingSystemComponent->m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// Set the render buffers to be the render target.
-	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	g_DXRenderingSystemComponent->m_deviceContext->OMSetRenderTargets(
-		1,
-		&g_DXRenderingSystemComponent->m_renderTargetView,
-		g_DXRenderingSystemComponent->m_depthStencilView);
-
-	// Set the viewport.
-	g_DXRenderingSystemComponent->m_deviceContext->RSSetViewports(
-		1,
-		&g_DXRenderingSystemComponent->m_viewport);
-
-	// Clear the render buffers.
-	cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), g_DXRenderingSystemComponent->m_renderTargetView);
-	cleanDSV(g_DXRenderingSystemComponent->m_depthStencilView);
-
-	// bind to previous pass render target textures
-	g_DXRenderingSystemComponent->m_deviceContext->PSSetShaderResources(0, 1, &DXLightRenderPassComponent::get().m_DXRPC->m_DXTDCs[0]->m_SRV);
-
-	// draw
-	drawMesh(6, g_DXRenderingSystemComponent->m_UnitQuadDXMDC);
 }

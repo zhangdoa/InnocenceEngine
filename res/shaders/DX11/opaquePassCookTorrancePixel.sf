@@ -37,7 +37,7 @@ struct PixelOutputType
 	float4 uni_geometryPassRT2 : SV_Target2;
 };
 
-PixelOutputType geometryPassCookTorrancePixel(PixelInputType input) : SV_TARGET
+PixelOutputType opaquePassCookTorrancePixel(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 

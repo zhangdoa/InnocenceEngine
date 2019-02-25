@@ -24,7 +24,7 @@ struct PixelInputType
 	float3 thefrag_Normal : NORMAL;
 };
 
-PixelInputType geometryPassCookTorranceVertex(VertexInputType input)
+PixelInputType opaquePassCookTorranceVertex(VertexInputType input)
 {
 	PixelInputType output;
 

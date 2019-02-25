@@ -1,7 +1,50 @@
 #pragma once
 #include "../common/InnoType.h"
 #include "../component/DXMeshDataComponent.h"
+#include "../component/TextureDataComponent.h"
 #include "../component/DXTextureDataComponent.h"
+
+struct GPassMeshCBufferData
+{
+	mat4 m;
+	mat4 vp;
+	mat4 m_normalMat;
+};
+
+struct GPassTextureCBufferData
+{
+	vec4 albedo;
+	vec4 MRA;
+	int useNormalTexture = true;
+	int useAlbedoTexture = true;
+	int useMetallicTexture = true;
+	int useRoughnessTexture = true;
+	int useAOTexture = true;
+	int padding1 = true;
+	int padding2 = true;
+	int padding3 = true;
+};
+
+struct GPassRenderingDataPack
+{
+	size_t indiceSize;
+	GPassMeshCBufferData meshCBuffer;
+	GPassTextureCBufferData textureCBuffer;
+	DXMeshDataComponent* DXMDC;
+	MeshPrimitiveTopology meshPrimitiveTopology;
+	DXTextureDataComponent* normalDXTDC;
+	DXTextureDataComponent* albedoDXTDC;
+	DXTextureDataComponent* metallicDXTDC;
+	DXTextureDataComponent* roughnessDXTDC;
+	DXTextureDataComponent* AODXTDC;
+};
+
+struct LPassCBufferData
+{
+	vec4 viewPos;
+	vec4 lightDir;
+	vec4 color;
+};
 
 class DXRenderingSystemComponent
 {
@@ -48,9 +91,15 @@ public:
 
 	D3D11_VIEWPORT m_viewport;
 
+	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
+	D3D11_RENDER_TARGET_VIEW_DESC deferredPassRTVDesc = D3D11_RENDER_TARGET_VIEW_DESC();
+
 	std::unordered_map<EntityID, DXMeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, DXTextureDataComponent*> m_textureMap;
 	
+	std::queue<GPassRenderingDataPack> m_GPassRenderingDataQueue;
+	LPassCBufferData m_LPassCBufferData;
+
 	DXMeshDataComponent* m_UnitLineDXMDC;
 	DXMeshDataComponent* m_UnitQuadDXMDC;
 	DXMeshDataComponent* m_UnitCubeDXMDC;

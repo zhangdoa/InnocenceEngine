@@ -1,10 +1,9 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "GLFrameBufferComponent.h"
+#include "GLRenderPassComponent.h"
 #include "GLShaderProgramComponent.h"
 #include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
-#include "GLRenderPassComponent.h"
 
 class GLGeometryRenderPassComponent
 {
