@@ -1,7 +1,8 @@
 #include "VisionSystem.h"
 
-#include "../component/GameSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
+#include "../component/WindowSystemComponent.h"
+#include "../component/GameSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
 
 #if defined INNO_PLATFORM_WIN
@@ -174,6 +175,44 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 	{
 		return true;
 	}
+
+	// main camera
+	auto l_mainCamera = GameSystemComponent::get().m_CameraComponents[0];
+	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
+
+	auto l_p = l_mainCamera->m_projectionMatrix;
+	auto l_r =
+		InnoMath::getInvertRotationMatrix(
+			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
+		);
+	auto l_t =
+		InnoMath::getInvertTranslationMatrix(
+			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
+		);
+	auto r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
+	auto t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
+
+	RenderingSystemComponent::get().m_CamProjOriginal = l_p;
+	RenderingSystemComponent::get().m_CamProjJittered = l_p;
+
+	if (RenderingSystemComponent::get().m_useTAA)
+	{
+		//TAA jitter for projection matrix
+		auto& l_currentHaltonStep = RenderingSystemComponent::get().currentHaltonStep;
+		if (l_currentHaltonStep >= 16)
+		{
+			l_currentHaltonStep = 0;
+		}
+		RenderingSystemComponent::get().m_CamProjJittered.m02 = RenderingSystemComponent::get().HaltonSampler[l_currentHaltonStep].x / WindowSystemComponent::get().m_windowResolution.x;
+		RenderingSystemComponent::get().m_CamProjJittered.m12 = RenderingSystemComponent::get().HaltonSampler[l_currentHaltonStep].y / WindowSystemComponent::get().m_windowResolution.y;
+		l_currentHaltonStep += 1;
+	}
+
+	RenderingSystemComponent::get().m_CamRot = l_r;
+	RenderingSystemComponent::get().m_CamTrans = l_t;
+	RenderingSystemComponent::get().m_CamRot_prev = r_prev;
+	RenderingSystemComponent::get().m_CamTrans_prev = t_prev;
+	RenderingSystemComponent::get().m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
 	RenderingSystemComponent::get().m_renderDataPack.clear();
 	for (auto& i : PhysicsSystemComponent::get().m_cullingDataPack)

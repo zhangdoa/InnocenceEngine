@@ -104,6 +104,7 @@ void DXGeometryRenderingPassUtilities::updateOpaquePass()
 	}
 	cleanDSV(DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_depthStencilView);
 
+
 	// draw
 	while (DXRenderingSystemComponent::get().m_GPassRenderingDataQueue.size() > 0)
 	{

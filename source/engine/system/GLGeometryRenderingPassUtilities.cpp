@@ -510,13 +510,13 @@ void GLGeometryRenderingPassUtilities::updateSSAOPass()
 
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_p,
-		GLRenderingSystemComponent::get().m_CamProjJittered);
+		RenderingSystemComponent::get().m_CamProjJittered);
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_r,
-		GLRenderingSystemComponent::get().m_CamRot);
+		RenderingSystemComponent::get().m_CamRot);
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_t,
-		GLRenderingSystemComponent::get().m_CamTrans);
+		RenderingSystemComponent::get().m_CamTrans);
 
 	for (size_t i = 0; i < GLGeometryRenderPassComponent::get().m_SSAOPass_uni_samples.size(); i++)
 	{
@@ -564,13 +564,13 @@ void GLGeometryRenderingPassUtilities::updateTransparentPass()
 
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_transparentPass_uni_viewPos,
-		GLRenderingSystemComponent::get().m_CamGlobalPos.x, GLRenderingSystemComponent::get().m_CamGlobalPos.y, GLRenderingSystemComponent::get().m_CamGlobalPos.z);
+		RenderingSystemComponent::get().m_CamGlobalPos.x, RenderingSystemComponent::get().m_CamGlobalPos.y, RenderingSystemComponent::get().m_CamGlobalPos.z);
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_transparentPass_uni_dirLight_direction,
-		GLRenderingSystemComponent::get().m_sunDir.x, GLRenderingSystemComponent::get().m_sunDir.y, GLRenderingSystemComponent::get().m_sunDir.z);
+		RenderingSystemComponent::get().m_sunDir.x, RenderingSystemComponent::get().m_sunDir.y, RenderingSystemComponent::get().m_sunDir.z);
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_transparentPass_uni_dirLight_color,
-		GLRenderingSystemComponent::get().m_sunLuminance.x, GLRenderingSystemComponent::get().m_sunLuminance.y, GLRenderingSystemComponent::get().m_sunLuminance.z);
+		RenderingSystemComponent::get().m_sunLuminance.x, RenderingSystemComponent::get().m_sunLuminance.y, RenderingSystemComponent::get().m_sunLuminance.z);
 
 	while (GLRenderingSystemComponent::get().m_transparentPassDataQueue.size() > 0)
 	{
@@ -609,13 +609,13 @@ void GLGeometryRenderingPassUtilities::updateTerrainPass()
 
 		updateUniform(
 			GLTerrainRenderPassComponent::get().m_terrainPass_uni_p_camera,
-			GLRenderingSystemComponent::get().m_CamProjOriginal);
+			RenderingSystemComponent::get().m_CamProjOriginal);
 		updateUniform(
 			GLTerrainRenderPassComponent::get().m_terrainPass_uni_r_camera,
-			GLRenderingSystemComponent::get().m_CamRot);
+			RenderingSystemComponent::get().m_CamRot);
 		updateUniform(
 			GLTerrainRenderPassComponent::get().m_terrainPass_uni_t_camera,
-			GLRenderingSystemComponent::get().m_CamTrans);
+			RenderingSystemComponent::get().m_CamTrans);
 		updateUniform(
 			GLTerrainRenderPassComponent::get().m_terrainPass_uni_m,
 			m);

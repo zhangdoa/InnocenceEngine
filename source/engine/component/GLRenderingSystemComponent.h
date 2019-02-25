@@ -129,22 +129,6 @@ public:
 	GLTextureDataComponent* m_basicRoughnessGLTDC;
 	GLTextureDataComponent* m_basicAOGLTDC;
 
-	mat4 m_CamProjOriginal;
-	mat4 m_CamProjJittered;
-	mat4 m_CamRot;
-	mat4 m_CamTrans;
-	mat4 m_CamRot_prev;
-	mat4 m_CamTrans_prev;
-	vec4 m_CamGlobalPos;
-
-	vec4 m_sunDir;
-	vec4 m_sunLuminance;
-	mat4 m_sunRot;
-
-	std::vector<mat4> m_CSMProjs;
-	std::vector<mat4> m_CSMViews;
-	std::vector<vec4> m_CSMSplitCorners;
-
 	GPassCameraUBOData m_GPassCameraUBOData;
 
 	std::queue<OpaquePassDataPack> m_opaquePassDataQueue;

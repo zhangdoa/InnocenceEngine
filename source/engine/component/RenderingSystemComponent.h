@@ -30,15 +30,35 @@ public:
 	EntityID m_parentEntity;
 
 	std::atomic<bool> m_canRender;
+
 	bool m_isTAAPingPass = true;
+
+	mat4 m_CamProjOriginal;
+	mat4 m_CamProjJittered;
+	mat4 m_CamRot;
+	mat4 m_CamTrans;
+	mat4 m_CamRot_prev;
+	mat4 m_CamTrans_prev;
+	vec4 m_CamGlobalPos;
+
+	vec4 m_sunDir;
+	vec4 m_sunLuminance;
+	mat4 m_sunRot;
+
+	std::vector<mat4> m_CSMProjs;
+	std::vector<mat4> m_CSMViews;
+	std::vector<vec4> m_CSMSplitCorners;
+
 	std::vector<vec2> HaltonSampler;
 	int currentHaltonStep = 0;
+
 	int m_MSAAdepth = 4;
 	bool m_useTAA = false;
 	bool m_useBloom = false;
 	bool m_drawTerrain = false;
 	bool m_drawSky = false;
 	bool m_drawOverlapWireframe = false;
+
 	std::function<void(RenderPassType)> f_reloadShader;
 	std::function<void()> f_captureEnvironment;	
 	std::vector<RenderDataPack> m_renderDataPack;

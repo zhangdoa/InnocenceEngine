@@ -268,44 +268,6 @@ bool GLRenderingSystemNS::update()
 
 void GLRenderingSystemNS::prepareRenderingData()
 {
-	// main camera
-	auto l_mainCamera = GameSystemComponent::get().m_CameraComponents[0];
-	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
-
-	auto l_p = l_mainCamera->m_projectionMatrix;
-	auto l_r =
-		InnoMath::getInvertRotationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
-		);
-	auto l_t =
-		InnoMath::getInvertTranslationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
-		);
-	auto r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
-	auto t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
-
-	GLRenderingSystemComponent::get().m_CamProjOriginal = l_p;
-	GLRenderingSystemComponent::get().m_CamProjJittered = l_p;
-
-	if (RenderingSystemComponent::get().m_useTAA)
-	{
-		//TAA jitter for projection matrix
-		auto& l_currentHaltonStep = RenderingSystemComponent::get().currentHaltonStep;
-		if (l_currentHaltonStep >= 16)
-		{
-			l_currentHaltonStep = 0;
-		}
-		GLRenderingSystemComponent::get().m_CamProjJittered.m02 = RenderingSystemComponent::get().HaltonSampler[l_currentHaltonStep].x / GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX;
-		GLRenderingSystemComponent::get().m_CamProjJittered.m12 = RenderingSystemComponent::get().HaltonSampler[l_currentHaltonStep].y / GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY;
-		l_currentHaltonStep += 1;
-	}
-
-	GLRenderingSystemComponent::get().m_CamRot = l_r;
-	GLRenderingSystemComponent::get().m_CamTrans = l_t;
-	GLRenderingSystemComponent::get().m_CamRot_prev = r_prev;
-	GLRenderingSystemComponent::get().m_CamTrans_prev = t_prev;
-	GLRenderingSystemComponent::get().m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-
 	prepareGeometryPassData();
 
 	prepareLightPassData();
@@ -321,12 +283,12 @@ void GLRenderingSystemNS::prepareRenderingData()
 bool GLRenderingSystemNS::prepareGeometryPassData()
 {
 	//UBO
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjJittered = GLRenderingSystemComponent::get().m_CamProjJittered;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjOriginal = GLRenderingSystemComponent::get().m_CamProjOriginal;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot = GLRenderingSystemComponent::get().m_CamRot;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans = GLRenderingSystemComponent::get().m_CamTrans;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot_prev = GLRenderingSystemComponent::get().m_CamRot_prev;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans_prev = GLRenderingSystemComponent::get().m_CamTrans_prev;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjJittered = RenderingSystemComponent::get().m_CamProjJittered;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjOriginal = RenderingSystemComponent::get().m_CamProjOriginal;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot = RenderingSystemComponent::get().m_CamRot;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans = RenderingSystemComponent::get().m_CamTrans;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot_prev = RenderingSystemComponent::get().m_CamRot_prev;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans_prev = RenderingSystemComponent::get().m_CamTrans_prev;
 
 	for (auto& l_renderDataPack : RenderingSystemComponent::get().m_renderDataPack)
 	{
@@ -442,24 +404,24 @@ bool GLRenderingSystemNS::prepareLightPassData()
 	auto l_directionalLight = GameSystemComponent::get().m_DirectionalLightComponents[0];
 	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
 
-	GLRenderingSystemComponent::get().m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
-	GLRenderingSystemComponent::get().m_sunLuminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
-	GLRenderingSystemComponent::get().m_sunRot = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	RenderingSystemComponent::get().m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	RenderingSystemComponent::get().m_sunLuminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
+	RenderingSystemComponent::get().m_sunRot = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 
 	auto l_CSMSize = l_directionalLight->m_projectionMatrices.size();
 
-	GLRenderingSystemComponent::get().m_CSMProjs.clear();
-	GLRenderingSystemComponent::get().m_CSMProjs.reserve(l_CSMSize);
-	GLRenderingSystemComponent::get().m_CSMSplitCorners.clear();
-	GLRenderingSystemComponent::get().m_CSMSplitCorners.reserve(l_CSMSize);
-	GLRenderingSystemComponent::get().m_CSMViews.clear();
-	GLRenderingSystemComponent::get().m_CSMViews.reserve(l_CSMSize);
+	RenderingSystemComponent::get().m_CSMProjs.clear();
+	RenderingSystemComponent::get().m_CSMProjs.reserve(l_CSMSize);
+	RenderingSystemComponent::get().m_CSMSplitCorners.clear();
+	RenderingSystemComponent::get().m_CSMSplitCorners.reserve(l_CSMSize);
+	RenderingSystemComponent::get().m_CSMViews.clear();
+	RenderingSystemComponent::get().m_CSMViews.reserve(l_CSMSize);
 
 	for (size_t j = 0; j < l_directionalLight->m_projectionMatrices.size(); j++)
 	{
-		GLRenderingSystemComponent::get().m_CSMProjs.emplace_back();
-		GLRenderingSystemComponent::get().m_CSMSplitCorners.emplace_back();
-		GLRenderingSystemComponent::get().m_CSMViews.emplace_back();
+		RenderingSystemComponent::get().m_CSMProjs.emplace_back();
+		RenderingSystemComponent::get().m_CSMSplitCorners.emplace_back();
+		RenderingSystemComponent::get().m_CSMViews.emplace_back();
 
 		auto l_shadowSplitCorner = vec4(
 			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.x,
@@ -468,12 +430,12 @@ bool GLRenderingSystemNS::prepareLightPassData()
 			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.z
 		);
 
-		GLRenderingSystemComponent::get().m_CSMProjs[j] = l_directionalLight->m_projectionMatrices[j];
-		GLRenderingSystemComponent::get().m_CSMSplitCorners[j] = l_shadowSplitCorner;
+		RenderingSystemComponent::get().m_CSMProjs[j] = l_directionalLight->m_projectionMatrices[j];
+		RenderingSystemComponent::get().m_CSMSplitCorners[j] = l_shadowSplitCorner;
 
 		auto l_lightRotMat = l_directionalLightTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
 
-		GLRenderingSystemComponent::get().m_CSMViews[j] = l_lightRotMat;
+		RenderingSystemComponent::get().m_CSMViews[j] = l_lightRotMat;
 	}
 
 	// point light
@@ -511,7 +473,7 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (GLRenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.distanceToCamera = (RenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::DIRECTIONAL_LIGHT;
 
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
@@ -521,7 +483,7 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (GLRenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.distanceToCamera = (RenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::POINT_LIGHT;
 
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
@@ -531,7 +493,7 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (GLRenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.distanceToCamera = (RenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::SPHERE_LIGHT;
 
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);

@@ -2,7 +2,7 @@
 #include "GLShadowRenderingPassUtilities.h"
 #include "../component/GLShadowRenderPassComponent.h"
 #include "../component/GameSystemComponent.h"
-#include "../component/GLRenderingSystemComponent.h"
+#include "../component/RenderingSystemComponent.h"
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -133,11 +133,11 @@ void GLShadowRenderingPassUtilities::update()
 			glViewport(i * sizeX / 2, j * sizeY / 2, sizeX / 2, sizeY / 2);
 			updateUniform(
 				GLShadowRenderPassComponent::get().m_shadowPass_uni_p,
-				GLRenderingSystemComponent::get().m_CSMProjs[splitCount]);
+				RenderingSystemComponent::get().m_CSMProjs[splitCount]);
 
 			updateUniform(
 				GLShadowRenderPassComponent::get().m_shadowPass_uni_v,
-				GLRenderingSystemComponent::get().m_CSMViews[splitCount]);
+				RenderingSystemComponent::get().m_CSMViews[splitCount]);
 
 			splitCount++;
 

@@ -5,6 +5,7 @@
 #include "../component/GLEnvironmentRenderPassComponent.h"
 #include "../component/GLGeometryRenderPassComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
+#include "../component/RenderingSystemComponent.h"
 
 #include "ICoreSystem.h"
 
@@ -170,27 +171,27 @@ void GLLightRenderingPassUtilities::update()
 
 	updateUniform(
 		GLLightRenderPassComponent::get().m_uni_viewPos,
-		GLRenderingSystemComponent::get().m_CamGlobalPos.x, GLRenderingSystemComponent::get().m_CamGlobalPos.y, GLRenderingSystemComponent::get().m_CamGlobalPos.z);
+		RenderingSystemComponent::get().m_CamGlobalPos.x, RenderingSystemComponent::get().m_CamGlobalPos.y, RenderingSystemComponent::get().m_CamGlobalPos.z);
 
 	updateUniform(
 		GLLightRenderPassComponent::get().m_uni_dirLight_direction,
-		GLRenderingSystemComponent::get().m_sunDir.x, GLRenderingSystemComponent::get().m_sunDir.y, GLRenderingSystemComponent::get().m_sunDir.z);
+		RenderingSystemComponent::get().m_sunDir.x, RenderingSystemComponent::get().m_sunDir.y, RenderingSystemComponent::get().m_sunDir.z);
 	updateUniform(
 		GLLightRenderPassComponent::get().m_uni_dirLight_luminance,
-		GLRenderingSystemComponent::get().m_sunLuminance.x, GLRenderingSystemComponent::get().m_sunLuminance.y, GLRenderingSystemComponent::get().m_sunLuminance.z);
+		RenderingSystemComponent::get().m_sunLuminance.x, RenderingSystemComponent::get().m_sunLuminance.y, RenderingSystemComponent::get().m_sunLuminance.z);
 
 	for (size_t j = 0; j < 4; j++)
 	{
 		updateUniform(
 			GLLightRenderPassComponent::get().m_uni_shadowSplitAreas[j],
-			GLRenderingSystemComponent::get().m_CSMSplitCorners[j].x, GLRenderingSystemComponent::get().m_CSMSplitCorners[j].y, GLRenderingSystemComponent::get().m_CSMSplitCorners[j].z, GLRenderingSystemComponent::get().m_CSMSplitCorners[j].w);
+			RenderingSystemComponent::get().m_CSMSplitCorners[j].x, RenderingSystemComponent::get().m_CSMSplitCorners[j].y, RenderingSystemComponent::get().m_CSMSplitCorners[j].z, RenderingSystemComponent::get().m_CSMSplitCorners[j].w);
 
 		updateUniform(
 			GLLightRenderPassComponent::get().m_uni_dirLightProjs[j],
-			GLRenderingSystemComponent::get().m_CSMProjs[j]);
+			RenderingSystemComponent::get().m_CSMProjs[j]);
 		updateUniform(
 			GLLightRenderPassComponent::get().m_uni_dirLightViews[j],
-			GLRenderingSystemComponent::get().m_CSMViews[j]);
+			RenderingSystemComponent::get().m_CSMViews[j]);
 	}
 
 	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_PointLightDatas.size(); i++)

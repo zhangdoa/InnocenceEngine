@@ -4,6 +4,16 @@
 #include "../component/TextureDataComponent.h"
 #include "../component/DXTextureDataComponent.h"
 
+struct GPassCameraCBufferData
+{
+	mat4 m_CamProjOriginal;
+	mat4 m_CamProjJittered;
+	mat4 m_CamRot;
+	mat4 m_CamTrans;
+	mat4 m_CamRot_prev;
+	mat4 m_CamTrans_prev;
+};
+
 struct GPassMeshCBufferData
 {
 	mat4 m;
@@ -97,6 +107,7 @@ public:
 	std::unordered_map<EntityID, DXMeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, DXTextureDataComponent*> m_textureMap;
 	
+	GPassCameraCBufferData m_GPassCameraCBufferData;
 	std::queue<GPassRenderingDataPack> m_GPassRenderingDataQueue;
 	LPassCBufferData m_LPassCBufferData;
 

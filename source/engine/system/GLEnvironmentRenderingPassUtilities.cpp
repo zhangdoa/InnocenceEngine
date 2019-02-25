@@ -386,10 +386,10 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_eyePos,
-			GLRenderingSystemComponent::get().m_CamGlobalPos.x, GLRenderingSystemComponent::get().m_CamGlobalPos.y, GLRenderingSystemComponent::get().m_CamGlobalPos.z);
+			RenderingSystemComponent::get().m_CamGlobalPos.x, RenderingSystemComponent::get().m_CamGlobalPos.y, RenderingSystemComponent::get().m_CamGlobalPos.z);
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_lightDir,
-			GLRenderingSystemComponent::get().m_sunDir.x, GLRenderingSystemComponent::get().m_sunDir.y, GLRenderingSystemComponent::get().m_sunDir.z);
+			RenderingSystemComponent::get().m_sunDir.x, RenderingSystemComponent::get().m_sunDir.y, RenderingSystemComponent::get().m_sunDir.z);
 
 		for (unsigned int i = 0; i < 6; ++i)
 		{

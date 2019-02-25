@@ -367,19 +367,19 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateSkyPass()
 
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_p,
-			GLRenderingSystemComponent::get().m_CamProjOriginal);
+			RenderingSystemComponent::get().m_CamProjOriginal);
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_r,
-			GLRenderingSystemComponent::get().m_CamRot);
+			RenderingSystemComponent::get().m_CamRot);
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_viewportSize,
 			(float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX, (float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY);
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_eyePos,
-			GLRenderingSystemComponent::get().m_CamGlobalPos.x, GLRenderingSystemComponent::get().m_CamGlobalPos.y, GLRenderingSystemComponent::get().m_CamGlobalPos.z);
+			RenderingSystemComponent::get().m_CamGlobalPos.x, RenderingSystemComponent::get().m_CamGlobalPos.y, RenderingSystemComponent::get().m_CamGlobalPos.z);
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_lightDir,
-			GLRenderingSystemComponent::get().m_sunDir.x, GLRenderingSystemComponent::get().m_sunDir.y, GLRenderingSystemComponent::get().m_sunDir.z);
+			RenderingSystemComponent::get().m_sunDir.x, RenderingSystemComponent::get().m_sunDir.y, RenderingSystemComponent::get().m_sunDir.z);
 
 		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
 		drawMesh(l_MDC);
@@ -602,13 +602,13 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBillboardPass()
 
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_billboardPass_uni_p,
-		GLRenderingSystemComponent::get().m_CamProjOriginal);
+		RenderingSystemComponent::get().m_CamProjOriginal);
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_billboardPass_uni_r,
-		GLRenderingSystemComponent::get().m_CamRot);
+		RenderingSystemComponent::get().m_CamRot);
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_billboardPass_uni_t,
-		GLRenderingSystemComponent::get().m_CamTrans);
+		RenderingSystemComponent::get().m_CamTrans);
 
 	while (GLRenderingSystemComponent::get().m_billboardPassDataQueue.size() > 0)
 	{
@@ -673,13 +673,13 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateDebuggerPass()
 
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_debuggerPass_uni_p,
-		GLRenderingSystemComponent::get().m_CamProjOriginal);
+		RenderingSystemComponent::get().m_CamProjOriginal);
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_debuggerPass_uni_r,
-		GLRenderingSystemComponent::get().m_CamRot);
+		RenderingSystemComponent::get().m_CamRot);
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_debuggerPass_uni_t,
-		GLRenderingSystemComponent::get().m_CamTrans);
+		RenderingSystemComponent::get().m_CamTrans);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	while (GLRenderingSystemComponent::get().m_debuggerPassDataQueue.size() > 0)
