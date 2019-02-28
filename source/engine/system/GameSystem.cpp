@@ -285,7 +285,7 @@ INNO_SYSTEM_EXPORT className* InnoGameSystem::get##className(const EntityID& par
 	} \
 	else \
 	{ \
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem : can't find " + std::string(#className) + " by EntityID: " + parentEntity + " !"); \
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find " + std::string(#className) + " by EntityID: " + parentEntity + " !"); \
 		return nullptr; \
 	} \
 }

@@ -720,6 +720,7 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::update()
 {
 	if (GameSystemComponent::get().m_isLoadingScene)
 	{
+		g_pCoreSystem->getTaskSystem()->waitAllTasksToFinish();
 		InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene);
 		GameSystemComponent::get().m_isLoadingScene = false;
 	}

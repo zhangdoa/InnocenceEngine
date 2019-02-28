@@ -35,8 +35,8 @@ INNO_PRIVATE_SCOPE InnoVisionSystemNS
 	bool setupRendering();
 	bool setupGui();
 
-	InnoFuture<void>* m_asyncTask;
-
+	std::vector<InnoFuture<void>> m_asyncTask;
+	std::vector<CullingDataPack> m_cullingDataPack;
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 }
 
@@ -129,7 +129,6 @@ bool InnoVisionSystemNS::setupRendering()
 	{
 		return false;
 	}
-	RenderingSystemComponent::get().m_canRender = true;
 
 	return true;
 }
@@ -166,92 +165,116 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 {
-	auto temp = g_pCoreSystem->getTaskSystem()->submit([]()
-	{
-	});
-	InnoVisionSystemNS::m_asyncTask = &temp;
-
 	if (GameSystemComponent::get().m_isLoadingScene)
 	{
 		return true;
 	}
 
-	// main camera
-	auto l_mainCamera = GameSystemComponent::get().m_CameraComponents[0];
-	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
-
-	auto l_p = l_mainCamera->m_projectionMatrix;
-	auto l_r =
-		InnoMath::getInvertRotationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
-		);
-	auto l_t =
-		InnoMath::getInvertTranslationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
-		);
-	auto r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
-	auto t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
-
-	RenderingSystemComponent::get().m_CamProjOriginal = l_p;
-	RenderingSystemComponent::get().m_CamProjJittered = l_p;
-
-	if (RenderingSystemComponent::get().m_useTAA)
+	if (!RenderingSystemComponent::get().m_allowRender)
 	{
-		//TAA jitter for projection matrix
-		auto& l_currentHaltonStep = RenderingSystemComponent::get().currentHaltonStep;
-		if (l_currentHaltonStep >= 16)
+		// copy culling data pack for local scope
+		if (PhysicsSystemComponent::get().m_isCullingDataPackValid)
 		{
-			l_currentHaltonStep = 0;
+			InnoVisionSystemNS::m_cullingDataPack = PhysicsSystemComponent::get().m_cullingDataPack.getRawData();
 		}
-		RenderingSystemComponent::get().m_CamProjJittered.m02 = RenderingSystemComponent::get().HaltonSampler[l_currentHaltonStep].x / WindowSystemComponent::get().m_windowResolution.x;
-		RenderingSystemComponent::get().m_CamProjJittered.m12 = RenderingSystemComponent::get().HaltonSampler[l_currentHaltonStep].y / WindowSystemComponent::get().m_windowResolution.y;
-		l_currentHaltonStep += 1;
-	}
 
-	RenderingSystemComponent::get().m_CamRot = l_r;
-	RenderingSystemComponent::get().m_CamTrans = l_t;
-	RenderingSystemComponent::get().m_CamRot_prev = r_prev;
-	RenderingSystemComponent::get().m_CamTrans_prev = t_prev;
-	RenderingSystemComponent::get().m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+		// main camera render data
+		auto l_mainCamera = GameSystemComponent::get().m_CameraComponents[0];
+		auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
 
-	RenderingSystemComponent::get().m_renderDataPack.clear();
-	for (auto& i : PhysicsSystemComponent::get().m_cullingDataPack)
-	{
-		auto l_visibleComponent = g_pCoreSystem->getGameSystem()->get<VisibleComponent>(i.visibleComponentEntityID);
-		if (l_visibleComponent != nullptr)
+		auto l_p = l_mainCamera->m_projectionMatrix;
+		auto l_r =
+			InnoMath::getInvertRotationMatrix(
+				l_mainCameraTransformComponent->m_globalTransformVector.m_rot
+			);
+		auto l_t =
+			InnoMath::getInvertTranslationMatrix(
+				l_mainCameraTransformComponent->m_globalTransformVector.m_pos
+			);
+		auto r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
+		auto t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
+
+		RenderingSystemComponent::get().m_CamProjOriginal = l_p;
+		RenderingSystemComponent::get().m_CamProjJittered = l_p;
+
+		if (RenderingSystemComponent::get().m_useTAA)
 		{
-			auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(i.MDCEntityID);
-			if (l_MDC != nullptr)
+			//TAA jitter for projection matrix
+			auto& l_currentHaltonStep = RenderingSystemComponent::get().currentHaltonStep;
+			if (l_currentHaltonStep >= 16)
 			{
-				auto l_modelPair = l_visibleComponent->m_modelMap.find(l_MDC);
-				if (l_modelPair != l_visibleComponent->m_modelMap.end())
+				l_currentHaltonStep = 0;
+			}
+			RenderingSystemComponent::get().m_CamProjJittered.m02 = RenderingSystemComponent::get().HaltonSampler[l_currentHaltonStep].x / WindowSystemComponent::get().m_windowResolution.x;
+			RenderingSystemComponent::get().m_CamProjJittered.m12 = RenderingSystemComponent::get().HaltonSampler[l_currentHaltonStep].y / WindowSystemComponent::get().m_windowResolution.y;
+			l_currentHaltonStep += 1;
+		}
+
+		RenderingSystemComponent::get().m_CamRot = l_r;
+		RenderingSystemComponent::get().m_CamTrans = l_t;
+		RenderingSystemComponent::get().m_CamRot_prev = r_prev;
+		RenderingSystemComponent::get().m_CamTrans_prev = t_prev;
+		RenderingSystemComponent::get().m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+
+		// objects render data
+		RenderingSystemComponent::get().m_isRenderDataPackValid = false;
+
+		RenderingSystemComponent::get().m_renderDataPack.clear();
+
+		for (auto& i : InnoVisionSystemNS::m_cullingDataPack)
+		{
+			if (i.visibleComponent != nullptr && i.MDC != nullptr)
+			{
+				if (i.MDC->m_objectStatus == ObjectStatus::ALIVE)
 				{
-					RenderDataPack l_renderDataPack;
-					l_renderDataPack.m = i.m;
-					l_renderDataPack.m_prev = i.m_prev;
-					l_renderDataPack.normalMat = i.normalMat;
-					l_renderDataPack.MDC = l_MDC;
-					l_renderDataPack.material = l_modelPair->second;
-					l_renderDataPack.visiblilityType = i.visiblilityType;
-					RenderingSystemComponent::get().m_renderDataPack.emplace_back(l_renderDataPack);
+					auto l_modelPair = i.visibleComponent->m_modelMap.find(i.MDC);
+					if (l_modelPair != i.visibleComponent->m_modelMap.end())
+					{
+						RenderDataPack l_renderDataPack;
+
+						l_renderDataPack.m = i.m;
+						l_renderDataPack.m_prev = i.m_prev;
+						l_renderDataPack.normalMat = i.normalMat;
+						l_renderDataPack.MDC = i.MDC;
+						l_renderDataPack.material = l_modelPair->second;
+						l_renderDataPack.visiblilityType = i.visibleComponent->m_visiblilityType;
+
+						RenderingSystemComponent::get().m_renderDataPack.emplace_back(l_renderDataPack);
+					}
 				}
 			}
 		}
-	};
-	
-	RenderingSystemComponent::get().m_selectedVisibleComponent = PhysicsSystemComponent::get().m_selectedVisibleComponent;
 
-	InnoVisionSystemNS::m_windowSystem->update();
+		RenderingSystemComponent::get().m_isRenderDataPackValid = true;
+
+		RenderingSystemComponent::get().m_selectedVisibleComponent = PhysicsSystemComponent::get().m_selectedVisibleComponent;
+
+		RenderingSystemComponent::get().m_allowRender = true;
+
+		auto prepareRenderDataTask = g_pCoreSystem->getTaskSystem()->submit([]()
+		{
+		});
+
+		InnoVisionSystemNS::m_asyncTask.emplace_back(std::move(prepareRenderDataTask));
+	}
+
+	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoVisionSystemNS::m_asyncTask);
 
 	if (InnoVisionSystemNS::m_windowSystem->getStatus() == ObjectStatus::ALIVE)
 	{
-		if (RenderingSystemComponent::get().m_canRender)
+		InnoVisionSystemNS::m_windowSystem->update();
+
+		if (!RenderingSystemComponent::get().m_isRendering && RenderingSystemComponent::get().m_allowRender)
 		{
-			RenderingSystemComponent::get().m_canRender = false;
+			RenderingSystemComponent::get().m_allowRender = false;
+
+			RenderingSystemComponent::get().m_isRendering = true;
+
 			InnoVisionSystemNS::m_renderingSystem->update();
 			InnoVisionSystemNS::m_guiSystem->update();
 			InnoVisionSystemNS::m_windowSystem->swapBuffer();
-			RenderingSystemComponent::get().m_canRender = true;
+
+			RenderingSystemComponent::get().m_isRendering = false;
 		}
 		return true;
 	}

@@ -47,7 +47,7 @@ namespace InnoPhysicsSystemNS
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_entityID;
 
-	InnoFuture<void>* m_asyncTask;
+	std::vector<InnoFuture<void>> m_asyncTask;
 
 	vec4 m_sceneBoundMax = vec4(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), 1.0f);
 	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
@@ -595,12 +595,13 @@ void InnoPhysicsSystemNS::updateCulling()
 						//if (InnoMath::intersectCheck(l_AABBws, l_cameraAABB))
 						//{
 						CullingDataPack l_cullingDataPack;
+
 						l_cullingDataPack.m = l_globalTm;
 						l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 						l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-						l_cullingDataPack.visibleComponentEntityID = visibleComponent->m_parentEntity;
-						l_cullingDataPack.MDCEntityID = physicsData.MDC->m_parentEntity;
-						l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
+						l_cullingDataPack.visibleComponent = visibleComponent;
+						l_cullingDataPack.MDC = physicsData.MDC;
+
 						PhysicsSystemComponent::get().m_cullingDataPack.emplace_back(l_cullingDataPack);
 						//}
 
@@ -616,19 +617,26 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
 {
 	if (GameSystemComponent::get().m_isLoadingScene)
 	{
+		PhysicsSystemComponent::get().m_cullingDataPack.clear();
+		PhysicsSystemComponent::get().m_isCullingDataPackValid = false;
 		return true;
 	}
 
-	auto temp = g_pCoreSystem->getTaskSystem()->submit([]()
-	{
+	InnoPhysicsSystemNS::updateCameraComponents();
+	InnoPhysicsSystemNS::updateLightComponents();
+	InnoPhysicsSystemNS::updateVisibleComponents();
 
-		InnoPhysicsSystemNS::updateCameraComponents();
-		InnoPhysicsSystemNS::updateLightComponents();
-		InnoPhysicsSystemNS::updateVisibleComponents();
-		InnoPhysicsSystemNS::updateCulling();
+	PhysicsSystemComponent::get().m_isCullingDataPackValid = false;
+	InnoPhysicsSystemNS::updateCulling();
+	PhysicsSystemComponent::get().m_isCullingDataPackValid = true;
+
+	auto preparePhysicsDataTask = g_pCoreSystem->getTaskSystem()->submit([]()
+	{
 	});
 
-	InnoPhysicsSystemNS::m_asyncTask = &temp;
+	InnoPhysicsSystemNS::m_asyncTask.emplace_back(std::move(preparePhysicsDataTask));
+	
+	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoPhysicsSystemNS::m_asyncTask);
 
 	return true;
 }

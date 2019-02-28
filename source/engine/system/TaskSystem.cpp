@@ -3,6 +3,8 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
+enum class WorkerStatus { IDLE, BUSY };
+
 INNO_PRIVATE_SCOPE InnoTaskSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
@@ -11,14 +13,22 @@ INNO_PRIVATE_SCOPE InnoTaskSystemNS
 	ThreadSafeQueue<std::unique_ptr<IThreadTask>> m_workQueue;
 	std::vector<std::thread> m_threads;
 
+	std::unordered_map<std::thread::id, std::atomic<WorkerStatus>> m_threadStatus;
+
 	void worker(void)
 	{
+		auto l_id = std::this_thread::get_id();
+		InnoTaskSystemNS::m_threadStatus.emplace(l_id, WorkerStatus::IDLE);
+		auto l_it = m_threadStatus.find(l_id);
+
 		while (!m_done)
 		{
 			std::unique_ptr<IThreadTask> pTask{ nullptr };
 			if (m_workQueue.waitPop(pTask))
-			{
+			{	
+				l_it->second = WorkerStatus::BUSY;
 				pTask->execute();
+				l_it->second = WorkerStatus::IDLE;
 			}
 		}
 	}
@@ -84,4 +94,26 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoTaskSystem::getStatus()
 INNO_SYSTEM_EXPORT void InnoTaskSystem::addTask(std::unique_ptr<IThreadTask>&& task)
 {
 	InnoTaskSystemNS::m_workQueue.push(std::move(task));
+}
+
+INNO_SYSTEM_EXPORT void InnoTaskSystem::shrinkFutureContainer(std::vector<InnoFuture<void>>& rhs)
+{
+	auto l_removeResult = std::remove_if(rhs.begin(), rhs.end(), [](InnoFuture<void>& val) {
+		return val.isReady();
+	});
+	rhs.erase(l_removeResult, rhs.end());
+
+	rhs.shrink_to_fit();
+}
+
+INNO_SYSTEM_EXPORT void InnoTaskSystem::waitAllTasksToFinish()
+{
+	auto l_isAllTasksFinished = 0;
+	while (l_isAllTasksFinished != InnoTaskSystemNS::m_threadStatus.size())
+	{
+		for (auto& i : InnoTaskSystemNS::m_threadStatus)
+		{
+			l_isAllTasksFinished += (i.second == WorkerStatus::IDLE);
+		}
+	}
 }

@@ -66,6 +66,11 @@ public:
 		return m_future.get();
 	}
 
+	auto isReady(void)
+	{
+		return m_future._Is_ready();
+	}
+
 private:
 	std::future<T> m_future;
 };

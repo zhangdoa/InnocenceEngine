@@ -3,7 +3,8 @@
 #include "VisibleComponent.h"
 #include "MeshDataComponent.h"
 #include "MaterialDataComponent.h"
-#include<atomic>
+
+#include "../common/InnoConcurrency.h"
 
 struct RenderDataPack
 {
@@ -29,7 +30,9 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	std::atomic<bool> m_canRender;
+	std::atomic<bool> m_allowRender = false;
+	std::atomic<bool> m_isRendering = false;
+	std::atomic<bool> m_isRenderDataPackValid = false;
 
 	bool m_isTAAPingPass = true;
 
@@ -61,7 +64,7 @@ public:
 
 	std::function<void(RenderPassType)> f_reloadShader;
 	std::function<void()> f_captureEnvironment;	
-	std::vector<RenderDataPack> m_renderDataPack;
+	ThreadSafeVector<RenderDataPack> m_renderDataPack;
 
 	VisibleComponent* m_selectedVisibleComponent;
 	std::vector<Sphere> m_debugSpheres;

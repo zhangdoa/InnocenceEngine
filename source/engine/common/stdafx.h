@@ -24,6 +24,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include <atomic>
+
 #include <filesystem>
 #include <optional>
 

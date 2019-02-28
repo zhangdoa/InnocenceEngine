@@ -95,6 +95,86 @@ private:
 	std::condition_variable m_condition;
 };
 
+template <typename T>
+class ThreadSafeVector
+{
+public:
+	~ThreadSafeVector(void)
+	{
+		invalidate();
+	}
+
+	void push_back(T value)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		m_vector.push_back(std::move(value));
+		m_condition.notify_one();
+	}
+
+	void emplace_back(T value)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		m_vector.emplace_back(std::move(value));
+		m_condition.notify_one();
+	}
+
+	bool empty(void) const
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_vector.empty();
+	}
+
+	void clear(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		m_vector.clear();
+		m_condition.notify_all();
+	}
+
+	auto begin(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_vector.begin();
+	}
+
+	auto end(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_vector.end();
+	}
+
+	bool isValid(void) const
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_valid;
+	}
+
+	void invalidate(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		m_valid = false;
+		m_condition.notify_all();
+	}
+
+	size_t size(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_vector.size();
+	}
+
+	std::vector<T> getRawData(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_vector;
+	}
+
+private:
+	std::atomic_bool m_valid{ true };
+	mutable std::mutex m_mutex;
+	std::vector<T> m_vector;
+	std::condition_variable m_condition;
+};
+
 #ifdef INNO_PLATFORM_WIN
 template<class _Ty, class _Ax = innoAllocator<_Ty> >
 class innoList : public std::list<_Ty, _Ax>

@@ -18,6 +18,10 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual void addTask(std::unique_ptr<IThreadTask>&& task) = 0;
 
+	INNO_SYSTEM_EXPORT virtual void shrinkFutureContainer(std::vector<InnoFuture<void>>& rhs) = 0;
+
+	INNO_SYSTEM_EXPORT virtual void waitAllTasksToFinish() = 0;
+
 	template <typename Func, typename... Args>
 	auto submit(Func&& func, Args&&... args)
 	{

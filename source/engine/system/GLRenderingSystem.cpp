@@ -60,6 +60,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 		}
 	}
 
+	std::vector<RenderDataPack> m_renderDataPack;
+	
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 }
 
@@ -290,23 +292,28 @@ bool GLRenderingSystemNS::prepareGeometryPassData()
 	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot_prev = RenderingSystemComponent::get().m_CamRot_prev;
 	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans_prev = RenderingSystemComponent::get().m_CamTrans_prev;
 
-	for (auto& l_renderDataPack : RenderingSystemComponent::get().m_renderDataPack)
+	if (RenderingSystemComponent::get().m_isRenderDataPackValid)
 	{
-		auto l_GLMDC = getGLMeshDataComponent(l_renderDataPack.MDC->m_parentEntity);
+		GLRenderingSystemNS::m_renderDataPack = RenderingSystemComponent::get().m_renderDataPack.getRawData();
+	}
+
+	for (auto& i : GLRenderingSystemNS::m_renderDataPack)
+	{
+		auto l_GLMDC = getGLMeshDataComponent(i.MDC->m_parentEntity);
 		if (l_GLMDC)
 		{
-			if (l_renderDataPack.visiblilityType == VisiblilityType::INNO_OPAQUE || l_renderDataPack.visiblilityType == VisiblilityType::INNO_EMISSIVE)
+			if (i.visiblilityType == VisiblilityType::INNO_OPAQUE || i.visiblilityType == VisiblilityType::INNO_EMISSIVE)
 			{
 				OpaquePassDataPack l_GLRenderDataPack;
 
-				l_GLRenderDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
-				l_GLRenderDataPack.meshPrimitiveTopology = l_renderDataPack.MDC->m_meshPrimitiveTopology;
-				l_GLRenderDataPack.meshShapeType = l_renderDataPack.MDC->m_meshShapeType;
-				l_GLRenderDataPack.meshUBOData.m = l_renderDataPack.m;
-				l_GLRenderDataPack.meshUBOData.m_prev = l_renderDataPack.m_prev;
+				l_GLRenderDataPack.indiceSize = i.MDC->m_indicesSize;
+				l_GLRenderDataPack.meshPrimitiveTopology = i.MDC->m_meshPrimitiveTopology;
+				l_GLRenderDataPack.meshShapeType = i.MDC->m_meshShapeType;
+				l_GLRenderDataPack.meshUBOData.m = i.m;
+				l_GLRenderDataPack.meshUBOData.m_prev = i.m_prev;
 				l_GLRenderDataPack.GLMDC = l_GLMDC;
 
-				auto l_material = l_renderDataPack.material;
+				auto l_material = i.material;
 				// any normal?
 				auto l_TDC = l_material->m_texturePack.m_normalTDC.second;
 				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
@@ -371,25 +378,25 @@ bool GLRenderingSystemNS::prepareGeometryPassData()
 					1.0f
 				);
 
-				l_GLRenderDataPack.visiblilityType = l_renderDataPack.visiblilityType;
+				l_GLRenderDataPack.visiblilityType = i.visiblilityType;
 
 				GLRenderingSystemComponent::get().m_opaquePassDataQueue.push(l_GLRenderDataPack);
 			}
-			else if (l_renderDataPack.visiblilityType == VisiblilityType::INNO_TRANSPARENT)
+			else if (i.visiblilityType == VisiblilityType::INNO_TRANSPARENT)
 			{
 				TransparentPassDataPack l_GLRenderDataPack;
 
-				l_GLRenderDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
-				l_GLRenderDataPack.meshPrimitiveTopology = l_renderDataPack.MDC->m_meshPrimitiveTopology;
-				l_GLRenderDataPack.meshShapeType = l_renderDataPack.MDC->m_meshShapeType;
-				l_GLRenderDataPack.meshUBOData.m = l_renderDataPack.m;
-				l_GLRenderDataPack.meshUBOData.m_prev = l_renderDataPack.m_prev;
+				l_GLRenderDataPack.indiceSize = i.MDC->m_indicesSize;
+				l_GLRenderDataPack.meshPrimitiveTopology = i.MDC->m_meshPrimitiveTopology;
+				l_GLRenderDataPack.meshShapeType = i.MDC->m_meshShapeType;
+				l_GLRenderDataPack.meshUBOData.m = i.m;
+				l_GLRenderDataPack.meshUBOData.m_prev = i.m_prev;
 				l_GLRenderDataPack.GLMDC = l_GLMDC;
 
-				auto l_material = l_renderDataPack.material;
+				auto l_material = i.material;
 
 				l_GLRenderDataPack.meshCustomMaterial = l_material->m_meshCustomMaterial;
-				l_GLRenderDataPack.visiblilityType = l_renderDataPack.visiblilityType;
+				l_GLRenderDataPack.visiblilityType = i.visiblilityType;
 				GLRenderingSystemComponent::get().m_transparentPassDataQueue.push(l_GLRenderDataPack);
 			}
 		}

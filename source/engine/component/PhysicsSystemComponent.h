@@ -9,9 +9,8 @@ struct CullingDataPack
 	mat4 m;
 	mat4 m_prev;
 	mat4 normalMat;
-	EntityID visibleComponentEntityID;
-	EntityID MDCEntityID;
-	VisiblilityType visiblilityType;
+	VisibleComponent* visibleComponent;
+	MeshDataComponent* MDC;
 };
 
 class PhysicsSystemComponent
@@ -28,7 +27,8 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	std::vector<CullingDataPack> m_cullingDataPack;
+	std::atomic<bool> m_isCullingDataPackValid = false;
+	ThreadSafeVector<CullingDataPack> m_cullingDataPack;
 
 	VisibleComponent* m_selectedVisibleComponent;
 private:
