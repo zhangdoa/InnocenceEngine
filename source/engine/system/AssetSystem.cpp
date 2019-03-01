@@ -34,7 +34,7 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	std::vector<InnoFuture<void>> m_asyncTaskVector;
+	std::vector<InnoFuture<void>> m_asyncTask;
 }
 
 INNO_SYSTEM_EXPORT bool InnoAssetSystem::setup()
@@ -651,7 +651,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 			{
 				if (l_visibleComponent->m_modelFileName != "")
 				{	
-					InnoAssetSystemNS::m_asyncTaskVector.emplace_back(g_pCoreSystem->getTaskSystem()->submit([&]()
+					InnoAssetSystemNS::m_asyncTask.emplace_back(g_pCoreSystem->getTaskSystem()->submit([&]()
 					{
 						l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
 						l_visibleComponent->m_objectStatus = ObjectStatus::STANDBY;
@@ -666,6 +666,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 			}
 		}
 	}
+	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoAssetSystemNS::m_asyncTask);
 }
 
 void InnoAssetSystemNS::assignUnitMesh(MeshShapeType MeshUsageType, VisibleComponent* visibleComponent)

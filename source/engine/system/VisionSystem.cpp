@@ -216,6 +216,44 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 		RenderingSystemComponent::get().m_CamTrans_prev = t_prev;
 		RenderingSystemComponent::get().m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
+		// sun/directional light render data
+		auto l_directionalLight = GameSystemComponent::get().m_DirectionalLightComponents[0];
+		auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
+
+		RenderingSystemComponent::get().m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+		RenderingSystemComponent::get().m_sunLuminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
+		RenderingSystemComponent::get().m_sunRot = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+
+		auto l_CSMSize = l_directionalLight->m_projectionMatrices.size();
+
+		RenderingSystemComponent::get().m_CSMProjs.clear();
+		RenderingSystemComponent::get().m_CSMProjs.reserve(l_CSMSize);
+		RenderingSystemComponent::get().m_CSMSplitCorners.clear();
+		RenderingSystemComponent::get().m_CSMSplitCorners.reserve(l_CSMSize);
+		RenderingSystemComponent::get().m_CSMViews.clear();
+		RenderingSystemComponent::get().m_CSMViews.reserve(l_CSMSize);
+
+		for (size_t j = 0; j < l_directionalLight->m_projectionMatrices.size(); j++)
+		{
+			RenderingSystemComponent::get().m_CSMProjs.emplace_back();
+			RenderingSystemComponent::get().m_CSMSplitCorners.emplace_back();
+			RenderingSystemComponent::get().m_CSMViews.emplace_back();
+
+			auto l_shadowSplitCorner = vec4(
+				l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.x,
+				l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.z,
+				l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.x,
+				l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.z
+			);
+
+			RenderingSystemComponent::get().m_CSMProjs[j] = l_directionalLight->m_projectionMatrices[j];
+			RenderingSystemComponent::get().m_CSMSplitCorners[j] = l_shadowSplitCorner;
+
+			auto l_lightRotMat = l_directionalLightTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
+
+			RenderingSystemComponent::get().m_CSMViews[j] = l_lightRotMat;
+		}
+
 		// objects render data
 		RenderingSystemComponent::get().m_isRenderDataPackValid = false;
 

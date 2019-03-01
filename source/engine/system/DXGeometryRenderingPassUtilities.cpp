@@ -41,19 +41,36 @@ void DXGeometryRenderingPassUtilities::initializeOpaquePassShaders()
 {
 	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
 
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_vertexShaderCBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_vertexShaderCBufferDesc.ByteWidth = sizeof(GPassMeshCBufferData);
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_vertexShaderCBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_vertexShaderCBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_vertexShaderCBufferDesc.MiscFlags = 0;
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_vertexShaderCBufferDesc.StructureByteStride = 0;
+	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_VSCBuffers.reserve(2);
 
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_pixelShaderCBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_pixelShaderCBufferDesc.ByteWidth = sizeof(GPassTextureCBufferData);
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_pixelShaderCBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_pixelShaderCBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_pixelShaderCBufferDesc.MiscFlags = 0;
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_pixelShaderCBufferDesc.StructureByteStride = 0;
+	DXCBuffer l_VSCameraCBuffer;
+	l_VSCameraCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	l_VSCameraCBuffer.m_CBufferDesc.ByteWidth = sizeof(GPassCameraCBufferData);
+	l_VSCameraCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	l_VSCameraCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	l_VSCameraCBuffer.m_CBufferDesc.MiscFlags = 0;
+	l_VSCameraCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_VSCBuffers.emplace_back(l_VSCameraCBuffer);
+
+	DXCBuffer l_VSMeshCBuffer;
+	l_VSMeshCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	l_VSMeshCBuffer.m_CBufferDesc.ByteWidth = sizeof(GPassMeshCBufferData);
+	l_VSMeshCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	l_VSMeshCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	l_VSMeshCBuffer.m_CBufferDesc.MiscFlags = 0;
+	l_VSMeshCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_VSCBuffers.emplace_back(l_VSMeshCBuffer);
+
+	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_PSCBuffers.reserve(1);
+
+	DXCBuffer l_PSCBuffer;
+	l_PSCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	l_PSCBuffer.m_CBufferDesc.ByteWidth = sizeof(GPassTextureCBufferData);
+	l_PSCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	l_PSCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	l_PSCBuffer.m_CBufferDesc.MiscFlags = 0;
+	l_PSCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_PSCBuffers.emplace_back(l_VSMeshCBuffer);
 
 	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -104,7 +121,6 @@ void DXGeometryRenderingPassUtilities::updateOpaquePass()
 	}
 	cleanDSV(DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_depthStencilView);
 
-
 	// draw
 	while (DXRenderingSystemComponent::get().m_GPassRenderingDataQueue.size() > 0)
 	{
@@ -124,8 +140,9 @@ void DXGeometryRenderingPassUtilities::updateOpaquePass()
 
 		DXRenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
 
-		updateShaderParameter<GPassMeshCBufferData>(ShaderType::VERTEX, DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_vertexShaderCBuffer, &l_renderPack.meshCBuffer);
-		updateShaderParameter<GPassTextureCBufferData>(ShaderType::FRAGMENT, DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_pixelShaderCBuffer, &l_renderPack.textureCBuffer);
+		updateShaderParameter(ShaderType::VERTEX, 0, DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_VSCBuffers[0].m_CBufferPtr, DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_VSCBuffers[0].m_CBufferDesc.ByteWidth, &DXRenderingSystemComponent::get().m_GPassCameraCBufferData);
+		updateShaderParameter(ShaderType::VERTEX, 1, DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_VSCBuffers[1].m_CBufferPtr, DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_VSCBuffers[1].m_CBufferDesc.ByteWidth, &l_renderPack.meshCBuffer);
+		updateShaderParameter(ShaderType::FRAGMENT, 0, DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_PSCBuffers[0].m_CBufferPtr, DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_PSCBuffers[0].m_CBufferDesc.ByteWidth, &l_renderPack.textureCBuffer);
 
 		// bind to textures
 		// any normal?

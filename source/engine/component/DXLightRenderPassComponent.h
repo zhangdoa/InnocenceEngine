@@ -17,11 +17,13 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	ShaderFilePaths m_lightPass_shaderFilePaths = { "DX11//lightPassCookTorranceVertex.sf" , "", "DX11//lightPassCookTorrancePixel.sf" };
+	DXRenderPassComponent* m_DXRPC;
 
 	DXShaderProgramComponent* m_DXSPC;
 
-	DXRenderPassComponent* m_DXRPC;
+	ShaderFilePaths m_lightPass_shaderFilePaths = { "DX11//lightPassCookTorranceVertex.sf" , "", "DX11//lightPassCookTorrancePixel.sf" };
+
+	DXCBuffer  m_lightPass_PSCBuffer;
 
 private:
 	DXLightRenderPassComponent() {};

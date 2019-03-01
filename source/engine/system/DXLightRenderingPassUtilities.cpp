@@ -30,12 +30,16 @@ void DXLightRenderingPassUtilities::initializeLightPassShaders()
 {
 	DXLightRenderPassComponent::get().m_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
 
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.ByteWidth = sizeof(LPassCBufferData);
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.MiscFlags = 0;
-	DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBufferDesc.StructureByteStride = 0;
+	DXCBuffer l_PSCBuffer;
+
+	l_PSCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	l_PSCBuffer.m_CBufferDesc.ByteWidth = sizeof(LPassCBufferData);
+	l_PSCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	l_PSCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	l_PSCBuffer.m_CBufferDesc.MiscFlags = 0;
+	l_PSCBuffer.m_CBufferDesc.StructureByteStride = 0;
+
+	DXLightRenderPassComponent::get().m_DXSPC->m_PSCBuffers.emplace_back(l_PSCBuffer);
 
 	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -85,7 +89,7 @@ void DXLightRenderingPassUtilities::update()
 
 	auto l_LPassCBufferData = DXRenderingSystemComponent::get().m_LPassCBufferData;
 
-	updateShaderParameter<LPassCBufferData>(ShaderType::FRAGMENT, DXLightRenderPassComponent::get().m_DXSPC->m_pixelShaderCBuffer, &l_LPassCBufferData);
+	updateShaderParameter(ShaderType::FRAGMENT, 0, DXLightRenderPassComponent::get().m_DXSPC->m_PSCBuffers[0].m_CBufferPtr, DXLightRenderPassComponent::get().m_DXSPC->m_PSCBuffers[0].m_CBufferDesc.ByteWidth, &l_LPassCBufferData);
 
 	// bind to previous pass render target textures
 	DXRenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_DXTDCs[0]->m_SRV);

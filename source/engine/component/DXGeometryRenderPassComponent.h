@@ -17,9 +17,9 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	DXShaderProgramComponent* m_opaquePass_DXSPC;
-
 	DXRenderPassComponent* m_opaquePass_DXRPC;
+
+	DXShaderProgramComponent* m_opaquePass_DXSPC;
 
 	ShaderFilePaths m_opaquePass_shaderFilePaths = { "DX11//opaquePassCookTorranceVertex.sf" , "", "DX11//opaquePassCookTorrancePixel.sf" };
 

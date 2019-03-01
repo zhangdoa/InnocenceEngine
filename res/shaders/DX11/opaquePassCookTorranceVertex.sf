@@ -1,9 +1,18 @@
 // shadertype=hlsl
 
+cbuffer cameraCBuffer
+{
+	matrix m_CamProjOriginal;
+	matrix m_CamProjJittered;
+	matrix m_CamRot;
+	matrix m_CamTrans;
+	matrix m_CamRot_prev;
+	matrix m_CamTrans_prev;
+};
+
 cbuffer meshCBuffer
 {
 	matrix m;
-	matrix vp;
 	matrix m_normalMat;
 };
 
@@ -29,7 +38,9 @@ PixelInputType opaquePassCookTorranceVertex(VertexInputType input)
 	PixelInputType output;
 
 	float4 thefrag_WorldSpacePos = mul(input.position, m);
-	output.thefrag_ClipSpacePos = mul(thefrag_WorldSpacePos, vp);
+	output.thefrag_ClipSpacePos = mul(thefrag_WorldSpacePos, m_CamTrans);
+	output.thefrag_ClipSpacePos = mul(output.thefrag_ClipSpacePos, m_CamRot);
+	output.thefrag_ClipSpacePos = mul(output.thefrag_ClipSpacePos, m_CamProjOriginal);
 	output.thefrag_WorldSpacePos = thefrag_WorldSpacePos.xyz;
 	output.thefrag_TexCoord = input.texcoord;
 	output.thefrag_Normal = mul(input.normal, m_normalMat).xyz;

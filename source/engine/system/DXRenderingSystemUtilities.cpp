@@ -14,11 +14,17 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedMeshComponents;
 	const std::wstring m_shaderRelativePath = L"..//res//shaders//";
 
+	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
+	ID3D10Blob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
+	bool createCBuffer(DXCBuffer& arg);
 	bool initializeVertexShader(DXShaderProgramComponent* rhs, const std::wstring& VSShaderPath);
+	bool createVertexShader(ID3D10Blob* shaderBuffer, ID3D11VertexShader** vertexShader);
+	bool createInputLayout(ID3D10Blob* shaderBuffer, ID3D11InputLayout** inputLayout);
 	bool initializePixelShader(DXShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
+	bool createPixelShader(ID3D10Blob* shaderBuffer, ID3D11PixelShader** pixelShader);
 }
 
-ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath)
+ID3D10Blob* DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath)
 {
 	auto l_shaderName = std::string(shaderFilePath.begin(), shaderFilePath.end());
 	std::reverse(l_shaderName.begin(), l_shaderName.end());
@@ -68,15 +74,54 @@ ID3D10Blob * DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const 
 	return l_shaderBuffer;
 }
 
+bool DXRenderingSystemNS::createCBuffer(DXCBuffer& arg)
+{
+	if (arg.m_CBufferDesc.ByteWidth > 0)
+	{
+		// Create the constant buffer pointer
+		auto result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&arg.m_CBufferDesc, NULL, &arg.m_CBufferPtr);
+
+		if (FAILED(result))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create constant buffer pointer!");
+			return false;
+		}
+
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: constant buffer byte width is 0!");
+		return false;
+	}
+}
+
 bool DXRenderingSystemNS::initializeVertexShader(DXShaderProgramComponent* rhs, const std::wstring& VSShaderPath)
 {
 	// Compile the shader code.
 	auto l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, VSShaderPath);
 
+	if (!createVertexShader(l_shaderBuffer, &rhs->m_vertexShader))
+	{
+		return false;
+	}
+
+	if (!createInputLayout(l_shaderBuffer, &rhs->m_inputLayout))
+	{
+		return false;
+	}
+
+	l_shaderBuffer->Release();
+
+	return true;
+}
+
+bool DXRenderingSystemNS::createVertexShader(ID3D10Blob* shaderBuffer, ID3D11VertexShader** vertexShader)
+{
 	auto result = DXRenderingSystemComponent::get().m_device->CreateVertexShader(
-		l_shaderBuffer->GetBufferPointer(), l_shaderBuffer->GetBufferSize(),
+		shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
 		NULL,
-		&rhs->m_vertexShader);
+		vertexShader);
 
 	if (FAILED(result))
 	{
@@ -84,6 +129,11 @@ bool DXRenderingSystemNS::initializeVertexShader(DXShaderProgramComponent* rhs, 
 		return false;
 	}
 
+	return true;
+}
+
+bool DXRenderingSystemNS::createInputLayout(ID3D10Blob* shaderBuffer, ID3D11InputLayout** inputLayout)
+{
 	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[5];
 	unsigned int l_numElements;
 
@@ -132,30 +182,15 @@ bool DXRenderingSystemNS::initializeVertexShader(DXShaderProgramComponent* rhs, 
 	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
 
 	// Create the vertex input layout.
-	result = DXRenderingSystemComponent::get().m_device->CreateInputLayout(
-		l_polygonLayout, l_numElements, l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(), &rhs->m_inputLayout);
+	auto result = DXRenderingSystemComponent::get().m_device->CreateInputLayout(
+		l_polygonLayout, l_numElements, shaderBuffer->GetBufferPointer(),
+		shaderBuffer->GetBufferSize(), inputLayout);
 
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create vertex shader layout!");
 		return false;
 	}
-
-	if (rhs->m_vertexShaderCBufferDesc.ByteWidth > 0)
-	{
-		// Create the constant buffer pointer
-		result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&rhs->m_vertexShaderCBufferDesc, NULL, &rhs->m_vertexShaderCBuffer);
-
-		if (FAILED(result))
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create constant buffer pointer for vertex shader!");
-			return false;
-		}
-	}
-
-	l_shaderBuffer->Release();
-	l_shaderBuffer = 0;
 
 	return true;
 }
@@ -165,32 +200,13 @@ bool DXRenderingSystemNS::initializePixelShader(DXShaderProgramComponent* rhs, c
 	// Compile the shader code.
 	auto l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, PSShaderPath);
 
-	// Create the shader from the buffer.
-	auto result = DXRenderingSystemComponent::get().m_device->CreatePixelShader(
-		l_shaderBuffer->GetBufferPointer(),
-		l_shaderBuffer->GetBufferSize(),
-		NULL,
-		&rhs->m_pixelShader);
-	if (FAILED(result))
+	if (!createPixelShader(l_shaderBuffer, &rhs->m_pixelShader))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create pixel shader!");
 		return false;
 	}
 
-	if (rhs->m_pixelShaderCBufferDesc.ByteWidth > 0)
-	{
-		// Create the constant buffer pointer
-		result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&rhs->m_pixelShaderCBufferDesc, NULL, &rhs->m_pixelShaderCBuffer);
-
-		if (FAILED(result))
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create constant buffer pointer for pixel shader!");
-			return false;
-		}
-	}
-
 	// Create the texture sampler state.
-	result = DXRenderingSystemComponent::get().m_device->CreateSamplerState(
+	auto result = DXRenderingSystemComponent::get().m_device->CreateSamplerState(
 		&rhs->m_samplerDesc,
 		&rhs->m_samplerState);
 
@@ -201,7 +217,22 @@ bool DXRenderingSystemNS::initializePixelShader(DXShaderProgramComponent* rhs, c
 	}
 
 	l_shaderBuffer->Release();
-	l_shaderBuffer = 0;
+
+	return true;
+}
+
+bool DXRenderingSystemNS::createPixelShader(ID3D10Blob* shaderBuffer, ID3D11PixelShader** pixelShader)
+{
+	auto result = DXRenderingSystemComponent::get().m_device->CreatePixelShader(
+		shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
+		NULL,
+		pixelShader);
+
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create pixel shader!");
+		return false;
+	}
 
 	return true;
 }
@@ -216,6 +247,14 @@ bool DXRenderingSystemNS::initializeDXShaderProgramComponent(DXShaderProgramComp
 	if (shaderFilePaths.m_FSPath != "")
 	{
 		l_result = l_result && initializePixelShader(rhs, std::wstring(shaderFilePaths.m_FSPath.begin(), shaderFilePaths.m_FSPath.end()));
+	}
+	for (auto& i : rhs->m_VSCBuffers)
+	{
+		createCBuffer(i);
+	}	
+	for (auto& i : rhs->m_PSCBuffers)
+	{
+		createCBuffer(i);
 	}
 	return l_result;
 }
@@ -418,7 +457,7 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 		result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &l_ptr->m_vertexBuffer);
 		if (FAILED(result))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create vbo!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create VBO!");
 			return nullptr;
 		}
 
@@ -443,7 +482,7 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 		result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&indexBufferDesc, &indexData, &l_ptr->m_indexBuffer);
 		if (FAILED(result))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create ibo!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create IBO!");
 			return nullptr;
 		}
 		l_ptr->m_objectStatus = ObjectStatus::ALIVE;
@@ -673,17 +712,17 @@ void DXRenderingSystemNS::drawMesh(size_t indicesSize, DXMeshDataComponent * DXM
 	DXRenderingSystemComponent::get().m_deviceContext->DrawIndexed((UINT)indicesSize, 0, 0);
 }
 
-void DXRenderingSystemNS::updateShaderParameterImpl(ShaderType shaderType, ID3D11Buffer* matrixBuffer, size_t size, void* parameterValue)
+void DXRenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned int startSlot, ID3D11Buffer* CBuffer, size_t size, void* parameterValue)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	unsigned int bufferNumber;
+
 
 	// Lock the constant buffer so it can be written to.
-	result = DXRenderingSystemComponent::get().m_deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = DXRenderingSystemComponent::get().m_deviceContext->Map(CBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't lock the shader matrix buffer!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't lock the shader buffer!");
 		return;
 	}
 
@@ -691,20 +730,18 @@ void DXRenderingSystemNS::updateShaderParameterImpl(ShaderType shaderType, ID3D1
 	std::memcpy(dataPtr, parameterValue, size);
 
 	// Unlock the constant buffer.
-	DXRenderingSystemComponent::get().m_deviceContext->Unmap(matrixBuffer, 0);
-
-	bufferNumber = 0;
+	DXRenderingSystemComponent::get().m_deviceContext->Unmap(CBuffer, 0);
 
 	switch (shaderType)
 	{
 	case ShaderType::VERTEX:
-		DXRenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		DXRenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers(startSlot, 1, &CBuffer);
 		break;
 	case ShaderType::GEOMETRY:
-		DXRenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		DXRenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers(startSlot, 1, &CBuffer);
 		break;
 	case ShaderType::FRAGMENT:
-		DXRenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+		DXRenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers(startSlot, 1, &CBuffer);
 		break;
 	default:
 		break;

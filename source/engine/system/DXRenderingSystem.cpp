@@ -37,11 +37,6 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	static DXWindowSystemComponent* g_DXWindowSystemComponent;
 	static DXRenderingSystemComponent* g_DXRenderingSystemComponent;
 
-	mat4 m_CamProj;
-	mat4 m_CamRot;
-	mat4 m_CamTrans;
-	mat4 m_CamRTP;
-
 	bool createPhysicalDevices();
 	bool createSwapChain();
 	bool createBackBuffer();
@@ -475,6 +470,10 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 		if (FileSystemComponent::get().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
 		{
 			auto l_initializedDXMDC = DXRenderingSystemNS::generateDXMeshDataComponent(l_meshDataComponent);
+			if (l_initializedDXMDC == nullptr)
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXMeshDataComponent for " + l_meshDataComponent->m_parentEntity + "!");
+			}
 		}
 	}
 	if (FileSystemComponent::get().m_uninitializedTextureComponents.size() > 0)
@@ -482,7 +481,11 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 		TextureDataComponent* l_textureDataComponent;
 		if (FileSystemComponent::get().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
 		{
-			DXRenderingSystemNS::generateDXTextureDataComponent(l_textureDataComponent);
+			auto l_initializedDXTDC = DXRenderingSystemNS::generateDXTextureDataComponent(l_textureDataComponent);
+			if (l_initializedDXTDC == nullptr)
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXTextureDataComponent for " + l_textureDataComponent->m_parentEntity + "!");
+			}
 		}
 	}
 	// Clear the buffers to begin the scene.
@@ -607,31 +610,16 @@ bool  DXRenderingSystemNS::initializeDefaultAssets()
 
 void DXRenderingSystemNS::prepareRenderingData()
 {
-	// camera and light
-	auto l_mainCamera = GameSystemComponent::get().m_CameraComponents[0];
-	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
-	auto l_directionalLight = GameSystemComponent::get().m_DirectionalLightComponents[0];
-	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamProjJittered = RenderingSystemComponent::get().m_CamProjJittered;
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamProjOriginal = RenderingSystemComponent::get().m_CamProjOriginal;
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamRot = RenderingSystemComponent::get().m_CamRot;
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamTrans = RenderingSystemComponent::get().m_CamTrans;
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamRot_prev = RenderingSystemComponent::get().m_CamRot_prev;
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamTrans_prev = RenderingSystemComponent::get().m_CamTrans_prev;
 
-	auto l_p = l_mainCamera->m_projectionMatrix;
-	auto l_r =
-		InnoMath::getInvertRotationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
-		);
-	auto l_t =
-		InnoMath::getInvertTranslationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
-		);
-
-	m_CamProj = l_p;
-	m_CamRot = l_r;
-	m_CamTrans = l_t;
-	m_CamRTP = l_p * l_r * l_t;
-
-	DXRenderingSystemComponent::get().m_LPassCBufferData.viewPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-	DXRenderingSystemComponent::get().m_LPassCBufferData.lightDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
-
-	DXRenderingSystemComponent::get().m_LPassCBufferData.color = l_directionalLight->m_color;
+	DXRenderingSystemComponent::get().m_LPassCBufferData.viewPos = RenderingSystemComponent::get().m_CamGlobalPos;
+	DXRenderingSystemComponent::get().m_LPassCBufferData.lightDir = RenderingSystemComponent::get().m_sunDir;
+	DXRenderingSystemComponent::get().m_LPassCBufferData.color = RenderingSystemComponent::get().m_sunLuminance;
 
 	for (auto& l_renderDataPack : RenderingSystemComponent::get().m_renderDataPack)
 	{
@@ -643,7 +631,6 @@ void DXRenderingSystemNS::prepareRenderingData()
 			l_renderingDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
 			l_renderingDataPack.meshPrimitiveTopology = l_renderDataPack.MDC->m_meshPrimitiveTopology;
 			l_renderingDataPack.meshCBuffer.m = l_renderDataPack.m;
-			l_renderingDataPack.meshCBuffer.vp = m_CamRTP;
 			l_renderingDataPack.meshCBuffer.m_normalMat = l_renderDataPack.normalMat;
 			l_renderingDataPack.DXMDC = l_DXMDC;
 
