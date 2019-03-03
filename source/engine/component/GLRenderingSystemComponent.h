@@ -92,7 +92,7 @@ class GLRenderingSystemComponent
 {
 public:
 	~GLRenderingSystemComponent() {};
-	
+
 	static GLRenderingSystemComponent& get()
 	{
 		static GLRenderingSystemComponent instance;
@@ -132,7 +132,6 @@ public:
 	GPassCameraUBOData m_GPassCameraUBOData;
 
 	std::queue<OpaquePassDataPack> m_opaquePassDataQueue;
-	std::queue<OpaquePassDataPack> m_opaquePassDataQueue_copy;
 
 	std::queue<TransparentPassDataPack> m_transparentPassDataQueue;
 

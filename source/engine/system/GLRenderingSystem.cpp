@@ -29,9 +29,6 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	void initializeDefaultAssets();
 
-	float radicalInverse(unsigned int n, unsigned int base);
-	void initializeHaltonSampler();
-
 	void prepareRenderingData();
 	bool prepareGeometryPassData();
 	bool prepareLightPassData();
@@ -61,7 +58,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	}
 
 	std::vector<RenderDataPack> m_renderDataPack;
-	
+
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 }
 
@@ -182,7 +179,7 @@ bool GLRenderingSystemNS::setup()
 bool GLRenderingSystemNS::initialize()
 {
 	initializeDefaultAssets();
-	initializeHaltonSampler();
+
 	GLEnvironmentRenderingPassUtilities::initialize();
 	GLShadowRenderingPassUtilities::initialize();
 	GLGeometryRenderingPassUtilities::initialize();
@@ -214,29 +211,6 @@ void  GLRenderingSystemNS::initializeDefaultAssets()
 	GLRenderingSystemComponent::get().m_iconTemplate_DirectionalLight = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT));
 	GLRenderingSystemComponent::get().m_iconTemplate_PointLight = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT));
 	GLRenderingSystemComponent::get().m_iconTemplate_SphereLight = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT));
-}
-
-float GLRenderingSystemNS::radicalInverse(unsigned int n, unsigned int base)
-{
-	float val = 0.0f;
-	float invBase = 1.0f / base, invBi = invBase;
-	while (n > 0)
-	{
-		auto d_i = (n % base);
-		val += d_i * invBi;
-		n *= (unsigned int)invBase;
-		invBi *= invBase;
-	}
-	return val;
-};
-
-void GLRenderingSystemNS::initializeHaltonSampler()
-{
-	// in NDC space
-	for (unsigned int i = 0; i < 16; i++)
-	{
-		RenderingSystemComponent::get().HaltonSampler.emplace_back(vec2(radicalInverse(i, 2) * 2.0f - 1.0f, radicalInverse(i, 3) * 2.0f - 1.0f));
-	}
 }
 
 bool GLRenderingSystemNS::update()
@@ -277,9 +251,6 @@ void GLRenderingSystemNS::prepareRenderingData()
 	prepareBillboardPassData();
 
 	prepareDebuggerPassData();
-
-	// copy for environment capture
-	GLRenderingSystemComponent::get().m_opaquePassDataQueue_copy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
 }
 
 bool GLRenderingSystemNS::prepareGeometryPassData()

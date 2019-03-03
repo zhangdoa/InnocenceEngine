@@ -35,6 +35,9 @@ INNO_PRIVATE_SCOPE InnoVisionSystemNS
 	bool setupRendering();
 	bool setupGui();
 
+	float radicalInverse(unsigned int n, unsigned int base);
+	void initializeHaltonSampler();
+
 	std::vector<InnoFuture<void>> m_asyncTask;
 	std::vector<CullingDataPack> m_cullingDataPack;
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
@@ -142,11 +145,36 @@ bool InnoVisionSystemNS::setupGui()
 	return true;
 }
 
+float InnoVisionSystemNS::radicalInverse(unsigned int n, unsigned int base)
+{
+	float val = 0.0f;
+	float invBase = 1.0f / base, invBi = invBase;
+	while (n > 0)
+	{
+		auto d_i = (n % base);
+		val += d_i * invBi;
+		n *= (unsigned int)invBase;
+		invBi *= invBase;
+	}
+	return val;
+};
+
+void InnoVisionSystemNS::initializeHaltonSampler()
+{
+	// in NDC space
+	for (unsigned int i = 0; i < 16; i++)
+	{
+		RenderingSystemComponent::get().HaltonSampler.emplace_back(vec2(radicalInverse(i, 2) * 2.0f - 1.0f, radicalInverse(i, 3) * 2.0f - 1.0f));
+	}
+}
+
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 {
 	InnoVisionSystemNS::m_windowSystem->initialize();
 	InnoVisionSystemNS::m_renderingSystem->initialize();
 	InnoVisionSystemNS::m_guiSystem->initialize();
+
+	InnoVisionSystemNS::initializeHaltonSampler();
 
 	Sphere testSphere;
 	testSphere.m_center = vec4(2.0f, 6.0f, -4.0f, 1.0f);

@@ -251,7 +251,7 @@ bool DXRenderingSystemNS::initializeDXShaderProgramComponent(DXShaderProgramComp
 	for (auto& i : rhs->m_VSCBuffers)
 	{
 		createCBuffer(i);
-	}	
+	}
 	for (auto& i : rhs->m_PSCBuffers)
 	{
 		createCBuffer(i);
@@ -716,7 +716,6 @@ void DXRenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned 
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-
 
 	// Lock the constant buffer so it can be written to.
 	result = DXRenderingSystemComponent::get().m_deviceContext->Map(CBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);

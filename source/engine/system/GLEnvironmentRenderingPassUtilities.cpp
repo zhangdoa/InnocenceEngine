@@ -408,7 +408,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 
 	for (unsigned int i = 0; i < 6; ++i)
 	{
-		auto l_copy = GLRenderingSystemComponent::get().m_opaquePassDataQueue_copy;
+		auto l_copy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
 		updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_v, l_v[i]);
 		attachCubemapColorRT(l_capturePassTDC, l_capturePassGLTDC, l_FBC, 0, i, 0);
 		while (l_copy.size() > 0)
