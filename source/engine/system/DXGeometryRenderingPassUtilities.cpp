@@ -32,7 +32,7 @@ void DXGeometryRenderingPassUtilities::initialize()
 
 void DXGeometryRenderingPassUtilities::initializeOpaquePass()
 {
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC = addDXRenderPassComponent(8, DXRenderingSystemComponent::get().deferredPassRTVDesc, DXRenderingSystemComponent::get().deferredPassTextureDesc);
+	DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC = addDXRenderPassComponent(4, DXRenderingSystemComponent::get().deferredPassRTVDesc, DXRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	initializeOpaquePassShaders();
 }

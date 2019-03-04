@@ -54,7 +54,6 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 
 	unsigned int numModes;
 	unsigned long long stringLength;
-	DXGI_MODE_DESC* displayModeList;
 
 	// Create a DirectX graphics interface factory.
 	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&m_factory);
@@ -93,10 +92,10 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	}
 
 	// Create a list to hold all the possible display modes for this monitor/video card combination.
-	displayModeList = new DXGI_MODE_DESC[numModes];
+	std::vector<DXGI_MODE_DESC> displayModeList(numModes);
 
 	// Now fill the display mode list structures.
-	result = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList);
+	result = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, &displayModeList[0]);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't fill the display mode list structures!");
@@ -139,8 +138,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	}
 
 	// Release the display mode list.
-	delete[] displayModeList;
-	displayModeList = 0;
+	// displayModeList.clear();
 
 	// Release the adapter output.
 	m_adapterOutput->Release();
@@ -631,6 +629,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 			l_renderingDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
 			l_renderingDataPack.meshPrimitiveTopology = l_renderDataPack.MDC->m_meshPrimitiveTopology;
 			l_renderingDataPack.meshCBuffer.m = l_renderDataPack.m;
+			l_renderingDataPack.meshCBuffer.m_prev = l_renderDataPack.m_prev;
 			l_renderingDataPack.meshCBuffer.m_normalMat = l_renderDataPack.normalMat;
 			l_renderingDataPack.DXMDC = l_DXMDC;
 

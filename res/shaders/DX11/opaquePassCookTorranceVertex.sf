@@ -13,6 +13,7 @@ cbuffer cameraCBuffer
 cbuffer meshCBuffer
 {
 	matrix m;
+	matrix m_prev;
 	matrix m_normalMat;
 };
 
@@ -27,22 +28,33 @@ struct VertexInputType
 
 struct PixelInputType
 {
-	float4 thefrag_ClipSpacePos : SV_POSITION;
-	float3 thefrag_WorldSpacePos : POSITION;
-	float2 thefrag_TexCoord : TEXCOORD;
-	float3 thefrag_Normal : NORMAL;
+	float4 frag_ClipSpacePos : SV_POSITION;
+	float4 frag_ClipSpacePos_orig : POSITION_ORIG;
+	float4 frag_ClipSpacePos_prev : POSITION_PREV;
+	float3 frag_WorldSpacePos : POSITION;
+	float2 frag_TexCoord : TEXCOORD;
+	float3 frag_Normal : NORMAL;
 };
 
 PixelInputType opaquePassCookTorranceVertex(VertexInputType input)
 {
 	PixelInputType output;
 
-	float4 thefrag_WorldSpacePos = mul(input.position, m);
-	output.thefrag_ClipSpacePos = mul(thefrag_WorldSpacePos, m_CamTrans);
-	output.thefrag_ClipSpacePos = mul(output.thefrag_ClipSpacePos, m_CamRot);
-	output.thefrag_ClipSpacePos = mul(output.thefrag_ClipSpacePos, m_CamProjOriginal);
-	output.thefrag_WorldSpacePos = thefrag_WorldSpacePos.xyz;
-	output.thefrag_TexCoord = input.texcoord;
-	output.thefrag_Normal = mul(input.normal, m_normalMat).xyz;
+	float4 frag_WorldSpacePos = mul(input.position, m);
+	float4 frag_WorldSpacePos_prev = mul(input.position, m_prev);
+
+	float4 frag_CameraSpacePos = mul(frag_WorldSpacePos, m_CamTrans);
+	frag_CameraSpacePos = mul(frag_CameraSpacePos, m_CamRot);
+
+	float4 frag_CameraSpacePos_prev = mul(frag_WorldSpacePos_prev, m_CamTrans_prev);
+	frag_CameraSpacePos_prev = mul(frag_CameraSpacePos, m_CamRot_prev);
+
+	output.frag_ClipSpacePos = mul(frag_CameraSpacePos, m_CamProjJittered);
+	output.frag_ClipSpacePos_orig = mul(frag_CameraSpacePos, m_CamProjOriginal);
+	output.frag_ClipSpacePos_prev = mul(frag_CameraSpacePos_prev, m_CamProjOriginal);
+	output.frag_WorldSpacePos = frag_WorldSpacePos.xyz;
+	output.frag_TexCoord = input.texcoord;
+	output.frag_Normal = mul(input.normal, m_normalMat).xyz;
+
 	return output;
 }

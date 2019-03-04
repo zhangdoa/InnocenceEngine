@@ -24,17 +24,20 @@ cbuffer textureCBuffer
 
 struct PixelInputType
 {
-	float4 thefrag_ClipSpacePos : SV_POSITION;
-	float3 thefrag_WorldSpacePos : POSITION;
-	float2 thefrag_TexCoord : TEXCOORD;
-	float3 thefrag_Normal : NORMAL;
+	float4 frag_ClipSpacePos : SV_POSITION;
+	float4 frag_ClipSpacePos_orig : POSITION_ORIG;
+	float4 frag_ClipSpacePos_prev : POSITION_PREV;
+	float3 frag_WorldSpacePos : POSITION;
+	float2 frag_TexCoord : TEXCOORD;
+	float3 frag_Normal : NORMAL;
 };
 
 struct PixelOutputType
 {
-	float4 uni_geometryPassRT0 : SV_Target0;
-	float4 uni_geometryPassRT1 : SV_Target1;
-	float4 uni_geometryPassRT2 : SV_Target2;
+	float4 geometryPassRT0 : SV_Target0;
+	float4 geometryPassRT1 : SV_Target1;
+	float4 geometryPassRT2 : SV_Target2;
+	float4 geometryPassRT3 : SV_Target3;
 };
 
 PixelOutputType opaquePassCookTorrancePixel(PixelInputType input) : SV_TARGET
@@ -45,13 +48,13 @@ PixelOutputType opaquePassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	if (useNormalTexture)
 	{
 		// get edge vectors of the pixel triangle
-		float3 dp1 = ddx_fine(input.thefrag_WorldSpacePos);
-		float3 dp2 = ddy_fine(input.thefrag_WorldSpacePos);
-		float2 duv1 = ddx_fine(input.thefrag_TexCoord);
-		float2 duv2 = ddy_fine(input.thefrag_TexCoord);
+		float3 dp1 = ddx_fine(input.frag_WorldSpacePos);
+		float3 dp2 = ddy_fine(input.frag_WorldSpacePos);
+		float2 duv1 = ddx_fine(input.frag_TexCoord);
+		float2 duv2 = ddy_fine(input.frag_TexCoord);
 
 		// solve the linear system
-		float3 N = normalize(input.thefrag_Normal);
+		float3 N = normalize(input.frag_Normal);
 
 		float3 dp2perp = cross(dp2, N);
 		float3 dp1perp = cross(N, dp1);
@@ -60,18 +63,28 @@ PixelOutputType opaquePassCookTorrancePixel(PixelInputType input) : SV_TARGET
 
 		float3x3 TBN = float3x3(T, B, N);
 
-		float3 normalInTangentSpace = normalize(t2d_normal.Sample(SampleTypeWrap, input.thefrag_TexCoord).rgb * 2.0f - 1.0f);
+		float3 normalInTangentSpace = normalize(t2d_normal.Sample(SampleTypeWrap, input.frag_TexCoord).rgb * 2.0f - 1.0f);
 		normalInWorldSpace = normalize(mul(normalInTangentSpace, TBN));
 	}
 	else
 	{
-		normalInWorldSpace = normalize(input.thefrag_Normal);
+		normalInWorldSpace = normalize(input.frag_Normal);
 	}
 
+	float transparency = 1.0;
 	float3 out_Albedo;
 	if (useAlbedoTexture)
 	{
-		out_Albedo = t2d_albedo.Sample(SampleTypeWrap, input.thefrag_TexCoord).rgb;
+		float4 l_albedo = t2d_albedo.Sample(SampleTypeWrap, input.frag_TexCoord);
+		transparency = l_albedo.a;
+		if (transparency < 0.1)
+		{
+			discard;
+		}
+		else
+		{
+			out_Albedo = l_albedo.rgb;
+		}
 	}
 	else
 	{
@@ -81,7 +94,7 @@ PixelOutputType opaquePassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	float out_Metallic;
 	if (useMetallicTexture)
 	{
-		out_Metallic = t2d_metallic.Sample(SampleTypeWrap, input.thefrag_TexCoord).r;
+		out_Metallic = t2d_metallic.Sample(SampleTypeWrap, input.frag_TexCoord).r;
 	}
 	else
 	{
@@ -91,7 +104,7 @@ PixelOutputType opaquePassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	float out_Roughness;
 	if (useRoughnessTexture)
 	{
-		out_Roughness = t2d_roughness.Sample(SampleTypeWrap, input.thefrag_TexCoord).r;
+		out_Roughness = t2d_roughness.Sample(SampleTypeWrap, input.frag_TexCoord).r;
 	}
 	else
 	{
@@ -101,18 +114,22 @@ PixelOutputType opaquePassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	float out_AO;
 	if (useAOTexture)
 	{
-		out_AO = t2d_ao.Sample(SampleTypeWrap, input.thefrag_TexCoord).r;
+		out_AO = t2d_ao.Sample(SampleTypeWrap, input.frag_TexCoord).r;
 	}
 	else
 	{
 		out_AO = MRA.b;
 	}
 
-	output.uni_geometryPassRT0 = float4(input.thefrag_WorldSpacePos, out_Metallic);
+	output.geometryPassRT0 = float4(input.frag_WorldSpacePos, out_Metallic);
 
-	output.uni_geometryPassRT1 = float4(normalInWorldSpace, out_Roughness);
+	output.geometryPassRT1 = float4(normalInWorldSpace, out_Roughness);
 
-	output.uni_geometryPassRT2 = float4(out_Albedo, out_AO);
+	output.geometryPassRT2 = float4(out_Albedo, out_AO);
+
+	float4 motionVec = (input.frag_ClipSpacePos_orig / input.frag_ClipSpacePos_orig.w - input.frag_ClipSpacePos_prev / input.frag_ClipSpacePos_prev.w);
+
+	output.geometryPassRT3 = float4(motionVec.xyz, transparency);
 
   return output;
 }

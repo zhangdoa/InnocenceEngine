@@ -1,8 +1,8 @@
 // shadertype=hlsl
 
-Texture2D uni_geometryPassRT0 : register(t0);
-Texture2D uni_geometryPassRT1 : register(t1);
-Texture2D uni_geometryPassRT2 : register(t2);
+Texture2D geometryPassRT0 : register(t0);
+Texture2D geometryPassRT1 : register(t1);
+Texture2D geometryPassRT2 : register(t2);
 
 SamplerState SampleTypePoint : register(s0);
 
@@ -21,7 +21,7 @@ struct PixelInputType
 
 struct PixelOutputType
 {
-	float4 uni_lightPassRT0 : SV_Target0;
+	float4 lightPassRT0 : SV_Target0;
 };
 
 static const float PI = 3.14159265359;
@@ -225,9 +225,9 @@ PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
-	float4 GPassRT0 = uni_geometryPassRT0.Sample(SampleTypePoint, input.texcoord);
-	float4 GPassRT1 = uni_geometryPassRT1.Sample(SampleTypePoint, input.texcoord);
-	float4 GPassRT2 = uni_geometryPassRT2.Sample(SampleTypePoint, input.texcoord);
+	float4 GPassRT0 = geometryPassRT0.Sample(SampleTypePoint, input.texcoord);
+	float4 GPassRT1 = geometryPassRT1.Sample(SampleTypePoint, input.texcoord);
+	float4 GPassRT2 = geometryPassRT2.Sample(SampleTypePoint, input.texcoord);
 
 	float3 posWS = GPassRT0.xyz;
 	float metallic = GPassRT0.w;
@@ -248,6 +248,6 @@ PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 
 	//finalColor = SG_CalcDirectionalLightRadiance(albedo, metallic, roughness, normalWS, posWS, F0);
 
-	output.uni_lightPassRT0 = float4(finalColor, 1.0);
+	output.lightPassRT0 = float4(finalColor, 1.0);
 	return output;
 }

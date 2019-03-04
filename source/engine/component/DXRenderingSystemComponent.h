@@ -17,6 +17,7 @@ struct GPassCameraCBufferData
 struct GPassMeshCBufferData
 {
 	mat4 m;
+	mat4 m_prev;
 	mat4 m_normalMat;
 };
 
