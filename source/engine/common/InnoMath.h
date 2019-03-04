@@ -1188,7 +1188,7 @@ namespace InnoMath
 	//Column-Major memory layout
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
-	auto toRotationVector(const TVec4<T>& rhs) -> TMat4<T>
+	auto toQuatRotator(const TVec4<T>& rhs) -> TMat4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TVec4<T> l_result;
@@ -1234,7 +1234,7 @@ namespace InnoMath
 	//Row-Major memory layout
 #elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
-	auto toRotationVector(const TMat4<T>& rhs) -> TVec4<T>
+	auto toQuatRotator(const TMat4<T>& rhs) -> TVec4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TVec4<T> l_result;

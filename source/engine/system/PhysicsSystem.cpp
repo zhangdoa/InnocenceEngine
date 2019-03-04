@@ -566,6 +566,49 @@ void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
 	}
 }
 
+template<class T>
+T distanceToPlane(const TVec4<T> & lhs, const TPlane<T> & rhs)
+{
+	auto l_dot = lhs * rhs.m_normal;
+	return l_dot - rhs.m_distance;
+}
+
+template<class T>
+bool isPointInFrustum(const TVec4<T> & lhs, const TFrustum<T> & rhs)
+{
+	if (distanceToPlane(lhs, rhs.m_px) > zero<T>)
+	{
+		return false;
+	}
+	if (distanceToPlane(lhs, rhs.m_nx) > zero<T>)
+	{
+		return false;
+	}
+	if (distanceToPlane(lhs, rhs.m_py) > zero<T>)
+	{
+		return false;
+	}
+	if (distanceToPlane(lhs, rhs.m_ny) > zero<T>)
+	{
+		return false;
+	}
+	if (distanceToPlane(lhs, rhs.m_pz) > zero<T>)
+	{
+		return false;
+	}
+	if (distanceToPlane(lhs, rhs.m_nz) > zero<T>)
+	{
+		return false;
+	}
+	return true;
+}
+
+template<class T>
+bool intersectCheck(const TFrustum<T> & lhs, const TAABB<T> & rhs)
+{
+	return true;
+}
+
 void InnoPhysicsSystemNS::updateCulling()
 {
 	PhysicsSystemComponent::get().m_cullingDataPack.clear();
@@ -592,17 +635,17 @@ void InnoPhysicsSystemNS::updateCulling()
 					{
 						auto l_AABBws = transformAABBtoWorldSpace(physicsData.aabb, l_globalTm);
 
-						//if (InnoMath::intersectCheck(l_AABBws, l_cameraAABB))
+						//if (isPointInFrustum(l_transformComponent->m_globalTransformVector.m_pos, l_cameraFrustum))
 						//{
-						CullingDataPack l_cullingDataPack;
+							CullingDataPack l_cullingDataPack;
 
-						l_cullingDataPack.m = l_globalTm;
-						l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-						l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-						l_cullingDataPack.visibleComponent = visibleComponent;
-						l_cullingDataPack.MDC = physicsData.MDC;
+							l_cullingDataPack.m = l_globalTm;
+							l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+							l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+							l_cullingDataPack.visibleComponent = visibleComponent;
+							l_cullingDataPack.MDC = physicsData.MDC;
 
-						PhysicsSystemComponent::get().m_cullingDataPack.emplace_back(l_cullingDataPack);
+							PhysicsSystemComponent::get().m_cullingDataPack.emplace_back(l_cullingDataPack);
 						//}
 
 						updateSceneAABB(l_AABBws);
@@ -635,7 +678,7 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
 	});
 
 	InnoPhysicsSystemNS::m_asyncTask.emplace_back(std::move(preparePhysicsDataTask));
-	
+
 	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoPhysicsSystemNS::m_asyncTask);
 
 	return true;

@@ -169,16 +169,6 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 
 	InnoVisionSystemNS::initializeHaltonSampler();
 
-	Sphere testSphere;
-	testSphere.m_center = vec4(2.0f, 6.0f, -4.0f, 1.0f);
-	testSphere.m_radius = 4.0f;
-	RenderingSystemComponent::get().m_debugSpheres.emplace_back(testSphere);
-
-	Plane testPlane;
-	testPlane.m_normal = vec4(0.0f, 1.0f, 0.0f, 0.0f);
-	testPlane.m_distance = 3.0f;
-	RenderingSystemComponent::get().m_debugPlanes.emplace_back(testPlane);
-
 	InnoVisionSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem has been initialized.");
 	return true;

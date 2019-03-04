@@ -494,6 +494,7 @@ bool GLRenderingSystemNS::prepareDebuggerPassData()
 			auto l_p = i.m_normal * i.m_distance;
 			auto l_t = InnoMath::toTranslationMatrix(l_p);
 			//@TODO: forward vector to rot
+
 			auto l_r = InnoMath::toRotationMatrix(i.m_normal);
 			auto l_m = l_t * l_r;
 

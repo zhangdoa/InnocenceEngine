@@ -183,7 +183,7 @@ bool GameInstanceNS::setup()
 
 		vec4 originalRot = InnoMath::getQuatRotator(axisSample, angleSample);
 		mat4 rotMat = InnoMath::toRotationMatrix(originalRot);
-		auto resultRot = InnoMath::toRotationVector(rotMat);
+		auto resultRot = InnoMath::toQuatRotator(rotMat);
 
 		auto testResult = true;
 		testResult &= (std::abs(std::abs(originalRot.w) - std::abs(resultRot.w)) < epsilon4<float>);
