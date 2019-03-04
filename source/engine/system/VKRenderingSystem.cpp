@@ -65,6 +65,10 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	VkExtent2D m_swapChainExtent;
 	std::vector<VkImageView> m_swapChainImageViews;
 
+	VkRenderPass m_renderPass;
+	VkPipelineLayout m_pipelineLayout;
+	VkPipeline m_graphicsPipeline;
+
 	bool checkValidationLayerSupport()
 	{
 		uint32_t l_layerCount;
@@ -131,7 +135,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Validation Layer�� " + std::string(pCallbackData->pMessage));
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Validation Layer: " + std::string(pCallbackData->pMessage));
 		return VK_FALSE;
 	}
 
@@ -296,6 +300,9 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createLogicalDevice();
 	bool createSwapChain();
 	bool createImageViews();
+
+	bool createRenderPass();
+	bool createGraphicsPipeline();
 
 	bool terminate();
 }
@@ -577,6 +584,51 @@ bool VKRenderingSystemNS::createImageViews()
 	return true;
 }
 
+bool VKRenderingSystemNS::createRenderPass() 
+{
+	VkAttachmentDescription colorAttachment = {};
+	colorAttachment.format = m_swapChainImageFormat;
+	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	VkAttachmentReference colorAttachmentRef = {};
+	colorAttachmentRef.attachment = 0;
+	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorAttachmentRef;
+
+	VkRenderPassCreateInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.attachmentCount = 1;
+	renderPassInfo.pAttachments = &colorAttachment;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+
+	if (vkCreateRenderPass(m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) 
+	{
+		m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create render pass!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: render pass has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createGraphicsPipeline()
+{
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: graphics pipeline has been created.");
+	return true;
+}
+
 bool VKRenderingSystemNS::setup()
 {
 	bool result = true;
@@ -587,6 +639,8 @@ bool VKRenderingSystemNS::setup()
 	result = result && createLogicalDevice();
 	result = result && createSwapChain();
 	result = result && createImageViews();
+	result = result && createRenderPass();
+	result = result && createGraphicsPipeline();
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	return result;
@@ -594,7 +648,12 @@ bool VKRenderingSystemNS::setup()
 
 bool VKRenderingSystemNS::terminate()
 {
-	for (auto imageView : m_swapChainImageViews) {
+	vkDestroyPipeline(m_logicalDevice, m_graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, nullptr);
+	vkDestroyRenderPass(m_logicalDevice, m_renderPass, nullptr);
+
+	for (auto imageView : m_swapChainImageViews) 
+	{
 		vkDestroyImageView(m_logicalDevice, imageView, nullptr);
 	}
 
