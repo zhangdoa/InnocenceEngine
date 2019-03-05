@@ -6,6 +6,10 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
+	bool initializeGLMeshDataComponent(GLMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
+	bool initializeGLTextureDataComponent(GLTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
+	GLTextureDataDesc getGLTextureDataDesc(const TextureDataDesc& textureDataDesc);
+
 	GLenum getTextureType(TextureUsageType rhs);
 	GLenum getTextureWrapMethod(TextureWrapMethod rhs);
 	GLenum getTextureFilterParam(TextureFilterMethod rhs);

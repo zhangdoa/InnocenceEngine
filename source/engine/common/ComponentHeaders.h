@@ -34,6 +34,15 @@ namespace InnoUtility
 
 	template<typename T>
 	componentType getComponentType();
+
+	template<typename T>
+	inline std::string pointerToString(T* ptr)
+	{
+		std::stringstream ss;
+		ss << ptr;
+		auto l_result = ss.str();
+		return l_result;
+	}
 }
 
 template<>

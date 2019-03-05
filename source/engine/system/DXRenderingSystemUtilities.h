@@ -14,7 +14,6 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 
 	DXMeshDataComponent* generateDXMeshDataComponent(MeshDataComponent* rhs);
 	DXTextureDataComponent* generateDXTextureDataComponent(TextureDataComponent* rhs);
-	bool initializeDXTextureDataComponent(DXTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
 
 	DXMeshDataComponent* addDXMeshDataComponent(EntityID rhs);
 	DXTextureDataComponent* addDXTextureDataComponent(EntityID rhs);

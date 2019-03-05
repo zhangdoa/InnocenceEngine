@@ -54,10 +54,8 @@ public:
 		auto l_result = m_memo.find(ptr);
 		if (l_result != m_memo.end())
 		{
-			std::stringstream ss;
-			ss << ptr;
-			std::string name = ss.str();
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: MemoryWatchdog: allocate collision happened at " + name + " !");
+			auto l_ptrStr = InnoUtility::pointerToString(ptr);
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: MemoryWatchdog: allocate collision happened at " + l_ptrStr + " !");
 			return false;
 		}
 		else

@@ -42,7 +42,6 @@ namespace InnoPhysicsSystemNS
 	void updateVisibleComponents();
 	void updateCulling();
 	AABB transformAABBtoWorldSpace(AABB rhs, mat4 globalTm);
-	void updateSceneAABB(AABB rhs);
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_entityID;
@@ -548,25 +547,6 @@ void InnoPhysicsSystemNS::updateVisibleComponents()
 {
 }
 
-void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
-{
-	auto boundMax = rhs.m_boundMax;
-	auto boundMin = rhs.m_boundMin;
-
-	if (boundMax.x > InnoPhysicsSystemNS::m_sceneBoundMax.x
-		&&boundMax.y > InnoPhysicsSystemNS::m_sceneBoundMax.y
-		&&boundMax.z > InnoPhysicsSystemNS::m_sceneBoundMax.z)
-	{
-		InnoPhysicsSystemNS::m_sceneBoundMax = boundMax;
-	}
-	if (boundMax.x < InnoPhysicsSystemNS::m_sceneBoundMax.x
-		&&boundMax.y < InnoPhysicsSystemNS::m_sceneBoundMax.y
-		&&boundMax.z < InnoPhysicsSystemNS::m_sceneBoundMax.z)
-	{
-		InnoPhysicsSystemNS::m_sceneBoundMin = boundMin;
-	}
-}
-
 template<class T>
 T distanceToPlane(const TVec4<T> & lhs, const TPlane<T> & rhs)
 {
@@ -700,8 +680,6 @@ void InnoPhysicsSystemNS::updateCulling()
 
 							PhysicsSystemComponent::get().m_cullingDataPack.emplace_back(l_cullingDataPack);
 						}
-
-						updateSceneAABB(l_OBBws);
 					}
 				}
 			}

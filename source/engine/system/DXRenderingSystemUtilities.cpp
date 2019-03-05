@@ -11,9 +11,6 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
-	std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedMeshComponents;
-	const std::wstring m_shaderRelativePath = L"..//res//shaders//";
-
 	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 	ID3D10Blob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
 	bool createCBuffer(DXCBuffer& arg);
@@ -22,6 +19,14 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	bool createInputLayout(ID3D10Blob* shaderBuffer, ID3D11InputLayout** inputLayout);
 	bool initializePixelShader(DXShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
 	bool createPixelShader(ID3D10Blob* shaderBuffer, ID3D11PixelShader** pixelShader);
+
+	bool initializeDXMeshDataComponent(DXMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
+	bool initializeDXTextureDataComponent(DXTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
+
+	std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedDXMDC;
+	std::unordered_map<EntityID, DXTextureDataComponent*> m_initializedDXTDC;
+
+	const std::wstring m_shaderRelativePath = L"..//res//shaders//";
 }
 
 ID3D10Blob* DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath)
@@ -435,63 +440,75 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 	{
 		auto l_ptr = addDXMeshDataComponent(rhs->m_parentEntity);
 
-		// Set up the description of the static vertex buffer.
-		D3D11_BUFFER_DESC vertexBufferDesc;
-		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)rhs->m_vertices.size();
-		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		vertexBufferDesc.CPUAccessFlags = 0;
-		vertexBufferDesc.MiscFlags = 0;
-		vertexBufferDesc.StructureByteStride = 0;
-
-		// Give the subresource structure a pointer to the vertex data.
-		D3D11_SUBRESOURCE_DATA vertexData;
-		ZeroMemory(&vertexData, sizeof(vertexData));
-		vertexData.pSysMem = &rhs->m_vertices[0];
-		vertexData.SysMemPitch = 0;
-		vertexData.SysMemSlicePitch = 0;
-
-		// Now create the vertex buffer.
-		HRESULT result;
-		result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &l_ptr->m_vertexBuffer);
-		if (FAILED(result))
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create VBO!");
-			return nullptr;
-		}
-
-		// Set up the description of the static index buffer.
-		D3D11_BUFFER_DESC indexBufferDesc;
-		ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		indexBufferDesc.ByteWidth = (UINT)(rhs->m_indices.size() * sizeof(unsigned int));
-		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		indexBufferDesc.CPUAccessFlags = 0;
-		indexBufferDesc.MiscFlags = 0;
-		indexBufferDesc.StructureByteStride = 0;
-
-		// Give the subresource structure a pointer to the index data.
-		D3D11_SUBRESOURCE_DATA indexData;
-		ZeroMemory(&indexData, sizeof(indexData));
-		indexData.pSysMem = &rhs->m_indices[0];
-		indexData.SysMemPitch = 0;
-		indexData.SysMemSlicePitch = 0;
-
-		// Create the index buffer.
-		result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&indexBufferDesc, &indexData, &l_ptr->m_indexBuffer);
-		if (FAILED(result))
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create IBO!");
-			return nullptr;
-		}
-		l_ptr->m_objectStatus = ObjectStatus::ALIVE;
+		initializeDXMeshDataComponent(l_ptr, rhs->m_vertices, rhs->m_indices);
+		
 		rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-		m_initializedMeshComponents.emplace(l_ptr->m_parentEntity, l_ptr);
 		return l_ptr;
 	}
 }
+
+bool DXRenderingSystemNS::initializeDXMeshDataComponent(DXMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices)
+{
+	// Set up the description of the static vertex buffer.
+	D3D11_BUFFER_DESC vertexBufferDesc;
+	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)vertices.size();
+	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexBufferDesc.CPUAccessFlags = 0;
+	vertexBufferDesc.MiscFlags = 0;
+	vertexBufferDesc.StructureByteStride = 0;
+
+	// Give the subresource structure a pointer to the vertex data.
+	D3D11_SUBRESOURCE_DATA vertexData;
+	ZeroMemory(&vertexData, sizeof(vertexData));
+	vertexData.pSysMem = &vertices[0];
+	vertexData.SysMemPitch = 0;
+	vertexData.SysMemSlicePitch = 0;
+
+	// Now create the vertex buffer.
+	HRESULT result;
+	result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &rhs->m_vertexBuffer);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create VBO!");
+		return false;
+	}
+
+	// Set up the description of the static index buffer.
+	D3D11_BUFFER_DESC indexBufferDesc;
+	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.ByteWidth = (UINT)(indices.size() * sizeof(unsigned int));
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.CPUAccessFlags = 0;
+	indexBufferDesc.MiscFlags = 0;
+	indexBufferDesc.StructureByteStride = 0;
+
+	// Give the subresource structure a pointer to the index data.
+	D3D11_SUBRESOURCE_DATA indexData;
+	ZeroMemory(&indexData, sizeof(indexData));
+	indexData.pSysMem = &indices[0];
+	indexData.SysMemPitch = 0;
+	indexData.SysMemSlicePitch = 0;
+
+	// Create the index buffer.
+	result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&indexBufferDesc, &indexData, &rhs->m_indexBuffer);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create IBO!");
+		return false;
+	}
+	rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+	m_initializedDXMDC.emplace(rhs->m_parentEntity, rhs);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DXRenderingSystem: VBO " + InnoUtility::pointerToString(rhs->m_vertexBuffer) + " is initialized.");
+
+	return true;
+}
+
 
 DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(TextureDataComponent * rhs)
 {
@@ -503,6 +520,7 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 	{
 		if (rhs->m_textureDataDesc.textureUsageType == TextureUsageType::INVISIBLE)
 		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: TextureUsageType is TextureUsageType::INVISIBLE!");
 			return nullptr;
 		}
 		else
@@ -599,13 +617,13 @@ bool DXRenderingSystemNS::initializeDXTextureDataComponent(DXTextureDataComponen
 	if (FAILED(hResult))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create texture!");
-		return nullptr;
+		return false;
 	}
 
 	if (textureDataDesc.textureUsageType != TextureUsageType::RENDER_TARGET)
 	{
 		unsigned int rowPitch;
-		rowPitch = (textureDataDesc.textureWidth * 4) * sizeof(unsigned char);
+		rowPitch = (textureDataDesc.textureWidth * ((unsigned int)textureDataDesc.texturePixelDataFormat + 1)) * sizeof(unsigned char);
 		DXRenderingSystemComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, textureData[0], rowPitch, 0);
 	}
 
@@ -614,7 +632,7 @@ bool DXRenderingSystemNS::initializeDXTextureDataComponent(DXTextureDataComponen
 	if (FAILED(hResult))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create shader resource view for texture!");
-		return nullptr;
+		return false;
 	}
 
 	// Generate mipmaps for this texture.
@@ -625,7 +643,11 @@ bool DXRenderingSystemNS::initializeDXTextureDataComponent(DXTextureDataComponen
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-	return rhs;
+	m_initializedDXTDC.emplace(rhs->m_parentEntity, rhs);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DXRenderingSystem: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
+
+	return true;
 }
 
 DXMeshDataComponent* DXRenderingSystemNS::addDXMeshDataComponent(EntityID rhs)
