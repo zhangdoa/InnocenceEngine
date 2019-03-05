@@ -1959,12 +1959,12 @@ namespace InnoMath
 
 		TFrustum<T> l_result;
 
-		l_result.m_px = makePlane(vertices[0].m_pos, vertices[1].m_pos, vertices[5].m_pos);
-		l_result.m_nx = makePlane(vertices[3].m_pos, vertices[7].m_pos, vertices[6].m_pos);
-		l_result.m_py = makePlane(vertices[0].m_pos, vertices[4].m_pos, vertices[7].m_pos);
-		l_result.m_ny = makePlane(vertices[1].m_pos, vertices[2].m_pos, vertices[6].m_pos);
-		l_result.m_pz = makePlane(vertices[0].m_pos, vertices[3].m_pos, vertices[2].m_pos);
-		l_result.m_nz = makePlane(vertices[4].m_pos, vertices[5].m_pos, vertices[6].m_pos);
+		l_result.m_px = makePlane(vertices[2].m_pos, vertices[6].m_pos, vertices[7].m_pos);
+		l_result.m_nx = makePlane(vertices[0].m_pos, vertices[4].m_pos, vertices[1].m_pos);
+		l_result.m_py = makePlane(vertices[0].m_pos, vertices[3].m_pos, vertices[7].m_pos);
+		l_result.m_ny = makePlane(vertices[1].m_pos, vertices[5].m_pos, vertices[6].m_pos);
+		l_result.m_pz = makePlane(vertices[0].m_pos, vertices[1].m_pos, vertices[2].m_pos);
+		l_result.m_nz = makePlane(vertices[4].m_pos, vertices[7].m_pos, vertices[6].m_pos);
 
 		return l_result;
 	};

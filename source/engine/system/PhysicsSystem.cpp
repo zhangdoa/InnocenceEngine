@@ -170,12 +170,13 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent
 	// near clip plane first
 	std::reverse(l_NDC.begin(), l_NDC.end());
 
-	return std::move(l_NDC);
+	return l_NDC;
 }
 
 void InnoPhysicsSystemNS::generateFrustum(CameraComponent * cameraComponent)
 {
-	cameraComponent->m_frustum = InnoMath::makeFrustum(generateFrustumVertices(cameraComponent));
+	auto l_vertices = generateFrustumVertices(cameraComponent);
+	cameraComponent->m_frustum = InnoMath::makeFrustum(l_vertices);
 }
 
 void InnoPhysicsSystemNS::generatePointLightComponentAttenuationRadius(PointLightComponent* pointLightComponent)
@@ -425,7 +426,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(vec4 boundMax, vec
 		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
 	}
 
-	return std::move(l_vertices);
+	return l_vertices;
 }
 
 std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(AABB rhs)
@@ -433,7 +434,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(AABB rhs)
 	auto boundMax = rhs.m_boundMax;
 	auto boundMin = rhs.m_boundMin;
 
-	return std::move(generateAABBVertices(boundMax, boundMin));
+	return generateAABBVertices(boundMax, boundMin);
 }
 
 MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
@@ -604,9 +605,57 @@ bool isPointInFrustum(const TVec4<T> & lhs, const TFrustum<T> & rhs)
 }
 
 template<class T>
+bool intersectCheck(const TFrustum<T> & lhs, const TSphere<T> & rhs)
+{
+	if (distanceToPlane(rhs.m_center, lhs.m_px) > rhs.m_radius)
+	{
+		return false;
+	}
+	if (distanceToPlane(rhs.m_center, lhs.m_nx) > rhs.m_radius)
+	{
+		return false;
+	}
+	if (distanceToPlane(rhs.m_center, lhs.m_py) > rhs.m_radius)
+	{
+		return false;
+	}
+	if (distanceToPlane(rhs.m_center, lhs.m_ny) > rhs.m_radius)
+	{
+		return false;
+	}
+	if (distanceToPlane(rhs.m_center, lhs.m_pz) > rhs.m_radius)
+	{
+		return false;
+	}
+	if (distanceToPlane(rhs.m_center, lhs.m_nz) > rhs.m_radius)
+	{
+		return false;
+	}
+	return true;
+}
+
+template<class T>
 bool intersectCheck(const TFrustum<T> & lhs, const TAABB<T> & rhs)
 {
-	return true;
+	auto l_isCenterInside = isPointInFrustum(rhs.m_center, lhs);
+	if (l_isCenterInside)
+	{
+		return true;
+	}
+
+	auto l_isMaxInside = isPointInFrustum(rhs.m_boundMax, lhs);
+	if (l_isMaxInside)
+	{
+		return true;
+	}
+
+	auto l_isMinInside = isPointInFrustum(rhs.m_boundMin, lhs);
+	if (l_isMinInside)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 void InnoPhysicsSystemNS::updateCulling()
@@ -633,10 +682,14 @@ void InnoPhysicsSystemNS::updateCulling()
 				{
 					for (auto& physicsData : visibleComponent->m_PhysicsDataComponent->m_physicsDatas)
 					{
-						auto l_AABBws = transformAABBtoWorldSpace(physicsData.aabb, l_globalTm);
+						auto l_OBBws = transformAABBtoWorldSpace(physicsData.aabb, l_globalTm);
 
-						//if (isPointInFrustum(l_transformComponent->m_globalTransformVector.m_pos, l_cameraFrustum))
-						//{
+						auto l_boundingSphere = Sphere();
+						l_boundingSphere.m_center = l_OBBws.m_center;
+						l_boundingSphere.m_radius = l_OBBws.m_extend.length();
+
+						if (intersectCheck(l_cameraFrustum, l_boundingSphere))
+						{
 							CullingDataPack l_cullingDataPack;
 
 							l_cullingDataPack.m = l_globalTm;
@@ -646,9 +699,9 @@ void InnoPhysicsSystemNS::updateCulling()
 							l_cullingDataPack.MDC = physicsData.MDC;
 
 							PhysicsSystemComponent::get().m_cullingDataPack.emplace_back(l_cullingDataPack);
-						//}
+						}
 
-						updateSceneAABB(l_AABBws);
+						updateSceneAABB(l_OBBws);
 					}
 				}
 			}
