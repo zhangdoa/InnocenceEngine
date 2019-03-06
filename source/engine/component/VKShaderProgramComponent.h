@@ -11,7 +11,8 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	VkShaderModule m_shaderModule;
+	VkShaderModule m_vertexShaderModule;
+	VkShaderModule m_fragmentShaderModule;
 	VkPipelineShaderStageCreateInfo m_vertexShaderStageCreateInfo;
 	VkPipelineShaderStageCreateInfo m_fragmentShaderStageCreateInfo;
 	VkPipelineVertexInputStateCreateInfo m_vertexInputStateCreateInfo;

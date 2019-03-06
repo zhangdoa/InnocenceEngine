@@ -110,11 +110,11 @@ allocateInitialFreeChucksDefi(className)
 	// Memory pool for components
 	objectPoolUniPtr(TransformComponent, 16384);
 	objectPoolUniPtr(VisibleComponent, 16384);
-	objectPoolUniPtr(DirectionalLightComponent, 16384);
-	objectPoolUniPtr(PointLightComponent, 16384);
-	objectPoolUniPtr(SphereLightComponent, 16384);
-	objectPoolUniPtr(CameraComponent, 16384);
-	objectPoolUniPtr(InputComponent, 16384);
+	objectPoolUniPtr(DirectionalLightComponent, 16);
+	objectPoolUniPtr(PointLightComponent, 8192);
+	objectPoolUniPtr(SphereLightComponent, 8192);
+	objectPoolUniPtr(CameraComponent, 128);
+	objectPoolUniPtr(InputComponent, 128);
 	objectPoolUniPtr(EnvironmentCaptureComponent, 16384);
 
 	objectPoolUniPtr(MeshDataComponent, 16384);
@@ -123,16 +123,21 @@ allocateInitialFreeChucksDefi(className)
 
 	objectPoolUniPtr(GLMeshDataComponent, 16384);
 	objectPoolUniPtr(GLTextureDataComponent, 16384);
-	objectPoolUniPtr(GLFrameBufferComponent, 16384);
-	objectPoolUniPtr(GLShaderProgramComponent, 16384);
-	objectPoolUniPtr(GLRenderPassComponent, 16384);
+	objectPoolUniPtr(GLFrameBufferComponent, 64);
+	objectPoolUniPtr(GLShaderProgramComponent, 512);
+	objectPoolUniPtr(GLRenderPassComponent, 32);
 
 	#if defined INNO_PLATFORM_WIN
 	objectPoolUniPtr(DXMeshDataComponent, 16384);
 	objectPoolUniPtr(DXTextureDataComponent, 16384);
-	objectPoolUniPtr(DXShaderProgramComponent, 16384);
-	objectPoolUniPtr(DXRenderPassComponent, 16384);
+	objectPoolUniPtr(DXShaderProgramComponent, 512);
+	objectPoolUniPtr(DXRenderPassComponent, 32);
 	#endif
+
+	objectPoolUniPtr(VKMeshDataComponent, 16384);
+	objectPoolUniPtr(VKTextureDataComponent, 16384);
+	objectPoolUniPtr(VKShaderProgramComponent, 512);
+	objectPoolUniPtr(VKRenderPassComponent, 32);
 
 	objectPoolUniPtr(PhysicsDataComponent, 16384);
 
@@ -148,29 +153,33 @@ bool InnoMemorySystemNS::setup()
 
 	constructObjectPool(TransformComponent, 16384);
 	constructObjectPool(VisibleComponent, 16384);
-	constructObjectPool(DirectionalLightComponent, 16384);
-	constructObjectPool(PointLightComponent, 16384);
-	constructObjectPool(SphereLightComponent, 16384);
-	constructObjectPool(CameraComponent, 16384);
-	constructObjectPool(InputComponent, 16384);
+	constructObjectPool(DirectionalLightComponent, 16);
+	constructObjectPool(PointLightComponent, 8192);
+	constructObjectPool(SphereLightComponent, 8192);
+	constructObjectPool(CameraComponent, 128);
+	constructObjectPool(InputComponent, 128);
 	constructObjectPool(EnvironmentCaptureComponent, 16384);
-
 	constructObjectPool(MeshDataComponent, 16384);
 	constructObjectPool(MaterialDataComponent, 16384);
 	constructObjectPool(TextureDataComponent, 16384);
 
 	constructObjectPool(GLMeshDataComponent, 16384);
 	constructObjectPool(GLTextureDataComponent, 16384);
-	constructObjectPool(GLFrameBufferComponent, 16384);
-	constructObjectPool(GLShaderProgramComponent, 16384);
-	constructObjectPool(GLRenderPassComponent, 16384);
+	constructObjectPool(GLFrameBufferComponent, 64);
+	constructObjectPool(GLShaderProgramComponent, 512);
+	constructObjectPool(GLRenderPassComponent, 32);
 
 #if defined INNO_PLATFORM_WIN
 	constructObjectPool(DXMeshDataComponent, 16384);
 	constructObjectPool(DXTextureDataComponent, 16384);
-	constructObjectPool(DXShaderProgramComponent, 16384);
-	constructObjectPool(DXRenderPassComponent, 16384);
+	constructObjectPool(DXShaderProgramComponent, 512);
+	constructObjectPool(DXRenderPassComponent, 32);
 #endif
+
+	constructObjectPool(VKMeshDataComponent, 16384);
+	constructObjectPool(VKTextureDataComponent, 16384);
+	constructObjectPool(VKShaderProgramComponent, 512);
+	constructObjectPool(VKRenderPassComponent, 32);
 
 	constructObjectPool(PhysicsDataComponent, 16384);
 
@@ -235,7 +244,6 @@ allocateComponentImplDefi(SphereLightComponent)
 allocateComponentImplDefi(CameraComponent)
 allocateComponentImplDefi(InputComponent)
 allocateComponentImplDefi(EnvironmentCaptureComponent)
-
 allocateComponentImplDefi(MeshDataComponent)
 allocateComponentImplDefi(MaterialDataComponent)
 allocateComponentImplDefi(TextureDataComponent)
@@ -252,6 +260,11 @@ allocateComponentImplDefi(DXTextureDataComponent)
 allocateComponentImplDefi(DXShaderProgramComponent)
 allocateComponentImplDefi(DXRenderPassComponent)
 #endif
+
+allocateComponentImplDefi(VKMeshDataComponent)
+allocateComponentImplDefi(VKTextureDataComponent)
+allocateComponentImplDefi(VKShaderProgramComponent)
+allocateComponentImplDefi(VKRenderPassComponent)
 
 allocateComponentImplDefi(PhysicsDataComponent)
 
@@ -281,7 +294,6 @@ freeComponentImplDefi(SphereLightComponent)
 freeComponentImplDefi(CameraComponent)
 freeComponentImplDefi(InputComponent)
 freeComponentImplDefi(EnvironmentCaptureComponent)
-
 freeComponentImplDefi(MeshDataComponent)
 freeComponentImplDefi(MaterialDataComponent)
 freeComponentImplDefi(TextureDataComponent)
@@ -298,6 +310,11 @@ freeComponentImplDefi(DXTextureDataComponent)
 freeComponentImplDefi(DXShaderProgramComponent)
 freeComponentImplDefi(DXRenderPassComponent)
 #endif
+
+freeComponentImplDefi(VKMeshDataComponent)
+freeComponentImplDefi(VKTextureDataComponent)
+freeComponentImplDefi(VKShaderProgramComponent)
+freeComponentImplDefi(VKRenderPassComponent)
 
 freeComponentImplDefi(PhysicsDataComponent)
 

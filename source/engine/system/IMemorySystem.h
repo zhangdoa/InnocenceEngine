@@ -21,6 +21,11 @@
 #include "../component/DXRenderPassComponent.h"
 #endif
 
+#include "../component/VKMeshDataComponent.h"
+#include "../component/VKTextureDataComponent.h"
+#include "../component/VKShaderProgramComponent.h"
+#include "../component/VKRenderPassComponent.h"
+
 #include "../component/PhysicsDataComponent.h"
 
 #define allocateComponentInterfaceDecl( className ) \
@@ -67,20 +72,28 @@ protected:
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(MeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(MaterialDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(TextureDataComponent);
+
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLTextureDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLFrameBufferComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLShaderProgramComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(GLRenderPassComponent);
+
 	#if defined INNO_PLATFORM_WIN
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXTextureDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXShaderProgramComponent);
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(DXRenderPassComponent);
 	#endif
+
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(VKMeshDataComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(VKTextureDataComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(VKShaderProgramComponent);
+	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(VKRenderPassComponent);
+
 	INNO_SYSTEM_EXPORT allocateComponentInterfaceDecl(PhysicsDataComponent);
 
-INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(TransformComponent);
+	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(VisibleComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DirectionalLightComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(PointLightComponent);
@@ -91,18 +104,27 @@ INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(TransformComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(MeshDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(MaterialDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(TextureDataComponent);
+
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(GLMeshDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(GLTextureDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(GLFrameBufferComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(GLShaderProgramComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(GLRenderPassComponent);
+
 	#if defined INNO_PLATFORM_WIN
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXTextureDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXShaderProgramComponent);
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(DXRenderPassComponent);
 	#endif
+
+	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(VKMeshDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(VKTextureDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(VKShaderProgramComponent);
+	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(VKRenderPassComponent);
+
 	INNO_SYSTEM_EXPORT freeComponentInterfaceDecl(PhysicsDataComponent);
+
 public:
 	template <typename T> T * spawn()
 	{
@@ -140,6 +162,7 @@ template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(MaterialDataComponent);
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(TextureDataComponent);
+
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(GLMeshDataComponent);
 template <>
@@ -150,6 +173,7 @@ template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(GLShaderProgramComponent);
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(GLRenderPassComponent);
+
 #if defined INNO_PLATFORM_WIN
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(DXMeshDataComponent);
@@ -160,6 +184,16 @@ INNO_SYSTEM_EXPORT spawnComponentTemplate(DXShaderProgramComponent);
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(DXRenderPassComponent);
 #endif
+
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(VKMeshDataComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(VKTextureDataComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(VKShaderProgramComponent);
+template <>
+INNO_SYSTEM_EXPORT spawnComponentTemplate(VKRenderPassComponent);
+
 template <>
 INNO_SYSTEM_EXPORT spawnComponentTemplate(PhysicsDataComponent);
 
@@ -185,6 +219,7 @@ template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(MaterialDataComponent);
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(TextureDataComponent);
+
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(GLMeshDataComponent);
 template <>
@@ -195,6 +230,7 @@ template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(GLShaderProgramComponent);
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(GLRenderPassComponent);
+
 #if defined INNO_PLATFORM_WIN
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(DXMeshDataComponent);
@@ -205,5 +241,15 @@ INNO_SYSTEM_EXPORT destroyComponentTemplate(DXShaderProgramComponent);
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(DXRenderPassComponent);
 #endif
+
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(VKMeshDataComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(VKTextureDataComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(VKShaderProgramComponent);
+template <>
+INNO_SYSTEM_EXPORT destroyComponentTemplate(VKRenderPassComponent);
+
 template <>
 INNO_SYSTEM_EXPORT destroyComponentTemplate(PhysicsDataComponent);

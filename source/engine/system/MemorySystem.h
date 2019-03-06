@@ -30,17 +30,25 @@ public:
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(MeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(MaterialDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(TextureDataComponent);
+
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(GLMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(GLTextureDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(GLFrameBufferComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(GLShaderProgramComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(GLRenderPassComponent);
+
 	#if defined INNO_PLATFORM_WIN
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXTextureDataComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXShaderProgramComponent);
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(DXRenderPassComponent);
 	#endif
+
+	INNO_SYSTEM_EXPORT allocateComponentImplDecl(VKMeshDataComponent);
+	INNO_SYSTEM_EXPORT allocateComponentImplDecl(VKTextureDataComponent);
+	INNO_SYSTEM_EXPORT allocateComponentImplDecl(VKShaderProgramComponent);
+	INNO_SYSTEM_EXPORT allocateComponentImplDecl(VKRenderPassComponent);
+
 	INNO_SYSTEM_EXPORT allocateComponentImplDecl(PhysicsDataComponent);
 
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(TransformComponent);
@@ -54,17 +62,25 @@ public:
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(MeshDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(MaterialDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(TextureDataComponent);
+
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLMeshDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLTextureDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLFrameBufferComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLShaderProgramComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(GLRenderPassComponent);
+
 	#if defined INNO_PLATFORM_WIN
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXMeshDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXTextureDataComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXShaderProgramComponent);
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(DXRenderPassComponent);
 	#endif
+
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(VKMeshDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(VKTextureDataComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(VKShaderProgramComponent);
+	INNO_SYSTEM_EXPORT freeComponentImplDecl(VKRenderPassComponent);
+
 	INNO_SYSTEM_EXPORT freeComponentImplDecl(PhysicsDataComponent);
 
 	INNO_SYSTEM_EXPORT void* allocateRawMemory(size_t size) override;

@@ -365,7 +365,7 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 			return;
 		}
 
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been compiled.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: " + shaderFilePath + " has been compiled.");
 
 		// Link shader to program
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
@@ -393,7 +393,7 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 			return;
 		}
 
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: " + shaderFilePath + " Shader has been linked.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: " + shaderFilePath + " has been linked.");
 	};
 
 	if (!ShaderFilePaths.m_VSPath.empty())
