@@ -47,6 +47,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	}
 
 	std::string loadTextFile(const std::string & fileName);
+	std::vector<char> loadBinaryFile(const std::string & fileName);
 
 	bool convertModel(const std::string & fileName, const std::string & exportPath);
 
@@ -168,7 +169,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	std::vector<InnoFuture<void>> m_asyncTaskVector;
+	std::vector<InnoFuture<void>> m_asyncTask;
 	std::vector<std::function<void()>*> m_sceneLoadingCallbacks;
 
 	std::string m_nextLoadingScene;
@@ -182,7 +183,15 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 std::string InnoFileSystemNS::loadTextFile(const std::string & fileName)
 {
 	std::ifstream file;
+
 	file.open((fileName).c_str());
+
+	if (!file.is_open())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't open text file : " + fileName + "!");
+		return std::string();
+	}
+
 	std::stringstream ss;
 	std::string output;
 
@@ -191,6 +200,28 @@ std::string InnoFileSystemNS::loadTextFile(const std::string & fileName)
 	file.close();
 
 	return output;
+}
+
+std::vector<char> InnoFileSystemNS::loadBinaryFile(const std::string & fileName)
+{
+	std::ifstream file;
+	file.open((fileName).c_str(), std::ios::ate | std::ios::binary);
+
+	if (!file.is_open())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't open binary file : " + fileName + "!");
+		return std::vector<char>();
+	}
+
+	size_t fileSize = (size_t)file.tellg();
+	std::vector<char> buffer(fileSize);
+
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+
+	file.close();
+
+	return buffer;
 }
 
 bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::string & exportPath)
@@ -204,7 +235,7 @@ bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::str
 			AssimpWrapper::convertModel(fileName, exportPath);
 		});
 
-		m_asyncTaskVector.emplace_back(std::move(tempTask));
+		m_asyncTask.emplace_back(std::move(tempTask));
 		return true;
 	}
 	else
@@ -743,6 +774,11 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoFileSystem::getStatus()
 std::string InnoFileSystem::loadTextFile(const std::string & fileName)
 {
 	return InnoFileSystemNS::loadTextFile(fileName);
+}
+
+INNO_SYSTEM_EXPORT std::vector<char> InnoFileSystem::loadBinaryFile(const std::string & fileName)
+{
+	return InnoFileSystemNS::loadBinaryFile(fileName);
 }
 
 INNO_SYSTEM_EXPORT bool InnoFileSystem::loadDefaultScene()

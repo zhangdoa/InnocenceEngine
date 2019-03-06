@@ -43,7 +43,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 		}
 	};
 
-	VkDevice m_logicalDevice;
+	VkDevice m_device;
 
 	VkQueue m_graphicsQueue;
 
@@ -473,15 +473,15 @@ bool VKRenderingSystemNS::createLogicalDevice()
 		l_createInfo.enabledLayerCount = 0;
 	}
 
-	if (vkCreateDevice(m_physicalDevice, &l_createInfo, nullptr, &m_logicalDevice) != VK_SUCCESS)
+	if (vkCreateDevice(m_physicalDevice, &l_createInfo, nullptr, &m_device) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create logical device!");
 		return false;
 	}
 
-	vkGetDeviceQueue(m_logicalDevice, l_indices.m_graphicsFamily.value(), 0, &m_graphicsQueue);
-	vkGetDeviceQueue(m_logicalDevice, l_indices.m_presentFamily.value(), 0, &m_presentQueue);
+	vkGetDeviceQueue(m_device, l_indices.m_graphicsFamily.value(), 0, &m_graphicsQueue);
+	vkGetDeviceQueue(m_device, l_indices.m_presentFamily.value(), 0, &m_presentQueue);
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: logical device has been created.");
 	return true;
@@ -533,17 +533,17 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	l_createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	if (vkCreateSwapchainKHR(m_logicalDevice, &l_createInfo, nullptr, &m_swapChain) != VK_SUCCESS)
+	if (vkCreateSwapchainKHR(m_device, &l_createInfo, nullptr, &m_swapChain) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create swap chain!");
 		return false;
 	}
 
-	vkGetSwapchainImagesKHR(m_logicalDevice, m_swapChain, &l_imageCount, nullptr);
+	vkGetSwapchainImagesKHR(m_device, m_swapChain, &l_imageCount, nullptr);
 	m_swapChainImages.resize(l_imageCount);
 
-	vkGetSwapchainImagesKHR(m_logicalDevice, m_swapChain, &l_imageCount, m_swapChainImages.data());
+	vkGetSwapchainImagesKHR(m_device, m_swapChain, &l_imageCount, m_swapChainImages.data());
 
 	m_swapChainImageFormat = l_surfaceFormat.format;
 	m_swapChainExtent = l_extent;
@@ -572,7 +572,7 @@ bool VKRenderingSystemNS::createImageViews()
 		l_createInfo.subresourceRange.baseArrayLayer = 0;
 		l_createInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(m_logicalDevice, &l_createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS)
+		if (vkCreateImageView(m_device, &l_createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS)
 		{
 			m_objectStatus = ObjectStatus::STANDBY;
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create image views!");
@@ -612,7 +612,7 @@ bool VKRenderingSystemNS::createRenderPass()
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
 
-	if (vkCreateRenderPass(m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) 
+	if (vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) 
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create render pass!");
@@ -648,18 +648,18 @@ bool VKRenderingSystemNS::setup()
 
 bool VKRenderingSystemNS::terminate()
 {
-	vkDestroyPipeline(m_logicalDevice, m_graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, nullptr);
-	vkDestroyRenderPass(m_logicalDevice, m_renderPass, nullptr);
+	vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 
 	for (auto imageView : m_swapChainImageViews) 
 	{
-		vkDestroyImageView(m_logicalDevice, imageView, nullptr);
+		vkDestroyImageView(m_device, imageView, nullptr);
 	}
 
-	vkDestroySwapchainKHR(m_logicalDevice, m_swapChain, nullptr);
+	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
 
-	vkDestroyDevice(m_logicalDevice, nullptr);
+	vkDestroyDevice(m_device, nullptr);
 
 	if (m_enableValidationLayers)
 	{
