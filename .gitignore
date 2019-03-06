@@ -13,6 +13,7 @@ source/external/include/json
 \.DS_Store
 
 *.innoModel
+*.spv
 
 /source/engine/common/config.h
 /source/engine/third-party/ImGui
