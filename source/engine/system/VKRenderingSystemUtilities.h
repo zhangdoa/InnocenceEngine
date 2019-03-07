@@ -10,7 +10,7 @@
 
 INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
-	VKRenderPassComponent* addVKRenderPassComponent(unsigned int RTNum, TextureDataDesc RTDesc);
+	VKRenderPassComponent* addVKRenderPassComponent(unsigned int RTNum, TextureDataDesc RTDesc, VKShaderProgramComponent* VKSPC);
 
 	VKMeshDataComponent* generateVKMeshDataComponent(MeshDataComponent* rhs);
 	VKTextureDataComponent* generateVKTextureDataComponent(TextureDataComponent* rhs);

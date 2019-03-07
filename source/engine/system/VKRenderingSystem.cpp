@@ -13,62 +13,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	VkInstance m_instance;
-
-#ifdef DEBUG
-	const bool m_enableValidationLayers = true;
-#else
-	const bool m_enableValidationLayers = false;
-#endif
-
-	const std::vector<const char*> m_validationLayers =
-	{
-	"VK_LAYER_LUNARG_standard_validation"
-	};
-
-	VkDebugUtilsMessengerEXT m_messengerCallback;
-
-	VkSurfaceKHR m_windowSurface;
-
-	VkQueue m_presentQueue;
-
-	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-
-	struct QueueFamilyIndices
-	{
-		std::optional<uint32_t> m_graphicsFamily;
-		std::optional<uint32_t> m_presentFamily;
-
-		bool isComplete()
-		{
-			return m_graphicsFamily.has_value() && m_presentFamily.has_value();
-		}
-	};
-
-	VkQueue m_graphicsQueue;
-
-	const std::vector<const char*> m_deviceExtensions =
-	{
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
-	};
-
-	struct SwapChainSupportDetails
-	{
-		VkSurfaceCapabilitiesKHR m_capabilities;
-		std::vector<VkSurfaceFormatKHR> m_formats;
-		std::vector<VkPresentModeKHR> m_presentModes;
-	};
-
-	VkSwapchainKHR m_swapChain = 0;
-	std::vector<VkImage> m_swapChainImages;
-	VkFormat m_swapChainImageFormat;
-	VkExtent2D m_swapChainExtent;
-	std::vector<VkImageView> m_swapChainImageViews;
-
-	VkRenderPass m_renderPass;
-	VkPipelineLayout m_pipelineLayout;
-	VkPipeline m_graphicsPipeline;
-
 	bool checkValidationLayerSupport()
 	{
 		uint32_t l_layerCount;
@@ -77,7 +21,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 		std::vector<VkLayerProperties> l_availableLayers(l_layerCount);
 		vkEnumerateInstanceLayerProperties(&l_layerCount, l_availableLayers.data());
 
-		for (const char* layerName : m_validationLayers)
+		for (const char* layerName : VKRenderingSystemComponent::get().m_validationLayers)
 		{
 			bool layerFound = false;
 
@@ -126,7 +70,8 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-		if (m_enableValidationLayers) {
+		if (VKRenderingSystemComponent::get().m_enableValidationLayers) 
+		{
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
 
@@ -147,7 +92,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
-		std::set<std::string> requiredExtensions(m_deviceExtensions.begin(), m_deviceExtensions.end());
+		std::set<std::string> requiredExtensions(VKRenderingSystemComponent::get().m_deviceExtensions.begin(), VKRenderingSystemComponent::get().m_deviceExtensions.end());
 
 		for (const auto& extension : availableExtensions)
 		{
@@ -176,7 +121,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 			}
 
 			VkBool32 l_presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_windowSurface, &l_presentSupport);
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, VKRenderingSystemComponent::get().m_windowSurface, &l_presentSupport);
 
 			if (queueFamily.queueCount > 0 && l_presentSupport)
 			{
@@ -252,24 +197,24 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	{
 		SwapChainSupportDetails l_details;
 
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_windowSurface, &l_details.m_capabilities);
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &l_details.m_capabilities);
 
 		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_windowSurface, &formatCount, nullptr);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &formatCount, nullptr);
 
 		if (formatCount != 0)
 		{
 			l_details.m_formats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_windowSurface, &formatCount, l_details.m_formats.data());
+			vkGetPhysicalDeviceSurfaceFormatsKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &formatCount, l_details.m_formats.data());
 		}
 
 		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_windowSurface, &presentModeCount, nullptr);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &presentModeCount, nullptr);
 
 		if (presentModeCount != 0)
 		{
 			l_details.m_presentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_windowSurface, &presentModeCount, l_details.m_presentModes.data());
+			vkGetPhysicalDeviceSurfacePresentModesKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &presentModeCount, l_details.m_presentModes.data());
 		}
 
 		return l_details;
@@ -301,7 +246,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createSwapChain();
 	bool createImageViews();
 
-	bool createRenderPass();
 	bool createGraphicsPipeline();
 
 	bool terminate();
@@ -310,7 +254,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 bool VKRenderingSystemNS::createVkInstance()
 {
 	// check support for validation layer
-	if (m_enableValidationLayers && !checkValidationLayerSupport()) {
+	if (VKRenderingSystemComponent::get().m_enableValidationLayers && !checkValidationLayerSupport()) {
 		m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: validation layers requested, but not available!");
 		return false;
@@ -335,10 +279,10 @@ bool VKRenderingSystemNS::createVkInstance()
 	l_createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	l_createInfo.ppEnabledExtensionNames = extensions.data();
 
-	if (m_enableValidationLayers)
+	if (VKRenderingSystemComponent::get().m_enableValidationLayers)
 	{
-		l_createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
-		l_createInfo.ppEnabledLayerNames = m_validationLayers.data();
+		l_createInfo.enabledLayerCount = static_cast<uint32_t>(VKRenderingSystemComponent::get().m_validationLayers.size());
+		l_createInfo.ppEnabledLayerNames = VKRenderingSystemComponent::get().m_validationLayers.data();
 	}
 	else
 	{
@@ -346,7 +290,7 @@ bool VKRenderingSystemNS::createVkInstance()
 	}
 
 	// create Vulkan instance
-	if (vkCreateInstance(&l_createInfo, nullptr, &m_instance) != VK_SUCCESS)
+	if (vkCreateInstance(&l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_instance) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkInstance!");
@@ -359,7 +303,7 @@ bool VKRenderingSystemNS::createVkInstance()
 
 bool VKRenderingSystemNS::createDebugCallback()
 {
-	if (m_enableValidationLayers)
+	if (VKRenderingSystemComponent::get().m_enableValidationLayers)
 	{
 		VkDebugUtilsMessengerCreateInfoEXT l_createInfo = {};
 		l_createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -367,7 +311,7 @@ bool VKRenderingSystemNS::createDebugCallback()
 		l_createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 		l_createInfo.pfnUserCallback = debugCallback;
 
-		if (createDebugUtilsMessengerEXT(m_instance, &l_createInfo, nullptr, &m_messengerCallback) != VK_SUCCESS)
+		if (createDebugUtilsMessengerEXT(VKRenderingSystemComponent::get().m_instance, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_messengerCallback) != VK_SUCCESS)
 		{
 			m_objectStatus = ObjectStatus::STANDBY;
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create DebugUtilsMessenger!");
@@ -385,7 +329,7 @@ bool VKRenderingSystemNS::createDebugCallback()
 
 bool VKRenderingSystemNS::createWindowSurface()
 {
-	if (glfwCreateWindowSurface(m_instance, VKWindowSystemComponent::get().m_window, nullptr, &m_windowSurface) != VK_SUCCESS)
+	if (glfwCreateWindowSurface(VKRenderingSystemComponent::get().m_instance, VKWindowSystemComponent::get().m_window, nullptr, &VKRenderingSystemComponent::get().m_windowSurface) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create window surface!");
@@ -400,7 +344,7 @@ bool VKRenderingSystemNS::createPysicalDevice()
 {
 	// check if there is any suitable physical GPU
 	uint32_t l_deviceCount = 0;
-	vkEnumeratePhysicalDevices(m_instance, &l_deviceCount, nullptr);
+	vkEnumeratePhysicalDevices(VKRenderingSystemComponent::get().m_instance, &l_deviceCount, nullptr);
 
 	if (l_deviceCount == 0) {
 		m_objectStatus = ObjectStatus::STANDBY;
@@ -410,18 +354,18 @@ bool VKRenderingSystemNS::createPysicalDevice()
 
 	// assign the handle
 	std::vector<VkPhysicalDevice> l_devices(l_deviceCount);
-	vkEnumeratePhysicalDevices(m_instance, &l_deviceCount, l_devices.data());
+	vkEnumeratePhysicalDevices(VKRenderingSystemComponent::get().m_instance, &l_deviceCount, l_devices.data());
 
 	for (const auto& device : l_devices)
 	{
 		if (isDeviceSuitable(device))
 		{
-			m_physicalDevice = device;
+			VKRenderingSystemComponent::get().m_physicalDevice = device;
 			break;
 		}
 	}
 
-	if (m_physicalDevice == VK_NULL_HANDLE)
+	if (VKRenderingSystemComponent::get().m_physicalDevice == VK_NULL_HANDLE)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to find a suitable GPU!");
@@ -434,7 +378,7 @@ bool VKRenderingSystemNS::createPysicalDevice()
 
 bool VKRenderingSystemNS::createLogicalDevice()
 {
-	QueueFamilyIndices l_indices = findQueueFamilies(m_physicalDevice);
+	QueueFamilyIndices l_indices = findQueueFamilies(VKRenderingSystemComponent::get().m_physicalDevice);
 
 	std::vector<VkDeviceQueueCreateInfo> l_queueCreateInfos;
 	std::set<uint32_t> l_uniqueQueueFamilies = { l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value() };
@@ -460,28 +404,28 @@ bool VKRenderingSystemNS::createLogicalDevice()
 
 	l_createInfo.pEnabledFeatures = &l_deviceFeatures;
 
-	l_createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
-	l_createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
+	l_createInfo.enabledExtensionCount = static_cast<uint32_t>(VKRenderingSystemComponent::get().m_deviceExtensions.size());
+	l_createInfo.ppEnabledExtensionNames = VKRenderingSystemComponent::get().m_deviceExtensions.data();
 
-	if (m_enableValidationLayers)
+	if (VKRenderingSystemComponent::get().m_enableValidationLayers)
 	{
-		l_createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
-		l_createInfo.ppEnabledLayerNames = m_validationLayers.data();
+		l_createInfo.enabledLayerCount = static_cast<uint32_t>(VKRenderingSystemComponent::get().m_validationLayers.size());
+		l_createInfo.ppEnabledLayerNames = VKRenderingSystemComponent::get().m_validationLayers.data();
 	}
 	else
 	{
 		l_createInfo.enabledLayerCount = 0;
 	}
 
-	if (vkCreateDevice(m_physicalDevice, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_device) != VK_SUCCESS)
+	if (vkCreateDevice(VKRenderingSystemComponent::get().m_physicalDevice, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_device) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create logical device!");
 		return false;
 	}
 
-	vkGetDeviceQueue(VKRenderingSystemComponent::get().m_device, l_indices.m_graphicsFamily.value(), 0, &m_graphicsQueue);
-	vkGetDeviceQueue(VKRenderingSystemComponent::get().m_device, l_indices.m_presentFamily.value(), 0, &m_presentQueue);
+	vkGetDeviceQueue(VKRenderingSystemComponent::get().m_device, l_indices.m_graphicsFamily.value(), 0, &VKRenderingSystemComponent::get().m_graphicsQueue);
+	vkGetDeviceQueue(VKRenderingSystemComponent::get().m_device, l_indices.m_presentFamily.value(), 0, &VKRenderingSystemComponent::get().m_presentQueue);
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: logical device has been created.");
 	return true;
@@ -489,7 +433,7 @@ bool VKRenderingSystemNS::createLogicalDevice()
 
 bool VKRenderingSystemNS::createSwapChain()
 {
-	SwapChainSupportDetails l_swapChainSupport = querySwapChainSupport(m_physicalDevice);
+	SwapChainSupportDetails l_swapChainSupport = querySwapChainSupport(VKRenderingSystemComponent::get().m_physicalDevice);
 
 	VkSurfaceFormatKHR l_surfaceFormat = chooseSwapSurfaceFormat(l_swapChainSupport.m_formats);
 	VkPresentModeKHR l_presentMode = chooseSwapPresentMode(l_swapChainSupport.m_presentModes);
@@ -503,7 +447,7 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	VkSwapchainCreateInfoKHR l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	l_createInfo.surface = m_windowSurface;
+	l_createInfo.surface = VKRenderingSystemComponent::get().m_windowSurface;
 
 	l_createInfo.minImageCount = l_imageCount;
 	l_createInfo.imageFormat = l_surfaceFormat.format;
@@ -512,7 +456,7 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_createInfo.imageArrayLayers = 1;
 	l_createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	QueueFamilyIndices l_indices = findQueueFamilies(m_physicalDevice);
+	QueueFamilyIndices l_indices = findQueueFamilies(VKRenderingSystemComponent::get().m_physicalDevice);
 	uint32_t l_queueFamilyIndices[] = { l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value() };
 
 	if (l_indices.m_graphicsFamily.value() != l_indices.m_presentFamily.value())
@@ -533,20 +477,20 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	l_createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	if (vkCreateSwapchainKHR(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &m_swapChain) != VK_SUCCESS)
+	if (vkCreateSwapchainKHR(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_swapChain) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create swap chain!");
 		return false;
 	}
 
-	vkGetSwapchainImagesKHR(VKRenderingSystemComponent::get().m_device, m_swapChain, &l_imageCount, nullptr);
-	m_swapChainImages.resize(l_imageCount);
+	vkGetSwapchainImagesKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, &l_imageCount, nullptr);
+	VKRenderingSystemComponent::get().m_swapChainImages.resize(l_imageCount);
 
-	vkGetSwapchainImagesKHR(VKRenderingSystemComponent::get().m_device, m_swapChain, &l_imageCount, m_swapChainImages.data());
+	vkGetSwapchainImagesKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, &l_imageCount, VKRenderingSystemComponent::get().m_swapChainImages.data());
 
-	m_swapChainImageFormat = l_surfaceFormat.format;
-	m_swapChainExtent = l_extent;
+	VKRenderingSystemComponent::get().m_swapChainImageFormat = l_surfaceFormat.format;
+	VKRenderingSystemComponent::get().m_swapChainExtent = l_extent;
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: swap chain has been created.");
 	return true;
@@ -554,14 +498,14 @@ bool VKRenderingSystemNS::createSwapChain()
 
 bool VKRenderingSystemNS::createImageViews()
 {
-	m_swapChainImageViews.resize(m_swapChainImages.size());
+	VKRenderingSystemComponent::get().m_swapChainImageViews.resize(VKRenderingSystemComponent::get().m_swapChainImages.size());
 
-	for (size_t i = 0; i < m_swapChainImages.size(); i++) {
+	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainImages.size(); i++) {
 		VkImageViewCreateInfo l_createInfo = {};
 		l_createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		l_createInfo.image = m_swapChainImages[i];
+		l_createInfo.image = VKRenderingSystemComponent::get().m_swapChainImages[i];
 		l_createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		l_createInfo.format = m_swapChainImageFormat;
+		l_createInfo.format = VKRenderingSystemComponent::get().m_swapChainImageFormat;
 		l_createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 		l_createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 		l_createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -572,7 +516,7 @@ bool VKRenderingSystemNS::createImageViews()
 		l_createInfo.subresourceRange.baseArrayLayer = 0;
 		l_createInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS)
+		if (vkCreateImageView(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_swapChainImageViews[i]) != VK_SUCCESS)
 		{
 			m_objectStatus = ObjectStatus::STANDBY;
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create image views!");
@@ -581,45 +525,6 @@ bool VKRenderingSystemNS::createImageViews()
 	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: swap chain image views has been created.");
-	return true;
-}
-
-bool VKRenderingSystemNS::createRenderPass() 
-{
-	VkAttachmentDescription colorAttachment = {};
-	colorAttachment.format = m_swapChainImageFormat;
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	VkAttachmentReference colorAttachmentRef = {};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass = {};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-
-	VkRenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = 1;
-	renderPassInfo.pAttachments = &colorAttachment;
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-
-	if (vkCreateRenderPass(VKRenderingSystemComponent::get().m_device, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS)
-	{
-		m_objectStatus = ObjectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create render pass!");
-		return false;
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: render pass has been created.");
 	return true;
 }
 
@@ -632,6 +537,8 @@ bool VKRenderingSystemNS::createGraphicsPipeline()
 	l_shaderFilePaths.m_FSPath = "..//res//shaders//VK//finalBlendPass.frag.spv";
 
 	auto l_result = initializeVKShaderProgramComponent(l_VKSPC, l_shaderFilePaths);
+
+	auto l_VKRPC = addVKRenderPassComponent(1, TextureDataDesc(), l_VKSPC);
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: graphics pipeline has been created.");
 	return true;
@@ -647,7 +554,6 @@ bool VKRenderingSystemNS::setup()
 	result = result && createLogicalDevice();
 	result = result && createSwapChain();
 	result = result && createImageViews();
-	result = result && createRenderPass();
 	result = result && createGraphicsPipeline();
 
 	m_objectStatus = ObjectStatus::ALIVE;
@@ -656,27 +562,27 @@ bool VKRenderingSystemNS::setup()
 
 bool VKRenderingSystemNS::terminate()
 {
-	vkDestroyPipeline(VKRenderingSystemComponent::get().m_device, m_graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(VKRenderingSystemComponent::get().m_device, m_pipelineLayout, nullptr);
-	vkDestroyRenderPass(VKRenderingSystemComponent::get().m_device, m_renderPass, nullptr);
+	//vkDestroyPipeline(VKRenderingSystemComponent::get().m_device, m_graphicsPipeline, nullptr);
+	//vkDestroyPipelineLayout(VKRenderingSystemComponent::get().m_device, m_pipelineLayout, nullptr);
+	//vkDestroyRenderPass(VKRenderingSystemComponent::get().m_device, m_renderPass, nullptr);
 
-	for (auto imageView : m_swapChainImageViews) 
+	for (auto imageView : VKRenderingSystemComponent::get().m_swapChainImageViews)
 	{
 		vkDestroyImageView(VKRenderingSystemComponent::get().m_device, imageView, nullptr);
 	}
 
-	vkDestroySwapchainKHR(VKRenderingSystemComponent::get().m_device, m_swapChain, nullptr);
+	vkDestroySwapchainKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, nullptr);
 
 	vkDestroyDevice(VKRenderingSystemComponent::get().m_device, nullptr);
 
-	if (m_enableValidationLayers)
+	if (VKRenderingSystemComponent::get().m_enableValidationLayers)
 	{
-		destroyDebugUtilsMessengerEXT(m_instance, m_messengerCallback, nullptr);
+		destroyDebugUtilsMessengerEXT(VKRenderingSystemComponent::get().m_instance, VKRenderingSystemComponent::get().m_messengerCallback, nullptr);
 	}
 
-	vkDestroySurfaceKHR(m_instance, m_windowSurface, nullptr);
+	vkDestroySurfaceKHR(VKRenderingSystemComponent::get().m_instance, VKRenderingSystemComponent::get().m_windowSurface, nullptr);
 
-	vkDestroyInstance(m_instance, nullptr);
+	vkDestroyInstance(VKRenderingSystemComponent::get().m_instance, nullptr);
 
 	VKRenderingSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	return true;

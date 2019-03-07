@@ -13,8 +13,8 @@ public:
 
 	VkShaderModule m_vertexShaderModule;
 	VkShaderModule m_fragmentShaderModule;
-	VkPipelineShaderStageCreateInfo m_vertexShaderStageCreateInfo;
-	VkPipelineShaderStageCreateInfo m_fragmentShaderStageCreateInfo;
-	VkPipelineVertexInputStateCreateInfo m_vertexInputStateCreateInfo;
-	VkPipelineInputAssemblyStateCreateInfo m_inputAssemblyStateCreateInfo;
+	VkPipelineShaderStageCreateInfo m_vertexShaderStageCInfo = {};
+	VkPipelineShaderStageCreateInfo m_fragmentShaderStageCInfo = {};
+	VkPipelineVertexInputStateCreateInfo m_vertexInputStateCInfo = {};
+	VkPipelineInputAssemblyStateCreateInfo m_inputAssemblyStateCInfo = {};
 };

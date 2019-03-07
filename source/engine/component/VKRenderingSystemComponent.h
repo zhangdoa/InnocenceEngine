@@ -5,6 +5,24 @@
 #include "../component/TextureDataComponent.h"
 #include "../component/VKTextureDataComponent.h"
 
+struct QueueFamilyIndices
+{
+	std::optional<uint32_t> m_graphicsFamily;
+	std::optional<uint32_t> m_presentFamily;
+
+	bool isComplete()
+	{
+		return m_graphicsFamily.has_value() && m_presentFamily.has_value();
+	}
+};
+
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR m_capabilities;
+	std::vector<VkSurfaceFormatKHR> m_formats;
+	std::vector<VkPresentModeKHR> m_presentModes;
+};
+
 class VKRenderingSystemComponent
 {
 public:
@@ -21,7 +39,35 @@ public:
 
 	bool m_vsync_enabled = true;
 
+	VkInstance m_instance;
+	VkSurfaceKHR m_windowSurface;
+	VkQueue m_presentQueue;
+	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_device;
+	VkQueue m_graphicsQueue;
+	VkSwapchainKHR m_swapChain = 0;
+	std::vector<VkImage> m_swapChainImages;
+	VkFormat m_swapChainImageFormat;
+	VkExtent2D m_swapChainExtent;
+	std::vector<VkImageView> m_swapChainImageViews;
+
+	const std::vector<const char*> m_deviceExtensions =
+	{
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
+
+#ifdef DEBUG
+	const bool m_enableValidationLayers = true;
+#else
+	const bool m_enableValidationLayers = false;
+#endif
+
+	const std::vector<const char*> m_validationLayers =
+	{
+	"VK_LAYER_LUNARG_standard_validation"
+	};
+
+	VkDebugUtilsMessengerEXT m_messengerCallback;
 
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 
