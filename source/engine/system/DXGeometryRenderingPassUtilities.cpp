@@ -2,7 +2,6 @@
 #include "DXGeometryRenderingPassUtilities.h"
 
 #include "../component/DXGeometryRenderPassComponent.h"
-#include "../component/GameSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "../component/DXRenderingSystemComponent.h"
 

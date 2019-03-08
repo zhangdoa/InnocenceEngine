@@ -3,8 +3,6 @@
 #include "../component/GLFinalRenderPassComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
-#include "../component/PhysicsSystemComponent.h"
-#include "../component/GameSystemComponent.h"
 #include "../component/GLGeometryRenderPassComponent.h"
 #include "../component/GLTerrainRenderPassComponent.h"
 #include "../component/GLLightRenderPassComponent.h"

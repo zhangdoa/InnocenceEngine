@@ -9,7 +9,6 @@
 #include "GLFinalRenderingPassUtilities.h"
 
 #include "../component/FileSystemComponent.h"
-#include "../component/GameSystemComponent.h"
 #include "../component/WindowSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
@@ -380,9 +379,9 @@ bool GLRenderingSystemNS::prepareLightPassData()
 {
 	// point light
 	GLRenderingSystemComponent::get().m_PointLightDatas.clear();
-	GLRenderingSystemComponent::get().m_PointLightDatas.reserve(GameSystemComponent::get().m_PointLightComponents.size());
+	GLRenderingSystemComponent::get().m_PointLightDatas.reserve(g_pCoreSystem->getGameSystem()->get<PointLightComponent>().size());
 
-	for (auto i : GameSystemComponent::get().m_PointLightComponents)
+	for (auto i : g_pCoreSystem->getGameSystem()->get<PointLightComponent>())
 	{
 		PointLightData l_PointLightData;
 		l_PointLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
@@ -393,9 +392,9 @@ bool GLRenderingSystemNS::prepareLightPassData()
 
 	// sphere light
 	GLRenderingSystemComponent::get().m_SphereLightDatas.clear();
-	GLRenderingSystemComponent::get().m_SphereLightDatas.reserve(GameSystemComponent::get().m_SphereLightComponents.size());
+	GLRenderingSystemComponent::get().m_SphereLightDatas.reserve(g_pCoreSystem->getGameSystem()->get<SphereLightComponent>().size());
 
-	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
+	for (auto i : g_pCoreSystem->getGameSystem()->get<SphereLightComponent>())
 	{
 		SphereLightData l_SphereLightData;
 		l_SphereLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
@@ -409,7 +408,7 @@ bool GLRenderingSystemNS::prepareLightPassData()
 
 bool GLRenderingSystemNS::prepareBillboardPassData()
 {
-	for (auto i : GameSystemComponent::get().m_DirectionalLightComponents)
+	for (auto i : g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>())
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
@@ -419,7 +418,7 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
 	}
 
-	for (auto i : GameSystemComponent::get().m_PointLightComponents)
+	for (auto i : g_pCoreSystem->getGameSystem()->get<PointLightComponent>())
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
@@ -429,7 +428,7 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
 	}
 
-	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
+	for (auto i : g_pCoreSystem->getGameSystem()->get<SphereLightComponent>())
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;

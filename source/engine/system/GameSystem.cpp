@@ -1,6 +1,5 @@
 #include "GameSystem.h"
 #include "../common/config.h"
-#include "../component/GameSystemComponent.h"
 
 #include "ICoreSystem.h"
 
@@ -22,19 +21,48 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	IGameInstance* m_gameInstance;
+
+	// root TransformComponent
+	TransformComponent* m_rootTransformComponent;
+
+	// the AOS here
+	std::vector<TransformComponent*> m_TransformComponents;
+	std::vector<VisibleComponent*> m_VisibleComponents;
+	std::vector<DirectionalLightComponent*> m_DirectionalLightComponents;
+	std::vector<PointLightComponent*> m_PointLightComponents;
+	std::vector<SphereLightComponent*> m_SphereLightComponents;
+	std::vector<CameraComponent*> m_CameraComponents;
+	std::vector<InputComponent*> m_InputComponents;
+	std::vector<EnvironmentCaptureComponent*> m_EnvironmentCaptureComponents;
+
+	std::unordered_map<EntityID, TransformComponent*> m_TransformComponentsMap;
+	std::unordered_multimap<EntityID, VisibleComponent*> m_VisibleComponentsMap;
+	std::unordered_multimap<EntityID, DirectionalLightComponent*> m_DirectionalLightComponentsMap;
+	std::unordered_multimap<EntityID, PointLightComponent*> m_PointLightComponentsMap;
+	std::unordered_multimap<EntityID, SphereLightComponent*> m_SphereLightComponentsMap;
+	std::unordered_multimap<EntityID, CameraComponent*> m_CameraComponentsMap;
+	std::unordered_multimap<EntityID, InputComponent*> m_InputComponentsMap;
+	std::unordered_multimap<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
+
+	entityChildrenComponentsMetadataMap m_entityChildrenComponentsMetadataMap;
+	entityNameMap m_entityNameMap;
+
+	InnoFuture<void>* m_asyncTask;
+
+	bool m_pauseGameUpdate = false;
 }
 
 std::string InnoGameSystemNS::getEntityName(const EntityID& entityID)
 {
 	auto result = std::find_if(
-		GameSystemComponent::get().m_enitityNameMap.begin(),
-		GameSystemComponent::get().m_enitityNameMap.end(),
+		m_entityNameMap.begin(),
+		m_entityNameMap.end(),
 		[&](auto& val)-> bool {
 		return val.first == entityID;
 	}
 	);
 
-	if (result == GameSystemComponent::get().m_enitityNameMap.end())
+	if (result == m_entityNameMap.end())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity name by ID " + entityID + " !");
 		return "AbnormalEntityName";
@@ -46,14 +74,14 @@ std::string InnoGameSystemNS::getEntityName(const EntityID& entityID)
 EntityID InnoGameSystemNS::getEntityID(const std::string& entityName)
 {
 	auto result = std::find_if(
-		GameSystemComponent::get().m_enitityNameMap.begin(),
-		GameSystemComponent::get().m_enitityNameMap.end(),
+		m_entityNameMap.begin(),
+		m_entityNameMap.end(),
 		[&](auto& val)-> bool {
 		return val.second == entityName;
 	}
 	);
 
-	if (result == GameSystemComponent::get().m_enitityNameMap.end())
+	if (result == m_entityNameMap.end())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity ID by name " + entityName + " !");
 		return "AbnormalEntityID";
@@ -65,14 +93,14 @@ EntityID InnoGameSystemNS::getEntityID(const std::string& entityName)
 bool InnoGameSystemNS::setup()
 {
 	// setup root TransformComponent
-	GameSystemComponent::get().m_rootTransformComponent = new TransformComponent();
-	GameSystemComponent::get().m_rootTransformComponent->m_parentTransformComponent = nullptr;
+	m_rootTransformComponent = new TransformComponent();
+	m_rootTransformComponent->m_parentTransformComponent = nullptr;
 
-	GameSystemComponent::get().m_rootTransformComponent->m_parentEntity = createEntity("RootTransform");
+	m_rootTransformComponent->m_parentEntity = createEntity("RootTransform");
 
-	GameSystemComponent::get().m_rootTransformComponent->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(GameSystemComponent::get().m_rootTransformComponent->m_localTransformVector);
-	GameSystemComponent::get().m_rootTransformComponent->m_globalTransformVector = GameSystemComponent::get().m_rootTransformComponent->m_localTransformVector;
-	GameSystemComponent::get().m_rootTransformComponent->m_globalTransformMatrix = GameSystemComponent::get().m_rootTransformComponent->m_localTransformMatrix;
+	m_rootTransformComponent->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(m_rootTransformComponent->m_localTransformVector);
+	m_rootTransformComponent->m_globalTransformVector = m_rootTransformComponent->m_localTransformVector;
+	m_rootTransformComponent->m_globalTransformMatrix = m_rootTransformComponent->m_localTransformMatrix;
 
 	g_pCoreSystem->getFileSystem()->loadDefaultScene();
 
@@ -101,7 +129,7 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::setup()
 void InnoGameSystemNS::sortTransformComponentsVector()
 {
 	//construct the hierarchy tree
-	for (auto i : GameSystemComponent::get().m_TransformComponents)
+	for (auto i : m_TransformComponents)
 	{
 		if (i->m_parentTransformComponent)
 		{
@@ -109,7 +137,7 @@ void InnoGameSystemNS::sortTransformComponentsVector()
 		}
 	}
 	//from top to bottom
-	std::sort(GameSystemComponent::get().m_TransformComponents.begin(), GameSystemComponent::get().m_TransformComponents.end(), [&](TransformComponent* a, TransformComponent* b)
+	std::sort(m_TransformComponents.begin(), m_TransformComponents.end(), [&](TransformComponent* a, TransformComponent* b)
 	{
 		return a->m_transformHierarchyLevel < b->m_transformHierarchyLevel;
 	});
@@ -117,7 +145,7 @@ void InnoGameSystemNS::sortTransformComponentsVector()
 
 void InnoGameSystemNS::updateTransformComponent()
 {
-	std::for_each(GameSystemComponent::get().m_TransformComponents.begin(), GameSystemComponent::get().m_TransformComponents.end(), [&](TransformComponent* val)
+	std::for_each(m_TransformComponents.begin(), m_TransformComponents.end(), [&](TransformComponent* val)
 	{
 		val->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_localTransformVector);
 		val->m_globalTransformVector = InnoMath::LocalTransformVectorToGlobal(val->m_localTransformVector, val->m_parentTransformComponent->m_globalTransformVector, val->m_parentTransformComponent->m_globalTransformMatrix);
@@ -128,10 +156,60 @@ void InnoGameSystemNS::updateTransformComponent()
 // @TODO: add a cache function for after-rendering business
 INNO_SYSTEM_EXPORT void InnoGameSystem::saveComponentsCapture()
 {
-	std::for_each(GameSystemComponent::get().m_TransformComponents.begin(), GameSystemComponent::get().m_TransformComponents.end(), [&](TransformComponent* val)
+	std::for_each(InnoGameSystemNS::m_TransformComponents.begin(), InnoGameSystemNS::m_TransformComponents.end(), [&](TransformComponent* val)
 	{
 		val->m_globalTransformMatrix_prev = val->m_globalTransformMatrix;
 	});
+}
+
+INNO_SYSTEM_EXPORT void InnoGameSystem::cleanScene()
+{
+	for (auto i : InnoGameSystemNS::m_TransformComponents)
+	{
+		destroy(i);
+	}
+	InnoGameSystemNS::m_TransformComponents.clear();
+	InnoGameSystemNS::m_TransformComponentsMap.clear();
+
+	for (auto i : InnoGameSystemNS::m_VisibleComponents)
+	{
+		destroy(i);
+	}
+	InnoGameSystemNS::m_VisibleComponents.clear();
+	InnoGameSystemNS::m_VisibleComponentsMap.clear();
+
+	for (auto i : InnoGameSystemNS::m_DirectionalLightComponents)
+	{
+		destroy(i);
+	}
+	InnoGameSystemNS::m_DirectionalLightComponents.clear();
+	InnoGameSystemNS::m_DirectionalLightComponentsMap.clear();
+
+	for (auto i : InnoGameSystemNS::m_PointLightComponents)
+	{
+		destroy(i);
+	}
+	InnoGameSystemNS::m_PointLightComponents.clear();
+	InnoGameSystemNS::m_PointLightComponentsMap.clear();
+
+	for (auto i : InnoGameSystemNS::m_SphereLightComponents)
+	{
+		destroy(i);
+	}
+	InnoGameSystemNS::m_SphereLightComponents.clear();
+	InnoGameSystemNS::m_SphereLightComponentsMap.clear();
+
+	for (auto i : InnoGameSystemNS::m_EnvironmentCaptureComponents)
+	{
+		destroy(i);
+	}
+	InnoGameSystemNS::m_EnvironmentCaptureComponents.clear();
+	InnoGameSystemNS::m_EnvironmentCaptureComponentsMap.clear();
+}
+
+INNO_SYSTEM_EXPORT void InnoGameSystem::pauseGameUpdate(bool shouldPause)
+{
+	InnoGameSystemNS::m_pauseGameUpdate = shouldPause;
 }
 
 INNO_SYSTEM_EXPORT void InnoGameSystem::setGameInstance(IGameInstance * rhs)
@@ -142,20 +220,23 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::setGameInstance(IGameInstance * rhs)
 EntityID InnoGameSystemNS::createEntity(const std::string & entityName)
 {
 	auto result = std::find_if(
-		GameSystemComponent::get().m_enitityNameMap.begin(),
-		GameSystemComponent::get().m_enitityNameMap.end(),
+		m_entityNameMap.begin(),
+		m_entityNameMap.end(),
 		[&](auto& val) -> bool {
 		return val.second == entityName;
 	});
 
-	if (result != GameSystemComponent::get().m_enitityNameMap.end())
+	if (result != m_entityNameMap.end())
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: duplicated entity name " + entityName + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: duplicated entity name " + entityName + "!");
 		return 0;
 	}
 
 	auto l_entityID = InnoMath::createEntityID();
-	GameSystemComponent::get().m_enitityNameMap.emplace(l_entityID, entityName);
+	m_entityNameMap.emplace(l_entityID, entityName);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GameSystem: entity " + entityName + " has been created.");
+
 	return l_entityID;
 }
 
@@ -166,17 +247,17 @@ INNO_SYSTEM_EXPORT EntityID InnoGameSystem::createEntity(const std::string & ent
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::removeEntity(const std::string & entityName)
 {
-	for (auto i : GameSystemComponent::get().m_enitityNameMap)
+	for (auto i : InnoGameSystemNS::m_entityNameMap)
 	{
 		if (i.second == entityName)
 		{
-			GameSystemComponent::get().m_enitityNameMap.erase(i.first);
+			InnoGameSystemNS::m_entityNameMap.erase(i.first);
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GameSystem: entity " + entityName + " has been removed.");
 			return true;
 		}
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GameSystem: can't remove entity " + entityName + " !");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GameSystem: can't remove entity " + entityName + "!");
 	return false;
 }
 
@@ -210,9 +291,9 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 	{
 		InnoGameSystemNS::updateTransformComponent();
 	});
-	GameSystemComponent::get().m_asyncTask = &temp;
+	InnoGameSystemNS::m_asyncTask = &temp;
 
-	if (!InnoGameSystemNS::m_gameInstance->update(GameSystemComponent::get().m_pauseGameUpdate))
+	if (!InnoGameSystemNS::m_gameInstance->update(InnoGameSystemNS::m_pauseGameUpdate))
 	{
 		return false;
 	}
@@ -227,7 +308,7 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 		return false;
 	}
 
-	delete GameSystemComponent::get().m_rootTransformComponent;
+	delete InnoGameSystemNS::m_rootTransformComponent;
 
 	InnoGameSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem has been terminated.");
@@ -238,16 +319,16 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 INNO_SYSTEM_EXPORT void InnoGameSystem::registerComponent(className* rhs, const EntityID& parentEntity) \
 { \
 	rhs->m_parentEntity = parentEntity; \
-	GameSystemComponent::get().m_##className##s.emplace_back(rhs); \
-	GameSystemComponent::get().m_##className##sMap.emplace(parentEntity, rhs); \
+	InnoGameSystemNS::m_##className##s.emplace_back(rhs); \
+	InnoGameSystemNS::m_##className##sMap.emplace(parentEntity, rhs); \
 \
-	auto indexOfTheComponent = GameSystemComponent::get().m_##className##s.size(); \
+	auto indexOfTheComponent = InnoGameSystemNS::m_##className##s.size(); \
 	auto l_componentName = std::string(#className) + "_" + std::to_string(indexOfTheComponent); \
 	auto l_componentType = InnoUtility::getComponentType<className>(); \
 	auto l_componentMetaDataPair = componentMetadataPair(l_componentType, l_componentName); \
 \
-	auto result = GameSystemComponent::get().m_enitityChildrenComponentsMetadataMap.find(parentEntity); \
-	if (result != GameSystemComponent::get().m_enitityChildrenComponentsMetadataMap.end()) \
+	auto result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(parentEntity); \
+	if (result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
 	{ \
 		auto l_componentMetadataMap = &result->second; \
 		l_componentMetadataMap->emplace(rhs, l_componentMetaDataPair); \
@@ -256,7 +337,7 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::registerComponent(className* rhs, const 
 	{ \
 		auto l_componentMetadataMap = componentMetadataMap(); \
 		l_componentMetadataMap.emplace(rhs, l_componentMetaDataPair); \
-		GameSystemComponent::get().m_enitityChildrenComponentsMetadataMap.emplace(parentEntity, std::move(l_componentMetadataMap)); \
+		InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.emplace(parentEntity, std::move(l_componentMetadataMap)); \
 	} \
 }
 
@@ -278,8 +359,8 @@ INNO_SYSTEM_EXPORT std::string InnoGameSystem::getGameName()
 #define getComponentImplDefi( className ) \
 INNO_SYSTEM_EXPORT className* InnoGameSystem::get##className(const EntityID& parentEntity) \
 { \
-	auto result = GameSystemComponent::get().m_##className##sMap.find(parentEntity); \
-	if (result != GameSystemComponent::get().m_##className##sMap.end()) \
+	auto result = InnoGameSystemNS::m_##className##sMap.find(parentEntity); \
+	if (result != InnoGameSystemNS::m_##className##sMap.end()) \
 	{ \
 		return result->second; \
 	} \
@@ -299,6 +380,21 @@ getComponentImplDefi(CameraComponent)
 getComponentImplDefi(InputComponent)
 getComponentImplDefi(EnvironmentCaptureComponent)
 
+#define getComponentContainerImplDefi( className ) \
+INNO_SYSTEM_EXPORT std::vector<className*>& InnoGameSystem::get##className##s() \
+{ \
+	return InnoGameSystemNS::m_##className##s; \
+}
+
+getComponentContainerImplDefi(TransformComponent)
+getComponentContainerImplDefi(VisibleComponent)
+getComponentContainerImplDefi(DirectionalLightComponent)
+getComponentContainerImplDefi(PointLightComponent)
+getComponentContainerImplDefi(SphereLightComponent)
+getComponentContainerImplDefi(CameraComponent)
+getComponentContainerImplDefi(InputComponent)
+getComponentContainerImplDefi(EnvironmentCaptureComponent)
+
 INNO_SYSTEM_EXPORT void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponent, ButtonData boundButton, std::function<void()>* function)
 {
 	auto l_kbuttonStatusCallbackVector = inputComponent->m_buttonStatusCallbackImpl.find(boundButton);
@@ -312,9 +408,19 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::registerButtonStatusCallback(InputCompon
 	}
 }
 
-INNO_SYSTEM_EXPORT TransformComponent * InnoGameSystem::getRootTransformComponent()
+INNO_SYSTEM_EXPORT TransformComponent* InnoGameSystem::getRootTransformComponent()
 {
-	return GameSystemComponent::get().m_rootTransformComponent;
+	return InnoGameSystemNS::m_rootTransformComponent;
+}
+
+INNO_SYSTEM_EXPORT entityNameMap& InnoGameSystem::getEntityNameMap()
+{
+	return InnoGameSystemNS::m_entityNameMap;
+}
+
+INNO_SYSTEM_EXPORT entityChildrenComponentsMetadataMap& InnoGameSystem::getEntityChildrenComponentsMetadataMap()
+{
+	return InnoGameSystemNS::m_entityChildrenComponentsMetadataMap;
 }
 
 INNO_SYSTEM_EXPORT void InnoGameSystem::registerMouseMovementCallback(InputComponent * inputComponent, int mouseCode, std::function<void(float)>* function)

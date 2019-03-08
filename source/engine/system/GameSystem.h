@@ -7,6 +7,9 @@ INNO_SYSTEM_EXPORT void registerComponent(className* rhs, const EntityID& parent
 #define getComponentImplDecl( className ) \
 INNO_SYSTEM_EXPORT className* get##className(const EntityID& parentEntity) override;
 
+#define getComponentContainerImplDecl( className ) \
+INNO_SYSTEM_EXPORT std::vector<className*>& get##className##s() override;
+
 class InnoGameSystem : INNO_IMPLEMENT IGameSystem
 {
 public:
@@ -37,14 +40,28 @@ public:
 	getComponentImplDecl(InputComponent);
 	getComponentImplDecl(EnvironmentCaptureComponent);
 
-	INNO_SYSTEM_EXPORT std::string getGameName() override;
+	getComponentContainerImplDecl(TransformComponent);
+	getComponentContainerImplDecl(VisibleComponent);
+	getComponentContainerImplDecl(DirectionalLightComponent);
+	getComponentContainerImplDecl(PointLightComponent);
+	getComponentContainerImplDecl(SphereLightComponent);
+	getComponentContainerImplDecl(CameraComponent);
+	getComponentContainerImplDecl(InputComponent);
+	getComponentContainerImplDecl(EnvironmentCaptureComponent);
 
+	INNO_SYSTEM_EXPORT std::string getGameName() override;
 	INNO_SYSTEM_EXPORT TransformComponent* getRootTransformComponent() override;
+	INNO_SYSTEM_EXPORT entityNameMap& getEntityNameMap() override;
+	INNO_SYSTEM_EXPORT entityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() override;
 
 	INNO_SYSTEM_EXPORT void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) override;
 	INNO_SYSTEM_EXPORT void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) override;
 
 	INNO_SYSTEM_EXPORT void saveComponentsCapture() override;
+	INNO_SYSTEM_EXPORT void cleanScene() override;
+
+	INNO_SYSTEM_EXPORT void pauseGameUpdate(bool shouldPause) override;
+
 	INNO_SYSTEM_EXPORT void setGameInstance(IGameInstance* rhs) override;
 
 	INNO_SYSTEM_EXPORT EntityID createEntity(const std::string& entityName) override;

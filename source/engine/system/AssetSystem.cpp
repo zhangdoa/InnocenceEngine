@@ -3,7 +3,6 @@
 #include "../common/ComponentHeaders.h"
 
 #include "../component/AssetSystemComponent.h"
-#include "../component/GameSystemComponent.h"
 
 namespace fs = std::filesystem;
 
@@ -636,27 +635,31 @@ void InnoAssetSystemNS::loadDefaultAssets()
 
 void InnoAssetSystemNS::loadAssetsForComponents()
 {
-	for (auto& l_environmentCaptureComponent : GameSystemComponent::get().m_EnvironmentCaptureComponents)
+	for (auto l_environmentCaptureComponent : g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>())
 	{
 		if (!l_environmentCaptureComponent->m_cubemapTextureFileName.empty())
 		{
-			//l_environmentCaptureComponent->m_TDC = InnoAssetSystemNS::loadTexture(l_environmentCaptureComponent->m_cubemapTextureFileName, TextureUsageType::EQUIRETANGULAR);
+			//InnoAssetSystemNS::m_asyncTask.emplace_back(g_pCoreSystem->getTaskSystem()->submit([&]()
+			//{
+			//	l_environmentCaptureComponent->m_TDC = InnoAssetSystemNS::loadTexture(l_environmentCaptureComponent->m_cubemapTextureFileName, TextureUsageType::EQUIRETANGULAR);
+			//}));
 		}
 	}
-	for (auto& l_visibleComponent : GameSystemComponent::get().m_VisibleComponents)
+
+	for (auto l_visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 	{
 		if (l_visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE)
 		{
 			if (l_visibleComponent->m_meshShapeType == MeshShapeType::CUSTOM)
 			{
-				if (l_visibleComponent->m_modelFileName != "")
-				{	
+				if (!l_visibleComponent->m_modelFileName.empty())
+				{
 					InnoAssetSystemNS::m_asyncTask.emplace_back(g_pCoreSystem->getTaskSystem()->submit([&]()
 					{
-						l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
-						l_visibleComponent->m_objectStatus = ObjectStatus::STANDBY;
-						g_pCoreSystem->getPhysicsSystem()->generatePhysicsData(l_visibleComponent);
 					}));
+					l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
+					l_visibleComponent->m_objectStatus = ObjectStatus::STANDBY;
+					g_pCoreSystem->getPhysicsSystem()->generatePhysicsData(l_visibleComponent);
 				}
 			}
 			else
@@ -665,8 +668,8 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 				g_pCoreSystem->getPhysicsSystem()->generatePhysicsData(l_visibleComponent);
 			}
 		}
+		g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoAssetSystemNS::m_asyncTask);
 	}
-	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoAssetSystemNS::m_asyncTask);
 }
 
 void InnoAssetSystemNS::assignUnitMesh(MeshShapeType MeshUsageType, VisibleComponent* visibleComponent)

@@ -1,7 +1,6 @@
 #include "GLRenderingSystemUtilities.h"
 #include "GLShadowRenderingPassUtilities.h"
 #include "../component/GLShadowRenderPassComponent.h"
-#include "../component/GameSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "ICoreSystem.h"
 
@@ -83,7 +82,7 @@ void GLShadowRenderingPassUtilities::initialize()
 
 void GLShadowRenderingPassUtilities::drawAllMeshDataComponents()
 {
-	for (auto& l_visibleComponent : GameSystemComponent::get().m_VisibleComponents)
+	for (auto& l_visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 	{
 		if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE)
 		{

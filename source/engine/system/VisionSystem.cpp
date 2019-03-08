@@ -2,7 +2,6 @@
 
 #include "../component/RenderingSystemComponent.h"
 #include "../component/WindowSystemComponent.h"
-#include "../component/GameSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
 
 #if defined INNO_PLATFORM_WIN
@@ -176,7 +175,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 {
-	if (GameSystemComponent::get().m_isLoadingScene)
+	if (g_pCoreSystem->getFileSystem()->isLoadingScene())
 	{
 		return true;
 	}
@@ -190,7 +189,8 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 		}
 
 		// main camera render data
-		auto l_mainCamera = GameSystemComponent::get().m_CameraComponents[0];
+		auto l_cameraComponents = g_pCoreSystem->getGameSystem()->get<CameraComponent>();
+		auto l_mainCamera = l_cameraComponents[0];
 		auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
 
 		auto l_p = l_mainCamera->m_projectionMatrix;
@@ -228,7 +228,8 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 		RenderingSystemComponent::get().m_CamGlobalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
 		// sun/directional light render data
-		auto l_directionalLight = GameSystemComponent::get().m_DirectionalLightComponents[0];
+		auto l_directionalLightComponents = g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>();
+		auto l_directionalLight = l_directionalLightComponents[0];
 		auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
 
 		RenderingSystemComponent::get().m_sunDir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);

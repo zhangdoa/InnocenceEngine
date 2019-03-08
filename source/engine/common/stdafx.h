@@ -25,6 +25,7 @@
 #include <iomanip>
 
 #include <atomic>
+#include <mutex>
 
 #include <filesystem>
 #include <optional>

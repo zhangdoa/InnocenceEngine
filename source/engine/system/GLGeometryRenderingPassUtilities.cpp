@@ -3,7 +3,6 @@
 
 #include "../component/GLGeometryRenderPassComponent.h"
 #include "../component/GLTerrainRenderPassComponent.h"
-#include "../component/GameSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
 

@@ -1,7 +1,6 @@
 #include "GLRenderingSystemUtilities.h"
 #include "GLEnvironmentRenderingPassUtilities.h"
 #include "../component/GLEnvironmentRenderPassComponent.h"
-#include "../component/GameSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
 #include "../component/GLFinalRenderPassComponent.h"
@@ -347,7 +346,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
 	glViewport(0, 0, 2048, 2048);
 
-	auto l_mainCapture = GameSystemComponent::get().m_EnvironmentCaptureComponents[0];
+	auto l_mainCapture = g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>()[0];
 	auto l_mainCaptureTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCapture->m_parentEntity);
 	//auto l_capturePos = l_mainCaptureTransformComponent->m_localTransformVector.m_pos;
 	auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);

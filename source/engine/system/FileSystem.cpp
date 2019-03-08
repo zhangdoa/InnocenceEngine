@@ -1,7 +1,6 @@
 #include "FileSystem.h"
 
 #include"../component/FileSystemComponent.h"
-#include"../component/GameSystemComponent.h"
 
 #include "json/json.hpp"
 using json = nlohmann::json;
@@ -51,7 +50,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 	bool convertModel(const std::string & fileName, const std::string & exportPath);
 
-	void to_json(json& j, const enitityNamePair& p);
+	void to_json(json& j, const entityNamePair& p);
 
 	void to_json(json& j, const TransformComponent& p);
 	void to_json(json& j, const TransformVector& p);
@@ -111,7 +110,11 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 	bool prepareForLoadingScene(const std::string& fileName);
 	bool loadScene(const std::string& fileName);
+	bool cacheScene();
 	bool cleanScene();
+	bool loadComponents(const json& j);
+	bool assignOrphanComponents();
+	bool loadAssets();
 	bool saveScene(const std::string& fileName);
 
 	bool serialize(std::ostream& os, void* ptr, size_t size)
@@ -172,6 +175,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	std::vector<InnoFuture<void>> m_asyncTask;
 	std::vector<std::function<void()>*> m_sceneLoadingCallbacks;
 
+	std::atomic<bool> m_isLoadingScene = false;
 	std::string m_nextLoadingScene;
 	std::string m_currentScene;
 
@@ -247,7 +251,7 @@ bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::str
 	return true;
 }
 
-void InnoFileSystemNS::to_json(json& j, const enitityNamePair& p)
+void InnoFileSystemNS::to_json(json& j, const entityNamePair& p)
 {
 	j = json{
 		{"EntityID", p.first},
@@ -515,7 +519,7 @@ bool InnoFileSystemNS::saveJsonDataToDisk(const std::string & fileName, const js
 bool InnoFileSystemNS::prepareForLoadingScene(const std::string& fileName)
 {
 	m_nextLoadingScene = fileName;
-	GameSystemComponent::get().m_isLoadingScene = true;
+	m_isLoadingScene = true;
 
 	return true;
 }
@@ -534,19 +538,63 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 		return false;
 	}
 
+	// cache components which can't be serilized currently
+	cacheScene();
+
 	cleanScene();
 
+	loadComponents(j);
+
+	assignOrphanComponents();
+
+	loadAssets();
+
+	for (auto i : m_sceneLoadingCallbacks)
+	{
+		(*i)();
+	}
+
+	m_currentScene = fileName;
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene " + fileName + " has been loaded.");
+
+	return true;
+}
+
+bool InnoFileSystemNS::cacheScene()
+{
+	for (auto i : g_pCoreSystem->getGameSystem()->get<CameraComponent>())
+	{
+		m_orphanCameraComponents.push(std::pair<CameraComponent*, std::string>(i, g_pCoreSystem->getGameSystem()->getEntityName(i->m_parentEntity)));
+	}
+	for (auto i : g_pCoreSystem->getGameSystem()->get<InputComponent>())
+	{
+		m_orphanInputComponents.push(std::pair<InputComponent*, std::string>(i, g_pCoreSystem->getGameSystem()->getEntityName(i->m_parentEntity)));
+	}
+
+	return true;
+}
+
+
+bool InnoFileSystemNS::cleanScene()
+{
+	g_pCoreSystem->getGameSystem()->cleanScene();
+	return true;
+}
+
+bool InnoFileSystemNS::loadComponents(const json& j)
+{
 	auto l_sceneName = j["SceneName"];
 
-	for (auto& i : j["SceneEntities"])
+	for (auto i : j["SceneEntities"])
 	{
 		if (i["EntityName"] != "RootTransform")
 		{
 			g_pCoreSystem->getGameSystem()->removeEntity(i["EntityName"]);
 
 			auto l_EntityID = g_pCoreSystem->getGameSystem()->createEntity(i["EntityName"]);
-
-			for (auto& k : i["ChildrenComponents"])
+		
+			for (auto k : i["ChildrenComponents"])
 			{
 				switch (componentType(k["ComponentType"]))
 				{
@@ -581,6 +629,13 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 		}
 	}
 
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: components loading finished.");
+
+	return true;
+}
+
+bool InnoFileSystemNS::assignOrphanComponents()
+{
 	while (InnoFileSystemNS::m_orphanTransformComponents.size() > 0)
 	{
 		std::pair<TransformComponent*, std::string> l_orphan;
@@ -616,73 +671,12 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 		}
 	}
 
-	g_pCoreSystem->getAssetSystem()->loadAssetsForComponents();
-
-	for (auto i : m_sceneLoadingCallbacks)
-	{
-		(*i)();
-	}
-
-	m_currentScene = fileName;
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene " + fileName + " has been loaded.");
-
 	return true;
 }
 
-bool InnoFileSystemNS::cleanScene()
+bool InnoFileSystemNS::loadAssets()
 {
-	// cache components which can't be serilized currently
-	for (auto i : GameSystemComponent::get().m_CameraComponents)
-	{
-		m_orphanCameraComponents.push(std::pair<CameraComponent*, std::string>(i, g_pCoreSystem->getGameSystem()->getEntityName(i->m_parentEntity)));
-	}
-	for (auto i : GameSystemComponent::get().m_InputComponents)
-	{
-		m_orphanInputComponents.push(std::pair<InputComponent*, std::string>(i, g_pCoreSystem->getGameSystem()->getEntityName(i->m_parentEntity)));
-	}
-
-	for (auto i : GameSystemComponent::get().m_TransformComponents)
-	{
-		g_pCoreSystem->getGameSystem()->destroy(i);
-	}
-	GameSystemComponent::get().m_TransformComponents.clear();
-	GameSystemComponent::get().m_TransformComponentsMap.clear();
-
-	for (auto i : GameSystemComponent::get().m_VisibleComponents)
-	{
-		g_pCoreSystem->getGameSystem()->destroy(i);
-	}
-	GameSystemComponent::get().m_VisibleComponents.clear();
-	GameSystemComponent::get().m_VisibleComponentsMap.clear();
-
-	for (auto i : GameSystemComponent::get().m_DirectionalLightComponents)
-	{
-		g_pCoreSystem->getGameSystem()->destroy(i);
-	}
-	GameSystemComponent::get().m_DirectionalLightComponents.clear();
-	GameSystemComponent::get().m_DirectionalLightComponentsMap.clear();
-
-	for (auto i : GameSystemComponent::get().m_PointLightComponents)
-	{
-		g_pCoreSystem->getGameSystem()->destroy(i);
-	}
-	GameSystemComponent::get().m_PointLightComponents.clear();
-	GameSystemComponent::get().m_PointLightComponentsMap.clear();
-
-	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
-	{
-		g_pCoreSystem->getGameSystem()->destroy(i);
-	}
-	GameSystemComponent::get().m_SphereLightComponents.clear();
-	GameSystemComponent::get().m_SphereLightComponentsMap.clear();
-
-	for (auto i : GameSystemComponent::get().m_EnvironmentCaptureComponents)
-	{
-		g_pCoreSystem->getGameSystem()->destroy(i);
-	}
-	GameSystemComponent::get().m_EnvironmentCaptureComponents.clear();
-	GameSystemComponent::get().m_EnvironmentCaptureComponentsMap.clear();
+	g_pCoreSystem->getAssetSystem()->loadAssetsForComponents();
 
 	return true;
 }
@@ -693,7 +687,7 @@ bool InnoFileSystemNS::saveScene(const std::string& fileName)
 	topLevel["SceneName"] = fileName;
 
 	// save entities name and ID
-	for (auto& i : GameSystemComponent::get().m_enitityNameMap)
+	for (auto& i : g_pCoreSystem->getGameSystem()->getEntityNameMap())
 	{
 		json j;
 		to_json(j, i);
@@ -701,27 +695,27 @@ bool InnoFileSystemNS::saveScene(const std::string& fileName)
 	}
 
 	// save childern components
-	for (auto i : GameSystemComponent::get().m_TransformComponents)
+	for (auto i : g_pCoreSystem->getGameSystem()->get<TransformComponent>())
 	{
 		saveComponentData(topLevel, i);
 	}
-	for (auto i : GameSystemComponent::get().m_VisibleComponents)
+	for (auto i : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 	{
 		saveComponentData(topLevel, i);
 	}
-	for (auto i : GameSystemComponent::get().m_DirectionalLightComponents)
+	for (auto i : g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>())
 	{
 		saveComponentData(topLevel, i);
 	}
-	for (auto i : GameSystemComponent::get().m_PointLightComponents)
+	for (auto i : g_pCoreSystem->getGameSystem()->get<PointLightComponent>())
 	{
 		saveComponentData(topLevel, i);
 	}
-	for (auto i : GameSystemComponent::get().m_SphereLightComponents)
+	for (auto i : g_pCoreSystem->getGameSystem()->get<SphereLightComponent>())
 	{
 		saveComponentData(topLevel, i);
 	}
-	for (auto i : GameSystemComponent::get().m_EnvironmentCaptureComponents)
+	for (auto i : g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>())
 	{
 		saveComponentData(topLevel, i);
 	}
@@ -749,11 +743,11 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool InnoFileSystem::update()
 {
-	if (GameSystemComponent::get().m_isLoadingScene)
+	if (InnoFileSystemNS::m_isLoadingScene)
 	{
 		g_pCoreSystem->getTaskSystem()->waitAllTasksToFinish();
 		InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene);
-		GameSystemComponent::get().m_isLoadingScene = false;
+		InnoFileSystemNS::m_isLoadingScene = false;
 	}
 
 	return true;
@@ -795,6 +789,11 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::loadScene(const std::string & fileName)
 INNO_SYSTEM_EXPORT bool InnoFileSystem::saveScene(const std::string & fileName)
 {
 	return InnoFileSystemNS::saveScene(fileName);
+}
+
+INNO_SYSTEM_EXPORT bool InnoFileSystem::isLoadingScene()
+{
+	return InnoFileSystemNS::m_isLoadingScene;
 }
 
 INNO_SYSTEM_EXPORT bool InnoFileSystem::addSceneLoadingCallback(std::function<void()>* functor)

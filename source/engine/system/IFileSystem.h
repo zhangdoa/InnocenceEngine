@@ -22,6 +22,7 @@ public:
 	INNO_SYSTEM_EXPORT virtual bool loadDefaultScene() = 0;
 	INNO_SYSTEM_EXPORT virtual bool loadScene(const std::string& fileName) = 0;
 	INNO_SYSTEM_EXPORT virtual bool saveScene(const std::string& fileName) = 0;
+	INNO_SYSTEM_EXPORT virtual bool isLoadingScene() = 0;
 
 	INNO_SYSTEM_EXPORT virtual bool addSceneLoadingCallback(std::function<void()>* functor) = 0;
 

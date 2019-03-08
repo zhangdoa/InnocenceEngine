@@ -24,9 +24,9 @@ enum class componentType { TransformComponent, VisibleComponent, DirectionalLigh
 
 using componentMetadataPair = std::pair<componentType, std::string>;
 using componentMetadataMap = std::unordered_map<void*, componentMetadataPair>;
-using enitityChildrenComponentsMetadataMap = std::unordered_map<EntityID, componentMetadataMap>;
-using enitityNamePair = std::pair<EntityID, std::string>;
-using enitityNameMap = std::unordered_map<EntityID, std::string>;
+using entityChildrenComponentsMetadataMap = std::unordered_map<EntityID, componentMetadataMap>;
+using entityNamePair = std::pair<EntityID, std::string>;
+using entityNameMap = std::unordered_map<EntityID, std::string>;
 
 struct TimeData
 {

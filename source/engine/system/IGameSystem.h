@@ -15,6 +15,12 @@ INNO_SYSTEM_EXPORT virtual className* get##className(const EntityID& parentEntit
 #define getComponentInterfaceCall( className, parentEntity ) \
 get##className(parentEntity)
 
+#define getComponentContainerInterfaceDecl( className ) \
+INNO_SYSTEM_EXPORT virtual std::vector<className*>& get##className##s() = 0;
+
+#define getComponentContainerInterfaceCall( className ) \
+get##className##s()
+
 INNO_INTERFACE IGameSystem
 {
 public:
@@ -67,11 +73,28 @@ protected:
 	getComponentInterfaceDecl(InputComponent);
 	getComponentInterfaceDecl(EnvironmentCaptureComponent);
 
+	getComponentContainerInterfaceDecl(TransformComponent);
+	getComponentContainerInterfaceDecl(VisibleComponent);
+	getComponentContainerInterfaceDecl(DirectionalLightComponent);
+	getComponentContainerInterfaceDecl(PointLightComponent);
+	getComponentContainerInterfaceDecl(SphereLightComponent);
+	getComponentContainerInterfaceDecl(CameraComponent);
+	getComponentContainerInterfaceDecl(InputComponent);
+	getComponentContainerInterfaceDecl(EnvironmentCaptureComponent);
+
 public:
-	template <typename T> T * get(const EntityID& parentEntity)
+	template <typename T> T* get(const EntityID& parentEntity)
 	{
 		return nullptr;
 	};
+
+	template <typename T> std::vector<T*>& get()
+	{
+		return nullptr;
+	};
+
+	INNO_SYSTEM_EXPORT virtual entityNameMap& getEntityNameMap() = 0;
+	INNO_SYSTEM_EXPORT virtual entityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() = 0;
 
 	INNO_SYSTEM_EXPORT virtual std::string getGameName() = 0;
 	INNO_SYSTEM_EXPORT virtual TransformComponent* getRootTransformComponent() = 0;
@@ -80,6 +103,9 @@ public:
 	INNO_SYSTEM_EXPORT virtual void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) = 0;
 
 	INNO_SYSTEM_EXPORT virtual void saveComponentsCapture() = 0;
+	INNO_SYSTEM_EXPORT virtual void cleanScene() = 0;
+
+	INNO_SYSTEM_EXPORT virtual void pauseGameUpdate(bool shouldPause) = 0;
 
 	INNO_SYSTEM_EXPORT virtual void setGameInstance(IGameInstance* rhs) = 0;
 
@@ -129,4 +155,44 @@ template <> inline InputComponent * IGameSystem::get(const EntityID& parentEntit
 template <> inline EnvironmentCaptureComponent * IGameSystem::get(const EntityID& parentEntity)
 {
 	return getComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity);
+};
+
+template <> inline std::vector<TransformComponent*>& IGameSystem::get()
+{
+	return getComponentContainerInterfaceCall(TransformComponent);
+};
+
+template <> inline std::vector<VisibleComponent*>& IGameSystem::get()
+{
+	return getComponentContainerInterfaceCall(VisibleComponent);
+};
+
+template <> inline std::vector<DirectionalLightComponent*>& IGameSystem::get()
+{
+	return getComponentContainerInterfaceCall(DirectionalLightComponent);
+};
+
+template <> inline std::vector<PointLightComponent*>& IGameSystem::get()
+{
+	return getComponentContainerInterfaceCall(PointLightComponent);
+};
+
+template <> inline std::vector<SphereLightComponent*>& IGameSystem::get()
+{
+	return getComponentContainerInterfaceCall(SphereLightComponent);
+};
+
+template <> inline std::vector<CameraComponent*>& IGameSystem::get()
+{
+	return getComponentContainerInterfaceCall(CameraComponent);
+};
+
+template <> inline std::vector<InputComponent*>& IGameSystem::get()
+{
+	return getComponentContainerInterfaceCall(InputComponent);
+};
+
+template <> inline std::vector<EnvironmentCaptureComponent*>& IGameSystem::get()
+{
+	return getComponentContainerInterfaceCall(EnvironmentCaptureComponent);
 };

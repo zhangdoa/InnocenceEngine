@@ -1,6 +1,5 @@
 #include "PhysicsSystem.h"
 
-#include "../component/GameSystemComponent.h"
 #include "../component/WindowSystemComponent.h"
 #include "../component/FileSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
@@ -64,13 +63,16 @@ bool InnoPhysicsSystemNS::setup()
 	f_mouseSelect = [&]() {
 		PhysicsSystemComponent::get().m_selectedVisibleComponent = nullptr;
 
-		if (GameSystemComponent::get().m_CameraComponents.size() > 0)
+		if (g_pCoreSystem->getGameSystem()->get<CameraComponent>().size() > 0)
 		{
+			auto l_cameraComponents = g_pCoreSystem->getGameSystem()->get<CameraComponent>();
+			auto l_mainCamera = l_cameraComponents[0];
+			auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
 			Ray l_mouseRay;
-			l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GameSystemComponent::get().m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
+			l_mouseRay.m_origin = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 			l_mouseRay.m_direction = WindowSystemComponent::get().m_mousePositionInWorldSpace;
 
-			for (auto visibleComponent : GameSystemComponent::get().m_VisibleComponents)
+			for (auto visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 			{
 				if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE)
 				{
@@ -212,7 +214,8 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	directionalLightComponent->m_projectionMatrices.clear();
 
 	//1. get frustum vertices and the maxium draw distance
-	auto l_camera = GameSystemComponent::get().m_CameraComponents[0];
+	auto l_cameraComponents = g_pCoreSystem->getGameSystem()->get<CameraComponent>();
+	auto l_camera = l_cameraComponents[0];
 	auto l_frustumVertices = generateFrustumVertices(l_camera);
 	auto l_distance = l_camera->m_zFar - l_camera->m_zNear;
 	std::vector<float> l_CSMSplitFactors = { 20.48f / l_distance, 128.0f / l_distance, 1024.0f / l_distance, 1.0f };
@@ -519,7 +522,7 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::initialize()
 
 void InnoPhysicsSystemNS::updateCameraComponents()
 {
-	for (auto& i : GameSystemComponent::get().m_CameraComponents)
+	for (auto& i : g_pCoreSystem->getGameSystem()->get<CameraComponent>())
 	{
 		generateProjectionMatrix(i);
 		generateRayOfEye(i);
@@ -529,15 +532,15 @@ void InnoPhysicsSystemNS::updateCameraComponents()
 
 void InnoPhysicsSystemNS::updateLightComponents()
 {
-	for (auto& i : GameSystemComponent::get().m_DirectionalLightComponents)
+	for (auto& i : g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>())
 	{
 		generateAABB(i);
 	}
-	for (auto& i : GameSystemComponent::get().m_PointLightComponents)
+	for (auto& i : g_pCoreSystem->getGameSystem()->get<PointLightComponent>())
 	{
 		generatePointLightComponentAttenuationRadius(i);
 	}
-	for (auto& i : GameSystemComponent::get().m_SphereLightComponents)
+	for (auto& i : g_pCoreSystem->getGameSystem()->get<SphereLightComponent>())
 	{
 		generateSphereLightComponentScale(i);
 	}
@@ -642,16 +645,16 @@ void InnoPhysicsSystemNS::updateCulling()
 {
 	PhysicsSystemComponent::get().m_cullingDataPack.clear();
 
-	if (GameSystemComponent::get().m_CameraComponents.size() > 0)
+	if (g_pCoreSystem->getGameSystem()->get<CameraComponent>().size() > 0)
 	{
-		Ray l_mouseRay;
-		l_mouseRay.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(GameSystemComponent::get().m_CameraComponents[0]->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_mouseRay.m_direction = WindowSystemComponent::get().m_mousePositionInWorldSpace;
+		auto l_cameraComponents = g_pCoreSystem->getGameSystem()->get<CameraComponent>();
+		auto l_mainCamera = l_cameraComponents[0];
+		auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
 
-		auto l_cameraFrustum = GameSystemComponent::get().m_CameraComponents[0]->m_frustum;
-		auto l_eyeRay = GameSystemComponent::get().m_CameraComponents[0]->m_rayOfEye;
+		auto l_cameraFrustum = l_mainCamera->m_frustum;
+		auto l_eyeRay = l_mainCamera->m_rayOfEye;
 
-		for (auto visibleComponent : GameSystemComponent::get().m_VisibleComponents)
+		for (auto visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 		{
 			if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE && visibleComponent->m_objectStatus == ObjectStatus::ALIVE)
 			{
@@ -689,7 +692,7 @@ void InnoPhysicsSystemNS::updateCulling()
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
 {
-	if (GameSystemComponent::get().m_isLoadingScene)
+	if (g_pCoreSystem->getFileSystem()->isLoadingScene())
 	{
 		PhysicsSystemComponent::get().m_cullingDataPack.clear();
 		PhysicsSystemComponent::get().m_isCullingDataPackValid = false;

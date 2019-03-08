@@ -16,8 +16,6 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-#include "../component/GameSystemComponent.h"
-
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;

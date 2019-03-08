@@ -3,7 +3,6 @@
 #include "../component/WindowSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "../component/AssetSystemComponent.h"
-#include "../component/GameSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
 
 #include "ICoreSystem.h"
@@ -171,7 +170,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 	}
 	if (ImGui::Checkbox("Pause game update", &l_gameConfig.pauseGameUpdate))
 	{
-		GameSystemComponent::get().m_pauseGameUpdate = l_gameConfig.pauseGameUpdate;
+		g_pCoreSystem->getGameSystem()->pauseGameUpdate(l_gameConfig.pauseGameUpdate);
 	}
 
 	ImGui::Checkbox("Use zoom", &l_renderingConfig.useZoom);
@@ -387,12 +386,15 @@ void ImGuiWrapperNS::showWorldExplorer()
 	static void* selectedComponent = nullptr;
 	static componentType selectedComponentType;
 
-	for (auto i : GameSystemComponent::get().m_enitityNameMap)
+	auto l_entityNameMap = g_pCoreSystem->getGameSystem()->getEntityNameMap();
+	auto l_entityChildrenComponentsMetadataMap = g_pCoreSystem->getGameSystem()->getEntityChildrenComponentsMetadataMap();
+
+	for (auto i : l_entityNameMap)
 	{
 		if (ImGui::TreeNode(i.second.c_str()))
 		{
-			auto result = GameSystemComponent::get().m_enitityChildrenComponentsMetadataMap.find(i.first);
-			if (result != GameSystemComponent::get().m_enitityChildrenComponentsMetadataMap.end())
+			auto result = l_entityChildrenComponentsMetadataMap.find(i.first);
+			if (result != l_entityChildrenComponentsMetadataMap.end())
 			{
 				auto& l_componentNameMap = result->second;
 
