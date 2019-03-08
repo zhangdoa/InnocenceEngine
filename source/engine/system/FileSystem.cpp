@@ -1,7 +1,5 @@
 #include "FileSystem.h"
 
-#include"../component/FileSystemComponent.h"
-
 #include "json/json.hpp"
 using json = nlohmann::json;
 
@@ -179,9 +177,13 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	std::string m_nextLoadingScene;
 	std::string m_currentScene;
 
-	ThreadSafeQueue <std::pair<TransformComponent*, std::string>> m_orphanTransformComponents;
-	ThreadSafeQueue <std::pair<CameraComponent*, std::string>> m_orphanCameraComponents;
-	ThreadSafeQueue <std::pair<InputComponent*, std::string>> m_orphanInputComponents;
+	ThreadSafeQueue<std::pair<TransformComponent*, std::string>> m_orphanTransformComponents;
+	ThreadSafeQueue<std::pair<CameraComponent*, std::string>> m_orphanCameraComponents;
+	ThreadSafeQueue<std::pair<InputComponent*, std::string>> m_orphanInputComponents;
+
+	std::unordered_map<std::string, ModelMap> m_loadedModelMap;
+	std::unordered_map<std::string, ModelPair> m_loadedModelPair;
+	std::unordered_map<std::string, TextureDataComponent*> m_loadedTexture;
 }
 
 std::string InnoFileSystemNS::loadTextFile(const std::string & fileName)
@@ -1169,8 +1171,8 @@ ModelMap InnoFileSystemNS::ModelLoader::loadModelFromDisk(const std::string & fi
 	ModelMap l_result;
 
 	// check if this file has already been loaded once
-	auto l_loadedModelMap = FileSystemComponent::get().m_loadedModelMap.find(fileName);
-	if (l_loadedModelMap != FileSystemComponent::get().m_loadedModelMap.end())
+	auto l_loadedModelMap = m_loadedModelMap.find(fileName);
+	if (l_loadedModelMap != m_loadedModelMap.end())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: " + fileName + " has been already loaded.");
 		// Just copy new materials
@@ -1188,7 +1190,7 @@ ModelMap InnoFileSystemNS::ModelLoader::loadModelFromDisk(const std::string & fi
 	if (loadJsonDataFromDisk(fileName, j))
 	{
 		l_result = std::move(processSceneJsonData(j));
-		FileSystemComponent::get().m_loadedModelMap.emplace(fileName, l_result);
+		m_loadedModelMap.emplace(fileName, l_result);
 	}
 	else
 	{
@@ -1232,8 +1234,8 @@ ModelPair InnoFileSystemNS::ModelLoader::processMeshJsonData(const json & j)
 
 	auto l_meshFileName = j["MeshFile"].get<std::string>();
 
-	auto l_loadedModelPair = FileSystemComponent::get().m_loadedModelPair.find(l_meshFileName);
-	if (l_loadedModelPair != FileSystemComponent::get().m_loadedModelPair.end())
+	auto l_loadedModelPair = m_loadedModelPair.find(l_meshFileName);
+	if (l_loadedModelPair != m_loadedModelPair.end())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: " + l_meshFileName + " has been already loaded.");
 		l_result = l_loadedModelPair->second;
@@ -1267,8 +1269,9 @@ ModelPair InnoFileSystemNS::ModelLoader::processMeshJsonData(const json & j)
 		l_result.first = l_MeshDC;
 		l_result.second = processMaterialJsonData(j["Material"]);
 
-		FileSystemComponent::get().m_loadedModelPair.emplace(l_meshFileName, l_result);
-		FileSystemComponent::get().m_uninitializedMeshComponents.push(l_MeshDC);
+		m_loadedModelPair.emplace(l_meshFileName, l_result);
+
+		g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->registerUninitializedMeshDataComponent(l_MeshDC);
 	}
 
 	return l_result;
@@ -1314,8 +1317,8 @@ TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTexture(const std::stri
 {
 	TextureDataComponent* l_TDC;
 
-	auto l_loadedTDC = FileSystemComponent::get().m_loadedTexture.find(fileName);
-	if (l_loadedTDC != FileSystemComponent::get().m_loadedTexture.end())
+	auto l_loadedTDC = m_loadedTexture.find(fileName);
+	if (l_loadedTDC != m_loadedTexture.end())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: " + fileName + " has been already loaded.");
 		l_TDC = l_loadedTDC->second;
@@ -1362,8 +1365,9 @@ TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const s
 
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: STB_Image: " + fileName + " has been loaded.");
 
-		FileSystemComponent::get().m_loadedTexture.emplace(fileName, l_TDC);
-		FileSystemComponent::get().m_uninitializedTextureComponents.push(l_TDC);
+		m_loadedTexture.emplace(fileName, l_TDC);
+
+		g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->registerUninitializedTextureDataComponent(l_TDC);
 
 		return l_TDC;
 	}

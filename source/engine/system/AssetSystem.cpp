@@ -1,8 +1,5 @@
 #include "AssetSystem.h"
-
 #include "../common/ComponentHeaders.h"
-
-#include "../component/AssetSystemComponent.h"
 
 namespace fs = std::filesystem;
 
@@ -34,6 +31,33 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	std::vector<InnoFuture<void>> m_asyncTask;
+
+	MeshDataComponent* m_UnitLineMDC;
+	MeshDataComponent* m_UnitQuadMDC;
+	MeshDataComponent* m_UnitCubeMDC;
+	MeshDataComponent* m_UnitSphereMDC;
+	MeshDataComponent* m_TerrainMDC;
+
+	TextureDataComponent* m_basicNormalTDC;
+	TextureDataComponent* m_basicAlbedoTDC;
+	TextureDataComponent* m_basicMetallicTDC;
+	TextureDataComponent* m_basicRoughnessTDC;
+	TextureDataComponent* m_basicAOTDC;
+
+	TextureDataComponent* m_iconTemplate_OBJ;
+	TextureDataComponent* m_iconTemplate_PNG;
+	TextureDataComponent* m_iconTemplate_SHADER;
+	TextureDataComponent* m_iconTemplate_UNKNOWN;
+
+	TextureDataComponent* m_iconTemplate_DirectionalLight;
+	TextureDataComponent* m_iconTemplate_PointLight;
+	TextureDataComponent* m_iconTemplate_SphereLight;
+
+	DirectoryMetadata m_rootDirectoryMetadata;
+
+	std::unordered_map<EntityID, MeshDataComponent*> m_meshMap;
+	std::unordered_map<EntityID, MaterialDataComponent*> m_materialMap;
+	std::unordered_map<EntityID, TextureDataComponent*> m_textureMap;
 }
 
 INNO_SYSTEM_EXPORT bool InnoAssetSystem::setup()
@@ -96,7 +120,7 @@ MeshDataComponent* InnoAssetSystemNS::addMeshDataComponent()
 	auto newMesh = g_pCoreSystem->getMemorySystem()->spawn<MeshDataComponent>();
 	auto l_parentEntity = InnoMath::createEntityID();
 	newMesh->m_parentEntity = l_parentEntity;
-	auto l_meshMap = &AssetSystemComponent::get().m_meshMap;
+	auto l_meshMap = &m_meshMap;
 	l_meshMap->emplace(std::pair<EntityID, MeshDataComponent*>(l_parentEntity, newMesh));
 	return newMesh;
 }
@@ -106,7 +130,7 @@ MaterialDataComponent* InnoAssetSystemNS::addMaterialDataComponent()
 	auto newMaterial = g_pCoreSystem->getMemorySystem()->spawn<MaterialDataComponent>();
 	auto l_parentEntity = InnoMath::createEntityID();
 	newMaterial->m_parentEntity = l_parentEntity;
-	auto l_materialMap = &AssetSystemComponent::get().m_materialMap;
+	auto l_materialMap = &m_materialMap;
 	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, newMaterial));
 	return newMaterial;
 }
@@ -116,15 +140,15 @@ TextureDataComponent* InnoAssetSystemNS::addTextureDataComponent()
 	auto newTexture = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 	auto l_parentEntity = InnoMath::createEntityID();
 	newTexture->m_parentEntity = l_parentEntity;
-	auto l_textureMap = &AssetSystemComponent::get().m_textureMap;
+	auto l_textureMap = &m_textureMap;
 	l_textureMap->emplace(std::pair<EntityID, TextureDataComponent*>(l_parentEntity, newTexture));
 	return newTexture;
 }
 
 MeshDataComponent* InnoAssetSystem::getMeshDataComponent(EntityID EntityID)
 {
-	auto result = AssetSystemComponent::get().m_meshMap.find(EntityID);
-	if (result != AssetSystemComponent::get().m_meshMap.end())
+	auto result = InnoAssetSystemNS::m_meshMap.find(EntityID);
+	if (result != InnoAssetSystemNS::m_meshMap.end())
 	{
 		return result->second;
 	}
@@ -137,8 +161,8 @@ MeshDataComponent* InnoAssetSystem::getMeshDataComponent(EntityID EntityID)
 
 TextureDataComponent * InnoAssetSystem::getTextureDataComponent(EntityID EntityID)
 {
-	auto result = AssetSystemComponent::get().m_textureMap.find(EntityID);
-	if (result != AssetSystemComponent::get().m_textureMap.end())
+	auto result = InnoAssetSystemNS::m_textureMap.find(EntityID);
+	if (result != InnoAssetSystemNS::m_textureMap.end())
 	{
 		return result->second;
 	}
@@ -154,15 +178,15 @@ MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType meshShap
 	switch (meshShapeType)
 	{
 	case MeshShapeType::LINE:
-		return AssetSystemComponent::get().m_UnitLineMDC; break;
+		return InnoAssetSystemNS::m_UnitLineMDC; break;
 	case MeshShapeType::QUAD:
-		return AssetSystemComponent::get().m_UnitQuadMDC; break;
+		return InnoAssetSystemNS::m_UnitQuadMDC; break;
 	case MeshShapeType::CUBE:
-		return AssetSystemComponent::get().m_UnitCubeMDC; break;
+		return InnoAssetSystemNS::m_UnitCubeMDC; break;
 	case MeshShapeType::SPHERE:
-		return AssetSystemComponent::get().m_UnitSphereMDC; break;
+		return InnoAssetSystemNS::m_UnitSphereMDC; break;
 	case MeshShapeType::TERRAIN:
-		return AssetSystemComponent::get().m_TerrainMDC; break;
+		return InnoAssetSystemNS::m_TerrainMDC; break;
 	case MeshShapeType::CUSTOM:
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: wrong MeshShapeType passed to InnoAssetSystem::getMeshDataComponent() !");
 		return nullptr; break;
@@ -178,15 +202,15 @@ TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType
 	case TextureUsageType::INVISIBLE:
 		return nullptr; break;
 	case TextureUsageType::NORMAL:
-		return AssetSystemComponent::get().m_basicNormalTDC; break;
+		return InnoAssetSystemNS::m_basicNormalTDC; break;
 	case TextureUsageType::ALBEDO:
-		return AssetSystemComponent::get().m_basicAlbedoTDC; break;
+		return InnoAssetSystemNS::m_basicAlbedoTDC; break;
 	case TextureUsageType::METALLIC:
-		return AssetSystemComponent::get().m_basicMetallicTDC; break;
+		return InnoAssetSystemNS::m_basicMetallicTDC; break;
 	case TextureUsageType::ROUGHNESS:
-		return AssetSystemComponent::get().m_basicRoughnessTDC; break;
+		return InnoAssetSystemNS::m_basicRoughnessTDC; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
-		return AssetSystemComponent::get().m_basicAOTDC; break;
+		return InnoAssetSystemNS::m_basicAOTDC; break;
 	case TextureUsageType::CUBEMAP:
 		return nullptr; break;
 	case TextureUsageType::EQUIRETANGULAR:
@@ -203,13 +227,13 @@ INNO_SYSTEM_EXPORT TextureDataComponent* InnoAssetSystem::getTextureDataComponen
 	switch (iconType)
 	{
 	case FileExplorerIconType::OBJ:
-		return AssetSystemComponent::get().m_iconTemplate_OBJ; break;
+		return InnoAssetSystemNS::m_iconTemplate_OBJ; break;
 	case FileExplorerIconType::PNG:
-		return AssetSystemComponent::get().m_iconTemplate_PNG; break;
+		return InnoAssetSystemNS::m_iconTemplate_PNG; break;
 	case FileExplorerIconType::SHADER:
-		return AssetSystemComponent::get().m_iconTemplate_SHADER; break;
+		return InnoAssetSystemNS::m_iconTemplate_SHADER; break;
 	case FileExplorerIconType::UNKNOWN:
-		return AssetSystemComponent::get().m_iconTemplate_UNKNOWN; break;
+		return InnoAssetSystemNS::m_iconTemplate_UNKNOWN; break;
 	default:
 		return nullptr; break;
 	}
@@ -220,11 +244,11 @@ INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataCompone
 	switch (iconType)
 	{
 	case WorldEditorIconType::DIRECTIONAL_LIGHT:
-		return AssetSystemComponent::get().m_iconTemplate_DirectionalLight; break;
+		return InnoAssetSystemNS::m_iconTemplate_DirectionalLight; break;
 	case WorldEditorIconType::POINT_LIGHT:
-		return AssetSystemComponent::get().m_iconTemplate_PointLight; break;
+		return InnoAssetSystemNS::m_iconTemplate_PointLight; break;
 	case WorldEditorIconType::SPHERE_LIGHT:
-		return AssetSystemComponent::get().m_iconTemplate_SphereLight; break;
+		return InnoAssetSystemNS::m_iconTemplate_SphereLight; break;
 	default:
 		return nullptr; break;
 	}
@@ -232,7 +256,7 @@ INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataCompone
 
 bool InnoAssetSystem::removeMeshDataComponent(EntityID EntityID)
 {
-	auto l_meshMap = &AssetSystemComponent::get().m_meshMap;
+	auto l_meshMap = &InnoAssetSystemNS::m_meshMap;
 	auto l_mesh = l_meshMap->find(EntityID);
 	if (l_mesh != l_meshMap->end())
 	{
@@ -249,7 +273,7 @@ bool InnoAssetSystem::removeMeshDataComponent(EntityID EntityID)
 
 bool InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
 {
-	auto l_textureMap = &AssetSystemComponent::get().m_textureMap;
+	auto l_textureMap = &InnoAssetSystemNS::m_textureMap;
 	auto l_texture = l_textureMap->find(EntityID);
 	if (l_texture != l_textureMap->end())
 	{
@@ -271,7 +295,7 @@ bool InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
 
 bool InnoAssetSystem::releaseRawDataForMeshDataComponent(EntityID EntityID)
 {
-	auto l_meshMap = &AssetSystemComponent::get().m_meshMap;
+	auto l_meshMap = &InnoAssetSystemNS::m_meshMap;
 	auto l_mesh = l_meshMap->find(EntityID);
 	if (l_mesh != l_meshMap->end())
 	{
@@ -291,7 +315,7 @@ bool InnoAssetSystem::releaseRawDataForMeshDataComponent(EntityID EntityID)
 
 bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
 {
-	auto l_textureMap = &AssetSystemComponent::get().m_textureMap;
+	auto l_textureMap = &InnoAssetSystemNS::m_textureMap;
 	auto l_texture = l_textureMap->find(EntityID);
 	if (l_texture != l_textureMap->end())
 	{
@@ -308,51 +332,56 @@ bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
 	}
 }
 
+INNO_SYSTEM_EXPORT DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata()
+{
+	return &InnoAssetSystemNS::m_rootDirectoryMetadata;
+}
+
 void InnoAssetSystemNS::addUnitCube(MeshDataComponent& meshDataComponent)
 {
 	float vertices[] = {
-		// positions          // normals           // texture coords
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-		0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
-		0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-		0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+		// positions     // normals      // texture coords
+		-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+		0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f,
+		0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,
+		0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,
+		-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
 
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-		0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
-		0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-		0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+		0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+		0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+		0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+		-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
 
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+		-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+		-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+		-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
 
-		0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-		0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-		0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-		0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+		0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+		0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+		0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+		0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
 
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-		0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
-		0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-		0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+		0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f,
+		0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		-0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
 
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-		0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-		0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-		0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
+		-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+		0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+		0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+		0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+		-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+		-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f
 	};
 
 	meshDataComponent.m_vertices.reserve(288);
@@ -410,7 +439,7 @@ void InnoAssetSystemNS::addUnitSphere(MeshDataComponent& meshDataComponent)
 		{
 			for (unsigned x = 0; x <= X_SEGMENTS; ++x)
 			{
-				meshDataComponent.m_indices.push_back(y       * (X_SEGMENTS + 1) + x);
+				meshDataComponent.m_indices.push_back(y    * (X_SEGMENTS + 1) + x);
 				meshDataComponent.m_indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
 			}
 		}
@@ -419,7 +448,7 @@ void InnoAssetSystemNS::addUnitSphere(MeshDataComponent& meshDataComponent)
 			for (int x = X_SEGMENTS; x >= 0; --x)
 			{
 				meshDataComponent.m_indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
-				meshDataComponent.m_indices.push_back(y       * (X_SEGMENTS + 1) + x);
+				meshDataComponent.m_indices.push_back(y    * (X_SEGMENTS + 1) + x);
 			}
 		}
 		oddRow = !oddRow;
@@ -570,63 +599,63 @@ void InnoAssetSystemNS::loadFolderData()
 		}
 	};
 
-	f_directoryTreeBuilder(path, 0, &AssetSystemComponent::get().m_rootDirectoryMetadata);
-	f_assignParentDirectory(&AssetSystemComponent::get().m_rootDirectoryMetadata);
+	f_directoryTreeBuilder(path, 0, &m_rootDirectoryMetadata);
+	f_assignParentDirectory(&m_rootDirectoryMetadata);
 }
 
 void InnoAssetSystemNS::loadDefaultAssets()
 {
 	InnoAssetSystemNS::loadFolderData();
 
-	AssetSystemComponent::get().m_basicNormalTDC = loadTexture("..//res//textures//basic_normal.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_basicAlbedoTDC = loadTexture("..//res//textures//basic_albedo.png", TextureUsageType::ALBEDO);
-	AssetSystemComponent::get().m_basicMetallicTDC = loadTexture("..//res//textures//basic_metallic.png", TextureUsageType::METALLIC);
-	AssetSystemComponent::get().m_basicRoughnessTDC = loadTexture("..//res//textures//basic_roughness.png", TextureUsageType::ROUGHNESS);
-	AssetSystemComponent::get().m_basicAOTDC = loadTexture("..//res//textures//basic_ao.png", TextureUsageType::AMBIENT_OCCLUSION);
+	m_basicNormalTDC = loadTexture("..//res//textures//basic_normal.png", TextureUsageType::NORMAL);
+	m_basicAlbedoTDC = loadTexture("..//res//textures//basic_albedo.png", TextureUsageType::ALBEDO);
+	m_basicMetallicTDC = loadTexture("..//res//textures//basic_metallic.png", TextureUsageType::METALLIC);
+	m_basicRoughnessTDC = loadTexture("..//res//textures//basic_roughness.png", TextureUsageType::ROUGHNESS);
+	m_basicAOTDC = loadTexture("..//res//textures//basic_ao.png", TextureUsageType::AMBIENT_OCCLUSION);
 
-	AssetSystemComponent::get().m_iconTemplate_OBJ = loadTexture("..//res//textures//InnoFileTypeIcons_OBJ.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_iconTemplate_PNG = loadTexture("..//res//textures//InnoFileTypeIcons_PNG.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_iconTemplate_SHADER = loadTexture("..//res//textures//InnoFileTypeIcons_SHADER.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_iconTemplate_UNKNOWN = loadTexture("..//res//textures//InnoFileTypeIcons_UNKNOWN.png", TextureUsageType::NORMAL);
+	m_iconTemplate_OBJ = loadTexture("..//res//textures//InnoFileTypeIcons_OBJ.png", TextureUsageType::NORMAL);
+	m_iconTemplate_PNG = loadTexture("..//res//textures//InnoFileTypeIcons_PNG.png", TextureUsageType::NORMAL);
+	m_iconTemplate_SHADER = loadTexture("..//res//textures//InnoFileTypeIcons_SHADER.png", TextureUsageType::NORMAL);
+	m_iconTemplate_UNKNOWN = loadTexture("..//res//textures//InnoFileTypeIcons_UNKNOWN.png", TextureUsageType::NORMAL);
 
-	AssetSystemComponent::get().m_iconTemplate_DirectionalLight = loadTexture("..//res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_iconTemplate_PointLight = loadTexture("..//res//textures//InnoWorldEditorIcons_PointLight.png", TextureUsageType::NORMAL);
-	AssetSystemComponent::get().m_iconTemplate_SphereLight = loadTexture("..//res//textures//InnoWorldEditorIcons_SphereLight.png", TextureUsageType::NORMAL);
+	m_iconTemplate_DirectionalLight = loadTexture("..//res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureUsageType::NORMAL);
+	m_iconTemplate_PointLight = loadTexture("..//res//textures//InnoWorldEditorIcons_PointLight.png", TextureUsageType::NORMAL);
+	m_iconTemplate_SphereLight = loadTexture("..//res//textures//InnoWorldEditorIcons_SphereLight.png", TextureUsageType::NORMAL);
 
-	AssetSystemComponent::get().m_UnitLineMDC = addMeshDataComponent();
-	auto lastLineMeshData = AssetSystemComponent::get().m_UnitLineMDC;
+	m_UnitLineMDC = addMeshDataComponent();
+	auto lastLineMeshData = m_UnitLineMDC;
 	InnoAssetSystemNS::addUnitLine(*lastLineMeshData);
 	lastLineMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastLineMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	lastLineMeshData->m_meshShapeType = MeshShapeType::LINE;
 	lastLineMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
-	AssetSystemComponent::get().m_UnitQuadMDC = addMeshDataComponent();
-	auto lastQuadMeshData = AssetSystemComponent::get().m_UnitQuadMDC;
+	m_UnitQuadMDC = addMeshDataComponent();
+	auto lastQuadMeshData = m_UnitQuadMDC;
 	InnoAssetSystemNS::addUnitQuad(*lastQuadMeshData);
 	lastQuadMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastQuadMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	lastLineMeshData->m_meshShapeType = MeshShapeType::QUAD;
 	lastQuadMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
-	AssetSystemComponent::get().m_UnitCubeMDC = addMeshDataComponent();
-	auto lastCubeMeshData = AssetSystemComponent::get().m_UnitCubeMDC;
+	m_UnitCubeMDC = addMeshDataComponent();
+	auto lastCubeMeshData = m_UnitCubeMDC;
 	InnoAssetSystemNS::addUnitCube(*lastCubeMeshData);
 	lastCubeMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastCubeMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	lastLineMeshData->m_meshShapeType = MeshShapeType::CUBE;
 	lastCubeMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
-	AssetSystemComponent::get().m_UnitSphereMDC = addMeshDataComponent();
-	auto lastSphereMeshData = AssetSystemComponent::get().m_UnitSphereMDC;
+	m_UnitSphereMDC = addMeshDataComponent();
+	auto lastSphereMeshData = m_UnitSphereMDC;
 	InnoAssetSystemNS::addUnitSphere(*lastSphereMeshData);
 	lastSphereMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastSphereMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	lastLineMeshData->m_meshShapeType = MeshShapeType::SPHERE;
 	lastSphereMeshData->m_objectStatus = ObjectStatus::STANDBY;
 
-	AssetSystemComponent::get().m_TerrainMDC = addMeshDataComponent();
-	auto lastTerrainMeshData = AssetSystemComponent::get().m_TerrainMDC;
+	m_TerrainMDC = addMeshDataComponent();
+	auto lastTerrainMeshData = m_TerrainMDC;
 	InnoAssetSystemNS::addTerrain(*lastTerrainMeshData);
 	lastTerrainMeshData->m_meshUsageType = MeshUsageType::STATIC;
 	lastTerrainMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
@@ -656,17 +685,20 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 				{
 					InnoAssetSystemNS::m_asyncTask.emplace_back(g_pCoreSystem->getTaskSystem()->submit([&]()
 					{
+
 					}));
 					l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
-					l_visibleComponent->m_objectStatus = ObjectStatus::STANDBY;
-					g_pCoreSystem->getPhysicsSystem()->generatePhysicsData(l_visibleComponent);
+					l_visibleComponent->m_PhysicsDataComponent = g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent->m_modelMap, l_visibleComponent->m_parentEntity);
+					l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
 				}
 			}
 			else
 			{
 				assignUnitMesh(l_visibleComponent->m_meshShapeType, l_visibleComponent);
-				g_pCoreSystem->getPhysicsSystem()->generatePhysicsData(l_visibleComponent);
+				l_visibleComponent->m_PhysicsDataComponent = g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent->m_modelMap, l_visibleComponent->m_parentEntity);
+				l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
 			}
+
 		}
 		g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoAssetSystemNS::m_asyncTask);
 	}
@@ -677,15 +709,15 @@ void InnoAssetSystemNS::assignUnitMesh(MeshShapeType MeshUsageType, VisibleCompo
 	MeshDataComponent* l_UnitMeshTemplate;
 	switch (MeshUsageType)
 	{
-	case MeshShapeType::LINE: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitLineMDC; break;
-	case MeshShapeType::QUAD: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitQuadMDC; break;
-	case MeshShapeType::CUBE: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitCubeMDC; break;
-	case MeshShapeType::SPHERE: l_UnitMeshTemplate = AssetSystemComponent::get().m_UnitSphereMDC; break;
-	case MeshShapeType::TERRAIN: l_UnitMeshTemplate = AssetSystemComponent::get().m_TerrainMDC; break;
-	case MeshShapeType::CUSTOM: break;
+	case MeshShapeType::LINE: l_UnitMeshTemplate = m_UnitLineMDC; break;
+	case MeshShapeType::QUAD: l_UnitMeshTemplate = m_UnitQuadMDC; break;
+	case MeshShapeType::CUBE: l_UnitMeshTemplate = m_UnitCubeMDC; break;
+	case MeshShapeType::SPHERE: l_UnitMeshTemplate = m_UnitSphereMDC; break;
+	case MeshShapeType::TERRAIN: l_UnitMeshTemplate = m_TerrainMDC; break;
+	case MeshShapeType::CUSTOM: g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: don't assign unit mesh to a custom mesh shape component!");
+		break; return;
 	}
 	visibleComponent->m_modelMap.emplace(l_UnitMeshTemplate, addMaterialDataComponent());
-	visibleComponent->m_objectStatus = ObjectStatus::STANDBY;
 }
 
 ModelMap InnoAssetSystemNS::loadModel(const std::string & fileName)

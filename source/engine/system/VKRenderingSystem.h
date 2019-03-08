@@ -1,12 +1,12 @@
 #pragma once
-#include "IRenderingSystem.h"
+#include "IRenderingBackendSystem.h"
 
-class VKRenderingSystem : INNO_IMPLEMENT IRenderingSystem
+class VKRenderingSystem : INNO_IMPLEMENT IRenderingBackendSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(VKRenderingSystem);
 
-	INNO_SYSTEM_EXPORT bool setup() override;
+	INNO_SYSTEM_EXPORT bool setup(IRenderingFrontendSystem* renderingFrontend) override;
 	INNO_SYSTEM_EXPORT bool initialize() override;
 	INNO_SYSTEM_EXPORT bool update() override;
 	INNO_SYSTEM_EXPORT bool terminate() override;

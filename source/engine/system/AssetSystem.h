@@ -29,5 +29,7 @@ public:
 	INNO_SYSTEM_EXPORT bool removeTextureDataComponent(EntityID EntityID) override;
 	INNO_SYSTEM_EXPORT bool releaseRawDataForMeshDataComponent(EntityID EntityID) override;
 	INNO_SYSTEM_EXPORT bool releaseRawDataForTextureDataComponent(EntityID EntityID) override;
+
+	INNO_SYSTEM_EXPORT DirectoryMetadata* getRootDirectoryMetadata() override;
 };
 

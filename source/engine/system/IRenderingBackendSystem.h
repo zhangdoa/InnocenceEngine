@@ -3,12 +3,14 @@
 #include "../exports/InnoSystem_Export.h"
 #include "../common/InnoClassTemplate.h"
 
-INNO_INTERFACE IRenderingSystem
+#include "IRenderingFrontendSystem.h"
+
+INNO_INTERFACE IRenderingBackendSystem
 {
 public:
-	INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingSystem);
+	INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingBackendSystem);
 
-	INNO_SYSTEM_EXPORT virtual bool setup() = 0;
+	INNO_SYSTEM_EXPORT virtual bool setup(IRenderingFrontendSystem* renderingFrontend) = 0;
 	INNO_SYSTEM_EXPORT virtual bool initialize() = 0;
 	INNO_SYSTEM_EXPORT virtual bool update() = 0;
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;

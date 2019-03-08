@@ -8,7 +8,6 @@
 #include "../component/DXWindowSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "../component/DXRenderingSystemComponent.h"
-#include "../component/FileSystemComponent.h"
 
 #include "DXRenderingSystemUtilities.h"
 
@@ -24,7 +23,8 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	bool setup();
+	bool setup(IRenderingFrontendSystem* renderingFrontend);
+	bool update();
 	bool terminate();
 
 	bool initializeDefaultAssets();
@@ -39,6 +39,8 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	bool createSwapChain();
 	bool createBackBuffer();
 	bool createRasterizer();
+
+	IRenderingFrontendSystem* m_renderingFrontendSystem;
 }
 
 bool DXRenderingSystemNS::createPhysicalDevices()
@@ -411,7 +413,7 @@ bool DXRenderingSystemNS::createRasterizer()
 	return true;
 }
 
-bool DXRenderingSystemNS::setup()
+bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
 	g_WindowSystemComponent = &WindowSystemComponent::get();
 	g_DXWindowSystemComponent = &DXWindowSystemComponent::get();
@@ -442,9 +444,48 @@ bool DXRenderingSystemNS::setup()
 	return result;
 }
 
-INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup()
+bool DXRenderingSystemNS::update()
 {
-	return DXRenderingSystemNS::setup();
+	if (m_renderingFrontendSystem->anyUninitializedMeshDataComponent())
+	{
+		auto l_MDC = m_renderingFrontendSystem->acquireUninitializedMeshDataComponent();
+		if (l_MDC)
+		{
+			auto l_result = generateDXMeshDataComponent(l_MDC);
+			if (l_result == nullptr)
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXMeshDataComponent for " + l_result->m_parentEntity + "!");
+			}
+		}
+	}
+	if (m_renderingFrontendSystem->anyUninitializedTextureDataComponent())
+	{
+		auto l_TDC = m_renderingFrontendSystem->acquireUninitializedTextureDataComponent();
+		if (l_TDC)
+		{
+			auto l_result = generateDXTextureDataComponent(l_TDC);
+			if (l_result == nullptr)
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXTextureDataComponent for " + l_result->m_parentEntity + "!");
+			}
+		}
+	}
+
+	// Clear the buffers to begin the scene.
+	prepareRenderingData();
+
+	DXGeometryRenderingPassUtilities::update();
+
+	DXLightRenderingPassUtilities::update();
+
+	DXFinalRenderingPassUtilities::update();
+
+	return true;
+}
+
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
+{
+	return DXRenderingSystemNS::setup(renderingFrontend);
 }
 
 INNO_SYSTEM_EXPORT bool DXRenderingSystem::initialize()
@@ -460,40 +501,7 @@ INNO_SYSTEM_EXPORT bool DXRenderingSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
 {
-	if (FileSystemComponent::get().m_uninitializedMeshComponents.size() > 0)
-	{
-		MeshDataComponent* l_meshDataComponent;
-		if (FileSystemComponent::get().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
-		{
-			auto l_initializedDXMDC = DXRenderingSystemNS::generateDXMeshDataComponent(l_meshDataComponent);
-			if (l_initializedDXMDC == nullptr)
-			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXMeshDataComponent for " + l_meshDataComponent->m_parentEntity + "!");
-			}
-		}
-	}
-	if (FileSystemComponent::get().m_uninitializedTextureComponents.size() > 0)
-	{
-		TextureDataComponent* l_textureDataComponent;
-		if (FileSystemComponent::get().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
-		{
-			auto l_initializedDXTDC = DXRenderingSystemNS::generateDXTextureDataComponent(l_textureDataComponent);
-			if (l_initializedDXTDC == nullptr)
-			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXTextureDataComponent for " + l_textureDataComponent->m_parentEntity + "!");
-			}
-		}
-	}
-	// Clear the buffers to begin the scene.
-	DXRenderingSystemNS::prepareRenderingData();
-
-	DXGeometryRenderingPassUtilities::update();
-
-	DXLightRenderingPassUtilities::update();
-
-	DXFinalRenderingPassUtilities::update();
-
-	return true;
+	return DXRenderingSystemNS::update();
 }
 
 bool DXRenderingSystemNS::terminate()

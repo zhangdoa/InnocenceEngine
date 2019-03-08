@@ -1,7 +1,6 @@
 #include "PhysicsSystem.h"
 
 #include "../component/WindowSystemComponent.h"
-#include "../component/FileSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
 
 //#include "PhysXWrapper.h"
@@ -34,7 +33,7 @@ namespace InnoPhysicsSystemNS
 	MeshDataComponent* generateMeshDataComponent(AABB rhs);
 	MeshDataComponent* generateMeshDataComponent(Frustum rhs);
 
-	PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap);
+	PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap, const EntityID& entityID);
 
 	void updateCameraComponents();
 	void updateLightComponents();
@@ -458,7 +457,8 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 	l_MDC->m_indicesSize = l_MDC->m_indices.size();
 
 	l_MDC->m_objectStatus = ObjectStatus::STANDBY;
-	FileSystemComponent::get().m_uninitializedMeshComponents.push(l_MDC);
+
+	g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->registerUninitializedMeshDataComponent(l_MDC);
 
 	return l_MDC;
 }
@@ -468,9 +468,10 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(Frustum rhs)
 	return nullptr;
 }
 
-PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelMap& modelMap)
+PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelMap& modelMap, const EntityID& entityID)
 {
 	auto l_PDC = g_pCoreSystem->getMemorySystem()->spawn<PhysicsDataComponent>();
+	l_PDC->m_parentEntity = entityID;
 
 	for (auto& l_MDC : modelMap)
 	{
@@ -487,6 +488,8 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Mo
 
 		l_PDC->m_physicsDatas.emplace_back(l_physicsData);
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for " + entityID + ".");
 
 	return l_PDC;
 }
@@ -730,17 +733,8 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoPhysicsSystem::getStatus()
 	return InnoPhysicsSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT void InnoPhysicsSystem::generatePhysicsData(VisibleComponent* visibleComponent)
+INNO_SYSTEM_EXPORT PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(const ModelMap& modelMap, const EntityID& entityID)
 {
-	if (visibleComponent->m_objectStatus == ObjectStatus::STANDBY)
-	{
-		auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(visibleComponent->m_modelMap);
-		visibleComponent->m_PhysicsDataComponent = l_physicsComponent;
-		visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for VisibleComponent " + visibleComponent->m_parentEntity + ".");
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "PhysicsSystem: PhysicsDataComponent has already been generated for VisibleComponent " + visibleComponent->m_parentEntity + "!");
-	}
+		auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(modelMap, entityID);
+		return l_physicsComponent;
 }

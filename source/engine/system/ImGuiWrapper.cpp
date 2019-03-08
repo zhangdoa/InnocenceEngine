@@ -2,7 +2,6 @@
 
 #include "../component/WindowSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
-#include "../component/AssetSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
 
 #include "ICoreSystem.h"
@@ -239,7 +238,7 @@ void ImGuiWrapperNS::showFileExplorer()
 
 	ImGui::Begin("File Explorer", 0);
 
-	static DirectoryMetadata* currentDirectoryMetadata = &AssetSystemComponent::get().m_rootDirectoryMetadata;
+	static DirectoryMetadata* currentDirectoryMetadata = g_pCoreSystem->getAssetSystem()->getRootDirectoryMetadata();
 
 	if (ImGui::Button("Return"))
 	{

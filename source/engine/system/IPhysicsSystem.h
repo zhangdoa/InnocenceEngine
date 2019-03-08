@@ -16,5 +16,5 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
-	INNO_SYSTEM_EXPORT virtual void generatePhysicsData(VisibleComponent* visibleComponent) = 0;
+	INNO_SYSTEM_EXPORT virtual PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap, const EntityID& entityID) = 0;
 };

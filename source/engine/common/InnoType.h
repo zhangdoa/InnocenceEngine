@@ -39,6 +39,26 @@ struct TimeData
 	long long millisecond;
 };
 
+enum class FileExplorerIconType { OBJ, PNG, SHADER, UNKNOWN };
+enum class WorldEditorIconType { DIRECTIONAL_LIGHT, POINT_LIGHT, SPHERE_LIGHT, UNKNOWN };
+
+struct AssetMetadata
+{
+	std::string fullPath;
+	std::string fileName;
+	std::string extension;
+	FileExplorerIconType iconType;
+};
+
+struct DirectoryMetadata
+{
+	unsigned int depth = 0;
+	std::string directoryName = "root";
+	DirectoryMetadata* parentDirectory = 0;
+	std::vector<DirectoryMetadata> childrenDirectories;
+	std::vector<AssetMetadata> childrenAssets;
+};
+
 using Index = unsigned int;
 
 enum class VisiblilityType { INNO_INVISIBLE, INNO_BILLBOARD, INNO_OPAQUE, INNO_TRANSPARENT, INNO_EMISSIVE, INNO_DEBUG };
@@ -54,9 +74,6 @@ enum class TexturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UN
 enum class TextureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER };
 enum class TextureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
 enum class TextureAssignType { ADD, OVERWRITE };
-
-enum class FileExplorerIconType { OBJ, PNG, SHADER, UNKNOWN };
-enum class WorldEditorIconType { DIRECTIONAL_LIGHT, POINT_LIGHT, SPHERE_LIGHT, UNKNOWN };
 
 enum class RenderPassType { OpaquePass, TransparentPass, TerrainPass, LightPass, FinalPass };
 

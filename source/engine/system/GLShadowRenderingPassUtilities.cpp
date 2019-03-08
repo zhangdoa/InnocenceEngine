@@ -84,7 +84,7 @@ void GLShadowRenderingPassUtilities::drawAllMeshDataComponents()
 {
 	for (auto& l_visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 	{
-		if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE)
+		if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE && l_visibleComponent->m_objectStatus == ObjectStatus::ALIVE)
 		{
 			updateUniform(
 				GLShadowRenderPassComponent::get().m_shadowPass_uni_m,

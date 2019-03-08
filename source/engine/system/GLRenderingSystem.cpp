@@ -8,7 +8,6 @@
 #include "GLLightRenderingPassUtilities.h"
 #include "GLFinalRenderingPassUtilities.h"
 
-#include "../component/FileSystemComponent.h"
 #include "../component/WindowSystemComponent.h"
 #include "../component/RenderingSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
@@ -19,7 +18,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
-	bool setup();
+	bool setup(IRenderingFrontendSystem* renderingFrontend);
 	bool initialize();
 	bool update();
 	bool terminate();
@@ -59,11 +58,13 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	std::vector<RenderDataPack> m_renderDataPack;
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+
+	IRenderingFrontendSystem* m_renderingFrontendSystem;
 }
 
-INNO_SYSTEM_EXPORT bool GLRenderingSystem::setup()
+INNO_SYSTEM_EXPORT bool GLRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
 {
-	return GLRenderingSystemNS::setup();
+	return GLRenderingSystemNS::setup(renderingFrontend);
 }
 
 INNO_SYSTEM_EXPORT bool GLRenderingSystem::initialize()
@@ -91,8 +92,10 @@ INNO_SYSTEM_EXPORT bool GLRenderingSystem::resize()
 	return GLRenderingSystemNS::resize();
 }
 
-bool GLRenderingSystemNS::setup()
+bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
+	m_renderingFrontendSystem = renderingFrontend;
+
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
@@ -214,20 +217,28 @@ void  GLRenderingSystemNS::initializeDefaultAssets()
 
 bool GLRenderingSystemNS::update()
 {
-	if (FileSystemComponent::get().m_uninitializedMeshComponents.size() > 0)
+	if (m_renderingFrontendSystem->anyUninitializedMeshDataComponent())
 	{
-		MeshDataComponent* l_meshDataComponent;
-		if (FileSystemComponent::get().m_uninitializedMeshComponents.tryPop(l_meshDataComponent))
+		auto l_MDC = m_renderingFrontendSystem->acquireUninitializedMeshDataComponent();
+		if (l_MDC)
 		{
-			generateGLMeshDataComponent(l_meshDataComponent);
+			auto l_result = generateGLMeshDataComponent(l_MDC);
+			if (l_result == nullptr)
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLMeshDataComponent for " + l_result->m_parentEntity + "!");
+			}
 		}
 	}
-	if (FileSystemComponent::get().m_uninitializedTextureComponents.size() > 0)
+	if (m_renderingFrontendSystem->anyUninitializedTextureDataComponent())
 	{
-		TextureDataComponent* l_textureDataComponent;
-		if (FileSystemComponent::get().m_uninitializedTextureComponents.tryPop(l_textureDataComponent))
+		auto l_TDC = m_renderingFrontendSystem->acquireUninitializedTextureDataComponent();
+		if (l_TDC)
 		{
-			generateGLTextureDataComponent(l_textureDataComponent);
+			auto l_result = generateGLTextureDataComponent(l_TDC);
+			if (l_result == nullptr)
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLTextureDataComponent for " + l_result->m_parentEntity + "!");
+			}
 		}
 	}
 

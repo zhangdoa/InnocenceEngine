@@ -236,7 +236,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 		return indices.isComplete() && extensionsSupported && swapChainAdequate;
 	}
 
-	bool setup();
+	bool setup(IRenderingFrontendSystem* renderingFrontend);
 
 	bool createVkInstance();
 	bool createDebugCallback();
@@ -249,6 +249,8 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createGraphicsPipeline();
 
 	bool terminate();
+
+	IRenderingFrontendSystem* m_renderingFrontendSystem;
 }
 
 bool VKRenderingSystemNS::createVkInstance()
@@ -544,8 +546,10 @@ bool VKRenderingSystemNS::createGraphicsPipeline()
 	return true;
 }
 
-bool VKRenderingSystemNS::setup()
+bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
+	m_renderingFrontendSystem = renderingFrontend;
+
 	bool result = true;
 	result = result && createVkInstance();
 	result = result && createDebugCallback();
@@ -588,9 +592,9 @@ bool VKRenderingSystemNS::terminate()
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool VKRenderingSystem::setup()
+INNO_SYSTEM_EXPORT bool VKRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
 {
-	return VKRenderingSystemNS::setup();
+	return VKRenderingSystemNS::setup(renderingFrontend);
 }
 
 INNO_SYSTEM_EXPORT bool VKRenderingSystem::initialize()

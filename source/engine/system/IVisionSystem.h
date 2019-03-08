@@ -3,6 +3,8 @@
 #include "../exports/InnoSystem_Export.h"
 #include "../common/InnoClassTemplate.h"
 
+#include "IRenderingFrontendSystem.h"
+
 INNO_INTERFACE IVisionSystem
 {
 public:
@@ -16,4 +18,6 @@ public:
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
 	INNO_SYSTEM_EXPORT virtual bool resize() = 0;
+
+	INNO_SYSTEM_EXPORT virtual IRenderingFrontendSystem* getRenderingFrontend() = 0;
 };

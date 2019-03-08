@@ -50,6 +50,12 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		}
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem setup finished.");
 
+		if (!g_pCoreSystem->getVisionSystem()->setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem setup finished.");
+
 		if (!g_pCoreSystem->getFileSystem()->setup())
 		{
 			return false;
@@ -77,12 +83,6 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 			return false;
 		}
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem setup finished.");
-
-		if (!g_pCoreSystem->getVisionSystem()->setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
-		{
-			return false;
-		}
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem setup finished.");
 
 		m_objectStatus = ObjectStatus::ALIVE;
 

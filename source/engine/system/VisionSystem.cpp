@@ -4,6 +4,8 @@
 #include "../component/WindowSystemComponent.h"
 #include "../component/PhysicsSystemComponent.h"
 
+#include "RenderingFrontendSystem.h"
+
 #if defined INNO_PLATFORM_WIN
 #include "DXWindowSystem.h"
 #include "DXRenderingSystem.h"
@@ -25,7 +27,8 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE InnoVisionSystemNS
 {
 	IWindowSystem* m_windowSystem;
-	IRenderingSystem* m_renderingSystem;
+	IRenderingFrontendSystem* m_renderingFrontendSystem;
+	IRenderingBackendSystem* m_renderingBackendSystem;
 	IGuiSystem* m_guiSystem;
 
 	bool setupWindow(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow);
@@ -42,6 +45,8 @@ INNO_PRIVATE_SCOPE InnoVisionSystemNS
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
+	InnoVisionSystemNS::m_renderingFrontendSystem = new InnoRenderingFrontendSystem();
+
 	std::string l_windowArguments = pScmdline;
 
 	if (l_windowArguments == "")
@@ -65,7 +70,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 	{
 #if defined INNO_PLATFORM_WIN
 		InnoVisionSystemNS::m_windowSystem = new DXWindowSystem();
-		InnoVisionSystemNS::m_renderingSystem = new DXRenderingSystem();
+		InnoVisionSystemNS::m_renderingBackendSystem = new DXRenderingSystem();
 		InnoVisionSystemNS::m_guiSystem = new DXGuiSystem();
 #else
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: DirectX is only supported on Windows OS!");
@@ -75,13 +80,13 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 	else if (l_rendererArguments == "GL")
 	{
 		InnoVisionSystemNS::m_windowSystem = new GLWindowSystem();
-		InnoVisionSystemNS::m_renderingSystem = new GLRenderingSystem();
+		InnoVisionSystemNS::m_renderingBackendSystem = new GLRenderingSystem();
 		InnoVisionSystemNS::m_guiSystem = new GLGuiSystem();
 	}
 	else if (l_rendererArguments == "VK")
 	{
 		InnoVisionSystemNS::m_windowSystem = new VKWindowSystem();
-		InnoVisionSystemNS::m_renderingSystem = new VKRenderingSystem();
+		InnoVisionSystemNS::m_renderingBackendSystem = new VKRenderingSystem();
 		InnoVisionSystemNS::m_guiSystem = new VKGuiSystem();
 	}
 	else
@@ -120,7 +125,7 @@ bool InnoVisionSystemNS::setupWindow(void* hInstance, void* hPrevInstance, char*
 
 bool InnoVisionSystemNS::setupRendering()
 {
-	if (!InnoVisionSystemNS::m_renderingSystem->setup())
+	if (!InnoVisionSystemNS::m_renderingBackendSystem->setup(m_renderingFrontendSystem))
 	{
 		return false;
 	}
@@ -163,7 +168,7 @@ void InnoVisionSystemNS::initializeHaltonSampler()
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 {
 	InnoVisionSystemNS::m_windowSystem->initialize();
-	InnoVisionSystemNS::m_renderingSystem->initialize();
+	InnoVisionSystemNS::m_renderingBackendSystem->initialize();
 	InnoVisionSystemNS::m_guiSystem->initialize();
 
 	InnoVisionSystemNS::initializeHaltonSampler();
@@ -320,7 +325,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 
 			RenderingSystemComponent::get().m_isRendering = true;
 
-			InnoVisionSystemNS::m_renderingSystem->update();
+			InnoVisionSystemNS::m_renderingBackendSystem->update();
 			InnoVisionSystemNS::m_guiSystem->update();
 			InnoVisionSystemNS::m_windowSystem->swapBuffer();
 
@@ -343,7 +348,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::terminate()
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GuiSystem can't be terminated!");
 		return false;
 	}
-	if (!InnoVisionSystemNS::m_renderingSystem->terminate())
+	if (!InnoVisionSystemNS::m_renderingBackendSystem->terminate())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingSystem can't be terminated!");
 		return false;
@@ -365,6 +370,11 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoVisionSystem::getStatus()
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::resize()
 {
-	InnoVisionSystemNS::m_renderingSystem->resize();
+	InnoVisionSystemNS::m_renderingBackendSystem->resize();
 	return true;
+}
+
+INNO_SYSTEM_EXPORT IRenderingFrontendSystem * InnoVisionSystem::getRenderingFrontend()
+{
+	return InnoVisionSystemNS::m_renderingFrontendSystem;
 }
