@@ -14,8 +14,6 @@ INNO_PRIVATE_SCOPE GLWindowSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	IInputSystem* m_inputSystem;
-
 	static WindowSystemComponent* g_WindowSystemComponent;
 	static GLWindowSystemComponent* g_GLWindowSystemComponent;
 
@@ -25,8 +23,6 @@ INNO_PRIVATE_SCOPE GLWindowSystemNS
 
 INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
-	GLWindowSystemNS::m_inputSystem = new InnoInputSystem();
-
 	GLWindowSystemNS::g_WindowSystemComponent = &WindowSystemComponent::get();
 	GLWindowSystemNS::g_GLWindowSystemComponent = &GLWindowSystemComponent::get();
 
@@ -68,8 +64,6 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 	//setup input
 	glfwSetInputMode(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
-	GLWindowSystemNS::m_inputSystem->setup();
-
 	GLWindowSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
@@ -77,10 +71,7 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 INNO_SYSTEM_EXPORT bool GLWindowSystem::initialize()
 {
 	//initialize window
-	windowCallbackWrapper::get().initialize(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, GLWindowSystemNS::m_inputSystem);
-
-	//initialize input
-	GLWindowSystemNS::m_inputSystem->initialize();
+	windowCallbackWrapper::get().initialize(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, g_pCoreSystem->getInputSystem());
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLWindowSystem has been initialized.");
 	return true;
@@ -98,50 +89,9 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::update()
 	{
 		glfwPollEvents();
 
-		//update input
-		//keyboard
-		for (int i = 0; i < GLWindowSystemNS::g_WindowSystemComponent->NUM_KEYCODES; i++)
-		{
-			if (glfwGetKey(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, i) == GLFW_PRESS)
-			{
-				auto l_result = GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
-				if (l_result != GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
-				{
-					l_result->second = ButtonStatus::PRESSED;
-				}
-			}
-			else
-			{
-				auto l_result = GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
-				if (l_result != GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
-				{
-					l_result->second = ButtonStatus::RELEASED;
-				}
-			}
-		}
-		//mouse
-		for (int i = 0; i < GLWindowSystemNS::g_WindowSystemComponent->NUM_MOUSEBUTTONS; i++)
-		{
-			if (glfwGetMouseButton(GLWindowSystemNS::g_GLWindowSystemComponent->m_window, i) == GLFW_PRESS)
-			{
-				auto l_result = GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
-				if (l_result != GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
-				{
-					l_result->second = ButtonStatus::PRESSED;
-				}
-			}
-			else
-			{
-				auto l_result = GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
-				if (l_result != GLWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
-				{
-					l_result->second = ButtonStatus::RELEASED;
-				}
-			}
-		}
+		windowCallbackWrapper::get().update(GLWindowSystemNS::g_GLWindowSystemComponent->m_window);
 	}
 
-	GLWindowSystemNS::m_inputSystem->update();
 	return true;
 }
 
@@ -174,4 +124,9 @@ void GLWindowSystemNS::showMouseCursor()
 INNO_SYSTEM_EXPORT ObjectStatus GLWindowSystem::getStatus()
 {
 	return GLWindowSystemNS::m_objectStatus;
+}
+
+INNO_SYSTEM_EXPORT ButtonStatusMap GLWindowSystem::getButtonStatus()
+{
+	return windowCallbackWrapper::get().getButtonStatus();
 }

@@ -227,6 +227,11 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoVisionSystem::getStatus()
 	return InnoVisionSystemNS::m_objectStatus;
 }
 
+INNO_SYSTEM_EXPORT IWindowSystem * InnoVisionSystem::getWindowSystem()
+{
+	return InnoVisionSystemNS::m_windowSystem;
+}
+
 INNO_SYSTEM_EXPORT IRenderingFrontendSystem * InnoVisionSystem::getRenderingFrontend()
 {
 	return InnoVisionSystemNS::m_renderingFrontendSystem;

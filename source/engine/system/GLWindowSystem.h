@@ -12,6 +12,7 @@ public:
 	INNO_SYSTEM_EXPORT bool terminate() override;
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
+	INNO_SYSTEM_EXPORT ButtonStatusMap getButtonStatus() override;
 
 	void swapBuffer() override;
 };

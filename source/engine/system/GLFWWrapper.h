@@ -11,7 +11,8 @@ public:
 		static windowCallbackWrapper instance;
 		return instance;
 	}
-	void initialize(GLFWwindow * window, IInputSystem* rhs);
+	bool initialize(GLFWwindow * window, IInputSystem* rhs);
+	bool update(GLFWwindow * window);
 
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void mousePositionCallback(GLFWwindow* window, double mouseXPos, double mouseYPos);
@@ -20,6 +21,8 @@ public:
 	void framebufferSizeCallbackImpl(GLFWwindow* window, int width, int height);
 	void mousePositionCallbackImpl(GLFWwindow* window, float mouseXPos, float mouseYPos);
 	void scrollCallbackImpl(GLFWwindow* window, float xoffset, float yoffset);
+
+	ButtonStatusMap getButtonStatus();
 
 private:
 	windowCallbackWrapper() {};

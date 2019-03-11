@@ -3,6 +3,7 @@
 #include "../exports/InnoSystem_Export.h"
 #include "../common/InnoClassTemplate.h"
 
+#include "IWindowSystem.h"
 #include "IRenderingFrontendSystem.h"
 #include "IRenderingBackendSystem.h"
 
@@ -18,6 +19,7 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
+	INNO_SYSTEM_EXPORT virtual IWindowSystem* getWindowSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IRenderingFrontendSystem* getRenderingFrontend() = 0;
 	INNO_SYSTEM_EXPORT virtual IRenderingBackendSystem* getRenderingBackend() = 0;
 };

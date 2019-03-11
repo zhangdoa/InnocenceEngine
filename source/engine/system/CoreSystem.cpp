@@ -7,6 +7,7 @@
 #include "GameSystem.h"
 #include "AssetSystem.h"
 #include "PhysicsSystem.h"
+#include "InputSystem.h"
 #include "VisionSystem.h"
 
 ICoreSystem* g_pCoreSystem;
@@ -21,6 +22,7 @@ INNO_PRIVATE_SCOPE CoreSystemNS
 	std::unique_ptr<IGameSystem> m_GameSystem;
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
 	std::unique_ptr<IPhysicsSystem> m_PhysicsSystem;
+	std::unique_ptr<IInputSystem> m_InputSystem;
 	std::unique_ptr<IVisionSystem> m_VisionSystem;
 }
 
@@ -65,6 +67,11 @@ INNO_SYSTEM_EXPORT bool InnoCoreSystem::setup()
 	}
 	CoreSystemNS::m_PhysicsSystem = std::make_unique<InnoPhysicsSystem>();
 	if (!CoreSystemNS::m_PhysicsSystem.get())
+	{
+		return false;
+	}
+	CoreSystemNS::m_InputSystem = std::make_unique<InnoInputSystem>();
+	if (!CoreSystemNS::m_InputSystem.get())
 	{
 		return false;
 	}
@@ -114,6 +121,11 @@ INNO_SYSTEM_EXPORT IAssetSystem * InnoCoreSystem::getAssetSystem()
 INNO_SYSTEM_EXPORT IPhysicsSystem * InnoCoreSystem::getPhysicsSystem()
 {
 	return CoreSystemNS::m_PhysicsSystem.get();
+}
+
+INNO_SYSTEM_EXPORT IInputSystem * InnoCoreSystem::getInputSystem()
+{
+	return CoreSystemNS::m_InputSystem.get();
 }
 
 INNO_SYSTEM_EXPORT IVisionSystem * InnoCoreSystem::getVisionSystem()

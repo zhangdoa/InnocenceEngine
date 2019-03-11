@@ -167,7 +167,6 @@ void ImGuiWrapperNS::showApplicationProfiler()
 	if (ImGui::Button("Bake GI"))
 	{
 		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->bakeGI();
-
 	}
 
 	static char scene_filePath[128] = "..//res//scenes//Intro.InnoScene";

@@ -74,7 +74,7 @@ bool InnoPhysicsSystemNS::setup()
 			auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
 			Ray l_mouseRay;
 			l_mouseRay.m_origin = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-			l_mouseRay.m_direction = WindowSystemComponent::get().m_mousePositionInWorldSpace;
+			l_mouseRay.m_direction = g_pCoreSystem->getInputSystem()->calcMousePositionInWorldSpace();
 
 			for (auto visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 			{

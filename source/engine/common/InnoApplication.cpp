@@ -80,6 +80,12 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		}
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem setup finished.");
 
+		if (!g_pCoreSystem->getInputSystem()->setup())
+		{
+			return false;
+		}
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "InputSystem setup finished.");
+
 		m_objectStatus = ObjectStatus::ALIVE;
 
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine setup finished.");
@@ -129,6 +135,11 @@ bool InnoApplication::initialize()
 	}
 
 	if (!g_pCoreSystem->getPhysicsSystem()->initialize())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getInputSystem()->initialize())
 	{
 		return false;
 	}
@@ -185,6 +196,11 @@ bool InnoApplication::update()
 		return false;
 	}
 
+	if (!g_pCoreSystem->getInputSystem()->update())
+	{
+		return false;
+	}
+
 	if (g_pCoreSystem->getVisionSystem()->getStatus() == ObjectStatus::ALIVE)
 	{
 		if (!g_pCoreSystem->getVisionSystem()->update())
@@ -205,6 +221,11 @@ bool InnoApplication::update()
 bool InnoApplication::terminate()
 {
 	if (!g_pCoreSystem->getVisionSystem()->terminate())
+	{
+		return false;
+	}
+
+	if (!g_pCoreSystem->getInputSystem()->terminate())
 	{
 		return false;
 	}

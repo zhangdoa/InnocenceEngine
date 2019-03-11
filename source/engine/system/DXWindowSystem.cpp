@@ -23,6 +23,8 @@ public:
 
 	LRESULT CALLBACK MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
 
+	ButtonStatusMap m_buttonStatus;
+
 private:
 	windowCallbackWrapper() {};
 };
@@ -34,16 +36,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 INNO_PRIVATE_SCOPE DXWindowSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-
-IInputSystem* m_inputSystem;
-
-static WindowSystemComponent* g_WindowSystemComponent;
-static DXWindowSystemComponent* g_DXWindowSystemComponent;
+	static WindowSystemComponent* g_WindowSystemComponent;
+	static DXWindowSystemComponent* g_DXWindowSystemComponent;
 }
 
 INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
-	DXWindowSystemNS::m_inputSystem = new InnoInputSystem();
+	for (int i = 0; i < g_pCoreSystem->getInputSystem()->getInputConfig().totalKeyCodes; i++)
+	{
+		windowCallbackWrapper::get().m_buttonStatus.emplace(i, ButtonStatus::RELEASED);
+	}
 
 	DXWindowSystemNS::g_WindowSystemComponent = &WindowSystemComponent::get();
 	DXWindowSystemNS::g_DXWindowSystemComponent = &DXWindowSystemComponent::get();
@@ -95,15 +97,12 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstan
 	// Hide the mouse cursor.
 	// ShowCursor(false);
 
-	DXWindowSystemNS::m_inputSystem->setup();
-
 	DXWindowSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool DXWindowSystem::initialize()
 {
-	DXWindowSystemNS::m_inputSystem->initialize();
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXWindowSystem has been initialized.");
 	return true;
 }
@@ -130,7 +129,6 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::update()
 		return false;
 	}
 
-	DXWindowSystemNS::m_inputSystem->update();
 	return true;
 }
 
@@ -166,6 +164,11 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::terminate()
 INNO_SYSTEM_EXPORT ObjectStatus DXWindowSystem::getStatus()
 {
 	return DXWindowSystemNS::m_objectStatus;
+}
+
+INNO_SYSTEM_EXPORT ButtonStatusMap DXWindowSystem::getButtonStatus()
+{
+	return windowCallbackWrapper::get().m_buttonStatus;
 }
 
 void DXWindowSystem::swapBuffer()
@@ -216,8 +219,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 	case WM_KEYDOWN:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find((int)wparam);
-		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
+		auto l_result = m_buttonStatus.find((int)wparam);
+		if (l_result != m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::PRESSED;
 		}
@@ -225,8 +228,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_KEYUP:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find((int)wparam);
-		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
+		auto l_result = m_buttonStatus.find((int)wparam);
+		if (l_result != m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::RELEASED;
 		}
@@ -235,8 +238,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_LBUTTONDOWN:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
-		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
+		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
+		if (l_result != m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::PRESSED;
 		}
@@ -244,8 +247,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_LBUTTONUP:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
-		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
+		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
+		if (l_result != m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::RELEASED;
 		}
@@ -253,8 +256,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_RBUTTONDOWN:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
-		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
+		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
+		if (l_result != m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::PRESSED;
 		}
@@ -262,8 +265,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_RBUTTONUP:
 	{
-		auto l_result = DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
-		if (l_result != DXWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
+		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
+		if (l_result != m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::RELEASED;
 		}
@@ -274,7 +277,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 		auto l_mouseCurrentX = GET_X_LPARAM(lparam);
 		auto l_mouseCurrentY = GET_Y_LPARAM(lparam);
-		DXWindowSystemNS::m_inputSystem->mousePositionCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
+		g_pCoreSystem->getInputSystem()->mousePositionCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
 		return 0;
 	}
 	// Any other messages send to the default message handler as our application won't make use of them.

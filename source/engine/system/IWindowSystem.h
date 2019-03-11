@@ -14,6 +14,7 @@ public:
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
+	INNO_SYSTEM_EXPORT virtual ButtonStatusMap getButtonStatus() = 0;
 
 	virtual void swapBuffer() = 0;
 };

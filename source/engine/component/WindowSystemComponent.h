@@ -24,20 +24,6 @@ public:
 	std::string m_windowName;
 	bool m_fullScreen = false;
 
-	//input data
-	const int NUM_KEYCODES = 256;
-	const int NUM_MOUSEBUTTONS = 5;
-
-	ButtonStatusMap m_buttonStatus;
-	ButtonStatusCallbackMap m_buttonStatusCallback;
-	MouseMovementCallbackMap m_mouseMovementCallback;
-
-	float m_mouseXOffset;
-	float m_mouseYOffset;
-	float m_mouseLastX;
-	float m_mouseLastY;
-
-	vec4 m_mousePositionInWorldSpace;
 private:
 	WindowSystemComponent() {};
 };

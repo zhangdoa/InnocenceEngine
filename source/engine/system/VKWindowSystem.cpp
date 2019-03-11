@@ -14,10 +14,10 @@ INNO_PRIVATE_SCOPE VKWindowSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	IInputSystem* m_inputSystem;
-
 	static WindowSystemComponent* g_WindowSystemComponent;
 	static VKWindowSystemComponent* g_VKWindowSystemComponent;
+
+	ButtonStatusMap m_buttonStatus;
 
 	bool setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow);
 
@@ -27,8 +27,6 @@ INNO_PRIVATE_SCOPE VKWindowSystemNS
 
 bool VKWindowSystemNS::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
-	m_inputSystem = new InnoInputSystem();
-
 	g_WindowSystemComponent = &WindowSystemComponent::get();
 	g_VKWindowSystemComponent = &VKWindowSystemComponent::get();
 
@@ -60,8 +58,6 @@ bool VKWindowSystemNS::setup(void* hInstance, void* hPrevInstance, char* pScmdli
 	//setup input
 	glfwSetInputMode(g_VKWindowSystemComponent->m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
-	m_inputSystem->setup();
-
 	m_objectStatus = ObjectStatus::ALIVE;
 
 	return true;
@@ -75,10 +71,7 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::setup(void* hInstance, void* hPrevInstan
 INNO_SYSTEM_EXPORT bool VKWindowSystem::initialize()
 {
 	//initialize window
-	windowCallbackWrapper::get().initialize(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, VKWindowSystemNS::m_inputSystem);
-
-	//initialize input
-	VKWindowSystemNS::m_inputSystem->initialize();
+	windowCallbackWrapper::get().initialize(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, g_pCoreSystem->getInputSystem());
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKWindowSystem has been initialized.");
 	return true;
@@ -96,50 +89,9 @@ INNO_SYSTEM_EXPORT bool VKWindowSystem::update()
 	{
 		glfwPollEvents();
 
-		//update input
-		//keyboard
-		for (int i = 0; i < VKWindowSystemNS::g_WindowSystemComponent->NUM_KEYCODES; i++)
-		{
-			if (glfwGetKey(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, i) == GLFW_PRESS)
-			{
-				auto l_result = VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
-				if (l_result != VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
-				{
-					l_result->second = ButtonStatus::PRESSED;
-				}
-			}
-			else
-			{
-				auto l_result = VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
-				if (l_result != VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
-				{
-					l_result->second = ButtonStatus::RELEASED;
-				}
-			}
-		}
-		//mouse
-		for (int i = 0; i < VKWindowSystemNS::g_WindowSystemComponent->NUM_MOUSEBUTTONS; i++)
-		{
-			if (glfwGetMouseButton(VKWindowSystemNS::g_VKWindowSystemComponent->m_window, i) == GLFW_PRESS)
-			{
-				auto l_result = VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
-				if (l_result != VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
-				{
-					l_result->second = ButtonStatus::PRESSED;
-				}
-			}
-			else
-			{
-				auto l_result = VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.find(i);
-				if (l_result != VKWindowSystemNS::g_WindowSystemComponent->m_buttonStatus.end())
-				{
-					l_result->second = ButtonStatus::RELEASED;
-				}
-			}
-		}
+		windowCallbackWrapper::get().update(VKWindowSystemNS::g_VKWindowSystemComponent->m_window);
 	}
 
-	VKWindowSystemNS::m_inputSystem->update();
 	return true;
 }
 
@@ -172,4 +124,9 @@ void VKWindowSystemNS::showMouseCursor()
 INNO_SYSTEM_EXPORT ObjectStatus VKWindowSystem::getStatus()
 {
 	return VKWindowSystemNS::m_objectStatus;
+}
+
+INNO_SYSTEM_EXPORT ButtonStatusMap VKWindowSystem::getButtonStatus()
+{
+	return windowCallbackWrapper::get().getButtonStatus();
 }

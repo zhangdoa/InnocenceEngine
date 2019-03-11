@@ -685,7 +685,6 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 				{
 					InnoAssetSystemNS::m_asyncTask.emplace_back(g_pCoreSystem->getTaskSystem()->submit([&]()
 					{
-
 					}));
 					l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
 					l_visibleComponent->m_PhysicsDataComponent = g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent->m_modelMap, l_visibleComponent->m_parentEntity);
@@ -698,7 +697,6 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 				l_visibleComponent->m_PhysicsDataComponent = g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent->m_modelMap, l_visibleComponent->m_parentEntity);
 				l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
 			}
-
 		}
 		g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoAssetSystemNS::m_asyncTask);
 	}
