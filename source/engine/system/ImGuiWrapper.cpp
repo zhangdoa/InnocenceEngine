@@ -1,8 +1,6 @@
 #include "ImGuiWrapper.h"
 
 #include "../component/WindowSystemComponent.h"
-#include "../component/RenderingSystemComponent.h"
-#include "../component/PhysicsSystemComponent.h"
 
 #include "ICoreSystem.h"
 
@@ -29,7 +27,7 @@ INNO_PRIVATE_SCOPE ImGuiWrapperNS
 	void showPointLightComponentPropertyEditor(void* rhs);
 	void showSphereLightComponentPropertyEditor(void* rhs);
 
-	std::function<void(RenderingConfig&)>* f_ShowRenderPassResult;
+	std::function<void()>* f_ShowRenderPassResult;
 	std::function<ImTextureID(const FileExplorerIconType)>* f_GetFileExplorerIconTextureID;
 
 	std::atomic<bool> m_canRender = false;
@@ -128,7 +126,7 @@ void ImGuiWrapper::terminate()
 	ImGui::DestroyContext();
 }
 
-bool ImGuiWrapper::addShowRenderPassResultCallback(std::function<void(RenderingConfig&)>* functor)
+bool ImGuiWrapper::addShowRenderPassResultCallback(std::function<void()>* functor)
 {
 	ImGuiWrapperNS::f_ShowRenderPassResult = functor;
 	return true;
@@ -144,37 +142,19 @@ void ImGuiWrapperNS::showApplicationProfiler()
 {
 	static RenderingConfig l_renderingConfig;
 	static GameConfig l_gameConfig;
+	static bool l_useZoom;
+	static bool l_showRenderPassResult;
 
 	ImGui::Begin("Profiler", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	if (ImGui::Checkbox("Use TAA", &l_renderingConfig.useTAA))
-	{
-		RenderingSystemComponent::get().m_useTAA = l_renderingConfig.useTAA;
-	}
-	if (ImGui::Checkbox("Use Bloom", &l_renderingConfig.useBloom))
-	{
-		RenderingSystemComponent::get().m_useBloom = l_renderingConfig.useBloom;
-	}
-	if (ImGui::Checkbox("Draw terrain", &l_renderingConfig.drawTerrain))
-	{
-		RenderingSystemComponent::get().m_drawTerrain = l_renderingConfig.drawTerrain;
-	}
-	if (ImGui::Checkbox("Draw sky", &l_renderingConfig.drawSky))
-	{
-		RenderingSystemComponent::get().m_drawSky = l_renderingConfig.drawSky;
-	}
-	if (ImGui::Checkbox("Draw debug object", &l_renderingConfig.drawDebugObject))
-	{
-		RenderingSystemComponent::get().m_drawOverlapWireframe = l_renderingConfig.drawDebugObject;
-	}
-	if (ImGui::Checkbox("Pause game update", &l_gameConfig.pauseGameUpdate))
-	{
-		g_pCoreSystem->getGameSystem()->pauseGameUpdate(l_gameConfig.pauseGameUpdate);
-	}
-
-	ImGui::Checkbox("Use zoom", &l_renderingConfig.useZoom);
-
-	ImGui::Checkbox("Show render pass result", &l_renderingConfig.showRenderPassResult);
+	ImGui::Checkbox("Use TAA", &l_renderingConfig.useTAA);
+	ImGui::Checkbox("Use Bloom", &l_renderingConfig.useBloom);
+	ImGui::Checkbox("Draw terrain", &l_renderingConfig.drawTerrain);
+	ImGui::Checkbox("Draw sky", &l_renderingConfig.drawSky);
+	ImGui::Checkbox("Draw debug object", &l_renderingConfig.drawDebugObject);
+	ImGui::Checkbox("Pause game update", &l_gameConfig.pauseGameUpdate);
+	ImGui::Checkbox("Use zoom", &l_useZoom);
+	ImGui::Checkbox("Show render pass result", &l_showRenderPassResult);
 
 	const char* items[] = { "OpaquePass", "TransparentPass", "TerrainPass", "LightPass", "FinalPass" };
 	static int item_current = 0;
@@ -182,11 +162,12 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (ImGui::Button("Reload Shader"))
 	{
-		RenderingSystemComponent::get().f_reloadShader(RenderPassType(item_current));
+		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->reloadShader(RenderPassType(item_current));
 	}
-	if (ImGui::Button("Capture environment"))
+	if (ImGui::Button("Bake GI"))
 	{
-		RenderingSystemComponent::get().f_captureEnvironment();
+		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->bakeGI();
+
 	}
 
 	static char scene_filePath[128] = "..//res//scenes//Intro.InnoScene";
@@ -201,12 +182,14 @@ void ImGuiWrapperNS::showApplicationProfiler()
 		g_pCoreSystem->getFileSystem()->loadScene(scene_filePath);
 	}
 
-	if (l_renderingConfig.showRenderPassResult)
+	if (l_showRenderPassResult)
 	{
-		(*f_ShowRenderPassResult)(l_renderingConfig);
+		(*f_ShowRenderPassResult)();
 	}
 
 	ImGui::End();
+
+	g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->setRenderingConfig(l_renderingConfig);
 }
 
 void ImGuiWrapperNS::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize)

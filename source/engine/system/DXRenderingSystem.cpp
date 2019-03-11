@@ -6,7 +6,6 @@
 
 #include "../component/WindowSystemComponent.h"
 #include "../component/DXWindowSystemComponent.h"
-#include "../component/RenderingSystemComponent.h"
 #include "../component/DXRenderingSystemComponent.h"
 
 #include "DXRenderingSystemUtilities.h"
@@ -41,6 +40,8 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	bool createRasterizer();
 
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
+
+	std::vector<MeshDataPack> m_meshDataPack;
 }
 
 bool DXRenderingSystemNS::createPhysicalDevices()
@@ -415,6 +416,8 @@ bool DXRenderingSystemNS::createRasterizer()
 
 bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
+	m_renderingFrontendSystem = renderingFrontend;
+
 	g_WindowSystemComponent = &WindowSystemComponent::get();
 	g_DXWindowSystemComponent = &DXWindowSystemComponent::get();
 	g_DXRenderingSystemComponent = &DXRenderingSystemComponent::get();
@@ -483,27 +486,6 @@ bool DXRenderingSystemNS::update()
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
-{
-	return DXRenderingSystemNS::setup(renderingFrontend);
-}
-
-INNO_SYSTEM_EXPORT bool DXRenderingSystem::initialize()
-{
-	DXRenderingSystemNS::initializeDefaultAssets();
-	DXGeometryRenderingPassUtilities::initialize();
-	DXLightRenderingPassUtilities::initialize();
-	DXFinalRenderingPassUtilities::initialize();
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXRenderingSystem has been initialized.");
-	return true;
-}
-
-INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
-{
-	return DXRenderingSystemNS::update();
-}
-
 bool DXRenderingSystemNS::terminate()
 {
 	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
@@ -565,21 +547,6 @@ bool DXRenderingSystemNS::terminate()
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool DXRenderingSystem::terminate()
-{
-	return DXRenderingSystemNS::terminate();
-}
-
-ObjectStatus DXRenderingSystem::getStatus()
-{
-	return DXRenderingSystemNS::m_objectStatus;
-}
-
-INNO_SYSTEM_EXPORT bool DXRenderingSystem::resize()
-{
-	return true;
-}
-
 bool  DXRenderingSystemNS::initializeDefaultAssets()
 {
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE);
@@ -614,97 +581,154 @@ bool  DXRenderingSystemNS::initializeDefaultAssets()
 
 void DXRenderingSystemNS::prepareRenderingData()
 {
-	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamProjJittered = RenderingSystemComponent::get().m_CamProjJittered;
-	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamProjOriginal = RenderingSystemComponent::get().m_CamProjOriginal;
-	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamRot = RenderingSystemComponent::get().m_CamRot;
-	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamTrans = RenderingSystemComponent::get().m_CamTrans;
-	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamRot_prev = RenderingSystemComponent::get().m_CamRot_prev;
-	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamTrans_prev = RenderingSystemComponent::get().m_CamTrans_prev;
+	auto l_cameraDataPack = m_renderingFrontendSystem->getCameraDataPack();
 
-	DXRenderingSystemComponent::get().m_LPassCBufferData.viewPos = RenderingSystemComponent::get().m_CamGlobalPos;
-	DXRenderingSystemComponent::get().m_LPassCBufferData.lightDir = RenderingSystemComponent::get().m_sunDir;
-	DXRenderingSystemComponent::get().m_LPassCBufferData.color = RenderingSystemComponent::get().m_sunLuminance;
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamProjJittered = l_cameraDataPack.p_Jittered;
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamProjOriginal = l_cameraDataPack.p_Original;
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamRot = l_cameraDataPack.r;
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamTrans = l_cameraDataPack.t;
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamRot_prev = l_cameraDataPack.r_prev;
+	DXRenderingSystemComponent::get().m_GPassCameraCBufferData.m_CamTrans_prev = l_cameraDataPack.t_prev;
 
-	for (auto& l_renderDataPack : RenderingSystemComponent::get().m_renderDataPack)
+	auto l_sunDataPack = m_renderingFrontendSystem->getSunDataPack();
+
+	DXRenderingSystemComponent::get().m_LPassCBufferData.viewPos = l_cameraDataPack.globalPos;
+	DXRenderingSystemComponent::get().m_LPassCBufferData.lightDir = l_sunDataPack.dir;
+	DXRenderingSystemComponent::get().m_LPassCBufferData.color = l_sunDataPack.luminance;
+
+	auto l_meshDataPack = m_renderingFrontendSystem->getMeshDataPack();
+
+	if (l_meshDataPack.has_value())
 	{
-		auto l_DXMDC = getDXMeshDataComponent(l_renderDataPack.MDC->m_parentEntity);
+		m_meshDataPack = l_meshDataPack.value();
+	}
+
+	for (auto i : m_meshDataPack)
+	{
+		auto l_DXMDC = getDXMeshDataComponent(i.MDC->m_parentEntity);
 		if (l_DXMDC && l_DXMDC->m_objectStatus == ObjectStatus::ALIVE)
 		{
-			GPassRenderingDataPack l_renderingDataPack;
+			GPassMeshDataPack l_meshDataPack;
 
-			l_renderingDataPack.indiceSize = l_renderDataPack.MDC->m_indicesSize;
-			l_renderingDataPack.meshPrimitiveTopology = l_renderDataPack.MDC->m_meshPrimitiveTopology;
-			l_renderingDataPack.meshCBuffer.m = l_renderDataPack.m;
-			l_renderingDataPack.meshCBuffer.m_prev = l_renderDataPack.m_prev;
-			l_renderingDataPack.meshCBuffer.m_normalMat = l_renderDataPack.normalMat;
-			l_renderingDataPack.DXMDC = l_DXMDC;
+			l_meshDataPack.indiceSize = i.MDC->m_indicesSize;
+			l_meshDataPack.meshPrimitiveTopology = i.MDC->m_meshPrimitiveTopology;
+			l_meshDataPack.meshCBuffer.m = i.m;
+			l_meshDataPack.meshCBuffer.m_prev = i.m_prev;
+			l_meshDataPack.meshCBuffer.m_normalMat = i.normalMat;
+			l_meshDataPack.DXMDC = l_DXMDC;
 
-			auto l_material = l_renderDataPack.material;
+			auto l_material = i.material;
 			// any normal?
 			auto l_TDC = l_material->m_texturePack.m_normalTDC.second;
 			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_renderingDataPack.normalDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+				l_meshDataPack.normalDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
-				l_renderingDataPack.textureCBuffer.useNormalTexture = false;
+				l_meshDataPack.textureCBuffer.useNormalTexture = false;
 			}
 			// any albedo?
 			l_TDC = l_material->m_texturePack.m_albedoTDC.second;
 			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_renderingDataPack.albedoDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+				l_meshDataPack.albedoDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
-				l_renderingDataPack.textureCBuffer.useAlbedoTexture = false;
+				l_meshDataPack.textureCBuffer.useAlbedoTexture = false;
 			}
 			// any metallic?
 			l_TDC = l_material->m_texturePack.m_metallicTDC.second;
 			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_renderingDataPack.metallicDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+				l_meshDataPack.metallicDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
-				l_renderingDataPack.textureCBuffer.useMetallicTexture = false;
+				l_meshDataPack.textureCBuffer.useMetallicTexture = false;
 			}
 			// any roughness?
 			l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
 			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_renderingDataPack.roughnessDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+				l_meshDataPack.roughnessDXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
-				l_renderingDataPack.textureCBuffer.useRoughnessTexture = false;
+				l_meshDataPack.textureCBuffer.useRoughnessTexture = false;
 			}
 			// any ao?
 			l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
 			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_renderingDataPack.AODXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
+				l_meshDataPack.AODXTDC = getDXTextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
-				l_renderingDataPack.textureCBuffer.useAOTexture = false;
+				l_meshDataPack.textureCBuffer.useAOTexture = false;
 			}
 
-			l_renderingDataPack.textureCBuffer.albedo = vec4(
+			l_meshDataPack.textureCBuffer.albedo = vec4(
 				l_material->m_meshCustomMaterial.albedo_r,
 				l_material->m_meshCustomMaterial.albedo_g,
 				l_material->m_meshCustomMaterial.albedo_b,
 				1.0f
 			);
-			l_renderingDataPack.textureCBuffer.MRA = vec4(
+			l_meshDataPack.textureCBuffer.MRA = vec4(
 				l_material->m_meshCustomMaterial.metallic,
 				l_material->m_meshCustomMaterial.roughness,
 				l_material->m_meshCustomMaterial.ao,
 				1.0f
 			);
 
-			DXRenderingSystemComponent::get().m_GPassRenderingDataQueue.push(l_renderingDataPack);
+			DXRenderingSystemComponent::get().m_GPassMeshDataQueue.push(l_meshDataPack);
 		}
 	}
+}
+
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
+{
+	return DXRenderingSystemNS::setup(renderingFrontend);
+}
+
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::initialize()
+{
+	DXRenderingSystemNS::initializeDefaultAssets();
+	DXGeometryRenderingPassUtilities::initialize();
+	DXLightRenderingPassUtilities::initialize();
+	DXFinalRenderingPassUtilities::initialize();
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXRenderingSystem has been initialized.");
+	return true;
+}
+
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::update()
+{
+	return DXRenderingSystemNS::update();
+}
+
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::terminate()
+{
+	return DXRenderingSystemNS::terminate();
+}
+
+ObjectStatus DXRenderingSystem::getStatus()
+{
+	return DXRenderingSystemNS::m_objectStatus;
+}
+
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::resize()
+{
+	return true;
+}
+
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::reloadShader(RenderPassType renderPassType)
+{
+	return true;
+}
+
+INNO_SYSTEM_EXPORT bool DXRenderingSystem::bakeGI()
+{
+	return true;
 }

@@ -2,7 +2,6 @@
 
 #include "../component/WindowSystemComponent.h"
 #include "../component/DXWindowSystemComponent.h"
-#include "../component/RenderingSystemComponent.h"
 #include "../component/DXRenderingSystemComponent.h"
 
 #include "ICoreSystem.h"

@@ -4,6 +4,7 @@
 #include "../common/InnoClassTemplate.h"
 
 #include "IRenderingFrontendSystem.h"
+#include "IRenderingBackendSystem.h"
 
 INNO_INTERFACE IVisionSystem
 {
@@ -17,7 +18,6 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
-	INNO_SYSTEM_EXPORT virtual bool resize() = 0;
-
 	INNO_SYSTEM_EXPORT virtual IRenderingFrontendSystem* getRenderingFrontend() = 0;
+	INNO_SYSTEM_EXPORT virtual IRenderingBackendSystem* getRenderingBackend() = 0;
 };

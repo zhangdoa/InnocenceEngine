@@ -146,7 +146,7 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::framebufferSizeCallback(int width, int 
 {
 	WindowSystemComponent::get().m_windowResolution.x = width;
 	WindowSystemComponent::get().m_windowResolution.y = height;
-	g_pCoreSystem->getVisionSystem()->resize();
+	g_pCoreSystem->getVisionSystem()->getRenderingBackend()->resize();
 }
 
 INNO_SYSTEM_EXPORT void InnoInputSystem::mousePositionCallback(float mouseXPos, float mouseYPos)

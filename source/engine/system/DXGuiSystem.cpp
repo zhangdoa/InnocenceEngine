@@ -15,10 +15,10 @@ INNO_PRIVATE_SCOPE DXGuiSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	void showRenderResult(RenderingConfig & renderingConfig);
+	void showRenderResult();
 	ImTextureID getFileExplorerIconTextureID(const FileExplorerIconType iconType);
 
-	std::function<void(RenderingConfig&)> f_ShowRenderPassResult;
+	std::function<void()> f_ShowRenderPassResult;
 	std::function<ImTextureID(const FileExplorerIconType)> f_GetFileExplorerIconTextureID;
 }
 
@@ -88,7 +88,7 @@ INNO_SYSTEM_EXPORT ObjectStatus DXGuiSystem::getStatus()
 	return DXGuiSystemNS::m_objectStatus;
 }
 
-void DXGuiSystemNS::showRenderResult(RenderingConfig & renderingConfig)
+void DXGuiSystemNS::showRenderResult()
 {
 	auto l_renderTargetSize = ImVec2((float)WindowSystemComponent::get().m_windowResolution.x / 4.0f, (float)WindowSystemComponent::get().m_windowResolution.y / 4.0f);
 

@@ -1,7 +1,6 @@
 #include "GLRenderingSystemUtilities.h"
 #include "GLEnvironmentRenderingPassUtilities.h"
 #include "../component/GLEnvironmentRenderPassComponent.h"
-#include "../component/RenderingSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
 #include "../component/GLFinalRenderPassComponent.h"
 
@@ -366,9 +365,13 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 	auto l_capturePassTDC = GLEnvironmentRenderPassComponent::get().m_capturePassTDC;
 	auto l_capturePassGLTDC = GLEnvironmentRenderPassComponent::get().m_capturePassGLTDC;
 
+	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
+
 	// draw sky
 	// @TODO: optimize
-	if (RenderingSystemComponent::get().m_drawSky)
+	if (l_renderingConfig.drawSky)
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
@@ -385,10 +388,10 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_eyePos,
-			RenderingSystemComponent::get().m_CamGlobalPos.x, RenderingSystemComponent::get().m_CamGlobalPos.y, RenderingSystemComponent::get().m_CamGlobalPos.z);
+			l_cameraDataPack.globalPos.x, l_cameraDataPack.globalPos.y, l_cameraDataPack.globalPos.z);
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_lightDir,
-			RenderingSystemComponent::get().m_sunDir.x, RenderingSystemComponent::get().m_sunDir.y, RenderingSystemComponent::get().m_sunDir.z);
+			l_sunDataPack.dir.x, l_sunDataPack.dir.y, l_sunDataPack.dir.z);
 
 		for (unsigned int i = 0; i < 6; ++i)
 		{

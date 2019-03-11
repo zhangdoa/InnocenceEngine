@@ -35,7 +35,7 @@ struct GPassTextureCBufferData
 	int padding3 = true;
 };
 
-struct GPassRenderingDataPack
+struct GPassMeshDataPack
 {
 	size_t indiceSize;
 	GPassMeshCBufferData meshCBuffer;
@@ -108,7 +108,7 @@ public:
 	std::unordered_map<EntityID, DXTextureDataComponent*> m_textureMap;
 	
 	GPassCameraCBufferData m_GPassCameraCBufferData;
-	std::queue<GPassRenderingDataPack> m_GPassRenderingDataQueue;
+	std::queue<GPassMeshDataPack> m_GPassMeshDataQueue;
 	LPassCBufferData m_LPassCBufferData;
 
 	DXMeshDataComponent* m_UnitLineDXMDC;

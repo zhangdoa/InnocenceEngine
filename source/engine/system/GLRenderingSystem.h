@@ -14,4 +14,6 @@ public:
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 
 	INNO_SYSTEM_EXPORT bool resize() override;
+	INNO_SYSTEM_EXPORT bool reloadShader(RenderPassType renderPassType) override;
+	INNO_SYSTEM_EXPORT bool bakeGI() override;
 };

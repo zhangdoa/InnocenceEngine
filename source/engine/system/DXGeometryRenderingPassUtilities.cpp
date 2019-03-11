@@ -2,7 +2,6 @@
 #include "DXGeometryRenderingPassUtilities.h"
 
 #include "../component/DXGeometryRenderPassComponent.h"
-#include "../component/RenderingSystemComponent.h"
 #include "../component/DXRenderingSystemComponent.h"
 
 #include "ICoreSystem.h"
@@ -121,9 +120,9 @@ void DXGeometryRenderingPassUtilities::updateOpaquePass()
 	cleanDSV(DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_depthStencilView);
 
 	// draw
-	while (DXRenderingSystemComponent::get().m_GPassRenderingDataQueue.size() > 0)
+	while (DXRenderingSystemComponent::get().m_GPassMeshDataQueue.size() > 0)
 	{
-		auto l_renderPack = DXRenderingSystemComponent::get().m_GPassRenderingDataQueue.front();
+		auto l_renderPack = DXRenderingSystemComponent::get().m_GPassMeshDataQueue.front();
 
 		// Set the type of primitive that should be rendered from this vertex buffer.
 		D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
@@ -172,6 +171,6 @@ void DXGeometryRenderingPassUtilities::updateOpaquePass()
 
 		drawMesh(l_renderPack.indiceSize, l_renderPack.DXMDC);
 
-		DXRenderingSystemComponent::get().m_GPassRenderingDataQueue.pop();
+		DXRenderingSystemComponent::get().m_GPassMeshDataQueue.pop();
 	}
 }

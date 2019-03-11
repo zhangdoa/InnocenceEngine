@@ -1474,6 +1474,86 @@ namespace InnoMath
 #endif
 
 	template<class T>
+	bool isPointOnSphere(const TVec4<T> & lhs, const TSphere<T> & rhs)
+	{
+		auto l_length = (lhs - rhs.m_center).length();
+		if (l_length != rhs.m_radius)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	template<class T>
+	bool isPointOnPlane(const TVec4<T> & lhs, const TPlane<T> & rhs)
+	{
+		auto l_dot = lhs * rhs.m_normal;
+		if (l_dot != rhs.m_distance)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	template<class T>
+	bool isPointInAABB(const TVec4<T> & lhs, const TAABB<T> & rhs)
+	{
+		if (std::abs(rhs.m_center.x - lhs.x) > (rhs.m_extend.x) / two<T>)
+		{
+			return false;
+		}
+		if (std::abs(rhs.m_center.y - lhs.y) > (rhs.m_extend.y) / two<T>)
+		{
+			return false;
+		}
+		if (std::abs(rhs.m_center.z - lhs.z) > (rhs.m_extend.z) / two<T>)
+		{
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
+
+	template<class T>
+	T distanceToPlane(const TVec4<T> & lhs, const TPlane<T> & rhs)
+	{
+		auto l_dot = lhs * rhs.m_normal;
+		return l_dot - rhs.m_distance;
+	}
+
+	template<class T>
+	bool isPointInFrustum(const TVec4<T> & lhs, const TFrustum<T> & rhs)
+	{
+		if (distanceToPlane(lhs, rhs.m_px) > zero<T>)
+		{
+			return false;
+		}
+		if (distanceToPlane(lhs, rhs.m_nx) > zero<T>)
+		{
+			return false;
+		}
+		if (distanceToPlane(lhs, rhs.m_py) > zero<T>)
+		{
+			return false;
+		}
+		if (distanceToPlane(lhs, rhs.m_ny) > zero<T>)
+		{
+			return false;
+		}
+		if (distanceToPlane(lhs, rhs.m_pz) > zero<T>)
+		{
+			return false;
+		}
+		if (distanceToPlane(lhs, rhs.m_nz) > zero<T>)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	template<class T>
 	bool intersectCheck(const TAABB<T> & lhs, const TAABB<T> & rhs)
 	{
 		if (std::abs(rhs.m_center.x - lhs.m_center.x) > (rhs.m_extend.x + lhs.m_extend.x) / two<T>)
@@ -1552,46 +1632,33 @@ namespace InnoMath
 	}
 
 	template<class T>
-	bool isPointOnSphere(const TVec4<T> & lhs, const TSphere<T> & rhs)
+	bool intersectCheck(const TFrustum<T> & lhs, const TSphere<T> & rhs)
 	{
-		auto l_length = (lhs - rhs.m_center).length();
-		if (l_length != rhs.m_radius)
+		if (distanceToPlane(rhs.m_center, lhs.m_px) > rhs.m_radius)
+		{
+			return false;
+		}
+		if (distanceToPlane(rhs.m_center, lhs.m_nx) > rhs.m_radius)
+		{
+			return false;
+		}
+		if (distanceToPlane(rhs.m_center, lhs.m_py) > rhs.m_radius)
+		{
+			return false;
+		}
+		if (distanceToPlane(rhs.m_center, lhs.m_ny) > rhs.m_radius)
+		{
+			return false;
+		}
+		if (distanceToPlane(rhs.m_center, lhs.m_pz) > rhs.m_radius)
+		{
+			return false;
+		}
+		if (distanceToPlane(rhs.m_center, lhs.m_nz) > rhs.m_radius)
 		{
 			return false;
 		}
 		return true;
-	}
-
-	template<class T>
-	bool isPointOnPlane(const TVec4<T> & lhs, const TPlane<T> & rhs)
-	{
-		auto l_dot = lhs * rhs.m_normal;
-		if (l_dot != rhs.m_distance)
-		{
-			return false;
-		}
-		return true;
-	}
-
-	template<class T>
-	bool isPointInAABB(const TVec4<T> & lhs, const TAABB<T> & rhs)
-	{
-		if (std::abs(rhs.m_center.x - lhs.x) > (rhs.m_extend.x) / two<T>)
-		{
-			return false;
-		}
-		if (std::abs(rhs.m_center.y - lhs.y) > (rhs.m_extend.y) / two<T>)
-		{
-			return false;
-		}
-		if (std::abs(rhs.m_center.z - lhs.z) > (rhs.m_extend.z) / two<T>)
-		{
-			return false;
-		}
-		else
-		{
-			return true;
-		}
 	}
 
 	template<class T, class U>

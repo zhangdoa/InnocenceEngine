@@ -622,3 +622,13 @@ INNO_SYSTEM_EXPORT bool VKRenderingSystem::resize()
 {
 	return true;
 }
+
+INNO_SYSTEM_EXPORT bool VKRenderingSystem::reloadShader(RenderPassType renderPassType)
+{
+	return true;
+}
+
+INNO_SYSTEM_EXPORT bool VKRenderingSystem::bakeGI()
+{
+	return true;
+}

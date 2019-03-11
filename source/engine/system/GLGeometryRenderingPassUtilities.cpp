@@ -3,7 +3,6 @@
 
 #include "../component/GLGeometryRenderPassComponent.h"
 #include "../component/GLTerrainRenderPassComponent.h"
-#include "../component/RenderingSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
 
 #include "ICoreSystem.h"
@@ -497,6 +496,8 @@ void GLGeometryRenderingPassUtilities::updateOpaquePass()
 
 void GLGeometryRenderingPassUtilities::updateSSAOPass()
 {
+	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+
 	// bind to framebuffer
 	auto l_FBC = GLGeometryRenderPassComponent::get().m_SSAOPass_GLRPC->m_GLFBC;
 	bindFBC(l_FBC);
@@ -509,13 +510,13 @@ void GLGeometryRenderingPassUtilities::updateSSAOPass()
 
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_p,
-		RenderingSystemComponent::get().m_CamProjJittered);
+		l_cameraDataPack.p_Jittered);
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_r,
-		RenderingSystemComponent::get().m_CamRot);
+		l_cameraDataPack.r);
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_SSAOPass_uni_t,
-		RenderingSystemComponent::get().m_CamTrans);
+		l_cameraDataPack.t);
 
 	for (size_t i = 0; i < GLGeometryRenderPassComponent::get().m_SSAOPass_uni_samples.size(); i++)
 	{
@@ -544,6 +545,9 @@ void GLGeometryRenderingPassUtilities::updateSSAOBlurPass()
 
 void GLGeometryRenderingPassUtilities::updateTransparentPass()
 {
+	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_DEPTH_CLAMP);
@@ -563,13 +567,13 @@ void GLGeometryRenderingPassUtilities::updateTransparentPass()
 
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_transparentPass_uni_viewPos,
-		RenderingSystemComponent::get().m_CamGlobalPos.x, RenderingSystemComponent::get().m_CamGlobalPos.y, RenderingSystemComponent::get().m_CamGlobalPos.z);
+		l_cameraDataPack.globalPos.x, l_cameraDataPack.globalPos.y, l_cameraDataPack.globalPos.z);
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_transparentPass_uni_dirLight_direction,
-		RenderingSystemComponent::get().m_sunDir.x, RenderingSystemComponent::get().m_sunDir.y, RenderingSystemComponent::get().m_sunDir.z);
+		l_sunDataPack.dir.x, l_sunDataPack.dir.y, l_sunDataPack.dir.z);
 	updateUniform(
 		GLGeometryRenderPassComponent::get().m_transparentPass_uni_dirLight_color,
-		RenderingSystemComponent::get().m_sunLuminance.x, RenderingSystemComponent::get().m_sunLuminance.y, RenderingSystemComponent::get().m_sunLuminance.z);
+		l_sunDataPack.luminance.x, l_sunDataPack.luminance.y, l_sunDataPack.luminance.z);
 
 	while (GLRenderingSystemComponent::get().m_transparentPassDataQueue.size() > 0)
 	{
@@ -592,7 +596,10 @@ void GLGeometryRenderingPassUtilities::updateTransparentPass()
 
 void GLGeometryRenderingPassUtilities::updateTerrainPass()
 {
-	if (RenderingSystemComponent::get().m_drawTerrain)
+	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+
+	if (l_renderingConfig.drawTerrain)
 	{
 		glEnable(GL_DEPTH_TEST);
 
@@ -608,13 +615,13 @@ void GLGeometryRenderingPassUtilities::updateTerrainPass()
 
 		updateUniform(
 			GLTerrainRenderPassComponent::get().m_terrainPass_uni_p_camera,
-			RenderingSystemComponent::get().m_CamProjOriginal);
+			l_cameraDataPack.p_Original);
 		updateUniform(
 			GLTerrainRenderPassComponent::get().m_terrainPass_uni_r_camera,
-			RenderingSystemComponent::get().m_CamRot);
+			l_cameraDataPack.r);
 		updateUniform(
 			GLTerrainRenderPassComponent::get().m_terrainPass_uni_t_camera,
-			RenderingSystemComponent::get().m_CamTrans);
+			l_cameraDataPack.t);
 		updateUniform(
 			GLTerrainRenderPassComponent::get().m_terrainPass_uni_m,
 			m);

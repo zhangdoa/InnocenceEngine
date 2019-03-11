@@ -1,7 +1,6 @@
 #include "DXRenderingSystemUtilities.h"
 #include "DXFinalRenderingPassUtilities.h"
 #include "../component/DXFinalRenderPassComponent.h"
-#include "../component/RenderingSystemComponent.h"
 #include "../component/DXRenderingSystemComponent.h"
 #include "../component/DXGeometryRenderPassComponent.h"
 #include "../component/DXLightRenderPassComponent.h"

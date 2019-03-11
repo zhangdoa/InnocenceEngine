@@ -1,7 +1,6 @@
 #include "GLRenderingSystemUtilities.h"
 #include "GLFinalRenderingPassUtilities.h"
 #include "../component/GLFinalRenderPassComponent.h"
-#include "../component/RenderingSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
 #include "../component/GLGeometryRenderPassComponent.h"
 #include "../component/GLTerrainRenderPassComponent.h"
@@ -44,6 +43,8 @@ INNO_PRIVATE_SCOPE GLFinalRenderingPassUtilities
 	GLTextureDataComponent* updateFinalBlendPass(GLTextureDataComponent * inputGLTDC);
 
 	EntityID m_entityID;
+
+	bool m_isTAAPingPass = true;
 }
 
 void GLFinalRenderingPassUtilities::initialize()
@@ -292,6 +293,8 @@ void GLFinalRenderingPassUtilities::bindFinalBlendPassUniformLocations()
 
 void GLFinalRenderingPassUtilities::update()
 {
+	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+
 	auto skyPassResult = updateSkyPass();
 
 	auto preTAAPassResult = updatePreTAAPass();
@@ -300,14 +303,14 @@ void GLFinalRenderingPassUtilities::update()
 
 	finalInputGLTDC = updateMotionBlurPass(preTAAPassResult);
 
-	if (RenderingSystemComponent::get().m_useTAA)
+	if (l_renderingConfig.useTAA)
 	{
 		auto TAAPassResult = updateTAAPass(finalInputGLTDC);
 
 		finalInputGLTDC = updateTAASharpenPass(TAAPassResult);
 	}
 
-	if (RenderingSystemComponent::get().m_useBloom)
+	if (l_renderingConfig.useBloom)
 	{
 		auto bloomExtractPassResult = updateBloomExtractPass(finalInputGLTDC);
 
@@ -334,7 +337,7 @@ void GLFinalRenderingPassUtilities::update()
 
 	updateBillboardPass();
 
-	if (RenderingSystemComponent::get().m_drawOverlapWireframe)
+	if (l_renderingConfig.drawDebugObject)
 	{
 		updateDebuggerPass();
 	}
@@ -348,7 +351,11 @@ void GLFinalRenderingPassUtilities::update()
 
 GLTextureDataComponent* GLFinalRenderingPassUtilities::updateSkyPass()
 {
-	if (RenderingSystemComponent::get().m_drawSky)
+	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
+
+	if (l_renderingConfig.drawSky)
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
@@ -365,19 +372,19 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateSkyPass()
 
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_p,
-			RenderingSystemComponent::get().m_CamProjOriginal);
+			l_cameraDataPack.p_Original);
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_r,
-			RenderingSystemComponent::get().m_CamRot);
+			l_cameraDataPack.r);
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_viewportSize,
 			(float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX, (float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY);
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_eyePos,
-			RenderingSystemComponent::get().m_CamGlobalPos.x, RenderingSystemComponent::get().m_CamGlobalPos.y, RenderingSystemComponent::get().m_CamGlobalPos.z);
+			l_cameraDataPack.globalPos.x, l_cameraDataPack.globalPos.y, l_cameraDataPack.globalPos.z);
 		updateUniform(
 			GLFinalRenderPassComponent::get().m_skyPass_uni_lightDir,
-			RenderingSystemComponent::get().m_sunDir.x, RenderingSystemComponent::get().m_sunDir.y, RenderingSystemComponent::get().m_sunDir.z);
+			l_sunDataPack.dir.x, l_sunDataPack.dir.y, l_sunDataPack.dir.z);
 
 		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
 		drawMesh(l_MDC);
@@ -431,14 +438,14 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateTAAPass(GLTextureDa
 
 	GLFrameBufferComponent* l_FBC;
 
-	if (RenderingSystemComponent::get().m_isTAAPingPass)
+	if (m_isTAAPingPass)
 	{
 		l_currentFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
 		l_lastFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
 
 		l_FBC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLFBC;
 
-		RenderingSystemComponent::get().m_isTAAPingPass = false;
+		m_isTAAPingPass = false;
 	}
 	else
 	{
@@ -447,7 +454,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateTAAPass(GLTextureDa
 
 		l_FBC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLFBC;
 
-		RenderingSystemComponent::get().m_isTAAPingPass = true;
+		m_isTAAPingPass = true;
 	}
 
 	bindFBC(l_FBC);
@@ -587,6 +594,8 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateMotionBlurPass(GLTe
 
 GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBillboardPass()
 {
+	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
@@ -600,13 +609,13 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBillboardPass()
 
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_billboardPass_uni_p,
-		RenderingSystemComponent::get().m_CamProjOriginal);
+		l_cameraDataPack.p_Original);
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_billboardPass_uni_r,
-		RenderingSystemComponent::get().m_CamRot);
+		l_cameraDataPack.r);
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_billboardPass_uni_t,
-		RenderingSystemComponent::get().m_CamTrans);
+		l_cameraDataPack.t);
 
 	while (GLRenderingSystemComponent::get().m_billboardPassDataQueue.size() > 0)
 	{
@@ -658,6 +667,8 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBillboardPass()
 
 GLTextureDataComponent* GLFinalRenderingPassUtilities::updateDebuggerPass()
 {
+	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
@@ -671,13 +682,13 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateDebuggerPass()
 
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_debuggerPass_uni_p,
-		RenderingSystemComponent::get().m_CamProjOriginal);
+		l_cameraDataPack.p_Original);
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_debuggerPass_uni_r,
-		RenderingSystemComponent::get().m_CamRot);
+		l_cameraDataPack.r);
 	updateUniform(
 		GLFinalRenderPassComponent::get().m_debuggerPass_uni_t,
-		RenderingSystemComponent::get().m_CamTrans);
+		l_cameraDataPack.t);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	while (GLRenderingSystemComponent::get().m_debuggerPassDataQueue.size() > 0)

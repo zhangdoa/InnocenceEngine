@@ -9,7 +9,6 @@
 #include "GLFinalRenderingPassUtilities.h"
 
 #include "../component/WindowSystemComponent.h"
-#include "../component/RenderingSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
 
 #include "ICoreSystem.h"
@@ -55,41 +54,11 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 		}
 	}
 
-	std::vector<RenderDataPack> m_renderDataPack;
+	std::vector<MeshDataPack> m_meshDataPack;
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
-}
-
-INNO_SYSTEM_EXPORT bool GLRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
-{
-	return GLRenderingSystemNS::setup(renderingFrontend);
-}
-
-INNO_SYSTEM_EXPORT bool GLRenderingSystem::initialize()
-{
-	return GLRenderingSystemNS::initialize();
-}
-
-INNO_SYSTEM_EXPORT bool GLRenderingSystem::update()
-{
-	return GLRenderingSystemNS::update();
-}
-
-INNO_SYSTEM_EXPORT bool GLRenderingSystem::terminate()
-{
-	return GLRenderingSystemNS::terminate();
-}
-
-INNO_SYSTEM_EXPORT ObjectStatus GLRenderingSystem::getStatus()
-{
-	return GLRenderingSystemNS::m_objectStatus;
-}
-
-INNO_SYSTEM_EXPORT bool GLRenderingSystem::resize()
-{
-	return GLRenderingSystemNS::resize();
 }
 
 bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
@@ -128,38 +97,10 @@ bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureHeight = GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
-	RenderingSystemComponent::get().f_reloadShader =
-		[&](RenderPassType renderPassType) {
-		switch (renderPassType)
-		{
-		case RenderPassType::OpaquePass:
-			GLGeometryRenderingPassUtilities::reloadOpaquePassShaders();
-			break;
-		case RenderPassType::TransparentPass:
-			GLGeometryRenderingPassUtilities::reloadTransparentPassShaders();
-			break;
-		case RenderPassType::TerrainPass:
-			GLGeometryRenderingPassUtilities::reloadTerrainPassShaders();
-			break;
-		case RenderPassType::LightPass:
-			GLLightRenderingPassUtilities::reloadLightPassShaders();
-			break;
-		case RenderPassType::FinalPass:
-			GLFinalRenderingPassUtilities::reloadFinalPassShaders();
-			break;
-		default: break;
-		}
-	};
-
-	RenderingSystemComponent::get().f_captureEnvironment =
-		[]() {
-		GLEnvironmentRenderingPassUtilities::update();
-	};
-
-	if (RenderingSystemComponent::get().m_MSAAdepth)
+	if (m_renderingFrontendSystem->getRenderingConfig().MSAAdepth)
 	{
 		// antialiasing
-		glfwWindowHint(GLFW_SAMPLES, RenderingSystemComponent::get().m_MSAAdepth);
+		glfwWindowHint(GLFW_SAMPLES, m_renderingFrontendSystem->getRenderingConfig().MSAAdepth);
 		// MSAA
 		glEnable(GL_MULTISAMPLE);
 	}
@@ -266,19 +207,23 @@ void GLRenderingSystemNS::prepareRenderingData()
 bool GLRenderingSystemNS::prepareGeometryPassData()
 {
 	//UBO
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjJittered = RenderingSystemComponent::get().m_CamProjJittered;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjOriginal = RenderingSystemComponent::get().m_CamProjOriginal;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot = RenderingSystemComponent::get().m_CamRot;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans = RenderingSystemComponent::get().m_CamTrans;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot_prev = RenderingSystemComponent::get().m_CamRot_prev;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans_prev = RenderingSystemComponent::get().m_CamTrans_prev;
+	auto l_cameraDataPack = m_renderingFrontendSystem->getCameraDataPack();
 
-	if (RenderingSystemComponent::get().m_isRenderDataPackValid)
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjJittered = l_cameraDataPack.p_Jittered;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjOriginal = l_cameraDataPack.p_Original;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot = l_cameraDataPack.r;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans = l_cameraDataPack.t;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot_prev = l_cameraDataPack.r_prev;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans_prev = l_cameraDataPack.t_prev;
+
+	auto l_meshDataPack = m_renderingFrontendSystem->getMeshDataPack();
+
+	if (l_meshDataPack.has_value())
 	{
-		GLRenderingSystemNS::m_renderDataPack = RenderingSystemComponent::get().m_renderDataPack.getRawData();
+		m_meshDataPack = l_meshDataPack.value();
 	}
 
-	for (auto& i : GLRenderingSystemNS::m_renderDataPack)
+	for (auto i : m_meshDataPack)
 	{
 		auto l_GLMDC = getGLMeshDataComponent(i.MDC->m_parentEntity);
 		if (l_GLMDC)
@@ -419,11 +364,13 @@ bool GLRenderingSystemNS::prepareLightPassData()
 
 bool GLRenderingSystemNS::prepareBillboardPassData()
 {
+	auto l_cameraDataPack = m_renderingFrontendSystem->getCameraDataPack();
+
 	for (auto i : g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>())
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (RenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.distanceToCamera = (l_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::DIRECTIONAL_LIGHT;
 
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
@@ -433,7 +380,7 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (RenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.distanceToCamera = (l_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::POINT_LIGHT;
 
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
@@ -443,7 +390,7 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (RenderingSystemComponent::get().m_CamGlobalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.distanceToCamera = (l_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::SPHERE_LIGHT;
 
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
@@ -454,50 +401,30 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 
 bool GLRenderingSystemNS::prepareDebuggerPassData()
 {
-	if (RenderingSystemComponent::get().m_selectedVisibleComponent)
-	{
-		for (auto i : RenderingSystemComponent::get().m_selectedVisibleComponent->m_modelMap)
-		{
-			DebuggerPassDataPack l_GLRenderDataPack;
+	//if (RenderingSystemComponent::get().m_selectedVisibleComponent)
+	//{
+	//	for (auto i : RenderingSystemComponent::get().m_selectedVisibleComponent->m_modelMap)
+	//	{
+	//		DebuggerPassDataPack l_GLRenderDataPack;
 
-			auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(RenderingSystemComponent::get().m_selectedVisibleComponent->m_parentEntity);
-			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+	//		auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(RenderingSystemComponent::get().m_selectedVisibleComponent->m_parentEntity);
+	//		auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-			l_GLRenderDataPack.m = l_globalTm;
-			l_GLRenderDataPack.GLMDC = getGLMeshDataComponent(i.first->m_parentEntity);
-			l_GLRenderDataPack.indiceSize = i.first->m_indicesSize;
-			l_GLRenderDataPack.meshPrimitiveTopology = i.first->m_meshPrimitiveTopology;
+	//		l_GLRenderDataPack.m = l_globalTm;
+	//		l_GLRenderDataPack.GLMDC = getGLMeshDataComponent(i.first->m_parentEntity);
+	//		l_GLRenderDataPack.indiceSize = i.first->m_indicesSize;
+	//		l_GLRenderDataPack.meshPrimitiveTopology = i.first->m_meshPrimitiveTopology;
 
-			GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
-		}
-	}
-
-	auto l_sphereMDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
-
-	if (RenderingSystemComponent::get().m_debugSpheres.size() > 0)
-	{
-		for (auto i : RenderingSystemComponent::get().m_debugSpheres)
-		{
-			DebuggerPassDataPack l_GLRenderDataPack;
-
-			auto l_t = InnoMath::toTranslationMatrix(i.m_center);
-			auto l_s = InnoMath::toScaleMatrix(vec4(i.m_radius, i.m_radius, i.m_radius, 1.0f));
-			auto l_m = l_t * l_s;
-
-			l_GLRenderDataPack.m = l_m;
-			l_GLRenderDataPack.GLMDC = GLRenderingSystemComponent::get().m_UnitSphereGLMDC;
-			l_GLRenderDataPack.indiceSize = l_sphereMDC->m_indicesSize;
-			l_GLRenderDataPack.meshPrimitiveTopology = l_sphereMDC->m_meshPrimitiveTopology;
-
-			GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
-		}
-	}
+	//		GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
+	//	}
+	//}
 
 	auto l_planeMDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_debugPlanes = m_renderingFrontendSystem->getDebugPlane();
 
-	if (RenderingSystemComponent::get().m_debugPlanes.size() > 0)
+	if (l_debugPlanes.size() > 0)
 	{
-		for (auto i : RenderingSystemComponent::get().m_debugPlanes)
+		for (auto i : l_debugPlanes)
 		{
 			DebuggerPassDataPack l_GLRenderDataPack;
 
@@ -512,6 +439,28 @@ bool GLRenderingSystemNS::prepareDebuggerPassData()
 			l_GLRenderDataPack.GLMDC = GLRenderingSystemComponent::get().m_UnitQuadGLMDC;
 			l_GLRenderDataPack.indiceSize = l_planeMDC->m_indicesSize;
 			l_GLRenderDataPack.meshPrimitiveTopology = l_planeMDC->m_meshPrimitiveTopology;
+
+			GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
+		}
+	}
+
+	auto l_sphereMDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
+	auto l_debugSpheres = m_renderingFrontendSystem->getDebugSphere();
+
+	if (l_debugSpheres.size() > 0)
+	{
+		for (auto i : l_debugSpheres)
+		{
+			DebuggerPassDataPack l_GLRenderDataPack;
+
+			auto l_t = InnoMath::toTranslationMatrix(i.m_center);
+			auto l_s = InnoMath::toScaleMatrix(vec4(i.m_radius, i.m_radius, i.m_radius, 1.0f));
+			auto l_m = l_t * l_s;
+
+			l_GLRenderDataPack.m = l_m;
+			l_GLRenderDataPack.GLMDC = GLRenderingSystemComponent::get().m_UnitSphereGLMDC;
+			l_GLRenderDataPack.indiceSize = l_sphereMDC->m_indicesSize;
+			l_GLRenderDataPack.meshPrimitiveTopology = l_sphereMDC->m_meshPrimitiveTopology;
 
 			GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
 		}
@@ -539,5 +488,67 @@ bool GLRenderingSystemNS::resize()
 	GLLightRenderingPassUtilities::resize();
 	GLFinalRenderingPassUtilities::resize();
 
+	return true;
+}
+
+
+INNO_SYSTEM_EXPORT bool GLRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
+{
+	return GLRenderingSystemNS::setup(renderingFrontend);
+}
+
+INNO_SYSTEM_EXPORT bool GLRenderingSystem::initialize()
+{
+	return GLRenderingSystemNS::initialize();
+}
+
+INNO_SYSTEM_EXPORT bool GLRenderingSystem::update()
+{
+	return GLRenderingSystemNS::update();
+}
+
+INNO_SYSTEM_EXPORT bool GLRenderingSystem::terminate()
+{
+	return GLRenderingSystemNS::terminate();
+}
+
+INNO_SYSTEM_EXPORT ObjectStatus GLRenderingSystem::getStatus()
+{
+	return GLRenderingSystemNS::m_objectStatus;
+}
+
+INNO_SYSTEM_EXPORT bool GLRenderingSystem::resize()
+{
+	return GLRenderingSystemNS::resize();
+}
+
+INNO_SYSTEM_EXPORT bool GLRenderingSystem::reloadShader(RenderPassType renderPassType)
+{
+	switch (renderPassType)
+	{
+	case RenderPassType::OpaquePass:
+		GLGeometryRenderingPassUtilities::reloadOpaquePassShaders();
+		break;
+	case RenderPassType::TransparentPass:
+		GLGeometryRenderingPassUtilities::reloadTransparentPassShaders();
+		break;
+	case RenderPassType::TerrainPass:
+		GLGeometryRenderingPassUtilities::reloadTerrainPassShaders();
+		break;
+	case RenderPassType::LightPass:
+		GLLightRenderingPassUtilities::reloadLightPassShaders();
+		break;
+	case RenderPassType::FinalPass:
+		GLFinalRenderingPassUtilities::reloadFinalPassShaders();
+		break;
+	default: break;
+	}
+
+	return true;
+}
+
+INNO_SYSTEM_EXPORT bool GLRenderingSystem::bakeGI()
+{
+	GLEnvironmentRenderingPassUtilities::update();
 	return true;
 }

@@ -13,7 +13,6 @@ public:
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 
-	INNO_SYSTEM_EXPORT bool resize() override;
-
 	INNO_SYSTEM_EXPORT IRenderingFrontendSystem* getRenderingFrontend() override;
+	INNO_SYSTEM_EXPORT IRenderingBackendSystem* getRenderingBackend() override;
 };

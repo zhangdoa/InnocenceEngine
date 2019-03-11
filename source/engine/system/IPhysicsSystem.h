@@ -3,6 +3,16 @@
 #include "../exports/InnoSystem_Export.h"
 #include "../common/InnoClassTemplate.h"
 #include "../component/VisibleComponent.h"
+#include "../component/MeshDataComponent.h"
+
+struct CullingDataPack
+{
+	mat4 m;
+	mat4 m_prev;
+	mat4 normalMat;
+	VisibleComponent* visibleComponent;
+	MeshDataComponent* MDC;
+};
 
 INNO_INTERFACE IPhysicsSystem
 {
@@ -17,4 +27,5 @@ public:
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
 	INNO_SYSTEM_EXPORT virtual PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap, const EntityID& entityID) = 0;
+	INNO_SYSTEM_EXPORT virtual std::optional<std::vector<CullingDataPack>> getCullingDataPack() = 0;
 };

@@ -1,7 +1,6 @@
 #include "GLRenderingSystemUtilities.h"
 #include "GLShadowRenderingPassUtilities.h"
 #include "../component/GLShadowRenderPassComponent.h"
-#include "../component/RenderingSystemComponent.h"
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -125,6 +124,8 @@ void GLShadowRenderingPassUtilities::update()
 
 	unsigned int splitCount = 0;
 
+	auto l_CSMDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCSMDataPack();
+
 	for (unsigned int i = 0; i < 2; i++)
 	{
 		for (unsigned int j = 0; j < 2; j++)
@@ -132,11 +133,11 @@ void GLShadowRenderingPassUtilities::update()
 			glViewport(i * sizeX / 2, j * sizeY / 2, sizeX / 2, sizeY / 2);
 			updateUniform(
 				GLShadowRenderPassComponent::get().m_shadowPass_uni_p,
-				RenderingSystemComponent::get().m_CSMProjs[splitCount]);
+				l_CSMDataPack[splitCount].p);
 
 			updateUniform(
 				GLShadowRenderPassComponent::get().m_shadowPass_uni_v,
-				RenderingSystemComponent::get().m_CSMViews[splitCount]);
+				l_CSMDataPack[splitCount].v);
 
 			splitCount++;
 

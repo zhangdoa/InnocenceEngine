@@ -1,7 +1,6 @@
 #include "PhysicsSystem.h"
 
 #include "../component/WindowSystemComponent.h"
-#include "../component/PhysicsSystemComponent.h"
 
 //#include "PhysXWrapper.h"
 
@@ -12,6 +11,7 @@ extern ICoreSystem* g_pCoreSystem;
 namespace InnoPhysicsSystemNS
 {
 	bool setup();
+	bool update();
 
 	void generateProjectionMatrix(CameraComponent* cameraComponent);
 	void generateRayOfEye(CameraComponent* cameraComponent);
@@ -51,6 +51,11 @@ namespace InnoPhysicsSystemNS
 
 	InputComponent* m_inputComponent;
 	std::function<void()> f_mouseSelect;
+
+	std::atomic<bool> m_isCullingDataPackValid = false;
+	std::vector<CullingDataPack> m_cullingDataPack;
+
+	VisibleComponent* m_selectedVisibleComponent;
 }
 
 bool InnoPhysicsSystemNS::setup()
@@ -60,7 +65,7 @@ bool InnoPhysicsSystemNS::setup()
 	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_entityID);
 
 	f_mouseSelect = [&]() {
-		PhysicsSystemComponent::get().m_selectedVisibleComponent = nullptr;
+		m_selectedVisibleComponent = nullptr;
 
 		if (g_pCoreSystem->getGameSystem()->get<CameraComponent>().size() > 0)
 		{
@@ -86,7 +91,7 @@ bool InnoPhysicsSystemNS::setup()
 
 							if (InnoMath::intersectCheck(l_AABBws, l_mouseRay))
 							{
-								PhysicsSystemComponent::get().m_selectedVisibleComponent = visibleComponent;
+								m_selectedVisibleComponent = visibleComponent;
 								break;
 							}
 						}
@@ -554,73 +559,6 @@ void InnoPhysicsSystemNS::updateVisibleComponents()
 }
 
 template<class T>
-T distanceToPlane(const TVec4<T> & lhs, const TPlane<T> & rhs)
-{
-	auto l_dot = lhs * rhs.m_normal;
-	return l_dot - rhs.m_distance;
-}
-
-template<class T>
-bool isPointInFrustum(const TVec4<T> & lhs, const TFrustum<T> & rhs)
-{
-	if (distanceToPlane(lhs, rhs.m_px) > zero<T>)
-	{
-		return false;
-	}
-	if (distanceToPlane(lhs, rhs.m_nx) > zero<T>)
-	{
-		return false;
-	}
-	if (distanceToPlane(lhs, rhs.m_py) > zero<T>)
-	{
-		return false;
-	}
-	if (distanceToPlane(lhs, rhs.m_ny) > zero<T>)
-	{
-		return false;
-	}
-	if (distanceToPlane(lhs, rhs.m_pz) > zero<T>)
-	{
-		return false;
-	}
-	if (distanceToPlane(lhs, rhs.m_nz) > zero<T>)
-	{
-		return false;
-	}
-	return true;
-}
-
-template<class T>
-bool intersectCheck(const TFrustum<T> & lhs, const TSphere<T> & rhs)
-{
-	if (distanceToPlane(rhs.m_center, lhs.m_px) > rhs.m_radius)
-	{
-		return false;
-	}
-	if (distanceToPlane(rhs.m_center, lhs.m_nx) > rhs.m_radius)
-	{
-		return false;
-	}
-	if (distanceToPlane(rhs.m_center, lhs.m_py) > rhs.m_radius)
-	{
-		return false;
-	}
-	if (distanceToPlane(rhs.m_center, lhs.m_ny) > rhs.m_radius)
-	{
-		return false;
-	}
-	if (distanceToPlane(rhs.m_center, lhs.m_pz) > rhs.m_radius)
-	{
-		return false;
-	}
-	if (distanceToPlane(rhs.m_center, lhs.m_nz) > rhs.m_radius)
-	{
-		return false;
-	}
-	return true;
-}
-
-template<class T>
 bool intersectCheck(const TFrustum<T> & lhs, const TAABB<T> & rhs)
 {
 	auto l_isCenterInside = isPointInFrustum(rhs.m_center, lhs);
@@ -646,7 +584,7 @@ bool intersectCheck(const TFrustum<T> & lhs, const TAABB<T> & rhs)
 
 void InnoPhysicsSystemNS::updateCulling()
 {
-	PhysicsSystemComponent::get().m_cullingDataPack.clear();
+	m_cullingDataPack.clear();
 
 	if (g_pCoreSystem->getGameSystem()->get<CameraComponent>().size() > 0)
 	{
@@ -674,7 +612,7 @@ void InnoPhysicsSystemNS::updateCulling()
 						l_boundingSphere.m_center = l_OBBws.m_center;
 						l_boundingSphere.m_radius = l_OBBws.m_extend.length();
 
-						if (intersectCheck(l_cameraFrustum, l_boundingSphere))
+						if (InnoMath::intersectCheck(l_cameraFrustum, l_boundingSphere))
 						{
 							CullingDataPack l_cullingDataPack;
 
@@ -684,7 +622,7 @@ void InnoPhysicsSystemNS::updateCulling()
 							l_cullingDataPack.visibleComponent = visibleComponent;
 							l_cullingDataPack.MDC = physicsData.MDC;
 
-							PhysicsSystemComponent::get().m_cullingDataPack.emplace_back(l_cullingDataPack);
+							m_cullingDataPack.emplace_back(l_cullingDataPack);
 						}
 					}
 				}
@@ -693,32 +631,37 @@ void InnoPhysicsSystemNS::updateCulling()
 	}
 }
 
-INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
+bool InnoPhysicsSystemNS::update()
 {
 	if (g_pCoreSystem->getFileSystem()->isLoadingScene())
 	{
-		PhysicsSystemComponent::get().m_cullingDataPack.clear();
-		PhysicsSystemComponent::get().m_isCullingDataPackValid = false;
+		m_cullingDataPack.clear();
+		m_isCullingDataPackValid = false;
 		return true;
 	}
 
-	InnoPhysicsSystemNS::updateCameraComponents();
-	InnoPhysicsSystemNS::updateLightComponents();
-	InnoPhysicsSystemNS::updateVisibleComponents();
+	updateCameraComponents();
+	updateLightComponents();
+	updateVisibleComponents();
 
-	PhysicsSystemComponent::get().m_isCullingDataPackValid = false;
-	InnoPhysicsSystemNS::updateCulling();
-	PhysicsSystemComponent::get().m_isCullingDataPackValid = true;
+	m_isCullingDataPackValid = false;
+	updateCulling();
+	m_isCullingDataPackValid = true;
 
 	auto preparePhysicsDataTask = g_pCoreSystem->getTaskSystem()->submit([]()
 	{
 	});
 
-	InnoPhysicsSystemNS::m_asyncTask.emplace_back(std::move(preparePhysicsDataTask));
+	m_asyncTask.emplace_back(std::move(preparePhysicsDataTask));
 
-	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoPhysicsSystemNS::m_asyncTask);
+	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(m_asyncTask);
 
 	return true;
+}
+
+INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
+{
+	return InnoPhysicsSystemNS::update();
 }
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::terminate()
@@ -735,6 +678,16 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoPhysicsSystem::getStatus()
 
 INNO_SYSTEM_EXPORT PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(const ModelMap& modelMap, const EntityID& entityID)
 {
-		auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(modelMap, entityID);
-		return l_physicsComponent;
+	auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(modelMap, entityID);
+	return l_physicsComponent;
+}
+
+INNO_SYSTEM_EXPORT std::optional<std::vector<CullingDataPack>> InnoPhysicsSystem::getCullingDataPack()
+{
+	if (InnoPhysicsSystemNS::m_isCullingDataPackValid)
+	{
+		return InnoPhysicsSystemNS::m_cullingDataPack;
+	}
+
+	return std::nullopt;
 }

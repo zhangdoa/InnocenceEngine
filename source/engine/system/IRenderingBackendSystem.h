@@ -18,4 +18,6 @@ public:
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
 	INNO_SYSTEM_EXPORT virtual bool resize() = 0;
+	INNO_SYSTEM_EXPORT virtual bool reloadShader(RenderPassType renderPassType) = 0;
+	INNO_SYSTEM_EXPORT virtual bool bakeGI() = 0;
 };

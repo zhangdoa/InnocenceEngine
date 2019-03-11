@@ -21,4 +21,15 @@ public:
 
 	INNO_SYSTEM_EXPORT MeshDataComponent* acquireUninitializedMeshDataComponent() override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* acquireUninitializedTextureDataComponent() override;
+
+	INNO_SYSTEM_EXPORT RenderingConfig getRenderingConfig() override;
+	INNO_SYSTEM_EXPORT bool setRenderingConfig(RenderingConfig renderingConfig) override;
+
+	INNO_SYSTEM_EXPORT CameraDataPack getCameraDataPack() override;
+	INNO_SYSTEM_EXPORT SunDataPack getSunDataPack() override;
+	INNO_SYSTEM_EXPORT std::vector<CSMDataPack>& getCSMDataPack() override;
+	INNO_SYSTEM_EXPORT std::optional<std::vector<MeshDataPack>> getMeshDataPack() override;
+
+	INNO_SYSTEM_EXPORT std::vector<Plane>& getDebugPlane() override;
+	INNO_SYSTEM_EXPORT std::vector<Sphere>& getDebugSphere() override;
 };
