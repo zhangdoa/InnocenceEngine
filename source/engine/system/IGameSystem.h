@@ -3,8 +3,19 @@
 #include "../exports/InnoSystem_Export.h"
 #include "../common/InnoClassTemplate.h"
 #include "../common/ComponentHeaders.h"
-#include "IMemorySystem.h"
 #include "../../game/IGameInstance.h"
+
+#define spawnComponentInterfaceDecl( className ) \
+INNO_SYSTEM_EXPORT virtual className* spawn##className(const EntityID& parentEntity) = 0;
+
+#define spawnComponentInterfaceCall( className, parentEntity ) \
+spawn##className(parentEntity)
+
+#define destroyComponentInterfaceDecl( className ) \
+INNO_SYSTEM_EXPORT virtual bool destroy(className* rhs) = 0;
+
+#define destroyComponentInterfaceCall( ptr ) \
+destroy(ptr)
 
 #define registerComponentInterfaceDecl( className ) \
 INNO_SYSTEM_EXPORT virtual void registerComponent(className* rhs, const EntityID& parentEntity) = 0;
@@ -26,7 +37,7 @@ INNO_INTERFACE IGameSystem
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IGameSystem);
 
-	INNO_SYSTEM_EXPORT virtual bool setup() = 0;
+	INNO_SYSTEM_EXPORT virtual bool setup(IGameInstance* gameInstance) = 0;
 	INNO_SYSTEM_EXPORT virtual bool initialize() = 0;
 	INNO_SYSTEM_EXPORT virtual bool update() = 0;
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;
@@ -34,6 +45,24 @@ public:
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
 protected:
+	spawnComponentInterfaceDecl(TransformComponent);
+	spawnComponentInterfaceDecl(VisibleComponent);
+	spawnComponentInterfaceDecl(DirectionalLightComponent);
+	spawnComponentInterfaceDecl(PointLightComponent);
+	spawnComponentInterfaceDecl(SphereLightComponent);
+	spawnComponentInterfaceDecl(CameraComponent);
+	spawnComponentInterfaceDecl(InputComponent);
+	spawnComponentInterfaceDecl(EnvironmentCaptureComponent);
+
+	destroyComponentInterfaceDecl(TransformComponent);
+	destroyComponentInterfaceDecl(VisibleComponent);
+	destroyComponentInterfaceDecl(DirectionalLightComponent);
+	destroyComponentInterfaceDecl(PointLightComponent);
+	destroyComponentInterfaceDecl(SphereLightComponent);
+	destroyComponentInterfaceDecl(CameraComponent);
+	destroyComponentInterfaceDecl(InputComponent);
+	destroyComponentInterfaceDecl(EnvironmentCaptureComponent);
+
 	registerComponentInterfaceDecl(TransformComponent);
 	registerComponentInterfaceDecl(VisibleComponent);
 	registerComponentInterfaceDecl(DirectionalLightComponent);
@@ -43,27 +72,6 @@ protected:
 	registerComponentInterfaceDecl(InputComponent);
 	registerComponentInterfaceDecl(EnvironmentCaptureComponent);
 
-public:
-	template <typename T> T * spawn(const EntityID& parentEntity)
-	{
-		auto l_ptr = g_pMemorySystem->spawn<T>();
-		if (l_ptr)
-		{
-			registerComponent(l_ptr, parentEntity);
-			return l_ptr;
-		}
-		else
-		{
-			return nullptr;
-		}
-	};
-
-	template <typename T> bool destroy(T* rhs)
-	{
-		return g_pMemorySystem->destroy<T>(rhs);
-	};
-
-protected:
 	getComponentInterfaceDecl(TransformComponent);
 	getComponentInterfaceDecl(VisibleComponent);
 	getComponentInterfaceDecl(DirectionalLightComponent);
@@ -83,6 +91,16 @@ protected:
 	getComponentContainerInterfaceDecl(EnvironmentCaptureComponent);
 
 public:
+	template <typename T> T * spawn(const EntityID& parentEntity)
+	{
+		return nullptr;
+	};
+
+	template <typename T> bool destroy(T* rhs)
+	{
+		return nullptr;
+	};
+
 	template <typename T> T* get(const EntityID& parentEntity)
 	{
 		return nullptr;
@@ -107,14 +125,90 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual void pauseGameUpdate(bool shouldPause) = 0;
 
-	INNO_SYSTEM_EXPORT virtual void setGameInstance(IGameInstance* rhs) = 0;
-
 	INNO_SYSTEM_EXPORT virtual EntityID createEntity(const std::string& entityName) = 0;
 	INNO_SYSTEM_EXPORT virtual bool removeEntity(const std::string& entityName) = 0;
 	INNO_SYSTEM_EXPORT virtual std::string getEntityName(const EntityID & entityID) = 0;
 	INNO_SYSTEM_EXPORT virtual EntityID getEntityID(const std::string & entityName) = 0;
+};
 
-	IMemorySystem* g_pMemorySystem;
+template <> inline TransformComponent * IGameSystem::spawn(const EntityID& parentEntity)
+{
+	return spawnComponentInterfaceCall(TransformComponent, parentEntity);
+};
+
+template <> inline VisibleComponent * IGameSystem::spawn(const EntityID& parentEntity)
+{
+	return spawnComponentInterfaceCall(VisibleComponent, parentEntity);
+};
+
+template <> inline DirectionalLightComponent * IGameSystem::spawn(const EntityID& parentEntity)
+{
+	return spawnComponentInterfaceCall(DirectionalLightComponent, parentEntity);
+};
+
+template <> inline PointLightComponent * IGameSystem::spawn(const EntityID& parentEntity)
+{
+	return spawnComponentInterfaceCall(PointLightComponent, parentEntity);
+};
+
+template <> inline SphereLightComponent * IGameSystem::spawn(const EntityID& parentEntity)
+{
+	return spawnComponentInterfaceCall(SphereLightComponent, parentEntity);
+};
+
+template <> inline CameraComponent * IGameSystem::spawn(const EntityID& parentEntity)
+{
+	return spawnComponentInterfaceCall(CameraComponent, parentEntity);
+};
+
+template <> inline InputComponent * IGameSystem::spawn(const EntityID& parentEntity)
+{
+	return spawnComponentInterfaceCall(InputComponent, parentEntity);
+};
+
+template <> inline EnvironmentCaptureComponent * IGameSystem::spawn(const EntityID& parentEntity)
+{
+	return spawnComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity);
+};
+
+template <> inline bool IGameSystem::destroy(TransformComponent* rhs)
+{
+	return destroyComponentInterfaceCall(rhs);
+};
+
+template <> inline bool IGameSystem::destroy(VisibleComponent* rhs)
+{
+	return destroyComponentInterfaceCall(rhs);
+};
+
+template <> inline bool IGameSystem::destroy(DirectionalLightComponent* rhs)
+{
+	return destroyComponentInterfaceCall(rhs);
+};
+
+template <> inline bool IGameSystem::destroy(PointLightComponent* rhs)
+{
+	return destroyComponentInterfaceCall(rhs);
+};
+
+template <> inline bool IGameSystem::destroy(SphereLightComponent* rhs)
+{
+	return destroyComponentInterfaceCall(rhs);
+};
+
+template <> inline bool IGameSystem::destroy(CameraComponent* rhs)
+{
+	return destroyComponentInterfaceCall(rhs);
+};
+
+template <> inline bool IGameSystem::destroy(InputComponent* rhs)
+{
+	return destroyComponentInterfaceCall(rhs);
+};
+
+template <> inline bool IGameSystem::destroy(EnvironmentCaptureComponent* rhs)
+{
+	return destroyComponentInterfaceCall(rhs);
 };
 
 template <> inline TransformComponent * IGameSystem::get(const EntityID& parentEntity)

@@ -1,6 +1,12 @@
 #pragma once
 #include "IGameSystem.h"
 
+#define spawnComponentImplDecl( className ) \
+INNO_SYSTEM_EXPORT className* spawn##className(const EntityID& parentEntity) override;
+
+#define destroyComponentImplDecl( className ) \
+INNO_SYSTEM_EXPORT bool destroy(className* rhs) override;
+
 #define registerComponentImplDecl( className ) \
 INNO_SYSTEM_EXPORT void registerComponent(className* rhs, const EntityID& parentEntity) override;
 
@@ -15,12 +21,30 @@ class InnoGameSystem : INNO_IMPLEMENT IGameSystem
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoGameSystem);
 
-	INNO_SYSTEM_EXPORT bool setup() override;
+	INNO_SYSTEM_EXPORT bool setup(IGameInstance* gameInstance) override;
 	INNO_SYSTEM_EXPORT bool initialize() override;
 	INNO_SYSTEM_EXPORT bool update() override;
 	INNO_SYSTEM_EXPORT bool terminate() override;
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
+
+	spawnComponentImplDecl(TransformComponent);
+	spawnComponentImplDecl(VisibleComponent);
+	spawnComponentImplDecl(DirectionalLightComponent);
+	spawnComponentImplDecl(PointLightComponent);
+	spawnComponentImplDecl(SphereLightComponent);
+	spawnComponentImplDecl(CameraComponent);
+	spawnComponentImplDecl(InputComponent);
+	spawnComponentImplDecl(EnvironmentCaptureComponent);
+
+	destroyComponentImplDecl(TransformComponent);
+	destroyComponentImplDecl(VisibleComponent);
+	destroyComponentImplDecl(DirectionalLightComponent);
+	destroyComponentImplDecl(PointLightComponent);
+	destroyComponentImplDecl(SphereLightComponent);
+	destroyComponentImplDecl(CameraComponent);
+	destroyComponentImplDecl(InputComponent);
+	destroyComponentImplDecl(EnvironmentCaptureComponent);
 
 	registerComponentImplDecl(TransformComponent);
 	registerComponentImplDecl(VisibleComponent);
@@ -61,8 +85,6 @@ public:
 	INNO_SYSTEM_EXPORT void cleanScene() override;
 
 	INNO_SYSTEM_EXPORT void pauseGameUpdate(bool shouldPause) override;
-
-	INNO_SYSTEM_EXPORT void setGameInstance(IGameInstance* rhs) override;
 
 	INNO_SYSTEM_EXPORT EntityID createEntity(const std::string& entityName) override;
 	INNO_SYSTEM_EXPORT bool removeEntity(const std::string& entityName) override;

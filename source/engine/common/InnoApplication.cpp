@@ -62,11 +62,7 @@ bool InnoApplication::setup(void* hInstance, void* hPrevInstance, char* pScmdlin
 		}
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem setup finished.");
 
-		// @TODO: Time-domain coupling
-		g_pCoreSystem->getGameSystem()->g_pMemorySystem = g_pCoreSystem->getMemorySystem();
-		g_pCoreSystem->getGameSystem()->setGameInstance(g_pGameInstance);
-
-		if (!g_pCoreSystem->getGameSystem()->setup())
+		if (!g_pCoreSystem->getGameSystem()->setup(g_pGameInstance))
 		{
 			return false;
 		}

@@ -7,7 +7,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoGameSystemNS
 {
-	bool setup();
+	bool setup(IGameInstance* gameInstance);
 
 	std::string getEntityName(const EntityID& entityID);
 	EntityID getEntityID(const std::string& entityName);
@@ -90,8 +90,10 @@ EntityID InnoGameSystemNS::getEntityID(const std::string& entityName)
 	return result->first;
 }
 
-bool InnoGameSystemNS::setup()
+bool InnoGameSystemNS::setup(IGameInstance* gameInstance)
 {
+	m_gameInstance = gameInstance;
+
 	// setup root TransformComponent
 	m_rootTransformComponent = new TransformComponent();
 	m_rootTransformComponent->m_parentTransformComponent = nullptr;
@@ -114,9 +116,9 @@ bool InnoGameSystemNS::setup()
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoGameSystem::setup()
+INNO_SYSTEM_EXPORT bool InnoGameSystem::setup(IGameInstance* gameInstance)
 {
-	if (!InnoGameSystemNS::setup())
+	if (!InnoGameSystemNS::setup(gameInstance))
 	{
 		return false;
 	}
@@ -213,11 +215,6 @@ INNO_SYSTEM_EXPORT void InnoGameSystem::cleanScene()
 INNO_SYSTEM_EXPORT void InnoGameSystem::pauseGameUpdate(bool shouldPause)
 {
 	InnoGameSystemNS::m_pauseGameUpdate = shouldPause;
-}
-
-INNO_SYSTEM_EXPORT void InnoGameSystem::setGameInstance(IGameInstance * rhs)
-{
-	InnoGameSystemNS::m_gameInstance = rhs;
 }
 
 EntityID InnoGameSystemNS::createEntity(const std::string & entityName)
@@ -318,6 +315,45 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 	return true;
 }
 
+#define spawnComponentImplDefi( className ) \
+INNO_SYSTEM_EXPORT className* InnoGameSystem::spawn##className(const EntityID& parentEntity) \
+{ \
+	auto l_ptr = g_pCoreSystem->getMemorySystem()->spawn<className>(); \
+	if (l_ptr) \
+	{ \
+		registerComponent(l_ptr, parentEntity); \
+		return l_ptr; \
+	} \
+	else \
+	{ \
+		return nullptr; \
+	} \
+}
+
+spawnComponentImplDefi(TransformComponent)
+spawnComponentImplDefi(VisibleComponent)
+spawnComponentImplDefi(DirectionalLightComponent)
+spawnComponentImplDefi(PointLightComponent)
+spawnComponentImplDefi(SphereLightComponent)
+spawnComponentImplDefi(CameraComponent)
+spawnComponentImplDefi(InputComponent)
+spawnComponentImplDefi(EnvironmentCaptureComponent)
+
+#define destroyComponentImplDefi( className ) \
+INNO_SYSTEM_EXPORT bool InnoGameSystem::destroy(className* rhs) \
+{ \
+	return g_pCoreSystem->getMemorySystem()->destroy(rhs); \
+}
+
+destroyComponentImplDefi(TransformComponent)
+destroyComponentImplDefi(VisibleComponent)
+destroyComponentImplDefi(DirectionalLightComponent)
+destroyComponentImplDefi(PointLightComponent)
+destroyComponentImplDefi(SphereLightComponent)
+destroyComponentImplDefi(CameraComponent)
+destroyComponentImplDefi(InputComponent)
+destroyComponentImplDefi(EnvironmentCaptureComponent)
+
 #define registerComponentImplDefi( className ) \
 INNO_SYSTEM_EXPORT void InnoGameSystem::registerComponent(className* rhs, const EntityID& parentEntity) \
 { \
@@ -352,11 +388,6 @@ registerComponentImplDefi(SphereLightComponent)
 registerComponentImplDefi(CameraComponent)
 registerComponentImplDefi(InputComponent)
 registerComponentImplDefi(EnvironmentCaptureComponent)
-
-INNO_SYSTEM_EXPORT std::string InnoGameSystem::getGameName()
-{
-	return std::string("GameInstance");
-}
 
 // @TODO: return multiple instances
 #define getComponentImplDefi( className ) \
@@ -397,6 +428,11 @@ getComponentContainerImplDefi(SphereLightComponent)
 getComponentContainerImplDefi(CameraComponent)
 getComponentContainerImplDefi(InputComponent)
 getComponentContainerImplDefi(EnvironmentCaptureComponent)
+
+INNO_SYSTEM_EXPORT std::string InnoGameSystem::getGameName()
+{
+	return std::string("GameInstance");
+}
 
 INNO_SYSTEM_EXPORT void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponent, ButtonData boundButton, std::function<void()>* function)
 {
