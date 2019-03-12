@@ -1,7 +1,5 @@
 #include "RenderingFrontendSystem.h"
 
-#include "../component/WindowSystemComponent.h"
-
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -9,6 +7,10 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+
+	TVec2<unsigned int> m_screenResolution = TVec2<unsigned int>(1280, 720);
+	std::string m_windowName;
+	bool m_fullScreen = false;
 
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMDC;
 	ThreadSafeQueue<TextureDataComponent*> m_uninitializedTDC;
@@ -118,8 +120,8 @@ bool InnoRenderingFrontendSystemNS::update()
 		{
 			l_currentHaltonStep = 0;
 		}
-		m_cameraDataPack.p_Jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / WindowSystemComponent::get().m_windowResolution.x;
-		m_cameraDataPack.p_Jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / WindowSystemComponent::get().m_windowResolution.y;
+		m_cameraDataPack.p_Jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
+		m_cameraDataPack.p_Jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
 		l_currentHaltonStep += 1;
 	}
 
@@ -257,6 +259,17 @@ INNO_SYSTEM_EXPORT TextureDataComponent * InnoRenderingFrontendSystem::acquireUn
 	TextureDataComponent* l_result;
 	InnoRenderingFrontendSystemNS::m_uninitializedTDC.tryPop(l_result);
 	return l_result;
+}
+
+INNO_SYSTEM_EXPORT TVec2<unsigned int> InnoRenderingFrontendSystem::getScreenResolution()
+{
+	return InnoRenderingFrontendSystemNS::m_screenResolution;
+}
+
+INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::setScreenResolution(TVec2<unsigned int> screenResolution)
+{
+	InnoRenderingFrontendSystemNS::m_screenResolution = screenResolution;
+	return true;
 }
 
 INNO_SYSTEM_EXPORT RenderingConfig InnoRenderingFrontendSystem::getRenderingConfig()

@@ -1,4 +1,6 @@
 #include "TaskSystem.h"
+#include "../common/InnoConcurrency.h"
+
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -25,7 +27,7 @@ INNO_PRIVATE_SCOPE InnoTaskSystemNS
 		{
 			std::unique_ptr<IThreadTask> pTask{ nullptr };
 			if (m_workQueue.waitPop(pTask))
-			{	
+			{
 				l_it->second = WorkerStatus::BUSY;
 				pTask->execute();
 				l_it->second = WorkerStatus::IDLE;

@@ -1,7 +1,6 @@
 #include "VKRenderingSystem.h"
 #include "vulkan/vulkan.h"
 #include "VKRenderingSystemUtilities.h"
-#include "../component/WindowSystemComponent.h"
 #include "../component/VKWindowSystemComponent.h"
 #include "../component/VKRenderingSystemComponent.h"
 
@@ -11,8 +10,6 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-
 	bool checkValidationLayerSupport()
 	{
 		uint32_t l_layerCount;
@@ -70,7 +67,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-		if (VKRenderingSystemComponent::get().m_enableValidationLayers) 
+		if (VKRenderingSystemComponent::get().m_enableValidationLayers)
 		{
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
@@ -184,7 +181,11 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 		}
 		else
 		{
-			VkExtent2D l_actualExtent = { WindowSystemComponent::get().m_windowResolution.x,  WindowSystemComponent::get().m_windowResolution.y };
+			auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+
+			VkExtent2D l_actualExtent;
+			l_actualExtent.width = l_screenResolution.x;
+			l_actualExtent.height = l_screenResolution.y;
 
 			l_actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, l_actualExtent.width));
 			l_actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, l_actualExtent.height));
@@ -250,6 +251,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	bool terminate();
 
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
 }
 
@@ -265,7 +267,7 @@ bool VKRenderingSystemNS::createVkInstance()
 	// set Vulkan app info
 	VkApplicationInfo l_appInfo = {};
 	l_appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	l_appInfo.pApplicationName = WindowSystemComponent::get().m_windowName.c_str();
+	l_appInfo.pApplicationName = g_pCoreSystem->getGameSystem()->getGameName().c_str();
 	l_appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 7);
 	l_appInfo.pEngineName = "Innocence Engine";
 	l_appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 7);

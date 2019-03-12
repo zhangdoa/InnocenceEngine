@@ -4,7 +4,6 @@
 #include "DXLightRenderingPassUtilities.h"
 #include "DXFinalRenderingPassUtilities.h"
 
-#include "../component/WindowSystemComponent.h"
 #include "../component/DXWindowSystemComponent.h"
 #include "../component/DXRenderingSystemComponent.h"
 
@@ -30,7 +29,6 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 
 	void prepareRenderingData();
 
-	static WindowSystemComponent* g_WindowSystemComponent;
 	static DXWindowSystemComponent* g_DXWindowSystemComponent;
 	static DXRenderingSystemComponent* g_DXRenderingSystemComponent;
 
@@ -106,11 +104,13 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 
 	// Now go through all the display modes and find the one that matches the screen width and height.
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
+	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+
 	for (unsigned int i = 0; i < numModes; i++)
 	{
-		if (displayModeList[i].Width == (unsigned int)g_WindowSystemComponent->m_windowResolution.x
+		if (displayModeList[i].Width == l_screenResolution.x
 			&&
-			displayModeList[i].Height == (unsigned int)g_WindowSystemComponent->m_windowResolution.y
+			displayModeList[i].Height == l_screenResolution.y
 			)
 		{
 			g_DXRenderingSystemComponent->m_refreshRate.x = displayModeList[i].RefreshRate.Numerator;
@@ -167,9 +167,11 @@ bool DXRenderingSystemNS::createSwapChain()
 	// Set to a single back buffer.
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferCount = 1;
 
+	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+
 	// Set the width and height of the back buffer.
-	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Width = (UINT)g_WindowSystemComponent->m_windowResolution.x;
-	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Height = (UINT)g_WindowSystemComponent->m_windowResolution.y;
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Width = (UINT)l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Height = (UINT)l_screenResolution.y;
 
 	// Set regular 32-bit surface for the back buffer.
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -197,14 +199,8 @@ bool DXRenderingSystemNS::createSwapChain()
 	g_DXRenderingSystemComponent->m_swapChainDesc.SampleDesc.Quality = 0;
 
 	// Set to full screen or windowed mode.
-	if (g_WindowSystemComponent->m_fullScreen)
-	{
-		g_DXRenderingSystemComponent->m_swapChainDesc.Windowed = false;
-	}
-	else
-	{
-		g_DXRenderingSystemComponent->m_swapChainDesc.Windowed = true;
-	}
+	// @TODO: finish this feature
+	g_DXRenderingSystemComponent->m_swapChainDesc.Windowed = true;
 
 	// Set the scan line ordering and scaling to unspecified.
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
@@ -261,9 +257,11 @@ bool DXRenderingSystemNS::createBackBuffer()
 	// Initialize the description of the depth buffer.
 	ZeroMemory(&g_DXRenderingSystemComponent->m_depthTextureDesc, sizeof(g_DXRenderingSystemComponent->m_depthTextureDesc));
 
+	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+
 	// Set up the description of the depth buffer.
-	g_DXRenderingSystemComponent->m_depthTextureDesc.Width = (UINT)g_WindowSystemComponent->m_windowResolution.x;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.Height = (UINT)g_WindowSystemComponent->m_windowResolution.y;
+	g_DXRenderingSystemComponent->m_depthTextureDesc.Width = (UINT)l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_depthTextureDesc.Height = (UINT)l_screenResolution.y;
 	g_DXRenderingSystemComponent->m_depthTextureDesc.MipLevels = 1;
 	g_DXRenderingSystemComponent->m_depthTextureDesc.ArraySize = 1;
 	g_DXRenderingSystemComponent->m_depthTextureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -402,10 +400,12 @@ bool DXRenderingSystemNS::createRasterizer()
 	}
 
 	// Setup the viewport for rendering.
+	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+
 	g_DXRenderingSystemComponent->m_viewport.Width =
-		(float)g_WindowSystemComponent->m_windowResolution.x;
+		(float)l_screenResolution.x;
 	g_DXRenderingSystemComponent->m_viewport.Height =
-		(float)g_WindowSystemComponent->m_windowResolution.y;
+		(float)l_screenResolution.y;
 	g_DXRenderingSystemComponent->m_viewport.MinDepth = 0.0f;
 	g_DXRenderingSystemComponent->m_viewport.MaxDepth = 1.0f;
 	g_DXRenderingSystemComponent->m_viewport.TopLeftX = 0.0f;
@@ -418,7 +418,6 @@ bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
 	m_renderingFrontendSystem = renderingFrontend;
 
-	g_WindowSystemComponent = &WindowSystemComponent::get();
 	g_DXWindowSystemComponent = &DXWindowSystemComponent::get();
 	g_DXRenderingSystemComponent = &DXRenderingSystemComponent::get();
 
@@ -428,6 +427,8 @@ bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	result = result && createBackBuffer();
 	result = result && createRasterizer();
 
+	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+
 	// Setup the description of the deferred pass.
 	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
@@ -435,8 +436,8 @@ bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
 	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
 	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureWidth = g_WindowSystemComponent->m_windowResolution.x;
-	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureHeight = g_WindowSystemComponent->m_windowResolution.y;
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureWidth = l_screenResolution.x;
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureHeight = l_screenResolution.y;
 	DXRenderingSystemComponent::get().deferredPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
 	DXRenderingSystemComponent::get().deferredPassRTVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;

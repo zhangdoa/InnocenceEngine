@@ -1,5 +1,4 @@
 #include "DXGuiSystem.h"
-#include "../component/WindowSystemComponent.h"
 #include "../component/DXWindowSystemComponent.h"
 #include "../component/DXRenderingSystemComponent.h"
 #include "../component/DXGeometryRenderPassComponent.h"
@@ -90,7 +89,8 @@ INNO_SYSTEM_EXPORT ObjectStatus DXGuiSystem::getStatus()
 
 void DXGuiSystemNS::showRenderResult()
 {
-	auto l_renderTargetSize = ImVec2((float)WindowSystemComponent::get().m_windowResolution.x / 4.0f, (float)WindowSystemComponent::get().m_windowResolution.y / 4.0f);
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
 
 	ImGui::Begin("Opaque Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	{

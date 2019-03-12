@@ -1,5 +1,4 @@
 #include "InputSystem.h"
-#include "../component/WindowSystemComponent.h"
 
 #include "ICoreSystem.h"
 
@@ -12,7 +11,7 @@ INNO_PRIVATE_SCOPE InnoInputSystemNS
 	bool update();
 	bool terminate();
 
-	bool addButtonStatusCallback(ButtonData boundButton, std::function<void()>* buttonStatusCallbackFunctor);	
+	bool addButtonStatusCallback(ButtonData boundButton, std::function<void()>* buttonStatusCallbackFunctor);
 	bool addButtonStatusCallback(ButtonData boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor);
 	bool addButtonStatusCallback(ButtonStatusCallbackMap & buttonStatusCallbackFunctor);
 	bool addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback);
@@ -192,8 +191,10 @@ bool InnoInputSystemNS::addMouseMovementCallback(MouseMovementCallbackMap & mous
 
 vec4 InnoInputSystemNS::calcMousePositionInWorldSpace()
 {
-	auto l_x = 2.0f * m_mouseLastX / WindowSystemComponent::get().m_windowResolution.x - 1.0f;
-	auto l_y = 1.0f - 2.0f * m_mouseLastY / WindowSystemComponent::get().m_windowResolution.y;
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+
+	auto l_x = 2.0f * m_mouseLastX / l_screenResolution.x - 1.0f;
+	auto l_y = 1.0f - 2.0f * m_mouseLastY / l_screenResolution.y;
 	auto l_z = -1.0f;
 	auto l_w = 1.0f;
 	vec4 l_ndcSpace = vec4(l_x, l_y, l_z, l_w);
@@ -233,8 +234,8 @@ vec4 InnoInputSystemNS::calcMousePositionInWorldSpace()
 
 void InnoInputSystemNS::framebufferSizeCallback(int width, int height)
 {
-	WindowSystemComponent::get().m_windowResolution.x = width;
-	WindowSystemComponent::get().m_windowResolution.y = height;
+	TVec2<unsigned int> l_newScreenResolution = TVec2<unsigned int>(width, height);
+	g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->setScreenResolution(l_newScreenResolution);
 	g_pCoreSystem->getVisionSystem()->getRenderingBackend()->resize();
 }
 

@@ -1,7 +1,5 @@
 #include "VisionSystem.h"
 
-#include "../component/WindowSystemComponent.h"
-
 #include "RenderingFrontendSystem.h"
 
 #if defined INNO_PLATFORM_WIN
@@ -182,7 +180,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 		{
 			InnoVisionSystemNS::m_allowRender = false;
 
-			InnoVisionSystemNS::m_isRendering  = true;
+			InnoVisionSystemNS::m_isRendering = true;
 
 			InnoVisionSystemNS::m_renderingBackendSystem->update();
 			InnoVisionSystemNS::m_guiSystem->update();

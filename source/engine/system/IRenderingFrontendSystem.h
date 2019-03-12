@@ -73,6 +73,9 @@ public:
 	INNO_SYSTEM_EXPORT virtual MeshDataComponent* acquireUninitializedMeshDataComponent() = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* acquireUninitializedTextureDataComponent() = 0;
 
+	INNO_SYSTEM_EXPORT virtual TVec2<unsigned int> getScreenResolution() = 0;
+	INNO_SYSTEM_EXPORT virtual bool setScreenResolution(TVec2<unsigned int> screenResolution) = 0;
+
 	INNO_SYSTEM_EXPORT virtual RenderingConfig getRenderingConfig() = 0;
 	INNO_SYSTEM_EXPORT virtual bool setRenderingConfig(RenderingConfig renderingConfig) = 0;
 

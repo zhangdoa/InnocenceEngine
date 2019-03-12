@@ -22,6 +22,9 @@ public:
 	INNO_SYSTEM_EXPORT MeshDataComponent* acquireUninitializedMeshDataComponent() override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* acquireUninitializedTextureDataComponent() override;
 
+	INNO_SYSTEM_EXPORT TVec2<unsigned int> getScreenResolution() override;
+	INNO_SYSTEM_EXPORT bool setScreenResolution(TVec2<unsigned int> screenResolution) override;
+
 	INNO_SYSTEM_EXPORT RenderingConfig getRenderingConfig() override;
 	INNO_SYSTEM_EXPORT bool setRenderingConfig(RenderingConfig renderingConfig) override;
 

@@ -577,7 +577,6 @@ bool InnoFileSystemNS::cacheScene()
 	return true;
 }
 
-
 bool InnoFileSystemNS::cleanScene()
 {
 	g_pCoreSystem->getGameSystem()->cleanScene();
@@ -595,7 +594,7 @@ bool InnoFileSystemNS::loadComponents(const json& j)
 			g_pCoreSystem->getGameSystem()->removeEntity(i["EntityName"]);
 
 			auto l_EntityID = g_pCoreSystem->getGameSystem()->createEntity(i["EntityName"]);
-		
+
 			for (auto k : i["ChildrenComponents"])
 			{
 				switch (componentType(k["ComponentType"]))
@@ -1256,7 +1255,6 @@ ModelPair InnoFileSystemNS::ModelLoader::processMeshJsonData(const json & j)
 		size_t l_indicesNumber = j["IndicesNumber"];
 
 		deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_MeshDC->m_vertices);
-
 
 		deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_MeshDC->m_indices);
 

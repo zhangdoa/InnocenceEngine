@@ -1,6 +1,5 @@
 #include "VKWindowSystem.h"
 
-#include "../component/WindowSystemComponent.h"
 #include "../component/VKWindowSystemComponent.h"
 #include "GLFWWrapper.h"
 
@@ -14,7 +13,6 @@ INNO_PRIVATE_SCOPE VKWindowSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	static WindowSystemComponent* g_WindowSystemComponent;
 	static VKWindowSystemComponent* g_VKWindowSystemComponent;
 
 	ButtonStatusMap m_buttonStatus;
@@ -27,10 +25,7 @@ INNO_PRIVATE_SCOPE VKWindowSystemNS
 
 bool VKWindowSystemNS::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
-	g_WindowSystemComponent = &WindowSystemComponent::get();
 	g_VKWindowSystemComponent = &VKWindowSystemComponent::get();
-
-	g_WindowSystemComponent->m_windowName = g_pCoreSystem->getGameSystem()->getGameName();
 
 	//setup window
 	if (glfwInit() != GL_TRUE)
@@ -44,8 +39,8 @@ bool VKWindowSystemNS::setup(void* hInstance, void* hPrevInstance, char* pScmdli
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 	// Open a window
-	g_VKWindowSystemComponent->m_window = glfwCreateWindow((int)g_WindowSystemComponent->m_windowResolution.x, (int)g_WindowSystemComponent->m_windowResolution.y, g_WindowSystemComponent->m_windowName.c_str(), NULL, NULL);
-
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	g_VKWindowSystemComponent->m_window = glfwCreateWindow((int)l_screenResolution.x, (int)l_screenResolution.y, g_pCoreSystem->getGameSystem()->getGameName().c_str(), NULL, NULL);
 	glfwMakeContextCurrent(g_VKWindowSystemComponent->m_window);
 
 	if (g_VKWindowSystemComponent->m_window == nullptr) {

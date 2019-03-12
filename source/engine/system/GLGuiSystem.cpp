@@ -1,5 +1,4 @@
 #include "GLGuiSystem.h"
-#include "../component/WindowSystemComponent.h"
 #include "../component/GLWindowSystemComponent.h"
 #include "../component/GLEnvironmentRenderPassComponent.h"
 #include "../component/GLShadowRenderPassComponent.h"
@@ -66,7 +65,8 @@ INNO_SYSTEM_EXPORT bool GLGuiSystem::update()
 	ImGuiWrapper::get().update();
 
 	// Rendering
-	glViewport(0, 0, (GLsizei)WindowSystemComponent::get().m_windowResolution.x, (GLsizei)WindowSystemComponent::get().m_windowResolution.y);
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	glViewport(0, 0, (GLsizei)l_screenResolution.x, (GLsizei)l_screenResolution.y);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #endif // !INNO_PLATFORM_MAC
 
@@ -96,8 +96,9 @@ INNO_SYSTEM_EXPORT ObjectStatus GLGuiSystem::getStatus()
 
 void GLGuiSystemNS::showRenderResult()
 {
-	auto l_renderTargetSize = ImVec2((float)WindowSystemComponent::get().m_windowResolution.x / 4.0f, (float)WindowSystemComponent::get().m_windowResolution.y / 4.0f);
-	
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
+
 	ImGui::Begin("Early-Z Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	{
 		ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_earlyZPass_GLRPC->m_GLTDCs[0]), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));

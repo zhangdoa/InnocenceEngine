@@ -1,6 +1,5 @@
 #include "DXWindowSystem.h"
 
-#include "../component/WindowSystemComponent.h"
 #include "../component/DXWindowSystemComponent.h"
 #include "../component/DXRenderingSystemComponent.h"
 
@@ -36,7 +35,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 INNO_PRIVATE_SCOPE DXWindowSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	static WindowSystemComponent* g_WindowSystemComponent;
 	static DXWindowSystemComponent* g_DXWindowSystemComponent;
 }
 
@@ -47,10 +45,8 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstan
 		windowCallbackWrapper::get().m_buttonStatus.emplace(i, ButtonStatus::RELEASED);
 	}
 
-	DXWindowSystemNS::g_WindowSystemComponent = &WindowSystemComponent::get();
 	DXWindowSystemNS::g_DXWindowSystemComponent = &DXWindowSystemComponent::get();
 
-	DXWindowSystemNS::g_WindowSystemComponent->m_windowName = g_pCoreSystem->getGameSystem()->getGameName();
 	DXWindowSystemNS::g_DXWindowSystemComponent->m_hInstance = static_cast<HINSTANCE>(hInstance);
 	DXWindowSystemNS::g_DXWindowSystemComponent->m_pScmdline = pScmdline;
 	DXWindowSystemNS::g_DXWindowSystemComponent->m_nCmdshow = nCmdshow;
@@ -61,7 +57,7 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstan
 	ApplicationHandle = &windowCallbackWrapper::get();
 
 	// Give the application a name.
-	auto l_windowName = DXWindowSystemNS::g_WindowSystemComponent->m_windowName;
+	auto l_windowName = g_pCoreSystem->getGameSystem()->getGameName();
 
 	// Setup the windows class with default settings.
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
@@ -78,8 +74,9 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::setup(void* hInstance, void* hPrevInstan
 	RegisterClass(&wc);
 
 	// Determine the resolution of the clients desktop screen.
-	auto l_screenWidth = (int)DXWindowSystemNS::g_WindowSystemComponent->m_windowResolution.x;
-	auto l_screenHeight = (int)DXWindowSystemNS::g_WindowSystemComponent->m_windowResolution.y;
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenWidth = (int)l_screenResolution.x;
+	auto l_screenHeight = (int)l_screenResolution.y;
 
 	auto l_posX = (GetSystemMetrics(SM_CXSCREEN) - l_screenWidth) / 2;
 	auto l_posY = (GetSystemMetrics(SM_CYSCREEN) - l_screenHeight) / 2;
@@ -136,12 +133,6 @@ INNO_SYSTEM_EXPORT bool DXWindowSystem::terminate()
 {
 	// Show the mouse cursor.
 	ShowCursor(true);
-
-	// Fix the display settings if leaving full screen mode.
-	if (DXWindowSystemNS::g_WindowSystemComponent->m_fullScreen)
-	{
-		ChangeDisplaySettings(NULL, 0);
-	}
 
 	// Remove the window.
 	DestroyWindow(DXWindowSystemNS::g_DXWindowSystemComponent->m_hwnd);

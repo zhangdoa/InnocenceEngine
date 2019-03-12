@@ -1,6 +1,5 @@
 #include "GLWindowSystem.h"
 
-#include "../component/WindowSystemComponent.h"
 #include "../component/GLWindowSystemComponent.h"
 #include "GLFWWrapper.h"
 
@@ -14,7 +13,6 @@ INNO_PRIVATE_SCOPE GLWindowSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	static WindowSystemComponent* g_WindowSystemComponent;
 	static GLWindowSystemComponent* g_GLWindowSystemComponent;
 
 	void hideMouseCursor();
@@ -23,10 +21,7 @@ INNO_PRIVATE_SCOPE GLWindowSystemNS
 
 INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
 {
-	GLWindowSystemNS::g_WindowSystemComponent = &WindowSystemComponent::get();
 	GLWindowSystemNS::g_GLWindowSystemComponent = &GLWindowSystemComponent::get();
-
-	GLWindowSystemNS::g_WindowSystemComponent->m_windowName = g_pCoreSystem->getGameSystem()->getGameName();
 
 	//setup window
 	if (glfwInit() != GL_TRUE)
@@ -44,8 +39,10 @@ INNO_SYSTEM_EXPORT bool GLWindowSystem::setup(void* hInstance, void* hPrevInstan
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL
 
 	// Open a window and create its OpenGL context
-	GLWindowSystemNS::g_GLWindowSystemComponent->m_window = glfwCreateWindow((int)GLWindowSystemNS::g_WindowSystemComponent->m_windowResolution.x, (int)GLWindowSystemNS::g_WindowSystemComponent->m_windowResolution.y, GLWindowSystemNS::g_WindowSystemComponent->m_windowName.c_str(), NULL, NULL);
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	GLWindowSystemNS::g_GLWindowSystemComponent->m_window = glfwCreateWindow((int)l_screenResolution.x, (int)l_screenResolution.y, g_pCoreSystem->getGameSystem()->getGameName().c_str(), NULL, NULL);
 	glfwMakeContextCurrent(GLWindowSystemNS::g_GLWindowSystemComponent->m_window);
+
 	if (GLWindowSystemNS::g_GLWindowSystemComponent->m_window == nullptr) {
 		GLWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLWindowSystem: Failed to open GLFW window.");

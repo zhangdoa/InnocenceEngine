@@ -16,7 +16,7 @@ INNO_PRIVATE_SCOPE GLGeometryRenderingPassUtilities
 	void initializeEarlyZPass();
 	void initializeEarlyZPassShaders();
 	void bindEarlyZPassUniformLocations(GLShaderProgramComponent* rhs);
-	
+
 	void initializeOpaquePass();
 	void initializeOpaquePassShaders();
 	void bindOpaquePassUniformLocations(GLShaderProgramComponent* rhs);
@@ -54,7 +54,7 @@ INNO_PRIVATE_SCOPE GLGeometryRenderingPassUtilities
 void GLGeometryRenderingPassUtilities::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
-	
+
 	initializeEarlyZPass();
 	initializeOpaquePass();
 	initializeSSAOPass();
@@ -71,7 +71,7 @@ void GLGeometryRenderingPassUtilities::initializeEarlyZPass()
 }
 
 void GLGeometryRenderingPassUtilities::initializeEarlyZPassShaders()
-{	
+{
 	// shader programs and shaders
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 

@@ -8,7 +8,6 @@
 #include "GLLightRenderingPassUtilities.h"
 #include "GLFinalRenderingPassUtilities.h"
 
-#include "../component/WindowSystemComponent.h"
 #include "../component/GLRenderingSystemComponent.h"
 
 #include "ICoreSystem.h"
@@ -65,10 +64,12 @@ bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
 	m_renderingFrontendSystem = renderingFrontend;
 
+	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX = l_screenResolution.x;
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY = l_screenResolution.y;
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.drawColorBuffers = false;
 
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
@@ -83,8 +84,8 @@ bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 
 	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
-	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
-	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
+	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = l_screenResolution.x;
+	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = l_screenResolution.y;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.drawColorBuffers = true;
 
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
@@ -478,11 +479,13 @@ bool GLRenderingSystemNS::terminate()
 
 bool GLRenderingSystemNS::resize()
 {
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
+	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
 
-	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = WindowSystemComponent::get().m_windowResolution.x;
-	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = WindowSystemComponent::get().m_windowResolution.y;
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX = l_screenResolution.x;
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY = l_screenResolution.y;
+
+	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = l_screenResolution.x;
+	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = l_screenResolution.y;
 
 	GLGeometryRenderingPassUtilities::resize();
 	GLLightRenderingPassUtilities::resize();
@@ -490,7 +493,6 @@ bool GLRenderingSystemNS::resize()
 
 	return true;
 }
-
 
 INNO_SYSTEM_EXPORT bool GLRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
 {

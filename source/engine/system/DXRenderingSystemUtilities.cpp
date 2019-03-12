@@ -1,6 +1,5 @@
 #include "DXRenderingSystemUtilities.h"
 
-#include "../component/WindowSystemComponent.h"
 #include "../component/DXWindowSystemComponent.h"
 #include "../component/DXRenderingSystemComponent.h"
 
@@ -440,7 +439,7 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 		auto l_ptr = addDXMeshDataComponent(rhs->m_parentEntity);
 
 		initializeDXMeshDataComponent(l_ptr, rhs->m_vertices, rhs->m_indices);
-		
+
 		rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 		return l_ptr;
@@ -507,7 +506,6 @@ bool DXRenderingSystemNS::initializeDXMeshDataComponent(DXMeshDataComponent * rh
 
 	return true;
 }
-
 
 DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(TextureDataComponent * rhs)
 {

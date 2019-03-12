@@ -1,7 +1,5 @@
 #include "PhysicsSystem.h"
 
-#include "../component/WindowSystemComponent.h"
-
 //#include "PhysXWrapper.h"
 
 #include "ICoreSystem.h"
