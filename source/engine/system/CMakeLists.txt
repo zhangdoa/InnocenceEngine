@@ -1,18 +1,11 @@
+if (INNO_PLATFORM_WIN)
+add_subdirectory("DXRenderingBackend")
+endif (INNO_PLATFORM_WIN)
+
+add_subdirectory("GLRenderingBackend")
+add_subdirectory("VKRenderingBackend")
+
 aux_source_directory(. DIR_SRCS)
-if (INNO_PLATFORM_LINUX OR INNO_PLATFORM_MAC)
-list(REMOVE_ITEM DIR_SRCS ./DXGuiSystem.h ./DXGuiSystem.cpp ./DXRenderingSystem.h ./DXRenderingSystem.cpp ./DXRenderingSystemUtilities.h ./DXRenderingSystemUtilities.cpp ./DXWindowSystem.h ./DXWindowSystem.cpp ./DXHeaders.h)
-endif (INNO_PLATFORM_LINUX OR INNO_PLATFORM_MAC)
-
-if (INNO_PLATFORM_LINUX)
-find_library(VULKAN vulkan)
-else ()
-find_library(VULKAN vulkan-1)
-endif (INNO_PLATFORM_LINUX)
-
-if(NOT VULKAN)
-message("No Vulkan pre-compiled library found! Won't compile Vulkan rendering backend.")
-list(REMOVE_ITEM DIR_SRCS ./VKGuiSystem.h ./VKGuiSystem.cpp ./VKRenderingSystem.h ./VKRenderingSystem.cpp ./VKWindowSystem.h ./VKWindowSystem.cpp)
-endif ()
 
 add_library(InnoSystem SHARED ${DIR_SRCS})
 include (GenerateExportHeader)
@@ -23,8 +16,14 @@ GENERATE_EXPORT_HEADER (InnoSystem
     STATIC_DEFINE INNO_SYSTEM_BUILT_AS_STATIC
 )
 
+if (INNO_PLATFORM_WIN)
+target_link_libraries(InnoSystem InnoDXRenderingBackend)
+endif (INNO_PLATFORM_WIN)
+
+target_link_libraries(InnoSystem InnoGLRenderingBackend)
+
 if (VULKAN)
-target_link_libraries(InnoSystem "${VULKAN}")
+target_link_libraries(InnoSystem InnoVKRenderingBackend)
 endif (VULKAN)
 
 target_link_libraries(InnoSystem GLAD)

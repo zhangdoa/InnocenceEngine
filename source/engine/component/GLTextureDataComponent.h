@@ -1,6 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../system/GLHeaders.h"
+#include "../system/GLRenderingBackend/GLHeaders.h"
 
 struct GLTextureDataDesc
 {
@@ -26,4 +26,3 @@ public:
 	GLuint m_TAO = 0;
 	GLTextureDataDesc m_GLTextureDataDesc = GLTextureDataDesc();
 };
-

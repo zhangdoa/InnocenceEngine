@@ -1,6 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../system/DXHeaders.h"
+#include "../system/DXRenderingBackend/DXHeaders.h"
 #include "TextureDataComponent.h"
 #include "DXTextureDataComponent.h"
 

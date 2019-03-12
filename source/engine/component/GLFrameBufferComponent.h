@@ -1,6 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../system/GLHeaders.h"
+#include "../system/GLRenderingBackend/GLHeaders.h"
 
 struct GLFrameBufferDesc
 {

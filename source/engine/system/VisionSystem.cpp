@@ -3,18 +3,18 @@
 #include "RenderingFrontendSystem.h"
 
 #if defined INNO_PLATFORM_WIN
-#include "DXWindowSystem.h"
-#include "DXRenderingSystem.h"
-#include "DXGuiSystem.h"
+#include "DXRenderingBackend/DXWindowSystem.h"
+#include "DXRenderingBackend/DXRenderingSystem.h"
+#include "DXRenderingBackend/DXGuiSystem.h"
 #endif
 
-#include "GLWindowSystem.h"
-#include "GLRenderingSystem.h"
-#include "GLGuiSystem.h"
+#include "GLRenderingBackend/GLWindowSystem.h"
+#include "GLRenderingBackend/GLRenderingSystem.h"
+#include "GLRenderingBackend/GLGuiSystem.h"
 
-#include "VKWindowSystem.h"
-#include "VKRenderingSystem.h"
-#include "VKGuiSystem.h"
+#include "VKRenderingBackend/VKWindowSystem.h"
+#include "VKRenderingBackend/VKRenderingSystem.h"
+#include "VKRenderingBackend/VKGuiSystem.h"
 
 #include "ICoreSystem.h"
 
