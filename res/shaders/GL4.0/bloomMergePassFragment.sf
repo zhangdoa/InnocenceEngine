@@ -1,0 +1,20 @@
+// shadertype=<glsl>
+#version 400 core
+layout(location = 0) out vec4 uni_bloomMergePassRT0;
+
+in vec2 TexCoords;
+
+uniform sampler2D uni_Full;
+uniform sampler2D uni_Half;
+uniform sampler2D uni_Quarter;
+uniform sampler2D uni_Eighth;
+
+void main()
+{
+	vec3 finalColor = texture(uni_Full, TexCoords).rgb;
+	finalColor += texture(uni_Half, TexCoords).rgb;
+	finalColor += texture(uni_Quarter, TexCoords).rgb;
+	finalColor += texture(uni_Eighth, TexCoords).rgb;
+
+	uni_bloomMergePassRT0 = vec4(finalColor, 1.0f);
+}

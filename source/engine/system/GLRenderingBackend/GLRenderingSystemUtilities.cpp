@@ -877,20 +877,26 @@ void GLRenderingSystemNS::cleanFBC(GLFrameBufferComponent* val) {
 	glClear(GL_STENCIL_BUFFER_BIT);
 };
 
-void GLRenderingSystemNS::copyDepthBuffer(GLFrameBufferComponent* src, GLFrameBufferComponent* dest) {
+void GLRenderingSystemNS::copyDepthBuffer(GLFrameBufferComponent* src, GLFrameBufferComponent* dest)
+{
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
 	glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 };
 
-void GLRenderingSystemNS::copyStencilBuffer(GLFrameBufferComponent* src, GLFrameBufferComponent* dest) {
+void GLRenderingSystemNS::copyStencilBuffer(GLFrameBufferComponent* src, GLFrameBufferComponent* dest)
+{
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
 	glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 };
 
-void GLRenderingSystemNS::copyColorBuffer(GLFrameBufferComponent* src, GLFrameBufferComponent* dest) {
+void GLRenderingSystemNS::copyColorBuffer(GLFrameBufferComponent* src, unsigned int srcIndex, GLFrameBufferComponent* dest, unsigned int destIndex)
+{
+	std::vector<GLenum> drawBuffers = { GL_COLOR_ATTACHMENT0 + destIndex };
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + srcIndex);
+	glDrawBuffers(1, &drawBuffers[0]);
 	glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 };

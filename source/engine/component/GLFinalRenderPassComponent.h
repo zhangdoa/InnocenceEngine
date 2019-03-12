@@ -7,7 +7,7 @@ class GLFinalRenderPassComponent
 {
 public:
 	~GLFinalRenderPassComponent() {};
-	
+
 	static GLFinalRenderPassComponent& get()
 	{
 		static GLFinalRenderPassComponent instance;
@@ -20,11 +20,11 @@ public:
 	GLRenderPassComponent* m_skyPassGLRPC;
 	GLShaderProgramComponent* m_skyPassGLSPC;
 	ShaderFilePaths m_skyPassShaderFilePaths = { "GL4.0//skyPassVertex.sf", "", "GL4.0//skyPassFragment.sf" };
-	
+
 	GLuint m_skyPass_uni_p;
 	GLuint m_skyPass_uni_r;
 	GLuint m_skyPass_uni_viewportSize;
-	GLuint m_skyPass_uni_eyePos;	
+	GLuint m_skyPass_uni_eyePos;
 	GLuint m_skyPass_uni_lightDir;
 
 	GLRenderPassComponent* m_preTAAPassGLRPC;
@@ -55,12 +55,12 @@ public:
 	GLRenderPassComponent* m_TAASharpenPassGLRPC;
 	GLShaderProgramComponent* m_TAASharpenPassGLSPC;
 	ShaderFilePaths m_TAASharpenPassShaderFilePaths = { "GL4.0//TAASharpenPassVertex.sf", "", "GL4.0//TAASharpenPassFragment.sf" };
-	
+
 	std::vector<std::string> m_TAASharpenPassUniformNames =
 	{
 		"uni_lastTAAPassRT0",
-	}; 
-	
+	};
+
 	GLRenderPassComponent* m_bloomExtractPassGLRPC;
 	GLShaderProgramComponent* m_bloomExtractPassGLSPC;
 	ShaderFilePaths m_bloomExtractPassShaderFilePaths = { "GL4.0//bloomExtractPassVertex.sf", "", "GL4.0//bloomExtractPassFragment.sf" };
@@ -69,6 +69,10 @@ public:
 	{
 		"uni_TAAPassRT0",
 	};
+
+	GLRenderPassComponent* m_bloomDownsampleGLRPC_Half;
+	GLRenderPassComponent* m_bloomDownsampleGLRPC_Quarter;
+	GLRenderPassComponent* m_bloomDownsampleGLRPC_Eighth;
 
 	GLRenderPassComponent* m_bloomBlurPingPassGLRPC;
 	GLRenderPassComponent* m_bloomBlurPongPassGLRPC;
@@ -81,6 +85,18 @@ public:
 	};
 
 	GLuint m_bloomBlurPass_uni_horizontal;
+
+	GLRenderPassComponent* m_bloomMergePassGLRPC;
+	GLShaderProgramComponent* m_bloomMergePassGLSPC;
+	ShaderFilePaths m_bloomMergePassShaderFilePaths = { "GL4.0//bloomMergePassVertex.sf", "", "GL4.0//bloomMergePassFragment.sf" };
+
+	std::vector<std::string> m_bloomMergePassUniformNames =
+	{
+		"uni_Full",
+		"uni_Half",
+		"uni_Quarter",
+		"uni_Eighth",
+	};
 
 	GLRenderPassComponent* m_motionBlurPassGLRPC;
 	GLShaderProgramComponent* m_motionBlurPassGLSPC;
@@ -118,8 +134,8 @@ public:
 	};
 
 	GLuint m_debuggerPass_uni_p;
-	GLuint m_debuggerPass_uni_r;	
-	GLuint m_debuggerPass_uni_t;	
+	GLuint m_debuggerPass_uni_r;
+	GLuint m_debuggerPass_uni_t;
 	GLuint m_debuggerPass_uni_m;
 
 	GLRenderPassComponent* m_finalBlendPassGLRPC;

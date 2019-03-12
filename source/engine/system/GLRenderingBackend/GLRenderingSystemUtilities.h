@@ -70,5 +70,5 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void cleanFBC(GLFrameBufferComponent* val);
 	void copyDepthBuffer(GLFrameBufferComponent* src, GLFrameBufferComponent* dest);
 	void copyStencilBuffer(GLFrameBufferComponent* src, GLFrameBufferComponent* dest);
-	void copyColorBuffer(GLFrameBufferComponent* src, GLFrameBufferComponent* dest);
+	void copyColorBuffer(GLFrameBufferComponent* src, unsigned int srcIndex, GLFrameBufferComponent* dest, unsigned int destIndex);
 }
