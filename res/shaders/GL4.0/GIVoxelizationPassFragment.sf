@@ -1,0 +1,9 @@
+// shadertype=<glsl>
+#version 400 core
+in vec4 finalColor;
+layout(location = 0) out vec4 uni_GIVoxPassRT0;
+
+void main()
+{
+	uni_GIVoxPassRT0 = finalColor;
+}

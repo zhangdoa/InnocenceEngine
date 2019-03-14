@@ -10,7 +10,7 @@ void main()
 {
 	// sharpen the TAA result [Siggraph 2016 "Temporal Antialiasing in Uncharted 4"]
 	vec2 renderTargetSize = vec2(textureSize(uni_lastTAAPassRT0, 0));
-		
+
 	vec4 currentColor = texture(uni_lastTAAPassRT0, TexCoords);
 	if (currentColor.a == 0.0)
 	{
