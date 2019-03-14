@@ -58,6 +58,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
+
+	bool m_bakeGI = true;
 }
 
 bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
@@ -185,6 +187,12 @@ bool GLRenderingSystemNS::update()
 	}
 
 	prepareRenderingData();
+
+	if (m_bakeGI)
+	{
+		GLEnvironmentRenderingPassUtilities::update();
+		m_bakeGI = false;
+	}
 
 	GLShadowRenderingPassUtilities::update();
 	GLGeometryRenderingPassUtilities::update();
@@ -551,6 +559,6 @@ bool GLRenderingSystem::reloadShader(RenderPassType renderPassType)
 
 bool GLRenderingSystem::bakeGI()
 {
-	GLEnvironmentRenderingPassUtilities::update();
+	GLRenderingSystemNS::m_bakeGI = true;
 	return true;
 }

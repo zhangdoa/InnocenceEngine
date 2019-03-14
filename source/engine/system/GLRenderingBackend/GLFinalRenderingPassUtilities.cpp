@@ -148,7 +148,8 @@ void GLFinalRenderingPassUtilities::initializeBloomExtractPass()
 {
 	auto l_FBDesc = GLRenderingSystemComponent::get().deferredPassFBDesc;
 	auto l_TextureDesc = GLRenderingSystemComponent::get().deferredPassTextureDesc;
-
+	l_TextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	l_TextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
 	GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC = addGLRenderPassComponent(2, l_FBDesc, l_TextureDesc);
 
 	l_FBDesc.sizeX = l_FBDesc.sizeX / 2;

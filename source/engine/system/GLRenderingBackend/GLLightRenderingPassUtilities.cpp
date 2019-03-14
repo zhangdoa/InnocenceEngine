@@ -134,34 +134,30 @@ void GLLightRenderingPassUtilities::update()
 	activateTexture(
 		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[2],
 		2);
-	// motion vector + transparency
-	activateTexture(
-		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[3],
-		3);
 	// SSAO
 	activateTexture(
 		GLGeometryRenderPassComponent::get().m_SSAOBlurPass_GLRPC->m_GLTDCs[0],
-		4);
+		3);
 	// shadow map
 	activateTexture(
 		GLShadowRenderPassComponent::get().m_DirLight_GLRPC->m_GLTDCs[0],
-		5);
+		4);
 	// BRDF look-up table 1
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassGLTDC,
-		6);
+		5);
 	// BRDF look-up table 2
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassGLTDC,
-		7);
+		6);
 	// Irradiance env cubemap
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_convPassGLTDC,
-		8);
+		7);
 	// pre-filtered specular env cubemap
 	activateTexture(
 		GLEnvironmentRenderPassComponent::get().m_preFilterPassGLTDC,
-		9);
+		8);
 #endif
 
 	updateUniform(

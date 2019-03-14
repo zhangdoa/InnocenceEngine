@@ -146,36 +146,36 @@ void GLShadowRenderingPassUtilities::update()
 		}
 	}
 
-	mat4 l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 10.0f);
-	auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	std::vector<mat4> l_v =
-	{
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(1.0f,  0.0f,  0.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(-1.0f,  0.0f,  0.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  1.0f,  0.0f, 0.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f, -1.0f,  0.0f, 0.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  0.0f,  1.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  0.0f, -1.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
-	};
+	//mat4 l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 10.0f);
+	//auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	//std::vector<mat4> l_v =
+	//{
+	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(1.0f,  0.0f,  0.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(-1.0f,  0.0f,  0.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  1.0f,  0.0f, 0.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
+	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f, -1.0f,  0.0f, 0.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
+	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  0.0f,  1.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
+	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  0.0f, -1.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
+	//};
 
-	l_GLFBC = GLShadowRenderPassComponent::get().m_PointLight_GLRPC->m_GLFBC;
+	//l_GLFBC = GLShadowRenderPassComponent::get().m_PointLight_GLRPC->m_GLFBC;
 
-	bindFBC(l_GLFBC);
+	//bindFBC(l_GLFBC);
 
-	updateUniform(
-		GLShadowRenderPassComponent::get().m_shadowPass_uni_p,
-		l_p);
+	//updateUniform(
+	//	GLShadowRenderPassComponent::get().m_shadowPass_uni_p,
+	//	l_p);
 
 	//for (unsigned int i = 0; i < 6; ++i)
 	//{
 	//	updateUniform(GLShadowRenderPassComponent::get().m_shadowPass_uni_v, l_v[i]);
-	//	attachTextureToFramebuffer(GLShadowRenderPassComponent::get().m_PointLight_GLRPC->m_TDCs[0], GLShadowRenderPassComponent::get().m_PointLight_GLRPC->m_GLTDCs[0], l_GLFBC, 0, i, 0);
+	//	attachCubemapDepthRT(GLShadowRenderPassComponent::get().m_PointLight_GLRPC->m_GLTDCs[0], l_GLFBC, i, 0);
 
 	//	glClear(GL_DEPTH_BUFFER_BIT);
 
 	//	drawAllMeshDataComponents();
 	//}
 
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_CULL_FACE);
+	//glDisable(GL_DEPTH_TEST);
 }

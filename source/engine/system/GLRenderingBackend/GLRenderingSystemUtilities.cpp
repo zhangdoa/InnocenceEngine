@@ -86,7 +86,6 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 			if (RTDesc.texturePixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
 			{
 				attachDepthRT(
-					l_TDC,
 					l_GLTDC,
 					l_FBC
 				);
@@ -94,7 +93,6 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 			else
 			{
 				attachColorRT(
-					l_TDC,
 					l_GLTDC,
 					l_FBC,
 					i
@@ -145,7 +143,6 @@ void GLRenderingSystemNS::addRenderTargetTextures(GLRenderPassComponent* GLRPC, 
 	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
 
 	attachColorRT(
-		l_TDC,
 		l_GLTDC,
 		GLRPC->m_GLFBC,
 		colorAttachmentIndex
@@ -181,7 +178,6 @@ bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GL
 		if (glFrameBufferDesc.drawColorBuffers)
 		{
 			attachColorRT(
-				GLRPC->m_TDCs[i],
 				GLRPC->m_GLTDCs[i],
 				GLRPC->m_GLFBC,
 				i
@@ -191,7 +187,6 @@ bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GL
 		{
 			// @TODO: it's not a binary classfication problem
 			attachDepthRT(
-				GLRPC->m_TDCs[i],
 				GLRPC->m_GLTDCs[i],
 				GLRPC->m_GLFBC
 			);
@@ -787,23 +782,27 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const mat4 
 #endif
 }
 
-void GLRenderingSystemNS::attachDepthRT(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC)
+void GLRenderingSystemNS::attachDepthRT(GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC)
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, GLFBC->m_FBO);
 	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TAO, 0);
 }
-void GLRenderingSystemNS::attachCubemapDepthRT(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int textureIndex, unsigned int mipLevel)
+void GLRenderingSystemNS::attachCubemapDepthRT(GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int textureIndex, unsigned int mipLevel)
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, GLFBC->m_FBO);
 	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TAO, mipLevel);
 }
-void GLRenderingSystemNS::attachColorRT(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int colorAttachmentIndex)
+void GLRenderingSystemNS::attachColorRT(GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int colorAttachmentIndex)
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, GLFBC->m_FBO);
 	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, GLTDC->m_TAO, 0);
 }
-void GLRenderingSystemNS::attachCubemapColorRT(TextureDataComponent * TDC, GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel)
+void GLRenderingSystemNS::attachCubemapColorRT(GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel)
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, GLFBC->m_FBO);
 	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TAO, mipLevel);
 }
