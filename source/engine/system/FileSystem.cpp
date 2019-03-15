@@ -29,7 +29,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		json processAssimpMesh(const aiScene * scene, unsigned int meshIndex);
 		std::pair<EntityID, size_t> processMeshData(const aiMesh * aiMesh);
 		json processAssimpMaterial(const aiMaterial * aiMaterial);
-		json processTextureData(const std::string & fileName, TextureUsageType textureUsageType);
+		json processTextureData(const std::string & fileName, TextureSamplerType textureSamplerType, TextureUsageType textureUsageType);
 	};
 
 	namespace ModelLoader
@@ -1067,23 +1067,23 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureUsageType::NORMAL));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_DIFFUSE)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureUsageType::ALBEDO));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_SPECULAR)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureUsageType::METALLIC));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_AMBIENT)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureUsageType::ROUGHNESS));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_EMISSIVE)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureUsageType::AMBIENT_OCCLUSION));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION));
 			}
 			else
 			{
@@ -1155,10 +1155,11 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 	return l_materialData;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fileName, TextureUsageType textureUsageType)
+json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fileName, TextureSamplerType textureSamplerType, TextureUsageType textureUsageType)
 {
 	json j;
 
+	j["TextureSamplerType"] = textureSamplerType;
 	j["TextureUsageType"] = textureUsageType;
 	j["TextureFile"] = fileName;
 
@@ -1284,6 +1285,7 @@ MaterialDataComponent * InnoFileSystemNS::ModelLoader::processMaterialJsonData(c
 		for (auto i : j["Textures"])
 		{
 			auto l_TDC = loadTexture(i["TextureFile"]);
+			l_TDC->m_textureDataDesc.textureSamplerType = TextureSamplerType(i["TextureSamplerType"]);
 			l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType(i["TextureUsageType"]);
 
 			switch (l_TDC->m_textureDataDesc.textureUsageType)

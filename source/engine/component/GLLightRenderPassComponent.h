@@ -24,9 +24,9 @@ public:
 	GLShaderProgramComponent* m_GLSPC;
 
 #ifdef CookTorrance
-	ShaderFilePaths m_shaderFilePaths = { "GL4.0//lightPassCookTorranceVertex.sf" , "", "GL4.0//lightPassCookTorranceFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//lightPassCookTorranceVertex.sf" , "", "GL//lightPassCookTorranceFragment.sf" };
 #elif BlinnPhong
-	ShaderFilePaths m_shaderFilePaths = { "GL4.0//lightPassBlinnPhongVertex.sf" , "", "GL4.0//lightPassBlinnPhongFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//lightPassBlinnPhongVertex.sf" , "", "GL//lightPassBlinnPhongFragment.sf" };
 #endif
 	std::vector<std::string> m_textureUniformNames =
 	{

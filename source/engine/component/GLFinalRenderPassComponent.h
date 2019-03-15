@@ -19,7 +19,7 @@ public:
 
 	GLRenderPassComponent* m_skyPassGLRPC;
 	GLShaderProgramComponent* m_skyPassGLSPC;
-	ShaderFilePaths m_skyPassShaderFilePaths = { "GL4.0//skyPassVertex.sf", "", "GL4.0//skyPassFragment.sf" };
+	ShaderFilePaths m_skyPassShaderFilePaths = { "GL//skyPassVertex.sf", "", "GL//skyPassFragment.sf" };
 
 	GLuint m_skyPass_uni_p;
 	GLuint m_skyPass_uni_r;
@@ -29,7 +29,7 @@ public:
 
 	GLRenderPassComponent* m_preTAAPassGLRPC;
 	GLShaderProgramComponent* m_preTAAPassGLSPC;
-	ShaderFilePaths m_preTAAPassShaderFilePaths = { "GL4.0//preTAAPassVertex.sf", "", "GL4.0//preTAAPassFragment.sf" };
+	ShaderFilePaths m_preTAAPassShaderFilePaths = { "GL//preTAAPassVertex.sf", "", "GL//preTAAPassFragment.sf" };
 
 	std::vector<std::string> m_preTAAPassUniformNames =
 	{
@@ -43,7 +43,7 @@ public:
 	GLRenderPassComponent* m_TAAPingPassGLRPC;
 	GLRenderPassComponent* m_TAAPongPassGLRPC;
 	GLShaderProgramComponent* m_TAAPassGLSPC;
-	ShaderFilePaths m_TAAPassShaderFilePaths = { "GL4.0//TAAPassVertex.sf", "", "GL4.0//TAAPassFragment.sf" };
+	ShaderFilePaths m_TAAPassShaderFilePaths = { "GL//TAAPassVertex.sf", "", "GL//TAAPassFragment.sf" };
 
 	std::vector<std::string> m_TAAPassUniformNames =
 	{
@@ -54,7 +54,7 @@ public:
 
 	GLRenderPassComponent* m_TAASharpenPassGLRPC;
 	GLShaderProgramComponent* m_TAASharpenPassGLSPC;
-	ShaderFilePaths m_TAASharpenPassShaderFilePaths = { "GL4.0//TAASharpenPassVertex.sf", "", "GL4.0//TAASharpenPassFragment.sf" };
+	ShaderFilePaths m_TAASharpenPassShaderFilePaths = { "GL//TAASharpenPassVertex.sf", "", "GL//TAASharpenPassFragment.sf" };
 
 	std::vector<std::string> m_TAASharpenPassUniformNames =
 	{
@@ -63,7 +63,7 @@ public:
 
 	GLRenderPassComponent* m_bloomExtractPassGLRPC;
 	GLShaderProgramComponent* m_bloomExtractPassGLSPC;
-	ShaderFilePaths m_bloomExtractPassShaderFilePaths = { "GL4.0//bloomExtractPassVertex.sf", "", "GL4.0//bloomExtractPassFragment.sf" };
+	ShaderFilePaths m_bloomExtractPassShaderFilePaths = { "GL//bloomExtractPassVertex.sf", "", "GL//bloomExtractPassFragment.sf" };
 
 	std::vector<std::string> m_bloomExtractPassUniformNames =
 	{
@@ -77,7 +77,7 @@ public:
 	GLRenderPassComponent* m_bloomBlurPingPassGLRPC;
 	GLRenderPassComponent* m_bloomBlurPongPassGLRPC;
 	GLShaderProgramComponent* m_bloomBlurPassGLSPC;
-	ShaderFilePaths m_bloomBlurPassShaderFilePaths = { "GL4.0//bloomBlurPassVertex.sf", "", "GL4.0//bloomBlurPassFragment.sf" };
+	ShaderFilePaths m_bloomBlurPassShaderFilePaths = { "GL//bloomBlurPassVertex.sf", "", "GL//bloomBlurPassFragment.sf" };
 
 	std::vector<std::string> m_bloomBlurPassUniformNames =
 	{
@@ -88,7 +88,7 @@ public:
 
 	GLRenderPassComponent* m_bloomMergePassGLRPC;
 	GLShaderProgramComponent* m_bloomMergePassGLSPC;
-	ShaderFilePaths m_bloomMergePassShaderFilePaths = { "GL4.0//bloomMergePassVertex.sf", "", "GL4.0//bloomMergePassFragment.sf" };
+	ShaderFilePaths m_bloomMergePassShaderFilePaths = { "GL//bloomMergePassVertex.sf", "", "GL//bloomMergePassFragment.sf" };
 
 	std::vector<std::string> m_bloomMergePassUniformNames =
 	{
@@ -100,7 +100,7 @@ public:
 
 	GLRenderPassComponent* m_motionBlurPassGLRPC;
 	GLShaderProgramComponent* m_motionBlurPassGLSPC;
-	ShaderFilePaths m_motionBlurPassShaderFilePaths = { "GL4.0//motionBlurPassVertex.sf", "", "GL4.0//motionBlurPassFragment.sf" };
+	ShaderFilePaths m_motionBlurPassShaderFilePaths = { "GL//motionBlurPassVertex.sf", "", "GL//motionBlurPassFragment.sf" };
 
 	std::vector<std::string> m_motionBlurPassUniformNames =
 	{
@@ -110,7 +110,7 @@ public:
 
 	GLRenderPassComponent* m_billboardPassGLRPC;
 	GLShaderProgramComponent* m_billboardPassGLSPC;
-	ShaderFilePaths m_billboardPassShaderFilePaths = { "GL4.0//billboardPassVertex.sf", "", "GL4.0//billboardPassFragment.sf" };
+	ShaderFilePaths m_billboardPassShaderFilePaths = { "GL//billboardPassVertex.sf", "", "GL//billboardPassFragment.sf" };
 
 	std::vector<std::string> m_billboardPassUniformNames =
 	{
@@ -125,8 +125,8 @@ public:
 
 	GLRenderPassComponent* m_debuggerPassGLRPC;
 	GLShaderProgramComponent* m_debuggerPassGLSPC;
-	ShaderFilePaths m_debuggerPassShaderFilePaths = { "GL4.0//wireframeOverlayPassVertex.sf", "", "GL4.0//wireframeOverlayPassFragment.sf" };
-	//ShaderFilePaths m_debuggerPassShaderFilePaths = { "GL4.0//debuggerPassVertex.sf", "GL4.0//debuggerPassGeometry.sf", "GL4.0//debuggerPassFragment.sf" };
+	ShaderFilePaths m_debuggerPassShaderFilePaths = { "GL//wireframeOverlayPassVertex.sf", "", "GL//wireframeOverlayPassFragment.sf" };
+	//ShaderFilePaths m_debuggerPassShaderFilePaths = { "GL//debuggerPassVertex.sf", "GL//debuggerPassGeometry.sf", "GL//debuggerPassFragment.sf" };
 
 	std::vector<std::string> m_debuggerPassUniformNames =
 	{
@@ -140,7 +140,7 @@ public:
 
 	GLRenderPassComponent* m_finalBlendPassGLRPC;
 	GLShaderProgramComponent* m_finalBlendPassGLSPC;
-	ShaderFilePaths m_finalBlendPassShaderFilePaths = { "GL4.0//finalBlendPassVertex.sf", "", "GL4.0//finalBlendPassFragment.sf" };
+	ShaderFilePaths m_finalBlendPassShaderFilePaths = { "GL//finalBlendPassVertex.sf", "", "GL//finalBlendPassFragment.sf" };
 
 	std::vector<std::string> m_finalBlendPassUniformNames =
 	{

@@ -430,6 +430,7 @@ bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
 
 	// Setup the description of the deferred pass.
+	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
 	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	DXRenderingSystemComponent::get().deferredPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	DXRenderingSystemComponent::get().deferredPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;

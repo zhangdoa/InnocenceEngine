@@ -4,7 +4,7 @@
 
 struct GLTextureDataDesc
 {
-	GLenum textureType;
+	GLenum textureSamplerType;
 	GLenum textureWrapMethod;
 	GLenum minFilterParam;
 	GLenum magFilterParam;

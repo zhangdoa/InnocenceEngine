@@ -4,6 +4,7 @@
 
 struct TextureDataDesc
 {
+	TextureSamplerType textureSamplerType;
 	TextureUsageType textureUsageType;
 	TextureColorComponentsFormat textureColorComponentsFormat;
 	TexturePixelDataFormat texturePixelDataFormat;
@@ -28,4 +29,3 @@ public:
 	TextureDataDesc m_textureDataDesc = TextureDataDesc();
 	std::vector<void*> m_textureData;
 };
-

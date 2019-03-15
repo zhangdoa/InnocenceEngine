@@ -14,9 +14,11 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 {
 	void initializeBRDFLUTPass();
 	void initializeEnvironmentCapturePass();
+	void initializeGIPass();
 
 	void updateBRDFLUTPass();
 	void updateEnvironmentCapturePass();
+	void updateGIPass();
 
 	EntityID m_entityID;
 
@@ -25,12 +27,14 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 	TextureDataDesc EnvCapPassTextureDesc = TextureDataDesc();
 	TextureDataDesc EnvConvPassTextureDesc = TextureDataDesc();
 	TextureDataDesc EnvPreFilterPassTextureDesc = TextureDataDesc();
+	TextureDataDesc GIVoxelizationPassTextureDesc = TextureDataDesc();
 }
 
 void GLEnvironmentRenderingPassUtilities::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
+	BRDFLUTSplitSummingTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
 	BRDFLUTSplitSummingTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	BRDFLUTSplitSummingTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	BRDFLUTSplitSummingTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
@@ -41,6 +45,7 @@ void GLEnvironmentRenderingPassUtilities::initialize()
 	BRDFLUTSplitSummingTextureDesc.textureHeight = 512;
 	BRDFLUTSplitSummingTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
+	BRDFLUTAverangeMSTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
 	BRDFLUTAverangeMSTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	BRDFLUTAverangeMSTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RG16F;
 	BRDFLUTAverangeMSTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RG;
@@ -51,7 +56,8 @@ void GLEnvironmentRenderingPassUtilities::initialize()
 	BRDFLUTAverangeMSTextureDesc.textureHeight = 512;
 	BRDFLUTAverangeMSTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
-	EnvCapPassTextureDesc.textureUsageType = TextureUsageType::CUBEMAP;
+	EnvCapPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
+	EnvCapPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	EnvCapPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
 	EnvCapPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
 	EnvCapPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
@@ -61,7 +67,8 @@ void GLEnvironmentRenderingPassUtilities::initialize()
 	EnvCapPassTextureDesc.textureHeight = 2048;
 	EnvCapPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
-	EnvConvPassTextureDesc.textureUsageType = TextureUsageType::CUBEMAP;
+	EnvConvPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
+	EnvConvPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	EnvConvPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
 	EnvConvPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
 	EnvConvPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
@@ -71,7 +78,8 @@ void GLEnvironmentRenderingPassUtilities::initialize()
 	EnvConvPassTextureDesc.textureHeight = 128;
 	EnvConvPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
-	EnvPreFilterPassTextureDesc.textureUsageType = TextureUsageType::CUBEMAP;
+	EnvPreFilterPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
+	EnvPreFilterPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	EnvPreFilterPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
 	EnvPreFilterPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
 	EnvPreFilterPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
@@ -81,8 +89,20 @@ void GLEnvironmentRenderingPassUtilities::initialize()
 	EnvPreFilterPassTextureDesc.textureHeight = 128;
 	EnvPreFilterPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
+	GIVoxelizationPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_3D;
+	GIVoxelizationPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	GIVoxelizationPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
+	GIVoxelizationPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
+	GIVoxelizationPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	GIVoxelizationPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	GIVoxelizationPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
+	GIVoxelizationPassTextureDesc.textureWidth = 512;
+	GIVoxelizationPassTextureDesc.textureHeight = 512;
+	GIVoxelizationPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+
 	initializeBRDFLUTPass();
 	initializeEnvironmentCapturePass();
+	initializeGIPass();
 }
 
 void GLEnvironmentRenderingPassUtilities::initializeBRDFLUTPass()
@@ -143,8 +163,8 @@ void GLEnvironmentRenderingPassUtilities::initializeBRDFLUTPass()
 	ShaderFilePaths m_ShaderFilePaths;
 
 	////
-	m_ShaderFilePaths.m_VSPath = "GL4.0//BRDFLUTPassVertex.sf";
-	m_ShaderFilePaths.m_FSPath = "GL4.0//BRDFLUTPassFragment.sf";
+	m_ShaderFilePaths.m_VSPath = "GL//BRDFLUTPassVertex.sf";
+	m_ShaderFilePaths.m_FSPath = "GL//BRDFLUTPassFragment.sf";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
@@ -152,8 +172,8 @@ void GLEnvironmentRenderingPassUtilities::initializeBRDFLUTPass()
 	GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassSPC = rhs;
 
 	////
-	m_ShaderFilePaths.m_VSPath = "GL4.0//BRDFLUTMSPassVertex.sf";
-	m_ShaderFilePaths.m_FSPath = "GL4.0//BRDFLUTMSPassFragment.sf";
+	m_ShaderFilePaths.m_VSPath = "GL//BRDFLUTMSPassVertex.sf";
+	m_ShaderFilePaths.m_FSPath = "GL//BRDFLUTMSPassFragment.sf";
 
 	rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
@@ -301,10 +321,45 @@ void GLEnvironmentRenderingPassUtilities::initializeEnvironmentCapturePass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void GLEnvironmentRenderingPassUtilities::initializeGIPass()
+{
+	// generate and bind framebuffer
+	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
+
+	glGenFramebuffers(1, &l_FBC->m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
+
+	// generate and bind renderbuffer
+	glGenRenderbuffers(1, &l_FBC->m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
+
+	// generate and bind texture
+	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+
+	l_TDC->m_textureDataDesc = GIVoxelizationPassTextureDesc;
+	l_TDC->m_textureData = { nullptr };
+
+	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
+
+	// shader programs and shaders
+	ShaderFilePaths m_ShaderFilePaths;
+
+	////
+	m_ShaderFilePaths.m_VSPath = "GL//BRDFLUTPassVertex.sf";
+	m_ShaderFilePaths.m_FSPath = "GL//BRDFLUTPassFragment.sf";
+
+	auto rhs = addGLShaderProgramComponent(m_entityID);
+	initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
+}
+
 void GLEnvironmentRenderingPassUtilities::update()
 {
 	updateBRDFLUTPass();
 	updateEnvironmentCapturePass();
+	updateGIPass();
 }
 
 void GLEnvironmentRenderingPassUtilities::updateBRDFLUTPass()
@@ -482,4 +537,8 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 			drawMesh(l_MDC);
 		}
 	}
+}
+
+void GLEnvironmentRenderingPassUtilities::updateGIPass()
+{
 }

@@ -31,6 +31,7 @@ void GLShadowRenderingPassUtilities::initialize()
 	DirLightShadowPassFBDesc.sizeY = 2048;
 	DirLightShadowPassFBDesc.drawColorBuffers = false;
 
+	DirLightShadowPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
 	DirLightShadowPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	DirLightShadowPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
 	DirLightShadowPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
@@ -50,7 +51,8 @@ void GLShadowRenderingPassUtilities::initialize()
 	PointLightShadowPassFBDesc.sizeY = 4096;
 	PointLightShadowPassFBDesc.drawColorBuffers = false;
 
-	PointLightShadowPassTextureDesc.textureUsageType = TextureUsageType::CUBEMAP;
+	PointLightShadowPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
+	PointLightShadowPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	PointLightShadowPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
 	PointLightShadowPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
 	PointLightShadowPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;

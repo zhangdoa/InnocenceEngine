@@ -22,7 +22,7 @@ public:
 
 	GLShaderProgramComponent* m_SPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL4.0//shadowPassVertex.sf" , "", "GL4.0//shadowPassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//shadowPassVertex.sf" , "", "GL//shadowPassFragment.sf" };
 
 	GLuint m_shadowPass_uni_p;
 	GLuint m_shadowPass_uni_v;

@@ -24,7 +24,7 @@ public:
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL4.0//terrainPassVertex.sf" , "", "GL4.0//terrainPassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPassVertex.sf" , "", "GL//terrainPassFragment.sf" };
 
 	GLuint m_terrainPass_uni_p_camera;
 	GLuint m_terrainPass_uni_r_camera;

@@ -14,7 +14,7 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 	void loadAssetsForComponents();
 
 	ModelMap loadModel(const std::string& fileName);
-	TextureDataComponent* loadTexture(const std::string& fileName, TextureUsageType textureUsageType);
+	TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType textureSamplerType, TextureUsageType textureUsageType);
 
 	MeshDataComponent* addMeshDataComponent();
 	MaterialDataComponent* addMaterialDataComponent();
@@ -211,10 +211,6 @@ TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType
 		return InnoAssetSystemNS::m_basicRoughnessTDC; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
 		return InnoAssetSystemNS::m_basicAOTDC; break;
-	case TextureUsageType::CUBEMAP:
-		return nullptr; break;
-	case TextureUsageType::EQUIRETANGULAR:
-		return nullptr; break;
 	case TextureUsageType::RENDER_TARGET:
 		return nullptr; break;
 	default:
@@ -607,20 +603,20 @@ void InnoAssetSystemNS::loadDefaultAssets()
 {
 	InnoAssetSystemNS::loadFolderData();
 
-	m_basicNormalTDC = loadTexture("..//res//textures//basic_normal.png", TextureUsageType::NORMAL);
-	m_basicAlbedoTDC = loadTexture("..//res//textures//basic_albedo.png", TextureUsageType::ALBEDO);
-	m_basicMetallicTDC = loadTexture("..//res//textures//basic_metallic.png", TextureUsageType::METALLIC);
-	m_basicRoughnessTDC = loadTexture("..//res//textures//basic_roughness.png", TextureUsageType::ROUGHNESS);
-	m_basicAOTDC = loadTexture("..//res//textures//basic_ao.png", TextureUsageType::AMBIENT_OCCLUSION);
+	m_basicNormalTDC = loadTexture("..//res//textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_basicAlbedoTDC = loadTexture("..//res//textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
+	m_basicMetallicTDC = loadTexture("..//res//textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
+	m_basicRoughnessTDC = loadTexture("..//res//textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
+	m_basicAOTDC = loadTexture("..//res//textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
 
-	m_iconTemplate_OBJ = loadTexture("..//res//textures//InnoFileTypeIcons_OBJ.png", TextureUsageType::NORMAL);
-	m_iconTemplate_PNG = loadTexture("..//res//textures//InnoFileTypeIcons_PNG.png", TextureUsageType::NORMAL);
-	m_iconTemplate_SHADER = loadTexture("..//res//textures//InnoFileTypeIcons_SHADER.png", TextureUsageType::NORMAL);
-	m_iconTemplate_UNKNOWN = loadTexture("..//res//textures//InnoFileTypeIcons_UNKNOWN.png", TextureUsageType::NORMAL);
+	m_iconTemplate_OBJ = loadTexture("..//res//textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_PNG = loadTexture("..//res//textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_SHADER = loadTexture("..//res//textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_UNKNOWN = loadTexture("..//res//textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
-	m_iconTemplate_DirectionalLight = loadTexture("..//res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureUsageType::NORMAL);
-	m_iconTemplate_PointLight = loadTexture("..//res//textures//InnoWorldEditorIcons_PointLight.png", TextureUsageType::NORMAL);
-	m_iconTemplate_SphereLight = loadTexture("..//res//textures//InnoWorldEditorIcons_SphereLight.png", TextureUsageType::NORMAL);
+	m_iconTemplate_DirectionalLight = loadTexture("..//res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_PointLight = loadTexture("..//res//textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_SphereLight = loadTexture("..//res//textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
 	m_UnitLineMDC = addMeshDataComponent();
 	auto lastLineMeshData = m_UnitLineMDC;
@@ -724,9 +720,10 @@ ModelMap InnoAssetSystemNS::loadModel(const std::string & fileName)
 	return l_result;
 }
 
-TextureDataComponent* InnoAssetSystemNS::loadTexture(const std::string& fileName, TextureUsageType textureUsageType)
+TextureDataComponent* InnoAssetSystemNS::loadTexture(const std::string& fileName, TextureSamplerType textureSamplerType, TextureUsageType textureUsageType)
 {
 	auto l_TDC = g_pCoreSystem->getFileSystem()->loadTexture(fileName);
+	l_TDC->m_textureDataDesc.textureSamplerType = textureSamplerType;
 	l_TDC->m_textureDataDesc.textureUsageType = textureUsageType;
 	return l_TDC;
 }

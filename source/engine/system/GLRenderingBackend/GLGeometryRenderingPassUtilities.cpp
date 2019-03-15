@@ -204,6 +204,7 @@ void GLGeometryRenderingPassUtilities::generateRandomNoise()
 
 	GLGeometryRenderPassComponent::get().m_noiseTDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
+	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
 	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB32F;
 	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;

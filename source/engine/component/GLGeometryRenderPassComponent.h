@@ -23,16 +23,16 @@ public:
 
 	GLShaderProgramComponent* m_earlyZPass_GLSPC;
 
-	ShaderFilePaths m_earlyZPass_shaderFilePaths = { "GL4.0//earlyZPassVertex.sf" , "", "GL4.0//earlyZPassFragment.sf" };
+	ShaderFilePaths m_earlyZPass_shaderFilePaths = { "GL//earlyZPassVertex.sf" , "", "GL//earlyZPassFragment.sf" };
 
 	GLRenderPassComponent* m_opaquePass_GLRPC;
 
 	GLShaderProgramComponent* m_opaquePass_GLSPC;
 
 #ifdef CookTorrance
-	ShaderFilePaths m_opaquePass_shaderFilePaths = { "GL4.0//opaquePassCookTorranceVertex.sf" , "", "GL4.0//opaquePassCookTorranceFragment.sf" };
+	ShaderFilePaths m_opaquePass_shaderFilePaths = { "GL//opaquePassCookTorranceVertex.sf" , "", "GL//opaquePassCookTorranceFragment.sf" };
 #elif BlinnPhong
-	ShaderFilePaths m_opaquePass_shaderFilePaths = { "GL4.0//opaquePassBlinnPhongVertex.sf" , "", "GL4.0//opaquePassBlinnPhongFragment.sf" };
+	ShaderFilePaths m_opaquePass_shaderFilePaths = { "GL//opaquePassBlinnPhongVertex.sf" , "", "GL//opaquePassBlinnPhongFragment.sf" };
 #endif
 	GLuint m_cameraUBO;
 	GLuint m_meshUBO;
@@ -52,7 +52,7 @@ public:
 
 	GLShaderProgramComponent* m_SSAOPass_GLSPC;
 
-	ShaderFilePaths m_SSAOPass_shaderFilePaths = { "GL4.0//SSAOPassVertex.sf" , "", "GL4.0//SSAOPassFragment.sf" };
+	ShaderFilePaths m_SSAOPass_shaderFilePaths = { "GL//SSAOPassVertex.sf" , "", "GL//SSAOPassFragment.sf" };
 
 	GLuint m_SSAOPass_uni_p;
 	GLuint m_SSAOPass_uni_r;
@@ -77,7 +77,7 @@ public:
 
 	GLShaderProgramComponent* m_SSAOBlurPass_GLSPC;
 
-	ShaderFilePaths m_SSAOBlurPass_shaderFilePaths = { "GL4.0//SSAOBlurPassVertex.sf" , "", "GL4.0//SSAOBlurPassFragment.sf" };
+	ShaderFilePaths m_SSAOBlurPass_shaderFilePaths = { "GL//SSAOBlurPassVertex.sf" , "", "GL//SSAOBlurPassFragment.sf" };
 
 	std::vector<std::string> m_SSAOBlurPassTextureUniformNames =
 	{
@@ -88,7 +88,7 @@ public:
 
 	GLShaderProgramComponent* m_transparentPass_GLSPC;
 
-	ShaderFilePaths m_transparentPass_shaderFilePaths = { "GL4.0//transparentPassVertex.sf" , "", "GL4.0//transparentPassFragment.sf" };
+	ShaderFilePaths m_transparentPass_shaderFilePaths = { "GL//transparentPassVertex.sf" , "", "GL//transparentPassFragment.sf" };
 
 	GLuint m_transparentPass_uni_albedo;
 	GLuint m_transparentPass_uni_TR;

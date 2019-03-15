@@ -10,7 +10,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	bool initializeGLTextureDataComponent(GLTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
 	GLTextureDataDesc getGLTextureDataDesc(const TextureDataDesc& textureDataDesc);
 
-	GLenum getTextureType(TextureUsageType rhs);
+	GLenum getTextureSamplerType(TextureSamplerType rhs);
 	GLenum getTextureWrapMethod(TextureWrapMethod rhs);
 	GLenum getTextureFilterParam(TextureFilterMethod rhs);
 	GLenum getTextureInternalFormat(TextureColorComponentsFormat rhs);
@@ -52,6 +52,7 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 	{
 		auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
+		l_TDC->m_textureDataDesc.textureSamplerType = RTDesc.textureSamplerType;
 		l_TDC->m_textureDataDesc.textureUsageType = RTDesc.textureUsageType;
 		l_TDC->m_textureDataDesc.textureColorComponentsFormat = RTDesc.textureColorComponentsFormat;
 		l_TDC->m_textureDataDesc.texturePixelDataFormat = RTDesc.texturePixelDataFormat;
@@ -62,7 +63,7 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 		l_TDC->m_textureDataDesc.textureHeight = RTDesc.textureHeight;
 		l_TDC->m_textureDataDesc.texturePixelDataType = RTDesc.texturePixelDataType;
 
-		if (RTDesc.textureUsageType == TextureUsageType::CUBEMAP)
+		if (RTDesc.textureSamplerType == TextureSamplerType::CUBEMAP)
 		{
 			l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 		}
@@ -81,7 +82,7 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 		auto l_TDC = l_GLRPC->m_TDCs[i];
 		auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
 
-		if (!(RTDesc.textureUsageType == TextureUsageType::CUBEMAP))
+		if (RTDesc.textureSamplerType != TextureSamplerType::CUBEMAP)
 		{
 			if (RTDesc.texturePixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
 			{
@@ -466,21 +467,21 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 	//generate and bind texture object
 	glGenTextures(1, &rhs->m_TAO);
 
-	glBindTexture(rhs->m_GLTextureDataDesc.textureType, rhs->m_TAO);
+	glBindTexture(rhs->m_GLTextureDataDesc.textureSamplerType, rhs->m_TAO);
 
-	if (rhs->m_GLTextureDataDesc.textureType == GL_TEXTURE_CUBE_MAP)
+	if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_CUBE_MAP)
 	{
-		glTexParameteri(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_WRAP_R, rhs->m_GLTextureDataDesc.textureWrapMethod);
+		glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_R, rhs->m_GLTextureDataDesc.textureWrapMethod);
 	}
-	glTexParameteri(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_WRAP_S, rhs->m_GLTextureDataDesc.textureWrapMethod);
-	glTexParameteri(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_WRAP_T, rhs->m_GLTextureDataDesc.textureWrapMethod);
+	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_S, rhs->m_GLTextureDataDesc.textureWrapMethod);
+	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_T, rhs->m_GLTextureDataDesc.textureWrapMethod);
 
-	glTexParameterfv(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_BORDER_COLOR, rhs->m_GLTextureDataDesc.boardColor);
+	glTexParameterfv(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_BORDER_COLOR, rhs->m_GLTextureDataDesc.boardColor);
 
-	glTexParameteri(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_MIN_FILTER, rhs->m_GLTextureDataDesc.minFilterParam);
-	glTexParameteri(rhs->m_GLTextureDataDesc.textureType, GL_TEXTURE_MAG_FILTER, rhs->m_GLTextureDataDesc.magFilterParam);
+	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_MIN_FILTER, rhs->m_GLTextureDataDesc.minFilterParam);
+	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_MAG_FILTER, rhs->m_GLTextureDataDesc.magFilterParam);
 
-	if (rhs->m_GLTextureDataDesc.textureType == GL_TEXTURE_CUBE_MAP)
+	if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_CUBE_MAP)
 	{
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[1]);
@@ -497,7 +498,7 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 	// should generate mipmap or not
 	if (rhs->m_GLTextureDataDesc.minFilterParam == GL_LINEAR_MIPMAP_LINEAR)
 	{
-		glGenerateMipmap(rhs->m_GLTextureDataDesc.textureType);
+		glGenerateMipmap(rhs->m_GLTextureDataDesc.textureSamplerType);
 	}
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
@@ -509,15 +510,20 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 	return true;
 }
 
-GLenum GLRenderingSystemNS::getTextureType(TextureUsageType rhs)
+GLenum GLRenderingSystemNS::getTextureSamplerType(TextureSamplerType rhs)
 {
-	if (rhs == TextureUsageType::CUBEMAP)
+	switch (rhs)
 	{
-		return GL_TEXTURE_CUBE_MAP;
-	}
-	else
-	{
+	case TextureSamplerType::SAMPLER_1D:
+		return GL_TEXTURE_1D;
+	case TextureSamplerType::SAMPLER_2D:
 		return GL_TEXTURE_2D;
+	case TextureSamplerType::SAMPLER_3D:
+		return GL_TEXTURE_3D;
+	case TextureSamplerType::CUBEMAP:
+		return GL_TEXTURE_CUBE_MAP;
+	default:
+		return 0;
 	}
 }
 
@@ -624,7 +630,7 @@ GLTextureDataDesc GLRenderingSystemNS::getGLTextureDataDesc(const TextureDataDes
 {
 	GLTextureDataDesc l_result;
 
-	l_result.textureType = getTextureType(textureDataDesc.textureUsageType);
+	l_result.textureSamplerType = getTextureSamplerType(textureDataDesc.textureSamplerType);
 
 	l_result.textureWrapMethod = getTextureWrapMethod(textureDataDesc.textureWrapMethod);
 
@@ -739,7 +745,6 @@ void GLRenderingSystemNS::updateUBOImpl(const GLint & UBO, size_t size, const vo
 {
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, size, UBOValue);
-	//glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, bool uniformValue)
@@ -785,25 +790,25 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const mat4 
 void GLRenderingSystemNS::attachDepthRT(GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLFBC->m_FBO);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TAO, 0);
 }
 void GLRenderingSystemNS::attachCubemapDepthRT(GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int textureIndex, unsigned int mipLevel)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLFBC->m_FBO);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TAO, mipLevel);
 }
 void GLRenderingSystemNS::attachColorRT(GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int colorAttachmentIndex)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLFBC->m_FBO);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, GLTDC->m_TAO, 0);
 }
 void GLRenderingSystemNS::attachCubemapColorRT(GLTextureDataComponent * GLTDC, GLFrameBufferComponent * GLFBC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLFBC->m_FBO);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TAO, mipLevel);
 }
 
@@ -856,7 +861,7 @@ void GLRenderingSystemNS::activateTexture(TextureDataComponent * TDC, int activa
 void GLRenderingSystemNS::activateTexture(GLTextureDataComponent * GLTDC, int activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureType, GLTDC->m_TAO);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
 }
 
 void GLRenderingSystemNS::bindFBC(GLFrameBufferComponent* val) {

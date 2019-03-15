@@ -325,6 +325,7 @@ DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned in
 	{
 		auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
 
+		l_TDC->m_textureDataDesc.textureSamplerType = RTDesc.textureSamplerType;
 		l_TDC->m_textureDataDesc.textureUsageType = RTDesc.textureUsageType;
 		l_TDC->m_textureDataDesc.textureColorComponentsFormat = RTDesc.textureColorComponentsFormat;
 		l_TDC->m_textureDataDesc.texturePixelDataFormat = RTDesc.texturePixelDataFormat;
