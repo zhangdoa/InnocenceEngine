@@ -28,6 +28,26 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 	TextureDataDesc EnvConvPassTextureDesc = TextureDataDesc();
 	TextureDataDesc EnvPreFilterPassTextureDesc = TextureDataDesc();
 	TextureDataDesc GIVoxelizationPassTextureDesc = TextureDataDesc();
+
+	GLFrameBufferComponent* GIFBC;
+	GLShaderProgramComponent* GISPC;
+
+	GLuint m_GIVoxelizationPass_uni_m;
+	std::vector<GLuint> m_GIVoxelizationPass_uni_VP;
+	std::vector<GLuint> m_GIVoxelizationPass_uni_VP_inv;
+	GLuint m_GIVoxelizationPass_uni_volumeDimension;
+	GLuint m_GIVoxelizationPass_uni_voxelScale;
+	GLuint m_GIVoxelizationPass_uni_worldMinPoint;
+
+	std::vector<mat4> m_VP;
+	std::vector<mat4> m_VP_inv;
+	int m_volumeDimension = 256;
+	float m_volumeGridSize;
+
+	TextureDataComponent* GITDC_Albedo;
+	GLTextureDataComponent* GIGLTDC_Albedo;
+	TextureDataComponent* GITDC_Normal;
+	GLTextureDataComponent* GIGLTDC_Normal;
 }
 
 void GLEnvironmentRenderingPassUtilities::initialize()
@@ -91,14 +111,15 @@ void GLEnvironmentRenderingPassUtilities::initialize()
 
 	GIVoxelizationPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_3D;
 	GIVoxelizationPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	GIVoxelizationPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
-	GIVoxelizationPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
+	GIVoxelizationPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RG32UI;
+	GIVoxelizationPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RG;
 	GIVoxelizationPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
 	GIVoxelizationPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
 	GIVoxelizationPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-	GIVoxelizationPassTextureDesc.textureWidth = 512;
-	GIVoxelizationPassTextureDesc.textureHeight = 512;
-	GIVoxelizationPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	GIVoxelizationPassTextureDesc.textureWidth = m_volumeDimension;
+	GIVoxelizationPassTextureDesc.textureHeight = m_volumeDimension;
+	GIVoxelizationPassTextureDesc.textureDepth = m_volumeDimension;
+	GIVoxelizationPassTextureDesc.texturePixelDataType = TexturePixelDataType::UNSIGNED_INT;
 
 	initializeBRDFLUTPass();
 	initializeEnvironmentCapturePass();
@@ -334,25 +355,75 @@ void GLEnvironmentRenderingPassUtilities::initializeGIPass()
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 512, 512);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, m_volumeDimension, m_volumeDimension);
+
+	GIFBC = l_FBC;
 
 	// generate and bind texture
 	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
-
 	l_TDC->m_textureDataDesc = GIVoxelizationPassTextureDesc;
 	l_TDC->m_textureData = { nullptr };
+	GITDC_Albedo = l_TDC;
 
 	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
+	GIGLTDC_Albedo = l_GLTDC;
+
+	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+	l_TDC->m_textureDataDesc = GIVoxelizationPassTextureDesc;
+	l_TDC->m_textureData = { nullptr };
+	GITDC_Normal = l_TDC;
+
+	l_GLTDC = generateGLTextureDataComponent(l_TDC);
+	GIGLTDC_Normal = l_GLTDC;
 
 	// shader programs and shaders
 	ShaderFilePaths m_ShaderFilePaths;
 
 	////
-	m_ShaderFilePaths.m_VSPath = "GL//BRDFLUTPassVertex.sf";
-	m_ShaderFilePaths.m_FSPath = "GL//BRDFLUTPassFragment.sf";
+	m_ShaderFilePaths.m_VSPath = "GL//GIVoxelizationPassVertex.sf";
+	m_ShaderFilePaths.m_GSPath = "GL//GIVoxelizationPassGeometry.sf";
+	m_ShaderFilePaths.m_FSPath = "GL//GIVoxelizationPassFragment.sf";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
+
+	m_GIVoxelizationPass_uni_m = getUniformLocation(
+		rhs->m_program,
+		"uni_m");
+
+	m_GIVoxelizationPass_uni_VP.reserve(3);
+	m_GIVoxelizationPass_uni_VP_inv.reserve(3);
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		m_GIVoxelizationPass_uni_VP.emplace_back(
+			getUniformLocation(rhs->m_program, "uni_VP[" + std::to_string(i) + "]")
+		);
+		m_GIVoxelizationPass_uni_VP_inv.emplace_back(
+			getUniformLocation(rhs->m_program, "uni_VP_inv[" + std::to_string(i) + "]")
+		);
+	}
+
+	m_GIVoxelizationPass_uni_volumeDimension = getUniformLocation(
+		rhs->m_program,
+		"uni_volumeDimension");
+	m_GIVoxelizationPass_uni_voxelScale = getUniformLocation(
+		rhs->m_program,
+		"uni_voxelScale");
+	m_GIVoxelizationPass_uni_worldMinPoint = getUniformLocation(
+		rhs->m_program,
+		"uni_worldMinPoint");
+
+	GISPC = rhs;
+
+	m_VP.reserve(3);
+	m_VP_inv.reserve(3);
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		m_VP.emplace_back();
+		m_VP_inv.emplace_back();
+	}
 }
 
 void GLEnvironmentRenderingPassUtilities::update()
@@ -465,6 +536,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 
 	for (unsigned int i = 0; i < 6; ++i)
 	{
+		// @TODO: not this queue, need another culled version from capture component view
 		auto l_copy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
 		updateUniform(GLEnvironmentRenderPassComponent::get().m_capturePass_uni_v, l_v[i]);
 		attachCubemapColorRT(l_capturePassGLTDC, l_FBC, 0, i, 0);
@@ -541,4 +613,81 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 
 void GLEnvironmentRenderingPassUtilities::updateGIPass()
 {
+	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
+
+	auto axisSize = l_sceneAABB.m_extend * 2.0f;
+	auto center = l_sceneAABB.m_center;
+	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
+	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
+	auto l_halfSize = m_volumeGridSize / 2.0f;
+
+	// projection matrices
+	auto l_p = InnoMath::generateOrthographicMatrix(-l_halfSize, l_halfSize, -l_halfSize, l_halfSize, 0.0f, m_volumeGridSize);
+
+	// view matrices
+	m_VP[0] = InnoMath::lookAt(center + vec4(l_halfSize, 0.0f, 0.0f, 0.0f),
+		center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	m_VP[1] = InnoMath::lookAt(center + vec4(0.0f, l_halfSize, 0.0f, 0.0f),
+		center, vec4(0.0f, 0.0f, -1.0f, 0.0f));
+	m_VP[2] = InnoMath::lookAt(center + vec4(0.0f, 0.0f, l_halfSize, 0.0f),
+		center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
+
+	int i = 0;
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		m_VP[i] = m_VP[i] * l_p;
+		m_VP_inv[i] = m_VP[i].inverse();
+	}
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
+	// bind to framebuffer
+	auto l_FBC = GIFBC;
+	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, m_volumeDimension, m_volumeDimension);
+	glViewport(0, 0, m_volumeDimension, m_volumeDimension);
+
+	glBindTexture(GIGLTDC_Albedo->m_GLTextureDataDesc.textureSamplerType, GIGLTDC_Albedo->m_TAO);
+	glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, GIGLTDC_Albedo->m_TAO, 0, 0);
+	glBindTexture(GIGLTDC_Normal->m_GLTextureDataDesc.textureSamplerType, GIGLTDC_Albedo->m_TAO);
+	glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_3D, GIGLTDC_Normal->m_TAO, 0, 0);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	activateShaderProgram(GISPC);
+
+	updateUniform(m_GIVoxelizationPass_uni_volumeDimension, m_volumeDimension);
+	updateUniform(m_GIVoxelizationPass_uni_voxelScale, 1.0f / m_volumeGridSize);
+	updateUniform(m_GIVoxelizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
+
+	for (size_t i = 0; i < m_VP.size(); i++)
+	{
+		updateUniform(m_GIVoxelizationPass_uni_VP[i], m_VP[i]);
+		updateUniform(m_GIVoxelizationPass_uni_VP_inv[i], m_VP_inv[i]);
+	}
+
+	for (auto& l_visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
+	{
+		if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE && l_visibleComponent->m_objectStatus == ObjectStatus::ALIVE)
+		{
+			updateUniform(
+				m_GIVoxelizationPass_uni_m,
+				g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
+
+			// draw each graphic data of visibleComponent
+			for (auto& l_modelPair : l_visibleComponent->m_modelMap)
+			{
+				// draw meshes
+				auto l_MDC = l_modelPair.first;
+				if (l_MDC)
+				{
+					// draw meshes
+					drawMesh(l_MDC);
+				}
+			}
+		}
+	}
 }

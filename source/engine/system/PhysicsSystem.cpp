@@ -38,6 +38,7 @@ namespace InnoPhysicsSystemNS
 	void updateVisibleComponents();
 	void updateCulling();
 	AABB transformAABBtoWorldSpace(AABB rhs, mat4 globalTm);
+	void updateSceneAABB(AABB rhs);
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_entityID;
@@ -46,6 +47,7 @@ namespace InnoPhysicsSystemNS
 
 	vec4 m_sceneBoundMax = vec4(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), 1.0f);
 	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
+	AABB m_SceneAABB;
 
 	InputComponent* m_inputComponent;
 	std::function<void()> f_mouseSelect;
@@ -605,6 +607,7 @@ void InnoPhysicsSystemNS::updateCulling()
 					for (auto& physicsData : visibleComponent->m_PhysicsDataComponent->m_physicsDatas)
 					{
 						auto l_OBBws = transformAABBtoWorldSpace(physicsData.aabb, l_globalTm);
+						updateSceneAABB(l_OBBws);
 
 						auto l_boundingSphere = Sphere();
 						l_boundingSphere.m_center = l_OBBws.m_center;
@@ -627,6 +630,27 @@ void InnoPhysicsSystemNS::updateCulling()
 			}
 		}
 	}
+}
+
+void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
+{
+	auto boundMax = rhs.m_boundMax;
+	auto boundMin = rhs.m_boundMin;
+
+	if (boundMax.x > InnoPhysicsSystemNS::m_sceneBoundMax.x
+		&&boundMax.y > InnoPhysicsSystemNS::m_sceneBoundMax.y
+		&&boundMax.z > InnoPhysicsSystemNS::m_sceneBoundMax.z)
+	{
+		InnoPhysicsSystemNS::m_sceneBoundMax = boundMax;
+	}
+	if (boundMin.x < InnoPhysicsSystemNS::m_sceneBoundMin.x
+		&&boundMin.y < InnoPhysicsSystemNS::m_sceneBoundMin.y
+		&&boundMin.z < InnoPhysicsSystemNS::m_sceneBoundMin.z)
+	{
+		InnoPhysicsSystemNS::m_sceneBoundMin = boundMin;
+	}
+
+	m_SceneAABB = generateAABB(InnoPhysicsSystemNS::m_sceneBoundMax, InnoPhysicsSystemNS::m_sceneBoundMin);
 }
 
 bool InnoPhysicsSystemNS::update()
@@ -688,4 +712,9 @@ INNO_SYSTEM_EXPORT std::optional<std::vector<CullingDataPack>> InnoPhysicsSystem
 	}
 
 	return std::nullopt;
+}
+
+INNO_SYSTEM_EXPORT AABB InnoPhysicsSystem::getSceneAABB()
+{
+	return InnoPhysicsSystemNS::m_SceneAABB;
 }

@@ -61,6 +61,7 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 		l_TDC->m_textureDataDesc.textureWrapMethod = RTDesc.textureWrapMethod;
 		l_TDC->m_textureDataDesc.textureWidth = RTDesc.textureWidth;
 		l_TDC->m_textureDataDesc.textureHeight = RTDesc.textureHeight;
+		l_TDC->m_textureDataDesc.textureDepth = RTDesc.textureDepth;
 		l_TDC->m_textureDataDesc.texturePixelDataType = RTDesc.texturePixelDataType;
 
 		if (RTDesc.textureSamplerType == TextureSamplerType::CUBEMAP)
@@ -469,10 +470,7 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 
 	glBindTexture(rhs->m_GLTextureDataDesc.textureSamplerType, rhs->m_TAO);
 
-	if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_CUBE_MAP)
-	{
-		glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_R, rhs->m_GLTextureDataDesc.textureWrapMethod);
-	}
+	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_R, rhs->m_GLTextureDataDesc.textureWrapMethod);
 	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_S, rhs->m_GLTextureDataDesc.textureWrapMethod);
 	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_T, rhs->m_GLTextureDataDesc.textureWrapMethod);
 
@@ -481,7 +479,19 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_MIN_FILTER, rhs->m_GLTextureDataDesc.minFilterParam);
 	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_MAG_FILTER, rhs->m_GLTextureDataDesc.magFilterParam);
 
-	if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_CUBE_MAP)
+	if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_1D)
+	{
+		glTexImage1D(GL_TEXTURE_2D, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
+	}
+	else if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_2D)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
+	}
+	else if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_3D)
+	{
+		glTexImage3D(GL_TEXTURE_3D, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, textureDataDesc.textureDepth, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
+	}
+	else if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_CUBE_MAP)
 	{
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[1]);
@@ -489,10 +499,6 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[3]);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[4]);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[5]);
-	}
-	else
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
 	}
 
 	// should generate mipmap or not
@@ -565,26 +571,62 @@ GLenum GLRenderingSystemNS::getTextureInternalFormat(TextureColorComponentsForma
 	case TextureColorComponentsFormat::RG: result = GL_RG; break;
 	case TextureColorComponentsFormat::RGB: result = GL_RGB; break;
 	case TextureColorComponentsFormat::RGBA: result = GL_RGBA; break;
+
 	case TextureColorComponentsFormat::R8: result = GL_R8; break;
 	case TextureColorComponentsFormat::RG8: result = GL_RG8; break;
 	case TextureColorComponentsFormat::RGB8: result = GL_RGB8; break;
 	case TextureColorComponentsFormat::RGBA8: result = GL_RGBA8; break;
+
+	case TextureColorComponentsFormat::R8I: result = GL_R8I; break;
+	case TextureColorComponentsFormat::RG8I: result = GL_RG8I; break;
+	case TextureColorComponentsFormat::RGB8I: result = GL_RGB8I; break;
+	case TextureColorComponentsFormat::RGBA8I: result = GL_RGBA8I; break;
+
+	case TextureColorComponentsFormat::R8UI: result = GL_R8UI; break;
+	case TextureColorComponentsFormat::RG8UI: result = GL_RG8UI; break;
+	case TextureColorComponentsFormat::RGB8UI: result = GL_RGB8UI; break;
+	case TextureColorComponentsFormat::RGBA8UI: result = GL_RGBA8UI; break;
+
 	case TextureColorComponentsFormat::R16: result = GL_R16; break;
 	case TextureColorComponentsFormat::RG16: result = GL_RG16; break;
 	case TextureColorComponentsFormat::RGB16: result = GL_RGB16; break;
 	case TextureColorComponentsFormat::RGBA16: result = GL_RGBA16; break;
+
+	case TextureColorComponentsFormat::R16I: result = GL_R16I; break;
+	case TextureColorComponentsFormat::RG16I: result = GL_RG16I; break;
+	case TextureColorComponentsFormat::RGB16I: result = GL_RGB16I; break;
+	case TextureColorComponentsFormat::RGBA16I: result = GL_RGBA16I; break;
+
+	case TextureColorComponentsFormat::R16UI: result = GL_R16UI; break;
+	case TextureColorComponentsFormat::RG16UI: result = GL_RG16UI; break;
+	case TextureColorComponentsFormat::RGB16UI: result = GL_RGB16UI; break;
+	case TextureColorComponentsFormat::RGBA16UI: result = GL_RGBA16UI; break;
+
 	case TextureColorComponentsFormat::R16F: result = GL_R16F; break;
 	case TextureColorComponentsFormat::RG16F: result = GL_RG16F; break;
 	case TextureColorComponentsFormat::RGB16F: result = GL_RGB16F; break;
 	case TextureColorComponentsFormat::RGBA16F: result = GL_RGBA16F; break;
+
+	case TextureColorComponentsFormat::R32I: result = GL_R32I; break;
+	case TextureColorComponentsFormat::RG32I: result = GL_RG32I; break;
+	case TextureColorComponentsFormat::RGB32I: result = GL_RGB32I; break;
+	case TextureColorComponentsFormat::RGBA32I: result = GL_RGBA32I; break;
+
+	case TextureColorComponentsFormat::R32UI: result = GL_R32UI; break;
+	case TextureColorComponentsFormat::RG32UI: result = GL_RG32UI; break;
+	case TextureColorComponentsFormat::RGB32UI: result = GL_RGB32UI; break;
+	case TextureColorComponentsFormat::RGBA32UI: result = GL_RGBA32UI; break;
+
 	case TextureColorComponentsFormat::R32F: result = GL_R32F; break;
 	case TextureColorComponentsFormat::RG32F: result = GL_RG32F; break;
 	case TextureColorComponentsFormat::RGB32F: result = GL_RGB32F; break;
 	case TextureColorComponentsFormat::RGBA32F: result = GL_RGBA32F; break;
+
 	case TextureColorComponentsFormat::SRGB: result = GL_SRGB; break;
 	case TextureColorComponentsFormat::SRGBA: result = GL_SRGB_ALPHA; break;
 	case TextureColorComponentsFormat::SRGB8: result = GL_SRGB8; break;
 	case TextureColorComponentsFormat::SRGBA8: result = GL_SRGB8_ALPHA8; break;
+
 	case TextureColorComponentsFormat::DEPTH_COMPONENT: result = GL_DEPTH_COMPONENT; break;
 	}
 

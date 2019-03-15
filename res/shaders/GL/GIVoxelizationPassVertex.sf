@@ -5,24 +5,10 @@ layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
 layout(location = 2) in vec3 in_Normal;
 
-layout(row_major) uniform cameraUBO
-{
-	mat4 uni_p_camera_original;
-	mat4 uni_p_camera_jittered;
-	mat4 uni_r_camera;
-	mat4 uni_t_camera;
-	mat4 uni_r_camera_prev;
-	mat4 uni_t_camera_prev;
-};
-
-layout(row_major) uniform meshUBO
-{
-	mat4 uni_m;
-	mat4 uni_m_prev;
-};
+uniform mat4 uni_m;
 
 out VS_OUT{
-	vec2 texCoord
+	vec2 texCoord;
 	vec3 normal;
 } vs_out;
 

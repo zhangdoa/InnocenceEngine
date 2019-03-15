@@ -5,7 +5,7 @@ layout(triangle_strip, max_vertices = 3) out;
 
 in VS_OUT
 {
-	vec3 texCoord;
+	vec2 texCoord;
 	vec3 normal;
 } gs_in[3];
 
@@ -14,7 +14,7 @@ out GS_OUT
 	vec3 wsPosition;
 	vec3 position;
 	vec3 normal;
-	vec3 texCoord;
+	vec2 texCoord;
 	flat vec4 triangleAABB;
 } gs_out;
 
@@ -65,10 +65,10 @@ vec4 AABB(vec4 pos[3], vec2 pixelDiagonal)
 
 void main()
 {
-	vec3 texCoord[3];
-	int selectedgs_index = CalculateAxis();
-	mat4 VP = uni_VP[selectedgs_index];
-	mat4 VP_inv = uni_VP_inv[selectedgs_index];
+	vec2 texCoord[3];
+	int selectedIndex = CalculateAxis();
+	mat4 VP = uni_VP[selectedIndex];
+	mat4 VP_inv = uni_VP_inv[selectedIndex];
 
 	for (int i = 0; i < gl_in.length(); i++)
 	{
@@ -93,7 +93,7 @@ void main()
 	if (dot(trianglePlane.xyz, vec3(0.0, 0.0, 1.0)) < 0.0)
 	{
 		vec4 vertexTemp = pos[2];
-		vec3 texCoordTemp = texCoord[2];
+		vec2 texCoordTemp = texCoord[2];
 
 		pos[2] = pos[1];
 		texCoord[2] = texCoord[1];

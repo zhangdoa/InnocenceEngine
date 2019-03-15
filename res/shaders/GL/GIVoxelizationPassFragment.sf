@@ -6,7 +6,7 @@ in GS_OUT
 	vec3 wsPosition;
 	vec3 position;
 	vec3 normal;
-	vec3 texCoord;
+	vec2 texCoord;
 	flat vec4 triangleAABB;
 } gs_in;
 
@@ -16,7 +16,7 @@ layout(pixel_center_integer) in vec4 gl_FragCoord;
 layout(binding = 0, r32ui) uniform volatile coherent uimage3D uni_voxelAlbedo;
 layout(binding = 1, r32ui) uniform volatile coherent uimage3D uni_voxelNormal;
 
-layout(binding = 2) uniform sampler2D uni_albedo;
+//layout(binding = 2) uniform sampler2D uni_albedo;
 
 uniform uint uni_volumeDimension;
 
@@ -82,7 +82,8 @@ void main()
 	ivec3 position = ivec3(gs_in.wsPosition);
 
 	// fragment albedo
-	vec4 albedo = texture(uni_albedo, gs_in.texCoord.xy);
+	//vec4 albedo = texture(uni_albedo, gs_in.texCoord.xy);
+	vec4 albedo = vec4(0.5f, 0.3f, 0.2f, 1.0f);
 	albedo.a = 1.0f;
 
 	// bring normal to 0-1 range

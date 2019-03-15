@@ -12,8 +12,9 @@ struct TextureDataDesc
 	TextureFilterMethod textureMagFilterMethod;
 	TextureWrapMethod textureWrapMethod;
 	TexturePixelDataType texturePixelDataType;
-	unsigned int textureWidth;
-	unsigned int textureHeight;
+	unsigned int textureWidth = 0;
+	unsigned int textureHeight = 0;
+	unsigned int textureDepth = 0;
 	vec4 borderColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 };
 

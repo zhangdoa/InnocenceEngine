@@ -45,6 +45,10 @@ void GLLightRenderingPassUtilities::bindLightPassUniformLocations(GLShaderProgra
 {
 	updateTextureUniformLocations(rhs->m_program, GLLightRenderPassComponent::get().m_textureUniformNames);
 
+	GLLightRenderPassComponent::get().m_uni_shadowSplitAreas.reserve(4);
+	GLLightRenderPassComponent::get().m_uni_dirLightProjs.reserve(4);
+	GLLightRenderPassComponent::get().m_uni_dirLightViews.reserve(4);
+
 	for (size_t i = 0; i < 4; i++)
 	{
 		GLLightRenderPassComponent::get().m_uni_shadowSplitAreas.emplace_back(
@@ -68,6 +72,10 @@ void GLLightRenderingPassUtilities::bindLightPassUniformLocations(GLShaderProgra
 		rhs->m_program,
 		"uni_dirLight.luminance");
 
+	GLLightRenderPassComponent::get().m_uni_pointLights_position.reserve(GLRenderingSystemComponent::get().m_maxPointLights);
+	GLLightRenderPassComponent::get().m_uni_pointLights_attenuationRadius.reserve(GLRenderingSystemComponent::get().m_maxPointLights);
+	GLLightRenderPassComponent::get().m_uni_pointLights_luminance.reserve(GLRenderingSystemComponent::get().m_maxPointLights);
+
 	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_maxPointLights; i++)
 	{
 		GLLightRenderPassComponent::get().m_uni_pointLights_position.emplace_back(
@@ -80,6 +88,10 @@ void GLLightRenderingPassUtilities::bindLightPassUniformLocations(GLShaderProgra
 			getUniformLocation(rhs->m_program, "uni_pointLights[" + std::to_string(i) + "].luminance")
 		);
 	}
+
+	GLLightRenderPassComponent::get().m_uni_sphereLights_position.reserve(GLRenderingSystemComponent::get().m_maxSphereLights);
+	GLLightRenderPassComponent::get().m_uni_sphereLights_sphereRadius.reserve(GLRenderingSystemComponent::get().m_maxSphereLights);
+	GLLightRenderPassComponent::get().m_uni_sphereLights_luminance.reserve(GLRenderingSystemComponent::get().m_maxSphereLights);
 
 	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_maxSphereLights; i++)
 	{
