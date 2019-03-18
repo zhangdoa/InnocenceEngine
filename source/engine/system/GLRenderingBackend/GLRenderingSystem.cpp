@@ -39,9 +39,25 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 			const GLchar* message,
 			const void* userParam)
 	{
-		fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-			(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-			type, severity, message);
+		if (severity == GL_DEBUG_SEVERITY_HIGH)
+		{
+			LogType l_logType;
+			if (type == GL_DEBUG_TYPE_ERROR || type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR)
+			{
+				l_logType = LogType::INNO_ERROR;
+			}
+			else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR || type == GL_DEBUG_TYPE_PERFORMANCE || type == GL_DEBUG_TYPE_PORTABILITY || type == GL_DEBUG_TYPE_OTHER)
+			{
+				l_logType = LogType::INNO_WARNING;
+			}
+			else
+			{
+				l_logType = LogType::INNO_DEV_VERBOSE;
+			}
+
+			std::string l_message = message;
+			g_pCoreSystem->getLogSystem()->printLog(l_logType, "GLRenderingSystem: " + l_message);
+		}
 	}
 
 	void getGLError()
@@ -109,17 +125,12 @@ bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 		// MSAA
 		glEnable(GL_MULTISAMPLE);
 	}
-
-	// Thanks Jobs left us these nice piece of codes
-#ifndef INNO_PLATFORM_MAC
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(MessageCallback, 0);
-#endif // !INNO_PLATFORM_MAC
 
 	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glEnable(GL_PROGRAM_POINT_SIZE);
-	glEnable(GL_TEXTURE_2D);
 
 	return true;
 }
@@ -192,10 +203,9 @@ bool GLRenderingSystemNS::update()
 
 	if (m_bakeGI)
 	{
-		GLEnvironmentRenderingPassUtilities::update();
 		m_bakeGI = false;
+		GLEnvironmentRenderingPassUtilities::update();
 	}
-
 	GLShadowRenderingPassUtilities::update();
 	GLGeometryRenderingPassUtilities::update();
 	GLLightRenderingPassUtilities::update();

@@ -85,7 +85,7 @@ enum class TextureColorComponentsFormat {
 	DEPTH_COMPONENT
 };
 
-enum class TexturePixelDataFormat { RED, RG, RGB, RGBA, DEPTH_COMPONENT };
+enum class TexturePixelDataFormat { RED, RG, RGB, RGBA, RED_INT, RG_INT, RGB_INT, RGBA_INT, DEPTH_COMPONENT };
 enum class TexturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, FLOAT, DOUBLE };
 enum class TextureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER };
 enum class TextureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
@@ -101,6 +101,7 @@ struct ShaderFilePaths
 	std::string m_VSPath;
 	std::string m_GSPath;
 	std::string m_FSPath;
+	std::string m_CSPath;
 };
 
 //#define BlinnPhong

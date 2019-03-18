@@ -15,4 +15,5 @@ public:
 	GLuint m_VSID = 0;
 	GLuint m_GSID = 0;
 	GLuint m_FSID = 0;
+	GLuint m_CSID = 0;
 };

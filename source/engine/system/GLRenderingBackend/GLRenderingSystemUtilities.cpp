@@ -293,7 +293,10 @@ GLTextureDataComponent* GLRenderingSystemNS::generateGLTextureDataComponent(Text
 
 				rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-				g_pCoreSystem->getAssetSystem()->releaseRawDataForTextureDataComponent(rhs->m_parentEntity);
+				if (rhs->m_textureDataDesc.textureUsageType != TextureUsageType::RENDER_TARGET)
+				{
+					g_pCoreSystem->getAssetSystem()->releaseRawDataForTextureDataComponent(rhs->m_parentEntity);
+				}
 
 				return l_ptr;
 			}
@@ -404,6 +407,10 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 	if (!ShaderFilePaths.m_FSPath.empty())
 	{
 		f_addShader(rhs->m_program, rhs->m_FSID, GL_FRAGMENT_SHADER, ShaderFilePaths.m_FSPath);
+	}
+	if (!ShaderFilePaths.m_CSPath.empty())
+	{
+		f_addShader(rhs->m_program, rhs->m_CSID, GL_COMPUTE_SHADER, ShaderFilePaths.m_CSPath);
 	}
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
@@ -643,7 +650,13 @@ GLenum GLRenderingSystemNS::getTexturePixelDataFormat(TexturePixelDataFormat rhs
 	case TexturePixelDataFormat::RG:result = GL_RG; break;
 	case TexturePixelDataFormat::RGB:result = GL_RGB; break;
 	case TexturePixelDataFormat::RGBA:result = GL_RGBA; break;
+	case TexturePixelDataFormat::RED_INT:result = GL_RED_INTEGER; break;
+	case TexturePixelDataFormat::RG_INT:result = GL_RG_INTEGER; break;
+	case TexturePixelDataFormat::RGB_INT:result = GL_RGB_INTEGER; break;
+	case TexturePixelDataFormat::RGBA_INT:result = GL_RGBA_INTEGER; break;
 	case TexturePixelDataFormat::DEPTH_COMPONENT:result = GL_DEPTH_COMPONENT; break;
+	default:
+		break;
 	}
 
 	return result;
