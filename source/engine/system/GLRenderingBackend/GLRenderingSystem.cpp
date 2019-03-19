@@ -42,13 +42,36 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 		if (severity == GL_DEBUG_SEVERITY_HIGH)
 		{
 			LogType l_logType;
-			if (type == GL_DEBUG_TYPE_ERROR || type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR)
+			std::string l_typeStr;
+			if (type == GL_DEBUG_TYPE_ERROR)
 			{
 				l_logType = LogType::INNO_ERROR;
+				l_typeStr = "GL_DEBUG_TYPE_ERROR: ID: ";
 			}
-			else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR || type == GL_DEBUG_TYPE_PERFORMANCE || type == GL_DEBUG_TYPE_PORTABILITY || type == GL_DEBUG_TYPE_OTHER)
+			else if (type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR)
 			{
-				l_logType = LogType::INNO_WARNING;
+				l_logType = LogType::INNO_ERROR;
+				l_typeStr = "GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: ID: ";
+			}
+			else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR)
+			{
+				l_logType = LogType::INNO_ERROR;
+				l_typeStr = "GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: ID: ";
+			}
+			else if (type == GL_DEBUG_TYPE_PERFORMANCE)
+			{
+				l_logType = LogType::INNO_ERROR;
+				l_typeStr = "GL_DEBUG_TYPE_PERFORMANCE: ID: ";
+			}
+			else if (type == GL_DEBUG_TYPE_PORTABILITY)
+			{
+				l_logType = LogType::INNO_ERROR;
+				l_typeStr = "GL_DEBUG_TYPE_PORTABILITY: ID: ";
+			}
+			else if (type == GL_DEBUG_TYPE_OTHER)
+			{
+				l_logType = LogType::INNO_ERROR;
+				l_typeStr = "GL_DEBUG_TYPE_OTHER: ID: ";
 			}
 			else
 			{
@@ -56,7 +79,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 			}
 
 			std::string l_message = message;
-			g_pCoreSystem->getLogSystem()->printLog(l_logType, "GLRenderingSystem: " + l_message);
+			g_pCoreSystem->getLogSystem()->printLog(l_logType, "GLRenderingSystem: " + l_typeStr + std::to_string(id) + ": " + l_message);
 		}
 	}
 
@@ -75,7 +98,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
 
-	bool m_bakeGI = true;
+	bool m_bakeGI = false;
 }
 
 bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)

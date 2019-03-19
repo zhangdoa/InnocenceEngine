@@ -1,5 +1,6 @@
 // shadertype=<glsl>
 #version 450
+#extension GL_ARB_shader_image_load_store : require
 
 in GS_OUT
 {

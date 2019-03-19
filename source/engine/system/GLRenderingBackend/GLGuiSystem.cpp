@@ -1,6 +1,6 @@
 #include "GLGuiSystem.h"
 #include "../../component/GLWindowSystemComponent.h"
-#include "../../component/GLEnvironmentRenderPassComponent.h"
+#include "GLEnvironmentRenderingPassUtilities.h"
 #include "../../component/GLShadowRenderPassComponent.h"
 #include "../../component/GLGeometryRenderPassComponent.h"
 #include "../../component/GLTerrainRenderPassComponent.h"
@@ -98,12 +98,6 @@ void GLGuiSystemNS::showRenderResult()
 {
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
-
-	ImGui::Begin("Early-Z Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
-	{
-		ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_earlyZPass_GLRPC->m_GLTDCs[0]), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-	}
-	ImGui::End();
 
 	ImGui::Begin("Opaque Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	{
@@ -250,13 +244,13 @@ void GLGuiSystemNS::showRenderResult()
 	ImGui::Begin("BRDF lookup table", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	{
 		ImGui::BeginChild("IBL LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderingPassUtilities::getBRDFSplitSumLUT()->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 
 		ImGui::SameLine();
 
 		ImGui::BeginChild("Multi-Scattering LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassGLTDC->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderingPassUtilities::getBRDFMSAverageLUT()->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 	}
 	ImGui::End();

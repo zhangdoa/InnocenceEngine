@@ -1,8 +1,8 @@
 #include "GLRenderingSystemUtilities.h"
 #include "GLLightRenderingPassUtilities.h"
+#include "GLEnvironmentRenderingPassUtilities.h"
 #include "../../component/GLLightRenderPassComponent.h"
 #include "../../component/GLShadowRenderPassComponent.h"
-#include "../../component/GLEnvironmentRenderPassComponent.h"
 #include "../../component/GLGeometryRenderPassComponent.h"
 #include "../../component/GLRenderingSystemComponent.h"
 
@@ -156,19 +156,19 @@ void GLLightRenderingPassUtilities::update()
 		4);
 	// BRDF look-up table 1
 	activateTexture(
-		GLEnvironmentRenderPassComponent::get().m_BRDFSplitSumLUTPassGLTDC,
+		GLEnvironmentRenderingPassUtilities::getBRDFSplitSumLUT(),
 		5);
 	// BRDF look-up table 2
 	activateTexture(
-		GLEnvironmentRenderPassComponent::get().m_BRDFMSAverageLUTPassGLTDC,
+		GLEnvironmentRenderingPassUtilities::getBRDFMSAverageLUT(),
 		6);
 	// Irradiance env cubemap
 	activateTexture(
-		GLEnvironmentRenderPassComponent::get().m_convPassGLTDC,
+		GLEnvironmentRenderingPassUtilities::getConvPassGLTDC(),
 		7);
 	// pre-filtered specular env cubemap
 	activateTexture(
-		GLEnvironmentRenderPassComponent::get().m_preFilterPassGLTDC,
+		GLEnvironmentRenderingPassUtilities::getPreFilterPassGLTDC(),
 		8);
 #endif
 
