@@ -13,9 +13,11 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 {
 	void initializeBRDFLUTPass();
 	void initializeEnvironmentCapturePass();
+
 	void initializeGIPass();
 	void initializeVoxelizationPass();
 	void initializeIrradianceInjectionPass();
+	void initializeVoxelVisualizationPass();
 
 	void updateBRDFLUTPass();
 	void updateEnvironmentCapturePass();
@@ -67,7 +69,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 	TextureDataComponent* m_preFilterPassTDC;
 	GLTextureDataComponent* m_preFilterPassGLTDC;
 
-	GLFrameBufferComponent* m_GIPassFBC;
+	GLFrameBufferComponent* m_GI3DVoxelFBC;
 	GLShaderProgramComponent* m_VoxelizationPassSPC;
 
 	GLuint m_VoxelizationPass_uni_m;
@@ -79,7 +81,8 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 
 	std::vector<mat4> m_VP;
 	std::vector<mat4> m_VP_inv;
-	int m_volumeDimension = 256;
+	unsigned int m_volumeDimension = 256;
+	unsigned int m_voxelCount = m_volumeDimension * m_volumeDimension * m_volumeDimension;
 	float m_volumeGridSize;
 
 	TextureDataComponent* m_VoxelizationPassTDC_Albedo;
@@ -98,6 +101,21 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 
 	TextureDataComponent* m_IrradianceInjectionPass_TDC;
 	GLTextureDataComponent* m_IrradianceInjectionPassGLTDC;
+
+	GLRenderPassComponent* m_VoxelVisualizationGLRPC;
+	GLShaderProgramComponent* m_VoxelVisualizationPassSPC;
+
+	GLuint m_VoxelVisualizationPass_uni_p;
+	GLuint m_VoxelVisualizationPass_uni_r;
+	GLuint m_VoxelVisualizationPass_uni_t;
+	GLuint m_VoxelVisualizationPass_uni_m;
+
+	GLuint m_VoxelVisualizationPass_uni_volumeDimension;
+	GLuint m_VoxelVisualizationPass_uni_voxelSize;
+	GLuint m_VoxelVisualizationPass_uni_worldMinPoint;
+
+	GLuint m_VAO;
+	GLuint m_VBO;
 }
 
 void GLEnvironmentRenderingPassUtilities::initialize()
@@ -370,11 +388,13 @@ void GLEnvironmentRenderingPassUtilities::initializeGIPass()
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, m_volumeDimension, m_volumeDimension);
 
-	m_GIPassFBC = l_FBC;
+	m_GI3DVoxelFBC = l_FBC;
 
 	initializeVoxelizationPass();
 
 	initializeIrradianceInjectionPass();
+
+	initializeVoxelVisualizationPass();
 }
 
 void GLEnvironmentRenderingPassUtilities::initializeVoxelizationPass()
@@ -493,10 +513,61 @@ void GLEnvironmentRenderingPassUtilities::initializeIrradianceInjectionPass()
 	m_IrradianceInjectionPassSPC = rhs;
 }
 
+void GLEnvironmentRenderingPassUtilities::initializeVoxelVisualizationPass()
+{
+	// generate and bind framebuffer
+	auto l_RPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_VoxelVisualizationGLRPC = l_RPC;
+
+	ShaderFilePaths m_VoxelVisualizationPassShaderFilePaths;
+
+	////
+	m_VoxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelVisualizationPassVertex.sf";
+	m_VoxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelVisualizationPassGeometry.sf";
+	m_VoxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelVisualizationPassFragment.sf";
+
+	auto rhs = addGLShaderProgramComponent(m_entityID);
+	initializeGLShaderProgramComponent(rhs, m_VoxelVisualizationPassShaderFilePaths);
+
+	std::vector<std::string> l_textureNames = { "uni_voxelTexture" };
+	updateTextureUniformLocations(rhs->m_program, l_textureNames);
+
+	m_VoxelVisualizationPass_uni_p = getUniformLocation(
+		rhs->m_program,
+		"uni_p");
+	m_VoxelVisualizationPass_uni_r = getUniformLocation(
+		rhs->m_program,
+		"uni_r");
+	m_VoxelVisualizationPass_uni_t = getUniformLocation(
+		rhs->m_program,
+		"uni_t");
+	m_VoxelVisualizationPass_uni_m = getUniformLocation(
+		rhs->m_program,
+		"uni_m");
+
+	m_VoxelVisualizationPass_uni_volumeDimension = getUniformLocation(
+		rhs->m_program,
+		"uni_volumeDimension");
+	m_VoxelVisualizationPass_uni_voxelSize = getUniformLocation(
+		rhs->m_program,
+		"uni_voxelSize");
+	m_VoxelVisualizationPass_uni_worldMinPoint = getUniformLocation(
+		rhs->m_program,
+		"uni_worldMinPoint");
+
+	m_VoxelVisualizationPassSPC = rhs;
+
+	glGenVertexArrays(1, &m_VAO);
+	//glBindVertexArray(m_VAO);
+	//glGenBuffers(1, &m_VBO);
+	//glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+	//glBufferData(GL_ARRAY_BUFFER, m_voxelCount * sizeof(float), nullptr, GL_STREAM_DRAW);
+}
+
 void GLEnvironmentRenderingPassUtilities::update()
 {
-	updateBRDFLUTPass();
-	updateEnvironmentCapturePass();
+	//updateBRDFLUTPass();
+	//updateEnvironmentCapturePass();
 	updateGIPass();
 }
 
@@ -697,12 +768,12 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 	auto l_p = InnoMath::generateOrthographicMatrix(-l_halfSize, l_halfSize, -l_halfSize, l_halfSize, 0.0f, m_volumeGridSize);
 
 	// view matrices
-	m_VP[0] = InnoMath::lookAt(center,
-		center + vec4(l_halfSize, 0.0f, 0.0f, 0.0f), vec4(0.0f, 1.0f, 0.0f, 0.0f));
-	m_VP[1] = InnoMath::lookAt(center,
-		center + vec4(0.0f, l_halfSize, 0.0f, 0.0f), vec4(0.0f, 0.0f, -1.0f, 0.0f));
-	m_VP[2] = InnoMath::lookAt(center,
-		center + vec4(0.0f, 0.0f, l_halfSize, 0.0f), vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	m_VP[0] = InnoMath::lookAt(center + vec4(l_halfSize, 0.0f, 0.0f, 0.0f),
+		center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	m_VP[1] = InnoMath::lookAt(center + vec4(0.0f, l_halfSize, 0.0f, 0.0f),
+		center, vec4(0.0f, 0.0f, -1.0f, 0.0f));
+	m_VP[2] = InnoMath::lookAt(center + vec4(0.0f, 0.0f, l_halfSize, 0.0f),
+		center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
 
 	for (size_t i = 0; i < 3; i++)
 	{
@@ -713,7 +784,7 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
 
 	// bind to framebuffer
-	auto l_FBC = m_GIPassFBC;
+	auto l_FBC = m_GI3DVoxelFBC;
 	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, m_volumeDimension, m_volumeDimension);
@@ -768,8 +839,8 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
 	// irradiance injection pass
-	glBindImageTexture(0, m_VoxelizationPassGLTDC_Albedo->m_TAO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RG32UI);
-	glBindImageTexture(1, m_VoxelizationPassGLTDC_Normal->m_TAO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RG32UI);
+	activateTexture(m_VoxelizationPassGLTDC_Albedo, 0);
+	activateTexture(m_VoxelizationPassGLTDC_Normal, 1);
 	glBindImageTexture(2, m_IrradianceInjectionPassGLTDC->m_TAO, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RG32UI);
 
 	activateShaderProgram(m_IrradianceInjectionPassSPC);
@@ -794,6 +865,38 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 	// reset status
 	glDepthMask(true);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	//glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_CULL_FACE);
+
+	// voxel visualization pass
+	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+
+	l_p = l_cameraDataPack.p_Original;
+	auto l_r = l_cameraDataPack.r;
+	auto l_t = l_cameraDataPack.t;
+	auto l_ms = InnoMath::toScaleMatrix(vec4(l_voxelSize, l_voxelSize, l_voxelSize, 1.0f));
+	auto l_mt = InnoMath::toTranslationMatrix(l_sceneAABB.m_boundMin);
+
+	auto l_m = l_mt * l_ms;
+
+	l_FBC = m_VoxelVisualizationGLRPC->m_GLFBC;
+	bindFBC(l_FBC);
+
+	activateShaderProgram(m_VoxelVisualizationPassSPC);
+
+	updateUniform(m_VoxelVisualizationPass_uni_p, l_p);
+	updateUniform(m_VoxelVisualizationPass_uni_r, l_r);
+	updateUniform(m_VoxelVisualizationPass_uni_t, l_t);
+	updateUniform(m_VoxelVisualizationPass_uni_m, l_m);
+
+	updateUniform(m_VoxelVisualizationPass_uni_volumeDimension, m_volumeDimension);
+	updateUniform(m_VoxelVisualizationPass_uni_voxelSize, l_voxelSize);
+	updateUniform(m_VoxelVisualizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
+
+	glBindImageTexture(0, m_VoxelizationPassGLTDC_Albedo->m_TAO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+
+	glBindVertexArray(m_VAO);
+	glDrawArrays(GL_POINTS, 0, m_voxelCount);
 }
 
 GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getBRDFSplitSumLUT()
@@ -814,4 +917,9 @@ GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getConvPassGLTDC()
 GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getPreFilterPassGLTDC()
 {
 	return m_preFilterPassGLTDC;
+}
+
+GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getVoxelVisualizationPassGLTDC()
+{
+	return m_VoxelVisualizationGLRPC->m_GLTDCs[0];
 }

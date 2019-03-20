@@ -17,7 +17,7 @@ const float SQRT_3 = 1.73205080f;
 
 uniform dirLight uni_dirLight;
 
-uniform int uni_volumeDimension;
+uniform uint uni_volumeDimension;
 uniform float uni_voxelSize;
 uniform float uni_voxelScale;
 uniform vec3 uni_worldMinPoint;

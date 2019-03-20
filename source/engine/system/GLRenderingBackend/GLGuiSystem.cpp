@@ -254,6 +254,11 @@ void GLGuiSystemNS::showRenderResult()
 		ImGui::EndChild();
 	}
 	ImGui::End();
+
+	ImGui::Begin("Voxelization Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
+	ImGui::Text("Voxelization Pass");
+	ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderingPassUtilities::getVoxelVisualizationPassGLTDC()->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+	ImGui::End();
 }
 
 ImTextureID GLGuiSystemNS::getFileExplorerIconTextureID(const FileExplorerIconType iconType)

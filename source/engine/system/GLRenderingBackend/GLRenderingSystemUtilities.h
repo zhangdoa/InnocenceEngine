@@ -48,6 +48,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	void updateUniform(const GLint uniformLocation, bool uniformValue);
 	void updateUniform(const GLint uniformLocation, int uniformValue);
+	void updateUniform(const GLint uniformLocation, unsigned int uniformValue);
 	void updateUniform(const GLint uniformLocation, float uniformValue);
 	void updateUniform(const GLint uniformLocation, float x, float y);
 	void updateUniform(const GLint uniformLocation, float x, float y, float z);

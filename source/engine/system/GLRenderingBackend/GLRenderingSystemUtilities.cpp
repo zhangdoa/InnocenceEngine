@@ -812,6 +812,11 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, int uniform
 	glUniform1i(uniformLocation, uniformValue);
 }
 
+void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, unsigned int uniformValue)
+{
+	glUniform1ui(uniformLocation, uniformValue);
+}
+
 void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, float uniformValue)
 {
 	glUniform1f(uniformLocation, (GLfloat)uniformValue);

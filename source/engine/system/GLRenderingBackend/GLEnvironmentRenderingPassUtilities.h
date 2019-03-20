@@ -12,4 +12,5 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 	GLTextureDataComponent* getBRDFMSAverageLUT();
 	GLTextureDataComponent* getConvPassGLTDC();
 	GLTextureDataComponent* getPreFilterPassGLTDC();
+	GLTextureDataComponent* getVoxelVisualizationPassGLTDC();
 }
