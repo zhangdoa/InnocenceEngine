@@ -1,7 +1,7 @@
 git submodule update
 
 cd source/external/gitsubmodules
-xcopy /y assimp\include\assimp\* ..\include\assimp\
+xcopy /e/s/y assimp\include\assimp\* ..\include\assimp\
 
 xcopy /y Vulkan-Headers\include\vulkan\* ..\include\vulkan\
 

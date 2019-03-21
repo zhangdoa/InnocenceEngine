@@ -245,14 +245,25 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createPysicalDevice();
 	bool createLogicalDevice();
 	bool createSwapChain();
-	bool createImageViews();
+	bool createSwapChainImageViews();
+	bool createSwapChainRenderPass();
+	bool createSwapChainFramebuffers();
+	bool createCommandPool();
+	bool createCommandBuffers();
+	bool createSyncPrimitives();
 
-	bool createGraphicsPipeline();
-
+	bool initialize();
+	bool update();
 	bool terminate();
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
+
+	VKShaderProgramComponent* m_swapChainVKSPC;
+	VKRenderPassComponent* m_swapChainVKRPC;
+
+	size_t m_maxFramesInFlight = 2;
+	size_t m_currentFrame = 0;
 }
 
 bool VKRenderingSystemNS::createVkInstance()
@@ -500,7 +511,7 @@ bool VKRenderingSystemNS::createSwapChain()
 	return true;
 }
 
-bool VKRenderingSystemNS::createImageViews()
+bool VKRenderingSystemNS::createSwapChainImageViews()
 {
 	VKRenderingSystemComponent::get().m_swapChainImageViews.resize(VKRenderingSystemComponent::get().m_swapChainImages.size());
 
@@ -523,7 +534,7 @@ bool VKRenderingSystemNS::createImageViews()
 		if (vkCreateImageView(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_swapChainImageViews[i]) != VK_SUCCESS)
 		{
 			m_objectStatus = ObjectStatus::STANDBY;
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create image views!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create swap chain image views!");
 			return false;
 		}
 	}
@@ -532,7 +543,7 @@ bool VKRenderingSystemNS::createImageViews()
 	return true;
 }
 
-bool VKRenderingSystemNS::createGraphicsPipeline()
+bool VKRenderingSystemNS::createSwapChainRenderPass()
 {
 	auto l_VKSPC = g_pCoreSystem->getMemorySystem()->spawn<VKShaderProgramComponent>();
 
@@ -540,11 +551,154 @@ bool VKRenderingSystemNS::createGraphicsPipeline()
 	l_shaderFilePaths.m_VSPath = "..//res//shaders//VK//finalBlendPass.vert.spv";
 	l_shaderFilePaths.m_FSPath = "..//res//shaders//VK//finalBlendPass.frag.spv";
 
-	auto l_result = initializeVKShaderProgramComponent(l_VKSPC, l_shaderFilePaths);
+	initializeVKShaderProgramComponent(l_VKSPC, l_shaderFilePaths);
 
 	auto l_VKRPC = addVKRenderPassComponent(1, TextureDataDesc(), l_VKSPC);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: graphics pipeline has been created.");
+	m_swapChainVKSPC = l_VKSPC;
+	m_swapChainVKRPC = l_VKRPC;
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: swap chain render pass has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createSwapChainFramebuffers()
+{
+	VKRenderingSystemComponent::get().m_swapChainFramebuffers.resize(VKRenderingSystemComponent::get().m_swapChainImageViews.size());
+
+	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainImageViews.size(); i++) {
+		VkImageView attachments[] = {
+			VKRenderingSystemComponent::get().m_swapChainImageViews[i]
+		};
+
+		VkFramebufferCreateInfo framebufferInfo = {};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = m_swapChainVKRPC->m_renderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = VKRenderingSystemComponent::get().m_swapChainExtent.width;
+		framebufferInfo.height = VKRenderingSystemComponent::get().m_swapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &VKRenderingSystemComponent::get().m_swapChainFramebuffers[i]) != VK_SUCCESS)
+		{
+			m_objectStatus = ObjectStatus::STANDBY;
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create swap chain framebuffer!");
+			return false;
+		}
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: swap chain framebuffer has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createCommandPool()
+{
+	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(VKRenderingSystemComponent::get().m_physicalDevice);
+
+	VkCommandPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.queueFamilyIndex = queueFamilyIndices.m_graphicsFamily.value();
+
+	if (vkCreateCommandPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &VKRenderingSystemComponent::get().m_commandPool) != VK_SUCCESS)
+	{
+		m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create command pool!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: command pool has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createCommandBuffers()
+{
+	VKRenderingSystemComponent::get().m_commandBuffers.resize(VKRenderingSystemComponent::get().m_swapChainFramebuffers.size());
+
+	VkCommandBufferAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = VKRenderingSystemComponent::get().m_commandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = (uint32_t)VKRenderingSystemComponent::get().m_commandBuffers.size();
+
+	if (vkAllocateCommandBuffers(VKRenderingSystemComponent::get().m_device, &allocInfo, VKRenderingSystemComponent::get().m_commandBuffers.data()) != VK_SUCCESS)
+	{
+		m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate command buffers!");
+		return false;
+	}
+
+	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_commandBuffers.size(); i++)
+	{
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+		if (vkBeginCommandBuffer(VKRenderingSystemComponent::get().m_commandBuffers[i], &beginInfo) != VK_SUCCESS)
+		{
+			m_objectStatus = ObjectStatus::STANDBY;
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to begin recording command buffer!");
+			return false;
+		}
+
+		VkRenderPassBeginInfo renderPassInfo = {};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = m_swapChainVKRPC->m_renderPass;
+		renderPassInfo.framebuffer = VKRenderingSystemComponent::get().m_swapChainFramebuffers[i];
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = VKRenderingSystemComponent::get().m_swapChainExtent;
+
+		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues = &clearColor;
+
+		vkCmdBeginRenderPass(VKRenderingSystemComponent::get().m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		vkCmdBindPipeline(VKRenderingSystemComponent::get().m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_swapChainVKRPC->m_pipeline);
+
+		vkCmdDraw(VKRenderingSystemComponent::get().m_commandBuffers[i], 3, 1, 0, 0);
+
+		vkCmdEndRenderPass(VKRenderingSystemComponent::get().m_commandBuffers[i]);
+
+		if (vkEndCommandBuffer(VKRenderingSystemComponent::get().m_commandBuffers[i]) != VK_SUCCESS)
+		{
+			m_objectStatus = ObjectStatus::STANDBY;
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to record command buffer!");
+			return false;
+		}
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: command buffers has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createSyncPrimitives()
+{
+	m_maxFramesInFlight = 2;
+	VKRenderingSystemComponent::get().m_imageAvailableSemaphores.resize(m_maxFramesInFlight);
+	VKRenderingSystemComponent::get().m_renderFinishedSemaphores.resize(m_maxFramesInFlight);
+	VKRenderingSystemComponent::get().m_inFlightFences.resize(m_maxFramesInFlight);
+
+	VkSemaphoreCreateInfo semaphoreInfo = {};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceInfo = {};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	for (size_t i = 0; i < m_maxFramesInFlight; i++)
+	{
+		if (vkCreateSemaphore(VKRenderingSystemComponent::get().m_device, &semaphoreInfo, nullptr, &VKRenderingSystemComponent::get().m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
+			vkCreateSemaphore(VKRenderingSystemComponent::get().m_device, &semaphoreInfo, nullptr, &VKRenderingSystemComponent::get().m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
+			vkCreateFence(VKRenderingSystemComponent::get().m_device, &fenceInfo, nullptr, &VKRenderingSystemComponent::get().m_inFlightFences[i]) != VK_SUCCESS)
+		{
+			m_objectStatus = ObjectStatus::STANDBY;
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create synchronization primitives for a frame!");
+			return false;
+		}
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: synchronization primitives has been created.");
 	return true;
 }
 
@@ -559,11 +713,69 @@ bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	result = result && createPysicalDevice();
 	result = result && createLogicalDevice();
 	result = result && createSwapChain();
-	result = result && createImageViews();
-	result = result && createGraphicsPipeline();
+	result = result && createSwapChainImageViews();
+	result = result && createSwapChainRenderPass();
+	result = result && createSwapChainFramebuffers();
+	result = result && createCommandPool();
+	result = result && createCommandBuffers();
+	result = result && createSyncPrimitives();
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	return result;
+}
+bool VKRenderingSystemNS::initialize()
+{
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been initialized.");
+	return true;
+}
+
+bool VKRenderingSystemNS::update()
+{
+	vkWaitForFences(VKRenderingSystemComponent::get().m_device, 1, &VKRenderingSystemComponent::get().m_inFlightFences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+	vkResetFences(VKRenderingSystemComponent::get().m_device, 1, &VKRenderingSystemComponent::get().m_inFlightFences[m_currentFrame]);
+
+	uint32_t imageIndex;
+	vkAcquireNextImageKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, std::numeric_limits<uint64_t>::max(), VKRenderingSystemComponent::get().m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkSemaphore waitSemaphores[] = { VKRenderingSystemComponent::get().m_imageAvailableSemaphores[m_currentFrame] };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &VKRenderingSystemComponent::get().m_commandBuffers[imageIndex];
+
+	VkSemaphore signalSemaphores[] = { VKRenderingSystemComponent::get().m_renderFinishedSemaphores[m_currentFrame] };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	if (vkQueueSubmit(VKRenderingSystemComponent::get().m_graphicsQueue, 1, &submitInfo, VKRenderingSystemComponent::get().m_inFlightFences[m_currentFrame]) != VK_SUCCESS)
+	{
+		m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to submit draw command buffer!");
+		return false;
+	}
+
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+
+	VkSwapchainKHR swapChains[] = { VKRenderingSystemComponent::get().m_swapChain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+
+	presentInfo.pImageIndices = &imageIndex;
+
+	vkQueuePresentKHR(VKRenderingSystemComponent::get().m_presentQueue, &presentInfo);
+
+	m_currentFrame = (m_currentFrame + 1) % m_maxFramesInFlight;
+	return true;
 }
 
 bool VKRenderingSystemNS::terminate()
@@ -601,13 +813,12 @@ bool VKRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
 
 bool VKRenderingSystem::initialize()
 {
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been initialized.");
-	return true;
+	return VKRenderingSystemNS::initialize();
 }
 
 bool VKRenderingSystem::update()
 {
-	return true;
+	return VKRenderingSystemNS::update();
 }
 
 bool VKRenderingSystem::terminate()

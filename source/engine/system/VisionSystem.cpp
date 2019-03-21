@@ -12,9 +12,11 @@
 #include "GLRenderingBackend/GLRenderingSystem.h"
 #include "GLRenderingBackend/GLGuiSystem.h"
 
+#if defined INNO_RENDERER_VULKAN
 #include "VKRenderingBackend/VKWindowSystem.h"
 #include "VKRenderingBackend/VKRenderingSystem.h"
 #include "VKRenderingBackend/VKGuiSystem.h"
+#endif
 
 #include "ICoreSystem.h"
 
@@ -81,9 +83,14 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInst
 	}
 	else if (l_rendererArguments == "VK")
 	{
+#if defined INNO_RENDERER_VULKAN
 		InnoVisionSystemNS::m_windowSystem = new VKWindowSystem();
 		InnoVisionSystemNS::m_renderingBackendSystem = new VKRenderingSystem();
 		InnoVisionSystemNS::m_guiSystem = new VKGuiSystem();
+#else
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: Vulkan is not supported!");
+		return false;
+#endif
 	}
 	else
 	{

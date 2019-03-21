@@ -122,6 +122,8 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned in
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to to create graphics pipeline!");
 	}
 
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: graphics pipeline has been created.");
+
 	return l_VKRPC;
 }
 

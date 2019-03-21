@@ -27,7 +27,7 @@ class VKRenderingSystemComponent
 {
 public:
 	~VKRenderingSystemComponent() {};
-	
+
 	static VKRenderingSystemComponent& get()
 	{
 		static VKRenderingSystemComponent instance;
@@ -50,6 +50,7 @@ public:
 	VkFormat m_swapChainImageFormat;
 	VkExtent2D m_swapChainExtent;
 	std::vector<VkImageView> m_swapChainImageViews;
+	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
 	const std::vector<const char*> m_deviceExtensions =
 	{
@@ -69,11 +70,18 @@ public:
 
 	VkDebugUtilsMessengerEXT m_messengerCallback;
 
+	VkCommandPool m_commandPool;
+	std::vector<VkCommandBuffer> m_commandBuffers;
+
+	std::vector<VkSemaphore> m_imageAvailableSemaphores;
+	std::vector<VkSemaphore> m_renderFinishedSemaphores;
+	std::vector<VkFence> m_inFlightFences;
+
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 
 	std::unordered_map<EntityID, VKMeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, VKTextureDataComponent*> m_textureMap;
-	
+
 	VKMeshDataComponent* m_UnitLineVKMDC;
 	VKMeshDataComponent* m_UnitQuadVKMDC;
 	VKMeshDataComponent* m_UnitCubeVKMDC;
