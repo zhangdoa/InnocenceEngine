@@ -14,6 +14,13 @@ source/external/include/json
 
 *.innoModel
 *.spv
-
+/source/editor/build*/
 /source/engine/common/config.h
 /source/engine/third-party/ImGui
+source/editor/InnocenceEditor/darkstyle/
+
+source/editor/InnocenceEditor/DarkStyle\.cpp
+
+source/editor/InnocenceEditor/DarkStyle\.h
+
+source/editor/InnocenceEditor/darkstyle\.qrc

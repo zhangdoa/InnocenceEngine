@@ -26,3 +26,7 @@
 	path = source/external/gitsubmodules/json
 	url = https://github.com/nlohmann/json
 	ignore = dirty
+[submodule "source/external/gitsubmodules/Qt-Frameless-Window-DarkStyle"]
+	path = source/external/gitsubmodules/Qt-Frameless-Window-DarkStyle
+	url = https://github.com/Jorgen-VikingGod/Qt-Frameless-Window-DarkStyle
+	ignore = dirty

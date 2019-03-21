@@ -31,6 +31,11 @@ move /y temp.h.new ..\..\engine\third-party\ImGui\imgui_impl_opengl3.h
 
 xcopy /y json\single_include\nlohmann\json.hpp ..\include\json\
 
+xcopy /e/s/y Qt-Frameless-Window-DarkStyle\darkstyle\* ..\..\editor\InnocenceEditor\darkstyle\
+xcopy /y Qt-Frameless-Window-DarkStyle\darkstyle.qrc ..\..\editor\InnocenceEditor\
+xcopy /y Qt-Frameless-Window-DarkStyle\Darkstyle.h ..\..\editor\InnocenceEditor\
+xcopy /y Qt-Frameless-Window-DarkStyle\Darkstyle.cpp ..\..\editor\InnocenceEditor\
+
 cd ../
 
 mkdir dll\win
