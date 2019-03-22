@@ -16,9 +16,7 @@
 
 ## How to build
 
-Currently avaliable platforms:
-
-### Windows:
+### Windows
 
 Tested under Windows 10 version 1809
 
@@ -34,7 +32,7 @@ Run following scripts in a sequence:
 @echo | postBuildWin.bat
 ```
 
-### Linux:
+### Linux
 
 Tested under Ubuntu 18.04 LTS
 
@@ -50,7 +48,7 @@ echo | buildLinux.sh # or buildLinux-Clang.sh or buildLinux-CodeBlocks.sh
 echo | postBuildLinux.sh
 ```
 
-### Mac OSX:
+### macOS
 
 Tested under version 10.13.6
 
@@ -66,21 +64,44 @@ echo | buildMac.sh
 echo | postBuildMac.sh
 ```
 
+## How to use
+
+Launch bin/InnoMain executable file with the optional arguments.
+
+### Available launch arguments
+
+```
+-renderer [value]
+```
+| Value |Notes |
+| --- | --- |
+| 0 | OpenGL rendering backend |
+| 1 | DirectX 11 rendering backend (WIP) |
+| 2 | Vulkan rendering backend (WIP) |
+
+```
+-mode [value]
+```
+| Value |Notes |
+| --- | --- |
+| 0 | game mode |
+| 1 | reserved for editor |
+
 ## Features
 
-### Architecture
+[Entity–component–system architecture](https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system)
 
-[Entity–component–system](https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system)
+Task-based concurrency model
 
-### Rendering
+[Object memory pool model](https://en.wikipedia.org/wiki/Object_pool_pattern)
 
-[Deferred shading](https://en.wikipedia.org/wiki/Deferred_shading)
+[Deferred rendering pipeline](https://en.wikipedia.org/wiki/Deferred_shading)
 
-[Physically based rendering](https://en.wikipedia.org/wiki/Physically_based_rendering)
+[Physically based shading](https://en.wikipedia.org/wiki/Physically_based_rendering)
 
 [Scene graph](https://en.wikipedia.org/wiki/Scene_graph)
 
-## References& Dependencies
+## References & Dependencies
 
 ### Third-party libraries
 
@@ -144,7 +165,9 @@ echo | postBuildMac.sh
 
 [Linear Algebra and Its Applications (3rd Edition)](https://www.amazon.com/Linear-Algebra-Its-Applications-3rd/dp/0201709708)
 
-### Online tutorials& resources
+And more...
+
+### Online tutorials & resources
 
 [Mathematics - Martin Baker](http://www.euclideanspace.com/maths)
 
@@ -173,3 +196,5 @@ echo | postBuildMac.sh
 [Sébastien Lagarde's blog](https://seblagarde.wordpress.com)
 
 [Stephen Hill's blog](http://blog.selfshadow.com)
+
+And more...
