@@ -10,7 +10,7 @@ public:
 	INNO_SYSTEM_EXPORT bool initialize() override;
 	INNO_SYSTEM_EXPORT bool update() override;
 	INNO_SYSTEM_EXPORT bool terminate() override;
-    
+
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus()  override;
 
 	INNO_SYSTEM_EXPORT void addTask(std::unique_ptr<IThreadTask>&& task) override;
@@ -18,5 +18,6 @@ public:
 	INNO_SYSTEM_EXPORT void shrinkFutureContainer(std::vector<InnoFuture<void>>& rhs) override;
 
 	INNO_SYSTEM_EXPORT void waitAllTasksToFinish() override;
-};
 
+	INNO_SYSTEM_EXPORT std::string getThreadId() override;
+};

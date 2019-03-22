@@ -119,3 +119,10 @@ INNO_SYSTEM_EXPORT void InnoTaskSystem::waitAllTasksToFinish()
 		}
 	}
 }
+
+INNO_SYSTEM_EXPORT std::string InnoTaskSystem::getThreadId()
+{
+	std::stringstream ss;
+	ss << std::this_thread::get_id();
+	return ss.str();
+}

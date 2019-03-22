@@ -22,6 +22,8 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual void waitAllTasksToFinish() = 0;
 
+	INNO_SYSTEM_EXPORT virtual std::string getThreadId() = 0;
+
 	template <typename Func, typename... Args>
 	auto submit(Func&& func, Args&&... args)
 	{
