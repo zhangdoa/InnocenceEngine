@@ -60,6 +60,8 @@ INNO_PRIVATE_SCOPE InnoLogSystemNS
 		return s;
 	}
 #endif
+
+	std::ofstream m_logFile;
 }
 
 INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(double logMessage)
@@ -156,6 +158,7 @@ INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(LogType LogType, const std::stri
 #else
 	std::cout << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl;
 #endif
+	InnoLogSystemNS::m_logFile << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl;
 }
 
 INNO_SYSTEM_EXPORT ObjectStatus InnoLogSystem::getStatus()
@@ -165,6 +168,7 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoLogSystem::getStatus()
 
 INNO_SYSTEM_EXPORT bool InnoLogSystem::setup()
 {
+	InnoLogSystemNS::m_logFile.open(InnoLogSystemNS::getLogTimeHeader() + ".log", std::ios::out | std::ios::trunc);
 	return true;
 }
 
@@ -190,6 +194,7 @@ INNO_SYSTEM_EXPORT bool InnoLogSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoLogSystem::terminate()
 {
+	InnoLogSystemNS::m_logFile.close();
 	InnoLogSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	printLog(LogType::INNO_DEV_SUCCESS, "LogSystem has been terminated.");
 	return true;

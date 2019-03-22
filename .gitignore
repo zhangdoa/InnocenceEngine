@@ -24,3 +24,5 @@ source/editor/InnocenceEditor/DarkStyle\.cpp
 source/editor/InnocenceEditor/DarkStyle\.h
 
 source/editor/InnocenceEditor/darkstyle\.qrc
+
+source/editor/InnocenceEditor/InnocenceEditor\.pro\.user

@@ -42,12 +42,14 @@ bool GLWindowSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline
 	GLWindowSystemNS::g_GLWindowSystemComponent->m_window = glfwCreateWindow((int)l_screenResolution.x, (int)l_screenResolution.y, g_pCoreSystem->getGameSystem()->getGameName().c_str(), NULL, NULL);
 	glfwMakeContextCurrent(GLWindowSystemNS::g_GLWindowSystemComponent->m_window);
 
-	if (GLWindowSystemNS::g_GLWindowSystemComponent->m_window == nullptr) {
+	if (GLWindowSystemNS::g_GLWindowSystemComponent->m_window == nullptr)
+	{
 		GLWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLWindowSystem: Failed to open GLFW window.");
 		glfwTerminate();
 		return false;
 	}
+
 	// glad: load all OpenGL function pointers
 	// ---------------------------------------
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))

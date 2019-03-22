@@ -721,6 +721,7 @@ bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	result = result && createSyncPrimitives();
 
 	m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem setup finished.");
 	return result;
 }
 bool VKRenderingSystemNS::initialize()

@@ -2031,7 +2031,7 @@ QSplitter::handle:vertical
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="QWidget" name="widgetViewport" native="true">
+                  <widget class="InnoWindowSurface" name="widgetViewport" native="true">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                      <horstretch>0</horstretch>
@@ -3039,6 +3039,13 @@ QSplitter::handle:vertical
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>InnoWindowSurface</class>
+   <extends>QWidget</extends>
+   <header>innowindowsurface.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

@@ -4,8 +4,8 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
-
+QT       += core gui \
+            opengl
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = InnocenceEditor
@@ -27,11 +27,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-        DarkStyle.cpp
+        DarkStyle.cpp \
+    innowindowsurface.cpp
 
 HEADERS += \
         mainwindow.h \
-        DarkStyle.h
+        DarkStyle.h \
+    innowindowsurface.h
 
 FORMS += \
         mainwindow.ui
@@ -42,3 +44,30 @@ RESOURCES += darkstyle.qrc
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/release/ -lInnoApplication
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/debug/ -lInnoApplication
+else:unix: LIBS += -L$$PWD/../../../build/lib_archive/ -lInnoApplication
+
+INCLUDEPATH += $$PWD/../../../build/lib_archive/Debug
+DEPENDPATH += $$PWD/../../../build/lib_archive/Debug
+
+win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../../build/lib_archive/release/libInnoApplication.a
+else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../../build/lib_archive/debug/libInnoApplication.a
+else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../../build/lib_archive/release/InnoApplication.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../../build/lib_archive/debug/InnoApplication.lib
+else:unix: PRE_TARGETDEPS += $$PWD/../../../build/lib_archive/libInnoApplication.a
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/release/ -lInnoSystem
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/debug/ -lInnoSystem
+else:unix: LIBS += -L$$PWD/../../../build/lib_archive/ -lInnoSystem
+
+INCLUDEPATH += $$PWD/../../../build/lib_archive/Debug
+DEPENDPATH += $$PWD/../../../build/lib_archive/Debug
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/release/ -lInnoGame
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/debug/ -lInnoGame
+else:unix: LIBS += -L$$PWD/../../../build/lib_archive/ -lInnoGame
+
+INCLUDEPATH += $$PWD/../../../build/lib_archive/Debug
+DEPENDPATH += $$PWD/../../../build/lib_archive/Debug

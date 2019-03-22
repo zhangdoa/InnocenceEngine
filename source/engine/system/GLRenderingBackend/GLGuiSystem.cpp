@@ -40,6 +40,8 @@ bool GLGuiSystem::setup()
 #endif // !INNO_PLATFORM_MAC
 
 	GLGuiSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLGuiSystem setup finished.");
+
 	return true;
 }
 

@@ -1,9 +1,12 @@
+add_library(InnoApplication InnoApplication.h InnoApplication.cpp)
+
 if (INNO_PLATFORM_WIN)
-add_executable(InnoMain WIN32 main.cpp InnoApplication.h InnoApplication.cpp)
+add_executable(InnoMain WIN32 main.cpp)
 else ()
-add_executable(InnoMain main.cpp InnoApplication.h InnoApplication.cpp)
+add_executable(InnoMain main.cpp)
 endif (INNO_PLATFORM_WIN)
 
+target_link_libraries(InnoMain InnoApplication)
 target_link_libraries(InnoMain InnoSystem)
 target_link_libraries(InnoMain InnoGame)
 

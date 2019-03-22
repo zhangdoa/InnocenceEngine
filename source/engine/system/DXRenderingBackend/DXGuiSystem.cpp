@@ -32,6 +32,8 @@ bool DXGuiSystem::setup()
 	ImGuiWrapper::get().addGetFileExplorerIconTextureIDCallback(&DXGuiSystemNS::f_GetFileExplorerIconTextureID);
 
 	DXGuiSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXGuiSystem setup finished.");
+
 	return true;
 }
 

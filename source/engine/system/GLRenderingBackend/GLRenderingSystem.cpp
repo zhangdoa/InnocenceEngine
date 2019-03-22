@@ -155,6 +155,8 @@ bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
+	m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem setup finished.");
 	return true;
 }
 
