@@ -1,34 +1,41 @@
 #ifndef INNOWINDOWSURFACE_H
 #define INNOWINDOWSURFACE_H
 
-#include <QObject>
 #include <QWidget>
+#include <QResizeEvent>
+#include <QApplication>
 #include <QTimer>
-#include <QOpenGLWidget>
-#include <QOpenGLFunctions>
 
-#include "../../engine/common/InnoApplication.h"
+#include "../../engine/system/CoreSystem.h"
+#include "../../game/GameInstance.h"
 
-class InnoWindowSurface: public QOpenGLWidget, protected QOpenGLFunctions
+class InnoWindowSurface : public QWidget
 {
     Q_OBJECT
 
 public:
-    InnoWindowSurface(QWidget *parent = 0);
-    ~InnoWindowSurface();
-    void Initialize(void *hinstance);
-    void terminate();
+    explicit InnoWindowSurface(QWidget* parent);
+    virtual ~InnoWindowSurface() override;
+
+    void initializeEngine();
+
 protected:
-    void initializeGL() override;
-    void paintGL() override;
-    void resizeGL(int w, int h) override;
+    virtual QPaintEngine* paintEngine() const { return NULL; }
+
+    virtual void paintEvent(QPaintEvent* paintEvent) override;
+
+    virtual void showEvent(QShowEvent* showEvent) override;
+
+    virtual void resizeEvent(QResizeEvent* resizeEvent) override;
 
 private:
-    void* m_hinstance;
-    bool m_animating;
     QTimer* m_timerUpdate;
 
-signals:
+    InnoCoreSystem* m_CoreSystem;
+    GameInstance* m_GameInstance;
+
+public slots:
+    void Update();
 };
 
 #endif // INNOWINDOWSURFACE_H

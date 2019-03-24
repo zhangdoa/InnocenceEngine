@@ -1,46 +1,66 @@
 #include "InnoWindowSurface.h"
+#include <qt_windows.h>
 
 InnoWindowSurface::InnoWindowSurface(QWidget *parent)
-    : QOpenGLWidget(parent)
+    : QWidget{parent}
 {
-    m_timerUpdate = new QTimer(this);
-    connect(m_timerUpdate, SIGNAL(timeout()), this, SLOT(update()));
+    setAttribute(Qt::WA_NativeWindow);
+    setAttribute(Qt::WA_PaintOnScreen);
+    //setAttribute(Qt::WA_NoSystemBackground);
 }
 
 InnoWindowSurface::~InnoWindowSurface()
 {
     m_timerUpdate->stop();
-    //InnoApplication::terminate();
+    //m_GameInstance->terminate();
+    //m_CoreSystem->terminate();
+    //delete m_GameInstance;
+    //delete m_CoreSystem;
 }
 
-void InnoWindowSurface::Initialize(void *hinstance)
+void InnoWindowSurface::initializeEngine()
 {
-    m_hinstance = hinstance;
-}
+    m_timerUpdate = new QTimer(this);
+    connect(m_timerUpdate, SIGNAL(timeout()), this, SLOT(Update()));
 
-void InnoWindowSurface::terminate()
-{
-
-}
-
-void InnoWindowSurface::initializeGL()
-{
-    initializeOpenGLFunctions();
+    WId l_hwnd = QWidget::winId();
+    void* hInstance = (void*)::GetModuleHandle(NULL);
     const char* l_args = "-renderer 0 -mode 1";
-    glEnable(Multisample);
-    //InnoApplication::setup(m_hinstance, nullptr, (char *)l_args, 0);
-    //InnoApplication::initialize();
-    m_timerUpdate->start(0);
+
+    //m_CoreSystem = new InnoCoreSystem();
+    //m_GameInstance = new GameInstance();
+
+    //m_CoreSystem->setup(hInstance, &l_hwnd, (char*)l_args);
+    //m_GameInstance->setup();
+
+    //m_CoreSystem->initialize();
+    //m_GameInstance->initialize();
+
+    m_timerUpdate->start(16);
 }
 
-void InnoWindowSurface::paintGL()
+void InnoWindowSurface::paintEvent(QPaintEvent *paintEvent)
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    //InnoApplication::update();
+    Update();
 }
 
-void InnoWindowSurface::resizeGL(int w, int h)
+void InnoWindowSurface::showEvent(QShowEvent *showEvent)
 {
-
+    QWidget::showEvent(showEvent);
 }
+
+void InnoWindowSurface::resizeEvent(QResizeEvent *resizeEvent)
+{
+    QWidget::resizeEvent(resizeEvent);
+    auto sz = resizeEvent->size();
+    if((sz.width() < 0) || (sz.height() < 0))
+        return;
+    m_CoreSystem->getVisionSystem()->getRenderingBackend()->resize();
+}
+
+void InnoWindowSurface::Update()
+{
+    //m_GameInstance->update();
+    //m_CoreSystem->update();
+}
+

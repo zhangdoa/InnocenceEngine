@@ -14,9 +14,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-bool MainWindow::InitializeEngine()
+void MainWindow::initializeEngine()
 {
-    void* hInstance = (void*)::GetModuleHandle(NULL);
-    ui->widgetViewport->Initialize(hInstance);
-    return true;
+    ui->widgetViewport->initializeEngine();
 }

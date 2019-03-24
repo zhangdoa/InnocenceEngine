@@ -4,8 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui \
-            opengl
+QT       += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = InnocenceEditor
@@ -22,7 +21,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-CONFIG += c++11
+CONFIG += c++17
 
 SOURCES += \
         main.cpp \
@@ -45,18 +44,7 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/release/ -lInnoApplication
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/debug/ -lInnoApplication
-else:unix: LIBS += -L$$PWD/../../../build/lib_archive/ -lInnoApplication
-
-INCLUDEPATH += $$PWD/../../../build/lib_archive/Debug
-DEPENDPATH += $$PWD/../../../build/lib_archive/Debug
-
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../../build/lib_archive/release/libInnoApplication.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../../build/lib_archive/debug/libInnoApplication.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../../build/lib_archive/release/InnoApplication.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../../build/lib_archive/debug/InnoApplication.lib
-else:unix: PRE_TARGETDEPS += $$PWD/../../../build/lib_archive/libInnoApplication.a
+INCLUDEPATH += $$PWD/../../../source/external/include
 
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/release/ -lInnoSystem
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/debug/ -lInnoSystem
