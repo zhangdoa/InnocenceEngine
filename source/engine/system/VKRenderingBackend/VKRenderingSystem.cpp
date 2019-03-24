@@ -63,9 +63,10 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	{
 		uint32_t glfwExtensionCount = 0;
 		const char** glfwExtensions;
-		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+		//glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+		//std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+		std::vector<const char*> extensions;
 
 		if (VKRenderingSystemComponent::get().m_enableValidationLayers)
 		{
@@ -344,12 +345,12 @@ bool VKRenderingSystemNS::createDebugCallback()
 
 bool VKRenderingSystemNS::createWindowSurface()
 {
-	if (glfwCreateWindowSurface(VKRenderingSystemComponent::get().m_instance, VKWindowSystemComponent::get().m_window, nullptr, &VKRenderingSystemComponent::get().m_windowSurface) != VK_SUCCESS)
-	{
-		m_objectStatus = ObjectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create window surface!");
-		return false;
-	}
+	//if (glfwCreateWindowSurface(VKRenderingSystemComponent::get().m_instance, VKWindowSystemComponent::get().m_window, nullptr, &VKRenderingSystemComponent::get().m_windowSurface) != VK_SUCCESS)
+	//{
+	//	m_objectStatus = ObjectStatus::STANDBY;
+	//	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create window surface!");
+	//	return false;
+	//}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: window surface has been created.");
 	return true;

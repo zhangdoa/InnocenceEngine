@@ -17,7 +17,10 @@ INNO_INTERFACE ICoreSystem
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ICoreSystem);
 
-	INNO_SYSTEM_EXPORT virtual bool setup() = 0;
+	INNO_SYSTEM_EXPORT virtual bool setup(void* hInstance, void* hwnd, char* pScmdline) = 0;
+	INNO_SYSTEM_EXPORT virtual bool initialize() = 0;
+	INNO_SYSTEM_EXPORT virtual bool update() = 0;
+	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;
 	INNO_SYSTEM_EXPORT virtual ITimeSystem* getTimeSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual ILogSystem* getLogSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IMemorySystem* getMemorySystem() = 0;

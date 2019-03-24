@@ -3,7 +3,7 @@
 
 namespace InnoApplication
 {
-	bool setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow);
+	bool setup(void* hInstance, char* pScmdline);
 	bool initialize();
 	bool update();
 	bool terminate();

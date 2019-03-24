@@ -7,7 +7,7 @@ INNO_INTERFACE IWindowSystem
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IWindowSystem);
 
-	virtual bool setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow) = 0;
+	virtual bool setup(void* hInstance, void* hwnd) = 0;
 	virtual bool initialize() = 0;
 	virtual bool update() = 0;
 	virtual bool terminate() = 0;

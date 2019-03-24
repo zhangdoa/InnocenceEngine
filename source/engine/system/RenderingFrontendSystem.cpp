@@ -199,6 +199,8 @@ bool InnoRenderingFrontendSystemNS::update()
 
 bool InnoRenderingFrontendSystemNS::terminate()
 {
+	m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontendSystem has been terminated.");
 	return true;
 }
 

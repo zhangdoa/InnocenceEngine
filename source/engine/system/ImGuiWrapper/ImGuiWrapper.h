@@ -1,6 +1,6 @@
 #pragma once
-#include "../common/InnoType.h"
-#include "../third-party/ImGui/imgui.h"
+#include "../../common/InnoType.h"
+#include "../../third-party/ImGui/imgui.h"
 
 class ImGuiWrapper
 {
@@ -12,10 +12,10 @@ public:
 		static ImGuiWrapper instance;
 		return instance;
 	}
-	void setup();
-	void initialize();
-	void update();
-	void terminate();
+	bool setup();
+	bool initialize();
+	bool update();
+	bool terminate();
 
 	bool addShowRenderPassResultCallback(std::function<void()>* functor);
 	bool addGetFileExplorerIconTextureIDCallback(std::function<ImTextureID(const FileExplorerIconType)>* functor);

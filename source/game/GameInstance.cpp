@@ -159,7 +159,7 @@ namespace GameInstanceNS
 
 	void setupSpheres();
 	void setupLights();
-	void update(bool pause);
+	void update();
 	void updateLights(float seed);
 	void updateSpheres(float seed);
 
@@ -221,9 +221,9 @@ INNO_GAME_EXPORT bool GameInstance::initialize()
 	return true;
 }
 
-INNO_GAME_EXPORT bool GameInstance::update(bool pause)
+INNO_GAME_EXPORT bool GameInstance::update()
 {
-	GameInstanceNS::update(pause);
+	GameInstanceNS::update();
 
 	return true;
 }
@@ -244,9 +244,11 @@ INNO_GAME_EXPORT std::string GameInstance::getGameName()
 	return std::string("GameInstance");
 }
 
-void GameInstanceNS::update(bool pause)
+void GameInstanceNS::update()
 {
-	if (!pause)
+	// @TODO: getter for config
+	auto l_pause = g_pCoreSystem->getGameSystem();
+	if (1)
 	{
 		auto tempTask = g_pCoreSystem->getTaskSystem()->submit([&]()
 		{

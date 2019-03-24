@@ -36,6 +36,10 @@ xcopy /y Qt-Frameless-Window-DarkStyle\darkstyle.qrc ..\..\editor\InnocenceEdito
 xcopy /y Qt-Frameless-Window-DarkStyle\Darkstyle.h ..\..\editor\InnocenceEditor\
 xcopy /y Qt-Frameless-Window-DarkStyle\Darkstyle.cpp ..\..\editor\InnocenceEditor\
 
+mkdir ..\include\GL
+powershell -Command "Invoke-WebRequest https://www.khronos.org/registry/OpenGL/api/GL/wglext.h -OutFile ..\include\GL\wglext.h"
+powershell -Command "Invoke-WebRequest https://www.khronos.org/registry/OpenGL/api/GL/glext.h -OutFile ..\include\GL\glext.h"
+
 cd ../
 
 mkdir dll\win

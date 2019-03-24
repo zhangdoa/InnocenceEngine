@@ -4,8 +4,8 @@
 #include "../../component/DXGeometryRenderPassComponent.h"
 
 #include "../ImGuiWrapper.h"
-#include "../../third-party/ImGui/imgui_impl_win32.h"
 #include "../../third-party/ImGui/imgui_impl_dx11.h"
+
 #include "../ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -39,9 +39,6 @@ bool DXGuiSystem::setup()
 
 bool DXGuiSystem::initialize()
 {
-	ImGui_ImplWin32_Init(DXWindowSystemComponent::get().m_hwnd);
-	ImGui_ImplDX11_Init(DXRenderingSystemComponent::get().m_device, DXRenderingSystemComponent::get().m_deviceContext);
-
 	ImGuiWrapper::get().initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXGuiSystem has been initialized.");
@@ -51,7 +48,6 @@ bool DXGuiSystem::initialize()
 bool DXGuiSystem::update()
 {
 	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplWin32_NewFrame();
 
 	ImGuiWrapper::get().update();
 
@@ -72,10 +68,9 @@ bool DXGuiSystem::update()
 
 bool DXGuiSystem::terminate()
 {
-	DXGuiSystemNS::m_objectStatus = ObjectStatus::STANDBY;
-
 	ImGui_ImplDX11_Shutdown();
-	ImGui_ImplWin32_Shutdown();
+
+	DXGuiSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 
 	ImGuiWrapper::get().terminate();
 

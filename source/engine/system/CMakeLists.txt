@@ -1,5 +1,9 @@
+#add_subdirectory("GLFWWrapper")
+add_subdirectory("ImGuiWrapper")
+
 if (INNO_PLATFORM_WIN)
 add_subdirectory("DXRenderingBackend")
+add_subdirectory("WinWindow")
 endif (INNO_PLATFORM_WIN)
 
 add_subdirectory("GLRenderingBackend")
@@ -18,6 +22,7 @@ GENERATE_EXPORT_HEADER (InnoSystem
 
 if (INNO_PLATFORM_WIN)
 target_link_libraries(InnoSystem InnoDXRenderingBackend)
+target_link_libraries(InnoSystem WinWindow)
 endif (INNO_PLATFORM_WIN)
 
 target_link_libraries(InnoSystem InnoGLRenderingBackend)
@@ -33,23 +38,26 @@ find_library(ASSIMP assimp)
 target_link_libraries(InnoSystem "${ASSIMP}")
 target_link_libraries(InnoSystem STB_Image)
 
-if (INNO_PLATFORM_LINUX)
-find_library(GLFW glfw)
+if (INNO_PLATFORM_WIN)
+find_library(OpenGL opengl32)
 elseif (INNO_PLATFORM_MAC)
-find_library(GLFW glfw)
+find_library(OPENGL OpenGL)
+endif (INNO_PLATFORM_WIN)
+
+if (OpenGL)
 else ()
-find_library(GLFW glfw3dll)
-endif (INNO_PLATFORM_LINUX)
-target_link_libraries(InnoSystem "${GLFW}")
+message("No OpenGL library found!")
+endif (OpenGL)
+
+target_link_libraries(InnoSystem "${OpenGL}")
 
 if (INNO_PLATFORM_LINUX)
 target_link_libraries(InnoSystem -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lGL -lm -lpthread -lstdc++fs)
 elseif (INNO_PLATFORM_MAC)
 #find_library(IRRXML IrrXML)
 find_library(COCOA Cocoa)
-find_library(OPENGL OpenGL)
 find_library(IOKIT IOKit)
 find_library(COREVIDEO CoreVideo)
-target_link_libraries(InnoSystem "${COCOA}" "${OPENGL}" "${IOKIT}" "${COREVIDEO}" -lz -lc++fs)
+target_link_libraries(InnoSystem "${COCOA}" "${IOKIT}" "${COREVIDEO}" -lz -lc++fs)
 else ()
 endif (INNO_PLATFORM_LINUX)

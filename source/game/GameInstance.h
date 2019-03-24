@@ -13,7 +13,7 @@ public:
 
 	INNO_GAME_EXPORT bool setup() override;
 	INNO_GAME_EXPORT bool initialize() override;
-	INNO_GAME_EXPORT bool update(bool pause) override;
+	INNO_GAME_EXPORT bool update() override;
 	INNO_GAME_EXPORT bool terminate() override;
 
 	INNO_GAME_EXPORT ObjectStatus getStatus() override;

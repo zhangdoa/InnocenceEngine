@@ -20,8 +20,6 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	GLFWwindow* m_window;
-
 private:
 	VKWindowSystemComponent() {};
 };

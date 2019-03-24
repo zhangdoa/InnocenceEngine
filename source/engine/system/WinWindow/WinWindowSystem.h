@@ -1,12 +1,13 @@
 #pragma once
 #include "../IWindowSystem.h"
+#include "../../exports/InnoSystem_Export.h"
 
-class GLWindowSystem : INNO_IMPLEMENT IWindowSystem
+class WinWindowSystem : INNO_IMPLEMENT IWindowSystem
 {
 public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(GLWindowSystem);
+	INNO_CLASS_CONCRETE_NON_COPYABLE(WinWindowSystem);
 
-	bool setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow) override;
+	bool setup(void* hInstance, void* hwnd) override;
 	bool initialize() override;
 	bool update() override;
 	bool terminate() override;

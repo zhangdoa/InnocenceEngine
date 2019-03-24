@@ -7,7 +7,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoGameSystemNS
 {
-	bool setup(IGameInstance* gameInstance);
+	bool setup();
 
 	std::string getEntityName(const EntityID& entityID);
 	EntityID getEntityID(const std::string& entityName);
@@ -19,8 +19,6 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	EntityID createEntity(const std::string & entityName);
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-
-	IGameInstance* m_gameInstance;
 
 	// root TransformComponent
 	TransformComponent* m_rootTransformComponent;
@@ -90,10 +88,8 @@ EntityID InnoGameSystemNS::getEntityID(const std::string& entityName)
 	return result->first;
 }
 
-bool InnoGameSystemNS::setup(IGameInstance* gameInstance)
+bool InnoGameSystemNS::setup()
 {
-	m_gameInstance = gameInstance;
-
 	// setup root TransformComponent
 	m_rootTransformComponent = new TransformComponent();
 	m_rootTransformComponent->m_parentTransformComponent = nullptr;
@@ -106,19 +102,14 @@ bool InnoGameSystemNS::setup(IGameInstance* gameInstance)
 
 	g_pCoreSystem->getFileSystem()->loadDefaultScene();
 
-	if (!m_gameInstance->setup())
-	{
-		return false;
-	}
-
 	m_objectStatus = ObjectStatus::ALIVE;
 
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoGameSystem::setup(IGameInstance* gameInstance)
+INNO_SYSTEM_EXPORT bool InnoGameSystem::setup()
 {
-	if (!InnoGameSystemNS::setup(gameInstance))
+	if (!InnoGameSystemNS::setup())
 	{
 		return false;
 	}
@@ -276,11 +267,6 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::initialize()
 	InnoGameSystemNS::sortTransformComponentsVector();
 	InnoGameSystemNS::updateTransformComponent();
 
-	if (!InnoGameSystemNS::m_gameInstance->initialize())
-	{
-		return false;
-	}
-
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem has been initialized.");
 	return true;
 }
@@ -293,21 +279,11 @@ INNO_SYSTEM_EXPORT bool InnoGameSystem::update()
 	});
 	InnoGameSystemNS::m_asyncTask = &temp;
 
-	if (!InnoGameSystemNS::m_gameInstance->update(InnoGameSystemNS::m_pauseGameUpdate))
-	{
-		return false;
-	}
-
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool InnoGameSystem::terminate()
 {
-	if (!InnoGameSystemNS::m_gameInstance->terminate())
-	{
-		return false;
-	}
-
 	delete InnoGameSystemNS::m_rootTransformComponent;
 
 	InnoGameSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;

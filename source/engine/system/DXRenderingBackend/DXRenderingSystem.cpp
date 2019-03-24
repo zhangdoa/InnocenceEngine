@@ -4,8 +4,8 @@
 #include "DXLightRenderingPassUtilities.h"
 #include "DXFinalRenderingPassUtilities.h"
 
-#include "../../component/DXWindowSystemComponent.h"
 #include "../../component/DXRenderingSystemComponent.h"
+#include "../../component/WinWindowSystemComponent.h"
 
 #include "DXRenderingSystemUtilities.h"
 
@@ -29,7 +29,6 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 
 	void prepareRenderingData();
 
-	static DXWindowSystemComponent* g_DXWindowSystemComponent;
 	static DXRenderingSystemComponent* g_DXRenderingSystemComponent;
 
 	bool createPhysicalDevices();
@@ -177,7 +176,7 @@ bool DXRenderingSystemNS::createSwapChain()
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	// Set the refresh rate of the back buffer.
-	if (g_DXRenderingSystemComponent->m_vsync_enabled)
+	if (WinWindowSystemComponent::get().m_vsync_enabled)
 	{
 		g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = g_DXRenderingSystemComponent->m_refreshRate.x;
 		g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = g_DXRenderingSystemComponent->m_refreshRate.y;
@@ -192,7 +191,7 @@ bool DXRenderingSystemNS::createSwapChain()
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 
 	// Set the handle for the window to render to.
-	g_DXRenderingSystemComponent->m_swapChainDesc.OutputWindow = g_DXWindowSystemComponent->m_hwnd;
+	g_DXRenderingSystemComponent->m_swapChainDesc.OutputWindow = WinWindowSystemComponent::get().m_hwnd;
 
 	// Turn multisampling off.
 	g_DXRenderingSystemComponent->m_swapChainDesc.SampleDesc.Count = 1;
@@ -418,7 +417,6 @@ bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
 	m_renderingFrontendSystem = renderingFrontend;
 
-	g_DXWindowSystemComponent = &DXWindowSystemComponent::get();
 	g_DXRenderingSystemComponent = &DXRenderingSystemComponent::get();
 
 	bool result = true;

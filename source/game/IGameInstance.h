@@ -11,7 +11,7 @@ public:
 
 	INNO_GAME_EXPORT virtual bool setup() = 0;
 	INNO_GAME_EXPORT virtual bool initialize() = 0;
-	INNO_GAME_EXPORT virtual bool update(bool pause) = 0;
+	INNO_GAME_EXPORT virtual bool update() = 0;
 	INNO_GAME_EXPORT virtual bool terminate() = 0;
 
 	INNO_GAME_EXPORT virtual ObjectStatus getStatus() = 0;

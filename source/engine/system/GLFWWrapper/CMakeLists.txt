@@ -1,0 +1,11 @@
+aux_source_directory(./ DIR_SRCS)
+add_library(GLFWWrapper ${DIR_SRCS})
+
+if (INNO_PLATFORM_LINUX)
+find_library(GLFW glfw)
+elseif (INNO_PLATFORM_MAC)
+find_library(GLFW glfw)
+else ()
+find_library(GLFW glfw3dll)
+endif (INNO_PLATFORM_LINUX)
+target_link_libraries(GLFWWrapper "${GLFW}")

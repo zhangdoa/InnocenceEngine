@@ -3,7 +3,6 @@
 #include "../exports/InnoSystem_Export.h"
 #include "../common/InnoClassTemplate.h"
 #include "../common/ComponentHeaders.h"
-#include "../../game/IGameInstance.h"
 
 #define spawnComponentInterfaceDecl( className ) \
 INNO_SYSTEM_EXPORT virtual className* spawn##className(const EntityID& parentEntity) = 0;
@@ -37,7 +36,7 @@ INNO_INTERFACE IGameSystem
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IGameSystem);
 
-	INNO_SYSTEM_EXPORT virtual bool setup(IGameInstance* gameInstance) = 0;
+	INNO_SYSTEM_EXPORT virtual bool setup() = 0;
 	INNO_SYSTEM_EXPORT virtual bool initialize() = 0;
 	INNO_SYSTEM_EXPORT virtual bool update() = 0;
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;

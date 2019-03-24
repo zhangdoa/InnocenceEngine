@@ -1,7 +1,7 @@
 add_library(InnoApplication InnoApplication.h InnoApplication.cpp)
 
 if (INNO_PLATFORM_WIN)
-add_executable(InnoMain WIN32 main.cpp)
+add_executable(InnoMain WIN32 winMain.cpp)
 else ()
 add_executable(InnoMain main.cpp)
 endif (INNO_PLATFORM_WIN)

@@ -21,7 +21,7 @@ class InnoGameSystem : INNO_IMPLEMENT IGameSystem
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoGameSystem);
 
-	INNO_SYSTEM_EXPORT bool setup(IGameInstance* gameInstance) override;
+	INNO_SYSTEM_EXPORT bool setup() override;
 	INNO_SYSTEM_EXPORT bool initialize() override;
 	INNO_SYSTEM_EXPORT bool update() override;
 	INNO_SYSTEM_EXPORT bool terminate() override;

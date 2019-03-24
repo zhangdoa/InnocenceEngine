@@ -70,7 +70,6 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	bool m_vsync_enabled = true;
 	TVec2<unsigned int> m_refreshRate = TVec2<unsigned int>(0, 1);
 
 	int m_videoCardMemory;

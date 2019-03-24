@@ -1,6 +1,5 @@
 #include "GLGuiSystem.h"
-#include "../../component/GLWindowSystemComponent.h"
-#include "GLEnvironmentRenderingPassUtilities.h"
+#include "../GLEnvironmentRenderingPassUtilities.h"
 #include "../../component/GLShadowRenderPassComponent.h"
 #include "../../component/GLGeometryRenderPassComponent.h"
 #include "../../component/GLTerrainRenderPassComponent.h"
@@ -8,8 +7,7 @@
 #include "../../component/GLFinalRenderPassComponent.h"
 #include "../../component/GLRenderingSystemComponent.h"
 
-#include "../ImGuiWrapper.h"
-#include "../../third-party/ImGui/imgui_impl_glfw.h"
+#include "../../ImGuiWrapper.h"
 #include "../../third-party/ImGui/imgui_impl_opengl3.h"
 
 #include "../ICoreSystem.h"
@@ -47,12 +45,7 @@ bool GLGuiSystem::setup()
 
 bool GLGuiSystem::initialize()
 {
-	ImGui_ImplGlfw_InitForOpenGL(GLWindowSystemComponent::get().m_window, true);
-	ImGui_ImplOpenGL3_Init(NULL);
 
-#ifndef INNO_PLATFORM_MAC
-	ImGuiWrapper::get().initialize();
-#endif // !INNO_PLATFORM_MAC
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLGuiSystem has been initialized.");
 	return true;
@@ -62,13 +55,13 @@ bool GLGuiSystem::update()
 {
 #ifndef INNO_PLATFORM_MAC
 	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
 
 	ImGuiWrapper::get().update();
 
 	// Rendering
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 	glViewport(0, 0, (GLsizei)l_screenResolution.x, (GLsizei)l_screenResolution.y);
+
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #endif // !INNO_PLATFORM_MAC
 
@@ -81,7 +74,6 @@ bool GLGuiSystem::terminate()
 
 #ifndef INNO_PLATFORM_MAC
 	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
 
 	ImGuiWrapper::get().terminate();
 #endif // !INNO_PLATFORM_MAC

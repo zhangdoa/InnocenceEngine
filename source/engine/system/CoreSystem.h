@@ -6,7 +6,10 @@ class InnoCoreSystem : INNO_IMPLEMENT ICoreSystem
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoCoreSystem);
 
-	INNO_SYSTEM_EXPORT bool setup() override;
+	INNO_SYSTEM_EXPORT bool setup(void* hInstance, void* hwnd, char* pScmdline) override;
+	INNO_SYSTEM_EXPORT bool initialize() override;
+	INNO_SYSTEM_EXPORT bool update() override;
+	INNO_SYSTEM_EXPORT bool terminate() override;
 	INNO_SYSTEM_EXPORT ITimeSystem* getTimeSystem() override;
 	INNO_SYSTEM_EXPORT ILogSystem* getLogSystem() override;
 	INNO_SYSTEM_EXPORT IMemorySystem* getMemorySystem() override;

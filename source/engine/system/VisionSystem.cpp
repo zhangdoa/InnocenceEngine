@@ -3,41 +3,29 @@
 #include "RenderingFrontendSystem.h"
 
 #if defined INNO_PLATFORM_WIN
-#include "DXRenderingBackend/DXWindowSystem.h"
+#include "WinWindow/WinWindowSystem.h"
 #include "DXRenderingBackend/DXRenderingSystem.h"
-#include "DXRenderingBackend/DXGuiSystem.h"
 #endif
 
-#include "GLRenderingBackend/GLWindowSystem.h"
 #include "GLRenderingBackend/GLRenderingSystem.h"
-#include "GLRenderingBackend/GLGuiSystem.h"
 
 #if defined INNO_RENDERER_VULKAN
-#include "VKRenderingBackend/VKWindowSystem.h"
 #include "VKRenderingBackend/VKRenderingSystem.h"
-#include "VKRenderingBackend/VKGuiSystem.h"
 #endif
+
+#include "ImGuiWrapper/ImGuiWrapper.h"
 
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
-
-enum EngineMode { GAME, EDITOR };
-enum RenderingBackend { GL, DX, VK };
-struct initConfig
-{
-	EngineMode engineMode = EngineMode::GAME;
-	RenderingBackend renderingBackend = RenderingBackend::GL;
-};
 
 INNO_PRIVATE_SCOPE InnoVisionSystemNS
 {
 	IWindowSystem* m_windowSystem;
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
 	IRenderingBackendSystem* m_renderingBackendSystem;
-	IGuiSystem* m_guiSystem;
 
-	bool setupWindow(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow);
+	bool setupWindow(void* hInstance, void* hwnd);
 	bool setupRendering();
 	bool setupGui();
 
@@ -47,14 +35,14 @@ INNO_PRIVATE_SCOPE InnoVisionSystemNS
 	std::atomic<bool> m_allowRender = false;
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	initConfig m_initConfig;
+	InitConfig m_initConfig;
 
-	initConfig getInitConfig(const std::string& arg);
+	InitConfig parseInitConfig(const std::string& arg);
 }
 
-initConfig InnoVisionSystemNS::getInitConfig(const std::string& arg)
+InitConfig InnoVisionSystemNS::parseInitConfig(const std::string& arg)
 {
-	initConfig l_result;
+	InitConfig l_result;
 
 	if (arg == "")
 	{
@@ -129,69 +117,60 @@ initConfig InnoVisionSystemNS::getInitConfig(const std::string& arg)
 	return l_result;
 }
 
-INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
+INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hwnd, char* pScmdline)
 {
 	InnoVisionSystemNS::m_renderingFrontendSystem = new InnoRenderingFrontendSystem();
 
 	std::string l_windowArguments = pScmdline;
 
-	InnoVisionSystemNS::m_initConfig = InnoVisionSystemNS::getInitConfig(l_windowArguments);
+	InnoVisionSystemNS::m_initConfig = InnoVisionSystemNS::parseInitConfig(l_windowArguments);
+
+#if defined INNO_PLATFORM_WIN
+	InnoVisionSystemNS::m_windowSystem = new WinWindowSystem();
+#endif
 
 	switch (InnoVisionSystemNS::m_initConfig.renderingBackend)
 	{
 	case RenderingBackend::GL:
-		InnoVisionSystemNS::m_windowSystem = new GLWindowSystem();
 		InnoVisionSystemNS::m_renderingBackendSystem = new GLRenderingSystem();
-		InnoVisionSystemNS::m_guiSystem = new GLGuiSystem();
 		break;
 	case RenderingBackend::DX:
 #if defined INNO_PLATFORM_WIN
-		InnoVisionSystemNS::m_windowSystem = new DXWindowSystem();
 		InnoVisionSystemNS::m_renderingBackendSystem = new DXRenderingSystem();
-		InnoVisionSystemNS::m_guiSystem = new DXGuiSystem();
 #endif
 		break;
 	case RenderingBackend::VK:
 #if defined INNO_RENDERER_VULKAN
-		InnoVisionSystemNS::m_windowSystem = new VKWindowSystem();
 		InnoVisionSystemNS::m_renderingBackendSystem = new VKRenderingSystem();
-		InnoVisionSystemNS::m_guiSystem = new VKGuiSystem();
 #endif
 		break;
 	default:
 		break;
 	}
 
-	if (InnoVisionSystemNS::m_initConfig.engineMode == EngineMode::GAME)
+	if (!InnoVisionSystemNS::setupWindow(hInstance, hwnd))
 	{
-		if (!InnoVisionSystemNS::setupWindow(hInstance, hPrevInstance, pScmdline, nCmdshow))
-		{
-			InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
-			return false;
-		};
-	}
-	else
-	{
-		// Editor handle window surface
-	}
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	};
 
 	if (!InnoVisionSystemNS::setupRendering())
 	{
 		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
-	if (!InnoVisionSystemNS::setupGui())
-	{
-		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
+	//if (!InnoVisionSystemNS::setupGui())
+	//{
+	//	InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+	//	return false;
+	//}
 
 	return true;
 }
 
-bool InnoVisionSystemNS::setupWindow(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow)
+bool InnoVisionSystemNS::setupWindow(void* hInstance, void* hwnd)
 {
-	if (!InnoVisionSystemNS::m_windowSystem->setup(hInstance, hPrevInstance, pScmdline, nCmdshow))
+	if (!InnoVisionSystemNS::m_windowSystem->setup(hInstance, hwnd))
 	{
 		return false;
 	}
@@ -210,27 +189,20 @@ bool InnoVisionSystemNS::setupRendering()
 
 bool InnoVisionSystemNS::setupGui()
 {
-	if (!InnoVisionSystemNS::m_guiSystem->setup())
-	{
-		return false;
-	}
+	//if (!ImGuiWrapper::get().setup())
+	//{
+	//	return false;
+	//}
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 {
-	if (InnoVisionSystemNS::m_initConfig.engineMode == EngineMode::GAME)
-	{
-		InnoVisionSystemNS::m_windowSystem->initialize();
-	}
-	else
-	{
-		// Editor handle window surface
-	}
+	InnoVisionSystemNS::m_windowSystem->initialize();
 
 	InnoVisionSystemNS::m_renderingFrontendSystem->initialize();
 	InnoVisionSystemNS::m_renderingBackendSystem->initialize();
-	InnoVisionSystemNS::m_guiSystem->initialize();
+	//ImGuiWrapper::get().initialize();
 
 	InnoVisionSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem has been initialized.");
@@ -261,14 +233,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 
 	if (InnoVisionSystemNS::m_windowSystem->getStatus() == ObjectStatus::ALIVE)
 	{
-		if (InnoVisionSystemNS::m_initConfig.engineMode == EngineMode::GAME)
-		{
-			InnoVisionSystemNS::m_windowSystem->update();
-		}
-		else
-		{
-			// Editor handle window surface
-		}
+		InnoVisionSystemNS::m_windowSystem->update();
 
 		if (!InnoVisionSystemNS::m_isRendering && InnoVisionSystemNS::m_allowRender)
 		{
@@ -277,15 +242,9 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 			InnoVisionSystemNS::m_isRendering = true;
 
 			InnoVisionSystemNS::m_renderingBackendSystem->update();
-			InnoVisionSystemNS::m_guiSystem->update();
-			if (InnoVisionSystemNS::m_initConfig.engineMode == EngineMode::GAME)
-			{
-				InnoVisionSystemNS::m_windowSystem->swapBuffer();
-			}
-			else
-			{
-				// Editor handle window surface
-			}
+			//ImGuiWrapper::get().update();
+
+			InnoVisionSystemNS::m_windowSystem->swapBuffer();
 
 			InnoVisionSystemNS::m_isRendering = false;
 		}
@@ -301,11 +260,11 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::terminate()
 {
-	if (!InnoVisionSystemNS::m_guiSystem->terminate())
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GuiSystem can't be terminated!");
-		return false;
-	}
+	//if (!ImGuiWrapper::get().terminate())
+	//{
+	//	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GuiSystem can't be terminated!");
+	//	return false;
+	//}
 	if (!InnoVisionSystemNS::m_renderingBackendSystem->terminate())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem can't be terminated!");
@@ -316,17 +275,11 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::terminate()
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingFrontendSystem can't be terminated!");
 		return false;
 	}
-	if (InnoVisionSystemNS::m_initConfig.engineMode == EngineMode::GAME)
+
+	if (!InnoVisionSystemNS::m_windowSystem->terminate())
 	{
-		if (!InnoVisionSystemNS::m_windowSystem->terminate())
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WindowSystem can't be terminated!");
-			return false;
-		}
-	}
-	else
-	{
-		// Editor handle window surface
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WindowSystem can't be terminated!");
+		return false;
 	}
 
 	InnoVisionSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
@@ -352,4 +305,9 @@ INNO_SYSTEM_EXPORT IRenderingFrontendSystem * InnoVisionSystem::getRenderingFron
 INNO_SYSTEM_EXPORT IRenderingBackendSystem * InnoVisionSystem::getRenderingBackend()
 {
 	return InnoVisionSystemNS::m_renderingBackendSystem;
+}
+
+INNO_SYSTEM_EXPORT InitConfig InnoVisionSystem::getInitConfig()
+{
+	return InnoVisionSystemNS::m_initConfig;
 }

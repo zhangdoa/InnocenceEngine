@@ -7,12 +7,20 @@
 #include "IRenderingFrontendSystem.h"
 #include "IRenderingBackendSystem.h"
 
+enum EngineMode { GAME, EDITOR };
+enum RenderingBackend { GL, DX, VK };
+struct InitConfig
+{
+	EngineMode engineMode = EngineMode::GAME;
+	RenderingBackend renderingBackend = RenderingBackend::GL;
+};
+
 INNO_INTERFACE IVisionSystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IVisionSystem);
 
-	INNO_SYSTEM_EXPORT virtual bool setup(void* hInstance, void* hPrevInstance, char* pScmdline, int nCmdshow) = 0;
+	INNO_SYSTEM_EXPORT virtual bool setup(void* hInstance, void* hwnd, char* pScmdline) = 0;
 	INNO_SYSTEM_EXPORT virtual bool initialize() = 0;
 	INNO_SYSTEM_EXPORT virtual bool update() = 0;
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;
@@ -22,4 +30,6 @@ public:
 	INNO_SYSTEM_EXPORT virtual IWindowSystem* getWindowSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IRenderingFrontendSystem* getRenderingFrontend() = 0;
 	INNO_SYSTEM_EXPORT virtual IRenderingBackendSystem* getRenderingBackend() = 0;
+
+	INNO_SYSTEM_EXPORT virtual InitConfig getInitConfig() = 0;
 };
