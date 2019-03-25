@@ -27,12 +27,18 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
         DarkStyle.cpp \
-    innowindowsurface.cpp
+    innowindowsurface.cpp \
+    innoconsole.cpp \
+    innodirectoryexplorer.cpp \
+    innofileexplorer.cpp
 
 HEADERS += \
         mainwindow.h \
         DarkStyle.h \
-    innowindowsurface.h
+    innowindowsurface.h \
+    innoconsole.h \
+    innodirectoryexplorer.h \
+    innofileexplorer.h
 
 FORMS += \
         mainwindow.ui

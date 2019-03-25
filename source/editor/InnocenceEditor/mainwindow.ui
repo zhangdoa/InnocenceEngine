@@ -2038,6 +2038,9 @@ QSplitter::handle:vertical
                      <verstretch>0</verstretch>
                     </sizepolicy>
                    </property>
+                   <property name="focusPolicy">
+                    <enum>Qt::WheelFocus</enum>
+                   </property>
                   </widget>
                  </item>
                 </layout>
@@ -2118,7 +2121,7 @@ QSplitter::handle:vertical
                <string notr="true"/>
               </property>
               <property name="currentIndex">
-               <number>1</number>
+               <number>0</number>
               </property>
               <property name="iconSize">
                <size>
@@ -2171,6 +2174,129 @@ QSplitter::handle:vertical
                     <property name="spacing">
                      <number>0</number>
                     </property>
+                    <item row="1" column="0">
+                     <layout class="QHBoxLayout" name="tabProjectLayout">
+                      <property name="spacing">
+                       <number>0</number>
+                      </property>
+                      <property name="topMargin">
+                       <number>0</number>
+                      </property>
+                      <item>
+                       <widget class="QSplitter" name="splitterLevel4">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                          <horstretch>1</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <property name="contextMenuPolicy">
+                         <enum>Qt::DefaultContextMenu</enum>
+                        </property>
+                        <property name="frameShape">
+                         <enum>QFrame::NoFrame</enum>
+                        </property>
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <property name="handleWidth">
+                         <number>5</number>
+                        </property>
+                        <property name="dragEnabled" stdset="0">
+                         <bool>true</bool>
+                        </property>
+                        <property name="isWrapping" stdset="0">
+                         <bool>true</bool>
+                        </property>
+                        <property name="uniformItemSizes" stdset="0">
+                         <bool>true</bool>
+                        </property>
+                        <property name="batchSize" stdset="0">
+                         <number>100</number>
+                        </property>
+                        <property name="selectionRectVisible" stdset="0">
+                         <bool>false</bool>
+                        </property>
+                        <widget class="InnoDirectoryExplorer" name="treeViewDirExplorer">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="frameShape">
+                          <enum>QFrame::StyledPanel</enum>
+                         </property>
+                         <property name="frameShadow">
+                          <enum>QFrame::Sunken</enum>
+                         </property>
+                         <property name="editTriggers">
+                          <set>QAbstractItemView::NoEditTriggers</set>
+                         </property>
+                         <property name="sortingEnabled">
+                          <bool>false</bool>
+                         </property>
+                         <property name="animated">
+                          <bool>true</bool>
+                         </property>
+                         <property name="headerHidden">
+                          <bool>true</bool>
+                         </property>
+                         <attribute name="headerDefaultSectionSize">
+                          <number>300</number>
+                         </attribute>
+                        </widget>
+                        <widget class="InnoFileExplorer" name="listViewFileExplorer">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                           <horstretch>1</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="contextMenuPolicy">
+                          <enum>Qt::DefaultContextMenu</enum>
+                         </property>
+                         <property name="editTriggers">
+                          <set>QAbstractItemView::DoubleClicked</set>
+                         </property>
+                         <property name="dragEnabled">
+                          <bool>true</bool>
+                         </property>
+                         <property name="dragDropMode">
+                          <enum>QAbstractItemView::NoDragDrop</enum>
+                         </property>
+                         <property name="defaultDropAction">
+                          <enum>Qt::MoveAction</enum>
+                         </property>
+                         <property name="selectionMode">
+                          <enum>QAbstractItemView::SingleSelection</enum>
+                         </property>
+                         <property name="movement">
+                          <enum>QListView::Static</enum>
+                         </property>
+                         <property name="isWrapping" stdset="0">
+                          <bool>true</bool>
+                         </property>
+                         <property name="resizeMode">
+                          <enum>QListView::Adjust</enum>
+                         </property>
+                         <property name="viewMode">
+                          <enum>QListView::IconMode</enum>
+                         </property>
+                         <property name="uniformItemSizes">
+                          <bool>true</bool>
+                         </property>
+                         <property name="batchSize">
+                          <number>100</number>
+                         </property>
+                         <property name="selectionRectVisible">
+                          <bool>false</bool>
+                         </property>
+                        </widget>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
                     <item row="0" column="0">
                      <widget class="QWidget" name="tabProjectToolbar" native="true">
                       <property name="sizePolicy">
@@ -2215,40 +2341,14 @@ QSplitter::handle:vertical
                          </property>
                          <property name="sizeHint" stdset="0">
                           <size>
-                           <width>40</width>
-                           <height>20</height>
+                           <width>37</width>
+                           <height>25</height>
                           </size>
                          </property>
                         </spacer>
                        </item>
                       </layout>
                      </widget>
-                    </item>
-                    <item row="1" column="0">
-                     <layout class="QHBoxLayout" name="tabProjectLayout">
-                      <property name="spacing">
-                       <number>0</number>
-                      </property>
-                      <property name="topMargin">
-                       <number>0</number>
-                      </property>
-                      <item>
-                       <widget class="QSplitter" name="splitterLevel4">
-                        <property name="sizePolicy">
-                         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-                          <horstretch>0</horstretch>
-                          <verstretch>0</verstretch>
-                         </sizepolicy>
-                        </property>
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <property name="handleWidth">
-                         <number>5</number>
-                        </property>
-                       </widget>
-                      </item>
-                     </layout>
                     </item>
                    </layout>
                   </item>
@@ -2929,10 +3029,104 @@ QSplitter::handle:vertical
    <extends>QWidget</extends>
    <header>innowindowsurface.h</header>
   </customwidget>
+  <customwidget>
+   <class>InnoDirectoryExplorer</class>
+   <extends>QWidget</extends>
+   <header>innodirectoryexplorer.h</header>
+   <slots>
+    <slot>UpdateFileExplorer(QModelIndex)</slot>
+   </slots>
+  </customwidget>
+  <customwidget>
+   <class>InnoFileExplorer</class>
+   <extends>QWidget</extends>
+   <header>innofileexplorer.h</header>
+      <slots>
+    <slot>SetRootPath(QString)</slot>
+   </slots>
+  </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
- <slots>
-  <slot>DisplayAboutDialog()</slot>
- </slots>
+ <connections>
+  <connection>
+   <sender>treeViewDirExplorer</sender>
+   <signal>clicked(QModelIndex)</signal>
+   <receiver>treeViewDirExplorer</receiver>
+   <slot>UpdateFileExplorer(QModelIndex)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>102</x>
+     <y>549</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>102</x>
+     <y>549</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionOpen_Scene</sender>
+   <signal>triggered()</signal>
+   <receiver>widgetHierarchy</receiver>
+   <slot>ShowOpenSceneDialog()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>258</x>
+     <y>491</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionNew_Scene</sender>
+   <signal>triggered()</signal>
+   <receiver>widgetHierarchy</receiver>
+   <slot>NewScene()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>258</x>
+     <y>491</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionSave_Scene</sender>
+   <signal>triggered()</signal>
+   <receiver>widgetHierarchy</receiver>
+   <slot>SaveScene()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>258</x>
+     <y>491</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionSave_Scene_as</sender>
+   <signal>triggered()</signal>
+   <receiver>widgetHierarchy</receiver>
+   <slot>ShowSaveSceneAsDialog()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>258</x>
+     <y>491</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

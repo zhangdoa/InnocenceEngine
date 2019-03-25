@@ -32,7 +32,7 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 	std::function<void(RenderPassType)> f_reloadShader;
 	std::function<void()> f_captureEnvironment;
 
-	RenderingConfig m_renderingConfig;
+	RenderingConfig m_renderingConfig = RenderingConfig();
 
 	VisibleComponent* m_selectedVisibleComponent;
 
@@ -70,6 +70,8 @@ void InnoRenderingFrontendSystemNS::initializeHaltonSampler()
 
 bool InnoRenderingFrontendSystemNS::setup()
 {
+	m_renderingConfig.drawSky = true;
+	m_renderingConfig.useTAA = true;
 	return true;
 }
 

@@ -49,9 +49,9 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 	if (hwnd)
 	{
 		WinWindowSystemComponent::get().m_hwnd = *reinterpret_cast<HWND*>(hwnd);
-		LONG styles = GetWindowLong(WinWindowSystemComponent::get().m_hwnd, GWL_EXSTYLE);
-		SetWindowLong(WinWindowSystemComponent::get().m_hwnd, GWL_EXSTYLE, styles | WS_EX_TRANSPARENT);
+		SetWindowLongPtr(WinWindowSystemComponent::get().m_hwnd, GWLP_WNDPROC, (LONG_PTR)WindowProc);
 	}
+
 	WinWindowSystemComponent::get().m_applicationName = "InnocenceEngineWindow";
 
 	ApplicationHandle = &windowCallbackWrapper::get();
@@ -94,21 +94,21 @@ bool WinWindowSystem::initialize()
 
 bool WinWindowSystem::update()
 {
-	//update window
-	MSG msg;
-
-	// Initialize the message structure.
-	ZeroMemory(&msg, sizeof(MSG));
-
-	// Handle the windows messages.
-	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-	{
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
-
 	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::GAME)
 	{
+		//update window
+		MSG msg;
+
+		// Initialize the message structure.
+		ZeroMemory(&msg, sizeof(MSG));
+
+		// Handle the windows messages.
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+
 		// If windows signals to end the application then exit out.
 		if (msg.message == WM_QUIT)
 		{
@@ -191,7 +191,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			auto l_width = lParam & 0xffff;
 			auto l_height = (lParam & 0xffff0000) >> 16;
 
-			TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(l_width, l_height);
+			TVec2<unsigned int> l_newResolution = TVec2<unsigned int>((unsigned int)l_width, (unsigned int)l_height);
 			g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->setScreenResolution(l_newResolution);
 			g_pCoreSystem->getVisionSystem()->getRenderingBackend()->resize();
 		}

@@ -4,9 +4,11 @@
 InnoWindowSurface::InnoWindowSurface(QWidget *parent)
     : QWidget{parent}
 {
+    setAttribute(Qt::WA_OpaquePaintEvent);
     setAttribute(Qt::WA_NativeWindow);
     setAttribute(Qt::WA_PaintOnScreen);
     setAttribute(Qt::WA_NoSystemBackground);
+    setAttribute( Qt::WA_TranslucentBackground);
 
     m_CoreSystem = new InnoCoreSystem();
     m_GameInstance = new GameInstance();
@@ -21,12 +23,13 @@ InnoWindowSurface::~InnoWindowSurface()
     delete m_CoreSystem;
 }
 
-void InnoWindowSurface::initializeEngine()
+void InnoWindowSurface::initialize()
 {
     m_timerUpdate = new QTimer(this);
     connect(m_timerUpdate, SIGNAL(timeout()), this, SLOT(Update()));
 
     WId l_hwnd = QWidget::winId();
+
     void* hInstance = (void*)::GetModuleHandle(NULL);
     const char* l_args = "-renderer 0 -mode 1";
 
@@ -67,6 +70,22 @@ void InnoWindowSurface::resizeEvent(QResizeEvent *resizeEvent)
     this->setGeometry(QRect(0, 0, width, height));
 
     Resize(width, height);
+}
+
+bool InnoWindowSurface::nativeEvent(const QByteArray &eventType, void *message, long *result)
+{
+    MSG *msg = static_cast<MSG*>(message);
+    if(m_CoreSystem)
+    {
+        if(m_CoreSystem->getStatus() == ObjectStatus::ALIVE)
+        {
+            if(msg->message == WM_KEYDOWN)
+            {
+                m_CoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "key down");
+            }
+        }
+    }
+    return false;
 }
 
 void InnoWindowSurface::Update()

@@ -179,6 +179,10 @@ bool InnoVisionSystemNS::setupWindow(void* hInstance, void* hwnd)
 
 bool InnoVisionSystemNS::setupRendering()
 {
+	if (!InnoVisionSystemNS::m_renderingFrontendSystem->setup())
+	{
+		return false;
+	}
 	if (!InnoVisionSystemNS::m_renderingBackendSystem->setup(m_renderingFrontendSystem))
 	{
 		return false;

@@ -17,16 +17,18 @@ public:
     explicit InnoWindowSurface(QWidget* parent);
     virtual ~InnoWindowSurface() override;
 
-    void initializeEngine();
+    void initialize();
 
 protected:
-    virtual QPaintEngine* paintEngine() const { return NULL; }
+    virtual QPaintEngine* paintEngine() const override { return NULL; }
 
-    virtual void paintEvent(QPaintEvent* paintEvent) override;
+    void paintEvent(QPaintEvent* paintEvent) override;
 
-    virtual void showEvent(QShowEvent* showEvent) override;
+    void showEvent(QShowEvent* showEvent) override;
 
-    virtual void resizeEvent(QResizeEvent* resizeEvent) override;
+    void resizeEvent(QResizeEvent* resizeEvent) override;
+
+    bool nativeEvent(const QByteArray &eventType, void *message, long *result) override;
 
 private:
     QTimer* m_timerUpdate;
