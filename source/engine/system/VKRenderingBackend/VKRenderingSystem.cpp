@@ -1,12 +1,27 @@
 #include "VKRenderingSystem.h"
-#include "vulkan/vulkan.h"
+
 #include "VKRenderingSystemUtilities.h"
-#include "../../component/VKWindowSystemComponent.h"
 #include "../../component/VKRenderingSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
+
+#define INSTANCE_FUNC_PTR(instance, entrypoint){											\
+    fp##entrypoint = (PFN_vk##entrypoint) vkGetInstanceProcAddr(instance, "vk"#entrypoint); \
+    if (fp##entrypoint == NULL) {															\
+        std::cout << "Unable to locate the vkGetDeviceProcAddr: vk"#entrypoint;				\
+        exit(-1);																			\
+    }																						\
+}
+
+#define DEVICE_FUNC_PTR(dev, entrypoint){													\
+    fp##entrypoint = (PFN_vk##entrypoint) vkGetDeviceProcAddr(dev, "vk"#entrypoint);		\
+    if (fp##entrypoint == NULL) {															\
+        std::cout << "Unable to locate the vkGetDeviceProcAddr: vk"#entrypoint;				\
+        exit(-1);																			\
+    }																						\
+}
 
 INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
@@ -61,16 +76,17 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	std::vector<const char*> getRequiredExtensions()
 	{
-		uint32_t glfwExtensionCount = 0;
-		const char** glfwExtensions;
-		//glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-		//std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-		std::vector<const char*> extensions;
+#if defined INNO_PLATFORM_WIN
+		std::vector<const char*> extensions = { "VK_KHR_surface", "VK_KHR_win32_surface" };
+#elif  defined INNO_PLATFORM_MAC
+		std::vector<const char*> extensions = { "VK_KHR_surface", "VK_MVK_macos_surface" }; 
+#elif  defined INNO_PLATFORM_LINUX
+		std::vector<const char*> extensions = { "VK_KHR_surface", "VK_KHR_xcb_surface" }; 
+#endif
 
 		if (VKRenderingSystemComponent::get().m_enableValidationLayers)
 		{
-			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+			extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
 
 		return extensions;
@@ -345,13 +361,6 @@ bool VKRenderingSystemNS::createDebugCallback()
 
 bool VKRenderingSystemNS::createWindowSurface()
 {
-	//if (glfwCreateWindowSurface(VKRenderingSystemComponent::get().m_instance, VKWindowSystemComponent::get().m_window, nullptr, &VKRenderingSystemComponent::get().m_windowSurface) != VK_SUCCESS)
-	//{
-	//	m_objectStatus = ObjectStatus::STANDBY;
-	//	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create window surface!");
-	//	return false;
-	//}
-
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: window surface has been created.");
 	return true;
 }
@@ -710,8 +719,17 @@ bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	bool result = true;
 	result = result && createVkInstance();
 	result = result && createDebugCallback();
-	result = result && createWindowSurface();
+
+
+	m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem setup finished.");
+	return result;
+}
+bool VKRenderingSystemNS::initialize()
+{
+	bool result = true;	
 	result = result && createPysicalDevice();
+	result = result && createWindowSurface();
 	result = result && createLogicalDevice();
 	result = result && createSwapChain();
 	result = result && createSwapChainImageViews();
@@ -721,14 +739,8 @@ bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	result = result && createCommandBuffers();
 	result = result && createSyncPrimitives();
 
-	m_objectStatus = ObjectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem setup finished.");
-	return result;
-}
-bool VKRenderingSystemNS::initialize()
-{
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been initialized.");
-	return true;
+	return result;
 }
 
 bool VKRenderingSystemNS::update()

@@ -48,5 +48,13 @@ message("No Vulkan pre-compiled library found! Won't compile Vulkan rendering ba
 option (INNO_RENDERER_VULKAN "Vulkan renderer" OFF)
 endif (VULKAN)
 
+find_package(OpenGL REQUIRED)
+if (OPENGL_FOUND)
+option (INNO_RENDERER_OPENGL "OpenGL renderer" ON)
+else (OPENGL_FOUND)
+message("No OpenGL library found! Won't compile OpenGL rendering backend.")
+option (INNO_RENDERER_OPENGL "OpenGL renderer" OFF)
+endif()
+
 add_subdirectory("engine")
 add_subdirectory("game")

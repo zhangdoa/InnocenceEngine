@@ -5,4 +5,5 @@
 #cmakedefine INNO_PLATFORM_LINUX
 #cmakedefine INNO_PLATFORM_MAC
 
+#cmakedefine INNO_RENDERER_OPENGL
 #cmakedefine INNO_RENDERER_VULKAN

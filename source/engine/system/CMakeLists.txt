@@ -6,12 +6,18 @@ add_subdirectory("DXRenderingBackend")
 add_subdirectory("WinWindow")
 endif (INNO_PLATFORM_WIN)
 
-add_subdirectory("GLRenderingBackend")
+if (VULKAN)
 add_subdirectory("VKRenderingBackend")
+endif (VULKAN)
+
+if (OPENGL_FOUND)
+add_subdirectory("GLRenderingBackend")
+endif (OPENGL_FOUND)
 
 aux_source_directory(. DIR_SRCS)
 
 add_library(InnoSystem SHARED ${DIR_SRCS})
+
 include (GenerateExportHeader)
 GENERATE_EXPORT_HEADER (InnoSystem
     BASE_NAME INNO_SYSTEM
@@ -25,11 +31,13 @@ target_link_libraries(InnoSystem InnoDXRenderingBackend)
 target_link_libraries(InnoSystem WinWindow)
 endif (INNO_PLATFORM_WIN)
 
-target_link_libraries(InnoSystem InnoGLRenderingBackend)
-
 if (VULKAN)
 target_link_libraries(InnoSystem InnoVKRenderingBackend)
 endif (VULKAN)
+
+if (OPENGL_FOUND)
+target_link_libraries(InnoSystem InnoGLRenderingBackend)
+endif (OPENGL_FOUND)
 
 target_link_libraries(InnoSystem GLAD)
 target_link_libraries(InnoSystem ImGui)
@@ -37,19 +45,6 @@ target_link_libraries(InnoSystem ImGui)
 find_library(ASSIMP assimp)
 target_link_libraries(InnoSystem "${ASSIMP}")
 target_link_libraries(InnoSystem STB_Image)
-
-if (INNO_PLATFORM_WIN)
-find_library(OpenGL opengl32)
-elseif (INNO_PLATFORM_MAC)
-find_library(OPENGL OpenGL)
-endif (INNO_PLATFORM_WIN)
-
-if (OpenGL)
-else ()
-message("No OpenGL library found!")
-endif (OpenGL)
-
-target_link_libraries(InnoSystem "${OpenGL}")
 
 if (INNO_PLATFORM_LINUX)
 target_link_libraries(InnoSystem -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lGL -lm -lpthread -lstdc++fs)

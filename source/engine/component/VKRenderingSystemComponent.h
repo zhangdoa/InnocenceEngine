@@ -1,6 +1,9 @@
 #pragma once
 #include "../common/InnoType.h"
+
+#define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
+
 #include "../component/VKMeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
 #include "../component/VKTextureDataComponent.h"

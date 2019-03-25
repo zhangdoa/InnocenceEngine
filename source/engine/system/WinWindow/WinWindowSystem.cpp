@@ -3,6 +3,7 @@
 
 #include "WinDXWindow/WinDXWindowSystem.h"
 #include "WinGLWindow/WinGLWindowSystem.h"
+#include "WinVKWindow/WinVKWindowSystem.h"
 
 #include "../ICoreSystem.h"
 
@@ -71,7 +72,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 		break;
 	case RenderingBackend::VK:
 #if defined INNO_RENDERER_VULKAN
-		// @TODO:
+		WinWindowSystemNS::m_backendWindowSystem = new WinVKWindowSystem();		
 #endif
 		break;
 	default:
@@ -88,6 +89,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 
 bool WinWindowSystem::initialize()
 {
+	WinWindowSystemNS::m_backendWindowSystem->initialize();
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinWindowSystem has been initialized.");
 	return true;
 }
