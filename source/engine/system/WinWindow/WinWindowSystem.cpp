@@ -49,6 +49,8 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 	if (hwnd)
 	{
 		WinWindowSystemComponent::get().m_hwnd = *reinterpret_cast<HWND*>(hwnd);
+		LONG styles = GetWindowLong(WinWindowSystemComponent::get().m_hwnd, GWL_EXSTYLE);
+		SetWindowLong(WinWindowSystemComponent::get().m_hwnd, GWL_EXSTYLE, styles | WS_EX_TRANSPARENT);
 	}
 	WinWindowSystemComponent::get().m_applicationName = "InnocenceEngineWindow";
 
@@ -75,9 +77,9 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 	default:
 		break;
 	}
-	
+
 	WinWindowSystemNS::m_backendWindowSystem->setup(WinWindowSystemComponent::get().m_hInstance, WinWindowSystemComponent::get().m_hwnd, WindowProc);
-	
+
 	WinWindowSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinWindowSystem setup finished.");
 
@@ -92,21 +94,21 @@ bool WinWindowSystem::initialize()
 
 bool WinWindowSystem::update()
 {
+	//update window
+	MSG msg;
+
+	// Initialize the message structure.
+	ZeroMemory(&msg, sizeof(MSG));
+
+	// Handle the windows messages.
+	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
 	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::GAME)
 	{
-		//update window
-		MSG msg;
-
-		// Initialize the message structure.
-		ZeroMemory(&msg, sizeof(MSG));
-
-		// Handle the windows messages.
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-
 		// If windows signals to end the application then exit out.
 		if (msg.message == WM_QUIT)
 		{
@@ -170,22 +172,34 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	switch (uMsg)
 	{
-		case WM_DESTROY:
+	case WM_DESTROY:
+	{
+		PostQuitMessage(0);
+		return 0;
+	}
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hwnd, &ps);
+		FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+		EndPaint(hwnd, &ps);
+	}
+	case WM_SIZE:
+	{
+		if (lParam && g_pCoreSystem->getStatus() == ObjectStatus::ALIVE)
 		{
-			PostQuitMessage(0);
-			return 0;
+			auto l_width = lParam & 0xffff;
+			auto l_height = (lParam & 0xffff0000) >> 16;
+
+			TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(l_width, l_height);
+			g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->setScreenResolution(l_newResolution);
+			g_pCoreSystem->getVisionSystem()->getRenderingBackend()->resize();
 		}
-		case WM_PAINT:
-		{
-			PAINTSTRUCT ps;
-			HDC hdc = BeginPaint(hwnd, &ps);
-			FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-			EndPaint(hwnd, &ps);
-		}
-		default:
-		{
-			return ApplicationHandle->MessageHandler(hwnd, uMsg, wParam, lParam);
-		}
+	}
+	default:
+	{
+		return ApplicationHandle->MessageHandler(hwnd, uMsg, wParam, lParam);
+	}
 	}
 }
 

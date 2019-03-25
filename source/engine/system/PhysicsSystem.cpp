@@ -117,6 +117,8 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::setup()
 
 void InnoPhysicsSystemNS::generateProjectionMatrix(CameraComponent * cameraComponent)
 {
+	auto l_resolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	cameraComponent->m_WHRatio = (float)l_resolution.x / (float)l_resolution.y;
 	cameraComponent->m_projectionMatrix = InnoMath::generatePerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
 }
 
@@ -242,7 +244,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 		l_frustumVertices[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVertices[i].m_pos);
 #endif
-	}
+}
 
 	//5.calculate AABBs in light space
 	auto l_AABBsLS = frustumsVerticesToAABBs(l_frustumVertices, l_CSMSplitFactors);

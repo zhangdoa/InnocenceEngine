@@ -1,4 +1,5 @@
 #pragma once
+#include "../common/InnoType.h"
 #include "../common/InnoClassTemplate.h"
 #include "../exports/InnoSystem_Export.h"
 #include "ITimeSystem.h"
@@ -21,6 +22,9 @@ public:
 	INNO_SYSTEM_EXPORT virtual bool initialize() = 0;
 	INNO_SYSTEM_EXPORT virtual bool update() = 0;
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;
+
+	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
+
 	INNO_SYSTEM_EXPORT virtual ITimeSystem* getTimeSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual ILogSystem* getLogSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IMemorySystem* getMemorySystem() = 0;
@@ -29,6 +33,6 @@ public:
 	INNO_SYSTEM_EXPORT virtual IGameSystem* getGameSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IAssetSystem* getAssetSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IPhysicsSystem* getPhysicsSystem() = 0;
-	INNO_SYSTEM_EXPORT virtual IInputSystem* getInputSystem() = 0;	
+	INNO_SYSTEM_EXPORT virtual IInputSystem* getInputSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IVisionSystem* getVisionSystem() = 0;
 };

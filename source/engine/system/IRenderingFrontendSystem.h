@@ -26,6 +26,7 @@ struct CameraDataPack
 	mat4 r_prev;
 	mat4 t_prev;
 	vec4 globalPos;
+	float WHRatio;
 };
 
 struct SunDataPack

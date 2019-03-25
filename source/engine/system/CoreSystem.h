@@ -10,6 +10,9 @@ public:
 	INNO_SYSTEM_EXPORT bool initialize() override;
 	INNO_SYSTEM_EXPORT bool update() override;
 	INNO_SYSTEM_EXPORT bool terminate() override;
+
+	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
+
 	INNO_SYSTEM_EXPORT ITimeSystem* getTimeSystem() override;
 	INNO_SYSTEM_EXPORT ILogSystem* getLogSystem() override;
 	INNO_SYSTEM_EXPORT IMemorySystem* getMemorySystem() override;

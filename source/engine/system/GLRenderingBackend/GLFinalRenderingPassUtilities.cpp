@@ -727,13 +727,13 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBillboardPass()
 		{
 			updateUniform(
 				GLFinalRenderPassComponent::get().m_billboardPass_uni_size,
-				(1.0f / l_distanceToCamera) * (9.0f / 16.0f), (1.0f / l_distanceToCamera));
+				(1.0f / (l_distanceToCamera * l_cameraDataPack.WHRatio)), (1.0f / l_distanceToCamera));
 		}
 		else
 		{
 			updateUniform(
 				GLFinalRenderPassComponent::get().m_billboardPass_uni_size,
-				(9.0f / 16.0f), 1.0f);
+				(1.0f / l_cameraDataPack.WHRatio), 1.0f);
 		}
 
 		GLTextureDataComponent* l_iconTexture = 0;

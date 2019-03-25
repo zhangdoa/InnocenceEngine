@@ -131,6 +131,8 @@ bool InnoRenderingFrontendSystemNS::update()
 	m_cameraDataPack.t_prev = t_prev;
 	m_cameraDataPack.globalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
+	m_cameraDataPack.WHRatio = l_mainCamera->m_WHRatio;
+
 	// sun/directional light render data
 	auto l_directionalLightComponents = g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>();
 	auto l_directionalLight = l_directionalLightComponents[0];

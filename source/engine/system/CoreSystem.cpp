@@ -30,6 +30,8 @@ INNO_PRIVATE_SCOPE InnoCoreSystemNS
 	std::unique_ptr<IPhysicsSystem> m_PhysicsSystem;
 	std::unique_ptr<IInputSystem> m_InputSystem;
 	std::unique_ptr<IVisionSystem> m_VisionSystem;
+
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 }
 
 bool InnoCoreSystemNS::createSubSystemInstance()
@@ -154,6 +156,7 @@ bool InnoCoreSystemNS::setup(void* hInstance, void* hwnd, char* pScmdline)
 	}
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "InputSystem setup finished.");
 
+	m_objectStatus = ObjectStatus::STANDBY;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine setup finished.");
 	return true;
 }
@@ -210,6 +213,7 @@ bool InnoCoreSystemNS::initialize()
 		return false;
 	}
 
+	m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been initialized.");
 	return true;
 }
@@ -271,6 +275,7 @@ bool InnoCoreSystemNS::update()
 	}
 	else
 	{
+		m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "Engine is stand-by.");
 		return false;
 	}
@@ -330,6 +335,7 @@ bool InnoCoreSystemNS::terminate()
 		return false;
 	}
 
+	m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been terminated.");
 
 	return true;
@@ -355,6 +361,11 @@ INNO_SYSTEM_EXPORT bool InnoCoreSystem::update()
 INNO_SYSTEM_EXPORT bool InnoCoreSystem::terminate()
 {
 	return InnoCoreSystemNS::terminate();
+}
+
+INNO_SYSTEM_EXPORT ObjectStatus InnoCoreSystem::getStatus()
+{
+	return InnoCoreSystemNS::m_objectStatus;
 }
 
 INNO_SYSTEM_EXPORT ITimeSystem * InnoCoreSystem::getTimeSystem()

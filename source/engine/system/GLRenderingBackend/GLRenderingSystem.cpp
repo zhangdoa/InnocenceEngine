@@ -144,7 +144,6 @@ bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	if (m_renderingFrontendSystem->getRenderingConfig().MSAAdepth)
 	{
 		// antialiasing
-		//glfwWindowHint(GLFW_SAMPLES, m_renderingFrontendSystem->getRenderingConfig().MSAAdepth);
 		// MSAA
 		glEnable(GL_MULTISAMPLE);
 	}

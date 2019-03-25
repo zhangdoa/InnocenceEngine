@@ -34,6 +34,8 @@ private:
     InnoCoreSystem* m_CoreSystem;
     GameInstance* m_GameInstance;
 
+    void Resize(float width, float height);
+
 public slots:
     void Update();
 };
