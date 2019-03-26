@@ -281,8 +281,6 @@ EntityID InnoGameSystem::getEntityID(const std::string & entityName)
 
 bool InnoGameSystem::initialize()
 {
-	g_pCoreSystem->getFileSystem()->loadDefaultScene();
-
 	InnoGameSystemNS::sortTransformComponentsVector();
 	InnoGameSystemNS::updateTransformComponent();
 
@@ -441,6 +439,7 @@ void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponen
 	{
 		inputComponent->m_buttonStatusCallbackImpl.emplace(boundButton, std::vector<std::function<void()>*>{function});
 	}
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(boundButton, function);
 }
 
 TransformComponent* InnoGameSystem::getRootTransformComponent()
@@ -469,6 +468,7 @@ void InnoGameSystem::registerMouseMovementCallback(InputComponent * inputCompone
 	{
 		inputComponent->m_mouseMovementCallbackImpl.emplace(mouseCode, std::vector<std::function<void(float)>*>{function});
 	}
+	g_pCoreSystem->getInputSystem()->addMouseMovementCallback(mouseCode, function);
 }
 
 ObjectStatus InnoGameSystem::getStatus()

@@ -57,6 +57,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	void to_json(json& j, const DirectionalLightComponent& p);
 	void to_json(json& j, const PointLightComponent& p);
 	void to_json(json& j, const SphereLightComponent& p);
+	void to_json(json& j, const CameraComponent& p);
 	void to_json(json& j, const EnvironmentCaptureComponent& p);
 
 	void from_json(const json& j, TransformComponent& p);
@@ -66,6 +67,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	void from_json(const json& j, DirectionalLightComponent& p);
 	void from_json(const json& j, PointLightComponent& p);
 	void from_json(const json& j, SphereLightComponent& p);
+	void from_json(const json& j, CameraComponent& p);
 	void from_json(const json& j, EnvironmentCaptureComponent& p);
 
 	template<typename T>
@@ -405,6 +407,14 @@ void InnoFileSystemNS::to_json(json& j, const SphereLightComponent& p)
 	};
 }
 
+void InnoFileSystemNS::to_json(json& j, const CameraComponent& p)
+{
+	j = json
+	{
+		{"ComponentType", InnoUtility::getComponentType<CameraComponent>()},
+	};
+}
+
 void InnoFileSystemNS::to_json(json& j, const EnvironmentCaptureComponent& p)
 {
 	j = json
@@ -483,6 +493,10 @@ void InnoFileSystemNS::from_json(const json & j, SphereLightComponent & p)
 	p.m_luminousFlux = j["LuminousFlux"];
 	p.m_sphereRadius = j["SphereRadius"];
 	from_json(j["Color"], p.m_color);
+}
+
+void from_json(const json& j, CameraComponent& p)
+{
 }
 
 void InnoFileSystemNS::from_json(const json & j, EnvironmentCaptureComponent & p)

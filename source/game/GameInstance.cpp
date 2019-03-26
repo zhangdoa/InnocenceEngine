@@ -64,53 +64,52 @@ bool PlayerComponentCollection::setup()
 		m_targetCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
 		m_targetCameraRotX = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		m_targetCameraRotY = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+		f_moveForward = [&]() { move(InnoMath::getDirection(direction::FORWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+		f_moveBackward = [&]() { move(InnoMath::getDirection(direction::BACKWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+		f_moveLeft = [&]() { move(InnoMath::getDirection(direction::LEFT, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+		f_moveRight = [&]() { move(InnoMath::getDirection(direction::RIGHT, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+
+		f_speedUp = [&]() { m_moveSpeed = m_initialMoveSpeed * 10.0f; };
+		f_speedDown = [&]() { m_moveSpeed = m_initialMoveSpeed; };
+
+		f_allowMove = [&]() { m_canMove = true; };
+		f_forbidMove = [&]() { m_canMove = false; };
+
+		f_rotateAroundPositiveYAxis = std::bind(&rotateAroundPositiveYAxis, std::placeholders::_1);
+		f_rotateAroundRightAxis = std::bind(&rotateAroundRightAxis, std::placeholders::_1);
+
+		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
+		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
+		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
+		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
+
+		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
+		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
+
+		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
+		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
+		g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 0, &f_rotateAroundPositiveYAxis);
+		g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 1, &f_rotateAroundRightAxis);
+
+		m_cameraComponent->m_FOVX = 60.0f;
+		m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
+		m_cameraComponent->m_zNear = 0.1f;
+		m_cameraComponent->m_zFar = 2000.0f;
+		m_cameraComponent->m_drawFrustum = false;
+		m_cameraComponent->m_drawAABB = false;
+
+		m_initialMoveSpeed = 0.5f;
+		m_moveSpeed = m_initialMoveSpeed;
+		m_rotateSpeed = 10.0f;
 	};
 	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
-
-	f_moveForward = [&]() { move(InnoMath::getDirection(direction::FORWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-	f_moveBackward = [&]() { move(InnoMath::getDirection(direction::BACKWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-	f_moveLeft = [&]() { move(InnoMath::getDirection(direction::LEFT, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-	f_moveRight = [&]() { move(InnoMath::getDirection(direction::RIGHT, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-
-	f_speedUp = [&]() { m_moveSpeed = m_initialMoveSpeed * 10.0f; };
-	f_speedDown = [&]() { m_moveSpeed = m_initialMoveSpeed; };
-
-	f_allowMove = [&]() { m_canMove = true; };
-	f_forbidMove = [&]() { m_canMove = false; };
-
-	f_rotateAroundPositiveYAxis = std::bind(&rotateAroundPositiveYAxis, std::placeholders::_1);
-	f_rotateAroundRightAxis = std::bind(&rotateAroundRightAxis, std::placeholders::_1);
 
 	return true;
 }
 
 bool PlayerComponentCollection::initialize()
 {
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
-
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
-
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
-	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 0, &f_rotateAroundPositiveYAxis);
-	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 1, &f_rotateAroundRightAxis);
-
-	m_cameraComponent->m_FOVX = 60.0f;
-	m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
-	m_cameraComponent->m_zNear = 0.1f;
-	m_cameraComponent->m_zFar = 2000.0f;
-	m_cameraComponent->m_drawFrustum = false;
-	m_cameraComponent->m_drawAABB = false;
-
-	m_initialMoveSpeed = 0.5f;
-	m_moveSpeed = m_initialMoveSpeed;
-	m_rotateSpeed = 10.0f;
-	m_canMove = false;
-
 	return true;
 }
 
@@ -224,6 +223,8 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 INNO_GAME_EXPORT bool GameInstance::initialize()
 {
 	bool result = true;
+	g_pCoreSystem->getFileSystem()->loadDefaultScene();
+
 	result = result && PlayerComponentCollection::initialize();
 	result = result && GameInstanceNS::initialize();
 

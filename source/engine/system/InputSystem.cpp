@@ -52,14 +52,6 @@ bool InnoInputSystemNS::initialize()
 		m_buttonStatus.emplace(i, ButtonStatus::RELEASED);
 	}
 
-	auto l_inputComponents = g_pCoreSystem->getGameSystem()->get<InputComponent>();
-	for (size_t i = 0; i < l_inputComponents.size(); i++)
-	{
-		// @TODO: multi input components need to register to multi map
-		addButtonStatusCallback(l_inputComponents[i]->m_buttonStatusCallbackImpl);
-		addMouseMovementCallback(l_inputComponents[i]->m_mouseMovementCallbackImpl);
-	}
-
 	m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "InputSystem has been initialized.");
 
