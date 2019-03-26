@@ -5,7 +5,10 @@ layout(location = 0) out vec4 uni_TAAPassRT0;
 in vec2 TexCoords;
 
 uniform sampler2D uni_preTAAPassRT0;
-uniform sampler2D uni_lastFrameTAAPassRT0;
+uniform sampler2D uni_history0;
+uniform sampler2D uni_history1;
+uniform sampler2D uni_history2;
+uniform sampler2D uni_history3;
 uniform sampler2D uni_motionVectorTexture;
 
 void main()
@@ -18,7 +21,16 @@ void main()
 	vec3 currentColor = preTAAPassRT0Result.rgb;
 
 	vec2 historyTexCoords = TexCoords - MotionVector;
-	vec4 historyColor = texture(uni_lastFrameTAAPassRT0, historyTexCoords);
+	vec4 historyColor;
+
+	vec4 historyColor0 = texture(uni_history0, TexCoords);
+	vec4 historyColor1 = texture(uni_history1, TexCoords);
+	vec4 historyColor2 = texture(uni_history2, TexCoords);
+
+	vec4 historyColor3 = texture(uni_history3, historyTexCoords);
+
+	historyColor = historyColor0 + historyColor1 + historyColor2 + historyColor3;
+	historyColor /= 4.0f;
 
 	vec3 maxNeighbor = vec3(0.0);
 	vec3 minNeighbor = vec3(1.0);

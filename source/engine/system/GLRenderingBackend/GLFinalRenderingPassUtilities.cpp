@@ -103,6 +103,11 @@ void GLFinalRenderingPassUtilities::initializeTAAPass()
 	// pre mix pass
 	GLFinalRenderPassComponent::get().m_preTAAPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
+	// history buffer pass
+	GLFinalRenderPassComponent::get().m_TAAHistory0PassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_TAAHistory1PassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	GLFinalRenderPassComponent::get().m_TAAHistory2PassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	
 	// Ping pass
 	GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
@@ -497,47 +502,48 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updatePreTAAPass()
 
 GLTextureDataComponent* GLFinalRenderingPassUtilities::updateTAAPass(GLTextureDataComponent* inputGLTDC)
 {
-	GLTextureDataComponent* l_currentFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
-	GLTextureDataComponent* l_lastFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
-
-	activateShaderProgram(GLFinalRenderPassComponent::get().m_TAAPassGLSPC);
-
-	GLRenderPassComponent* l_GLRPC;
+	GLTextureDataComponent* l_currentFrameGLTDC;
+	GLTextureDataComponent* l_lastFrameGLTDC;
+	GLRenderPassComponent* l_currentFrameGLRPC;
 
 	if (m_isTAAPingPass)
 	{
-		l_currentFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
-		l_lastFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
+		l_currentFrameGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
+		l_lastFrameGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
 
-		l_GLRPC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC;
+		l_currentFrameGLRPC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC;
 
 		m_isTAAPingPass = false;
 	}
 	else
 	{
-		l_currentFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
-		l_lastFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
+		l_currentFrameGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
+		l_lastFrameGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
 
-		l_GLRPC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC;
+		l_currentFrameGLRPC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC;
 
 		m_isTAAPingPass = true;
 	}
 
-	activateRenderPass(l_GLRPC);
+	copyColorBuffer(GLFinalRenderPassComponent::get().m_TAAHistory1PassGLRPC, 0, GLFinalRenderPassComponent::get().m_TAAHistory0PassGLRPC, 0);
+	copyColorBuffer(GLFinalRenderPassComponent::get().m_TAAHistory2PassGLRPC, 0, GLFinalRenderPassComponent::get().m_TAAHistory1PassGLRPC, 0);
+	copyColorBuffer(l_currentFrameGLRPC, 0, GLFinalRenderPassComponent::get().m_TAAHistory2PassGLRPC, 0);
 
-	activateTexture(inputGLTDC,
-		0);
-	activateTexture(
-		l_lastFrameTAAGLTDC,
-		1);
-	activateTexture(
-		GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[3],
-		2);
+	activateShaderProgram(GLFinalRenderPassComponent::get().m_TAAPassGLSPC);
+
+	activateRenderPass(l_currentFrameGLRPC);
+
+	activateTexture(inputGLTDC,	0);
+	activateTexture(GLFinalRenderPassComponent::get().m_TAAHistory0PassGLRPC->m_GLTDCs[0], 1);
+	activateTexture(GLFinalRenderPassComponent::get().m_TAAHistory1PassGLRPC->m_GLTDCs[0], 2);
+	activateTexture(GLFinalRenderPassComponent::get().m_TAAHistory2PassGLRPC->m_GLTDCs[0], 3);
+	activateTexture(l_lastFrameGLTDC, 4);
+	activateTexture(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[3], 5);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
-	return l_currentFrameTAAGLTDC;
+	return l_currentFrameGLTDC;
 }
 
 GLTextureDataComponent* GLFinalRenderingPassUtilities::updateTAASharpenPass(GLTextureDataComponent * inputGLTDC)

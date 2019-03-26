@@ -40,6 +40,10 @@ public:
 		"uni_terrainPassRT0",
 	};
 
+	GLRenderPassComponent* m_TAAHistory0PassGLRPC;
+	GLRenderPassComponent* m_TAAHistory1PassGLRPC;
+	GLRenderPassComponent* m_TAAHistory2PassGLRPC;
+
 	GLRenderPassComponent* m_TAAPingPassGLRPC;
 	GLRenderPassComponent* m_TAAPongPassGLRPC;
 	GLShaderProgramComponent* m_TAAPassGLSPC;
@@ -48,7 +52,10 @@ public:
 	std::vector<std::string> m_TAAPassUniformNames =
 	{
 		"uni_preTAAPassRT0",
-		"uni_lastFrameTAAPassRT0",
+		"uni_history0",
+		"uni_history1",
+		"uni_history2",
+		"uni_history3",
 		"uni_motionVectorTexture",
 	};
 
