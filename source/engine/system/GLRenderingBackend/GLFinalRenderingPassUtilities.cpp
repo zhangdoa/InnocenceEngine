@@ -361,9 +361,9 @@ void GLFinalRenderingPassUtilities::update()
 	if (l_renderingConfig.useBloom)
 	{
 		auto bloomExtractPassResult = updateBloomExtractPass(finalInputGLTDC);
-		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLFBC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Half->m_GLFBC, 0);
-		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLFBC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Quarter->m_GLFBC, 0);
-		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLFBC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Eighth->m_GLFBC, 0);
+		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Half, 0);
+		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Quarter, 0);
+		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Eighth, 0);
 
 		//glEnable(GL_STENCIL_TEST);
 		//glClear(GL_STENCIL_BUFFER_BIT);
@@ -372,36 +372,36 @@ void GLFinalRenderingPassUtilities::update()
 		//glStencilFunc(GL_EQUAL, 0x02, 0xFF);
 		//glStencilMask(0x00);
 
-		//copyColorBuffer(GLLightRenderPassComponent::get().m_GLRPC->m_GLFBC,
-		//	GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLFBC);
+		//copyColorBuffer(GLLightRenderPassComponent::get().m_GLRPC,
+		//	GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC);
 
 		//glDisable(GL_STENCIL_TEST);
 
 		updateBloomBlurPass(bloomExtractPassResult);
-		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLFBC, 0, GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLFBC, 0);
+		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC, 0, GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC, 0);
 
 		updateBloomBlurPass(GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Half->m_GLTDCs[0]);
-		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLFBC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Half->m_GLFBC, 0);
+		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Half, 0);
 
 		updateBloomBlurPass(GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Quarter->m_GLTDCs[0]);
-		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLFBC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Quarter->m_GLFBC, 0);
+		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Quarter, 0);
 
 		updateBloomBlurPass(GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Eighth->m_GLTDCs[0]);
-		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLFBC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Eighth->m_GLFBC, 0);
+		copyColorBuffer(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC, 0, GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Eighth, 0);
 
 		updateBloomMergePass();
 	}
 	else
 	{
-		cleanFBC(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLFBC);
-		cleanFBC(GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Half->m_GLFBC);
-		cleanFBC(GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Quarter->m_GLFBC);
-		cleanFBC(GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Eighth->m_GLFBC);
+		cleanFBC(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC);
+		cleanFBC(GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Half);
+		cleanFBC(GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Quarter);
+		cleanFBC(GLFinalRenderPassComponent::get().m_bloomDownsampleGLRPC_Eighth);
 
-		cleanFBC(GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLFBC);
-		cleanFBC(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLFBC);
+		cleanFBC(GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC);
+		cleanFBC(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC);
 
-		cleanFBC(GLFinalRenderPassComponent::get().m_bloomMergePassGLRPC->m_GLFBC);
+		cleanFBC(GLFinalRenderPassComponent::get().m_bloomMergePassGLRPC);
 	}
 
 	updateBillboardPass();
@@ -412,7 +412,7 @@ void GLFinalRenderingPassUtilities::update()
 	}
 	else
 	{
-		cleanFBC(GLFinalRenderPassComponent::get().m_debuggerPassGLRPC->m_GLFBC);
+		cleanFBC(GLFinalRenderPassComponent::get().m_debuggerPassGLRPC);
 	}
 
 	updateFinalBlendPass(finalInputGLTDC);
@@ -433,9 +433,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateSkyPass()
 		//glFrontFace(GL_CW);
 		//glCullFace(GL_FRONT);
 
-		// bind to framebuffer
-		auto l_FBC = GLFinalRenderPassComponent::get().m_skyPassGLRPC->m_GLFBC;
-		bindFBC(l_FBC);
+		activateRenderPass(GLFinalRenderPassComponent::get().m_skyPassGLRPC);
 
 		activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassGLSPC);
 
@@ -463,7 +461,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateSkyPass()
 	}
 	else
 	{
-		cleanFBC(GLFinalRenderPassComponent::get().m_skyPassGLRPC->m_GLFBC);
+		cleanFBC(GLFinalRenderPassComponent::get().m_skyPassGLRPC);
 	}
 
 	return GLFinalRenderPassComponent::get().m_skyPassGLRPC->m_GLTDCs[0];
@@ -471,8 +469,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateSkyPass()
 
 GLTextureDataComponent* GLFinalRenderingPassUtilities::updatePreTAAPass()
 {
-	auto l_FBC = GLFinalRenderPassComponent::get().m_preTAAPassGLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLFinalRenderPassComponent::get().m_preTAAPassGLRPC);
 
 	activateShaderProgram(GLFinalRenderPassComponent::get().m_preTAAPassGLSPC);
 
@@ -505,14 +502,14 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateTAAPass(GLTextureDa
 
 	activateShaderProgram(GLFinalRenderPassComponent::get().m_TAAPassGLSPC);
 
-	GLFrameBufferComponent* l_FBC;
+	GLRenderPassComponent* l_GLRPC;
 
 	if (m_isTAAPingPass)
 	{
 		l_currentFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
 		l_lastFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
 
-		l_FBC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLFBC;
+		l_GLRPC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC;
 
 		m_isTAAPingPass = false;
 	}
@@ -521,12 +518,12 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateTAAPass(GLTextureDa
 		l_currentFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLTDCs[0];
 		l_lastFrameTAAGLTDC = GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0];
 
-		l_FBC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC->m_GLFBC;
+		l_GLRPC = GLFinalRenderPassComponent::get().m_TAAPongPassGLRPC;
 
 		m_isTAAPingPass = true;
 	}
 
-	bindFBC(l_FBC);
+	activateRenderPass(l_GLRPC);
 
 	activateTexture(inputGLTDC,
 		0);
@@ -545,8 +542,8 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateTAAPass(GLTextureDa
 
 GLTextureDataComponent* GLFinalRenderingPassUtilities::updateTAASharpenPass(GLTextureDataComponent * inputGLTDC)
 {
-	auto l_FBC = GLFinalRenderPassComponent::get().m_TAASharpenPassGLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLFinalRenderPassComponent::get().m_TAASharpenPassGLRPC);
+
 	activateShaderProgram(GLFinalRenderPassComponent::get().m_TAASharpenPassGLSPC);
 
 	activateTexture(
@@ -561,8 +558,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateTAASharpenPass(GLTe
 
 GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBloomExtractPass(GLTextureDataComponent * inputGLTDC)
 {
-	auto l_FBC = GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC);
 
 	activateShaderProgram(GLFinalRenderPassComponent::get().m_bloomExtractPassGLSPC);
 
@@ -593,8 +589,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBloomBlurPass(GLTex
 			l_currentFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
 			l_lastFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
 
-			auto l_FBC = GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLFBC;
-			bindFBC(l_FBC);
+			activateRenderPass(GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC);
 
 			updateUniform(
 				GLFinalRenderPassComponent::get().m_bloomBlurPass_uni_horizontal,
@@ -623,8 +618,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBloomBlurPass(GLTex
 			l_currentFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLTDCs[0];
 			l_lastFrameBloomBlurGLTDC = GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLTDCs[0];
 
-			auto l_FBC = GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC->m_GLFBC;
-			bindFBC(l_FBC);
+			activateRenderPass(GLFinalRenderPassComponent::get().m_bloomBlurPongPassGLRPC);
 
 			updateUniform(
 				GLFinalRenderPassComponent::get().m_bloomBlurPass_uni_horizontal,
@@ -644,8 +638,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBloomBlurPass(GLTex
 }
 GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBloomMergePass()
 {
-	auto l_FBC = GLFinalRenderPassComponent::get().m_bloomMergePassGLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLFinalRenderPassComponent::get().m_bloomMergePassGLRPC);
 
 	activateShaderProgram(GLFinalRenderPassComponent::get().m_bloomMergePassGLSPC);
 
@@ -670,8 +663,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBloomMergePass()
 
 GLTextureDataComponent* GLFinalRenderingPassUtilities::updateMotionBlurPass(GLTextureDataComponent * inputGLTDC)
 {
-	auto l_FBC = GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC);
 
 	activateShaderProgram(GLFinalRenderPassComponent::get().m_motionBlurPassGLSPC);
 
@@ -693,11 +685,10 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateBillboardPass()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	auto l_FBC = GLFinalRenderPassComponent::get().m_billboardPassGLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLFinalRenderPassComponent::get().m_billboardPassGLRPC);
 
 	// copy depth buffer from G-Pass
-	copyDepthBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC, l_FBC);
+	copyDepthBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC, GLFinalRenderPassComponent::get().m_billboardPassGLRPC);
 
 	activateShaderProgram(GLFinalRenderPassComponent::get().m_billboardPassGLSPC);
 
@@ -766,11 +757,10 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateDebuggerPass()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	auto l_FBC = GLFinalRenderPassComponent::get().m_debuggerPassGLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLFinalRenderPassComponent::get().m_debuggerPassGLRPC);
 
 	// copy depth buffer from G-Pass
-	copyDepthBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC, l_FBC);
+	copyDepthBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC, GLFinalRenderPassComponent::get().m_debuggerPassGLRPC);
 
 	activateShaderProgram(GLFinalRenderPassComponent::get().m_debuggerPassGLSPC);
 
@@ -808,8 +798,7 @@ GLTextureDataComponent* GLFinalRenderingPassUtilities::updateDebuggerPass()
 
 GLTextureDataComponent* GLFinalRenderingPassUtilities::updateFinalBlendPass(GLTextureDataComponent * inputGLTDC)
 {
-	auto l_FBC = GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC);
 
 	activateShaderProgram(GLFinalRenderPassComponent::get().m_finalBlendPassGLSPC);
 

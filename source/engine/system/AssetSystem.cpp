@@ -9,6 +9,8 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoAssetSystemNS
 {
+	bool initializeComponentPool();
+
 	void loadFolderData();
 	void loadDefaultAssets();
 	void loadAssetsForComponents();
@@ -58,10 +60,24 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 	std::unordered_map<EntityID, MeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, MaterialDataComponent*> m_materialMap;
 	std::unordered_map<EntityID, TextureDataComponent*> m_textureMap;
+
+	void* m_MeshDataComponentPool;
+	void* m_MaterialDataComponentPool;
+	void* m_TextureDataComponentPool;
 }
 
+bool InnoAssetSystemNS::initializeComponentPool()
+{
+	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MeshDataComponent), 16384);
+	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
+	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(TextureDataComponent), 32768);
+
+	return true;
+}
 INNO_SYSTEM_EXPORT bool InnoAssetSystem::setup()
 {
+	InnoAssetSystemNS::initializeComponentPool();
+
 	InnoAssetSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
@@ -117,32 +133,35 @@ INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::addTextureDataCompone
 
 MeshDataComponent* InnoAssetSystemNS::addMeshDataComponent()
 {
-	auto newMesh = g_pCoreSystem->getMemorySystem()->spawn<MeshDataComponent>();
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(MeshDataComponent));
+	auto l_MDC = new(l_rawPtr)MeshDataComponent();
 	auto l_parentEntity = InnoMath::createEntityID();
-	newMesh->m_parentEntity = l_parentEntity;
+	l_MDC->m_parentEntity = l_parentEntity;
 	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, MeshDataComponent*>(l_parentEntity, newMesh));
-	return newMesh;
+	l_meshMap->emplace(std::pair<EntityID, MeshDataComponent*>(l_parentEntity, l_MDC));
+	return l_MDC;
 }
 
 MaterialDataComponent* InnoAssetSystemNS::addMaterialDataComponent()
 {
-	auto newMaterial = g_pCoreSystem->getMemorySystem()->spawn<MaterialDataComponent>();
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
+	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
 	auto l_parentEntity = InnoMath::createEntityID();
-	newMaterial->m_parentEntity = l_parentEntity;
+	l_MDC->m_parentEntity = l_parentEntity;
 	auto l_materialMap = &m_materialMap;
-	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, newMaterial));
-	return newMaterial;
+	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, l_MDC));
+	return l_MDC;
 }
 
 TextureDataComponent* InnoAssetSystemNS::addTextureDataComponent()
 {
-	auto newTexture = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(TextureDataComponent));
+	auto l_TDC = new(l_rawPtr)TextureDataComponent();
 	auto l_parentEntity = InnoMath::createEntityID();
-	newTexture->m_parentEntity = l_parentEntity;
+	l_TDC->m_parentEntity = l_parentEntity;
 	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, TextureDataComponent*>(l_parentEntity, newTexture));
-	return newTexture;
+	l_textureMap->emplace(std::pair<EntityID, TextureDataComponent*>(l_parentEntity, l_TDC));
+	return l_TDC;
 }
 
 MeshDataComponent* InnoAssetSystem::getMeshDataComponent(EntityID EntityID)
@@ -256,7 +275,7 @@ bool InnoAssetSystem::removeMeshDataComponent(EntityID EntityID)
 	auto l_mesh = l_meshMap->find(EntityID);
 	if (l_mesh != l_meshMap->end())
 	{
-		g_pCoreSystem->getMemorySystem()->destroy<MeshDataComponent>(l_mesh->second);
+		g_pCoreSystem->getMemorySystem()->destroyObject(InnoAssetSystemNS::m_MeshDataComponentPool, sizeof(MeshDataComponent), l_mesh->second);
 		l_meshMap->erase(EntityID);
 		return true;
 	}
@@ -278,7 +297,7 @@ bool InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
 			// @TODO
 		}
 
-		g_pCoreSystem->getMemorySystem()->destroy<TextureDataComponent>(l_texture->second);
+		g_pCoreSystem->getMemorySystem()->destroyObject(InnoAssetSystemNS::m_TextureDataComponentPool, sizeof(TextureDataComponent), l_texture->second);
 		l_textureMap->erase(EntityID);
 		return true;
 	}

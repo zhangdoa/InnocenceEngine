@@ -1,7 +1,4 @@
 #include "TimeSystem.h"
-#include "ICoreSystem.h"
-
-extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoTimeSystemNS
 {
@@ -43,20 +40,19 @@ const long long InnoTimeSystemNS::getCurrentTimeInMillSec()
 	return (std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1));
 }
 
-INNO_SYSTEM_EXPORT bool InnoTimeSystem::setup()
+bool InnoTimeSystem::setup()
 {
 	InnoTimeSystemNS::m_gameStartTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoTimeSystem::initialize()
+bool InnoTimeSystem::initialize()
 {
 	InnoTimeSystemNS::m_objectStatus = ObjectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TimeSystem has been initialized.");
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoTimeSystem::update()
+bool InnoTimeSystem::update()
 {
 	InnoTimeSystemNS::m_updateStartTime = std::chrono::high_resolution_clock::now();
 	InnoTimeSystemNS::m_deltaTime = (std::chrono::high_resolution_clock::now() - InnoTimeSystemNS::m_updateStartTime).count();
@@ -74,14 +70,13 @@ INNO_SYSTEM_EXPORT bool InnoTimeSystem::update()
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoTimeSystem::terminate()
+bool InnoTimeSystem::terminate()
 {
 	InnoTimeSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TimeSystem has been terminated.");
 	return true;
 }
 
-INNO_SYSTEM_EXPORT const TimeData InnoTimeSystem::getCurrentTime(unsigned int timezone_adjustment)
+const TimeData InnoTimeSystem::getCurrentTime(unsigned int timezone_adjustment)
 {
 	typedef std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type> days;
 	auto now = std::chrono::system_clock::now();
@@ -116,12 +111,12 @@ INNO_SYSTEM_EXPORT const TimeData InnoTimeSystem::getCurrentTime(unsigned int ti
 	return  l_timeData;
 }
 
-INNO_SYSTEM_EXPORT ObjectStatus InnoTimeSystem::getStatus()
+ObjectStatus InnoTimeSystem::getStatus()
 {
 	return InnoTimeSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT const long long InnoTimeSystem::getDeltaTime()
+const long long InnoTimeSystem::getDeltaTime()
 {
 	return InnoTimeSystemNS::m_deltaTime;
 }

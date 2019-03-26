@@ -118,12 +118,10 @@ void GLShadowRenderingPassUtilities::update()
 
 	activateShaderProgram(GLShadowRenderPassComponent::get().m_SPC);
 
-	auto l_GLFBC = GLShadowRenderPassComponent::get().m_DirLight_GLRPC->m_GLFBC;
-	auto sizeX = l_GLFBC->m_GLFrameBufferDesc.sizeX;
-	auto sizeY = l_GLFBC->m_GLFrameBufferDesc.sizeY;
+	activateRenderPass(GLShadowRenderPassComponent::get().m_DirLight_GLRPC);
 
-	cleanFBC(l_GLFBC);
-	glRenderbufferStorage(GL_RENDERBUFFER, l_GLFBC->m_GLFrameBufferDesc.renderBufferInternalFormat, sizeX, sizeY);
+	auto sizeX = GLShadowRenderPassComponent::get().m_DirLight_GLRPC->m_GLFrameBufferDesc.sizeX;
+	auto sizeY = GLShadowRenderPassComponent::get().m_DirLight_GLRPC->m_GLFrameBufferDesc.sizeY;
 
 	unsigned int splitCount = 0;
 

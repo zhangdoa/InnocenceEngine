@@ -1,16 +1,15 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "GLFrameBufferComponent.h"
-#include "GLShaderProgramComponent.h"
 #include "TextureDataComponent.h"
 #include "GLTextureDataComponent.h"
 #include "GLRenderPassComponent.h"
+#include "GLShaderProgramComponent.h"
 
 class GLTerrainRenderPassComponent
 {
 public:
 	~GLTerrainRenderPassComponent() {};
-	
+
 	static GLTerrainRenderPassComponent& get()
 	{
 		static GLTerrainRenderPassComponent instance;
@@ -19,7 +18,7 @@ public:
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
-	
+
 	GLRenderPassComponent* m_GLRPC;
 
 	GLShaderProgramComponent* m_GLSPC;

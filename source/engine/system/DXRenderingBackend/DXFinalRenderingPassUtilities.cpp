@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE DXFinalRenderingPassUtilities
 void DXFinalRenderingPassUtilities::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
-	DXFinalRenderPassComponent::get().m_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
+	DXFinalRenderPassComponent::get().m_DXSPC = addDXShaderProgramComponent(m_entityID);
 
 	// Create a texture sampler state description.
 	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;

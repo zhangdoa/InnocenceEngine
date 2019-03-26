@@ -24,7 +24,25 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedDXMDC;
 	std::unordered_map<EntityID, DXTextureDataComponent*> m_initializedDXTDC;
 
+	std::unordered_map<EntityID, DXMeshDataComponent*> m_meshMap;
+	std::unordered_map<EntityID, DXTextureDataComponent*> m_textureMap;
+
+	void* m_DXMeshDataComponentPool;
+	void* m_DXTextureDataComponentPool;
+	void* m_DXRenderPassComponentPool;
+	void* m_DXShaderProgramComponentPool;
+
 	const std::wstring m_shaderRelativePath = L"..//res//shaders//";
+}
+
+bool DXRenderingSystemNS::initializeComponentPool()
+{
+	m_DXMeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DXMeshDataComponent), 32768);
+	m_DXTextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DXTextureDataComponent), 32768);
+	m_DXRenderPassComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DXRenderPassComponent), 128);
+	m_DXShaderProgramComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DXShaderProgramComponent), 256);
+
+	return true;
 }
 
 ID3D10Blob* DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath)
@@ -240,6 +258,14 @@ bool DXRenderingSystemNS::createPixelShader(ID3D10Blob* shaderBuffer, ID3D11Pixe
 	return true;
 }
 
+DXShaderProgramComponent* DXRenderingSystemNS::addDXShaderProgramComponent(EntityID rhs)
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DXShaderProgramComponentPool, sizeof(DXShaderProgramComponent));
+	auto l_DXSPC = new(l_rawPtr)DXShaderProgramComponent();
+	l_DXSPC->m_parentEntity = rhs;
+	return l_DXSPC;
+}
+
 bool DXRenderingSystemNS::initializeDXShaderProgramComponent(DXShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths)
 {
 	bool l_result = true;
@@ -253,12 +279,13 @@ bool DXRenderingSystemNS::initializeDXShaderProgramComponent(DXShaderProgramComp
 	}
 	for (auto& i : rhs->m_VSCBuffers)
 	{
-		createCBuffer(i);
+		l_result = l_result && createCBuffer(i);
 	}
 	for (auto& i : rhs->m_PSCBuffers)
 	{
-		createCBuffer(i);
+		l_result = l_result && createCBuffer(i);
 	}
+
 	return l_result;
 }
 
@@ -314,7 +341,8 @@ bool DXRenderingSystemNS::activateDXShaderProgramComponent(DXShaderProgramCompon
 
 DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned int RTNum, D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc)
 {
-	auto l_DXRPC = g_pCoreSystem->getMemorySystem()->spawn<DXRenderPassComponent>();
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DXRenderPassComponentPool, sizeof(DXRenderPassComponent));
+	auto l_DXRPC = new(l_rawPtr)DXRenderPassComponent();
 
 	HRESULT result;
 
@@ -323,7 +351,7 @@ DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned in
 
 	for (unsigned int i = 0; i < RTNum; i++)
 	{
-		auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
 		l_TDC->m_textureDataDesc.textureSamplerType = RTDesc.textureSamplerType;
 		l_TDC->m_textureDataDesc.textureUsageType = RTDesc.textureUsageType;
@@ -650,26 +678,27 @@ bool DXRenderingSystemNS::initializeDXTextureDataComponent(DXTextureDataComponen
 
 DXMeshDataComponent* DXRenderingSystemNS::addDXMeshDataComponent(EntityID rhs)
 {
-	DXMeshDataComponent* newMesh = g_pCoreSystem->getMemorySystem()->spawn<DXMeshDataComponent>();
-	newMesh->m_parentEntity = rhs;
-	auto l_meshMap = &DXRenderingSystemComponent::get().m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, DXMeshDataComponent*>(rhs, newMesh));
-	return newMesh;
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DXMeshDataComponentPool, sizeof(DXMeshDataComponent));
+	auto l_DXMDC = new(l_rawPtr)DXMeshDataComponent();
+	l_DXMDC->m_parentEntity = rhs;
+	auto l_meshMap = &m_meshMap;
+	l_meshMap->emplace(std::pair<EntityID, DXMeshDataComponent*>(rhs, l_DXMDC));
+	return l_DXMDC;
 }
 
 DXTextureDataComponent* DXRenderingSystemNS::addDXTextureDataComponent(EntityID rhs)
 {
-	DXTextureDataComponent* newTexture = g_pCoreSystem->getMemorySystem()->spawn<DXTextureDataComponent>();
-	newTexture->m_parentEntity = rhs;
-	auto l_textureMap = &DXRenderingSystemComponent::get().m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, DXTextureDataComponent*>(rhs, newTexture));
-	return newTexture;
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DXTextureDataComponentPool, sizeof(DXTextureDataComponent));
+	auto l_DXTDC = new(l_rawPtr)DXTextureDataComponent();
+	auto l_textureMap = &m_textureMap;
+	l_textureMap->emplace(std::pair<EntityID, DXTextureDataComponent*>(rhs, l_DXTDC));
+	return l_DXTDC;
 }
 
 DXMeshDataComponent * DXRenderingSystemNS::getDXMeshDataComponent(EntityID rhs)
 {
-	auto result = DXRenderingSystemComponent::get().m_meshMap.find(rhs);
-	if (result != DXRenderingSystemComponent::get().m_meshMap.end())
+	auto result = m_meshMap.find(rhs);
+	if (result != m_meshMap.end())
 	{
 		return result->second;
 	}
@@ -681,8 +710,8 @@ DXMeshDataComponent * DXRenderingSystemNS::getDXMeshDataComponent(EntityID rhs)
 
 DXTextureDataComponent * DXRenderingSystemNS::getDXTextureDataComponent(EntityID rhs)
 {
-	auto result = DXRenderingSystemComponent::get().m_textureMap.find(rhs);
-	if (result != DXRenderingSystemComponent::get().m_textureMap.end())
+	auto result = m_textureMap.find(rhs);
+	if (result != m_textureMap.end())
 	{
 		return result->second;
 	}

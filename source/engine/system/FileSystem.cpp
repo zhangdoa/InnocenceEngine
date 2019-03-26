@@ -730,8 +730,6 @@ bool InnoFileSystemNS::saveScene(const std::string& fileName)
 
 INNO_SYSTEM_EXPORT bool InnoFileSystem::setup()
 {
-	g_pCoreSystem->getAssetSystem()->loadDefaultAssets();
-
 	InnoFileSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 
 	return true;
@@ -739,6 +737,8 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::setup()
 
 INNO_SYSTEM_EXPORT bool InnoFileSystem::initialize()
 {
+	g_pCoreSystem->getAssetSystem()->loadDefaultAssets();
+
 	return true;
 }
 

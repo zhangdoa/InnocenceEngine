@@ -420,6 +420,7 @@ bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	g_DXRenderingSystemComponent = &DXRenderingSystemComponent::get();
 
 	bool result = true;
+	result = result && initializeComponentPool();
 	result = result && createPhysicalDevices();
 	result = result && createSwapChain();
 	result = result && createBackBuffer();

@@ -1,8 +1,8 @@
 #include "CoreSystem.h"
-#include "TimeSystem.h"
-#include "LogSystem.h"
-#include "MemorySystem.h"
-#include "TaskSystem.h"
+#include "Core/TimeSystem.h"
+#include "Core/LogSystem.h"
+#include "Core/MemorySystem.h"
+#include "Core/TaskSystem.h"
 #include "FileSystem.h"
 #include "GameSystem.h"
 #include "AssetSystem.h"
@@ -126,6 +126,12 @@ bool InnoCoreSystemNS::setup(void* hInstance, void* hwnd, char* pScmdline)
 	}
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem setup finished.");
 
+	if (!g_pCoreSystem->getAssetSystem()->setup())
+	{
+		return false;
+	}
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "AssetSystem setup finished.");
+
 	if (!g_pCoreSystem->getFileSystem()->setup())
 	{
 		return false;
@@ -137,12 +143,6 @@ bool InnoCoreSystemNS::setup(void* hInstance, void* hwnd, char* pScmdline)
 		return false;
 	}
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem setup finished.");
-
-	if (!g_pCoreSystem->getAssetSystem()->setup())
-	{
-		return false;
-	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "AssetSystem setup finished.");
 
 	if (!g_pCoreSystem->getPhysicsSystem()->setup())
 	{

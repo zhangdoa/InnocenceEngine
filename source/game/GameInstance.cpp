@@ -6,7 +6,8 @@ INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
 
 namespace PlayerComponentCollection
 {
-	void setup();
+	bool setup();
+	bool initialize();
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_cameraParentEntity;
@@ -51,47 +52,20 @@ namespace PlayerComponentCollection
 	std::function<void()> f_sceneLoadingCallback;
 };
 
-void PlayerComponentCollection::setup()
+bool PlayerComponentCollection::setup()
 {
 	f_sceneLoadingCallback = [&]() {
 		m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntityID("playerCharacterCamera");
 		m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
+		m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_cameraParentEntity);
+		m_cameraComponent = g_pCoreSystem->getGameSystem()->spawn<CameraComponent>(m_cameraParentEntity);
+
 		m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
 		m_targetCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
 		m_targetCameraRotX = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		m_targetCameraRotY = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	};
 	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
-
-	f_sceneLoadingCallback();
-
-	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_cameraParentEntity);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
-
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
-
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
-	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 0, &f_rotateAroundPositiveYAxis);
-	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 1, &f_rotateAroundRightAxis);
-
-	m_cameraComponent = g_pCoreSystem->getGameSystem()->spawn<CameraComponent>(m_cameraParentEntity);
-
-	m_cameraComponent->m_FOVX = 60.0f;
-	m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
-	m_cameraComponent->m_zNear = 0.1f;
-	m_cameraComponent->m_zFar = 2000.0f;
-	m_cameraComponent->m_drawFrustum = false;
-	m_cameraComponent->m_drawAABB = false;
-
-	m_initialMoveSpeed = 0.5f;
-	m_moveSpeed = m_initialMoveSpeed;
-	m_rotateSpeed = 10.0f;
-	m_canMove = false;
 
 	f_moveForward = [&]() { move(InnoMath::getDirection(direction::FORWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
 	f_moveBackward = [&]() { move(InnoMath::getDirection(direction::BACKWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
@@ -106,6 +80,38 @@ void PlayerComponentCollection::setup()
 
 	f_rotateAroundPositiveYAxis = std::bind(&rotateAroundPositiveYAxis, std::placeholders::_1);
 	f_rotateAroundRightAxis = std::bind(&rotateAroundRightAxis, std::placeholders::_1);
+
+	return true;
+}
+
+bool PlayerComponentCollection::initialize()
+{
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
+
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
+
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
+	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
+	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 0, &f_rotateAroundPositiveYAxis);
+	g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 1, &f_rotateAroundRightAxis);
+
+	m_cameraComponent->m_FOVX = 60.0f;
+	m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
+	m_cameraComponent->m_zNear = 0.1f;
+	m_cameraComponent->m_zFar = 2000.0f;
+	m_cameraComponent->m_drawFrustum = false;
+	m_cameraComponent->m_drawAABB = false;
+
+	m_initialMoveSpeed = 0.5f;
+	m_moveSpeed = m_initialMoveSpeed;
+	m_rotateSpeed = 10.0f;
+	m_canMove = false;
+
+	return true;
 }
 
 void PlayerComponentCollection::move(vec4 direction, float length)
@@ -174,11 +180,11 @@ bool GameInstanceNS::setup()
 	auto l_testQuatToMat = []() -> bool {
 		std::default_random_engine generator;
 
-		std::uniform_real_distribution<GLfloat> randomAxis(0.0f, 1.0f);
+		std::uniform_real_distribution<float> randomAxis(0.0f, 1.0f);
 		auto axisSample = vec4(randomAxis(generator) * 2.0f - 1.0f, randomAxis(generator) * 2.0f - 1.0f, randomAxis(generator) * 2.0f - 1.0f, 0.0f);
 		axisSample = axisSample.normalize();
 
-		std::uniform_real_distribution<GLfloat> randomAngle(0.0f, 360.0f);
+		std::uniform_real_distribution<float> randomAngle(0.0f, 360.0f);
 		auto angleSample = randomAngle(generator);
 
 		vec4 originalRot = InnoMath::getQuatRotator(axisSample, angleSample);
@@ -208,17 +214,20 @@ bool GameInstanceNS::initialize()
 
 INNO_GAME_EXPORT bool GameInstance::setup()
 {
-	// setup player character
-	PlayerComponentCollection::setup();
-	// setup others
-	GameInstanceNS::setup();
+	bool result = true;
+	result = result && PlayerComponentCollection::setup();
+	result = result && GameInstanceNS::setup();
 
-	return true;
+	return result;
 }
 
 INNO_GAME_EXPORT bool GameInstance::initialize()
 {
-	return true;
+	bool result = true;
+	result = result && PlayerComponentCollection::initialize();
+	result = result && GameInstanceNS::initialize();
+
+	return result;
 }
 
 INNO_GAME_EXPORT bool GameInstance::update()

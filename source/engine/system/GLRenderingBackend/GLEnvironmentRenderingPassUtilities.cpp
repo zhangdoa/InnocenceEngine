@@ -25,21 +25,19 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 
 	EntityID m_entityID;
 
-	TextureDataDesc EnvCapPassTextureDesc = TextureDataDesc();
-	TextureDataDesc EnvConvPassTextureDesc = TextureDataDesc();
-	TextureDataDesc EnvPreFilterPassTextureDesc = TextureDataDesc();
-	TextureDataDesc VoxelizationPassTextureDesc = TextureDataDesc();
-
 	GLRenderPassComponent* m_BRDFSplitSumLUTPassGLRPC;
 	GLFrameBufferDesc m_BRDFSplitSumLUTPassFrameBufferDesc = GLFrameBufferDesc();
-	GLShaderProgramComponent* m_BRDFSplitSumLUTPassSPC;
 	TextureDataDesc m_BRDFSplitSumLUTPassTextureDesc = TextureDataDesc();
+	GLShaderProgramComponent* m_BRDFSplitSumLUTPassSPC;
 
 	GLRenderPassComponent* m_BRDFMSAverageLUTPassGLRPC;
 	GLFrameBufferDesc m_BRDFMSAverageLUTPassFrameBufferDesc = GLFrameBufferDesc();
-	GLShaderProgramComponent* m_BRDFMSAverageLUTPassSPC;
 	TextureDataDesc m_BRDFMSAverageLUTPassTextureDesc = TextureDataDesc();
+	GLShaderProgramComponent* m_BRDFMSAverageLUTPassSPC;
 
+	GLRenderPassComponent* m_capturePassGLRPC;
+	GLFrameBufferDesc m_capturePassFrameBufferDesc = GLFrameBufferDesc();
+	TextureDataDesc m_capturePassTextureDesc = TextureDataDesc();
 	ShaderFilePaths m_capturePassShaderFilePaths = { "GL//environmentCapturePassVertex.sf" , "", "GL//environmentCapturePassFragment.sf" };
 	GLShaderProgramComponent* m_capturePassSPC;
 	GLuint m_capturePass_uni_albedoTexture;
@@ -48,36 +46,36 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 	GLuint m_capturePass_uni_m;
 	GLuint m_capturePass_uni_useAlbedoTexture;
 	GLuint m_capturePass_uni_albedo;
-	GLFrameBufferComponent* m_capturePassFBC;
-	TextureDataComponent* m_capturePassTDC;
-	GLTextureDataComponent* m_capturePassGLTDC;
 
+	GLRenderPassComponent* m_convPassGLRPC;
+	GLFrameBufferDesc m_convPassFrameBufferDesc = GLFrameBufferDesc();
+	TextureDataDesc m_convPassTextureDesc = TextureDataDesc();
 	ShaderFilePaths m_convPassShaderFilePaths = { "GL//environmentConvolutionPassVertex.sf" , "", "GL//environmentConvolutionPassFragment.sf" };
 	GLShaderProgramComponent* m_convPassSPC;
 	GLuint m_convPass_uni_capturedCubeMap;
 	GLuint m_convPass_uni_p;
 	GLuint m_convPass_uni_r;
-	TextureDataComponent* m_convPassTDC;
-	GLTextureDataComponent* m_convPassGLTDC;
 
+	GLRenderPassComponent* m_preFilterPassGLRPC;
+	GLFrameBufferDesc m_preFilterPassFrameBufferDesc = GLFrameBufferDesc();
+	TextureDataDesc m_preFilterPassTextureDesc = TextureDataDesc();
 	ShaderFilePaths m_preFilterPassShaderFilePaths = { "GL//environmentPreFilterPassVertex.sf" , "", "GL//environmentPreFilterPassFragment.sf" };
 	GLShaderProgramComponent* m_preFilterPassSPC;
 	GLuint m_preFilterPass_uni_capturedCubeMap;
 	GLuint m_preFilterPass_uni_p;
 	GLuint m_preFilterPass_uni_r;
 	GLuint m_preFilterPass_uni_roughness;
-	TextureDataComponent* m_preFilterPassTDC;
-	GLTextureDataComponent* m_preFilterPassGLTDC;
 
-	GLFrameBufferComponent* m_GI3DVoxelFBC;
-	GLShaderProgramComponent* m_VoxelizationPassSPC;
-
-	GLuint m_VoxelizationPass_uni_m;
-	std::vector<GLuint> m_VoxelizationPass_uni_VP;
-	std::vector<GLuint> m_VoxelizationPass_uni_VP_inv;
-	GLuint m_VoxelizationPass_uni_volumeDimension;
-	GLuint m_VoxelizationPass_uni_voxelScale;
-	GLuint m_VoxelizationPass_uni_worldMinPoint;
+	GLRenderPassComponent* m_voxelizationPassGLRPC;
+	GLFrameBufferDesc m_voxelizationPassFrameBufferDesc = GLFrameBufferDesc();
+	TextureDataDesc m_voxelizationPassTextureDesc = TextureDataDesc();
+	GLShaderProgramComponent* m_voxelizationPassSPC;
+	GLuint m_voxelizationPass_uni_m;
+	std::vector<GLuint> m_voxelizationPass_uni_VP;
+	std::vector<GLuint> m_voxelizationPass_uni_VP_inv;
+	GLuint m_voxelizationPass_uni_volumeDimension;
+	GLuint m_voxelizationPass_uni_voxelScale;
+	GLuint m_voxelizationPass_uni_worldMinPoint;
 
 	std::vector<mat4> m_VP;
 	std::vector<mat4> m_VP_inv;
@@ -85,34 +83,26 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 	unsigned int m_voxelCount = m_volumeDimension * m_volumeDimension * m_volumeDimension;
 	float m_volumeGridSize;
 
-	TextureDataComponent* m_VoxelizationPassTDC_Albedo;
-	GLTextureDataComponent* m_VoxelizationPassGLTDC_Albedo;
-	TextureDataComponent* m_VoxelizationPassTDC_Normal;
-	GLTextureDataComponent* m_VoxelizationPassGLTDC_Normal;
+	GLRenderPassComponent* m_irradianceInjectionPassGLRPC;
+	GLFrameBufferDesc m_irradianceInjectionPassFrameBufferDesc = GLFrameBufferDesc();
+	TextureDataDesc m_irradianceInjectionPassTextureDesc = TextureDataDesc();
+	GLShaderProgramComponent* m_irradianceInjectionPassSPC;
+	GLuint m_irradianceInjectionPass_uni_dirLight_direction;
+	GLuint m_irradianceInjectionPass_uni_dirLight_luminance;
+	GLuint m_irradianceInjectionPass_uni_volumeDimension;
+	GLuint m_irradianceInjectionPass_uni_voxelSize;
+	GLuint m_irradianceInjectionPass_uni_voxelScale;
+	GLuint m_irradianceInjectionPass_uni_worldMinPoint;
 
-	GLShaderProgramComponent* m_IrradianceInjectionPassSPC;
-
-	GLuint m_IrradianceInjectionPass_uni_dirLight_direction;
-	GLuint m_IrradianceInjectionPass_uni_dirLight_luminance;
-	GLuint m_IrradianceInjectionPass_uni_volumeDimension;
-	GLuint m_IrradianceInjectionPass_uni_voxelSize;
-	GLuint m_IrradianceInjectionPass_uni_voxelScale;
-	GLuint m_IrradianceInjectionPass_uni_worldMinPoint;
-
-	TextureDataComponent* m_IrradianceInjectionPass_TDC;
-	GLTextureDataComponent* m_IrradianceInjectionPassGLTDC;
-
-	GLRenderPassComponent* m_VoxelVisualizationGLRPC;
-	GLShaderProgramComponent* m_VoxelVisualizationPassSPC;
-
-	GLuint m_VoxelVisualizationPass_uni_p;
-	GLuint m_VoxelVisualizationPass_uni_r;
-	GLuint m_VoxelVisualizationPass_uni_t;
-	GLuint m_VoxelVisualizationPass_uni_m;
-
-	GLuint m_VoxelVisualizationPass_uni_volumeDimension;
-	GLuint m_VoxelVisualizationPass_uni_voxelSize;
-	GLuint m_VoxelVisualizationPass_uni_worldMinPoint;
+	GLRenderPassComponent* m_voxelVisualizationGLRPC;
+	GLShaderProgramComponent* m_voxelVisualizationPassSPC;
+	GLuint m_voxelVisualizationPass_uni_p;
+	GLuint m_voxelVisualizationPass_uni_r;
+	GLuint m_voxelVisualizationPass_uni_t;
+	GLuint m_voxelVisualizationPass_uni_m;
+	GLuint m_voxelVisualizationPass_uni_volumeDimension;
+	GLuint m_voxelVisualizationPass_uni_voxelSize;
+	GLuint m_voxelVisualizationPass_uni_worldMinPoint;
 
 	GLuint m_VAO;
 	GLuint m_VBO;
@@ -156,50 +146,92 @@ void GLEnvironmentRenderingPassUtilities::initialize()
 	m_BRDFMSAverageLUTPassFrameBufferDesc.sizeY = m_BRDFMSAverageLUTPassTextureDesc.textureHeight;
 	m_BRDFMSAverageLUTPassFrameBufferDesc.drawColorBuffers = true;
 
-	EnvCapPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
-	EnvCapPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	EnvCapPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
-	EnvCapPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
-	EnvCapPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	EnvCapPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	EnvCapPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-	EnvCapPassTextureDesc.textureWidth = 2048;
-	EnvCapPassTextureDesc.textureHeight = 2048;
-	EnvCapPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	m_capturePassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
+	m_capturePassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	m_capturePassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
+	m_capturePassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
+	m_capturePassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	m_capturePassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	m_capturePassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
+	m_capturePassTextureDesc.textureWidth = 2048;
+	m_capturePassTextureDesc.textureHeight = 2048;
+	m_capturePassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
-	EnvConvPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
-	EnvConvPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	EnvConvPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
-	EnvConvPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
-	EnvConvPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	EnvConvPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	EnvConvPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-	EnvConvPassTextureDesc.textureWidth = 128;
-	EnvConvPassTextureDesc.textureHeight = 128;
-	EnvConvPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	m_capturePassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
+	m_capturePassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
+	m_capturePassFrameBufferDesc.sizeX = m_capturePassTextureDesc.textureWidth;
+	m_capturePassFrameBufferDesc.sizeY = m_capturePassTextureDesc.textureHeight;
+	m_capturePassFrameBufferDesc.drawColorBuffers = false;
 
-	EnvPreFilterPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
-	EnvPreFilterPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	EnvPreFilterPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
-	EnvPreFilterPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
-	EnvPreFilterPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
-	EnvPreFilterPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	EnvPreFilterPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-	EnvPreFilterPassTextureDesc.textureWidth = 128;
-	EnvPreFilterPassTextureDesc.textureHeight = 128;
-	EnvPreFilterPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	m_convPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
+	m_convPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	m_convPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
+	m_convPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
+	m_convPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	m_convPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	m_convPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
+	m_convPassTextureDesc.textureWidth = 128;
+	m_convPassTextureDesc.textureHeight = 128;
+	m_convPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
-	VoxelizationPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_3D;
-	VoxelizationPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	VoxelizationPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA8;
-	VoxelizationPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	VoxelizationPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	VoxelizationPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	VoxelizationPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	VoxelizationPassTextureDesc.textureWidth = m_volumeDimension;
-	VoxelizationPassTextureDesc.textureHeight = m_volumeDimension;
-	VoxelizationPassTextureDesc.textureDepth = m_volumeDimension;
-	VoxelizationPassTextureDesc.texturePixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
+	m_convPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
+	m_convPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
+	m_convPassFrameBufferDesc.sizeX = m_convPassTextureDesc.textureWidth;
+	m_convPassFrameBufferDesc.sizeY = m_convPassTextureDesc.textureHeight;
+	m_convPassFrameBufferDesc.drawColorBuffers = false;
+
+	m_preFilterPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
+	m_preFilterPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	m_preFilterPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
+	m_preFilterPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
+	m_preFilterPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+	m_preFilterPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	m_preFilterPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
+	m_preFilterPassTextureDesc.textureWidth = 128;
+	m_preFilterPassTextureDesc.textureHeight = 128;
+	m_preFilterPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+
+	m_preFilterPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
+	m_preFilterPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
+	m_preFilterPassFrameBufferDesc.sizeX = m_preFilterPassTextureDesc.textureWidth;
+	m_preFilterPassFrameBufferDesc.sizeY = m_preFilterPassTextureDesc.textureHeight;
+	m_preFilterPassFrameBufferDesc.drawColorBuffers = false;
+
+	m_voxelizationPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_3D;
+	m_voxelizationPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	m_voxelizationPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA8;
+	m_voxelizationPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_voxelizationPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	m_voxelizationPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	m_voxelizationPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	m_voxelizationPassTextureDesc.textureWidth = m_volumeDimension;
+	m_voxelizationPassTextureDesc.textureHeight = m_volumeDimension;
+	m_voxelizationPassTextureDesc.textureDepth = m_volumeDimension;
+	m_voxelizationPassTextureDesc.texturePixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
+
+	m_voxelizationPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
+	m_voxelizationPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
+	m_voxelizationPassFrameBufferDesc.sizeX = m_voxelizationPassTextureDesc.textureWidth;
+	m_voxelizationPassFrameBufferDesc.sizeY = m_voxelizationPassTextureDesc.textureHeight;
+	m_voxelizationPassFrameBufferDesc.drawColorBuffers = true;
+
+	m_irradianceInjectionPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_3D;
+	m_irradianceInjectionPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	m_irradianceInjectionPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA8;
+	m_irradianceInjectionPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_irradianceInjectionPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	m_irradianceInjectionPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	m_irradianceInjectionPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	m_irradianceInjectionPassTextureDesc.textureWidth = m_volumeDimension;
+	m_irradianceInjectionPassTextureDesc.textureHeight = m_volumeDimension;
+	m_irradianceInjectionPassTextureDesc.textureDepth = m_volumeDimension;
+	m_irradianceInjectionPassTextureDesc.texturePixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
+
+	m_irradianceInjectionPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
+	m_irradianceInjectionPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
+	m_irradianceInjectionPassFrameBufferDesc.sizeX = m_irradianceInjectionPassTextureDesc.textureWidth;
+	m_irradianceInjectionPassFrameBufferDesc.sizeY = m_irradianceInjectionPassTextureDesc.textureHeight;
+	m_irradianceInjectionPassFrameBufferDesc.drawColorBuffers = true;
 
 	initializeBRDFLUTPass();
 	initializeEnvironmentCapturePass();
@@ -243,56 +275,9 @@ void GLEnvironmentRenderingPassUtilities::initializeBRDFLUTPass()
 void GLEnvironmentRenderingPassUtilities::initializeEnvironmentCapturePass()
 {
 	// generate and bind framebuffer
-	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
-
-	glGenFramebuffers(1, &l_FBC->m_FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
-
-	// generate and bind renderbuffer
-	glGenRenderbuffers(1, &l_FBC->m_RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
-
-	m_capturePassFBC = l_FBC;
-
-	// generate and bind texture
-	// Capture pass
-	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
-
-	l_TDC->m_textureDataDesc = EnvCapPassTextureDesc;
-	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-
-	m_capturePassTDC = l_TDC;
-
-	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
-
-	m_capturePassGLTDC = l_GLTDC;
-
-	// Convolution pass
-	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
-
-	l_TDC->m_textureDataDesc = EnvConvPassTextureDesc;
-	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-
-	m_convPassTDC = l_TDC;
-
-	l_GLTDC = generateGLTextureDataComponent(l_TDC);
-
-	m_convPassGLTDC = l_GLTDC;
-
-	// Pre-filter pass
-	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
-
-	l_TDC->m_textureDataDesc = EnvPreFilterPassTextureDesc;
-	l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-
-	m_preFilterPassTDC = l_TDC;
-
-	l_GLTDC = generateGLTextureDataComponent(l_TDC);
-
-	m_preFilterPassGLTDC = l_GLTDC;
+	m_capturePassGLRPC = addGLRenderPassComponent(1, m_capturePassFrameBufferDesc, m_capturePassTextureDesc);
+	m_convPassGLRPC = addGLRenderPassComponent(1, m_convPassFrameBufferDesc, m_convPassTextureDesc);
+	m_preFilterPassGLRPC = addGLRenderPassComponent(1, m_preFilterPassFrameBufferDesc, m_preFilterPassTextureDesc);
 
 	// capture pass shader
 	auto rhs = addGLShaderProgramComponent(m_entityID);
@@ -362,34 +347,10 @@ void GLEnvironmentRenderingPassUtilities::initializeEnvironmentCapturePass()
 		"uni_roughness");
 
 	m_preFilterPassSPC = rhs;
-
-	// finally check if framebuffer is complete
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: EnvironmentCaptureRenderPass Framebuffer is not completed!");
-	}
-
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void GLEnvironmentRenderingPassUtilities::initializeGIPass()
 {
-	// generate and bind framebuffer
-	auto l_FBC = g_pCoreSystem->getMemorySystem()->spawn<GLFrameBufferComponent>();
-
-	glGenFramebuffers(1, &l_FBC->m_FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
-
-	// generate and bind renderbuffer
-	glGenRenderbuffers(1, &l_FBC->m_RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, m_volumeDimension, m_volumeDimension);
-
-	m_GI3DVoxelFBC = l_FBC;
-
 	initializeVoxelizationPass();
 
 	initializeIrradianceInjectionPass();
@@ -399,65 +360,50 @@ void GLEnvironmentRenderingPassUtilities::initializeGIPass()
 
 void GLEnvironmentRenderingPassUtilities::initializeVoxelizationPass()
 {
-	// generate and bind texture
-	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
-	l_TDC->m_textureDataDesc = VoxelizationPassTextureDesc;
-	l_TDC->m_textureData = { nullptr };
-	m_VoxelizationPassTDC_Albedo = l_TDC;
-
-	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
-	m_VoxelizationPassGLTDC_Albedo = l_GLTDC;
-
-	l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
-	l_TDC->m_textureDataDesc = VoxelizationPassTextureDesc;
-	l_TDC->m_textureData = { nullptr };
-	m_VoxelizationPassTDC_Normal = l_TDC;
-
-	l_GLTDC = generateGLTextureDataComponent(l_TDC);
-	m_VoxelizationPassGLTDC_Normal = l_GLTDC;
+	m_voxelizationPassGLRPC = addGLRenderPassComponent(2, m_voxelizationPassFrameBufferDesc, m_voxelizationPassTextureDesc);
 
 	// shader programs and shaders
-	ShaderFilePaths m_VoxelizationPassShaderFilePaths;
+	ShaderFilePaths m_voxelizationPassShaderFilePaths;
 
 	////
-	m_VoxelizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelizationPassVertex.sf";
-	m_VoxelizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelizationPassGeometry.sf";
-	m_VoxelizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelizationPassFragment.sf";
+	m_voxelizationPassShaderFilePaths.m_VSPath = "GL//GIvoxelizationPassVertex.sf";
+	m_voxelizationPassShaderFilePaths.m_GSPath = "GL//GIvoxelizationPassGeometry.sf";
+	m_voxelizationPassShaderFilePaths.m_FSPath = "GL//GIvoxelizationPassFragment.sf";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
-	initializeGLShaderProgramComponent(rhs, m_VoxelizationPassShaderFilePaths);
+	initializeGLShaderProgramComponent(rhs, m_voxelizationPassShaderFilePaths);
 
 	std::vector<std::string> l_textureNames = { "uni_voxelAlbedo", "uni_voxelNormal" };
 	updateTextureUniformLocations(rhs->m_program, l_textureNames);
 
-	m_VoxelizationPass_uni_m = getUniformLocation(
+	m_voxelizationPass_uni_m = getUniformLocation(
 		rhs->m_program,
 		"uni_m");
 
-	m_VoxelizationPass_uni_VP.reserve(3);
-	m_VoxelizationPass_uni_VP_inv.reserve(3);
+	m_voxelizationPass_uni_VP.reserve(3);
+	m_voxelizationPass_uni_VP_inv.reserve(3);
 
 	for (size_t i = 0; i < 3; i++)
 	{
-		m_VoxelizationPass_uni_VP.emplace_back(
+		m_voxelizationPass_uni_VP.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_VP[" + std::to_string(i) + "]")
 		);
-		m_VoxelizationPass_uni_VP_inv.emplace_back(
+		m_voxelizationPass_uni_VP_inv.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_VP_inv[" + std::to_string(i) + "]")
 		);
 	}
 
-	m_VoxelizationPass_uni_volumeDimension = getUniformLocation(
+	m_voxelizationPass_uni_volumeDimension = getUniformLocation(
 		rhs->m_program,
 		"uni_volumeDimension");
-	m_VoxelizationPass_uni_voxelScale = getUniformLocation(
+	m_voxelizationPass_uni_voxelScale = getUniformLocation(
 		rhs->m_program,
 		"uni_voxelScale");
-	m_VoxelizationPass_uni_worldMinPoint = getUniformLocation(
+	m_voxelizationPass_uni_worldMinPoint = getUniformLocation(
 		rhs->m_program,
 		"uni_worldMinPoint");
 
-	m_VoxelizationPassSPC = rhs;
+	m_voxelizationPassSPC = rhs;
 
 	m_VP.reserve(3);
 	m_VP_inv.reserve(3);
@@ -471,91 +417,83 @@ void GLEnvironmentRenderingPassUtilities::initializeVoxelizationPass()
 
 void GLEnvironmentRenderingPassUtilities::initializeIrradianceInjectionPass()
 {
-	// generate and bind texture
-	auto l_TDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
-	l_TDC->m_textureDataDesc = VoxelizationPassTextureDesc;
-	l_TDC->m_textureData = { nullptr };
-	m_IrradianceInjectionPass_TDC = l_TDC;
+	m_irradianceInjectionPassGLRPC = addGLRenderPassComponent(1, m_irradianceInjectionPassFrameBufferDesc, m_irradianceInjectionPassTextureDesc);
 
-	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
-	m_IrradianceInjectionPassGLTDC = l_GLTDC;
-
-	ShaderFilePaths m_IrradianceInjectionPassShaderFilePaths;
+	ShaderFilePaths m_irradianceInjectionPassShaderFilePaths;
 
 	////
-	m_IrradianceInjectionPassShaderFilePaths.m_CSPath = "GL//GIIrradianceInjectionPassCompute.sf";
+	m_irradianceInjectionPassShaderFilePaths.m_CSPath = "GL//GIirradianceInjectionPassCompute.sf";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
-	initializeGLShaderProgramComponent(rhs, m_IrradianceInjectionPassShaderFilePaths);
+	initializeGLShaderProgramComponent(rhs, m_irradianceInjectionPassShaderFilePaths);
 
 	std::vector<std::string> l_textureNames = { "voxelAlbedo", "voxelNormal" };
 	updateTextureUniformLocations(rhs->m_program, l_textureNames);
 
-	m_IrradianceInjectionPass_uni_dirLight_direction = getUniformLocation(
+	m_irradianceInjectionPass_uni_dirLight_direction = getUniformLocation(
 		rhs->m_program,
 		"uni_dirLight.direction");
-	m_IrradianceInjectionPass_uni_dirLight_luminance = getUniformLocation(
+	m_irradianceInjectionPass_uni_dirLight_luminance = getUniformLocation(
 		rhs->m_program,
 		"uni_dirLight.luminance");
-	m_IrradianceInjectionPass_uni_volumeDimension = getUniformLocation(
+	m_irradianceInjectionPass_uni_volumeDimension = getUniformLocation(
 		rhs->m_program,
 		"uni_volumeDimension");
-	m_IrradianceInjectionPass_uni_voxelSize = getUniformLocation(
+	m_irradianceInjectionPass_uni_voxelSize = getUniformLocation(
 		rhs->m_program,
 		"uni_voxelSize");
-	m_IrradianceInjectionPass_uni_voxelScale = getUniformLocation(
+	m_irradianceInjectionPass_uni_voxelScale = getUniformLocation(
 		rhs->m_program,
 		"uni_voxelScale");
-	m_IrradianceInjectionPass_uni_worldMinPoint = getUniformLocation(
+	m_irradianceInjectionPass_uni_worldMinPoint = getUniformLocation(
 		rhs->m_program,
 		"uni_worldMinPoint");
 
-	m_IrradianceInjectionPassSPC = rhs;
+	m_irradianceInjectionPassSPC = rhs;
 }
 
 void GLEnvironmentRenderingPassUtilities::initializeVoxelVisualizationPass()
 {
 	// generate and bind framebuffer
-	auto l_RPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
-	m_VoxelVisualizationGLRPC = l_RPC;
+	m_voxelVisualizationGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
-	ShaderFilePaths m_VoxelVisualizationPassShaderFilePaths;
+	ShaderFilePaths m_voxelVisualizationPassShaderFilePaths;
 
 	////
-	m_VoxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelVisualizationPassVertex.sf";
-	m_VoxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelVisualizationPassGeometry.sf";
-	m_VoxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelVisualizationPassFragment.sf";
+	m_voxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIvoxelVisualizationPassVertex.sf";
+	m_voxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIvoxelVisualizationPassGeometry.sf";
+	m_voxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIvoxelVisualizationPassFragment.sf";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
-	initializeGLShaderProgramComponent(rhs, m_VoxelVisualizationPassShaderFilePaths);
+	initializeGLShaderProgramComponent(rhs, m_voxelVisualizationPassShaderFilePaths);
 
 	std::vector<std::string> l_textureNames = { "uni_voxelTexture" };
 	updateTextureUniformLocations(rhs->m_program, l_textureNames);
 
-	m_VoxelVisualizationPass_uni_p = getUniformLocation(
+	m_voxelVisualizationPass_uni_p = getUniformLocation(
 		rhs->m_program,
 		"uni_p");
-	m_VoxelVisualizationPass_uni_r = getUniformLocation(
+	m_voxelVisualizationPass_uni_r = getUniformLocation(
 		rhs->m_program,
 		"uni_r");
-	m_VoxelVisualizationPass_uni_t = getUniformLocation(
+	m_voxelVisualizationPass_uni_t = getUniformLocation(
 		rhs->m_program,
 		"uni_t");
-	m_VoxelVisualizationPass_uni_m = getUniformLocation(
+	m_voxelVisualizationPass_uni_m = getUniformLocation(
 		rhs->m_program,
 		"uni_m");
 
-	m_VoxelVisualizationPass_uni_volumeDimension = getUniformLocation(
+	m_voxelVisualizationPass_uni_volumeDimension = getUniformLocation(
 		rhs->m_program,
 		"uni_volumeDimension");
-	m_VoxelVisualizationPass_uni_voxelSize = getUniformLocation(
+	m_voxelVisualizationPass_uni_voxelSize = getUniformLocation(
 		rhs->m_program,
 		"uni_voxelSize");
-	m_VoxelVisualizationPass_uni_worldMinPoint = getUniformLocation(
+	m_voxelVisualizationPass_uni_worldMinPoint = getUniformLocation(
 		rhs->m_program,
 		"uni_worldMinPoint");
 
-	m_VoxelVisualizationPassSPC = rhs;
+	m_voxelVisualizationPassSPC = rhs;
 
 	glGenVertexArrays(1, &m_VAO);
 	//glBindVertexArray(m_VAO);
@@ -578,9 +516,7 @@ void GLEnvironmentRenderingPassUtilities::updateBRDFLUTPass()
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	// bind to framebuffer
-	auto l_FBC = m_BRDFSplitSumLUTPassGLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(m_BRDFSplitSumLUTPassGLRPC);
 
 	// draw split-Sum LUT
 	activateShaderProgram(m_BRDFSplitSumLUTPassSPC);
@@ -591,8 +527,7 @@ void GLEnvironmentRenderingPassUtilities::updateBRDFLUTPass()
 	drawMesh(l_MDC);
 
 	// bind to framebuffer
-	l_FBC = m_BRDFMSAverageLUTPassGLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(m_BRDFMSAverageLUTPassGLRPC);
 
 	// draw averange RsF1 LUT
 	activateShaderProgram(m_BRDFMSAverageLUTPassSPC);
@@ -607,12 +542,7 @@ void GLEnvironmentRenderingPassUtilities::updateBRDFLUTPass()
 
 void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 {
-	// bind to framebuffer
-	auto l_FBC = m_capturePassFBC;
-	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 2048, 2048);
-	glViewport(0, 0, 2048, 2048);
+	activateRenderPass(m_capturePassGLRPC);
 
 	auto l_mainCapture = g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>()[0];
 	auto l_mainCaptureTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCapture->m_parentEntity);
@@ -631,8 +561,8 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
 
-	auto l_capturePassTDC = m_capturePassTDC;
-	auto l_capturePassGLTDC = m_capturePassGLTDC;
+	auto l_capturePassTDC = m_capturePassGLRPC->m_TDCs[0];
+	auto l_capturePassGLTDC = m_capturePassGLRPC->m_GLTDCs[0];
 
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
 	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
@@ -665,7 +595,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 		for (unsigned int i = 0; i < 6; ++i)
 		{
 			updateUniform(GLFinalRenderPassComponent::get().m_skyPass_uni_r, l_v[i]);
-			attachCubemapColorRT(l_capturePassGLTDC, l_FBC, 0, i, 0);
+			attachCubemapColorRT(l_capturePassGLTDC, m_capturePassGLRPC, 0, i, 0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			drawMesh(l_MDC);
 		}
@@ -682,7 +612,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 		// @TODO: not this queue, need another culled version from capture component view
 		auto l_copy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
 		updateUniform(m_capturePass_uni_v, l_v[i]);
-		attachCubemapColorRT(l_capturePassGLTDC, l_FBC, 0, i, 0);
+		attachCubemapColorRT(l_capturePassGLTDC, m_capturePassGLRPC, 0, i, 0);
 		while (l_copy.size() > 0)
 		{
 			auto l_renderPack = l_copy.front();
@@ -703,32 +633,32 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 	}
 
 	// draw conv pass
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
-	glViewport(0, 0, 128, 128);
+	activateRenderPass(m_convPassGLRPC);
+
 	activateShaderProgram(m_convPassSPC);
 	updateUniform(m_convPass_uni_p, l_p);
 
-	auto l_convPassTDC = m_convPassTDC;
-	auto l_convPassGLTDC = m_convPassGLTDC;
+	auto l_convPassTDC = m_convPassGLRPC->m_TDCs[0];
+	auto l_convPassGLTDC = m_convPassGLRPC->m_GLTDCs[0];
 
 	activateTexture(l_capturePassGLTDC, 1);
 
 	for (unsigned int i = 0; i < 6; ++i)
 	{
 		updateUniform(m_convPass_uni_r, l_v[i]);
-		attachCubemapColorRT(l_convPassGLTDC, l_FBC, 0, i, 0);
+		attachCubemapColorRT(l_convPassGLTDC, m_convPassGLRPC, 0, i, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		drawMesh(l_MDC);
 	}
 
 	// draw pre-filter pass
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, 128, 128);
-	glViewport(0, 0, 128, 128);
+	activateRenderPass(m_preFilterPassGLRPC);
+
 	activateShaderProgram(m_preFilterPassSPC);
 	updateUniform(m_preFilterPass_uni_p, l_p);
 
-	auto l_preFilterPassTDC = m_preFilterPassTDC;
-	auto l_preFilterPassGLTDC = m_preFilterPassGLTDC;
+	auto l_preFilterPassTDC = m_preFilterPassGLRPC->m_TDCs[0];
+	auto l_preFilterPassGLTDC = m_preFilterPassGLRPC->m_GLTDCs[0];
 
 	activateTexture(l_convPassGLTDC, 2);
 
@@ -747,7 +677,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 		for (unsigned int i = 0; i < 6; ++i)
 		{
 			updateUniform(m_preFilterPass_uni_r, l_v[i]);
-			attachCubemapColorRT(l_preFilterPassGLTDC, l_FBC, 0, i, mip);
+			attachCubemapColorRT(l_preFilterPassGLTDC, m_preFilterPassGLRPC, 0, i, mip);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			drawMesh(l_MDC);
 		}
@@ -783,12 +713,8 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 
 	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
 
-	// bind to framebuffer
-	auto l_FBC = m_GI3DVoxelFBC;
-	glBindFramebuffer(GL_FRAMEBUFFER, l_FBC->m_FBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, l_FBC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, m_volumeDimension, m_volumeDimension);
-	glViewport(0, 0, m_volumeDimension, m_volumeDimension);
+	// voxelization pass
+	activateRenderPass(m_voxelizationPassGLRPC);
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -799,19 +725,19 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// voxelization pass
-	glBindImageTexture(0, m_VoxelizationPassGLTDC_Albedo->m_TAO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RG32UI);
-	glBindImageTexture(1, m_VoxelizationPassGLTDC_Normal->m_TAO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RG32UI);
+	glBindImageTexture(0, m_voxelizationPassGLRPC->m_GLTDCs[0]->m_TAO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RG32UI);
+	glBindImageTexture(1, m_voxelizationPassGLRPC->m_GLTDCs[1]->m_TAO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RG32UI);
 
-	activateShaderProgram(m_VoxelizationPassSPC);
+	activateShaderProgram(m_voxelizationPassSPC);
 
-	updateUniform(m_VoxelizationPass_uni_volumeDimension, m_volumeDimension);
-	updateUniform(m_VoxelizationPass_uni_voxelScale, 1.0f / m_volumeGridSize);
-	updateUniform(m_VoxelizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
+	updateUniform(m_voxelizationPass_uni_volumeDimension, m_volumeDimension);
+	updateUniform(m_voxelizationPass_uni_voxelScale, 1.0f / m_volumeGridSize);
+	updateUniform(m_voxelizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
 
 	for (size_t i = 0; i < m_VP.size(); i++)
 	{
-		updateUniform(m_VoxelizationPass_uni_VP[i], m_VP[i]);
-		updateUniform(m_VoxelizationPass_uni_VP_inv[i], m_VP_inv[i]);
+		updateUniform(m_voxelizationPass_uni_VP[i], m_VP[i]);
+		updateUniform(m_voxelizationPass_uni_VP_inv[i], m_VP_inv[i]);
 	}
 
 	for (auto& l_visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
@@ -819,7 +745,7 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 		if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE && l_visibleComponent->m_objectStatus == ObjectStatus::ALIVE)
 		{
 			updateUniform(
-				m_VoxelizationPass_uni_m,
+				m_voxelizationPass_uni_m,
 				g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 
 			// draw each graphic data of visibleComponent
@@ -839,23 +765,25 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
 	// irradiance injection pass
-	activateTexture(m_VoxelizationPassGLTDC_Albedo, 0);
-	activateTexture(m_VoxelizationPassGLTDC_Normal, 1);
-	glBindImageTexture(2, m_IrradianceInjectionPassGLTDC->m_TAO, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RG32UI);
+	activateRenderPass(m_irradianceInjectionPassGLRPC);
 
-	activateShaderProgram(m_IrradianceInjectionPassSPC);
+	activateTexture(m_voxelizationPassGLRPC->m_GLTDCs[0], 0);
+	activateTexture(m_voxelizationPassGLRPC->m_GLTDCs[1], 1);
+	glBindImageTexture(2, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TAO, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RG32UI);
+
+	activateShaderProgram(m_irradianceInjectionPassSPC);
 
 	updateUniform(
-		m_IrradianceInjectionPass_uni_dirLight_direction,
+		m_irradianceInjectionPass_uni_dirLight_direction,
 		l_sunDataPack.dir.x, l_sunDataPack.dir.y, l_sunDataPack.dir.z);
 	updateUniform(
-		m_IrradianceInjectionPass_uni_dirLight_luminance,
+		m_irradianceInjectionPass_uni_dirLight_luminance,
 		l_sunDataPack.luminance.x, l_sunDataPack.luminance.y, l_sunDataPack.luminance.z);
 
-	updateUniform(m_IrradianceInjectionPass_uni_volumeDimension, m_volumeDimension);
-	updateUniform(m_IrradianceInjectionPass_uni_voxelSize, m_volumeGridSize);
-	updateUniform(m_IrradianceInjectionPass_uni_voxelScale, 1.0f / m_volumeGridSize);
-	updateUniform(m_IrradianceInjectionPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
+	updateUniform(m_irradianceInjectionPass_uni_volumeDimension, m_volumeDimension);
+	updateUniform(m_irradianceInjectionPass_uni_voxelSize, m_volumeGridSize);
+	updateUniform(m_irradianceInjectionPass_uni_voxelScale, 1.0f / m_volumeGridSize);
+	updateUniform(m_irradianceInjectionPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
 
 	auto l_workGroups = static_cast<unsigned>(std::ceil(m_volumeDimension / 8.0f));
 	glDispatchCompute(l_workGroups, l_workGroups, l_workGroups);
@@ -879,21 +807,20 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 
 	auto l_m = l_mt * l_ms;
 
-	l_FBC = m_VoxelVisualizationGLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(m_voxelVisualizationGLRPC);
 
-	activateShaderProgram(m_VoxelVisualizationPassSPC);
+	activateShaderProgram(m_voxelVisualizationPassSPC);
 
-	updateUniform(m_VoxelVisualizationPass_uni_p, l_p);
-	updateUniform(m_VoxelVisualizationPass_uni_r, l_r);
-	updateUniform(m_VoxelVisualizationPass_uni_t, l_t);
-	updateUniform(m_VoxelVisualizationPass_uni_m, l_m);
+	updateUniform(m_voxelVisualizationPass_uni_p, l_p);
+	updateUniform(m_voxelVisualizationPass_uni_r, l_r);
+	updateUniform(m_voxelVisualizationPass_uni_t, l_t);
+	updateUniform(m_voxelVisualizationPass_uni_m, l_m);
 
-	updateUniform(m_VoxelVisualizationPass_uni_volumeDimension, m_volumeDimension);
-	updateUniform(m_VoxelVisualizationPass_uni_voxelSize, l_voxelSize);
-	updateUniform(m_VoxelVisualizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
+	updateUniform(m_voxelVisualizationPass_uni_volumeDimension, m_volumeDimension);
+	updateUniform(m_voxelVisualizationPass_uni_voxelSize, l_voxelSize);
+	updateUniform(m_voxelVisualizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
 
-	glBindImageTexture(0, m_VoxelizationPassGLTDC_Albedo->m_TAO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+	glBindImageTexture(0, m_voxelizationPassGLRPC->m_GLTDCs[0]->m_TAO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
 
 	glBindVertexArray(m_VAO);
 	glDrawArrays(GL_POINTS, 0, m_voxelCount);
@@ -911,15 +838,15 @@ GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getBRDFMSAverageLU
 
 GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getConvPassGLTDC()
 {
-	return m_convPassGLTDC;
+	return m_convPassGLRPC->m_GLTDCs[0];
 }
 
 GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getPreFilterPassGLTDC()
 {
-	return m_preFilterPassGLTDC;
+	return m_preFilterPassGLRPC->m_GLTDCs[0];
 }
 
 GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getVoxelVisualizationPassGLTDC()
 {
-	return m_VoxelVisualizationGLRPC->m_GLTDCs[0];
+	return m_voxelVisualizationGLRPC->m_GLTDCs[0];
 }

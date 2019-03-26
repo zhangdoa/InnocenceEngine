@@ -1,6 +1,5 @@
 #include "LogSystem.h"
-#include "../component/LogSystemComponent.h"
-#include "ICoreSystem.h"
+#include "../ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
 
@@ -24,6 +23,7 @@ INNO_PRIVATE_SCOPE InnoLogSystemNS
 	}
 
 #if defined INNO_PLATFORM_WIN
+#include <windows.h>
 	inline std::ostream& redColor(std::ostream &s)
 	{
 		HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -64,12 +64,12 @@ INNO_PRIVATE_SCOPE InnoLogSystemNS
 	std::ofstream m_logFile;
 }
 
-INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(double logMessage)
+void InnoLogSystem::printLog(double logMessage)
 {
 	std::cout << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl;
 }
 
-INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(const vec2 & logMessage)
+void InnoLogSystem::printLog(const vec2 & logMessage)
 {
 	std::cout
 		<< InnoLogSystemNS::getLogTimeHeader()
@@ -81,7 +81,7 @@ INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(const vec2 & logMessage)
 		<< std::endl;
 }
 
-INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(const vec4 & logMessage)
+void InnoLogSystem::printLog(const vec4 & logMessage)
 {
 	std::cout
 		<< InnoLogSystemNS::getLogTimeHeader()
@@ -97,7 +97,7 @@ INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(const vec4 & logMessage)
 		<< std::endl;
 }
 
-INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(const mat4 & logMessage)
+void InnoLogSystem::printLog(const mat4 & logMessage)
 {
 	std::cout
 		<< InnoLogSystemNS::getLogTimeHeader()
@@ -144,7 +144,7 @@ INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(const mat4 & logMessage)
 		<< std::endl;
 }
 
-INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(LogType LogType, const std::string & logMessage)
+void InnoLogSystem::printLog(LogType LogType, const std::string & logMessage)
 {
 #if defined INNO_PLATFORM_WIN
 	switch (LogType)
@@ -161,38 +161,30 @@ INNO_SYSTEM_EXPORT void InnoLogSystem::printLog(LogType LogType, const std::stri
 	InnoLogSystemNS::m_logFile << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl;
 }
 
-INNO_SYSTEM_EXPORT ObjectStatus InnoLogSystem::getStatus()
+ObjectStatus InnoLogSystem::getStatus()
 {
 	return InnoLogSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT bool InnoLogSystem::setup()
+bool InnoLogSystem::setup()
 {
 	InnoLogSystemNS::m_logFile.open(InnoLogSystemNS::getLogTimeHeader() + ".log", std::ios::out | std::ios::trunc);
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoLogSystem::initialize()
+bool InnoLogSystem::initialize()
 {
 	InnoLogSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	printLog(LogType::INNO_DEV_SUCCESS, "LogSystem has been initialized.");
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoLogSystem::update()
+bool InnoLogSystem::update()
 {
-	if (LogSystemComponent::get().m_log.size() > 0)
-	{
-		std::string l_log;
-		if (LogSystemComponent::get().m_log.tryPop(l_log))
-		{
-			printLog(LogType::INNO_DEV_VERBOSE, l_log);
-		}
-	}
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoLogSystem::terminate()
+bool InnoLogSystem::terminate()
 {
 	InnoLogSystemNS::m_logFile.close();
 	InnoLogSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;

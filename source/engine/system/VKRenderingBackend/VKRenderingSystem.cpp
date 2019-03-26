@@ -25,6 +25,8 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
+	EntityID m_entityID;
+
 	bool checkValidationLayerSupport()
 	{
 		uint32_t l_layerCount;
@@ -79,9 +81,9 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 #if defined INNO_PLATFORM_WIN
 		std::vector<const char*> extensions = { "VK_KHR_surface", "VK_KHR_win32_surface" };
 #elif  defined INNO_PLATFORM_MAC
-		std::vector<const char*> extensions = { "VK_KHR_surface", "VK_MVK_macos_surface" }; 
+		std::vector<const char*> extensions = { "VK_KHR_surface", "VK_MVK_macos_surface" };
 #elif  defined INNO_PLATFORM_LINUX
-		std::vector<const char*> extensions = { "VK_KHR_surface", "VK_KHR_xcb_surface" }; 
+		std::vector<const char*> extensions = { "VK_KHR_surface", "VK_KHR_xcb_surface" };
 #endif
 
 		if (VKRenderingSystemComponent::get().m_enableValidationLayers)
@@ -555,7 +557,7 @@ bool VKRenderingSystemNS::createSwapChainImageViews()
 
 bool VKRenderingSystemNS::createSwapChainRenderPass()
 {
-	auto l_VKSPC = g_pCoreSystem->getMemorySystem()->spawn<VKShaderProgramComponent>();
+	auto l_VKSPC = addVKShaderProgramComponent(m_entityID);
 
 	ShaderFilePaths l_shaderFilePaths;
 	l_shaderFilePaths.m_VSPath = "..//res//shaders//VK//finalBlendPass.vert.spv";
@@ -716,10 +718,13 @@ bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
 	m_renderingFrontendSystem = renderingFrontend;
 
+	m_entityID = InnoMath::createEntityID();
+
+	initializeComponentPool();
+
 	bool result = true;
 	result = result && createVkInstance();
 	result = result && createDebugCallback();
-
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem setup finished.");
@@ -727,7 +732,7 @@ bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 }
 bool VKRenderingSystemNS::initialize()
 {
-	bool result = true;	
+	bool result = true;
 	result = result && createPysicalDevice();
 	result = result && createWindowSurface();
 	result = result && createLogicalDevice();

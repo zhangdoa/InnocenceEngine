@@ -105,6 +105,8 @@ bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
 	m_renderingFrontendSystem = renderingFrontend;
 
+	initializeComponentPool();
+
 	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
 
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;

@@ -9,11 +9,23 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
 	bool createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath);
+
+	void* m_VKRenderPassComponentPool;
+	void* m_VKShaderProgramComponentPool;
+}
+
+bool VKRenderingSystemNS::initializeComponentPool()
+{
+	m_VKRenderPassComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKRenderPassComponent), 32);
+	m_VKShaderProgramComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKShaderProgramComponent), 128);
+
+	return true;
 }
 
 VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned int RTNum, TextureDataDesc RTDesc, VKShaderProgramComponent* VKSPC)
 {
-	auto l_VKRPC = g_pCoreSystem->getMemorySystem()->spawn<VKRenderPassComponent>();
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKRenderPassComponentPool, sizeof(VKRenderPassComponent));
+	auto l_VKRPC = new(l_rawPtr)VKRenderPassComponent();
 
 	VkAttachmentDescription colorAttachment = {};
 	colorAttachment.format = VKRenderingSystemComponent::get().m_swapChainImageFormat;
@@ -186,6 +198,13 @@ bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, con
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: innoShader: " + shaderFilePath + " has been loaded.");
 	return true;
+}
+
+VKShaderProgramComponent * VKRenderingSystemNS::addVKShaderProgramComponent(const EntityID & rhs)
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKShaderProgramComponentPool, sizeof(VKShaderProgramComponent));
+	auto l_VKSPC = new(l_rawPtr)VKShaderProgramComponent();
+	return l_VKSPC;
 }
 
 bool VKRenderingSystemNS::initializeVKShaderProgramComponent(VKShaderProgramComponent * rhs, const ShaderFilePaths & shaderFilePaths)

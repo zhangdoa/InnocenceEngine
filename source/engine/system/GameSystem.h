@@ -2,31 +2,31 @@
 #include "IGameSystem.h"
 
 #define spawnComponentImplDecl( className ) \
-INNO_SYSTEM_EXPORT className* spawn##className(const EntityID& parentEntity) override;
+className* spawn##className(const EntityID& parentEntity) override;
 
 #define destroyComponentImplDecl( className ) \
-INNO_SYSTEM_EXPORT bool destroy(className* rhs) override;
+bool destroy(className* rhs) override;
 
 #define registerComponentImplDecl( className ) \
-INNO_SYSTEM_EXPORT void registerComponent(className* rhs, const EntityID& parentEntity) override;
+void registerComponent(className* rhs, const EntityID& parentEntity) override;
 
 #define getComponentImplDecl( className ) \
-INNO_SYSTEM_EXPORT className* get##className(const EntityID& parentEntity) override;
+className* get##className(const EntityID& parentEntity) override;
 
 #define getComponentContainerImplDecl( className ) \
-INNO_SYSTEM_EXPORT std::vector<className*>& get##className##s() override;
+std::vector<className*>& get##className##s() override;
 
 class InnoGameSystem : INNO_IMPLEMENT IGameSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoGameSystem);
 
-	INNO_SYSTEM_EXPORT bool setup() override;
-	INNO_SYSTEM_EXPORT bool initialize() override;
-	INNO_SYSTEM_EXPORT bool update() override;
-	INNO_SYSTEM_EXPORT bool terminate() override;
+	bool setup() override;
+	bool initialize() override;
+	bool update() override;
+	bool terminate() override;
 
-	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
+	ObjectStatus getStatus() override;
 
 	spawnComponentImplDecl(TransformComponent);
 	spawnComponentImplDecl(VisibleComponent);
@@ -73,21 +73,21 @@ public:
 	getComponentContainerImplDecl(InputComponent);
 	getComponentContainerImplDecl(EnvironmentCaptureComponent);
 
-	INNO_SYSTEM_EXPORT std::string getGameName() override;
-	INNO_SYSTEM_EXPORT TransformComponent* getRootTransformComponent() override;
-	INNO_SYSTEM_EXPORT entityNameMap& getEntityNameMap() override;
-	INNO_SYSTEM_EXPORT entityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() override;
+	std::string getGameName() override;
+	TransformComponent* getRootTransformComponent() override;
+	entityNameMap& getEntityNameMap() override;
+	entityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() override;
 
-	INNO_SYSTEM_EXPORT void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) override;
-	INNO_SYSTEM_EXPORT void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) override;
+	void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) override;
+	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) override;
 
-	INNO_SYSTEM_EXPORT void saveComponentsCapture() override;
-	INNO_SYSTEM_EXPORT void cleanScene() override;
+	void saveComponentsCapture() override;
+	void cleanScene() override;
 
-	INNO_SYSTEM_EXPORT void pauseGameUpdate(bool shouldPause) override;
+	void pauseGameUpdate(bool shouldPause) override;
 
-	INNO_SYSTEM_EXPORT EntityID createEntity(const std::string& entityName) override;
-	INNO_SYSTEM_EXPORT bool removeEntity(const std::string& entityName) override;
-	INNO_SYSTEM_EXPORT std::string getEntityName(const EntityID & entityID) override;
-	INNO_SYSTEM_EXPORT EntityID getEntityID(const std::string & entityName) override;
+	EntityID createEntity(const std::string& entityName) override;
+	bool removeEntity(const std::string& entityName) override;
+	std::string getEntityName(const EntityID & entityID) override;
+	EntityID getEntityID(const std::string & entityName) override;
 };

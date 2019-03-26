@@ -5,28 +5,28 @@
 #include "../common/ComponentHeaders.h"
 
 #define spawnComponentInterfaceDecl( className ) \
-INNO_SYSTEM_EXPORT virtual className* spawn##className(const EntityID& parentEntity) = 0;
+virtual className* spawn##className(const EntityID& parentEntity) = 0;
 
 #define spawnComponentInterfaceCall( className, parentEntity ) \
 spawn##className(parentEntity)
 
 #define destroyComponentInterfaceDecl( className ) \
-INNO_SYSTEM_EXPORT virtual bool destroy(className* rhs) = 0;
+virtual bool destroy(className* rhs) = 0;
 
 #define destroyComponentInterfaceCall( ptr ) \
 destroy(ptr)
 
 #define registerComponentInterfaceDecl( className ) \
-INNO_SYSTEM_EXPORT virtual void registerComponent(className* rhs, const EntityID& parentEntity) = 0;
+virtual void registerComponent(className* rhs, const EntityID& parentEntity) = 0;
 
 #define getComponentInterfaceDecl( className ) \
-INNO_SYSTEM_EXPORT virtual className* get##className(const EntityID& parentEntity) = 0;
+virtual className* get##className(const EntityID& parentEntity) = 0;
 
 #define getComponentInterfaceCall( className, parentEntity ) \
 get##className(parentEntity)
 
 #define getComponentContainerInterfaceDecl( className ) \
-INNO_SYSTEM_EXPORT virtual std::vector<className*>& get##className##s() = 0;
+virtual std::vector<className*>& get##className##s() = 0;
 
 #define getComponentContainerInterfaceCall( className ) \
 get##className##s()
@@ -36,12 +36,12 @@ INNO_INTERFACE IGameSystem
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IGameSystem);
 
-	INNO_SYSTEM_EXPORT virtual bool setup() = 0;
-	INNO_SYSTEM_EXPORT virtual bool initialize() = 0;
-	INNO_SYSTEM_EXPORT virtual bool update() = 0;
-	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;
+	virtual bool setup() = 0;
+	virtual bool initialize() = 0;
+	virtual bool update() = 0;
+	virtual bool terminate() = 0;
 
-	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
+	virtual ObjectStatus getStatus() = 0;
 
 protected:
 	spawnComponentInterfaceDecl(TransformComponent);
@@ -110,24 +110,24 @@ public:
 		return nullptr;
 	};
 
-	INNO_SYSTEM_EXPORT virtual entityNameMap& getEntityNameMap() = 0;
-	INNO_SYSTEM_EXPORT virtual entityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() = 0;
+	virtual entityNameMap& getEntityNameMap() = 0;
+	virtual entityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() = 0;
 
-	INNO_SYSTEM_EXPORT virtual std::string getGameName() = 0;
-	INNO_SYSTEM_EXPORT virtual TransformComponent* getRootTransformComponent() = 0;
+	virtual std::string getGameName() = 0;
+	virtual TransformComponent* getRootTransformComponent() = 0;
 
-	INNO_SYSTEM_EXPORT virtual void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) = 0;
-	INNO_SYSTEM_EXPORT virtual void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) = 0;
+	virtual void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) = 0;
+	virtual void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) = 0;
 
-	INNO_SYSTEM_EXPORT virtual void saveComponentsCapture() = 0;
-	INNO_SYSTEM_EXPORT virtual void cleanScene() = 0;
+	virtual void saveComponentsCapture() = 0;
+	virtual void cleanScene() = 0;
 
-	INNO_SYSTEM_EXPORT virtual void pauseGameUpdate(bool shouldPause) = 0;
+	virtual void pauseGameUpdate(bool shouldPause) = 0;
 
-	INNO_SYSTEM_EXPORT virtual EntityID createEntity(const std::string& entityName) = 0;
-	INNO_SYSTEM_EXPORT virtual bool removeEntity(const std::string& entityName) = 0;
-	INNO_SYSTEM_EXPORT virtual std::string getEntityName(const EntityID & entityID) = 0;
-	INNO_SYSTEM_EXPORT virtual EntityID getEntityID(const std::string & entityName) = 0;
+	virtual EntityID createEntity(const std::string& entityName) = 0;
+	virtual bool removeEntity(const std::string& entityName) = 0;
+	virtual std::string getEntityName(const EntityID & entityID) = 0;
+	virtual EntityID getEntityID(const std::string & entityName) = 0;
 };
 
 template <> inline TransformComponent * IGameSystem::spawn(const EntityID& parentEntity)

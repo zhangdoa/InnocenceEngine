@@ -28,7 +28,7 @@ void DXLightRenderingPassUtilities::initialize()
 
 void DXLightRenderingPassUtilities::initializeLightPassShaders()
 {
-	DXLightRenderPassComponent::get().m_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
+	DXLightRenderPassComponent::get().m_DXSPC = addDXShaderProgramComponent(m_entityID);
 
 	DXCBuffer l_PSCBuffer;
 

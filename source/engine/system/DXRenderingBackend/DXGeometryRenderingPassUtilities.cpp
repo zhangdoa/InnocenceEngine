@@ -37,7 +37,7 @@ void DXGeometryRenderingPassUtilities::initializeOpaquePass()
 
 void DXGeometryRenderingPassUtilities::initializeOpaquePassShaders()
 {
-	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC = g_pCoreSystem->getMemorySystem()->spawn<DXShaderProgramComponent>();
+	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC = addDXShaderProgramComponent(m_entityID);
 
 	DXGeometryRenderPassComponent::get().m_opaquePass_DXSPC->m_VSCBuffers.reserve(2);
 

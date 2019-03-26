@@ -1,7 +1,6 @@
 #include "TaskSystem.h"
-#include "../common/InnoConcurrency.h"
 
-#include "ICoreSystem.h"
+#include "../ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
 
@@ -49,7 +48,7 @@ INNO_PRIVATE_SCOPE InnoTaskSystemNS
 	}
 }
 
-INNO_SYSTEM_EXPORT bool InnoTaskSystem::setup()
+bool InnoTaskSystem::setup()
 {
 	auto l_numThreads = std::max<unsigned int>(std::thread::hardware_concurrency(), 2u) - 1u;
 	try
@@ -68,18 +67,18 @@ INNO_SYSTEM_EXPORT bool InnoTaskSystem::setup()
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoTaskSystem::initialize()
+bool InnoTaskSystem::initialize()
 {
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem has been initialized.");
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoTaskSystem::update()
+bool InnoTaskSystem::update()
 {
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoTaskSystem::terminate()
+bool InnoTaskSystem::terminate()
 {
 	InnoTaskSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 	InnoTaskSystemNS::destroy();
@@ -88,17 +87,17 @@ INNO_SYSTEM_EXPORT bool InnoTaskSystem::terminate()
 	return true;
 }
 
-INNO_SYSTEM_EXPORT ObjectStatus InnoTaskSystem::getStatus()
+ObjectStatus InnoTaskSystem::getStatus()
 {
 	return 	InnoTaskSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT void InnoTaskSystem::addTask(std::unique_ptr<IThreadTask>&& task)
+void InnoTaskSystem::addTask(std::unique_ptr<IThreadTask>&& task)
 {
 	InnoTaskSystemNS::m_workQueue.push(std::move(task));
 }
 
-INNO_SYSTEM_EXPORT void InnoTaskSystem::shrinkFutureContainer(std::vector<InnoFuture<void>>& rhs)
+void InnoTaskSystem::shrinkFutureContainer(std::vector<InnoFuture<void>>& rhs)
 {
 	auto l_removeResult = std::remove_if(rhs.begin(), rhs.end(), [](InnoFuture<void>& val) {
 		return val.isReady();
@@ -108,7 +107,7 @@ INNO_SYSTEM_EXPORT void InnoTaskSystem::shrinkFutureContainer(std::vector<InnoFu
 	rhs.shrink_to_fit();
 }
 
-INNO_SYSTEM_EXPORT void InnoTaskSystem::waitAllTasksToFinish()
+void InnoTaskSystem::waitAllTasksToFinish()
 {
 	auto l_isAllTasksFinished = 0;
 	while (l_isAllTasksFinished != InnoTaskSystemNS::m_threadStatus.size())
@@ -120,7 +119,7 @@ INNO_SYSTEM_EXPORT void InnoTaskSystem::waitAllTasksToFinish()
 	}
 }
 
-INNO_SYSTEM_EXPORT std::string InnoTaskSystem::getThreadId()
+std::string InnoTaskSystem::getThreadId()
 {
 	std::stringstream ss;
 	ss << std::this_thread::get_id();

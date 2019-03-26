@@ -60,7 +60,7 @@ class DXRenderingSystemComponent
 {
 public:
 	~DXRenderingSystemComponent() {};
-	
+
 	static DXRenderingSystemComponent& get()
 	{
 		static DXRenderingSystemComponent instance;
@@ -103,9 +103,6 @@ public:
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 	D3D11_RENDER_TARGET_VIEW_DESC deferredPassRTVDesc = D3D11_RENDER_TARGET_VIEW_DESC();
 
-	std::unordered_map<EntityID, DXMeshDataComponent*> m_meshMap;
-	std::unordered_map<EntityID, DXTextureDataComponent*> m_textureMap;
-	
 	GPassCameraCBufferData m_GPassCameraCBufferData;
 	std::queue<GPassMeshDataPack> m_GPassMeshDataQueue;
 	LPassCBufferData m_LPassCBufferData;

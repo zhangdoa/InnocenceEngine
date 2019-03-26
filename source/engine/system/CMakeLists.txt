@@ -1,6 +1,8 @@
 #add_subdirectory("GLFWWrapper")
 add_subdirectory("ImGuiWrapper")
 
+add_subdirectory("Core")
+
 if (INNO_PLATFORM_WIN)
 add_subdirectory("DXRenderingBackend")
 add_subdirectory("WinWindow")
@@ -25,6 +27,8 @@ GENERATE_EXPORT_HEADER (InnoSystem
     EXPORT_FILE_NAME ${CMAKE_SOURCE_DIR}/engine/exports/InnoSystem_Export.h
     STATIC_DEFINE INNO_SYSTEM_BUILT_AS_STATIC
 )
+
+target_link_libraries(InnoSystem InnoCore)
 
 if (INNO_PLATFORM_WIN)
 target_link_libraries(InnoSystem InnoDXRenderingBackend)

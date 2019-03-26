@@ -49,6 +49,8 @@ namespace InnoPhysicsSystemNS
 	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
 	AABB m_SceneAABB;
 
+	void* m_PhysicsDataComponentPool;
+
 	InputComponent* m_inputComponent;
 	std::function<void()> f_mouseSelect;
 
@@ -60,6 +62,8 @@ namespace InnoPhysicsSystemNS
 
 bool InnoPhysicsSystemNS::setup()
 {
+	m_PhysicsDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(PhysicsDataComponent), 16384);
+
 	m_entityID = g_pCoreSystem->getGameSystem()->createEntity("PhysicsSystemPicker");
 
 	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_entityID);
@@ -244,7 +248,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 		l_frustumVertices[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVertices[i].m_pos);
 #endif
-}
+	}
 
 	//5.calculate AABBs in light space
 	auto l_AABBsLS = frustumsVerticesToAABBs(l_frustumVertices, l_CSMSplitFactors);
@@ -447,7 +451,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(AABB rhs)
 
 MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
 {
-	auto l_MDC = g_pCoreSystem->getMemorySystem()->spawn<MeshDataComponent>();
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->addMeshDataComponent();
 	l_MDC->m_parentEntity = InnoMath::createEntityID();
 
 	l_MDC->m_vertices = generateAABBVertices(rhs);
@@ -477,7 +481,9 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(Frustum rhs)
 
 PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelMap& modelMap, const EntityID& entityID)
 {
-	auto l_PDC = g_pCoreSystem->getMemorySystem()->spawn<PhysicsDataComponent>();
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_PhysicsDataComponentPool, sizeof(PhysicsDataComponent));
+	auto l_PDC = new(l_rawPtr)PhysicsDataComponent();
+
 	l_PDC->m_parentEntity = entityID;
 
 	for (auto& l_MDC : modelMap)

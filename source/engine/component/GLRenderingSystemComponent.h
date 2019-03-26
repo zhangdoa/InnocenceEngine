@@ -2,7 +2,7 @@
 #include "../common/InnoType.h"
 #include "../component/GLMeshDataComponent.h"
 #include "../component/GLTextureDataComponent.h"
-#include "../component/GLFrameBufferComponent.h"
+#include "../component/GLRenderPassComponent.h"
 
 struct GPassCameraUBOData
 {

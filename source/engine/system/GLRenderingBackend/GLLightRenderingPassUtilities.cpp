@@ -123,12 +123,11 @@ void GLLightRenderingPassUtilities::update()
 	glDisable(GL_CULL_FACE);
 
 	// bind to framebuffer
-	auto l_FBC = GLLightRenderPassComponent::get().m_GLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLLightRenderPassComponent::get().m_GLRPC);
 
 	// 1. opaque objects
 	// copy stencil buffer of opaque objects from G-Pass
-	copyStencilBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC, l_FBC);
+	copyStencilBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC, GLLightRenderPassComponent::get().m_GLRPC);
 
 	activateShaderProgram(GLLightRenderPassComponent::get().m_GLSPC);
 
@@ -251,7 +250,7 @@ void GLLightRenderingPassUtilities::update()
 	glClear(GL_STENCIL_BUFFER_BIT);
 
 	// copy stencil buffer of emmisive objects from G-Pass
-	copyStencilBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC, l_FBC);
+	copyStencilBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC, GLLightRenderPassComponent::get().m_GLRPC);
 
 	updateUniform(
 		GLLightRenderPassComponent::get().m_uni_isEmissive,

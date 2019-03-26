@@ -10,6 +10,8 @@
 
 INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
+	bool initializeComponentPool();
+
 	DXRenderPassComponent* addDXRenderPassComponent(unsigned int RTNum, D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc);
 
 	DXMeshDataComponent* generateDXMeshDataComponent(MeshDataComponent* rhs);
@@ -24,6 +26,8 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	void drawMesh(EntityID rhs);
 	void drawMesh(MeshDataComponent* MDC);
 	void drawMesh(size_t indicesSize, DXMeshDataComponent * DXMDC);
+
+	DXShaderProgramComponent* addDXShaderProgramComponent(EntityID rhs);
 
 	bool initializeDXShaderProgramComponent(DXShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
 

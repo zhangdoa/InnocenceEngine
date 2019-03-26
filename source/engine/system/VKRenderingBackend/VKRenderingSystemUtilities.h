@@ -10,6 +10,8 @@
 
 INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
+	bool initializeComponentPool();
+
 	VKRenderPassComponent* addVKRenderPassComponent(unsigned int RTNum, TextureDataDesc RTDesc, VKShaderProgramComponent* VKSPC);
 
 	VKMeshDataComponent* generateVKMeshDataComponent(MeshDataComponent* rhs);
@@ -24,6 +26,8 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	void drawMesh(EntityID rhs);
 	void drawMesh(MeshDataComponent* MDC);
 	void drawMesh(size_t indicesSize, VKMeshDataComponent * VKMDC);
+
+	VKShaderProgramComponent* addVKShaderProgramComponent(const EntityID& rhs);
 
 	bool initializeVKShaderProgramComponent(VKShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
 

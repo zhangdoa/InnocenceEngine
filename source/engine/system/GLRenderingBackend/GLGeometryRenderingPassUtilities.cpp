@@ -202,7 +202,7 @@ void GLGeometryRenderingPassUtilities::generateRandomNoise()
 		GLGeometryRenderPassComponent::get().ssaoNoise.push_back(noise);
 	}
 
-	GLGeometryRenderPassComponent::get().m_noiseTDC = g_pCoreSystem->getMemorySystem()->spawn<TextureDataComponent>();
+	GLGeometryRenderPassComponent::get().m_noiseTDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
 	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
 	GLGeometryRenderPassComponent::get().m_noiseTDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
@@ -359,9 +359,7 @@ void GLGeometryRenderingPassUtilities::updateEarlyZPass()
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	// bind to framebuffer
-	auto l_FBC = GLGeometryRenderPassComponent::get().m_earlyZPass_GLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLGeometryRenderPassComponent::get().m_earlyZPass_GLRPC);
 
 	activateShaderProgram(GLGeometryRenderPassComponent::get().m_earlyZPass_GLSPC);
 
@@ -413,11 +411,9 @@ void GLGeometryRenderingPassUtilities::updateOpaquePass()
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	// bind to framebuffer
-	auto l_FBC = GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC);
 
-	copyDepthBuffer(GLGeometryRenderPassComponent::get().m_earlyZPass_GLRPC->m_GLFBC, GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC);
+	copyDepthBuffer(GLGeometryRenderPassComponent::get().m_earlyZPass_GLRPC, GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC);
 
 	activateShaderProgram(GLGeometryRenderPassComponent::get().m_opaquePass_GLSPC);
 
@@ -499,9 +495,7 @@ void GLGeometryRenderingPassUtilities::updateSSAOPass()
 {
 	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
 
-	// bind to framebuffer
-	auto l_FBC = GLGeometryRenderPassComponent::get().m_SSAOPass_GLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLGeometryRenderPassComponent::get().m_SSAOPass_GLRPC);
 
 	activateShaderProgram(GLGeometryRenderPassComponent::get().m_SSAOPass_GLSPC);
 
@@ -532,9 +526,7 @@ void GLGeometryRenderingPassUtilities::updateSSAOPass()
 }
 void GLGeometryRenderingPassUtilities::updateSSAOBlurPass()
 {
-	// bind to framebuffer
-	auto l_FBC = GLGeometryRenderPassComponent::get().m_SSAOBlurPass_GLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLGeometryRenderPassComponent::get().m_SSAOBlurPass_GLRPC);
 
 	activateShaderProgram(GLGeometryRenderPassComponent::get().m_SSAOBlurPass_GLSPC);
 
@@ -556,11 +548,9 @@ void GLGeometryRenderingPassUtilities::updateTransparentPass()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// bind to framebuffer
-	auto l_FBC = GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC->m_GLFBC;
-	bindFBC(l_FBC);
+	activateRenderPass(GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC);
 
-	copyDepthBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC, l_FBC);
+	copyDepthBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC, GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC);
 
 	activateShaderProgram(GLGeometryRenderPassComponent::get().m_transparentPass_GLSPC);
 
@@ -604,11 +594,9 @@ void GLGeometryRenderingPassUtilities::updateTerrainPass()
 	{
 		glEnable(GL_DEPTH_TEST);
 
-		// bind to framebuffer
-		auto l_FBC = GLTerrainRenderPassComponent::get().m_GLRPC->m_GLFBC;
-		bindFBC(l_FBC);
+		activateRenderPass(GLTerrainRenderPassComponent::get().m_GLRPC);
 
-		copyDepthBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLFBC, l_FBC);
+		copyDepthBuffer(GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC, GLTerrainRenderPassComponent::get().m_GLRPC);
 
 		activateShaderProgram(GLTerrainRenderPassComponent::get().m_GLSPC);
 
@@ -636,7 +624,7 @@ void GLGeometryRenderingPassUtilities::updateTerrainPass()
 	}
 	else
 	{
-		cleanFBC(GLTerrainRenderPassComponent::get().m_GLRPC->m_GLFBC);
+		cleanFBC(GLTerrainRenderPassComponent::get().m_GLRPC);
 	}
 }
 
