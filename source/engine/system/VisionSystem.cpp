@@ -7,7 +7,9 @@
 #include "DX11RenderingBackend/DXRenderingSystem.h"
 #endif
 
+#if not defined INNO_PLATFORM_MAC
 #include "GLRenderingBackend/GLRenderingSystem.h"
+#endif
 
 #if defined INNO_RENDERER_VULKAN
 #include "VKRenderingBackend/VKRenderingSystem.h"
@@ -90,7 +92,12 @@ InitConfig InnoVisionSystemNS::parseInitConfig(const std::string& arg)
 
 		if (l_rendererArguments == "0")
 		{
-			l_result.renderingBackend = RenderingBackend::GL;
+#if not defined INNO_PLATFORM_MAC
+            l_result.renderingBackend = RenderingBackend::GL;
+#else
+            g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem: OpenGL is not supported on current platformm no rendering backend will be launched.");
+#endif
+
 		}
 		else if (l_rendererArguments == "1")
 		{
@@ -132,7 +139,9 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hwnd, cha
 	switch (InnoVisionSystemNS::m_initConfig.renderingBackend)
 	{
 	case RenderingBackend::GL:
-		InnoVisionSystemNS::m_renderingBackendSystem = new GLRenderingSystem();
+#if not defined INNO_PLATFORM_MAC
+        InnoVisionSystemNS::m_renderingBackendSystem = new GLRenderingSystem();
+#endif
 		break;
 	case RenderingBackend::DX:
 #if defined INNO_PLATFORM_WIN

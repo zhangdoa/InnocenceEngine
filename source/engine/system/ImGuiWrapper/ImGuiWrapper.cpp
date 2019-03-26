@@ -1,5 +1,8 @@
 #include "ImGuiWrapper.h"
+
+#if defined INNO_PLATFORM_WIN
 #include "../../third-party/ImGui/imgui_impl_win32.h"
+#endif
 
 #include "../ICoreSystem.h"
 
@@ -164,7 +167,7 @@ bool ImGuiWrapper::initialize()
 
 bool ImGuiWrapper::update()
 {
-	ImGui_ImplWin32_NewFrame();
+	//ImGui_ImplWin32_NewFrame();
 
 #ifdef DEBUG
 #ifndef INNO_PLATFORM_LINUX64
@@ -191,7 +194,7 @@ bool ImGuiWrapper::terminate()
 {
 	ImGui::DestroyContext();
 
-	ImGui_ImplWin32_Shutdown();
+	//ImGui_ImplWin32_Shutdown();
 
 	return true;
 }

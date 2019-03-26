@@ -1,5 +1,5 @@
 #!/bin/sh
-git submodule update
+#git submodule update
 
 cd source/external/gitsubmodules
 
@@ -31,6 +31,16 @@ mv -f temp.h.new ../../engine/third-party/ImGui/imgui_impl_opengl3.h
 
 mkdir -p ../include/json/
 cp json/single_include/nlohmann/json.hpp ../include/json/
+
+mkdir -p ../../editor/InnocenceEditor/darkstyle/
+cp Qt-Frameless-Window-DarkStyle/darkstyle/* ../../editor/InnocenceEditor/darkstyle/
+cp Qt-Frameless-Window-DarkStyle/darkstyle.qrc ../../editor/InnocenceEditor/
+cp Qt-Frameless-Window-DarkStyle/Darkstyle.h ../../editor/InnocenceEditor/
+cp Qt-Frameless-Window-DarkStyle/Darkstyle.cpp ../../editor/InnocenceEditor/
+
+mkdir -p ../include/GL
+curl -o ../include/GL/wglext.h "https://www.khronos.org/registry/OpenGL/api/GL/wglext.h"
+curl -o ../include/GL/glext.h "https://www.khronos.org/registry/OpenGL/api/GL/glext.h"
 
 cd ../
 

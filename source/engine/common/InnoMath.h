@@ -1161,9 +1161,9 @@ namespace InnoMath
 		// @TODO: replace with SIMD impl
 		TVec4<T> l_result;
 
-		l_result.x = l_m.m30;
-		l_result.y = l_m.m31;
-		l_result.z = l_m.m32;
+		l_result.x = rhs.m30;
+		l_result.y = rhs.m31;
+		l_result.z = rhs.m32;
 		l_result.w = one<T>;
 
 		return l_result;
@@ -1176,9 +1176,9 @@ namespace InnoMath
 		// @TODO: replace with SIMD impl
 		TVec4<T> l_result;
 
-		l_result.x = l_m.m03;
-		l_result.y = l_m.m13;
-		l_result.z = l_m.m23;
+		l_result.x = rhs.m03;
+		l_result.y = rhs.m13;
+		l_result.z = rhs.m23;
 		l_result.w = one<T>;
 
 		return l_result;
@@ -1285,10 +1285,10 @@ namespace InnoMath
 		// @TODO: replace with SIMD impl
 		TVec4<T> l_result;
 
-		l_result.x = l_m.m00;
-		l_result.y = l_m.m11;
-		l_result.z = l_m.m22;
-		l_result.w = l_m.m33;
+		l_result.x = rhs.m00;
+		l_result.y = rhs.m11;
+		l_result.z = rhs.m22;
+		l_result.w = rhs.m33;
 
 		return l_result;
 	}
@@ -2002,7 +2002,7 @@ namespace InnoMath
 
 		for (auto& l_vertexData : l_vertices)
 		{
-			l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, zero<T>).normalize();
+			l_vertexData.m_normal = TVec4<T>(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, zero<T>).normalize();
 		}
 
 		return l_vertices;

@@ -97,7 +97,7 @@ public:
 
 	template <typename T> bool destroy(T* rhs)
 	{
-		return nullptr;
+		return false;
 	};
 
 	template <typename T> T* get(const EntityID& parentEntity)

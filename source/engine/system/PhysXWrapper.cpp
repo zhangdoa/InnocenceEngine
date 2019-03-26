@@ -1,6 +1,8 @@
 #include "PhysXWrapper.h"
 
+#if defined INNO_PLATFORM_WIN
 #include "PxPhysicsAPI.h"
+#endif
 
 INNO_PRIVATE_SCOPE PhysXWrapperNS
 {
