@@ -1,8 +1,8 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../component/DXMeshDataComponent.h"
+#include "../component/DX11MeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
-#include "../component/DXTextureDataComponent.h"
+#include "../component/DX11TextureDataComponent.h"
 
 struct GPassCameraCBufferData
 {
@@ -40,13 +40,13 @@ struct GPassMeshDataPack
 	size_t indiceSize;
 	GPassMeshCBufferData meshCBuffer;
 	GPassTextureCBufferData textureCBuffer;
-	DXMeshDataComponent* DXMDC;
+	DX11MeshDataComponent* DXMDC;
 	MeshPrimitiveTopology meshPrimitiveTopology;
-	DXTextureDataComponent* normalDXTDC;
-	DXTextureDataComponent* albedoDXTDC;
-	DXTextureDataComponent* metallicDXTDC;
-	DXTextureDataComponent* roughnessDXTDC;
-	DXTextureDataComponent* AODXTDC;
+	DX11TextureDataComponent* normalDXTDC;
+	DX11TextureDataComponent* albedoDXTDC;
+	DX11TextureDataComponent* metallicDXTDC;
+	DX11TextureDataComponent* roughnessDXTDC;
+	DX11TextureDataComponent* AODXTDC;
 };
 
 struct LPassCBufferData
@@ -56,14 +56,14 @@ struct LPassCBufferData
 	vec4 color;
 };
 
-class DXRenderingSystemComponent
+class DX11RenderingSystemComponent
 {
 public:
-	~DXRenderingSystemComponent() {};
+	~DX11RenderingSystemComponent() {};
 
-	static DXRenderingSystemComponent& get()
+	static DX11RenderingSystemComponent& get()
 	{
-		static DXRenderingSystemComponent instance;
+		static DX11RenderingSystemComponent instance;
 		return instance;
 	}
 
@@ -107,26 +107,26 @@ public:
 	std::queue<GPassMeshDataPack> m_GPassMeshDataQueue;
 	LPassCBufferData m_LPassCBufferData;
 
-	DXMeshDataComponent* m_UnitLineDXMDC;
-	DXMeshDataComponent* m_UnitQuadDXMDC;
-	DXMeshDataComponent* m_UnitCubeDXMDC;
-	DXMeshDataComponent* m_UnitSphereDXMDC;
+	DX11MeshDataComponent* m_UnitLineDXMDC;
+	DX11MeshDataComponent* m_UnitQuadDXMDC;
+	DX11MeshDataComponent* m_UnitCubeDXMDC;
+	DX11MeshDataComponent* m_UnitSphereDXMDC;
 
-	DXTextureDataComponent* m_iconTemplate_OBJ;
-	DXTextureDataComponent* m_iconTemplate_PNG;
-	DXTextureDataComponent* m_iconTemplate_SHADER;
-	DXTextureDataComponent* m_iconTemplate_UNKNOWN;
+	DX11TextureDataComponent* m_iconTemplate_OBJ;
+	DX11TextureDataComponent* m_iconTemplate_PNG;
+	DX11TextureDataComponent* m_iconTemplate_SHADER;
+	DX11TextureDataComponent* m_iconTemplate_UNKNOWN;
 
-	DXTextureDataComponent* m_iconTemplate_DirectionalLight;
-	DXTextureDataComponent* m_iconTemplate_PointLight;
-	DXTextureDataComponent* m_iconTemplate_SphereLight;
+	DX11TextureDataComponent* m_iconTemplate_DirectionalLight;
+	DX11TextureDataComponent* m_iconTemplate_PointLight;
+	DX11TextureDataComponent* m_iconTemplate_SphereLight;
 
-	DXTextureDataComponent* m_basicNormalDXTDC;
-	DXTextureDataComponent* m_basicAlbedoDXTDC;
-	DXTextureDataComponent* m_basicMetallicDXTDC;
-	DXTextureDataComponent* m_basicRoughnessDXTDC;
-	DXTextureDataComponent* m_basicAODXTDC;
+	DX11TextureDataComponent* m_basicNormalDXTDC;
+	DX11TextureDataComponent* m_basicAlbedoDXTDC;
+	DX11TextureDataComponent* m_basicMetallicDXTDC;
+	DX11TextureDataComponent* m_basicRoughnessDXTDC;
+	DX11TextureDataComponent* m_basicAODXTDC;
 
 private:
-	DXRenderingSystemComponent() {};
+	DX11RenderingSystemComponent() {};
 };

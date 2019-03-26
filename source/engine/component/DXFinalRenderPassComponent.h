@@ -1,12 +1,12 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "DXShaderProgramComponent.h"
+#include "DX11ShaderProgramComponent.h"
 
 class DXFinalRenderPassComponent
 {
 public:
 	~DXFinalRenderPassComponent() {};
-	
+
 	static DXFinalRenderPassComponent& get()
 	{
 		static DXFinalRenderPassComponent instance;
@@ -18,7 +18,7 @@ public:
 
 	ShaderFilePaths m_finalPass_shaderFilePaths = { "DX11//finalBlendPassVertex.sf" , "", "DX11//finalBlendPassPixel.sf" };
 
-	DXShaderProgramComponent* m_DXSPC;
+	DX11ShaderProgramComponent* m_DXSPC;
 
 private:
 	DXFinalRenderPassComponent() {};

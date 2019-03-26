@@ -1,20 +1,20 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../system/DXRenderingBackend/DXHeaders.h"
+#include "../system/DX11RenderingBackend/DXHeaders.h"
 #include "TextureDataComponent.h"
-#include "DXTextureDataComponent.h"
+#include "DX11TextureDataComponent.h"
 
-class DXRenderPassComponent
+class DX11RenderPassComponent
 {
 public:
-	DXRenderPassComponent() {};
-	~DXRenderPassComponent() {};
+	DX11RenderPassComponent() {};
+	~DX11RenderPassComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
 	std::vector<TextureDataComponent*> m_TDCs;
-	std::vector<DXTextureDataComponent*> m_DXTDCs;
+	std::vector<DX11TextureDataComponent*> m_DXTDCs;
 
 	std::vector<ID3D11RenderTargetView*> m_renderTargetViews;
 

@@ -2,7 +2,7 @@
 #include "DXLightRenderingPassUtilities.h"
 #include "../../component/DXLightRenderPassComponent.h"
 #include "../../component/DXGeometryRenderPassComponent.h"
-#include "../../component/DXRenderingSystemComponent.h"
+#include "../../component/DX11RenderingSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -21,16 +21,16 @@ void DXLightRenderingPassUtilities::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	DXLightRenderPassComponent::get().m_DXRPC = addDXRenderPassComponent(1, DXRenderingSystemComponent::get().deferredPassRTVDesc, DXRenderingSystemComponent::get().deferredPassTextureDesc);
+	DXLightRenderPassComponent::get().m_DXRPC = addDX11RenderPassComponent(1, DX11RenderingSystemComponent::get().deferredPassRTVDesc, DX11RenderingSystemComponent::get().deferredPassTextureDesc);
 
 	initializeLightPassShaders();
 }
 
 void DXLightRenderingPassUtilities::initializeLightPassShaders()
 {
-	DXLightRenderPassComponent::get().m_DXSPC = addDXShaderProgramComponent(m_entityID);
+	DXLightRenderPassComponent::get().m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
 
-	DXCBuffer l_PSCBuffer;
+	DX11CBuffer l_PSCBuffer;
 
 	l_PSCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	l_PSCBuffer.m_CBufferDesc.ByteWidth = sizeof(LPassCBufferData);
@@ -55,28 +55,28 @@ void DXLightRenderingPassUtilities::initializeLightPassShaders()
 	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.MinLOD = 0;
 	DXLightRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	initializeDXShaderProgramComponent(DXLightRenderPassComponent::get().m_DXSPC, DXLightRenderPassComponent::get().m_lightPass_shaderFilePaths);
+	initializeDX11ShaderProgramComponent(DXLightRenderPassComponent::get().m_DXSPC, DXLightRenderPassComponent::get().m_lightPass_shaderFilePaths);
 }
 
 void DXLightRenderingPassUtilities::update()
 {
 	// Set Rasterizer State
-	DXRenderingSystemComponent::get().m_deviceContext->RSSetState(
-		DXRenderingSystemComponent::get().m_rasterStateDeferred);
+	DX11RenderingSystemComponent::get().m_deviceContext->RSSetState(
+		DX11RenderingSystemComponent::get().m_rasterStateDeferred);
 
-	activateDXShaderProgramComponent(DXLightRenderPassComponent::get().m_DXSPC);
+	activateDX11ShaderProgramComponent(DXLightRenderPassComponent::get().m_DXSPC);
 
-	DXRenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	DXRenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
+	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
 		(unsigned int)DXLightRenderPassComponent::get().m_DXRPC->m_renderTargetViews.size(),
 		&DXLightRenderPassComponent::get().m_DXRPC->m_renderTargetViews[0],
 		DXLightRenderPassComponent::get().m_DXRPC->m_depthStencilView);
 
 	// Set the viewport.
-	DXRenderingSystemComponent::get().m_deviceContext->RSSetViewports(
+	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
 		1,
 		&DXLightRenderPassComponent::get().m_DXRPC->m_viewport);
 
@@ -87,17 +87,17 @@ void DXLightRenderingPassUtilities::update()
 	}
 	cleanDSV(DXLightRenderPassComponent::get().m_DXRPC->m_depthStencilView);
 
-	auto l_LPassCBufferData = DXRenderingSystemComponent::get().m_LPassCBufferData;
+	auto l_LPassCBufferData = DX11RenderingSystemComponent::get().m_LPassCBufferData;
 
 	updateShaderParameter(ShaderType::FRAGMENT, 0, DXLightRenderPassComponent::get().m_DXSPC->m_PSCBuffers[0].m_CBufferPtr, DXLightRenderPassComponent::get().m_DXSPC->m_PSCBuffers[0].m_CBufferDesc.ByteWidth, &l_LPassCBufferData);
 
 	// bind to previous pass render target textures
-	DXRenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_DXTDCs[0]->m_SRV);
-	DXRenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(1, 1, &DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_DXTDCs[1]->m_SRV);
-	DXRenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(2, 1, &DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_DXTDCs[2]->m_SRV);
+	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_DXTDCs[0]->m_SRV);
+	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(1, 1, &DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_DXTDCs[1]->m_SRV);
+	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(2, 1, &DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_DXTDCs[2]->m_SRV);
 
 	// draw
-	drawMesh(6, DXRenderingSystemComponent::get().m_UnitQuadDXMDC);
+	drawMesh(6, DX11RenderingSystemComponent::get().m_UnitQuadDXMDC);
 }
 
 bool DXLightRenderingPassUtilities::resize()

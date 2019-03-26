@@ -4,7 +4,7 @@
 
 #if defined INNO_PLATFORM_WIN
 #include "WinWindow/WinWindowSystem.h"
-#include "DXRenderingBackend/DXRenderingSystem.h"
+#include "DX11RenderingBackend/DXRenderingSystem.h"
 #endif
 
 #include "GLRenderingBackend/GLRenderingSystem.h"

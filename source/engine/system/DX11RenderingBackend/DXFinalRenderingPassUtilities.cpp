@@ -1,7 +1,7 @@
 #include "DXRenderingSystemUtilities.h"
 #include "DXFinalRenderingPassUtilities.h"
 #include "../../component/DXFinalRenderPassComponent.h"
-#include "../../component/DXRenderingSystemComponent.h"
+#include "../../component/DX11RenderingSystemComponent.h"
 #include "../../component/DXGeometryRenderPassComponent.h"
 #include "../../component/DXLightRenderPassComponent.h"
 
@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE DXFinalRenderingPassUtilities
 void DXFinalRenderingPassUtilities::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
-	DXFinalRenderPassComponent::get().m_DXSPC = addDXShaderProgramComponent(m_entityID);
+	DXFinalRenderPassComponent::get().m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
 
 	// Create a texture sampler state description.
 	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -36,40 +36,40 @@ void DXFinalRenderingPassUtilities::initialize()
 	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.MinLOD = 0;
 	DXFinalRenderPassComponent::get().m_DXSPC->m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	initializeDXShaderProgramComponent(DXFinalRenderPassComponent::get().m_DXSPC, DXFinalRenderPassComponent::get().m_finalPass_shaderFilePaths);
+	initializeDX11ShaderProgramComponent(DXFinalRenderPassComponent::get().m_DXSPC, DXFinalRenderPassComponent::get().m_finalPass_shaderFilePaths);
 }
 
 void DXFinalRenderingPassUtilities::update()
 {
 	// Set Rasterizer State
-	DXRenderingSystemComponent::get().m_deviceContext->RSSetState(
-		DXRenderingSystemComponent::get().m_rasterStateDeferred);
+	DX11RenderingSystemComponent::get().m_deviceContext->RSSetState(
+		DX11RenderingSystemComponent::get().m_rasterStateDeferred);
 
-	activateDXShaderProgramComponent(DXFinalRenderPassComponent::get().m_DXSPC);
+	activateDX11ShaderProgramComponent(DXFinalRenderPassComponent::get().m_DXSPC);
 
-	DXRenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	DXRenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
+	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
 		1,
-		&DXRenderingSystemComponent::get().m_renderTargetView,
-		DXRenderingSystemComponent::get().m_depthStencilView);
+		&DX11RenderingSystemComponent::get().m_renderTargetView,
+		DX11RenderingSystemComponent::get().m_depthStencilView);
 
 	// Set the viewport.
-	DXRenderingSystemComponent::get().m_deviceContext->RSSetViewports(
+	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
 		1,
-		&DXRenderingSystemComponent::get().m_viewport);
+		&DX11RenderingSystemComponent::get().m_viewport);
 
 	// Clear the render buffers.
-	cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), DXRenderingSystemComponent::get().m_renderTargetView);
-	cleanDSV(DXRenderingSystemComponent::get().m_depthStencilView);
+	cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), DX11RenderingSystemComponent::get().m_renderTargetView);
+	cleanDSV(DX11RenderingSystemComponent::get().m_depthStencilView);
 
 	// bind to previous pass render target textures
-	DXRenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DXLightRenderPassComponent::get().m_DXRPC->m_DXTDCs[0]->m_SRV);
+	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DXLightRenderPassComponent::get().m_DXRPC->m_DXTDCs[0]->m_SRV);
 
 	// draw
-	drawMesh(6, DXRenderingSystemComponent::get().m_UnitQuadDXMDC);
+	drawMesh(6, DX11RenderingSystemComponent::get().m_UnitQuadDXMDC);
 }
 
 bool DXFinalRenderingPassUtilities::resize()

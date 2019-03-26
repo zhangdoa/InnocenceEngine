@@ -1,12 +1,12 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../system/DXRenderingBackend/DXHeaders.h"
+#include "../system/DX11RenderingBackend/DXHeaders.h"
 
-class DXMeshDataComponent
+class DX11MeshDataComponent
 {
 public:
-	DXMeshDataComponent() {};
-	~DXMeshDataComponent() {};
+	DX11MeshDataComponent() {};
+	~DX11MeshDataComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;

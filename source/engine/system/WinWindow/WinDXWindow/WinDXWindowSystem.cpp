@@ -1,6 +1,6 @@
 #include "WinDXWindowSystem.h"
 #include "../../../component/WinWindowSystemComponent.h"
-#include "../../../component/DXRenderingSystemComponent.h"
+#include "../../../component/DX11RenderingSystemComponent.h"
 
 #include "../../ICoreSystem.h"
 
@@ -121,11 +121,11 @@ void WinDXWindowSystem::swapBuffer()
 	if (WinWindowSystemComponent::get().m_vsync_enabled)
 	{
 		// Lock to screen refresh rate.
-		DXRenderingSystemComponent::get().m_swapChain->Present(1, 0);
+		DX11RenderingSystemComponent::get().m_swapChain->Present(1, 0);
 	}
 	else
 	{
 		// Present as fast as possible.
-		DXRenderingSystemComponent::get().m_swapChain->Present(0, 0);
+		DX11RenderingSystemComponent::get().m_swapChain->Present(0, 0);
 	}
 }

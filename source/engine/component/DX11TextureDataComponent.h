@@ -1,12 +1,12 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../system/DXRenderingBackend/DXHeaders.h"
+#include "../system/DX11RenderingBackend/DXHeaders.h"
 
-class DXTextureDataComponent
+class DX11TextureDataComponent
 {
 public:
-	DXTextureDataComponent() {};
-	~DXTextureDataComponent() {};
+	DX11TextureDataComponent() {};
+	~DX11TextureDataComponent() {};
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;

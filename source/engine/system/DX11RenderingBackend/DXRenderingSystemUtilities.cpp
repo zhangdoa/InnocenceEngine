@@ -1,7 +1,7 @@
 #include "DXRenderingSystemUtilities.h"
 
-#include "../../component/DXWindowSystemComponent.h"
-#include "../../component/DXRenderingSystemComponent.h"
+#include "../../component/WinWindowSystemComponent.h"
+#include "../../component/DX11RenderingSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -11,36 +11,36 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 {
 	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 	ID3D10Blob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
-	bool createCBuffer(DXCBuffer& arg);
-	bool initializeVertexShader(DXShaderProgramComponent* rhs, const std::wstring& VSShaderPath);
+	bool createCBuffer(DX11CBuffer& arg);
+	bool initializeVertexShader(DX11ShaderProgramComponent* rhs, const std::wstring& VSShaderPath);
 	bool createVertexShader(ID3D10Blob* shaderBuffer, ID3D11VertexShader** vertexShader);
 	bool createInputLayout(ID3D10Blob* shaderBuffer, ID3D11InputLayout** inputLayout);
-	bool initializePixelShader(DXShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
+	bool initializePixelShader(DX11ShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
 	bool createPixelShader(ID3D10Blob* shaderBuffer, ID3D11PixelShader** pixelShader);
 
-	bool initializeDXMeshDataComponent(DXMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
-	bool initializeDXTextureDataComponent(DXTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
+	bool initializeDX11MeshDataComponent(DX11MeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
+	bool initializeDX11TextureDataComponent(DX11TextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
 
-	std::unordered_map<EntityID, DXMeshDataComponent*> m_initializedDXMDC;
-	std::unordered_map<EntityID, DXTextureDataComponent*> m_initializedDXTDC;
+	std::unordered_map<EntityID, DX11MeshDataComponent*> m_initializedDXMDC;
+	std::unordered_map<EntityID, DX11TextureDataComponent*> m_initializedDXTDC;
 
-	std::unordered_map<EntityID, DXMeshDataComponent*> m_meshMap;
-	std::unordered_map<EntityID, DXTextureDataComponent*> m_textureMap;
+	std::unordered_map<EntityID, DX11MeshDataComponent*> m_meshMap;
+	std::unordered_map<EntityID, DX11TextureDataComponent*> m_textureMap;
 
-	void* m_DXMeshDataComponentPool;
-	void* m_DXTextureDataComponentPool;
-	void* m_DXRenderPassComponentPool;
-	void* m_DXShaderProgramComponentPool;
+	void* m_DX11MeshDataComponentPool;
+	void* m_DX11TextureDataComponentPool;
+	void* m_DX11RenderPassComponentPool;
+	void* m_DX11ShaderProgramComponentPool;
 
 	const std::wstring m_shaderRelativePath = L"..//res//shaders//";
 }
 
 bool DXRenderingSystemNS::initializeComponentPool()
 {
-	m_DXMeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DXMeshDataComponent), 32768);
-	m_DXTextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DXTextureDataComponent), 32768);
-	m_DXRenderPassComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DXRenderPassComponent), 128);
-	m_DXShaderProgramComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DXShaderProgramComponent), 256);
+	m_DX11MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11MeshDataComponent), 32768);
+	m_DX11TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11TextureDataComponent), 32768);
+	m_DX11RenderPassComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11RenderPassComponent), 128);
+	m_DX11ShaderProgramComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11ShaderProgramComponent), 256);
 
 	return true;
 }
@@ -80,12 +80,12 @@ ID3D10Blob* DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const s
 		// If the shader failed to compile it should have writen something to the error message.
 		if (l_errorMessage)
 		{
-			OutputShaderErrorMessage(l_errorMessage, DXWindowSystemComponent::get().m_hwnd, l_shaderName.c_str());
+			OutputShaderErrorMessage(l_errorMessage, WinWindowSystemComponent::get().m_hwnd, l_shaderName.c_str());
 		}
 		// If there was nothing in the error message then it simply could not find the shader file itself.
 		else
 		{
-			MessageBox(DXWindowSystemComponent::get().m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
+			MessageBox(WinWindowSystemComponent::get().m_hwnd, l_shaderName.c_str(), "Missing Shader File", MB_OK);
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "Shader creation failed: cannot find shader!");
 		}
 
@@ -95,12 +95,12 @@ ID3D10Blob* DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const s
 	return l_shaderBuffer;
 }
 
-bool DXRenderingSystemNS::createCBuffer(DXCBuffer& arg)
+bool DXRenderingSystemNS::createCBuffer(DX11CBuffer& arg)
 {
 	if (arg.m_CBufferDesc.ByteWidth > 0)
 	{
 		// Create the constant buffer pointer
-		auto result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&arg.m_CBufferDesc, NULL, &arg.m_CBufferPtr);
+		auto result = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&arg.m_CBufferDesc, NULL, &arg.m_CBufferPtr);
 
 		if (FAILED(result))
 		{
@@ -117,7 +117,7 @@ bool DXRenderingSystemNS::createCBuffer(DXCBuffer& arg)
 	}
 }
 
-bool DXRenderingSystemNS::initializeVertexShader(DXShaderProgramComponent* rhs, const std::wstring& VSShaderPath)
+bool DXRenderingSystemNS::initializeVertexShader(DX11ShaderProgramComponent* rhs, const std::wstring& VSShaderPath)
 {
 	// Compile the shader code.
 	auto l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, VSShaderPath);
@@ -139,7 +139,7 @@ bool DXRenderingSystemNS::initializeVertexShader(DXShaderProgramComponent* rhs, 
 
 bool DXRenderingSystemNS::createVertexShader(ID3D10Blob* shaderBuffer, ID3D11VertexShader** vertexShader)
 {
-	auto result = DXRenderingSystemComponent::get().m_device->CreateVertexShader(
+	auto result = DX11RenderingSystemComponent::get().m_device->CreateVertexShader(
 		shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
 		NULL,
 		vertexShader);
@@ -203,7 +203,7 @@ bool DXRenderingSystemNS::createInputLayout(ID3D10Blob* shaderBuffer, ID3D11Inpu
 	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
 
 	// Create the vertex input layout.
-	auto result = DXRenderingSystemComponent::get().m_device->CreateInputLayout(
+	auto result = DX11RenderingSystemComponent::get().m_device->CreateInputLayout(
 		l_polygonLayout, l_numElements, shaderBuffer->GetBufferPointer(),
 		shaderBuffer->GetBufferSize(), inputLayout);
 
@@ -216,7 +216,7 @@ bool DXRenderingSystemNS::createInputLayout(ID3D10Blob* shaderBuffer, ID3D11Inpu
 	return true;
 }
 
-bool DXRenderingSystemNS::initializePixelShader(DXShaderProgramComponent* rhs, const std::wstring& PSShaderPath)
+bool DXRenderingSystemNS::initializePixelShader(DX11ShaderProgramComponent* rhs, const std::wstring& PSShaderPath)
 {
 	// Compile the shader code.
 	auto l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, PSShaderPath);
@@ -227,7 +227,7 @@ bool DXRenderingSystemNS::initializePixelShader(DXShaderProgramComponent* rhs, c
 	}
 
 	// Create the texture sampler state.
-	auto result = DXRenderingSystemComponent::get().m_device->CreateSamplerState(
+	auto result = DX11RenderingSystemComponent::get().m_device->CreateSamplerState(
 		&rhs->m_samplerDesc,
 		&rhs->m_samplerState);
 
@@ -244,7 +244,7 @@ bool DXRenderingSystemNS::initializePixelShader(DXShaderProgramComponent* rhs, c
 
 bool DXRenderingSystemNS::createPixelShader(ID3D10Blob* shaderBuffer, ID3D11PixelShader** pixelShader)
 {
-	auto result = DXRenderingSystemComponent::get().m_device->CreatePixelShader(
+	auto result = DX11RenderingSystemComponent::get().m_device->CreatePixelShader(
 		shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
 		NULL,
 		pixelShader);
@@ -258,15 +258,15 @@ bool DXRenderingSystemNS::createPixelShader(ID3D10Blob* shaderBuffer, ID3D11Pixe
 	return true;
 }
 
-DXShaderProgramComponent* DXRenderingSystemNS::addDXShaderProgramComponent(EntityID rhs)
+DX11ShaderProgramComponent* DXRenderingSystemNS::addDX11ShaderProgramComponent(EntityID rhs)
 {
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DXShaderProgramComponentPool, sizeof(DXShaderProgramComponent));
-	auto l_DXSPC = new(l_rawPtr)DXShaderProgramComponent();
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX11ShaderProgramComponentPool, sizeof(DX11ShaderProgramComponent));
+	auto l_DXSPC = new(l_rawPtr)DX11ShaderProgramComponent();
 	l_DXSPC->m_parentEntity = rhs;
 	return l_DXSPC;
 }
 
-bool DXRenderingSystemNS::initializeDXShaderProgramComponent(DXShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths)
+bool DXRenderingSystemNS::initializeDX11ShaderProgramComponent(DX11ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths)
 {
 	bool l_result = true;
 	if (shaderFilePaths.m_VSPath != "")
@@ -311,38 +311,38 @@ void DXRenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HW
 	errorMessage->Release();
 	errorMessage = 0;
 
-	MessageBox(DXWindowSystemComponent::get().m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
+	MessageBox(WinWindowSystemComponent::get().m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
 
-bool DXRenderingSystemNS::activateDXShaderProgramComponent(DXShaderProgramComponent * rhs)
+bool DXRenderingSystemNS::activateDX11ShaderProgramComponent(DX11ShaderProgramComponent * rhs)
 {
 	if (rhs->m_vertexShader)
 	{
-		DXRenderingSystemComponent::get().m_deviceContext->VSSetShader(
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetShader(
 			rhs->m_vertexShader,
 			NULL,
 			0);
 
-		DXRenderingSystemComponent::get().m_deviceContext->IASetInputLayout(rhs->m_inputLayout);
+		DX11RenderingSystemComponent::get().m_deviceContext->IASetInputLayout(rhs->m_inputLayout);
 	}
 	if (rhs->m_pixelShader)
 	{
-		DXRenderingSystemComponent::get().m_deviceContext->PSSetShader(
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetShader(
 			rhs->m_pixelShader,
 			NULL,
 			0);
 
-		DXRenderingSystemComponent::get().m_deviceContext->PSSetSamplers(0, 1, &rhs->m_samplerState);
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetSamplers(0, 1, &rhs->m_samplerState);
 	}
 
 	return true;
 }
 
-DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned int RTNum, D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc)
+DX11RenderPassComponent* DXRenderingSystemNS::addDX11RenderPassComponent(unsigned int RTNum, D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc)
 {
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DXRenderPassComponentPool, sizeof(DXRenderPassComponent));
-	auto l_DXRPC = new(l_rawPtr)DXRenderPassComponent();
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX11RenderPassComponentPool, sizeof(DX11RenderPassComponent));
+	auto l_DXRPC = new(l_rawPtr)DX11RenderPassComponent();
 
 	HRESULT result;
 
@@ -374,7 +374,7 @@ DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned in
 	for (unsigned int i = 0; i < RTNum; i++)
 	{
 		auto l_TDC = l_DXRPC->m_TDCs[i];
-		auto l_DXTDC = generateDXTextureDataComponent(l_TDC);
+		auto l_DXTDC = generateDX11TextureDataComponent(l_TDC);
 
 		l_DXRPC->m_DXTDCs.emplace_back(l_DXTDC);
 	}
@@ -385,7 +385,7 @@ DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned in
 	for (unsigned int i = 0; i < RTNum; i++)
 	{
 		l_DXRPC->m_renderTargetViews.emplace_back();
-		result = DXRenderingSystemComponent::get().m_device->CreateRenderTargetView(
+		result = DX11RenderingSystemComponent::get().m_device->CreateRenderTargetView(
 			l_DXRPC->m_DXTDCs[i]->m_texture,
 			&renderTargetViewDesc,
 			&l_DXRPC->m_renderTargetViews[i]);
@@ -414,7 +414,7 @@ DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned in
 	l_DXRPC->m_depthBufferDesc.MiscFlags = 0;
 
 	// Create the texture for the depth buffer using the filled out description.
-	result = DXRenderingSystemComponent::get().m_device->CreateTexture2D(
+	result = DX11RenderingSystemComponent::get().m_device->CreateTexture2D(
 		&l_DXRPC->m_depthBufferDesc,
 		NULL,
 		&l_DXRPC->m_depthStencilBuffer);
@@ -434,7 +434,7 @@ DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned in
 	l_DXRPC->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
-	result = DXRenderingSystemComponent::get().m_device->CreateDepthStencilView(
+	result = DX11RenderingSystemComponent::get().m_device->CreateDepthStencilView(
 		l_DXRPC->m_depthStencilBuffer,
 		&l_DXRPC->m_depthStencilViewDesc,
 		&l_DXRPC->m_depthStencilView);
@@ -457,17 +457,17 @@ DXRenderPassComponent* DXRenderingSystemNS::addDXRenderPassComponent(unsigned in
 	return l_DXRPC;
 }
 
-DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataComponent * rhs)
+DX11MeshDataComponent* DXRenderingSystemNS::generateDX11MeshDataComponent(MeshDataComponent * rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
-		return getDXMeshDataComponent(rhs->m_parentEntity);
+		return getDX11MeshDataComponent(rhs->m_parentEntity);
 	}
 	else
 	{
-		auto l_ptr = addDXMeshDataComponent(rhs->m_parentEntity);
+		auto l_ptr = addDX11MeshDataComponent(rhs->m_parentEntity);
 
-		initializeDXMeshDataComponent(l_ptr, rhs->m_vertices, rhs->m_indices);
+		initializeDX11MeshDataComponent(l_ptr, rhs->m_vertices, rhs->m_indices);
 
 		rhs->m_objectStatus = ObjectStatus::ALIVE;
 
@@ -475,7 +475,7 @@ DXMeshDataComponent* DXRenderingSystemNS::generateDXMeshDataComponent(MeshDataCo
 	}
 }
 
-bool DXRenderingSystemNS::initializeDXMeshDataComponent(DXMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices)
+bool DXRenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices)
 {
 	// Set up the description of the static vertex buffer.
 	D3D11_BUFFER_DESC vertexBufferDesc;
@@ -496,7 +496,7 @@ bool DXRenderingSystemNS::initializeDXMeshDataComponent(DXMeshDataComponent * rh
 
 	// Now create the vertex buffer.
 	HRESULT result;
-	result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &rhs->m_vertexBuffer);
+	result = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &rhs->m_vertexBuffer);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create VBO!");
@@ -521,7 +521,7 @@ bool DXRenderingSystemNS::initializeDXMeshDataComponent(DXMeshDataComponent * rh
 	indexData.SysMemSlicePitch = 0;
 
 	// Create the index buffer.
-	result = DXRenderingSystemComponent::get().m_device->CreateBuffer(&indexBufferDesc, &indexData, &rhs->m_indexBuffer);
+	result = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&indexBufferDesc, &indexData, &rhs->m_indexBuffer);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create IBO!");
@@ -536,11 +536,11 @@ bool DXRenderingSystemNS::initializeDXMeshDataComponent(DXMeshDataComponent * rh
 	return true;
 }
 
-DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(TextureDataComponent * rhs)
+DX11TextureDataComponent* DXRenderingSystemNS::generateDX11TextureDataComponent(TextureDataComponent * rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
-		return getDXTextureDataComponent(rhs->m_parentEntity);
+		return getDX11TextureDataComponent(rhs->m_parentEntity);
 	}
 	else
 	{
@@ -551,9 +551,9 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 		}
 		else
 		{
-			auto l_ptr = addDXTextureDataComponent(rhs->m_parentEntity);
+			auto l_ptr = addDX11TextureDataComponent(rhs->m_parentEntity);
 
-			initializeDXTextureDataComponent(l_ptr, rhs->m_textureDataDesc, rhs->m_textureData);
+			initializeDX11TextureDataComponent(l_ptr, rhs->m_textureDataDesc, rhs->m_textureData);
 
 			rhs->m_objectStatus = ObjectStatus::ALIVE;
 
@@ -562,7 +562,7 @@ DXTextureDataComponent* DXRenderingSystemNS::generateDXTextureDataComponent(Text
 	}
 }
 
-bool DXRenderingSystemNS::initializeDXTextureDataComponent(DXTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
+bool DXRenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
 {
 	// set texture formats
 	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
@@ -639,7 +639,7 @@ bool DXRenderingSystemNS::initializeDXTextureDataComponent(DXTextureDataComponen
 
 	// Create the empty texture.
 	HRESULT hResult;
-	hResult = DXRenderingSystemComponent::get().m_device->CreateTexture2D(&D3DTextureDesc, NULL, &rhs->m_texture);
+	hResult = DX11RenderingSystemComponent::get().m_device->CreateTexture2D(&D3DTextureDesc, NULL, &rhs->m_texture);
 	if (FAILED(hResult))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create texture!");
@@ -650,11 +650,11 @@ bool DXRenderingSystemNS::initializeDXTextureDataComponent(DXTextureDataComponen
 	{
 		unsigned int rowPitch;
 		rowPitch = (textureDataDesc.textureWidth * ((unsigned int)textureDataDesc.texturePixelDataFormat + 1)) * sizeof(unsigned char);
-		DXRenderingSystemComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, textureData[0], rowPitch, 0);
+		DX11RenderingSystemComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, textureData[0], rowPitch, 0);
 	}
 
 	// Create the shader resource view for the texture.
-	hResult = DXRenderingSystemComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &srvDesc, &rhs->m_SRV);
+	hResult = DX11RenderingSystemComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &srvDesc, &rhs->m_SRV);
 	if (FAILED(hResult))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create shader resource view for texture!");
@@ -664,7 +664,7 @@ bool DXRenderingSystemNS::initializeDXTextureDataComponent(DXTextureDataComponen
 	// Generate mipmaps for this texture.
 	if (textureDataDesc.textureMagFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
-		DXRenderingSystemComponent::get().m_deviceContext->GenerateMips(rhs->m_SRV);
+		DX11RenderingSystemComponent::get().m_deviceContext->GenerateMips(rhs->m_SRV);
 	}
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
@@ -676,26 +676,26 @@ bool DXRenderingSystemNS::initializeDXTextureDataComponent(DXTextureDataComponen
 	return true;
 }
 
-DXMeshDataComponent* DXRenderingSystemNS::addDXMeshDataComponent(EntityID rhs)
+DX11MeshDataComponent* DXRenderingSystemNS::addDX11MeshDataComponent(EntityID rhs)
 {
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DXMeshDataComponentPool, sizeof(DXMeshDataComponent));
-	auto l_DXMDC = new(l_rawPtr)DXMeshDataComponent();
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX11MeshDataComponentPool, sizeof(DX11MeshDataComponent));
+	auto l_DXMDC = new(l_rawPtr)DX11MeshDataComponent();
 	l_DXMDC->m_parentEntity = rhs;
 	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, DXMeshDataComponent*>(rhs, l_DXMDC));
+	l_meshMap->emplace(std::pair<EntityID, DX11MeshDataComponent*>(rhs, l_DXMDC));
 	return l_DXMDC;
 }
 
-DXTextureDataComponent* DXRenderingSystemNS::addDXTextureDataComponent(EntityID rhs)
+DX11TextureDataComponent* DXRenderingSystemNS::addDX11TextureDataComponent(EntityID rhs)
 {
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DXTextureDataComponentPool, sizeof(DXTextureDataComponent));
-	auto l_DXTDC = new(l_rawPtr)DXTextureDataComponent();
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX11TextureDataComponentPool, sizeof(DX11TextureDataComponent));
+	auto l_DXTDC = new(l_rawPtr)DX11TextureDataComponent();
 	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, DXTextureDataComponent*>(rhs, l_DXTDC));
+	l_textureMap->emplace(std::pair<EntityID, DX11TextureDataComponent*>(rhs, l_DXTDC));
 	return l_DXTDC;
 }
 
-DXMeshDataComponent * DXRenderingSystemNS::getDXMeshDataComponent(EntityID rhs)
+DX11MeshDataComponent * DXRenderingSystemNS::getDX11MeshDataComponent(EntityID rhs)
 {
 	auto result = m_meshMap.find(rhs);
 	if (result != m_meshMap.end())
@@ -708,7 +708,7 @@ DXMeshDataComponent * DXRenderingSystemNS::getDXMeshDataComponent(EntityID rhs)
 	}
 }
 
-DXTextureDataComponent * DXRenderingSystemNS::getDXTextureDataComponent(EntityID rhs)
+DX11TextureDataComponent * DXRenderingSystemNS::getDX11TextureDataComponent(EntityID rhs)
 {
 	auto result = m_textureMap.find(rhs);
 	if (result != m_textureMap.end())
@@ -732,7 +732,7 @@ void DXRenderingSystemNS::drawMesh(EntityID rhs)
 
 void DXRenderingSystemNS::drawMesh(MeshDataComponent * MDC)
 {
-	auto l_DXMDC = DXRenderingSystemNS::getDXMeshDataComponent(MDC->m_parentEntity);
+	auto l_DXMDC = DXRenderingSystemNS::getDX11MeshDataComponent(MDC->m_parentEntity);
 	if (l_DXMDC)
 	{
 		if (MDC->m_objectStatus == ObjectStatus::ALIVE && l_DXMDC->m_objectStatus == ObjectStatus::ALIVE)
@@ -742,7 +742,7 @@ void DXRenderingSystemNS::drawMesh(MeshDataComponent * MDC)
 	}
 }
 
-void DXRenderingSystemNS::drawMesh(size_t indicesSize, DXMeshDataComponent * DXMDC)
+void DXRenderingSystemNS::drawMesh(size_t indicesSize, DX11MeshDataComponent * DXMDC)
 {
 	unsigned int stride;
 	unsigned int offset;
@@ -752,13 +752,13 @@ void DXRenderingSystemNS::drawMesh(size_t indicesSize, DXMeshDataComponent * DXM
 	offset = 0;
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	DXRenderingSystemComponent::get().m_deviceContext->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBuffer, &stride, &offset);
+	DX11RenderingSystemComponent::get().m_deviceContext->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBuffer, &stride, &offset);
 
 	// Set the index buffer to active in the input assembler so it can be rendered.
-	DXRenderingSystemComponent::get().m_deviceContext->IASetIndexBuffer(DXMDC->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	DX11RenderingSystemComponent::get().m_deviceContext->IASetIndexBuffer(DXMDC->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	// Render the triangle.
-	DXRenderingSystemComponent::get().m_deviceContext->DrawIndexed((UINT)indicesSize, 0, 0);
+	DX11RenderingSystemComponent::get().m_deviceContext->DrawIndexed((UINT)indicesSize, 0, 0);
 }
 
 void DXRenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned int startSlot, ID3D11Buffer* CBuffer, size_t size, void* parameterValue)
@@ -767,7 +767,7 @@ void DXRenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 
 	// Lock the constant buffer so it can be written to.
-	result = DXRenderingSystemComponent::get().m_deviceContext->Map(CBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = DX11RenderingSystemComponent::get().m_deviceContext->Map(CBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't lock the shader buffer!");
@@ -778,18 +778,18 @@ void DXRenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned 
 	std::memcpy(dataPtr, parameterValue, size);
 
 	// Unlock the constant buffer.
-	DXRenderingSystemComponent::get().m_deviceContext->Unmap(CBuffer, 0);
+	DX11RenderingSystemComponent::get().m_deviceContext->Unmap(CBuffer, 0);
 
 	switch (shaderType)
 	{
 	case ShaderType::VERTEX:
-		DXRenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers(startSlot, 1, &CBuffer);
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers(startSlot, 1, &CBuffer);
 		break;
 	case ShaderType::GEOMETRY:
-		DXRenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers(startSlot, 1, &CBuffer);
+		DX11RenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers(startSlot, 1, &CBuffer);
 		break;
 	case ShaderType::FRAGMENT:
-		DXRenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers(startSlot, 1, &CBuffer);
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers(startSlot, 1, &CBuffer);
 		break;
 	default:
 		break;
@@ -806,10 +806,10 @@ void DXRenderingSystemNS::cleanRTV(vec4 color, ID3D11RenderTargetView* RTV)
 	l_color[2] = color.z;
 	l_color[3] = color.w;
 
-	DXRenderingSystemComponent::get().m_deviceContext->ClearRenderTargetView(RTV, l_color);
+	DX11RenderingSystemComponent::get().m_deviceContext->ClearRenderTargetView(RTV, l_color);
 }
 
 void DXRenderingSystemNS::cleanDSV(ID3D11DepthStencilView* DSV)
 {
-	DXRenderingSystemComponent::get().m_deviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	DX11RenderingSystemComponent::get().m_deviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
