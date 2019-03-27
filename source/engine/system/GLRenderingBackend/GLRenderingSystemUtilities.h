@@ -55,9 +55,10 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void updateUniform(const GLint uniformLocation, float x, float y, float z, float w);
 	void updateUniform(const GLint uniformLocation, const mat4& mat);
 
-	void attachDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC);
+	void attach2DDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC);
 	void attachCubemapDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int textureIndex, unsigned int mipLevel);
-	void attachColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex);
+	void attach2DColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex);
+	void attach3DColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int layer);
 	void attachCubemapColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel);
 	void activateShaderProgram(GLShaderProgramComponent* GLShaderProgramComponent);
 

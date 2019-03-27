@@ -70,17 +70,7 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 	{
 		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
-		l_TDC->m_textureDataDesc.textureSamplerType = RTDesc.textureSamplerType;
-		l_TDC->m_textureDataDesc.textureUsageType = RTDesc.textureUsageType;
-		l_TDC->m_textureDataDesc.textureColorComponentsFormat = RTDesc.textureColorComponentsFormat;
-		l_TDC->m_textureDataDesc.texturePixelDataFormat = RTDesc.texturePixelDataFormat;
-		l_TDC->m_textureDataDesc.textureMinFilterMethod = RTDesc.textureMinFilterMethod;
-		l_TDC->m_textureDataDesc.textureMagFilterMethod = RTDesc.textureMagFilterMethod;
-		l_TDC->m_textureDataDesc.textureWrapMethod = RTDesc.textureWrapMethod;
-		l_TDC->m_textureDataDesc.textureWidth = RTDesc.textureWidth;
-		l_TDC->m_textureDataDesc.textureHeight = RTDesc.textureHeight;
-		l_TDC->m_textureDataDesc.textureDepth = RTDesc.textureDepth;
-		l_TDC->m_textureDataDesc.texturePixelDataType = RTDesc.texturePixelDataType;
+		l_TDC->m_textureDataDesc = RTDesc;
 
 		if (RTDesc.textureSamplerType == TextureSamplerType::CUBEMAP)
 		{
@@ -101,21 +91,37 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 		auto l_TDC = l_GLRPC->m_TDCs[i];
 		auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
 
-		if (RTDesc.textureSamplerType != TextureSamplerType::CUBEMAP)
+		if (RTDesc.textureSamplerType == TextureSamplerType::SAMPLER_2D)
 		{
 			if (RTDesc.texturePixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
 			{
-				attachDepthRT(
+				attach2DDepthRT(
 					l_GLTDC,
 					l_GLRPC
 				);
 			}
 			else
 			{
-				attachColorRT(
+				attach2DColorRT(
 					l_GLTDC,
 					l_GLRPC,
 					i
+				);
+			}
+		}
+		else if (RTDesc.textureSamplerType == TextureSamplerType::SAMPLER_3D)
+		{
+			if (RTDesc.texturePixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GLRenderingSystem: 3D depth only render target is not supported now");
+			}
+			else
+			{
+				attach3DColorRT(
+					l_GLTDC,
+					l_GLRPC,
+					i,
+					0
 				);
 			}
 		}
@@ -162,7 +168,7 @@ void GLRenderingSystemNS::addRenderTargetTextures(GLRenderPassComponent* GLRPC, 
 
 	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
 
-	attachColorRT(
+	attach2DColorRT(
 		l_GLTDC,
 		GLRPC,
 		colorAttachmentIndex
@@ -193,11 +199,14 @@ bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GL
 		GLRPC->m_TDCs[i]->m_textureDataDesc.textureWidth = glFrameBufferDesc.sizeX;
 		GLRPC->m_TDCs[i]->m_textureDataDesc.textureHeight = glFrameBufferDesc.sizeY;
 		GLRPC->m_TDCs[i]->m_objectStatus = ObjectStatus::STANDBY;
+
 		glDeleteTextures(1, &GLRPC->m_GLTDCs[i]->m_TAO);
+
 		initializeGLTextureDataComponent(GLRPC->m_GLTDCs[i], GLRPC->m_TDCs[i]->m_textureDataDesc, GLRPC->m_TDCs[i]->m_textureData);
+
 		if (glFrameBufferDesc.drawColorBuffers)
 		{
-			attachColorRT(
+			attach2DColorRT(
 				GLRPC->m_GLTDCs[i],
 				GLRPC,
 				i
@@ -206,7 +215,7 @@ bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GL
 		else
 		{
 			// @TODO: it's not a binary classfication problem
-			attachDepthRT(
+			attach2DDepthRT(
 				GLRPC->m_GLTDCs[i],
 				GLRPC
 			);
@@ -509,7 +518,7 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 
 	if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_1D)
 	{
-		glTexImage1D(GL_TEXTURE_2D, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
+		glTexImage1D(GL_TEXTURE_1D, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
 	}
 	else if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_2D)
 	{
@@ -868,24 +877,34 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const mat4 
 #endif
 }
 
-void GLRenderingSystemNS::attachDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC)
+void GLRenderingSystemNS::attach2DDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TAO, 0);
 }
+
 void GLRenderingSystemNS::attachCubemapDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int textureIndex, unsigned int mipLevel)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TAO, mipLevel);
 }
-void GLRenderingSystemNS::attachColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex)
+
+void GLRenderingSystemNS::attach2DColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, GLTDC->m_TAO, 0);
 }
+
+void GLRenderingSystemNS::attach3DColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int layer)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
+	glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_3D, GLTDC->m_TAO, 0, layer);
+}
+
 void GLRenderingSystemNS::attachCubemapColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
