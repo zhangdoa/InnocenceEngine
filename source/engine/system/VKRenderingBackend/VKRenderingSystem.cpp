@@ -730,6 +730,7 @@ bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem setup finished.");
 	return result;
 }
+
 bool VKRenderingSystemNS::initialize()
 {
 	bool result = true;
@@ -794,14 +795,29 @@ bool VKRenderingSystemNS::update()
 	vkQueuePresentKHR(VKRenderingSystemComponent::get().m_presentQueue, &presentInfo);
 
 	m_currentFrame = (m_currentFrame + 1) % m_maxFramesInFlight;
+
 	return true;
 }
 
 bool VKRenderingSystemNS::terminate()
 {
-	//vkDestroyPipeline(VKRenderingSystemComponent::get().m_device, m_graphicsPipeline, nullptr);
-	//vkDestroyPipelineLayout(VKRenderingSystemComponent::get().m_device, m_pipelineLayout, nullptr);
-	//vkDestroyRenderPass(VKRenderingSystemComponent::get().m_device, m_renderPass, nullptr);
+	vkDeviceWaitIdle(VKRenderingSystemComponent::get().m_device);
+
+	for (size_t i = 0; i < m_maxFramesInFlight; i++)
+	{
+		vkDestroySemaphore(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_renderFinishedSemaphores[i], nullptr);
+		vkDestroySemaphore(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_imageAvailableSemaphores[i], nullptr);
+		vkDestroyFence(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_inFlightFences[i], nullptr);
+	}
+
+	vkDestroyCommandPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_commandPool, nullptr);
+
+	for (auto framebuffer : VKRenderingSystemComponent::get().m_swapChainFramebuffers)
+	{
+		vkDestroyFramebuffer(VKRenderingSystemComponent::get().m_device, framebuffer, nullptr);
+	}
+
+	destroyVKRenderPassComponent(m_swapChainVKRPC);
 
 	for (auto imageView : VKRenderingSystemComponent::get().m_swapChainImageViews)
 	{
@@ -822,6 +838,8 @@ bool VKRenderingSystemNS::terminate()
 	vkDestroyInstance(VKRenderingSystemComponent::get().m_instance, nullptr);
 
 	VKRenderingSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been terminated.");
+
 	return true;
 }
 

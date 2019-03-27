@@ -139,6 +139,15 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned in
 	return l_VKRPC;
 }
 
+bool VKRenderingSystemNS::destroyVKRenderPassComponent(VKRenderPassComponent* VKRPC)
+{
+	vkDestroyPipeline(VKRenderingSystemComponent::get().m_device, VKRPC->m_pipeline, nullptr);
+	vkDestroyPipelineLayout(VKRenderingSystemComponent::get().m_device, VKRPC->m_pipelineLayout, nullptr);
+	vkDestroyRenderPass(VKRenderingSystemComponent::get().m_device, VKRPC->m_renderPass, nullptr);
+
+	return true;
+}
+
 VKMeshDataComponent * VKRenderingSystemNS::generateVKMeshDataComponent(MeshDataComponent * rhs)
 {
 	return nullptr;

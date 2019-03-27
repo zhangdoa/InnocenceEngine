@@ -98,7 +98,7 @@ bool WinVKWindowSystemNS::update()
 bool WinVKWindowSystemNS::terminate()
 {
 	m_objectStatus = ObjectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSystemNS has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinVKWindowSystemNS has been terminated.");
 
 	return true;
 }

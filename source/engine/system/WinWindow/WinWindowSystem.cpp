@@ -72,7 +72,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 		break;
 	case RenderingBackend::VK:
 #if defined INNO_RENDERER_VULKAN
-		WinWindowSystemNS::m_backendWindowSystem = new WinVKWindowSystem();		
+		WinWindowSystemNS::m_backendWindowSystem = new WinVKWindowSystem();
 #endif
 		break;
 	default:
@@ -110,14 +110,6 @@ bool WinWindowSystem::update()
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-
-		// If windows signals to end the application then exit out.
-		if (msg.message == WM_QUIT)
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "WinWindowSystem: WM_QUIT signal received.");
-			WinWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
-			return false;
-		}
 	}
 
 	return true;
@@ -125,6 +117,8 @@ bool WinWindowSystem::update()
 
 bool WinWindowSystem::terminate()
 {
+	WinWindowSystemNS::m_backendWindowSystem->terminate();
+
 	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::GAME)
 	{
 		// Show the mouse cursor.
@@ -143,7 +137,8 @@ bool WinWindowSystem::terminate()
 		// Release the pointer to this class.
 		ApplicationHandle = NULL;
 	}
-	WinWindowSystemNS::m_backendWindowSystem->terminate();
+
+	PostQuitMessage(0);
 
 	WinWindowSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinWindowSystem has been terminated.");
@@ -176,7 +171,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_DESTROY:
 	{
-		PostQuitMessage(0);
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "WinWindowSystem: WM_DESTROY signal received.");
+		WinWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return 0;
 	}
 	case WM_PAINT:
