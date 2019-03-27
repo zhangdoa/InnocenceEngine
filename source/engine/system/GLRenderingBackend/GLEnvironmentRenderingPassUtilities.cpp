@@ -270,6 +270,8 @@ void GLEnvironmentRenderingPassUtilities::initializeBRDFLUTPass()
 	updateTextureUniformLocations(rhs->m_program, l_textureNames);
 
 	m_BRDFMSAverageLUTPassSPC = rhs;
+
+	updateBRDFLUTPass();
 }
 
 void GLEnvironmentRenderingPassUtilities::initializeEnvironmentCapturePass()
@@ -504,7 +506,6 @@ void GLEnvironmentRenderingPassUtilities::initializeVoxelVisualizationPass()
 
 void GLEnvironmentRenderingPassUtilities::update()
 {
-	//updateBRDFLUTPass();
 	//updateEnvironmentCapturePass();
 	updateGIPass();
 }

@@ -94,14 +94,11 @@ void GLGeometryRenderingPassUtilities::initializeOpaquePass()
 	GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC = addGLRenderPassComponent(4, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	// UBO
-	auto l_UBO = generateUBO(sizeof(GPassCameraUBOData));
-	GLGeometryRenderPassComponent::get().m_cameraUBO = l_UBO;
+	GLGeometryRenderPassComponent::get().m_cameraUBO = generateUBO(sizeof(GPassCameraUBOData));
 
-	l_UBO = generateUBO(sizeof(GPassMeshUBOData));
-	GLGeometryRenderPassComponent::get().m_meshUBO = l_UBO;
+	GLGeometryRenderPassComponent::get().m_meshUBO = generateUBO(sizeof(GPassMeshUBOData));
 
-	l_UBO = generateUBO(sizeof(GPassTextureUBOData));
-	GLGeometryRenderPassComponent::get().m_textureUBO = l_UBO;
+	GLGeometryRenderPassComponent::get().m_textureUBO = generateUBO(sizeof(GPassTextureUBOData));
 
 	initializeOpaquePassShaders();
 }
