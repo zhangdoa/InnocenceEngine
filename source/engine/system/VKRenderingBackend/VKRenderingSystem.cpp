@@ -272,6 +272,9 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createSyncPrimitives();
 
 	bool initialize();
+
+	bool initializeDefaultAssets();
+
 	bool update();
 	bool terminate();
 
@@ -664,11 +667,13 @@ bool VKRenderingSystemNS::createCommandBuffers()
 		renderPassInfo.clearValueCount = 1;
 		renderPassInfo.pClearValues = &clearColor;
 
+		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+
 		vkCmdBeginRenderPass(VKRenderingSystemComponent::get().m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 		vkCmdBindPipeline(VKRenderingSystemComponent::get().m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_swapChainVKRPC->m_pipeline);
 
-		vkCmdDraw(VKRenderingSystemComponent::get().m_commandBuffers[i], 3, 1, 0, 0);
+		recordDrawCall(VKRenderingSystemComponent::get().m_commandBuffers[i], l_MDC);
 
 		vkCmdEndRenderPass(VKRenderingSystemComponent::get().m_commandBuffers[i]);
 
@@ -731,6 +736,23 @@ bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	return result;
 }
 
+bool VKRenderingSystemNS::initializeDefaultAssets()
+{
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE);
+	VKRenderingSystemComponent::get().m_UnitLineVKMDC = generateVKMeshDataComponent(l_MDC);
+
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	VKRenderingSystemComponent::get().m_UnitQuadVKMDC = generateVKMeshDataComponent(l_MDC);
+
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
+	VKRenderingSystemComponent::get().m_UnitCubeVKMDC = generateVKMeshDataComponent(l_MDC);
+
+	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
+	VKRenderingSystemComponent::get().m_UnitSphereVKMDC = generateVKMeshDataComponent(l_MDC);
+
+	return true;
+}
+
 bool VKRenderingSystemNS::initialize()
 {
 	bool result = true;
@@ -742,6 +764,7 @@ bool VKRenderingSystemNS::initialize()
 	result = result && createSwapChainRenderPass();
 	result = result && createSwapChainFramebuffers();
 	result = result && createCommandPool();
+	result = result && initializeDefaultAssets();
 	result = result && createCommandBuffers();
 	result = result && createSyncPrimitives();
 

@@ -9,15 +9,67 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
 	bool createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath);
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	bool createVBO(const std::vector<Vertex>& vertices, VkBuffer& VBO);
+	bool createIBO(const std::vector<Index>& indices, VkBuffer& IBO);
 
+	bool initializeVKMeshDataComponent(VKMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
+	bool initializeVKTextureDataComponent(VKTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
+
+	VkVertexInputBindingDescription m_bindingDescription;
+	std::array<VkVertexInputAttributeDescription, 5> m_attributeDescriptions;
+
+	std::unordered_map<EntityID, VKMeshDataComponent*> m_initializedVKMDC;
+	std::unordered_map<EntityID, VKTextureDataComponent*> m_initializedVKTDC;
+
+	std::unordered_map<EntityID, VKMeshDataComponent*> m_meshMap;
+	std::unordered_map<EntityID, VKTextureDataComponent*> m_textureMap;
+
+	void* m_VKMeshDataComponentPool;
+	void* m_VKTextureDataComponentPool;
 	void* m_VKRenderPassComponentPool;
 	void* m_VKShaderProgramComponentPool;
 }
 
 bool VKRenderingSystemNS::initializeComponentPool()
 {
+	m_VKMeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), 32768);
+	m_VKTextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), 32768);
 	m_VKRenderPassComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKRenderPassComponent), 32);
 	m_VKShaderProgramComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKShaderProgramComponent), 128);
+
+	m_bindingDescription = {};
+	m_bindingDescription.binding = 0;
+	m_bindingDescription.stride = sizeof(Vertex);
+	m_bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+	m_attributeDescriptions = {};
+
+	m_attributeDescriptions[0].binding = 0;
+	m_attributeDescriptions[0].location = 0;
+	m_attributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	m_attributeDescriptions[0].offset = offsetof(Vertex, m_pos);
+
+	m_attributeDescriptions[1].binding = 0;
+	m_attributeDescriptions[1].location = 1;
+	m_attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+	m_attributeDescriptions[1].offset = offsetof(Vertex, m_texCoord);
+
+	m_attributeDescriptions[2].binding = 0;
+	m_attributeDescriptions[2].location = 2;
+	m_attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+	m_attributeDescriptions[2].offset = offsetof(Vertex, m_pad1);
+
+	m_attributeDescriptions[3].binding = 0;
+	m_attributeDescriptions[3].location = 3;
+	m_attributeDescriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	m_attributeDescriptions[3].offset = offsetof(Vertex, m_normal);
+
+	m_attributeDescriptions[4].binding = 0;
+	m_attributeDescriptions[4].location = 4;
+	m_attributeDescriptions[4].format = VK_FORMAT_R32G32_SFLOAT;
+	m_attributeDescriptions[4].offset = offsetof(Vertex, m_pad2);
 
 	return true;
 }
@@ -148,46 +200,284 @@ bool VKRenderingSystemNS::destroyVKRenderPassComponent(VKRenderPassComponent* VK
 	return true;
 }
 
-VKMeshDataComponent * VKRenderingSystemNS::generateVKMeshDataComponent(MeshDataComponent * rhs)
+VKMeshDataComponent* VKRenderingSystemNS::generateVKMeshDataComponent(MeshDataComponent * rhs)
 {
-	return nullptr;
+	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	{
+		return getVKMeshDataComponent(rhs->m_parentEntity);
+	}
+	else
+	{
+		auto l_ptr = addVKMeshDataComponent(rhs->m_parentEntity);
+
+		initializeVKMeshDataComponent(l_ptr, rhs->m_vertices, rhs->m_indices);
+
+		rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+		return l_ptr;
+	}
 }
 
-VKTextureDataComponent * VKRenderingSystemNS::generateVKTextureDataComponent(TextureDataComponent * rhs)
+uint32_t VKRenderingSystemNS::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
-	return nullptr;
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(VKRenderingSystemComponent::get().m_physicalDevice, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+	{
+		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+		{
+			return i;
+		}
+	}
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to find suitable memory type!!");
+	return 0;
 }
 
-VKMeshDataComponent * VKRenderingSystemNS::addVKMeshDataComponent(EntityID rhs)
+bool VKRenderingSystemNS::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
-	return nullptr;
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = size;
+	bufferInfo.usage = usage;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	if (vkCreateBuffer(VKRenderingSystemComponent::get().m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create create buffer!");
+		return false;
+	}
+
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(VKRenderingSystemComponent::get().m_device, buffer, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+	if (vkAllocateMemory(VKRenderingSystemComponent::get().m_device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate buffer memory!");
+		return false;
+	}
+
+	vkBindBufferMemory(VKRenderingSystemComponent::get().m_device, buffer, bufferMemory, 0);
+
+	return true;
 }
 
-VKTextureDataComponent * VKRenderingSystemNS::addVKTextureDataComponent(EntityID rhs)
+bool copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
-	return nullptr;
+	VkCommandBufferAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandPool = VKRenderingSystemComponent::get().m_commandPool;
+	allocInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	vkAllocateCommandBuffers(VKRenderingSystemComponent::get().m_device, &allocInfo, &commandBuffer);
+
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+	VkBufferCopy copyRegion = {};
+	copyRegion.size = size;
+	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	vkQueueSubmit(VKRenderingSystemComponent::get().m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(VKRenderingSystemComponent::get().m_graphicsQueue);
+
+	vkFreeCommandBuffers(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_commandPool, 1, &commandBuffer);
+
+	return true;
+}
+
+bool VKRenderingSystemNS::createVBO(const std::vector<Vertex>& vertices, VkBuffer& VBO)
+{
+	VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	void* data;
+	vkMapMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
+	std::memcpy(data, vertices.data(), (size_t)bufferSize);
+	vkUnmapMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory);
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VBO, VKRenderingSystemComponent::get().m_vertexBufferMemory);
+
+	copyBuffer(stagingBuffer, VBO, bufferSize);
+
+	vkDestroyBuffer(VKRenderingSystemComponent::get().m_device, stagingBuffer, nullptr);
+	vkFreeMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory, nullptr);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingSystem: VBO " + InnoUtility::pointerToString(VBO) + " is initialized.");
+
+	return true;
+}
+
+bool  VKRenderingSystemNS::createIBO(const std::vector<Index>& indices, VkBuffer& IBO)
+{
+	VkDeviceSize bufferSize = sizeof(Index) * indices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	void* data;
+	vkMapMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
+	std::memcpy(data, indices.data(), (size_t)bufferSize);
+	vkUnmapMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory);
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, IBO, VKRenderingSystemComponent::get().m_indexBufferMemory);
+
+	copyBuffer(stagingBuffer, IBO, bufferSize);
+
+	vkDestroyBuffer(VKRenderingSystemComponent::get().m_device, stagingBuffer, nullptr);
+	vkFreeMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory, nullptr);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingSystem: IBO " + InnoUtility::pointerToString(IBO) + " is initialized.");
+
+	return true;
+}
+
+bool VKRenderingSystemNS::initializeVKMeshDataComponent(VKMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices)
+{
+	createVBO(vertices, rhs->m_VBO);
+	createIBO(indices, rhs->m_IBO);
+
+	rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+	m_initializedVKMDC.emplace(rhs->m_parentEntity, rhs);
+
+	return true;
+}
+
+VKTextureDataComponent* VKRenderingSystemNS::generateVKTextureDataComponent(TextureDataComponent * rhs)
+{
+	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	{
+		return getVKTextureDataComponent(rhs->m_parentEntity);
+	}
+	else
+	{
+		if (rhs->m_textureDataDesc.textureUsageType == TextureUsageType::INVISIBLE)
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: TextureUsageType is TextureUsageType::INVISIBLE!");
+			return nullptr;
+		}
+		else
+		{
+			auto l_ptr = addVKTextureDataComponent(rhs->m_parentEntity);
+
+			initializeVKTextureDataComponent(l_ptr, rhs->m_textureDataDesc, rhs->m_textureData);
+
+			rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+			return l_ptr;
+		}
+	}
+}
+
+bool VKRenderingSystemNS::initializeVKTextureDataComponent(VKTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
+{
+	rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+	m_initializedVKTDC.emplace(rhs->m_parentEntity, rhs);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingSystem: SRV is initialized.");
+
+	return true;
+}
+
+VKMeshDataComponent* VKRenderingSystemNS::addVKMeshDataComponent(EntityID rhs)
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKMeshDataComponentPool, sizeof(VKMeshDataComponent));
+	auto l_VKMDC = new(l_rawPtr)VKMeshDataComponent();
+	l_VKMDC->m_parentEntity = rhs;
+	auto l_meshMap = &m_meshMap;
+	l_meshMap->emplace(std::pair<EntityID, VKMeshDataComponent*>(rhs, l_VKMDC));
+	return l_VKMDC;
+}
+
+VKTextureDataComponent* VKRenderingSystemNS::addVKTextureDataComponent(EntityID rhs)
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKTextureDataComponentPool, sizeof(VKTextureDataComponent));
+	auto l_VKTDC = new(l_rawPtr)VKTextureDataComponent();
+	auto l_textureMap = &m_textureMap;
+	l_textureMap->emplace(std::pair<EntityID, VKTextureDataComponent*>(rhs, l_VKTDC));
+	return l_VKTDC;
 }
 
 VKMeshDataComponent * VKRenderingSystemNS::getVKMeshDataComponent(EntityID rhs)
 {
-	return nullptr;
+	auto result = m_meshMap.find(rhs);
+	if (result != m_meshMap.end())
+	{
+		return result->second;
+	}
+	else
+	{
+		return nullptr;
+	}
 }
 
 VKTextureDataComponent * VKRenderingSystemNS::getVKTextureDataComponent(EntityID rhs)
 {
-	return nullptr;
+	auto result = m_textureMap.find(rhs);
+	if (result != m_textureMap.end())
+	{
+		return result->second;
+	}
+	else
+	{
+		return nullptr;
+	}
 }
 
-void VKRenderingSystemNS::drawMesh(EntityID rhs)
+void VKRenderingSystemNS::recordDrawCall(VkCommandBuffer commandBuffer, EntityID rhs)
 {
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(rhs);
+	if (l_MDC)
+	{
+		recordDrawCall(commandBuffer, l_MDC);
+	}
 }
 
-void VKRenderingSystemNS::drawMesh(MeshDataComponent * MDC)
+void VKRenderingSystemNS::recordDrawCall(VkCommandBuffer commandBuffer, MeshDataComponent * MDC)
 {
+	auto l_VKMDC = VKRenderingSystemNS::getVKMeshDataComponent(MDC->m_parentEntity);
+	if (l_VKMDC)
+	{
+		if (MDC->m_objectStatus == ObjectStatus::ALIVE && l_VKMDC->m_objectStatus == ObjectStatus::ALIVE)
+		{
+			recordDrawCall(commandBuffer, MDC->m_indicesSize, l_VKMDC);
+		}
+	}
 }
 
-void VKRenderingSystemNS::drawMesh(size_t indicesSize, VKMeshDataComponent * VKMDC)
+void VKRenderingSystemNS::recordDrawCall(VkCommandBuffer commandBuffer, size_t indicesSize, VKMeshDataComponent * VKMDC)
 {
+	VkBuffer vertexBuffers[] = { VKMDC->m_VBO };
+	VkDeviceSize offsets[] = { 0 };
+
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+	vkCmdBindIndexBuffer(commandBuffer, VKMDC->m_IBO, 0, VK_INDEX_TYPE_UINT32);
+
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indicesSize), 0, 0, 0, 0);
 }
 
 bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath)
@@ -228,8 +518,10 @@ bool VKRenderingSystemNS::initializeVKShaderProgramComponent(VKShaderProgramComp
 		rhs->m_vertexShaderStageCInfo.pName = "main";
 
 		rhs->m_vertexInputStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		rhs->m_vertexInputStateCInfo.vertexBindingDescriptionCount = 0;
-		rhs->m_vertexInputStateCInfo.vertexAttributeDescriptionCount = 0;
+		rhs->m_vertexInputStateCInfo.vertexBindingDescriptionCount = 1;
+		rhs->m_vertexInputStateCInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_attributeDescriptions.size());
+		rhs->m_vertexInputStateCInfo.pVertexBindingDescriptions = &m_bindingDescription;
+		rhs->m_vertexInputStateCInfo.pVertexAttributeDescriptions = m_attributeDescriptions.data();
 
 		rhs->m_inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		rhs->m_inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

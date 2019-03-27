@@ -80,6 +80,9 @@ public:
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
 	std::vector<VkFence> m_inFlightFences;
 
+	VkDeviceMemory m_vertexBufferMemory;
+	VkDeviceMemory m_indexBufferMemory;
+
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 
 	std::unordered_map<EntityID, VKMeshDataComponent*> m_meshMap;

@@ -24,9 +24,9 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	VKMeshDataComponent* getVKMeshDataComponent(EntityID rhs);
 	VKTextureDataComponent* getVKTextureDataComponent(EntityID rhs);
 
-	void drawMesh(EntityID rhs);
-	void drawMesh(MeshDataComponent* MDC);
-	void drawMesh(size_t indicesSize, VKMeshDataComponent * VKMDC);
+	void recordDrawCall(VkCommandBuffer commandBuffer, EntityID rhs);
+	void recordDrawCall(VkCommandBuffer commandBuffer, MeshDataComponent* MDC);
+	void recordDrawCall(VkCommandBuffer commandBuffer, size_t indicesSize, VKMeshDataComponent * VKMDC);
 
 	VKShaderProgramComponent* addVKShaderProgramComponent(const EntityID& rhs);
 

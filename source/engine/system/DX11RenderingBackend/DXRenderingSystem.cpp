@@ -549,7 +549,7 @@ bool DXRenderingSystemNS::terminate()
 	return true;
 }
 
-bool  DXRenderingSystemNS::initializeDefaultAssets()
+bool DXRenderingSystemNS::initializeDefaultAssets()
 {
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE);
 	g_DXRenderingSystemComponent->m_UnitLineDXMDC = generateDX11MeshDataComponent(l_MDC);
