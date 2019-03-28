@@ -79,7 +79,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 
 	std::vector<mat4> m_VP;
 	std::vector<mat4> m_VP_inv;
-	unsigned int m_volumeDimension = 256;
+	unsigned int m_volumeDimension = 128;
 	unsigned int m_voxelCount = m_volumeDimension * m_volumeDimension * m_volumeDimension;
 	float m_volumeGridSize;
 
@@ -770,7 +770,7 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 
 	activateTexture(m_voxelizationPassGLRPC->m_GLTDCs[0], 0);
 	activateTexture(m_voxelizationPassGLRPC->m_GLTDCs[1], 1);
-	glBindImageTexture(2, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TAO, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RG32UI);
+	glBindImageTexture(2, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TAO, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 	activateShaderProgram(m_irradianceInjectionPassSPC);
 
@@ -782,7 +782,7 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 		l_sunDataPack.luminance.x, l_sunDataPack.luminance.y, l_sunDataPack.luminance.z);
 
 	updateUniform(m_irradianceInjectionPass_uni_volumeDimension, m_volumeDimension);
-	updateUniform(m_irradianceInjectionPass_uni_voxelSize, m_volumeGridSize);
+	updateUniform(m_irradianceInjectionPass_uni_voxelSize, l_voxelSize);
 	updateUniform(m_irradianceInjectionPass_uni_voxelScale, 1.0f / m_volumeGridSize);
 	updateUniform(m_irradianceInjectionPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
 
@@ -821,7 +821,7 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 	updateUniform(m_voxelVisualizationPass_uni_voxelSize, l_voxelSize);
 	updateUniform(m_voxelVisualizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
 
-	glBindImageTexture(0, m_voxelizationPassGLRPC->m_GLTDCs[0]->m_TAO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+	glBindImageTexture(0, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TAO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
 
 	glBindVertexArray(m_VAO);
 	glDrawArrays(GL_POINTS, 0, m_voxelCount);

@@ -53,7 +53,6 @@ void main()
 		{
 			gl_Position = projectedVertices[cubeIndices[face * 4 + vertex]];
 
-			//voxelColor = vec4(gl_Position.xyz / gl_Position.w, 1.0f);
 			voxelColor = out_textureValue[0];
 			EmitVertex();
 		}
