@@ -68,7 +68,7 @@ bool VKRenderingSystemNS::initializeComponentPool()
 
 	m_attributeDescriptions[4].binding = 0;
 	m_attributeDescriptions[4].location = 4;
-	m_attributeDescriptions[4].format = VK_FORMAT_R32G32_SFLOAT;
+	m_attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 	m_attributeDescriptions[4].offset = offsetof(Vertex, m_pad2);
 
 	return true;
@@ -341,7 +341,7 @@ bool  VKRenderingSystemNS::createIBO(const std::vector<Index>& indices, VkBuffer
 	std::memcpy(data, indices.data(), (size_t)bufferSize);
 	vkUnmapMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory);
 
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, IBO, VKRenderingSystemComponent::get().m_indexBufferMemory);
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, IBO, VKRenderingSystemComponent::get().m_indexBufferMemory);
 
 	copyBuffer(stagingBuffer, IBO, bufferSize);
 
@@ -477,7 +477,7 @@ void VKRenderingSystemNS::recordDrawCall(VkCommandBuffer commandBuffer, size_t i
 
 	vkCmdBindIndexBuffer(commandBuffer, VKMDC->m_IBO, 0, VK_INDEX_TYPE_UINT32);
 
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indicesSize), 0, 0, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indicesSize), 1, 0, 0, 0);
 }
 
 bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath)
@@ -524,7 +524,8 @@ bool VKRenderingSystemNS::initializeVKShaderProgramComponent(VKShaderProgramComp
 		rhs->m_vertexInputStateCInfo.pVertexAttributeDescriptions = m_attributeDescriptions.data();
 
 		rhs->m_inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		rhs->m_inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		// @TODO: how to deal with different topologies?
+		rhs->m_inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 		rhs->m_inputAssemblyStateCInfo.primitiveRestartEnable = VK_FALSE;
 	}
 	if (shaderFilePaths.m_FSPath != "")
