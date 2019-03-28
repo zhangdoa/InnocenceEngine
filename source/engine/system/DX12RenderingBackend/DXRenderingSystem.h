@@ -2,10 +2,10 @@
 #include "../IRenderingBackendSystem.h"
 #include "../../exports/InnoSystem_Export.h"
 
-class DXRenderingSystem : INNO_IMPLEMENT IRenderingBackendSystem
+class DX12RenderingSystem : INNO_IMPLEMENT IRenderingBackendSystem
 {
 public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(DXRenderingSystem);
+	INNO_CLASS_CONCRETE_NON_COPYABLE(DX12RenderingSystem);
 
 	bool setup(IRenderingFrontendSystem* renderingFrontend) override;
 	bool initialize() override;

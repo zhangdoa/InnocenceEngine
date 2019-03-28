@@ -1,6 +1,6 @@
 #include "DXRenderingSystem.h"
 
-#include "../../component/DX11RenderingSystemComponent.h"
+#include "../../component/DX12RenderingSystemComponent.h"
 #include "../../component/WinWindowSystemComponent.h"
 
 #include "DXRenderingSystemUtilities.h"
@@ -25,11 +25,12 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 
 	void prepareRenderingData();
 
-	static DX11RenderingSystemComponent* g_DXRenderingSystemComponent;
+	static DX12RenderingSystemComponent* g_DXRenderingSystemComponent;
 
 	bool createPhysicalDevices();
 	bool createSwapChain();
 	bool createBackBuffer();
+	bool createCommandList();
 	bool createRasterizer();
 
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
@@ -39,21 +40,369 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 
 bool DXRenderingSystemNS::createPhysicalDevices()
 {
+	HRESULT result;
+
+	unsigned int numModes;
+	unsigned long long stringLength;
+
+	// Set the feature level to DirectX 12.1 to enable using all the DirectX 12 features.
+	// Note: Not all cards support full DirectX 12, this feature level may need to be reduced on some cards to 12.0.
+	auto featureLevel = D3D_FEATURE_LEVEL_12_1;
+
+	// Create the Direct3D 12 device.
+	result = D3D12CreateDevice(NULL, featureLevel, __uuidof(ID3D12Device), (void**)&g_DXRenderingSystemComponent->m_device);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: Could not create a DirectX 12.1 device.  The default video card does not support DirectX 12.1!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Initialize the description of the command queue.
+	ZeroMemory(&g_DXRenderingSystemComponent->m_commandQueueDesc, sizeof(g_DXRenderingSystemComponent->m_commandQueueDesc));
+
+	// Set up the description of the command queue.
+	g_DXRenderingSystemComponent->m_commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	g_DXRenderingSystemComponent->m_commandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+	g_DXRenderingSystemComponent->m_commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	g_DXRenderingSystemComponent->m_commandQueueDesc.NodeMask = 0;
+
+	// Create the command queue.
+	result = g_DXRenderingSystemComponent->m_device->CreateCommandQueue(&g_DXRenderingSystemComponent->m_commandQueueDesc, __uuidof(ID3D12CommandQueue), (void**)&g_DXRenderingSystemComponent->m_commandQueue);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: Could not create command queue!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Create a DirectX graphics interface factory.
+	result = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void**)&g_DXRenderingSystemComponent->m_factory);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXGI factory!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Use the factory to create an adapter for the primary graphics interface (video card).
+	result = g_DXRenderingSystemComponent->m_factory->EnumAdapters(0, &g_DXRenderingSystemComponent->m_adapter);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create video card adapter!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Enumerate the primary adapter output (monitor).
+	result = g_DXRenderingSystemComponent->m_adapter->EnumOutputs(0, &g_DXRenderingSystemComponent->m_adapterOutput);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create monitor adapter!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
+	result = g_DXRenderingSystemComponent->m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Create a list to hold all the possible display modes for this monitor/video card combination.
+	std::vector<DXGI_MODE_DESC> displayModeList(numModes);
+
+	// Now fill the display mode list structures.
+	result = g_DXRenderingSystemComponent->m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, &displayModeList[0]);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't fill the display mode list structures!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Now go through all the display modes and find the one that matches the screen width and height.
+	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
+	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+
+	for (unsigned int i = 0; i < numModes; i++)
+	{
+		if (displayModeList[i].Width == l_screenResolution.x
+			&&
+			displayModeList[i].Height == l_screenResolution.y
+			)
+		{
+			g_DXRenderingSystemComponent->m_refreshRate.x = displayModeList[i].RefreshRate.Numerator;
+			g_DXRenderingSystemComponent->m_refreshRate.y = displayModeList[i].RefreshRate.Denominator;
+		}
+	}
+
+	// Get the adapter (video card) description.
+	result = g_DXRenderingSystemComponent->m_adapter->GetDesc(&g_DXRenderingSystemComponent->m_adapterDesc);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get the video card adapter description!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Store the dedicated video card memory in megabytes.
+	g_DXRenderingSystemComponent->m_videoCardMemory = (int)(g_DXRenderingSystemComponent->m_adapterDesc.DedicatedVideoMemory / 1024 / 1024);
+
+	// Convert the name of the video card to a character array and store it.
+	if (wcstombs_s(&stringLength, g_DXRenderingSystemComponent->m_videoCardDescription, 128, g_DXRenderingSystemComponent->m_adapterDesc.Description, 128) != 0)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't convert the name of the video card to a character array!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Release the display mode list.
+	// displayModeList.clear();
+
+	// Release the adapter output.
+	g_DXRenderingSystemComponent->m_adapterOutput->Release();
+	g_DXRenderingSystemComponent->m_adapterOutput = 0;
+
+	// Release the adapter.
+	g_DXRenderingSystemComponent->m_adapter->Release();
+	g_DXRenderingSystemComponent->m_adapter = 0;
+
 	return true;
 }
 
 bool DXRenderingSystemNS::createSwapChain()
 {
+	HRESULT result;
+	D3D_FEATURE_LEVEL featureLevel;
+
+	// Initialize the swap chain description.
+	ZeroMemory(&g_DXRenderingSystemComponent->m_swapChainDesc, sizeof(g_DXRenderingSystemComponent->m_swapChainDesc));
+
+	// Set the swap chain to use double buffering.
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferCount = 2;
+
+	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+
+	// Set the width and height of the back buffer.
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Width = (UINT)l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Height = (UINT)l_screenResolution.y;
+
+	// Set regular 32-bit surface for the back buffer.
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	// Set the refresh rate of the back buffer.
+	if (WinWindowSystemComponent::get().m_vsync_enabled)
+	{
+		g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = g_DXRenderingSystemComponent->m_refreshRate.x;
+		g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = g_DXRenderingSystemComponent->m_refreshRate.y;
+	}
+	else
+	{
+		g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
+		g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+	}
+
+	// Set the usage of the back buffer.
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+
+	// Set the handle for the window to render to.
+	g_DXRenderingSystemComponent->m_swapChainDesc.OutputWindow = WinWindowSystemComponent::get().m_hwnd;
+
+	// Turn multisampling off.
+	g_DXRenderingSystemComponent->m_swapChainDesc.SampleDesc.Count = 1;
+	g_DXRenderingSystemComponent->m_swapChainDesc.SampleDesc.Quality = 0;
+
+	// Set to full screen or windowed mode.
+	// @TODO: finish this feature
+	g_DXRenderingSystemComponent->m_swapChainDesc.Windowed = true;
+
+	// Set the scan line ordering and scaling to unspecified.
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+
+	// Discard the back buffer contents after presenting.
+	g_DXRenderingSystemComponent->m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+
+	// Don't set the advanced flags.
+	g_DXRenderingSystemComponent->m_swapChainDesc.Flags = 0;
+
+	IDXGISwapChain* l_tempSwapChain;
+	// Finally create the swap chain using the swap chain description.
+	result = g_DXRenderingSystemComponent->m_factory->CreateSwapChain(g_DXRenderingSystemComponent->m_commandQueue, &g_DXRenderingSystemComponent->m_swapChainDesc, &l_tempSwapChain);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create temporary swap chain!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Next upgrade the IDXGISwapChain to a IDXGISwapChain3 interface and store it in a private member variable named m_swapChain.
+	// This will allow us to use the newer functionality such as getting the current back buffer index.
+	result = l_tempSwapChain->QueryInterface(__uuidof(IDXGISwapChain3), (void**)&g_DXRenderingSystemComponent->m_swapChain);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't upgrade swap chain!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Release the factory.
+	g_DXRenderingSystemComponent->m_factory->Release();
+	g_DXRenderingSystemComponent->m_factory = 0;
+
 	return true;
 }
 
 bool DXRenderingSystemNS::createBackBuffer()
 {
+	HRESULT result;
+
+	unsigned int renderTargetViewDescriptorSize;
+
+	// Initialize the render target view heap description for the two back buffers.
+	ZeroMemory(&g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc, sizeof(g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc));
+
+	// Set the number of descriptors to two for our two back buffers.  Also set the heap tyupe to render target views.
+	g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc.NumDescriptors = 2;
+	g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	// Create the render target view heap for the back buffers.
+	result = g_DXRenderingSystemComponent->m_device->CreateDescriptorHeap(&g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&g_DXRenderingSystemComponent->m_renderTargetViewHeap);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create render target view heap!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Get a handle to the starting memory location in the render target view heap to identify where the render target views will be located for the two back buffers.
+	g_DXRenderingSystemComponent->m_renderTargetViewHandle = g_DXRenderingSystemComponent->m_renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart();
+
+	// Get the size of the memory location for the render target view descriptors.
+	renderTargetViewDescriptorSize = g_DXRenderingSystemComponent->m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	// Get a pointer to the first back buffer from the swap chain.
+	result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D12Resource), (void**)&g_DXRenderingSystemComponent->m_backBufferRenderTarget[0]);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get pointer of first back buffer!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Create a render target view for the first back buffer.
+	g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(g_DXRenderingSystemComponent->m_backBufferRenderTarget[0], NULL, g_DXRenderingSystemComponent->m_renderTargetViewHandle);
+
+	// Increment the view handle to the next descriptor location in the render target view heap.
+	g_DXRenderingSystemComponent->m_renderTargetViewHandle.ptr += renderTargetViewDescriptorSize;
+
+	// Get a pointer to the second back buffer from the swap chain.
+	result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(1, __uuidof(ID3D12Resource), (void**)&g_DXRenderingSystemComponent->m_backBufferRenderTarget[1]);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get pointer of second back buffer!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	// Create a render target view for the second back buffer.
+	g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(g_DXRenderingSystemComponent->m_backBufferRenderTarget[1], NULL, g_DXRenderingSystemComponent->m_renderTargetViewHandle);
+
+	// Finally get the initial index to which buffer is the current back buffer.
+	g_DXRenderingSystemComponent->m_bufferIndex = g_DXRenderingSystemComponent->m_swapChain->GetCurrentBackBufferIndex();
+
+	return true;
+}
+
+bool DXRenderingSystemNS::createCommandList()
+{
+	HRESULT result;
+
+	// Create a command allocator.
+	result = g_DXRenderingSystemComponent->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, __uuidof(ID3D12CommandAllocator), (void**)&g_DXRenderingSystemComponent->m_commandAllocator);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Create a basic command list.
+	result = g_DXRenderingSystemComponent->m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_DXRenderingSystemComponent->m_commandAllocator, NULL, __uuidof(ID3D12GraphicsCommandList), (void**)&g_DXRenderingSystemComponent->m_commandList);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Initially we need to close the command list during initialization as it is created in a recording state.
+	result = g_DXRenderingSystemComponent->m_commandList->Close();
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Create a fence for GPU synchronization.
+	result = g_DXRenderingSystemComponent->m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), (void**)&g_DXRenderingSystemComponent->m_fence);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Create an event object for the fence.
+	g_DXRenderingSystemComponent->m_fenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+	if (g_DXRenderingSystemComponent->m_fenceEvent == NULL)
+	{
+		return false;
+	}
+
+	// Initialize the starting fence value.
+	g_DXRenderingSystemComponent->m_fenceValue = 1;
+
 	return true;
 }
 
 bool DXRenderingSystemNS::createRasterizer()
 {
+	HRESULT result;
+
+	// Setup the raster description which will determine how and what polygons will be drawn.
+	g_DXRenderingSystemComponent->m_rasterDescForward.AntialiasedLineEnable = false;
+	g_DXRenderingSystemComponent->m_rasterDescDeferred.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+	g_DXRenderingSystemComponent->m_rasterDescForward.CullMode = D3D12_CULL_MODE_NONE;
+	g_DXRenderingSystemComponent->m_rasterDescForward.DepthBias = 0;
+	g_DXRenderingSystemComponent->m_rasterDescForward.DepthBiasClamp = 0.0f;
+	g_DXRenderingSystemComponent->m_rasterDescForward.DepthClipEnable = true;
+	g_DXRenderingSystemComponent->m_rasterDescForward.FillMode = D3D12_FILL_MODE_SOLID;
+	g_DXRenderingSystemComponent->m_rasterDescForward.FrontCounterClockwise = true;
+	g_DXRenderingSystemComponent->m_rasterDescForward.MultisampleEnable = false;
+	g_DXRenderingSystemComponent->m_rasterDescForward.SlopeScaledDepthBias = 0.0f;
+
+	g_DXRenderingSystemComponent->m_rasterDescDeferred.AntialiasedLineEnable = false;
+	g_DXRenderingSystemComponent->m_rasterDescDeferred.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+	g_DXRenderingSystemComponent->m_rasterDescDeferred.CullMode = D3D12_CULL_MODE_NONE;
+	g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthBias = 0;
+	g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthBiasClamp = 0.0f;
+	g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthClipEnable = true;
+	g_DXRenderingSystemComponent->m_rasterDescDeferred.FillMode = D3D12_FILL_MODE_SOLID;
+	g_DXRenderingSystemComponent->m_rasterDescDeferred.FrontCounterClockwise = false;
+	g_DXRenderingSystemComponent->m_rasterDescDeferred.MultisampleEnable = false;
+	g_DXRenderingSystemComponent->m_rasterDescDeferred.SlopeScaledDepthBias = 0.0f;
+
+	// Setup the viewport for rendering.
+	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+
+	g_DXRenderingSystemComponent->m_viewport.Width =
+		(float)l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_viewport.Height =
+		(float)l_screenResolution.y;
+	g_DXRenderingSystemComponent->m_viewport.MinDepth = 0.0f;
+	g_DXRenderingSystemComponent->m_viewport.MaxDepth = 1.0f;
+	g_DXRenderingSystemComponent->m_viewport.TopLeftX = 0.0f;
+	g_DXRenderingSystemComponent->m_viewport.TopLeftY = 0.0f;
+
 	return true;
 }
 
@@ -61,13 +410,14 @@ bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
 	m_renderingFrontendSystem = renderingFrontend;
 
-	g_DXRenderingSystemComponent = &DX11RenderingSystemComponent::get();
+	g_DXRenderingSystemComponent = &DX12RenderingSystemComponent::get();
 
 	bool result = true;
 	result = result && initializeComponentPool();
 	result = result && createPhysicalDevices();
 	result = result && createSwapChain();
 	result = result && createBackBuffer();
+	result = result && createCommandList();
 	result = result && createRasterizer();
 
 	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
@@ -85,7 +435,7 @@ bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	g_DXRenderingSystemComponent->deferredPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
 	g_DXRenderingSystemComponent->deferredPassRTVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	g_DXRenderingSystemComponent->deferredPassRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	g_DXRenderingSystemComponent->deferredPassRTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	g_DXRenderingSystemComponent->deferredPassRTVDesc.Texture2D.MipSlice = 0;
 
 	m_objectStatus = ObjectStatus::ALIVE;
@@ -123,17 +473,95 @@ bool DXRenderingSystemNS::update()
 	// Clear the buffers to begin the scene.
 	prepareRenderingData();
 
-	DXGeometryRenderingPassUtilities::update();
+	//DXGeometryRenderingPassUtilities::update();
 
-	DXLightRenderingPassUtilities::update();
+	//DXLightRenderingPassUtilities::update();
 
-	DXFinalRenderingPassUtilities::update();
+	//DXFinalRenderingPassUtilities::update();
 
 	return true;
 }
 
 bool DXRenderingSystemNS::terminate()
 {
+	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
+	if (g_DXRenderingSystemComponent->m_swapChain)
+	{
+		g_DXRenderingSystemComponent->m_swapChain->SetFullscreenState(false, NULL);
+	}
+
+	// Close the object handle to the fence event.
+	auto error = CloseHandle(g_DXRenderingSystemComponent->m_fenceEvent);
+	if (error == 0)
+	{
+	}
+
+	// Release the fence.
+	if (g_DXRenderingSystemComponent->m_fence)
+	{
+		g_DXRenderingSystemComponent->m_fence->Release();
+		g_DXRenderingSystemComponent->m_fence = 0;
+	}
+
+	// Release the empty pipe line state.
+	if (g_DXRenderingSystemComponent->m_pipelineState)
+	{
+		g_DXRenderingSystemComponent->m_pipelineState->Release();
+		g_DXRenderingSystemComponent->m_pipelineState = 0;
+	}
+
+	// Release the command list.
+	if (g_DXRenderingSystemComponent->m_commandList)
+	{
+		g_DXRenderingSystemComponent->m_commandList->Release();
+		g_DXRenderingSystemComponent->m_commandList = 0;
+	}
+
+	// Release the command allocator.
+	if (g_DXRenderingSystemComponent->m_commandAllocator)
+	{
+		g_DXRenderingSystemComponent->m_commandAllocator->Release();
+		g_DXRenderingSystemComponent->m_commandAllocator = 0;
+	}
+
+	// Release the back buffer render target views.
+	if (g_DXRenderingSystemComponent->m_backBufferRenderTarget[0])
+	{
+		g_DXRenderingSystemComponent->m_backBufferRenderTarget[0]->Release();
+		g_DXRenderingSystemComponent->m_backBufferRenderTarget[0] = 0;
+	}
+	if (g_DXRenderingSystemComponent->m_backBufferRenderTarget[1])
+	{
+		g_DXRenderingSystemComponent->m_backBufferRenderTarget[1]->Release();
+		g_DXRenderingSystemComponent->m_backBufferRenderTarget[1] = 0;
+	}
+
+	// Release the render target view heap.
+	if (g_DXRenderingSystemComponent->m_renderTargetViewHeap)
+	{
+		g_DXRenderingSystemComponent->m_renderTargetViewHeap->Release();
+		g_DXRenderingSystemComponent->m_renderTargetViewHeap = 0;
+	}
+
+	if (g_DXRenderingSystemComponent->m_swapChain)
+	{
+		g_DXRenderingSystemComponent->m_swapChain->Release();
+		g_DXRenderingSystemComponent->m_swapChain = 0;
+	}
+
+	// Release the command queue.
+	if (g_DXRenderingSystemComponent->m_commandQueue)
+	{
+		g_DXRenderingSystemComponent->m_commandQueue->Release();
+		g_DXRenderingSystemComponent->m_commandQueue = 0;
+	}
+
+	if (g_DXRenderingSystemComponent->m_device)
+	{
+		g_DXRenderingSystemComponent->m_device->Release();
+		g_DXRenderingSystemComponent->m_device = 0;
+	}
+
 	m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXRenderingSystem has been terminated.");
 	return true;
@@ -142,31 +570,31 @@ bool DXRenderingSystemNS::terminate()
 bool  DXRenderingSystemNS::initializeDefaultAssets()
 {
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE);
-	g_DXRenderingSystemComponent->m_UnitLineDXMDC = generateDX11MeshDataComponent(l_MDC);
+	g_DXRenderingSystemComponent->m_UnitLineDXMDC = generateDX12MeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-	g_DXRenderingSystemComponent->m_UnitQuadDXMDC = generateDX11MeshDataComponent(l_MDC);
+	g_DXRenderingSystemComponent->m_UnitQuadDXMDC = generateDX12MeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
-	g_DXRenderingSystemComponent->m_UnitCubeDXMDC = generateDX11MeshDataComponent(l_MDC);
+	g_DXRenderingSystemComponent->m_UnitCubeDXMDC = generateDX12MeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
-	g_DXRenderingSystemComponent->m_UnitSphereDXMDC = generateDX11MeshDataComponent(l_MDC);
+	g_DXRenderingSystemComponent->m_UnitSphereDXMDC = generateDX12MeshDataComponent(l_MDC);
 
-	g_DXRenderingSystemComponent->m_basicNormalDXTDC = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::NORMAL));
-	g_DXRenderingSystemComponent->m_basicAlbedoDXTDC = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ALBEDO));
-	g_DXRenderingSystemComponent->m_basicMetallicDXTDC = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::METALLIC));
-	g_DXRenderingSystemComponent->m_basicRoughnessDXTDC = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
-	g_DXRenderingSystemComponent->m_basicAODXTDC = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
+	g_DXRenderingSystemComponent->m_basicNormalDXTDC = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::NORMAL));
+	g_DXRenderingSystemComponent->m_basicAlbedoDXTDC = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ALBEDO));
+	g_DXRenderingSystemComponent->m_basicMetallicDXTDC = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::METALLIC));
+	g_DXRenderingSystemComponent->m_basicRoughnessDXTDC = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
+	g_DXRenderingSystemComponent->m_basicAODXTDC = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
 
-	g_DXRenderingSystemComponent->m_iconTemplate_OBJ = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::OBJ));
-	g_DXRenderingSystemComponent->m_iconTemplate_PNG = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::PNG));
-	g_DXRenderingSystemComponent->m_iconTemplate_SHADER = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::SHADER));
-	g_DXRenderingSystemComponent->m_iconTemplate_UNKNOWN = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::UNKNOWN));
+	g_DXRenderingSystemComponent->m_iconTemplate_OBJ = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::OBJ));
+	g_DXRenderingSystemComponent->m_iconTemplate_PNG = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::PNG));
+	g_DXRenderingSystemComponent->m_iconTemplate_SHADER = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::SHADER));
+	g_DXRenderingSystemComponent->m_iconTemplate_UNKNOWN = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::UNKNOWN));
 
-	g_DXRenderingSystemComponent->m_iconTemplate_DirectionalLight = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT));
-	g_DXRenderingSystemComponent->m_iconTemplate_PointLight = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT));
-	g_DXRenderingSystemComponent->m_iconTemplate_SphereLight = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT));
+	g_DXRenderingSystemComponent->m_iconTemplate_DirectionalLight = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT));
+	g_DXRenderingSystemComponent->m_iconTemplate_PointLight = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT));
+	g_DXRenderingSystemComponent->m_iconTemplate_SphereLight = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT));
 
 	return true;
 }
@@ -197,7 +625,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 
 	for (auto i : m_meshDataPack)
 	{
-		auto l_DXMDC = getDX11MeshDataComponent(i.MDC->m_parentEntity);
+		auto l_DXMDC = getDX12MeshDataComponent(i.MDC->m_parentEntity);
 		if (l_DXMDC && l_DXMDC->m_objectStatus == ObjectStatus::ALIVE)
 		{
 			GPassMeshDataPack l_meshDataPack;
@@ -214,7 +642,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 			auto l_TDC = l_material->m_texturePack.m_normalTDC.second;
 			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_meshDataPack.normalDXTDC = getDX11TextureDataComponent(l_TDC->m_parentEntity);
+				l_meshDataPack.normalDXTDC = getDX12TextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
@@ -224,7 +652,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 			l_TDC = l_material->m_texturePack.m_albedoTDC.second;
 			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_meshDataPack.albedoDXTDC = getDX11TextureDataComponent(l_TDC->m_parentEntity);
+				l_meshDataPack.albedoDXTDC = getDX12TextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
@@ -234,7 +662,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 			l_TDC = l_material->m_texturePack.m_metallicTDC.second;
 			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_meshDataPack.metallicDXTDC = getDX11TextureDataComponent(l_TDC->m_parentEntity);
+				l_meshDataPack.metallicDXTDC = getDX12TextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
@@ -244,7 +672,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 			l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
 			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_meshDataPack.roughnessDXTDC = getDX11TextureDataComponent(l_TDC->m_parentEntity);
+				l_meshDataPack.roughnessDXTDC = getDX12TextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
@@ -254,7 +682,7 @@ void DXRenderingSystemNS::prepareRenderingData()
 			l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
 			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				l_meshDataPack.AODXTDC = getDX11TextureDataComponent(l_TDC->m_parentEntity);
+				l_meshDataPack.AODXTDC = getDX12TextureDataComponent(l_TDC->m_parentEntity);
 			}
 			else
 			{
@@ -279,48 +707,48 @@ void DXRenderingSystemNS::prepareRenderingData()
 	}
 }
 
-bool DXRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
+bool DX12RenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
 {
 	return DXRenderingSystemNS::setup(renderingFrontend);
 }
 
-bool DXRenderingSystem::initialize()
+bool DX12RenderingSystem::initialize()
 {
 	DXRenderingSystemNS::initializeDefaultAssets();
-	DXGeometryRenderingPassUtilities::initialize();
-	DXLightRenderingPassUtilities::initialize();
-	DXFinalRenderingPassUtilities::initialize();
+	//DXGeometryRenderingPassUtilities::initialize();
+	//DXLightRenderingPassUtilities::initialize();
+	//DXFinalRenderingPassUtilities::initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXRenderingSystem has been initialized.");
 	return true;
 }
 
-bool DXRenderingSystem::update()
+bool DX12RenderingSystem::update()
 {
 	return DXRenderingSystemNS::update();
 }
 
-bool DXRenderingSystem::terminate()
+bool DX12RenderingSystem::terminate()
 {
 	return DXRenderingSystemNS::terminate();
 }
 
-ObjectStatus DXRenderingSystem::getStatus()
+ObjectStatus DX12RenderingSystem::getStatus()
 {
 	return DXRenderingSystemNS::m_objectStatus;
 }
 
-bool DXRenderingSystem::resize()
+bool DX12RenderingSystem::resize()
 {
 	return true;
 }
 
-bool DXRenderingSystem::reloadShader(RenderPassType renderPassType)
+bool DX12RenderingSystem::reloadShader(RenderPassType renderPassType)
 {
 	return true;
 }
 
-bool DXRenderingSystem::bakeGI()
+bool DX12RenderingSystem::bakeGI()
 {
 	return true;
 }

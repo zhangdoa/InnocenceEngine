@@ -44,17 +44,12 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 bool DXRenderingSystemNS::createPhysicalDevices()
 {
 	HRESULT result;
-	IDXGIFactory* m_factory;
-
-	DXGI_ADAPTER_DESC adapterDesc;
-	IDXGIAdapter* m_adapter;
-	IDXGIOutput* m_adapterOutput;
 
 	unsigned int numModes;
 	unsigned long long stringLength;
 
 	// Create a DirectX graphics interface factory.
-	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&m_factory);
+	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&g_DXRenderingSystemComponent->m_factory);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXGI factory!");
@@ -63,7 +58,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	}
 
 	// Use the factory to create an adapter for the primary graphics interface (video card).
-	result = m_factory->EnumAdapters(0, &m_adapter);
+	result = g_DXRenderingSystemComponent->m_factory->EnumAdapters(0, &g_DXRenderingSystemComponent->m_adapter);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create video card adapter!");
@@ -72,7 +67,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	}
 
 	// Enumerate the primary adapter output (monitor).
-	result = m_adapter->EnumOutputs(0, &m_adapterOutput);
+	result = g_DXRenderingSystemComponent->m_adapter->EnumOutputs(0, &g_DXRenderingSystemComponent->m_adapterOutput);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create monitor adapter!");
@@ -81,7 +76,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	}
 
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
-	result = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
+	result = g_DXRenderingSystemComponent->m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
@@ -93,7 +88,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	std::vector<DXGI_MODE_DESC> displayModeList(numModes);
 
 	// Now fill the display mode list structures.
-	result = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, &displayModeList[0]);
+	result = g_DXRenderingSystemComponent->m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, &displayModeList[0]);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't fill the display mode list structures!");
@@ -118,7 +113,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	}
 
 	// Get the adapter (video card) description.
-	result = m_adapter->GetDesc(&adapterDesc);
+	result = g_DXRenderingSystemComponent->m_adapter->GetDesc(&g_DXRenderingSystemComponent->m_adapterDesc);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get the video card adapter description!");
@@ -127,10 +122,10 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	}
 
 	// Store the dedicated video card memory in megabytes.
-	g_DXRenderingSystemComponent->m_videoCardMemory = (int)(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
+	g_DXRenderingSystemComponent->m_videoCardMemory = (int)(g_DXRenderingSystemComponent->m_adapterDesc.DedicatedVideoMemory / 1024 / 1024);
 
 	// Convert the name of the video card to a character array and store it.
-	if (wcstombs_s(&stringLength, g_DXRenderingSystemComponent->m_videoCardDescription, 128, adapterDesc.Description, 128) != 0)
+	if (wcstombs_s(&stringLength, g_DXRenderingSystemComponent->m_videoCardDescription, 128, g_DXRenderingSystemComponent->m_adapterDesc.Description, 128) != 0)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't convert the name of the video card to a character array!");
 		m_objectStatus = ObjectStatus::STANDBY;
@@ -141,16 +136,16 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	// displayModeList.clear();
 
 	// Release the adapter output.
-	m_adapterOutput->Release();
-	m_adapterOutput = 0;
+	g_DXRenderingSystemComponent->m_adapterOutput->Release();
+	g_DXRenderingSystemComponent->m_adapterOutput = 0;
 
 	// Release the adapter.
-	m_adapter->Release();
-	m_adapter = 0;
+	g_DXRenderingSystemComponent->m_adapter->Release();
+	g_DXRenderingSystemComponent->m_adapter = 0;
 
 	// Release the factory.
-	m_factory->Release();
-	m_factory = 0;
+	g_DXRenderingSystemComponent->m_factory->Release();
+	g_DXRenderingSystemComponent->m_factory = 0;
 
 	return true;
 }

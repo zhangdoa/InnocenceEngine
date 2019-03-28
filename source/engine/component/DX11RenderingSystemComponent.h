@@ -75,11 +75,17 @@ public:
 	int m_videoCardMemory;
 	char m_videoCardDescription[128];
 
-	DXGI_SWAP_CHAIN_DESC m_swapChainDesc;
-	IDXGISwapChain* m_swapChain;
+	IDXGIFactory* m_factory;
+
+	DXGI_ADAPTER_DESC m_adapterDesc;
+	IDXGIAdapter* m_adapter;
+	IDXGIOutput* m_adapterOutput;
 
 	ID3D11Device* m_device;
 	ID3D11DeviceContext* m_deviceContext;
+
+	DXGI_SWAP_CHAIN_DESC m_swapChainDesc;
+	IDXGISwapChain* m_swapChain;
 
 	ID3D11Texture2D* m_renderTargetTexture;
 	ID3D11RenderTargetView* m_renderTargetView;
