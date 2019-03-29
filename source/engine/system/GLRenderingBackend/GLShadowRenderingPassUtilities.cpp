@@ -1,6 +1,7 @@
 #include "GLRenderingSystemUtilities.h"
 #include "GLShadowRenderingPassUtilities.h"
 #include "../../component/GLShadowRenderPassComponent.h"
+#include "../../component/GLRenderingSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -84,26 +85,23 @@ void GLShadowRenderingPassUtilities::initialize()
 
 void GLShadowRenderingPassUtilities::drawAllMeshDataComponents()
 {
-	for (auto& l_visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
-	{
-		if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE && l_visibleComponent->m_objectStatus == ObjectStatus::ALIVE)
-		{
-			updateUniform(
-				GLShadowRenderPassComponent::get().m_shadowPass_uni_m,
-				g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
+	auto l_queueCopy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
 
-			// draw each graphic data of visibleComponent
-			for (auto& l_modelPair : l_visibleComponent->m_modelMap)
-			{
-				// draw meshes
-				auto l_MDC = l_modelPair.first;
-				if (l_MDC)
-				{
-					// draw meshes
-					drawMesh(l_MDC);
-				}
-			}
+	while (l_queueCopy.size() > 0)
+	{
+		auto l_renderPack = l_queueCopy.front();
+		if (l_renderPack.meshShapeType != MeshShapeType::CUSTOM)
+		{
+			glFrontFace(GL_CW);
 		}
+		else
+		{
+			glFrontFace(GL_CCW);
+		}
+		updateUniform(
+			GLShadowRenderPassComponent::get().m_shadowPass_uni_m, l_renderPack.meshUBOData.m);
+		drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
+		l_queueCopy.pop();
 	}
 }
 

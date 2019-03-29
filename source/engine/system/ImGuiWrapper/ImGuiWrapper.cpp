@@ -75,8 +75,6 @@ bool ImGuiWrapper::initialize()
 		ImGuiWrapperNS::m_wrapperImpl->initialize();
 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
-		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
 		// Setup style
 		ImGui::StyleColorsDark();
@@ -144,7 +142,7 @@ bool ImGuiWrapper::update()
 		ImGui::NewFrame();
 		{
 			ImGuiWrapperNS::showApplicationProfiler();
-			//ImGuiWrapperNS::showFileExplorer();
+			ImGuiWrapperNS::showFileExplorer();
 			//ImGuiWrapperNS::showWorldExplorer();
 #else
 		// @TODO: handle GUI component

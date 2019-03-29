@@ -187,7 +187,7 @@ void * InnoMemorySystem::spawnObject(void * memoryPool, size_t objectSize)
 
 	auto l_objectPoolInstance = reinterpret_cast<ObjectPoolInstance*>(memoryPool);
 
-	//assert(l_objectPoolInstance->m_Pool->m_objectSize != objectSize);
+	assert(l_objectPoolInstance->m_Pool->m_objectSize == objectSize);
 
 	if (!l_objectPoolInstance->m_CurrentFreeChunk)
 	{
@@ -228,7 +228,7 @@ bool InnoMemorySystem::destroyObject(void * memoryPool, size_t objectSize, void 
 
 	auto l_objectPoolInstance = reinterpret_cast<ObjectPoolInstance*>(memoryPool);
 
-	assert(l_objectPoolInstance->m_Pool->m_objectSize != objectSize);
+	assert(l_objectPoolInstance->m_Pool->m_objectSize == objectSize);
 
 	//get pointer distance between this object and the head of the pool
 	auto l_offset = reinterpret_cast<unsigned char*>(object) - l_objectPoolInstance->m_Pool->m_poolPtr;
