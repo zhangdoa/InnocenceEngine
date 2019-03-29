@@ -16,5 +16,4 @@ public:
 	VkPipelineShaderStageCreateInfo m_vertexShaderStageCInfo = {};
 	VkPipelineShaderStageCreateInfo m_fragmentShaderStageCInfo = {};
 	VkPipelineVertexInputStateCreateInfo m_vertexInputStateCInfo = {};
-	VkPipelineInputAssemblyStateCreateInfo m_inputAssemblyStateCInfo = {};
 };

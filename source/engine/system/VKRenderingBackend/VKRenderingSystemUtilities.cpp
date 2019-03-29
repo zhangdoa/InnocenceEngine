@@ -17,6 +17,12 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool initializeVKMeshDataComponent(VKMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
 	bool initializeVKTextureDataComponent(VKTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
 
+	VKTextureDataDesc getVKTextureDataDesc(const TextureDataDesc& textureDataDesc);
+
+	VkSamplerAddressMode getTextureWrapMethod(TextureWrapMethod rhs);
+	VkSamplerMipmapMode getTextureFilterParam(TextureFilterMethod rhs);
+	VkFormat getTextureInternalFormat(TextureColorComponentsFormat rhs);
+
 	VkVertexInputBindingDescription m_bindingDescription;
 	std::array<VkVertexInputAttributeDescription, 5> m_attributeDescriptions;
 
@@ -74,13 +80,84 @@ bool VKRenderingSystemNS::initializeComponentPool()
 	return true;
 }
 
-VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned int RTNum, TextureDataDesc RTDesc, VKShaderProgramComponent* VKSPC)
+VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned int RTNum, TextureDataDesc RTDesc, const std::vector<VkImage>* VkImages, MeshPrimitiveTopology topology, VKShaderProgramComponent* VKSPC)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKRenderPassComponentPool, sizeof(VKRenderPassComponent));
 	auto l_VKRPC = new(l_rawPtr)VKRenderPassComponent();
+	auto l_VKRTDesc = getVKTextureDataDesc(RTDesc);
+
+	l_VKRPC->m_framebuffers.reserve(RTNum);
+	for (size_t i = 0; i < RTNum; i++)
+	{
+		l_VKRPC->m_framebuffers.emplace_back();
+	}
+
+	l_VKRPC->m_VKTDCs.reserve(RTNum);
+	for (size_t i = 0; i < RTNum; i++)
+	{
+		l_VKRPC->m_VKTDCs.emplace_back();
+	}
+
+	for (size_t i = 0; i < RTNum; i++)
+	{
+		l_VKRPC->m_VKTDCs[i] = addVKTextureDataComponent(l_VKRPC->m_parentEntity);
+	}
+
+	// @TODO: ugly
+	if (VkImages)
+	{
+		for (size_t i = 0; i < VkImages->size(); i++)
+		{
+			l_VKRPC->m_VKTDCs[i]->m_image = VkImages->data()[i];
+			l_VKRPC->m_VKTDCs[i]->m_VKTextureDataDesc = l_VKRTDesc;
+		}
+	}
+
+	for (size_t i = 0; i < RTNum; i++)
+	{
+		VkImageViewCreateInfo l_createInfo = {};
+		l_createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		l_createInfo.image = l_VKRPC->m_VKTDCs[i]->m_image;
+		l_createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		l_createInfo.format = l_VKRPC->m_VKTDCs[i]->m_VKTextureDataDesc.internalFormat;
+		l_createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		l_createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		l_createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		l_createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		l_createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		l_createInfo.subresourceRange.baseMipLevel = 0;
+		l_createInfo.subresourceRange.levelCount = 1;
+		l_createInfo.subresourceRange.baseArrayLayer = 0;
+		l_createInfo.subresourceRange.layerCount = 1;
+
+		if (vkCreateImageView(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &l_VKRPC->m_VKTDCs[i]->m_imageView) != VK_SUCCESS)
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create image view!");
+			return false;
+		}
+
+		VkImageView attachments[] =
+		{
+			l_VKRPC->m_VKTDCs[i]->m_imageView
+		};
+
+		VkFramebufferCreateInfo framebufferInfo = {};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = l_VKRPC->m_renderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = RTDesc.textureWidth;
+		framebufferInfo.height = RTDesc.textureHeight;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &l_VKRPC->m_framebuffers[i]) != VK_SUCCESS)
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create framebuffer!");
+		}
+	}
 
 	VkAttachmentDescription colorAttachment = {};
-	colorAttachment.format = VKRenderingSystemComponent::get().m_swapChainImageFormat;
+	colorAttachment.format = l_VKRPC->m_VKTDCs[0]->m_VKTextureDataDesc.internalFormat;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -112,15 +189,43 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned in
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: render pass has been created.");
 
+	VkPrimitiveTopology l_topology;
+
+	switch (topology)
+	{
+	case MeshPrimitiveTopology::POINT:
+		l_topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+		break;
+	case MeshPrimitiveTopology::LINE:
+		l_topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+		break;
+	case MeshPrimitiveTopology::TRIANGLE:
+		l_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		break;
+	case MeshPrimitiveTopology::TRIANGLE_STRIP:
+		l_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+		break;
+	default:
+		break;
+	}
+
+	l_VKRPC->m_inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	l_VKRPC->m_inputAssemblyStateCInfo.topology = l_topology;
+	l_VKRPC->m_inputAssemblyStateCInfo.primitiveRestartEnable = VK_FALSE;
+
+	l_VKRPC->m_extent = VkExtent2D();
+	l_VKRPC->m_extent.width = RTDesc.textureWidth;
+	l_VKRPC->m_extent.height = RTDesc.textureHeight;
+
 	l_VKRPC->m_viewport.x = 0.0f;
 	l_VKRPC->m_viewport.y = 0.0f;
-	l_VKRPC->m_viewport.width = (float)VKRenderingSystemComponent::get().m_swapChainExtent.width;
-	l_VKRPC->m_viewport.height = (float)VKRenderingSystemComponent::get().m_swapChainExtent.height;
+	l_VKRPC->m_viewport.width = (float)RTDesc.textureWidth;
+	l_VKRPC->m_viewport.height = (float)RTDesc.textureHeight;
 	l_VKRPC->m_viewport.minDepth = 0.0f;
 	l_VKRPC->m_viewport.maxDepth = 1.0f;
 
 	l_VKRPC->m_scissor.offset = { 0, 0 };
-	l_VKRPC->m_scissor.extent = VKRenderingSystemComponent::get().m_swapChainExtent;
+	l_VKRPC->m_scissor.extent = l_VKRPC->m_extent;
 
 	l_VKRPC->m_viewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	l_VKRPC->m_viewportStateCInfo.viewportCount = 1;
@@ -171,7 +276,7 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned in
 	l_VKRPC->m_pipelineCInfo.stageCount = 2;
 	l_VKRPC->m_pipelineCInfo.pStages = &l_shaderStages[0];
 	l_VKRPC->m_pipelineCInfo.pVertexInputState = &VKSPC->m_vertexInputStateCInfo;
-	l_VKRPC->m_pipelineCInfo.pInputAssemblyState = &VKSPC->m_inputAssemblyStateCInfo;
+	l_VKRPC->m_pipelineCInfo.pInputAssemblyState = &l_VKRPC->m_inputAssemblyStateCInfo;
 	l_VKRPC->m_pipelineCInfo.pViewportState = &l_VKRPC->m_viewportStateCInfo;
 	l_VKRPC->m_pipelineCInfo.pRasterizationState = &l_VKRPC->m_rasterizationStateCInfo;
 	l_VKRPC->m_pipelineCInfo.pMultisampleState = &l_VKRPC->m_multisampleStateCInfo;
@@ -193,9 +298,17 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned in
 
 bool VKRenderingSystemNS::destroyVKRenderPassComponent(VKRenderPassComponent* VKRPC)
 {
+	for (auto framebuffer : VKRPC->m_framebuffers)
+	{
+		vkDestroyFramebuffer(VKRenderingSystemComponent::get().m_device, framebuffer, nullptr);
+	}
 	vkDestroyPipeline(VKRenderingSystemComponent::get().m_device, VKRPC->m_pipeline, nullptr);
 	vkDestroyPipelineLayout(VKRenderingSystemComponent::get().m_device, VKRPC->m_pipelineLayout, nullptr);
 	vkDestroyRenderPass(VKRenderingSystemComponent::get().m_device, VKRPC->m_renderPass, nullptr);
+	for (auto VKTDC : VKRPC->m_VKTDCs)
+	{
+		vkDestroyImageView(VKRenderingSystemComponent::get().m_device, VKTDC->m_imageView, nullptr);
+	}
 
 	return true;
 }
@@ -522,11 +635,6 @@ bool VKRenderingSystemNS::initializeVKShaderProgramComponent(VKShaderProgramComp
 		rhs->m_vertexInputStateCInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_attributeDescriptions.size());
 		rhs->m_vertexInputStateCInfo.pVertexBindingDescriptions = &m_bindingDescription;
 		rhs->m_vertexInputStateCInfo.pVertexAttributeDescriptions = m_attributeDescriptions.data();
-
-		rhs->m_inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		// @TODO: how to deal with different topologies?
-		rhs->m_inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-		rhs->m_inputAssemblyStateCInfo.primitiveRestartEnable = VK_FALSE;
 	}
 	if (shaderFilePaths.m_FSPath != "")
 	{
@@ -543,4 +651,176 @@ bool VKRenderingSystemNS::initializeVKShaderProgramComponent(VKShaderProgramComp
 bool VKRenderingSystemNS::activateVKShaderProgramComponent(VKShaderProgramComponent * rhs)
 {
 	return false;
+}
+
+VKTextureDataDesc VKRenderingSystemNS::getVKTextureDataDesc(const TextureDataDesc & textureDataDesc)
+{
+	VKTextureDataDesc l_result;
+
+	l_result.textureWrapMethod = getTextureWrapMethod(textureDataDesc.textureWrapMethod);
+	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.textureMinFilterMethod);
+	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.textureMagFilterMethod);
+	l_result.internalFormat = getTextureInternalFormat(textureDataDesc.textureColorComponentsFormat);
+
+	return l_result;
+}
+
+VkSamplerAddressMode VKRenderingSystemNS::getTextureWrapMethod(TextureWrapMethod rhs)
+{
+	VkSamplerAddressMode result;
+
+	switch (rhs)
+	{
+	case TextureWrapMethod::CLAMP_TO_EDGE:
+		result = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		break;
+	case TextureWrapMethod::REPEAT:
+		result = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		break;
+	case TextureWrapMethod::CLAMP_TO_BORDER:
+		result = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		break;
+	default:
+		break;
+	}
+
+	return result;
+}
+
+VkSamplerMipmapMode VKRenderingSystemNS::getTextureFilterParam(TextureFilterMethod rhs)
+{
+	VkSamplerMipmapMode result;
+
+	switch (rhs)
+	{
+	case TextureFilterMethod::NEAREST:
+		result = VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_NEAREST;
+		break;
+	case TextureFilterMethod::LINEAR:
+		result = VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		break;
+	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR:
+		result = VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_MAX_ENUM; // ????????
+		break;
+	default:
+		break;
+	}
+
+	return result;
+}
+
+VkFormat VKRenderingSystemNS::getTextureInternalFormat(TextureColorComponentsFormat rhs)
+{
+	VkFormat result;
+
+	// @TODO: with pixel format together
+	switch (rhs)
+	{
+	case TextureColorComponentsFormat::RED:
+		result = VkFormat::VK_FORMAT_R8_UNORM;
+		break;
+	case TextureColorComponentsFormat::RG:
+		result = VkFormat::VK_FORMAT_R8G8_UNORM;
+		break;
+	case TextureColorComponentsFormat::RGB:
+		result = VkFormat::VK_FORMAT_R8G8B8_UNORM;
+		break;
+	case TextureColorComponentsFormat::RGBA:
+		result = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
+		break;
+	case TextureColorComponentsFormat::R8:
+		break;
+	case TextureColorComponentsFormat::RG8:
+		break;
+	case TextureColorComponentsFormat::RGB8:
+		break;
+	case TextureColorComponentsFormat::RGBA8:
+		break;
+	case TextureColorComponentsFormat::R8I:
+		break;
+	case TextureColorComponentsFormat::RG8I:
+		break;
+	case TextureColorComponentsFormat::RGB8I:
+		break;
+	case TextureColorComponentsFormat::RGBA8I:
+		break;
+	case TextureColorComponentsFormat::R8UI:
+		break;
+	case TextureColorComponentsFormat::RG8UI:
+		break;
+	case TextureColorComponentsFormat::RGB8UI:
+		break;
+	case TextureColorComponentsFormat::RGBA8UI:
+		break;
+	case TextureColorComponentsFormat::R16:
+		break;
+	case TextureColorComponentsFormat::RG16:
+		break;
+	case TextureColorComponentsFormat::RGB16:
+		break;
+	case TextureColorComponentsFormat::RGBA16:
+		break;
+	case TextureColorComponentsFormat::R16I:
+		break;
+	case TextureColorComponentsFormat::RG16I:
+		break;
+	case TextureColorComponentsFormat::RGB16I:
+		break;
+	case TextureColorComponentsFormat::RGBA16I:
+		break;
+	case TextureColorComponentsFormat::R16UI:
+		break;
+	case TextureColorComponentsFormat::RG16UI:
+		break;
+	case TextureColorComponentsFormat::RGB16UI:
+		break;
+	case TextureColorComponentsFormat::RGBA16UI:
+		break;
+	case TextureColorComponentsFormat::R16F:
+		break;
+	case TextureColorComponentsFormat::RG16F:
+		break;
+	case TextureColorComponentsFormat::RGB16F:
+		break;
+	case TextureColorComponentsFormat::RGBA16F:
+		break;
+	case TextureColorComponentsFormat::R32I:
+		break;
+	case TextureColorComponentsFormat::RG32I:
+		break;
+	case TextureColorComponentsFormat::RGB32I:
+		break;
+	case TextureColorComponentsFormat::RGBA32I:
+		break;
+	case TextureColorComponentsFormat::R32UI:
+		break;
+	case TextureColorComponentsFormat::RG32UI:
+		break;
+	case TextureColorComponentsFormat::RGB32UI:
+		break;
+	case TextureColorComponentsFormat::RGBA32UI:
+		break;
+	case TextureColorComponentsFormat::R32F:
+		break;
+	case TextureColorComponentsFormat::RG32F:
+		break;
+	case TextureColorComponentsFormat::RGB32F:
+		break;
+	case TextureColorComponentsFormat::RGBA32F:
+		break;
+	case TextureColorComponentsFormat::SRGB:
+		break;
+	case TextureColorComponentsFormat::SRGBA:
+		break;
+	case TextureColorComponentsFormat::SRGB8:
+		break;
+	case TextureColorComponentsFormat::SRGBA8:
+		break;
+	case TextureColorComponentsFormat::DEPTH_COMPONENT:
+		break;
+	default:
+		break;
+	}
+
+	return result;
 }

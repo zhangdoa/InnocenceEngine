@@ -12,7 +12,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
 	bool initializeComponentPool();
 
-	VKRenderPassComponent* addVKRenderPassComponent(unsigned int RTNum, TextureDataDesc RTDesc, VKShaderProgramComponent* VKSPC);
+	VKRenderPassComponent* addVKRenderPassComponent(unsigned int RTNum, TextureDataDesc RTDesc, const std::vector<VkImage>* VkImages, MeshPrimitiveTopology topology, VKShaderProgramComponent* VKSPC);
 	bool destroyVKRenderPassComponent(VKRenderPassComponent* VKRPC);
 
 	VKMeshDataComponent* generateVKMeshDataComponent(MeshDataComponent* rhs);

@@ -264,9 +264,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createPysicalDevice();
 	bool createLogicalDevice();
 	bool createSwapChain();
-	bool createSwapChainImageViews();
-	bool createSwapChainRenderPass();
-	bool createSwapChainFramebuffers();
 	bool createCommandPool();
 	bool createCommandBuffers();
 	bool createSyncPrimitives();
@@ -280,9 +277,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
-
-	VKShaderProgramComponent* m_swapChainVKSPC;
-	VKRenderPassComponent* m_swapChainVKRPC;
 
 	size_t m_maxFramesInFlight = 2;
 	size_t m_currentFrame = 0;
@@ -515,51 +509,11 @@ bool VKRenderingSystemNS::createSwapChain()
 	}
 
 	vkGetSwapchainImagesKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, &l_imageCount, nullptr);
-	VKRenderingSystemComponent::get().m_swapChainImages.resize(l_imageCount);
 
-	vkGetSwapchainImagesKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, &l_imageCount, VKRenderingSystemComponent::get().m_swapChainImages.data());
+	std::vector<VkImage> l_swapChainImages(l_imageCount);
 
-	VKRenderingSystemComponent::get().m_swapChainImageFormat = l_surfaceFormat.format;
-	VKRenderingSystemComponent::get().m_swapChainExtent = l_extent;
+	vkGetSwapchainImagesKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, &l_imageCount, l_swapChainImages.data());
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: swap chain has been created.");
-	return true;
-}
-
-bool VKRenderingSystemNS::createSwapChainImageViews()
-{
-	VKRenderingSystemComponent::get().m_swapChainImageViews.resize(VKRenderingSystemComponent::get().m_swapChainImages.size());
-
-	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainImages.size(); i++) {
-		VkImageViewCreateInfo l_createInfo = {};
-		l_createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		l_createInfo.image = VKRenderingSystemComponent::get().m_swapChainImages[i];
-		l_createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		l_createInfo.format = VKRenderingSystemComponent::get().m_swapChainImageFormat;
-		l_createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		l_createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		l_createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		l_createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		l_createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		l_createInfo.subresourceRange.baseMipLevel = 0;
-		l_createInfo.subresourceRange.levelCount = 1;
-		l_createInfo.subresourceRange.baseArrayLayer = 0;
-		l_createInfo.subresourceRange.layerCount = 1;
-
-		if (vkCreateImageView(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_swapChainImageViews[i]) != VK_SUCCESS)
-		{
-			m_objectStatus = ObjectStatus::STANDBY;
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create swap chain image views!");
-			return false;
-		}
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: swap chain image views has been created.");
-	return true;
-}
-
-bool VKRenderingSystemNS::createSwapChainRenderPass()
-{
 	auto l_VKSPC = addVKShaderProgramComponent(m_entityID);
 
 	ShaderFilePaths l_shaderFilePaths;
@@ -567,43 +521,25 @@ bool VKRenderingSystemNS::createSwapChainRenderPass()
 	l_shaderFilePaths.m_FSPath = "..//res//shaders//VK//finalBlendPass.frag.spv";
 
 	initializeVKShaderProgramComponent(l_VKSPC, l_shaderFilePaths);
+	VKRenderingSystemComponent::get().m_swapChainVKSPC = l_VKSPC;
 
-	auto l_VKRPC = addVKRenderPassComponent(1, TextureDataDesc(), l_VKSPC);
+	// @TODO: dangerous format
+	TextureDataDesc l_RTDesc;
+	l_RTDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
+	l_RTDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
+	l_RTDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA;
+	l_RTDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
+	l_RTDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	l_RTDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
+	l_RTDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	l_RTDesc.textureWidth = l_extent.width;
+	l_RTDesc.textureHeight = l_extent.height;
+	l_RTDesc.texturePixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
 
-	m_swapChainVKSPC = l_VKSPC;
-	m_swapChainVKRPC = l_VKRPC;
+	auto l_VKRPC = addVKRenderPassComponent(l_imageCount, l_RTDesc, &l_swapChainImages, MeshPrimitiveTopology::TRIANGLE_STRIP, l_VKSPC);
+	VKRenderingSystemComponent::get().m_swapChainVKRPC = l_VKRPC;
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: swap chain render pass has been created.");
-	return true;
-}
-
-bool VKRenderingSystemNS::createSwapChainFramebuffers()
-{
-	VKRenderingSystemComponent::get().m_swapChainFramebuffers.resize(VKRenderingSystemComponent::get().m_swapChainImageViews.size());
-
-	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainImageViews.size(); i++) {
-		VkImageView attachments[] = {
-			VKRenderingSystemComponent::get().m_swapChainImageViews[i]
-		};
-
-		VkFramebufferCreateInfo framebufferInfo = {};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = m_swapChainVKRPC->m_renderPass;
-		framebufferInfo.attachmentCount = 1;
-		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = VKRenderingSystemComponent::get().m_swapChainExtent.width;
-		framebufferInfo.height = VKRenderingSystemComponent::get().m_swapChainExtent.height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &VKRenderingSystemComponent::get().m_swapChainFramebuffers[i]) != VK_SUCCESS)
-		{
-			m_objectStatus = ObjectStatus::STANDBY;
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create swap chain framebuffer!");
-			return false;
-		}
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: swap chain framebuffer has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: swap chain has been created.");
 	return true;
 }
 
@@ -628,7 +564,7 @@ bool VKRenderingSystemNS::createCommandPool()
 
 bool VKRenderingSystemNS::createCommandBuffers()
 {
-	VKRenderingSystemComponent::get().m_commandBuffers.resize(VKRenderingSystemComponent::get().m_swapChainFramebuffers.size());
+	VKRenderingSystemComponent::get().m_commandBuffers.resize(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_framebuffers.size());
 
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -658,10 +594,10 @@ bool VKRenderingSystemNS::createCommandBuffers()
 
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = m_swapChainVKRPC->m_renderPass;
-		renderPassInfo.framebuffer = VKRenderingSystemComponent::get().m_swapChainFramebuffers[i];
+		renderPassInfo.renderPass = VKRenderingSystemComponent::get().m_swapChainVKRPC->m_renderPass;
+		renderPassInfo.framebuffer = VKRenderingSystemComponent::get().m_swapChainVKRPC->m_framebuffers[i];
 		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = VKRenderingSystemComponent::get().m_swapChainExtent;
+		renderPassInfo.renderArea.extent = VKRenderingSystemComponent::get().m_swapChainVKRPC->m_extent;
 
 		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 		renderPassInfo.clearValueCount = 1;
@@ -671,7 +607,7 @@ bool VKRenderingSystemNS::createCommandBuffers()
 
 		vkCmdBeginRenderPass(VKRenderingSystemComponent::get().m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(VKRenderingSystemComponent::get().m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_swapChainVKRPC->m_pipeline);
+		vkCmdBindPipeline(VKRenderingSystemComponent::get().m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_pipeline);
 
 		recordDrawCall(VKRenderingSystemComponent::get().m_commandBuffers[i], l_MDC);
 
@@ -760,9 +696,6 @@ bool VKRenderingSystemNS::initialize()
 	result = result && createWindowSurface();
 	result = result && createLogicalDevice();
 	result = result && createSwapChain();
-	result = result && createSwapChainImageViews();
-	result = result && createSwapChainRenderPass();
-	result = result && createSwapChainFramebuffers();
 	result = result && createCommandPool();
 	result = result && initializeDefaultAssets();
 	result = result && createCommandBuffers();
@@ -836,17 +769,7 @@ bool VKRenderingSystemNS::terminate()
 
 	vkDestroyCommandPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_commandPool, nullptr);
 
-	for (auto framebuffer : VKRenderingSystemComponent::get().m_swapChainFramebuffers)
-	{
-		vkDestroyFramebuffer(VKRenderingSystemComponent::get().m_device, framebuffer, nullptr);
-	}
-
-	destroyVKRenderPassComponent(m_swapChainVKRPC);
-
-	for (auto imageView : VKRenderingSystemComponent::get().m_swapChainImageViews)
-	{
-		vkDestroyImageView(VKRenderingSystemComponent::get().m_device, imageView, nullptr);
-	}
+	destroyVKRenderPassComponent(VKRenderingSystemComponent::get().m_swapChainVKRPC);
 
 	vkDestroySwapchainKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, nullptr);
 

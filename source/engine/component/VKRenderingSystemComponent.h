@@ -4,6 +4,8 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
 
+#include "../component/VKRenderPassComponent.h"
+#include "../component/VKShaderProgramComponent.h"
 #include "../component/VKMeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
 #include "../component/VKTextureDataComponent.h"
@@ -49,11 +51,8 @@ public:
 	VkDevice m_device;
 	VkQueue m_graphicsQueue;
 	VkSwapchainKHR m_swapChain = 0;
-	std::vector<VkImage> m_swapChainImages;
-	VkFormat m_swapChainImageFormat;
-	VkExtent2D m_swapChainExtent;
-	std::vector<VkImageView> m_swapChainImageViews;
-	std::vector<VkFramebuffer> m_swapChainFramebuffers;
+	VKShaderProgramComponent* m_swapChainVKSPC;
+	VKRenderPassComponent* m_swapChainVKRPC;
 
 	const std::vector<const char*> m_deviceExtensions =
 	{

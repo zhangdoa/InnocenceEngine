@@ -18,6 +18,8 @@ public:
 	VkPipeline m_pipeline;
 	VkViewport m_viewport = {};
 	VkRect2D m_scissor = {};
+	VkExtent2D m_extent = {};
+	VkPipelineInputAssemblyStateCreateInfo m_inputAssemblyStateCInfo = {};
 	VkPipelineViewportStateCreateInfo m_viewportStateCInfo = {};
 	VkPipelineRasterizationStateCreateInfo m_rasterizationStateCInfo = {};
 	VkPipelineMultisampleStateCreateInfo m_multisampleStateCInfo = {};
@@ -26,6 +28,7 @@ public:
 	VkPipelineLayoutCreateInfo m_pipelineLayoutCInfo = {};
 	VkGraphicsPipelineCreateInfo m_pipelineCInfo = {};
 
+	std::vector<VkFramebuffer> m_framebuffers;
 	std::vector<TextureDataComponent*> m_TDCs;
 	std::vector<VKTextureDataComponent*> m_VKTDCs;
 };
