@@ -14,7 +14,7 @@ add_subdirectory("VKRenderingBackend")
 endif (VULKAN)
 
 if (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
-	add_subdirectory("GLRenderingBackend")
+add_subdirectory("GLRenderingBackend")
 endif (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
 
 aux_source_directory(. DIR_SRCS)
@@ -44,12 +44,12 @@ if (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
 target_link_libraries(InnoSystem InnoGLRenderingBackend)
 endif (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
 
-target_link_libraries(InnoSystem GLAD)
-target_link_libraries(InnoSystem ImGui)
-
 find_library(ASSIMP assimp)
 target_link_libraries(InnoSystem "${ASSIMP}")
+
 target_link_libraries(InnoSystem STB_Image)
+
+target_link_libraries(InnoSystem ImGuiWrapper)
 
 if (INNO_PLATFORM_LINUX)
 target_link_libraries(InnoSystem -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lGL -lm -lpthread -lstdc++fs)

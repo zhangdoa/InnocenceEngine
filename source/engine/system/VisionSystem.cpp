@@ -97,7 +97,6 @@ InitConfig InnoVisionSystemNS::parseInitConfig(const std::string& arg)
 #else
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem: OpenGL is not supported on current platform, no rendering backend will be launched.");
 #endif
-
 		}
 		else if (l_rendererArguments == "1")
 		{
@@ -168,11 +167,11 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hwnd, cha
 		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
-	//if (!InnoVisionSystemNS::setupGui())
-	//{
-	//	InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
-	//	return false;
-	//}
+	if (!InnoVisionSystemNS::setupGui())
+	{
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
 
 	return true;
 }
@@ -202,10 +201,11 @@ bool InnoVisionSystemNS::setupRendering()
 
 bool InnoVisionSystemNS::setupGui()
 {
-	//if (!ImGuiWrapper::get().setup())
-	//{
-	//	return false;
-	//}
+	if (!ImGuiWrapper::get().setup())
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -215,7 +215,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 
 	InnoVisionSystemNS::m_renderingFrontendSystem->initialize();
 	InnoVisionSystemNS::m_renderingBackendSystem->initialize();
-	//ImGuiWrapper::get().initialize();
+	ImGuiWrapper::get().initialize();
 
 	InnoVisionSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem has been initialized.");
@@ -255,7 +255,8 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 			InnoVisionSystemNS::m_isRendering = true;
 
 			InnoVisionSystemNS::m_renderingBackendSystem->update();
-			//ImGuiWrapper::get().update();
+
+			ImGuiWrapper::get().update();
 
 			InnoVisionSystemNS::m_windowSystem->swapBuffer();
 
@@ -273,11 +274,12 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::terminate()
 {
-	//if (!ImGuiWrapper::get().terminate())
-	//{
-	//	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GuiSystem can't be terminated!");
-	//	return false;
-	//}
+	if (!ImGuiWrapper::get().terminate())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GuiSystem can't be terminated!");
+		return false;
+	}
+
 	if (!InnoVisionSystemNS::m_renderingBackendSystem->terminate())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem can't be terminated!");

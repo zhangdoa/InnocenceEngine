@@ -1,7 +1,9 @@
 #include "ImGuiWrapper.h"
 
 #if defined INNO_PLATFORM_WIN
-#include "../../third-party/ImGui/imgui_impl_win32.h"
+#include "ImGuiWrapperWinDX.h"
+#include "ImGuiWrapperWinGL.h"
+#include "ImGuiWrapperWinVK.h"
 #endif
 
 #include "../ICoreSystem.h"
@@ -29,47 +31,10 @@ INNO_PRIVATE_SCOPE ImGuiWrapperNS
 	void showPointLightComponentPropertyEditor(void* rhs);
 	void showSphereLightComponentPropertyEditor(void* rhs);
 
-	std::function<void()>* f_ShowRenderPassResult;
-	std::function<ImTextureID(const FileExplorerIconType)>* f_GetFileExplorerIconTextureID;
+	bool m_isParity = true;
 
-	std::atomic<bool> m_canRender = false;
-	
-	bool initializeForWin();
-
-	bool initializeForDX();
-	bool initializeForGL();
-	bool initializeForVK();
-
-	std::function<bool()> f_initializeRenderer;
-
-	bool updateForDX();
-	bool updateForGL();
-	bool updateForVK();
-
-	std::function<bool()> f_updateRenderer;
+	IImGuiWrapperImpl* m_wrapperImpl;
 }
-
-bool ImGuiWrapperNS::initializeForDX()
-{
-	//ImGui_ImplDX11_Init(DXRenderingSystemComponent::get().m_device, DXRenderingSystemComponent::get().m_deviceContext);
-
-	return true;
-}
-
-bool ImGuiWrapperNS::initializeForGL()
-{
-#ifndef INNO_PLATFORM_MAC
-	//ImGui_ImplOpenGL3_Init(NULL);
-#endif // !INNO_PLATFORM_MAC
-
-	return true;
-}
-
-bool ImGuiWrapperNS::initializeForVK()
-{
-	return true;
-}
-
 
 bool ImGuiWrapper::setup()
 {
@@ -78,136 +43,129 @@ bool ImGuiWrapper::setup()
 	switch (l_initConfig.renderingBackend)
 	{
 	case RenderingBackend::GL:
-		ImGuiWrapperNS::f_initializeRenderer = []() -> bool { return ImGuiWrapperNS::initializeForGL();  };
+		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinGL();
 		break;
 	case RenderingBackend::DX:
-#if defined INNO_PLATFORM_WIN
-		ImGuiWrapperNS::f_initializeRenderer = []() -> bool { return ImGuiWrapperNS::initializeForDX();  };
-#endif
+		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinDX();
 		break;
 	case RenderingBackend::VK:
-#if defined INNO_RENDERER_VULKAN
-		ImGuiWrapperNS::f_initializeRenderer = []() -> bool { return ImGuiWrapperNS::initializeForVK();  };
-#endif
+		ImGuiWrapperNS::m_isParity = false;
+		//ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinVK();
 		break;
 	default:
 		break;
 	}
 
-	// Setup Dear ImGui binding
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
+	if (ImGuiWrapperNS::m_isParity)
+	{
+		// Setup Dear ImGui binding
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+
+		ImGuiWrapperNS::m_wrapperImpl->setup();
+	}
 
 	return true;
 }
 
 bool ImGuiWrapper::initialize()
 {
-	//ImGui_ImplWin32_Init(DXWindowSystemComponent::get().m_hwnd);
-	ImGuiWrapperNS::f_initializeRenderer();
+	if (ImGuiWrapperNS::m_isParity)
+	{
+		ImGuiWrapperNS::m_wrapperImpl->initialize();
 
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
-	// Setup style
-	ImGui::StyleColorsDark();
-	ImGuiStyle& style = ImGui::GetStyle();
-	ImVec4* colors = ImGui::GetStyle().Colors;
+		// Setup style
+		ImGui::StyleColorsDark();
+		ImGuiStyle& style = ImGui::GetStyle();
+		ImVec4* colors = ImGui::GetStyle().Colors;
 
-	colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
-	colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.13f, 0.13f, 1.00f);
-	colors[ImGuiCol_ChildBg] = ImVec4(1.00f, 1.00f, 1.00f, 0.00f);
-	colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-	colors[ImGuiCol_Border] = ImVec4(0.50f, 0.50f, 0.50f, 0.50f);
-	colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-	colors[ImGuiCol_FrameBg] = ImVec4(0.36f, 0.36f, 0.36f, 0.50f);
-	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.50f, 0.50f, 0.50f, 0.71f);
-	colors[ImGuiCol_FrameBgActive] = ImVec4(0.75f, 0.75f, 0.75f, 0.79f);
-	colors[ImGuiCol_TitleBg] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
-	colors[ImGuiCol_TitleBgActive] = ImVec4(0.21f, 0.21f, 0.21f, 1.00f);
-	colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);
-	colors[ImGuiCol_MenuBarBg] = ImVec4(0.17f, 0.17f, 0.17f, 1.00f);
-	colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-	colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
-	colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-	colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
-	colors[ImGuiCol_CheckMark] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
-	colors[ImGuiCol_SliderGrab] = ImVec4(0.75f, 0.75f, 0.76f, 1.00f);
-	colors[ImGuiCol_SliderGrabActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
-	colors[ImGuiCol_Button] = ImVec4(0.36f, 0.36f, 0.36f, 0.50f);
-	colors[ImGuiCol_ButtonHovered] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-	colors[ImGuiCol_ButtonActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
-	colors[ImGuiCol_Header] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-	colors[ImGuiCol_HeaderHovered] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-	colors[ImGuiCol_HeaderActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
-	colors[ImGuiCol_Separator] = ImVec4(0.50f, 0.50f, 0.50f, 0.50f);
-	colors[ImGuiCol_SeparatorHovered] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-	colors[ImGuiCol_SeparatorActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
-	colors[ImGuiCol_ResizeGrip] = ImVec4(0.36f, 0.36f, 0.36f, 0.25f);
-	colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.50f, 0.50f, 0.50f, 0.50f);
-	colors[ImGuiCol_ResizeGripActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
-	colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-	colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-	colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-	colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
-	colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
-	colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
-	colors[ImGuiCol_NavHighlight] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-	colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
-	colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
-	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+		colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+		colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+		colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.13f, 0.13f, 1.00f);
+		colors[ImGuiCol_ChildBg] = ImVec4(1.00f, 1.00f, 1.00f, 0.00f);
+		colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
+		colors[ImGuiCol_Border] = ImVec4(0.50f, 0.50f, 0.50f, 0.50f);
+		colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+		colors[ImGuiCol_FrameBg] = ImVec4(0.36f, 0.36f, 0.36f, 0.50f);
+		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.50f, 0.50f, 0.50f, 0.71f);
+		colors[ImGuiCol_FrameBgActive] = ImVec4(0.75f, 0.75f, 0.75f, 0.79f);
+		colors[ImGuiCol_TitleBg] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
+		colors[ImGuiCol_TitleBgActive] = ImVec4(0.21f, 0.21f, 0.21f, 1.00f);
+		colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);
+		colors[ImGuiCol_MenuBarBg] = ImVec4(0.17f, 0.17f, 0.17f, 1.00f);
+		colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
+		colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+		colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+		colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
+		colors[ImGuiCol_CheckMark] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
+		colors[ImGuiCol_SliderGrab] = ImVec4(0.75f, 0.75f, 0.76f, 1.00f);
+		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
+		colors[ImGuiCol_Button] = ImVec4(0.36f, 0.36f, 0.36f, 0.50f);
+		colors[ImGuiCol_ButtonHovered] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+		colors[ImGuiCol_ButtonActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
+		colors[ImGuiCol_Header] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+		colors[ImGuiCol_HeaderHovered] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+		colors[ImGuiCol_HeaderActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
+		colors[ImGuiCol_Separator] = ImVec4(0.50f, 0.50f, 0.50f, 0.50f);
+		colors[ImGuiCol_SeparatorHovered] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+		colors[ImGuiCol_SeparatorActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
+		colors[ImGuiCol_ResizeGrip] = ImVec4(0.36f, 0.36f, 0.36f, 0.25f);
+		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.50f, 0.50f, 0.50f, 0.50f);
+		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.75f, 0.75f, 0.75f, 1.00f);
+		colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+		colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+		colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+		colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+		colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
+		colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+		colors[ImGuiCol_NavHighlight] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+		colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
+		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
+		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 
-	// Load Fonts
-	io.Fonts->AddFontFromFileTTF("..//res//fonts//FreeSans.otf", 16.0f);
+		// Load Fonts
+		io.Fonts->AddFontFromFileTTF("..//res//fonts//FreeSans.otf", 16.0f);
+	}
 
 	return true;
 }
 
 bool ImGuiWrapper::update()
 {
-	//ImGui_ImplWin32_NewFrame();
+	if (ImGuiWrapperNS::m_isParity)
+	{
+		ImGuiWrapperNS::m_wrapperImpl->newFrame();
 
 #ifdef DEBUG
-#ifndef INNO_PLATFORM_LINUX64
-	ImGui::NewFrame();
-	{
-		ImGuiWrapperNS::showApplicationProfiler();
-		ImGuiWrapperNS::showFileExplorer();
-		ImGuiWrapperNS::showWorldExplorer();
+		ImGui::NewFrame();
+		{
+			ImGuiWrapperNS::showApplicationProfiler();
+			//ImGuiWrapperNS::showFileExplorer();
+			//ImGuiWrapperNS::showWorldExplorer();
 #else
-	// @TODO: Linux & MacOS ImGui WIP
+		// @TODO: handle GUI component
+		ImGui::Begin("Main Menu", 0, ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::Button("Start");
+		ImGui::End();
 #endif
-#else
-	// @TODO: handle GUI component
-	ImGui::Begin("Main Menu", 0, ImGuiWindowFlags_AlwaysAutoResize);
-	ImGui::Button("Start");
-	ImGui::End();
-#endif
-	}
+		}
 	ImGui::Render();
-	return true;
+	ImGuiWrapperNS::m_wrapperImpl->render();
+	}
+return true;
 }
 
 bool ImGuiWrapper::terminate()
 {
-	ImGui::DestroyContext();
-
-	//ImGui_ImplWin32_Shutdown();
-
-	return true;
-}
-
-bool ImGuiWrapper::addShowRenderPassResultCallback(std::function<void()>* functor)
-{
-	ImGuiWrapperNS::f_ShowRenderPassResult = functor;
-	return true;
-}
-
-bool ImGuiWrapper::addGetFileExplorerIconTextureIDCallback(std::function<ImTextureID(const FileExplorerIconType)>* functor)
-{
-	ImGuiWrapperNS::f_GetFileExplorerIconTextureID = functor;
+	if (ImGuiWrapperNS::m_isParity)
+	{
+		ImGuiWrapperNS::m_wrapperImpl->terminate();
+		ImGui::DestroyContext();
+	}
 	return true;
 }
 
@@ -256,7 +214,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (l_showRenderPassResult)
 	{
-		(*f_ShowRenderPassResult)();
+		ImGuiWrapperNS::m_wrapperImpl->showRenderResult();
 	}
 
 	ImGui::End();
@@ -314,7 +272,7 @@ void ImGuiWrapperNS::showFileExplorer()
 
 		ImGui::BeginGroup();
 		{
-			ImGui::Image((*f_GetFileExplorerIconTextureID)(FileExplorerIconType::UNKNOWN), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImGuiWrapperNS::m_wrapperImpl->getFileExplorerIconTextureID(FileExplorerIconType::UNKNOWN), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			{
 				if (ImGui::OpenPopupOnItemClick("Directory Left-click", 0))
 				{
@@ -344,7 +302,7 @@ void ImGuiWrapperNS::showFileExplorer()
 	{
 		ImGui::BeginGroup();
 		{
-			ImGui::Image((*f_GetFileExplorerIconTextureID)(i.iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImGuiWrapperNS::m_wrapperImpl->getFileExplorerIconTextureID(i.iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			{
 				if (ImGui::OpenPopupOnItemClick("Asset Right-click", 1))
 				{

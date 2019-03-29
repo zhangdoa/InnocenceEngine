@@ -1,2 +1,12 @@
-aux_source_directory(./ DIR_SRCS)
-add_library(ImGuiWrapper ${DIR_SRCS})
+add_library(ImGuiWrapper ImGuiWrapper.h ImGuiWrapper.cpp)
+add_library(ImGuiWrapperWinDX ImGuiWrapperWinDX.h ImGuiWrapperWinDX.cpp)
+target_link_libraries(ImGuiWrapperWinDX ImGui)
+target_link_libraries(ImGuiWrapper ImGuiWrapperWinDX)
+
+add_library(ImGuiWrapperWinGL ImGuiWrapperWinGL.h ImGuiWrapperWinGL.cpp)
+target_link_libraries(ImGuiWrapperWinGL ImGui)
+target_link_libraries(ImGuiWrapper ImGuiWrapperWinGL)
+
+add_library(ImGuiWrapperWinVK ImGuiWrapperWinVK.h ImGuiWrapperWinVK.cpp)
+target_link_libraries(ImGuiWrapperWinVK ImGui)
+target_link_libraries(ImGuiWrapper ImGuiWrapperWinVK)

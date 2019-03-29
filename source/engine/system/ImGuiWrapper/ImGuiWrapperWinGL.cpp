@@ -1,5 +1,6 @@
-#include "GLGuiSystem.h"
-#include "../GLEnvironmentRenderingPassUtilities.h"
+#include "ImGuiWrapperWinGL.h"
+#include "../../component/WinWindowSystemComponent.h"
+#include "../GLRenderingBackend/GLEnvironmentRenderingPassUtilities.h"
 #include "../../component/GLShadowRenderPassComponent.h"
 #include "../../component/GLGeometryRenderPassComponent.h"
 #include "../../component/GLTerrainRenderPassComponent.h"
@@ -7,88 +8,68 @@
 #include "../../component/GLFinalRenderPassComponent.h"
 #include "../../component/GLRenderingSystemComponent.h"
 
-#include "../../ImGuiWrapper.h"
+#include "../../third-party/ImGui/imgui_impl_win32.h"
 #include "../../third-party/ImGui/imgui_impl_opengl3.h"
 
 #include "../ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
 
-INNO_PRIVATE_SCOPE GLGuiSystemNS
+INNO_PRIVATE_SCOPE ImGuiWrapperWinGLNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-
-	void showRenderResult();
-	ImTextureID getFileExplorerIconTextureID(const FileExplorerIconType iconType);
-
-	std::function<void()> f_ShowRenderPassResult;
-	std::function<ImTextureID(const FileExplorerIconType)> f_GetFileExplorerIconTextureID;
 }
 
-bool GLGuiSystem::setup()
+bool ImGuiWrapperWinGL::setup()
 {
-#ifndef INNO_PLATFORM_MAC
-	GLGuiSystemNS::f_ShowRenderPassResult = GLGuiSystemNS::showRenderResult;
-	GLGuiSystemNS::f_GetFileExplorerIconTextureID = GLGuiSystemNS::getFileExplorerIconTextureID;
-
-	ImGuiWrapper::get().setup();
-
-	ImGuiWrapper::get().addShowRenderPassResultCallback(&GLGuiSystemNS::f_ShowRenderPassResult);
-	ImGuiWrapper::get().addGetFileExplorerIconTextureIDCallback(&GLGuiSystemNS::f_GetFileExplorerIconTextureID);
-#endif // !INNO_PLATFORM_MAC
-
-	GLGuiSystemNS::m_objectStatus = ObjectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLGuiSystem setup finished.");
+	ImGuiWrapperWinGLNS::m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinGL setup finished.");
 
 	return true;
 }
 
-bool GLGuiSystem::initialize()
+bool ImGuiWrapperWinGL::initialize()
 {
+	ImGui_ImplWin32_Init(WinWindowSystemComponent::get().m_hwnd);
+	ImGui_ImplOpenGL3_Init(NULL);
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinGL has been initialized.");
 
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLGuiSystem has been initialized.");
 	return true;
 }
 
-bool GLGuiSystem::update()
+bool ImGuiWrapperWinGL::newFrame()
 {
-#ifndef INNO_PLATFORM_MAC
+	ImGui_ImplWin32_NewFrame();
 	ImGui_ImplOpenGL3_NewFrame();
+	return true;
+}
 
-	ImGuiWrapper::get().update();
-
-	// Rendering
+bool ImGuiWrapperWinGL::render()
+{
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 	glViewport(0, 0, (GLsizei)l_screenResolution.x, (GLsizei)l_screenResolution.y);
 
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-#endif // !INNO_PLATFORM_MAC
 
 	return true;
 }
 
-bool GLGuiSystem::terminate()
+bool ImGuiWrapperWinGL::terminate()
 {
-	GLGuiSystemNS::m_objectStatus = ObjectStatus::STANDBY;
-
-#ifndef INNO_PLATFORM_MAC
 	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGuiWrapperWinGLNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinGL has been terminated.");
 
-	ImGuiWrapper::get().terminate();
-#endif // !INNO_PLATFORM_MAC
-
-	GLGuiSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLGuiSystem has been terminated.");
 	return true;
 }
 
-ObjectStatus GLGuiSystem::getStatus()
+ObjectStatus ImGuiWrapperWinGL::getStatus()
 {
-	return GLGuiSystemNS::m_objectStatus;
+	return ImGuiWrapperWinGLNS::m_objectStatus;
 }
 
-void GLGuiSystemNS::showRenderResult()
+void ImGuiWrapperWinGL::showRenderResult()
 {
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
@@ -255,7 +236,7 @@ void GLGuiSystemNS::showRenderResult()
 	ImGui::End();
 }
 
-ImTextureID GLGuiSystemNS::getFileExplorerIconTextureID(const FileExplorerIconType iconType)
+ImTextureID ImGuiWrapperWinGL::getFileExplorerIconTextureID(const FileExplorerIconType iconType)
 {
 	switch (iconType)
 	{

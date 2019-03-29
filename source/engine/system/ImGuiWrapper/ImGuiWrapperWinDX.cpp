@@ -1,90 +1,76 @@
-#include "DXGuiSystem.h"
-#include "../../component/DXWindowSystemComponent.h"
-#include "../../component/DXRenderingSystemComponent.h"
+#include "ImGuiWrapperWinDX.h"
+#include "../../component/WinWindowSystemComponent.h"
+#include "../../component/DX11RenderingSystemComponent.h"
 #include "../../component/DXGeometryRenderPassComponent.h"
 
-#include "../ImGuiWrapper.h"
+#include "../../third-party/ImGui/imgui_impl_win32.h"
 #include "../../third-party/ImGui/imgui_impl_dx11.h"
 
 #include "../ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
 
-INNO_PRIVATE_SCOPE DXGuiSystemNS
+INNO_PRIVATE_SCOPE ImGuiWrapperWinDXNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-
-	void showRenderResult();
-	ImTextureID getFileExplorerIconTextureID(const FileExplorerIconType iconType);
-
-	std::function<void()> f_ShowRenderPassResult;
-	std::function<ImTextureID(const FileExplorerIconType)> f_GetFileExplorerIconTextureID;
 }
 
-bool DXGuiSystem::setup()
+bool ImGuiWrapperWinDX::setup()
 {
-	DXGuiSystemNS::f_ShowRenderPassResult = DXGuiSystemNS::showRenderResult;
-	DXGuiSystemNS::f_GetFileExplorerIconTextureID = DXGuiSystemNS::getFileExplorerIconTextureID;
-
-	ImGuiWrapper::get().setup();
-
-	ImGuiWrapper::get().addShowRenderPassResultCallback(&DXGuiSystemNS::f_ShowRenderPassResult);
-	ImGuiWrapper::get().addGetFileExplorerIconTextureIDCallback(&DXGuiSystemNS::f_GetFileExplorerIconTextureID);
-
-	DXGuiSystemNS::m_objectStatus = ObjectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXGuiSystem setup finished.");
+	ImGuiWrapperWinDXNS::m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinDX setup finished.");
 
 	return true;
 }
 
-bool DXGuiSystem::initialize()
+bool ImGuiWrapperWinDX::initialize()
 {
-	ImGuiWrapper::get().initialize();
+	ImGui_ImplWin32_Init(WinWindowSystemComponent::get().m_hwnd);
+	ImGui_ImplDX11_Init(DX11RenderingSystemComponent::get().m_device, DX11RenderingSystemComponent::get().m_deviceContext);
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinDX has been initialized.");
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXGuiSystem has been initialized.");
 	return true;
 }
 
-bool DXGuiSystem::update()
+bool ImGuiWrapperWinDX::newFrame()
 {
+	ImGui_ImplWin32_NewFrame();
 	ImGui_ImplDX11_NewFrame();
+	return true;
+}
 
-	ImGuiWrapper::get().update();
-
-	// Rendering
-	DXRenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
+bool ImGuiWrapperWinDX::render()
+{
+	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
 		1,
-		&DXRenderingSystemComponent::get().m_renderTargetView,
+		&DX11RenderingSystemComponent::get().m_renderTargetView,
 		NULL);
 
-	DXRenderingSystemComponent::get().m_deviceContext->RSSetViewports(
+	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
 		1,
-		&DXRenderingSystemComponent::get().m_viewport);
+		&DX11RenderingSystemComponent::get().m_viewport);
 
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 	return true;
 }
 
-bool DXGuiSystem::terminate()
+bool ImGuiWrapperWinDX::terminate()
 {
 	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGuiWrapperWinDXNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinDX has been terminated.");
 
-	DXGuiSystemNS::m_objectStatus = ObjectStatus::STANDBY;
-
-	ImGuiWrapper::get().terminate();
-
-	DXGuiSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXGuiSystem has been terminated.");
 	return true;
 }
 
-ObjectStatus DXGuiSystem::getStatus()
+ObjectStatus ImGuiWrapperWinDX::getStatus()
 {
-	return DXGuiSystemNS::m_objectStatus;
+	return ImGuiWrapperWinDXNS::m_objectStatus;
 }
 
-void DXGuiSystemNS::showRenderResult()
+void ImGuiWrapperWinDX::showRenderResult()
 {
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
@@ -121,18 +107,18 @@ void DXGuiSystemNS::showRenderResult()
 	ImGui::End();
 }
 
-ImTextureID DXGuiSystemNS::getFileExplorerIconTextureID(const FileExplorerIconType iconType)
+ImTextureID ImGuiWrapperWinDX::getFileExplorerIconTextureID(const FileExplorerIconType iconType)
 {
 	switch (iconType)
 	{
 	case FileExplorerIconType::OBJ:
-		return ImTextureID(DXRenderingSystemComponent::get().m_iconTemplate_OBJ->m_SRV); break;
+		return ImTextureID(DX11RenderingSystemComponent::get().m_iconTemplate_OBJ->m_SRV); break;
 	case FileExplorerIconType::PNG:
-		return ImTextureID(DXRenderingSystemComponent::get().m_iconTemplate_PNG->m_SRV); break;
+		return ImTextureID(DX11RenderingSystemComponent::get().m_iconTemplate_PNG->m_SRV); break;
 	case FileExplorerIconType::SHADER:
-		return ImTextureID(DXRenderingSystemComponent::get().m_iconTemplate_SHADER->m_SRV); break;
+		return ImTextureID(DX11RenderingSystemComponent::get().m_iconTemplate_SHADER->m_SRV); break;
 	case FileExplorerIconType::UNKNOWN:
-		return ImTextureID(DXRenderingSystemComponent::get().m_iconTemplate_UNKNOWN->m_SRV); break;
+		return ImTextureID(DX11RenderingSystemComponent::get().m_iconTemplate_UNKNOWN->m_SRV); break;
 	default:
 		return nullptr; break;
 	}

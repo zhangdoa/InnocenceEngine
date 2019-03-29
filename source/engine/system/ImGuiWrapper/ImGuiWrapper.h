@@ -17,9 +17,6 @@ public:
 	bool update();
 	bool terminate();
 
-	bool addShowRenderPassResultCallback(std::function<void()>* functor);
-	bool addGetFileExplorerIconTextureIDCallback(std::function<ImTextureID(const FileExplorerIconType)>* functor);
-
 private:
 	ImGuiWrapper() {};
 };
