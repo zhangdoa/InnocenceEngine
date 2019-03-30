@@ -75,19 +75,21 @@ public:
 	int m_videoCardMemory;
 	char m_videoCardDescription[128];
 
+	ID3D12Debug* m_debugInterface;
+
 	IDXGIFactory4* m_factory;
 
 	DXGI_ADAPTER_DESC m_adapterDesc;
-	IDXGIAdapter* m_adapter;
+	IDXGIAdapter4* m_adapter;
 	IDXGIOutput* m_adapterOutput;
 
-	ID3D12Device* m_device;
+	ID3D12Device2* m_device;
 
 	D3D12_COMMAND_QUEUE_DESC m_commandQueueDesc;
 	ID3D12CommandQueue* m_commandQueue;
 
-	DXGI_SWAP_CHAIN_DESC m_swapChainDesc;
-	IDXGISwapChain3* m_swapChain;
+	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc;
+	IDXGISwapChain4* m_swapChain;
 
 	ID3D12DescriptorHeap* m_renderTargetViewHeap;
 	ID3D12Resource* m_backBufferRenderTarget[2];

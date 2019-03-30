@@ -1,6 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../system/DX12RenderingBackend/DXHeaders.h"
+#include "../system/DX12RenderingBackend/DX12Headers.h"
 
 class DX12TextureDataComponent
 {
@@ -11,7 +11,7 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	D3D11_TEXTURE2D_DESC m_textureDesc = D3D11_TEXTURE2D_DESC();
-	ID3D11Texture2D* m_texture = 0;
-	ID3D11ShaderResourceView* m_SRV = 0;
+	ID3D12Resource* m_texture = 0;
+	D3D12_SHADER_RESOURCE_VIEW_DESC m_SRVDesc;
+	ID3D12Resource* m_SRV = 0;
 };

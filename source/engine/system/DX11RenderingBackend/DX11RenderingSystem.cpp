@@ -1,4 +1,4 @@
-#include "DXRenderingSystem.h"
+#include "DX11RenderingSystem.h"
 
 #include "DXGeometryRenderingPassUtilities.h"
 #include "DXLightRenderingPassUtilities.h"
@@ -7,7 +7,7 @@
 #include "../../component/DX11RenderingSystemComponent.h"
 #include "../../component/WinWindowSystemComponent.h"
 
-#include "DXRenderingSystemUtilities.h"
+#include "DX11RenderingSystemUtilities.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -17,7 +17,7 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-INNO_PRIVATE_SCOPE DXRenderingSystemNS
+INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
@@ -41,7 +41,7 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	std::vector<MeshDataPack> m_meshDataPack;
 }
 
-bool DXRenderingSystemNS::createPhysicalDevices()
+bool DX11RenderingSystemNS::createPhysicalDevices()
 {
 	HRESULT result;
 
@@ -52,7 +52,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&g_DXRenderingSystemComponent->m_factory);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXGI factory!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DXGI factory!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -61,7 +61,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	result = g_DXRenderingSystemComponent->m_factory->EnumAdapters(0, &g_DXRenderingSystemComponent->m_adapter);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create video card adapter!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create video card adapter!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -70,7 +70,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	result = g_DXRenderingSystemComponent->m_adapter->EnumOutputs(0, &g_DXRenderingSystemComponent->m_adapterOutput);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create monitor adapter!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create monitor adapter!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -79,7 +79,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	result = g_DXRenderingSystemComponent->m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -91,7 +91,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	result = g_DXRenderingSystemComponent->m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, &displayModeList[0]);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't fill the display mode list structures!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't fill the display mode list structures!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -116,7 +116,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	result = g_DXRenderingSystemComponent->m_adapter->GetDesc(&g_DXRenderingSystemComponent->m_adapterDesc);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get the video card adapter description!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't get the video card adapter description!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -127,7 +127,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	// Convert the name of the video card to a character array and store it.
 	if (wcstombs_s(&stringLength, g_DXRenderingSystemComponent->m_videoCardDescription, 128, g_DXRenderingSystemComponent->m_adapterDesc.Description, 128) != 0)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't convert the name of the video card to a character array!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't convert the name of the video card to a character array!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -150,7 +150,7 @@ bool DXRenderingSystemNS::createPhysicalDevices()
 	return true;
 }
 
-bool DXRenderingSystemNS::createSwapChain()
+bool DX11RenderingSystemNS::createSwapChain()
 {
 	HRESULT result;
 	D3D_FEATURE_LEVEL featureLevel;
@@ -214,7 +214,7 @@ bool DXRenderingSystemNS::createSwapChain()
 		D3D11_SDK_VERSION, &g_DXRenderingSystemComponent->m_swapChainDesc, &g_DXRenderingSystemComponent->m_swapChain, &g_DXRenderingSystemComponent->m_device, NULL, &g_DXRenderingSystemComponent->m_deviceContext);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the swap chain/D3D device/D3D device context!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the swap chain/D3D device/D3D device context!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -222,7 +222,7 @@ bool DXRenderingSystemNS::createSwapChain()
 	return true;
 }
 
-bool DXRenderingSystemNS::createBackBuffer()
+bool DX11RenderingSystemNS::createBackBuffer()
 {
 	HRESULT result;
 
@@ -230,7 +230,7 @@ bool DXRenderingSystemNS::createBackBuffer()
 	result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&g_DXRenderingSystemComponent->m_renderTargetTexture);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't get back buffer pointer!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't get back buffer pointer!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -239,7 +239,7 @@ bool DXRenderingSystemNS::createBackBuffer()
 	result = g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(g_DXRenderingSystemComponent->m_renderTargetTexture, NULL, &g_DXRenderingSystemComponent->m_renderTargetView);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create render target view!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create render target view!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -270,7 +270,7 @@ bool DXRenderingSystemNS::createBackBuffer()
 	result = g_DXRenderingSystemComponent->m_device->CreateTexture2D(&g_DXRenderingSystemComponent->m_depthTextureDesc, NULL, &g_DXRenderingSystemComponent->m_depthStencilTexture);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the texture for the depth buffer!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the texture for the depth buffer!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -305,7 +305,7 @@ bool DXRenderingSystemNS::createBackBuffer()
 		&g_DXRenderingSystemComponent->m_depthStencilState);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the depth stencil state!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the depth stencil state!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -330,7 +330,7 @@ bool DXRenderingSystemNS::createBackBuffer()
 		&g_DXRenderingSystemComponent->m_depthStencilView);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the depth stencil view!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the depth stencil view!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -344,7 +344,7 @@ bool DXRenderingSystemNS::createBackBuffer()
 	return true;
 }
 
-bool DXRenderingSystemNS::createRasterizer()
+bool DX11RenderingSystemNS::createRasterizer()
 {
 	HRESULT result;
 
@@ -366,7 +366,7 @@ bool DXRenderingSystemNS::createRasterizer()
 		&g_DXRenderingSystemComponent->m_rasterStateForward);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the rasterizer state for forward pass!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the rasterizer state for forward pass!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -388,7 +388,7 @@ bool DXRenderingSystemNS::createRasterizer()
 		&g_DXRenderingSystemComponent->m_rasterStateDeferred);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the rasterizer state for deferred pass!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the rasterizer state for deferred pass!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -408,7 +408,7 @@ bool DXRenderingSystemNS::createRasterizer()
 	return true;
 }
 
-bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
+bool DX11RenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
 	m_renderingFrontendSystem = renderingFrontend;
 
@@ -440,11 +440,11 @@ bool DXRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	g_DXRenderingSystemComponent->deferredPassRTVDesc.Texture2D.MipSlice = 0;
 
 	m_objectStatus = ObjectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXRenderingSystem setup finished.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem setup finished.");
 	return result;
 }
 
-bool DXRenderingSystemNS::update()
+bool DX11RenderingSystemNS::update()
 {
 	if (m_renderingFrontendSystem->anyUninitializedMeshDataComponent())
 	{
@@ -454,7 +454,7 @@ bool DXRenderingSystemNS::update()
 			auto l_result = generateDX11MeshDataComponent(l_MDC);
 			if (l_result == nullptr)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXMeshDataComponent for " + l_result->m_parentEntity + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DXMeshDataComponent for " + l_result->m_parentEntity + "!");
 			}
 		}
 	}
@@ -466,7 +466,7 @@ bool DXRenderingSystemNS::update()
 			auto l_result = generateDX11TextureDataComponent(l_TDC);
 			if (l_result == nullptr)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create DXTextureDataComponent for " + l_result->m_parentEntity + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DXTextureDataComponent for " + l_result->m_parentEntity + "!");
 			}
 		}
 	}
@@ -483,7 +483,7 @@ bool DXRenderingSystemNS::update()
 	return true;
 }
 
-bool DXRenderingSystemNS::terminate()
+bool DX11RenderingSystemNS::terminate()
 {
 	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
 	if (g_DXRenderingSystemComponent->m_swapChain)
@@ -540,11 +540,11 @@ bool DXRenderingSystemNS::terminate()
 	}
 
 	m_objectStatus = ObjectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXRenderingSystem has been terminated.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been terminated.");
 	return true;
 }
 
-bool DXRenderingSystemNS::initializeDefaultAssets()
+bool DX11RenderingSystemNS::initializeDefaultAssets()
 {
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE);
 	g_DXRenderingSystemComponent->m_UnitLineDXMDC = generateDX11MeshDataComponent(l_MDC);
@@ -576,7 +576,7 @@ bool DXRenderingSystemNS::initializeDefaultAssets()
 	return true;
 }
 
-void DXRenderingSystemNS::prepareRenderingData()
+void DX11RenderingSystemNS::prepareRenderingData()
 {
 	auto l_cameraDataPack = m_renderingFrontendSystem->getCameraDataPack();
 
@@ -684,48 +684,48 @@ void DXRenderingSystemNS::prepareRenderingData()
 	}
 }
 
-bool DXRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
+bool DX11RenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
 {
-	return DXRenderingSystemNS::setup(renderingFrontend);
+	return DX11RenderingSystemNS::setup(renderingFrontend);
 }
 
-bool DXRenderingSystem::initialize()
+bool DX11RenderingSystem::initialize()
 {
-	DXRenderingSystemNS::initializeDefaultAssets();
+	DX11RenderingSystemNS::initializeDefaultAssets();
 	DXGeometryRenderingPassUtilities::initialize();
 	DXLightRenderingPassUtilities::initialize();
 	DXFinalRenderingPassUtilities::initialize();
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DXRenderingSystem has been initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been initialized.");
 	return true;
 }
 
-bool DXRenderingSystem::update()
+bool DX11RenderingSystem::update()
 {
-	return DXRenderingSystemNS::update();
+	return DX11RenderingSystemNS::update();
 }
 
-bool DXRenderingSystem::terminate()
+bool DX11RenderingSystem::terminate()
 {
-	return DXRenderingSystemNS::terminate();
+	return DX11RenderingSystemNS::terminate();
 }
 
-ObjectStatus DXRenderingSystem::getStatus()
+ObjectStatus DX11RenderingSystem::getStatus()
 {
-	return DXRenderingSystemNS::m_objectStatus;
+	return DX11RenderingSystemNS::m_objectStatus;
 }
 
-bool DXRenderingSystem::resize()
-{
-	return true;
-}
-
-bool DXRenderingSystem::reloadShader(RenderPassType renderPassType)
+bool DX11RenderingSystem::resize()
 {
 	return true;
 }
 
-bool DXRenderingSystem::bakeGI()
+bool DX11RenderingSystem::reloadShader(RenderPassType renderPassType)
+{
+	return true;
+}
+
+bool DX11RenderingSystem::bakeGI()
 {
 	return true;
 }

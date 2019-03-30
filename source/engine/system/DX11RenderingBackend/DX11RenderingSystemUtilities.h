@@ -8,7 +8,7 @@
 #include "../../component/DX11ShaderProgramComponent.h"
 #include "../../component/DX11RenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE DXRenderingSystemNS
+INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 {
 	bool initializeComponentPool();
 

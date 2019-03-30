@@ -1,6 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../system/DX11RenderingBackend/DXHeaders.h"
+#include "../system/DX11RenderingBackend/DX11Headers.h"
 
 class DX11TextureDataComponent
 {

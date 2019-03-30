@@ -1,4 +1,4 @@
-#include "DXRenderingSystemUtilities.h"
+#include "DX11RenderingSystemUtilities.h"
 #include "DXFinalRenderingPassUtilities.h"
 #include "../../component/DXFinalRenderPassComponent.h"
 #include "../../component/DX11RenderingSystemComponent.h"
@@ -9,7 +9,7 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-using namespace DXRenderingSystemNS;
+using namespace DX11RenderingSystemNS;
 
 INNO_PRIVATE_SCOPE DXFinalRenderingPassUtilities
 {

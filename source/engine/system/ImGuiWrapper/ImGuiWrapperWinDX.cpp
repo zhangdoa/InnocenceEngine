@@ -15,7 +15,7 @@ INNO_PRIVATE_SCOPE ImGuiWrapperWinDXNS
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 }
 
-bool ImGuiWrapperWinDX::setup()
+bool ImGuiWrapperWinDX11::setup()
 {
 	ImGuiWrapperWinDXNS::m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinDX setup finished.");
@@ -23,7 +23,7 @@ bool ImGuiWrapperWinDX::setup()
 	return true;
 }
 
-bool ImGuiWrapperWinDX::initialize()
+bool ImGuiWrapperWinDX11::initialize()
 {
 	ImGui_ImplWin32_Init(WinWindowSystemComponent::get().m_hwnd);
 	ImGui_ImplDX11_Init(DX11RenderingSystemComponent::get().m_device, DX11RenderingSystemComponent::get().m_deviceContext);
@@ -32,14 +32,14 @@ bool ImGuiWrapperWinDX::initialize()
 	return true;
 }
 
-bool ImGuiWrapperWinDX::newFrame()
+bool ImGuiWrapperWinDX11::newFrame()
 {
 	ImGui_ImplWin32_NewFrame();
 	ImGui_ImplDX11_NewFrame();
 	return true;
 }
 
-bool ImGuiWrapperWinDX::render()
+bool ImGuiWrapperWinDX11::render()
 {
 	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
 		1,
@@ -55,7 +55,7 @@ bool ImGuiWrapperWinDX::render()
 	return true;
 }
 
-bool ImGuiWrapperWinDX::terminate()
+bool ImGuiWrapperWinDX11::terminate()
 {
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -65,12 +65,12 @@ bool ImGuiWrapperWinDX::terminate()
 	return true;
 }
 
-ObjectStatus ImGuiWrapperWinDX::getStatus()
+ObjectStatus ImGuiWrapperWinDX11::getStatus()
 {
 	return ImGuiWrapperWinDXNS::m_objectStatus;
 }
 
-void ImGuiWrapperWinDX::showRenderResult()
+void ImGuiWrapperWinDX11::showRenderResult()
 {
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
@@ -107,7 +107,7 @@ void ImGuiWrapperWinDX::showRenderResult()
 	ImGui::End();
 }
 
-ImTextureID ImGuiWrapperWinDX::getFileExplorerIconTextureID(const FileExplorerIconType iconType)
+ImTextureID ImGuiWrapperWinDX11::getFileExplorerIconTextureID(const FileExplorerIconType iconType)
 {
 	switch (iconType)
 	{

@@ -5,7 +5,7 @@ add_subdirectory("Core")
 
 if (INNO_PLATFORM_WIN)
 add_subdirectory("DX11RenderingBackend")
-#add_subdirectory("DX12RenderingBackend")
+add_subdirectory("DX12RenderingBackend")
 add_subdirectory("WinWindow")
 endif (INNO_PLATFORM_WIN)
 
@@ -33,6 +33,7 @@ target_link_libraries(InnoSystem InnoCore)
 
 if (INNO_PLATFORM_WIN)
 target_link_libraries(InnoSystem InnoDX11RenderingBackend)
+target_link_libraries(InnoSystem InnoDX12RenderingBackend)
 target_link_libraries(InnoSystem WinWindow)
 endif (INNO_PLATFORM_WIN)
 

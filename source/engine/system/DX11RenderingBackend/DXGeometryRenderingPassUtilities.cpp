@@ -1,4 +1,4 @@
-#include "DXRenderingSystemUtilities.h"
+#include "DX11RenderingSystemUtilities.h"
 #include "DXGeometryRenderingPassUtilities.h"
 
 #include "../../component/DXGeometryRenderPassComponent.h"
@@ -8,7 +8,7 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-using namespace DXRenderingSystemNS;
+using namespace DX11RenderingSystemNS;
 
 INNO_PRIVATE_SCOPE DXGeometryRenderingPassUtilities
 {

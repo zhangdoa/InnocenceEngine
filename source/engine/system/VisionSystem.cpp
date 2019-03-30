@@ -4,7 +4,8 @@
 
 #if defined INNO_PLATFORM_WIN
 #include "WinWindow/WinWindowSystem.h"
-#include "DX11RenderingBackend/DXRenderingSystem.h"
+#include "DX11RenderingBackend/DX11RenderingSystem.h"
+#include "DX12RenderingBackend/DX12RenderingSystem.h"
 #endif
 
 #if !defined INNO_PLATFORM_MAC
@@ -101,12 +102,20 @@ InitConfig InnoVisionSystemNS::parseInitConfig(const std::string& arg)
 		else if (l_rendererArguments == "1")
 		{
 #if defined INNO_PLATFORM_WIN
-			l_result.renderingBackend = RenderingBackend::DX;
+			l_result.renderingBackend = RenderingBackend::DX11;
 #else
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem: DirectX is not supported on current platform, use default OpenGL rendering backend.");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem: DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "2")
+		{
+#if defined INNO_PLATFORM_WIN
+			l_result.renderingBackend = RenderingBackend::DX12;
+#else
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem: DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
+#endif
+		}
+		else if (l_rendererArguments == "3")
 		{
 #if defined INNO_RENDERER_VULKAN
 			l_result.renderingBackend = RenderingBackend::VK;
@@ -142,9 +151,14 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hwnd, cha
 		InnoVisionSystemNS::m_renderingBackendSystem = new GLRenderingSystem();
 #endif
 		break;
-	case RenderingBackend::DX:
+	case RenderingBackend::DX11:
 #if defined INNO_PLATFORM_WIN
-		InnoVisionSystemNS::m_renderingBackendSystem = new DXRenderingSystem();
+		InnoVisionSystemNS::m_renderingBackendSystem = new DX11RenderingSystem();
+#endif
+		break;
+	case RenderingBackend::DX12:
+#if defined INNO_PLATFORM_WIN
+		InnoVisionSystemNS::m_renderingBackendSystem = new DX12RenderingSystem();
 #endif
 		break;
 	case RenderingBackend::VK:

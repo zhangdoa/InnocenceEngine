@@ -45,8 +45,11 @@ bool ImGuiWrapper::setup()
 	case RenderingBackend::GL:
 		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinGL();
 		break;
-	case RenderingBackend::DX:
-		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinDX();
+	case RenderingBackend::DX11:
+		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinDX11();
+		break;
+	case RenderingBackend::DX12:
+		ImGuiWrapperNS::m_isParity = false;
 		break;
 	case RenderingBackend::VK:
 		ImGuiWrapperNS::m_isParity = false;

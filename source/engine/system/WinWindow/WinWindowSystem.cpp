@@ -65,7 +65,12 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 	case RenderingBackend::GL:
 		WinWindowSystemNS::m_backendWindowSystem = new WinGLWindowSystem();
 		break;
-	case RenderingBackend::DX:
+	case RenderingBackend::DX11:
+#if defined INNO_PLATFORM_WIN
+		WinWindowSystemNS::m_backendWindowSystem = new WinDXWindowSystem();
+#endif
+		break;
+	case RenderingBackend::DX12:
 #if defined INNO_PLATFORM_WIN
 		WinWindowSystemNS::m_backendWindowSystem = new WinDXWindowSystem();
 #endif

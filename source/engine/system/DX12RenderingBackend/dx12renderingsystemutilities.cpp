@@ -1,4 +1,4 @@
-#include "DXRenderingSystemUtilities.h"
+#include "DX12RenderingSystemUtilities.h"
 
 #include "../../component/WinWindowSystemComponent.h"
 #include "../../component/DX12RenderingSystemComponent.h"
@@ -7,7 +7,7 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-INNO_PRIVATE_SCOPE DXRenderingSystemNS
+INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 {
 	void OutputShaderErrorMessage(ID3DBlob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 	ID3DBlob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
@@ -33,7 +33,7 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	const std::wstring m_shaderRelativePath = L"..//res//shaders//";
 }
 
-bool DXRenderingSystemNS::initializeComponentPool()
+bool DX12RenderingSystemNS::initializeComponentPool()
 {
 	m_DX12MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12MeshDataComponent), 32768);
 	m_DX12TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12TextureDataComponent), 32768);
@@ -43,7 +43,7 @@ bool DXRenderingSystemNS::initializeComponentPool()
 	return true;
 }
 
-ID3DBlob* DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath)
+ID3DBlob* DX12RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath)
 {
 	auto l_shaderName = std::string(shaderFilePath.begin(), shaderFilePath.end());
 	std::reverse(l_shaderName.begin(), l_shaderName.end());
@@ -89,33 +89,16 @@ ID3DBlob* DXRenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const std
 
 		return nullptr;
 	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DXRenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: innoShader: " + l_shaderName + " Shader has been compiled.");
 	return l_shaderBuffer;
 }
 
-bool DXRenderingSystemNS::createCBuffer(DX12CBuffer& arg)
+bool DX12RenderingSystemNS::createCBuffer(DX12CBuffer& arg)
 {
-	if (arg.m_CBufferDesc.ByteWidth > 0)
-	{
-		// Create the constant buffer pointer
-		auto result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(&arg.m_CBufferDesc, NULL, &arg.m_CBufferPtr);
-
-		if (FAILED(result))
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create constant buffer pointer!");
-			return false;
-		}
-
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: constant buffer byte width is 0!");
-		return false;
-	}
+	return true;
 }
 
-bool DXRenderingSystemNS::initializeVertexShader(DX12ShaderProgramComponent* rhs, const std::wstring& VSShaderPath)
+bool DX12RenderingSystemNS::initializeVertexShader(DX12ShaderProgramComponent* rhs, const std::wstring& VSShaderPath)
 {
 	// Compile the shader code.
 	auto l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, VSShaderPath);
@@ -123,7 +106,7 @@ bool DXRenderingSystemNS::initializeVertexShader(DX12ShaderProgramComponent* rhs
 	return true;
 }
 
-bool DXRenderingSystemNS::createInputLayout(ID3DBlob* shaderBuffer)
+bool DX12RenderingSystemNS::createInputLayout(ID3DBlob* shaderBuffer)
 {
 	D3D12_INPUT_ELEMENT_DESC l_polygonLayout[5];
 	unsigned int l_numElements;
@@ -175,7 +158,7 @@ bool DXRenderingSystemNS::createInputLayout(ID3DBlob* shaderBuffer)
 	return true;
 }
 
-bool DXRenderingSystemNS::initializePixelShader(DX12ShaderProgramComponent* rhs, const std::wstring& PSShaderPath)
+bool DX12RenderingSystemNS::initializePixelShader(DX12ShaderProgramComponent* rhs, const std::wstring& PSShaderPath)
 {
 	// Compile the shader code.
 	auto l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, PSShaderPath);
@@ -183,7 +166,7 @@ bool DXRenderingSystemNS::initializePixelShader(DX12ShaderProgramComponent* rhs,
 	return true;
 }
 
-DX12ShaderProgramComponent* DXRenderingSystemNS::addDX12ShaderProgramComponent(EntityID rhs)
+DX12ShaderProgramComponent* DX12RenderingSystemNS::addDX12ShaderProgramComponent(EntityID rhs)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12ShaderProgramComponentPool, sizeof(DX12ShaderProgramComponent));
 	auto l_DXSPC = new(l_rawPtr)DX12ShaderProgramComponent();
@@ -191,7 +174,7 @@ DX12ShaderProgramComponent* DXRenderingSystemNS::addDX12ShaderProgramComponent(E
 	return l_DXSPC;
 }
 
-bool DXRenderingSystemNS::initializeDX12ShaderProgramComponent(DX12ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths)
+bool DX12RenderingSystemNS::initializeDX12ShaderProgramComponent(DX12ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths)
 {
 	bool l_result = true;
 	if (shaderFilePaths.m_VSPath != "")
@@ -214,7 +197,7 @@ bool DXRenderingSystemNS::initializeDX12ShaderProgramComponent(DX12ShaderProgram
 	return l_result;
 }
 
-void DXRenderingSystemNS::OutputShaderErrorMessage(ID3DBlob * errorMessage, HWND hwnd, const std::string & shaderFilename)
+void DX12RenderingSystemNS::OutputShaderErrorMessage(ID3DBlob * errorMessage, HWND hwnd, const std::string & shaderFilename)
 {
 	char* compileErrors;
 	unsigned long long bufferSize, i;
@@ -237,20 +220,18 @@ void DXRenderingSystemNS::OutputShaderErrorMessage(ID3DBlob * errorMessage, HWND
 	errorMessage = 0;
 
 	MessageBox(WinWindowSystemComponent::get().m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
 
-bool DXRenderingSystemNS::activateDX12ShaderProgramComponent(DX12ShaderProgramComponent * rhs)
+bool DX12RenderingSystemNS::activateDX12ShaderProgramComponent(DX12ShaderProgramComponent * rhs)
 {
 	return true;
 }
 
-DX12RenderPassComponent* DXRenderingSystemNS::addDX12RenderPassComponent(unsigned int RTNum, D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc)
+DX12RenderPassComponent* DX12RenderingSystemNS::addDX12RenderPassComponent(unsigned int RTNum, D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12RenderPassComponentPool, sizeof(DX12RenderPassComponent));
 	auto l_DXRPC = new(l_rawPtr)DX12RenderPassComponent();
-
-	HRESULT result;
 
 	// create TDC
 	l_DXRPC->m_TDCs.reserve(RTNum);
@@ -288,47 +269,13 @@ DX12RenderPassComponent* DXRenderingSystemNS::addDX12RenderPassComponent(unsigne
 	// Create the render target views.
 	l_DXRPC->m_renderTargetViews.reserve(RTNum);
 
-	for (unsigned int i = 0; i < RTNum; i++)
-	{
-		l_DXRPC->m_renderTargetViews.emplace_back();
-		result = DX12RenderingSystemComponent::get().m_device->CreateRenderTargetView(
-			l_DXRPC->m_DXTDCs[i]->m_texture,
-			&renderTargetViewDesc,
-			&l_DXRPC->m_renderTargetViews[i]);
-		if (FAILED(result))
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create render target view!");
-			return nullptr;
-		}
-	}
-
 	// Initialize the description of the depth buffer.
-	ZeroMemory(&l_DXRPC->m_depthBufferDesc,
-		sizeof(l_DXRPC->m_depthBufferDesc));
+	ZeroMemory(&l_DXRPC->m_depthStencilBufferDesc,
+		sizeof(l_DXRPC->m_depthStencilBufferDesc));
 
 	// Set up the description of the depth buffer.
-	l_DXRPC->m_depthBufferDesc.Width = RTDesc.textureWidth;
-	l_DXRPC->m_depthBufferDesc.Height = RTDesc.textureHeight;
-	l_DXRPC->m_depthBufferDesc.MipLevels = 1;
-	l_DXRPC->m_depthBufferDesc.ArraySize = 1;
-	l_DXRPC->m_depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	l_DXRPC->m_depthBufferDesc.SampleDesc.Count = 1;
-	l_DXRPC->m_depthBufferDesc.SampleDesc.Quality = 0;
-	l_DXRPC->m_depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	l_DXRPC->m_depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	l_DXRPC->m_depthBufferDesc.CPUAccessFlags = 0;
-	l_DXRPC->m_depthBufferDesc.MiscFlags = 0;
 
 	// Create the texture for the depth buffer using the filled out description.
-	result = DX12RenderingSystemComponent::get().m_device->CreateTexture2D(
-		&l_DXRPC->m_depthBufferDesc,
-		NULL,
-		&l_DXRPC->m_depthStencilBuffer);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the texture for the depth buffer!");
-		return nullptr;
-	}
 
 	// Initailze the depth stencil view description.
 	ZeroMemory(&l_DXRPC->m_depthStencilViewDesc,
@@ -340,15 +287,6 @@ DX12RenderPassComponent* DXRenderingSystemNS::addDX12RenderPassComponent(unsigne
 	l_DXRPC->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
-	result = DX12RenderingSystemComponent::get().m_device->CreateDepthStencilView(
-		l_DXRPC->m_depthStencilBuffer,
-		&l_DXRPC->m_depthStencilViewDesc,
-		&l_DXRPC->m_depthStencilView);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create the depth stencil view!");
-		return nullptr;
-	}
 
 	// Setup the viewport for rendering.
 	l_DXRPC->m_viewport.Width = (float)RTDesc.textureWidth;
@@ -363,7 +301,7 @@ DX12RenderPassComponent* DXRenderingSystemNS::addDX12RenderPassComponent(unsigne
 	return l_DXRPC;
 }
 
-DX12MeshDataComponent* DXRenderingSystemNS::generateDX12MeshDataComponent(MeshDataComponent * rhs)
+DX12MeshDataComponent* DX12RenderingSystemNS::generateDX12MeshDataComponent(MeshDataComponent * rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
@@ -381,68 +319,30 @@ DX12MeshDataComponent* DXRenderingSystemNS::generateDX12MeshDataComponent(MeshDa
 	}
 }
 
-bool DXRenderingSystemNS::initializeDX12MeshDataComponent(DX12MeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices)
+bool DX12RenderingSystemNS::initializeDX12MeshDataComponent(DX12MeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices)
 {
 	// Set up the description of the static vertex buffer.
-	D3D11_BUFFER_DESC vertexBufferDesc;
-	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)vertices.size();
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = 0;
 
 	// Give the subresource structure a pointer to the vertex data.
-	D3D11_SUBRESOURCE_DATA vertexData;
-	ZeroMemory(&vertexData, sizeof(vertexData));
-	vertexData.pSysMem = &vertices[0];
-	vertexData.SysMemPitch = 0;
-	vertexData.SysMemSlicePitch = 0;
 
 	// Now create the vertex buffer.
-	HRESULT result;
-	result = DX12RenderingSystemComponent::get().m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &rhs->m_vertexBuffer);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create VBO!");
-		return false;
-	}
 
 	// Set up the description of the static index buffer.
-	D3D11_BUFFER_DESC indexBufferDesc;
-	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = (UINT)(indices.size() * sizeof(unsigned int));
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-	indexBufferDesc.StructureByteStride = 0;
 
 	// Give the subresource structure a pointer to the index data.
-	D3D11_SUBRESOURCE_DATA indexData;
-	ZeroMemory(&indexData, sizeof(indexData));
-	indexData.pSysMem = &indices[0];
-	indexData.SysMemPitch = 0;
-	indexData.SysMemSlicePitch = 0;
 
 	// Create the index buffer.
-	result = DX12RenderingSystemComponent::get().m_device->CreateBuffer(&indexBufferDesc, &indexData, &rhs->m_indexBuffer);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create IBO!");
-		return false;
-	}
+
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 	m_initializedDXMDC.emplace(rhs->m_parentEntity, rhs);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DXRenderingSystem: VBO " + InnoUtility::pointerToString(rhs->m_vertexBuffer) + " is initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: VBO " + InnoUtility::pointerToString(rhs->m_vertexBuffer) + " is initialized.");
 
 	return true;
 }
 
-DX12TextureDataComponent* DXRenderingSystemNS::generateDX12TextureDataComponent(TextureDataComponent * rhs)
+DX12TextureDataComponent* DX12RenderingSystemNS::generateDX12TextureDataComponent(TextureDataComponent * rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
@@ -452,7 +352,7 @@ DX12TextureDataComponent* DXRenderingSystemNS::generateDX12TextureDataComponent(
 	{
 		if (rhs->m_textureDataDesc.textureUsageType == TextureUsageType::INVISIBLE)
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: TextureUsageType is TextureUsageType::INVISIBLE!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: TextureUsageType is TextureUsageType::INVISIBLE!");
 			return nullptr;
 		}
 		else
@@ -468,7 +368,7 @@ DX12TextureDataComponent* DXRenderingSystemNS::generateDX12TextureDataComponent(
 	}
 }
 
-bool DXRenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
+bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
 {
 	// set texture formats
 	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
@@ -508,81 +408,17 @@ bool DXRenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataComp
 
 	unsigned int textureMipLevels = 1;
 	unsigned int miscFlags = 0;
-	if (textureDataDesc.textureMagFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
-	{
-		textureMipLevels = 0;
-		miscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
-	}
-
-	D3D11_TEXTURE2D_DESC D3DTextureDesc;
-	ZeroMemory(&D3DTextureDesc, sizeof(D3DTextureDesc));
-	D3DTextureDesc.Height = textureDataDesc.textureHeight;
-	D3DTextureDesc.Width = textureDataDesc.textureWidth;
-	D3DTextureDesc.MipLevels = textureMipLevels;
-	D3DTextureDesc.ArraySize = 1;
-	D3DTextureDesc.Format = l_internalFormat;
-	D3DTextureDesc.SampleDesc.Count = 1;
-	if (textureDataDesc.textureUsageType != TextureUsageType::RENDER_TARGET)
-	{
-		D3DTextureDesc.SampleDesc.Quality = 0;
-	}
-	D3DTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-	D3DTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	D3DTextureDesc.CPUAccessFlags = 0;
-	D3DTextureDesc.MiscFlags = miscFlags;
-
-	unsigned int SRVMipLevels = -1;
-	if (textureDataDesc.textureUsageType == TextureUsageType::RENDER_TARGET)
-	{
-		SRVMipLevels = 1;
-	}
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-	ZeroMemory(&srvDesc, sizeof(srvDesc));
-	srvDesc.Format = D3DTextureDesc.Format;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = SRVMipLevels;
-
-	// Create the empty texture.
-	HRESULT hResult;
-	hResult = DX12RenderingSystemComponent::get().m_device->CreateTexture2D(&D3DTextureDesc, NULL, &rhs->m_texture);
-	if (FAILED(hResult))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create texture!");
-		return false;
-	}
-
-	if (textureDataDesc.textureUsageType != TextureUsageType::RENDER_TARGET)
-	{
-		unsigned int rowPitch;
-		rowPitch = (textureDataDesc.textureWidth * ((unsigned int)textureDataDesc.texturePixelDataFormat + 1)) * sizeof(unsigned char);
-		DX12RenderingSystemComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, textureData[0], rowPitch, 0);
-	}
-
-	// Create the shader resource view for the texture.
-	hResult = DX12RenderingSystemComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &srvDesc, &rhs->m_SRV);
-	if (FAILED(hResult))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't create shader resource view for texture!");
-		return false;
-	}
-
-	// Generate mipmaps for this texture.
-	if (textureDataDesc.textureMagFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
-	{
-		DX12RenderingSystemComponent::get().m_deviceContext->GenerateMips(rhs->m_SRV);
-	}
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 	m_initializedDXTDC.emplace(rhs->m_parentEntity, rhs);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DXRenderingSystem: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
 
 	return true;
 }
 
-DX12MeshDataComponent* DXRenderingSystemNS::addDX12MeshDataComponent(EntityID rhs)
+DX12MeshDataComponent* DX12RenderingSystemNS::addDX12MeshDataComponent(EntityID rhs)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12MeshDataComponentPool, sizeof(DX12MeshDataComponent));
 	auto l_DXMDC = new(l_rawPtr)DX12MeshDataComponent();
@@ -592,7 +428,7 @@ DX12MeshDataComponent* DXRenderingSystemNS::addDX12MeshDataComponent(EntityID rh
 	return l_DXMDC;
 }
 
-DX12TextureDataComponent* DXRenderingSystemNS::addDX12TextureDataComponent(EntityID rhs)
+DX12TextureDataComponent* DX12RenderingSystemNS::addDX12TextureDataComponent(EntityID rhs)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12TextureDataComponentPool, sizeof(DX12TextureDataComponent));
 	auto l_DXTDC = new(l_rawPtr)DX12TextureDataComponent();
@@ -601,7 +437,7 @@ DX12TextureDataComponent* DXRenderingSystemNS::addDX12TextureDataComponent(Entit
 	return l_DXTDC;
 }
 
-DX12MeshDataComponent * DXRenderingSystemNS::getDX12MeshDataComponent(EntityID rhs)
+DX12MeshDataComponent * DX12RenderingSystemNS::getDX12MeshDataComponent(EntityID rhs)
 {
 	auto result = m_meshMap.find(rhs);
 	if (result != m_meshMap.end())
@@ -614,7 +450,7 @@ DX12MeshDataComponent * DXRenderingSystemNS::getDX12MeshDataComponent(EntityID r
 	}
 }
 
-DX12TextureDataComponent * DXRenderingSystemNS::getDX12TextureDataComponent(EntityID rhs)
+DX12TextureDataComponent * DX12RenderingSystemNS::getDX12TextureDataComponent(EntityID rhs)
 {
 	auto result = m_textureMap.find(rhs);
 	if (result != m_textureMap.end())
@@ -627,28 +463,28 @@ DX12TextureDataComponent * DXRenderingSystemNS::getDX12TextureDataComponent(Enti
 	}
 }
 
-void DXRenderingSystemNS::drawMesh(EntityID rhs)
+void DX12RenderingSystemNS::recordDrawCall(EntityID rhs)
 {
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(rhs);
 	if (l_MDC)
 	{
-		drawMesh(l_MDC);
+		recordDrawCall(l_MDC);
 	}
 }
 
-void DXRenderingSystemNS::drawMesh(MeshDataComponent * MDC)
+void DX12RenderingSystemNS::recordDrawCall(MeshDataComponent * MDC)
 {
-	auto l_DXMDC = DXRenderingSystemNS::getDX12MeshDataComponent(MDC->m_parentEntity);
+	auto l_DXMDC = DX12RenderingSystemNS::getDX12MeshDataComponent(MDC->m_parentEntity);
 	if (l_DXMDC)
 	{
 		if (MDC->m_objectStatus == ObjectStatus::ALIVE && l_DXMDC->m_objectStatus == ObjectStatus::ALIVE)
 		{
-			drawMesh(MDC->m_indicesSize, l_DXMDC);
+			recordDrawCall(MDC->m_indicesSize, l_DXMDC);
 		}
 	}
 }
 
-void DXRenderingSystemNS::drawMesh(size_t indicesSize, DX12MeshDataComponent * DXMDC)
+void DX12RenderingSystemNS::recordDrawCall(size_t indicesSize, DX12MeshDataComponent * DXMDC)
 {
 	unsigned int stride;
 	unsigned int offset;
@@ -656,53 +492,13 @@ void DXRenderingSystemNS::drawMesh(size_t indicesSize, DX12MeshDataComponent * D
 	// Set vertex buffer stride and offset.
 	stride = sizeof(Vertex);
 	offset = 0;
-
-	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	DX12RenderingSystemComponent::get().m_deviceContext->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBuffer, &stride, &offset);
-
-	// Set the index buffer to active in the input assembler so it can be rendered.
-	DX12RenderingSystemComponent::get().m_deviceContext->IASetIndexBuffer(DXMDC->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	// Render the triangle.
-	DX12RenderingSystemComponent::get().m_deviceContext->DrawIndexed((UINT)indicesSize, 0, 0);
 }
 
-void DXRenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned int startSlot, ID3D12Resource* CBuffer, size_t size, void* parameterValue)
+void DX12RenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned int startSlot, ID3D12Resource* CBuffer, size_t size, void* parameterValue)
 {
-	HRESULT result;
-	D3D12_MAPPED_SUBRESOURCE mappedResource;
-
-	// Lock the constant buffer so it can be written to.
-	result = DX12RenderingSystemComponent::get().m_deviceContext->Map(CBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DXRenderingSystem: can't lock the shader buffer!");
-		return;
-	}
-
-	auto dataPtr = mappedResource.pData;
-	std::memcpy(dataPtr, parameterValue, size);
-
-	// Unlock the constant buffer.
-	DX12RenderingSystemComponent::get().m_deviceContext->Unmap(CBuffer, 0);
-
-	switch (shaderType)
-	{
-	case ShaderType::VERTEX:
-		DX12RenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers(startSlot, 1, &CBuffer);
-		break;
-	case ShaderType::GEOMETRY:
-		DX12RenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers(startSlot, 1, &CBuffer);
-		break;
-	case ShaderType::FRAGMENT:
-		DX12RenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers(startSlot, 1, &CBuffer);
-		break;
-	default:
-		break;
-	}
 }
 
-void DXRenderingSystemNS::cleanRTV(vec4 color, ID3D12Resource* RTV)
+void DX12RenderingSystemNS::cleanRTV(vec4 color, ID3D12Resource* RTV)
 {
 	float l_color[4];
 
@@ -711,11 +507,8 @@ void DXRenderingSystemNS::cleanRTV(vec4 color, ID3D12Resource* RTV)
 	l_color[1] = color.y;
 	l_color[2] = color.z;
 	l_color[3] = color.w;
-
-	DX12RenderingSystemComponent::get().m_deviceContext->ClearRenderTargetView(RTV, l_color);
 }
 
-void DXRenderingSystemNS::cleanDSV(ID3D12Resource* DSV)
+void DX12RenderingSystemNS::cleanDSV(ID3D12Resource* DSV)
 {
-	DX12RenderingSystemComponent::get().m_deviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }

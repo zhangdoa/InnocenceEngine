@@ -77,7 +77,8 @@ Launch bin/InnoMain executable file with the optional arguments.
 | --- | --- |
 | 0 | OpenGL rendering backend |
 | 1 | DirectX 11 rendering backend (WIP) |
-| 2 | Vulkan rendering backend (WIP) |
+| 2 | DirectX 12 rendering backend (WIP) |
+| 3 | Vulkan rendering backend (WIP) |
 
 ```
 -mode [value]

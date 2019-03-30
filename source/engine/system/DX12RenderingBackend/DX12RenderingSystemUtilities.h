@@ -8,7 +8,7 @@
 #include "../../component/DX12ShaderProgramComponent.h"
 #include "../../component/DX12RenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE DXRenderingSystemNS
+INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 {
 	bool initializeComponentPool();
 
@@ -23,9 +23,9 @@ INNO_PRIVATE_SCOPE DXRenderingSystemNS
 	DX12MeshDataComponent* getDX12MeshDataComponent(EntityID rhs);
 	DX12TextureDataComponent* getDX12TextureDataComponent(EntityID rhs);
 
-	void drawMesh(EntityID rhs);
-	void drawMesh(MeshDataComponent* MDC);
-	void drawMesh(size_t indicesSize, DX12MeshDataComponent * DXMDC);
+	void recordDrawCall(EntityID rhs);
+	void recordDrawCall(MeshDataComponent* MDC);
+	void recordDrawCall(size_t indicesSize, DX12MeshDataComponent * DXMDC);
 
 	DX12ShaderProgramComponent* addDX12ShaderProgramComponent(EntityID rhs);
 

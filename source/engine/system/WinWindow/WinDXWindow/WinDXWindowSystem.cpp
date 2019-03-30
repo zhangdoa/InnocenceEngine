@@ -117,15 +117,21 @@ ObjectStatus WinDXWindowSystem::getStatus()
 
 void WinDXWindowSystem::swapBuffer()
 {
-	// Present the back buffer to the screen since rendering is complete.
-	if (WinWindowSystemComponent::get().m_vsync_enabled)
+	if (WinDXWindowSystemNS::m_initConfig.renderingBackend == RenderingBackend::DX11)
 	{
-		// Lock to screen refresh rate.
-		DX11RenderingSystemComponent::get().m_swapChain->Present(1, 0);
+		// Present the back buffer to the screen since rendering is complete.
+		if (WinWindowSystemComponent::get().m_vsync_enabled)
+		{
+			// Lock to screen refresh rate.
+			DX11RenderingSystemComponent::get().m_swapChain->Present(1, 0);
+		}
+		else
+		{
+			// Present as fast as possible.
+			DX11RenderingSystemComponent::get().m_swapChain->Present(0, 0);
+		}
 	}
-	else
+	else if (WinDXWindowSystemNS::m_initConfig.renderingBackend == RenderingBackend::DX12)
 	{
-		// Present as fast as possible.
-		DX11RenderingSystemComponent::get().m_swapChain->Present(0, 0);
 	}
 }
