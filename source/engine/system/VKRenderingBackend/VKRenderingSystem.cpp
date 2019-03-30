@@ -472,7 +472,6 @@ bool VKRenderingSystemNS::createSwapChain()
 	VkSwapchainCreateInfoKHR l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	l_createInfo.surface = VKRenderingSystemComponent::get().m_windowSurface;
-
 	l_createInfo.minImageCount = l_imageCount;
 	l_createInfo.imageFormat = l_surfaceFormat.format;
 	l_createInfo.imageColorSpace = l_surfaceFormat.colorSpace;
@@ -527,7 +526,7 @@ bool VKRenderingSystemNS::createSwapChain()
 	TextureDataDesc l_RTDesc;
 	l_RTDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
 	l_RTDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	l_RTDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA;
+	l_RTDesc.textureColorComponentsFormat = TextureColorComponentsFormat::BGRA;
 	l_RTDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
 	l_RTDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
 	l_RTDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;

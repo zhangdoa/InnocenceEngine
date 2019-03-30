@@ -136,6 +136,39 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned in
 			return false;
 		}
 
+		VkAttachmentDescription colorAttachment = {};
+		colorAttachment.format = l_VKRPC->m_VKTDCs[0]->m_VKTextureDataDesc.internalFormat;
+		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+		VkAttachmentReference colorAttachmentRef = {};
+		colorAttachmentRef.attachment = 0;
+		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkSubpassDescription subpass = {};
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount = 1;
+		subpass.pColorAttachments = &colorAttachmentRef;
+
+		VkRenderPassCreateInfo renderPassInfo = {};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		renderPassInfo.attachmentCount = 1;
+		renderPassInfo.pAttachments = &colorAttachment;
+		renderPassInfo.subpassCount = 1;
+		renderPassInfo.pSubpasses = &subpass;
+
+		if (vkCreateRenderPass(VKRenderingSystemComponent::get().m_device, &renderPassInfo, nullptr, &l_VKRPC->m_renderPass) != VK_SUCCESS)
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create render pass!");
+		}
+
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: render pass has been created.");
+
 		VkImageView attachments[] =
 		{
 			l_VKRPC->m_VKTDCs[i]->m_imageView
@@ -155,39 +188,6 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned in
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create framebuffer!");
 		}
 	}
-
-	VkAttachmentDescription colorAttachment = {};
-	colorAttachment.format = l_VKRPC->m_VKTDCs[0]->m_VKTextureDataDesc.internalFormat;
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	VkAttachmentReference colorAttachmentRef = {};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass = {};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-
-	VkRenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = 1;
-	renderPassInfo.pAttachments = &colorAttachment;
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-
-	if (vkCreateRenderPass(VKRenderingSystemComponent::get().m_device, &renderPassInfo, nullptr, &l_VKRPC->m_renderPass) != VK_SUCCESS)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create render pass!");
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: render pass has been created.");
 
 	VkPrimitiveTopology l_topology;
 
@@ -239,7 +239,7 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned in
 	l_VKRPC->m_rasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_FILL;
 	l_VKRPC->m_rasterizationStateCInfo.lineWidth = 1.0f;
 	l_VKRPC->m_rasterizationStateCInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	l_VKRPC->m_rasterizationStateCInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	l_VKRPC->m_rasterizationStateCInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	l_VKRPC->m_rasterizationStateCInfo.depthBiasEnable = VK_FALSE;
 
 	l_VKRPC->m_multisampleStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -817,6 +817,12 @@ VkFormat VKRenderingSystemNS::getTextureInternalFormat(TextureColorComponentsFor
 	case TextureColorComponentsFormat::SRGBA8:
 		break;
 	case TextureColorComponentsFormat::DEPTH_COMPONENT:
+		break;
+	case TextureColorComponentsFormat::BGR:
+		result = VkFormat::VK_FORMAT_B8G8R8_UNORM;
+		break;
+	case TextureColorComponentsFormat::BGRA:
+		result = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
 		break;
 	default:
 		break;
