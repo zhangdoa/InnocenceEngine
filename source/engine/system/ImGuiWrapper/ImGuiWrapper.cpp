@@ -170,6 +170,8 @@ bool ImGuiWrapper::terminate()
 void ImGuiWrapperNS::showApplicationProfiler()
 {
 	static RenderingConfig l_renderingConfig;
+	l_renderingConfig.useTAA = true;
+	l_renderingConfig.drawSky = true;
 	static GameConfig l_gameConfig;
 	static bool l_useZoom;
 	static bool l_showRenderPassResult;

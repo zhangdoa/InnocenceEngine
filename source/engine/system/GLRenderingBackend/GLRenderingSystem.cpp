@@ -97,8 +97,6 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
-
-	bool m_bakeGI = false;
 }
 
 bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
@@ -201,7 +199,14 @@ void  GLRenderingSystemNS::initializeDefaultAssets()
 
 bool GLRenderingSystemNS::update()
 {
-	if (m_renderingFrontendSystem->anyUninitializedMeshDataComponent())
+	// @TODO: too many states
+	bool l_meshStatus = true;
+	l_meshStatus = l_meshStatus & m_renderingFrontendSystem->anyUninitializedMeshDataComponent();
+
+	bool l_textureStatus = true;
+	l_textureStatus = l_textureStatus & m_renderingFrontendSystem->anyUninitializedTextureDataComponent();
+
+	if (l_meshStatus)
 	{
 		auto l_MDC = m_renderingFrontendSystem->acquireUninitializedMeshDataComponent();
 		if (l_MDC)
@@ -213,7 +218,7 @@ bool GLRenderingSystemNS::update()
 			}
 		}
 	}
-	if (m_renderingFrontendSystem->anyUninitializedTextureDataComponent())
+	if (l_textureStatus)
 	{
 		auto l_TDC = m_renderingFrontendSystem->acquireUninitializedTextureDataComponent();
 		if (l_TDC)
@@ -228,11 +233,12 @@ bool GLRenderingSystemNS::update()
 
 	prepareRenderingData();
 
-	if (m_bakeGI)
+	if (!l_meshStatus && !l_meshStatus)
 	{
-		m_bakeGI = false;
 		GLEnvironmentRenderingPassUtilities::update();
+		//GLEnvironmentRenderingPassUtilities::draw();
 	}
+
 	GLShadowRenderingPassUtilities::update();
 	GLGeometryRenderingPassUtilities::update();
 	GLLightRenderingPassUtilities::update();
@@ -598,6 +604,5 @@ bool GLRenderingSystem::reloadShader(RenderPassType renderPassType)
 
 bool GLRenderingSystem::bakeGI()
 {
-	GLRenderingSystemNS::m_bakeGI = true;
 	return true;
 }

@@ -7,6 +7,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 	void initialize();
 
 	void update();
+	void draw();
 
 	GLTextureDataComponent* getBRDFSplitSumLUT();
 	GLTextureDataComponent* getBRDFMSAverageLUT();

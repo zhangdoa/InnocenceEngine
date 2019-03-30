@@ -21,9 +21,15 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 
 	void updateBRDFLUTPass();
 	void updateEnvironmentCapturePass();
-	void updateGIPass();
+	void updateVoxelizationPass();
+	void updateIrradianceInjectionPass();
+	void updateVoxelVisualizationPass();
 
 	EntityID m_entityID;
+
+	std::function<void()> m_sceneLoadingCallback;
+
+	bool m_isBaked = false;
 
 	GLRenderPassComponent* m_BRDFSplitSumLUTPassGLRPC;
 	GLFrameBufferDesc m_BRDFSplitSumLUTPassFrameBufferDesc = GLFrameBufferDesc();
@@ -105,12 +111,17 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 	GLuint m_voxelVisualizationPass_uni_worldMinPoint;
 
 	GLuint m_VAO;
-	GLuint m_VBO;
 }
 
 void GLEnvironmentRenderingPassUtilities::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
+
+	m_sceneLoadingCallback = [&]() {
+		m_isBaked = false;
+	};
+
+	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&m_sceneLoadingCallback);
 
 	m_BRDFSplitSumLUTPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
 	m_BRDFSplitSumLUTPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
@@ -201,9 +212,9 @@ void GLEnvironmentRenderingPassUtilities::initialize()
 	m_voxelizationPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	m_voxelizationPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA8;
 	m_voxelizationPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_voxelizationPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	m_voxelizationPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	m_voxelizationPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	m_voxelizationPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
+	m_voxelizationPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
+	m_voxelizationPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
 	m_voxelizationPassTextureDesc.textureWidth = m_volumeDimension;
 	m_voxelizationPassTextureDesc.textureHeight = m_volumeDimension;
 	m_voxelizationPassTextureDesc.textureDepth = m_volumeDimension;
@@ -213,15 +224,15 @@ void GLEnvironmentRenderingPassUtilities::initialize()
 	m_voxelizationPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
 	m_voxelizationPassFrameBufferDesc.sizeX = m_voxelizationPassTextureDesc.textureWidth;
 	m_voxelizationPassFrameBufferDesc.sizeY = m_voxelizationPassTextureDesc.textureHeight;
-	m_voxelizationPassFrameBufferDesc.drawColorBuffers = true;
+	m_voxelizationPassFrameBufferDesc.drawColorBuffers = false;
 
 	m_irradianceInjectionPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_3D;
 	m_irradianceInjectionPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	m_irradianceInjectionPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA8;
 	m_irradianceInjectionPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_irradianceInjectionPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	m_irradianceInjectionPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	m_irradianceInjectionPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	m_irradianceInjectionPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
+	m_irradianceInjectionPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
+	m_irradianceInjectionPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
 	m_irradianceInjectionPassTextureDesc.textureWidth = m_volumeDimension;
 	m_irradianceInjectionPassTextureDesc.textureHeight = m_volumeDimension;
 	m_irradianceInjectionPassTextureDesc.textureDepth = m_volumeDimension;
@@ -231,7 +242,7 @@ void GLEnvironmentRenderingPassUtilities::initialize()
 	m_irradianceInjectionPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
 	m_irradianceInjectionPassFrameBufferDesc.sizeX = m_irradianceInjectionPassTextureDesc.textureWidth;
 	m_irradianceInjectionPassFrameBufferDesc.sizeY = m_irradianceInjectionPassTextureDesc.textureHeight;
-	m_irradianceInjectionPassFrameBufferDesc.drawColorBuffers = true;
+	m_irradianceInjectionPassFrameBufferDesc.drawColorBuffers = false;
 
 	initializeBRDFLUTPass();
 	initializeEnvironmentCapturePass();
@@ -498,16 +509,22 @@ void GLEnvironmentRenderingPassUtilities::initializeVoxelVisualizationPass()
 	m_voxelVisualizationPassSPC = rhs;
 
 	glGenVertexArrays(1, &m_VAO);
-	//glBindVertexArray(m_VAO);
-	//glGenBuffers(1, &m_VBO);
-	//glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	//glBufferData(GL_ARRAY_BUFFER, m_voxelCount * sizeof(float), nullptr, GL_STREAM_DRAW);
 }
 
 void GLEnvironmentRenderingPassUtilities::update()
 {
-	//updateEnvironmentCapturePass();
-	updateGIPass();
+	if (!m_isBaked)
+	{
+		updateEnvironmentCapturePass();
+		updateVoxelizationPass();
+		updateIrradianceInjectionPass();
+		m_isBaked = true;
+	}
+}
+
+void GLEnvironmentRenderingPassUtilities::draw()
+{
+	updateVoxelVisualizationPass();
 }
 
 void GLEnvironmentRenderingPassUtilities::updateBRDFLUTPass()
@@ -684,8 +701,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 		}
 	}
 }
-
-void GLEnvironmentRenderingPassUtilities::updateGIPass()
+void GLEnvironmentRenderingPassUtilities::updateVoxelizationPass()
 {
 	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
 
@@ -712,11 +728,9 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 		m_VP_inv[i] = m_VP[i].inverse();
 	}
 
-	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
-
-	// voxelization pass
 	activateRenderPass(m_voxelizationPassGLRPC);
 
+	// disable status
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
@@ -764,8 +778,18 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 	}
 
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+}
 
-	// irradiance injection pass
+void GLEnvironmentRenderingPassUtilities::updateIrradianceInjectionPass()
+{
+	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
+
+	auto axisSize = l_sceneAABB.m_extend * 2.0f;
+	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
+	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
+
+	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
+
 	activateRenderPass(m_irradianceInjectionPassGLRPC);
 
 	activateTexture(m_voxelizationPassGLRPC->m_GLTDCs[0], 0);
@@ -794,13 +818,22 @@ void GLEnvironmentRenderingPassUtilities::updateGIPass()
 	// reset status
 	glDepthMask(true);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	//glEnable(GL_DEPTH_TEST);
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+}
+
+void GLEnvironmentRenderingPassUtilities::updateVoxelVisualizationPass()
+{
+	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
+
+	auto axisSize = l_sceneAABB.m_extend * 2.0f;
+	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
+	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
 
 	// voxel visualization pass
 	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
 
-	l_p = l_cameraDataPack.p_Original;
+	auto l_p = l_cameraDataPack.p_Original;
 	auto l_r = l_cameraDataPack.r;
 	auto l_t = l_cameraDataPack.t;
 	auto l_ms = InnoMath::toScaleMatrix(vec4(l_voxelSize, l_voxelSize, l_voxelSize, 1.0f));
