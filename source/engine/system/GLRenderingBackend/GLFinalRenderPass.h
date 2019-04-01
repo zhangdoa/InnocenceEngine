@@ -1,7 +1,7 @@
 #pragma once
 #include "../../common/InnoType.h"
 
-INNO_PRIVATE_SCOPE GLLightRenderingPassUtilities
+INNO_PRIVATE_SCOPE GLFinalRenderPass
 {
 	void initialize();
 
@@ -9,5 +9,5 @@ INNO_PRIVATE_SCOPE GLLightRenderingPassUtilities
 
 	bool resize();
 
-	bool reloadLightPassShaders();
+	bool reloadFinalPassShaders();
 }

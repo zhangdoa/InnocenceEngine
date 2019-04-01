@@ -2,7 +2,7 @@
 #include "../../common/InnoType.h"
 #include "../../component/GLTextureDataComponent.h"
 
-INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
+INNO_PRIVATE_SCOPE GLEnvironmentRenderPass
 {
 	void initialize();
 

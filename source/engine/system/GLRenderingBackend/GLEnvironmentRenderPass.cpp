@@ -1,7 +1,8 @@
+#include "GLEnvironmentRenderPass.h"
+
 #include "GLRenderingSystemUtilities.h"
-#include "GLEnvironmentRenderingPassUtilities.h"
+
 #include "../../component/GLRenderingSystemComponent.h"
-#include "../../component/GLFinalRenderPassComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -9,7 +10,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 using namespace GLRenderingSystemNS;
 
-INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
+INNO_PRIVATE_SCOPE GLEnvironmentRenderPass
 {
 	void initializeBRDFLUTPass();
 	void initializeEnvironmentCapturePass();
@@ -113,7 +114,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderingPassUtilities
 	GLuint m_VAO;
 }
 
-void GLEnvironmentRenderingPassUtilities::initialize()
+void GLEnvironmentRenderPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
@@ -249,7 +250,7 @@ void GLEnvironmentRenderingPassUtilities::initialize()
 	initializeGIPass();
 }
 
-void GLEnvironmentRenderingPassUtilities::initializeBRDFLUTPass()
+void GLEnvironmentRenderPass::initializeBRDFLUTPass()
 {
 	// generate and bind framebuffer
 	auto l_RPC = addGLRenderPassComponent(1, m_BRDFSplitSumLUTPassFrameBufferDesc, m_BRDFSplitSumLUTPassTextureDesc);
@@ -285,7 +286,7 @@ void GLEnvironmentRenderingPassUtilities::initializeBRDFLUTPass()
 	updateBRDFLUTPass();
 }
 
-void GLEnvironmentRenderingPassUtilities::initializeEnvironmentCapturePass()
+void GLEnvironmentRenderPass::initializeEnvironmentCapturePass()
 {
 	// generate and bind framebuffer
 	m_capturePassGLRPC = addGLRenderPassComponent(1, m_capturePassFrameBufferDesc, m_capturePassTextureDesc);
@@ -362,7 +363,7 @@ void GLEnvironmentRenderingPassUtilities::initializeEnvironmentCapturePass()
 	m_preFilterPassSPC = rhs;
 }
 
-void GLEnvironmentRenderingPassUtilities::initializeGIPass()
+void GLEnvironmentRenderPass::initializeGIPass()
 {
 	initializeVoxelizationPass();
 
@@ -371,7 +372,7 @@ void GLEnvironmentRenderingPassUtilities::initializeGIPass()
 	initializeVoxelVisualizationPass();
 }
 
-void GLEnvironmentRenderingPassUtilities::initializeVoxelizationPass()
+void GLEnvironmentRenderPass::initializeVoxelizationPass()
 {
 	m_voxelizationPassGLRPC = addGLRenderPassComponent(2, m_voxelizationPassFrameBufferDesc, m_voxelizationPassTextureDesc);
 
@@ -428,7 +429,7 @@ void GLEnvironmentRenderingPassUtilities::initializeVoxelizationPass()
 	}
 }
 
-void GLEnvironmentRenderingPassUtilities::initializeIrradianceInjectionPass()
+void GLEnvironmentRenderPass::initializeIrradianceInjectionPass()
 {
 	m_irradianceInjectionPassGLRPC = addGLRenderPassComponent(1, m_irradianceInjectionPassFrameBufferDesc, m_irradianceInjectionPassTextureDesc);
 
@@ -465,7 +466,7 @@ void GLEnvironmentRenderingPassUtilities::initializeIrradianceInjectionPass()
 	m_irradianceInjectionPassSPC = rhs;
 }
 
-void GLEnvironmentRenderingPassUtilities::initializeVoxelVisualizationPass()
+void GLEnvironmentRenderPass::initializeVoxelVisualizationPass()
 {
 	// generate and bind framebuffer
 	m_voxelVisualizationGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
@@ -511,7 +512,7 @@ void GLEnvironmentRenderingPassUtilities::initializeVoxelVisualizationPass()
 	glGenVertexArrays(1, &m_VAO);
 }
 
-void GLEnvironmentRenderingPassUtilities::update()
+void GLEnvironmentRenderPass::update()
 {
 	if (!m_isBaked)
 	{
@@ -522,12 +523,12 @@ void GLEnvironmentRenderingPassUtilities::update()
 	}
 }
 
-void GLEnvironmentRenderingPassUtilities::draw()
+void GLEnvironmentRenderPass::draw()
 {
 	updateVoxelVisualizationPass();
 }
 
-void GLEnvironmentRenderingPassUtilities::updateBRDFLUTPass()
+void GLEnvironmentRenderPass::updateBRDFLUTPass()
 {
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 
@@ -558,7 +559,7 @@ void GLEnvironmentRenderingPassUtilities::updateBRDFLUTPass()
 	drawMesh(l_MDC);
 }
 
-void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
+void GLEnvironmentRenderPass::updateEnvironmentCapturePass()
 {
 	activateRenderPass(m_capturePassGLRPC);
 
@@ -590,35 +591,35 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 	// @TODO: optimize
 	if (l_renderingConfig.drawSky)
 	{
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
+		//glEnable(GL_DEPTH_TEST);
+		//glDepthFunc(GL_LEQUAL);
 
-		activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassGLSPC);
+		//activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassGLSPC);
 
-		updateUniform(
-			GLFinalRenderPassComponent::get().m_skyPass_uni_p,
-			l_p);
+		//updateUniform(
+		//	GLFinalRenderPassComponent::get().m_skyPass_uni_p,
+		//	l_p);
 
-		updateUniform(
-			GLFinalRenderPassComponent::get().m_skyPass_uni_viewportSize,
-			2048.0f, 2048.0f);
+		//updateUniform(
+		//	GLFinalRenderPassComponent::get().m_skyPass_uni_viewportSize,
+		//	2048.0f, 2048.0f);
 
-		updateUniform(
-			GLFinalRenderPassComponent::get().m_skyPass_uni_eyePos,
-			l_cameraDataPack.globalPos.x, l_cameraDataPack.globalPos.y, l_cameraDataPack.globalPos.z);
-		updateUniform(
-			GLFinalRenderPassComponent::get().m_skyPass_uni_lightDir,
-			l_sunDataPack.dir.x, l_sunDataPack.dir.y, l_sunDataPack.dir.z);
+		//updateUniform(
+		//	GLFinalRenderPassComponent::get().m_skyPass_uni_eyePos,
+		//	l_cameraDataPack.globalPos.x, l_cameraDataPack.globalPos.y, l_cameraDataPack.globalPos.z);
+		//updateUniform(
+		//	GLFinalRenderPassComponent::get().m_skyPass_uni_lightDir,
+		//	l_sunDataPack.dir.x, l_sunDataPack.dir.y, l_sunDataPack.dir.z);
 
-		for (unsigned int i = 0; i < 6; ++i)
-		{
-			updateUniform(GLFinalRenderPassComponent::get().m_skyPass_uni_r, l_v[i]);
-			attachCubemapColorRT(l_capturePassGLTDC, m_capturePassGLRPC, 0, i, 0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			drawMesh(l_MDC);
-		}
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_DEPTH_TEST);
+		//for (unsigned int i = 0; i < 6; ++i)
+		//{
+		//	updateUniform(GLFinalRenderPassComponent::get().m_skyPass_uni_r, l_v[i]);
+		//	attachCubemapColorRT(l_capturePassGLTDC, m_capturePassGLRPC, 0, i, 0);
+		//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//	drawMesh(l_MDC);
+		//}
+		//glDisable(GL_CULL_FACE);
+		//glDisable(GL_DEPTH_TEST);
 	}
 
 	// draw opaque meshes
@@ -701,7 +702,7 @@ void GLEnvironmentRenderingPassUtilities::updateEnvironmentCapturePass()
 		}
 	}
 }
-void GLEnvironmentRenderingPassUtilities::updateVoxelizationPass()
+void GLEnvironmentRenderPass::updateVoxelizationPass()
 {
 	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
 
@@ -780,7 +781,7 @@ void GLEnvironmentRenderingPassUtilities::updateVoxelizationPass()
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 }
 
-void GLEnvironmentRenderingPassUtilities::updateIrradianceInjectionPass()
+void GLEnvironmentRenderPass::updateIrradianceInjectionPass()
 {
 	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
 
@@ -822,7 +823,7 @@ void GLEnvironmentRenderingPassUtilities::updateIrradianceInjectionPass()
 	glEnable(GL_CULL_FACE);
 }
 
-void GLEnvironmentRenderingPassUtilities::updateVoxelVisualizationPass()
+void GLEnvironmentRenderPass::updateVoxelVisualizationPass()
 {
 	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
 
@@ -860,27 +861,27 @@ void GLEnvironmentRenderingPassUtilities::updateVoxelVisualizationPass()
 	glDrawArrays(GL_POINTS, 0, m_voxelCount);
 }
 
-GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getBRDFSplitSumLUT()
+GLTextureDataComponent * GLEnvironmentRenderPass::getBRDFSplitSumLUT()
 {
 	return m_BRDFSplitSumLUTPassGLRPC->m_GLTDCs[0];
 }
 
-GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getBRDFMSAverageLUT()
+GLTextureDataComponent * GLEnvironmentRenderPass::getBRDFMSAverageLUT()
 {
 	return m_BRDFMSAverageLUTPassGLRPC->m_GLTDCs[0];
 }
 
-GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getConvPassGLTDC()
+GLTextureDataComponent * GLEnvironmentRenderPass::getConvPassGLTDC()
 {
 	return m_convPassGLRPC->m_GLTDCs[0];
 }
 
-GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getPreFilterPassGLTDC()
+GLTextureDataComponent * GLEnvironmentRenderPass::getPreFilterPassGLTDC()
 {
 	return m_preFilterPassGLRPC->m_GLTDCs[0];
 }
 
-GLTextureDataComponent * GLEnvironmentRenderingPassUtilities::getVoxelVisualizationPassGLTDC()
+GLTextureDataComponent * GLEnvironmentRenderPass::getVoxelVisualizationPassGLTDC()
 {
 	return m_voxelVisualizationGLRPC->m_GLTDCs[0];
 }

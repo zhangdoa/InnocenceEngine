@@ -117,6 +117,10 @@ public:
 	GLFrameBufferDesc deferredPassFBDesc = GLFrameBufferDesc();
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 
+	GLuint m_cameraUBO;
+	GLuint m_meshUBO;
+	GLuint m_textureUBO;
+
 	GLMeshDataComponent* m_UnitLineGLMDC;
 	GLMeshDataComponent* m_UnitQuadGLMDC;
 	GLMeshDataComponent* m_UnitCubeGLMDC;

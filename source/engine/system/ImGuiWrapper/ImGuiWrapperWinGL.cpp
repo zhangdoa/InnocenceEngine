@@ -1,11 +1,18 @@
 #include "ImGuiWrapperWinGL.h"
 #include "../../component/WinWindowSystemComponent.h"
-#include "../GLRenderingBackend/GLEnvironmentRenderingPassUtilities.h"
-#include "../../component/GLShadowRenderPassComponent.h"
-#include "../../component/GLGeometryRenderPassComponent.h"
-#include "../../component/GLTerrainRenderPassComponent.h"
-#include "../../component/GLLightRenderPassComponent.h"
-#include "../../component/GLFinalRenderPassComponent.h"
+
+#include "../GLRenderingBackend/GLEnvironmentRenderPass.h"
+
+#include "../GLRenderingBackend/GLOpaquePass.h"
+#include "../GLRenderingBackend/GLSSAONoisePass.h"
+#include "../GLRenderingBackend/GLSSAOBlurPass.h"
+#include "../GLRenderingBackend/GLTransparentPass.h"
+#include "../GLRenderingBackend/GLTerrainPass.h"
+
+#include "../GLRenderingBackend/GLLightPass.h"
+
+#include "../GLRenderingBackend/GLSkyPass.h"
+
 #include "../../component/GLRenderingSystemComponent.h"
 
 #include "../../third-party/ImGui/imgui_impl_win32.h"
@@ -79,27 +86,27 @@ void ImGuiWrapperWinGL::showRenderResult()
 		{
 			ImGui::BeginChild("World Space Position(RGB) + Metallic(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("World Space Position(RGB) + Metallic(A)");
-			ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLOpaquePass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();
 
 			ImGui::BeginChild("World Space Normal(RGB) + Roughness(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("World Space Normal(RGB) + Roughness(A)");
-			ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[1]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLOpaquePass::getGLRPC()->m_GLTDCs[1]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 		}
 		{
 			ImGui::BeginChild("Albedo(RGB) + Ambient Occlusion(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Albedo(RGB) + Ambient Occlusion(A)");
-			ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[2]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLOpaquePass::getGLRPC()->m_GLTDCs[2]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();
 
 			ImGui::BeginChild("Screen Space Motion Vector(RGB) + Transparency(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Screen Space Motion Vector(RGB) + Transparency(A)");
-			ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_opaquePass_GLRPC->m_GLTDCs[3]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLOpaquePass::getGLRPC()->m_GLTDCs[3]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 		}
 	}
@@ -107,9 +114,8 @@ void ImGuiWrapperWinGL::showRenderResult()
 
 	ImGui::Begin("SSAO Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	{
-		ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_SSAOPass_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-		ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_SSAOBlurPass_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-		ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_noiseGLTDC->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLSSAONoisePass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLSSAOBlurPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 	}
 	ImGui::End();
 
@@ -117,25 +123,25 @@ void ImGuiWrapperWinGL::showRenderResult()
 	{
 		ImGui::BeginChild("Albedo (RGB) + transparency factor (A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 		ImGui::Text("Albedo (RGB) + transparency factor (A)");
-		ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLTransparentPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 
 		ImGui::BeginChild("Transmittance factor (RGB) + blend mask (A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 		ImGui::Text("Transmittance factor (RGB) + blend mask (A)");
-		ImGui::Image(ImTextureID((GLuint64)GLGeometryRenderPassComponent::get().m_transparentPass_GLRPC->m_GLTDCs[1]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLTransparentPass::getGLRPC()->m_GLTDCs[1]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 	}
 	ImGui::End();
 
 	ImGui::Begin("Terrain Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	{
-		ImGui::Image(ImTextureID((GLuint64)GLTerrainRenderPassComponent::get().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLTerrainPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 	}
 	ImGui::End();
 
 	ImGui::Begin("Light Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	{
-		ImGui::Image(ImTextureID((GLuint64)GLLightRenderPassComponent::get().m_GLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLLightPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 	}
 	ImGui::End();
 
@@ -144,7 +150,7 @@ void ImGuiWrapperWinGL::showRenderResult()
 		{
 			ImGui::BeginChild("Sky Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Sky Pass");
-			ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassComponent::get().m_skyPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLSkyPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();
@@ -219,20 +225,20 @@ void ImGuiWrapperWinGL::showRenderResult()
 	ImGui::Begin("BRDF lookup table", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	{
 		ImGui::BeginChild("IBL LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderingPassUtilities::getBRDFSplitSumLUT()->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPass::getBRDFSplitSumLUT()->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 
 		ImGui::SameLine();
 
 		ImGui::BeginChild("Multi-Scattering LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderingPassUtilities::getBRDFMSAverageLUT()->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPass::getBRDFMSAverageLUT()->m_TAO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 	}
 	ImGui::End();
 
 	ImGui::Begin("Voxelization Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Text("Voxelization Pass");
-	ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderingPassUtilities::getVoxelVisualizationPassGLTDC()->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+	ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPass::getVoxelVisualizationPassGLTDC()->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 	ImGui::End();
 }
 

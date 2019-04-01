@@ -2,11 +2,19 @@
 
 #include "GLRenderingSystemUtilities.h"
 
-#include "GLEnvironmentRenderingPassUtilities.h"
-#include "GLShadowRenderingPassUtilities.h"
-#include "GLGeometryRenderingPassUtilities.h"
-#include "GLLightRenderingPassUtilities.h"
-#include "GLFinalRenderingPassUtilities.h"
+#include "GLEnvironmentRenderPass.h"
+#include "GLShadowRenderPass.h"
+
+#include "GLEarlyZPass.h"
+#include "GLOpaquePass.h"
+#include "GLSSAONoisePass.h"
+#include "GLSSAOBlurPass.h"
+#include "GLTransparentPass.h"
+#include "GLTerrainPass.h"
+
+#include "GLLightPass.h"
+
+#include "GLFinalRenderPass.h"
 
 #include "../../component/GLRenderingSystemComponent.h"
 
@@ -164,11 +172,25 @@ bool GLRenderingSystemNS::initialize()
 {
 	initializeDefaultAssets();
 
-	GLEnvironmentRenderingPassUtilities::initialize();
-	GLShadowRenderingPassUtilities::initialize();
-	GLGeometryRenderingPassUtilities::initialize();
-	GLLightRenderingPassUtilities::initialize();
-	GLFinalRenderingPassUtilities::initialize();
+	// UBO
+	GLRenderingSystemComponent::get().m_cameraUBO = generateUBO(sizeof(GPassCameraUBOData));
+
+	GLRenderingSystemComponent::get().m_meshUBO = generateUBO(sizeof(GPassMeshUBOData));
+
+	GLRenderingSystemComponent::get().m_textureUBO = generateUBO(sizeof(GPassTextureUBOData));
+
+	GLEnvironmentRenderPass::initialize();
+	GLShadowRenderPass::initialize();
+
+	GLEarlyZPass::initialize();
+	GLOpaquePass::initialize();
+	GLSSAONoisePass::initialize();
+	GLSSAOBlurPass::initialize();
+	GLTransparentPass::initialize();
+	GLTerrainPass::initialize();
+
+	GLLightPass::initialize();
+	GLFinalRenderPass::initialize();
 
 	return true;
 }
@@ -235,14 +257,21 @@ bool GLRenderingSystemNS::update()
 
 	if (!l_meshStatus && !l_meshStatus)
 	{
-		GLEnvironmentRenderingPassUtilities::update();
-		//GLEnvironmentRenderingPassUtilities::draw();
+		GLEnvironmentRenderPass::update();
+		//GLEnvironmentRenderPass::draw();
 	}
 
-	GLShadowRenderingPassUtilities::update();
-	GLGeometryRenderingPassUtilities::update();
-	GLLightRenderingPassUtilities::update();
-	GLFinalRenderingPassUtilities::update();
+	GLShadowRenderPass::update();
+
+	GLEarlyZPass::update();
+	GLOpaquePass::update();
+	GLSSAONoisePass::update();
+	GLSSAOBlurPass::update();
+	GLTransparentPass::update();
+	GLTerrainPass::update();
+
+	GLLightPass::update();
+	GLFinalRenderPass::update();
 
 	return true;
 }
@@ -540,9 +569,15 @@ bool GLRenderingSystemNS::resize()
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = l_screenResolution.x;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = l_screenResolution.y;
 
-	GLGeometryRenderingPassUtilities::resize();
-	GLLightRenderingPassUtilities::resize();
-	GLFinalRenderingPassUtilities::resize();
+	GLEarlyZPass::resize();
+	GLOpaquePass::resize();
+	GLSSAONoisePass::resize();
+	GLSSAOBlurPass::resize();
+	GLTransparentPass::resize();
+	GLTerrainPass::resize();
+
+	GLLightPass::resize();
+	GLFinalRenderPass::resize();
 
 	return true;
 }
@@ -582,19 +617,19 @@ bool GLRenderingSystem::reloadShader(RenderPassType renderPassType)
 	switch (renderPassType)
 	{
 	case RenderPassType::OpaquePass:
-		GLGeometryRenderingPassUtilities::reloadOpaquePassShaders();
+		GLOpaquePass::reloadShader();
 		break;
 	case RenderPassType::TransparentPass:
-		GLGeometryRenderingPassUtilities::reloadTransparentPassShaders();
+		GLTransparentPass::reloadShader();
 		break;
 	case RenderPassType::TerrainPass:
-		GLGeometryRenderingPassUtilities::reloadTerrainPassShaders();
+		GLTerrainPass::reloadShader();
 		break;
 	case RenderPassType::LightPass:
-		GLLightRenderingPassUtilities::reloadLightPassShaders();
+		GLLightPass::reloadShader();
 		break;
 	case RenderPassType::FinalPass:
-		GLFinalRenderingPassUtilities::reloadFinalPassShaders();
+		GLFinalRenderPass::reloadFinalPassShaders();
 		break;
 	default: break;
 	}
