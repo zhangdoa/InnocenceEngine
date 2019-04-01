@@ -50,6 +50,8 @@ public:
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_device;
 	VkQueue m_graphicsQueue;
+	VkCommandPool m_commandPool;
+
 	VkSwapchainKHR m_swapChain = 0;
 	VKShaderProgramComponent* m_swapChainVKSPC;
 	VKRenderPassComponent* m_swapChainVKRPC;
@@ -71,9 +73,6 @@ public:
 	};
 
 	VkDebugUtilsMessengerEXT m_messengerCallback;
-
-	VkCommandPool m_commandPool;
-	std::vector<VkCommandBuffer> m_commandBuffers;
 
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;

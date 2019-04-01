@@ -76,6 +76,12 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 		}
 	}
 
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Validation Layer: " + std::string(pCallbackData->pMessage));
+		return VK_FALSE;
+	}
+
 	std::vector<const char*> getRequiredExtensions()
 	{
 #if defined INNO_PLATFORM_WIN
@@ -92,12 +98,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 		}
 
 		return extensions;
-	}
-
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Validation Layer: " + std::string(pCallbackData->pMessage));
-		return VK_FALSE;
 	}
 
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device)
@@ -260,12 +260,13 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	bool createVkInstance();
 	bool createDebugCallback();
-	bool createWindowSurface();
+
 	bool createPysicalDevice();
 	bool createLogicalDevice();
-	bool createSwapChain();
 	bool createCommandPool();
-	bool createCommandBuffers();
+
+	bool createSwapChain();
+	bool createSwapChainCommandBuffers();
 	bool createSyncPrimitives();
 
 	bool initialize();
@@ -356,12 +357,6 @@ bool VKRenderingSystemNS::createDebugCallback()
 	{
 		return true;
 	}
-}
-
-bool VKRenderingSystemNS::createWindowSurface()
-{
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: window surface has been created.");
-	return true;
 }
 
 bool VKRenderingSystemNS::createPysicalDevice()
@@ -455,6 +450,25 @@ bool VKRenderingSystemNS::createLogicalDevice()
 	return true;
 }
 
+bool VKRenderingSystemNS::createCommandPool()
+{
+	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(VKRenderingSystemComponent::get().m_physicalDevice);
+
+	VkCommandPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.queueFamilyIndex = queueFamilyIndices.m_graphicsFamily.value();
+
+	if (vkCreateCommandPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &VKRenderingSystemComponent::get().m_commandPool) != VK_SUCCESS)
+	{
+		m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create command pool!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: command pool has been created.");
+	return true;
+}
+
 bool VKRenderingSystemNS::createSwapChain()
 {
 	SwapChainSupportDetails l_swapChainSupport = querySwapChainSupport(VKRenderingSystemComponent::get().m_physicalDevice);
@@ -542,49 +556,30 @@ bool VKRenderingSystemNS::createSwapChain()
 	return true;
 }
 
-bool VKRenderingSystemNS::createCommandPool()
+bool VKRenderingSystemNS::createSwapChainCommandBuffers()
 {
-	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(VKRenderingSystemComponent::get().m_physicalDevice);
-
-	VkCommandPoolCreateInfo poolInfo = {};
-	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.queueFamilyIndex = queueFamilyIndices.m_graphicsFamily.value();
-
-	if (vkCreateCommandPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &VKRenderingSystemComponent::get().m_commandPool) != VK_SUCCESS)
-	{
-		m_objectStatus = ObjectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create command pool!");
-		return false;
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: command pool has been created.");
-	return true;
-}
-
-bool VKRenderingSystemNS::createCommandBuffers()
-{
-	VKRenderingSystemComponent::get().m_commandBuffers.resize(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_framebuffers.size());
+	VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.resize(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_framebuffers.size());
 
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = VKRenderingSystemComponent::get().m_commandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = (uint32_t)VKRenderingSystemComponent::get().m_commandBuffers.size();
+	allocInfo.commandBufferCount = (uint32_t)VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.size();
 
-	if (vkAllocateCommandBuffers(VKRenderingSystemComponent::get().m_device, &allocInfo, VKRenderingSystemComponent::get().m_commandBuffers.data()) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(VKRenderingSystemComponent::get().m_device, &allocInfo, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.data()) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate command buffers!");
 		return false;
 	}
 
-	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_commandBuffers.size(); i++)
+	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.size(); i++)
 	{
 		VkCommandBufferBeginInfo beginInfo = {};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-		if (vkBeginCommandBuffer(VKRenderingSystemComponent::get().m_commandBuffers[i], &beginInfo) != VK_SUCCESS)
+		if (vkBeginCommandBuffer(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i], &beginInfo) != VK_SUCCESS)
 		{
 			m_objectStatus = ObjectStatus::STANDBY;
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to begin recording command buffer!");
@@ -604,15 +599,15 @@ bool VKRenderingSystemNS::createCommandBuffers()
 
 		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 
-		vkCmdBeginRenderPass(VKRenderingSystemComponent::get().m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(VKRenderingSystemComponent::get().m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_pipeline);
+		vkCmdBindPipeline(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_pipeline);
 
-		recordDrawCall(VKRenderingSystemComponent::get().m_commandBuffers[i], l_MDC);
+		recordDrawCall(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i], l_MDC);
 
-		vkCmdEndRenderPass(VKRenderingSystemComponent::get().m_commandBuffers[i]);
+		vkCmdEndRenderPass(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i]);
 
-		if (vkEndCommandBuffer(VKRenderingSystemComponent::get().m_commandBuffers[i]) != VK_SUCCESS)
+		if (vkEndCommandBuffer(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i]) != VK_SUCCESS)
 		{
 			m_objectStatus = ObjectStatus::STANDBY;
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to record command buffer!");
@@ -692,12 +687,12 @@ bool VKRenderingSystemNS::initialize()
 {
 	bool result = true;
 	result = result && createPysicalDevice();
-	result = result && createWindowSurface();
 	result = result && createLogicalDevice();
-	result = result && createSwapChain();
 	result = result && createCommandPool();
+
+	result = result && createSwapChain();
 	result = result && initializeDefaultAssets();
-	result = result && createCommandBuffers();
+	result = result && createSwapChainCommandBuffers();
 	result = result && createSyncPrimitives();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been initialized.");
@@ -706,29 +701,36 @@ bool VKRenderingSystemNS::initialize()
 
 bool VKRenderingSystemNS::update()
 {
+	// wait current frame until it finishes
 	vkWaitForFences(VKRenderingSystemComponent::get().m_device, 1, &VKRenderingSystemComponent::get().m_inFlightFences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
+	// acquire an image from swap chain
 	uint32_t imageIndex;
 	vkAcquireNextImageKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, std::numeric_limits<uint64_t>::max(), VKRenderingSystemComponent::get().m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
 
+	// submit the draw command buffer for the swap chain, with a wait and a signal semaphores
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[] = { VKRenderingSystemComponent::get().m_imageAvailableSemaphores[m_currentFrame] };
+	// wait semaphore
+	VkSemaphore waitImageAvailableSemaphores[] = { VKRenderingSystemComponent::get().m_imageAvailableSemaphores[m_currentFrame] };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitSemaphores = waitImageAvailableSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 
+	// command buffer
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &VKRenderingSystemComponent::get().m_commandBuffers[imageIndex];
+	submitInfo.pCommandBuffers = &VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[imageIndex];
 
-	VkSemaphore signalSemaphores[] = { VKRenderingSystemComponent::get().m_renderFinishedSemaphores[m_currentFrame] };
+	// signal semaphore
+	VkSemaphore signalRenderFinishedSemaphores[] = { VKRenderingSystemComponent::get().m_renderFinishedSemaphores[m_currentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
+	submitInfo.pSignalSemaphores = signalRenderFinishedSemaphores;
 
 	vkResetFences(VKRenderingSystemComponent::get().m_device, 1, &VKRenderingSystemComponent::get().m_inFlightFences[m_currentFrame]);
 
+	// submit to queue
 	if (vkQueueSubmit(VKRenderingSystemComponent::get().m_graphicsQueue, 1, &submitInfo, VKRenderingSystemComponent::get().m_inFlightFences[m_currentFrame]) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
@@ -736,12 +738,15 @@ bool VKRenderingSystemNS::update()
 		return false;
 	}
 
+	// present the swap chain image to the front screen
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
+	// wait semaphore
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores;
+	presentInfo.pWaitSemaphores = signalRenderFinishedSemaphores;
 
+	// swap chain
 	VkSwapchainKHR swapChains[] = { VKRenderingSystemComponent::get().m_swapChain };
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;

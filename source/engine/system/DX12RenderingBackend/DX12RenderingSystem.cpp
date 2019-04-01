@@ -42,13 +42,13 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 bool DX12RenderingSystemNS::createDebugCallback()
 {
 	auto l_result = D3D12GetDebugInterface(IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_debugInterface));
-	g_DXRenderingSystemComponent->m_debugInterface->EnableDebugLayer();
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Could not enable DirectX 12 debug layer!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+	g_DXRenderingSystemComponent->m_debugInterface->EnableDebugLayer();
 	return true;
 }
 
