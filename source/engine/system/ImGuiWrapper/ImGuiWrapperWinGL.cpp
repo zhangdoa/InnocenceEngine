@@ -2,6 +2,7 @@
 #include "../../component/WinWindowSystemComponent.h"
 
 #include "../GLRenderingBackend/GLEnvironmentRenderPass.h"
+#include "../GLRenderingBackend/GLShadowRenderPass.h"
 
 #include "../GLRenderingBackend/GLOpaquePass.h"
 #include "../GLRenderingBackend/GLSSAONoisePass.h"
@@ -12,6 +13,16 @@
 #include "../GLRenderingBackend/GLLightPass.h"
 
 #include "../GLRenderingBackend/GLSkyPass.h"
+#include "../GLRenderingBackend/GLPreTAAPass.h"
+#include "../GLRenderingBackend/GLTAAPass.h"
+#include "../GLRenderingBackend/GLPostTAAPass.h"
+#include "../GLRenderingBackend/GLMotionBlurPass.h"
+#include "../GLRenderingBackend/GLBloomExtractPass.h"
+#include "../GLRenderingBackend/GLBloomBlurPass.h"
+#include "../GLRenderingBackend/GLBloomMergePass.h"
+#include "../GLRenderingBackend/GLBillboardPass.h"
+#include "../GLRenderingBackend/GLDebuggerPass.h"
+#include "../GLRenderingBackend/GLFinalBlendPass.h"
 
 #include "../../component/GLRenderingSystemComponent.h"
 
@@ -157,59 +168,59 @@ void ImGuiWrapperWinGL::showRenderResult()
 
 			ImGui::BeginChild("Pre TAA Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Pre TAA Pass");
-			ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassComponent::get().m_preTAAPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLPreTAAPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 		}
 		{
-			ImGui::BeginChild("TAA Ping Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Text("TAA Ping Pass");
-			ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassComponent::get().m_TAAPingPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::BeginChild("TAA Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("TAA Pass");
+			ImGui::Image(ImTextureID((GLuint64)GLTAAPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();
 
-			ImGui::BeginChild("TAA Sharpen Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Text("TAA Sharpen Pass");
-			ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassComponent::get().m_TAASharpenPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::BeginChild("Post TAA Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Post TAA Pass");
+			ImGui::Image(ImTextureID((GLuint64)GLPostTAAPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 		}
 		{
 			ImGui::BeginChild("Bloom Extract Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Bloom Extract Pass");
-			ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassComponent::get().m_bloomExtractPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLBloomExtractPass::getGLRPC(0)->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();
 
-			ImGui::BeginChild("Bloom Blur Ping Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Text("Bloom Blur Ping Pass");
-			ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassComponent::get().m_bloomBlurPingPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::BeginChild("Bloom Blur Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Bloom Blur Pass");
+			ImGui::Image(ImTextureID((GLuint64)GLBloomBlurPass::getGLRPC(1)->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 		}
 		{
 			ImGui::BeginChild("Motion Blur Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Motion Blur Pass");
-			ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassComponent::get().m_motionBlurPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLMotionBlurPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();
 
 			ImGui::BeginChild("Billboard Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Billboard Pass");
-			ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassComponent::get().m_billboardPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLBillboardPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 		}
 		{
 			ImGui::BeginChild("Debugger Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Debugger Pass");
-			ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassComponent::get().m_debuggerPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLDebuggerPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();
 
 			ImGui::BeginChild("Final Blend Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Final Blend Pass");
-			ImGui::Image(ImTextureID((GLuint64)GLFinalRenderPassComponent::get().m_finalBlendPassGLRPC->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLFinalBlendPass::getGLRPC()->m_GLTDCs[0]->m_TAO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 		}
 	}
@@ -217,8 +228,8 @@ void ImGuiWrapperWinGL::showRenderResult()
 
 	auto l_shadowPassWindowSize = ImVec2(512.0, 512.0);
 	ImGui::Begin("Shadow Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
-	ImGui::Text("Depth Buffer");
-	ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPassComponent::get().m_DirLight_GLRPC->m_GLTDCs[0]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+	ImGui::Text("CSM Depth Buffer");
+	ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPass::getGLRPC(0)->m_GLTDCs[0]->m_TAO), l_shadowPassWindowSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 	ImGui::End();
 
 	auto l_BRDFLUT = ImVec2(128.0, 128.0);

@@ -14,7 +14,17 @@
 
 #include "GLLightPass.h"
 
-#include "GLFinalRenderPass.h"
+#include "GLSkyPass.h"
+#include "GLPreTAAPass.h"
+#include "GLTAAPass.h"
+#include "GLPostTAAPass.h"
+#include "GLMotionBlurPass.h"
+#include "GLBloomExtractPass.h"
+#include "GLBloomBlurPass.h"
+#include "GLBloomMergePass.h"
+#include "GLBillboardPass.h"
+#include "GLDebuggerPass.h"
+#include "GLFinalBlendPass.h"
 
 #include "../../component/GLRenderingSystemComponent.h"
 
@@ -190,7 +200,18 @@ bool GLRenderingSystemNS::initialize()
 	GLTerrainPass::initialize();
 
 	GLLightPass::initialize();
-	GLFinalRenderPass::initialize();
+
+	GLSkyPass::initialize();
+	GLPreTAAPass::initialize();
+	GLTAAPass::initialize();
+	GLPostTAAPass::initialize();
+	GLMotionBlurPass::initialize();
+	GLBloomExtractPass::initialize();
+	GLBloomBlurPass::initialize();
+	GLBloomMergePass::initialize();
+	GLBillboardPass::initialize();
+	GLDebuggerPass::initialize();
+	GLFinalBlendPass::initialize();
 
 	return true;
 }
@@ -271,7 +292,67 @@ bool GLRenderingSystemNS::update()
 	GLTerrainPass::update();
 
 	GLLightPass::update();
-	GLFinalRenderPass::update();
+
+	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+
+	GLSkyPass::update();
+	GLPreTAAPass::update();
+
+	auto l_canvasGLRPC = GLPreTAAPass::getGLRPC();
+
+	if (l_renderingConfig.useMotionBlur)
+	{
+		GLMotionBlurPass::update();
+
+		l_canvasGLRPC = GLMotionBlurPass::getGLRPC();
+	}
+
+	if (l_renderingConfig.useTAA)
+	{
+		GLTAAPass::update(l_canvasGLRPC);
+		GLPostTAAPass::update();
+
+		l_canvasGLRPC = GLPostTAAPass::getGLRPC();
+	}
+
+	if (l_renderingConfig.useBloom)
+	{
+		GLBloomExtractPass::update(l_canvasGLRPC);
+
+		GLBloomBlurPass::update(GLBloomExtractPass::getGLRPC(0));
+
+		GLBloomBlurPass::update(GLBloomExtractPass::getGLRPC(1));
+
+		GLBloomBlurPass::update(GLBloomExtractPass::getGLRPC(2));
+
+		GLBloomBlurPass::update(GLBloomExtractPass::getGLRPC(3));
+
+		GLBloomMergePass::update();
+	}
+	else
+	{
+		cleanFBC(GLBloomExtractPass::getGLRPC(0));
+		cleanFBC(GLBloomExtractPass::getGLRPC(1));
+		cleanFBC(GLBloomExtractPass::getGLRPC(2));
+		cleanFBC(GLBloomExtractPass::getGLRPC(3));
+
+		cleanFBC(GLBloomBlurPass::getGLRPC(0));
+		cleanFBC(GLBloomBlurPass::getGLRPC(1));
+
+		cleanFBC(GLBloomMergePass::getGLRPC());
+	}
+
+	GLBillboardPass::update();
+
+	if (l_renderingConfig.drawDebugObject)
+	{
+		GLDebuggerPass::update();
+	}
+	else
+	{
+		cleanFBC(GLDebuggerPass::getGLRPC());
+	}
+	GLFinalBlendPass::update(l_canvasGLRPC);
 
 	return true;
 }
@@ -577,7 +658,18 @@ bool GLRenderingSystemNS::resize()
 	GLTerrainPass::resize();
 
 	GLLightPass::resize();
-	GLFinalRenderPass::resize();
+
+	GLSkyPass::resize();
+	GLPreTAAPass::resize();
+	GLTAAPass::resize();
+	GLPostTAAPass::resize();
+	GLMotionBlurPass::resize();
+	GLBloomExtractPass::resize();
+	GLBloomBlurPass::resize();
+	GLBloomMergePass::resize();
+	GLBillboardPass::resize();
+	GLDebuggerPass::resize();
+	GLFinalBlendPass::resize();
 
 	return true;
 }
@@ -629,7 +721,17 @@ bool GLRenderingSystem::reloadShader(RenderPassType renderPassType)
 		GLLightPass::reloadShader();
 		break;
 	case RenderPassType::FinalPass:
-		GLFinalRenderPass::reloadFinalPassShaders();
+		GLSkyPass::reloadShader();
+		GLPreTAAPass::reloadShader();
+		GLTAAPass::reloadShader();
+		GLPostTAAPass::reloadShader();
+		GLMotionBlurPass::reloadShader();
+		GLBloomExtractPass::reloadShader();
+		GLBloomBlurPass::reloadShader();
+		GLBloomMergePass::reloadShader();
+		GLBillboardPass::reloadShader();
+		GLDebuggerPass::reloadShader();
+		GLFinalBlendPass::reloadShader();
 		break;
 	default: break;
 	}

@@ -10,6 +10,7 @@
 struct RenderingConfig
 {
 	int MSAAdepth = 4;
+	bool useMotionBlur = false;
 	bool useTAA = false;
 	bool useBloom = false;
 	bool drawTerrain = false;

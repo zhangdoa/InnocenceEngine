@@ -15,9 +15,16 @@ uniform mat4 uni_t_camera;
 
 uniform mat4 uni_m;
 
+uniform sampler2D uni_heightTexture;
+
 void main()
 {
-	thefrag_WorldSpacePos = uni_m * vec4(in_Position, 1.0);
+	vec3 height = texture(uni_heightTexture, in_TexCoord).rgb;
+
+	vec4 localSpacePos = vec4(in_Position, 1.0);
+	localSpacePos.z += height.z;
+
+	thefrag_WorldSpacePos = uni_m * localSpacePos;
 
 	vec4 thefrag_CameraSpacePos = uni_r_camera * uni_t_camera * thefrag_WorldSpacePos;
 

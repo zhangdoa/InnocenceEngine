@@ -52,19 +52,19 @@ void GLSkyPass::initializeShaders()
 void GLSkyPass::bindUniformLocations(GLShaderProgramComponent* rhs)
 {
 	m_uni_p = getUniformLocation(
-		m_GLSPC->m_program,
+		rhs->m_program,
 		"uni_p");
 	m_uni_r = getUniformLocation(
-		m_GLSPC->m_program,
+		rhs->m_program,
 		"uni_r");
 	m_uni_viewportSize = getUniformLocation(
-		m_GLSPC->m_program,
+		rhs->m_program,
 		"uni_viewportSize");
 	m_uni_eyePos = getUniformLocation(
-		m_GLSPC->m_program,
+		rhs->m_program,
 		"uni_eyePos");
 	m_uni_lightDir = getUniformLocation(
-		m_GLSPC->m_program,
+		rhs->m_program,
 		"uni_lightDir");
 }
 

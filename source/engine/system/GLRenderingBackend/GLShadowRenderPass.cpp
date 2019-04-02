@@ -187,3 +187,19 @@ void GLShadowRenderPass::update()
 	//glDisable(GL_CULL_FACE);
 	//glDisable(GL_DEPTH_TEST);
 }
+
+GLRenderPassComponent * GLShadowRenderPass::getGLRPC(unsigned int index)
+{
+	if (index == 0)
+	{
+		return m_DirLight_GLRPC;
+	}
+	else if (index == 1)
+	{
+		return m_PointLight_GLRPC;
+	}
+	else
+	{
+		return nullptr;
+	}
+}

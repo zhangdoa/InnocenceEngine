@@ -2,6 +2,7 @@
 #include "GLOpaquePass.h"
 #include "GLSSAOBlurPass.h"
 #include "GLEnvironmentRenderPass.h"
+#include "GLShadowRenderPass.h"
 
 #include "../../component/GLRenderingSystemComponent.h"
 
@@ -194,7 +195,7 @@ void GLLightPass::update()
 		3);
 	// shadow map
 	activateTexture(
-		GLShadowRenderPassComponent::get().m_DirLight_GLRPC->m_GLTDCs[0],
+		GLShadowRenderPass::getGLRPC(0)->m_GLTDCs[0],
 		4);
 	// BRDF look-up table 1
 	activateTexture(
@@ -322,4 +323,9 @@ bool GLLightPass::reloadShader()
 	bindLightPassUniformLocations(m_GLSPC);
 
 	return true;
+}
+
+GLRenderPassComponent * GLLightPass::getGLRPC()
+{
+	return m_GLRPC;
 }

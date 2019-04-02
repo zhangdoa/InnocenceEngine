@@ -31,7 +31,7 @@ INNO_PRIVATE_SCOPE GLSSAONoisePass
 
 	std::vector<GLuint> m_uni_samples;
 
-	std::vector<std::string> m_TextureUniformNames =
+	std::vector<std::string> m_uniformNames =
 	{
 		"uni_Position",
 		"uni_Normal",
@@ -72,7 +72,7 @@ void GLSSAONoisePass::initializeShaders()
 
 void GLSSAONoisePass::bindUniformLocations(GLShaderProgramComponent * rhs)
 {
-	updateTextureUniformLocations(rhs->m_program, m_TextureUniformNames);
+	updateTextureUniformLocations(rhs->m_program, m_uniformNames);
 
 	m_uni_p = getUniformLocation(
 		rhs->m_program,
@@ -94,7 +94,7 @@ void GLSSAONoisePass::bindUniformLocations(GLShaderProgramComponent * rhs)
 
 void GLSSAONoisePass::generateSSAONoiseTexture()
 {
-	std::uniform_real_distribution<GLfloat> randomFloats(0.0f, 1.0f); // generates random floats between 0.0 and 1.0
+	std::uniform_real_distribution<GLfloat> randomFloats(0.0f, 1.0f);
 	std::default_random_engine generator;
 	for (unsigned int i = 0; i < 64; ++i)
 	{
@@ -111,9 +111,14 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 		m_SSAOKernel.push_back(sample);
 	}
 
-	for (unsigned int i = 0; i < 16; i++)
+	auto l_textureSize = 4;
+
+	m_SSAONoise.reserve(l_textureSize * l_textureSize);
+
+	for (size_t i = 0; i < m_SSAONoise.capacity(); i++)
 	{
-		auto noise = vec4(randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator) * 2.0f - 1.0f, 0.0f, 0.0f); // rotate around z-axis (in tangent space)
+		// rotate around z-axis (in tangent space)
+		auto noise = vec4(randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator) * 2.0f - 1.0f, 0.0f, 0.0f);
 		noise = noise.normalize();
 		m_SSAONoise.push_back(noise);
 	}
@@ -123,12 +128,12 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 	m_SSAONoiseTDC->m_textureDataDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
 	m_SSAONoiseTDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
 	m_SSAONoiseTDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB32F;
-	m_SSAONoiseTDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
+	m_SSAONoiseTDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_SSAONoiseTDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
 	m_SSAONoiseTDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
 	m_SSAONoiseTDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-	m_SSAONoiseTDC->m_textureDataDesc.textureWidth = 4;
-	m_SSAONoiseTDC->m_textureDataDesc.textureHeight = 4;
+	m_SSAONoiseTDC->m_textureDataDesc.textureWidth = l_textureSize;
+	m_SSAONoiseTDC->m_textureDataDesc.textureHeight = l_textureSize;
 	m_SSAONoiseTDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
 
 	std::vector<float> l_pixelBuffer;

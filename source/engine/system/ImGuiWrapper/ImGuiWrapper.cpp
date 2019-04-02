@@ -33,6 +33,11 @@ INNO_PRIVATE_SCOPE ImGuiWrapperNS
 
 	bool m_isParity = true;
 
+	static RenderingConfig m_renderingConfig;
+	static GameConfig m_gameConfig;
+	static bool m_useZoom = false;
+	static bool m_showRenderPassResult = false;
+
 	IImGuiWrapperImpl* m_wrapperImpl;
 }
 
@@ -67,6 +72,10 @@ bool ImGuiWrapper::setup()
 
 		ImGuiWrapperNS::m_wrapperImpl->setup();
 	}
+
+	ImGuiWrapperNS::m_renderingConfig.useMotionBlur = true;
+	ImGuiWrapperNS::m_renderingConfig.useTAA = true;
+	ImGuiWrapperNS::m_renderingConfig.drawSky = true;
 
 	return true;
 }
@@ -172,23 +181,17 @@ bool ImGuiWrapper::terminate()
 
 void ImGuiWrapperNS::showApplicationProfiler()
 {
-	static RenderingConfig l_renderingConfig;
-	l_renderingConfig.useTAA = true;
-	l_renderingConfig.drawSky = true;
-	static GameConfig l_gameConfig;
-	static bool l_useZoom;
-	static bool l_showRenderPassResult;
-
 	ImGui::Begin("Profiler", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::Checkbox("Use TAA", &l_renderingConfig.useTAA);
-	ImGui::Checkbox("Use Bloom", &l_renderingConfig.useBloom);
-	ImGui::Checkbox("Draw terrain", &l_renderingConfig.drawTerrain);
-	ImGui::Checkbox("Draw sky", &l_renderingConfig.drawSky);
-	ImGui::Checkbox("Draw debug object", &l_renderingConfig.drawDebugObject);
-	ImGui::Checkbox("Pause game update", &l_gameConfig.pauseGameUpdate);
-	ImGui::Checkbox("Use zoom", &l_useZoom);
-	ImGui::Checkbox("Show render pass result", &l_showRenderPassResult);
+	ImGui::Checkbox("Use Motion Blur", &m_renderingConfig.useMotionBlur);
+	ImGui::Checkbox("Use TAA", &m_renderingConfig.useTAA);
+	ImGui::Checkbox("Use Bloom", &m_renderingConfig.useBloom);
+	ImGui::Checkbox("Draw terrain", &m_renderingConfig.drawTerrain);
+	ImGui::Checkbox("Draw sky", &m_renderingConfig.drawSky);
+	ImGui::Checkbox("Draw debug object", &m_renderingConfig.drawDebugObject);
+	ImGui::Checkbox("Pause game update", &m_gameConfig.pauseGameUpdate);
+	ImGui::Checkbox("Use zoom", &m_useZoom);
+	ImGui::Checkbox("Show render pass result", &m_showRenderPassResult);
 
 	const char* items[] = { "OpaquePass", "TransparentPass", "TerrainPass", "LightPass", "FinalPass" };
 	static int item_current = 0;
@@ -215,14 +218,14 @@ void ImGuiWrapperNS::showApplicationProfiler()
 		g_pCoreSystem->getFileSystem()->loadScene(scene_filePath);
 	}
 
-	if (l_showRenderPassResult)
+	if (m_showRenderPassResult)
 	{
 		ImGuiWrapperNS::m_wrapperImpl->showRenderResult();
 	}
 
 	ImGui::End();
 
-	g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->setRenderingConfig(l_renderingConfig);
+	g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->setRenderingConfig(m_renderingConfig);
 }
 
 void ImGuiWrapperNS::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize)

@@ -2,11 +2,12 @@
 #include "../../common/InnoType.h"
 #include "../../component/GLRenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE GLShadowRenderPass
+INNO_PRIVATE_SCOPE GLBloomBlurPass
 {
-	void initialize();
-
-	void update();
+	bool initialize();
+	bool update(GLRenderPassComponent* prePassGLRPC);
+	bool resize();
+	bool reloadShader();
 
 	GLRenderPassComponent* getGLRPC(unsigned int index);
 }
