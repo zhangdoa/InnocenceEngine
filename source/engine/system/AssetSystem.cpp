@@ -522,24 +522,34 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent& meshDataComponent)
 	{
 		for (auto i = 0; i < l_gridSize; i++)
 		{
+			auto l_px0 = (float)(i - l_gridSizehalf);
+			auto l_px1 = l_px0 + 1.0f;
+			auto l_pz0 = (float)(j - l_gridSizehalf);
+			auto l_pz1 = l_pz0 + 1.0f;
+
+			auto l_tx0 = l_px0 / (float)l_gridSize;
+			auto l_tx1 = l_px1 / (float)l_gridSize;
+			auto l_tz0 = l_pz0 / (float)l_gridSize;
+			auto l_tz1 = l_pz1 / (float)l_gridSize;
+
 			Vertex l_VertexData_1;
-			l_VertexData_1.m_pos = vec4((float)(i - l_gridSizehalf), 0.0f, (float)(j - l_gridSizehalf), 1.0f);
-			l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
+			l_VertexData_1.m_pos = vec4(l_px0, 0.0f, l_pz0, 1.0f);
+			l_VertexData_1.m_texCoord = vec2(l_tx0, l_tz0);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_1);
 
 			Vertex l_VertexData_2;
-			l_VertexData_2.m_pos = vec4((float)(i - l_gridSizehalf), 0.0f, (float)(j - l_gridSizehalf + 1), 1.0f);
-			l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
+			l_VertexData_2.m_pos = vec4(l_px0, 0.0f, l_pz1, 1.0f);
+			l_VertexData_2.m_texCoord = vec2(l_tx0, l_tz1);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_2);
 
 			Vertex l_VertexData_3;
-			l_VertexData_3.m_pos = vec4((float)(i - l_gridSizehalf + 1), 0.0f, (float)(j - l_gridSizehalf + 1), 1.0f);
-			l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
+			l_VertexData_3.m_pos = vec4(l_px1, 0.0f, l_pz1, 1.0f);
+			l_VertexData_3.m_texCoord = vec2(l_tx1, l_tz1);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_3);
 
 			Vertex l_VertexData_4;
-			l_VertexData_4.m_pos = vec4((float)(i - l_gridSizehalf + 1), 0.0f, (float)(j - l_gridSizehalf), 1.0f);
-			l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
+			l_VertexData_4.m_pos = vec4(l_px1, 0.0f, l_pz0, 1.0f);
+			l_VertexData_4.m_texCoord = vec2(l_tx1, l_tz0);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_4);
 
 			auto l_gridIndex = 4 * (i)+4 * l_gridSize * (j);
