@@ -1,5 +1,6 @@
 #pragma once
 #include "../../common/InnoType.h"
+#include "../../common/InnoMath.h"
 
 class PhysXWrapper
 {
@@ -11,11 +12,12 @@ public:
 		static PhysXWrapper instance;
 		return instance;
 	}
-	void setup();
-	void initialize();
-	void update();
-	void terminate();
+	bool setup();
+	bool initialize();
+	bool update();
+	bool terminate();
 
+	bool createPxActor(void* component, vec4 globalPos, vec4 size);
 private:
 	PhysXWrapper() {};
 };
