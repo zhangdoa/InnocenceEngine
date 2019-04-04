@@ -1,6 +1,6 @@
 #add_subdirectory("GLFWWrapper")
 add_subdirectory("ImGuiWrapper")
-
+add_subdirectory("PhysXWrapper")
 add_subdirectory("Core")
 
 if (INNO_PLATFORM_WIN)
@@ -51,6 +51,10 @@ target_link_libraries(InnoSystem "${ASSIMP}")
 target_link_libraries(InnoSystem STB_Image)
 
 target_link_libraries(InnoSystem ImGuiWrapper)
+
+if (INNO_PLATFORM_WIN)
+target_link_libraries(InnoSystem PhysXWrapper)
+endif (INNO_PLATFORM_WIN)
 
 if (INNO_PLATFORM_LINUX)
 target_link_libraries(InnoSystem -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lGL -lm -lpthread -lstdc++fs)

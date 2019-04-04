@@ -1,0 +1,13 @@
+aux_source_directory(. DIR_SRCS)
+add_library(PhysXWrapper ${DIR_SRCS})
+
+find_library(PHYSX PhysX_64)
+target_link_libraries(PhysXWrapper "${PHYSX}")
+find_library(PHYSX_FND PhysXFoundation_64)
+target_link_libraries(PhysXWrapper "${PHYSX_FND}")
+find_library(PHYSX_COMMON PhysXCommon_64)
+target_link_libraries(PhysXWrapper "${PHYSX_COMMON}")
+find_library(PHYSX_PVD PhysXPvdSDK_static_64)
+target_link_libraries(PhysXWrapper "${PHYSX_PVD}")
+find_library(PHYSX_EXT PhysXExtensions_static_64)
+target_link_libraries(PhysXWrapper "${PHYSX_EXT}")

@@ -1,6 +1,6 @@
 #include "PhysicsSystem.h"
 
-//#include "PhysXWrapper.h"
+#include "PhysXWrapper/PhysXWrapper.h"
 
 #include "ICoreSystem.h"
 
@@ -107,7 +107,7 @@ bool InnoPhysicsSystemNS::setup()
 
 	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
 
-	//PhysXWrapper::get().setup();
+	PhysXWrapper::get().setup();
 
 	m_objectStatus = ObjectStatus::ALIVE;
 
