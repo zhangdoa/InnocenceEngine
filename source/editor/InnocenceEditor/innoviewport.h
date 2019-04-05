@@ -9,6 +9,14 @@
 #include "../../engine/system/CoreSystem.h"
 #include "../../game/GameInstance.h"
 
+class ViewportEventFilter : public QObject
+{
+    Q_OBJECT
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
+};
+
 class InnoViewport : public QWidget
 {
     Q_OBJECT
@@ -19,6 +27,8 @@ public:
 
     void initialize();
 
+    ViewportEventFilter* m_viewportEventFilter;
+
 protected:
     virtual QPaintEngine* paintEngine() const override { return NULL; }
 
@@ -27,8 +37,6 @@ protected:
     void showEvent(QShowEvent* showEvent) override;
 
     void resizeEvent(QResizeEvent* resizeEvent) override;
-
-    bool nativeEvent(const QByteArray &eventType, void *message, long *result) override;
 
 private:
     QTimer* m_timerUpdate;

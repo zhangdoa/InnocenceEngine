@@ -15,5 +15,7 @@ public:
 	ObjectStatus getStatus() override;
 	ButtonStatusMap getButtonStatus() override;
 
+	bool sendEvent(unsigned int umsg, unsigned int WParam, int LParam) override;
+
 	void swapBuffer() override;
 };

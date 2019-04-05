@@ -1567,7 +1567,7 @@ QSplitter::handle:vertical
                     <bool>true</bool>
                    </property>
                    <property name="expandsOnDoubleClick">
-                    <bool>false</bool>
+                    <bool>true</bool>
                    </property>
                    <column>
                     <property name="text">
@@ -2067,7 +2067,14 @@ QSplitter::handle:vertical
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="InnoViewport" name="widgetInnoViewport" native="true"/>
+                  <widget class="InnoViewport" name="widgetInnoViewport" native="true">
+                   <property name="mouseTracking">
+                    <bool>true</bool>
+                   </property>
+                   <property name="focusPolicy">
+                    <enum>Qt::ClickFocus</enum>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </widget>

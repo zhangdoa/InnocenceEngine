@@ -15,5 +15,8 @@ public:
 	virtual ObjectStatus getStatus() = 0;
 	virtual ButtonStatusMap getButtonStatus() = 0;
 
+	// Editor only
+	virtual bool sendEvent(unsigned int umsg, unsigned int WParam, int LParam) = 0;
+
 	virtual void swapBuffer() = 0;
 };

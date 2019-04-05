@@ -153,7 +153,7 @@ bool ImGuiWrapper::update()
 #ifdef DEBUG
 		ImGui::NewFrame();
 		{
-			ImGuiWrapperNS::showApplicationProfiler();
+			//ImGuiWrapperNS::showApplicationProfiler();
 			//ImGuiWrapperNS::showFileExplorer();
 			//ImGuiWrapperNS::showWorldExplorer();
 #else

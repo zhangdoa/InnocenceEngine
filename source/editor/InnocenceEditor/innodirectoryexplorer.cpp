@@ -15,7 +15,7 @@ void InnoDirectoryExplorer::initialize(InnoFileExplorer* fileExplorer)
     m_fileExplorer = fileExplorer;
     connect(m_fileExplorer, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(UpdateFromFileExplorer(QModelIndex)));
 
-    SetRootDirectory("../../../res");
+    SetRootDirectory("../res");
 }
 
 void InnoDirectoryExplorer::SetRootDirectory(const std::string &directory)

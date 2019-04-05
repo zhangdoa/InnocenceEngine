@@ -50,7 +50,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 	if (hwnd)
 	{
 		WinWindowSystemComponent::get().m_hwnd = *reinterpret_cast<HWND*>(hwnd);
-		SetWindowLongPtr(WinWindowSystemComponent::get().m_hwnd, GWLP_WNDPROC, (LONG_PTR)WindowProc);
+		//SetWindowLongPtr(WinWindowSystemComponent::get().m_hwnd, GWLP_WNDPROC, (LONG_PTR)WindowProc);
 	}
 
 	WinWindowSystemComponent::get().m_applicationName = "InnocenceEngineWindow";
@@ -160,6 +160,12 @@ ButtonStatusMap WinWindowSystem::getButtonStatus()
 	return windowCallbackWrapper::get().m_buttonStatus;
 }
 
+bool WinWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LParam)
+{
+	windowCallbackWrapper::get().MessageHandler(0, umsg, WParam, LParam);
+	return true;
+}
+
 void WinWindowSystem::swapBuffer()
 {
 	WinWindowSystemNS::m_backendWindowSystem->swapBuffer();
@@ -210,7 +216,10 @@ extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam
 
 LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 {
-	ImGui_ImplWin32_WndProcHandler(hwnd, umsg, wparam, lparam);
+	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::GAME)
+	{
+		ImGui_ImplWin32_WndProcHandler(hwnd, umsg, wparam, lparam);
+	}
 
 	switch (umsg)
 	{
