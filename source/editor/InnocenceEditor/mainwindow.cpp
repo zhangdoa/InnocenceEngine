@@ -16,8 +16,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::initializeEngine()
 {
-    ui->widgetViewport->initialize();
-    ui->treeWidgetWorldExplorer->initialize();
-    ui->listViewFileExplorer->initialize();
-    ui->treeViewDirExplorer->initialize(ui->listViewFileExplorer);
+    ui->widgetInnoViewport->initialize();
+    ui->treeWidgetInnoWorldExplorer->initialize();
+    ui->listViewInnoFileExplorer->initialize();
+    ui->treeViewInnoDirExplorer->initialize(ui->listViewInnoFileExplorer);
 }

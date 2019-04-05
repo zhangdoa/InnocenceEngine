@@ -1,5 +1,5 @@
-#ifndef INNOWINDOWSURFACE_H
-#define INNOWINDOWSURFACE_H
+#ifndef INNOVIEWPORT_H
+#define INNOVIEWPORT_H
 
 #include <QWidget>
 #include <QResizeEvent>
@@ -9,13 +9,13 @@
 #include "../../engine/system/CoreSystem.h"
 #include "../../game/GameInstance.h"
 
-class InnoWindowSurface : public QWidget
+class InnoViewport : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit InnoWindowSurface(QWidget* parent);
-    virtual ~InnoWindowSurface() override;
+    explicit InnoViewport(QWidget* parent);
+    virtual ~InnoViewport() override;
 
     void initialize();
 
@@ -42,4 +42,4 @@ public slots:
     void Update();
 };
 
-#endif // INNOWINDOWSURFACE_H
+#endif // INNOVIEWPORT_H

@@ -1541,16 +1541,39 @@ QSplitter::handle:vertical
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="InnoWorldExplorer" name="treeWidgetWorldExplorer" native="true">
+                  <widget class="InnoWorldExplorer" name="treeWidgetInnoWorldExplorer">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
                      <horstretch>0</horstretch>
                      <verstretch>0</verstretch>
                     </sizepolicy>
                    </property>
-                   <property name="cursor">
-                    <cursorShape>ArrowCursor</cursorShape>
+                   <property name="frameShape">
+                    <enum>QFrame::NoFrame</enum>
                    </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Plain</enum>
+                   </property>
+                   <property name="editTriggers">
+                    <set>QAbstractItemView::DoubleClicked</set>
+                   </property>
+                   <property name="uniformRowHeights">
+                    <bool>true</bool>
+                   </property>
+                   <property name="animated">
+                    <bool>true</bool>
+                   </property>
+                   <property name="headerHidden">
+                    <bool>true</bool>
+                   </property>
+                   <property name="expandsOnDoubleClick">
+                    <bool>false</bool>
+                   </property>
+                   <column>
+                    <property name="text">
+                     <string notr="true">1</string>
+                    </property>
+                   </column>
                   </widget>
                  </item>
                 </layout>
@@ -2044,17 +2067,7 @@ QSplitter::handle:vertical
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="InnoWindowSurface" name="widgetViewport" native="true">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="focusPolicy">
-                    <enum>Qt::WheelFocus</enum>
-                   </property>
-                  </widget>
+                  <widget class="InnoViewport" name="widgetInnoViewport" native="true"/>
                  </item>
                 </layout>
                </widget>
@@ -2230,46 +2243,49 @@ QSplitter::handle:vertical
                         <property name="selectionRectVisible" stdset="0">
                          <bool>false</bool>
                         </property>
-                        <widget class="InnoDirectoryExplorer" name="treeViewDirExplorer" native="true">
+                        <widget class="InnoDirectoryExplorer" name="treeViewInnoDirExplorer">
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                            <horstretch>0</horstretch>
                            <verstretch>0</verstretch>
                           </sizepolicy>
                          </property>
-                         <property name="sortingEnabled" stdset="0">
-                          <bool>false</bool>
+                         <property name="editTriggers">
+                          <set>QAbstractItemView::NoEditTriggers</set>
                          </property>
-                         <property name="animated" stdset="0">
+                         <property name="animated">
                           <bool>true</bool>
                          </property>
-                         <property name="headerHidden" stdset="0">
+                         <property name="headerHidden">
                           <bool>true</bool>
                          </property>
+                         <attribute name="headerDefaultSectionSize">
+                          <number>300</number>
+                         </attribute>
                         </widget>
-                        <widget class="InnoFileExplorer" name="listViewFileExplorer" native="true">
+                        <widget class="InnoFileExplorer" name="listViewInnoFileExplorer">
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                           <horstretch>1</horstretch>
+                           <horstretch>0</horstretch>
                            <verstretch>0</verstretch>
                           </sizepolicy>
                          </property>
-                         <property name="contextMenuPolicy">
-                          <enum>Qt::DefaultContextMenu</enum>
-                         </property>
-                         <property name="dragEnabled" stdset="0">
-                          <bool>true</bool>
+                         <property name="editTriggers">
+                          <set>QAbstractItemView::DoubleClicked</set>
                          </property>
                          <property name="isWrapping" stdset="0">
                           <bool>true</bool>
                          </property>
-                         <property name="uniformItemSizes" stdset="0">
+                         <property name="resizeMode">
+                          <enum>QListView::Adjust</enum>
+                         </property>
+                         <property name="viewMode">
+                          <enum>QListView::IconMode</enum>
+                         </property>
+                         <property name="uniformItemSizes">
                           <bool>true</bool>
                          </property>
-                         <property name="batchSize" stdset="0">
-                          <number>100</number>
-                         </property>
-                         <property name="selectionRectVisible" stdset="0">
+                         <property name="selectionRectVisible">
                           <bool>false</bool>
                          </property>
                         </widget>
@@ -3005,13 +3021,19 @@ QSplitter::handle:vertical
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>InnoWindowSurface</class>
+   <class>InnoWorldExplorer</class>
+   <extends>QTreeWidget</extends>
+   <header>innoworldexplorer.h</header>
+  </customwidget>
+  <customwidget>
+   <class>InnoViewport</class>
    <extends>QWidget</extends>
-   <header>innowindowsurface.h</header>
+   <header>innoviewport.h</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>InnoDirectoryExplorer</class>
-   <extends>QWidget</extends>
+   <extends>QTreeView</extends>
    <header>innodirectoryexplorer.h</header>
    <slots>
     <slot>UpdateFileExplorer(QModelIndex)</slot>
@@ -3019,33 +3041,25 @@ QSplitter::handle:vertical
   </customwidget>
   <customwidget>
    <class>InnoFileExplorer</class>
-   <extends>QWidget</extends>
+   <extends>QListView</extends>
    <header>innofileexplorer.h</header>
-   <slots>
-    <slot>SetRootPath(QString)</slot>
-   </slots>
-  </customwidget>
-  <customwidget>
-   <class>InnoWorldExplorer</class>
-   <extends>QWidget</extends>
-   <header>innoworldexplorer.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
  <connections>
   <connection>
-   <sender>treeViewDirExplorer</sender>
+   <sender>treeViewInnoDirExplorer</sender>
    <signal>clicked(QModelIndex)</signal>
-   <receiver>treeViewDirExplorer</receiver>
+   <receiver>treeViewInnoDirExplorer</receiver>
    <slot>UpdateFileExplorer(QModelIndex)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>102</x>
-     <y>549</y>
+     <x>274</x>
+     <y>660</y>
     </hint>
     <hint type="destinationlabel">
-     <x>102</x>
-     <y>549</y>
+     <x>274</x>
+     <y>660</y>
     </hint>
    </hints>
   </connection>

@@ -1,4 +1,5 @@
 #include "innoworldexplorer.h"
+
 #include "../../engine/system/ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -12,6 +13,8 @@ void InnoWorldExplorer::initialize()
 {
     // root item
     m_rootItem = new QTreeWidgetItem(this);
+    m_rootItem->setText(0, "Entities");
+
     this->addTopLevelItem(m_rootItem);
 
     auto l_entityNameMap = g_pCoreSystem->getGameSystem()->getEntityNameMap();

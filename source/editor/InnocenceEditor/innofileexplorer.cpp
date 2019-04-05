@@ -6,7 +6,6 @@ extern ICoreSystem* g_pCoreSystem;
 
 InnoFileExplorer::InnoFileExplorer(QWidget* parent) : QListView(parent)
 {
-
 }
 
 void InnoFileExplorer::initialize()

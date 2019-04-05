@@ -1,9 +1,9 @@
-#include "InnoWindowSurface.h"
+#include "InnoViewport.h"
 #include <qt_windows.h>
 
 ICoreSystem* g_pCoreSystem;
 
-InnoWindowSurface::InnoWindowSurface(QWidget *parent)
+InnoViewport::InnoViewport(QWidget *parent)
     : QWidget{parent}
 {
     setAttribute(Qt::WA_OpaquePaintEvent);
@@ -17,7 +17,7 @@ InnoWindowSurface::InnoWindowSurface(QWidget *parent)
     m_GameInstance = new GameInstance();
 }
 
-InnoWindowSurface::~InnoWindowSurface()
+InnoViewport::~InnoViewport()
 {
     m_timerUpdate->stop();
     m_GameInstance->terminate();
@@ -26,7 +26,7 @@ InnoWindowSurface::~InnoWindowSurface()
     delete m_CoreSystem;
 }
 
-void InnoWindowSurface::initialize()
+void InnoViewport::initialize()
 {
     m_timerUpdate = new QTimer(this);
     connect(m_timerUpdate, SIGNAL(timeout()), this, SLOT(Update()));
@@ -45,17 +45,17 @@ void InnoWindowSurface::initialize()
     m_timerUpdate->start(16);
 }
 
-void InnoWindowSurface::paintEvent(QPaintEvent *paintEvent)
+void InnoViewport::paintEvent(QPaintEvent *paintEvent)
 {
     Update();
 }
 
-void InnoWindowSurface::showEvent(QShowEvent *showEvent)
+void InnoViewport::showEvent(QShowEvent *showEvent)
 {
     QWidget::showEvent(showEvent);
 }
 
-void InnoWindowSurface::resizeEvent(QResizeEvent *resizeEvent)
+void InnoViewport::resizeEvent(QResizeEvent *resizeEvent)
 {
     if (resizeEvent->oldSize() == resizeEvent->size())
         return;
@@ -75,7 +75,7 @@ void InnoWindowSurface::resizeEvent(QResizeEvent *resizeEvent)
     Resize(width, height);
 }
 
-bool InnoWindowSurface::nativeEvent(const QByteArray &eventType, void *message, long *result)
+bool InnoViewport::nativeEvent(const QByteArray &eventType, void *message, long *result)
 {
     MSG *msg = static_cast<MSG*>(message);
     if(m_CoreSystem)
@@ -91,13 +91,13 @@ bool InnoWindowSurface::nativeEvent(const QByteArray &eventType, void *message, 
     return false;
 }
 
-void InnoWindowSurface::Update()
+void InnoViewport::Update()
 {
     m_GameInstance->update();
     m_CoreSystem->update();
 }
 
-void InnoWindowSurface::Resize(float width, float height)
+void InnoViewport::Resize(float width, float height)
 {
     if(m_CoreSystem)
     {
