@@ -154,7 +154,7 @@ bool ImGuiWrapper::update()
 		ImGui::NewFrame();
 		{
 			ImGuiWrapperNS::showApplicationProfiler();
-			ImGuiWrapperNS::showFileExplorer();
+			//ImGuiWrapperNS::showFileExplorer();
 			//ImGuiWrapperNS::showWorldExplorer();
 #else
 		// @TODO: handle GUI component

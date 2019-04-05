@@ -11,7 +11,6 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 {
 	bool initializeComponentPool();
 
-	void loadFolderData();
 	void loadDefaultAssets();
 	void loadAssetsForComponents();
 
@@ -564,74 +563,8 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
-void InnoAssetSystemNS::loadFolderData()
-{
-	std::function<FileExplorerIconType(const std::string&)> getIconType =
-		[&](const std::string& extension) -> FileExplorerIconType {
-		if (extension == ".obj")
-		{
-			return FileExplorerIconType::OBJ;
-		}
-		else if (extension == ".png")
-		{
-			return FileExplorerIconType::PNG;
-		}
-		else if (extension == ".sf")
-		{
-			return FileExplorerIconType::SHADER;
-		}
-		else
-		{
-			return FileExplorerIconType::UNKNOWN;
-		}
-	};
-
-	auto path = "..//res";
-
-	std::function<void(const fs::path& pathToShow, int level, DirectoryMetadata* parentDirectoryMetadata)> f_directoryTreeBuilder =
-		[&](const fs::path& pathToShow, int level, DirectoryMetadata* parentDirectoryMetadata) {
-		if (fs::exists(pathToShow) && fs::is_directory(pathToShow))
-		{
-			for (const auto& entry : fs::directory_iterator(pathToShow))
-			{
-				if (fs::is_directory(entry.status()))
-				{
-					DirectoryMetadata l_directoryMetadata;
-					l_directoryMetadata.depth = level + 1;
-					l_directoryMetadata.directoryName = entry.path().stem().generic_string();
-					f_directoryTreeBuilder(entry, level + 1, &l_directoryMetadata);
-					parentDirectoryMetadata->childrenDirectories.emplace_back(l_directoryMetadata);
-				}
-				else if (fs::is_regular_file(entry.status()))
-				{
-					AssetMetadata l_assetMetadata;
-					l_assetMetadata.fullPath = entry.path().generic_string();
-					l_assetMetadata.fileName = entry.path().stem().generic_string();
-					l_assetMetadata.extension = entry.path().extension().generic_string();
-					l_assetMetadata.iconType = getIconType(l_assetMetadata.extension);
-					parentDirectoryMetadata->childrenAssets.emplace_back(l_assetMetadata);
-				}
-			}
-		}
-	};
-
-	std::function<void(DirectoryMetadata* directoryMetadata)> f_assignParentDirectory =
-		[&](DirectoryMetadata* directoryMetadata) {
-		for (auto& i : directoryMetadata->childrenDirectories)
-		{
-			i.parentDirectory = directoryMetadata;
-			f_assignParentDirectory(&i);
-		}
-	};
-
-	f_directoryTreeBuilder(path, 0, &m_rootDirectoryMetadata);
-	f_assignParentDirectory(&m_rootDirectoryMetadata);
-}
-
 void InnoAssetSystemNS::loadDefaultAssets()
 {
-	InnoAssetSystemNS::loadFolderData();
-
 	m_basicNormalTDC = loadTexture("..//res//textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 	m_basicAlbedoTDC = loadTexture("..//res//textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
 	m_basicMetallicTDC = loadTexture("..//res//textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);

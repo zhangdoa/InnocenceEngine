@@ -30,7 +30,8 @@ SOURCES += \
     innowindowsurface.cpp \
     innoconsole.cpp \
     innodirectoryexplorer.cpp \
-    innofileexplorer.cpp
+    innofileexplorer.cpp \
+    innoworldexplorer.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -38,7 +39,8 @@ HEADERS += \
     innowindowsurface.h \
     innoconsole.h \
     innodirectoryexplorer.h \
-    innofileexplorer.h
+    innofileexplorer.h \
+    innoworldexplorer.h
 
 FORMS += \
         mainwindow.ui
