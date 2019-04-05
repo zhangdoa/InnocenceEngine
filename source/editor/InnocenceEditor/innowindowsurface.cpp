@@ -1,6 +1,8 @@
 #include "InnoWindowSurface.h"
 #include <qt_windows.h>
 
+ICoreSystem* g_pCoreSystem;
+
 InnoWindowSurface::InnoWindowSurface(QWidget *parent)
     : QWidget{parent}
 {
@@ -11,6 +13,7 @@ InnoWindowSurface::InnoWindowSurface(QWidget *parent)
     setAttribute( Qt::WA_TranslucentBackground);
 
     m_CoreSystem = new InnoCoreSystem();
+    g_pCoreSystem = m_CoreSystem;
     m_GameInstance = new GameInstance();
 }
 

@@ -21,6 +21,7 @@ private:
     QString GetSelectionPath();
 
     QFileSystemModel* m_fileModel;
+    QString m_rootDir;
 
 signals:
 
