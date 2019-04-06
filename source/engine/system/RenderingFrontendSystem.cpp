@@ -70,8 +70,9 @@ void InnoRenderingFrontendSystemNS::initializeHaltonSampler()
 
 bool InnoRenderingFrontendSystemNS::setup()
 {
-	m_renderingConfig.drawSky = true;
+	m_renderingConfig.useMotionBlur = true;
 	m_renderingConfig.useTAA = true;
+	m_renderingConfig.drawSky = true;
 	return true;
 }
 

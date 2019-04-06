@@ -21,5 +21,4 @@ public:
 	bool m_drawFrustum = false;
 	bool m_drawAABB = false;
 	mat4 m_projectionMatrix;
-	MeshDataComponent* m_frustumMDC = nullptr;
 };

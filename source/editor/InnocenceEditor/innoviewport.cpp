@@ -1,5 +1,7 @@
-#include "InnoViewport.h"
+#include "innoviewport.h"
 #include <qt_windows.h>
+#include "../../engine/system/CoreSystem.h"
+#include "../../game/GameInstance.h"
 
 ICoreSystem* g_pCoreSystem;
 

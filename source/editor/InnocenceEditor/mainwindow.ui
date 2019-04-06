@@ -886,12 +886,12 @@ QSplitter::handle:vertical
           <number>4</number>
          </property>
          <item>
-          <spacer name="horizontalSpacer">
+          <spacer name="horizontalSpacerLeft">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
            <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
+            <enum>QSizePolicy::Expanding</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -902,43 +902,90 @@ QSplitter::handle:vertical
           </spacer>
          </item>
          <item>
-          <spacer name="horizontalSpacer_3">
+          <widget class="QPushButton" name="PushButtonInnoPlayButton">
+           <property name="maximumSize">
+            <size>
+             <width>50</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="autoFillBackground">
+            <bool>false</bool>
+           </property>
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="autoRepeat">
+            <bool>false</bool>
+           </property>
+           <property name="autoExclusive">
+            <bool>false</bool>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+           <property name="default">
+            <bool>false</bool>
+           </property>
+           <property name="flat">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacerCenter">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>40</width>
+             <width>20</width>
              <height>20</height>
             </size>
            </property>
           </spacer>
          </item>
          <item>
-          <widget class="QWidget" name="widgetToolBar" native="true">
-           <layout class="QHBoxLayout" name="horizontalLayout_10">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-           </layout>
+          <widget class="InnoRenderConfigurator" name="comboBoxInnoRenderConfigurator">
+           <property name="minimumSize">
+            <size>
+             <width>140</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="editable">
+            <bool>false</bool>
+           </property>
+           <property name="currentText">
+            <string/>
+           </property>
+           <property name="currentIndex">
+            <number>-1</number>
+           </property>
+           <property name="sizeAdjustPolicy">
+            <enum>QComboBox::AdjustToContents</enum>
+           </property>
+           <property name="frame">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>
-          <spacer name="horizontalSpacer_2">
+          <spacer name="horizontalSpacerRight">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
            <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
+            <enum>QSizePolicy::Expanding</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -2154,7 +2201,7 @@ QSplitter::handle:vertical
                <string notr="true"/>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>1</number>
               </property>
               <property name="iconSize">
                <size>
@@ -3050,6 +3097,11 @@ QSplitter::handle:vertical
    <class>InnoFileExplorer</class>
    <extends>QListView</extends>
    <header>innofileexplorer.h</header>
+  </customwidget>
+  <customwidget>
+   <class>InnoRenderConfigurator</class>
+   <extends>QComboBox</extends>
+   <header>innorenderconfigurator.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

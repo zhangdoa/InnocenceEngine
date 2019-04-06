@@ -5,9 +5,8 @@
 #include <QResizeEvent>
 #include <QApplication>
 #include <QTimer>
-
-#include "../../engine/system/CoreSystem.h"
-#include "../../game/GameInstance.h"
+#include "../../engine/system/ICoreSystem.h"
+#include "../../game/IGameInstance.h"
 
 class ViewportEventFilter : public QObject
 {
@@ -41,8 +40,8 @@ protected:
 private:
     QTimer* m_timerUpdate;
 
-    InnoCoreSystem* m_CoreSystem;
-    GameInstance* m_GameInstance;
+    ICoreSystem* m_CoreSystem;
+    IGameInstance* m_GameInstance;
 
     void Resize(float width, float height);
 

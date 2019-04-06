@@ -31,7 +31,8 @@ SOURCES += \
     innoconsole.cpp \
     innodirectoryexplorer.cpp \
     innofileexplorer.cpp \
-    innoworldexplorer.cpp
+    innoworldexplorer.cpp \
+    innorenderconfigurator.cpp
 
 
 HEADERS += \
@@ -41,7 +42,8 @@ HEADERS += \
     innoconsole.h \
     innodirectoryexplorer.h \
     innofileexplorer.h \
-    innoworldexplorer.h
+    innoworldexplorer.h \
+    innorenderconfigurator.h
 
 FORMS += \
         mainwindow.ui

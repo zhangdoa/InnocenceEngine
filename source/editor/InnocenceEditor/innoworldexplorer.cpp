@@ -6,7 +6,6 @@ extern ICoreSystem* g_pCoreSystem;
 
 InnoWorldExplorer::InnoWorldExplorer(QWidget* parent) : QTreeWidget(parent)
 {
-
 }
 
 void InnoWorldExplorer::initialize()

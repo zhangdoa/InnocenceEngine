@@ -47,10 +47,10 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 	}
 
 	WinWindowSystemComponent::get().m_hInstance = static_cast<HINSTANCE>(hInstance);
+
 	if (hwnd)
 	{
 		WinWindowSystemComponent::get().m_hwnd = *reinterpret_cast<HWND*>(hwnd);
-		//SetWindowLongPtr(WinWindowSystemComponent::get().m_hwnd, GWLP_WNDPROC, (LONG_PTR)WindowProc);
 	}
 
 	WinWindowSystemComponent::get().m_applicationName = "InnocenceEngineWindow";
