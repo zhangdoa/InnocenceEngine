@@ -9,7 +9,7 @@ class InnoRenderConfigurator : public QComboBox
 {
     Q_OBJECT
 public:
-    InnoRenderConfigurator(QWidget* parent = 0);
+    explicit InnoRenderConfigurator(QWidget *parent = nullptr);
     ~InnoRenderConfigurator();
     virtual void showPopup();
     void initialize();

@@ -21,7 +21,7 @@ class InnoViewport : public QWidget
     Q_OBJECT
 
 public:
-    explicit InnoViewport(QWidget* parent);
+    explicit InnoViewport(QWidget *parent = nullptr);
     virtual ~InnoViewport() override;
 
     void initialize();

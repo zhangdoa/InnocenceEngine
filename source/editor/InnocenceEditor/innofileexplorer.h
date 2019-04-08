@@ -8,7 +8,7 @@ class InnoFileExplorer : public QListView
 {
     Q_OBJECT
 public:
-    explicit InnoFileExplorer(QWidget *parent = 0);
+    explicit InnoFileExplorer(QWidget *parent = nullptr);
 
     void initialize();
 

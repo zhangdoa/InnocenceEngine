@@ -8,8 +8,10 @@ InnoWorldExplorer::InnoWorldExplorer(QWidget* parent) : QTreeWidget(parent)
 {
 }
 
-void InnoWorldExplorer::initialize()
+void InnoWorldExplorer::initialize(InnoPropertyEditor* propertyEditor)
 {
+    m_propertyEditor = propertyEditor;
+
     // root item
     m_rootItem = new QTreeWidgetItem(this);
     m_rootItem->setText(0, "Entities");
@@ -23,6 +25,8 @@ void InnoWorldExplorer::initialize()
     {
         QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
         l_entityItem->setText(0, i.second.c_str());
+        l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
+
         AddChild(m_rootItem, l_entityItem);
 
         auto result = l_entityChildrenComponentsMetadataMap.find(i.first);
@@ -36,7 +40,28 @@ void InnoWorldExplorer::initialize()
                 QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
                 l_componentItem->setText(0, l_componentMetapair.second.c_str());
                 l_componentItem->setData(0, Qt::UserRole, QVariant((int)l_componentMetapair.first));
+                l_componentItem->setData(1, Qt::UserRole, QVariant((char*)(j.first)));
                 AddChild(l_entityItem, l_componentItem);
+            }
+        }
+    }
+}
+
+void InnoWorldExplorer::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+    QTreeWidget::selectionChanged(selected, deselected);
+    QList<QTreeWidgetItem*> selectedItems = this->selectedItems();
+    QTreeWidgetItem* item;
+    if (selectedItems.count() != 0)
+    {
+        item = selectedItems[0];
+        if(item != m_rootItem)
+        {
+            if (m_propertyEditor)
+            {
+                auto l_componentType = item->data(0, Qt::UserRole).toInt();
+                auto l_componentPtr = item->data(1, Qt::UserRole).data();
+                m_propertyEditor->editComponent(l_componentType, l_componentPtr);
             }
         }
     }

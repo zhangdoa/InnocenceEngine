@@ -9,7 +9,7 @@ class InnoDirectoryExplorer : public QTreeView
 {
     Q_OBJECT
 public:
-    InnoDirectoryExplorer(QWidget *parent = 0);
+    explicit InnoDirectoryExplorer(QWidget *parent = nullptr);
 
     void initialize(InnoFileExplorer* fileExplorer);
 

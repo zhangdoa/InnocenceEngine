@@ -2201,7 +2201,7 @@ QSplitter::handle:vertical
                <string notr="true"/>
               </property>
               <property name="currentIndex">
-               <number>1</number>
+               <number>0</number>
               </property>
               <property name="iconSize">
                <size>
@@ -2304,6 +2304,12 @@ QSplitter::handle:vertical
                            <verstretch>0</verstretch>
                           </sizepolicy>
                          </property>
+                         <property name="maximumSize">
+                          <size>
+                           <width>200</width>
+                           <height>16777215</height>
+                          </size>
+                         </property>
                          <property name="editTriggers">
                           <set>QAbstractItemView::NoEditTriggers</set>
                          </property>
@@ -2319,7 +2325,7 @@ QSplitter::handle:vertical
                         </widget>
                         <widget class="InnoFileExplorer" name="listViewInnoFileExplorer">
                          <property name="sizePolicy">
-                          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                            <horstretch>0</horstretch>
                            <verstretch>0</verstretch>
                           </sizepolicy>
@@ -2961,7 +2967,7 @@ QSplitter::handle:vertical
        <property name="styleSheet">
         <string notr="true"/>
        </property>
-       <widget class="QWidget" name="widgetPropertyEditor">
+       <widget class="InnoPropertyEditor" name="widgetPropertyEditor">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -3102,6 +3108,12 @@ QSplitter::handle:vertical
    <class>InnoRenderConfigurator</class>
    <extends>QComboBox</extends>
    <header>innorenderconfigurator.h</header>
+  </customwidget>
+  <customwidget>
+   <class>InnoPropertyEditor</class>
+   <extends>QWidget</extends>
+   <header>innopropertyeditor.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

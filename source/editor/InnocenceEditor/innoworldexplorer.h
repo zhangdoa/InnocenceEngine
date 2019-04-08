@@ -2,17 +2,23 @@
 #define INNOWORLDEXPLORER_H
 
 #include <QTreeWidget>
+#include "innopropertyeditor.h"
 
 class InnoWorldExplorer : public QTreeWidget
 {
     Q_OBJECT
 public:
-    InnoWorldExplorer(QWidget* parent);
+    explicit InnoWorldExplorer(QWidget *parent = nullptr);
 
-    void initialize();
+    void initialize(InnoPropertyEditor* propertyEditor);
+
+protected:
+    virtual void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
 private:
     void AddChild(QTreeWidgetItem* parent, QTreeWidgetItem* child);
+
+    InnoPropertyEditor* m_propertyEditor;
 
     QTreeWidgetItem* m_rootItem;
 };

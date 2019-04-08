@@ -18,8 +18,9 @@ void MainWindow::initializeEngine()
 {
     ui->widgetInnoViewport->initialize();
     ui->comboBoxInnoRenderConfigurator->initialize();
+    ui->widgetPropertyEditor->initialize();
 
-    ui->treeWidgetInnoWorldExplorer->initialize();
+    ui->treeWidgetInnoWorldExplorer->initialize(ui->widgetPropertyEditor);
     ui->listViewInnoFileExplorer->initialize();
     ui->treeViewInnoDirExplorer->initialize(ui->listViewInnoFileExplorer);
 }
