@@ -54,6 +54,8 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	entityChildrenComponentsMetadataMap m_entityChildrenComponentsMetadataMap;
 	entityNameMap m_entityNameMap;
 
+	unsigned int m_currentUUID = 0;
+
 	InnoFuture<void>* m_asyncTask;
 
 	bool m_pauseGameUpdate = false;
@@ -352,6 +354,7 @@ destroyComponentImplDefi(EnvironmentCaptureComponent)
 void InnoGameSystem::registerComponent(className* rhs, const EntityID& parentEntity) \
 { \
 	rhs->m_parentEntity = parentEntity; \
+	rhs->m_UUID = InnoGameSystemNS::m_currentUUID++; \
 	InnoGameSystemNS::m_##className##s.emplace_back(rhs); \
 	InnoGameSystemNS::m_##className##sMap.emplace(parentEntity, rhs); \
 \

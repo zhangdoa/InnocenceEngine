@@ -24,7 +24,8 @@ public:
 	INNO_SYSTEM_EXPORT void mousePositionCallback(float mouseXPos, float mouseYPos) override;
 	INNO_SYSTEM_EXPORT void scrollCallback(float xoffset, float yoffset) override;
 
-	INNO_SYSTEM_EXPORT vec4 calcMousePositionInWorldSpace() override;
+	INNO_SYSTEM_EXPORT vec4 getMousePositionInWorldSpace() override;
+	INNO_SYSTEM_EXPORT vec2 getMousePositionInScreenSpace() override;
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 };

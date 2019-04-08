@@ -10,6 +10,7 @@ public:
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
+	unsigned int m_UUID = 0;
 
 	std::string m_cubemapTextureFileName;
 	TextureDataComponent* m_TDC = nullptr;

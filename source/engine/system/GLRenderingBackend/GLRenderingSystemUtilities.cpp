@@ -1006,3 +1006,17 @@ void GLRenderingSystemNS::copyColorBuffer(GLRenderPassComponent* src, unsigned i
 	glDrawBuffers(1, &drawBuffers[0]);
 	glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 };
+
+vec4 GLRenderingSystemNS::readPixel(GLRenderPassComponent* GLRPC, unsigned int colorAttachmentIndex, GLint x, GLint y)
+{
+	vec4 l_result;
+	auto l_GLTDC = GLRPC->m_GLTDCs[colorAttachmentIndex];
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GLRPC->m_FBO);
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + colorAttachmentIndex);
+	glReadPixels(x, y, 1, 1, l_GLTDC->m_GLTextureDataDesc.pixelDataFormat, l_GLTDC->m_GLTextureDataDesc.pixelDataType, &l_result);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+	return l_result;
+}

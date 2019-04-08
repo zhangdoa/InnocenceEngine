@@ -41,7 +41,6 @@ namespace InnoPhysicsSystemNS
 	void updateSceneAABB(AABB rhs);
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_entityID;
 
 	std::vector<InnoFuture<void>> m_asyncTask;
 
@@ -50,9 +49,6 @@ namespace InnoPhysicsSystemNS
 	AABB m_SceneAABB;
 
 	void* m_PhysicsDataComponentPool;
-
-	InputComponent* m_inputComponent;
-	std::function<void()> f_mouseSelect;
 
 	std::atomic<bool> m_isCullingDataPackValid = false;
 	std::vector<CullingDataPack> m_cullingDataPack;
@@ -63,49 +59,6 @@ namespace InnoPhysicsSystemNS
 bool InnoPhysicsSystemNS::setup()
 {
 	m_PhysicsDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(PhysicsDataComponent), 16384);
-
-	m_entityID = g_pCoreSystem->getGameSystem()->createEntity("PhysicsSystemPicker");
-
-	m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_entityID);
-
-	f_mouseSelect = [&]() {
-		m_selectedVisibleComponent = nullptr;
-
-		if (g_pCoreSystem->getGameSystem()->get<CameraComponent>().size() > 0)
-		{
-			auto l_cameraComponents = g_pCoreSystem->getGameSystem()->get<CameraComponent>();
-			auto l_mainCamera = l_cameraComponents[0];
-			auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
-			Ray l_mouseRay;
-			l_mouseRay.m_origin = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-			l_mouseRay.m_direction = g_pCoreSystem->getInputSystem()->calcMousePositionInWorldSpace();
-
-			for (auto visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
-			{
-				if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE)
-				{
-					auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
-					auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-
-					if (visibleComponent->m_PhysicsDataComponent)
-					{
-						for (auto& physicsData : visibleComponent->m_PhysicsDataComponent->m_physicsDatas)
-						{
-							auto l_AABBws = transformAABBtoWorldSpace(physicsData.aabb, l_globalTm);
-
-							if (InnoMath::intersectCheck(l_AABBws, l_mouseRay))
-							{
-								m_selectedVisibleComponent = visibleComponent;
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-	};
-
-	g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
 
 	PhysXWrapper::get().setup();
 
@@ -330,7 +283,7 @@ std::vector<AABB> InnoPhysicsSystemNS::frustumsVerticesToAABBs(const std::vector
 	}
 
 	return l_AABBs;
-}
+	}
 
 AABB InnoPhysicsSystemNS::generateAABB(const std::vector<Vertex>& vertices)
 {

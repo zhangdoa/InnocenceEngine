@@ -190,6 +190,7 @@ bool InnoRenderingFrontendSystemNS::update()
 					l_meshDataPack.MDC = i.MDC;
 					l_meshDataPack.material = l_modelPair->second;
 					l_meshDataPack.visiblilityType = i.visibleComponent->m_visiblilityType;
+					l_meshDataPack.m_UUID = i.visibleComponent->m_UUID;
 
 					m_meshDataPack.emplace_back(l_meshDataPack);
 				}

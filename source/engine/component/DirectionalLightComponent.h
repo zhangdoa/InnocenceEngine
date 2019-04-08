@@ -10,6 +10,7 @@ public:
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
+	unsigned int m_UUID = 0;
 
 	// Unit: Lumen (lm)
 	float m_luminousFlux = 1.0f;
@@ -25,4 +26,3 @@ public:
 
 	std::vector<mat4> m_projectionMatrices;
 };
-

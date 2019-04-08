@@ -10,6 +10,7 @@ public:
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
+	unsigned int m_UUID = 0;
 
 	// Unit: Meter (m)
 	float m_sphereRadius = 1.0f;
@@ -21,4 +22,3 @@ public:
 	// CIE 1931 RGB color space
 	vec4 m_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 };
-

@@ -18,4 +18,3 @@ public:
 	std::vector<Vertex> m_vertices;
 	std::vector<Index> m_indices;
 };
-

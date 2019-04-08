@@ -35,6 +35,7 @@ struct GPassTextureUBOData
 struct OpaquePassDataPack
 {
 	size_t indiceSize;
+	unsigned int UUID;
 	GPassMeshUBOData meshUBOData;
 	GLMeshDataComponent* GLMDC;
 	MeshPrimitiveTopology meshPrimitiveTopology;

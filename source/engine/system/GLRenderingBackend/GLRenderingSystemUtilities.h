@@ -73,4 +73,6 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void copyDepthBuffer(GLRenderPassComponent* src, GLRenderPassComponent* dest);
 	void copyStencilBuffer(GLRenderPassComponent* src, GLRenderPassComponent* dest);
 	void copyColorBuffer(GLRenderPassComponent* src, unsigned int srcIndex, GLRenderPassComponent* dest, unsigned int destIndex);
+
+	vec4 readPixel(GLRenderPassComponent* GLRPC, unsigned int colorAttachmentIndex, GLint x, GLint y);
 }

@@ -16,6 +16,7 @@ public:
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
+	unsigned int m_UUID = 0;
 
 	VisiblilityType m_visiblilityType = VisiblilityType::INNO_INVISIBLE;
 	MeshShapeType m_meshShapeType = MeshShapeType::QUAD;
@@ -30,4 +31,3 @@ public:
 
 	PhysicsDataComponent* m_PhysicsDataComponent = 0;
 };
-

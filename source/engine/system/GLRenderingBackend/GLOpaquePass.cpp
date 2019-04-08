@@ -26,6 +26,8 @@ INNO_PRIVATE_SCOPE GLOpaquePass
 	ShaderFilePaths m_shaderFilePaths = { "GL//opaquePassBlinnPhongVertex.sf" , "", "GL//opaquePassBlinnPhongFragment.sf" };
 #endif
 
+	GLuint m_uni_id;
+
 	std::vector<std::string> m_TextureUniformNames =
 	{
 		"uni_normalTexture",
@@ -66,6 +68,8 @@ void GLOpaquePass::bindUniformLocations(GLShaderProgramComponent* rhs)
 	bindUniformBlock(GLRenderingSystemComponent::get().m_meshUBO, sizeof(GPassMeshUBOData), rhs->m_program, "meshUBO", 1);
 
 	bindUniformBlock(GLRenderingSystemComponent::get().m_textureUBO, sizeof(GPassTextureUBOData), rhs->m_program, "textureUBO", 2);
+
+	m_uni_id = getUniformLocation(rhs->m_program, "uni_id");
 
 #ifdef CookTorrance
 	updateTextureUniformLocations(rhs->m_program, m_TextureUniformNames);
@@ -140,6 +144,8 @@ bool GLOpaquePass::update()
 
 			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_renderPack.meshUBOData);
 			updateUBO(GLRenderingSystemComponent::get().m_textureUBO, l_renderPack.textureUBOData);
+			updateUniform(m_uni_id, l_renderPack.UUID);
+
 			drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
 		}
 		else if (l_renderPack.visiblilityType == VisiblilityType::INNO_EMISSIVE)

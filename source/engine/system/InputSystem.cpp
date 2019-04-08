@@ -18,7 +18,8 @@ INNO_PRIVATE_SCOPE InnoInputSystemNS
 	bool addMouseMovementCallback(int mouseCode, std::vector<std::function<void(float)>*>& mouseMovementCallback);
 	bool addMouseMovementCallback(MouseMovementCallbackMap& mouseMovementCallback);
 
-	vec4 calcMousePositionInWorldSpace();
+	vec4 getMousePositionInWorldSpace();
+	vec2 getMousePositionInScreenSpace();
 
 	void framebufferSizeCallback(int width, int height);
 	void mousePositionCallback(float mouseXPos, float mouseYPos);
@@ -181,7 +182,7 @@ bool InnoInputSystemNS::addMouseMovementCallback(MouseMovementCallbackMap & mous
 	return true;
 }
 
-vec4 InnoInputSystemNS::calcMousePositionInWorldSpace()
+vec4 InnoInputSystemNS::getMousePositionInWorldSpace()
 {
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
@@ -222,6 +223,11 @@ vec4 InnoInputSystemNS::calcMousePositionInWorldSpace()
 #endif
 	l_ndcSpace = l_ndcSpace.normalize();
 	return l_ndcSpace;
+}
+
+vec2 InnoInputSystemNS::getMousePositionInScreenSpace()
+{
+	return vec2(m_mouseLastX, m_mouseLastY);
 }
 
 void InnoInputSystemNS::framebufferSizeCallback(int width, int height)
@@ -313,9 +319,14 @@ INNO_SYSTEM_EXPORT void InnoInputSystem::scrollCallback(float xoffset, float yof
 {
 }
 
-INNO_SYSTEM_EXPORT vec4 InnoInputSystem::calcMousePositionInWorldSpace()
+INNO_SYSTEM_EXPORT vec4 InnoInputSystem::getMousePositionInWorldSpace()
 {
-	return InnoInputSystemNS::calcMousePositionInWorldSpace();
+	return InnoInputSystemNS::getMousePositionInWorldSpace();
+}
+
+INNO_SYSTEM_EXPORT vec2 InnoInputSystem::getMousePositionInScreenSpace()
+{
+	return InnoInputSystemNS::getMousePositionInScreenSpace();
 }
 
 INNO_SYSTEM_EXPORT ObjectStatus InnoInputSystem::getStatus()

@@ -33,7 +33,8 @@ public:
 	INNO_SYSTEM_EXPORT virtual void mousePositionCallback(float mouseXPos, float mouseYPos) = 0;
 	INNO_SYSTEM_EXPORT virtual void scrollCallback(float xoffset, float yoffset) = 0;
 
-	INNO_SYSTEM_EXPORT virtual vec4 calcMousePositionInWorldSpace() = 0;
+	INNO_SYSTEM_EXPORT virtual vec4 getMousePositionInWorldSpace() = 0;
+	INNO_SYSTEM_EXPORT virtual vec2 getMousePositionInScreenSpace() = 0;
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 };

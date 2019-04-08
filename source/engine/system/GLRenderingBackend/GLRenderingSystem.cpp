@@ -396,6 +396,7 @@ bool GLRenderingSystemNS::prepareGeometryPassData()
 			{
 				OpaquePassDataPack l_GLRenderDataPack;
 
+				l_GLRenderDataPack.UUID = i.m_UUID;
 				l_GLRenderDataPack.indiceSize = i.MDC->m_indicesSize;
 				l_GLRenderDataPack.meshPrimitiveTopology = i.MDC->m_meshPrimitiveTopology;
 				l_GLRenderDataPack.meshShapeType = i.MDC->m_meshShapeType;

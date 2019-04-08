@@ -9,6 +9,7 @@ public:
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
+	unsigned int m_UUID = 0;
 
 	float m_FOVX = 0.0;
 	float m_WHRatio = 0.0;

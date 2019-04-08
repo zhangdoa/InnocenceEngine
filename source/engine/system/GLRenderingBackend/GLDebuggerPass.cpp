@@ -18,6 +18,10 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 
 	EntityID m_entityID;
 
+	std::function<void()> f_mouseSelect;
+	unsigned int m_pickedID;
+	VisibleComponent* m_pickedVisibleComponent;
+
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//wireframeOverlayPassVertex.sf", "", "GL//wireframeOverlayPassFragment.sf" };
@@ -36,6 +40,28 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 
 bool GLDebuggerPass::initialize()
 {
+	f_mouseSelect = [&]() {
+		auto l_mousePos = g_pCoreSystem->getInputSystem()->getMousePositionInScreenSpace();
+		l_mousePos.y = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution().y - l_mousePos.y;
+
+		auto l_pixelValue = readPixel(GLOpaquePass::getGLRPC(), 3, (GLint)l_mousePos.x, (GLint)l_mousePos.y);
+
+		m_pickedID = (unsigned int)l_pixelValue.z;
+
+		auto l_visibleCompoents = g_pCoreSystem->getGameSystem()->get<VisibleComponent>();
+		auto l_findResult =
+			std::find_if(l_visibleCompoents.begin(), l_visibleCompoents.end(), [&](auto& val) -> bool {
+			return val->m_UUID == m_pickedID;
+		}
+		);
+		if (l_findResult != l_visibleCompoents.end())
+		{
+			m_pickedVisibleComponent = *l_findResult;
+		}
+	};
+
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
+
 	m_entityID = InnoMath::createEntityID();
 
 	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);

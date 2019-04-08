@@ -52,6 +52,7 @@ struct MeshDataPack
 	MeshDataComponent* MDC;
 	MaterialDataComponent* material;
 	VisiblilityType visiblilityType;
+	unsigned int m_UUID;
 };
 
 INNO_INTERFACE IRenderingFrontendSystem
