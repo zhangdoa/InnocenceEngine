@@ -26,6 +26,7 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	bool terminate();
 
 	bool initializeDefaultAssets();
+	bool generateCBuffers();
 
 	void prepareRenderingData();
 
@@ -576,6 +577,43 @@ bool DX11RenderingSystemNS::initializeDefaultAssets()
 	return true;
 }
 
+bool DX11RenderingSystemNS::generateCBuffers()
+{
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11CameraCBufferData);
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_cameraCBuffer);
+
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11MeshCBufferData);
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_meshCBuffer);
+
+	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11TextureCBufferData);
+	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_textureCBuffer);
+
+	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.ByteWidth = sizeof(DirectionalLightCBufferData);
+	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_directionalLightCBuffer);
+
+	return true;
+}
+
 void DX11RenderingSystemNS::prepareRenderingData()
 {
 	auto l_cameraDataPack = m_renderingFrontendSystem->getCameraDataPack();
@@ -592,7 +630,6 @@ void DX11RenderingSystemNS::prepareRenderingData()
 
 	g_DXRenderingSystemComponent->m_directionalLightCBufferData.dir = l_sunDataPack.dir;
 	g_DXRenderingSystemComponent->m_directionalLightCBufferData.luminance = l_sunDataPack.luminance;
-	g_DXRenderingSystemComponent->m_directionalLightCBufferData.r = l_sunDataPack.r;
 
 	auto l_meshDataPack = m_renderingFrontendSystem->getMeshDataPack();
 
@@ -693,6 +730,9 @@ bool DX11RenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
 bool DX11RenderingSystem::initialize()
 {
 	DX11RenderingSystemNS::initializeDefaultAssets();
+
+	DX11RenderingSystemNS::generateCBuffers();
+
 	DX11OpaquePass::initialize();
 	DX11LightPass::initialize();
 	DX11FinalBlendPass::initialize();

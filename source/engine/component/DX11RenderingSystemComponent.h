@@ -4,6 +4,12 @@
 #include "../component/TextureDataComponent.h"
 #include "../component/DX11TextureDataComponent.h"
 
+struct DX11CBuffer
+{
+	D3D11_BUFFER_DESC m_CBufferDesc = D3D11_BUFFER_DESC();
+	ID3D11Buffer* m_CBufferPtr = 0;
+};
+
 struct DX11CameraCBufferData
 {
 	mat4 p_original;
@@ -56,7 +62,6 @@ struct DirectionalLightCBufferData
 {
 	vec4 dir;
 	vec4 luminance;
-	mat4 r;
 };
 
 class DX11RenderingSystemComponent
@@ -111,6 +116,11 @@ public:
 
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 	D3D11_RENDER_TARGET_VIEW_DESC deferredPassRTVDesc = D3D11_RENDER_TARGET_VIEW_DESC();
+
+	DX11CBuffer m_cameraCBuffer;
+	DX11CBuffer m_textureCBuffer;
+	DX11CBuffer m_meshCBuffer;
+	DX11CBuffer m_directionalLightCBuffer;
 
 	DX11CameraCBufferData m_cameraCBufferData;
 	std::queue<DX11MeshDataPack> m_meshDataQueue;

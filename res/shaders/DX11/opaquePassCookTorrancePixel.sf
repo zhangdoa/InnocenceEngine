@@ -6,9 +6,9 @@ Texture2D t2d_metallic : register(t2);
 Texture2D t2d_roughness : register(t3);
 Texture2D t2d_ao : register(t4);
 
-SamplerState SampleTypeWrap;
+SamplerState SampleTypeWrap : register(s0);
 
-cbuffer textureCBuffer
+cbuffer textureCBuffer : register(b0)
 {
 	float4 albedo;
 	float4 MRA;

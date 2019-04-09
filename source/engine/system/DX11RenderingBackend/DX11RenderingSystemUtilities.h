@@ -7,6 +7,7 @@
 #include "../../component/DX11TextureDataComponent.h"
 #include "../../component/DX11ShaderProgramComponent.h"
 #include "../../component/DX11RenderPassComponent.h"
+#include "../../component/DX11RenderingSystemComponent.h"
 
 INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 {
@@ -29,11 +30,13 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 
 	DX11ShaderProgramComponent* addDX11ShaderProgramComponent(EntityID rhs);
 
+	bool createCBuffer(DX11CBuffer& arg);
+
 	bool initializeDX11ShaderProgramComponent(DX11ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
 
 	bool activateDX11ShaderProgramComponent(DX11ShaderProgramComponent* rhs);
 
-	void updateShaderParameter(ShaderType shaderType, unsigned int startSlot, const std::vector<DX11CBuffer>& DX11CBuffers, void* parameterValue);
+	void updateShaderParameter(ShaderType shaderType, unsigned int startSlot, const DX11CBuffer& CBuffer, void* parameterValue);
 
 	void cleanRTV(vec4 color, ID3D11RenderTargetView* RTV);
 	void cleanDSV(ID3D11DepthStencilView* DSV);

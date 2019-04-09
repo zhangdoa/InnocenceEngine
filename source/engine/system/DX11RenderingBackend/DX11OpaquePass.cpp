@@ -37,37 +37,6 @@ bool DX11OpaquePass::initializeShaders()
 {
 	m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
 
-	m_DXSPC->m_VSCBuffers.reserve(2);
-
-	DX11CBuffer l_VSCameraCBuffer;
-	l_VSCameraCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	l_VSCameraCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11CameraCBufferData);
-	l_VSCameraCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	l_VSCameraCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	l_VSCameraCBuffer.m_CBufferDesc.MiscFlags = 0;
-	l_VSCameraCBuffer.m_CBufferDesc.StructureByteStride = 0;
-	m_DXSPC->m_VSCBuffers.emplace_back(l_VSCameraCBuffer);
-
-	DX11CBuffer l_VSMeshCBuffer;
-	l_VSMeshCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	l_VSMeshCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11MeshCBufferData);
-	l_VSMeshCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	l_VSMeshCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	l_VSMeshCBuffer.m_CBufferDesc.MiscFlags = 0;
-	l_VSMeshCBuffer.m_CBufferDesc.StructureByteStride = 0;
-	m_DXSPC->m_VSCBuffers.emplace_back(l_VSMeshCBuffer);
-
-	m_DXSPC->m_PSCBuffers.reserve(1);
-
-	DX11CBuffer l_PSCBuffer;
-	l_PSCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	l_PSCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11TextureCBufferData);
-	l_PSCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	l_PSCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	l_PSCBuffer.m_CBufferDesc.MiscFlags = 0;
-	l_PSCBuffer.m_CBufferDesc.StructureByteStride = 0;
-	m_DXSPC->m_PSCBuffers.emplace_back(l_VSMeshCBuffer);
-
 	m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	m_DXSPC->m_samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -95,7 +64,7 @@ bool DX11OpaquePass::update()
 
 	// activate shader
 	activateDX11ShaderProgramComponent(m_DXSPC);
-	updateShaderParameter(ShaderType::VERTEX, 0, m_DXSPC->m_VSCBuffers, &DX11RenderingSystemComponent::get().m_cameraCBufferData);
+	updateShaderParameter(ShaderType::VERTEX, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer, &DX11RenderingSystemComponent::get().m_cameraCBufferData);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
@@ -135,8 +104,8 @@ bool DX11OpaquePass::update()
 
 		DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
 
-		updateShaderParameter(ShaderType::VERTEX, 1, m_DXSPC->m_VSCBuffers, &l_renderPack.meshCBuffer);
-		updateShaderParameter(ShaderType::FRAGMENT, 0, m_DXSPC->m_PSCBuffers, &l_renderPack.textureCBuffer);
+		updateShaderParameter(ShaderType::VERTEX, 1, DX11RenderingSystemComponent::get().m_meshCBuffer, &l_renderPack.meshCBuffer);
+		updateShaderParameter(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_textureCBuffer, &l_renderPack.textureCBuffer);
 
 		// bind to textures
 		// any normal?

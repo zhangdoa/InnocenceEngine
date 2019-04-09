@@ -1,7 +1,6 @@
 #include "DX11RenderingSystemUtilities.h"
 
 #include "../../component/WinWindowSystemComponent.h"
-#include "../../component/DX11RenderingSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -11,7 +10,6 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 {
 	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 	ID3D10Blob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
-	bool createCBuffer(DX11CBuffer& arg);
 	bool initializeVertexShader(DX11ShaderProgramComponent* rhs, const std::wstring& VSShaderPath);
 	bool createVertexShader(ID3D10Blob* shaderBuffer, ID3D11VertexShader** vertexShader);
 	bool createInputLayout(ID3D10Blob* shaderBuffer, ID3D11InputLayout** inputLayout);
@@ -276,14 +274,6 @@ bool DX11RenderingSystemNS::initializeDX11ShaderProgramComponent(DX11ShaderProgr
 	if (shaderFilePaths.m_FSPath != "")
 	{
 		l_result = l_result && initializePixelShader(rhs, std::wstring(shaderFilePaths.m_FSPath.begin(), shaderFilePaths.m_FSPath.end()));
-	}
-	for (auto& i : rhs->m_VSCBuffers)
-	{
-		l_result = l_result && createCBuffer(i);
-	}
-	for (auto& i : rhs->m_PSCBuffers)
-	{
-		l_result = l_result && createCBuffer(i);
 	}
 
 	return l_result;
@@ -761,15 +751,13 @@ void DX11RenderingSystemNS::drawMesh(size_t indicesSize, DX11MeshDataComponent *
 	DX11RenderingSystemComponent::get().m_deviceContext->DrawIndexed((UINT)indicesSize, 0, 0);
 }
 
-void DX11RenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned int startSlot, const std::vector<DX11CBuffer>& DX11CBuffers, void* parameterValue)
+void DX11RenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned int startSlot, const DX11CBuffer& CBuffer, void* parameterValue)
 {
-	auto l_DX11CBuffer = DX11CBuffers[startSlot];
-
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 
 	// Lock the constant buffer so it can be written to.
-	result = DX11RenderingSystemComponent::get().m_deviceContext->Map(l_DX11CBuffer.m_CBufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = DX11RenderingSystemComponent::get().m_deviceContext->Map(CBuffer.m_CBufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't lock the shader buffer!");
@@ -777,21 +765,21 @@ void DX11RenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigne
 	}
 
 	auto dataPtr = mappedResource.pData;
-	std::memcpy(dataPtr, parameterValue, l_DX11CBuffer.m_CBufferDesc.ByteWidth);
+	std::memcpy(dataPtr, parameterValue, CBuffer.m_CBufferDesc.ByteWidth);
 
 	// Unlock the constant buffer.
-	DX11RenderingSystemComponent::get().m_deviceContext->Unmap(l_DX11CBuffer.m_CBufferPtr, 0);
+	DX11RenderingSystemComponent::get().m_deviceContext->Unmap(CBuffer.m_CBufferPtr, 0);
 
 	switch (shaderType)
 	{
 	case ShaderType::VERTEX:
-		DX11RenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers(startSlot, 1, &l_DX11CBuffer.m_CBufferPtr);
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers(startSlot, 1, &CBuffer.m_CBufferPtr);
 		break;
 	case ShaderType::GEOMETRY:
-		DX11RenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers(startSlot, 1, &l_DX11CBuffer.m_CBufferPtr);
+		DX11RenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers(startSlot, 1, &CBuffer.m_CBufferPtr);
 		break;
 	case ShaderType::FRAGMENT:
-		DX11RenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers(startSlot, 1, &l_DX11CBuffer.m_CBufferPtr);
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers(startSlot, 1, &CBuffer.m_CBufferPtr);
 		break;
 	default:
 		break;

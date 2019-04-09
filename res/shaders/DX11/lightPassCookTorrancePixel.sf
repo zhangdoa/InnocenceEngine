@@ -6,7 +6,7 @@ Texture2D geometryPassRT2 : register(t2);
 
 SamplerState SampleTypePoint : register(s0);
 
-cbuffer cameraCBuffer
+cbuffer cameraCBuffer : register(b0)
 {
 	matrix cam_p_original;
 	matrix cam_p_jittered;
@@ -17,11 +17,10 @@ cbuffer cameraCBuffer
 	float4 cam_globalPos;
 };
 
-cbuffer DirectionalLightCBuffer
+cbuffer directionalLightCBuffer : register(b1)
 {
 	float4 dirLight_dir;
 	float4 dirLight_luminance;
-	matrix dirLight_r;
 };
 
 struct PixelInputType
@@ -227,9 +226,9 @@ SG DirectionalLightToSG(in float3 lightDir, in float3 intensity)
 
 float3 SG_CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughness, float3 normal, float3 posWS, float3 F0)
 {
-	SG directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), 20);
+	SG directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), dirLight_luminance.xyz);
 
-	return SGDiffusePunctual(directionalLight, normal, albedo) * dirLight_luminance.xyz;
+	return SGDiffusePunctual(directionalLight, normal, albedo);
 }
 
 PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
