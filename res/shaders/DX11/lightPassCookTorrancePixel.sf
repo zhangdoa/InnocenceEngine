@@ -191,10 +191,19 @@ float3 SGIrradianceFitted(in SG lightingLobe, in float3 normal)
 	return result * SGIntegral(lightingLobe);
 }
 
-float3 SGDiffusePunctual(in SG lightingLobe, in float3 normal, in float3 albedo)
+float3 SGDiffusePunctual(SG lightingLobe, float3 albedo, float metallic, float roughness, float3 F0, float3 N, float3 V)
 {
-	float3 brdf = albedo / PI;
-	return SGIrradianceFitted(lightingLobe, normal) * brdf;
+	float3 L = normalize(-dirLight_dir.xyz);
+	float3 H = normalize(V + L);
+
+	float NdotV = max(dot(N, V), 0.0);
+	float LdotH = max(dot(L, H), 0.0);
+	float NdotH = max(dot(N, H), 0.0);
+	float NdotL = max(dot(N, L), 0.0);
+
+	float3 brdf = CalcBRDF(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL);
+
+	return SGIrradianceFitted(lightingLobe, N) * brdf * NdotL;
 }
 
 SG MakeSphereSG(in float3 lightDir, in float radius, in float3 intensity, in float dist)
@@ -224,11 +233,11 @@ SG DirectionalLightToSG(in float3 lightDir, in float3 intensity)
 	return sg;
 }
 
-float3 SG_CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughness, float3 normal, float3 posWS, float3 F0)
+float3 SG_CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughness, float3 F0, float3 N, float3 V)
 {
 	SG directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), dirLight_luminance.xyz);
 
-	return SGDiffusePunctual(directionalLight, normal, albedo);
+	return SGDiffusePunctual(directionalLight, albedo, metallic, roughness, F0, N, V);
 }
 
 PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
@@ -254,9 +263,9 @@ PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 
 	float3 finalColor;
 
-	finalColor = CalcDirectionalLightRadiance(albedo, metallic, roughness, F0, N, V);
+	//finalColor = CalcDirectionalLightRadiance(albedo, metallic, roughness, F0, N, V);
 
-	//finalColor = SG_CalcDirectionalLightRadiance(albedo, metallic, roughness, normalWS, posWS, F0);
+	finalColor = SG_CalcDirectionalLightRadiance(albedo, metallic, roughness, F0, N, V);
 
 	output.lightPassRT0 = float4(finalColor, 1.0);
 	return output;
