@@ -33,7 +33,11 @@ SOURCES += \
     innofileexplorer.cpp \
     innoworldexplorer.cpp \
     innorenderconfigurator.cpp \
-    innopropertyeditor.cpp
+    innopropertyeditor.cpp \
+    icomponentpropertyeditor.cpp \
+    transformcomponentpropertyeditor.cpp \
+    adjustlabel.cpp \
+    combolabeltext.cpp
 
 
 HEADERS += \
@@ -45,7 +49,11 @@ HEADERS += \
     innofileexplorer.h \
     innoworldexplorer.h \
     innorenderconfigurator.h \
-    innopropertyeditor.h
+    innopropertyeditor.h \
+    icomponentpropertyeditor.h \
+    transformcomponentpropertyeditor.h \
+    adjustlabel.h \
+    combolabeltext.h
 
 FORMS += \
         mainwindow.ui
