@@ -34,7 +34,6 @@ SOURCES += \
     innoworldexplorer.cpp \
     innorenderconfigurator.cpp \
     innopropertyeditor.cpp \
-    icomponentpropertyeditor.cpp \
     transformcomponentpropertyeditor.cpp \
     adjustlabel.cpp \
     combolabeltext.cpp

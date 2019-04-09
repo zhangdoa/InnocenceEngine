@@ -11,6 +11,7 @@
 
 class TransformComponentPropertyEditor : public IComponentPropertyEditor
 {
+    Q_OBJECT
 public:
     TransformComponentPropertyEditor();
 
@@ -45,7 +46,7 @@ public slots:
     void SetPosition();
     void SetRotation();
     void SetScale();
-    virtual void Remove(){}
+    void remove() override;
 };
 
 #endif // TRANSFORMCOMPONENTPROPERTYEDITOR_H

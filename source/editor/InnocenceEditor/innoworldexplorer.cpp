@@ -40,7 +40,7 @@ void InnoWorldExplorer::initialize(InnoPropertyEditor* propertyEditor)
                 QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
                 l_componentItem->setText(0, l_componentMetapair.second.c_str());
                 l_componentItem->setData(0, Qt::UserRole, QVariant((int)l_componentMetapair.first));
-                l_componentItem->setData(1, Qt::UserRole, QVariant((char*)(j.first)));
+                l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue(j.first));
                 AddChild(l_entityItem, l_componentItem);
             }
         }
@@ -60,8 +60,16 @@ void InnoWorldExplorer::selectionChanged(const QItemSelection &selected, const Q
             if (m_propertyEditor)
             {
                 auto l_componentType = item->data(0, Qt::UserRole).toInt();
-                auto l_componentPtr = item->data(1, Qt::UserRole).data();
-                m_propertyEditor->editComponent(l_componentType, l_componentPtr);
+                if(l_componentType != -1)
+                {
+                    auto l_componentPtr = item->data(1, Qt::UserRole).value<void*>();
+                    m_propertyEditor->editComponent(l_componentType, l_componentPtr);
+                }
+                else
+                {
+                    m_propertyEditor->remove();
+                }
+
             }
         }
     }

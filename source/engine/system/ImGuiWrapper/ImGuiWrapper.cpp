@@ -402,7 +402,7 @@ void ImGuiWrapperNS::showWorldExplorer()
 	ImGui::Begin("World Explorer", 0);
 
 	static void* selectedComponent = nullptr;
-	static componentType selectedComponentType;
+	static ComponentType selectedComponentType;
 
 	auto l_entityNameMap = g_pCoreSystem->getGameSystem()->getEntityNameMap();
 	auto l_entityChildrenComponentsMetadataMap = g_pCoreSystem->getGameSystem()->getEntityChildrenComponentsMetadataMap();
@@ -436,11 +436,11 @@ void ImGuiWrapperNS::showWorldExplorer()
 		{
 			switch (selectedComponentType)
 			{
-			case componentType::TransformComponent: showTransformComponentPropertyEditor(selectedComponent); break;
-			case componentType::VisibleComponent: showVisiableComponentPropertyEditor(selectedComponent); break;
-			case componentType::DirectionalLightComponent: showDirectionalLightComponentPropertyEditor(selectedComponent); break;
-			case componentType::PointLightComponent: showPointLightComponentPropertyEditor(selectedComponent); break;
-			case componentType::SphereLightComponent: showSphereLightComponentPropertyEditor(selectedComponent); break;
+			case ComponentType::TransformComponent: showTransformComponentPropertyEditor(selectedComponent); break;
+			case ComponentType::VisibleComponent: showVisiableComponentPropertyEditor(selectedComponent); break;
+			case ComponentType::DirectionalLightComponent: showDirectionalLightComponentPropertyEditor(selectedComponent); break;
+			case ComponentType::PointLightComponent: showPointLightComponentPropertyEditor(selectedComponent); break;
+			case ComponentType::SphereLightComponent: showSphereLightComponentPropertyEditor(selectedComponent); break;
 			default:
 				break;
 			}

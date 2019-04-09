@@ -110,8 +110,8 @@ public:
 		return nullptr;
 	};
 
-	virtual entityNameMap& getEntityNameMap() = 0;
-	virtual entityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() = 0;
+	virtual EntityNameMap& getEntityNameMap() = 0;
+	virtual EntityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() = 0;
 
 	virtual std::string getGameName() = 0;
 	virtual TransformComponent* getRootTransformComponent() = 0;

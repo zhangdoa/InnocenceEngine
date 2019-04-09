@@ -48,7 +48,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 	bool convertModel(const std::string & fileName, const std::string & exportPath);
 
-	void to_json(json& j, const entityNamePair& p);
+	void to_json(json& j, const EntityNamePair& p);
 
 	void to_json(json& j, const TransformComponent& p);
 	void to_json(json& j, const TransformVector& p);
@@ -255,7 +255,7 @@ bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::str
 	return true;
 }
 
-void InnoFileSystemNS::to_json(json& j, const entityNamePair& p)
+void InnoFileSystemNS::to_json(json& j, const EntityNamePair& p)
 {
 	j = json{
 		{"EntityID", p.first},
@@ -563,12 +563,12 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 
 	assignOrphanComponents();
 
-	loadAssets();
-
 	for (auto i : m_sceneLoadingCallbacks)
 	{
 		(*i)();
 	}
+
+	loadAssets();
 
 	m_currentScene = fileName;
 
@@ -611,31 +611,31 @@ bool InnoFileSystemNS::loadComponents(const json& j)
 
 			for (auto k : i["ChildrenComponents"])
 			{
-				switch (componentType(k["ComponentType"]))
+				switch (ComponentType(k["ComponentType"]))
 				{
-				case componentType::TransformComponent: loadComponentData<TransformComponent>(k, l_EntityID);
+				case ComponentType::TransformComponent: loadComponentData<TransformComponent>(k, l_EntityID);
 					break;
-				case componentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_EntityID);
+				case ComponentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_EntityID);
 					break;
-				case componentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_EntityID);
+				case ComponentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_EntityID);
 					break;
-				case componentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_EntityID);
+				case ComponentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_EntityID);
 					break;
-				case componentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_EntityID);
+				case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_EntityID);
 					break;
-				case componentType::CameraComponent:
+				case ComponentType::CameraComponent:
 					break;
-				case componentType::InputComponent:
+				case ComponentType::InputComponent:
 					break;
-				case componentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_EntityID);
+				case ComponentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_EntityID);
 					break;
-				case componentType::PhysicsDataComponent:
+				case ComponentType::PhysicsDataComponent:
 					break;
-				case componentType::MeshDataComponent:
+				case ComponentType::MeshDataComponent:
 					break;
-				case componentType::MaterialDataComponent:
+				case ComponentType::MaterialDataComponent:
 					break;
-				case componentType::TextureDataComponent:
+				case ComponentType::TextureDataComponent:
 					break;
 				default:
 					break;

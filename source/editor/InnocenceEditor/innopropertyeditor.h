@@ -2,7 +2,7 @@
 #define INNOPROPERTYEDITOR_H
 
 #include <QWidget>
-#include "icomponentpropertyeditor.h"
+#include "transformcomponentpropertyeditor.h"
 
 class InnoPropertyEditor : public QWidget
 {
@@ -13,9 +13,10 @@ public:
     void clear();
 
     void editComponent(int componentType, void* componentPtr);
+    void remove();
 
 private:
-    IComponentPropertyEditor* m_transformComponentPropertyEditor;
+    TransformComponentPropertyEditor* m_transformComponentPropertyEditor;
 
 signals:
 

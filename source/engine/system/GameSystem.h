@@ -75,8 +75,8 @@ public:
 
 	std::string getGameName() override;
 	TransformComponent* getRootTransformComponent() override;
-	entityNameMap& getEntityNameMap() override;
-	entityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() override;
+	EntityNameMap& getEntityNameMap() override;
+	EntityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() override;
 
 	void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) override;
 	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) override;

@@ -19,9 +19,9 @@ inline std::string InnoUtility::getClassName<className>() \
 }
 
 #define getComponentTypeDefi( className ) \
-inline componentType InnoUtility::getComponentType<className>() \
+inline ComponentType InnoUtility::getComponentType<className>() \
 { \
-	return componentType::className; \
+	return ComponentType::className; \
 }
 
 namespace InnoUtility
@@ -33,7 +33,7 @@ namespace InnoUtility
 	}
 
 	template<typename T>
-	componentType getComponentType();
+	ComponentType getComponentType();
 
 	template<typename T>
 	inline std::string pointerToString(T* ptr)

@@ -283,7 +283,7 @@ std::vector<AABB> InnoPhysicsSystemNS::frustumsVerticesToAABBs(const std::vector
 	}
 
 	return l_AABBs;
-	}
+}
 
 AABB InnoPhysicsSystemNS::generateAABB(const std::vector<Vertex>& vertices)
 {

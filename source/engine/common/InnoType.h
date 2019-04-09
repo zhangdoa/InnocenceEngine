@@ -20,13 +20,13 @@ enum class ObjectStatus
 
 using EntityID = std::string;
 
-enum class componentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SphereLightComponent, CameraComponent, InputComponent, EnvironmentCaptureComponent, PhysicsDataComponent, MeshDataComponent, MaterialDataComponent, TextureDataComponent };
+enum class ComponentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SphereLightComponent, CameraComponent, InputComponent, EnvironmentCaptureComponent, PhysicsDataComponent, MeshDataComponent, MaterialDataComponent, TextureDataComponent };
 
-using componentMetadataPair = std::pair<componentType, std::string>;
-using componentMetadataMap = std::unordered_map<void*, componentMetadataPair>;
-using entityChildrenComponentsMetadataMap = std::unordered_map<EntityID, componentMetadataMap>;
-using entityNamePair = std::pair<EntityID, std::string>;
-using entityNameMap = std::unordered_map<EntityID, std::string>;
+using ComponentMetadataPair = std::pair<ComponentType, std::string>;
+using ComponentMetadataMap = std::unordered_map<void*, ComponentMetadataPair>;
+using EntityChildrenComponentsMetadataMap = std::unordered_map<EntityID, ComponentMetadataMap>;
+using EntityNamePair = std::pair<EntityID, std::string>;
+using EntityNameMap = std::unordered_map<EntityID, std::string>;
 
 struct TimeData
 {

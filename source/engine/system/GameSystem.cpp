@@ -51,8 +51,8 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	std::unordered_multimap<EntityID, InputComponent*> m_InputComponentsMap;
 	std::unordered_multimap<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
 
-	entityChildrenComponentsMetadataMap m_entityChildrenComponentsMetadataMap;
-	entityNameMap m_entityNameMap;
+	EntityChildrenComponentsMetadataMap m_entityChildrenComponentsMetadataMap;
+	EntityNameMap m_entityNameMap;
 
 	unsigned int m_currentUUID = 0;
 
@@ -361,7 +361,7 @@ void InnoGameSystem::registerComponent(className* rhs, const EntityID& parentEnt
 	auto indexOfTheComponent = InnoGameSystemNS::m_##className##s.size(); \
 	auto l_componentName = std::string(#className) + "_" + std::to_string(indexOfTheComponent); \
 	auto l_componentType = InnoUtility::getComponentType<className>(); \
-	auto l_componentMetaDataPair = componentMetadataPair(l_componentType, l_componentName); \
+	auto l_componentMetaDataPair = ComponentMetadataPair(l_componentType, l_componentName); \
 \
 	auto result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(parentEntity); \
 	if (result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
@@ -371,7 +371,7 @@ void InnoGameSystem::registerComponent(className* rhs, const EntityID& parentEnt
 	} \
 	else \
 	{ \
-		auto l_componentMetadataMap = componentMetadataMap(); \
+		auto l_componentMetadataMap = ComponentMetadataMap(); \
 		l_componentMetadataMap.emplace(rhs, l_componentMetaDataPair); \
 		InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.emplace(parentEntity, std::move(l_componentMetadataMap)); \
 	} \
@@ -450,12 +450,12 @@ TransformComponent* InnoGameSystem::getRootTransformComponent()
 	return InnoGameSystemNS::m_rootTransformComponent;
 }
 
-entityNameMap& InnoGameSystem::getEntityNameMap()
+EntityNameMap& InnoGameSystem::getEntityNameMap()
 {
 	return InnoGameSystemNS::m_entityNameMap;
 }
 
-entityChildrenComponentsMetadataMap& InnoGameSystem::getEntityChildrenComponentsMetadataMap()
+EntityChildrenComponentsMetadataMap& InnoGameSystem::getEntityChildrenComponentsMetadataMap()
 {
 	return InnoGameSystemNS::m_entityChildrenComponentsMetadataMap;
 }

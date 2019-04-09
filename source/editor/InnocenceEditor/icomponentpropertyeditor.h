@@ -9,7 +9,7 @@ class IComponentPropertyEditor : public QWidget
 {
     Q_OBJECT
 public:
-    explicit IComponentPropertyEditor(QWidget *parent = nullptr);
+    explicit IComponentPropertyEditor(QWidget *parent = nullptr) : QWidget(parent){}
     virtual void initialize() = 0;
     virtual void edit(void* component) = 0;
 

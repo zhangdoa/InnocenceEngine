@@ -1,8 +1,11 @@
 #include "transformcomponentpropertyeditor.h"
 
+#include "../../engine/system/ICoreSystem.h"
+
+extern ICoreSystem* g_pCoreSystem;
+
 TransformComponentPropertyEditor::TransformComponentPropertyEditor()
 {
-
 }
 
 void TransformComponentPropertyEditor::initialize()
@@ -13,7 +16,7 @@ void TransformComponentPropertyEditor::initialize()
     m_validator = new QDoubleValidator(-2147483647, 2147483647, 4);
     m_validator->setProperty("notation", QDoubleValidator::StandardNotation);
 
-    m_title = new QLabel("Transform");
+    m_title = new QLabel("TransformComponent");
     m_title->setStyleSheet(
                 "background-repeat: no-repeat;"
                 "background-position: left;"
@@ -103,7 +106,6 @@ void TransformComponentPropertyEditor::initialize()
 
     m_gridLayout->setHorizontalSpacing(m_horizontalSpacing);
     m_gridLayout->setVerticalSpacing(m_verticalSpacing);
-    //======================================================
 
     this->setLayout(m_gridLayout);
     this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -114,7 +116,11 @@ void TransformComponentPropertyEditor::edit(void *component)
 {
     m_component = reinterpret_cast<TransformComponent*>(component);
 
+    GetPosition();
+    GetRotation();
+    GetScale();
 
+    this->show();
 }
 
 void TransformComponentPropertyEditor::GetPosition()
@@ -123,6 +129,7 @@ void TransformComponentPropertyEditor::GetPosition()
         return;
 
     vec4 pos = m_component->m_localTransformVector.m_pos;
+
     m_posX->SetFromFloat(pos.x);
     m_posY->SetFromFloat(pos.y);
     m_posZ->SetFromFloat(pos.z);
@@ -158,7 +165,7 @@ void TransformComponentPropertyEditor::SetPosition()
     float x = m_posX->GetAsFloat();
     float y = m_posY->GetAsFloat();
     float z = m_posZ->GetAsFloat();
-    vec4 pos(x,y,z, 1.0f);
+    vec4 pos(x, y, z, 1.0f);
 
     m_component->m_localTransformVector.m_pos = pos;
 }
@@ -188,4 +195,10 @@ void TransformComponentPropertyEditor::SetScale()
     float y = m_scaleY->GetAsFloat();
     float z = m_scaleZ->GetAsFloat();
     m_component->m_localTransformVector.m_scale = vec4(x, y, z, 1.0f);
+}
+
+void TransformComponentPropertyEditor::remove()
+{
+    m_component = nullptr;
+    this->hide();
 }

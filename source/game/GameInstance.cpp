@@ -44,7 +44,7 @@ namespace PlayerComponentCollection
 	vec4 m_targetCameraRotX;
 	vec4 m_targetCameraRotY;
 
-	void updatePlayer();
+	void update();
 
 	void rotateAroundPositiveYAxis(float offset);
 	void rotateAroundRightAxis(float offset);
@@ -159,6 +159,10 @@ namespace GameInstanceNS
 {
 	float temp = 0.0f;
 
+	std::vector<EntityID> m_opaqueSphereEntitys;
+	std::vector<TransformComponent*> m_opaqueSphereTransformComponents;
+	std::vector<VisibleComponent*> m_opaqueSphereVisibleComponents;
+
 	bool setup();
 	bool initialize();
 
@@ -169,6 +173,9 @@ namespace GameInstanceNS
 	void updateSpheres(float seed);
 
 	void runTest(unsigned int testTime, std::function<bool()> testCase);
+
+	std::function<void()> f_sceneLoadingCallback;
+
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	InnoFuture<void>* m_asyncTask;
@@ -200,6 +207,11 @@ bool GameInstanceNS::setup()
 	};
 
 	runTest(512, l_testQuatToMat);
+
+	f_sceneLoadingCallback = [&]() {
+	};
+
+	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
 
 	m_objectStatus = ObjectStatus::ALIVE;
 
@@ -268,7 +280,7 @@ void GameInstanceNS::update()
 		});
 		m_asyncTask = &tempTask;
 	}
-	PlayerComponentCollection::updatePlayer();
+	PlayerComponentCollection::update();
 }
 
 void GameInstanceNS::updateLights(float seed)
@@ -293,7 +305,7 @@ void GameInstanceNS::runTest(unsigned int testTime, std::function<bool()> testCa
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Finished test for " + std::to_string(testTime) + " times.");
 }
 
-void PlayerComponentCollection::updatePlayer()
+void PlayerComponentCollection::update()
 {
 	auto l_currentCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
 	auto l_currentCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
