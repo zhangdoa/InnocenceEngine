@@ -20,8 +20,8 @@ struct RenderingConfig
 
 struct CameraDataPack
 {
-	mat4 p_Original;
-	mat4 p_Jittered;
+	mat4 p_original;
+	mat4 p_jittered;
 	mat4 r;
 	mat4 t;
 	mat4 r_prev;

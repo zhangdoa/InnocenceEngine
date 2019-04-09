@@ -525,8 +525,8 @@ void DX12RenderingSystemNS::prepareRenderingData()
 {
 	auto l_cameraDataPack = m_renderingFrontendSystem->getCameraDataPack();
 
-	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamProjJittered = l_cameraDataPack.p_Jittered;
-	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamProjOriginal = l_cameraDataPack.p_Original;
+	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamProjJittered = l_cameraDataPack.p_jittered;
+	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamProjOriginal = l_cameraDataPack.p_original;
 	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamRot = l_cameraDataPack.r;
 	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamTrans = l_cameraDataPack.t;
 	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamRot_prev = l_cameraDataPack.r_prev;

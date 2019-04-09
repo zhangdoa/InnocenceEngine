@@ -27,11 +27,11 @@ INNO_PRIVATE_SCOPE GLBillboardPass
 		"uni_texture",
 	};
 
-	GLuint m__uni_p;
-	GLuint m__uni_r;
-	GLuint m__uni_t;
-	GLuint m__uni_pos;
-	GLuint m__uni_size;
+	GLuint m_uni_p;
+	GLuint m_uni_r;
+	GLuint m_uni_t;
+	GLuint m_uni_pos;
+	GLuint m_uni_size;
 }
 
 bool GLBillboardPass::initialize()
@@ -61,19 +61,19 @@ void GLBillboardPass::bindUniformLocations(GLShaderProgramComponent* rhs)
 {
 	updateTextureUniformLocations(rhs->m_program, m_uniformNames);
 
-	m__uni_p = getUniformLocation(
+	m_uni_p = getUniformLocation(
 		rhs->m_program,
 		"uni_p");
-	m__uni_r = getUniformLocation(
+	m_uni_r = getUniformLocation(
 		rhs->m_program,
 		"uni_r");
-	m__uni_t = getUniformLocation(
+	m_uni_t = getUniformLocation(
 		rhs->m_program,
 		"uni_t");
-	m__uni_pos = getUniformLocation(
+	m_uni_pos = getUniformLocation(
 		rhs->m_program,
 		"uni_pos");
-	m__uni_size = getUniformLocation(
+	m_uni_size = getUniformLocation(
 		rhs->m_program,
 		"uni_size");
 }
@@ -93,13 +93,13 @@ bool GLBillboardPass::update()
 	activateShaderProgram(m_GLSPC);
 
 	updateUniform(
-		m__uni_p,
-		l_cameraDataPack.p_Original);
+		m_uni_p,
+		l_cameraDataPack.p_original);
 	updateUniform(
-		m__uni_r,
+		m_uni_r,
 		l_cameraDataPack.r);
 	updateUniform(
-		m__uni_t,
+		m_uni_t,
 		l_cameraDataPack.t);
 
 	while (GLRenderingSystemComponent::get().m_billboardPassDataQueue.size() > 0)
@@ -109,7 +109,7 @@ bool GLBillboardPass::update()
 		auto l_GlobalPos = l_renderPack.globalPos;
 
 		updateUniform(
-			m__uni_pos,
+			m_uni_pos,
 			l_GlobalPos.x, l_GlobalPos.y, l_GlobalPos.z);
 
 		auto l_distanceToCamera = l_renderPack.distanceToCamera;
@@ -117,13 +117,13 @@ bool GLBillboardPass::update()
 		if (l_distanceToCamera > 1.0f)
 		{
 			updateUniform(
-				m__uni_size,
+				m_uni_size,
 				(1.0f / (l_distanceToCamera * l_cameraDataPack.WHRatio)), (1.0f / l_distanceToCamera));
 		}
 		else
 		{
 			updateUniform(
-				m__uni_size,
+				m_uni_size,
 				(1.0f / l_cameraDataPack.WHRatio), 1.0f);
 		}
 

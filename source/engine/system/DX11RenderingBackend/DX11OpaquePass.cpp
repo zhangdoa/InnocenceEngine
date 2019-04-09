@@ -41,7 +41,7 @@ bool DX11OpaquePass::initializeShaders()
 
 	DX11CBuffer l_VSCameraCBuffer;
 	l_VSCameraCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	l_VSCameraCBuffer.m_CBufferDesc.ByteWidth = sizeof(GPassCameraCBufferData);
+	l_VSCameraCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11CameraCBufferData);
 	l_VSCameraCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	l_VSCameraCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	l_VSCameraCBuffer.m_CBufferDesc.MiscFlags = 0;
@@ -50,7 +50,7 @@ bool DX11OpaquePass::initializeShaders()
 
 	DX11CBuffer l_VSMeshCBuffer;
 	l_VSMeshCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	l_VSMeshCBuffer.m_CBufferDesc.ByteWidth = sizeof(GPassMeshCBufferData);
+	l_VSMeshCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11MeshCBufferData);
 	l_VSMeshCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	l_VSMeshCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	l_VSMeshCBuffer.m_CBufferDesc.MiscFlags = 0;
@@ -61,7 +61,7 @@ bool DX11OpaquePass::initializeShaders()
 
 	DX11CBuffer l_PSCBuffer;
 	l_PSCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	l_PSCBuffer.m_CBufferDesc.ByteWidth = sizeof(GPassTextureCBufferData);
+	l_PSCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11TextureCBufferData);
 	l_PSCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	l_PSCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	l_PSCBuffer.m_CBufferDesc.MiscFlags = 0;
@@ -93,7 +93,9 @@ bool DX11OpaquePass::update()
 	DX11RenderingSystemComponent::get().m_deviceContext->RSSetState(
 		DX11RenderingSystemComponent::get().m_rasterStateForward);
 
+	// activate shader
 	activateDX11ShaderProgramComponent(m_DXSPC);
+	updateShaderParameter(ShaderType::VERTEX, 0, m_DXSPC->m_VSCBuffers, &DX11RenderingSystemComponent::get().m_cameraCBufferData);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
@@ -115,9 +117,9 @@ bool DX11OpaquePass::update()
 	cleanDSV(m_DXRPC->m_depthStencilView);
 
 	// draw
-	while (DX11RenderingSystemComponent::get().m_GPassMeshDataQueue.size() > 0)
+	while (DX11RenderingSystemComponent::get().m_meshDataQueue.size() > 0)
 	{
-		auto l_renderPack = DX11RenderingSystemComponent::get().m_GPassMeshDataQueue.front();
+		auto l_renderPack = DX11RenderingSystemComponent::get().m_meshDataQueue.front();
 
 		// Set the type of primitive that should be rendered from this vertex buffer.
 		D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
@@ -133,7 +135,6 @@ bool DX11OpaquePass::update()
 
 		DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
 
-		updateShaderParameter(ShaderType::VERTEX, 0, m_DXSPC->m_VSCBuffers, &DX11RenderingSystemComponent::get().m_GPassCameraCBufferData);
 		updateShaderParameter(ShaderType::VERTEX, 1, m_DXSPC->m_VSCBuffers, &l_renderPack.meshCBuffer);
 		updateShaderParameter(ShaderType::FRAGMENT, 0, m_DXSPC->m_PSCBuffers, &l_renderPack.textureCBuffer);
 
@@ -166,7 +167,7 @@ bool DX11OpaquePass::update()
 
 		drawMesh(l_renderPack.indiceSize, l_renderPack.DXMDC);
 
-		DX11RenderingSystemComponent::get().m_GPassMeshDataQueue.pop();
+		DX11RenderingSystemComponent::get().m_meshDataQueue.pop();
 	}
 
 	return true;

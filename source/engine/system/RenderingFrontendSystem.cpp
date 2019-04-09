@@ -112,8 +112,8 @@ bool InnoRenderingFrontendSystemNS::update()
 	auto r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
 	auto t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
 
-	m_cameraDataPack.p_Original = l_p;
-	m_cameraDataPack.p_Jittered = l_p;
+	m_cameraDataPack.p_original = l_p;
+	m_cameraDataPack.p_jittered = l_p;
 
 	if (m_renderingConfig.useTAA)
 	{
@@ -123,8 +123,8 @@ bool InnoRenderingFrontendSystemNS::update()
 		{
 			l_currentHaltonStep = 0;
 		}
-		m_cameraDataPack.p_Jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
-		m_cameraDataPack.p_Jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
+		m_cameraDataPack.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
+		m_cameraDataPack.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
 		l_currentHaltonStep += 1;
 	}
 

@@ -834,7 +834,7 @@ void GLEnvironmentRenderPass::updateVoxelVisualizationPass()
 	// voxel visualization pass
 	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
 
-	auto l_p = l_cameraDataPack.p_Original;
+	auto l_p = l_cameraDataPack.p_original;
 	auto l_r = l_cameraDataPack.r;
 	auto l_t = l_cameraDataPack.t;
 	auto l_ms = InnoMath::toScaleMatrix(vec4(l_voxelSize, l_voxelSize, l_voxelSize, 1.0f));

@@ -6,12 +6,12 @@
 
 struct GPassCameraUBOData
 {
-	mat4 m_CamProjOriginal;
-	mat4 m_CamProjJittered;
-	mat4 m_CamRot;
-	mat4 m_CamTrans;
-	mat4 m_CamRot_prev;
-	mat4 m_CamTrans_prev;
+	mat4 p_original;
+	mat4 p_jittered;
+	mat4 r;
+	mat4 t;
+	mat4 r_prev;
+	mat4 t_prev;
 };
 
 struct GPassMeshUBOData

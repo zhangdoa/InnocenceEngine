@@ -48,7 +48,6 @@ INNO_PRIVATE_SCOPE GLLightPass
 	std::vector<GLuint> m_uni_dirLightViews;
 
 	GLuint m_uni_viewPos;
-
 	GLuint m_uni_dirLight_direction;
 	GLuint m_uni_dirLight_luminance;
 	GLuint m_uni_dirLight_rot;

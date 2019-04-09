@@ -39,16 +39,25 @@ bool DX11LightPass::initializeShaders()
 {
 	m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
 
-	DX11CBuffer l_PSCBuffer;
+	m_DXSPC->m_PSCBuffers.reserve(2);
 
-	l_PSCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	l_PSCBuffer.m_CBufferDesc.ByteWidth = sizeof(LPassCBufferData);
-	l_PSCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	l_PSCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	l_PSCBuffer.m_CBufferDesc.MiscFlags = 0;
-	l_PSCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	DX11CBuffer l_PSCameraCBuffer;
+	l_PSCameraCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	l_PSCameraCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11CameraCBufferData);
+	l_PSCameraCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	l_PSCameraCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	l_PSCameraCBuffer.m_CBufferDesc.MiscFlags = 0;
+	l_PSCameraCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	m_DXSPC->m_PSCBuffers.emplace_back(l_PSCameraCBuffer);
 
-	m_DXSPC->m_PSCBuffers.emplace_back(l_PSCBuffer);
+	DX11CBuffer l_PSDirectionalLightCBuffer;
+	l_PSDirectionalLightCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	l_PSDirectionalLightCBuffer.m_CBufferDesc.ByteWidth = sizeof(DirectionalLightCBufferData);
+	l_PSDirectionalLightCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	l_PSDirectionalLightCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	l_PSDirectionalLightCBuffer.m_CBufferDesc.MiscFlags = 0;
+	l_PSDirectionalLightCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	m_DXSPC->m_PSCBuffers.emplace_back(l_PSDirectionalLightCBuffer);
 
 	m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -98,9 +107,8 @@ bool DX11LightPass::update()
 	}
 	cleanDSV(m_DXRPC->m_depthStencilView);
 
-	auto l_LPassCBufferData = DX11RenderingSystemComponent::get().m_LPassCBufferData;
-
-	updateShaderParameter(ShaderType::FRAGMENT, 0, m_DXSPC->m_PSCBuffers, &l_LPassCBufferData);
+	updateShaderParameter(ShaderType::FRAGMENT, 0, m_DXSPC->m_PSCBuffers, &DX11RenderingSystemComponent::get().m_cameraCBufferData);
+	updateShaderParameter(ShaderType::FRAGMENT, 1, m_DXSPC->m_PSCBuffers, &DX11RenderingSystemComponent::get().m_directionalLightCBufferData);
 
 	// bind to previous pass render target textures
 	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DX11OpaquePass::getDX11RPC()->m_DXTDCs[0]->m_SRV);

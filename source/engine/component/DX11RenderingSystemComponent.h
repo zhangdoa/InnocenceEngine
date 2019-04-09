@@ -4,24 +4,25 @@
 #include "../component/TextureDataComponent.h"
 #include "../component/DX11TextureDataComponent.h"
 
-struct GPassCameraCBufferData
+struct DX11CameraCBufferData
 {
-	mat4 m_CamProjOriginal;
-	mat4 m_CamProjJittered;
-	mat4 m_CamRot;
-	mat4 m_CamTrans;
-	mat4 m_CamRot_prev;
-	mat4 m_CamTrans_prev;
+	mat4 p_original;
+	mat4 p_jittered;
+	mat4 r;
+	mat4 t;
+	mat4 r_prev;
+	mat4 t_prev;
+	vec4 globalPos;
 };
 
-struct GPassMeshCBufferData
+struct DX11MeshCBufferData
 {
 	mat4 m;
 	mat4 m_prev;
-	mat4 m_normalMat;
+	mat4 normalMat;
 };
 
-struct GPassTextureCBufferData
+struct DX11TextureCBufferData
 {
 	vec4 albedo;
 	vec4 MRA;
@@ -35,25 +36,27 @@ struct GPassTextureCBufferData
 	int padding3 = true;
 };
 
-struct GPassMeshDataPack
+struct DX11MeshDataPack
 {
 	size_t indiceSize;
-	GPassMeshCBufferData meshCBuffer;
-	GPassTextureCBufferData textureCBuffer;
+	DX11MeshCBufferData meshCBuffer;
 	DX11MeshDataComponent* DXMDC;
+	DX11TextureCBufferData textureCBuffer;
 	MeshPrimitiveTopology meshPrimitiveTopology;
+	MeshShapeType meshShapeType;
 	DX11TextureDataComponent* normalDXTDC;
 	DX11TextureDataComponent* albedoDXTDC;
 	DX11TextureDataComponent* metallicDXTDC;
 	DX11TextureDataComponent* roughnessDXTDC;
 	DX11TextureDataComponent* AODXTDC;
+	VisiblilityType visiblilityType;
 };
 
-struct LPassCBufferData
+struct DirectionalLightCBufferData
 {
-	vec4 viewPos;
-	vec4 lightDir;
-	vec4 color;
+	vec4 dir;
+	vec4 luminance;
+	mat4 r;
 };
 
 class DX11RenderingSystemComponent
@@ -109,9 +112,9 @@ public:
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 	D3D11_RENDER_TARGET_VIEW_DESC deferredPassRTVDesc = D3D11_RENDER_TARGET_VIEW_DESC();
 
-	GPassCameraCBufferData m_GPassCameraCBufferData;
-	std::queue<GPassMeshDataPack> m_GPassMeshDataQueue;
-	LPassCBufferData m_LPassCBufferData;
+	DX11CameraCBufferData m_cameraCBufferData;
+	std::queue<DX11MeshDataPack> m_meshDataQueue;
+	DirectionalLightCBufferData m_directionalLightCBufferData;
 
 	DX11MeshDataComponent* m_UnitLineDXMDC;
 	DX11MeshDataComponent* m_UnitQuadDXMDC;

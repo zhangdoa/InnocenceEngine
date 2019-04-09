@@ -167,7 +167,7 @@ bool GLSSAONoisePass::update()
 
 	updateUniform(
 		m_uni_p,
-		l_cameraDataPack.p_Jittered);
+		l_cameraDataPack.p_jittered);
 	updateUniform(
 		m_uni_r,
 		l_cameraDataPack.r);

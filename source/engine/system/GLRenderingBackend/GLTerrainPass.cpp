@@ -253,7 +253,7 @@ bool GLTerrainPass::update()
 
 		updateUniform(
 			m_uni_p_camera,
-			l_cameraDataPack.p_Original);
+			l_cameraDataPack.p_original);
 		updateUniform(
 			m_uni_r_camera,
 			l_cameraDataPack.r);

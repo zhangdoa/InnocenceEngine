@@ -6,11 +6,22 @@ Texture2D geometryPassRT2 : register(t2);
 
 SamplerState SampleTypePoint : register(s0);
 
-cbuffer LightBuffer
+cbuffer cameraCBuffer
 {
-	float4 viewPos;
-	float4 lightDir;
-	float4 color;
+	matrix cam_p_original;
+	matrix cam_p_jittered;
+	matrix cam_r;
+	matrix cam_t;
+	matrix cam_r_prev;
+	matrix cam_t_prev;
+	float4 cam_globalPos;
+};
+
+cbuffer DirectionalLightCBuffer
+{
+	float4 dirLight_dir;
+	float4 dirLight_luminance;
+	matrix dirLight_r;
 };
 
 struct PixelInputType
@@ -78,7 +89,7 @@ float3 CalcBRDF(float3 albedo, float metallic, float roughness, float3 F0, float
 
 	// Diffuse BRDF
 	float Fd = DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness);
-	
+
 	float3 BRDF = (Fd * albedo + Fr) / PI;
 
 	return BRDF;
@@ -87,7 +98,7 @@ float3 CalcBRDF(float3 albedo, float metallic, float roughness, float3 F0, float
 // ----------------------------------------------------------------------------
 float3 CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughness, float3 F0, float3 N, float3 V)
 {
-	float3 L = normalize(-lightDir.xyz);
+	float3 L = normalize(-dirLight_dir.xyz);
 	float3 H = normalize(V + L);
 
 	float NdotV = max(dot(N, V), 0.0);
@@ -95,7 +106,7 @@ float3 CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughne
 	float NdotH = max(dot(N, H), 0.0);
 	float NdotL = max(dot(N, L), 0.0);
 
-	return CalcBRDF(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL) * color.xyz * NdotL;
+	return CalcBRDF(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL) * dirLight_luminance.xyz * NdotL;
 }
 // Spherical-Gaussians
 // ----------------------------------------------------------------------------
@@ -216,9 +227,9 @@ SG DirectionalLightToSG(in float3 lightDir, in float3 intensity)
 
 float3 SG_CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughness, float3 normal, float3 posWS, float3 F0)
 {
-	SG directionalLight = DirectionalLightToSG(normalize(-lightDir.xyz), 20);
+	SG directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), 20);
 
-	return SGDiffusePunctual(directionalLight, normal, albedo) * color.xyz;
+	return SGDiffusePunctual(directionalLight, normal, albedo) * dirLight_luminance.xyz;
 }
 
 PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
@@ -240,7 +251,7 @@ PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	F0 = lerp(F0, albedo, metallic);
 
 	float3 N = normalize(normalWS);
-	float3 V = normalize(viewPos.xyz - posWS);
+	float3 V = normalize(cam_globalPos.xyz - posWS);
 
 	float3 finalColor;
 

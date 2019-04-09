@@ -373,12 +373,12 @@ bool GLRenderingSystemNS::prepareGeometryPassData()
 	//UBO
 	auto l_cameraDataPack = m_renderingFrontendSystem->getCameraDataPack();
 
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjJittered = l_cameraDataPack.p_Jittered;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamProjOriginal = l_cameraDataPack.p_Original;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot = l_cameraDataPack.r;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans = l_cameraDataPack.t;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamRot_prev = l_cameraDataPack.r_prev;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.m_CamTrans_prev = l_cameraDataPack.t_prev;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.p_original = l_cameraDataPack.p_original;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.p_jittered = l_cameraDataPack.p_jittered;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.r = l_cameraDataPack.r;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.t = l_cameraDataPack.t;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.r_prev = l_cameraDataPack.r_prev;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.t_prev = l_cameraDataPack.t_prev;
 
 	auto l_meshDataPack = m_renderingFrontendSystem->getMeshDataPack();
 

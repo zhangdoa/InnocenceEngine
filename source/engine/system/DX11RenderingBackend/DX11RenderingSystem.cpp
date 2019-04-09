@@ -580,18 +580,19 @@ void DX11RenderingSystemNS::prepareRenderingData()
 {
 	auto l_cameraDataPack = m_renderingFrontendSystem->getCameraDataPack();
 
-	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamProjJittered = l_cameraDataPack.p_Jittered;
-	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamProjOriginal = l_cameraDataPack.p_Original;
-	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamRot = l_cameraDataPack.r;
-	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamTrans = l_cameraDataPack.t;
-	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamRot_prev = l_cameraDataPack.r_prev;
-	g_DXRenderingSystemComponent->m_GPassCameraCBufferData.m_CamTrans_prev = l_cameraDataPack.t_prev;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.p_original = l_cameraDataPack.p_original;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.p_jittered = l_cameraDataPack.p_jittered;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.r = l_cameraDataPack.r;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.t = l_cameraDataPack.t;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.r_prev = l_cameraDataPack.r_prev;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.t_prev = l_cameraDataPack.t_prev;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.globalPos = l_cameraDataPack.globalPos;
 
 	auto l_sunDataPack = m_renderingFrontendSystem->getSunDataPack();
 
-	g_DXRenderingSystemComponent->m_LPassCBufferData.viewPos = l_cameraDataPack.globalPos;
-	g_DXRenderingSystemComponent->m_LPassCBufferData.lightDir = l_sunDataPack.dir;
-	g_DXRenderingSystemComponent->m_LPassCBufferData.color = l_sunDataPack.luminance;
+	g_DXRenderingSystemComponent->m_directionalLightCBufferData.dir = l_sunDataPack.dir;
+	g_DXRenderingSystemComponent->m_directionalLightCBufferData.luminance = l_sunDataPack.luminance;
+	g_DXRenderingSystemComponent->m_directionalLightCBufferData.r = l_sunDataPack.r;
 
 	auto l_meshDataPack = m_renderingFrontendSystem->getMeshDataPack();
 
@@ -605,13 +606,13 @@ void DX11RenderingSystemNS::prepareRenderingData()
 		auto l_DXMDC = getDX11MeshDataComponent(i.MDC->m_parentEntity);
 		if (l_DXMDC && l_DXMDC->m_objectStatus == ObjectStatus::ALIVE)
 		{
-			GPassMeshDataPack l_meshDataPack;
+			DX11MeshDataPack l_meshDataPack;
 
 			l_meshDataPack.indiceSize = i.MDC->m_indicesSize;
 			l_meshDataPack.meshPrimitiveTopology = i.MDC->m_meshPrimitiveTopology;
 			l_meshDataPack.meshCBuffer.m = i.m;
 			l_meshDataPack.meshCBuffer.m_prev = i.m_prev;
-			l_meshDataPack.meshCBuffer.m_normalMat = i.normalMat;
+			l_meshDataPack.meshCBuffer.normalMat = i.normalMat;
 			l_meshDataPack.DXMDC = l_DXMDC;
 
 			auto l_material = i.material;
@@ -679,7 +680,7 @@ void DX11RenderingSystemNS::prepareRenderingData()
 				1.0f
 			);
 
-			g_DXRenderingSystemComponent->m_GPassMeshDataQueue.push(l_meshDataPack);
+			g_DXRenderingSystemComponent->m_meshDataQueue.push(l_meshDataPack);
 		}
 	}
 }

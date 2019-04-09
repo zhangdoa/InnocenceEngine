@@ -89,7 +89,7 @@ bool GLSkyPass::update()
 
 		updateUniform(
 			m_uni_p,
-			l_cameraDataPack.p_Original);
+			l_cameraDataPack.p_original);
 		updateUniform(
 			m_uni_r,
 			l_cameraDataPack.r);
