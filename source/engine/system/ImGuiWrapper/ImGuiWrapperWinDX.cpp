@@ -1,7 +1,7 @@
 #include "ImGuiWrapperWinDX.h"
 #include "../../component/WinWindowSystemComponent.h"
 #include "../../component/DX11RenderingSystemComponent.h"
-#include "../../component/DXGeometryRenderPassComponent.h"
+#include "../DX11RenderingBackend/DX11OpaquePass.h"
 
 #include "../../third-party/ImGui/imgui_impl_win32.h"
 #include "../../third-party/ImGui/imgui_impl_dx11.h"
@@ -80,27 +80,27 @@ void ImGuiWrapperWinDX11::showRenderResult()
 		{
 			ImGui::BeginChild("World Space Position(RGB) + Metallic(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("World Space Position(RGB) + Metallic(A)");
-			ImGui::Image(ImTextureID(DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_DXTDCs[0]->m_SRV), l_renderTargetSize, ImVec2(0.0, 0.0), ImVec2(1.0, 1.0));
+			ImGui::Image(ImTextureID(DX11OpaquePass::getDX11RPC()->m_DXTDCs[0]->m_SRV), l_renderTargetSize, ImVec2(0.0, 0.0), ImVec2(1.0, 1.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();
 
 			ImGui::BeginChild("World Space Normal(RGB) + Roughness(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("World Space Normal(RGB) + Roughness(A)");
-			ImGui::Image(ImTextureID(DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_DXTDCs[1]->m_SRV), l_renderTargetSize, ImVec2(0.0, 0.0), ImVec2(1.0, 1.0));
+			ImGui::Image(ImTextureID(DX11OpaquePass::getDX11RPC()->m_DXTDCs[1]->m_SRV), l_renderTargetSize, ImVec2(0.0, 0.0), ImVec2(1.0, 1.0));
 			ImGui::EndChild();
 		}
 		{
 			ImGui::BeginChild("Albedo(RGB) + Ambient Occlusion(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Albedo(RGB) + Ambient Occlusion(A)");
-			ImGui::Image(ImTextureID(DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_DXTDCs[2]->m_SRV), l_renderTargetSize, ImVec2(0.0, 0.0), ImVec2(1.0, 1.0));
+			ImGui::Image(ImTextureID(DX11OpaquePass::getDX11RPC()->m_DXTDCs[2]->m_SRV), l_renderTargetSize, ImVec2(0.0, 0.0), ImVec2(1.0, 1.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();
 
 			ImGui::BeginChild("Screen Space Motion Vector(RGB) + Transparency(A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Screen Space Motion Vector(RGB) + Transparency(A)");
-			ImGui::Image(ImTextureID(DXGeometryRenderPassComponent::get().m_opaquePass_DXRPC->m_DXTDCs[3]->m_SRV), l_renderTargetSize, ImVec2(0.0, 0.0), ImVec2(1.0, 1.0));
+			ImGui::Image(ImTextureID(DX11OpaquePass::getDX11RPC()->m_DXTDCs[3]->m_SRV), l_renderTargetSize, ImVec2(0.0, 0.0), ImVec2(1.0, 1.0));
 			ImGui::EndChild();
 		}
 	}

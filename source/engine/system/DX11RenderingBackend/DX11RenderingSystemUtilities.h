@@ -33,7 +33,7 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 
 	bool activateDX11ShaderProgramComponent(DX11ShaderProgramComponent* rhs);
 
-	void updateShaderParameter(ShaderType shaderType, unsigned int startSlot, ID3D11Buffer* CBuffer, size_t size, void* parameterValue);
+	void updateShaderParameter(ShaderType shaderType, unsigned int startSlot, const std::vector<DX11CBuffer>& DX11CBuffers, void* parameterValue);
 
 	void cleanRTV(vec4 color, ID3D11RenderTargetView* RTV);
 	void cleanDSV(ID3D11DepthStencilView* DSV);

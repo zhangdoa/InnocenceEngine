@@ -1,8 +1,8 @@
 #include "DX11RenderingSystem.h"
 
-#include "DXGeometryRenderingPassUtilities.h"
-#include "DXLightRenderingPassUtilities.h"
-#include "DXFinalRenderingPassUtilities.h"
+#include "DX11OpaquePass.h"
+#include "DX11LightPass.h"
+#include "DX11FinalBlendPass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
 #include "../../component/WinWindowSystemComponent.h"
@@ -474,11 +474,11 @@ bool DX11RenderingSystemNS::update()
 	// Clear the buffers to begin the scene.
 	prepareRenderingData();
 
-	DXGeometryRenderingPassUtilities::update();
+	DX11OpaquePass::update();
 
-	DXLightRenderingPassUtilities::update();
+	DX11LightPass::update();
 
-	DXFinalRenderingPassUtilities::update();
+	DX11FinalBlendPass::update();
 
 	return true;
 }
@@ -692,9 +692,9 @@ bool DX11RenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
 bool DX11RenderingSystem::initialize()
 {
 	DX11RenderingSystemNS::initializeDefaultAssets();
-	DXGeometryRenderingPassUtilities::initialize();
-	DXLightRenderingPassUtilities::initialize();
-	DXFinalRenderingPassUtilities::initialize();
+	DX11OpaquePass::initialize();
+	DX11LightPass::initialize();
+	DX11FinalBlendPass::initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been initialized.");
 	return true;
@@ -717,11 +717,17 @@ ObjectStatus DX11RenderingSystem::getStatus()
 
 bool DX11RenderingSystem::resize()
 {
+	DX11OpaquePass::resize();
+	DX11LightPass::resize();
+	DX11FinalBlendPass::resize();
 	return true;
 }
 
 bool DX11RenderingSystem::reloadShader(RenderPassType renderPassType)
 {
+	DX11OpaquePass::reloadShaders();
+	DX11LightPass::reloadShaders();
+	DX11FinalBlendPass::reloadShaders();
 	return true;
 }
 

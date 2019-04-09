@@ -761,13 +761,15 @@ void DX11RenderingSystemNS::drawMesh(size_t indicesSize, DX11MeshDataComponent *
 	DX11RenderingSystemComponent::get().m_deviceContext->DrawIndexed((UINT)indicesSize, 0, 0);
 }
 
-void DX11RenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned int startSlot, ID3D11Buffer* CBuffer, size_t size, void* parameterValue)
+void DX11RenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned int startSlot, const std::vector<DX11CBuffer>& DX11CBuffers, void* parameterValue)
 {
+	auto l_DX11CBuffer = DX11CBuffers[startSlot];
+
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 
 	// Lock the constant buffer so it can be written to.
-	result = DX11RenderingSystemComponent::get().m_deviceContext->Map(CBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = DX11RenderingSystemComponent::get().m_deviceContext->Map(l_DX11CBuffer.m_CBufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't lock the shader buffer!");
@@ -775,21 +777,21 @@ void DX11RenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigne
 	}
 
 	auto dataPtr = mappedResource.pData;
-	std::memcpy(dataPtr, parameterValue, size);
+	std::memcpy(dataPtr, parameterValue, l_DX11CBuffer.m_CBufferDesc.ByteWidth);
 
 	// Unlock the constant buffer.
-	DX11RenderingSystemComponent::get().m_deviceContext->Unmap(CBuffer, 0);
+	DX11RenderingSystemComponent::get().m_deviceContext->Unmap(l_DX11CBuffer.m_CBufferPtr, 0);
 
 	switch (shaderType)
 	{
 	case ShaderType::VERTEX:
-		DX11RenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers(startSlot, 1, &CBuffer);
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers(startSlot, 1, &l_DX11CBuffer.m_CBufferPtr);
 		break;
 	case ShaderType::GEOMETRY:
-		DX11RenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers(startSlot, 1, &CBuffer);
+		DX11RenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers(startSlot, 1, &l_DX11CBuffer.m_CBufferPtr);
 		break;
 	case ShaderType::FRAGMENT:
-		DX11RenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers(startSlot, 1, &CBuffer);
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers(startSlot, 1, &l_DX11CBuffer.m_CBufferPtr);
 		break;
 	default:
 		break;
