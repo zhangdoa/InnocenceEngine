@@ -233,13 +233,13 @@ bool GameInstanceNS::setup()
 		}
 
 		std::default_random_engine generator;
-		std::uniform_real_distribution<float> randomHeight(0.0f, 50.0f);
+		std::uniform_real_distribution<float> randomPosDelta(0.0f, 1.0f);
 
 		for (unsigned int i = 0; i < sphereMatrixDim; i++)
 		{
 			for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 			{
-				m_sphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos = vec4((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), randomHeight(generator), (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1), 1.0f);
+				m_sphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos = vec4((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), randomPosDelta(generator) * 50.0f, (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1), 1.0f);
 			}
 		}
 

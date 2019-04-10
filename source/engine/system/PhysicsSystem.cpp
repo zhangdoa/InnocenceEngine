@@ -13,7 +13,12 @@ namespace InnoPhysicsSystemNS
 
 	void generateProjectionMatrix(CameraComponent* cameraComponent);
 	void generateRayOfEye(CameraComponent* cameraComponent);
+	std::vector<Vertex> toViewSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r);
+	std::vector<Vertex> fromViewSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r);
+	std::vector<Vertex> toClipSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p);
+	std::vector<Vertex> fromClipSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p);
 	std::vector<Vertex> generateFrustumVertices(CameraComponent* cameraComponent);
+
 	void generateFrustum(CameraComponent* cameraComponent);
 	void generatePointLightComponentAttenuationRadius(PointLightComponent* pointLightComponent);
 	void generateSphereLightComponentScale(SphereLightComponent* sphereLightComponent);
@@ -91,6 +96,135 @@ void InnoPhysicsSystemNS::generateRayOfEye(CameraComponent * cameraComponent)
 	cameraComponent->m_rayOfEye.m_origin = l_transformComponent->m_globalTransformVector.m_pos;
 	cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(direction::BACKWARD, l_transformComponent->m_localTransformVector.m_rot);
 }
+std::vector<Vertex> InnoPhysicsSystemNS::toViewSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r)
+{
+	auto l_result = rhs;
+
+	for (auto& l_vertexData : l_result)
+	{
+		vec4 l_mulPos;
+		l_mulPos = l_vertexData.m_pos;
+		// from world space to view space
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(l_mulPos, r.inverse());
+		l_mulPos = InnoMath::mul(l_mulPos, t.inverse());
+#endif
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(r.inverse(), l_mulPos);
+		l_mulPos = InnoMath::mul(t.inverse(), l_mulPos);
+#endif
+		l_vertexData.m_pos = l_mulPos;
+	}
+
+	for (auto& l_vertexData : l_result)
+	{
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
+	}
+
+	return l_result;
+}
+
+std::vector<Vertex> InnoPhysicsSystemNS::fromViewSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r)
+{
+	auto l_result = rhs;
+
+	for (auto& l_vertexData : l_result)
+	{
+		vec4 l_mulPos;
+		l_mulPos = l_vertexData.m_pos;
+		// from view space to world space
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(l_mulPos, r);
+		l_mulPos = InnoMath::mul(l_mulPos, t);
+#endif
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(r, l_mulPos);
+		l_mulPos = InnoMath::mul(t, l_mulPos);
+#endif
+		l_vertexData.m_pos = l_mulPos;
+	}
+
+	for (auto& l_vertexData : l_result)
+	{
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
+	}
+
+	return l_result;
+}
+
+std::vector<Vertex> InnoPhysicsSystemNS::toClipSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p)
+{
+	auto l_result = rhs;
+
+	for (auto& l_vertexData : l_result)
+	{
+		vec4 l_mulPos;
+		l_mulPos = l_vertexData.m_pos;
+		// from world space to view space
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(l_mulPos, r.inverse());
+		l_mulPos = InnoMath::mul(l_mulPos, t.inverse());
+#endif
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(r.inverse(), l_mulPos);
+		l_mulPos = InnoMath::mul(t.inverse(), l_mulPos);
+#endif
+		// from view space to clip space
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(l_mulPos, p);
+#endif
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(p, l_mulPos);
+#endif
+		// perspective division
+		l_mulPos = l_mulPos * (1.0f / l_mulPos.w);
+		l_vertexData.m_pos = l_mulPos;
+	}
+
+	for (auto& l_vertexData : l_result)
+	{
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
+	}
+
+	return l_result;
+}
+
+std::vector<Vertex> InnoPhysicsSystemNS::fromClipSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p)
+{
+	auto l_result = rhs;
+
+	for (auto& l_vertexData : l_result)
+	{
+		vec4 l_mulPos;
+		l_mulPos = l_vertexData.m_pos;
+		// from clip space to view space
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(l_mulPos, p.inverse());
+#endif
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(p.inverse(), l_mulPos);
+#endif
+		// perspective division
+		l_mulPos = l_mulPos * (1.0f / l_mulPos.w);
+		// from view space to world space
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(l_mulPos, r);
+		l_mulPos = InnoMath::mul(l_mulPos, t);
+#endif
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_mulPos = InnoMath::mul(r, l_mulPos);
+		l_mulPos = InnoMath::mul(t, l_mulPos);
+#endif
+		l_vertexData.m_pos = l_mulPos;
+	}
+
+	for (auto& l_vertexData : l_result)
+	{
+		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
+	}
+
+	return l_result;
+}
 
 std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent * cameraComponent)
 {
@@ -99,46 +233,14 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent
 	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 	auto l_pCamera = cameraComponent->m_projectionMatrix;
 
-	auto l_NDC = InnoMath::generateNDC<float>();
+	auto rhs = InnoMath::generateNDC<float>();
 
-	for (auto& l_vertexData : l_NDC)
-	{
-		vec4 l_mulPos;
-		l_mulPos = l_vertexData.m_pos;
-		// from projection space to view space
-		//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_mulPos = InnoMath::mul(l_mulPos, l_pCamera.inverse());
-#endif
-		//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_mulPos = InnoMath::mul(l_pCamera.inverse(), l_mulPos);
-#endif
-		// perspective division
-		l_mulPos = l_mulPos * (1.0f / l_mulPos.w);
-		// from view space to world space
-		//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_mulPos = InnoMath::mul(l_mulPos, l_rCamera);
-		l_mulPos = InnoMath::mul(l_mulPos, l_tCamera);
-#endif
-		//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_mulPos = InnoMath::mul(l_rCamera, l_mulPos);
-		l_mulPos = InnoMath::mul(l_tCamera, l_mulPos);
-#endif
-		l_vertexData.m_pos = l_mulPos;
-	}
-
-	for (auto& l_vertexData : l_NDC)
-	{
-		l_vertexData.m_normal = vec4(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, 0.0f).normalize();
-	}
+	rhs = fromClipSpace(rhs, l_tCamera, l_rCamera, l_pCamera);
 
 	// near clip plane first
-	std::reverse(l_NDC.begin(), l_NDC.end());
+	std::reverse(rhs.begin(), rhs.end());
 
-	return l_NDC;
+	return rhs;
 }
 
 void InnoPhysicsSystemNS::generateFrustum(CameraComponent * cameraComponent)
@@ -180,22 +282,74 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	directionalLightComponent->m_AABBsInWorldSpace.clear();
 	directionalLightComponent->m_projectionMatrices.clear();
 
-	//1. get frustum vertices and the maxium draw distance
+	//1. get frustum vertices (fit to scene) and the maxium draw distance
 	auto l_cameraComponents = g_pCoreSystem->getGameSystem()->get<CameraComponent>();
 	auto l_camera = l_cameraComponents[0];
-	auto l_frustumVertices = generateFrustumVertices(l_camera);
-	auto l_distance = l_camera->m_zFar - l_camera->m_zNear;
-	std::vector<float> l_CSMSplitFactors = { 20.48f / l_distance, 128.0f / l_distance, 1024.0f / l_distance, 1.0f };
+	auto l_frustumVerticesInWorldSpace = generateFrustumVertices(l_camera);
 
-	//2.calculate AABBs in world space
-	auto l_AABBsWS = frustumsVerticesToAABBs(l_frustumVertices, l_CSMSplitFactors);
+	// transform scene AABB vertices to view space
+	auto l_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_camera->m_parentEntity);
+	auto l_rCamera = InnoMath::toRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
+	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
+
+	// extend AABB to include the bound sphere, for to eliminate rotation conflict
+	auto sphereRadius = (m_SceneAABB.m_boundMax - m_SceneAABB.m_center).length();
+	auto l_boundMax = m_SceneAABB.m_center + sphereRadius;
+	l_boundMax.w = 1.0f;
+	auto l_boundMin = m_SceneAABB.m_center - sphereRadius;
+	l_boundMin.w = 1.0f;
+
+	auto l_sceneAABBVertices = generateAABBVertices(l_boundMax, l_boundMin);
+	l_sceneAABBVertices = toViewSpace(l_sceneAABBVertices, l_tCamera, l_rCamera);
+
+	// find the farest one vertex
+	vec4 l_farPoint = InnoMath::minVec4<float>;
+
+	for (auto i : l_sceneAABBVertices)
+	{
+		if (i.m_pos.z < l_farPoint.z)
+		{
+			l_farPoint.z = i.m_pos.z;
+		}
+	}
+
+	// compare draw distance and z component of the farest scene AABB vertex in view space
+	auto l_distance_original = l_camera->m_zFar - l_camera->m_zNear;
+
+	auto l_frustumVerticesInViewSpace = toViewSpace(l_frustumVerticesInWorldSpace, l_tCamera, l_rCamera);
+
+	auto l_distance_adjust = std::abs(l_farPoint.z - l_frustumVerticesInViewSpace[0].m_pos.z);
+
+	// adjust draw distance and frustum vertices
+	if (l_distance_adjust < l_distance_original)
+	{
+		// move the far plane closer to the new far point
+		l_frustumVerticesInViewSpace[4].m_pos.x = l_frustumVerticesInViewSpace[4].m_pos.x * l_distance_adjust / l_distance_original;
+		l_frustumVerticesInViewSpace[4].m_pos.y = l_frustumVerticesInViewSpace[4].m_pos.y * l_distance_adjust / l_distance_original;
+		l_frustumVerticesInViewSpace[4].m_pos.z = l_farPoint.z;
+		l_frustumVerticesInViewSpace[5].m_pos.x = l_frustumVerticesInViewSpace[5].m_pos.x * l_distance_adjust / l_distance_original;
+		l_frustumVerticesInViewSpace[5].m_pos.y = l_frustumVerticesInViewSpace[5].m_pos.y * l_distance_adjust / l_distance_original;
+		l_frustumVerticesInViewSpace[5].m_pos.z = l_farPoint.z;
+		l_frustumVerticesInViewSpace[6].m_pos.x = l_frustumVerticesInViewSpace[6].m_pos.x * l_distance_adjust / l_distance_original;
+		l_frustumVerticesInViewSpace[6].m_pos.y = l_frustumVerticesInViewSpace[6].m_pos.y * l_distance_adjust / l_distance_original;
+		l_frustumVerticesInViewSpace[6].m_pos.z = l_farPoint.z;
+		l_frustumVerticesInViewSpace[7].m_pos.x = l_frustumVerticesInViewSpace[7].m_pos.x * l_distance_adjust / l_distance_original;
+		l_frustumVerticesInViewSpace[7].m_pos.y = l_frustumVerticesInViewSpace[7].m_pos.y * l_distance_adjust / l_distance_original;
+		l_frustumVerticesInViewSpace[7].m_pos.z = l_farPoint.z;
+
+		l_frustumVerticesInWorldSpace = fromViewSpace(l_frustumVerticesInViewSpace, l_tCamera, l_rCamera);
+	}
+	std::vector<float> l_CSMSplitFactors = { 0.25f, 0.5f, 0.75f, 1.0f };
+
+	//2. calculate AABBs in world space
+	auto l_AABBsWS = frustumsVerticesToAABBs(l_frustumVerticesInWorldSpace, l_CSMSplitFactors);
 
 	//3. save the AABB for bound area detection
 	directionalLightComponent->m_AABBsInWorldSpace = std::move(l_AABBsWS);
 
 	//4. transform frustum vertices to light space
 	auto l_lightRotMat = g_pCoreSystem->getGameSystem()->get<TransformComponent>(directionalLightComponent->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
-	for (size_t i = 0; i < l_frustumVertices.size(); i++)
+	for (size_t i = 0; i < l_frustumVerticesInWorldSpace.size(); i++)
 	{
 		//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
@@ -203,14 +357,14 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 #endif
 		//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_frustumVertices[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVertices[i].m_pos);
+		l_frustumVerticesInWorldSpace[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVerticesInWorldSpace[i].m_pos);
 #endif
 	}
 
 	//5.calculate AABBs in light space
-	auto l_AABBsLS = frustumsVerticesToAABBs(l_frustumVertices, l_CSMSplitFactors);
+	auto l_AABBsLS = frustumsVerticesToAABBs(l_frustumVerticesInWorldSpace, l_CSMSplitFactors);
 
-	//6. extend AABB to include the sphere
+	//6. extend AABB to include the bound sphere, for to eliminate rotation conflict
 	for (size_t i = 0; i < 4; i++)
 	{
 		auto sphereRadius = (l_AABBsLS[i].m_boundMax - l_AABBsLS[i].m_center).length();
