@@ -19,7 +19,6 @@ public:
 	INNO_SYSTEM_EXPORT virtual std::string loadTextFile(const std::string& fileName) = 0;
 	INNO_SYSTEM_EXPORT virtual std::vector<char> loadBinaryFile(const std::string& fileName) = 0;
 
-	INNO_SYSTEM_EXPORT virtual bool loadDefaultScene() = 0;
 	INNO_SYSTEM_EXPORT virtual bool loadScene(const std::string& fileName) = 0;
 	INNO_SYSTEM_EXPORT virtual bool saveScene(const std::string& fileName) = 0;
 	INNO_SYSTEM_EXPORT virtual bool isLoadingScene() = 0;

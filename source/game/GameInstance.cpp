@@ -160,11 +160,7 @@ namespace GameInstanceNS
 	bool setup();
 	bool initialize();
 
-	void setupSpheres();
-	void setupLights();
 	void update();
-	void updateLights(float seed);
-	void updateSpheres(float seed);
 
 	void runTest(unsigned int testTime, std::function<bool()> testCase);
 
@@ -246,11 +242,11 @@ bool GameInstanceNS::setup()
 				m_sphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos = vec4((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), randomHeight(generator), (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1), 1.0f);
 			}
 		}
+
+		m_objectStatus = ObjectStatus::ALIVE;
 	};
 
-	//g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
-
-	m_objectStatus = ObjectStatus::ALIVE;
+	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
 
 	return true;
 }
@@ -272,7 +268,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 INNO_GAME_EXPORT bool GameInstance::initialize()
 {
 	bool result = true;
-	g_pCoreSystem->getFileSystem()->loadDefaultScene();
+	g_pCoreSystem->getFileSystem()->loadScene("..//res//scenes//default.InnoScene");
 
 	result = result && PlayerComponentCollection::initialize();
 	result = result && GameInstanceNS::initialize();
@@ -305,27 +301,10 @@ INNO_GAME_EXPORT std::string GameInstance::getGameName()
 
 void GameInstanceNS::update()
 {
-	// @TODO: getter for config
-	auto l_pause = g_pCoreSystem->getGameSystem();
-	if (1)
+	if (m_objectStatus == ObjectStatus::ALIVE)
 	{
-		auto tempTask = g_pCoreSystem->getTaskSystem()->submit([&]()
-		{
-			temp += 0.02f;
-			updateLights(temp);
-			updateSpheres(temp);
-		});
-		m_asyncTask = &tempTask;
+		PlayerComponentCollection::update();
 	}
-	PlayerComponentCollection::update();
-}
-
-void GameInstanceNS::updateLights(float seed)
-{
-}
-
-void GameInstanceNS::updateSpheres(float seed)
-{
 }
 
 void GameInstanceNS::runTest(unsigned int testTime, std::function<bool()> testCase)

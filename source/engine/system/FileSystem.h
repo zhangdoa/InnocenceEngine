@@ -16,7 +16,6 @@ public:
 	INNO_SYSTEM_EXPORT std::string loadTextFile(const std::string& fileName) override;
 	INNO_SYSTEM_EXPORT std::vector<char> loadBinaryFile(const std::string& fileName) override;
 
-	INNO_SYSTEM_EXPORT bool loadDefaultScene() override;
 	INNO_SYSTEM_EXPORT bool loadScene(const std::string& fileName) override;
 	INNO_SYSTEM_EXPORT bool saveScene(const std::string& fileName) override;
 	INNO_SYSTEM_EXPORT bool isLoadingScene() override;

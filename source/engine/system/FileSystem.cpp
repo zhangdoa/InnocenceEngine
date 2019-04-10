@@ -767,12 +767,6 @@ INNO_SYSTEM_EXPORT std::vector<char> InnoFileSystem::loadBinaryFile(const std::s
 	return InnoFileSystemNS::loadBinaryFile(fileName);
 }
 
-INNO_SYSTEM_EXPORT bool InnoFileSystem::loadDefaultScene()
-{
-	InnoFileSystemNS::loadScene("..//res//scenes//default.InnoScene");
-	return true;
-}
-
 INNO_SYSTEM_EXPORT bool InnoFileSystem::loadScene(const std::string & fileName)
 {
 	return InnoFileSystemNS::prepareForLoadingScene(fileName);

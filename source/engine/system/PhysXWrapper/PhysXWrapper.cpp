@@ -85,10 +85,6 @@ bool PhysXWrapperNS::setup()
 	PxRigidActors.reserve(16384);
 
 	f_sceneLoadingCallback = [&]() {
-		for (auto i : PxRigidActors)
-		{
-			gScene->removeActor(*i);
-		}
 	};
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
@@ -103,8 +99,18 @@ bool PhysXWrapperNS::initialize()
 
 bool PhysXWrapperNS::update()
 {
+	if (g_pCoreSystem->getFileSystem()->isLoadingScene())
+	{
+		for (auto i : PxRigidActors)
+		{
+			gScene->removeActor(*i);
+		}
+		return true;
+	}
+
 	gScene->simulate(1.0f / 60.0f);
 	gScene->fetchResults(true);
+
 	for (auto i : PxRigidActors)
 	{
 		PxTransform t = i->getGlobalPose();
@@ -117,6 +123,7 @@ bool PhysXWrapperNS::update()
 			l_transformComponent->m_localTransformVector.m_pos = vec4(p.x, p.y, p.z, 1.0f);
 		}
 	}
+
 	return true;
 }
 
@@ -147,6 +154,8 @@ bool PhysXWrapperNS::createPxSphere(void* component, vec4 globalPos, float radiu
 	gScene->addActor(*body);
 	shape->release();
 	PxRigidActors.emplace_back(body);
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysXWrapper: PxRigidDynamic has been created for " + InnoUtility::pointerToString(component) + ".");
+
 	return true;
 }
 
@@ -161,6 +170,8 @@ bool PhysXWrapperNS::createPxBox(void* component, vec4 globalPos, vec4 size)
 	gScene->addActor(*body);
 	shape->release();
 	PxRigidActors.emplace_back(body);
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysXWrapper: PxRigidDynamic has been created for " + InnoUtility::pointerToString(component) + ".");
+
 	return true;
 }
 
