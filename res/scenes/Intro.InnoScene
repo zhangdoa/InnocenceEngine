@@ -110,7 +110,8 @@
           "ModelFileName": "..//res//convertedAssets//sponza.InnoModel",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": false
+          "drawAABB": false,
+          "SimulatePhysics": false
         }
       ],
       "EntityID": "775d351b562850c7e013f7532187ac58",
@@ -123,7 +124,7 @@
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
-              "Y": -4.0,
+              "Y": -0.1,
               "Z": 0.0
             },
             "Rotation": {
@@ -135,7 +136,7 @@
             "Scale": {
               "X": 200.0,
               "Y": 200.0,
-              "Z": 0.10000000149011612
+              "Z": 0.1
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
@@ -147,7 +148,8 @@
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": false
+          "drawAABB": false,
+          "SimulatePhysics": false
         }
       ],
       "EntityID": "be5c104071400205215f368e464c99d2",
@@ -184,7 +186,8 @@
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 3,
-          "drawAABB": true
+          "drawAABB": true,
+          "SimulatePhysics": false
         }
       ],
       "EntityID": "3c1ad32f03803d38938f073c5b45e6b1",
@@ -253,7 +256,8 @@
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": true
+          "drawAABB": true,
+          "SimulatePhysics": true
         }
       ],
       "EntityID": "1935246950c8de59edec48e38d060e6a",
@@ -290,7 +294,8 @@
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 3,
-          "drawAABB": false
+          "drawAABB": false,
+          "SimulatePhysics": false
         }
       ],
       "EntityID": "51fed505c9584a37daf68df67af610c2",
@@ -327,7 +332,8 @@
           "ModelFileName": "..//res//convertedAssets//Orb.InnoModel",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": true
+          "drawAABB": true,
+          "SimulatePhysics": false
         }
       ],
       "EntityID": "038c1d165dd678461749f5c3a8e30e44",

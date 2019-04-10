@@ -5,6 +5,9 @@
 
 //typedef __m128 TVec4;
 
+#undef max
+#undef min
+
 template<class T>
 const static T PI = T(3.14159265358979323846264338327950288L);
 template<class T>
@@ -121,6 +124,7 @@ public:
 	{
 		return std::sqrt(x * x + y * y);
 	}
+
 	auto normalize() -> TVec2<T>
 	{
 		return TVec2<T>(x / length(), y / length());
@@ -790,7 +794,7 @@ template<class T>
 class TFrustum
 {
 public:
-	TFrustum() noexcept	{};
+	TFrustum() noexcept {};
 	TFrustum(const TFrustum<T>& rhs) :
 		m_px(rhs.m_px),
 		m_nx(rhs.m_nx),
@@ -853,6 +857,66 @@ enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
 namespace InnoMath
 {
 	template<class T>
+	TVec2<T> minVec2 = TVec2(std::numeric_limits<T>::min(), std::numeric_limits<T>::min());
+
+	template<class T>
+	TVec2<T> maxVec2 = TVec2(std::numeric_limits<T>::max(), std::numeric_limits<T>::max());
+
+	template<class T>
+	TVec4<T> minVec4 = TVec4(std::numeric_limits<T>::min(), std::numeric_limits<T>::min(), std::numeric_limits<T>::min(), std::numeric_limits<T>::min());
+
+	template<class T>
+	TVec4<T> maxVec4 = TVec4(std::numeric_limits<T>::max(), std::numeric_limits<T>::max(), std::numeric_limits<T>::max(), std::numeric_limits<T>::max());
+
+	template<class T>
+	auto isAGreaterThanB(const TVec2<T>& a, const TVec2<T>& b) -> bool
+	{
+		return a.x > b.x
+			&& a.y > b.y;
+	}
+
+	template<class T>
+	auto isAGreaterThanBVec3(const TVec4<T>& a, const TVec4<T>& b) -> bool
+	{
+		return a.x > b.x
+			&& a.y > b.y
+			&& a.z > b.z;
+	}
+
+	template<class T>
+	auto isAGreaterThanB(const TVec4<T>& a, const TVec4<T>& b) -> bool
+	{
+		return a.x > b.x
+			&& a.y > b.y
+			&& a.z > b.z
+			&& a.w > b.w;
+	}
+
+	template<class T>
+	auto isALessThanB(const TVec2<T>& a, const TVec2<T>& b) -> bool
+	{
+		return a.x < b.x
+			&& a.y < b.y;
+	}
+
+	template<class T>
+	auto isALessThanBVec3(const TVec4<T>& a, const TVec4<T>& b) -> bool
+	{
+		return a.x < b.x
+			&& a.y < b.y
+			&& a.z < b.z;
+	}
+
+	template<class T>
+	auto isALessThanB(const TVec4<T>& a, const TVec4<T>& b) -> bool
+	{
+		return a.x < b.x
+			&& a.y < b.y
+			&& a.z < b.z
+			&& a.w < b.w;
+	}
+
+	template<class T>
 	auto lerp(const TVec4<T>& a, const TVec4<T>& b, T alpha) -> TVec4<T>
 	{
 		return a * alpha + b * (one<T> -alpha);
@@ -863,7 +927,7 @@ namespace InnoMath
 	{
 		T cosOfAngle = a * b;
 		// use nlerp for quaternions which are too close
-		if (cosOfAngle > one<T> - epsilon4<T>) {
+		if (cosOfAngle > one<T> -epsilon4<T>) {
 			return (a * alpha + b * (one<T>-alpha)).normalize();
 		}
 		// for shorter path
@@ -877,7 +941,7 @@ namespace InnoMath
 			auto s1 = cos(theta) + cosOfAngle * sin_theta / sin_theta_0;
 
 			return ((a * -one<T> * s0) + (b * s1)).normalize();
-}
+		}
 		else
 		{
 			auto theta_0 = acos(cosOfAngle);
@@ -1240,7 +1304,7 @@ namespace InnoMath
 		TVec4<T> l_result;
 
 		T trace = rhs.m00 + rhs.m11 + rhs.m22;
-		if (trace > zero<T>) 
+		if (trace > zero<T>)
 		{
 			T s = half<T> / std::sqrt(trace + one<T>);
 			l_result.w = half<T> * half<T> / s;
@@ -1249,25 +1313,25 @@ namespace InnoMath
 			l_result.z = (rhs.m10 - rhs.m01) * s;
 		}
 		else {
-			if (rhs.m00 > rhs.m11 && rhs.m00 > rhs.m22) 
+			if (rhs.m00 > rhs.m11 && rhs.m00 > rhs.m22)
 			{
-				T s = two<T> * sqrtf(one<T> + rhs.m00 - rhs.m11 - rhs.m22);
+				T s = two<T> * sqrtf(one<T> +rhs.m00 - rhs.m11 - rhs.m22);
 				l_result.w = (rhs.m21 - rhs.m12) / s;
 				l_result.x = half<T> * half<T> * s;
 				l_result.y = (rhs.m01 + rhs.m10) / s;
 				l_result.z = (rhs.m02 + rhs.m20) / s;
 			}
-			else if (rhs.m11 > rhs.m22) 
+			else if (rhs.m11 > rhs.m22)
 			{
-				T s = two<T> * sqrtf(one<T> + rhs.m11 - rhs.m00 - rhs.m22);
+				T s = two<T> * sqrtf(one<T> +rhs.m11 - rhs.m00 - rhs.m22);
 				l_result.w = (rhs.m02 - rhs.m20) / s;
 				l_result.x = (rhs.m01 + rhs.m10) / s;
 				l_result.y = half<T> * half<T> * s;
 				l_result.z = (rhs.m12 + rhs.m21) / s;
 			}
-			else 
+			else
 			{
-				T s = two<T> * sqrtf(one<T> + rhs.m22 - rhs.m00 - rhs.m11);
+				T s = two<T> * sqrtf(one<T> +rhs.m22 - rhs.m00 - rhs.m11);
 				l_result.w = (rhs.m10 - rhs.m01) / s;
 				l_result.x = (rhs.m02 + rhs.m20) / s;
 				l_result.y = (rhs.m12 + rhs.m21) / s;
@@ -1864,7 +1928,7 @@ namespace InnoMath
 	{
 		// roll (x-axis rotation)
 		T sinr_cosp = +two<T> * (rhs.w * rhs.x + rhs.y * rhs.z);
-		T cosr_cosp = +one<T> - two<T> * (rhs.x * rhs.x + rhs.y * rhs.y);
+		T cosr_cosp = +one<T> -two<T> * (rhs.x * rhs.x + rhs.y * rhs.y);
 		T roll = std::atan2(sinr_cosp, cosr_cosp);
 
 		// pitch (y-axis rotation)
@@ -1881,7 +1945,7 @@ namespace InnoMath
 
 		// yaw (z-axis rotation)
 		T siny_cosp = +two<T> * (rhs.w * rhs.z + rhs.x * rhs.y);
-		T cosy_cosp = +one<T> - two<T> * (rhs.y * rhs.y + rhs.z * rhs.z);
+		T cosy_cosp = +one<T> -two<T> * (rhs.y * rhs.y + rhs.z * rhs.z);
 		T yaw = std::atan2(siny_cosp, cosy_cosp);
 
 		return TVec4<T>(roll, pitch, yaw, zero<T>);
@@ -1913,24 +1977,24 @@ namespace InnoMath
 			p, q, t,
 			fract;
 
-		(h == two<T> * halfCircumference<T>) ? (h = zero<T>) : (h /= (halfCircumference<T> / (one<T> + two<T>)));
+		(h == two<T> * halfCircumference<T>) ? (h = zero<T>) : (h /= (halfCircumference<T> / (one<T> +two<T>)));
 		fract = h - floor(h);
 
-		p = v * (one<T> - s);
-		q = v * (one<T> - s * fract);
-		t = v * (one<T> - s * (one<T> - fract));
+		p = v * (one<T> -s);
+		q = v * (one<T> -s * fract);
+		t = v * (one<T> -s * (one<T> -fract));
 
 		if (zero<T> <= h && h < one<T>)
 			RGB = TVec4<T>(v, t, p, one<T>);
 		else if (one<T> <= h && h < two<T>)
 			RGB = TVec4<T>(q, v, p, one<T>);
-		else if (two<T> <= h && h < one<T> + two<T>)
+		else if (two<T> <= h && h < one<T> +two<T>)
 			RGB = TVec4<T>(p, v, t, one<T>);
-		else if (one<T> +two<T> <= h && h < two<T> + two<T>)
+		else if (one<T> +two<T> <= h && h < two<T> +two<T>)
 			RGB = TVec4<T>(p, q, v, one<T>);
-		else if (two<T> +two<T> <= h && h < one<T> + two<T> +two<T>)
+		else if (two<T> +two<T> <= h && h < one<T> +two<T> +two<T>)
 			RGB = TVec4<T>(t, p, v, one<T>);
-		else if (one<T> +two<T> +two<T> <= h && h < two<T> + two<T> +two<T>)
+		else if (one<T> +two<T> +two<T> <= h && h < two<T> +two<T> +two<T>)
 			RGB = TVec4<T>(v, p, q, one<T>);
 		else
 			RGB = TVec4<T>(zero<T>, zero<T>, zero<T>, one<T>);

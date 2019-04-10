@@ -11,7 +11,7 @@
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
-              "Y": -4.0,
+              "Y": -0.1,
               "Z": 0.0
             },
             "Rotation": {
@@ -35,7 +35,8 @@
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": false
+          "drawAABB": false,
+          "SimulatePhysics": false
         }
       ],
       "EntityID": "d4229e4616eb07cc6e5e044ffe0fd77b",
@@ -108,7 +109,8 @@
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": false
+          "drawAABB": false,
+          "SimulatePhysics": false
         }
       ],
       "EntityID": "5372b91cf296660c0784256e52f89db1",
@@ -145,7 +147,8 @@
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 3,
-          "drawAABB": false
+          "drawAABB": false,
+          "SimulatePhysics": false
         }
       ],
       "EntityID": "2bd45e8c187d8d8c02a0bd423cf57f24",
@@ -214,7 +217,8 @@
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": true
+          "drawAABB": true,
+          "SimulatePhysics": true
         }
       ],
       "EntityID": "4aef84a7156ebe124e8621fdd139ad28",
@@ -290,7 +294,8 @@
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": true
+          "drawAABB": true,
+          "SimulatePhysics": false
         }
       ],
       "EntityID": "34d2a44f04bc21109a963c8683dd5e45",
@@ -404,7 +409,8 @@
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 3,
-          "drawAABB": true
+          "drawAABB": true,
+          "SimulatePhysics": true
         }
       ],
       "EntityID": "bcbe6129380213d7debcdcbc448e85f1",

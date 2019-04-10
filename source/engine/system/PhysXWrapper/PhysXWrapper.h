@@ -17,7 +17,8 @@ public:
 	bool update();
 	bool terminate();
 
-	bool createPxActor(void* component, vec4 globalPos, vec4 size);
+	bool createPxSphere(void* component, vec4 globalPos, float radius);
+	bool createPxBox(void* component, vec4 globalPos, vec4 size);
 private:
 	PhysXWrapper() {};
 };

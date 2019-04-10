@@ -31,7 +31,7 @@ namespace InnoPhysicsSystemNS
 	MeshDataComponent* generateMeshDataComponent(AABB rhs);
 	MeshDataComponent* generateMeshDataComponent(Frustum rhs);
 
-	PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap, const EntityID& entityID);
+	PhysicsDataComponent* generatePhysicsDataComponent(const VisibleComponent* visibleComponent);
 
 	void updateCameraComponents();
 	void updateLightComponents();
@@ -44,8 +44,8 @@ namespace InnoPhysicsSystemNS
 
 	std::vector<InnoFuture<void>> m_asyncTask;
 
-	vec4 m_sceneBoundMax = vec4(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), 1.0f);
-	vec4 m_sceneBoundMin = vec4(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1.0f);
+	vec4 m_sceneBoundMax;
+	vec4 m_sceneBoundMin;
 	AABB m_SceneAABB;
 
 	void* m_PhysicsDataComponentPool;
@@ -59,6 +59,12 @@ namespace InnoPhysicsSystemNS
 bool InnoPhysicsSystemNS::setup()
 {
 	m_PhysicsDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(PhysicsDataComponent), 16384);
+
+	m_sceneBoundMax = InnoMath::minVec4<float>;
+	m_sceneBoundMax.w = 1.0f;
+
+	m_sceneBoundMin = InnoMath::maxVec4<float>;
+	m_sceneBoundMin.w = 1.0f;
 
 	PhysXWrapper::get().setup();
 
@@ -430,14 +436,20 @@ MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(Frustum rhs)
 	return nullptr;
 }
 
-PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelMap& modelMap, const EntityID& entityID)
+PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const VisibleComponent* visibleComponent)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_PhysicsDataComponentPool, sizeof(PhysicsDataComponent));
 	auto l_PDC = new(l_rawPtr)PhysicsDataComponent();
 
-	l_PDC->m_parentEntity = entityID;
+	l_PDC->m_parentEntity = visibleComponent->m_parentEntity;
 
-	for (auto& l_MDC : modelMap)
+	auto l_boundMax = InnoMath::minVec4<float>;
+	l_boundMax.w = 1.0f;
+
+	auto l_boundMin = InnoMath::maxVec4<float>;
+	l_boundMin.w = 1.0f;
+
+	for (auto& l_MDC : visibleComponent->m_modelMap)
 	{
 		PhysicsData l_physicsData;
 
@@ -450,10 +462,37 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Mo
 		l_physicsData.aabb = l_AABB;
 		l_physicsData.sphere = l_sphere;
 
+		if (InnoMath::isAGreaterThanBVec3(l_AABB.m_boundMax, l_boundMax))
+		{
+			l_boundMax = l_AABB.m_boundMax;
+		}
+		if (InnoMath::isALessThanBVec3(l_AABB.m_boundMin, l_boundMin))
+		{
+			l_boundMin = l_AABB.m_boundMin;
+		}
 		l_PDC->m_physicsDatas.emplace_back(l_physicsData);
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for " + entityID + ".");
+	if (visibleComponent->m_simulatePhysics)
+	{
+		auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
+		switch (visibleComponent->m_meshShapeType)
+		{
+		case MeshShapeType::CUBE:
+			PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_scale);
+			break;
+		case MeshShapeType::SPHERE:
+			PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_scale.x);
+			break;
+		case MeshShapeType::CUSTOM:
+			PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_boundMax - l_boundMin);
+			break;
+		default:
+			break;
+		}
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for " + visibleComponent->m_parentEntity + ".");
 
 	return l_PDC;
 }
@@ -597,15 +636,11 @@ void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
 	auto boundMax = rhs.m_boundMax;
 	auto boundMin = rhs.m_boundMin;
 
-	if (boundMax.x > InnoPhysicsSystemNS::m_sceneBoundMax.x
-		&&boundMax.y > InnoPhysicsSystemNS::m_sceneBoundMax.y
-		&&boundMax.z > InnoPhysicsSystemNS::m_sceneBoundMax.z)
+	if (InnoMath::isAGreaterThanBVec3(boundMax, InnoPhysicsSystemNS::m_sceneBoundMax))
 	{
 		InnoPhysicsSystemNS::m_sceneBoundMax = boundMax;
 	}
-	if (boundMin.x < InnoPhysicsSystemNS::m_sceneBoundMin.x
-		&&boundMin.y < InnoPhysicsSystemNS::m_sceneBoundMin.y
-		&&boundMin.z < InnoPhysicsSystemNS::m_sceneBoundMin.z)
+	if (InnoMath::isALessThanBVec3(boundMin, InnoPhysicsSystemNS::m_sceneBoundMin))
 	{
 		InnoPhysicsSystemNS::m_sceneBoundMin = boundMin;
 	}
@@ -621,6 +656,8 @@ bool InnoPhysicsSystemNS::update()
 		m_isCullingDataPackValid = false;
 		return true;
 	}
+
+	PhysXWrapper::get().update();
 
 	updateCameraComponents();
 	updateLightComponents();
@@ -658,9 +695,9 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoPhysicsSystem::getStatus()
 	return InnoPhysicsSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(const ModelMap& modelMap, const EntityID& entityID)
+INNO_SYSTEM_EXPORT PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(const VisibleComponent* visibleComponent)
 {
-	auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(modelMap, entityID);
+	auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(visibleComponent);
 	return l_physicsComponent;
 }
 

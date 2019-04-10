@@ -29,5 +29,6 @@ public:
 
 	ModelMap m_modelMap;
 
+	bool m_simulatePhysics = false;
 	PhysicsDataComponent* m_PhysicsDataComponent = 0;
 };

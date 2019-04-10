@@ -360,6 +360,7 @@ void InnoFileSystemNS::to_json(json& j, const VisibleComponent& p)
 		{"TextureWrapMethod", p.m_textureWrapMethod},
 		{"drawAABB", p.m_drawAABB},
 		{"ModelFileName", p.m_modelFileName},
+		{"SimulatePhysics", p.m_simulatePhysics},
 	};
 }
 
@@ -467,6 +468,7 @@ void InnoFileSystemNS::from_json(const json & j, VisibleComponent & p)
 	p.m_textureWrapMethod = j["TextureWrapMethod"];
 	p.m_drawAABB = j["drawAABB"];
 	p.m_modelFileName = j["ModelFileName"];
+	p.m_simulatePhysics = j["SimulatePhysics"];
 }
 
 void InnoFileSystemNS::from_json(const json & j, vec4 & p)

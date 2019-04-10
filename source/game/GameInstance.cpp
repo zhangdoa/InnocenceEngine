@@ -153,9 +153,9 @@ namespace GameInstanceNS
 {
 	float temp = 0.0f;
 
-	std::vector<EntityID> m_opaqueSphereEntitys;
-	std::vector<TransformComponent*> m_opaqueSphereTransformComponents;
-	std::vector<VisibleComponent*> m_opaqueSphereVisibleComponents;
+	std::vector<EntityID> m_sphereEntitys;
+	std::vector<TransformComponent*> m_sphereTransformComponents;
+	std::vector<VisibleComponent*> m_sphereVisibleComponents;
 
 	bool setup();
 	bool initialize();
@@ -203,9 +203,52 @@ bool GameInstanceNS::setup()
 	runTest(512, l_testQuatToMat);
 
 	f_sceneLoadingCallback = [&]() {
+		unsigned int sphereMatrixDim = 8;
+		float sphereBreadthInterval = 4.0f;
+		auto l_containerSize = sphereMatrixDim * sphereMatrixDim;
+
+		m_sphereTransformComponents.clear();
+		m_sphereVisibleComponents.clear();
+		m_sphereEntitys.clear();
+
+		m_sphereTransformComponents.reserve(l_containerSize);
+		m_sphereVisibleComponents.reserve(l_containerSize);
+		m_sphereEntitys.reserve(l_containerSize);
+
+		for (unsigned int i = 0; i < l_containerSize; i++)
+		{
+			m_sphereTransformComponents.emplace_back();
+			m_sphereVisibleComponents.emplace_back();
+			auto l_entityName = "PhysicsTestSphere_" + std::to_string(i);
+			g_pCoreSystem->getGameSystem()->removeEntity(l_entityName);
+			m_sphereEntitys.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName));
+		}
+
+		for (unsigned int i = 0; i < l_containerSize; i++)
+		{
+			m_sphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_sphereEntitys[i]);
+			m_sphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+			m_sphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+			m_sphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_sphereEntitys[i]);
+			m_sphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
+			m_sphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
+			m_sphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+			m_sphereVisibleComponents[i]->m_simulatePhysics = true;
+		}
+
+		std::default_random_engine generator;
+		std::uniform_real_distribution<float> randomHeight(0.0f, 50.0f);
+
+		for (unsigned int i = 0; i < sphereMatrixDim; i++)
+		{
+			for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
+			{
+				m_sphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos = vec4((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), randomHeight(generator), (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1), 1.0f);
+			}
+		}
 	};
 
-	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
+	//g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
 
 	m_objectStatus = ObjectStatus::ALIVE;
 

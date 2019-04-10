@@ -13,7 +13,7 @@ public:
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 
-	INNO_SYSTEM_EXPORT PhysicsDataComponent* generatePhysicsDataComponent(const ModelMap& modelMap, const EntityID& entityID) override;
+	INNO_SYSTEM_EXPORT PhysicsDataComponent* generatePhysicsDataComponent(const VisibleComponent* visibleComponent) override;
 	INNO_SYSTEM_EXPORT std::optional<std::vector<CullingDataPack>> getCullingDataPack() override;
 	INNO_SYSTEM_EXPORT AABB getSceneAABB() override;
 };

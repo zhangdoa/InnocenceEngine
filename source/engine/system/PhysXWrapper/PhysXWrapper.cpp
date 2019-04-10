@@ -19,7 +19,8 @@ INNO_PRIVATE_SCOPE PhysXWrapperNS
 	bool update();
 	bool terminate();
 
-	bool createPxActor(void* component, vec4 globalPos, vec4 size);
+	bool createPxSphere(void* component, vec4 globalPos, float radius);
+	bool createPxBox(void* component, vec4 globalPos, vec4 size);
 
 	std::vector<PxRigidActor*> PxRigidActors;
 
@@ -35,6 +36,8 @@ INNO_PRIVATE_SCOPE PhysXWrapperNS
 	PxDefaultCpuDispatcher* gDispatcher = nullptr;
 	PxScene* gScene = nullptr;
 	PxMaterial* gMaterial = nullptr;
+
+	std::function<void()> f_sceneLoadingCallback;
 }
 
 bool PhysXWrapperNS::setup()
@@ -80,7 +83,16 @@ bool PhysXWrapperNS::setup()
 	gScene->addActor(*groundPlane);
 
 	PxRigidActors.reserve(16384);
-	PxRigidActors.emplace_back(groundPlane);
+
+	f_sceneLoadingCallback = [&]() {
+		for (auto i : PxRigidActors)
+		{
+			gScene->removeActor(*i);
+		}
+	};
+
+	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
+
 	return true;
 }
 
@@ -96,8 +108,14 @@ bool PhysXWrapperNS::update()
 	for (auto i : PxRigidActors)
 	{
 		PxTransform t = i->getGlobalPose();
+		PxVec3 p = t.p;
+		auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i);
 
-		PxMat44 m = PxMat44(t);
+		if (l_rigidBody->userData)
+		{
+			auto l_transformComponent = reinterpret_cast<TransformComponent*>(l_rigidBody->userData);
+			l_transformComponent->m_localTransformVector.m_pos = vec4(p.x, p.y, p.z, 1.0f);
+		}
 	}
 	return true;
 }
@@ -118,7 +136,21 @@ bool PhysXWrapperNS::terminate()
 	return true;
 }
 
-bool PhysXWrapperNS::createPxActor(void* component, vec4 globalPos, vec4 size)
+bool PhysXWrapperNS::createPxSphere(void* component, vec4 globalPos, float radius)
+{
+	PxShape* shape = gPhysics->createShape(PxSphereGeometry(radius), *gMaterial);
+	PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z));
+	PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);
+	body->userData = component;
+	body->attachShape(*shape);
+	PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+	gScene->addActor(*body);
+	shape->release();
+	PxRigidActors.emplace_back(body);
+	return true;
+}
+
+bool PhysXWrapperNS::createPxBox(void* component, vec4 globalPos, vec4 size)
 {
 	PxShape* shape = gPhysics->createShape(PxBoxGeometry(size.x, size.y, size.z), *gMaterial);
 	PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z));
@@ -152,7 +184,12 @@ bool PhysXWrapper::terminate()
 	return PhysXWrapperNS::terminate();
 }
 
-bool PhysXWrapper::createPxActor(void* component, vec4 globalPos, vec4 size)
+bool PhysXWrapper::createPxSphere(void* component, vec4 globalPos, float radius)
 {
-	return PhysXWrapperNS::createPxActor(component, globalPos, size);
+	return PhysXWrapperNS::createPxSphere(component, globalPos, radius);
+}
+
+bool PhysXWrapper::createPxBox(void* component, vec4 globalPos, vec4 size)
+{
+	return PhysXWrapperNS::createPxBox(component, globalPos, size);
 }
