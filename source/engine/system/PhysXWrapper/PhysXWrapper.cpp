@@ -37,7 +37,9 @@ INNO_PRIVATE_SCOPE PhysXWrapperNS
 	PxScene* gScene = nullptr;
 	PxMaterial* gMaterial = nullptr;
 
+	bool m_needSimulate = false;
 	std::function<void()> f_sceneLoadingCallback;
+	std::function<void()> f_pauseSimulate;
 }
 
 bool PhysXWrapperNS::setup()
@@ -89,6 +91,10 @@ bool PhysXWrapperNS::setup()
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
 
+	f_pauseSimulate = [&]() { m_needSimulate = !m_needSimulate; };
+
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_P, ButtonStatus::PRESSED }, &f_pauseSimulate);
+
 	return true;
 }
 
@@ -108,19 +114,22 @@ bool PhysXWrapperNS::update()
 		return true;
 	}
 
-	gScene->simulate(1.0f / 60.0f);
-	gScene->fetchResults(true);
-
-	for (auto i : PxRigidActors)
+	if (m_needSimulate)
 	{
-		PxTransform t = i->getGlobalPose();
-		PxVec3 p = t.p;
-		auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i);
+		gScene->simulate(1.0f / 60.0f);
+		gScene->fetchResults(true);
 
-		if (l_rigidBody->userData)
+		for (auto i : PxRigidActors)
 		{
-			auto l_transformComponent = reinterpret_cast<TransformComponent*>(l_rigidBody->userData);
-			l_transformComponent->m_localTransformVector.m_pos = vec4(p.x, p.y, p.z, 1.0f);
+			PxTransform t = i->getGlobalPose();
+			PxVec3 p = t.p;
+			auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i);
+
+			if (l_rigidBody->userData)
+			{
+				auto l_transformComponent = reinterpret_cast<TransformComponent*>(l_rigidBody->userData);
+				l_transformComponent->m_localTransformVector.m_pos = vec4(p.x, p.y, p.z, 1.0f);
+			}
 		}
 	}
 
