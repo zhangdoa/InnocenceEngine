@@ -17,10 +17,39 @@ cbuffer cameraCBuffer : register(b0)
 	float4 cam_globalPos;
 };
 
+static const float eps = 0.00001;
+static const float PI = 3.14159265359;
+static const int NR_POINT_LIGHTS = 64;
+static const int NR_SPHERE_LIGHTS = 64;
+
+// w component of luminance is attenuationRadius
+struct pointLight {
+	float4 position;
+	//float attenuationRadius;
+	float4 luminance;
+};
+
+// w component of luminance is sphereRadius
+struct sphereLight {
+	float4 position;
+	//float sphereRadius;
+	float4 luminance;
+};
+
 cbuffer directionalLightCBuffer : register(b1)
 {
 	float4 dirLight_dir;
 	float4 dirLight_luminance;
+};
+
+cbuffer pointLightCBuffer : register(b2)
+{
+	pointLight pointLights[NR_POINT_LIGHTS];
+};
+
+cbuffer sphereLightCBuffer : register(b3)
+{
+	sphereLight sphereLights[NR_SPHERE_LIGHTS];
 };
 
 struct PixelInputType
@@ -34,10 +63,24 @@ struct PixelOutputType
 	float4 lightPassRT0 : SV_Target0;
 };
 
-static const float PI = 3.14159265359;
-
-// Frostbite Engine model
+// Frostbite Engine model [https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf]
 // ----------------------------------------------------------------------------
+// punctual light attenuation
+// ----------------------------------------------------------------------------
+float smoothDistanceAtt(float squaredDistance, float invSqrAttRadius)
+{
+	float factor = squaredDistance * invSqrAttRadius;
+	float smoothFactor = saturate(1.0 - factor * factor);
+	return smoothFactor * smoothFactor;
+}
+float getDistanceAtt(float3 unormalizedLightVector, float invSqrAttRadius)
+{
+	float sqrDist = dot(unormalizedLightVector, unormalizedLightVector);
+	float attenuation = 1.0 / (max(sqrDist, eps));
+	attenuation *= smoothDistanceAtt(sqrDist, invSqrAttRadius);
+
+	return attenuation;
+}
 // Specular Fresnel Component
 // ----------------------------------------------------------------------------
 float3 fresnelSchlick(float3 f0, float f90, float u)
@@ -93,20 +136,14 @@ float3 CalcBRDF(float3 albedo, float metallic, float roughness, float3 F0, float
 
 	return BRDF;
 }
-//Directional light irradiance
 // ----------------------------------------------------------------------------
-float3 CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughness, float3 F0, float3 N, float3 V)
+float getIlluminance(float3 albedo, float metallic, float roughness, float3 F0, float NdotV, float LdotH, float NdotH, float NdotL, float3 lightLuminance)
 {
-	float3 L = normalize(-dirLight_dir.xyz);
-	float3 H = normalize(V + L);
+	float3 BRDF = CalcBRDF(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL);
 
-	float NdotV = max(dot(N, V), 0.0);
-	float LdotH = max(dot(L, H), 0.0);
-	float NdotH = max(dot(N, H), 0.0);
-	float NdotL = max(dot(N, L), 0.0);
-
-	return CalcBRDF(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL) * dirLight_luminance.xyz * NdotL;
+	return BRDF * lightLuminance * NdotL;
 }
+
 // Spherical-Gaussians
 // ----------------------------------------------------------------------------
 struct SG
@@ -191,9 +228,8 @@ float3 SGIrradianceFitted(in SG lightingLobe, in float3 normal)
 	return result * SGIntegral(lightingLobe);
 }
 
-float3 SGDiffusePunctual(SG lightingLobe, float3 albedo, float metallic, float roughness, float3 F0, float3 N, float3 V)
+float3 SGGetIlluminance(SG lightingLobe, float3 albedo, float metallic, float roughness, float3 F0, float3 N, float3 V, float3 L)
 {
-	float3 L = normalize(-dirLight_dir.xyz);
 	float3 H = normalize(V + L);
 
 	float NdotV = max(dot(N, V), 0.0);
@@ -206,7 +242,7 @@ float3 SGDiffusePunctual(SG lightingLobe, float3 albedo, float metallic, float r
 	return SGIrradianceFitted(lightingLobe, N) * brdf * NdotL;
 }
 
-SG MakeSphereSG(in float3 lightDir, in float radius, in float3 intensity, in float dist)
+SG SphereLightToSG(in float3 lightDir, in float radius, in float3 intensity, in float dist)
 {
 	SG sg;
 
@@ -233,13 +269,6 @@ SG DirectionalLightToSG(in float3 lightDir, in float3 intensity)
 	return sg;
 }
 
-float3 SG_CalcDirectionalLightRadiance(float3 albedo, float metallic, float roughness, float3 F0, float3 N, float3 V)
-{
-	SG directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), dirLight_luminance.xyz);
-
-	return SGDiffusePunctual(directionalLight, albedo, metallic, roughness, F0, N, V);
-}
-
 PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
@@ -260,13 +289,89 @@ PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 
 	float3 N = normalize(normalWS);
 	float3 V = normalize(cam_globalPos.xyz - posWS);
+	float NdotV = max(dot(N, V), 0.0);
 
-	float3 finalColor;
+	float3 Lo = float3(0, 0, 0);
 
-	//finalColor = CalcDirectionalLightRadiance(albedo, metallic, roughness, F0, N, V);
+	// direction light, sun light
+	float3 L = normalize(-dirLight_dir.xyz);
+	float3 H = normalize(V + L);
 
-	finalColor = SG_CalcDirectionalLightRadiance(albedo, metallic, roughness, F0, N, V);
+	float LdotH = max(dot(L, H), 0.0);
+	float NdotH = max(dot(N, H), 0.0);
+	float NdotL = max(dot(N, L), 0.0);
 
-	output.lightPassRT0 = float4(finalColor, 1.0);
+	Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, dirLight_luminance.xyz);
+
+	SG SG_directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), dirLight_luminance.xyz);
+	//Lo += SGGetIlluminance(SG_directionalLight, albedo, metallic, roughness, F0, N, V, L);
+
+	// point punctual light
+	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
+	{
+		float3 unormalizedL = pointLights[i].position.xyz - posWS;
+		float lightAttRadius = pointLights[i].luminance.w;
+		float distance = length(unormalizedL);
+		if (distance < lightAttRadius)
+		{
+			L = normalize(unormalizedL);
+			H = normalize(V + L);
+
+			LdotH = max(dot(L, H), 0.0);
+			NdotH = max(dot(N, H), 0.0);
+			NdotL = max(dot(N, L), 0.0);
+
+			float attenuation = 1.0;
+			float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
+			attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
+
+			float3 lightLuminance = pointLights[i].luminance.xyz * attenuation;
+			Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, lightLuminance.xyz);
+
+			//use 1cm sphere light to represent point light
+			SG SG_pointLight = SphereLightToSG(L, 0.01, lightLuminance, distance);
+			//Lo += SGGetIlluminance(SG_pointLight, albedo, metallic, roughness, F0, N, V, L);
+		}
+	}
+
+	// sphere area light
+	for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
+	{
+		float3 unormalizedL = sphereLights[i].position.xyz - posWS;
+		float lightSphereRadius = sphereLights[i].luminance.w;
+
+		L = normalize(unormalizedL);
+		H = normalize(V + L);
+
+		LdotH = max(dot(L, H), 0.0);
+		NdotH = max(dot(N, H), 0.0);
+		NdotL = max(dot(N, L), 0.0);
+
+		float sqrDist = dot(unormalizedL, unormalizedL);
+
+		float Beta = acos(NdotL);
+		float H2 = sqrt(sqrDist);
+		float h = H2 / lightSphereRadius;
+		float x = sqrt(max(h * h - 1, eps));
+		float y = -x * (1 / tan(Beta));
+		//y = clamp(y, -1.0, 1.0);
+		float illuminance = 0;
+
+		if (h * cos(Beta) > 1)
+		{
+			illuminance = cos(Beta) / (h * h);
+		}
+		else
+		{
+			illuminance = (1 / max(PI * h * h, eps))
+				* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
+				+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
+		}
+		illuminance *= PI;
+
+		Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, illuminance * sphereLights[i].luminance.xyz);
+	}
+
+	output.lightPassRT0 = float4(Lo, 1.0);
 	return output;
 }

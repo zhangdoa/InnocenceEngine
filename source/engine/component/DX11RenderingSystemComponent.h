@@ -64,6 +64,22 @@ struct DirectionalLightCBufferData
 	vec4 luminance;
 };
 
+// w component of luminance is attenuationRadius
+struct PointLightCBufferData
+{
+	vec4 pos;
+	vec4 luminance;
+	//float attenuationRadius;
+};
+
+// w component of luminance is sphereRadius
+struct SphereLightCBufferData
+{
+	vec4 pos;
+	vec4 luminance;
+	//float sphereRadius;
+};
+
 class DX11RenderingSystemComponent
 {
 public:
@@ -121,10 +137,17 @@ public:
 	DX11CBuffer m_textureCBuffer;
 	DX11CBuffer m_meshCBuffer;
 	DX11CBuffer m_directionalLightCBuffer;
+	DX11CBuffer m_pointLightCBuffer;
+	DX11CBuffer m_sphereLightCBuffer;
 
 	DX11CameraCBufferData m_cameraCBufferData;
 	std::queue<DX11MeshDataPack> m_meshDataQueue;
 	DirectionalLightCBufferData m_directionalLightCBufferData;
+	const unsigned int m_maxPointLights = 64;
+	std::vector<PointLightCBufferData> m_PointLightCBufferDatas;
+
+	const unsigned int m_maxSphereLights = 64;
+	std::vector<SphereLightCBufferData> m_SphereLightCBufferDatas;
 
 	DX11MeshDataComponent* m_UnitLineDXMDC;
 	DX11MeshDataComponent* m_UnitQuadDXMDC;

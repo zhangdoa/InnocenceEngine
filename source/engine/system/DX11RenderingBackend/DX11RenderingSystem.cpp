@@ -29,6 +29,8 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	bool generateCBuffers();
 
 	void prepareRenderingData();
+	bool prepareGeometryPassData();
+	bool prepareLightPassData();
 
 	static DX11RenderingSystemComponent* g_DXRenderingSystemComponent;
 
@@ -611,6 +613,22 @@ bool DX11RenderingSystemNS::generateCBuffers()
 	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.StructureByteStride = 0;
 	createCBuffer(g_DXRenderingSystemComponent->m_directionalLightCBuffer);
 
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.ByteWidth = sizeof(PointLightCBufferData) * g_DXRenderingSystemComponent->m_maxPointLights;
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_pointLightCBuffer);
+
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.ByteWidth = sizeof(SphereLightCBufferData)* g_DXRenderingSystemComponent->m_maxSphereLights;
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_sphereLightCBuffer);
+
 	return true;
 }
 
@@ -631,6 +649,12 @@ void DX11RenderingSystemNS::prepareRenderingData()
 	g_DXRenderingSystemComponent->m_directionalLightCBufferData.dir = l_sunDataPack.dir;
 	g_DXRenderingSystemComponent->m_directionalLightCBufferData.luminance = l_sunDataPack.luminance;
 
+	prepareGeometryPassData();
+	prepareLightPassData();
+}
+
+bool DX11RenderingSystemNS::prepareGeometryPassData()
+{
 	auto l_meshDataPack = m_renderingFrontendSystem->getMeshDataPack();
 
 	if (l_meshDataPack.has_value())
@@ -720,6 +744,52 @@ void DX11RenderingSystemNS::prepareRenderingData()
 			g_DXRenderingSystemComponent->m_meshDataQueue.push(l_meshDataPack);
 		}
 	}
+	return true;
+}
+
+bool DX11RenderingSystemNS::prepareLightPassData()
+{
+	// point light
+	DX11RenderingSystemComponent::get().m_PointLightCBufferDatas.clear();
+	DX11RenderingSystemComponent::get().m_PointLightCBufferDatas.reserve(g_DXRenderingSystemComponent->m_maxPointLights);
+
+	for (unsigned int i = 0; i < g_DXRenderingSystemComponent->m_maxPointLights; i++)
+	{
+		DX11RenderingSystemComponent::get().m_PointLightCBufferDatas.emplace_back();
+	}
+
+	auto& l_PointLightComponents = g_pCoreSystem->getGameSystem()->get<PointLightComponent>();
+
+	for (auto i = 0; i < l_PointLightComponents.size(); i++)
+	{
+		PointLightCBufferData l_PointLightData;
+		l_PointLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_PointLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_PointLightData.luminance = l_PointLightComponents[i]->m_color * l_PointLightComponents[i]->m_luminousFlux;
+		l_PointLightData.luminance.w = l_PointLightComponents[i]->m_attenuationRadius;
+		DX11RenderingSystemComponent::get().m_PointLightCBufferDatas[i] = l_PointLightData;
+	}
+
+	// sphere light
+	DX11RenderingSystemComponent::get().m_SphereLightCBufferDatas.clear();
+	DX11RenderingSystemComponent::get().m_SphereLightCBufferDatas.reserve(g_DXRenderingSystemComponent->m_maxSphereLights);
+
+	for (unsigned int i = 0; i < g_DXRenderingSystemComponent->m_maxSphereLights; i++)
+	{
+		DX11RenderingSystemComponent::get().m_SphereLightCBufferDatas.emplace_back();
+	}
+
+	auto& l_SphereLightComponents = g_pCoreSystem->getGameSystem()->get<SphereLightComponent>();
+
+	for (auto i = 0; i < l_SphereLightComponents.size(); i++)
+	{
+		SphereLightCBufferData l_SphereLightData;
+		l_SphereLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_SphereLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_SphereLightData.luminance = l_SphereLightComponents[i]->m_color * l_SphereLightComponents[i]->m_luminousFlux;
+		l_SphereLightData.luminance.w = l_SphereLightComponents[i]->m_sphereRadius;
+		DX11RenderingSystemComponent::get().m_SphereLightCBufferDatas[i] = l_SphereLightData;
+	}
+
+	return true;
 }
 
 bool DX11RenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)

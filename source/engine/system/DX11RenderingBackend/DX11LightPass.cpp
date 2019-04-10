@@ -89,6 +89,8 @@ bool DX11LightPass::update()
 
 	updateShaderParameter(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer, &DX11RenderingSystemComponent::get().m_cameraCBufferData);
 	updateShaderParameter(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_directionalLightCBuffer, &DX11RenderingSystemComponent::get().m_directionalLightCBufferData);
+	updateShaderParameter(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_pointLightCBuffer, &DX11RenderingSystemComponent::get().m_PointLightCBufferDatas[0]);
+	updateShaderParameter(ShaderType::FRAGMENT, 3, DX11RenderingSystemComponent::get().m_sphereLightCBuffer, &DX11RenderingSystemComponent::get().m_SphereLightCBufferDatas[0]);
 
 	// bind to previous pass render target textures
 	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DX11OpaquePass::getDX11RPC()->m_DXTDCs[0]->m_SRV);
