@@ -12,11 +12,6 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE ImGuiWrapperNS
 {
-	struct GameConfig
-	{
-		bool pauseGameUpdate = false;
-	};
-
 	void showApplicationProfiler();
 	void zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize);
 
@@ -34,7 +29,6 @@ INNO_PRIVATE_SCOPE ImGuiWrapperNS
 	bool m_isParity = true;
 
 	static RenderingConfig m_renderingConfig;
-	static GameConfig m_gameConfig;
 	static bool m_useZoom = false;
 	static bool m_showRenderPassResult = false;
 
@@ -189,7 +183,6 @@ void ImGuiWrapperNS::showApplicationProfiler()
 	ImGui::Checkbox("Draw terrain", &m_renderingConfig.drawTerrain);
 	ImGui::Checkbox("Draw sky", &m_renderingConfig.drawSky);
 	ImGui::Checkbox("Draw debug object", &m_renderingConfig.drawDebugObject);
-	ImGui::Checkbox("Pause game update", &m_gameConfig.pauseGameUpdate);
 	ImGui::Checkbox("Use zoom", &m_useZoom);
 	ImGui::Checkbox("Show render pass result", &m_showRenderPassResult);
 

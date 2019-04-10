@@ -43,13 +43,13 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	std::vector<EnvironmentCaptureComponent*> m_EnvironmentCaptureComponents;
 
 	std::unordered_map<EntityID, TransformComponent*> m_TransformComponentsMap;
-	std::unordered_multimap<EntityID, VisibleComponent*> m_VisibleComponentsMap;
-	std::unordered_multimap<EntityID, DirectionalLightComponent*> m_DirectionalLightComponentsMap;
-	std::unordered_multimap<EntityID, PointLightComponent*> m_PointLightComponentsMap;
-	std::unordered_multimap<EntityID, SphereLightComponent*> m_SphereLightComponentsMap;
-	std::unordered_multimap<EntityID, CameraComponent*> m_CameraComponentsMap;
-	std::unordered_multimap<EntityID, InputComponent*> m_InputComponentsMap;
-	std::unordered_multimap<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
+	std::unordered_map<EntityID, VisibleComponent*> m_VisibleComponentsMap;
+	std::unordered_map<EntityID, DirectionalLightComponent*> m_DirectionalLightComponentsMap;
+	std::unordered_map<EntityID, PointLightComponent*> m_PointLightComponentsMap;
+	std::unordered_map<EntityID, SphereLightComponent*> m_SphereLightComponentsMap;
+	std::unordered_map<EntityID, CameraComponent*> m_CameraComponentsMap;
+	std::unordered_map<EntityID, InputComponent*> m_InputComponentsMap;
+	std::unordered_map<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
 
 	EntityChildrenComponentsMetadataMap m_entityChildrenComponentsMetadataMap;
 	EntityNameMap m_entityNameMap;
@@ -57,8 +57,6 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	unsigned int m_currentUUID = 0;
 
 	InnoFuture<void>* m_asyncTask;
-
-	bool m_pauseGameUpdate = false;
 }
 
 std::string InnoGameSystemNS::getEntityName(const EntityID& entityID)
@@ -214,17 +212,26 @@ void InnoGameSystem::cleanScene()
 	InnoGameSystemNS::m_SphereLightComponents.clear();
 	InnoGameSystemNS::m_SphereLightComponentsMap.clear();
 
+	for (auto i : InnoGameSystemNS::m_CameraComponents)
+	{
+		destroy(i);
+	}
+	InnoGameSystemNS::m_CameraComponents.clear();
+	InnoGameSystemNS::m_CameraComponentsMap.clear();
+
+	for (auto i : InnoGameSystemNS::m_InputComponents)
+	{
+		destroy(i);
+	}
+	InnoGameSystemNS::m_InputComponents.clear();
+	InnoGameSystemNS::m_InputComponentsMap.clear();
+
 	for (auto i : InnoGameSystemNS::m_EnvironmentCaptureComponents)
 	{
 		destroy(i);
 	}
 	InnoGameSystemNS::m_EnvironmentCaptureComponents.clear();
 	InnoGameSystemNS::m_EnvironmentCaptureComponentsMap.clear();
-}
-
-void InnoGameSystem::pauseGameUpdate(bool shouldPause)
-{
-	InnoGameSystemNS::m_pauseGameUpdate = shouldPause;
 }
 
 EntityID InnoGameSystemNS::createEntity(const std::string & entityName)
@@ -338,6 +345,7 @@ spawnComponentImplDefi(EnvironmentCaptureComponent)
 #define destroyComponentImplDefi( className ) \
 bool InnoGameSystem::destroy(className* rhs) \
 { \
+	unregisterComponent(rhs); \
 	return g_pCoreSystem->getMemorySystem()->destroyObject(InnoGameSystemNS::m_##className##Pool, sizeof(className), (void*)rhs); \
 }
 
@@ -386,7 +394,30 @@ registerComponentImplDefi(CameraComponent)
 registerComponentImplDefi(InputComponent)
 registerComponentImplDefi(EnvironmentCaptureComponent)
 
-// @TODO: return multiple instances
+#define  unregisterComponentImplDefi( className ) \
+void InnoGameSystem::unregisterComponent(className* rhs) \
+{ \
+	auto result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(rhs->m_parentEntity); \
+	if (result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
+	{ \
+		auto l_componentMetadataMap = &result->second; \
+		l_componentMetadataMap->erase(rhs); \
+	} \
+	else \
+	{ \
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't unregister " + std::string(#className) + " by EntityID: " + rhs->m_parentEntity + " !"); \
+	} \
+}
+
+unregisterComponentImplDefi(TransformComponent)
+unregisterComponentImplDefi(VisibleComponent)
+unregisterComponentImplDefi(DirectionalLightComponent)
+unregisterComponentImplDefi(PointLightComponent)
+unregisterComponentImplDefi(SphereLightComponent)
+unregisterComponentImplDefi(CameraComponent)
+unregisterComponentImplDefi(InputComponent)
+unregisterComponentImplDefi(EnvironmentCaptureComponent)
+
 #define getComponentImplDefi( className ) \
 className* InnoGameSystem::get##className(const EntityID& parentEntity) \
 { \

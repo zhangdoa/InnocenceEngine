@@ -27,6 +27,14 @@
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 5,
+          "FOVX": 60.0,
+          "widthScale": 16.0,
+          "heightScale": 9.0,
+          "zNear": 0.1,
+          "zFar": 2000.0
         }
       ],
       "EntityID": "8ebdcf16ba11961a7b5dee1876cfc62d",
@@ -401,10 +409,6 @@
       ],
       "EntityID": "d7a9d339941c3c19aa9051aaeba5a98a",
       "EntityName": "sphereLight"
-    },
-    {
-      "EntityID": "833d1740b4483cd978220461a60ce648",
-      "EntityName": "PhysicsSystemPicker"
     }
   ],
   "SceneName": "..//res//scenes//Intro.InnoScene"

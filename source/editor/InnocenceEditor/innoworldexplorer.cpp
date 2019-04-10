@@ -8,14 +8,10 @@ InnoWorldExplorer::InnoWorldExplorer(QWidget* parent) : QTreeWidget(parent)
 {
 }
 
-void InnoWorldExplorer::initialize(InnoPropertyEditor* propertyEditor)
+void InnoWorldExplorer::buildTree()
 {
-    m_propertyEditor = propertyEditor;
-
-    // root item
     m_rootItem = new QTreeWidgetItem(this);
     m_rootItem->setText(0, "Entities");
-
     this->addTopLevelItem(m_rootItem);
 
     auto l_entityNameMap = g_pCoreSystem->getGameSystem()->getEntityNameMap();
@@ -27,7 +23,7 @@ void InnoWorldExplorer::initialize(InnoPropertyEditor* propertyEditor)
         l_entityItem->setText(0, i.second.c_str());
         l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
 
-        AddChild(m_rootItem, l_entityItem);
+        addChild(m_rootItem, l_entityItem);
 
         auto result = l_entityChildrenComponentsMetadataMap.find(i.first);
         if (result != l_entityChildrenComponentsMetadataMap.end())
@@ -41,10 +37,26 @@ void InnoWorldExplorer::initialize(InnoPropertyEditor* propertyEditor)
                 l_componentItem->setText(0, l_componentMetapair.second.c_str());
                 l_componentItem->setData(0, Qt::UserRole, QVariant((int)l_componentMetapair.first));
                 l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue(j.first));
-                AddChild(l_entityItem, l_componentItem);
+                addChild(l_entityItem, l_componentItem);
             }
         }
     }
+}
+
+void InnoWorldExplorer::initialize(InnoPropertyEditor* propertyEditor)
+{
+    m_propertyEditor = propertyEditor;
+
+    buildTree();
+
+    f_sceneLoadingCallback
+            = [&]()
+    {
+        clear();
+        buildTree();
+    };
+
+    g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
 }
 
 void InnoWorldExplorer::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
@@ -75,7 +87,7 @@ void InnoWorldExplorer::selectionChanged(const QItemSelection &selected, const Q
     }
 }
 
-void InnoWorldExplorer::AddChild(QTreeWidgetItem *parent, QTreeWidgetItem *child)
+void InnoWorldExplorer::addChild(QTreeWidgetItem *parent, QTreeWidgetItem *child)
 {
     parent->addChild(child);
 }

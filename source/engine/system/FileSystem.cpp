@@ -110,10 +110,9 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 	bool prepareForLoadingScene(const std::string& fileName);
 	bool loadScene(const std::string& fileName);
-	bool cacheScene();
 	bool cleanScene();
 	bool loadComponents(const json& j);
-	bool assignOrphanComponents();
+	bool assignComponentRuntimeData();
 	bool loadAssets();
 	bool saveScene(const std::string& fileName);
 
@@ -180,8 +179,6 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	std::string m_currentScene;
 
 	ThreadSafeQueue<std::pair<TransformComponent*, std::string>> m_orphanTransformComponents;
-	ThreadSafeQueue<std::pair<CameraComponent*, std::string>> m_orphanCameraComponents;
-	ThreadSafeQueue<std::pair<InputComponent*, std::string>> m_orphanInputComponents;
 
 	std::unordered_map<std::string, ModelMap> m_loadedModelMap;
 	std::unordered_map<std::string, ModelPair> m_loadedModelPair;
@@ -259,7 +256,7 @@ void InnoFileSystemNS::to_json(json& j, const EntityNamePair& p)
 {
 	j = json{
 		{"EntityID", p.first},
-	{"EntityName", p.second},
+		{"EntityName", p.second},
 	};
 }
 
@@ -412,6 +409,11 @@ void InnoFileSystemNS::to_json(json& j, const CameraComponent& p)
 	j = json
 	{
 		{"ComponentType", InnoUtility::getComponentType<CameraComponent>()},
+		{"FOVX", p.m_FOVX},
+		{"widthScale", p.m_widthScale},
+		{"heightScale", p.m_heightScale},
+		{"zNear", p.m_zNear},
+		{"zFar", p.m_zFar},
 	};
 }
 
@@ -495,8 +497,13 @@ void InnoFileSystemNS::from_json(const json & j, SphereLightComponent & p)
 	from_json(j["Color"], p.m_color);
 }
 
-void from_json(const json& j, CameraComponent& p)
+void InnoFileSystemNS::from_json(const json& j, CameraComponent& p)
 {
+	p.m_FOVX = j["FOVX"];
+	p.m_widthScale = j["widthScale"];
+	p.m_heightScale = j["heightScale"];
+	p.m_zNear = j["zNear"];
+	p.m_zFar = j["zFar"];
 }
 
 void InnoFileSystemNS::from_json(const json & j, EnvironmentCaptureComponent & p)
@@ -554,14 +561,11 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 		return false;
 	}
 
-	// cache components which can't be serilized currently
-	cacheScene();
-
 	cleanScene();
 
 	loadComponents(j);
 
-	assignOrphanComponents();
+	assignComponentRuntimeData();
 
 	for (auto i : m_sceneLoadingCallbacks)
 	{
@@ -573,20 +577,6 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 	m_currentScene = fileName;
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene " + fileName + " has been loaded.");
-
-	return true;
-}
-
-bool InnoFileSystemNS::cacheScene()
-{
-	for (auto i : g_pCoreSystem->getGameSystem()->get<CameraComponent>())
-	{
-		m_orphanCameraComponents.push(std::pair<CameraComponent*, std::string>(i, g_pCoreSystem->getGameSystem()->getEntityName(i->m_parentEntity)));
-	}
-	for (auto i : g_pCoreSystem->getGameSystem()->get<InputComponent>())
-	{
-		m_orphanInputComponents.push(std::pair<InputComponent*, std::string>(i, g_pCoreSystem->getGameSystem()->getEntityName(i->m_parentEntity)));
-	}
 
 	return true;
 }
@@ -623,7 +613,7 @@ bool InnoFileSystemNS::loadComponents(const json& j)
 					break;
 				case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_EntityID);
 					break;
-				case ComponentType::CameraComponent:
+				case ComponentType::CameraComponent: loadComponentData<CameraComponent>(k, l_EntityID);
 					break;
 				case ComponentType::InputComponent:
 					break;
@@ -649,7 +639,7 @@ bool InnoFileSystemNS::loadComponents(const json& j)
 	return true;
 }
 
-bool InnoFileSystemNS::assignOrphanComponents()
+bool InnoFileSystemNS::assignComponentRuntimeData()
 {
 	while (InnoFileSystemNS::m_orphanTransformComponents.size() > 0)
 	{
@@ -665,24 +655,6 @@ bool InnoFileSystemNS::assignOrphanComponents()
 			{
 				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't find TransformComponent with entity name" + l_orphan.second + "!");
 			}
-		}
-	}
-	while (InnoFileSystemNS::m_orphanCameraComponents.size() > 0)
-	{
-		std::pair<CameraComponent*, std::string> l_orphan;
-		if (InnoFileSystemNS::m_orphanCameraComponents.tryPop(l_orphan))
-		{
-			l_orphan.first->m_parentEntity = g_pCoreSystem->getGameSystem()->getEntityID(l_orphan.second);
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: reattached CameraComponent to entity " + l_orphan.second + ".");
-		}
-	}
-	while (InnoFileSystemNS::m_orphanInputComponents.size() > 0)
-	{
-		std::pair<InputComponent*, std::string> l_orphan;
-		if (InnoFileSystemNS::m_orphanInputComponents.tryPop(l_orphan))
-		{
-			l_orphan.first->m_parentEntity = g_pCoreSystem->getGameSystem()->getEntityID(l_orphan.second);
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: reattached InputComponent to entity " + l_orphan.second + ".");
 		}
 	}
 
@@ -730,6 +702,10 @@ bool InnoFileSystemNS::saveScene(const std::string& fileName)
 	{
 		saveComponentData(topLevel, i);
 	}
+	for (auto i : g_pCoreSystem->getGameSystem()->get<CameraComponent>())
+	{
+		saveComponentData(topLevel, i);
+	}
 	for (auto i : g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>())
 	{
 		saveComponentData(topLevel, i);
@@ -745,7 +721,6 @@ bool InnoFileSystemNS::saveScene(const std::string& fileName)
 INNO_SYSTEM_EXPORT bool InnoFileSystem::setup()
 {
 	InnoFileSystemNS::m_objectStatus = ObjectStatus::ALIVE;
-
 	return true;
 }
 

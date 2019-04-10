@@ -10,14 +10,17 @@ virtual className* spawn##className(const EntityID& parentEntity) = 0;
 #define spawnComponentInterfaceCall( className, parentEntity ) \
 spawn##className(parentEntity)
 
+#define registerComponentInterfaceDecl( className ) \
+virtual void registerComponent(className* rhs, const EntityID& parentEntity) = 0;
+
 #define destroyComponentInterfaceDecl( className ) \
 virtual bool destroy(className* rhs) = 0;
 
 #define destroyComponentInterfaceCall( ptr ) \
 destroy(ptr)
 
-#define registerComponentInterfaceDecl( className ) \
-virtual void registerComponent(className* rhs, const EntityID& parentEntity) = 0;
+#define unregisterComponentInterfaceDecl( className ) \
+virtual void unregisterComponent(className* rhs) = 0;
 
 #define getComponentInterfaceDecl( className ) \
 virtual className* get##className(const EntityID& parentEntity) = 0;
@@ -53,6 +56,15 @@ protected:
 	spawnComponentInterfaceDecl(InputComponent);
 	spawnComponentInterfaceDecl(EnvironmentCaptureComponent);
 
+	registerComponentInterfaceDecl(TransformComponent);
+	registerComponentInterfaceDecl(VisibleComponent);
+	registerComponentInterfaceDecl(DirectionalLightComponent);
+	registerComponentInterfaceDecl(PointLightComponent);
+	registerComponentInterfaceDecl(SphereLightComponent);
+	registerComponentInterfaceDecl(CameraComponent);
+	registerComponentInterfaceDecl(InputComponent);
+	registerComponentInterfaceDecl(EnvironmentCaptureComponent);
+
 	destroyComponentInterfaceDecl(TransformComponent);
 	destroyComponentInterfaceDecl(VisibleComponent);
 	destroyComponentInterfaceDecl(DirectionalLightComponent);
@@ -62,14 +74,14 @@ protected:
 	destroyComponentInterfaceDecl(InputComponent);
 	destroyComponentInterfaceDecl(EnvironmentCaptureComponent);
 
-	registerComponentInterfaceDecl(TransformComponent);
-	registerComponentInterfaceDecl(VisibleComponent);
-	registerComponentInterfaceDecl(DirectionalLightComponent);
-	registerComponentInterfaceDecl(PointLightComponent);
-	registerComponentInterfaceDecl(SphereLightComponent);
-	registerComponentInterfaceDecl(CameraComponent);
-	registerComponentInterfaceDecl(InputComponent);
-	registerComponentInterfaceDecl(EnvironmentCaptureComponent);
+	unregisterComponentInterfaceDecl(TransformComponent);
+	unregisterComponentInterfaceDecl(VisibleComponent);
+	unregisterComponentInterfaceDecl(DirectionalLightComponent);
+	unregisterComponentInterfaceDecl(PointLightComponent);
+	unregisterComponentInterfaceDecl(SphereLightComponent);
+	unregisterComponentInterfaceDecl(CameraComponent);
+	unregisterComponentInterfaceDecl(InputComponent);
+	unregisterComponentInterfaceDecl(EnvironmentCaptureComponent);
 
 	getComponentInterfaceDecl(TransformComponent);
 	getComponentInterfaceDecl(VisibleComponent);
@@ -121,8 +133,6 @@ public:
 
 	virtual void saveComponentsCapture() = 0;
 	virtual void cleanScene() = 0;
-
-	virtual void pauseGameUpdate(bool shouldPause) = 0;
 
 	virtual EntityID createEntity(const std::string& entityName) = 0;
 	virtual bool removeEntity(const std::string& entityName) = 0;

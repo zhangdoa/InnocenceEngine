@@ -64,6 +64,14 @@
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 5,
+          "FOVX": 60.0,
+          "widthScale": 16.0,
+          "heightScale": 9.0,
+          "zNear": 0.1,
+          "zFar": 2000.0
         }
       ],
       "EntityID": "1e6af8f1c63c5165990ba1aca26a72ab",

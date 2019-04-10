@@ -81,11 +81,9 @@ void InnoPhysicsSystemNS::generateProjectionMatrix(CameraComponent * cameraCompo
 
 void InnoPhysicsSystemNS::generateRayOfEye(CameraComponent * cameraComponent)
 {
-	cameraComponent->m_rayOfEye.m_origin = g_pCoreSystem->getGameSystem()->get<TransformComponent>(cameraComponent->m_parentEntity)->m_globalTransformVector.m_pos;
-	cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(
-		direction::BACKWARD,
-		g_pCoreSystem->getGameSystem()->get<TransformComponent>(cameraComponent->m_parentEntity)->m_localTransformVector.m_rot
-	);
+	auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(cameraComponent->m_parentEntity);
+	cameraComponent->m_rayOfEye.m_origin = l_transformComponent->m_globalTransformVector.m_pos;
+	cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(direction::BACKWARD, l_transformComponent->m_localTransformVector.m_rot);
 }
 
 std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent * cameraComponent)
@@ -493,6 +491,7 @@ void InnoPhysicsSystemNS::updateCameraComponents()
 {
 	for (auto& i : g_pCoreSystem->getGameSystem()->get<CameraComponent>())
 	{
+		i->m_WHRatio = i->m_widthScale / i->m_heightScale;
 		generateProjectionMatrix(i);
 		generateRayOfEye(i);
 		generateFrustum(i);

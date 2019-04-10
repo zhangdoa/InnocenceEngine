@@ -4,11 +4,14 @@
 #define spawnComponentImplDecl( className ) \
 className* spawn##className(const EntityID& parentEntity) override;
 
+#define registerComponentImplDecl( className ) \
+void registerComponent(className* rhs, const EntityID& parentEntity) override;
+
 #define destroyComponentImplDecl( className ) \
 bool destroy(className* rhs) override;
 
-#define registerComponentImplDecl( className ) \
-void registerComponent(className* rhs, const EntityID& parentEntity) override;
+#define unregisterComponentImplDecl( className ) \
+void unregisterComponent(className* rhs) override;
 
 #define getComponentImplDecl( className ) \
 className* get##className(const EntityID& parentEntity) override;
@@ -37,6 +40,15 @@ public:
 	spawnComponentImplDecl(InputComponent);
 	spawnComponentImplDecl(EnvironmentCaptureComponent);
 
+	registerComponentImplDecl(TransformComponent);
+	registerComponentImplDecl(VisibleComponent);
+	registerComponentImplDecl(DirectionalLightComponent);
+	registerComponentImplDecl(PointLightComponent);
+	registerComponentImplDecl(SphereLightComponent);
+	registerComponentImplDecl(CameraComponent);
+	registerComponentImplDecl(InputComponent);
+	registerComponentImplDecl(EnvironmentCaptureComponent);
+
 	destroyComponentImplDecl(TransformComponent);
 	destroyComponentImplDecl(VisibleComponent);
 	destroyComponentImplDecl(DirectionalLightComponent);
@@ -46,14 +58,14 @@ public:
 	destroyComponentImplDecl(InputComponent);
 	destroyComponentImplDecl(EnvironmentCaptureComponent);
 
-	registerComponentImplDecl(TransformComponent);
-	registerComponentImplDecl(VisibleComponent);
-	registerComponentImplDecl(DirectionalLightComponent);
-	registerComponentImplDecl(PointLightComponent);
-	registerComponentImplDecl(SphereLightComponent);
-	registerComponentImplDecl(CameraComponent);
-	registerComponentImplDecl(InputComponent);
-	registerComponentImplDecl(EnvironmentCaptureComponent);
+	unregisterComponentImplDecl(TransformComponent);
+	unregisterComponentImplDecl(VisibleComponent);
+	unregisterComponentImplDecl(DirectionalLightComponent);
+	unregisterComponentImplDecl(PointLightComponent);
+	unregisterComponentImplDecl(SphereLightComponent);
+	unregisterComponentImplDecl(CameraComponent);
+	unregisterComponentImplDecl(InputComponent);
+	unregisterComponentImplDecl(EnvironmentCaptureComponent);
 
 	getComponentImplDecl(TransformComponent);
 	getComponentImplDecl(VisibleComponent);
@@ -83,8 +95,6 @@ public:
 
 	void saveComponentsCapture() override;
 	void cleanScene() override;
-
-	void pauseGameUpdate(bool shouldPause) override;
 
 	EntityID createEntity(const std::string& entityName) override;
 	bool removeEntity(const std::string& entityName) override;

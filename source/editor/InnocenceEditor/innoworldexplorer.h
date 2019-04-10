@@ -16,11 +16,14 @@ protected:
     virtual void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
 private:
-    void AddChild(QTreeWidgetItem* parent, QTreeWidgetItem* child);
+    void addChild(QTreeWidgetItem* parent, QTreeWidgetItem* child);
 
     InnoPropertyEditor* m_propertyEditor;
 
     QTreeWidgetItem* m_rootItem;
+
+    std::function<void()> f_sceneLoadingCallback;
+    void buildTree();
 };
 
 #endif // INNOWORLDEXPLORER_H

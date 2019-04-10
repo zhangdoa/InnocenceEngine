@@ -13,8 +13,8 @@ namespace PlayerComponentCollection
 	EntityID m_cameraParentEntity;
 
 	TransformComponent* m_cameraTransformComponent;
-	InputComponent* m_inputComponent;
 	CameraComponent* m_cameraComponent;
+	InputComponent* m_inputComponent;
 
 	std::function<void()> f_moveForward;
 	std::function<void()> f_moveBackward;
@@ -57,8 +57,9 @@ bool PlayerComponentCollection::setup()
 	f_sceneLoadingCallback = [&]() {
 		m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntityID("playerCharacterCamera");
 		m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
+		m_cameraComponent = g_pCoreSystem->getGameSystem()->get<CameraComponent>(m_cameraParentEntity);
+
 		m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_cameraParentEntity);
-		m_cameraComponent = g_pCoreSystem->getGameSystem()->spawn<CameraComponent>(m_cameraParentEntity);
 
 		m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
 		m_targetCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
@@ -91,13 +92,6 @@ bool PlayerComponentCollection::setup()
 		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
 		g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 0, &f_rotateAroundPositiveYAxis);
 		g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 1, &f_rotateAroundRightAxis);
-
-		m_cameraComponent->m_FOVX = 60.0f;
-		m_cameraComponent->m_WHRatio = 16.0f / 9.0f;
-		m_cameraComponent->m_zNear = 0.1f;
-		m_cameraComponent->m_zFar = 2000.0f;
-		m_cameraComponent->m_drawFrustum = false;
-		m_cameraComponent->m_drawAABB = false;
 
 		m_initialMoveSpeed = 0.5f;
 		m_moveSpeed = m_initialMoveSpeed;
