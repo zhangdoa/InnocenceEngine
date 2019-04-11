@@ -291,6 +291,8 @@ bool GLTerrainPass::update()
 
 bool GLTerrainPass::resize()
 {
+	resizeGLRenderPassComponent(m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+
 	return true;
 }
 

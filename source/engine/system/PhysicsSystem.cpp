@@ -824,7 +824,7 @@ bool InnoPhysicsSystemNS::update()
 
 	PhysXWrapper::get().update();
 
-	auto preparePhysicsDataTask = g_pCoreSystem->getTaskSystem()->submit([]()
+	auto preparePhysicsDataTask = g_pCoreSystem->getTaskSystem()->submit([&]()
 	{
 		updateCameraComponents();
 		updateLightComponents();

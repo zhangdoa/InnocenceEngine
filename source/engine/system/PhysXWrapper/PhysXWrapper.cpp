@@ -122,26 +122,27 @@ bool PhysXWrapperNS::update()
 {
 	if (m_needSimulate)
 	{
-		auto updatePhysXTask = g_pCoreSystem->getTaskSystem()->submit([]()
+		//auto updatePhysXTask = g_pCoreSystem->getTaskSystem()->submit([&]()
+		//{
+		gScene->simulate(1.0f / 120.0f);
+
+		gScene->fetchResults(true);
+
+		for (auto i : PxRigidActors)
 		{
-			gScene->simulate(1.0f / 60.0f);
-			gScene->fetchResults(true);
+			PxTransform t = i->getGlobalPose();
+			PxVec3 p = t.p;
+			auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i);
 
-			for (auto i : PxRigidActors)
+			if (l_rigidBody->userData)
 			{
-				PxTransform t = i->getGlobalPose();
-				PxVec3 p = t.p;
-				auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i);
-
-				if (l_rigidBody->userData)
-				{
-					auto l_transformComponent = reinterpret_cast<TransformComponent*>(l_rigidBody->userData);
-					l_transformComponent->m_localTransformVector.m_pos = vec4(p.x, p.y, p.z, 1.0f);
-				}
+				auto l_transformComponent = reinterpret_cast<TransformComponent*>(l_rigidBody->userData);
+				l_transformComponent->m_localTransformVector.m_pos = vec4(p.x, p.y, p.z, 1.0f);
 			}
-		});
+		}
+		//});
 
-		m_asyncTask.emplace_back(std::move(updatePhysXTask));
+		//m_asyncTask.emplace_back(std::move(updatePhysXTask));
 
 		g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(m_asyncTask);
 	}

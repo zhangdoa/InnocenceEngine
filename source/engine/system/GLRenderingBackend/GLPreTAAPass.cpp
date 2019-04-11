@@ -29,7 +29,6 @@ INNO_PRIVATE_SCOPE GLPreTAAPass
 	{
 		"uni_lightPassRT0",
 		"uni_transparentPassRT0",
-		"uni_transparentPassRT1",
 		"uni_skyPassRT0",
 		"uni_terrainPassRT0",
 	};
@@ -76,14 +75,11 @@ bool GLPreTAAPass::update()
 		GLTransparentPass::getGLRPC()->m_GLTDCs[0],
 		1);
 	activateTexture(
-		GLTransparentPass::getGLRPC()->m_GLTDCs[1],
+		GLSkyPass::getGLRPC()->m_GLTDCs[0],
 		2);
 	activateTexture(
-		GLSkyPass::getGLRPC()->m_GLTDCs[0],
-		3);
-	activateTexture(
 		GLTerrainPass::getGLRPC()->m_GLTDCs[0],
-		4);
+		3);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);

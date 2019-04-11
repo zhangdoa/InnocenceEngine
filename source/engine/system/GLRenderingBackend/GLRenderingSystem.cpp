@@ -9,10 +9,10 @@
 #include "GLOpaquePass.h"
 #include "GLSSAONoisePass.h"
 #include "GLSSAOBlurPass.h"
-#include "GLTransparentPass.h"
 #include "GLTerrainPass.h"
 
 #include "GLLightPass.h"
+#include "GLTransparentPass.h"
 
 #include "GLSkyPass.h"
 #include "GLPreTAAPass.h"
@@ -198,10 +198,10 @@ bool GLRenderingSystemNS::initialize()
 	GLOpaquePass::initialize();
 	GLSSAONoisePass::initialize();
 	GLSSAOBlurPass::initialize();
-	GLTransparentPass::initialize();
 	GLTerrainPass::initialize();
 
 	GLLightPass::initialize();
+	GLTransparentPass::initialize();
 
 	GLSkyPass::initialize();
 	GLPreTAAPass::initialize();
@@ -290,10 +290,11 @@ bool GLRenderingSystemNS::update()
 	GLOpaquePass::update();
 	GLSSAONoisePass::update();
 	GLSSAOBlurPass::update();
-	GLTransparentPass::update();
+
 	GLTerrainPass::update();
 
 	GLLightPass::update();
+	GLTransparentPass::update();
 
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
 
@@ -392,6 +393,8 @@ bool GLRenderingSystemNS::prepareGeometryPassData()
 	GLRenderingSystemComponent::get().m_GPassCameraUBOData.t = m_cameraDataPack.t;
 	GLRenderingSystemComponent::get().m_GPassCameraUBOData.r_prev = m_cameraDataPack.r_prev;
 	GLRenderingSystemComponent::get().m_GPassCameraUBOData.t_prev = m_cameraDataPack.t_prev;
+
+	std::vector<TransparentPassDataPack> l_sortedTransparentPassDataPack;
 
 	for (auto i : m_meshDataPack)
 	{
@@ -494,11 +497,23 @@ bool GLRenderingSystemNS::prepareGeometryPassData()
 
 				l_GLRenderDataPack.meshCustomMaterial = l_material->m_meshCustomMaterial;
 				l_GLRenderDataPack.visiblilityType = i.visiblilityType;
-				GLRenderingSystemComponent::get().m_transparentPassDataQueue.push(l_GLRenderDataPack);
+
+				l_sortedTransparentPassDataPack.emplace_back(l_GLRenderDataPack);
 			}
 		}
 	}
 
+	// @TODO: use GPU to do OIT
+	std::sort(l_sortedTransparentPassDataPack.begin(), l_sortedTransparentPassDataPack.end(), [](TransparentPassDataPack a, TransparentPassDataPack b) {
+		auto m_a_InViewSpace = m_cameraDataPack.t * m_cameraDataPack.r * a.meshUBOData.m;
+		auto m_b_InViewSpace = m_cameraDataPack.t * m_cameraDataPack.r * b.meshUBOData.m;
+		return m_a_InViewSpace.m23 < m_b_InViewSpace.m23;
+	});
+
+	for (auto i : l_sortedTransparentPassDataPack)
+	{
+		GLRenderingSystemComponent::get().m_transparentPassDataQueue.push(i);
+	}
 	return true;
 }
 
@@ -661,10 +676,11 @@ bool GLRenderingSystemNS::resize()
 	GLOpaquePass::resize();
 	GLSSAONoisePass::resize();
 	GLSSAOBlurPass::resize();
-	GLTransparentPass::resize();
+
 	GLTerrainPass::resize();
 
 	GLLightPass::resize();
+	GLTransparentPass::resize();
 
 	GLSkyPass::resize();
 	GLPreTAAPass::resize();

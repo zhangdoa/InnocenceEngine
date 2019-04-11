@@ -240,7 +240,7 @@ bool InnoRenderingFrontendSystemNS::update()
 
 	updateMeshData();
 
-	auto prepareRenderingDataTask = g_pCoreSystem->getTaskSystem()->submit([]()
+	auto prepareRenderingDataTask = g_pCoreSystem->getTaskSystem()->submit([&]()
 	{
 	});
 

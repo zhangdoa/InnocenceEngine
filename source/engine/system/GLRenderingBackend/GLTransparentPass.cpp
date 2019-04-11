@@ -1,5 +1,6 @@
 #include "GLTransparentPass.h"
 #include "GLOpaquePass.h"
+#include "GLLightPass.h"
 
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
@@ -37,7 +38,7 @@ bool GLTransparentPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(2, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	initializeShaders();
 
@@ -96,15 +97,21 @@ bool GLTransparentPass::update()
 	}
 
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_DEPTH_CLAMP);
 
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_SRC1_COLOR, GL_ONE, GL_ZERO);
 
-	activateRenderPass(m_GLRPC);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLLightPass::getGLRPC()->m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, GLLightPass::getGLRPC()->m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GLLightPass::getGLRPC()->m_GLFrameBufferDesc.renderBufferInternalFormat, GLLightPass::getGLRPC()->m_GLFrameBufferDesc.sizeX, GLLightPass::getGLRPC()->m_GLFrameBufferDesc.sizeY);
+	glViewport(0, 0, GLLightPass::getGLRPC()->m_GLFrameBufferDesc.sizeX, GLLightPass::getGLRPC()->m_GLFrameBufferDesc.sizeY);
 
-	copyDepthBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);
+	copyDepthBuffer(GLOpaquePass::getGLRPC(), GLLightPass::getGLRPC());
+
+	//activateRenderPass(m_GLRPC);
+	//copyDepthBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);
 
 	activateShaderProgram(m_GLSPC);
 

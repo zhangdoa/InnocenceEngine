@@ -243,7 +243,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 		return true;
 	}
 
-	auto prepareRenderDataTask = g_pCoreSystem->getTaskSystem()->submit([]()
+	auto prepareRenderDataTask = g_pCoreSystem->getTaskSystem()->submit([&]()
 	{
 	});
 

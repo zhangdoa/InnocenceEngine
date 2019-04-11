@@ -302,7 +302,7 @@ bool InnoGameSystem::initialize()
 
 bool InnoGameSystem::update()
 {
-	auto temp = g_pCoreSystem->getTaskSystem()->submit([]()
+	auto temp = g_pCoreSystem->getTaskSystem()->submit([&]()
 	{
 		InnoGameSystemNS::updateTransformComponent();
 	});
