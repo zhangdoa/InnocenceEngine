@@ -110,6 +110,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 		}
 	}
 
+	CameraDataPack m_cameraDataPack;
+	SunDataPack m_sunDataPack;
 	std::vector<MeshDataPack> m_meshDataPack;
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
@@ -359,6 +361,20 @@ bool GLRenderingSystemNS::update()
 
 void GLRenderingSystemNS::prepareRenderingData()
 {
+	// copy camera data pack for local scope
+	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+	if (l_cameraDataPack.has_value())
+	{
+		m_cameraDataPack = l_cameraDataPack.value();
+	}
+
+	// copy mesh data pack for local scope
+	auto l_meshDataPack = m_renderingFrontendSystem->getMeshDataPack();
+	if (l_meshDataPack.has_value())
+	{
+		m_meshDataPack = l_meshDataPack.value();
+	}
+
 	prepareGeometryPassData();
 
 	prepareLightPassData();
@@ -370,22 +386,12 @@ void GLRenderingSystemNS::prepareRenderingData()
 
 bool GLRenderingSystemNS::prepareGeometryPassData()
 {
-	//UBO
-	auto l_cameraDataPack = m_renderingFrontendSystem->getCameraDataPack();
-
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.p_original = l_cameraDataPack.p_original;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.p_jittered = l_cameraDataPack.p_jittered;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.r = l_cameraDataPack.r;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.t = l_cameraDataPack.t;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.r_prev = l_cameraDataPack.r_prev;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.t_prev = l_cameraDataPack.t_prev;
-
-	auto l_meshDataPack = m_renderingFrontendSystem->getMeshDataPack();
-
-	if (l_meshDataPack.has_value())
-	{
-		m_meshDataPack = l_meshDataPack.value();
-	}
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.p_original = m_cameraDataPack.p_original;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.p_jittered = m_cameraDataPack.p_jittered;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.r = m_cameraDataPack.r;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.t = m_cameraDataPack.t;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.r_prev = m_cameraDataPack.r_prev;
+	GLRenderingSystemComponent::get().m_GPassCameraUBOData.t_prev = m_cameraDataPack.t_prev;
 
 	for (auto i : m_meshDataPack)
 	{
@@ -535,7 +541,7 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (l_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.distanceToCamera = (m_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::DIRECTIONAL_LIGHT;
 
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
@@ -545,7 +551,7 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (l_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.distanceToCamera = (m_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::POINT_LIGHT;
 
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
@@ -555,7 +561,7 @@ bool GLRenderingSystemNS::prepareBillboardPassData()
 	{
 		BillboardPassDataPack l_GLRenderDataPack;
 		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (l_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
+		l_GLRenderDataPack.distanceToCamera = (m_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
 		l_GLRenderDataPack.iconType = WorldEditorIconType::SPHERE_LIGHT;
 
 		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);

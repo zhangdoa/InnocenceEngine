@@ -28,6 +28,9 @@ INNO_PRIVATE_SCOPE GLTransparentPass
 	GLuint m_uni_viewPos;
 	GLuint m_uni_dirLight_direction;
 	GLuint m_uni_dirLight_color;
+
+	CameraDataPack m_cameraDataPack;
+	SunDataPack m_sunDataPack;
 }
 
 bool GLTransparentPass::initialize()
@@ -78,8 +81,19 @@ void GLTransparentPass::bindUniformLocations(GLShaderProgramComponent* rhs)
 
 bool GLTransparentPass::update()
 {
+	// copy camera data pack for local scope
 	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+	if (l_cameraDataPack.has_value())
+	{
+		m_cameraDataPack = l_cameraDataPack.value();
+	}
+
+	// copy sun data pack for local scope
 	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
+	if (l_sunDataPack.has_value())
+	{
+		m_sunDataPack = l_sunDataPack.value();
+	}
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -98,13 +112,13 @@ bool GLTransparentPass::update()
 
 	updateUniform(
 		m_uni_viewPos,
-		l_cameraDataPack.globalPos.x, l_cameraDataPack.globalPos.y, l_cameraDataPack.globalPos.z);
+		m_cameraDataPack.globalPos.x, m_cameraDataPack.globalPos.y, m_cameraDataPack.globalPos.z);
 	updateUniform(
 		m_uni_dirLight_direction,
-		l_sunDataPack.dir.x, l_sunDataPack.dir.y, l_sunDataPack.dir.z);
+		m_sunDataPack.dir.x, m_sunDataPack.dir.y, m_sunDataPack.dir.z);
 	updateUniform(
 		m_uni_dirLight_color,
-		l_sunDataPack.luminance.x, l_sunDataPack.luminance.y, l_sunDataPack.luminance.z);
+		m_sunDataPack.luminance.x, m_sunDataPack.luminance.y, m_sunDataPack.luminance.z);
 
 	while (GLRenderingSystemComponent::get().m_transparentPassDataQueue.size() > 0)
 	{

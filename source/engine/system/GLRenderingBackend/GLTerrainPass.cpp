@@ -158,6 +158,8 @@ INNO_PRIVATE_SCOPE GLTerrainPass
 
 	TextureDataComponent* m_terrainNoiseTDC;
 	GLTextureDataComponent* m_terrainNoiseGLTDC;
+
+	CameraDataPack m_cameraDataPack;
 }
 
 bool GLTerrainPass::initialize()
@@ -237,7 +239,13 @@ void GLTerrainPass::bindUniformLocations(GLShaderProgramComponent* rhs)
 bool GLTerrainPass::update()
 {
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+
+	// copy camera data pack for local scope
 	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+	if (l_cameraDataPack.has_value())
+	{
+		m_cameraDataPack = l_cameraDataPack.value();
+	}
 
 	if (l_renderingConfig.drawTerrain)
 	{
@@ -253,13 +261,13 @@ bool GLTerrainPass::update()
 
 		updateUniform(
 			m_uni_p_camera,
-			l_cameraDataPack.p_original);
+			m_cameraDataPack.p_original);
 		updateUniform(
 			m_uni_r_camera,
-			l_cameraDataPack.r);
+			m_cameraDataPack.r);
 		updateUniform(
 			m_uni_t_camera,
-			l_cameraDataPack.t);
+			m_cameraDataPack.t);
 		updateUniform(
 			m_uni_m,
 			m);

@@ -41,6 +41,8 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
 
+	CameraDataPack m_cameraDataPack;
+	SunDataPack m_sunDataPack;
 	std::vector<MeshDataPack> m_meshDataPack;
 }
 
@@ -634,20 +636,30 @@ bool DX11RenderingSystemNS::generateCBuffers()
 
 void DX11RenderingSystemNS::prepareRenderingData()
 {
-	auto l_cameraDataPack = m_renderingFrontendSystem->getCameraDataPack();
+	// copy camera data pack for local scope
+	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+	if (l_cameraDataPack.has_value())
+	{
+		m_cameraDataPack = l_cameraDataPack.value();
+	}
 
-	g_DXRenderingSystemComponent->m_cameraCBufferData.p_original = l_cameraDataPack.p_original;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.p_jittered = l_cameraDataPack.p_jittered;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.r = l_cameraDataPack.r;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.t = l_cameraDataPack.t;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.r_prev = l_cameraDataPack.r_prev;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.t_prev = l_cameraDataPack.t_prev;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.globalPos = l_cameraDataPack.globalPos;
+	// copy sun data pack for local scope
+	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
+	if (l_sunDataPack.has_value())
+	{
+		m_sunDataPack = l_sunDataPack.value();
+	}
 
-	auto l_sunDataPack = m_renderingFrontendSystem->getSunDataPack();
+	g_DXRenderingSystemComponent->m_cameraCBufferData.p_original = m_cameraDataPack.p_original;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.p_jittered = m_cameraDataPack.p_jittered;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.r = m_cameraDataPack.r;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.t = m_cameraDataPack.t;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.r_prev = m_cameraDataPack.r_prev;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.t_prev = m_cameraDataPack.t_prev;
+	g_DXRenderingSystemComponent->m_cameraCBufferData.globalPos = m_cameraDataPack.globalPos;
 
-	g_DXRenderingSystemComponent->m_directionalLightCBufferData.dir = l_sunDataPack.dir;
-	g_DXRenderingSystemComponent->m_directionalLightCBufferData.luminance = l_sunDataPack.luminance;
+	g_DXRenderingSystemComponent->m_directionalLightCBufferData.dir = m_sunDataPack.dir;
+	g_DXRenderingSystemComponent->m_directionalLightCBufferData.luminance = m_sunDataPack.luminance;
 
 	prepareGeometryPassData();
 	prepareLightPassData();

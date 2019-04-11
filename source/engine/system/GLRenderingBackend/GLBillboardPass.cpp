@@ -32,6 +32,8 @@ INNO_PRIVATE_SCOPE GLBillboardPass
 	GLuint m_uni_t;
 	GLuint m_uni_pos;
 	GLuint m_uni_size;
+
+	CameraDataPack m_cameraDataPack;
 }
 
 bool GLBillboardPass::initialize()
@@ -80,7 +82,12 @@ void GLBillboardPass::bindUniformLocations(GLShaderProgramComponent* rhs)
 
 bool GLBillboardPass::update()
 {
+	// copy camera data pack for local scope
 	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+	if (l_cameraDataPack.has_value())
+	{
+		m_cameraDataPack = l_cameraDataPack.value();
+	}
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -94,13 +101,13 @@ bool GLBillboardPass::update()
 
 	updateUniform(
 		m_uni_p,
-		l_cameraDataPack.p_original);
+		m_cameraDataPack.p_original);
 	updateUniform(
 		m_uni_r,
-		l_cameraDataPack.r);
+		m_cameraDataPack.r);
 	updateUniform(
 		m_uni_t,
-		l_cameraDataPack.t);
+		m_cameraDataPack.t);
 
 	while (GLRenderingSystemComponent::get().m_billboardPassDataQueue.size() > 0)
 	{
@@ -118,13 +125,13 @@ bool GLBillboardPass::update()
 		{
 			updateUniform(
 				m_uni_size,
-				(1.0f / (l_distanceToCamera * l_cameraDataPack.WHRatio)), (1.0f / l_distanceToCamera));
+				(1.0f / (l_distanceToCamera * m_cameraDataPack.WHRatio)), (1.0f / l_distanceToCamera));
 		}
 		else
 		{
 			updateUniform(
 				m_uni_size,
-				(1.0f / l_cameraDataPack.WHRatio), 1.0f);
+				(1.0f / m_cameraDataPack.WHRatio), 1.0f);
 		}
 
 		GLTextureDataComponent* l_iconTexture = 0;

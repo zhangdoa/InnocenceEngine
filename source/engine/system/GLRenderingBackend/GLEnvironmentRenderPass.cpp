@@ -112,6 +112,9 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderPass
 	GLuint m_voxelVisualizationPass_uni_worldMinPoint;
 
 	GLuint m_VAO;
+
+	CameraDataPack m_cameraDataPack;
+	SunDataPack m_sunDataPack;
 }
 
 void GLEnvironmentRenderPass::initialize()
@@ -516,6 +519,20 @@ void GLEnvironmentRenderPass::update()
 {
 	if (!m_isBaked)
 	{
+		// copy camera data pack for local scope
+		auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+		if (l_cameraDataPack.has_value())
+		{
+			m_cameraDataPack = l_cameraDataPack.value();
+		}
+
+		// copy sun data pack for local scope
+		auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
+		if (l_sunDataPack.has_value())
+		{
+			m_sunDataPack = l_sunDataPack.value();
+		}
+
 		updateEnvironmentCapturePass();
 		updateVoxelizationPass();
 		updateIrradianceInjectionPass();
@@ -801,10 +818,10 @@ void GLEnvironmentRenderPass::updateIrradianceInjectionPass()
 
 	updateUniform(
 		m_irradianceInjectionPass_uni_dirLight_direction,
-		l_sunDataPack.dir.x, l_sunDataPack.dir.y, l_sunDataPack.dir.z);
+		m_sunDataPack.dir.x, m_sunDataPack.dir.y, m_sunDataPack.dir.z);
 	updateUniform(
 		m_irradianceInjectionPass_uni_dirLight_luminance,
-		l_sunDataPack.luminance.x, l_sunDataPack.luminance.y, l_sunDataPack.luminance.z);
+		m_sunDataPack.luminance.x, m_sunDataPack.luminance.y, m_sunDataPack.luminance.z);
 
 	updateUniform(m_irradianceInjectionPass_uni_volumeDimension, m_volumeDimension);
 	updateUniform(m_irradianceInjectionPass_uni_voxelSize, l_voxelSize);
@@ -832,11 +849,9 @@ void GLEnvironmentRenderPass::updateVoxelVisualizationPass()
 	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
 
 	// voxel visualization pass
-	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-
-	auto l_p = l_cameraDataPack.p_original;
-	auto l_r = l_cameraDataPack.r;
-	auto l_t = l_cameraDataPack.t;
+	auto l_p = m_cameraDataPack.p_original;
+	auto l_r = m_cameraDataPack.r;
+	auto l_t = m_cameraDataPack.t;
 	auto l_ms = InnoMath::toScaleMatrix(vec4(l_voxelSize, l_voxelSize, l_voxelSize, 1.0f));
 	auto l_mt = InnoMath::toTranslationMatrix(l_sceneAABB.m_boundMin);
 

@@ -4,24 +4,25 @@
 #include "../component/TextureDataComponent.h"
 #include "../component/DX12TextureDataComponent.h"
 
-struct GPassCameraCBufferData
+struct DX12CameraCBufferData
 {
-	mat4 m_CamProjOriginal;
-	mat4 m_CamProjJittered;
-	mat4 m_CamRot;
-	mat4 m_CamTrans;
-	mat4 m_CamRot_prev;
-	mat4 m_CamTrans_prev;
+	mat4 p_original;
+	mat4 p_jittered;
+	mat4 r;
+	mat4 t;
+	mat4 r_prev;
+	mat4 t_prev;
+	vec4 globalPos;
 };
 
-struct GPassMeshCBufferData
+struct DX12MeshCBufferData
 {
 	mat4 m;
 	mat4 m_prev;
-	mat4 m_normalMat;
+	mat4 normalMat;
 };
 
-struct GPassTextureCBufferData
+struct DX12TextureCBufferData
 {
 	vec4 albedo;
 	vec4 MRA;
@@ -35,25 +36,42 @@ struct GPassTextureCBufferData
 	int padding3 = true;
 };
 
-struct GPassMeshDataPack
+struct DX12MeshDataPack
 {
 	size_t indiceSize;
-	GPassMeshCBufferData meshCBuffer;
-	GPassTextureCBufferData textureCBuffer;
+	DX12MeshCBufferData meshCBuffer;
 	DX12MeshDataComponent* DXMDC;
+	DX12TextureCBufferData textureCBuffer;
 	MeshPrimitiveTopology meshPrimitiveTopology;
+	MeshShapeType meshShapeType;
 	DX12TextureDataComponent* normalDXTDC;
 	DX12TextureDataComponent* albedoDXTDC;
 	DX12TextureDataComponent* metallicDXTDC;
 	DX12TextureDataComponent* roughnessDXTDC;
 	DX12TextureDataComponent* AODXTDC;
+	VisiblilityType visiblilityType;
 };
 
-struct LPassCBufferData
+struct DirectionalLightCBufferData
 {
-	vec4 viewPos;
-	vec4 lightDir;
-	vec4 color;
+	vec4 dir;
+	vec4 luminance;
+};
+
+// w component of luminance is attenuationRadius
+struct PointLightCBufferData
+{
+	vec4 pos;
+	vec4 luminance;
+	//float attenuationRadius;
+};
+
+// w component of luminance is sphereRadius
+struct SphereLightCBufferData
+{
+	vec4 pos;
+	vec4 luminance;
+	//float sphereRadius;
 };
 
 class DX12RenderingSystemComponent
@@ -119,9 +137,14 @@ public:
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 	D3D12_RENDER_TARGET_VIEW_DESC deferredPassRTVDesc = D3D12_RENDER_TARGET_VIEW_DESC();
 
-	GPassCameraCBufferData m_GPassCameraCBufferData;
-	std::queue<GPassMeshDataPack> m_GPassMeshDataQueue;
-	LPassCBufferData m_LPassCBufferData;
+	DX12CameraCBufferData m_cameraCBufferData;
+	std::queue<DX12MeshDataPack> m_meshDataQueue;
+	DirectionalLightCBufferData m_directionalLightCBufferData;
+	const unsigned int m_maxPointLights = 64;
+	std::vector<PointLightCBufferData> m_PointLightCBufferDatas;
+
+	const unsigned int m_maxSphereLights = 64;
+	std::vector<SphereLightCBufferData> m_SphereLightCBufferDatas;
 
 	DX12MeshDataComponent* m_UnitLineDXMDC;
 	DX12MeshDataComponent* m_UnitQuadDXMDC;

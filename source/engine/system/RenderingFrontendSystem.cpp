@@ -20,8 +20,11 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 	std::atomic<bool> m_isCSMDataPackValid = false;
 	std::vector<CSMDataPack> m_CSMDataPacks;
 
-	CameraDataPack m_cameraDataPack;
+	std::atomic<bool> m_isSunDataPackValid = false;
 	SunDataPack m_sunDataPack;
+
+	std::atomic<bool> m_isCameraDataPackValid = false;
+	CameraDataPack m_cameraDataPack;
 
 	std::atomic<bool> m_isMeshDataPackValid = false;
 	std::vector<MeshDataPack> m_meshDataPack;
@@ -37,7 +40,7 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 
 	RenderingConfig m_renderingConfig = RenderingConfig();
 
-	VisibleComponent* m_selectedVisibleComponent;
+	std::vector<InnoFuture<void>> m_asyncTask;
 
 	bool setup();
 	bool initialize();
@@ -95,6 +98,8 @@ bool InnoRenderingFrontendSystemNS::initialize()
 
 bool InnoRenderingFrontendSystemNS::updateCameraData()
 {
+	m_isCameraDataPackValid = false;
+
 	auto l_cameraComponents = g_pCoreSystem->getGameSystem()->get<CameraComponent>();
 	auto l_mainCamera = l_cameraComponents[0];
 	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
@@ -135,12 +140,15 @@ bool InnoRenderingFrontendSystemNS::updateCameraData()
 
 	m_cameraDataPack.WHRatio = l_mainCamera->m_WHRatio;
 
+	m_isCameraDataPackValid = true;
+
 	return true;
 }
 
 bool InnoRenderingFrontendSystemNS::updateSunData()
 {
 	m_isCSMDataPackValid = false;
+	m_isSunDataPackValid = false;
 
 	auto l_directionalLightComponents = g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>();
 	auto l_directionalLight = l_directionalLightComponents[0];
@@ -174,7 +182,7 @@ bool InnoRenderingFrontendSystemNS::updateSunData()
 	}
 
 	m_isCSMDataPackValid = true;
-
+	m_isSunDataPackValid = true;
 	return true;
 }
 
@@ -182,7 +190,7 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 {
 	m_isMeshDataPackValid = false;
 
-	m_meshDataPack.clear();
+	std::vector<MeshDataPack> l_tempMeshDataPack;
 
 	for (auto& i : m_cullingDataPack)
 	{
@@ -203,11 +211,14 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 					l_meshDataPack.visiblilityType = i.visibleComponent->m_visiblilityType;
 					l_meshDataPack.m_UUID = i.visibleComponent->m_UUID;
 
-					m_meshDataPack.emplace_back(l_meshDataPack);
+					l_tempMeshDataPack.emplace_back(l_meshDataPack);
 				}
 			}
 		}
 	}
+
+	m_meshDataPack = l_tempMeshDataPack;
+	m_meshDataPack.shrink_to_fit();
 
 	m_isMeshDataPackValid = true;
 
@@ -216,6 +227,10 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 
 bool InnoRenderingFrontendSystemNS::update()
 {
+	updateCameraData();
+
+	updateSunData();
+
 	// copy culling data pack for local scope
 	auto l_cullingDataPack = g_pCoreSystem->getPhysicsSystem()->getCullingDataPack();
 	if (l_cullingDataPack.has_value())
@@ -223,13 +238,16 @@ bool InnoRenderingFrontendSystemNS::update()
 		m_cullingDataPack = l_cullingDataPack.value();
 	}
 
-	updateCameraData();
-
-	updateSunData();
-
 	updateMeshData();
 
-	// objects render data
+	auto prepareRenderingDataTask = g_pCoreSystem->getTaskSystem()->submit([]()
+	{
+	});
+
+	m_asyncTask.emplace_back(std::move(prepareRenderingDataTask));
+
+	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(m_asyncTask);
+
 	return true;
 }
 
@@ -321,14 +339,24 @@ INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::setRenderingConfig(Renderin
 	return true;
 }
 
-INNO_SYSTEM_EXPORT CameraDataPack InnoRenderingFrontendSystem::getCameraDataPack()
+INNO_SYSTEM_EXPORT std::optional<CameraDataPack> InnoRenderingFrontendSystem::getCameraDataPack()
 {
-	return InnoRenderingFrontendSystemNS::m_cameraDataPack;
+	if (InnoRenderingFrontendSystemNS::m_isCameraDataPackValid)
+	{
+		return InnoRenderingFrontendSystemNS::m_cameraDataPack;
+	}
+
+	return std::nullopt;
 }
 
-INNO_SYSTEM_EXPORT SunDataPack InnoRenderingFrontendSystem::getSunDataPack()
+INNO_SYSTEM_EXPORT std::optional<SunDataPack> InnoRenderingFrontendSystem::getSunDataPack()
 {
-	return InnoRenderingFrontendSystemNS::m_sunDataPack;
+	if (InnoRenderingFrontendSystemNS::m_isSunDataPackValid)
+	{
+		return InnoRenderingFrontendSystemNS::m_sunDataPack;
+	}
+
+	return std::nullopt;
 }
 
 INNO_SYSTEM_EXPORT std::optional<std::vector<CSMDataPack>> InnoRenderingFrontendSystem::getCSMDataPack()

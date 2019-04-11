@@ -36,6 +36,8 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 	GLuint m_uni_r;
 	GLuint m_uni_t;
 	GLuint m_uni_m;
+
+	CameraDataPack m_cameraDataPack;
 }
 
 bool GLDebuggerPass::initialize()
@@ -103,7 +105,12 @@ void GLDebuggerPass::bindUniformLocations(GLShaderProgramComponent* rhs)
 
 bool GLDebuggerPass::update()
 {
+	// copy camera data pack for local scope
 	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+	if (l_cameraDataPack.has_value())
+	{
+		m_cameraDataPack = l_cameraDataPack.value();
+	}
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -117,13 +124,13 @@ bool GLDebuggerPass::update()
 
 	updateUniform(
 		m_uni_p,
-		l_cameraDataPack.p_original);
+		m_cameraDataPack.p_original);
 	updateUniform(
 		m_uni_r,
-		l_cameraDataPack.r);
+		m_cameraDataPack.r);
 	updateUniform(
 		m_uni_t,
-		l_cameraDataPack.t);
+		m_cameraDataPack.t);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	while (GLRenderingSystemComponent::get().m_debuggerPassDataQueue.size() > 0)

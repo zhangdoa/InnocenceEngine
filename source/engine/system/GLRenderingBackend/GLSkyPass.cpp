@@ -24,6 +24,9 @@ INNO_PRIVATE_SCOPE GLSkyPass
 	GLuint m_uni_viewportSize;
 	GLuint m_uni_eyePos;
 	GLuint m_uni_lightDir;
+
+	CameraDataPack m_cameraDataPack;
+	SunDataPack m_sunDataPack;
 }
 
 bool GLSkyPass::initialize()
@@ -71,8 +74,20 @@ void GLSkyPass::bindUniformLocations(GLShaderProgramComponent* rhs)
 bool GLSkyPass::update()
 {
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+
+	// copy camera data pack for local scope
 	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+	if (l_cameraDataPack.has_value())
+	{
+		m_cameraDataPack = l_cameraDataPack.value();
+	}
+
+	// copy sun data pack for local scope
 	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
+	if (l_sunDataPack.has_value())
+	{
+		m_sunDataPack = l_sunDataPack.value();
+	}
 
 	if (l_renderingConfig.drawSky)
 	{
@@ -89,19 +104,19 @@ bool GLSkyPass::update()
 
 		updateUniform(
 			m_uni_p,
-			l_cameraDataPack.p_original);
+			m_cameraDataPack.p_original);
 		updateUniform(
 			m_uni_r,
-			l_cameraDataPack.r);
+			m_cameraDataPack.r);
 		updateUniform(
 			m_uni_viewportSize,
 			(float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX, (float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY);
 		updateUniform(
 			m_uni_eyePos,
-			l_cameraDataPack.globalPos.x, l_cameraDataPack.globalPos.y, l_cameraDataPack.globalPos.z);
+			m_cameraDataPack.globalPos.x, m_cameraDataPack.globalPos.y, m_cameraDataPack.globalPos.z);
 		updateUniform(
 			m_uni_lightDir,
-			l_sunDataPack.dir.x, l_sunDataPack.dir.y, l_sunDataPack.dir.z);
+			m_sunDataPack.dir.x, m_sunDataPack.dir.y, m_sunDataPack.dir.z);
 
 		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
 		drawMesh(l_MDC);

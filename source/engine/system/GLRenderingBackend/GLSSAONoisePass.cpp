@@ -43,6 +43,8 @@ INNO_PRIVATE_SCOPE GLSSAONoisePass
 
 	TextureDataComponent* m_SSAONoiseTDC;
 	GLTextureDataComponent* m_SSAONoiseGLTDC;
+
+	CameraDataPack m_cameraDataPack;
 }
 
 bool GLSSAONoisePass::initialize()
@@ -155,7 +157,12 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 
 bool GLSSAONoisePass::update()
 {
+	// copy camera data pack for local scope
 	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
+	if (l_cameraDataPack.has_value())
+	{
+		m_cameraDataPack = l_cameraDataPack.value();
+	}
 
 	activateRenderPass(m_GLRPC);
 
@@ -167,13 +174,13 @@ bool GLSSAONoisePass::update()
 
 	updateUniform(
 		m_uni_p,
-		l_cameraDataPack.p_jittered);
+		m_cameraDataPack.p_jittered);
 	updateUniform(
 		m_uni_r,
-		l_cameraDataPack.r);
+		m_cameraDataPack.r);
 	updateUniform(
 		m_uni_t,
-		l_cameraDataPack.t);
+		m_cameraDataPack.t);
 
 	for (size_t i = 0; i < m_uni_samples.size(); i++)
 	{

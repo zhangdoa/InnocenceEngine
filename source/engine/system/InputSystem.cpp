@@ -77,7 +77,7 @@ bool InnoInputSystemNS::update()
 			}
 		}
 	}
-	// @TODO: relative offset for editor window
+
 	if (m_mouseMovementCallback.size() != 0)
 	{
 		if (m_mouseXOffset != 0)

@@ -82,8 +82,8 @@ public:
 	INNO_SYSTEM_EXPORT virtual RenderingConfig getRenderingConfig() = 0;
 	INNO_SYSTEM_EXPORT virtual bool setRenderingConfig(RenderingConfig renderingConfig) = 0;
 
-	INNO_SYSTEM_EXPORT virtual CameraDataPack getCameraDataPack() = 0;
-	INNO_SYSTEM_EXPORT virtual SunDataPack getSunDataPack() = 0;
+	INNO_SYSTEM_EXPORT virtual std::optional<CameraDataPack> getCameraDataPack() = 0;
+	INNO_SYSTEM_EXPORT virtual std::optional<SunDataPack> getSunDataPack() = 0;
 	INNO_SYSTEM_EXPORT virtual std::optional<std::vector<CSMDataPack>> getCSMDataPack() = 0;
 	INNO_SYSTEM_EXPORT virtual std::optional<std::vector<MeshDataPack>> getMeshDataPack() = 0;
 

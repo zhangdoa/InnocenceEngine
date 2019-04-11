@@ -28,8 +28,8 @@ public:
 	INNO_SYSTEM_EXPORT RenderingConfig getRenderingConfig() override;
 	INNO_SYSTEM_EXPORT bool setRenderingConfig(RenderingConfig renderingConfig) override;
 
-	INNO_SYSTEM_EXPORT CameraDataPack getCameraDataPack() override;
-	INNO_SYSTEM_EXPORT SunDataPack getSunDataPack() override;
+	INNO_SYSTEM_EXPORT std::optional<CameraDataPack> getCameraDataPack() override;
+	INNO_SYSTEM_EXPORT std::optional<SunDataPack> getSunDataPack() override;
 	INNO_SYSTEM_EXPORT std::optional<std::vector<CSMDataPack>> getCSMDataPack() override;
 	INNO_SYSTEM_EXPORT std::optional<std::vector<MeshDataPack>> getMeshDataPack() override;
 

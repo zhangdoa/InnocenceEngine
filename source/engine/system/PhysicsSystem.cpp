@@ -123,7 +123,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::toViewSpace(const std::vector<Vertex>& 
 		l_mulPos = InnoMath::mul(t.inverse(), l_mulPos);
 #endif
 		l_vertexData.m_pos = l_mulPos;
-}
+	}
 
 	for (auto& l_vertexData : l_result)
 	{
@@ -151,7 +151,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::fromViewSpace(const std::vector<Vertex>
 		l_mulPos = InnoMath::mul(t, l_mulPos);
 #endif
 		l_vertexData.m_pos = l_mulPos;
-}
+	}
 
 	for (auto& l_vertexData : l_result)
 	{
@@ -188,7 +188,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::toClipSpace(const std::vector<Vertex>& 
 		// perspective division
 		l_mulPos = l_mulPos * (1.0f / l_mulPos.w);
 		l_vertexData.m_pos = l_mulPos;
-}
+	}
 
 	for (auto& l_vertexData : l_result)
 	{
@@ -225,7 +225,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::fromClipSpace(const std::vector<Vertex>
 		l_mulPos = InnoMath::mul(t, l_mulPos);
 #endif
 		l_vertexData.m_pos = l_mulPos;
-}
+	}
 
 	for (auto& l_vertexData : l_result)
 	{
@@ -826,13 +826,12 @@ bool InnoPhysicsSystemNS::update()
 
 	auto preparePhysicsDataTask = g_pCoreSystem->getTaskSystem()->submit([]()
 	{
+		updateCameraComponents();
+		updateLightComponents();
+		updateVisibleComponents();
+		updateCulling();
 	});
 
-	updateCameraComponents();
-	updateLightComponents();
-	updateVisibleComponents();
-
-	updateCulling();
 	m_asyncTask.emplace_back(std::move(preparePhysicsDataTask));
 
 	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(m_asyncTask);
