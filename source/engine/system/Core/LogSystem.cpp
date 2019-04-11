@@ -62,6 +62,8 @@ INNO_PRIVATE_SCOPE InnoLogSystemNS
 #endif
 
 	std::ofstream m_logFile;
+
+	std::mutex m_mutex;
 }
 
 void InnoLogSystem::printLog(double logMessage)
@@ -146,6 +148,7 @@ void InnoLogSystem::printLog(const mat4 & logMessage)
 
 void InnoLogSystem::printLog(LogType LogType, const std::string & logMessage)
 {
+	std::lock_guard<std::mutex> lock{ InnoLogSystemNS::m_mutex };
 #if defined INNO_PLATFORM_WIN
 	switch (LogType)
 	{
@@ -159,7 +162,7 @@ void InnoLogSystem::printLog(LogType LogType, const std::string & logMessage)
 	std::cout << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl;
 #endif
 	InnoLogSystemNS::m_logFile << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl;
-}
+	}
 
 ObjectStatus InnoLogSystem::getStatus()
 {

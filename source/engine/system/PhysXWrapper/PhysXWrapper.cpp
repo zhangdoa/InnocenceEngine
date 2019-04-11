@@ -40,6 +40,8 @@ INNO_PRIVATE_SCOPE PhysXWrapperNS
 	bool m_needSimulate = false;
 	std::function<void()> f_sceneLoadingCallback;
 	std::function<void()> f_pauseSimulate;
+
+	std::mutex m_mutex;
 }
 
 bool PhysXWrapperNS::setup()
@@ -154,6 +156,8 @@ bool PhysXWrapperNS::terminate()
 
 bool PhysXWrapperNS::createPxSphere(void* component, vec4 globalPos, float radius)
 {
+	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
+
 	PxShape* shape = gPhysics->createShape(PxSphereGeometry(radius), *gMaterial);
 	PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z));
 	PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);
@@ -170,6 +174,8 @@ bool PhysXWrapperNS::createPxSphere(void* component, vec4 globalPos, float radiu
 
 bool PhysXWrapperNS::createPxBox(void* component, vec4 globalPos, vec4 size)
 {
+	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
+
 	PxShape* shape = gPhysics->createShape(PxBoxGeometry(size.x, size.y, size.z), *gMaterial);
 	PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z));
 	PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);

@@ -33,23 +33,23 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	void* m_EnvironmentCaptureComponentPool;
 
 	// the AOS here
-	std::vector<TransformComponent*> m_TransformComponents;
-	std::vector<VisibleComponent*> m_VisibleComponents;
-	std::vector<DirectionalLightComponent*> m_DirectionalLightComponents;
-	std::vector<PointLightComponent*> m_PointLightComponents;
-	std::vector<SphereLightComponent*> m_SphereLightComponents;
-	std::vector<CameraComponent*> m_CameraComponents;
-	std::vector<InputComponent*> m_InputComponents;
-	std::vector<EnvironmentCaptureComponent*> m_EnvironmentCaptureComponents;
+	ThreadSafeVector<TransformComponent*> m_TransformComponents;
+	ThreadSafeVector<VisibleComponent*> m_VisibleComponents;
+	ThreadSafeVector<DirectionalLightComponent*> m_DirectionalLightComponents;
+	ThreadSafeVector<PointLightComponent*> m_PointLightComponents;
+	ThreadSafeVector<SphereLightComponent*> m_SphereLightComponents;
+	ThreadSafeVector<CameraComponent*> m_CameraComponents;
+	ThreadSafeVector<InputComponent*> m_InputComponents;
+	ThreadSafeVector<EnvironmentCaptureComponent*> m_EnvironmentCaptureComponents;
 
-	std::unordered_map<EntityID, TransformComponent*> m_TransformComponentsMap;
-	std::unordered_map<EntityID, VisibleComponent*> m_VisibleComponentsMap;
-	std::unordered_map<EntityID, DirectionalLightComponent*> m_DirectionalLightComponentsMap;
-	std::unordered_map<EntityID, PointLightComponent*> m_PointLightComponentsMap;
-	std::unordered_map<EntityID, SphereLightComponent*> m_SphereLightComponentsMap;
-	std::unordered_map<EntityID, CameraComponent*> m_CameraComponentsMap;
-	std::unordered_map<EntityID, InputComponent*> m_InputComponentsMap;
-	std::unordered_map<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
+	ThreadSafeUnorderedMap<EntityID, TransformComponent*> m_TransformComponentsMap;
+	ThreadSafeUnorderedMap<EntityID, VisibleComponent*> m_VisibleComponentsMap;
+	ThreadSafeUnorderedMap<EntityID, DirectionalLightComponent*> m_DirectionalLightComponentsMap;
+	ThreadSafeUnorderedMap<EntityID, PointLightComponent*> m_PointLightComponentsMap;
+	ThreadSafeUnorderedMap<EntityID, SphereLightComponent*> m_SphereLightComponentsMap;
+	ThreadSafeUnorderedMap<EntityID, CameraComponent*> m_CameraComponentsMap;
+	ThreadSafeUnorderedMap<EntityID, InputComponent*> m_InputComponentsMap;
+	ThreadSafeUnorderedMap<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
 
 	EntityChildrenComponentsMetadataMap m_entityChildrenComponentsMetadataMap;
 	EntityNameMap m_entityNameMap;
@@ -445,7 +445,7 @@ getComponentImplDefi(EnvironmentCaptureComponent)
 #define getComponentContainerImplDefi( className ) \
 std::vector<className*>& InnoGameSystem::get##className##s() \
 { \
-	return InnoGameSystemNS::m_##className##s; \
+	return InnoGameSystemNS::m_##className##s.getRawData(); \
 }
 
 getComponentContainerImplDefi(TransformComponent)

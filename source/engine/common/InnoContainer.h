@@ -118,7 +118,7 @@ public:
 		m_condition.notify_one();
 	}
 
-	bool empty(void) const
+	auto empty(void) const
 	{
 		std::lock_guard<std::mutex> lock{ m_mutex };
 		return m_vector.empty();
@@ -156,13 +156,13 @@ public:
 		m_condition.notify_all();
 	}
 
-	size_t size(void)
+	auto size(void)
 	{
 		std::lock_guard<std::mutex> lock{ m_mutex };
 		return m_vector.size();
 	}
 
-	std::vector<T> getRawData(void)
+	std::vector<T>& getRawData(void)
 	{
 		std::lock_guard<std::mutex> lock{ m_mutex };
 		return m_vector;
@@ -172,6 +172,91 @@ private:
 	std::atomic_bool m_valid{ true };
 	mutable std::mutex m_mutex;
 	std::vector<T> m_vector;
+	std::condition_variable m_condition;
+};
+
+template <typename Key, typename T>
+class ThreadSafeUnorderedMap
+{
+public:
+	~ThreadSafeUnorderedMap(void)
+	{
+		invalidate();
+	}
+
+	void emplace(Key key, T value)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		m_unordered_map.emplace(key, value);
+		m_condition.notify_one();
+	}
+
+	void emplace(std::pair<Key, T> value)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		m_unordered_map.emplace(value);
+		m_condition.notify_one();
+	}
+
+	auto begin(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_unordered_map.begin();
+	}
+
+	auto end(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_unordered_map.end();
+	}
+
+	auto find(const Key& key)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_unordered_map.find(key);
+	}
+
+	auto find(const Key& key) const
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_unordered_map.find(key);
+	}
+
+	auto erase(const Key& key)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_unordered_map.erase(key);
+	}
+
+	auto clear(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_unordered_map.clear();
+	}
+
+	void invalidate(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		m_valid = false;
+		m_condition.notify_all();
+	}
+
+	auto size(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_unordered_map.size();
+	}
+
+	std::unordered_map<Key, T>& getRawData(void)
+	{
+		std::lock_guard<std::mutex> lock{ m_mutex };
+		return m_unordered_map;
+	}
+
+private:
+	std::atomic_bool m_valid{ true };
+	mutable std::mutex m_mutex;
+	std::unordered_map<Key, T> m_unordered_map;
 	std::condition_variable m_condition;
 };
 
