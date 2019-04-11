@@ -71,7 +71,7 @@ ID3D10Blob* DX11RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const
 		break;
 	}
 
-	result = D3DCompileFromFile((m_shaderRelativePath + shaderFilePath).c_str(), NULL, NULL, l_shaderName.c_str(), l_shaderTypeName.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0,
+	result = D3DCompileFromFile((m_shaderRelativePath + shaderFilePath).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, l_shaderName.c_str(), l_shaderTypeName.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0,
 		&l_shaderBuffer, &l_errorMessage);
 	if (FAILED(result))
 	{
@@ -385,6 +385,10 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 			return nullptr;
 		}
 	}
+
+	// use default depth stencil state
+	l_DXRPC->m_depthStencilDesc = DX11RenderingSystemComponent::get().m_depthStencilDesc;
+	l_DXRPC->m_depthStencilState = DX11RenderingSystemComponent::get().m_defaultDepthStencilState;
 
 	// Initialize the description of the depth buffer.
 	ZeroMemory(&l_DXRPC->m_depthBufferDesc,

@@ -1,4 +1,4 @@
-#include "DX11LightPass.h"
+#include "DX11SkyPass.h"
 #include "DX11RenderingSystemUtilities.h"
 
 #include "DX11OpaquePass.h"
@@ -11,7 +11,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 using namespace DX11RenderingSystemNS;
 
-INNO_PRIVATE_SCOPE DX11LightPass
+INNO_PRIVATE_SCOPE DX11SkyPass
 {
 	bool initializeShaders();
 
@@ -19,23 +19,54 @@ INNO_PRIVATE_SCOPE DX11LightPass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX11//lightPassCookTorranceVertex.sf" , "", "DX11//lightPassCookTorrancePixel.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//skyPassVertex.sf" , "", "DX11//skyPassPixel.sf" };
 
 	EntityID m_entityID;
 }
 
-bool DX11LightPass::initialize()
+bool DX11SkyPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
 	m_DXRPC = addDX11RenderPassComponent(1, DX11RenderingSystemComponent::get().deferredPassRTVDesc, DX11RenderingSystemComponent::get().deferredPassTextureDesc);
+
+	// Set up the description of the stencil state.
+	m_DXRPC->m_depthStencilDesc.DepthEnable = true;
+	m_DXRPC->m_depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	m_DXRPC->m_depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+
+	m_DXRPC->m_depthStencilDesc.StencilEnable = true;
+	m_DXRPC->m_depthStencilDesc.StencilReadMask = 0xFF;
+	m_DXRPC->m_depthStencilDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	m_DXRPC->m_depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	m_DXRPC->m_depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	m_DXRPC->m_depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	m_DXRPC->m_depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Stencil operations if pixel is back-facing.
+	m_DXRPC->m_depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	m_DXRPC->m_depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	m_DXRPC->m_depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	m_DXRPC->m_depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Create the depth stencil state.
+	auto result = DX11RenderingSystemComponent::get().m_device->CreateDepthStencilState(
+		&m_DXRPC->m_depthStencilDesc,
+		&m_DXRPC->m_depthStencilState);
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the depth stencil state for sky pass!");
+		return false;
+	}
 
 	initializeShaders();
 
 	return true;
 }
 
-bool DX11LightPass::initializeShaders()
+bool DX11SkyPass::initializeShaders()
 {
 	m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
 
@@ -58,7 +89,7 @@ bool DX11LightPass::initializeShaders()
 	return true;
 }
 
-bool DX11LightPass::update()
+bool DX11SkyPass::update()
 {
 	// Set the depth stencil state.
 	DX11RenderingSystemComponent::get().m_deviceContext->OMSetDepthStencilState(
@@ -93,31 +124,26 @@ bool DX11LightPass::update()
 
 	updateShaderParameter(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer, &DX11RenderingSystemComponent::get().m_cameraCBufferData);
 	updateShaderParameter(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_directionalLightCBuffer, &DX11RenderingSystemComponent::get().m_directionalLightCBufferData);
-	updateShaderParameter(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_pointLightCBuffer, &DX11RenderingSystemComponent::get().m_PointLightCBufferDatas[0]);
-	updateShaderParameter(ShaderType::FRAGMENT, 3, DX11RenderingSystemComponent::get().m_sphereLightCBuffer, &DX11RenderingSystemComponent::get().m_SphereLightCBufferDatas[0]);
-
-	// bind to previous pass render target textures
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DX11OpaquePass::getDX11RPC()->m_DXTDCs[0]->m_SRV);
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(1, 1, &DX11OpaquePass::getDX11RPC()->m_DXTDCs[1]->m_SRV);
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(2, 1, &DX11OpaquePass::getDX11RPC()->m_DXTDCs[2]->m_SRV);
+	updateShaderParameter(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_skyCBuffer, &DX11RenderingSystemComponent::get().m_skyCBufferData);
 
 	// draw
-	drawMesh(6, DX11RenderingSystemComponent::get().m_UnitQuadDXMDC);
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
+	drawMesh(l_MDC);
 
 	return true;
 }
 
-bool DX11LightPass::resize()
+bool DX11SkyPass::resize()
 {
 	return true;
 }
 
-bool DX11LightPass::reloadShaders()
+bool DX11SkyPass::reloadShaders()
 {
 	return true;
 }
 
-DX11RenderPassComponent * DX11LightPass::getDX11RPC()
+DX11RenderPassComponent * DX11SkyPass::getDX11RPC()
 {
 	return m_DXRPC;
 }

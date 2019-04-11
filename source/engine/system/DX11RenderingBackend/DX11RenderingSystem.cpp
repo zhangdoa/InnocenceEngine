@@ -2,6 +2,7 @@
 
 #include "DX11OpaquePass.h"
 #include "DX11LightPass.h"
+#include "DX11SkyPass.h"
 #include "DX11FinalBlendPass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
@@ -307,17 +308,13 @@ bool DX11RenderingSystemNS::createBackBuffer()
 	// Create the depth stencil state.
 	result = g_DXRenderingSystemComponent->m_device->CreateDepthStencilState(
 		&g_DXRenderingSystemComponent->m_depthStencilDesc,
-		&g_DXRenderingSystemComponent->m_depthStencilState);
+		&g_DXRenderingSystemComponent->m_defaultDepthStencilState);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the depth stencil state!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
-
-	// Set the depth stencil state.
-	g_DXRenderingSystemComponent->m_deviceContext->OMSetDepthStencilState(
-		g_DXRenderingSystemComponent->m_depthStencilState, 1);
 
 	// Initialize the depth stencil view.
 	ZeroMemory(&g_DXRenderingSystemComponent->m_depthStencilViewDesc, sizeof(
@@ -483,6 +480,8 @@ bool DX11RenderingSystemNS::update()
 
 	DX11LightPass::update();
 
+	DX11SkyPass::update();
+
 	DX11FinalBlendPass::update();
 
 	return true;
@@ -508,10 +507,10 @@ bool DX11RenderingSystemNS::terminate()
 		g_DXRenderingSystemComponent->m_depthStencilView = 0;
 	}
 
-	if (g_DXRenderingSystemComponent->m_depthStencilState)
+	if (g_DXRenderingSystemComponent->m_defaultDepthStencilState)
 	{
-		g_DXRenderingSystemComponent->m_depthStencilState->Release();
-		g_DXRenderingSystemComponent->m_depthStencilState = 0;
+		g_DXRenderingSystemComponent->m_defaultDepthStencilState->Release();
+		g_DXRenderingSystemComponent->m_defaultDepthStencilState = 0;
 	}
 
 	if (g_DXRenderingSystemComponent->m_depthStencilTexture)
@@ -631,6 +630,14 @@ bool DX11RenderingSystemNS::generateCBuffers()
 	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.StructureByteStride = 0;
 	createCBuffer(g_DXRenderingSystemComponent->m_sphereLightCBuffer);
 
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.ByteWidth = sizeof(SkyCBufferData);
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_skyCBuffer);
+
 	return true;
 }
 
@@ -660,6 +667,13 @@ void DX11RenderingSystemNS::prepareRenderingData()
 
 	g_DXRenderingSystemComponent->m_directionalLightCBufferData.dir = m_sunDataPack.dir;
 	g_DXRenderingSystemComponent->m_directionalLightCBufferData.luminance = m_sunDataPack.luminance;
+
+	auto l_viewportSize = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+
+	g_DXRenderingSystemComponent->m_skyCBufferData.viewportSize.x = (float)l_viewportSize.x;
+	g_DXRenderingSystemComponent->m_skyCBufferData.viewportSize.y = (float)l_viewportSize.y;
+	g_DXRenderingSystemComponent->m_skyCBufferData.p_inv = m_cameraDataPack.p_original.inverse();
+	g_DXRenderingSystemComponent->m_skyCBufferData.r_inv = m_cameraDataPack.r.inverse();
 
 	prepareGeometryPassData();
 	prepareLightPassData();
@@ -817,6 +831,7 @@ bool DX11RenderingSystem::initialize()
 
 	DX11OpaquePass::initialize();
 	DX11LightPass::initialize();
+	DX11SkyPass::initialize();
 	DX11FinalBlendPass::initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been initialized.");
@@ -842,6 +857,7 @@ bool DX11RenderingSystem::resize()
 {
 	DX11OpaquePass::resize();
 	DX11LightPass::resize();
+	DX11SkyPass::resize();
 	DX11FinalBlendPass::resize();
 	return true;
 }
@@ -850,6 +866,7 @@ bool DX11RenderingSystem::reloadShader(RenderPassType renderPassType)
 {
 	DX11OpaquePass::reloadShaders();
 	DX11LightPass::reloadShaders();
+	DX11SkyPass::reloadShaders();
 	DX11FinalBlendPass::reloadShaders();
 	return true;
 }

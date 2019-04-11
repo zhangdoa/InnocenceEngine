@@ -21,6 +21,9 @@ public:
 	D3D11_TEXTURE2D_DESC m_depthBufferDesc = D3D11_TEXTURE2D_DESC();
 	ID3D11Texture2D* m_depthStencilBuffer = 0;
 
+	D3D11_DEPTH_STENCIL_DESC m_depthStencilDesc;
+	ID3D11DepthStencilState* m_depthStencilState;
+
 	D3D11_DEPTH_STENCIL_VIEW_DESC m_depthStencilViewDesc = D3D11_DEPTH_STENCIL_VIEW_DESC();
 	ID3D11DepthStencilView* m_depthStencilView = 0;
 

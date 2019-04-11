@@ -47,10 +47,10 @@ public:
 	T x;
 	T y;
 
-	TVec2()
+	TVec2() noexcept
 	{
-		x = zero<T>();
-		y = zero<T>();
+		x = T();
+		y = T();
 	}
 
 	TVec2(T rhsX, T rhsY)

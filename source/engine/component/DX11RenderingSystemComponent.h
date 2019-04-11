@@ -1,5 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
+#include "../common/InnoContainer.h"
 #include "../component/DX11MeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
 #include "../component/DX11TextureDataComponent.h"
@@ -80,6 +81,14 @@ struct SphereLightCBufferData
 	//float sphereRadius;
 };
 
+struct SkyCBufferData
+{
+	mat4 p_inv;
+	mat4 r_inv;
+	vec2 viewportSize;
+	vec2 padding1;
+};
+
 class DX11RenderingSystemComponent
 {
 public:
@@ -117,7 +126,7 @@ public:
 	D3D11_TEXTURE2D_DESC m_depthTextureDesc;
 	D3D11_DEPTH_STENCIL_DESC m_depthStencilDesc;
 	ID3D11Texture2D* m_depthStencilTexture;
-	ID3D11DepthStencilState* m_depthStencilState;
+	ID3D11DepthStencilState* m_defaultDepthStencilState;
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC m_depthStencilViewDesc;
 	ID3D11DepthStencilView* m_depthStencilView;
@@ -139,15 +148,16 @@ public:
 	DX11CBuffer m_directionalLightCBuffer;
 	DX11CBuffer m_pointLightCBuffer;
 	DX11CBuffer m_sphereLightCBuffer;
+	DX11CBuffer m_skyCBuffer;
 
 	DX11CameraCBufferData m_cameraCBufferData;
-	std::queue<DX11MeshDataPack> m_meshDataQueue;
+	ThreadSafeQueue<DX11MeshDataPack> m_meshDataQueue;
 	DirectionalLightCBufferData m_directionalLightCBufferData;
 	const unsigned int m_maxPointLights = 64;
 	std::vector<PointLightCBufferData> m_PointLightCBufferDatas;
-
 	const unsigned int m_maxSphereLights = 64;
 	std::vector<SphereLightCBufferData> m_SphereLightCBufferDatas;
+	SkyCBufferData m_skyCBufferData;
 
 	DX11MeshDataComponent* m_UnitLineDXMDC;
 	DX11MeshDataComponent* m_UnitQuadDXMDC;

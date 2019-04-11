@@ -58,6 +58,10 @@ bool DX11OpaquePass::initializeShaders()
 
 bool DX11OpaquePass::update()
 {
+	// Set the depth stencil state.
+	DX11RenderingSystemComponent::get().m_deviceContext->OMSetDepthStencilState(
+		m_DXRPC->m_depthStencilState, 1);
+
 	// Set Rasterizer State
 	DX11RenderingSystemComponent::get().m_deviceContext->RSSetState(
 		DX11RenderingSystemComponent::get().m_rasterStateForward);
@@ -88,55 +92,55 @@ bool DX11OpaquePass::update()
 	// draw
 	while (DX11RenderingSystemComponent::get().m_meshDataQueue.size() > 0)
 	{
-		auto l_renderPack = DX11RenderingSystemComponent::get().m_meshDataQueue.front();
-
-		// Set the type of primitive that should be rendered from this vertex buffer.
-		D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
-
-		if (l_renderPack.meshPrimitiveTopology == MeshPrimitiveTopology::TRIANGLE)
+		DX11MeshDataPack l_meshDataPack;
+		if (DX11RenderingSystemComponent::get().m_meshDataQueue.tryPop(l_meshDataPack))
 		{
-			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		}
-		else
-		{
-			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-		}
+			// Set the type of primitive that should be rendered from this vertex buffer.
+			D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
 
-		DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
+			if (l_meshDataPack.meshPrimitiveTopology == MeshPrimitiveTopology::TRIANGLE)
+			{
+				l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+			}
+			else
+			{
+				l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+			}
 
-		updateShaderParameter(ShaderType::VERTEX, 1, DX11RenderingSystemComponent::get().m_meshCBuffer, &l_renderPack.meshCBuffer);
-		updateShaderParameter(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_textureCBuffer, &l_renderPack.textureCBuffer);
+			DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
 
-		// bind to textures
-		// any normal?
-		if (l_renderPack.textureCBuffer.useNormalTexture)
-		{
-			DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &l_renderPack.normalDXTDC->m_SRV);
-		}
-		// any albedo?
-		if (l_renderPack.textureCBuffer.useAlbedoTexture)
-		{
-			DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(1, 1, &l_renderPack.albedoDXTDC->m_SRV);
-		}
-		// any metallic?
-		if (l_renderPack.textureCBuffer.useMetallicTexture)
-		{
-			DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(2, 1, &l_renderPack.metallicDXTDC->m_SRV);
-		}
-		// any roughness?
-		if (l_renderPack.textureCBuffer.useRoughnessTexture)
-		{
-			DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(3, 1, &l_renderPack.roughnessDXTDC->m_SRV);
-		}
-		// any ao?
-		if (l_renderPack.textureCBuffer.useAOTexture)
-		{
-			DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(4, 1, &l_renderPack.AODXTDC->m_SRV);
-		}
+			updateShaderParameter(ShaderType::VERTEX, 1, DX11RenderingSystemComponent::get().m_meshCBuffer, &l_meshDataPack.meshCBuffer);
+			updateShaderParameter(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_textureCBuffer, &l_meshDataPack.textureCBuffer);
 
-		drawMesh(l_renderPack.indiceSize, l_renderPack.DXMDC);
+			// bind to textures
+			// any normal?
+			if (l_meshDataPack.textureCBuffer.useNormalTexture)
+			{
+				DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &l_meshDataPack.normalDXTDC->m_SRV);
+			}
+			// any albedo?
+			if (l_meshDataPack.textureCBuffer.useAlbedoTexture)
+			{
+				DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(1, 1, &l_meshDataPack.albedoDXTDC->m_SRV);
+			}
+			// any metallic?
+			if (l_meshDataPack.textureCBuffer.useMetallicTexture)
+			{
+				DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(2, 1, &l_meshDataPack.metallicDXTDC->m_SRV);
+			}
+			// any roughness?
+			if (l_meshDataPack.textureCBuffer.useRoughnessTexture)
+			{
+				DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(3, 1, &l_meshDataPack.roughnessDXTDC->m_SRV);
+			}
+			// any ao?
+			if (l_meshDataPack.textureCBuffer.useAOTexture)
+			{
+				DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(4, 1, &l_meshDataPack.AODXTDC->m_SRV);
+			}
 
-		DX11RenderingSystemComponent::get().m_meshDataQueue.pop();
+			drawMesh(l_meshDataPack.indiceSize, l_meshDataPack.DXMDC);
+		}
 	}
 
 	return true;

@@ -17,7 +17,7 @@ INNO_PRIVATE_SCOPE DX11FinalBlendPass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_finalPass_shaderFilePaths = { "DX11//finalBlendPassVertex.sf" , "", "DX11//finalBlendPassPixel.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//finalBlendPassVertex.sf" , "", "DX11//finalBlendPassPixel.sf" };
 }
 
 bool DX11FinalBlendPass::initialize()
@@ -40,13 +40,17 @@ bool DX11FinalBlendPass::initialize()
 	m_DXSPC->m_samplerDesc.MinLOD = 0;
 	m_DXSPC->m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	initializeDX11ShaderProgramComponent(m_DXSPC, m_finalPass_shaderFilePaths);
+	initializeDX11ShaderProgramComponent(m_DXSPC, m_shaderFilePaths);
 
 	return true;
 }
 
 bool DX11FinalBlendPass::update()
 {
+	// Set the depth stencil state.
+	DX11RenderingSystemComponent::get().m_deviceContext->OMSetDepthStencilState(
+		DX11RenderingSystemComponent::get().m_defaultDepthStencilState, 1);
+
 	// Set Rasterizer State
 	DX11RenderingSystemComponent::get().m_deviceContext->RSSetState(
 		DX11RenderingSystemComponent::get().m_rasterStateDeferred);

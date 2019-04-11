@@ -1,5 +1,7 @@
 // shadertype=hlsl
 
+#include "common.sf"
+
 Texture2D geometryPassRT0 : register(t0);
 Texture2D geometryPassRT1 : register(t1);
 Texture2D geometryPassRT2 : register(t2);
@@ -17,8 +19,6 @@ cbuffer cameraCBuffer : register(b0)
 	float4 cam_globalPos;
 };
 
-static const float eps = 0.00001;
-static const float PI = 3.14159265359;
 static const int NR_POINT_LIGHTS = 64;
 static const int NR_SPHERE_LIGHTS = 64;
 
