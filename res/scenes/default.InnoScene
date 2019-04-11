@@ -11,19 +11,19 @@
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
-              "Y": -0.1,
+              "Y": 0.1,
               "Z": 0.0
             },
             "Rotation": {
-              "W": 0.7071068286895752,
-              "X": 0.7071068286895752,
+              "W": 1.0,
+              "X": 0.0,
               "Y": 0.0,
               "Z": 0.0
             },
             "Scale": {
               "X": 200.0,
-              "Y": 200.0,
-              "Z": 0.1
+              "Y": 0.1,
+              "Z": 200.0
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
@@ -36,7 +36,7 @@
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
           "drawAABB": false,
-          "SimulatePhysics": false
+          "SimulatePhysics": true
         }
       ],
       "EntityID": "d4229e4616eb07cc6e5e044ffe0fd77b",

@@ -30,6 +30,8 @@ INNO_PRIVATE_SCOPE GLShadowRenderPass
 	GLuint m_shadowPass_uni_p;
 	GLuint m_shadowPass_uni_v;
 	GLuint m_shadowPass_uni_m;
+
+	std::vector<CSMDataPack> m_CSMDataPack;
 }
 
 void GLShadowRenderPass::initialize()
@@ -117,40 +119,48 @@ void GLShadowRenderPass::drawAllMeshDataComponents()
 
 void GLShadowRenderPass::update()
 {
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CCW);
-	glCullFace(GL_FRONT);
-
-	activateShaderProgram(m_GLSPC);
-
-	activateRenderPass(m_DirLight_GLRPC);
-
-	auto sizeX = m_DirLight_GLRPC->m_GLFrameBufferDesc.sizeX;
-	auto sizeY = m_DirLight_GLRPC->m_GLFrameBufferDesc.sizeY;
-
-	unsigned int splitCount = 0;
-
+	// copy CSM data pack for local scope
 	auto l_CSMDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCSMDataPack();
-
-	for (unsigned int i = 0; i < 2; i++)
+	if (l_CSMDataPack.has_value())
 	{
-		for (unsigned int j = 0; j < 2; j++)
+		m_CSMDataPack = l_CSMDataPack.value();
+	}
+
+	if (m_CSMDataPack.size())
+	{
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+
+		glEnable(GL_CULL_FACE);
+		glFrontFace(GL_CCW);
+		glCullFace(GL_FRONT);
+
+		activateShaderProgram(m_GLSPC);
+
+		activateRenderPass(m_DirLight_GLRPC);
+
+		auto sizeX = m_DirLight_GLRPC->m_GLFrameBufferDesc.sizeX;
+		auto sizeY = m_DirLight_GLRPC->m_GLFrameBufferDesc.sizeY;
+
+		unsigned int splitCount = 0;
+
+		for (unsigned int i = 0; i < 2; i++)
 		{
-			glViewport(i * sizeX / 2, j * sizeY / 2, sizeX / 2, sizeY / 2);
-			updateUniform(
-				m_shadowPass_uni_p,
-				l_CSMDataPack[splitCount].p);
+			for (unsigned int j = 0; j < 2; j++)
+			{
+				glViewport(i * sizeX / 2, j * sizeY / 2, sizeX / 2, sizeY / 2);
+				updateUniform(
+					m_shadowPass_uni_p,
+					m_CSMDataPack[splitCount].p);
 
-			updateUniform(
-				m_shadowPass_uni_v,
-				l_CSMDataPack[splitCount].v);
+				updateUniform(
+					m_shadowPass_uni_v,
+					m_CSMDataPack[splitCount].v);
 
-			splitCount++;
+				splitCount++;
 
-			drawAllMeshDataComponents();
+				drawAllMeshDataComponents();
+			}
 		}
 	}
 

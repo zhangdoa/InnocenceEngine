@@ -49,12 +49,12 @@ namespace PlayerComponentCollection
 	void rotateAroundPositiveYAxis(float offset);
 	void rotateAroundRightAxis(float offset);
 
-	std::function<void()> f_sceneLoadingCallback;
+	std::function<void()> f_sceneLoadingFinishCallback;
 };
 
 bool PlayerComponentCollection::setup()
 {
-	f_sceneLoadingCallback = [&]() {
+	f_sceneLoadingFinishCallback = [&]() {
 		m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntityID("playerCharacterCamera");
 		m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
 		m_cameraComponent = g_pCoreSystem->getGameSystem()->get<CameraComponent>(m_cameraParentEntity);
@@ -97,7 +97,7 @@ bool PlayerComponentCollection::setup()
 		m_moveSpeed = m_initialMoveSpeed;
 		m_rotateSpeed = 10.0f;
 	};
-	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
+	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	return true;
 }
@@ -164,7 +164,7 @@ namespace GameInstanceNS
 
 	void runTest(unsigned int testTime, std::function<bool()> testCase);
 
-	std::function<void()> f_sceneLoadingCallback;
+	std::function<void()> f_sceneLoadingFinishCallback;
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
@@ -198,7 +198,7 @@ bool GameInstanceNS::setup()
 
 	runTest(512, l_testQuatToMat);
 
-	f_sceneLoadingCallback = [&]() {
+	f_sceneLoadingFinishCallback = [&]() {
 		unsigned int sphereMatrixDim = 8;
 		float sphereBreadthInterval = 4.0f;
 		auto l_containerSize = sphereMatrixDim * sphereMatrixDim;
@@ -246,7 +246,7 @@ bool GameInstanceNS::setup()
 		m_objectStatus = ObjectStatus::ALIVE;
 	};
 
-	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
+	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	return true;
 }

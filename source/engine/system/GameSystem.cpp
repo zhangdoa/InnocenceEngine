@@ -57,6 +57,8 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	unsigned int m_currentUUID = 0;
 
 	InnoFuture<void>* m_asyncTask;
+
+	std::function<void()> f_sceneLoadingStartCallback;
 }
 
 std::string InnoGameSystemNS::getEntityName(const EntityID& entityID)
@@ -131,6 +133,66 @@ bool InnoGameSystem::setup()
 		return false;
 	}
 
+	InnoGameSystemNS::f_sceneLoadingStartCallback = [&]() {
+		for (auto i : InnoGameSystemNS::m_TransformComponents)
+		{
+			destroy(i);
+		}
+		InnoGameSystemNS::m_TransformComponents.clear();
+		InnoGameSystemNS::m_TransformComponentsMap.clear();
+
+		for (auto i : InnoGameSystemNS::m_VisibleComponents)
+		{
+			destroy(i);
+		}
+		InnoGameSystemNS::m_VisibleComponents.clear();
+		InnoGameSystemNS::m_VisibleComponentsMap.clear();
+
+		for (auto i : InnoGameSystemNS::m_DirectionalLightComponents)
+		{
+			destroy(i);
+		}
+		InnoGameSystemNS::m_DirectionalLightComponents.clear();
+		InnoGameSystemNS::m_DirectionalLightComponentsMap.clear();
+
+		for (auto i : InnoGameSystemNS::m_PointLightComponents)
+		{
+			destroy(i);
+		}
+		InnoGameSystemNS::m_PointLightComponents.clear();
+		InnoGameSystemNS::m_PointLightComponentsMap.clear();
+
+		for (auto i : InnoGameSystemNS::m_SphereLightComponents)
+		{
+			destroy(i);
+		}
+		InnoGameSystemNS::m_SphereLightComponents.clear();
+		InnoGameSystemNS::m_SphereLightComponentsMap.clear();
+
+		for (auto i : InnoGameSystemNS::m_CameraComponents)
+		{
+			destroy(i);
+		}
+		InnoGameSystemNS::m_CameraComponents.clear();
+		InnoGameSystemNS::m_CameraComponentsMap.clear();
+
+		for (auto i : InnoGameSystemNS::m_InputComponents)
+		{
+			destroy(i);
+		}
+		InnoGameSystemNS::m_InputComponents.clear();
+		InnoGameSystemNS::m_InputComponentsMap.clear();
+
+		for (auto i : InnoGameSystemNS::m_EnvironmentCaptureComponents)
+		{
+			destroy(i);
+		}
+		InnoGameSystemNS::m_EnvironmentCaptureComponents.clear();
+		InnoGameSystemNS::m_EnvironmentCaptureComponentsMap.clear();
+	};
+
+	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&InnoGameSystemNS::f_sceneLoadingStartCallback);
+
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameInstance setup finished.");
 
 	return true;
@@ -173,65 +235,6 @@ void InnoGameSystem::saveComponentsCapture()
 	{
 		val->m_globalTransformMatrix_prev = val->m_globalTransformMatrix;
 	});
-}
-
-void InnoGameSystem::cleanScene()
-{
-	for (auto i : InnoGameSystemNS::m_TransformComponents)
-	{
-		destroy(i);
-	}
-	InnoGameSystemNS::m_TransformComponents.clear();
-	InnoGameSystemNS::m_TransformComponentsMap.clear();
-
-	for (auto i : InnoGameSystemNS::m_VisibleComponents)
-	{
-		destroy(i);
-	}
-	InnoGameSystemNS::m_VisibleComponents.clear();
-	InnoGameSystemNS::m_VisibleComponentsMap.clear();
-
-	for (auto i : InnoGameSystemNS::m_DirectionalLightComponents)
-	{
-		destroy(i);
-	}
-	InnoGameSystemNS::m_DirectionalLightComponents.clear();
-	InnoGameSystemNS::m_DirectionalLightComponentsMap.clear();
-
-	for (auto i : InnoGameSystemNS::m_PointLightComponents)
-	{
-		destroy(i);
-	}
-	InnoGameSystemNS::m_PointLightComponents.clear();
-	InnoGameSystemNS::m_PointLightComponentsMap.clear();
-
-	for (auto i : InnoGameSystemNS::m_SphereLightComponents)
-	{
-		destroy(i);
-	}
-	InnoGameSystemNS::m_SphereLightComponents.clear();
-	InnoGameSystemNS::m_SphereLightComponentsMap.clear();
-
-	for (auto i : InnoGameSystemNS::m_CameraComponents)
-	{
-		destroy(i);
-	}
-	InnoGameSystemNS::m_CameraComponents.clear();
-	InnoGameSystemNS::m_CameraComponentsMap.clear();
-
-	for (auto i : InnoGameSystemNS::m_InputComponents)
-	{
-		destroy(i);
-	}
-	InnoGameSystemNS::m_InputComponents.clear();
-	InnoGameSystemNS::m_InputComponentsMap.clear();
-
-	for (auto i : InnoGameSystemNS::m_EnvironmentCaptureComponents)
-	{
-		destroy(i);
-	}
-	InnoGameSystemNS::m_EnvironmentCaptureComponents.clear();
-	InnoGameSystemNS::m_EnvironmentCaptureComponentsMap.clear();
 }
 
 EntityID InnoGameSystemNS::createEntity(const std::string & entityName)

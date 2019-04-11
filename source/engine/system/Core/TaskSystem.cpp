@@ -11,6 +11,9 @@ INNO_PRIVATE_SCOPE InnoTaskSystemNS
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	std::atomic_bool m_done = false;
+
+	std::atomic_bool m_isAllTasksFinished = true;
+
 	ThreadSafeQueue<std::unique_ptr<IThreadTask>> m_workQueue;
 	std::vector<std::thread> m_threads;
 
@@ -109,14 +112,14 @@ void InnoTaskSystem::shrinkFutureContainer(std::vector<InnoFuture<void>>& rhs)
 
 void InnoTaskSystem::waitAllTasksToFinish()
 {
-	auto l_isAllTasksFinished = 0;
-	while (l_isAllTasksFinished != InnoTaskSystemNS::m_threadStatus.size())
+	while (!InnoTaskSystemNS::m_isAllTasksFinished)
 	{
 		for (auto& i : InnoTaskSystemNS::m_threadStatus)
 		{
-			l_isAllTasksFinished += (i.second == WorkerStatus::IDLE);
+			InnoTaskSystemNS::m_isAllTasksFinished = (i.second == WorkerStatus::IDLE);
 		}
 	}
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem: All threads are idle now.");
 }
 
 std::string InnoTaskSystem::getThreadId()

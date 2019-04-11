@@ -28,7 +28,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderPass
 
 	EntityID m_entityID;
 
-	std::function<void()> m_sceneLoadingCallback;
+	std::function<void()> f_sceneLoadingFinishCallback;
 
 	bool m_isBaked = false;
 
@@ -118,11 +118,11 @@ void GLEnvironmentRenderPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_sceneLoadingCallback = [&]() {
+	f_sceneLoadingFinishCallback = [&]() {
 		m_isBaked = false;
 	};
 
-	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&m_sceneLoadingCallback);
+	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	m_BRDFSplitSumLUTPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
 	m_BRDFSplitSumLUTPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;

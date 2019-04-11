@@ -59,6 +59,8 @@ namespace InnoPhysicsSystemNS
 	std::vector<CullingDataPack> m_cullingDataPack;
 
 	VisibleComponent* m_selectedVisibleComponent;
+
+	std::function<void()> f_sceneLoadingStartCallback;
 }
 
 bool InnoPhysicsSystemNS::setup()
@@ -72,6 +74,13 @@ bool InnoPhysicsSystemNS::setup()
 	m_sceneBoundMin.w = 1.0f;
 
 	PhysXWrapper::get().setup();
+
+	f_sceneLoadingStartCallback = [&]() {
+		m_cullingDataPack.clear();
+		m_isCullingDataPackValid = false;
+	};
+
+	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 
 	m_objectStatus = ObjectStatus::ALIVE;
 
@@ -114,7 +123,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::toViewSpace(const std::vector<Vertex>& 
 		l_mulPos = InnoMath::mul(t.inverse(), l_mulPos);
 #endif
 		l_vertexData.m_pos = l_mulPos;
-	}
+}
 
 	for (auto& l_vertexData : l_result)
 	{
@@ -142,7 +151,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::fromViewSpace(const std::vector<Vertex>
 		l_mulPos = InnoMath::mul(t, l_mulPos);
 #endif
 		l_vertexData.m_pos = l_mulPos;
-	}
+}
 
 	for (auto& l_vertexData : l_result)
 	{
@@ -179,7 +188,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::toClipSpace(const std::vector<Vertex>& 
 		// perspective division
 		l_mulPos = l_mulPos * (1.0f / l_mulPos.w);
 		l_vertexData.m_pos = l_mulPos;
-	}
+}
 
 	for (auto& l_vertexData : l_result)
 	{
@@ -216,7 +225,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::fromClipSpace(const std::vector<Vertex>
 		l_mulPos = InnoMath::mul(t, l_mulPos);
 #endif
 		l_vertexData.m_pos = l_mulPos;
-	}
+}
 
 	for (auto& l_vertexData : l_result)
 	{
@@ -737,6 +746,8 @@ bool intersectCheck(const TFrustum<T> & lhs, const TAABB<T> & rhs)
 
 void InnoPhysicsSystemNS::updateCulling()
 {
+	m_isCullingDataPackValid = false;
+
 	m_cullingDataPack.clear();
 
 	if (g_pCoreSystem->getGameSystem()->get<CameraComponent>().size() > 0)
@@ -783,6 +794,8 @@ void InnoPhysicsSystemNS::updateCulling()
 			}
 		}
 	}
+
+	m_isCullingDataPackValid = true;
 }
 
 void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
@@ -806,25 +819,20 @@ bool InnoPhysicsSystemNS::update()
 {
 	if (g_pCoreSystem->getFileSystem()->isLoadingScene())
 	{
-		m_cullingDataPack.clear();
-		m_isCullingDataPackValid = false;
 		return true;
 	}
 
 	PhysXWrapper::get().update();
 
-	updateCameraComponents();
-	updateLightComponents();
-	updateVisibleComponents();
-
-	m_isCullingDataPackValid = false;
-	updateCulling();
-	m_isCullingDataPackValid = true;
-
 	auto preparePhysicsDataTask = g_pCoreSystem->getTaskSystem()->submit([]()
 	{
 	});
 
+	updateCameraComponents();
+	updateLightComponents();
+	updateVisibleComponents();
+
+	updateCulling();
 	m_asyncTask.emplace_back(std::move(preparePhysicsDataTask));
 
 	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(m_asyncTask);

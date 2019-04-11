@@ -94,7 +94,6 @@ public:
 	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) override;
 
 	void saveComponentsCapture() override;
-	void cleanScene() override;
 
 	EntityID createEntity(const std::string& entityName) override;
 	bool removeEntity(const std::string& entityName) override;

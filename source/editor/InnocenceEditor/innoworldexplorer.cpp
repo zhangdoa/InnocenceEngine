@@ -49,14 +49,14 @@ void InnoWorldExplorer::initialize(InnoPropertyEditor* propertyEditor)
 
     buildTree();
 
-    f_sceneLoadingCallback
+    f_sceneLoadingFinishCallback
             = [&]()
     {
         clear();
         buildTree();
     };
 
-    g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
+    g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 }
 
 void InnoWorldExplorer::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)

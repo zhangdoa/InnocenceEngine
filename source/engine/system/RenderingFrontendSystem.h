@@ -30,7 +30,7 @@ public:
 
 	INNO_SYSTEM_EXPORT CameraDataPack getCameraDataPack() override;
 	INNO_SYSTEM_EXPORT SunDataPack getSunDataPack() override;
-	INNO_SYSTEM_EXPORT std::vector<CSMDataPack>& getCSMDataPack() override;
+	INNO_SYSTEM_EXPORT std::optional<std::vector<CSMDataPack>> getCSMDataPack() override;
 	INNO_SYSTEM_EXPORT std::optional<std::vector<MeshDataPack>> getMeshDataPack() override;
 
 	INNO_SYSTEM_EXPORT std::vector<Plane>& getDebugPlane() override;

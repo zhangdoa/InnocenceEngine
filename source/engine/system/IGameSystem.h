@@ -132,7 +132,6 @@ public:
 	virtual void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) = 0;
 
 	virtual void saveComponentsCapture() = 0;
-	virtual void cleanScene() = 0;
 
 	virtual EntityID createEntity(const std::string& entityName) = 0;
 	virtual bool removeEntity(const std::string& entityName) = 0;

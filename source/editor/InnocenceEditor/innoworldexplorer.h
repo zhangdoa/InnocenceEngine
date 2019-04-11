@@ -22,7 +22,7 @@ private:
 
     QTreeWidgetItem* m_rootItem;
 
-    std::function<void()> f_sceneLoadingCallback;
+    std::function<void()> f_sceneLoadingFinishCallback;
     void buildTree();
 };
 

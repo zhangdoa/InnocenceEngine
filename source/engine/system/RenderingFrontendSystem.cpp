@@ -15,14 +15,17 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMDC;
 	ThreadSafeQueue<TextureDataComponent*> m_uninitializedTDC;
 
-	std::atomic<bool> m_isMeshDataPackValid = false;
-
 	std::vector<CullingDataPack> m_cullingDataPack;
+
+	std::atomic<bool> m_isCSMDataPackValid = false;
+	std::vector<CSMDataPack> m_CSMDataPacks;
 
 	CameraDataPack m_cameraDataPack;
 	SunDataPack m_sunDataPack;
-	std::vector<CSMDataPack> m_CSMDataPacks;
+
+	std::atomic<bool> m_isMeshDataPackValid = false;
 	std::vector<MeshDataPack> m_meshDataPack;
+
 	std::vector<Plane> m_debugPlanes;
 	std::vector<Sphere> m_debugSpheres;
 
@@ -43,6 +46,10 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 
 	float radicalInverse(unsigned int n, unsigned int base);
 	void initializeHaltonSampler();
+
+	bool updateCameraData();
+	bool updateSunData();
+	bool updateMeshData();
 }
 
 float InnoRenderingFrontendSystemNS::radicalInverse(unsigned int n, unsigned int base)
@@ -86,16 +93,8 @@ bool InnoRenderingFrontendSystemNS::initialize()
 	return true;
 }
 
-bool InnoRenderingFrontendSystemNS::update()
+bool InnoRenderingFrontendSystemNS::updateCameraData()
 {
-	// copy culling data pack for local scope
-	auto l_cullingDataPack = g_pCoreSystem->getPhysicsSystem()->getCullingDataPack();
-	if (l_cullingDataPack.has_value())
-	{
-		m_cullingDataPack = l_cullingDataPack.value();
-	}
-
-	// main camera render data
 	auto l_cameraComponents = g_pCoreSystem->getGameSystem()->get<CameraComponent>();
 	auto l_mainCamera = l_cameraComponents[0];
 	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
@@ -136,7 +135,13 @@ bool InnoRenderingFrontendSystemNS::update()
 
 	m_cameraDataPack.WHRatio = l_mainCamera->m_WHRatio;
 
-	// sun/directional light render data
+	return true;
+}
+
+bool InnoRenderingFrontendSystemNS::updateSunData()
+{
+	m_isCSMDataPackValid = false;
+
 	auto l_directionalLightComponents = g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>();
 	auto l_directionalLight = l_directionalLightComponents[0];
 	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
@@ -168,7 +173,13 @@ bool InnoRenderingFrontendSystemNS::update()
 		m_CSMDataPacks[j].v = l_lightRotMat;
 	}
 
-	// objects render data
+	m_isCSMDataPackValid = true;
+
+	return true;
+}
+
+bool InnoRenderingFrontendSystemNS::updateMeshData()
+{
 	m_isMeshDataPackValid = false;
 
 	m_meshDataPack.clear();
@@ -200,6 +211,25 @@ bool InnoRenderingFrontendSystemNS::update()
 
 	m_isMeshDataPackValid = true;
 
+	return true;
+}
+
+bool InnoRenderingFrontendSystemNS::update()
+{
+	// copy culling data pack for local scope
+	auto l_cullingDataPack = g_pCoreSystem->getPhysicsSystem()->getCullingDataPack();
+	if (l_cullingDataPack.has_value())
+	{
+		m_cullingDataPack = l_cullingDataPack.value();
+	}
+
+	updateCameraData();
+
+	updateSunData();
+
+	updateMeshData();
+
+	// objects render data
 	return true;
 }
 
@@ -301,9 +331,14 @@ INNO_SYSTEM_EXPORT SunDataPack InnoRenderingFrontendSystem::getSunDataPack()
 	return InnoRenderingFrontendSystemNS::m_sunDataPack;
 }
 
-INNO_SYSTEM_EXPORT std::vector<CSMDataPack>& InnoRenderingFrontendSystem::getCSMDataPack()
+INNO_SYSTEM_EXPORT std::optional<std::vector<CSMDataPack>> InnoRenderingFrontendSystem::getCSMDataPack()
 {
-	return InnoRenderingFrontendSystemNS::m_CSMDataPacks;
+	if (InnoRenderingFrontendSystemNS::m_isCSMDataPackValid)
+	{
+		return InnoRenderingFrontendSystemNS::m_CSMDataPacks;
+	}
+
+	return std::nullopt;
 }
 
 INNO_SYSTEM_EXPORT std::optional<std::vector<MeshDataPack>> InnoRenderingFrontendSystem::getMeshDataPack()

@@ -61,6 +61,8 @@ INNO_PRIVATE_SCOPE GLLightPass
 	std::vector<GLuint> m_uni_sphereLights_luminance;
 
 	GLuint m_uni_isEmissive;
+
+	std::vector<CSMDataPack> m_CSMDataPack;
 }
 
 void GLLightPass::initialize()
@@ -220,7 +222,12 @@ void GLLightPass::update()
 
 	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
 	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
+	// copy CSM data pack for local scope
 	auto l_CSMDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCSMDataPack();
+	if (l_CSMDataPack.has_value())
+	{
+		m_CSMDataPack = l_CSMDataPack.value();
+	}
 
 	updateUniform(
 		m_uni_viewPos,
@@ -233,18 +240,21 @@ void GLLightPass::update()
 		m_uni_dirLight_luminance,
 		l_sunDataPack.luminance.x, l_sunDataPack.luminance.y, l_sunDataPack.luminance.z);
 
-	for (size_t j = 0; j < 4; j++)
+	if (m_CSMDataPack.size())
 	{
-		updateUniform(
-			m_uni_shadowSplitAreas[j],
-			l_CSMDataPack[j].splitCorners.x, l_CSMDataPack[j].splitCorners.y, l_CSMDataPack[j].splitCorners.z, l_CSMDataPack[j].splitCorners.w);
+		for (size_t j = 0; j < 4; j++)
+		{
+			updateUniform(
+				m_uni_shadowSplitAreas[j],
+				m_CSMDataPack[j].splitCorners.x, m_CSMDataPack[j].splitCorners.y, m_CSMDataPack[j].splitCorners.z, m_CSMDataPack[j].splitCorners.w);
 
-		updateUniform(
-			m_uni_dirLightProjs[j],
-			l_CSMDataPack[j].p);
-		updateUniform(
-			m_uni_dirLightViews[j],
-			l_CSMDataPack[j].v);
+			updateUniform(
+				m_uni_dirLightProjs[j],
+				m_CSMDataPack[j].p);
+			updateUniform(
+				m_uni_dirLightViews[j],
+				m_CSMDataPack[j].v);
+		}
 	}
 
 	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_PointLightDatas.size(); i++)

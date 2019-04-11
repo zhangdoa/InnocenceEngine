@@ -84,7 +84,7 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual CameraDataPack getCameraDataPack() = 0;
 	INNO_SYSTEM_EXPORT virtual SunDataPack getSunDataPack() = 0;
-	INNO_SYSTEM_EXPORT virtual std::vector<CSMDataPack>& getCSMDataPack() = 0;
+	INNO_SYSTEM_EXPORT virtual std::optional<std::vector<CSMDataPack>> getCSMDataPack() = 0;
 	INNO_SYSTEM_EXPORT virtual std::optional<std::vector<MeshDataPack>> getMeshDataPack() = 0;
 
 	INNO_SYSTEM_EXPORT virtual std::vector<Plane>& getDebugPlane() = 0;

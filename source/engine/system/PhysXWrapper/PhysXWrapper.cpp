@@ -1,4 +1,5 @@
 #include "PhysXWrapper.h"
+#include "PhysXWrapper.h"
 
 #if defined INNO_PLATFORM_WIN
 #include "PxPhysicsAPI.h"
@@ -38,7 +39,7 @@ INNO_PRIVATE_SCOPE PhysXWrapperNS
 	PxMaterial* gMaterial = nullptr;
 
 	bool m_needSimulate = false;
-	std::function<void()> f_sceneLoadingCallback;
+	std::function<void()> f_sceneLoadingStartCallback;
 	std::function<void()> f_pauseSimulate;
 
 	std::mutex m_mutex;
@@ -88,10 +89,20 @@ bool PhysXWrapperNS::setup()
 
 	PxRigidActors.reserve(16384);
 
-	f_sceneLoadingCallback = [&]() {
+	f_sceneLoadingStartCallback = [&]() {
+		m_needSimulate = false;
+
+		for (auto i : PxRigidActors)
+		{
+			gScene->removeActor(*i);
+		}
+
+		PxRigidActors.clear();
+
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysXWrapper: All PhysX Actors has been removed.");
 	};
 
-	g_pCoreSystem->getFileSystem()->addSceneLoadingCallback(&f_sceneLoadingCallback);
+	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 
 	f_pauseSimulate = [&]() { m_needSimulate = !m_needSimulate; };
 
@@ -107,15 +118,6 @@ bool PhysXWrapperNS::initialize()
 
 bool PhysXWrapperNS::update()
 {
-	if (g_pCoreSystem->getFileSystem()->isLoadingScene())
-	{
-		for (auto i : PxRigidActors)
-		{
-			gScene->removeActor(*i);
-		}
-		return true;
-	}
-
 	if (m_needSimulate)
 	{
 		gScene->simulate(1.0f / 60.0f);

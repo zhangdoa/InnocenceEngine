@@ -110,7 +110,6 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 	bool prepareForLoadingScene(const std::string& fileName);
 	bool loadScene(const std::string& fileName);
-	bool cleanScene();
 	bool loadComponents(const json& j);
 	bool assignComponentRuntimeData();
 	bool loadAssets();
@@ -172,9 +171,12 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	std::vector<InnoFuture<void>> m_asyncTask;
-	std::vector<std::function<void()>*> m_sceneLoadingCallbacks;
+	std::vector<std::function<void()>*> m_sceneLoadingStartCallbacks;
+	std::vector<std::function<void()>*> m_sceneLoadingFinishCallbacks;
 
 	std::atomic<bool> m_isLoadingScene = false;
+	std::atomic<bool> m_prepareForLoadingScene = false;
+
 	std::string m_nextLoadingScene;
 	std::string m_currentScene;
 
@@ -543,18 +545,25 @@ bool InnoFileSystemNS::saveJsonDataToDisk(const std::string & fileName, const js
 
 bool InnoFileSystemNS::prepareForLoadingScene(const std::string& fileName)
 {
-	m_nextLoadingScene = fileName;
-	m_isLoadingScene = true;
+	if (!InnoFileSystemNS::m_isLoadingScene)
+	{
+		if (m_currentScene == fileName)
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: scene " + fileName + " has already loaded now.");
+			return true;
+		}
+		m_nextLoadingScene = fileName;
+		m_prepareForLoadingScene = true;
+	}
 
 	return true;
 }
 
 bool InnoFileSystemNS::loadScene(const std::string& fileName)
 {
-	if (m_currentScene == fileName)
+	for (auto i : m_sceneLoadingStartCallbacks)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: scene " + fileName + " has already loaded now.");
-		return true;
+		(*i)();
 	}
 
 	json j;
@@ -563,29 +572,23 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 		return false;
 	}
 
-	cleanScene();
-
 	loadComponents(j);
 
 	assignComponentRuntimeData();
 
-	for (auto i : m_sceneLoadingCallbacks)
+	for (auto i : m_sceneLoadingFinishCallbacks)
 	{
 		(*i)();
 	}
 
-	loadAssets();
+	InnoFileSystemNS::m_isLoadingScene = false;
 
 	m_currentScene = fileName;
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene " + fileName + " has been loaded.");
 
-	return true;
-}
+	loadAssets();
 
-bool InnoFileSystemNS::cleanScene()
-{
-	g_pCoreSystem->getGameSystem()->cleanScene();
 	return true;
 }
 
@@ -735,11 +738,12 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::initialize()
 
 INNO_SYSTEM_EXPORT bool InnoFileSystem::update()
 {
-	if (InnoFileSystemNS::m_isLoadingScene)
+	if (InnoFileSystemNS::m_prepareForLoadingScene)
 	{
+		InnoFileSystemNS::m_prepareForLoadingScene = false;
+		InnoFileSystemNS::m_isLoadingScene = true;
 		g_pCoreSystem->getTaskSystem()->waitAllTasksToFinish();
 		InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene);
-		InnoFileSystemNS::m_isLoadingScene = false;
 	}
 
 	return true;
@@ -782,9 +786,15 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::isLoadingScene()
 	return InnoFileSystemNS::m_isLoadingScene;
 }
 
-INNO_SYSTEM_EXPORT bool InnoFileSystem::addSceneLoadingCallback(std::function<void()>* functor)
+INNO_SYSTEM_EXPORT bool InnoFileSystem::addSceneLoadingStartCallback(std::function<void()>* functor)
 {
-	InnoFileSystemNS::m_sceneLoadingCallbacks.emplace_back(functor);
+	InnoFileSystemNS::m_sceneLoadingStartCallbacks.emplace_back(functor);
+	return true;
+}
+
+INNO_SYSTEM_EXPORT bool InnoFileSystem::addSceneLoadingFinishCallback(std::function<void()>* functor)
+{
+	InnoFileSystemNS::m_sceneLoadingFinishCallbacks.emplace_back(functor);
 	return true;
 }
 

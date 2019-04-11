@@ -23,7 +23,8 @@ public:
 	INNO_SYSTEM_EXPORT virtual bool saveScene(const std::string& fileName) = 0;
 	INNO_SYSTEM_EXPORT virtual bool isLoadingScene() = 0;
 
-	INNO_SYSTEM_EXPORT virtual bool addSceneLoadingCallback(std::function<void()>* functor) = 0;
+	INNO_SYSTEM_EXPORT virtual bool addSceneLoadingStartCallback(std::function<void()>* functor) = 0;
+	INNO_SYSTEM_EXPORT virtual bool addSceneLoadingFinishCallback(std::function<void()>* functor) = 0;
 
 	INNO_SYSTEM_EXPORT virtual bool convertModel(const std::string & fileName, const std::string & exportPath) = 0;
 

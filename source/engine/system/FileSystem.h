@@ -20,7 +20,8 @@ public:
 	INNO_SYSTEM_EXPORT bool saveScene(const std::string& fileName) override;
 	INNO_SYSTEM_EXPORT bool isLoadingScene() override;
 
-	INNO_SYSTEM_EXPORT bool addSceneLoadingCallback(std::function<void()>* functor) override;
+	INNO_SYSTEM_EXPORT bool addSceneLoadingStartCallback(std::function<void()>* functor) override;
+	INNO_SYSTEM_EXPORT bool addSceneLoadingFinishCallback(std::function<void()>* functor) override;
 
 	INNO_SYSTEM_EXPORT bool convertModel(const std::string & fileName, const std::string & exportPath) override;
 
