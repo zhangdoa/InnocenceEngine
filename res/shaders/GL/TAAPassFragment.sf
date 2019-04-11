@@ -14,7 +14,9 @@ uniform sampler2D uni_motionVectorTexture;
 void main()
 {
 	vec2 renderTargetSize = vec2(textureSize(uni_preTAAPassRT0, 0));
-	vec2 MotionVector = texture(uni_motionVectorTexture, TexCoords).xy;
+	vec2 texelSize = 1.0 / renderTargetSize;
+	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
+	vec2 MotionVector = texture(uni_motionVectorTexture, screenTexCoords).xy;
 
 	vec4 preTAAPassRT0Result = texture(uni_preTAAPassRT0, TexCoords);
 

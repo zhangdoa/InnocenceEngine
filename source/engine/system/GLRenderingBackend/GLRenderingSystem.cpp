@@ -302,19 +302,19 @@ bool GLRenderingSystemNS::update()
 
 	auto l_canvasGLRPC = GLPreTAAPass::getGLRPC();
 
-	if (l_renderingConfig.useMotionBlur)
-	{
-		GLMotionBlurPass::update();
-
-		l_canvasGLRPC = GLMotionBlurPass::getGLRPC();
-	}
-
 	if (l_renderingConfig.useTAA)
 	{
 		GLTAAPass::update(l_canvasGLRPC);
 		GLPostTAAPass::update();
 
 		l_canvasGLRPC = GLPostTAAPass::getGLRPC();
+	}
+
+	if (l_renderingConfig.useMotionBlur)
+	{
+		GLMotionBlurPass::update();
+
+		l_canvasGLRPC = GLMotionBlurPass::getGLRPC();
 	}
 
 	if (l_renderingConfig.useBloom)

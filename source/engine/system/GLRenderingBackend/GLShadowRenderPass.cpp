@@ -40,8 +40,8 @@ void GLShadowRenderPass::initialize()
 
 	DirLightShadowPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	DirLightShadowPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
-	DirLightShadowPassFBDesc.sizeX = 2048;
-	DirLightShadowPassFBDesc.sizeY = 2048;
+	DirLightShadowPassFBDesc.sizeX = 4096;
+	DirLightShadowPassFBDesc.sizeY = 4096;
 	DirLightShadowPassFBDesc.drawColorBuffers = false;
 
 	DirLightShadowPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;

@@ -1,6 +1,6 @@
 #include "GLMotionBlurPass.h"
 #include "GLOpaquePass.h"
-#include "GLPreTAAPass.h"
+#include "GLPostTAAPass.h"
 
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
@@ -67,7 +67,7 @@ bool GLMotionBlurPass::update()
 		GLOpaquePass::getGLRPC()->m_GLTDCs[3],
 		0);
 	activateTexture(
-		GLPreTAAPass::getGLRPC()->m_GLTDCs[0],
+		GLPostTAAPass::getGLRPC()->m_GLTDCs[0],
 		1);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
