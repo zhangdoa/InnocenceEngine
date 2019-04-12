@@ -4,10 +4,10 @@ layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
 layout(location = 2) in vec3 in_Normal;
 
-uniform mat4 uni_p;
-uniform mat4 uni_r;
-uniform mat4 uni_t;
-uniform mat4 uni_m;
+layout(location = 0) uniform mat4 uni_p;
+layout(location = 1) uniform mat4 uni_r;
+layout(location = 2) uniform mat4 uni_t;
+layout(location = 3) uniform mat4 uni_m;
 
 void main()
 {

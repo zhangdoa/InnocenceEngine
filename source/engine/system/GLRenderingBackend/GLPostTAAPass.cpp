@@ -14,18 +14,12 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLPostTAAPass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//TAASharpenPassVertex.sf", "", "GL//TAASharpenPassFragment.sf" };
-
-	std::vector<std::string> m_uniformNames =
-	{
-		"uni_lastTAAPassRT0",
-	};
+	ShaderFilePaths m_shaderFilePaths = { "GL//postTAAPassVertex.sf", "", "GL//postTAAPassFragment.sf" };
 }
 
 bool GLPostTAAPass::initialize()
@@ -46,14 +40,7 @@ void GLPostTAAPass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLPostTAAPass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	updateTextureUniformLocations(rhs->m_program, m_uniformNames);
 }
 
 bool GLPostTAAPass::update()
@@ -84,8 +71,6 @@ bool GLPostTAAPass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

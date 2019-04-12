@@ -17,21 +17,12 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLPreTAAPass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//preTAAPassVertex.sf", "", "GL//preTAAPassFragment.sf" };
-
-	std::vector<std::string> m_uniformNames =
-	{
-		"uni_lightPassRT0",
-		"uni_transparentPassRT0",
-		"uni_skyPassRT0",
-		"uni_terrainPassRT0",
-	};
 }
 
 bool GLPreTAAPass::initialize()
@@ -52,14 +43,7 @@ void GLPreTAAPass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLPreTAAPass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	updateTextureUniformLocations(rhs->m_program, m_uniformNames);
 }
 
 bool GLPreTAAPass::update()
@@ -99,8 +83,6 @@ bool GLPreTAAPass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

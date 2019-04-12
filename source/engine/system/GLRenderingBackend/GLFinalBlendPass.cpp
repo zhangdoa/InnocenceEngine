@@ -15,21 +15,12 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLFinalBlendPass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//finalBlendPassVertex.sf", "", "GL//finalBlendPassFragment.sf" };
-
-	std::vector<std::string> m_uniformNames =
-	{
-		"uni_basePassRT0",
-		"uni_bloomPassRT0",
-		"uni_billboardPassRT0",
-		"uni_debuggerPassRT0",
-	};
 }
 
 bool GLFinalBlendPass::initialize()
@@ -50,14 +41,7 @@ void GLFinalBlendPass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLFinalBlendPass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	updateTextureUniformLocations(rhs->m_program, m_uniformNames);
 }
 
 bool GLFinalBlendPass::update(GLRenderPassComponent* prePassGLRPC)
@@ -107,8 +91,6 @@ bool GLFinalBlendPass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

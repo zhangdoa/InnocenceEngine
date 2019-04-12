@@ -862,6 +862,11 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const mat4 
 #endif
 }
 
+void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const std::vector<vec4>& uniformValue)
+{
+	glUniform4fv(uniformLocation, (GLsizei)uniformValue.size(), (float*)&uniformValue[0]);
+}
+
 void GLRenderingSystemNS::attach2DDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);

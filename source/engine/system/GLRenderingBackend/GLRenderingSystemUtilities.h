@@ -54,6 +54,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void updateUniform(const GLint uniformLocation, float x, float y, float z);
 	void updateUniform(const GLint uniformLocation, float x, float y, float z, float w);
 	void updateUniform(const GLint uniformLocation, const mat4& mat);
+	void updateUniform(const GLint uniformLocation, const std::vector<vec4>& uniformValue);
 
 	void attach2DDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC);
 	void attachCubemapDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int textureIndex, unsigned int mipLevel);

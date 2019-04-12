@@ -12,7 +12,6 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLBloomBlurPass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
@@ -20,13 +19,6 @@ INNO_PRIVATE_SCOPE GLBloomBlurPass
 	GLRenderPassComponent* m_PongPassGLRPC;
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//bloomBlurPassVertex.sf", "", "GL//bloomBlurPassFragment.sf" };
-
-	std::vector<std::string> m_uniformNames =
-	{
-		"uni_bloomExtractPassRT0",
-	};
-
-	GLuint m__uni_horizontal;
 }
 
 bool GLBloomBlurPass::initialize()
@@ -51,18 +43,7 @@ void GLBloomBlurPass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLBloomBlurPass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	updateTextureUniformLocations(rhs->m_program, m_uniformNames);
-
-	m__uni_horizontal = getUniformLocation(
-		rhs->m_program,
-		"uni_horizontal");
 }
 
 bool GLBloomBlurPass::update(GLRenderPassComponent* prePassGLRPC)
@@ -87,7 +68,7 @@ bool GLBloomBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 			activateRenderPass(m_PingPassGLRPC);
 
 			updateUniform(
-				m__uni_horizontal,
+				0,
 				true);
 
 			if (l_isFirstIteration)
@@ -116,7 +97,7 @@ bool GLBloomBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 			activateRenderPass(m_PongPassGLRPC);
 
 			updateUniform(
-				m__uni_horizontal,
+				0,
 				false);
 
 			activateTexture(
@@ -148,8 +129,6 @@ bool GLBloomBlurPass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

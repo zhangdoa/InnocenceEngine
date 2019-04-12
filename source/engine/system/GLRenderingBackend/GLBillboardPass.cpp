@@ -14,24 +14,12 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLBillboardPass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//billboardPassVertex.sf", "", "GL//billboardPassFragment.sf" };
-
-	std::vector<std::string> m_uniformNames =
-	{
-		"uni_texture",
-	};
-
-	GLuint m_uni_p;
-	GLuint m_uni_r;
-	GLuint m_uni_t;
-	GLuint m_uni_pos;
-	GLuint m_uni_size;
 
 	CameraDataPack m_cameraDataPack;
 }
@@ -54,30 +42,7 @@ void GLBillboardPass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLBillboardPass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	updateTextureUniformLocations(rhs->m_program, m_uniformNames);
-
-	m_uni_p = getUniformLocation(
-		rhs->m_program,
-		"uni_p");
-	m_uni_r = getUniformLocation(
-		rhs->m_program,
-		"uni_r");
-	m_uni_t = getUniformLocation(
-		rhs->m_program,
-		"uni_t");
-	m_uni_pos = getUniformLocation(
-		rhs->m_program,
-		"uni_pos");
-	m_uni_size = getUniformLocation(
-		rhs->m_program,
-		"uni_size");
 }
 
 bool GLBillboardPass::update()
@@ -100,13 +65,13 @@ bool GLBillboardPass::update()
 	activateShaderProgram(m_GLSPC);
 
 	updateUniform(
-		m_uni_p,
+		0,
 		m_cameraDataPack.p_original);
 	updateUniform(
-		m_uni_r,
+		1,
 		m_cameraDataPack.r);
 	updateUniform(
-		m_uni_t,
+		2,
 		m_cameraDataPack.t);
 
 	while (GLRenderingSystemComponent::get().m_billboardPassDataQueue.size() > 0)
@@ -116,7 +81,7 @@ bool GLBillboardPass::update()
 		auto l_GlobalPos = l_renderPack.globalPos;
 
 		updateUniform(
-			m_uni_pos,
+			3,
 			l_GlobalPos.x, l_GlobalPos.y, l_GlobalPos.z);
 
 		auto l_distanceToCamera = l_renderPack.distanceToCamera;
@@ -124,13 +89,13 @@ bool GLBillboardPass::update()
 		if (l_distanceToCamera > 1.0f)
 		{
 			updateUniform(
-				m_uni_size,
+				4,
 				(1.0f / (l_distanceToCamera * m_cameraDataPack.WHRatio)), (1.0f / l_distanceToCamera));
 		}
 		else
 		{
 			updateUniform(
-				m_uni_size,
+				4,
 				(1.0f / m_cameraDataPack.WHRatio), 1.0f);
 		}
 
@@ -169,8 +134,6 @@ bool GLBillboardPass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

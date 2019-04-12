@@ -12,7 +12,6 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLBloomExtractPass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
@@ -23,11 +22,6 @@ INNO_PRIVATE_SCOPE GLBloomExtractPass
 
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//bloomExtractPassVertex.sf", "", "GL//bloomExtractPassFragment.sf" };
-
-	std::vector<std::string> m_uniformNames =
-	{
-		"uni_TAAPassRT0",
-	};
 }
 
 bool GLBloomExtractPass::initialize()
@@ -73,14 +67,7 @@ void GLBloomExtractPass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLBloomExtractPass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	updateTextureUniformLocations(rhs->m_program, m_uniformNames);
 }
 
 bool GLBloomExtractPass::update(GLRenderPassComponent* prePassGLRPC)
@@ -143,8 +130,6 @@ bool GLBloomExtractPass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

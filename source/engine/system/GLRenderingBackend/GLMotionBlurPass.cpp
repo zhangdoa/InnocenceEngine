@@ -14,19 +14,12 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLMotionBlurPass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//motionBlurPassVertex.sf", "", "GL//motionBlurPassFragment.sf" };
-
-	std::vector<std::string> m_uniformNames =
-	{
-		"uni_motionVectorTexture",
-		"uni_TAAPassRT0",
-	};
 }
 
 bool GLMotionBlurPass::initialize()
@@ -47,14 +40,7 @@ void GLMotionBlurPass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLMotionBlurPass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	updateTextureUniformLocations(rhs->m_program, m_uniformNames);
 }
 
 bool GLMotionBlurPass::update()
@@ -88,8 +74,6 @@ bool GLMotionBlurPass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

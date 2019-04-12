@@ -13,21 +13,12 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLBloomMergePass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//bloomMergePassVertex.sf", "", "GL//bloomMergePassFragment.sf" };
-
-	std::vector<std::string> m_uniformNames =
-	{
-		"uni_Full",
-		"uni_Half",
-		"uni_Quarter",
-		"uni_Eighth",
-	};
 }
 
 bool GLBloomMergePass::initialize()
@@ -48,14 +39,7 @@ void GLBloomMergePass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLBloomMergePass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	updateTextureUniformLocations(rhs->m_program, m_uniformNames);
 }
 
 bool GLBloomMergePass::update()
@@ -95,8 +79,6 @@ bool GLBloomMergePass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

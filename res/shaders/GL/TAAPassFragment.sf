@@ -4,12 +4,12 @@ layout(location = 0) out vec4 uni_TAAPassRT0;
 
 in vec2 TexCoords;
 
-uniform sampler2D uni_preTAAPassRT0;
-uniform sampler2D uni_history0;
-uniform sampler2D uni_history1;
-uniform sampler2D uni_history2;
-uniform sampler2D uni_history3;
-uniform sampler2D uni_motionVectorTexture;
+layout(location = 0, binding = 0) uniform sampler2D uni_preTAAPassRT0;
+layout(location = 1, binding = 1) uniform sampler2D uni_history0;
+layout(location = 2, binding = 2) uniform sampler2D uni_history1;
+layout(location = 3, binding = 3) uniform sampler2D uni_history2;
+layout(location = 4, binding = 4) uniform sampler2D uni_history3;
+layout(location = 5, binding = 5) uniform sampler2D uni_motionVectorTexture;
 
 void main()
 {

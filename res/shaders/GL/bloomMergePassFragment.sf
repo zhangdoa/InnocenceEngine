@@ -4,10 +4,10 @@ layout(location = 0) out vec4 uni_bloomMergePassRT0;
 
 in vec2 TexCoords;
 
-uniform sampler2D uni_Full;
-uniform sampler2D uni_Half;
-uniform sampler2D uni_Quarter;
-uniform sampler2D uni_Eighth;
+layout(location = 0, binding = 0) uniform sampler2D uni_Full;
+layout(location = 1, binding = 1) uniform sampler2D uni_Half;
+layout(location = 2, binding = 2) uniform sampler2D uni_Quarter;
+layout(location = 3, binding = 3) uniform sampler2D uni_Eighth;
 
 void main()
 {

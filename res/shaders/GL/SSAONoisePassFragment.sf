@@ -4,17 +4,17 @@ layout(location = 0) out vec4 uni_SSAOPassRT0;
 
 in vec2 TexCoords;
 
-uniform sampler2D uni_Position;
-uniform sampler2D uni_Normal;
-uniform sampler2D uni_texNoise;
+layout(location = 0) uniform mat4 uni_p;
+layout(location = 1) uniform mat4 uni_r;
+layout(location = 2) uniform mat4 uni_t;
 
-uniform mat4 uni_p;
-uniform mat4 uni_r;
-uniform mat4 uni_t;
+layout(location = 3, binding = 0) uniform sampler2D uni_Position;
+layout(location = 4, binding = 1) uniform sampler2D uni_Normal;
+layout(location = 5, binding = 2) uniform sampler2D uni_texNoise;
 
 const int kernelSize = 64;
 
-uniform vec4 uni_samples[kernelSize];
+layout(location = 6) uniform vec4 uni_samples[kernelSize];
 
 float radius = 0.5f;
 float bias = 0.025f;

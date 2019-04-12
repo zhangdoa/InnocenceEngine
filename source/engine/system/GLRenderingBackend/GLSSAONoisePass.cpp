@@ -13,7 +13,6 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLSSAONoisePass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	void generateSSAONoiseTexture();
 
@@ -25,19 +24,7 @@ INNO_PRIVATE_SCOPE GLSSAONoisePass
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//SSAONoisePassVertex.sf" , "", "GL//SSAONoisePassFragment.sf" };
 
-	GLuint m_uni_p;
-	GLuint m_uni_r;
-	GLuint m_uni_t;
-
-	std::vector<GLuint> m_uni_samples;
-
-	std::vector<std::string> m_uniformNames =
-	{
-		"uni_Position",
-		"uni_Normal",
-		"uni_texNoise",
-	};
-
+	unsigned int m_kernelSize = 64;
 	std::vector<vec4> m_SSAOKernel;
 	std::vector<vec4> m_SSAONoise;
 
@@ -67,50 +54,29 @@ void GLSSAONoisePass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLSSAONoisePass::bindUniformLocations(GLShaderProgramComponent * rhs)
-{
-	updateTextureUniformLocations(rhs->m_program, m_uniformNames);
-
-	m_uni_p = getUniformLocation(
-		rhs->m_program,
-		"uni_p");
-	m_uni_r = getUniformLocation(
-		rhs->m_program,
-		"uni_r");
-	m_uni_t = getUniformLocation(
-		rhs->m_program,
-		"uni_t");
-
-	for (size_t i = 0; i < 64; i++)
-	{
-		m_uni_samples.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_samples[" + std::to_string(i) + "]")
-		);
-	}
 }
 
 void GLSSAONoisePass::generateSSAONoiseTexture()
 {
 	std::uniform_real_distribution<GLfloat> randomFloats(0.0f, 1.0f);
 	std::default_random_engine generator;
-	for (unsigned int i = 0; i < 64; ++i)
+
+	m_SSAOKernel.reserve(m_kernelSize);
+
+	for (unsigned int i = 0; i < m_kernelSize; ++i)
 	{
 		auto sample = vec4(randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator), 0.0f);
 		sample = sample.normalize();
 		sample = sample * randomFloats(generator);
-		float scale = float(i) / 64.0f;
+		float scale = float(i) / float(m_kernelSize);
 
 		// scale samples s.t. they're more aligned to center of kernel
 		auto alpha = scale * scale;
 		scale = 0.1f + 0.9f * alpha;
 		sample = sample * scale;
 
-		m_SSAOKernel.push_back(sample);
+		m_SSAOKernel.emplace_back(sample);
 	}
 
 	auto l_textureSize = 4;
@@ -172,23 +138,10 @@ bool GLSSAONoisePass::update()
 	activateTexture(GLOpaquePass::getGLRPC()->m_GLTDCs[1], 1);
 	activateTexture(m_SSAONoiseGLTDC, 2);
 
-	updateUniform(
-		m_uni_p,
-		m_cameraDataPack.p_jittered);
-	updateUniform(
-		m_uni_r,
-		m_cameraDataPack.r);
-	updateUniform(
-		m_uni_t,
-		m_cameraDataPack.t);
-
-	for (size_t i = 0; i < m_uni_samples.size(); i++)
-	{
-		auto l_kernel = m_SSAOKernel[i];
-		updateUniform(
-			m_uni_samples[i],
-			l_kernel.x, l_kernel.y, l_kernel.z, l_kernel.w);
-	}
+	updateUniform(0, m_cameraDataPack.p_jittered);
+	updateUniform(1, m_cameraDataPack.r);
+	updateUniform(2, m_cameraDataPack.t);
+	updateUniform(6, m_SSAOKernel);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
@@ -208,8 +161,6 @@ bool GLSSAONoisePass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }
