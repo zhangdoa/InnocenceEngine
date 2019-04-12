@@ -141,9 +141,13 @@ void TransformComponentPropertyEditor::GetRotation()
         return;
 
     vec4 eulerAngles = InnoMath::quatToEulerAngle(m_component->m_localTransformVector.m_rot);
-    m_rotX->SetFromFloat(eulerAngles.x);
-    m_rotY->SetFromFloat(eulerAngles.y);
-    m_rotZ->SetFromFloat(eulerAngles.z);
+    auto roll = InnoMath::radianToAngle(eulerAngles.x);
+    auto pitch = InnoMath::radianToAngle(eulerAngles.y);
+    auto yaw = InnoMath::radianToAngle(eulerAngles.z);
+
+    m_rotX->SetFromFloat(roll);
+    m_rotY->SetFromFloat(pitch);
+    m_rotZ->SetFromFloat(yaw);
 }
 
 void TransformComponentPropertyEditor::GetScale()

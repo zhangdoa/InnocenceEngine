@@ -36,7 +36,10 @@ SOURCES += \
     innopropertyeditor.cpp \
     transformcomponentpropertyeditor.cpp \
     adjustlabel.cpp \
-    combolabeltext.cpp
+    combolabeltext.cpp \
+    directionallightcomponentpropertyeditor.cpp \
+    pointlightcomponentpropertyeditor.cpp \
+    spherelightcomponentpropertyeditor.cpp
 
 
 HEADERS += \
@@ -52,7 +55,10 @@ HEADERS += \
     icomponentpropertyeditor.h \
     transformcomponentpropertyeditor.h \
     adjustlabel.h \
-    combolabeltext.h
+    combolabeltext.h \
+    directionallightcomponentpropertyeditor.h \
+    pointlightcomponentpropertyeditor.h \
+    spherelightcomponentpropertyeditor.h
 
 FORMS += \
         mainwindow.ui
