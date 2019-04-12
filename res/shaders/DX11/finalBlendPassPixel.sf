@@ -1,6 +1,6 @@
 // shadertype=hlsl
 
-Texture2D lightPassRT0 : register(t0);
+Texture2D basePassRT0 : register(t0);
 
 SamplerState SampleTypePoint : register(s0);
 
@@ -23,7 +23,7 @@ float3 acesFilm(const float3 x) {
 
 float4 finalBlendPassPixel(PixelInputType input) : SV_TARGET
 {
-	float3 finalColor = lightPassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
+	float3 finalColor = basePassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
 
 //HDR to LDR
 finalColor = acesFilm(finalColor);

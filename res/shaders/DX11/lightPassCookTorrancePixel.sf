@@ -2,9 +2,9 @@
 
 #include "common.sf"
 
-Texture2D geometryPassRT0 : register(t0);
-Texture2D geometryPassRT1 : register(t1);
-Texture2D geometryPassRT2 : register(t2);
+Texture2D in_geometryPassRT0 : register(t0);
+Texture2D in_geometryPassRT1 : register(t1);
+Texture2D in_geometryPassRT2 : register(t2);
 
 SamplerState SampleTypePoint : register(s0);
 
@@ -273,9 +273,9 @@ PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
-	float4 GPassRT0 = geometryPassRT0.Sample(SampleTypePoint, input.texcoord);
-	float4 GPassRT1 = geometryPassRT1.Sample(SampleTypePoint, input.texcoord);
-	float4 GPassRT2 = geometryPassRT2.Sample(SampleTypePoint, input.texcoord);
+	float4 GPassRT0 = in_geometryPassRT0.Sample(SampleTypePoint, input.texcoord);
+	float4 GPassRT1 = in_geometryPassRT1.Sample(SampleTypePoint, input.texcoord);
+	float4 GPassRT2 = in_geometryPassRT2.Sample(SampleTypePoint, input.texcoord);
 
 	float3 posWS = GPassRT0.xyz;
 	float metallic = GPassRT0.w;

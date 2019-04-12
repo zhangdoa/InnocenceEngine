@@ -3,6 +3,7 @@
 #include "DX11OpaquePass.h"
 #include "DX11LightPass.h"
 #include "DX11SkyPass.h"
+#include "DX11PreTAAPass.h"
 #include "DX11FinalBlendPass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
@@ -482,6 +483,8 @@ bool DX11RenderingSystemNS::update()
 
 	DX11SkyPass::update();
 
+	DX11PreTAAPass::update();
+
 	DX11FinalBlendPass::update();
 
 	return true;
@@ -832,6 +835,7 @@ bool DX11RenderingSystem::initialize()
 	DX11OpaquePass::initialize();
 	DX11LightPass::initialize();
 	DX11SkyPass::initialize();
+	DX11PreTAAPass::initialize();
 	DX11FinalBlendPass::initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been initialized.");
@@ -858,6 +862,7 @@ bool DX11RenderingSystem::resize()
 	DX11OpaquePass::resize();
 	DX11LightPass::resize();
 	DX11SkyPass::resize();
+	DX11PreTAAPass::resize();
 	DX11FinalBlendPass::resize();
 	return true;
 }
@@ -867,6 +872,7 @@ bool DX11RenderingSystem::reloadShader(RenderPassType renderPassType)
 	DX11OpaquePass::reloadShaders();
 	DX11LightPass::reloadShaders();
 	DX11SkyPass::reloadShaders();
+	DX11PreTAAPass::reloadShaders();
 	DX11FinalBlendPass::reloadShaders();
 	return true;
 }
