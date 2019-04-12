@@ -557,6 +557,10 @@ bool DX11RenderingSystemNS::initializeDefaultAssets()
 	g_DXRenderingSystemComponent->m_UnitLineDXMDC = generateDX11MeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	for (auto& i : l_MDC->m_vertices)
+	{
+		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
+	}
 	g_DXRenderingSystemComponent->m_UnitQuadDXMDC = generateDX11MeshDataComponent(l_MDC);
 
 	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);

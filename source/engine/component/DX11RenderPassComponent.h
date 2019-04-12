@@ -28,4 +28,7 @@ public:
 	ID3D11DepthStencilView* m_depthStencilView = 0;
 
 	D3D11_VIEWPORT m_viewport = D3D11_VIEWPORT();
+
+	D3D11_RASTERIZER_DESC m_rasterizerDesc = D3D11_RASTERIZER_DESC();
+	ID3D11RasterizerState* m_rasterizerState = 0;
 };

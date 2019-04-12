@@ -805,5 +805,5 @@ void DX11RenderingSystemNS::cleanRTV(vec4 color, ID3D11RenderTargetView* RTV)
 
 void DX11RenderingSystemNS::cleanDSV(ID3D11DepthStencilView* DSV)
 {
-	DX11RenderingSystemComponent::get().m_deviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	DX11RenderingSystemComponent::get().m_deviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0x00);
 }

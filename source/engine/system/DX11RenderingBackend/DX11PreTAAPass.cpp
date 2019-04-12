@@ -97,7 +97,7 @@ bool DX11PreTAAPass::update()
 	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(1, 1, &DX11SkyPass::getDX11RPC()->m_DXTDCs[0]->m_SRV);
 
 	// draw
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
+	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	return true;
