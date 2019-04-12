@@ -1,7 +1,7 @@
 #include "DX11FinalBlendPass.h"
 #include "DX11RenderingSystemUtilities.h"
 
-#include "DX11PreTAAPass.h"
+#include "DX11TAAPass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
 
@@ -76,7 +76,8 @@ bool DX11FinalBlendPass::update()
 	cleanDSV(DX11RenderingSystemComponent::get().m_depthStencilView);
 
 	// bind to previous pass render target textures
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DX11PreTAAPass::getDX11RPC()->m_DXTDCs[0]->m_SRV);
+	auto l_canvas = DX11TAAPass::getResult();
+	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &l_canvas);
 
 	// draw
 	drawMesh(6, DX11RenderingSystemComponent::get().m_UnitQuadDXMDC);
