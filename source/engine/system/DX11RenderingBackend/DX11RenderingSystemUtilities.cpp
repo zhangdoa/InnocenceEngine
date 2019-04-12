@@ -343,16 +343,16 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 	{
 		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
-		l_TDC->m_textureDataDesc.textureSamplerType = RTDesc.textureSamplerType;
-		l_TDC->m_textureDataDesc.textureUsageType = RTDesc.textureUsageType;
-		l_TDC->m_textureDataDesc.textureColorComponentsFormat = RTDesc.textureColorComponentsFormat;
-		l_TDC->m_textureDataDesc.texturePixelDataFormat = RTDesc.texturePixelDataFormat;
-		l_TDC->m_textureDataDesc.textureMinFilterMethod = RTDesc.textureMinFilterMethod;
-		l_TDC->m_textureDataDesc.textureMagFilterMethod = RTDesc.textureMagFilterMethod;
-		l_TDC->m_textureDataDesc.textureWrapMethod = RTDesc.textureWrapMethod;
-		l_TDC->m_textureDataDesc.textureWidth = RTDesc.textureWidth;
-		l_TDC->m_textureDataDesc.textureHeight = RTDesc.textureHeight;
-		l_TDC->m_textureDataDesc.texturePixelDataType = RTDesc.texturePixelDataType;
+		l_TDC->m_textureDataDesc.samplerType = RTDesc.samplerType;
+		l_TDC->m_textureDataDesc.usageType = RTDesc.usageType;
+		l_TDC->m_textureDataDesc.colorComponentsFormat = RTDesc.colorComponentsFormat;
+		l_TDC->m_textureDataDesc.pixelDataFormat = RTDesc.pixelDataFormat;
+		l_TDC->m_textureDataDesc.minFilterMethod = RTDesc.minFilterMethod;
+		l_TDC->m_textureDataDesc.magFilterMethod = RTDesc.magFilterMethod;
+		l_TDC->m_textureDataDesc.wrapMethod = RTDesc.wrapMethod;
+		l_TDC->m_textureDataDesc.width = RTDesc.width;
+		l_TDC->m_textureDataDesc.height = RTDesc.height;
+		l_TDC->m_textureDataDesc.pixelDataType = RTDesc.pixelDataType;
 		l_TDC->m_textureData = { nullptr };
 
 		l_DXRPC->m_TDCs.emplace_back(l_TDC);
@@ -395,8 +395,8 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 		sizeof(l_DXRPC->m_depthBufferDesc));
 
 	// Set up the description of the depth buffer.
-	l_DXRPC->m_depthBufferDesc.Width = RTDesc.textureWidth;
-	l_DXRPC->m_depthBufferDesc.Height = RTDesc.textureHeight;
+	l_DXRPC->m_depthBufferDesc.Width = RTDesc.width;
+	l_DXRPC->m_depthBufferDesc.Height = RTDesc.height;
 	l_DXRPC->m_depthBufferDesc.MipLevels = 1;
 	l_DXRPC->m_depthBufferDesc.ArraySize = 1;
 	l_DXRPC->m_depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -439,8 +439,8 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 	}
 
 	// Setup the viewport for rendering.
-	l_DXRPC->m_viewport.Width = (float)RTDesc.textureWidth;
-	l_DXRPC->m_viewport.Height = (float)RTDesc.textureHeight;
+	l_DXRPC->m_viewport.Width = (float)RTDesc.width;
+	l_DXRPC->m_viewport.Height = (float)RTDesc.height;
 	l_DXRPC->m_viewport.MinDepth = 0.0f;
 	l_DXRPC->m_viewport.MaxDepth = 1.0f;
 	l_DXRPC->m_viewport.TopLeftX = 0.0f;
@@ -538,7 +538,7 @@ DX11TextureDataComponent* DX11RenderingSystemNS::generateDX11TextureDataComponen
 	}
 	else
 	{
-		if (rhs->m_textureDataDesc.textureUsageType == TextureUsageType::INVISIBLE)
+		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: TextureUsageType is TextureUsageType::INVISIBLE!");
 			return nullptr;
@@ -564,15 +564,15 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 	// @TODO: Unified internal format
 	// Setup the description of the texture.
 	// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
-	if (textureDataDesc.textureUsageType == TextureUsageType::ALBEDO)
+	if (textureDataDesc.usageType == TextureUsageType::ALBEDO)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
 	else
 	{
-		if (textureDataDesc.texturePixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
+		if (textureDataDesc.pixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
 		{
-			switch (textureDataDesc.texturePixelDataFormat)
+			switch (textureDataDesc.pixelDataFormat)
 			{
 			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
@@ -581,9 +581,9 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 			default: break;
 			}
 		}
-		else if (textureDataDesc.texturePixelDataType == TexturePixelDataType::FLOAT)
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT)
 		{
-			switch (textureDataDesc.texturePixelDataFormat)
+			switch (textureDataDesc.pixelDataFormat)
 			{
 			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
@@ -596,7 +596,7 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 
 	unsigned int textureMipLevels = 1;
 	unsigned int miscFlags = 0;
-	if (textureDataDesc.textureMagFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
 		textureMipLevels = 0;
 		miscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
@@ -604,13 +604,13 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 
 	D3D11_TEXTURE2D_DESC D3DTextureDesc;
 	ZeroMemory(&D3DTextureDesc, sizeof(D3DTextureDesc));
-	D3DTextureDesc.Height = textureDataDesc.textureHeight;
-	D3DTextureDesc.Width = textureDataDesc.textureWidth;
+	D3DTextureDesc.Height = textureDataDesc.height;
+	D3DTextureDesc.Width = textureDataDesc.width;
 	D3DTextureDesc.MipLevels = textureMipLevels;
 	D3DTextureDesc.ArraySize = 1;
 	D3DTextureDesc.Format = l_internalFormat;
 	D3DTextureDesc.SampleDesc.Count = 1;
-	if (textureDataDesc.textureUsageType != TextureUsageType::RENDER_TARGET)
+	if (textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
 	{
 		D3DTextureDesc.SampleDesc.Quality = 0;
 	}
@@ -620,7 +620,7 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 	D3DTextureDesc.MiscFlags = miscFlags;
 
 	unsigned int SRVMipLevels = -1;
-	if (textureDataDesc.textureUsageType == TextureUsageType::RENDER_TARGET)
+	if (textureDataDesc.usageType == TextureUsageType::RENDER_TARGET)
 	{
 		SRVMipLevels = 1;
 	}
@@ -640,10 +640,10 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 		return false;
 	}
 
-	if (textureDataDesc.textureUsageType != TextureUsageType::RENDER_TARGET)
+	if (textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
 	{
 		unsigned int rowPitch;
-		rowPitch = (textureDataDesc.textureWidth * ((unsigned int)textureDataDesc.texturePixelDataFormat + 1)) * sizeof(unsigned char);
+		rowPitch = (textureDataDesc.width * ((unsigned int)textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
 		DX11RenderingSystemComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, textureData[0], rowPitch, 0);
 	}
 
@@ -656,7 +656,7 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 	}
 
 	// Generate mipmaps for this texture.
-	if (textureDataDesc.textureMagFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
 		DX11RenderingSystemComponent::get().m_deviceContext->GenerateMips(rhs->m_SRV);
 	}

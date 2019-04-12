@@ -15,7 +15,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	GLRenderPassComponent* addGLRenderPassComponent(unsigned int RTNum, GLFrameBufferDesc glFrameBufferDesc, TextureDataDesc RTDesc);
 
-	bool resizeGLRenderPassComponent(GLRenderPassComponent* GLRPC, GLFrameBufferDesc glFrameBufferDesc);
+	bool resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC, unsigned int newSizeX, unsigned int newSizeY);
 
 	GLMeshDataComponent* generateGLMeshDataComponent(MeshDataComponent* rhs);
 	GLTextureDataComponent* generateGLTextureDataComponent(TextureDataComponent* rhs);
@@ -69,7 +69,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void activateTexture(GLTextureDataComponent* GLTDC, int activateIndex);
 
 	void activateRenderPass(GLRenderPassComponent * GLRPC);
-	void cleanFBC(GLRenderPassComponent * GLRPC);
+	void cleanRenderBuffers(GLRenderPassComponent * GLRPC);
 	void copyDepthBuffer(GLRenderPassComponent* src, GLRenderPassComponent* dest);
 	void copyStencilBuffer(GLRenderPassComponent* src, GLRenderPassComponent* dest);
 	void copyColorBuffer(GLRenderPassComponent* src, unsigned int srcIndex, GLRenderPassComponent* dest, unsigned int destIndex);

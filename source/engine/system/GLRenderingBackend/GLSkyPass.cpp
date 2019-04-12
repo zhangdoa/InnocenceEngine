@@ -126,15 +126,15 @@ bool GLSkyPass::update()
 	}
 	else
 	{
-		cleanFBC(m_GLRPC);
+		cleanRenderBuffers(m_GLRPC);
 	}
 
 	return true;
 }
 
-bool GLSkyPass::resize()
+bool GLSkyPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 
 	return true;
 }

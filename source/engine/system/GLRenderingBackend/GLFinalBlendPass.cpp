@@ -95,9 +95,9 @@ bool GLFinalBlendPass::update(GLRenderPassComponent* prePassGLRPC)
 	return true;
 }
 
-bool GLFinalBlendPass::resize()
+bool GLFinalBlendPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 
 	return true;
 }

@@ -154,9 +154,9 @@ bool GLDebuggerPass::update()
 	return true;
 }
 
-bool GLDebuggerPass::resize()
+bool GLDebuggerPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 
 	return true;
 }

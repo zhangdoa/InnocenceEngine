@@ -23,6 +23,6 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	GLuint m_TAO = 0;
+	GLuint m_TO = 0;
 	GLTextureDataDesc m_GLTextureDataDesc = GLTextureDataDesc();
 };

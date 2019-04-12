@@ -8,7 +8,7 @@ INNO_PRIVATE_SCOPE GLLightPass
 
 	void update();
 
-	bool resize();
+	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
 
 	bool reloadShader();
 

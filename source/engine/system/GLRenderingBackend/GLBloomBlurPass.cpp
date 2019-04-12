@@ -135,10 +135,10 @@ bool GLBloomBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 	return true;
 }
 
-bool GLBloomBlurPass::resize()
+bool GLBloomBlurPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_PingPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	resizeGLRenderPassComponent(m_PongPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(m_PingPassGLRPC, newSizeX, newSizeY);
+	resizeGLRenderPassComponent(m_PongPassGLRPC, newSizeX, newSizeY);
 
 	return true;
 }

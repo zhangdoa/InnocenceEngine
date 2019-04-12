@@ -79,13 +79,11 @@ void GLTAAPass::bindUniformLocations(GLShaderProgramComponent* rhs)
 
 bool GLTAAPass::update(GLRenderPassComponent* prePassGLRPC)
 {
-	GLTextureDataComponent* l_currentFrameGLTDC;
 	GLTextureDataComponent* l_lastFrameGLTDC;
 	GLRenderPassComponent* l_currentFrameGLRPC;
 
 	if (m_isTAAPingPass)
 	{
-		l_currentFrameGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
 		l_lastFrameGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
 
 		l_currentFrameGLRPC = m_PingPassGLRPC;
@@ -94,7 +92,6 @@ bool GLTAAPass::update(GLRenderPassComponent* prePassGLRPC)
 	}
 	else
 	{
-		l_currentFrameGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
 		l_lastFrameGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
 
 		l_currentFrameGLRPC = m_PongPassGLRPC;
@@ -123,13 +120,13 @@ bool GLTAAPass::update(GLRenderPassComponent* prePassGLRPC)
 	return true;
 }
 
-bool GLTAAPass::resize()
+bool GLTAAPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_History0PassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	resizeGLRenderPassComponent(m_History1PassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	resizeGLRenderPassComponent(m_History2PassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	resizeGLRenderPassComponent(m_PingPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
-	resizeGLRenderPassComponent(m_PongPassGLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(m_History0PassGLRPC, newSizeX, newSizeY);
+	resizeGLRenderPassComponent(m_History1PassGLRPC, newSizeX, newSizeY);
+	resizeGLRenderPassComponent(m_History2PassGLRPC, newSizeX, newSizeY);
+	resizeGLRenderPassComponent(m_PingPassGLRPC, newSizeX, newSizeY);
+	resizeGLRenderPassComponent(m_PongPassGLRPC, newSizeX, newSizeY);
 
 	return true;
 }

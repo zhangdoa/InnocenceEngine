@@ -133,16 +133,16 @@ bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY = l_screenResolution.y;
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.drawColorBuffers = false;
 
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureWidth = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.textureHeight = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.width = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.height = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
@@ -150,16 +150,16 @@ bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = l_screenResolution.y;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.drawColorBuffers = true;
 
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureWidth = GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.textureHeight = GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.width = GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.height = GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	if (m_renderingFrontendSystem->getRenderingConfig().MSAAdepth)
 	{
@@ -334,15 +334,15 @@ bool GLRenderingSystemNS::update()
 	}
 	else
 	{
-		cleanFBC(GLBloomExtractPass::getGLRPC(0));
-		cleanFBC(GLBloomExtractPass::getGLRPC(1));
-		cleanFBC(GLBloomExtractPass::getGLRPC(2));
-		cleanFBC(GLBloomExtractPass::getGLRPC(3));
+		cleanRenderBuffers(GLBloomExtractPass::getGLRPC(0));
+		cleanRenderBuffers(GLBloomExtractPass::getGLRPC(1));
+		cleanRenderBuffers(GLBloomExtractPass::getGLRPC(2));
+		cleanRenderBuffers(GLBloomExtractPass::getGLRPC(3));
 
-		cleanFBC(GLBloomBlurPass::getGLRPC(0));
-		cleanFBC(GLBloomBlurPass::getGLRPC(1));
+		cleanRenderBuffers(GLBloomBlurPass::getGLRPC(0));
+		cleanRenderBuffers(GLBloomBlurPass::getGLRPC(1));
 
-		cleanFBC(GLBloomMergePass::getGLRPC());
+		cleanRenderBuffers(GLBloomMergePass::getGLRPC());
 	}
 
 	GLBillboardPass::update();
@@ -353,7 +353,7 @@ bool GLRenderingSystemNS::update()
 	}
 	else
 	{
-		cleanFBC(GLDebuggerPass::getGLRPC());
+		cleanRenderBuffers(GLDebuggerPass::getGLRPC());
 	}
 	GLFinalBlendPass::update(l_canvasGLRPC);
 
@@ -672,27 +672,27 @@ bool GLRenderingSystemNS::resize()
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = l_screenResolution.x;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = l_screenResolution.y;
 
-	GLEarlyZPass::resize();
-	GLOpaquePass::resize();
-	GLSSAONoisePass::resize();
-	GLSSAOBlurPass::resize();
+	GLEarlyZPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLOpaquePass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLSSAONoisePass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLSSAOBlurPass::resize(l_screenResolution.x, l_screenResolution.y);
 
-	GLTerrainPass::resize();
+	GLTerrainPass::resize(l_screenResolution.x, l_screenResolution.y);
 
-	GLLightPass::resize();
-	GLTransparentPass::resize();
+	GLLightPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLTransparentPass::resize(l_screenResolution.x, l_screenResolution.y);
 
-	GLSkyPass::resize();
-	GLPreTAAPass::resize();
-	GLTAAPass::resize();
-	GLPostTAAPass::resize();
-	GLMotionBlurPass::resize();
-	GLBloomExtractPass::resize();
-	GLBloomBlurPass::resize();
-	GLBloomMergePass::resize();
-	GLBillboardPass::resize();
-	GLDebuggerPass::resize();
-	GLFinalBlendPass::resize();
+	GLSkyPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLPreTAAPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLTAAPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLPostTAAPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLMotionBlurPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLBloomExtractPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLBloomBlurPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLBloomMergePass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLBillboardPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLDebuggerPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLFinalBlendPass::resize(l_screenResolution.x, l_screenResolution.y);
 
 	return true;
 }

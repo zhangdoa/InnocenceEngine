@@ -6,7 +6,10 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
-	void addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex);
+	void generateFBO(GLRenderPassComponent* GLRPC);
+	void addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc);
+	void attachRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex);
+
 	void setDrawBuffers(unsigned int RTNum);
 
 	bool initializeGLMeshDataComponent(GLMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
@@ -20,6 +23,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	GLenum getTextureInternalFormat(TextureColorComponentsFormat rhs);
 	GLenum getTexturePixelDataFormat(TexturePixelDataFormat rhs);
 	GLenum getTexturePixelDataType(TexturePixelDataType rhs);
+
+	void generateTO(GLuint& TO, GLTextureDataDesc desc, GLsizei width, GLsizei height, GLsizei depth, const std::vector<void*>& textureData);
 
 	std::unordered_map<EntityID, GLMeshDataComponent*> m_initializedGLMDC;
 	std::unordered_map<EntityID, GLTextureDataComponent*> m_initializedGLTDC;
@@ -53,90 +58,21 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 	// generate and bind framebuffer
 	l_GLRPC->m_GLFrameBufferDesc = glFrameBufferDesc;
 
-	glGenFramebuffers(1, &l_GLRPC->m_FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, l_GLRPC->m_FBO);
-
-	// generate and bind renderbuffer
-	glGenRenderbuffers(1, &l_GLRPC->m_RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, l_GLRPC->m_RBO);
-
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, l_GLRPC->m_GLFrameBufferDesc.renderBufferAttachmentType, GL_RENDERBUFFER, l_GLRPC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, l_GLRPC->m_GLFrameBufferDesc.renderBufferInternalFormat, l_GLRPC->m_GLFrameBufferDesc.sizeX, l_GLRPC->m_GLFrameBufferDesc.sizeY);
+	generateFBO(l_GLRPC);
 
 	// generate and bind texture
 	l_GLRPC->m_TDCs.reserve(RTNum);
-
-	for (unsigned int i = 0; i < RTNum; i++)
-	{
-		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
-
-		l_TDC->m_textureDataDesc = RTDesc;
-
-		if (RTDesc.textureSamplerType == TextureSamplerType::CUBEMAP)
-		{
-			l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-		}
-		else
-		{
-			l_TDC->m_textureData = { nullptr };
-		}
-
-		l_GLRPC->m_TDCs.emplace_back(l_TDC);
-	}
-
 	l_GLRPC->m_GLTDCs.reserve(RTNum);
 
 	for (unsigned int i = 0; i < RTNum; i++)
 	{
-		auto l_TDC = l_GLRPC->m_TDCs[i];
-		auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
-
-		if (RTDesc.textureSamplerType == TextureSamplerType::SAMPLER_2D)
-		{
-			if (RTDesc.texturePixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
-			{
-				attach2DDepthRT(
-					l_GLTDC,
-					l_GLRPC
-				);
-			}
-			else
-			{
-				attach2DColorRT(
-					l_GLTDC,
-					l_GLRPC,
-					i
-				);
-			}
-		}
-		else if (RTDesc.textureSamplerType == TextureSamplerType::SAMPLER_3D)
-		{
-			if (RTDesc.texturePixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
-			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GLRenderingSystem: 3D depth only render target is not supported now");
-			}
-			else
-			{
-				attach3DColorRT(
-					l_GLTDC,
-					l_GLRPC,
-					i,
-					0
-				);
-			}
-		}
-
-		l_GLRPC->m_GLTDCs.emplace_back(l_GLTDC);
+		addRenderTargetTextures(l_GLRPC, RTDesc);
+		attachRenderTargetTextures(l_GLRPC, RTDesc, i);
 	}
 
 	if (glFrameBufferDesc.drawColorBuffers)
 	{
-		std::vector<unsigned int> l_colorAttachments;
-		for (unsigned int i = 0; i < RTNum; ++i)
-		{
-			l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
-		}
-		glDrawBuffers((GLsizei)l_colorAttachments.size(), &l_colorAttachments[0]);
+		setDrawBuffers(RTNum);
 	}
 	else
 	{
@@ -144,37 +80,76 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 		glReadBuffer(GL_NONE);
 	}
 
+	return l_GLRPC;
+}
+
+void GLRenderingSystemNS::generateFBO(GLRenderPassComponent* GLRPC)
+{
+	// generate and bind framebuffer
+	glGenFramebuffers(1, &GLRPC->m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
+
+	// generate and bind renderbuffer
+	glGenRenderbuffers(1, &GLRPC->m_RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, GLRPC->m_RBO);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GLRPC->m_GLFrameBufferDesc.renderBufferAttachmentType, GL_RENDERBUFFER, GLRPC->m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GLRPC->m_GLFrameBufferDesc.renderBufferInternalFormat, GLRPC->m_GLFrameBufferDesc.sizeX, GLRPC->m_GLFrameBufferDesc.sizeY);
+
 	// finally check if framebuffer is complete
 	auto l_result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (l_result != GL_FRAMEBUFFER_COMPLETE)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: Framebuffer is not completed: " + std::to_string(l_result));
 	}
-
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	return l_GLRPC;
 }
 
-void GLRenderingSystemNS::addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex)
+void GLRenderingSystemNS::addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc)
 {
 	auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
 	l_TDC->m_textureDataDesc = RTDesc;
-	l_TDC->m_textureData = { nullptr };
+
+	if (RTDesc.samplerType == TextureSamplerType::CUBEMAP)
+	{
+		l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	}
+	else
+	{
+		l_TDC->m_textureData = { nullptr };
+	}
 
 	GLRPC->m_TDCs.emplace_back(l_TDC);
 
 	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
 
-	attach2DColorRT(
-		l_GLTDC,
-		GLRPC,
-		colorAttachmentIndex
-	);
-
 	GLRPC->m_GLTDCs.emplace_back(l_GLTDC);
+}
+
+void GLRenderingSystemNS::attachRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex)
+{
+	if (RTDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	{
+		if (RTDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+		{
+			attach2DDepthRT(GLRPC->m_GLTDCs[colorAttachmentIndex], GLRPC);
+		}
+		else
+		{
+			attach2DColorRT(GLRPC->m_GLTDCs[colorAttachmentIndex], GLRPC, colorAttachmentIndex);
+		}
+	}
+	else if (RTDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	{
+		if (RTDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GLRenderingSystem: 3D depth only render target is not supported now");
+		}
+		else
+		{
+			attach3DColorRT(GLRPC->m_GLTDCs[colorAttachmentIndex], GLRPC, colorAttachmentIndex, 0);
+		}
+	}
 }
 
 void GLRenderingSystemNS::setDrawBuffers(unsigned int RTNum)
@@ -187,39 +162,38 @@ void GLRenderingSystemNS::setDrawBuffers(unsigned int RTNum)
 	glDrawBuffers((GLsizei)l_colorAttachments.size(), &l_colorAttachments[0]);
 }
 
-bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC, GLFrameBufferDesc glFrameBufferDesc)
+bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC, unsigned int newSizeX, unsigned int newSizeY)
 {
-	GLRPC->m_GLFrameBufferDesc = glFrameBufferDesc;
+	GLRPC->m_GLFrameBufferDesc.sizeX = newSizeX;
+	GLRPC->m_GLFrameBufferDesc.sizeY = newSizeY;
 
-	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, GLRPC->m_RBO);
+	glDeleteFramebuffers(1, &GLRPC->m_FBO);
+	glDeleteRenderbuffers(1, &GLRPC->m_RBO);
+
+	generateFBO(GLRPC);
 
 	for (unsigned int i = 0; i < GLRPC->m_GLTDCs.size(); i++)
 	{
-		GLRPC->m_TDCs[i]->m_textureDataDesc.textureWidth = glFrameBufferDesc.sizeX;
-		GLRPC->m_TDCs[i]->m_textureDataDesc.textureHeight = glFrameBufferDesc.sizeY;
-		GLRPC->m_TDCs[i]->m_objectStatus = ObjectStatus::STANDBY;
+		GLRPC->m_TDCs[i]->m_textureDataDesc.width = newSizeX;
+		GLRPC->m_TDCs[i]->m_textureDataDesc.height = newSizeY;
 
-		glDeleteTextures(1, &GLRPC->m_GLTDCs[i]->m_TAO);
+		glDeleteTextures(1, &GLRPC->m_GLTDCs[i]->m_TO);
 
-		initializeGLTextureDataComponent(GLRPC->m_GLTDCs[i], GLRPC->m_TDCs[i]->m_textureDataDesc, GLRPC->m_TDCs[i]->m_textureData);
+		auto l_textureDesc = GLRPC->m_TDCs[i]->m_textureDataDesc;
 
-		if (glFrameBufferDesc.drawColorBuffers)
-		{
-			attach2DColorRT(
-				GLRPC->m_GLTDCs[i],
-				GLRPC,
-				i
-			);
-		}
-		else
-		{
-			// @TODO: it's not a binary classfication problem
-			attach2DDepthRT(
-				GLRPC->m_GLTDCs[i],
-				GLRPC
-			);
-		}
+		generateTO(GLRPC->m_GLTDCs[i]->m_TO, GLRPC->m_GLTDCs[i]->m_GLTextureDataDesc, l_textureDesc.width, l_textureDesc.height, l_textureDesc.depth, GLRPC->m_TDCs[i]->m_textureData);
+
+		attachRenderTargetTextures(GLRPC, l_textureDesc, i);
+	}
+
+	if (GLRPC->m_GLFrameBufferDesc.drawColorBuffers)
+	{
+		setDrawBuffers((unsigned int)GLRPC->m_GLTDCs.size());
+	}
+	else
+	{
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
 	}
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -308,7 +282,7 @@ GLTextureDataComponent* GLRenderingSystemNS::generateGLTextureDataComponent(Text
 	}
 	else
 	{
-		if (rhs->m_textureDataDesc.textureUsageType == TextureUsageType::INVISIBLE)
+		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GLRenderingSystem: try to generate GLTextureDataComponent for TextureUsageType::INVISIBLE type!");
 			return nullptr;
@@ -323,7 +297,7 @@ GLTextureDataComponent* GLRenderingSystemNS::generateGLTextureDataComponent(Text
 
 				rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-				if (rhs->m_textureDataDesc.textureUsageType != TextureUsageType::RENDER_TARGET)
+				if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
 				{
 					g_pCoreSystem->getAssetSystem()->releaseRawDataForTextureDataComponent(rhs->m_parentEntity);
 				}
@@ -466,16 +440,13 @@ bool GLRenderingSystemNS::initializeGLMeshDataComponent(GLMeshDataComponent * rh
 	});
 
 	glGenVertexArrays(1, &rhs->m_VAO);
-	glGenBuffers(1, &rhs->m_VBO);
-	glGenBuffers(1, &rhs->m_IBO);
-
 	glBindVertexArray(rhs->m_VAO);
 
+	glGenBuffers(1, &rhs->m_VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, rhs->m_VBO);
-	glBufferData(GL_ARRAY_BUFFER, l_verticesBuffer.size() * sizeof(float), &l_verticesBuffer[0], GL_STATIC_DRAW);
 
+	glGenBuffers(1, &rhs->m_IBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rhs->m_IBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
 	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
 	glEnableVertexAttribArray(0);
@@ -489,66 +460,80 @@ bool GLRenderingSystemNS::initializeGLMeshDataComponent(GLMeshDataComponent * rh
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
 
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Vertex Array Object " + std::to_string(rhs->m_VAO) + " is initialized.");
+
+	glBufferData(GL_ARRAY_BUFFER, l_verticesBuffer.size() * sizeof(float), &l_verticesBuffer[0], GL_STATIC_DRAW);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Vertex Buffer Object " + std::to_string(rhs->m_VBO) + " is initialized.");
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Index Buffer Object " + std::to_string(rhs->m_IBO) + " is initialized.");
+
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 	m_initializedGLMDC.emplace(rhs->m_parentEntity, rhs);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: VAO " + std::to_string(rhs->m_VAO) + " is initialized.");
-
 	return true;
+}
+
+void GLRenderingSystemNS::generateTO(GLuint& TO, GLTextureDataDesc desc, GLsizei width, GLsizei height, GLsizei depth, const std::vector<void*>& textureData)
+{
+	glGenTextures(1, &TO);
+
+	glBindTexture(desc.textureSamplerType, TO);
+
+	glTexParameteri(desc.textureSamplerType, GL_TEXTURE_WRAP_R, desc.textureWrapMethod);
+	glTexParameteri(desc.textureSamplerType, GL_TEXTURE_WRAP_S, desc.textureWrapMethod);
+	glTexParameteri(desc.textureSamplerType, GL_TEXTURE_WRAP_T, desc.textureWrapMethod);
+
+	glTexParameterfv(desc.textureSamplerType, GL_TEXTURE_BORDER_COLOR, desc.boardColor);
+
+	glTexParameteri(desc.textureSamplerType, GL_TEXTURE_MIN_FILTER, desc.minFilterParam);
+	glTexParameteri(desc.textureSamplerType, GL_TEXTURE_MAG_FILTER, desc.magFilterParam);
+
+	if (desc.textureSamplerType == GL_TEXTURE_1D)
+	{
+		glTexImage1D(GL_TEXTURE_1D, 0, desc.internalFormat, width, 0, desc.pixelDataFormat, desc.pixelDataType, textureData[0]);
+	}
+	else if (desc.textureSamplerType == GL_TEXTURE_2D)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, desc.internalFormat, width, height, 0, desc.pixelDataFormat, desc.pixelDataType, textureData[0]);
+	}
+	else if (desc.textureSamplerType == GL_TEXTURE_3D)
+	{
+		glTexImage3D(GL_TEXTURE_3D, 0, desc.internalFormat, width, height, depth, 0, desc.pixelDataFormat, desc.pixelDataType, textureData[0]);
+	}
+	else if (desc.textureSamplerType == GL_TEXTURE_CUBE_MAP)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, desc.internalFormat, width, height, 0, desc.pixelDataFormat, desc.pixelDataType, textureData[0]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, desc.internalFormat, width, height, 0, desc.pixelDataFormat, desc.pixelDataType, textureData[1]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, desc.internalFormat, width, height, 0, desc.pixelDataFormat, desc.pixelDataType, textureData[2]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, desc.internalFormat, width, height, 0, desc.pixelDataFormat, desc.pixelDataType, textureData[3]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, desc.internalFormat, width, height, 0, desc.pixelDataFormat, desc.pixelDataType, textureData[4]);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, desc.internalFormat, width, height, 0, desc.pixelDataFormat, desc.pixelDataType, textureData[5]);
+	}
+
+	// should generate mipmap or not
+	if (desc.minFilterParam == GL_LINEAR_MIPMAP_LINEAR)
+	{
+		glGenerateMipmap(desc.textureSamplerType);
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Texture object " + std::to_string(TO) + " is created.");
 }
 
 bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
 {
 	rhs->m_GLTextureDataDesc = getGLTextureDataDesc(textureDataDesc);
 
-	//generate and bind texture object
-	glGenTextures(1, &rhs->m_TAO);
-
-	glBindTexture(rhs->m_GLTextureDataDesc.textureSamplerType, rhs->m_TAO);
-
-	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_R, rhs->m_GLTextureDataDesc.textureWrapMethod);
-	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_S, rhs->m_GLTextureDataDesc.textureWrapMethod);
-	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_T, rhs->m_GLTextureDataDesc.textureWrapMethod);
-
-	glTexParameterfv(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_BORDER_COLOR, rhs->m_GLTextureDataDesc.boardColor);
-
-	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_MIN_FILTER, rhs->m_GLTextureDataDesc.minFilterParam);
-	glTexParameteri(rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_MAG_FILTER, rhs->m_GLTextureDataDesc.magFilterParam);
-
-	if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_1D)
-	{
-		glTexImage1D(GL_TEXTURE_1D, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
-	}
-	else if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_2D)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
-	}
-	else if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_3D)
-	{
-		glTexImage3D(GL_TEXTURE_3D, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, textureDataDesc.textureDepth, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
-	}
-	else if (rhs->m_GLTextureDataDesc.textureSamplerType == GL_TEXTURE_CUBE_MAP)
-	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[0]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[1]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[2]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[3]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[4]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, rhs->m_GLTextureDataDesc.internalFormat, textureDataDesc.textureWidth, textureDataDesc.textureHeight, 0, rhs->m_GLTextureDataDesc.pixelDataFormat, rhs->m_GLTextureDataDesc.pixelDataType, textureData[5]);
-	}
-
-	// should generate mipmap or not
-	if (rhs->m_GLTextureDataDesc.minFilterParam == GL_LINEAR_MIPMAP_LINEAR)
-	{
-		glGenerateMipmap(rhs->m_GLTextureDataDesc.textureSamplerType);
-	}
+	generateTO(rhs->m_TO, rhs->m_GLTextureDataDesc, textureDataDesc.width, textureDataDesc.height, textureDataDesc.depth, textureData);
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 	m_initializedGLTDC.emplace(rhs->m_parentEntity, rhs);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: TAO " + std::to_string(rhs->m_TAO) + " is initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: GLTDC " + InnoUtility::pointerToString(rhs) + " is initialized.");
 
 	return true;
 }
@@ -715,33 +700,33 @@ GLTextureDataDesc GLRenderingSystemNS::getGLTextureDataDesc(const TextureDataDes
 {
 	GLTextureDataDesc l_result;
 
-	l_result.textureSamplerType = getTextureSamplerType(textureDataDesc.textureSamplerType);
+	l_result.textureSamplerType = getTextureSamplerType(textureDataDesc.samplerType);
 
-	l_result.textureWrapMethod = getTextureWrapMethod(textureDataDesc.textureWrapMethod);
+	l_result.textureWrapMethod = getTextureWrapMethod(textureDataDesc.wrapMethod);
 
-	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.textureMinFilterMethod);
-	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.textureMagFilterMethod);
+	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.minFilterMethod);
+	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.magFilterMethod);
 
 	// set texture formats
-	if (textureDataDesc.textureUsageType == TextureUsageType::ALBEDO)
+	if (textureDataDesc.usageType == TextureUsageType::ALBEDO)
 	{
-		if (textureDataDesc.texturePixelDataFormat == TexturePixelDataFormat::RGB)
+		if (textureDataDesc.pixelDataFormat == TexturePixelDataFormat::RGB)
 		{
 			l_result.internalFormat = GL_SRGB;
 		}
-		else if (textureDataDesc.texturePixelDataFormat == TexturePixelDataFormat::RGBA)
+		else if (textureDataDesc.pixelDataFormat == TexturePixelDataFormat::RGBA)
 		{
 			l_result.internalFormat = GL_SRGB_ALPHA;
 		}
 	}
 	else
 	{
-		l_result.internalFormat = getTextureInternalFormat(textureDataDesc.textureColorComponentsFormat);
+		l_result.internalFormat = getTextureInternalFormat(textureDataDesc.colorComponentsFormat);
 	}
 
-	l_result.pixelDataFormat = getTexturePixelDataFormat(textureDataDesc.texturePixelDataFormat);
+	l_result.pixelDataFormat = getTexturePixelDataFormat(textureDataDesc.pixelDataFormat);
 
-	l_result.pixelDataType = getTexturePixelDataType(textureDataDesc.texturePixelDataType);
+	l_result.pixelDataType = getTexturePixelDataType(textureDataDesc.pixelDataType);
 
 	l_result.boardColor[0] = textureDataDesc.borderColor.x;
 	l_result.boardColor[1] = textureDataDesc.borderColor.y;
@@ -880,36 +865,36 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const mat4 
 void GLRenderingSystemNS::attach2DDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TAO, 0);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TO, 0);
 }
 
 void GLRenderingSystemNS::attachCubemapDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int textureIndex, unsigned int mipLevel)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TAO, mipLevel);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
 }
 
 void GLRenderingSystemNS::attach2DColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, GLTDC->m_TAO, 0);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, GLTDC->m_TO, 0);
 }
 
 void GLRenderingSystemNS::attach3DColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int layer)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
-	glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_3D, GLTDC->m_TAO, 0, layer);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TO);
+	glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_3D, GLTDC->m_TO, 0, layer);
 }
 
 void GLRenderingSystemNS::attachCubemapColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TAO, mipLevel);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
 }
 
 void GLRenderingSystemNS::activateShaderProgram(GLShaderProgramComponent * GLShaderProgramComponent)
@@ -961,18 +946,19 @@ void GLRenderingSystemNS::activateTexture(TextureDataComponent * TDC, int activa
 void GLRenderingSystemNS::activateTexture(GLTextureDataComponent * GLTDC, int activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TAO);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TO);
 }
 
 void GLRenderingSystemNS::activateRenderPass(GLRenderPassComponent* val)
 {
-	cleanFBC(val);
+	cleanRenderBuffers(val);
 
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, val->m_FBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, val->m_GLFrameBufferDesc.renderBufferInternalFormat, val->m_GLFrameBufferDesc.sizeX, val->m_GLFrameBufferDesc.sizeY);
 	glViewport(0, 0, val->m_GLFrameBufferDesc.sizeX, val->m_GLFrameBufferDesc.sizeY);
 };
 
-void GLRenderingSystemNS::cleanFBC(GLRenderPassComponent* val)
+void GLRenderingSystemNS::cleanRenderBuffers(GLRenderPassComponent* val)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, val->m_FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, val->m_RBO);
@@ -999,12 +985,11 @@ void GLRenderingSystemNS::copyStencilBuffer(GLRenderPassComponent* src, GLRender
 
 void GLRenderingSystemNS::copyColorBuffer(GLRenderPassComponent* src, unsigned int srcIndex, GLRenderPassComponent* dest, unsigned int destIndex)
 {
-	std::vector<GLenum> drawBuffers = { GL_COLOR_ATTACHMENT0 + destIndex };
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
 	glReadBuffer(GL_COLOR_ATTACHMENT0 + srcIndex);
-	glDrawBuffers(1, &drawBuffers[0]);
-	glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0 + destIndex);
+	glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 };
 
 vec4 GLRenderingSystemNS::readPixel(GLRenderPassComponent* GLRPC, unsigned int colorAttachmentIndex, GLint x, GLint y)

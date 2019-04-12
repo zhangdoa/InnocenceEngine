@@ -426,16 +426,16 @@ bool DX11RenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
 
 	// Setup the description of the deferred pass.
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.textureWidth = l_screenResolution.x;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.textureHeight = l_screenResolution.y;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.width = l_screenResolution.x;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.height = l_screenResolution.y;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	g_DXRenderingSystemComponent->deferredPassRTVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	g_DXRenderingSystemComponent->deferredPassRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;

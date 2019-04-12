@@ -285,8 +285,8 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned in
 		framebufferInfo.renderPass = l_VKRPC->m_renderPass;
 		framebufferInfo.attachmentCount = 1;
 		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = RTDesc.textureWidth;
-		framebufferInfo.height = RTDesc.textureHeight;
+		framebufferInfo.width = RTDesc.width;
+		framebufferInfo.height = RTDesc.height;
 		framebufferInfo.layers = 1;
 
 		if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &l_VKRPC->m_framebuffers[i]) != VK_SUCCESS)
@@ -297,7 +297,7 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned in
 
 	createRenderPass(l_VKRPC, l_VKRTDesc.internalFormat);
 
-	createPipelineLayout(l_VKRPC, topology, RTDesc.textureWidth, RTDesc.textureHeight);
+	createPipelineLayout(l_VKRPC, topology, RTDesc.width, RTDesc.height);
 
 	// attach shader module and create pipeline
 	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStages = { VKSPC->m_vertexShaderStageCInfo, VKSPC->m_fragmentShaderStageCInfo };
@@ -516,7 +516,7 @@ VKTextureDataComponent* VKRenderingSystemNS::generateVKTextureDataComponent(Text
 	}
 	else
 	{
-		if (rhs->m_textureDataDesc.textureUsageType == TextureUsageType::INVISIBLE)
+		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: TextureUsageType is TextureUsageType::INVISIBLE!");
 			return nullptr;
@@ -687,10 +687,10 @@ VKTextureDataDesc VKRenderingSystemNS::getVKTextureDataDesc(const TextureDataDes
 {
 	VKTextureDataDesc l_result;
 
-	l_result.textureWrapMethod = getTextureWrapMethod(textureDataDesc.textureWrapMethod);
-	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.textureMinFilterMethod);
-	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.textureMagFilterMethod);
-	l_result.internalFormat = getTextureInternalFormat(textureDataDesc.textureColorComponentsFormat);
+	l_result.textureWrapMethod = getTextureWrapMethod(textureDataDesc.wrapMethod);
+	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.minFilterMethod);
+	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.magFilterMethod);
+	l_result.internalFormat = getTextureInternalFormat(textureDataDesc.colorComponentsFormat);
 
 	return l_result;
 }

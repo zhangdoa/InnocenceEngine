@@ -176,9 +176,9 @@ bool GLOpaquePass::update()
 	return true;
 }
 
-bool GLOpaquePass::resize()
+bool GLOpaquePass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 
 	return true;
 }

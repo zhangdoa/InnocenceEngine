@@ -15,7 +15,7 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 	void loadAssetsForComponents();
 
 	ModelMap loadModel(const std::string& fileName);
-	TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType textureSamplerType, TextureUsageType textureUsageType);
+	TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType);
 
 	MeshDataComponent* addMeshDataComponent();
 	MaterialDataComponent* addMaterialDataComponent();
@@ -685,10 +685,10 @@ ModelMap InnoAssetSystemNS::loadModel(const std::string & fileName)
 	return l_result;
 }
 
-TextureDataComponent* InnoAssetSystemNS::loadTexture(const std::string& fileName, TextureSamplerType textureSamplerType, TextureUsageType textureUsageType)
+TextureDataComponent* InnoAssetSystemNS::loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType)
 {
 	auto l_TDC = g_pCoreSystem->getFileSystem()->loadTexture(fileName);
-	l_TDC->m_textureDataDesc.textureSamplerType = textureSamplerType;
-	l_TDC->m_textureDataDesc.textureUsageType = textureUsageType;
+	l_TDC->m_textureDataDesc.samplerType = samplerType;
+	l_TDC->m_textureDataDesc.usageType = usageType;
 	return l_TDC;
 }

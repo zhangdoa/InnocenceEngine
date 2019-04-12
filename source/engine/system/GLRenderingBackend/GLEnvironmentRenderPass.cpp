@@ -127,125 +127,125 @@ void GLEnvironmentRenderPass::initialize()
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
-	m_BRDFSplitSumLUTPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
-	m_BRDFSplitSumLUTPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	m_BRDFSplitSumLUTPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
-	m_BRDFSplitSumLUTPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_BRDFSplitSumLUTPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	m_BRDFSplitSumLUTPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	m_BRDFSplitSumLUTPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	m_BRDFSplitSumLUTPassTextureDesc.textureWidth = 512;
-	m_BRDFSplitSumLUTPassTextureDesc.textureHeight = 512;
-	m_BRDFSplitSumLUTPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	m_BRDFSplitSumLUTPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	m_BRDFSplitSumLUTPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_BRDFSplitSumLUTPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
+	m_BRDFSplitSumLUTPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_BRDFSplitSumLUTPassTextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
+	m_BRDFSplitSumLUTPassTextureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
+	m_BRDFSplitSumLUTPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	m_BRDFSplitSumLUTPassTextureDesc.width = 512;
+	m_BRDFSplitSumLUTPassTextureDesc.height = 512;
+	m_BRDFSplitSumLUTPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	m_BRDFSplitSumLUTPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_BRDFSplitSumLUTPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
-	m_BRDFSplitSumLUTPassFrameBufferDesc.sizeX = m_BRDFSplitSumLUTPassTextureDesc.textureWidth;
-	m_BRDFSplitSumLUTPassFrameBufferDesc.sizeY = m_BRDFSplitSumLUTPassTextureDesc.textureHeight;
+	m_BRDFSplitSumLUTPassFrameBufferDesc.sizeX = m_BRDFSplitSumLUTPassTextureDesc.width;
+	m_BRDFSplitSumLUTPassFrameBufferDesc.sizeY = m_BRDFSplitSumLUTPassTextureDesc.height;
 	m_BRDFSplitSumLUTPassFrameBufferDesc.drawColorBuffers = true;
 
-	m_BRDFMSAverageLUTPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
-	m_BRDFMSAverageLUTPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	m_BRDFMSAverageLUTPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RG16F;
-	m_BRDFMSAverageLUTPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RG;
-	m_BRDFMSAverageLUTPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	m_BRDFMSAverageLUTPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	m_BRDFMSAverageLUTPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	m_BRDFMSAverageLUTPassTextureDesc.textureWidth = 512;
-	m_BRDFMSAverageLUTPassTextureDesc.textureHeight = 512;
-	m_BRDFMSAverageLUTPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	m_BRDFMSAverageLUTPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	m_BRDFMSAverageLUTPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_BRDFMSAverageLUTPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RG16F;
+	m_BRDFMSAverageLUTPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RG;
+	m_BRDFMSAverageLUTPassTextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
+	m_BRDFMSAverageLUTPassTextureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
+	m_BRDFMSAverageLUTPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	m_BRDFMSAverageLUTPassTextureDesc.width = 512;
+	m_BRDFMSAverageLUTPassTextureDesc.height = 512;
+	m_BRDFMSAverageLUTPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	m_BRDFMSAverageLUTPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_BRDFMSAverageLUTPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
-	m_BRDFMSAverageLUTPassFrameBufferDesc.sizeX = m_BRDFMSAverageLUTPassTextureDesc.textureWidth;
-	m_BRDFMSAverageLUTPassFrameBufferDesc.sizeY = m_BRDFMSAverageLUTPassTextureDesc.textureHeight;
+	m_BRDFMSAverageLUTPassFrameBufferDesc.sizeX = m_BRDFMSAverageLUTPassTextureDesc.width;
+	m_BRDFMSAverageLUTPassFrameBufferDesc.sizeY = m_BRDFMSAverageLUTPassTextureDesc.height;
 	m_BRDFMSAverageLUTPassFrameBufferDesc.drawColorBuffers = true;
 
-	m_capturePassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
-	m_capturePassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	m_capturePassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
-	m_capturePassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
-	m_capturePassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	m_capturePassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	m_capturePassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-	m_capturePassTextureDesc.textureWidth = 2048;
-	m_capturePassTextureDesc.textureHeight = 2048;
-	m_capturePassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	m_capturePassTextureDesc.samplerType = TextureSamplerType::CUBEMAP;
+	m_capturePassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_capturePassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB16F;
+	m_capturePassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
+	m_capturePassTextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
+	m_capturePassTextureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
+	m_capturePassTextureDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_capturePassTextureDesc.width = 2048;
+	m_capturePassTextureDesc.height = 2048;
+	m_capturePassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	m_capturePassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_capturePassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
-	m_capturePassFrameBufferDesc.sizeX = m_capturePassTextureDesc.textureWidth;
-	m_capturePassFrameBufferDesc.sizeY = m_capturePassTextureDesc.textureHeight;
+	m_capturePassFrameBufferDesc.sizeX = m_capturePassTextureDesc.width;
+	m_capturePassFrameBufferDesc.sizeY = m_capturePassTextureDesc.height;
 	m_capturePassFrameBufferDesc.drawColorBuffers = false;
 
-	m_convPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
-	m_convPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	m_convPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
-	m_convPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
-	m_convPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	m_convPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	m_convPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-	m_convPassTextureDesc.textureWidth = 128;
-	m_convPassTextureDesc.textureHeight = 128;
-	m_convPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	m_convPassTextureDesc.samplerType = TextureSamplerType::CUBEMAP;
+	m_convPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_convPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB16F;
+	m_convPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
+	m_convPassTextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
+	m_convPassTextureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
+	m_convPassTextureDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_convPassTextureDesc.width = 128;
+	m_convPassTextureDesc.height = 128;
+	m_convPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	m_convPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_convPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
-	m_convPassFrameBufferDesc.sizeX = m_convPassTextureDesc.textureWidth;
-	m_convPassFrameBufferDesc.sizeY = m_convPassTextureDesc.textureHeight;
+	m_convPassFrameBufferDesc.sizeX = m_convPassTextureDesc.width;
+	m_convPassFrameBufferDesc.sizeY = m_convPassTextureDesc.height;
 	m_convPassFrameBufferDesc.drawColorBuffers = false;
 
-	m_preFilterPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
-	m_preFilterPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	m_preFilterPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB16F;
-	m_preFilterPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGB;
-	m_preFilterPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
-	m_preFilterPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	m_preFilterPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-	m_preFilterPassTextureDesc.textureWidth = 128;
-	m_preFilterPassTextureDesc.textureHeight = 128;
-	m_preFilterPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	m_preFilterPassTextureDesc.samplerType = TextureSamplerType::CUBEMAP;
+	m_preFilterPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_preFilterPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB16F;
+	m_preFilterPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
+	m_preFilterPassTextureDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+	m_preFilterPassTextureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
+	m_preFilterPassTextureDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_preFilterPassTextureDesc.width = 128;
+	m_preFilterPassTextureDesc.height = 128;
+	m_preFilterPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	m_preFilterPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_preFilterPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
-	m_preFilterPassFrameBufferDesc.sizeX = m_preFilterPassTextureDesc.textureWidth;
-	m_preFilterPassFrameBufferDesc.sizeY = m_preFilterPassTextureDesc.textureHeight;
+	m_preFilterPassFrameBufferDesc.sizeX = m_preFilterPassTextureDesc.width;
+	m_preFilterPassFrameBufferDesc.sizeY = m_preFilterPassTextureDesc.height;
 	m_preFilterPassFrameBufferDesc.drawColorBuffers = false;
 
-	m_voxelizationPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_3D;
-	m_voxelizationPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	m_voxelizationPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA8;
-	m_voxelizationPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_voxelizationPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
-	m_voxelizationPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
-	m_voxelizationPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-	m_voxelizationPassTextureDesc.textureWidth = m_volumeDimension;
-	m_voxelizationPassTextureDesc.textureHeight = m_volumeDimension;
-	m_voxelizationPassTextureDesc.textureDepth = m_volumeDimension;
-	m_voxelizationPassTextureDesc.texturePixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
+	m_voxelizationPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_3D;
+	m_voxelizationPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_voxelizationPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA8;
+	m_voxelizationPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_voxelizationPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	m_voxelizationPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	m_voxelizationPassTextureDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_voxelizationPassTextureDesc.width = m_volumeDimension;
+	m_voxelizationPassTextureDesc.height = m_volumeDimension;
+	m_voxelizationPassTextureDesc.depth = m_volumeDimension;
+	m_voxelizationPassTextureDesc.pixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
 
 	m_voxelizationPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_voxelizationPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
-	m_voxelizationPassFrameBufferDesc.sizeX = m_voxelizationPassTextureDesc.textureWidth;
-	m_voxelizationPassFrameBufferDesc.sizeY = m_voxelizationPassTextureDesc.textureHeight;
+	m_voxelizationPassFrameBufferDesc.sizeX = m_voxelizationPassTextureDesc.width;
+	m_voxelizationPassFrameBufferDesc.sizeY = m_voxelizationPassTextureDesc.height;
 	m_voxelizationPassFrameBufferDesc.drawColorBuffers = false;
 
-	m_irradianceInjectionPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_3D;
-	m_irradianceInjectionPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	m_irradianceInjectionPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGBA8;
-	m_irradianceInjectionPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_irradianceInjectionPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
-	m_irradianceInjectionPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
-	m_irradianceInjectionPassTextureDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-	m_irradianceInjectionPassTextureDesc.textureWidth = m_volumeDimension;
-	m_irradianceInjectionPassTextureDesc.textureHeight = m_volumeDimension;
-	m_irradianceInjectionPassTextureDesc.textureDepth = m_volumeDimension;
-	m_irradianceInjectionPassTextureDesc.texturePixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
+	m_irradianceInjectionPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_3D;
+	m_irradianceInjectionPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_irradianceInjectionPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA8;
+	m_irradianceInjectionPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_irradianceInjectionPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	m_irradianceInjectionPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	m_irradianceInjectionPassTextureDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_irradianceInjectionPassTextureDesc.width = m_volumeDimension;
+	m_irradianceInjectionPassTextureDesc.height = m_volumeDimension;
+	m_irradianceInjectionPassTextureDesc.depth = m_volumeDimension;
+	m_irradianceInjectionPassTextureDesc.pixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
 
 	m_irradianceInjectionPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_irradianceInjectionPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
-	m_irradianceInjectionPassFrameBufferDesc.sizeX = m_irradianceInjectionPassTextureDesc.textureWidth;
-	m_irradianceInjectionPassFrameBufferDesc.sizeY = m_irradianceInjectionPassTextureDesc.textureHeight;
+	m_irradianceInjectionPassFrameBufferDesc.sizeX = m_irradianceInjectionPassTextureDesc.width;
+	m_irradianceInjectionPassFrameBufferDesc.sizeY = m_irradianceInjectionPassTextureDesc.height;
 	m_irradianceInjectionPassFrameBufferDesc.drawColorBuffers = false;
 
 	initializeBRDFLUTPass();
@@ -758,8 +758,8 @@ void GLEnvironmentRenderPass::updateVoxelizationPass()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// voxelization pass
-	glBindImageTexture(0, m_voxelizationPassGLRPC->m_GLTDCs[0]->m_TAO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RG32UI);
-	glBindImageTexture(1, m_voxelizationPassGLRPC->m_GLTDCs[1]->m_TAO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RG32UI);
+	glBindImageTexture(0, m_voxelizationPassGLRPC->m_GLTDCs[0]->m_TO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RG32UI);
+	glBindImageTexture(1, m_voxelizationPassGLRPC->m_GLTDCs[1]->m_TO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RG32UI);
 
 	activateShaderProgram(m_voxelizationPassSPC);
 
@@ -812,7 +812,7 @@ void GLEnvironmentRenderPass::updateIrradianceInjectionPass()
 
 	activateTexture(m_voxelizationPassGLRPC->m_GLTDCs[0], 0);
 	activateTexture(m_voxelizationPassGLRPC->m_GLTDCs[1], 1);
-	glBindImageTexture(2, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TAO, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glBindImageTexture(2, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TO, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 	activateShaderProgram(m_irradianceInjectionPassSPC);
 
@@ -870,7 +870,7 @@ void GLEnvironmentRenderPass::updateVoxelVisualizationPass()
 	updateUniform(m_voxelVisualizationPass_uni_voxelSize, l_voxelSize);
 	updateUniform(m_voxelVisualizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
 
-	glBindImageTexture(0, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TAO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+	glBindImageTexture(0, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
 
 	glBindVertexArray(m_VAO);
 	glDrawArrays(GL_POINTS, 0, m_voxelCount);

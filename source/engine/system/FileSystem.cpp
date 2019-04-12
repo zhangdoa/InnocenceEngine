@@ -29,7 +29,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		json processAssimpMesh(const aiScene * scene, unsigned int meshIndex);
 		std::pair<EntityID, size_t> processMeshData(const aiMesh * aiMesh);
 		json processAssimpMaterial(const aiMaterial * aiMaterial);
-		json processTextureData(const std::string & fileName, TextureSamplerType textureSamplerType, TextureUsageType textureUsageType);
+		json processTextureData(const std::string & fileName, TextureSamplerType samplerType, TextureUsageType usageType);
 	};
 
 	namespace ModelLoader
@@ -1150,13 +1150,13 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 	return l_materialData;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fileName, TextureSamplerType textureSamplerType, TextureUsageType textureUsageType)
+json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fileName, TextureSamplerType samplerType, TextureUsageType usageType)
 {
 	json j;
 
-	j["TextureSamplerType"] = textureSamplerType;
-	j["TextureUsageType"] = textureUsageType;
-	j["TextureFile"] = fileName;
+	j["SamplerType"] = samplerType;
+	j["UsageType"] = usageType;
+	j["File"] = fileName;
 
 	return j;
 }
@@ -1279,11 +1279,11 @@ MaterialDataComponent * InnoFileSystemNS::ModelLoader::processMaterialJsonData(c
 	{
 		for (auto i : j["Textures"])
 		{
-			auto l_TDC = loadTexture(i["TextureFile"]);
-			l_TDC->m_textureDataDesc.textureSamplerType = TextureSamplerType(i["TextureSamplerType"]);
-			l_TDC->m_textureDataDesc.textureUsageType = TextureUsageType(i["TextureUsageType"]);
+			auto l_TDC = loadTexture(i["File"]);
+			l_TDC->m_textureDataDesc.samplerType = TextureSamplerType(i["SamplerType"]);
+			l_TDC->m_textureDataDesc.usageType = TextureUsageType(i["UsageType"]);
 
-			switch (l_TDC->m_textureDataDesc.textureUsageType)
+			switch (l_TDC->m_textureDataDesc.usageType)
 			{
 			case TextureUsageType::NORMAL: l_MDC->m_texturePack.m_normalTDC.second = l_TDC; break;
 			case TextureUsageType::ALBEDO: l_MDC->m_texturePack.m_albedoTDC.second = l_TDC; break;
@@ -1348,14 +1348,14 @@ TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const s
 	{
 		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
-		l_TDC->m_textureDataDesc.textureColorComponentsFormat = l_isHDR ? TextureColorComponentsFormat((unsigned int)TextureColorComponentsFormat::R16F + (nrChannels - 1)) : TextureColorComponentsFormat((nrChannels - 1));
-		l_TDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
-		l_TDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-		l_TDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
-		l_TDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-		l_TDC->m_textureDataDesc.texturePixelDataType = l_isHDR ? TexturePixelDataType::FLOAT : TexturePixelDataType::UNSIGNED_BYTE;
-		l_TDC->m_textureDataDesc.textureWidth = width;
-		l_TDC->m_textureDataDesc.textureHeight = height;
+		l_TDC->m_textureDataDesc.colorComponentsFormat = l_isHDR ? TextureColorComponentsFormat((unsigned int)TextureColorComponentsFormat::R16F + (nrChannels - 1)) : TextureColorComponentsFormat((nrChannels - 1));
+		l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
+		l_TDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
+		l_TDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+		l_TDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::LINEAR;
+		l_TDC->m_textureDataDesc.pixelDataType = l_isHDR ? TexturePixelDataType::FLOAT : TexturePixelDataType::UNSIGNED_BYTE;
+		l_TDC->m_textureDataDesc.width = width;
+		l_TDC->m_textureDataDesc.height = height;
 		l_TDC->m_textureData.emplace_back(l_rawData);
 
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: STB_Image: " + fileName + " has been loaded.");

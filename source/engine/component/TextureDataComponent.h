@@ -4,17 +4,17 @@
 
 struct TextureDataDesc
 {
-	TextureSamplerType textureSamplerType;
-	TextureUsageType textureUsageType;
-	TextureColorComponentsFormat textureColorComponentsFormat;
-	TexturePixelDataFormat texturePixelDataFormat;
-	TextureFilterMethod textureMinFilterMethod;
-	TextureFilterMethod textureMagFilterMethod;
-	TextureWrapMethod textureWrapMethod;
-	TexturePixelDataType texturePixelDataType;
-	unsigned int textureWidth = 0;
-	unsigned int textureHeight = 0;
-	unsigned int textureDepth = 0;
+	TextureSamplerType samplerType;
+	TextureUsageType usageType;
+	TextureColorComponentsFormat colorComponentsFormat;
+	TexturePixelDataFormat pixelDataFormat;
+	TextureFilterMethod minFilterMethod;
+	TextureFilterMethod magFilterMethod;
+	TextureWrapMethod wrapMethod;
+	TexturePixelDataType pixelDataType;
+	unsigned int width = 0;
+	unsigned int height = 0;
+	unsigned int depth = 0;
 	vec4 borderColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 };
 

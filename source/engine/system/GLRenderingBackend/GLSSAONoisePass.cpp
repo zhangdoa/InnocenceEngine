@@ -127,16 +127,16 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 
 	m_SSAONoiseTDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
-	m_SSAONoiseTDC->m_textureDataDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
-	m_SSAONoiseTDC->m_textureDataDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	m_SSAONoiseTDC->m_textureDataDesc.textureColorComponentsFormat = TextureColorComponentsFormat::RGB32F;
-	m_SSAONoiseTDC->m_textureDataDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_SSAONoiseTDC->m_textureDataDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
-	m_SSAONoiseTDC->m_textureDataDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
-	m_SSAONoiseTDC->m_textureDataDesc.textureWrapMethod = TextureWrapMethod::REPEAT;
-	m_SSAONoiseTDC->m_textureDataDesc.textureWidth = l_textureSize;
-	m_SSAONoiseTDC->m_textureDataDesc.textureHeight = l_textureSize;
-	m_SSAONoiseTDC->m_textureDataDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	m_SSAONoiseTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	m_SSAONoiseTDC->m_textureDataDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_SSAONoiseTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB32F;
+	m_SSAONoiseTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_SSAONoiseTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	m_SSAONoiseTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	m_SSAONoiseTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_SSAONoiseTDC->m_textureDataDesc.width = l_textureSize;
+	m_SSAONoiseTDC->m_textureDataDesc.height = l_textureSize;
+	m_SSAONoiseTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	std::vector<float> l_pixelBuffer;
 	auto l_containerSize = m_SSAONoise.size() * 4;
@@ -196,9 +196,9 @@ bool GLSSAONoisePass::update()
 	return true;
 }
 
-bool GLSSAONoisePass::resize()
+bool GLSSAONoisePass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 
 	return true;
 }

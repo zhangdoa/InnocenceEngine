@@ -76,9 +76,9 @@ bool GLMotionBlurPass::update()
 	return true;
 }
 
-bool GLMotionBlurPass::resize()
+bool GLMotionBlurPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 
 	return true;
 }

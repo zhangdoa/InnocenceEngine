@@ -6,7 +6,7 @@ INNO_PRIVATE_SCOPE GLBillboardPass
 {
 	bool initialize();
 	bool update();
-	bool resize();
+	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
 	bool reloadShader();
 
 	GLRenderPassComponent* getGLRPC();

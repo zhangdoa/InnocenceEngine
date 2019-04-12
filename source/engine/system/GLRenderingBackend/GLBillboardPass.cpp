@@ -157,9 +157,9 @@ bool GLBillboardPass::update()
 	return true;
 }
 
-bool GLBillboardPass::resize()
+bool GLBillboardPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 
 	return true;
 }

@@ -44,16 +44,16 @@ void GLShadowRenderPass::initialize()
 	DirLightShadowPassFBDesc.sizeY = 4096;
 	DirLightShadowPassFBDesc.drawColorBuffers = false;
 
-	DirLightShadowPassTextureDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
-	DirLightShadowPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	DirLightShadowPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
-	DirLightShadowPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
-	DirLightShadowPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
-	DirLightShadowPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
-	DirLightShadowPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
-	DirLightShadowPassTextureDesc.textureWidth = DirLightShadowPassFBDesc.sizeX;
-	DirLightShadowPassTextureDesc.textureHeight = DirLightShadowPassFBDesc.sizeY;
-	DirLightShadowPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	DirLightShadowPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	DirLightShadowPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	DirLightShadowPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
+	DirLightShadowPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
+	DirLightShadowPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	DirLightShadowPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	DirLightShadowPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
+	DirLightShadowPassTextureDesc.width = DirLightShadowPassFBDesc.sizeX;
+	DirLightShadowPassTextureDesc.height = DirLightShadowPassFBDesc.sizeY;
+	DirLightShadowPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
 	DirLightShadowPassTextureDesc.borderColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	m_DirLight_GLRPC = addGLRenderPassComponent(1, DirLightShadowPassFBDesc, DirLightShadowPassTextureDesc);
@@ -64,16 +64,16 @@ void GLShadowRenderPass::initialize()
 	PointLightShadowPassFBDesc.sizeY = 4096;
 	PointLightShadowPassFBDesc.drawColorBuffers = false;
 
-	PointLightShadowPassTextureDesc.textureSamplerType = TextureSamplerType::CUBEMAP;
-	PointLightShadowPassTextureDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	PointLightShadowPassTextureDesc.textureColorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
-	PointLightShadowPassTextureDesc.texturePixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
-	PointLightShadowPassTextureDesc.textureMinFilterMethod = TextureFilterMethod::NEAREST;
-	PointLightShadowPassTextureDesc.textureMagFilterMethod = TextureFilterMethod::NEAREST;
-	PointLightShadowPassTextureDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
-	PointLightShadowPassTextureDesc.textureWidth = PointLightShadowPassFBDesc.sizeX;
-	PointLightShadowPassTextureDesc.textureHeight = PointLightShadowPassFBDesc.sizeY;
-	PointLightShadowPassTextureDesc.texturePixelDataType = TexturePixelDataType::FLOAT;
+	PointLightShadowPassTextureDesc.samplerType = TextureSamplerType::CUBEMAP;
+	PointLightShadowPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	PointLightShadowPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
+	PointLightShadowPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
+	PointLightShadowPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	PointLightShadowPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	PointLightShadowPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
+	PointLightShadowPassTextureDesc.width = PointLightShadowPassFBDesc.sizeX;
+	PointLightShadowPassTextureDesc.height = PointLightShadowPassFBDesc.sizeY;
+	PointLightShadowPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
 	PointLightShadowPassTextureDesc.borderColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	m_PointLight_GLRPC = addGLRenderPassComponent(1, PointLightShadowPassFBDesc, PointLightShadowPassTextureDesc);

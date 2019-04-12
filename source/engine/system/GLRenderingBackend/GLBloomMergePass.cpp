@@ -83,9 +83,9 @@ bool GLBloomMergePass::update()
 	return true;
 }
 
-bool GLBloomMergePass::resize()
+bool GLBloomMergePass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 
 	return true;
 }

@@ -36,28 +36,28 @@ bool GLBloomExtractPass::initialize()
 
 	auto l_FBDesc = GLRenderingSystemComponent::get().deferredPassFBDesc;
 	auto l_TextureDesc = GLRenderingSystemComponent::get().deferredPassTextureDesc;
-	l_TextureDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	l_TextureDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
+	l_TextureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
+	l_TextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
 	m_baseGLRPC = addGLRenderPassComponent(1, l_FBDesc, l_TextureDesc);
 
 	l_FBDesc.sizeX = l_FBDesc.sizeX / 2;
 	l_FBDesc.sizeY = l_FBDesc.sizeY / 2;
-	l_TextureDesc.textureWidth = l_TextureDesc.textureWidth / 2;
-	l_TextureDesc.textureHeight = l_TextureDesc.textureHeight / 2;
+	l_TextureDesc.width = l_TextureDesc.width / 2;
+	l_TextureDesc.height = l_TextureDesc.height / 2;
 
 	m_downsampleGLRPC_Half = addGLRenderPassComponent(1, l_FBDesc, l_TextureDesc);
 
 	l_FBDesc.sizeX = l_FBDesc.sizeX / 2;
 	l_FBDesc.sizeY = l_FBDesc.sizeY / 2;
-	l_TextureDesc.textureWidth = l_TextureDesc.textureWidth / 2;
-	l_TextureDesc.textureHeight = l_TextureDesc.textureHeight / 2;
+	l_TextureDesc.width = l_TextureDesc.width / 2;
+	l_TextureDesc.height = l_TextureDesc.height / 2;
 
 	m_downsampleGLRPC_Quarter = addGLRenderPassComponent(1, l_FBDesc, l_TextureDesc);
 
 	l_FBDesc.sizeX = l_FBDesc.sizeX / 2;
 	l_FBDesc.sizeY = l_FBDesc.sizeY / 2;
-	l_TextureDesc.textureWidth = l_TextureDesc.textureWidth / 2;
-	l_TextureDesc.textureHeight = l_TextureDesc.textureHeight / 2;
+	l_TextureDesc.width = l_TextureDesc.width / 2;
+	l_TextureDesc.height = l_TextureDesc.height / 2;
 
 	m_downsampleGLRPC_Eighth = addGLRenderPassComponent(1, l_FBDesc, l_TextureDesc);
 
@@ -113,26 +113,27 @@ bool GLBloomExtractPass::update(GLRenderPassComponent* prePassGLRPC)
 	return true;
 }
 
-bool GLBloomExtractPass::resize()
+bool GLBloomExtractPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	auto l_FBDesc = GLRenderingSystemComponent::get().deferredPassFBDesc;
+	auto l_newSizeX = newSizeX;
+	auto l_newSizeY = newSizeY;
 
-	resizeGLRenderPassComponent(m_baseGLRPC, l_FBDesc);
+	resizeGLRenderPassComponent(m_baseGLRPC, l_newSizeX, l_newSizeY);
 
-	l_FBDesc.sizeX = l_FBDesc.sizeX / 2;
-	l_FBDesc.sizeY = l_FBDesc.sizeY / 2;
+	l_newSizeX = l_newSizeX / 2;
+	l_newSizeY = l_newSizeY / 2;
 
-	resizeGLRenderPassComponent(m_downsampleGLRPC_Half, l_FBDesc);
+	resizeGLRenderPassComponent(m_downsampleGLRPC_Half, l_newSizeX, l_newSizeY);
 
-	l_FBDesc.sizeX = l_FBDesc.sizeX / 2;
-	l_FBDesc.sizeY = l_FBDesc.sizeY / 2;
+	l_newSizeX = l_newSizeX / 2;
+	l_newSizeY = l_newSizeY / 2;
 
-	resizeGLRenderPassComponent(m_downsampleGLRPC_Quarter, l_FBDesc);
+	resizeGLRenderPassComponent(m_downsampleGLRPC_Quarter, l_newSizeX, l_newSizeY);
 
-	l_FBDesc.sizeX = l_FBDesc.sizeX / 2;
-	l_FBDesc.sizeY = l_FBDesc.sizeY / 2;
+	l_newSizeX = l_newSizeX / 2;
+	l_newSizeY = l_newSizeY / 2;
 
-	resizeGLRenderPassComponent(m_downsampleGLRPC_Eighth, l_FBDesc);
+	resizeGLRenderPassComponent(m_downsampleGLRPC_Eighth, l_newSizeX, l_newSizeY);
 
 	return true;
 }

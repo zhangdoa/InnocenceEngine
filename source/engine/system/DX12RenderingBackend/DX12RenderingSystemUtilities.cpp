@@ -240,16 +240,16 @@ DX12RenderPassComponent* DX12RenderingSystemNS::addDX12RenderPassComponent(unsig
 	{
 		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
-		l_TDC->m_textureDataDesc.textureSamplerType = RTDesc.textureSamplerType;
-		l_TDC->m_textureDataDesc.textureUsageType = RTDesc.textureUsageType;
-		l_TDC->m_textureDataDesc.textureColorComponentsFormat = RTDesc.textureColorComponentsFormat;
-		l_TDC->m_textureDataDesc.texturePixelDataFormat = RTDesc.texturePixelDataFormat;
-		l_TDC->m_textureDataDesc.textureMinFilterMethod = RTDesc.textureMinFilterMethod;
-		l_TDC->m_textureDataDesc.textureMagFilterMethod = RTDesc.textureMagFilterMethod;
-		l_TDC->m_textureDataDesc.textureWrapMethod = RTDesc.textureWrapMethod;
-		l_TDC->m_textureDataDesc.textureWidth = RTDesc.textureWidth;
-		l_TDC->m_textureDataDesc.textureHeight = RTDesc.textureHeight;
-		l_TDC->m_textureDataDesc.texturePixelDataType = RTDesc.texturePixelDataType;
+		l_TDC->m_textureDataDesc.samplerType = RTDesc.samplerType;
+		l_TDC->m_textureDataDesc.usageType = RTDesc.usageType;
+		l_TDC->m_textureDataDesc.colorComponentsFormat = RTDesc.colorComponentsFormat;
+		l_TDC->m_textureDataDesc.pixelDataFormat = RTDesc.pixelDataFormat;
+		l_TDC->m_textureDataDesc.minFilterMethod = RTDesc.minFilterMethod;
+		l_TDC->m_textureDataDesc.magFilterMethod = RTDesc.magFilterMethod;
+		l_TDC->m_textureDataDesc.wrapMethod = RTDesc.wrapMethod;
+		l_TDC->m_textureDataDesc.width = RTDesc.width;
+		l_TDC->m_textureDataDesc.height = RTDesc.height;
+		l_TDC->m_textureDataDesc.pixelDataType = RTDesc.pixelDataType;
 		l_TDC->m_textureData = { nullptr };
 
 		l_DXRPC->m_TDCs.emplace_back(l_TDC);
@@ -289,8 +289,8 @@ DX12RenderPassComponent* DX12RenderingSystemNS::addDX12RenderPassComponent(unsig
 	// Create the depth stencil view.
 
 	// Setup the viewport for rendering.
-	l_DXRPC->m_viewport.Width = (float)RTDesc.textureWidth;
-	l_DXRPC->m_viewport.Height = (float)RTDesc.textureHeight;
+	l_DXRPC->m_viewport.Width = (float)RTDesc.width;
+	l_DXRPC->m_viewport.Height = (float)RTDesc.height;
 	l_DXRPC->m_viewport.MinDepth = 0.0f;
 	l_DXRPC->m_viewport.MaxDepth = 1.0f;
 	l_DXRPC->m_viewport.TopLeftX = 0.0f;
@@ -350,7 +350,7 @@ DX12TextureDataComponent* DX12RenderingSystemNS::generateDX12TextureDataComponen
 	}
 	else
 	{
-		if (rhs->m_textureDataDesc.textureUsageType == TextureUsageType::INVISIBLE)
+		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: TextureUsageType is TextureUsageType::INVISIBLE!");
 			return nullptr;
@@ -376,15 +376,15 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 	// @TODO: Unified internal format
 	// Setup the description of the texture.
 	// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
-	if (textureDataDesc.textureUsageType == TextureUsageType::ALBEDO)
+	if (textureDataDesc.usageType == TextureUsageType::ALBEDO)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
 	else
 	{
-		if (textureDataDesc.texturePixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
+		if (textureDataDesc.pixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
 		{
-			switch (textureDataDesc.texturePixelDataFormat)
+			switch (textureDataDesc.pixelDataFormat)
 			{
 			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
@@ -393,9 +393,9 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 			default: break;
 			}
 		}
-		else if (textureDataDesc.texturePixelDataType == TexturePixelDataType::FLOAT)
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT)
 		{
-			switch (textureDataDesc.texturePixelDataFormat)
+			switch (textureDataDesc.pixelDataFormat)
 			{
 			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;

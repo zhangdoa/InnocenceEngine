@@ -97,9 +97,9 @@ bool GLEarlyZPass::update()
 	return true;
 }
 
-bool GLEarlyZPass::resize()
+bool GLEarlyZPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, GLRenderingSystemComponent::get().deferredPassFBDesc);
+	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 
 	return true;
 }

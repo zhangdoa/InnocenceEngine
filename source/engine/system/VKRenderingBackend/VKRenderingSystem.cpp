@@ -538,16 +538,16 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	// @TODO: dangerous format
 	TextureDataDesc l_RTDesc;
-	l_RTDesc.textureSamplerType = TextureSamplerType::SAMPLER_2D;
-	l_RTDesc.textureUsageType = TextureUsageType::RENDER_TARGET;
-	l_RTDesc.textureColorComponentsFormat = TextureColorComponentsFormat::BGRA;
-	l_RTDesc.texturePixelDataFormat = TexturePixelDataFormat::RGBA;
-	l_RTDesc.textureMinFilterMethod = TextureFilterMethod::LINEAR;
-	l_RTDesc.textureMagFilterMethod = TextureFilterMethod::LINEAR;
-	l_RTDesc.textureWrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	l_RTDesc.textureWidth = l_extent.width;
-	l_RTDesc.textureHeight = l_extent.height;
-	l_RTDesc.texturePixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
+	l_RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	l_RTDesc.usageType = TextureUsageType::RENDER_TARGET;
+	l_RTDesc.colorComponentsFormat = TextureColorComponentsFormat::BGRA;
+	l_RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	l_RTDesc.minFilterMethod = TextureFilterMethod::LINEAR;
+	l_RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
+	l_RTDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	l_RTDesc.width = l_extent.width;
+	l_RTDesc.height = l_extent.height;
+	l_RTDesc.pixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
 
 	auto l_VKRPC = addVKRenderPassComponent(l_imageCount, l_RTDesc, &l_swapChainImages, MeshPrimitiveTopology::TRIANGLE_STRIP, l_VKSPC);
 	VKRenderingSystemComponent::get().m_swapChainVKRPC = l_VKRPC;

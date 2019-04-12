@@ -6,7 +6,7 @@ INNO_PRIVATE_SCOPE GLTAAPass
 {
 	bool initialize();
 	bool update(GLRenderPassComponent* prePassGLRPC);
-	bool resize();
+	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
 	bool reloadShader();
 
 	GLRenderPassComponent* getGLRPC();
