@@ -1,9 +1,9 @@
-#include "stdafx.h"
-#include "config.h"
+#include "../../common/stdafx.h"
+#include "../../common/config.h"
 #include <windows.h>
 #include <windowsx.h>
 
-#include "InnoApplication.h"
+#include "../../common/InnoApplication.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {

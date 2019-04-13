@@ -1,0 +1,13 @@
+if (INNO_PLATFORM_WIN)
+set(INNO_MAIN_PATH "Windows")
+endif (INNO_PLATFORM_WIN)
+
+if (INNO_PLATFORM_MAC)
+set(INNO_MAIN_PATH "macOS")
+endif (INNO_PLATFORM_MAC)
+
+if (INNO_PLATFORM_LINUX)
+set(INNO_MAIN_PATH "Linux")
+endif (INNO_PLATFORM_LINUX)
+
+add_subdirectory(${INNO_MAIN_PATH})
