@@ -20,14 +20,15 @@
 
 Tested under Windows 10 version 1809
 
-Prerequisites: MSVC 19.00 + CMake 3.10 or higher
+Prerequisites: MSVC 19.00 + CMake 3.10 or higher + Vulkan pre-compiled library (Optional)
 
-Run following scripts in a sequence:
+Run following scripts in a sequence
 
 ``` cmd
 @echo | setupWin.bat
 @echo | buildAssimpWin-VS15.bat
 @echo | buildGLFWWin-VS15.bat
+powershell -ExecutionPolicy RemoteSigned -File "buildPhysXWin-VS15.ps1"
 @echo | buildWin-VS15.bat
 @echo | postBuildWin.bat
 ```
@@ -66,9 +67,52 @@ echo | postBuildMac.sh
 
 ## How to use
 
-Launch bin/InnoMain executable file with the optional arguments.
+### Windows
 
-### Available launch arguments
+Run following script
+
+``` cmd
+@echo | startEngineWin.bat
+```
+
+### Linux
+
+Run following script
+
+``` shell
+echo | startEngineLinux.sh
+```
+
+### macOS
+
+Run following script
+
+``` shell
+echo | startEngineMac.sh
+```
+
+## How to debug
+
+### Windows
+
+1. Open build/InnocenceEngine.sln
+2. Set debug launch arguments and default launch project to InnoMain
+3. Start debug with "Launch" button (default F5)
+
+### Linux
+
+1. Use Atom to load the repo folder
+2. Install gcc-compiler package
+3. Select build/makefile and hit "Compile and Debug" button default F6)
+4. (Optional) Change launch arguments in source/engine/platform/Linux/CMakeLists.txt
+
+### macOS
+
+1. Use Atom to load the repo folder
+2. Open source/engine/platform/macOS/InnoMain.InnoMain.xcodeproj
+3. Select "Product" - "Run" (⌘ + R)
+
+## Available launch arguments
 
 ```
 -renderer [value]
@@ -76,9 +120,10 @@ Launch bin/InnoMain executable file with the optional arguments.
 | Value |Notes |
 | --- | --- |
 | 0 | OpenGL rendering backend |
-| 1 | DirectX 11 rendering backend (WIP) |
+| 1 | DirectX 11 rendering backend |
 | 2 | DirectX 12 rendering backend (WIP) |
 | 3 | Vulkan rendering backend (WIP) |
+| 4 | Metal rendering backend (WIP) |
 
 ```
 -mode [value]
@@ -117,6 +162,8 @@ Task-based concurrency model
 [stb](https://github.com/nothings/stb)
 
 [JSON for Modern C++](https://github.com/nlohmann/json)
+
+[PhysX](https://github.com/NVIDIAGameWorks/PhysX)
 
 ### Assets
 

@@ -14,8 +14,6 @@
 		9ACA09632261C3C80036FCEC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9ACA09622261C3C80036FCEC /* Assets.xcassets */; };
 		9ACA09662261C3C80036FCEC /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9ACA09642261C3C80036FCEC /* MainMenu.xib */; };
 		9ACA09722261C3E10036FCEC /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ACA09712261C3E10036FCEC /* AppKit.framework */; };
-		9ACA09742261C3E70036FCEC /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ACA09732261C3E70036FCEC /* GLKit.framework */; };
-		9ACA09762261C3EC0036FCEC /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ACA09752261C3EC0036FCEC /* OpenGL.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,8 +39,6 @@
 				9A6EE4282261D4F80062CA0E /* libInnoGame.dylib in Frameworks */,
 				9A6EE4262261D4EB0062CA0E /* libInnoSystem.dylib in Frameworks */,
 				9A6EE4242261D4D80062CA0E /* libInnoApplication.a in Frameworks */,
-				9ACA09762261C3EC0036FCEC /* OpenGL.framework in Frameworks */,
-				9ACA09742261C3E70036FCEC /* GLKit.framework in Frameworks */,
 				9ACA09722261C3E10036FCEC /* AppKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -301,7 +297,6 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
-					../lib,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					../../../../build/lib,
@@ -324,7 +319,6 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
-					../lib,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					../../../../build/lib,

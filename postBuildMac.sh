@@ -1,10 +1,10 @@
 #!/bin/sh
 rm -rf bin
-rm -rf build/InnoMain/build/Debug/res/
+rm -rf $HOME/Library/Containers/InnocenceEngine.InnoMain/Data/res
 
 mkdir bin
-cp -r build/lib/* build/InnoMain/build/Debug/
-cp -r build/InnoMain/build/Debug/* bin/
+cp -r build/lib/* build/InnoMain/Debug/
+cp -r build/InnoMain/Debug/* bin/
 
-mkdir build/InnoMain/build/Debug/res/
-cp -r res/* build/InnoMain/build/Debug/res/
+mkdir $HOME/Library/Containers/InnocenceEngine.InnoMain/Data/res
+cp -r res/* $HOME/Library/Containers/InnocenceEngine.InnoMain/Data/res

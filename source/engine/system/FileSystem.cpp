@@ -175,6 +175,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	std::vector<std::function<void()>*> m_sceneLoadingStartCallbacks;
 	std::vector<std::function<void()>*> m_sceneLoadingFinishCallbacks;
 
+  std::string m_workingDir;
 	std::atomic<bool> m_isLoadingScene = false;
 	std::atomic<bool> m_prepareForLoadingScene = false;
 
@@ -726,6 +727,8 @@ bool InnoFileSystemNS::saveScene(const std::string& fileName)
 
 INNO_SYSTEM_EXPORT bool InnoFileSystem::setup()
 {
+	InnoFileSystemNS::m_workingDir = std::filesystem::current_path().generic_string();
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: current working directory is " + InnoFileSystemNS::m_workingDir);
 	InnoFileSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
@@ -764,7 +767,7 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoFileSystem::getStatus()
 
 std::string InnoFileSystem::loadTextFile(const std::string & fileName)
 {
-	return InnoFileSystemNS::loadTextFile(fileName);
+	return InnoFileSystemNS::loadTextFile(InnoFileSystemNS::m_workingDir + fileName);
 }
 
 INNO_SYSTEM_EXPORT std::vector<char> InnoFileSystem::loadBinaryFile(const std::string & fileName)
@@ -809,7 +812,7 @@ INNO_SYSTEM_EXPORT ModelMap InnoFileSystem::loadModel(const std::string & fileNa
 	auto l_extension = fs::path(fileName).extension().generic_string();
 	if (l_extension == ".InnoModel")
 	{
-		return InnoFileSystemNS::ModelLoader::loadModelFromDisk(fileName);
+		return InnoFileSystemNS::ModelLoader::loadModelFromDisk(InnoFileSystemNS::m_workingDir + fileName);
 	}
 	else
 	{
@@ -1019,7 +1022,7 @@ std::pair<EntityID, size_t> InnoFileSystemNS::AssimpWrapper::processMeshData(con
 		l_exportFileName = InnoMath::createEntityID();
 	}
 
-	auto l_exportFileFullPath = "..//res//convertedAssets//" + l_exportFileName + ".InnoRaw";
+	auto l_exportFileFullPath = m_workingDir + "//res//convertedAssets//" + l_exportFileName + ".InnoRaw";
 
 	std::ofstream l_file(l_exportFileFullPath, std::ios::binary);
 

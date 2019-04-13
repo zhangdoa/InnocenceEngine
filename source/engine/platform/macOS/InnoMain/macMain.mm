@@ -14,50 +14,27 @@ NSApplication* application;
 
 @interface MacEntryWrapper : NSWindow <NSApplicationDelegate>{
 }
-@property (nonatomic, retain) NSOpenGLView* glView;
 -(void) drawLoop:(NSTimer*) timer;
 @end
 
 @implementation MacEntryWrapper
 
-@synthesize glView;
-
 BOOL shouldStop = NO;
 
 -(id)initWithContentRect:(NSRect)contentRect styleMask:(NSUInteger)aStyle backing:(NSBackingStoreType)bufferingType defer:(BOOL)flag{
     if(self = [super initWithContentRect:contentRect styleMask:aStyle backing:bufferingType defer:flag]){
+        
         //sets the title of the window (Declared in Plist)
         [self setTitle:[[NSProcessInfo processInfo] processName]];
         
-        //This is pretty important.. OS X starts always with a context that only supports openGL 2.1
-        //This will ditch the classic OpenGL and initialises openGL 4.1
-        NSOpenGLPixelFormatAttribute pixelFormatAttributes[] ={
-            NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
-            NSOpenGLPFAColorSize    , 24                           ,
-            NSOpenGLPFAAlphaSize    , 8                            ,
-            NSOpenGLPFADoubleBuffer ,
-            NSOpenGLPFAAccelerated  ,
-            NSOpenGLPFANoRecovery   ,
-            0
-        };
-        
-        NSOpenGLPixelFormat* format = [[NSOpenGLPixelFormat alloc]initWithAttributes:pixelFormatAttributes];
-        //Initialize the view
-        glView = [[NSOpenGLView alloc]initWithFrame:contentRect pixelFormat:format];
-        
-        //Set context and attach it to the window
-        [[glView openGLContext]makeCurrentContext];
-        
         //finishing off
-        [self setContentView:glView];
-        [glView prepareOpenGL];
         [self makeKeyAndOrderFront:self];
         [self setAcceptsMouseMovedEvents:YES];
         [self makeKeyWindow];
         [self setOpaque:YES];
         
         //Start the c++ code
-        const char* l_args = "-renderer 0 -mode 0";
+        const char* l_args = "-renderer 4 -mode 0";
         if (!InnoApplication::setup(nullptr, (char*)l_args))
         {
             return 0;
@@ -71,33 +48,33 @@ BOOL shouldStop = NO;
 }
 
 -(void) drawLoop:(NSTimer*) timer{
-    
     if(shouldStop){
         [self close];
-        if (!InnoApplication::update())
-        {
-            InnoApplication::terminate();
-            return;
-        }
         return;
     }
     if([self isVisible]){
-        [glView update];
-        [[glView openGLContext] flushBuffer];
+        if (!InnoApplication::update())
+        {
+            shouldStop = YES;
+            InnoApplication::terminate();
+            return;
+        }
     }
 }
 
-- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication     *)theApplication{
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)theApplication{
     return YES;
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification{
     shouldStop = YES;
+    InnoApplication::terminate();
 }
 #pragma mark -
 #pragma mark Cleanup
 - (void) dealloc
 {
+    InnoApplication::terminate();
 }
 @end
 

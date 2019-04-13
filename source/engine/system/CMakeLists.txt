@@ -17,8 +17,12 @@ if (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
 add_subdirectory("GLRenderingBackend")
 endif (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
 
-aux_source_directory(. DIR_SRCS)
+if (INNO_PLATFORM_MAC)
+add_subdirectory("MTRenderingBackend")
+add_subdirectory("MacWindow")
+endif (INNO_PLATFORM_MAC)
 
+aux_source_directory(. DIR_SRCS)
 add_library(InnoSystem SHARED ${DIR_SRCS})
 
 include (GenerateExportHeader)
@@ -45,6 +49,11 @@ endif (VULKAN)
 if (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
 target_link_libraries(InnoSystem InnoGLRenderingBackend)
 endif (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
+
+if (INNO_PLATFORM_MAC)
+target_link_libraries(InnoSystem InnoMTRenderingBackend)
+target_link_libraries(InnoSystem MacWindow)
+endif (INNO_PLATFORM_MAC)
 
 find_library(ASSIMP assimp)
 target_link_libraries(InnoSystem "${ASSIMP}")

@@ -309,7 +309,7 @@ INNO_GAME_EXPORT bool GameInstance::setup()
 INNO_GAME_EXPORT bool GameInstance::initialize()
 {
 	bool result = true;
-	g_pCoreSystem->getFileSystem()->loadScene("..//res//scenes//default.InnoScene");
+	g_pCoreSystem->getFileSystem()->loadScene("res//scenes//default.InnoScene");
 
 	result = result && PlayerComponentCollection::initialize();
 	result = result && GameInstanceNS::initialize();

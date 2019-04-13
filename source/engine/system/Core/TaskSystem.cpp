@@ -19,8 +19,17 @@ INNO_PRIVATE_SCOPE InnoTaskSystemNS
 
 	std::unordered_map<std::thread::id, std::atomic<WorkerStatus>> m_threadStatus;
 
+	std::string getThreadId()
+	{
+		std::stringstream ss;
+		ss << std::this_thread::get_id();
+		return ss.str();
+	}
+
 	void worker(void)
 	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem: Thread " + getThreadId() + " has been occupied.");
+
 		auto l_id = std::this_thread::get_id();
 		InnoTaskSystemNS::m_threadStatus.emplace(l_id, WorkerStatus::IDLE);
 		auto l_it = m_threadStatus.find(l_id);
@@ -124,7 +133,5 @@ void InnoTaskSystem::waitAllTasksToFinish()
 
 std::string InnoTaskSystem::getThreadId()
 {
-	std::stringstream ss;
-	ss << std::this_thread::get_id();
-	return ss.str();
+	return InnoTaskSystemNS::getThreadId();
 }

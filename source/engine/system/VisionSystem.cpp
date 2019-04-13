@@ -8,8 +8,13 @@
 #include "DX12RenderingBackend/DX12RenderingSystem.h"
 #endif
 
-#if !defined INNO_PLATFORM_MAC
+#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
 #include "GLRenderingBackend/GLRenderingSystem.h"
+#endif
+
+#if defined INNO_PLATFORM_MAC
+#include "MacWindow/MacWindowSystem.h"
+#include "MTRenderingBackend/MTRenderingSystem.h"
 #endif
 
 #if defined INNO_RENDERER_VULKAN
@@ -93,7 +98,7 @@ InitConfig InnoVisionSystemNS::parseInitConfig(const std::string& arg)
 
 		if (l_rendererArguments == "0")
 		{
-#if !defined INNO_PLATFORM_MAC
+#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
 			l_result.renderingBackend = RenderingBackend::GL;
 #else
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem: OpenGL is not supported on current platform, no rendering backend will be launched.");
@@ -123,6 +128,14 @@ InitConfig InnoVisionSystemNS::parseInitConfig(const std::string& arg)
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem: Vulkan is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
+		else if (l_rendererArguments == "4")
+		{
+#if defined INNO_PLATFORM_MAC
+			l_result.renderingBackend = RenderingBackend::MT;
+#else
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem: Metal is not supported on current platform, use default OpenGL rendering backend.");
+#endif
+		}
 		else
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem: Unsupported rendering backend, use default OpenGL rendering backend.");
@@ -144,10 +157,14 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hwnd, cha
 	InnoVisionSystemNS::m_windowSystem = new WinWindowSystem();
 #endif
 
+#if defined INNO_PLATFORM_MAC
+	InnoVisionSystemNS::m_windowSystem = new MacWindowSystem();
+#endif
+
 	switch (InnoVisionSystemNS::m_initConfig.renderingBackend)
 	{
 	case RenderingBackend::GL:
-#if !defined INNO_PLATFORM_MAC
+#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
 		InnoVisionSystemNS::m_renderingBackendSystem = new GLRenderingSystem();
 #endif
 		break;
@@ -166,6 +183,11 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hwnd, cha
 		InnoVisionSystemNS::m_renderingBackendSystem = new VKRenderingSystem();
 #endif
 		break;
+		case RenderingBackend::MT:
+	#if defined INNO_PLATFORM_MAC
+			InnoVisionSystemNS::m_renderingBackendSystem = new MTRenderingSystem();
+	#endif
+			break;
 	default:
 		break;
 	}

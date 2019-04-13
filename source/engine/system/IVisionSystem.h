@@ -8,7 +8,7 @@
 #include "IRenderingBackendSystem.h"
 
 enum EngineMode { GAME, EDITOR };
-enum RenderingBackend { GL, DX11, DX12, VK };
+enum RenderingBackend { GL, DX11, DX12, VK, MT };
 struct InitConfig
 {
 	EngineMode engineMode = EngineMode::GAME;

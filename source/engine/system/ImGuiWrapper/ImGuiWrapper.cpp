@@ -58,6 +58,8 @@ bool ImGuiWrapper::setup()
 	case RenderingBackend::VK:
 		ImGuiWrapperNS::m_isParity = false;
 		//ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinVK();
+	case RenderingBackend::MT:
+		ImGuiWrapperNS::m_isParity = false;
 		break;
 	default:
 		break;
@@ -80,6 +82,8 @@ bool ImGuiWrapper::setup()
 	case RenderingBackend::VK:
 		ImGuiWrapperNS::m_isParity = false;
 		break;
+  case RenderingBackend::MT:
+		ImGuiWrapperNS::m_isParity = false;
 	default:
 		break;
 	}
