@@ -184,10 +184,10 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hwnd, cha
 #endif
 		break;
 		case RenderingBackend::MT:
-	#if defined INNO_PLATFORM_MAC
-			InnoVisionSystemNS::m_renderingBackendSystem = new MTRenderingSystem();
-	#endif
-			break;
+#if defined INNO_PLATFORM_MAC
+		InnoVisionSystemNS::m_renderingBackendSystem = new MTRenderingSystem();
+#endif
+    break;
 	default:
 		break;
 	}
@@ -197,6 +197,13 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hwnd, cha
 		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	};
+
+	// Objective-C++ bridge class instance passed as the 1st parameter of setup()
+#if defined INNO_PLATFORM_MAC
+	auto l_renderingBackendSystem = reinterpret_cast<MTRenderingSystem*>(InnoVisionSystemNS::m_renderingBackendSystem);
+	std::shared_ptr<MTRenderingSystemBridge> l_bridge(reinterpret_cast<MTRenderingSystemBridge*>(hInstance));
+	l_renderingBackendSystem->setBridge(l_bridge);
+#endif
 
 	if (!InnoVisionSystemNS::setupRendering())
 	{

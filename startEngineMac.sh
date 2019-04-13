@@ -1,3 +1,3 @@
 #!/bin/sh
 cd bin
-./InnoMain "-renderer 0 -mode 0"
+open -a InnoMain --args "-renderer 4 -mode 0"

@@ -23,22 +23,17 @@ INNO_PRIVATE_SCOPE MTRenderingSystemNS
 bool MTRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
 	m_renderingFrontendSystem = renderingFrontend;
-
 	m_entityID = InnoMath::createEntityID();
-
-	bool result = true;
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem setup finished.");
-	return result;
+	return true;
 }
 
 bool MTRenderingSystemNS::initialize()
 {
-	bool result = true;
-
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem has been initialized.");
-	return result;
+	return true;
 }
 
 bool MTRenderingSystemNS::update()
@@ -48,6 +43,7 @@ bool MTRenderingSystemNS::update()
 
 bool MTRenderingSystemNS::terminate()
 {
+
 	MTRenderingSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem has been terminated.");
 
@@ -56,21 +52,25 @@ bool MTRenderingSystemNS::terminate()
 
 bool MTRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
 {
+	bool result = m_bridge->setup();
 	return MTRenderingSystemNS::setup(renderingFrontend);
 }
 
 bool MTRenderingSystem::initialize()
 {
+	bool result = m_bridge->initialize();
 	return MTRenderingSystemNS::initialize();
 }
 
 bool MTRenderingSystem::update()
 {
+	bool result = m_bridge->update();
 	return MTRenderingSystemNS::update();
 }
 
 bool MTRenderingSystem::terminate()
 {
+	bool result = m_bridge->terminate();
 	return MTRenderingSystemNS::terminate();
 }
 
@@ -92,4 +92,10 @@ bool MTRenderingSystem::reloadShader(RenderPassType renderPassType)
 bool MTRenderingSystem::bakeGI()
 {
 	return true;
+}
+
+void MTRenderingSystem::setBridge(const std::shared_ptr<MTRenderingSystemBridge>& bridge)
+{
+	m_bridge = bridge;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem: Bridge connected at " + InnoUtility::pointerToString(bridge.get()));
 }

@@ -7,28 +7,39 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9A101773226256CE003E3B2A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9A101772226256CE003E3B2A /* AppDelegate.mm */; };
+		9A10177522625751003E3B2A /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A10177422625751003E3B2A /* MetalKit.framework */; };
+		9A10177722625757003E3B2A /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A10177622625757003E3B2A /* Metal.framework */; };
+		9A10177C22627458003E3B2A /* MetalDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 9A10177B22627458003E3B2A /* MetalDelegate.m */; };
+		9A10178022627562003E3B2A /* MacWindowDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 9A10177F22627562003E3B2A /* MacWindowDelegate.m */; };
 		9A6EE4242261D4D80062CA0E /* libInnoApplication.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A6EE4232261D4D80062CA0E /* libInnoApplication.a */; };
 		9A6EE4262261D4EB0062CA0E /* libInnoSystem.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A6EE4252261D4EB0062CA0E /* libInnoSystem.dylib */; };
 		9A6EE4282261D4F80062CA0E /* libInnoGame.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A6EE4272261D4F80062CA0E /* libInnoGame.dylib */; settings = {ATTRIBUTES = (Required, ); }; };
-		9AAC7E002261C42D000BD5B5 /* macMain.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9AAC7DFF2261C42D000BD5B5 /* macMain.mm */; };
+		9AAC7E002261C42D000BD5B5 /* macMain.m in Sources */ = {isa = PBXBuildFile; fileRef = 9AAC7DFF2261C42D000BD5B5 /* macMain.m */; };
 		9ACA09632261C3C80036FCEC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9ACA09622261C3C80036FCEC /* Assets.xcassets */; };
 		9ACA09662261C3C80036FCEC /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9ACA09642261C3C80036FCEC /* MainMenu.xib */; };
 		9ACA09722261C3E10036FCEC /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ACA09712261C3E10036FCEC /* AppKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9A1017712262568E003E3B2A /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		9A101772226256CE003E3B2A /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
+		9A10177422625751003E3B2A /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		9A10177622625757003E3B2A /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		9A10177A22627439003E3B2A /* MetalDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MetalDelegate.h; sourceTree = "<group>"; };
+		9A10177B22627458003E3B2A /* MetalDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MetalDelegate.m; sourceTree = "<group>"; };
+		9A10177E22627518003E3B2A /* MacWindowDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MacWindowDelegate.h; sourceTree = "<group>"; };
+		9A10177F22627562003E3B2A /* MacWindowDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MacWindowDelegate.m; sourceTree = "<group>"; };
 		9A6EE4232261D4D80062CA0E /* libInnoApplication.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libInnoApplication.a; path = ../../../../build/lib_archive/libInnoApplication.a; sourceTree = "<group>"; };
 		9A6EE4252261D4EB0062CA0E /* libInnoSystem.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libInnoSystem.dylib; path = ../../../../build/lib/libInnoSystem.dylib; sourceTree = "<group>"; };
 		9A6EE4272261D4F80062CA0E /* libInnoGame.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libInnoGame.dylib; path = ../../../../build/lib/libInnoGame.dylib; sourceTree = "<group>"; };
-		9AAC7DFF2261C42D000BD5B5 /* macMain.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = macMain.mm; sourceTree = "<group>"; };
+		9AAC7DFF2261C42D000BD5B5 /* macMain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = macMain.m; sourceTree = "<group>"; };
 		9ACA095C2261C3C80036FCEC /* InnoMain.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InnoMain.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9ACA09622261C3C80036FCEC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9ACA09652261C3C80036FCEC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		9ACA09672261C3C80036FCEC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9ACA096A2261C3C80036FCEC /* InnoMain.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = InnoMain.entitlements; sourceTree = "<group>"; };
 		9ACA09712261C3E10036FCEC /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
-		9ACA09732261C3E70036FCEC /* GLKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLKit.framework; path = System/Library/Frameworks/GLKit.framework; sourceTree = SDKROOT; };
-		9ACA09752261C3EC0036FCEC /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,6 +47,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9A10177722625757003E3B2A /* Metal.framework in Frameworks */,
+				9A10177522625751003E3B2A /* MetalKit.framework in Frameworks */,
 				9A6EE4282261D4F80062CA0E /* libInnoGame.dylib in Frameworks */,
 				9A6EE4262261D4EB0062CA0E /* libInnoSystem.dylib in Frameworks */,
 				9A6EE4242261D4D80062CA0E /* libInnoApplication.a in Frameworks */,
@@ -66,11 +79,17 @@
 		9ACA095E2261C3C80036FCEC /* InnoMain */ = {
 			isa = PBXGroup;
 			children = (
-				9AAC7DFF2261C42D000BD5B5 /* macMain.mm */,
+				9A10177F22627562003E3B2A /* MacWindowDelegate.m */,
+				9A10177E22627518003E3B2A /* MacWindowDelegate.h */,
+				9A10177B22627458003E3B2A /* MetalDelegate.m */,
+				9A10177A22627439003E3B2A /* MetalDelegate.h */,
+				9A101772226256CE003E3B2A /* AppDelegate.mm */,
+				9AAC7DFF2261C42D000BD5B5 /* macMain.m */,
 				9ACA09622261C3C80036FCEC /* Assets.xcassets */,
 				9ACA09642261C3C80036FCEC /* MainMenu.xib */,
 				9ACA09672261C3C80036FCEC /* Info.plist */,
 				9ACA096A2261C3C80036FCEC /* InnoMain.entitlements */,
+				9A1017712262568E003E3B2A /* AppDelegate.h */,
 			);
 			path = InnoMain;
 			sourceTree = "<group>";
@@ -78,11 +97,11 @@
 		9ACA09702261C3E10036FCEC /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				9A10177622625757003E3B2A /* Metal.framework */,
+				9A10177422625751003E3B2A /* MetalKit.framework */,
 				9A6EE4272261D4F80062CA0E /* libInnoGame.dylib */,
 				9A6EE4252261D4EB0062CA0E /* libInnoSystem.dylib */,
 				9A6EE4232261D4D80062CA0E /* libInnoApplication.a */,
-				9ACA09752261C3EC0036FCEC /* OpenGL.framework */,
-				9ACA09732261C3E70036FCEC /* GLKit.framework */,
 				9ACA09712261C3E10036FCEC /* AppKit.framework */,
 			);
 			name = Frameworks;
@@ -157,7 +176,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9AAC7E002261C42D000BD5B5 /* macMain.mm in Sources */,
+				9A10177C22627458003E3B2A /* MetalDelegate.m in Sources */,
+				9A101773226256CE003E3B2A /* AppDelegate.mm in Sources */,
+				9A10178022627562003E3B2A /* MacWindowDelegate.m in Sources */,
+				9AAC7E002261C42D000BD5B5 /* macMain.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

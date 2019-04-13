@@ -1,5 +1,6 @@
 #pragma once
 #include "../IRenderingBackendSystem.h"
+#include "MTRenderingSystemBridge.h"
 
 class MTRenderingSystem : INNO_IMPLEMENT IRenderingBackendSystem
 {
@@ -16,4 +17,9 @@ public:
 	bool resize() override;
 	bool reloadShader(RenderPassType renderPassType) override;
 	bool bakeGI() override;
+
+	void setBridge(const std::shared_ptr<MTRenderingSystemBridge>& bridge);
+
+private:
+		std::shared_ptr<MTRenderingSystemBridge> m_bridge;
 };
