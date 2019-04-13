@@ -1,7 +1,10 @@
 #!/bin/sh
 rm -rf bin
+rm -rf build/InnoMain/build/Debug/res/
+
 mkdir bin
-cp -r build/bin/* bin/
-rm -rf build/bin/res/
-mkdir build/bin/res
-cp -r res/* build/bin/res/
+cp -r build/lib/* build/InnoMain/build/Debug/
+cp -r build/InnoMain/build/Debug/* bin/
+
+mkdir build/InnoMain/build/Debug/res/
+cp -r res/* build/InnoMain/build/Debug/res/

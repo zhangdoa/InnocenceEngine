@@ -1,10 +1,5 @@
 #pragma once
-#include "../common/stdafx.h"
-#include <atomic>
-#include <condition_variable>
-#include <mutex>
-#include <queue>
-#include <utility>
+#include "../common/stl14.h"
 
 #include "InnoAllocator.h"
 

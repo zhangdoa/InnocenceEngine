@@ -6,6 +6,10 @@
 #include "ImGuiWrapperWinVK.h"
 #endif
 
+#if defined INNO_PLATFORM_MAC
+#include "ImGuiWrapperMacGL.h"
+#endif
+
 #include "../ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -39,6 +43,7 @@ bool ImGuiWrapper::setup()
 {
 	auto l_initConfig = g_pCoreSystem->getVisionSystem()->getInitConfig();
 
+	#if defined INNO_PLATFORM_WIN
 	switch (l_initConfig.renderingBackend)
 	{
 	case RenderingBackend::GL:
@@ -57,6 +62,28 @@ bool ImGuiWrapper::setup()
 	default:
 		break;
 	}
+	#endif
+
+	#if defined INNO_PLATFORM_MAC
+	switch (l_initConfig.renderingBackend)
+	{
+	case RenderingBackend::GL:
+		ImGuiWrapperNS::m_isParity = false;
+		//ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinGL();
+		break;
+	case RenderingBackend::DX11:
+		ImGuiWrapperNS::m_isParity = false;
+		break;
+	case RenderingBackend::DX12:
+		ImGuiWrapperNS::m_isParity = false;
+		break;
+	case RenderingBackend::VK:
+		ImGuiWrapperNS::m_isParity = false;
+		break;
+	default:
+		break;
+	}
+	#endif
 
 	if (ImGuiWrapperNS::m_isParity)
 	{
@@ -144,18 +171,11 @@ bool ImGuiWrapper::update()
 	{
 		ImGuiWrapperNS::m_wrapperImpl->newFrame();
 
-#ifdef DEBUG
 		ImGui::NewFrame();
 		{
 			//ImGuiWrapperNS::showApplicationProfiler();
 			//ImGuiWrapperNS::showFileExplorer();
 			//ImGuiWrapperNS::showWorldExplorer();
-#else
-		// @TODO: handle GUI component
-		ImGui::Begin("Main Menu", 0, ImGuiWindowFlags_AlwaysAutoResize);
-		ImGui::Button("Start");
-		ImGui::End();
-#endif
 		}
 	ImGui::Render();
 	ImGuiWrapperNS::m_wrapperImpl->render();
@@ -279,7 +299,7 @@ void ImGuiWrapperNS::showFileExplorer()
 				}
 			}
 			ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + l_iconSize.x);
-			ImGui::Text((l_currentActivateDir->directoryName).c_str());
+			ImGui::Text("%s", (l_currentActivateDir->directoryName).c_str());
 			ImGui::PopTextWrapPos();
 		}
 		ImGui::EndGroup();
@@ -318,7 +338,7 @@ void ImGuiWrapperNS::showFileExplorer()
 				}
 			}
 			ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + l_iconSize.x);
-			ImGui::Text((i.fileName + i.extension).c_str());
+			ImGui::Text("%s", (i.fileName + i.extension).c_str());
 			ImGui::PopTextWrapPos();
 		}
 		ImGui::EndGroup();

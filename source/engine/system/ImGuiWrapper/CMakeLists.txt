@@ -12,6 +12,12 @@ target_link_libraries(ImGuiWrapper ImGuiWrapperWinGL)
 target_link_libraries(ImGuiWrapper InnoGLRenderingBackend)
 endif (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
 
+if (INNO_PLATFORM_MAC)
+add_library(ImGuiWrapperMacGL ImGuiWrapperMacGL.h ImGuiWrapperMacGL.cpp)
+target_link_libraries(ImGuiWrapperMacGL ImGui)
+target_link_libraries(ImGuiWrapper ImGuiWrapperMacGL)
+endif (INNO_PLATFORM_MAC)
+
 if (VULKAN)
 add_library(ImGuiWrapperWinVK ImGuiWrapperWinVK.h ImGuiWrapperWinVK.cpp)
 target_link_libraries(ImGuiWrapperWinVK ImGui)

@@ -1,12 +1,12 @@
 #add_subdirectory("GLFWWrapper")
 add_subdirectory("ImGuiWrapper")
-add_subdirectory("PhysXWrapper")
 add_subdirectory("Core")
 
 if (INNO_PLATFORM_WIN)
 add_subdirectory("DX11RenderingBackend")
 add_subdirectory("DX12RenderingBackend")
 add_subdirectory("WinWindow")
+add_subdirectory("PhysXWrapper")
 endif (INNO_PLATFORM_WIN)
 
 if (VULKAN)
@@ -35,6 +35,7 @@ if (INNO_PLATFORM_WIN)
 target_link_libraries(InnoSystem InnoDX11RenderingBackend)
 target_link_libraries(InnoSystem InnoDX12RenderingBackend)
 target_link_libraries(InnoSystem WinWindow)
+target_link_libraries(InnoSystem PhysXWrapper)
 endif (INNO_PLATFORM_WIN)
 
 if (VULKAN)
@@ -52,16 +53,13 @@ target_link_libraries(InnoSystem STB_Image)
 
 target_link_libraries(InnoSystem ImGuiWrapper)
 
-if (INNO_PLATFORM_WIN)
-target_link_libraries(InnoSystem PhysXWrapper)
-endif (INNO_PLATFORM_WIN)
-
 if (INNO_PLATFORM_LINUX)
 target_link_libraries(InnoSystem -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lGL -lm -lpthread -lstdc++fs)
-elseif (INNO_PLATFORM_MAC)
+endif (INNO_PLATFORM_LINUX)
+
+if (INNO_PLATFORM_MAC)
 find_library(COCOA Cocoa)
 find_library(IOKIT IOKit)
 find_library(COREVIDEO CoreVideo)
 target_link_libraries(InnoSystem "${COCOA}" "${IOKIT}" "${COREVIDEO}" -lz -lc++fs)
-else ()
-endif (INNO_PLATFORM_LINUX)
+endif (INNO_PLATFORM_MAC)

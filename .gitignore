@@ -1,7 +1,12 @@
+# Build binaries
 /bin
 /build
+
+# Dynamic linking export headers
 /source/engine/exports
 /source/game/exports
+
+# Third-party headers and libraries
 /source/external/include/assimp
 /source/external/include/GLFW
 /source/external/include/vulkan
@@ -11,20 +16,36 @@ source/external/include/GL
 /source/external/lib
 /source/external/dll
 
+# For macOS
 \.DS_Store
+/source/engine/platform/macOS/build
 
+# For Xcode
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+# Intermite assets
 *.innoModel
 *.spv
+
+# For Qt
 /source/editor/*
 !/source/editor/InnocenceEditor/*
+
 /source/engine/common/config.h
 /source/engine/third-party/ImGui
 source/editor/InnocenceEditor/darkstyle/
-
 source/editor/InnocenceEditor/DarkStyle\.cpp
-
 source/editor/InnocenceEditor/DarkStyle\.h
-
 source/editor/InnocenceEditor/darkstyle\.qrc
-
 source/editor/InnocenceEditor/InnocenceEditor\.pro\.user

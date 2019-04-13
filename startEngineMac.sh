@@ -1,3 +1,3 @@
 #!/bin/sh
 cd bin
-./InnoMain "-renderer GL"
+./InnoMain "-renderer 0 -mode 0"

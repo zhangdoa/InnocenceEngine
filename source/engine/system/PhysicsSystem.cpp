@@ -1,6 +1,8 @@
 #include "PhysicsSystem.h"
 
+#if defined INNO_PLATFORM_WIN
 #include "PhysXWrapper/PhysXWrapper.h"
+#endif
 
 #include "ICoreSystem.h"
 
@@ -73,7 +75,9 @@ bool InnoPhysicsSystemNS::setup()
 	m_sceneBoundMin = InnoMath::maxVec4<float>;
 	m_sceneBoundMin.w = 1.0f;
 
+	#if defined INNO_PLATFORM_WIN
 	PhysXWrapper::get().setup();
+	#endif
 
 	f_sceneLoadingStartCallback = [&]() {
 		m_cullingDataPack.clear();
@@ -636,6 +640,7 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Vi
 		l_PDC->m_physicsDatas.emplace_back(l_physicsData);
 	}
 
+	#if defined INNO_PLATFORM_WIN
 	if (visibleComponent->m_simulatePhysics)
 	{
 		auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
@@ -654,6 +659,7 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Vi
 			break;
 		}
 	}
+	#endif
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for " + visibleComponent->m_parentEntity + ".");
 
@@ -822,7 +828,9 @@ bool InnoPhysicsSystemNS::update()
 		return true;
 	}
 
+	#if defined INNO_PLATFORM_WIN
 	PhysXWrapper::get().update();
+	#endif
 
 	auto preparePhysicsDataTask = g_pCoreSystem->getTaskSystem()->submit([&]()
 	{

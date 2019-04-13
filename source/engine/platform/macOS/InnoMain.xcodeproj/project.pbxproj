@@ -1,0 +1,363 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		9A6EE4242261D4D80062CA0E /* libInnoApplication.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A6EE4232261D4D80062CA0E /* libInnoApplication.a */; };
+		9A6EE4262261D4EB0062CA0E /* libInnoSystem.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A6EE4252261D4EB0062CA0E /* libInnoSystem.dylib */; };
+		9A6EE4282261D4F80062CA0E /* libInnoGame.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A6EE4272261D4F80062CA0E /* libInnoGame.dylib */; settings = {ATTRIBUTES = (Required, ); }; };
+		9AAC7E002261C42D000BD5B5 /* macMain.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9AAC7DFF2261C42D000BD5B5 /* macMain.mm */; };
+		9ACA09632261C3C80036FCEC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9ACA09622261C3C80036FCEC /* Assets.xcassets */; };
+		9ACA09662261C3C80036FCEC /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9ACA09642261C3C80036FCEC /* MainMenu.xib */; };
+		9ACA09722261C3E10036FCEC /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ACA09712261C3E10036FCEC /* AppKit.framework */; };
+		9ACA09742261C3E70036FCEC /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ACA09732261C3E70036FCEC /* GLKit.framework */; };
+		9ACA09762261C3EC0036FCEC /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ACA09752261C3EC0036FCEC /* OpenGL.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		9A6EE4232261D4D80062CA0E /* libInnoApplication.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libInnoApplication.a; path = ../../../../build/lib_archive/libInnoApplication.a; sourceTree = "<group>"; };
+		9A6EE4252261D4EB0062CA0E /* libInnoSystem.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libInnoSystem.dylib; path = ../../../../build/lib/libInnoSystem.dylib; sourceTree = "<group>"; };
+		9A6EE4272261D4F80062CA0E /* libInnoGame.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libInnoGame.dylib; path = ../../../../build/lib/libInnoGame.dylib; sourceTree = "<group>"; };
+		9AAC7DFF2261C42D000BD5B5 /* macMain.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = macMain.mm; sourceTree = "<group>"; };
+		9ACA095C2261C3C80036FCEC /* InnoMain.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InnoMain.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9ACA09622261C3C80036FCEC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9ACA09652261C3C80036FCEC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		9ACA09672261C3C80036FCEC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9ACA096A2261C3C80036FCEC /* InnoMain.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = InnoMain.entitlements; sourceTree = "<group>"; };
+		9ACA09712261C3E10036FCEC /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		9ACA09732261C3E70036FCEC /* GLKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLKit.framework; path = System/Library/Frameworks/GLKit.framework; sourceTree = SDKROOT; };
+		9ACA09752261C3EC0036FCEC /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9ACA09592261C3C80036FCEC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9A6EE4282261D4F80062CA0E /* libInnoGame.dylib in Frameworks */,
+				9A6EE4262261D4EB0062CA0E /* libInnoSystem.dylib in Frameworks */,
+				9A6EE4242261D4D80062CA0E /* libInnoApplication.a in Frameworks */,
+				9ACA09762261C3EC0036FCEC /* OpenGL.framework in Frameworks */,
+				9ACA09742261C3E70036FCEC /* GLKit.framework in Frameworks */,
+				9ACA09722261C3E10036FCEC /* AppKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		9ACA09532261C3C80036FCEC = {
+			isa = PBXGroup;
+			children = (
+				9ACA095E2261C3C80036FCEC /* InnoMain */,
+				9ACA095D2261C3C80036FCEC /* Products */,
+				9ACA09702261C3E10036FCEC /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		9ACA095D2261C3C80036FCEC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9ACA095C2261C3C80036FCEC /* InnoMain.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9ACA095E2261C3C80036FCEC /* InnoMain */ = {
+			isa = PBXGroup;
+			children = (
+				9AAC7DFF2261C42D000BD5B5 /* macMain.mm */,
+				9ACA09622261C3C80036FCEC /* Assets.xcassets */,
+				9ACA09642261C3C80036FCEC /* MainMenu.xib */,
+				9ACA09672261C3C80036FCEC /* Info.plist */,
+				9ACA096A2261C3C80036FCEC /* InnoMain.entitlements */,
+			);
+			path = InnoMain;
+			sourceTree = "<group>";
+		};
+		9ACA09702261C3E10036FCEC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				9A6EE4272261D4F80062CA0E /* libInnoGame.dylib */,
+				9A6EE4252261D4EB0062CA0E /* libInnoSystem.dylib */,
+				9A6EE4232261D4D80062CA0E /* libInnoApplication.a */,
+				9ACA09752261C3EC0036FCEC /* OpenGL.framework */,
+				9ACA09732261C3E70036FCEC /* GLKit.framework */,
+				9ACA09712261C3E10036FCEC /* AppKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9ACA095B2261C3C80036FCEC /* InnoMain */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9ACA096D2261C3C80036FCEC /* Build configuration list for PBXNativeTarget "InnoMain" */;
+			buildPhases = (
+				9ACA09582261C3C80036FCEC /* Sources */,
+				9ACA09592261C3C80036FCEC /* Frameworks */,
+				9ACA095A2261C3C80036FCEC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = InnoMain;
+			productName = InnoMain;
+			productReference = 9ACA095C2261C3C80036FCEC /* InnoMain.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9ACA09542261C3C80036FCEC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1010;
+				ORGANIZATIONNAME = InnocenceEngine;
+				TargetAttributes = {
+					9ACA095B2261C3C80036FCEC = {
+						CreatedOnToolsVersion = 10.1;
+					};
+				};
+			};
+			buildConfigurationList = 9ACA09572261C3C80036FCEC /* Build configuration list for PBXProject "InnoMain" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 9ACA09532261C3C80036FCEC;
+			productRefGroup = 9ACA095D2261C3C80036FCEC /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9ACA095B2261C3C80036FCEC /* InnoMain */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9ACA095A2261C3C80036FCEC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9ACA09632261C3C80036FCEC /* Assets.xcassets in Resources */,
+				9ACA09662261C3C80036FCEC /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9ACA09582261C3C80036FCEC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9AAC7E002261C42D000BD5B5 /* macMain.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		9ACA09642261C3C80036FCEC /* MainMenu.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9ACA09652261C3C80036FCEC /* Base */,
+			);
+			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		9ACA096B2261C3C80036FCEC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		9ACA096C2261C3C80036FCEC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		9ACA096E2261C3C80036FCEC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = InnoMain/InnoMain.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = InnoMain/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					../lib,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					../../../../build/lib,
+					../../../../build/lib_archive,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = InnocenceEngine.InnoMain;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYMROOT = ../../../../build/InnoMain;
+			};
+			name = Debug;
+		};
+		9ACA096F2261C3C80036FCEC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = InnoMain/InnoMain.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = InnoMain/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					../lib,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					../../../../build/lib,
+					../../../../build/lib_archive,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = InnocenceEngine.InnoMain;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYMROOT = ../../../../build/InnoMain;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9ACA09572261C3C80036FCEC /* Build configuration list for PBXProject "InnoMain" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9ACA096B2261C3C80036FCEC /* Debug */,
+				9ACA096C2261C3C80036FCEC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9ACA096D2261C3C80036FCEC /* Build configuration list for PBXNativeTarget "InnoMain" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9ACA096E2261C3C80036FCEC /* Debug */,
+				9ACA096F2261C3C80036FCEC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9ACA09542261C3C80036FCEC /* Project object */;
+}

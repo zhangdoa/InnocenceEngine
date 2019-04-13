@@ -17,6 +17,7 @@ INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
 
 #include "stb/stb_image.h"
 
+#include "../common/stl17.h"
 namespace fs = std::filesystem;
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS

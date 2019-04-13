@@ -1,5 +1,5 @@
 #pragma once
-#include "../common/stdafx.h"
+#include "../common/stl14.h"
 #include "../common/config.h"
 #include "../common/InnoType.h"
 

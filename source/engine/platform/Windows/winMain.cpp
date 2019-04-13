@@ -1,5 +1,3 @@
-#include "../../common/stdafx.h"
-#include "../../common/config.h"
 #include <windows.h>
 #include <windowsx.h>
 

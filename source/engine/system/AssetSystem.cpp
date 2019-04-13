@@ -1,8 +1,5 @@
 #include "AssetSystem.h"
 #include "../common/ComponentHeaders.h"
-
-namespace fs = std::filesystem;
-
 #include "ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
