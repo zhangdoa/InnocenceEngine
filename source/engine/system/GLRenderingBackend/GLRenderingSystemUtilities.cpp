@@ -37,7 +37,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void* m_GLRenderPassComponentPool;
 	void* m_GLShaderProgramComponentPool;
 
-	const std::string m_shaderRelativePath = std::string{ "..//res//shaders//" };
+	const std::string m_shaderRelativePath = std::string{ "res//shaders//" };
 }
 
 bool GLRenderingSystemNS::initializeComponentPool()

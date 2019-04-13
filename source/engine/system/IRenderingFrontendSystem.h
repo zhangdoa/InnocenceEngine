@@ -1,5 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
+#include "../common/stl17.h"
 #include "../exports/InnoSystem_Export.h"
 #include "../common/InnoClassTemplate.h"
 

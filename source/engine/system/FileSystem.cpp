@@ -18,6 +18,7 @@ INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
 #include "stb/stb_image.h"
 
 #include "../common/stl17.h"
+#include <filesystem>
 namespace fs = std::filesystem;
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS
@@ -728,6 +729,7 @@ bool InnoFileSystemNS::saveScene(const std::string& fileName)
 INNO_SYSTEM_EXPORT bool InnoFileSystem::setup()
 {
 	InnoFileSystemNS::m_workingDir = std::filesystem::current_path().generic_string();
+	InnoFileSystemNS::m_workingDir = InnoFileSystemNS::m_workingDir + "//";
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: current working directory is " + InnoFileSystemNS::m_workingDir);
 	InnoFileSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;

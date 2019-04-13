@@ -163,7 +163,7 @@ bool ImGuiWrapper::initialize()
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 
 		// Load Fonts
-		io.Fonts->AddFontFromFileTTF("..//res//fonts//FreeSans.otf", 16.0f);
+		io.Fonts->AddFontFromFileTTF("res//fonts//FreeSans.otf", 16.0f);
 	}
 
 	return true;
