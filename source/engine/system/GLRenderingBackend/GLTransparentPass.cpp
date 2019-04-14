@@ -22,7 +22,7 @@ INNO_PRIVATE_SCOPE GLTransparentPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//transparentPassVertex.sf" , "", "GL//transparentPassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//transparentPass.vert" , "", "GL//transparentPass.frag" };
 
 	GLuint m_uni_albedo;
 	GLuint m_uni_TR;

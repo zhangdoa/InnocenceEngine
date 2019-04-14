@@ -22,7 +22,7 @@ INNO_PRIVATE_SCOPE GLSSAONoisePass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//SSAONoisePassVertex.sf" , "", "GL//SSAONoisePassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//SSAONoisePass.vert" , "", "GL//SSAONoisePass.frag" };
 
 	unsigned int m_kernelSize = 64;
 	std::vector<vec4> m_SSAOKernel;

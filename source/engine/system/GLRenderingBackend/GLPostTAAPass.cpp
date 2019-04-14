@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE GLPostTAAPass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//postTAAPassVertex.sf", "", "GL//postTAAPassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//postTAAPass.vert", "", "GL//postTAAPass.frag" };
 }
 
 bool GLPostTAAPass::initialize()

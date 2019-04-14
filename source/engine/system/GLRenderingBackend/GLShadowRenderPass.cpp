@@ -25,7 +25,7 @@ INNO_PRIVATE_SCOPE GLShadowRenderPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//shadowPassVertex.sf" , "", "GL//shadowPassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//shadowPass.vert" , "", "GL//shadowPass.frag" };
 
 	GLuint m_shadowPass_uni_p;
 	GLuint m_shadowPass_uni_v;

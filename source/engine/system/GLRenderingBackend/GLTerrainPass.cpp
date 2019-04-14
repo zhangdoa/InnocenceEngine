@@ -21,7 +21,7 @@ INNO_PRIVATE_SCOPE GLTerrainPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPassVertex.sf" , "", "GL//terrainPassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert" , "", "GL//terrainPass.frag" };
 
 	GLuint m_uni_p_camera;
 	GLuint m_uni_r_camera;

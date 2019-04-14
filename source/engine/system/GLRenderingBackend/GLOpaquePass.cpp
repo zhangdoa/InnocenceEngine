@@ -21,9 +21,9 @@ INNO_PRIVATE_SCOPE GLOpaquePass
 	GLShaderProgramComponent* m_GLSPC;
 
 #ifdef CookTorrance
-	ShaderFilePaths m_shaderFilePaths = { "GL//opaquePassCookTorranceVertex.sf" , "", "GL//opaquePassCookTorranceFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//opaquePassCookTorrance.vert" , "", "GL//opaquePassCookTorrance.frag" };
 #elif BlinnPhong
-	ShaderFilePaths m_shaderFilePaths = { "GL//opaquePassBlinnPhongVertex.sf" , "", "GL//opaquePassBlinnPhongFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//opaquePassBlinnPhong.vert" , "", "GL//opaquePassBlinnPhong.frag" };
 #endif
 
 	GLuint m_uni_id;

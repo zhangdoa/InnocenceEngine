@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE GLMotionBlurPass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//motionBlurPassVertex.sf", "", "GL//motionBlurPassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//motionBlurPass.vert", "", "GL//motionBlurPass.frag" };
 }
 
 bool GLMotionBlurPass::initialize()

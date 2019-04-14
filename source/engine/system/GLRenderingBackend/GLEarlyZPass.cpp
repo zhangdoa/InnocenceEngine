@@ -15,7 +15,7 @@ INNO_PRIVATE_SCOPE GLEarlyZPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//earlyZPassVertex.sf" , "", "GL//earlyZPassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//earlyZPass.vert" , "", "GL//earlyZPass.frag" };
 }
 
 bool GLEarlyZPass::initialize()

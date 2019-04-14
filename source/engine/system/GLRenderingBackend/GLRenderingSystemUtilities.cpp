@@ -398,6 +398,8 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 		}
 
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: " + shaderFilePath + " has been linked.");
+
+		glDetachShader(shaderProgram, shaderID);
 	};
 
 	if (!ShaderFilePaths.m_VSPath.empty())

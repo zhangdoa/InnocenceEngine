@@ -26,7 +26,7 @@ INNO_PRIVATE_SCOPE GLTAAPass
 	GLRenderPassComponent* m_PingPassGLRPC;
 	GLRenderPassComponent* m_PongPassGLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//TAAPassVertex.sf", "", "GL//TAAPassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//TAAPass.vert", "", "GL//TAAPass.frag" };
 }
 
 bool GLTAAPass::initialize()

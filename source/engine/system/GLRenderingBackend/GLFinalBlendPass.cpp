@@ -20,7 +20,7 @@ INNO_PRIVATE_SCOPE GLFinalBlendPass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//finalBlendPassVertex.sf", "", "GL//finalBlendPassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//finalBlendPass.vert", "", "GL//finalBlendPass.frag" };
 }
 
 bool GLFinalBlendPass::initialize()

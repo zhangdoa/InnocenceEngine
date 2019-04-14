@@ -26,9 +26,9 @@ INNO_PRIVATE_SCOPE GLLightPass
 	GLShaderProgramComponent* m_GLSPC;
 
 #ifdef CookTorrance
-	ShaderFilePaths m_shaderFilePaths = { "GL//lightPassCookTorranceVertex.sf" , "", "GL//lightPassCookTorranceFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//lightPassCookTorrance.vert" , "", "GL//lightPassCookTorrance.frag" };
 #elif BlinnPhong
-	ShaderFilePaths m_shaderFilePaths = { "GL//lightPassBlinnPhongVertex.sf" , "", "GL//lightPassBlinnPhongFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//lightPassBlinnPhong.vert" , "", "GL//lightPassBlinnPhong.frag" };
 #endif
 	std::vector<std::string> m_textureUniformNames =
 	{

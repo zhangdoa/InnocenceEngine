@@ -21,7 +21,7 @@ INNO_PRIVATE_SCOPE GLSSAOBlurPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//SSAOBlurPassVertex.sf" , "", "GL//SSAOBlurPassFragment.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//SSAOBlurPass.vert" , "", "GL//SSAOBlurPass.frag" };
 
 	std::vector<std::string> m_SSAOBlurPassTextureUniformNames =
 	{

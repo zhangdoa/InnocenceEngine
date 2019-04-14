@@ -45,7 +45,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderPass
 	GLRenderPassComponent* m_capturePassGLRPC;
 	GLFrameBufferDesc m_capturePassFrameBufferDesc = GLFrameBufferDesc();
 	TextureDataDesc m_capturePassTextureDesc = TextureDataDesc();
-	ShaderFilePaths m_capturePassShaderFilePaths = { "GL//environmentCapturePassVertex.sf" , "", "GL//environmentCapturePassFragment.sf" };
+	ShaderFilePaths m_capturePassShaderFilePaths = { "GL//environmentCapturePass.vert" , "", "GL//environmentCapturePass.frag" };
 	GLShaderProgramComponent* m_capturePassSPC;
 	GLuint m_capturePass_uni_albedoTexture;
 	GLuint m_capturePass_uni_p;
@@ -57,7 +57,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderPass
 	GLRenderPassComponent* m_convPassGLRPC;
 	GLFrameBufferDesc m_convPassFrameBufferDesc = GLFrameBufferDesc();
 	TextureDataDesc m_convPassTextureDesc = TextureDataDesc();
-	ShaderFilePaths m_convPassShaderFilePaths = { "GL//environmentConvolutionPassVertex.sf" , "", "GL//environmentConvolutionPassFragment.sf" };
+	ShaderFilePaths m_convPassShaderFilePaths = { "GL//environmentConvolutionPass.vert" , "", "GL//environmentConvolutionPass.frag" };
 	GLShaderProgramComponent* m_convPassSPC;
 	GLuint m_convPass_uni_capturedCubeMap;
 	GLuint m_convPass_uni_p;
@@ -66,7 +66,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderPass
 	GLRenderPassComponent* m_preFilterPassGLRPC;
 	GLFrameBufferDesc m_preFilterPassFrameBufferDesc = GLFrameBufferDesc();
 	TextureDataDesc m_preFilterPassTextureDesc = TextureDataDesc();
-	ShaderFilePaths m_preFilterPassShaderFilePaths = { "GL//environmentPreFilterPassVertex.sf" , "", "GL//environmentPreFilterPassFragment.sf" };
+	ShaderFilePaths m_preFilterPassShaderFilePaths = { "GL//environmentPreFilterPass.vert" , "", "GL//environmentPreFilterPass.frag" };
 	GLShaderProgramComponent* m_preFilterPassSPC;
 	GLuint m_preFilterPass_uni_capturedCubeMap;
 	GLuint m_preFilterPass_uni_p;
@@ -266,8 +266,8 @@ void GLEnvironmentRenderPass::initializeBRDFLUTPass()
 	ShaderFilePaths m_ShaderFilePaths;
 
 	////
-	m_ShaderFilePaths.m_VSPath = "GL//BRDFLUTPassVertex.sf";
-	m_ShaderFilePaths.m_FSPath = "GL//BRDFLUTPassFragment.sf";
+	m_ShaderFilePaths.m_VSPath = "GL//BRDFLUTPass.vert";
+	m_ShaderFilePaths.m_FSPath = "GL//BRDFLUTPass.frag";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
@@ -275,8 +275,8 @@ void GLEnvironmentRenderPass::initializeBRDFLUTPass()
 	m_BRDFSplitSumLUTPassSPC = rhs;
 
 	////
-	m_ShaderFilePaths.m_VSPath = "GL//BRDFLUTMSPassVertex.sf";
-	m_ShaderFilePaths.m_FSPath = "GL//BRDFLUTMSPassFragment.sf";
+	m_ShaderFilePaths.m_VSPath = "GL//BRDFLUTMSPass.vert";
+	m_ShaderFilePaths.m_FSPath = "GL//BRDFLUTMSPass.frag";
 
 	rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_ShaderFilePaths);
@@ -383,9 +383,9 @@ void GLEnvironmentRenderPass::initializeVoxelizationPass()
 	ShaderFilePaths m_voxelizationPassShaderFilePaths;
 
 	////
-	m_voxelizationPassShaderFilePaths.m_VSPath = "GL//GIvoxelizationPassVertex.sf";
-	m_voxelizationPassShaderFilePaths.m_GSPath = "GL//GIvoxelizationPassGeometry.sf";
-	m_voxelizationPassShaderFilePaths.m_FSPath = "GL//GIvoxelizationPassFragment.sf";
+	m_voxelizationPassShaderFilePaths.m_VSPath = "GL//GIvoxelizationPass.vert";
+	m_voxelizationPassShaderFilePaths.m_GSPath = "GL//GIvoxelizationPass.geom";
+	m_voxelizationPassShaderFilePaths.m_FSPath = "GL//GIvoxelizationPass.frag";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelizationPassShaderFilePaths);
@@ -439,7 +439,7 @@ void GLEnvironmentRenderPass::initializeIrradianceInjectionPass()
 	ShaderFilePaths m_irradianceInjectionPassShaderFilePaths;
 
 	////
-	m_irradianceInjectionPassShaderFilePaths.m_CSPath = "GL//GIirradianceInjectionPassCompute.sf";
+	m_irradianceInjectionPassShaderFilePaths.m_CSPath = "GL//GIirradianceInjectionPass.comp";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_irradianceInjectionPassShaderFilePaths);
@@ -477,9 +477,9 @@ void GLEnvironmentRenderPass::initializeVoxelVisualizationPass()
 	ShaderFilePaths m_voxelVisualizationPassShaderFilePaths;
 
 	////
-	m_voxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIvoxelVisualizationPassVertex.sf";
-	m_voxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIvoxelVisualizationPassGeometry.sf";
-	m_voxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIvoxelVisualizationPassFragment.sf";
+	m_voxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIvoxelVisualizationPass.vert";
+	m_voxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIvoxelVisualizationPass.geom";
+	m_voxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIvoxelVisualizationPass.frag";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelVisualizationPassShaderFilePaths);
