@@ -1,5 +1,5 @@
 //
-//  MetalDelegate.m
+//  MetalDelegate.mm
 //  InnoMain
 //
 //  Created by zhangdoa on 14/04/2019.
@@ -44,6 +44,7 @@ static matrix_float4x4 rotationMatrix2D(float radians)
 @implementation MetalDelegate
     
     id<MTLDevice> _device;
+    MTKView* _view;
     id<MTLLibrary> _library;
     id<MTLRenderPipelineState> _pipelineState;
     id<MTLBuffer> _vertexBuffer;
@@ -55,13 +56,11 @@ static matrix_float4x4 rotationMatrix2D(float radians)
         _device = MTLCreateSystemDefaultDevice();
     }
     
-    - (MTKView*)createView:(NSRect)frame
+    - (void)createView:(NSRect)frame
     {
-        MTKView* view = [[MTKView alloc] initWithFrame:frame
+        _view = [[MTKView alloc] initWithFrame:frame
                                                 device:_device];
-        [view setDelegate:self];
-        
-        return view;
+        [_view setDelegate:self];
     }
     
     - (void)createLibrary
@@ -79,9 +78,11 @@ static matrix_float4x4 rotationMatrix2D(float radians)
         }
     }
     
-    - (void)createPipeline:(id<CAMetalDrawable>)drawable
+    - (void)createPipeline
     {
         NSError* error;
+        
+        id<CAMetalDrawable> drawable = [_view currentDrawable];
         
         MTLRenderPipelineDescriptor* pipelineDesc = [[MTLRenderPipelineDescriptor alloc] init];
         pipelineDesc.vertexFunction = [_library newFunctionWithName:@"vertexFunction"];
@@ -144,4 +145,8 @@ static matrix_float4x4 rotationMatrix2D(float radians)
         [commandBuffer commit];
     }
     
-    @end
+- (MTKView *)getView { 
+    return _view;
+}
+
+@end

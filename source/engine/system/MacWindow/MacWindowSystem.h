@@ -1,6 +1,6 @@
 #pragma once
 #include "../IWindowSystem.h"
-#include "../../exports/InnoSystem_Export.h"
+#include "MacWindowSystemBridge.h"
 
 class MacWindowSystem : INNO_IMPLEMENT IWindowSystem
 {
@@ -18,4 +18,6 @@ public:
 	bool sendEvent(unsigned int umsg, unsigned int WParam, int LParam) override;
 
 	void swapBuffer() override;
+
+	void setBridge(MacWindowSystemBridge* bridge);
 };

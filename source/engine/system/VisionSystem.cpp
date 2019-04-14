@@ -145,7 +145,7 @@ InitConfig InnoVisionSystemNS::parseInitConfig(const std::string& arg)
 	return l_result;
 }
 
-INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hwnd, char* pScmdline)
+INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* appHook, void* extraHook, char* pScmdline)
 {
 	InnoVisionSystemNS::m_renderingFrontendSystem = new InnoRenderingFrontendSystem();
 
@@ -192,18 +192,24 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* hInstance, void* hwnd, cha
 		break;
 	}
 
-	if (!InnoVisionSystemNS::setupWindow(hInstance, hwnd))
+	// Objective-C++ bridge class instances passed as the 1st and 2nd parameters of setup()
+#if defined INNO_PLATFORM_MAC
+	auto l_windowSystem = reinterpret_cast<MacWindowSystem*>(InnoVisionSystemNS::m_windowSystem);
+	auto l_windowSystemBridge = reinterpret_cast<MacWindowSystemBridge*>(appHook);
+
+	l_windowSystem->setBridge(l_windowSystemBridge);
+
+	auto l_renderingBackendSystem = reinterpret_cast<MTRenderingSystem*>(InnoVisionSystemNS::m_renderingBackendSystem);
+	auto l_renderingBackendSystemBridge = reinterpret_cast<MTRenderingSystemBridge*>(extraHook);
+
+	l_renderingBackendSystem->setBridge(l_renderingBackendSystemBridge);
+#endif
+
+	if (!InnoVisionSystemNS::setupWindow(appHook, extraHook))
 	{
 		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	};
-
-	// Objective-C++ bridge class instance passed as the 1st parameter of setup()
-#if defined INNO_PLATFORM_MAC
-	auto l_renderingBackendSystem = reinterpret_cast<MTRenderingSystem*>(InnoVisionSystemNS::m_renderingBackendSystem);
-	std::shared_ptr<MTRenderingSystemBridge> l_bridge(reinterpret_cast<MTRenderingSystemBridge*>(hInstance));
-	l_renderingBackendSystem->setBridge(l_bridge);
-#endif
 
 	if (!InnoVisionSystemNS::setupRendering())
 	{

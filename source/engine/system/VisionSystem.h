@@ -6,7 +6,7 @@ class InnoVisionSystem : INNO_IMPLEMENT IVisionSystem
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoVisionSystem);
 
-	INNO_SYSTEM_EXPORT bool setup(void* hInstance, void* hwnd, char* pScmdline) override;
+	INNO_SYSTEM_EXPORT bool setup(void* appHook, void* extraHook, char* pScmdline) override;
 	INNO_SYSTEM_EXPORT bool initialize() override;
 	INNO_SYSTEM_EXPORT bool update() override;
 	INNO_SYSTEM_EXPORT bool terminate() override;

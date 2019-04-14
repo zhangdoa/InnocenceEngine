@@ -10,7 +10,7 @@ namespace InnoApplication
 	std::unique_ptr<GameInstance> m_pGameInstance;
 }
 
-bool InnoApplication::setup(void* hInstance, char* pScmdline)
+bool InnoApplication::setup(void* appHook, void* extraHook, char* pScmdline)
 {
 	m_pCoreSystem = std::make_unique<InnoCoreSystem>();
 	if (!m_pCoreSystem.get())
@@ -24,7 +24,7 @@ bool InnoApplication::setup(void* hInstance, char* pScmdline)
 		return false;
 	}
 
-	if (!m_pCoreSystem.get()->setup(hInstance, nullptr, pScmdline))
+	if (!m_pCoreSystem.get()->setup(appHook, extraHook, pScmdline))
 	{
 		return false;
 	}

@@ -18,8 +18,5 @@ public:
 	bool reloadShader(RenderPassType renderPassType) override;
 	bool bakeGI() override;
 
-	void setBridge(const std::shared_ptr<MTRenderingSystemBridge>& bridge);
-
-private:
-		std::shared_ptr<MTRenderingSystemBridge> m_bridge;
+	void setBridge(MTRenderingSystemBridge* bridge);
 };

@@ -18,7 +18,7 @@ INNO_INTERFACE ICoreSystem
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ICoreSystem);
 
-	INNO_SYSTEM_EXPORT virtual bool setup(void* hInstance, void* hwnd, char* pScmdline) = 0;
+	INNO_SYSTEM_EXPORT virtual bool setup(void* appHook, void* extraHook, char* pScmdline) = 0;
 	INNO_SYSTEM_EXPORT virtual bool initialize() = 0;
 	INNO_SYSTEM_EXPORT virtual bool update() = 0;
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;

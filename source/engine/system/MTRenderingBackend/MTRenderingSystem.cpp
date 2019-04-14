@@ -18,12 +18,16 @@ INNO_PRIVATE_SCOPE MTRenderingSystemNS
 
   ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
   IRenderingFrontendSystem* m_renderingFrontendSystem;
+
+	MTRenderingSystemBridge* m_bridge;
 }
 
 bool MTRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
 	m_renderingFrontendSystem = renderingFrontend;
 	m_entityID = InnoMath::createEntityID();
+
+	bool result = MTRenderingSystemNS::m_bridge->setup();
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem setup finished.");
@@ -32,17 +36,22 @@ bool MTRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 
 bool MTRenderingSystemNS::initialize()
 {
+	bool result = MTRenderingSystemNS::m_bridge->initialize();
+
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem has been initialized.");
 	return true;
 }
 
 bool MTRenderingSystemNS::update()
 {
+	bool result = MTRenderingSystemNS::m_bridge->update();
+
 	return true;
 }
 
 bool MTRenderingSystemNS::terminate()
 {
+	bool result = m_bridge->terminate();
 
 	MTRenderingSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem has been terminated.");
@@ -52,25 +61,21 @@ bool MTRenderingSystemNS::terminate()
 
 bool MTRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
 {
-	bool result = m_bridge->setup();
 	return MTRenderingSystemNS::setup(renderingFrontend);
 }
 
 bool MTRenderingSystem::initialize()
 {
-	bool result = m_bridge->initialize();
 	return MTRenderingSystemNS::initialize();
 }
 
 bool MTRenderingSystem::update()
 {
-	bool result = m_bridge->update();
 	return MTRenderingSystemNS::update();
 }
 
 bool MTRenderingSystem::terminate()
 {
-	bool result = m_bridge->terminate();
 	return MTRenderingSystemNS::terminate();
 }
 
@@ -94,8 +99,8 @@ bool MTRenderingSystem::bakeGI()
 	return true;
 }
 
-void MTRenderingSystem::setBridge(const std::shared_ptr<MTRenderingSystemBridge>& bridge)
+void MTRenderingSystem::setBridge(MTRenderingSystemBridge* bridge)
 {
-	m_bridge = bridge;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem: Bridge connected at " + InnoUtility::pointerToString(bridge.get()));
+	MTRenderingSystemNS::m_bridge = bridge;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem: Bridge connected at " + InnoUtility::pointerToString(bridge));
 }

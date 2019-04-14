@@ -14,11 +14,12 @@
 
 @interface MetalDelegate : NSObject <MTKViewDelegate> {
 }
-    - (void)createDevice;
-    - (MTKView*)createView:(NSRect)frame;
-    - (void)createLibrary;
-    - (void)createPipeline:(id<CAMetalDrawable>)drawable;
-    - (void)createBuffer;
-    @end
+- (void)createDevice;
+- (void)createView:(NSRect)frame;
+- (MTKView*)getView;
+- (void)createLibrary;
+- (void)createPipeline;
+- (void)createBuffer;
+@end
 
 #endif /* MetalDelegate_h */

@@ -15,7 +15,7 @@ ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE InnoCoreSystemNS
 {
 	bool createSubSystemInstance();
-	bool setup(void* hInstance, void* hwnd, char* pScmdline);
+	bool setup(void* appHook, void* extraHook, char* pScmdline);
 	bool initialize();
 	bool update();
 	bool terminate();
@@ -89,7 +89,7 @@ bool InnoCoreSystemNS::createSubSystemInstance()
 	return true;
 }
 
-bool InnoCoreSystemNS::setup(void* hInstance, void* hwnd, char* pScmdline)
+bool InnoCoreSystemNS::setup(void* appHook, void* extraHook, char* pScmdline)
 {
 	if (!InnoCoreSystemNS::createSubSystemInstance())
 	{
@@ -120,7 +120,7 @@ bool InnoCoreSystemNS::setup(void* hInstance, void* hwnd, char* pScmdline)
 	}
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem setup finished.");
 
-	if (!g_pCoreSystem->getVisionSystem()->setup(hInstance, hwnd, pScmdline))
+	if (!g_pCoreSystem->getVisionSystem()->setup(appHook, extraHook, pScmdline))
 	{
 		return false;
 	}
@@ -341,11 +341,11 @@ bool InnoCoreSystemNS::terminate()
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoCoreSystem::setup(void* hInstance, void* hwnd, char* pScmdline)
+INNO_SYSTEM_EXPORT bool InnoCoreSystem::setup(void* appHook, void* extraHook, char* pScmdline)
 {
 	g_pCoreSystem = this;
 
-	return InnoCoreSystemNS::setup(hInstance, hwnd, pScmdline);
+	return InnoCoreSystemNS::setup(appHook, extraHook, pScmdline);
 }
 
 INNO_SYSTEM_EXPORT bool InnoCoreSystem::initialize()

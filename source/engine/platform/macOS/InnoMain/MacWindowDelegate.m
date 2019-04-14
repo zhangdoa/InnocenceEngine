@@ -9,11 +9,12 @@
 #import "MacWindowDelegate.h"
 #import <Foundation/Foundation.h>
 
-@implementation MacWindow
-    
-    BOOL m_isAlive = YES;
-    
+@implementation MacWindowDelegate
+NSRect m_frame;
+BOOL m_isAlive = YES;
+
 -(id)initWithContentRect:(NSRect)contentRect styleMask:(NSWindowStyleMask)aStyle backing:(NSBackingStoreType)bufferingType defer:(BOOL)flag{
+    m_frame = contentRect;
     if(self = [super initWithContentRect:contentRect styleMask:aStyle backing:bufferingType defer:flag]){
         
         //sets the title of the window (Declared in Plist)
@@ -30,16 +31,20 @@
     }
     return self;
 }
-    
-    -(void) setView:(MTKView*) view{
-        [self setContentView:view];
-    }
-        
+
+-(void) setView:(MTKView*) view{
+    [self setContentView:view];
+}
+
 - (void)applicationWillTerminate:(NSNotification *)aNotification{
     m_isAlive = NO;
 }
-    - (BOOL)isAlive {
-        return m_isAlive;
-    }
-    
-    @end
+- (BOOL)isAlive {
+    return m_isAlive;
+}
+
+- (NSRect)getFrame { 
+    return m_frame;
+}
+
+@end

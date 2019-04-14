@@ -8,10 +8,15 @@ INNO_PRIVATE_SCOPE MacWindowSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	ButtonStatusMap m_buttonStatus;
+
+  MacWindowSystemBridge* m_bridge;
 }
 
 bool MacWindowSystem::setup(void* hInstance, void* hwnd)
 {
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+  bool result = MacWindowSystemNS::m_bridge->setup(l_screenResolution.x, l_screenResolution.y);
+
 	MacWindowSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem setup finished.");
 
@@ -20,17 +25,20 @@ bool MacWindowSystem::setup(void* hInstance, void* hwnd)
 
 bool MacWindowSystem::initialize()
 {
+	bool result = MacWindowSystemNS::m_bridge->initialize();
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem has been initialized.");
 	return true;
 }
 
 bool MacWindowSystem::update()
 {
+	bool result = MacWindowSystemNS::m_bridge->update();
 	return true;
 }
 
 bool MacWindowSystem::terminate()
 {
+	bool result = MacWindowSystemNS::m_bridge->terminate();
 	MacWindowSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem has been terminated.");
 	return true;
@@ -53,4 +61,10 @@ bool MacWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LPar
 
 void MacWindowSystem::swapBuffer()
 {
+}
+
+void MacWindowSystem::setBridge(MacWindowSystemBridge* bridge)
+{
+	MacWindowSystemNS::m_bridge = bridge;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem: Bridge connected at " + InnoUtility::pointerToString(bridge));
 }
