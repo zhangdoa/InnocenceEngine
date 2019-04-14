@@ -11,7 +11,6 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	MeshUsageType m_meshUsageType = MeshUsageType::STATIC;
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	MeshShapeType m_meshShapeType = MeshShapeType::LINE;
 	size_t m_indicesSize = 0;

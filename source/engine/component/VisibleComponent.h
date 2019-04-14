@@ -19,6 +19,7 @@ public:
 	unsigned int m_UUID = 0;
 
 	VisiblilityType m_visiblilityType = VisiblilityType::INNO_INVISIBLE;
+	MeshUsageType m_meshUsageType = MeshUsageType::STATIC;
 	MeshShapeType m_meshShapeType = MeshShapeType::QUAD;
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::REPEAT;
