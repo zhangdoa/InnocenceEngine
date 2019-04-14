@@ -4,6 +4,12 @@
 #include "TextureDataComponent.h"
 #include "DX12TextureDataComponent.h"
 
+struct RenderPassDesc
+{
+	unsigned int RTNumber = 0;
+	TextureDataDesc RTDesc = TextureDataDesc();
+};
+
 class DX12RenderPassComponent
 {
 public:
@@ -12,6 +18,14 @@ public:
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
+
+	RenderPassDesc m_renderPassDesc;
+
+	D3D12_VERSIONED_ROOT_SIGNATURE_DESC m_rootSignatureDesc;
+	ID3D12RootSignature* m_rootSignature;
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PSODesc;
+	ID3D12PipelineState* m_PSO;
 
 	std::vector<TextureDataComponent*> m_TDCs;
 	std::vector<DX12TextureDataComponent*> m_DXTDCs;

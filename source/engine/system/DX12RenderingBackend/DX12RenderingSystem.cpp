@@ -15,7 +15,32 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	IDXGIAdapter1* getHardwareAdapter(IDXGIFactory2* pFactory)
+	{
+		IDXGIAdapter1* l_adapter;
+
+		for (UINT adapterIndex = 0; DXGI_ERROR_NOT_FOUND != pFactory->EnumAdapters1(adapterIndex, &l_adapter); ++adapterIndex)
+		{
+			DXGI_ADAPTER_DESC1 desc;
+			l_adapter->GetDesc1(&desc);
+
+			if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+			{
+				// Don't select the Basic Render Driver adapter.
+				// If you want a software adapter, pass in "/warp" on the command line.
+				continue;
+			}
+
+			// Check to see if the adapter supports Direct3D 12, but don't create the
+			// actual device yet.
+			if (SUCCEEDED(D3D12CreateDevice(l_adapter, D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
+			{
+				break;
+			}
+		}
+
+		return l_adapter;
+	}
 
 	bool setup(IRenderingFrontendSystem* renderingFrontend);
 	bool update();
@@ -31,8 +56,14 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool createDebugCallback();
 	bool createSwapChain();
 	bool createBackBuffer();
+	bool createRenderPass();
 	bool createCommandList();
+	bool createSyncPrimitives();
 	bool createRasterizer();
+
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+
+	EntityID m_entityID;
 
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
 
@@ -43,14 +74,29 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 
 bool DX12RenderingSystemNS::createDebugCallback()
 {
-	auto l_result = D3D12GetDebugInterface(IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_debugInterface));
+	ID3D12Debug* l_debugInterface;
+
+	auto l_result = D3D12GetDebugInterface(IID_PPV_ARGS(&l_debugInterface));
 	if (FAILED(l_result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Could not enable DirectX 12 debug layer!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't get DirectX 12 debug interface!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	l_result = l_debugInterface->QueryInterface(IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_debugInterface));
+	if (FAILED(l_result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't query DirectX 12 debug interface!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
 	g_DXRenderingSystemComponent->m_debugInterface->EnableDebugLayer();
+	g_DXRenderingSystemComponent->m_debugInterface->SetEnableGPUBasedValidation(true);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Debug layer and GPU based validation has been enabled.");
+
 	return true;
 }
 
@@ -62,22 +108,26 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	result = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_factory));
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create DXGI factory!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DXGI factory!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: DXGI factory has been created.");
 
 	// Use the factory to create an adapter for the primary graphics interface (video card).
-	IDXGIAdapter1* l_adapter1;
-	result = g_DXRenderingSystemComponent->m_factory->EnumWarpAdapter(IID_PPV_ARGS(&l_adapter1));
-	g_DXRenderingSystemComponent->m_adapter = reinterpret_cast<IDXGIAdapter4*>(l_adapter1);
+	auto l_adapter1 = getHardwareAdapter(g_DXRenderingSystemComponent->m_factory);
 
-	if (FAILED(result))
+	if (l_adapter1 == nullptr)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create video card adapter!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create a suitable video card adapter!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	g_DXRenderingSystemComponent->m_adapter = reinterpret_cast<IDXGIAdapter4*>(l_adapter1);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Video card adapter has been created.");
 
 	// Set the feature level to DirectX 12.1 to enable using all the DirectX 12 features.
 	// Note: Not all cards support full DirectX 12, this feature level may need to be reduced on some cards to 12.0.
@@ -87,10 +137,12 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	result = D3D12CreateDevice(g_DXRenderingSystemComponent->m_adapter, featureLevel, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_device));
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Could not create a DirectX 12.1 device. The default video card does not support DirectX 12.1!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create a DirectX 12.1 device. The default video card does not support DirectX 12.1!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: D3D device has been created.");
 
 	// Set debug report severity
 	auto l_pInfoQueue = reinterpret_cast<ID3D12InfoQueue*>(g_DXRenderingSystemComponent->m_device);
@@ -112,10 +164,12 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	result = g_DXRenderingSystemComponent->m_device->CreateCommandQueue(&g_DXRenderingSystemComponent->m_commandQueueDesc, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandQueue));
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Could not create command queue!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command queue!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Command queue has been created.");
 
 	// Release the adapter.
 	g_DXRenderingSystemComponent->m_adapter->Release();
@@ -173,10 +227,12 @@ bool DX12RenderingSystemNS::createSwapChain()
 
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create swap chain!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create swap chain!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Swap chain has been created.");
 
 	// Release the factory.
 	g_DXRenderingSystemComponent->m_factory->Release();
@@ -194,19 +250,20 @@ bool DX12RenderingSystemNS::createBackBuffer()
 	// Initialize the render target view heap description for the two back buffers.
 	ZeroMemory(&g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc, sizeof(g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc));
 
-	// Set the number of descriptors to two for our two back buffers.  Also set the heap tyupe to render target views.
 	g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc.NumDescriptors = 2;
 	g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
 	// Create the render target view heap for the back buffers.
-	result = g_DXRenderingSystemComponent->m_device->CreateDescriptorHeap(&g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc, __uuidof(ID3D12DescriptorHeap), (void**)&g_DXRenderingSystemComponent->m_renderTargetViewHeap);
+	result = g_DXRenderingSystemComponent->m_device->CreateDescriptorHeap(&g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_renderTargetViewHeap));
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create render target view heap!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create render target view desc heap!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Render target view desc heap has been created.");
 
 	// Get a handle to the starting memory location in the render target view heap to identify where the render target views will be located for the two back buffers.
 	g_DXRenderingSystemComponent->m_renderTargetViewHandle = g_DXRenderingSystemComponent->m_renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart();
@@ -215,10 +272,10 @@ bool DX12RenderingSystemNS::createBackBuffer()
 	renderTargetViewDescriptorSize = g_DXRenderingSystemComponent->m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	// Get a pointer to the first back buffer from the swap chain.
-	result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D12Resource), (void**)&g_DXRenderingSystemComponent->m_backBufferRenderTarget[0]);
+	result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(0, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_backBufferRenderTarget[0]));
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't get pointer of first back buffer!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't get pointer of first back buffer!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -230,10 +287,10 @@ bool DX12RenderingSystemNS::createBackBuffer()
 	g_DXRenderingSystemComponent->m_renderTargetViewHandle.ptr += renderTargetViewDescriptorSize;
 
 	// Get a pointer to the second back buffer from the swap chain.
-	result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(1, __uuidof(ID3D12Resource), (void**)&g_DXRenderingSystemComponent->m_backBufferRenderTarget[1]);
+	result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(1, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_backBufferRenderTarget[1]));
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't get pointer of second back buffer!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't get pointer of second back buffer!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
@@ -244,44 +301,91 @@ bool DX12RenderingSystemNS::createBackBuffer()
 	return true;
 }
 
+bool DX12RenderingSystemNS::createRenderPass()
+{
+	auto l_DXSPC = addDX12ShaderProgramComponent(m_entityID);
+
+	ShaderFilePaths m_shaderFilePaths = { "DX12//finalBlendPassVertex.hlsl" , "", "DX12//finalBlendPassPixel.hlsl" };
+
+	initializeDX12ShaderProgramComponent(l_DXSPC, m_shaderFilePaths);
+
+	auto l_DXRPC = addDX12RenderPassComponent(m_entityID);
+
+	// Create an empty root signature.
+	l_DXRPC->m_rootSignatureDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
+
+	l_DXRPC->m_rootSignatureDesc.Desc_1_1.NumParameters = 0;
+	l_DXRPC->m_rootSignatureDesc.Desc_1_1.pParameters = nullptr;
+	l_DXRPC->m_rootSignatureDesc.Desc_1_1.NumStaticSamplers = 0;
+	l_DXRPC->m_rootSignatureDesc.Desc_1_1.pStaticSamplers = nullptr;
+	l_DXRPC->m_rootSignatureDesc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+	return true;
+}
+
 bool DX12RenderingSystemNS::createCommandList()
 {
 	HRESULT result;
 
 	// Create a command allocator.
-	result = g_DXRenderingSystemComponent->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, __uuidof(ID3D12CommandAllocator), (void**)&g_DXRenderingSystemComponent->m_commandAllocator);
+	result = g_DXRenderingSystemComponent->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandAllocator));
 	if (FAILED(result))
 	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command allocator!");
+		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Command allocator has been created.");
+
 	// Create a basic command list.
-	result = g_DXRenderingSystemComponent->m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_DXRenderingSystemComponent->m_commandAllocator, NULL, __uuidof(ID3D12GraphicsCommandList), (void**)&g_DXRenderingSystemComponent->m_commandList);
+	result = g_DXRenderingSystemComponent->m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_DXRenderingSystemComponent->m_commandAllocator, NULL, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandList));
 	if (FAILED(result))
 	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command list!");
+		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Command list has been created.");
 
 	// Initially we need to close the command list during initialization as it is created in a recording state.
 	result = g_DXRenderingSystemComponent->m_commandList->Close();
 	if (FAILED(result))
 	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't close the command list!");
+		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
+	return true;
+}
+
+bool DX12RenderingSystemNS::createSyncPrimitives()
+{
+	HRESULT result;
+
 	// Create a fence for GPU synchronization.
-	result = g_DXRenderingSystemComponent->m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), (void**)&g_DXRenderingSystemComponent->m_fence);
+	result = g_DXRenderingSystemComponent->m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_fence));
 	if (FAILED(result))
 	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create fence!");
+		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Fence has been created.");
 
 	// Create an event object for the fence.
 	g_DXRenderingSystemComponent->m_fenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
 	if (g_DXRenderingSystemComponent->m_fenceEvent == NULL)
 	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create fence event!");
+		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Fence event has been created.");
 
 	// Initialize the starting fence value.
 	g_DXRenderingSystemComponent->m_fenceValue = 1;
@@ -331,17 +435,24 @@ bool DX12RenderingSystemNS::createRasterizer()
 
 bool DX12RenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 {
+	m_entityID = InnoMath::createEntityID();
+
 	m_renderingFrontendSystem = renderingFrontend;
 
 	g_DXRenderingSystemComponent = &DX12RenderingSystemComponent::get();
 
 	bool result = true;
 	result = result && initializeComponentPool();
+
 	result = result && createDebugCallback();
 	result = result && createPhysicalDevices();
+
 	result = result && createSwapChain();
 	result = result && createBackBuffer();
+	result = result && createRenderPass();
+
 	result = result && createCommandList();
+	result = result && createSyncPrimitives();
 	result = result && createRasterizer();
 
 	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
@@ -377,7 +488,7 @@ bool DX12RenderingSystemNS::update()
 			auto l_result = generateDX12MeshDataComponent(l_MDC);
 			if (l_result == nullptr)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create DXMeshDataComponent for " + l_result->m_parentEntity + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DXMeshDataComponent for " + l_result->m_parentEntity + "!");
 			}
 		}
 	}
@@ -389,7 +500,7 @@ bool DX12RenderingSystemNS::update()
 			auto l_result = generateDX12TextureDataComponent(l_TDC);
 			if (l_result == nullptr)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create DXTextureDataComponent for " + l_result->m_parentEntity + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DXTextureDataComponent for " + l_result->m_parentEntity + "!");
 			}
 		}
 	}
@@ -425,13 +536,6 @@ bool DX12RenderingSystemNS::terminate()
 	{
 		g_DXRenderingSystemComponent->m_fence->Release();
 		g_DXRenderingSystemComponent->m_fence = 0;
-	}
-
-	// Release the empty pipe line state.
-	if (g_DXRenderingSystemComponent->m_pipelineState)
-	{
-		g_DXRenderingSystemComponent->m_pipelineState->Release();
-		g_DXRenderingSystemComponent->m_pipelineState = 0;
 	}
 
 	// Release the command list.

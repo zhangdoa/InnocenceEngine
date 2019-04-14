@@ -12,7 +12,8 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 {
 	bool initializeComponentPool();
 
-	DX12RenderPassComponent* addDX12RenderPassComponent(unsigned int RTNum, D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc);
+	DX12RenderPassComponent* addDX12RenderPassComponent(EntityID rhs);
+	bool initializeDX12RenderPassComponent(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
 
 	DX12MeshDataComponent* generateDX12MeshDataComponent(MeshDataComponent* rhs);
 	DX12TextureDataComponent* generateDX12TextureDataComponent(TextureDataComponent* rhs);

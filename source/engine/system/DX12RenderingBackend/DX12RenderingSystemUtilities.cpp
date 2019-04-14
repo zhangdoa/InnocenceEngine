@@ -13,7 +13,6 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	ID3DBlob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
 	bool createCBuffer(DX12CBuffer& arg);
 	bool initializeVertexShader(DX12ShaderProgramComponent* rhs, const std::wstring& VSShaderPath);
-	bool createInputLayout(ID3DBlob* shaderBuffer);
 	bool initializePixelShader(DX12ShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
 
 	bool initializeDX12MeshDataComponent(DX12MeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
@@ -71,7 +70,14 @@ ID3DBlob* DX12RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const s
 		break;
 	}
 
-	result = D3DCompileFromFile((m_shaderRelativePath + shaderFilePath).c_str(), NULL, NULL, l_shaderName.c_str(), l_shaderTypeName.c_str(), D3DCOMPILE_DEBUG, 0,
+#if defined(_DEBUG)
+	// Enable better shader debugging with the graphics debugging tools.
+	UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+	UINT compileFlags = 0;
+#endif
+
+	result = D3DCompileFromFile((m_shaderRelativePath + shaderFilePath).c_str(), NULL, NULL, l_shaderName.c_str(), l_shaderTypeName.c_str(), compileFlags, 0,
 		&l_shaderBuffer, &l_errorMessage);
 	if (FAILED(result))
 	{
@@ -103,11 +109,141 @@ bool DX12RenderingSystemNS::initializeVertexShader(DX12ShaderProgramComponent* r
 	// Compile the shader code.
 	auto l_shaderBuffer = loadShaderBuffer(ShaderType::VERTEX, VSShaderPath);
 
+	rhs->m_vertexShader = l_shaderBuffer;
+
 	return true;
 }
 
-bool DX12RenderingSystemNS::createInputLayout(ID3DBlob* shaderBuffer)
+bool DX12RenderingSystemNS::initializePixelShader(DX12ShaderProgramComponent* rhs, const std::wstring& PSShaderPath)
 {
+	// Compile the shader code.
+	auto l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, PSShaderPath);
+
+	rhs->m_vertexShader = l_shaderBuffer;
+
+	return true;
+}
+
+DX12ShaderProgramComponent* DX12RenderingSystemNS::addDX12ShaderProgramComponent(EntityID rhs)
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12ShaderProgramComponentPool, sizeof(DX12ShaderProgramComponent));
+	auto l_DXSPC = new(l_rawPtr)DX12ShaderProgramComponent();
+	l_DXSPC->m_parentEntity = rhs;
+	return l_DXSPC;
+}
+
+bool DX12RenderingSystemNS::initializeDX12ShaderProgramComponent(DX12ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths)
+{
+	bool l_result = true;
+	if (shaderFilePaths.m_VSPath != "")
+	{
+		l_result = l_result && initializeVertexShader(rhs, std::wstring(shaderFilePaths.m_VSPath.begin(), shaderFilePaths.m_VSPath.end()));
+	}
+	if (shaderFilePaths.m_FSPath != "")
+	{
+		l_result = l_result && initializePixelShader(rhs, std::wstring(shaderFilePaths.m_FSPath.begin(), shaderFilePaths.m_FSPath.end()));
+	}
+
+	return l_result;
+}
+
+void DX12RenderingSystemNS::OutputShaderErrorMessage(ID3DBlob * errorMessage, HWND hwnd, const std::string & shaderFilename)
+{
+	char* compileErrors;
+	unsigned long long bufferSize, i;
+	std::stringstream errorSStream;
+
+	// Get a pointer to the error message text buffer.
+	compileErrors = (char*)(errorMessage->GetBufferPointer());
+
+	// Get the length of the message.
+	bufferSize = errorMessage->GetBufferSize();
+
+	// Write out the error message.
+	for (i = 0; i < bufferSize; i++)
+	{
+		errorSStream << compileErrors[i];
+	}
+
+	// Release the error message.
+	errorMessage->Release();
+	errorMessage = 0;
+
+	MessageBox(WinWindowSystemComponent::get().m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
+}
+
+bool DX12RenderingSystemNS::activateDX12ShaderProgramComponent(DX12ShaderProgramComponent * rhs)
+{
+	return true;
+}
+
+DX12RenderPassComponent* DX12RenderingSystemNS::addDX12RenderPassComponent(EntityID rhs)
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12RenderPassComponentPool, sizeof(DX12RenderPassComponent));
+	auto l_DXRPC = new(l_rawPtr)DX12RenderPassComponent();
+	l_DXRPC->m_parentEntity = rhs;
+	return l_DXRPC;
+}
+
+bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC)
+{
+	auto l_renderPassDesc = DXRPC->m_renderPassDesc;
+
+	// create TDC
+	DXRPC->m_TDCs.reserve(l_renderPassDesc.RTNumber);
+
+	for (unsigned int i = 0; i < l_renderPassDesc.RTNumber; i++)
+	{
+		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
+
+		l_TDC->m_textureDataDesc.samplerType = l_renderPassDesc.RTDesc.samplerType;
+		l_TDC->m_textureDataDesc.usageType = l_renderPassDesc.RTDesc.usageType;
+		l_TDC->m_textureDataDesc.colorComponentsFormat = l_renderPassDesc.RTDesc.colorComponentsFormat;
+		l_TDC->m_textureDataDesc.pixelDataFormat = l_renderPassDesc.RTDesc.pixelDataFormat;
+		l_TDC->m_textureDataDesc.minFilterMethod = l_renderPassDesc.RTDesc.minFilterMethod;
+		l_TDC->m_textureDataDesc.magFilterMethod = l_renderPassDesc.RTDesc.magFilterMethod;
+		l_TDC->m_textureDataDesc.wrapMethod = l_renderPassDesc.RTDesc.wrapMethod;
+		l_TDC->m_textureDataDesc.width = l_renderPassDesc.RTDesc.width;
+		l_TDC->m_textureDataDesc.height = l_renderPassDesc.RTDesc.height;
+		l_TDC->m_textureDataDesc.pixelDataType = l_renderPassDesc.RTDesc.pixelDataType;
+		l_TDC->m_textureData = { nullptr };
+
+		DXRPC->m_TDCs.emplace_back(l_TDC);
+	}
+
+	// generate DXTDC
+	DXRPC->m_DXTDCs.reserve(l_renderPassDesc.RTNumber);
+
+	for (unsigned int i = 0; i < l_renderPassDesc.RTNumber; i++)
+	{
+		auto l_TDC = DXRPC->m_TDCs[i];
+		auto l_DXTDC = generateDX12TextureDataComponent(l_TDC);
+
+		DXRPC->m_DXTDCs.emplace_back(l_DXTDC);
+	}
+
+	ID3DBlob* l_signature;
+	ID3DBlob* l_error;
+
+	auto l_result = D3D12SerializeVersionedRootSignature(&DXRPC->m_rootSignatureDesc, &l_signature, &l_error);
+
+	if (FAILED(l_result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't serialize Root Signature!");
+		return false;
+	}
+
+	l_result = DX12RenderingSystemComponent::get().m_device->CreateRootSignature(0, l_signature->GetBufferPointer(), l_signature->GetBufferSize(), IID_PPV_ARGS(&DXRPC->m_rootSignature));
+
+	if (FAILED(l_result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create Root Signature!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Root Signature has been created.");
+
 	D3D12_INPUT_ELEMENT_DESC l_polygonLayout[5];
 	unsigned int l_numElements;
 
@@ -155,150 +291,70 @@ bool DX12RenderingSystemNS::createInputLayout(ID3DBlob* shaderBuffer)
 	// Get a count of the elements in the layout.
 	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
 
-	return true;
-}
+	D3D12_SHADER_BYTECODE l_vsBytecode;
+	l_vsBytecode.pShaderBytecode = DXSPC->m_vertexShader->GetBufferPointer();
+	l_vsBytecode.BytecodeLength = DXSPC->m_vertexShader->GetBufferSize();
 
-bool DX12RenderingSystemNS::initializePixelShader(DX12ShaderProgramComponent* rhs, const std::wstring& PSShaderPath)
-{
-	// Compile the shader code.
-	auto l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, PSShaderPath);
+	D3D12_SHADER_BYTECODE l_psBytecode;
+	l_psBytecode.pShaderBytecode = DXSPC->m_pixelShader->GetBufferPointer();
+	l_psBytecode.BytecodeLength = DXSPC->m_pixelShader->GetBufferSize();
 
-	return true;
-}
+	// Describe and create the graphics pipeline state object (PSO).
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+	psoDesc.InputLayout = { l_polygonLayout, l_numElements };
+	psoDesc.pRootSignature = DXRPC->m_rootSignature;
+	psoDesc.VS = l_vsBytecode;
+	psoDesc.PS = l_psBytecode;
+	psoDesc.RasterizerState = D3D12_RASTERIZER_DESC();
+	psoDesc.BlendState = D3D12_BLEND_DESC();
+	psoDesc.DepthStencilState.DepthEnable = FALSE;
+	psoDesc.DepthStencilState.StencilEnable = FALSE;
+	psoDesc.SampleMask = UINT_MAX;
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.NumRenderTargets = 1;
+	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	psoDesc.SampleDesc.Count = 1;
 
-DX12ShaderProgramComponent* DX12RenderingSystemNS::addDX12ShaderProgramComponent(EntityID rhs)
-{
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12ShaderProgramComponentPool, sizeof(DX12ShaderProgramComponent));
-	auto l_DXSPC = new(l_rawPtr)DX12ShaderProgramComponent();
-	l_DXSPC->m_parentEntity = rhs;
-	return l_DXSPC;
-}
+	l_result = DX12RenderingSystemComponent::get().m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&DXRPC->m_PSO));
 
-bool DX12RenderingSystemNS::initializeDX12ShaderProgramComponent(DX12ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths)
-{
-	bool l_result = true;
-	if (shaderFilePaths.m_VSPath != "")
+	if (FAILED(l_result))
 	{
-		l_result = l_result && initializeVertexShader(rhs, std::wstring(shaderFilePaths.m_VSPath.begin(), shaderFilePaths.m_VSPath.end()));
-	}
-	if (shaderFilePaths.m_FSPath != "")
-	{
-		l_result = l_result && initializePixelShader(rhs, std::wstring(shaderFilePaths.m_FSPath.begin(), shaderFilePaths.m_FSPath.end()));
-	}
-	for (auto& i : rhs->m_VSCBuffers)
-	{
-		l_result = l_result && createCBuffer(i);
-	}
-	for (auto& i : rhs->m_PSCBuffers)
-	{
-		l_result = l_result && createCBuffer(i);
-	}
-
-	return l_result;
-}
-
-void DX12RenderingSystemNS::OutputShaderErrorMessage(ID3DBlob * errorMessage, HWND hwnd, const std::string & shaderFilename)
-{
-	char* compileErrors;
-	unsigned long long bufferSize, i;
-	std::stringstream errorSStream;
-
-	// Get a pointer to the error message text buffer.
-	compileErrors = (char*)(errorMessage->GetBufferPointer());
-
-	// Get the length of the message.
-	bufferSize = errorMessage->GetBufferSize();
-
-	// Write out the error message.
-	for (i = 0; i < bufferSize; i++)
-	{
-		errorSStream << compileErrors[i];
-	}
-
-	// Release the error message.
-	errorMessage->Release();
-	errorMessage = 0;
-
-	MessageBox(WinWindowSystemComponent::get().m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
-}
-
-bool DX12RenderingSystemNS::activateDX12ShaderProgramComponent(DX12ShaderProgramComponent * rhs)
-{
-	return true;
-}
-
-DX12RenderPassComponent* DX12RenderingSystemNS::addDX12RenderPassComponent(unsigned int RTNum, D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc)
-{
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12RenderPassComponentPool, sizeof(DX12RenderPassComponent));
-	auto l_DXRPC = new(l_rawPtr)DX12RenderPassComponent();
-
-	// create TDC
-	l_DXRPC->m_TDCs.reserve(RTNum);
-
-	for (unsigned int i = 0; i < RTNum; i++)
-	{
-		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
-
-		l_TDC->m_textureDataDesc.samplerType = RTDesc.samplerType;
-		l_TDC->m_textureDataDesc.usageType = RTDesc.usageType;
-		l_TDC->m_textureDataDesc.colorComponentsFormat = RTDesc.colorComponentsFormat;
-		l_TDC->m_textureDataDesc.pixelDataFormat = RTDesc.pixelDataFormat;
-		l_TDC->m_textureDataDesc.minFilterMethod = RTDesc.minFilterMethod;
-		l_TDC->m_textureDataDesc.magFilterMethod = RTDesc.magFilterMethod;
-		l_TDC->m_textureDataDesc.wrapMethod = RTDesc.wrapMethod;
-		l_TDC->m_textureDataDesc.width = RTDesc.width;
-		l_TDC->m_textureDataDesc.height = RTDesc.height;
-		l_TDC->m_textureDataDesc.pixelDataType = RTDesc.pixelDataType;
-		l_TDC->m_textureData = { nullptr };
-
-		l_DXRPC->m_TDCs.emplace_back(l_TDC);
-	}
-
-	// generate DXTDC
-	l_DXRPC->m_DXTDCs.reserve(RTNum);
-
-	for (unsigned int i = 0; i < RTNum; i++)
-	{
-		auto l_TDC = l_DXRPC->m_TDCs[i];
-		auto l_DXTDC = generateDX12TextureDataComponent(l_TDC);
-
-		l_DXRPC->m_DXTDCs.emplace_back(l_DXTDC);
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create PSO!");
 	}
 
 	// Create the render target views.
-	l_DXRPC->m_renderTargetViews.reserve(RTNum);
+	DXRPC->m_renderTargetViews.reserve(l_renderPassDesc.RTNumber);
 
 	// Initialize the description of the depth buffer.
-	ZeroMemory(&l_DXRPC->m_depthStencilBufferDesc,
-		sizeof(l_DXRPC->m_depthStencilBufferDesc));
+	ZeroMemory(&DXRPC->m_depthStencilBufferDesc,
+		sizeof(DXRPC->m_depthStencilBufferDesc));
 
 	// Set up the description of the depth buffer.
 
 	// Create the texture for the depth buffer using the filled out description.
 
 	// Initailze the depth stencil view description.
-	ZeroMemory(&l_DXRPC->m_depthStencilViewDesc,
-		sizeof(l_DXRPC->m_depthStencilViewDesc));
+	ZeroMemory(&DXRPC->m_depthStencilViewDesc,
+		sizeof(DXRPC->m_depthStencilViewDesc));
 
 	// Set up the depth stencil view description.
-	l_DXRPC->m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	l_DXRPC->m_depthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	l_DXRPC->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
+	DXRPC->m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DXRPC->m_depthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	DXRPC->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
 
 	// Setup the viewport for rendering.
-	l_DXRPC->m_viewport.Width = (float)RTDesc.width;
-	l_DXRPC->m_viewport.Height = (float)RTDesc.height;
-	l_DXRPC->m_viewport.MinDepth = 0.0f;
-	l_DXRPC->m_viewport.MaxDepth = 1.0f;
-	l_DXRPC->m_viewport.TopLeftX = 0.0f;
-	l_DXRPC->m_viewport.TopLeftY = 0.0f;
+	DXRPC->m_viewport.Width = (float)l_renderPassDesc.RTDesc.width;
+	DXRPC->m_viewport.Height = (float)l_renderPassDesc.RTDesc.height;
+	DXRPC->m_viewport.MinDepth = 0.0f;
+	DXRPC->m_viewport.MaxDepth = 1.0f;
+	DXRPC->m_viewport.TopLeftX = 0.0f;
+	DXRPC->m_viewport.TopLeftY = 0.0f;
 
-	l_DXRPC->m_objectStatus = ObjectStatus::ALIVE;
+	DXRPC->m_objectStatus = ObjectStatus::ALIVE;
 
-	return l_DXRPC;
+	return DXRPC;
 }
 
 DX12MeshDataComponent* DX12RenderingSystemNS::generateDX12MeshDataComponent(MeshDataComponent * rhs)

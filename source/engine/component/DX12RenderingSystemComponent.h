@@ -4,6 +4,12 @@
 #include "../component/TextureDataComponent.h"
 #include "../component/DX12TextureDataComponent.h"
 
+struct DX12CBuffer
+{
+	D3D12_RESOURCE_DESC m_CBufferDesc = D3D12_RESOURCE_DESC();
+	ID3D12Resource* m_CBufferPtr = 0;
+};
+
 struct DX12CameraCBufferData
 {
 	mat4 p_original;
@@ -93,7 +99,7 @@ public:
 	int m_videoCardMemory;
 	char m_videoCardDescription[128];
 
-	ID3D12Debug* m_debugInterface;
+	ID3D12Debug1* m_debugInterface;
 
 	IDXGIFactory4* m_factory;
 
@@ -117,8 +123,6 @@ public:
 
 	ID3D12CommandAllocator* m_commandAllocator;
 	ID3D12GraphicsCommandList* m_commandList;
-
-	ID3D12PipelineState* m_pipelineState;
 
 	ID3D12Fence* m_fence;
 	HANDLE m_fenceEvent;
