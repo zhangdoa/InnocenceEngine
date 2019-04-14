@@ -2,7 +2,7 @@
 #version 450
 layout(location = 0) out vec4 uni_SSAOPassRT0;
 
-in vec2 TexCoords;
+layout(location = 0) in vec2 TexCoords;
 
 layout(location = 0) uniform mat4 uni_p;
 layout(location = 1) uniform mat4 uni_r;

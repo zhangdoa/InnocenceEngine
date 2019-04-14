@@ -11,19 +11,12 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLSkyPass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//skyPass.vert", "", "GL//skyPass.frag" };
-
-	GLuint m_uni_p;
-	GLuint m_uni_r;
-	GLuint m_uni_viewportSize;
-	GLuint m_uni_eyePos;
-	GLuint m_uni_lightDir;
 
 	CameraDataPack m_cameraDataPack;
 	SunDataPack m_sunDataPack;
@@ -47,28 +40,7 @@ void GLSkyPass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLSkyPass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	m_uni_p = getUniformLocation(
-		rhs->m_program,
-		"uni_p");
-	m_uni_r = getUniformLocation(
-		rhs->m_program,
-		"uni_r");
-	m_uni_viewportSize = getUniformLocation(
-		rhs->m_program,
-		"uni_viewportSize");
-	m_uni_eyePos = getUniformLocation(
-		rhs->m_program,
-		"uni_eyePos");
-	m_uni_lightDir = getUniformLocation(
-		rhs->m_program,
-		"uni_lightDir");
 }
 
 bool GLSkyPass::update()
@@ -102,20 +74,25 @@ bool GLSkyPass::update()
 
 		activateShaderProgram(m_GLSPC);
 
+		// uni_p
 		updateUniform(
-			m_uni_p,
+			0,
 			m_cameraDataPack.p_original);
+		// uni_r
 		updateUniform(
-			m_uni_r,
+			1,
 			m_cameraDataPack.r);
+		// uni_viewportSize
 		updateUniform(
-			m_uni_viewportSize,
+			2,
 			(float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX, (float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY);
+		// uni_eyePos
 		updateUniform(
-			m_uni_eyePos,
+			3,
 			m_cameraDataPack.globalPos.x, m_cameraDataPack.globalPos.y, m_cameraDataPack.globalPos.z);
+		// uni_lightDir
 		updateUniform(
-			m_uni_lightDir,
+			4,
 			m_sunDataPack.dir.x, m_sunDataPack.dir.y, m_sunDataPack.dir.z);
 
 		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
@@ -144,8 +121,6 @@ bool GLSkyPass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

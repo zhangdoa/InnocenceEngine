@@ -1,9 +1,9 @@
 // shadertype=glsl
 #version 450
 layout(location = 0) out vec2 uni_brdfMSLUT;
-in vec2 TexCoords;
+layout(location = 0) in vec2 TexCoords;
 
-uniform sampler2D uni_brdfLUT;
+layout(location = 0, binding = 0) uniform sampler2D uni_brdfLUT;
 
 // ----------------------------------------------------------------------------
 void main()

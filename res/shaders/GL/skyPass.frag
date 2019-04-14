@@ -2,13 +2,13 @@
 #version 450
 layout(location = 0) out vec4 uni_skyPassRT0;
 
-in vec3 TexCoords;
-in mat4 inv_p;
-in mat4 inv_v;
+layout(location = 0) in vec3 TexCoords;
+layout(location = 1) in mat4 inv_p;
+layout(location = 5) in mat4 inv_v;
 
-uniform vec2 uni_viewportSize;
-uniform vec3 uni_eyePos;
-uniform vec3 uni_lightDir;
+layout(location = 2) uniform vec2 uni_viewportSize;
+layout(location = 3) uniform vec3 uni_eyePos;
+layout(location = 4) uniform vec3 uni_lightDir;
 
 const float PI = 3.14159265359;
 

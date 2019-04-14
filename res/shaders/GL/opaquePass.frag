@@ -5,11 +5,11 @@ layout(location = 1) out vec4 uni_geometryPassRT1;
 layout(location = 2) out vec4 uni_geometryPassRT2;
 layout(location = 3) out vec4 uni_geometryPassRT3;
 
-in vec4 thefrag_WorldSpacePos;
-in vec4 thefrag_ClipSpacePos_current;
-in vec4 thefrag_ClipSpacePos_previous;
-in vec2 thefrag_TexCoord;
-in vec3 thefrag_Normal;
+layout(location = 0) in vec4 thefrag_WorldSpacePos;
+layout(location = 1) in vec4 thefrag_ClipSpacePos_current;
+layout(location = 2) in vec4 thefrag_ClipSpacePos_previous;
+layout(location = 3) in vec2 thefrag_TexCoord;
+layout(location = 4) in vec3 thefrag_Normal;
 
 uniform sampler2D uni_normalTexture;
 uniform sampler2D uni_albedoTexture;

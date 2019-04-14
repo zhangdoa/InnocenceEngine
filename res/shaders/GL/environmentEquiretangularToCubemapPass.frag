@@ -3,7 +3,7 @@
 out vec4 FragColor;
 in vec3 TexCoords;
 
-uniform sampler2D uni_equirectangularMap;
+layout(location = 2, binding = 0) uniform sampler2D uni_equirectangularMap;
 
 const vec2 invAtan = vec2(0.1591, 0.3183);
 vec2 SampleSphericalMap(vec3 v)

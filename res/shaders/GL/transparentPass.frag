@@ -3,9 +3,9 @@
 layout(location = 0, index = 0) out vec4 uni_transparentPassRT0;
 layout(location = 0, index = 1) out vec4 uni_transparentPassRT1;
 
-in vec4 thefrag_WorldSpacePos;
-in vec3 thefrag_Normal;
-in vec2 thefrag_TexCoord;
+layout(location = 0) in vec4 thefrag_WorldSpacePos;
+layout(location = 1) in vec3 thefrag_Normal;
+layout(location = 2) in vec2 thefrag_TexCoord;
 
 struct dirLight {
 	vec3 direction;

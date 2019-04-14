@@ -1,7 +1,7 @@
 // shadertype=glsl
 #version 450
 layout(location = 0) out vec4 uni_brdfLUT;
-in vec2 TexCoords;
+layout(location = 0) in vec2 TexCoords;
 
 const float PI = 3.14159265359;
 // ----------------------------------------------------------------------------

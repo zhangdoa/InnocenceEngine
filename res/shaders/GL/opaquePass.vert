@@ -5,11 +5,11 @@ layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
 layout(location = 2) in vec3 in_Normal;
 
-out vec4 thefrag_WorldSpacePos;
-out vec4 thefrag_ClipSpacePos_current;
-out vec4 thefrag_ClipSpacePos_previous;
-out vec2 thefrag_TexCoord;
-out vec3 thefrag_Normal;
+layout(location = 0) out vec4 thefrag_WorldSpacePos;
+layout(location = 1) out vec4 thefrag_ClipSpacePos_current;
+layout(location = 2) out vec4 thefrag_ClipSpacePos_previous;
+layout(location = 3) out vec2 thefrag_TexCoord;
+layout(location = 4) out vec3 thefrag_Normal;
 
 layout(row_major) uniform cameraUBO
 {

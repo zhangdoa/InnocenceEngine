@@ -4,9 +4,9 @@ layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
 layout(location = 2) in vec3 in_Normal;
 
-uniform sampler2D uni_normalTexture;
+layout(location = 0, binding = 0) uniform sampler2D uni_normalTexture;
 
-out VS_OUT{
+layout(location = 0) out VS_OUT{
 	vec3 normal;
 } vs_out;
 

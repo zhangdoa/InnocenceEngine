@@ -1,8 +1,8 @@
 // shadertype=glsl
 #version 450
 
-in vec2 TexCoords;
-out vec4 FragColor;
+layout(location = 0) in vec2 TexCoords;
+layout(location = 0) out vec4 FragColor;
 
 layout(location = 0, binding = 0) uniform sampler2D uni_basePassRT0;
 layout(location = 1, binding = 1) uniform sampler2D uni_bloomPassRT0;

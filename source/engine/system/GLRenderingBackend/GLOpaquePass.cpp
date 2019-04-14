@@ -20,11 +20,7 @@ INNO_PRIVATE_SCOPE GLOpaquePass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-#ifdef CookTorrance
-	ShaderFilePaths m_shaderFilePaths = { "GL//opaquePassCookTorrance.vert" , "", "GL//opaquePassCookTorrance.frag" };
-#elif BlinnPhong
-	ShaderFilePaths m_shaderFilePaths = { "GL//opaquePassBlinnPhong.vert" , "", "GL//opaquePassBlinnPhong.frag" };
-#endif
+	ShaderFilePaths m_shaderFilePaths = { "GL//opaquePass.vert" , "", "GL//opaquePass.frag" };
 
 	GLuint m_uni_id;
 
@@ -71,11 +67,7 @@ void GLOpaquePass::bindUniformLocations(GLShaderProgramComponent* rhs)
 
 	m_uni_id = getUniformLocation(rhs->m_program, "uni_id");
 
-#ifdef CookTorrance
 	updateTextureUniformLocations(rhs->m_program, m_TextureUniformNames);
-#elif BlinnPhong
-	// @TODO: texture uniforms
-#endif
 }
 
 bool GLOpaquePass::update()
@@ -100,7 +92,6 @@ bool GLOpaquePass::update()
 
 	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, GLRenderingSystemComponent::get().m_GPassCameraUBOData);
 
-#ifdef CookTorrance
 	while (GLRenderingSystemComponent::get().m_opaquePassDataQueue.size() > 0)
 	{
 		auto l_renderPack = GLRenderingSystemComponent::get().m_opaquePassDataQueue.front();
@@ -169,9 +160,6 @@ bool GLOpaquePass::update()
 	glDepthMask(GL_TRUE);
 	glDisable(GL_DEPTH_CLAMP);
 	glDisable(GL_DEPTH_TEST);
-
-#elif BlinnPhong
-#endif
 
 	return true;
 }

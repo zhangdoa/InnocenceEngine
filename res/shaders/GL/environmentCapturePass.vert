@@ -5,11 +5,11 @@ layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
 layout(location = 2) in vec3 in_Normal;
 
-out vec2 thefrag_TexCoord;
+layout(location = 0) out vec2 thefrag_TexCoord;
 
-uniform mat4 uni_p;
-uniform mat4 uni_v;
-uniform mat4 uni_m;
+layout(location = 0) uniform mat4 uni_p;
+layout(location = 1) uniform mat4 uni_v;
+layout(location = 2) uniform mat4 uni_m;
 
 void main()
 {

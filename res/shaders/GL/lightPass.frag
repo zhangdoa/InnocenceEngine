@@ -2,7 +2,7 @@
 #version 450
 layout(location = 0) out vec4 uni_lightPassRT0;
 
-in vec2 TexCoords;
+layout(location = 0) in vec2 TexCoords;
 
 struct dirLight {
 	vec3 direction;

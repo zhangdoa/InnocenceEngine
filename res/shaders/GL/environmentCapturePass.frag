@@ -1,11 +1,11 @@
 // shadertype=glsl
 #version 450
-out vec4 FragColor;
-in vec2 thefrag_TexCoord;
+layout(location = 0) out vec4 FragColor;
+layout(location = 0) in vec2 thefrag_TexCoord;
 
-uniform sampler2D uni_albedoTexture;
-uniform bool uni_useAlbedoTexture;
-uniform vec4 uni_albedo;
+layout(location = 3, binding = 0) uniform sampler2D uni_albedoTexture;
+layout(location = 4) uniform bool uni_useAlbedoTexture;
+layout(location = 5) uniform vec4 uni_albedo;
 
 void main()
 {

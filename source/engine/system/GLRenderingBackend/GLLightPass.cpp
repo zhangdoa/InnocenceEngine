@@ -25,11 +25,8 @@ INNO_PRIVATE_SCOPE GLLightPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-#ifdef CookTorrance
-	ShaderFilePaths m_shaderFilePaths = { "GL//lightPassCookTorrance.vert" , "", "GL//lightPassCookTorrance.frag" };
-#elif BlinnPhong
-	ShaderFilePaths m_shaderFilePaths = { "GL//lightPassBlinnPhong.vert" , "", "GL//lightPassBlinnPhong.frag" };
-#endif
+	ShaderFilePaths m_shaderFilePaths = { "GL//lightPass.vert" , "", "GL//lightPass.frag" };
+
 	std::vector<std::string> m_textureUniformNames =
 	{
 		"uni_opaquePassRT0",
@@ -199,7 +196,6 @@ void GLLightPass::update()
 
 	activateShaderProgram(m_GLSPC);
 
-#ifdef CookTorrance
 	// Cook-Torrance
 	// world space position + metallic
 	activateTexture(
@@ -237,7 +233,6 @@ void GLLightPass::update()
 	activateTexture(
 		GLEnvironmentRenderPass::getPreFilterPassGLTDC(),
 		8);
-#endif
 
 	updateUniform(
 		m_uni_isEmissive,

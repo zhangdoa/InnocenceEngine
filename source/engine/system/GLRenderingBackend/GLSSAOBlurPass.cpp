@@ -13,7 +13,6 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLSSAOBlurPass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
@@ -22,11 +21,6 @@ INNO_PRIVATE_SCOPE GLSSAOBlurPass
 	GLShaderProgramComponent* m_GLSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//SSAOBlurPass.vert" , "", "GL//SSAOBlurPass.frag" };
-
-	std::vector<std::string> m_SSAOBlurPassTextureUniformNames =
-	{
-		"uni_SSAOPassRT0",
-	};
 }
 
 bool GLSSAOBlurPass::initialize()
@@ -47,14 +41,7 @@ void GLSSAOBlurPass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLSSAOBlurPass::bindUniformLocations(GLShaderProgramComponent * rhs)
-{
-	updateTextureUniformLocations(rhs->m_program, m_SSAOBlurPassTextureUniformNames);
 }
 
 bool GLSSAOBlurPass::update()
@@ -83,8 +70,6 @@ bool GLSSAOBlurPass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

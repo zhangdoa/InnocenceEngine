@@ -27,10 +27,6 @@ INNO_PRIVATE_SCOPE GLShadowRenderPass
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//shadowPass.vert" , "", "GL//shadowPass.frag" };
 
-	GLuint m_shadowPass_uni_p;
-	GLuint m_shadowPass_uni_v;
-	GLuint m_shadowPass_uni_m;
-
 	std::vector<CSMDataPack> m_CSMDataPack;
 }
 
@@ -78,19 +74,8 @@ void GLShadowRenderPass::initialize()
 
 	m_PointLight_GLRPC = addGLRenderPassComponent(1, PointLightShadowPassFBDesc, PointLightShadowPassTextureDesc);
 
-	// shader programs and shaders
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
-
-	m_shadowPass_uni_p = getUniformLocation(
-		rhs->m_program,
-		"uni_p");
-	m_shadowPass_uni_v = getUniformLocation(
-		rhs->m_program,
-		"uni_v");
-	m_shadowPass_uni_m = getUniformLocation(
-		rhs->m_program,
-		"uni_m");
 
 	m_GLSPC = rhs;
 }
@@ -110,8 +95,9 @@ void GLShadowRenderPass::drawAllMeshDataComponents()
 		{
 			glFrontFace(GL_CCW);
 		}
+		//uni_m
 		updateUniform(
-			m_shadowPass_uni_m, l_renderPack.meshUBOData.m);
+			2, l_renderPack.meshUBOData.m);
 		drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
 		l_queueCopy.pop();
 	}
@@ -149,12 +135,13 @@ void GLShadowRenderPass::update()
 			for (unsigned int j = 0; j < 2; j++)
 			{
 				glViewport(i * sizeX / 2, j * sizeY / 2, sizeX / 2, sizeY / 2);
+				// uni_p
 				updateUniform(
-					m_shadowPass_uni_p,
+					0,
 					m_CSMDataPack[splitCount].p);
-
+				//uni_v
 				updateUniform(
-					m_shadowPass_uni_v,
+					1,
 					m_CSMDataPack[splitCount].v);
 
 				splitCount++;

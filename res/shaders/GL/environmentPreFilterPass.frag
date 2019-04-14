@@ -1,10 +1,10 @@
 // shadertype=glsl
 #version 450
-out vec4 FragColor;
-in vec3 TexCoords;
+layout(location = 0) out vec4 FragColor;
+layout(location = 0) in vec3 TexCoords;
 
-uniform samplerCube uni_capturedCubeMap;
-uniform float uni_roughness;
+layout(location = 2, binding = 2) uniform samplerCube uni_capturedCubeMap;
+layout(location = 3) uniform float uni_roughness;
 
 const float PI = 3.14159265359;
 

@@ -2,9 +2,9 @@
 #version 450
 layout(location = 0) out vec4 uni_terrainPassRT0;
 
-in vec4 thefrag_WorldSpacePos;
-in vec2 thefrag_TexCoord;
-in vec3 thefrag_Normal;
+layout(location = 0) in vec4 thefrag_WorldSpacePos;
+layout(location = 1) in vec2 thefrag_TexCoord;
+layout(location = 2) in vec3 thefrag_Normal;
 
 uniform sampler2D uni_albedoTexture;
 

@@ -105,9 +105,6 @@ struct ShaderFilePaths
 	std::string m_CSPath;
 };
 
-//#define BlinnPhong
-#define CookTorrance
-
 #ifdef INNO_PLATFORM_MAC
 struct EnumClassHash
 {
