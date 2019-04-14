@@ -17,7 +17,7 @@ INNO_PRIVATE_SCOPE DX11FinalBlendPass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX11//finalBlendPassVertex.sf" , "", "DX11//finalBlendPassPixel.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//finalBlendPassVertex.hlsl" , "", "DX11//finalBlendPassPixel.hlsl" };
 }
 
 bool DX11FinalBlendPass::initialize()

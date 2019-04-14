@@ -20,7 +20,7 @@ INNO_PRIVATE_SCOPE DX11TAAPass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX11//TAAPassVertex.sf" , "", "DX11//TAAPassPixel.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//TAAPassVertex.hlsl" , "", "DX11//TAAPassPixel.hlsl" };
 
 	EntityID m_entityID;
 

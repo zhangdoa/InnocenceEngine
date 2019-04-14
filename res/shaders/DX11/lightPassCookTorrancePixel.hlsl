@@ -1,6 +1,6 @@
 // shadertype=hlsl
 
-#include "common.sf"
+#include "common.hlsl"
 
 Texture2D in_geometryPassRT0 : register(t0);
 Texture2D in_geometryPassRT1 : register(t1);

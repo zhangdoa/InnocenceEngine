@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE DX11LightPass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX11//lightPassCookTorranceVertex.sf" , "", "DX11//lightPassCookTorrancePixel.sf" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//lightPassCookTorranceVertex.hlsl" , "", "DX11//lightPassCookTorrancePixel.hlsl" };
 
 	EntityID m_entityID;
 }

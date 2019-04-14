@@ -16,6 +16,8 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
+	INNO_SYSTEM_EXPORT virtual std::string getWorkingDirectory() = 0;
+
 	INNO_SYSTEM_EXPORT virtual std::string loadTextFile(const std::string& fileName) = 0;
 	INNO_SYSTEM_EXPORT virtual std::vector<char> loadBinaryFile(const std::string& fileName) = 0;
 

@@ -767,6 +767,11 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoFileSystem::getStatus()
 	return InnoFileSystemNS::m_objectStatus;
 }
 
+INNO_SYSTEM_EXPORT std::string InnoFileSystem::getWorkingDirectory()
+{
+	return InnoFileSystemNS::m_workingDir;
+}
+
 std::string InnoFileSystem::loadTextFile(const std::string & fileName)
 {
 	return InnoFileSystemNS::loadTextFile(InnoFileSystemNS::m_workingDir + fileName);

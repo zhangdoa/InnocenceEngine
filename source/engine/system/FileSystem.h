@@ -13,6 +13,8 @@ public:
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 
+	INNO_SYSTEM_EXPORT std::string getWorkingDirectory() override;
+
 	INNO_SYSTEM_EXPORT std::string loadTextFile(const std::string& fileName) override;
 	INNO_SYSTEM_EXPORT std::vector<char> loadBinaryFile(const std::string& fileName) override;
 

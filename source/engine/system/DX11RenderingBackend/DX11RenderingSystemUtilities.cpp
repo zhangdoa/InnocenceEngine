@@ -30,7 +30,7 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	void* m_DX11RenderPassComponentPool;
 	void* m_DX11ShaderProgramComponentPool;
 
-	const std::wstring m_shaderRelativePath = L"..//res//shaders//";
+	const std::wstring m_shaderRelativePath = L"res//shaders//";
 }
 
 bool DX11RenderingSystemNS::initializeComponentPool()
@@ -71,7 +71,9 @@ ID3D10Blob* DX11RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const
 		break;
 	}
 
-	result = D3DCompileFromFile((m_shaderRelativePath + shaderFilePath).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, l_shaderName.c_str(), l_shaderTypeName.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0,
+	auto l_workingDir = g_pCoreSystem->getFileSystem()->getWorkingDirectory();
+	auto l_workingDirW = std::wstring(l_workingDir.begin(), l_workingDir.end());
+	result = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + shaderFilePath).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, l_shaderName.c_str(), l_shaderTypeName.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0,
 		&l_shaderBuffer, &l_errorMessage);
 	if (FAILED(result))
 	{
