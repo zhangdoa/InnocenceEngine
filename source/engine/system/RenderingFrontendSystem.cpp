@@ -37,10 +37,9 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 
 	std::function<void(RenderPassType)> f_reloadShader;
 	std::function<void()> f_captureEnvironment;
+	std::function<void()> f_sceneLoadingStartCallback;
 
 	RenderingConfig m_renderingConfig = RenderingConfig();
-
-	std::vector<InnoFuture<void>> m_asyncTask;
 
 	bool setup();
 	bool initialize();
@@ -83,6 +82,15 @@ bool InnoRenderingFrontendSystemNS::setup()
 	m_renderingConfig.useMotionBlur = true;
 	m_renderingConfig.useTAA = true;
 	m_renderingConfig.drawSky = true;
+
+	f_sceneLoadingStartCallback = [&]() {
+		m_meshDataPack.clear();
+		m_cullingDataPack.clear();
+		m_isMeshDataPackValid = false;
+	};
+
+	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+
 	return true;
 }
 
@@ -239,14 +247,6 @@ bool InnoRenderingFrontendSystemNS::update()
 	}
 
 	updateMeshData();
-
-	auto prepareRenderingDataTask = g_pCoreSystem->getTaskSystem()->submit([&]()
-	{
-	});
-
-	m_asyncTask.emplace_back(std::move(prepareRenderingDataTask));
-
-	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(m_asyncTask);
 
 	return true;
 }

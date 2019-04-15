@@ -56,8 +56,6 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 
 	unsigned int m_currentUUID = 0;
 
-	InnoFuture<void>* m_asyncTask;
-
 	std::function<void()> f_sceneLoadingStartCallback;
 }
 
@@ -302,11 +300,10 @@ bool InnoGameSystem::initialize()
 
 bool InnoGameSystem::update()
 {
-	auto temp = g_pCoreSystem->getTaskSystem()->submit([&]()
+	auto updateTask = g_pCoreSystem->getTaskSystem()->submit([&]()
 	{
 		InnoGameSystemNS::updateTransformComponent();
 	});
-	InnoGameSystemNS::m_asyncTask = &temp;
 
 	return true;
 }

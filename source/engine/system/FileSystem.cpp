@@ -244,8 +244,6 @@ bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::str
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: converting " + fileName + " ...");
 			AssimpWrapper::convertModel(fileName, exportPath);
 		});
-
-		m_asyncTask.emplace_back(std::move(tempTask));
 		return true;
 	}
 	else
@@ -1391,9 +1389,15 @@ MaterialDataComponent * InnoFileSystemNS::ModelLoader::processMaterialJsonData(c
 		for (auto i : j["Textures"])
 		{
 			auto l_TDC = loadTexture(i["File"]);
-			l_TDC->m_textureDataDesc.samplerType = TextureSamplerType(i["SamplerType"]);
-			l_TDC->m_textureDataDesc.usageType = TextureUsageType(i["UsageType"]);
-
+			if (l_TDC)
+			{
+				l_TDC->m_textureDataDesc.samplerType = TextureSamplerType(i["SamplerType"]);
+				l_TDC->m_textureDataDesc.usageType = TextureUsageType(i["UsageType"]);
+			}
+			else
+			{
+				l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType(i["UsageType"]));
+			}
 			switch (l_TDC->m_textureDataDesc.usageType)
 			{
 			case TextureUsageType::NORMAL: l_MDC->m_texturePack.m_normalTDC.second = l_TDC; break;

@@ -15,7 +15,7 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
-	virtual void addTask(std::unique_ptr<IThreadTask>&& task) = 0;
+	virtual void* addTask(std::unique_ptr<IThreadTask>&& task) = 0;
 
 	virtual void shrinkFutureContainer(std::vector<InnoFuture<void>>& rhs) = 0;
 
@@ -32,8 +32,6 @@ public:
 		using TaskType = InnoTask<PackagedTask>;
 
 		PackagedTask task{ std::move(boundTask) };
-		InnoFuture<ResultType> result{ task.get_future() };
-		addTask(std::make_unique<TaskType>(std::move(task)));
-		return result;
+		return addTask(std::make_unique<TaskType>(std::move(task)));;
 	}
 };

@@ -104,9 +104,10 @@ ObjectStatus InnoTaskSystem::getStatus()
 	return 	InnoTaskSystemNS::m_objectStatus;
 }
 
-void InnoTaskSystem::addTask(std::unique_ptr<IThreadTask>&& task)
+void* InnoTaskSystem::addTask(std::unique_ptr<IThreadTask>&& task)
 {
 	InnoTaskSystemNS::m_workQueue.push(std::move(task));
+	return task.get();
 }
 
 void InnoTaskSystem::shrinkFutureContainer(std::vector<InnoFuture<void>>& rhs)

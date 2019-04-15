@@ -49,8 +49,6 @@ namespace InnoPhysicsSystemNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	std::vector<InnoFuture<void>> m_asyncTask;
-
 	vec4 m_sceneBoundMax;
 	vec4 m_sceneBoundMin;
 	AABB m_SceneAABB;
@@ -75,9 +73,9 @@ bool InnoPhysicsSystemNS::setup()
 	m_sceneBoundMin = InnoMath::maxVec4<float>;
 	m_sceneBoundMin.w = 1.0f;
 
-	#if defined INNO_PLATFORM_WIN
+#if defined INNO_PLATFORM_WIN
 	PhysXWrapper::get().setup();
-	#endif
+#endif
 
 	f_sceneLoadingStartCallback = [&]() {
 		m_cullingDataPack.clear();
@@ -640,7 +638,7 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Vi
 		l_PDC->m_physicsDatas.emplace_back(l_physicsData);
 	}
 
-	#if defined INNO_PLATFORM_WIN
+#if defined INNO_PLATFORM_WIN
 	if (visibleComponent->m_simulatePhysics)
 	{
 		auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
@@ -659,7 +657,7 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Vi
 			break;
 		}
 	}
-	#endif
+#endif
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for " + visibleComponent->m_parentEntity + ".");
 
@@ -771,7 +769,6 @@ void InnoPhysicsSystemNS::updateCulling()
 			{
 				auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
 				auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-
 				if (visibleComponent->m_PhysicsDataComponent)
 				{
 					for (auto& physicsData : visibleComponent->m_PhysicsDataComponent->m_physicsDatas)
@@ -785,7 +782,7 @@ void InnoPhysicsSystemNS::updateCulling()
 
 						if (InnoMath::intersectCheck(l_cameraFrustum, l_boundingSphere))
 						{
-							CullingDataPack l_cullingDataPack;
+							thread_local CullingDataPack l_cullingDataPack;
 
 							l_cullingDataPack.m = l_globalTm;
 							l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
@@ -828,21 +825,26 @@ bool InnoPhysicsSystemNS::update()
 		return true;
 	}
 
-	#if defined INNO_PLATFORM_WIN
+#if defined INNO_PLATFORM_WIN
 	PhysXWrapper::get().update();
-	#endif
+#endif
 
-	auto preparePhysicsDataTask = g_pCoreSystem->getTaskSystem()->submit([&]()
+	g_pCoreSystem->getTaskSystem()->submit([&]()
 	{
 		updateCameraComponents();
+	});
+	g_pCoreSystem->getTaskSystem()->submit([&]()
+	{
 		updateLightComponents();
+	});
+	g_pCoreSystem->getTaskSystem()->submit([&]()
+	{
 		updateVisibleComponents();
+	});
+	g_pCoreSystem->getTaskSystem()->submit([&]()
+	{
 		updateCulling();
 	});
-
-	m_asyncTask.emplace_back(std::move(preparePhysicsDataTask));
-
-	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(m_asyncTask);
 
 	return true;
 }

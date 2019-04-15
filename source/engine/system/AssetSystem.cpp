@@ -633,22 +633,22 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 			{
 				if (!l_visibleComponent->m_modelFileName.empty())
 				{
-					InnoAssetSystemNS::m_asyncTask.emplace_back(g_pCoreSystem->getTaskSystem()->submit([=]()
+					g_pCoreSystem->getTaskSystem()->submit([=]()
 					{
 						l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
 						l_visibleComponent->m_PhysicsDataComponent = g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
 						l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
-					}));
+					});
 				}
 			}
 			else
 			{
-				InnoAssetSystemNS::m_asyncTask.emplace_back(g_pCoreSystem->getTaskSystem()->submit([=]()
+				g_pCoreSystem->getTaskSystem()->submit([=]()
 				{
 					assignUnitMesh(l_visibleComponent->m_meshShapeType, l_visibleComponent);
 					l_visibleComponent->m_PhysicsDataComponent = g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
 					l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
-				}));
+				});
 			}
 		}
 		g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoAssetSystemNS::m_asyncTask);

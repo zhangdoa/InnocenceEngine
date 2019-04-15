@@ -169,10 +169,9 @@ namespace GameInstanceNS
 	void runTest(unsigned int testTime, std::function<bool()> testCase);
 
 	std::function<void()> f_sceneLoadingFinishCallback;
+	std::function<void()> f_testFunc;
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-
-	std::vector<InnoFuture<void>> m_asyncTask;
 }
 
 bool GameInstanceNS::setup()
@@ -294,6 +293,9 @@ bool GameInstanceNS::setup()
 
 bool GameInstanceNS::initialize()
 {
+	f_testFunc = []() {	g_pCoreSystem->getFileSystem()->loadScene("res//scenes//Intro.InnoScene");
+	};
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_R, ButtonStatus::PRESSED }, &f_testFunc);
 	return true;
 }
 
@@ -350,10 +352,6 @@ void GameInstanceNS::update()
 		{
 			PlayerComponentCollection::update();
 		});
-
-		m_asyncTask.emplace_back(std::move(updateGameTask));
-
-		g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(m_asyncTask);
 
 		std::function<void(ModelMap modelMap, vec4 albedo, vec4 MRA)> f_setMRAT = [&](ModelMap modelMap, vec4 albedo, vec4 MRAT)
 		{

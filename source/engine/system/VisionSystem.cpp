@@ -37,8 +37,6 @@ INNO_PRIVATE_SCOPE InnoVisionSystemNS
 	bool setupRendering();
 	bool setupGui();
 
-	std::vector<InnoFuture<void>> m_asyncTask;
-
 	std::atomic<bool> m_isRendering = false;
 	std::atomic<bool> m_allowRender = false;
 
@@ -183,11 +181,11 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* appHook, void* extraHook, 
 		InnoVisionSystemNS::m_renderingBackendSystem = new VKRenderingSystem();
 #endif
 		break;
-		case RenderingBackend::MT:
+	case RenderingBackend::MT:
 #if defined INNO_PLATFORM_MAC
 		InnoVisionSystemNS::m_renderingBackendSystem = new MTRenderingSystem();
 #endif
-    break;
+		break;
 	default:
 		break;
 	}
@@ -277,14 +275,6 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 	{
 		return true;
 	}
-
-	auto prepareRenderDataTask = g_pCoreSystem->getTaskSystem()->submit([&]()
-	{
-	});
-
-	InnoVisionSystemNS::m_asyncTask.emplace_back(std::move(prepareRenderDataTask));
-
-	g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoVisionSystemNS::m_asyncTask);
 
 	if (!InnoVisionSystemNS::m_allowRender)
 	{

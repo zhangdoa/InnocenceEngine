@@ -69,9 +69,9 @@ public:
 	auto isReady(void)
 	{
 #if defined INNO_PLATFORM_WIN
-    return m_future._Is_ready();
+		return m_future._Is_ready();
 #else
-    return m_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+		return m_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 #endif
 	}
 
