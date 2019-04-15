@@ -6,6 +6,7 @@
 #include "ILogSystem.h"
 #include "IMemorySystem.h"
 #include "ITaskSystem.h"
+#include "ITestSystem.h"
 #include "IFileSystem.h"
 #include "IGameSystem.h"
 #include "IAssetSystem.h"
@@ -29,6 +30,7 @@ public:
 	INNO_SYSTEM_EXPORT virtual ILogSystem* getLogSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IMemorySystem* getMemorySystem() = 0;
 	INNO_SYSTEM_EXPORT virtual ITaskSystem* getTaskSystem() = 0;
+	INNO_SYSTEM_EXPORT virtual ITestSystem* getTestSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IFileSystem* getFileSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IGameSystem* getGameSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IAssetSystem* getAssetSystem() = 0;

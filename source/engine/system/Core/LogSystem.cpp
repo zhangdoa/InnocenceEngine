@@ -162,7 +162,7 @@ void InnoLogSystem::printLog(LogType LogType, const std::string & logMessage)
 	std::cout << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl;
 #endif
 	InnoLogSystemNS::m_logFile << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl;
-	}
+}
 
 ObjectStatus InnoLogSystem::getStatus()
 {
@@ -171,7 +171,7 @@ ObjectStatus InnoLogSystem::getStatus()
 
 bool InnoLogSystem::setup()
 {
-	InnoLogSystemNS::m_logFile.open(InnoLogSystemNS::getLogTimeHeader() + ".log", std::ios::out | std::ios::trunc);
+	InnoLogSystemNS::m_logFile.open("res//" + InnoLogSystemNS::getLogTimeHeader() + ".log", std::ios::out | std::ios::trunc);
 	return true;
 }
 

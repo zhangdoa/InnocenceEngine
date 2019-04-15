@@ -15,4 +15,5 @@ public:
 
 	const long long getDeltaTime() override;
 	const TimeData getCurrentTime(unsigned int timezone_adjustment = 8) override;
+	const long long getCurrentTimeFromEpoch() override;
 };

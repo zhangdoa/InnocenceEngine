@@ -1,7 +1,7 @@
 #pragma once
 #include "IPhysicsSystem.h"
 
-class InnoPhysicsSystem : INNO_IMPLEMENT IPhysicsSystem
+INNO_CONCRETE InnoPhysicsSystem : INNO_IMPLEMENT IPhysicsSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoPhysicsSystem);

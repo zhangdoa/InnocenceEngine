@@ -1,7 +1,7 @@
 #pragma once
 #include "IRenderingFrontendSystem.h"
 
-class InnoRenderingFrontendSystem : INNO_IMPLEMENT IRenderingFrontendSystem
+INNO_CONCRETE InnoRenderingFrontendSystem : INNO_IMPLEMENT IRenderingFrontendSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoRenderingFrontendSystem);

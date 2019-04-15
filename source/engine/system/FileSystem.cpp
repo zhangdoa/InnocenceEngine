@@ -833,6 +833,106 @@ INNO_SYSTEM_EXPORT TextureDataComponent* InnoFileSystem::loadTexture(const std::
 	return InnoFileSystemNS::ModelLoader::loadTexture(fileName);
 }
 
+INNO_SYSTEM_EXPORT bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & desc)
+{
+	// Build header file
+	auto l_headerFileName = desc.filePath + desc.className + ".h";
+	std::ofstream l_headerFile(l_headerFileName, std::ios::out | std::ios::trunc);
+
+	if (!l_headerFile.is_open())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ofstream: can't open file " + l_headerFileName + "!");
+		return false;
+	}
+
+	// Common headers include
+	l_headerFile << "#pragma once" << std::endl;
+	l_headerFile << "#include \"common/InnoType.h\"" << std::endl;
+	l_headerFile << "#include \"common/InnoClassTemplate.h\"" << std::endl;
+	l_headerFile << std::endl;
+
+	// Abstraction type
+	if (desc.isInterface)
+	{
+		l_headerFile << "INNO_INTERFACE ";
+	}
+	else
+	{
+		l_headerFile << "INNO_CONCRETE ";
+	}
+
+	l_headerFile << desc.className;
+
+	// Inheriance type
+	if (!desc.parentClass.empty())
+	{
+		l_headerFile << " : INNO_IMPLEMENT " << desc.parentClass;
+	}
+
+	l_headerFile << std::endl;
+
+	// Class decl body
+	l_headerFile << "{" << std::endl;
+	l_headerFile << "public:" << std::endl;
+
+	// Ctor type
+	if (desc.isInterface)
+	{
+		if (desc.isNonMoveable && desc.isNonCopyable)
+		{
+			l_headerFile << "  INNO_CLASS_INTERFACE_NON_COPYABLE_AND_NON_MOVABLE(" << desc.className << ");" << std::endl;
+		}
+		else if (desc.isNonMoveable)
+		{
+			l_headerFile << "  INNO_CLASS_INTERFACE_NON_MOVABLE(" << desc.className << ");" << std::endl;
+		}
+		else if (desc.isNonCopyable)
+		{
+			l_headerFile << "  INNO_CLASS_INTERFACE_NON_COPYABLE(" << desc.className << ");" << std::endl;
+		}
+		else
+		{
+			l_headerFile << "  INNO_CLASS_INTERFACE_DEFALUT(" << desc.className << ");" << std::endl;
+		}
+	}
+	else
+	{
+		if (desc.isNonMoveable && desc.isNonCopyable)
+		{
+			l_headerFile << "  INNO_CLASS_CONCRETE_NON_COPYABLE_AND_NON_MOVABLE(" << desc.className << ");" << std::endl;
+		}
+		else if (desc.isNonMoveable)
+		{
+			l_headerFile << "  INNO_CLASS_CONCRETE_NON_MOVABLE(" << desc.className << ");" << std::endl;
+		}
+		else if (desc.isNonCopyable)
+		{
+			l_headerFile << "  INNO_CLASS_CONCRETE_NON_COPYABLE(" << desc.className << ");" << std::endl;
+		}
+		else
+		{
+			l_headerFile << "  INNO_CLASS_CONCRETE_DEFALUT(" << desc.className << ");" << std::endl;
+		}
+	}
+
+	l_headerFile << std::endl;
+	l_headerFile << "  bool setup();" << std::endl;
+	l_headerFile << "  bool initialize();" << std::endl;
+	l_headerFile << "  bool update();" << std::endl;
+	l_headerFile << "  bool terminate();" << std::endl;
+	l_headerFile << "  ObjectStatus getStatus();" << std::endl;
+
+	l_headerFile << std::endl;
+	l_headerFile << "private:" << std::endl;
+	l_headerFile << "  ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;" << std::endl;
+	l_headerFile << "};" << std::endl;
+
+	l_headerFile.close();
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: " + l_headerFileName + " has been generated.");
+	return true;
+}
+
 bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName, const std::string & exportPath)
 {
 	auto l_exportFileName = fs::path(fileName).stem().generic_string();

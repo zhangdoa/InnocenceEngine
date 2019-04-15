@@ -1,7 +1,7 @@
 #pragma once
 #include "IInputSystem.h"
 
-class InnoInputSystem : INNO_IMPLEMENT IInputSystem
+INNO_CONCRETE InnoInputSystem : INNO_IMPLEMENT IInputSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoInputSystem);

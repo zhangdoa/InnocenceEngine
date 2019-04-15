@@ -1,7 +1,7 @@
 #pragma once
 #include "IFileSystem.h"
 
-class InnoFileSystem : INNO_IMPLEMENT IFileSystem
+INNO_CONCRETE InnoFileSystem : INNO_IMPLEMENT IFileSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoFileSystem);
@@ -29,4 +29,6 @@ public:
 
 	INNO_SYSTEM_EXPORT ModelMap loadModel(const std::string & fileName) override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* loadTexture(const std::string & fileName) override;
+
+	INNO_SYSTEM_EXPORT bool addCPPClassFiles(const CPPClassDesc& desc) override;
 };

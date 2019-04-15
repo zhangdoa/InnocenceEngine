@@ -111,6 +111,11 @@ const TimeData InnoTimeSystem::getCurrentTime(unsigned int timezone_adjustment)
 	return  l_timeData;
 }
 
+const long long InnoTimeSystem::getCurrentTimeFromEpoch()
+{
+	return std::chrono::high_resolution_clock::now().time_since_epoch().count();
+}
+
 ObjectStatus InnoTimeSystem::getStatus()
 {
 	return InnoTimeSystemNS::m_objectStatus;

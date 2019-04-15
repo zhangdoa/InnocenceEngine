@@ -16,4 +16,5 @@ public:
 
 	virtual const long long getDeltaTime() = 0;
 	virtual const TimeData getCurrentTime(unsigned int timezone_adjustment = 8) = 0;
+	virtual const long long getCurrentTimeFromEpoch() = 0;
 };

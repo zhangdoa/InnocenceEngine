@@ -19,7 +19,7 @@ className* get##className(const EntityID& parentEntity) override;
 #define getComponentContainerImplDecl( className ) \
 std::vector<className*>& get##className##s() override;
 
-class InnoGameSystem : INNO_IMPLEMENT IGameSystem
+INNO_CONCRETE InnoGameSystem : INNO_IMPLEMENT IGameSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoGameSystem);

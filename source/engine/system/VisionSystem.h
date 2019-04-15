@@ -1,7 +1,7 @@
 #pragma once
 #include "IVisionSystem.h"
 
-class InnoVisionSystem : INNO_IMPLEMENT IVisionSystem
+INNO_CONCRETE InnoVisionSystem : INNO_IMPLEMENT IVisionSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoVisionSystem);

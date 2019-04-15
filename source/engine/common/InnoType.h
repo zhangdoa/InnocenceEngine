@@ -3,6 +3,7 @@
 #include "../common/config.h"
 
 #define INNO_INTERFACE class
+#define INNO_CONCRETE class
 #define INNO_IMPLEMENT public
 #define INNO_PRIVATE_SCOPE namespace
 #if defined INNO_PLATFORM_WIN

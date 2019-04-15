@@ -3,6 +3,7 @@
 #include "Core/LogSystem.h"
 #include "Core/MemorySystem.h"
 #include "Core/TaskSystem.h"
+#include "TestSystem.h"
 #include "FileSystem.h"
 #include "GameSystem.h"
 #include "AssetSystem.h"
@@ -11,6 +12,53 @@
 #include "VisionSystem.h"
 
 ICoreSystem* g_pCoreSystem;
+
+#define createSubSystemInstanceDefi( className ) \
+m_##className = std::make_unique<Inno##className>(); \
+if (!m_##className.get()) \
+{ \
+	return false; \
+} \
+
+#define subSystemSetup( className ) \
+if (!g_pCoreSystem->get##className()->setup()) \
+{ \
+	return false; \
+} \
+g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, std::string(#className) + " setup finished."); \
+
+#define subSystemInit( className ) \
+if (!g_pCoreSystem->get##className()->initialize()) \
+{ \
+	return false; \
+} \
+
+//#define INNO_TEST_BUILD
+#if defined INNO_TEST_BUILD
+#define subSystemUpdate( className ) \
+{ \
+std::function<void()> l_task = [](){ g_pCoreSystem->get##className()->update(); }; \
+g_pCoreSystem->getTestSystem()->measure(std::string(#className), l_task); \
+}
+#else
+#define subSystemUpdate( className ) \
+if (!g_pCoreSystem->get##className()->update()) \
+{ \
+return false; \
+}
+#endif
+
+#define subSystemTerm( className ) \
+if (!g_pCoreSystem->get##className()->terminate()) \
+{ \
+	return false; \
+} \
+
+#define subSystemGetDefi( className ) \
+INNO_SYSTEM_EXPORT I##className * InnoCoreSystem::get##className() \
+{ \
+	return InnoCoreSystemNS::m_##className.get(); \
+} \
 
 INNO_PRIVATE_SCOPE InnoCoreSystemNS
 {
@@ -24,6 +72,7 @@ INNO_PRIVATE_SCOPE InnoCoreSystemNS
 	std::unique_ptr<ILogSystem> m_LogSystem;
 	std::unique_ptr<IMemorySystem> m_MemorySystem;
 	std::unique_ptr<ITaskSystem> m_TaskSystem;
+	std::unique_ptr<ITestSystem> m_TestSystem;
 	std::unique_ptr<IFileSystem> m_FileSystem;
 	std::unique_ptr<IGameSystem> m_GameSystem;
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
@@ -36,56 +85,19 @@ INNO_PRIVATE_SCOPE InnoCoreSystemNS
 
 bool InnoCoreSystemNS::createSubSystemInstance()
 {
-	m_TimeSystem = std::make_unique<InnoTimeSystem>();
-	if (!m_TimeSystem.get())
-	{
-		return false;
-	}
-	m_LogSystem = std::make_unique<InnoLogSystem>();
-	if (!m_LogSystem.get())
-	{
-		return false;
-	}
-	m_MemorySystem = std::make_unique<InnoMemorySystem>();
-	if (!m_MemorySystem.get())
-	{
-		return false;
-	}
-	m_TaskSystem = std::make_unique<InnoTaskSystem>();
-	if (!m_TaskSystem.get())
-	{
-		return false;
-	}
-	m_FileSystem = std::make_unique<InnoFileSystem>();
-	if (!m_FileSystem.get())
-	{
-		return false;
-	}
-	m_GameSystem = std::make_unique<InnoGameSystem>();
-	if (!m_GameSystem.get())
-	{
-		return false;
-	}
-	m_AssetSystem = std::make_unique<InnoAssetSystem>();
-	if (!m_AssetSystem.get())
-	{
-		return false;
-	}
-	m_PhysicsSystem = std::make_unique<InnoPhysicsSystem>();
-	if (!m_PhysicsSystem.get())
-	{
-		return false;
-	}
-	m_InputSystem = std::make_unique<InnoInputSystem>();
-	if (!m_InputSystem.get())
-	{
-		return false;
-	}
-	m_VisionSystem = std::make_unique<InnoVisionSystem>();
-	if (!m_VisionSystem.get())
-	{
-		return false;
-	}
+	createSubSystemInstanceDefi(TimeSystem);
+	createSubSystemInstanceDefi(LogSystem);
+	createSubSystemInstanceDefi(MemorySystem);
+	createSubSystemInstanceDefi(TaskSystem);
+
+	createSubSystemInstanceDefi(TestSystem);
+	createSubSystemInstanceDefi(FileSystem);
+	createSubSystemInstanceDefi(GameSystem);
+	createSubSystemInstanceDefi(AssetSystem);
+	createSubSystemInstanceDefi(PhysicsSystem);
+	createSubSystemInstanceDefi(InputSystem);
+	createSubSystemInstanceDefi(VisionSystem);
+
 	return true;
 }
 
@@ -96,29 +108,12 @@ bool InnoCoreSystemNS::setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-	if (!g_pCoreSystem->getTimeSystem()->setup())
-	{
-		return false;
-	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TimeSystem setup finished.");
+	subSystemSetup(TimeSystem);
+	subSystemSetup(LogSystem);
+	subSystemSetup(MemorySystem);
+	subSystemSetup(TaskSystem);
 
-	if (!g_pCoreSystem->getLogSystem()->setup())
-	{
-		return false;
-	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "LogSystem setup finished.");
-
-	if (!g_pCoreSystem->getMemorySystem()->setup())
-	{
-		return false;
-	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MemorySystem setup finished.");
-
-	if (!g_pCoreSystem->getTaskSystem()->setup())
-	{
-		return false;
-	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem setup finished.");
+	subSystemSetup(TestSystem);
 
 	if (!g_pCoreSystem->getVisionSystem()->setup(appHook, extraHook, pScmdline))
 	{
@@ -126,35 +121,11 @@ bool InnoCoreSystemNS::setup(void* appHook, void* extraHook, char* pScmdline)
 	}
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem setup finished.");
 
-	if (!g_pCoreSystem->getAssetSystem()->setup())
-	{
-		return false;
-	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "AssetSystem setup finished.");
-
-	if (!g_pCoreSystem->getFileSystem()->setup())
-	{
-		return false;
-	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem setup finished.");
-
-	if (!g_pCoreSystem->getGameSystem()->setup())
-	{
-		return false;
-	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem setup finished.");
-
-	if (!g_pCoreSystem->getPhysicsSystem()->setup())
-	{
-		return false;
-	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem setup finished.");
-
-	if (!g_pCoreSystem->getInputSystem()->setup())
-	{
-		return false;
-	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "InputSystem setup finished.");
+	subSystemSetup(AssetSystem);
+	subSystemSetup(FileSystem);
+	subSystemSetup(GameSystem);
+	subSystemSetup(PhysicsSystem);
+	subSystemSetup(InputSystem);
 
 	m_objectStatus = ObjectStatus::STANDBY;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine setup finished.");
@@ -163,55 +134,19 @@ bool InnoCoreSystemNS::setup(void* appHook, void* extraHook, char* pScmdline)
 
 bool InnoCoreSystemNS::initialize()
 {
-	if (!g_pCoreSystem->getTimeSystem()->initialize())
-	{
-		return false;
-	}
+	subSystemInit(TimeSystem);
+	subSystemInit(LogSystem);
+	subSystemInit(MemorySystem);
+	subSystemInit(TaskSystem);
 
-	if (!g_pCoreSystem->getLogSystem()->initialize())
-	{
-		return false;
-	}
+	subSystemInit(TestSystem);
 
-	if (!g_pCoreSystem->getMemorySystem()->initialize())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getTaskSystem()->initialize())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getFileSystem()->initialize())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getGameSystem()->initialize())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getAssetSystem()->initialize())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getPhysicsSystem()->initialize())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getInputSystem()->initialize())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getVisionSystem()->initialize())
-	{
-		return false;
-	}
+	subSystemInit(FileSystem);
+	subSystemInit(GameSystem);
+	subSystemInit(AssetSystem);
+	subSystemInit(PhysicsSystem);
+	subSystemInit(InputSystem);
+	subSystemInit(VisionSystem);
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been initialized.");
@@ -220,51 +155,39 @@ bool InnoCoreSystemNS::initialize()
 
 bool InnoCoreSystemNS::update()
 {
-	if (!g_pCoreSystem->getTimeSystem()->update())
-	{
-		return false;
-	}
+	subSystemUpdate(TimeSystem);
+	subSystemUpdate(LogSystem);
+	subSystemUpdate(MemorySystem);
+	subSystemUpdate(TaskSystem);
 
-	if (!g_pCoreSystem->getLogSystem()->update())
-	{
-		return false;
-	}
+	subSystemUpdate(TestSystem);
 
-	if (!g_pCoreSystem->getMemorySystem()->update())
-	{
-		return false;
-	}
+	subSystemUpdate(FileSystem);
+	subSystemUpdate(GameSystem);
+	subSystemUpdate(AssetSystem);
+	subSystemUpdate(PhysicsSystem);
+	subSystemUpdate(InputSystem);
 
-	if (!g_pCoreSystem->getTaskSystem()->update())
+#if defined INNO_TEST_BUILD
 	{
-		return false;
+		std::function<void()> l_task = [&]() {
+			if (g_pCoreSystem->getVisionSystem()->getStatus() == ObjectStatus::ALIVE)
+			{
+				if (!g_pCoreSystem->getVisionSystem()->update())
+				{
+					m_objectStatus = ObjectStatus::STANDBY;
+				}
+				g_pCoreSystem->getGameSystem()->saveComponentsCapture();
+			}
+			else
+			{
+				m_objectStatus = ObjectStatus::STANDBY;
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "Engine is stand-by.");
+			}
+		};
+		g_pCoreSystem->getTestSystem()->measure("VisionSystem", l_task);
 	}
-
-	if (!g_pCoreSystem->getFileSystem()->update())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getGameSystem()->update())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getAssetSystem()->update())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getPhysicsSystem()->update())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getInputSystem()->update())
-	{
-		return false;
-	}
-
+#else
 	if (g_pCoreSystem->getVisionSystem()->getStatus() == ObjectStatus::ALIVE)
 	{
 		if (!g_pCoreSystem->getVisionSystem()->update())
@@ -279,61 +202,26 @@ bool InnoCoreSystemNS::update()
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "Engine is stand-by.");
 		return false;
 	}
+#endif
 
 	return true;
 }
 
 bool InnoCoreSystemNS::terminate()
 {
-	if (!g_pCoreSystem->getVisionSystem()->terminate())
-	{
-		return false;
-	}
+	subSystemTerm(VisionSystem);
+	subSystemTerm(InputSystem);
+	subSystemTerm(PhysicsSystem);
+	subSystemTerm(AssetSystem);
+	subSystemTerm(GameSystem);
+	subSystemTerm(FileSystem);
 
-	if (!g_pCoreSystem->getInputSystem()->terminate())
-	{
-		return false;
-	}
+	subSystemTerm(TestSystem);
 
-	if (!g_pCoreSystem->getPhysicsSystem()->terminate())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getAssetSystem()->terminate())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getGameSystem()->terminate())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getFileSystem()->terminate())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getTaskSystem()->terminate())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getMemorySystem()->terminate())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getLogSystem()->terminate())
-	{
-		return false;
-	}
-
-	if (!g_pCoreSystem->getTimeSystem()->terminate())
-	{
-		return false;
-	}
+	subSystemTerm(TaskSystem);
+	subSystemTerm(MemorySystem);
+	subSystemTerm(LogSystem);
+	subSystemTerm(TimeSystem);
 
 	m_objectStatus = ObjectStatus::SHUTDOWN;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been terminated.");
@@ -368,52 +256,16 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoCoreSystem::getStatus()
 	return InnoCoreSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT ITimeSystem * InnoCoreSystem::getTimeSystem()
-{
-	return InnoCoreSystemNS::m_TimeSystem.get();
-}
+subSystemGetDefi(TimeSystem);
+subSystemGetDefi(LogSystem);
+subSystemGetDefi(MemorySystem);
+subSystemGetDefi(TaskSystem);
 
-INNO_SYSTEM_EXPORT ILogSystem * InnoCoreSystem::getLogSystem()
-{
-	return InnoCoreSystemNS::m_LogSystem.get();
-}
+subSystemGetDefi(TestSystem);
 
-INNO_SYSTEM_EXPORT IMemorySystem * InnoCoreSystem::getMemorySystem()
-{
-	return InnoCoreSystemNS::m_MemorySystem.get();
-}
-
-INNO_SYSTEM_EXPORT ITaskSystem * InnoCoreSystem::getTaskSystem()
-{
-	return InnoCoreSystemNS::m_TaskSystem.get();
-}
-
-INNO_SYSTEM_EXPORT IFileSystem * InnoCoreSystem::getFileSystem()
-{
-	return 	InnoCoreSystemNS::m_FileSystem.get();
-}
-
-INNO_SYSTEM_EXPORT IGameSystem * InnoCoreSystem::getGameSystem()
-{
-	return 	InnoCoreSystemNS::m_GameSystem.get();
-}
-
-INNO_SYSTEM_EXPORT IAssetSystem * InnoCoreSystem::getAssetSystem()
-{
-	return InnoCoreSystemNS::m_AssetSystem.get();
-}
-
-INNO_SYSTEM_EXPORT IPhysicsSystem * InnoCoreSystem::getPhysicsSystem()
-{
-	return InnoCoreSystemNS::m_PhysicsSystem.get();
-}
-
-INNO_SYSTEM_EXPORT IInputSystem * InnoCoreSystem::getInputSystem()
-{
-	return InnoCoreSystemNS::m_InputSystem.get();
-}
-
-INNO_SYSTEM_EXPORT IVisionSystem * InnoCoreSystem::getVisionSystem()
-{
-	return InnoCoreSystemNS::m_VisionSystem.get();
-}
+subSystemGetDefi(FileSystem);
+subSystemGetDefi(GameSystem);
+subSystemGetDefi(AssetSystem);
+subSystemGetDefi(PhysicsSystem);
+subSystemGetDefi(InputSystem);
+subSystemGetDefi(VisionSystem);
