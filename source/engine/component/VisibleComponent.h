@@ -24,12 +24,10 @@ public:
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::REPEAT;
 
-	bool m_drawAABB = false;
-
 	std::string m_modelFileName;
 
 	ModelMap m_modelMap;
 
 	bool m_simulatePhysics = false;
-	PhysicsDataComponent* m_PhysicsDataComponent = 0;
+	PhysicsDataComponent* m_PDC = 0;
 };

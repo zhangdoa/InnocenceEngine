@@ -578,38 +578,38 @@ void InnoAssetSystemNS::loadDefaultAssets()
 	m_iconTemplate_SphereLight = loadTexture("res//textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
 	m_UnitLineMDC = addMeshDataComponent();
-	auto lastLineMeshData = m_UnitLineMDC;
-	InnoAssetSystemNS::addUnitLine(*lastLineMeshData);
-	lastLineMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
-	lastLineMeshData->m_meshShapeType = MeshShapeType::LINE;
-	lastLineMeshData->m_objectStatus = ObjectStatus::STANDBY;
+	InnoAssetSystemNS::addUnitLine(*m_UnitLineMDC);
+	m_UnitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_UnitLineMDC->m_meshShapeType = MeshShapeType::LINE;
+	m_UnitLineMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_UnitLineMDC);
 
 	m_UnitQuadMDC = addMeshDataComponent();
-	auto lastQuadMeshData = m_UnitQuadMDC;
-	InnoAssetSystemNS::addUnitQuad(*lastQuadMeshData);
-	lastQuadMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
-	lastLineMeshData->m_meshShapeType = MeshShapeType::QUAD;
-	lastQuadMeshData->m_objectStatus = ObjectStatus::STANDBY;
+	InnoAssetSystemNS::addUnitQuad(*m_UnitQuadMDC);
+	m_UnitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_UnitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
+	m_UnitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_UnitQuadMDC);
 
 	m_UnitCubeMDC = addMeshDataComponent();
-	auto lastCubeMeshData = m_UnitCubeMDC;
-	InnoAssetSystemNS::addUnitCube(*lastCubeMeshData);
-	lastCubeMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	lastLineMeshData->m_meshShapeType = MeshShapeType::CUBE;
-	lastCubeMeshData->m_objectStatus = ObjectStatus::STANDBY;
+	InnoAssetSystemNS::addUnitCube(*m_UnitCubeMDC);
+	m_UnitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_UnitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
+	m_UnitCubeMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_UnitCubeMDC);
 
 	m_UnitSphereMDC = addMeshDataComponent();
-	auto lastSphereMeshData = m_UnitSphereMDC;
-	InnoAssetSystemNS::addUnitSphere(*lastSphereMeshData);
-	lastSphereMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
-	lastLineMeshData->m_meshShapeType = MeshShapeType::SPHERE;
-	lastSphereMeshData->m_objectStatus = ObjectStatus::STANDBY;
+	InnoAssetSystemNS::addUnitSphere(*m_UnitSphereMDC);
+	m_UnitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_UnitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
+	m_UnitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_UnitSphereMDC);
 
 	m_TerrainMDC = addMeshDataComponent();
-	auto lastTerrainMeshData = m_TerrainMDC;
-	InnoAssetSystemNS::addTerrain(*lastTerrainMeshData);
-	lastTerrainMeshData->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	lastTerrainMeshData->m_objectStatus = ObjectStatus::STANDBY;
+	InnoAssetSystemNS::addTerrain(*m_TerrainMDC);
+	m_TerrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_TerrainMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_TerrainMDC);
 }
 
 void InnoAssetSystemNS::loadAssetsForComponents()
@@ -636,7 +636,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 					g_pCoreSystem->getTaskSystem()->submit([=]()
 					{
 						l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
-						l_visibleComponent->m_PhysicsDataComponent = g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
+						g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
 						l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
 					});
 				}
@@ -646,7 +646,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 				g_pCoreSystem->getTaskSystem()->submit([=]()
 				{
 					assignUnitMesh(l_visibleComponent->m_meshShapeType, l_visibleComponent);
-					l_visibleComponent->m_PhysicsDataComponent = g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
+					g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
 					l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
 				});
 			}

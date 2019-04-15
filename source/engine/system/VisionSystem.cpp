@@ -295,7 +295,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 
 			InnoVisionSystemNS::m_renderingBackendSystem->update();
 
-			ImGuiWrapper::get().update();
+			//ImGuiWrapper::get().update();
 
 			InnoVisionSystemNS::m_windowSystem->swapBuffer();
 

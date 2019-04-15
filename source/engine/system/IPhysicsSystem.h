@@ -27,7 +27,8 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
-	INNO_SYSTEM_EXPORT virtual PhysicsDataComponent* generatePhysicsDataComponent(const VisibleComponent* visibleComponent) = 0;
+	INNO_SYSTEM_EXPORT virtual bool generatePhysicsDataComponent(MeshDataComponent* MDC) = 0;
+	INNO_SYSTEM_EXPORT virtual bool generatePhysicsDataComponent(VisibleComponent* VC) = 0;
 	INNO_SYSTEM_EXPORT virtual std::optional<std::vector<CullingDataPack>> getCullingDataPack() = 0;
 	INNO_SYSTEM_EXPORT virtual AABB getSceneAABB() = 0;
 };

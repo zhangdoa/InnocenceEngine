@@ -35,10 +35,8 @@ namespace InnoPhysicsSystemNS
 	std::vector<Vertex> generateAABBVertices(vec4 boundMax, vec4 boundMin);
 	std::vector<Vertex> generateAABBVertices(AABB rhs);
 
-	MeshDataComponent* generateMeshDataComponent(AABB rhs);
-	MeshDataComponent* generateMeshDataComponent(Frustum rhs);
-
-	PhysicsDataComponent* generatePhysicsDataComponent(const VisibleComponent* visibleComponent);
+	bool generatePhysicsDataComponent(MeshDataComponent* MDC);
+	bool generatePhysicsDataComponent(VisibleComponent* VC);
 
 	void updateCameraComponents();
 	void updateLightComponents();
@@ -422,8 +420,8 @@ std::vector<AABB> InnoPhysicsSystemNS::frustumsVerticesToAABBs(const std::vector
 	}
 
 	//3. assemble splited frustum corners
-	std::vector<Vertex> l_frustumsCornerVertices;
-	l_frustumsCornerVertices.reserve(32);
+	std::vector<Vertex> l_frustumsCornerVertices(32);
+
 	for (size_t i = 0; i < 4; i++)
 	{
 		for (size_t j = 0; j < 8; j++)
@@ -549,9 +547,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(vec4 boundMax, vec
 	l_VertexData_8.m_pos = (vec4(boundMin.x, boundMax.y, boundMin.z, 1.0f));
 	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
 
-	std::vector<Vertex> l_vertices;
-
-	l_vertices.reserve(8);
+	std::vector<Vertex> l_vertices(8);
 
 	l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
 
@@ -571,42 +567,12 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(AABB rhs)
 	return generateAABBVertices(boundMax, boundMin);
 }
 
-MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(AABB rhs)
-{
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->addMeshDataComponent();
-	l_MDC->m_parentEntity = InnoMath::createEntityID();
-
-	l_MDC->m_vertices = generateAABBVertices(rhs);
-
-	l_MDC->m_indices.reserve(36);
-
-	l_MDC->m_indices = { 0, 1, 3, 1, 2, 3,
-		4, 5, 0, 5, 1, 0,
-		7, 6, 4, 6, 5, 4,
-		3, 2, 7, 2, 6 ,7,
-		4, 0, 7, 0, 3, 7,
-		1, 5, 2, 5, 6, 2 };
-
-	l_MDC->m_indicesSize = l_MDC->m_indices.size();
-
-	l_MDC->m_objectStatus = ObjectStatus::STANDBY;
-
-	g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->registerUninitializedMeshDataComponent(l_MDC);
-
-	return l_MDC;
-}
-
-MeshDataComponent* InnoPhysicsSystemNS::generateMeshDataComponent(Frustum rhs)
-{
-	return nullptr;
-}
-
-PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const VisibleComponent* visibleComponent)
+bool InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshDataComponent* MDC)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_PhysicsDataComponentPool, sizeof(PhysicsDataComponent));
 	auto l_PDC = new(l_rawPtr)PhysicsDataComponent();
 
-	l_PDC->m_parentEntity = visibleComponent->m_parentEntity;
+	l_PDC->m_parentEntity = MDC->m_parentEntity;
 
 	auto l_boundMax = InnoMath::minVec4<float>;
 	l_boundMax.w = 1.0f;
@@ -614,18 +580,47 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Vi
 	auto l_boundMin = InnoMath::maxVec4<float>;
 	l_boundMin.w = 1.0f;
 
-	for (auto& l_MDC : visibleComponent->m_modelMap)
+	auto l_AABB = generateAABB(MDC->m_vertices);
+	auto l_sphere = generateBoundSphere(l_AABB);
+
+	if (InnoMath::isAGreaterThanBVec3(l_AABB.m_boundMax, l_boundMax))
 	{
-		PhysicsData l_physicsData;
+		l_boundMax = l_AABB.m_boundMax;
+	}
+	if (InnoMath::isALessThanBVec3(l_AABB.m_boundMin, l_boundMin))
+	{
+		l_boundMin = l_AABB.m_boundMin;
+	}
+	l_PDC->m_AABB = l_AABB;
+	l_PDC->m_sphere = l_sphere;
 
-		auto l_AABB = generateAABB(l_MDC.first->m_vertices);
-		auto l_MDCforAABB = generateMeshDataComponent(l_AABB);
-		auto l_sphere = generateBoundSphere(l_AABB);
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:" + MDC->m_parentEntity + ".");
 
-		l_physicsData.MDC = l_MDC.first;
-		l_physicsData.wireframeMDC = l_MDCforAABB;
-		l_physicsData.aabb = l_AABB;
-		l_physicsData.sphere = l_sphere;
+	MDC->m_PDC = l_PDC;
+
+	return true;
+}
+
+bool InnoPhysicsSystemNS::generatePhysicsDataComponent(VisibleComponent* VC)
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_PhysicsDataComponentPool, sizeof(PhysicsDataComponent));
+	auto l_PDC = new(l_rawPtr)PhysicsDataComponent();
+
+	l_PDC->m_parentEntity = VC->m_parentEntity;
+
+	auto l_boundMax = InnoMath::minVec4<float>;
+	l_boundMax.w = 1.0f;
+
+	auto l_boundMin = InnoMath::maxVec4<float>;
+	l_boundMin.w = 1.0f;
+
+	AABB l_AABB;
+	Sphere l_sphere;
+
+	for (auto& l_MDC : VC->m_modelMap)
+	{
+		auto l_AABB = l_MDC.first->m_PDC->m_AABB;
+		auto l_sphere = l_MDC.first->m_PDC->m_sphere;
 
 		if (InnoMath::isAGreaterThanBVec3(l_AABB.m_boundMax, l_boundMax))
 		{
@@ -635,14 +630,16 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Vi
 		{
 			l_boundMin = l_AABB.m_boundMin;
 		}
-		l_PDC->m_physicsDatas.emplace_back(l_physicsData);
 	}
 
+	l_PDC->m_AABB = generateAABB(l_boundMax, l_boundMin);
+	l_PDC->m_sphere = generateBoundSphere(l_PDC->m_AABB);
+
 #if defined INNO_PLATFORM_WIN
-	if (visibleComponent->m_simulatePhysics)
+	if (VC->m_simulatePhysics)
 	{
-		auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
-		switch (visibleComponent->m_meshShapeType)
+		auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(VC->m_parentEntity);
+		switch (VC->m_meshShapeType)
 		{
 		case MeshShapeType::CUBE:
 			PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_scale);
@@ -659,9 +656,10 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const Vi
 	}
 #endif
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for " + visibleComponent->m_parentEntity + ".");
+	VC->m_PDC = l_PDC;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for VisibleComponent:" + VC->m_parentEntity + ".");
 
-	return l_PDC;
+	return true;
 }
 
 AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(AABB rhs, mat4 globalTm)
@@ -769,11 +767,12 @@ void InnoPhysicsSystemNS::updateCulling()
 			{
 				auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
 				auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-				if (visibleComponent->m_PhysicsDataComponent)
+				if (visibleComponent->m_PDC)
 				{
-					for (auto& physicsData : visibleComponent->m_PhysicsDataComponent->m_physicsDatas)
+					for (auto& l_modelPair : visibleComponent->m_modelMap)
 					{
-						auto l_OBBws = transformAABBtoWorldSpace(physicsData.aabb, l_globalTm);
+						auto l_PDC = l_modelPair.first->m_PDC;
+						auto l_OBBws = transformAABBtoWorldSpace(l_PDC->m_AABB, l_globalTm);
 						updateSceneAABB(l_OBBws);
 
 						auto l_boundingSphere = Sphere();
@@ -788,7 +787,7 @@ void InnoPhysicsSystemNS::updateCulling()
 							l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 							l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 							l_cullingDataPack.visibleComponent = visibleComponent;
-							l_cullingDataPack.MDC = physicsData.MDC;
+							l_cullingDataPack.MDC = l_modelPair.first;
 
 							m_cullingDataPack.emplace_back(l_cullingDataPack);
 						}
@@ -866,10 +865,9 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoPhysicsSystem::getStatus()
 	return InnoPhysicsSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(const VisibleComponent* visibleComponent)
+INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::generatePhysicsDataComponent(MeshDataComponent* MDC)
 {
-	auto l_physicsComponent = InnoPhysicsSystemNS::generatePhysicsDataComponent(visibleComponent);
-	return l_physicsComponent;
+	return InnoPhysicsSystemNS::generatePhysicsDataComponent(MDC);
 }
 
 INNO_SYSTEM_EXPORT std::optional<std::vector<CullingDataPack>> InnoPhysicsSystem::getCullingDataPack()
@@ -885,4 +883,9 @@ INNO_SYSTEM_EXPORT std::optional<std::vector<CullingDataPack>> InnoPhysicsSystem
 INNO_SYSTEM_EXPORT AABB InnoPhysicsSystem::getSceneAABB()
 {
 	return InnoPhysicsSystemNS::m_SceneAABB;
+}
+
+INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::generatePhysicsDataComponent(VisibleComponent * VC)
+{
+	return InnoPhysicsSystemNS::generatePhysicsDataComponent(VC);
 }

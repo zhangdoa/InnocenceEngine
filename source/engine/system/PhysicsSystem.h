@@ -13,7 +13,8 @@ public:
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 
-	INNO_SYSTEM_EXPORT PhysicsDataComponent* generatePhysicsDataComponent(const VisibleComponent* visibleComponent) override;
+	INNO_SYSTEM_EXPORT bool generatePhysicsDataComponent(MeshDataComponent* MDC) override;
+	INNO_SYSTEM_EXPORT bool generatePhysicsDataComponent(VisibleComponent* VC) override;
 	INNO_SYSTEM_EXPORT std::optional<std::vector<CullingDataPack>> getCullingDataPack() override;
 	INNO_SYSTEM_EXPORT AABB getSceneAABB() override;
 };
