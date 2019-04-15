@@ -1,6 +1,6 @@
 #include "GLTransparentPass.h"
 #include "GLOpaquePass.h"
-#include "GLLightPass.h"
+#include "GLPreTAAPass.h"
 
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
@@ -103,12 +103,12 @@ bool GLTransparentPass::update()
 	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_SRC1_COLOR, GL_ONE, GL_ZERO);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, GLLightPass::getGLRPC()->m_FBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, GLLightPass::getGLRPC()->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GLLightPass::getGLRPC()->m_GLFrameBufferDesc.renderBufferInternalFormat, GLLightPass::getGLRPC()->m_GLFrameBufferDesc.sizeX, GLLightPass::getGLRPC()->m_GLFrameBufferDesc.sizeY);
-	glViewport(0, 0, GLLightPass::getGLRPC()->m_GLFrameBufferDesc.sizeX, GLLightPass::getGLRPC()->m_GLFrameBufferDesc.sizeY);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLPreTAAPass::getGLRPC()->m_FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, GLPreTAAPass::getGLRPC()->m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GLPreTAAPass::getGLRPC()->m_GLFrameBufferDesc.renderBufferInternalFormat, GLPreTAAPass::getGLRPC()->m_GLFrameBufferDesc.sizeX, GLPreTAAPass::getGLRPC()->m_GLFrameBufferDesc.sizeY);
+	glViewport(0, 0, GLPreTAAPass::getGLRPC()->m_GLFrameBufferDesc.sizeX, GLPreTAAPass::getGLRPC()->m_GLFrameBufferDesc.sizeY);
 
-	copyDepthBuffer(GLOpaquePass::getGLRPC(), GLLightPass::getGLRPC());
+	copyDepthBuffer(GLOpaquePass::getGLRPC(), GLPreTAAPass::getGLRPC());
 
 	//activateRenderPass(m_GLRPC);
 	//copyDepthBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);

@@ -12,10 +12,11 @@
 #include "GLTerrainPass.h"
 
 #include "GLLightPass.h"
-#include "GLTransparentPass.h"
 
 #include "GLSkyPass.h"
 #include "GLPreTAAPass.h"
+#include "GLTransparentPass.h"
+
 #include "GLTAAPass.h"
 #include "GLPostTAAPass.h"
 #include "GLMotionBlurPass.h"
@@ -201,10 +202,11 @@ bool GLRenderingSystemNS::initialize()
 	GLTerrainPass::initialize();
 
 	GLLightPass::initialize();
-	GLTransparentPass::initialize();
 
 	GLSkyPass::initialize();
 	GLPreTAAPass::initialize();
+	GLTransparentPass::initialize();
+
 	GLTAAPass::initialize();
 	GLPostTAAPass::initialize();
 	GLMotionBlurPass::initialize();
@@ -278,7 +280,7 @@ bool GLRenderingSystemNS::update()
 
 	prepareRenderingData();
 
-	if (!l_meshStatus && !l_meshStatus)
+	if (!l_meshStatus && !l_textureStatus)
 	{
 		GLEnvironmentRenderPass::update();
 		//GLEnvironmentRenderPass::draw();
@@ -294,12 +296,12 @@ bool GLRenderingSystemNS::update()
 	GLTerrainPass::update();
 
 	GLLightPass::update();
-	GLTransparentPass::update();
 
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
 
 	GLSkyPass::update();
 	GLPreTAAPass::update();
+	GLTransparentPass::update();
 
 	auto l_canvasGLRPC = GLPreTAAPass::getGLRPC();
 
@@ -680,10 +682,11 @@ bool GLRenderingSystemNS::resize()
 	GLTerrainPass::resize(l_screenResolution.x, l_screenResolution.y);
 
 	GLLightPass::resize(l_screenResolution.x, l_screenResolution.y);
-	GLTransparentPass::resize(l_screenResolution.x, l_screenResolution.y);
 
 	GLSkyPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLPreTAAPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLTransparentPass::resize(l_screenResolution.x, l_screenResolution.y);
+
 	GLTAAPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLPostTAAPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLMotionBlurPass::resize(l_screenResolution.x, l_screenResolution.y);
