@@ -130,20 +130,6 @@ void ImGuiWrapperWinGL::showRenderResult()
 	}
 	ImGui::End();
 
-	ImGui::Begin("Transparent Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
-	{
-		ImGui::BeginChild("Albedo (RGB) + transparency factor (A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Text("Albedo (RGB) + transparency factor (A)");
-		ImGui::Image(ImTextureID((GLuint64)GLTransparentPass::getGLRPC()->m_GLTDCs[0]->m_TO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-		ImGui::EndChild();
-
-		ImGui::BeginChild("Transmittance factor (RGB) + blend mask (A)", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Text("Transmittance factor (RGB) + blend mask (A)");
-		ImGui::Image(ImTextureID((GLuint64)GLTransparentPass::getGLRPC()->m_GLTDCs[1]->m_TO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-		ImGui::EndChild();
-	}
-	ImGui::End();
-
 	ImGui::Begin("Terrain Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	{
 		ImGui::Image(ImTextureID((GLuint64)GLTerrainPass::getGLRPC()->m_GLTDCs[0]->m_TO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));

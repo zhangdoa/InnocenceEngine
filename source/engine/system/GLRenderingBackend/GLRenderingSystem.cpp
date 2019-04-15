@@ -305,21 +305,6 @@ bool GLRenderingSystemNS::update()
 
 	auto l_canvasGLRPC = GLPreTAAPass::getGLRPC();
 
-	if (l_renderingConfig.useTAA)
-	{
-		GLTAAPass::update(l_canvasGLRPC);
-		GLPostTAAPass::update();
-
-		l_canvasGLRPC = GLPostTAAPass::getGLRPC();
-	}
-
-	if (l_renderingConfig.useMotionBlur)
-	{
-		GLMotionBlurPass::update();
-
-		l_canvasGLRPC = GLMotionBlurPass::getGLRPC();
-	}
-
 	if (l_renderingConfig.useBloom)
 	{
 		GLBloomExtractPass::update(l_canvasGLRPC);
@@ -333,6 +318,8 @@ bool GLRenderingSystemNS::update()
 		GLBloomBlurPass::update(GLBloomExtractPass::getGLRPC(3));
 
 		GLBloomMergePass::update();
+
+		l_canvasGLRPC = GLBloomMergePass::getGLRPC();
 	}
 	else
 	{
@@ -345,6 +332,21 @@ bool GLRenderingSystemNS::update()
 		cleanRenderBuffers(GLBloomBlurPass::getGLRPC(1));
 
 		cleanRenderBuffers(GLBloomMergePass::getGLRPC());
+	}
+
+	if (l_renderingConfig.useTAA)
+	{
+		GLTAAPass::update(l_canvasGLRPC);
+		GLPostTAAPass::update();
+
+		l_canvasGLRPC = GLPostTAAPass::getGLRPC();
+	}
+
+	if (l_renderingConfig.useMotionBlur)
+	{
+		GLMotionBlurPass::update();
+
+		l_canvasGLRPC = GLMotionBlurPass::getGLRPC();
 	}
 
 	GLBillboardPass::update();

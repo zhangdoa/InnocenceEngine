@@ -1,5 +1,6 @@
 #include "GLBloomMergePass.h"
 #include "GLBloomExtractPass.h"
+#include "GLPreTAAPass.h"
 
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
@@ -25,7 +26,11 @@ bool GLBloomMergePass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	auto l_textureDesc = GLRenderingSystemComponent::get().deferredPassTextureDesc;
+	l_textureDesc.magFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+	l_textureDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+
+	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, l_textureDesc);
 
 	initializeShaders();
 
@@ -60,7 +65,9 @@ bool GLBloomMergePass::update()
 	activateTexture(
 		GLBloomExtractPass::getGLRPC(3)->m_GLTDCs[0],
 		3);
-
+	activateTexture(
+		GLPreTAAPass::getGLRPC()->m_GLTDCs[0],
+		4);
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 

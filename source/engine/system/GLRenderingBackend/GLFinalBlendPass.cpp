@@ -1,5 +1,4 @@
 #include "GLFinalBlendPass.h"
-#include "GLBloomMergePass.h"
 #include "GLBillboardPass.h"
 #include "GLDebuggerPass.h"
 
@@ -54,18 +53,14 @@ bool GLFinalBlendPass::update(GLRenderPassComponent* prePassGLRPC)
 	activateTexture(
 		prePassGLRPC->m_GLTDCs[0],
 		0);
-	// bloom pass rendering target
-	activateTexture(
-		GLBloomMergePass::getGLRPC()->m_GLTDCs[0],
-		1);
 	// billboard pass rendering target
 	activateTexture(
 		GLBillboardPass::getGLRPC()->m_GLTDCs[0],
-		2);
+		1);
 	// debugger pass rendering target
 	activateTexture(
 		GLDebuggerPass::getGLRPC()->m_GLTDCs[0],
-		3);
+		2);
 	// draw final pass rectangle
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);

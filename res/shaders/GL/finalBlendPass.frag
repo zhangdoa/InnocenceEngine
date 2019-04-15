@@ -5,9 +5,8 @@ layout(location = 0) in vec2 TexCoords;
 layout(location = 0) out vec4 FragColor;
 
 layout(location = 0, binding = 0) uniform sampler2D uni_basePassRT0;
-layout(location = 1, binding = 1) uniform sampler2D uni_bloomPassRT0;
-layout(location = 2, binding = 2) uniform sampler2D uni_billboardPassRT0;
-layout(location = 3, binding = 3) uniform sampler2D uni_debuggerPassRT0;
+layout(location = 1, binding = 1) uniform sampler2D uni_billboardPassRT0;
+layout(location = 2, binding = 2) uniform sampler2D uni_debuggerPassRT0;
 
 // Academy Color Encoding System [http://www.oscars.org/science-technology/sci-tech-projects/aces]
 vec3 acesFilm(const vec3 x) {
@@ -34,26 +33,22 @@ void main()
 {
 	vec3 finalColor;
 	vec4 basePassResult = texture(uni_basePassRT0, TexCoords);
-	vec4 bloomPassResult = texture(uni_bloomPassRT0, TexCoords);
 	vec4 billboardPassResult = texture(uni_billboardPassRT0, TexCoords);
 	vec4 debuggerPassResult = texture(uni_debuggerPassRT0, TexCoords);
 
 	finalColor = basePassResult.rgb;
-
-	// emissive overlay
-	finalColor += bloomPassResult.rgb;
-
-	// billboard overlay
-	finalColor += billboardPassResult.rgb;
-
-	// debugger overlay
-	finalColor += debuggerPassResult.rgb;
 
 	// HDR to LDR
 	finalColor = acesFilm(finalColor);
 
 	// gamma correction
 	finalColor = accurateLinearToSRGB(finalColor);
+
+	// billboard overlay
+	finalColor += billboardPassResult.rgb;
+
+	// debugger overlay
+	finalColor += debuggerPassResult.rgb;
 
 	FragColor = vec4(finalColor, 1.0);
 }

@@ -17,17 +17,18 @@ void main()
 	vec2 texelSize = 1.0 / renderTargetSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 	vec2 MotionVector = texture(uni_motionVectorTexture, screenTexCoords).xy;
+	MotionVector.y = -MotionVector.y;
 
 	vec4 preTAAPassRT0Result = texture(uni_preTAAPassRT0, TexCoords);
 
 	vec3 currentColor = preTAAPassRT0Result.rgb;
 
-	vec2 historyTexCoords = TexCoords - MotionVector;
+	vec2 historyTexCoords = screenTexCoords - MotionVector;
 	vec4 historyColor;
 
-	vec4 historyColor0 = texture(uni_history0, TexCoords);
-	vec4 historyColor1 = texture(uni_history1, TexCoords);
-	vec4 historyColor2 = texture(uni_history2, TexCoords);
+	vec4 historyColor0 = texture(uni_history0, historyTexCoords);
+	vec4 historyColor1 = texture(uni_history1, historyTexCoords);
+	vec4 historyColor2 = texture(uni_history2, historyTexCoords);
 
 	vec4 historyColor3 = texture(uni_history3, historyTexCoords);
 
@@ -44,7 +45,7 @@ void main()
 
 	for (int x = -1; x <= 1; x++) {
 		for (int y = -1; y <= 1; y++) {
-			vec2 neighborTexCoords = TexCoords + vec2(float(x) / renderTargetSize.x, float(y) / renderTargetSize.y);
+			vec2 neighborTexCoords = screenTexCoords + vec2(float(x) / renderTargetSize.x, float(y) / renderTargetSize.y);
 			neighborColor = texture(uni_preTAAPassRT0, neighborTexCoords);
 			if (neighborColor.a != 0.0)
 			{

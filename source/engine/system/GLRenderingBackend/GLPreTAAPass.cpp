@@ -56,14 +56,11 @@ bool GLPreTAAPass::update()
 		GLLightPass::getGLRPC()->m_GLTDCs[0],
 		0);
 	activateTexture(
-		GLTransparentPass::getGLRPC()->m_GLTDCs[0],
+		GLSkyPass::getGLRPC()->m_GLTDCs[0],
 		1);
 	activateTexture(
-		GLSkyPass::getGLRPC()->m_GLTDCs[0],
-		2);
-	activateTexture(
 		GLTerrainPass::getGLRPC()->m_GLTDCs[0],
-		3);
+		2);
 
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);

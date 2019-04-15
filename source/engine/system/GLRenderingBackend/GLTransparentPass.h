@@ -8,6 +8,4 @@ INNO_PRIVATE_SCOPE GLTransparentPass
 	bool update();
 	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
 	bool reloadShader();
-
-	GLRenderPassComponent* getGLRPC();
 }

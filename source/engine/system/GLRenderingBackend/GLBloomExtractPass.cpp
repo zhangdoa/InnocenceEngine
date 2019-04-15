@@ -85,18 +85,6 @@ bool GLBloomExtractPass::update(GLRenderPassComponent* prePassGLRPC)
 	copyColorBuffer(m_baseGLRPC, 0, m_downsampleGLRPC_Quarter, 0);
 	copyColorBuffer(m_baseGLRPC, 0, m_downsampleGLRPC_Eighth, 0);
 
-	//glEnable(GL_STENCIL_TEST);
-	//glClear(GL_STENCIL_BUFFER_BIT);
-
-	//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	//glStencilFunc(GL_EQUAL, 0x02, 0xFF);
-	//glStencilMask(0x00);
-
-	//copyColorBuffer(GLLightRenderPassComponent::get().m_GLRPC,
-	//	m_GLRPC);
-
-	//glDisable(GL_STENCIL_TEST);
-
 	return true;
 }
 

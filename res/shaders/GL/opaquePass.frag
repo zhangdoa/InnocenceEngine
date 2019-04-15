@@ -108,5 +108,5 @@ void main()
 	uni_geometryPassRT1 = vec4(WorldSpaceNormal, MRA.g);
 	uni_geometryPassRT2 = vec4(albedo, MRA.b);
 	vec4 motionVec = (thefrag_ClipSpacePos_current / thefrag_ClipSpacePos_current.w - thefrag_ClipSpacePos_previous / thefrag_ClipSpacePos_previous.w);
-	uni_geometryPassRT3 = vec4(motionVec.xy, float(uni_id), transparency);
+	uni_geometryPassRT3 = vec4(motionVec.xy * 0.5, float(uni_id), transparency);
 }

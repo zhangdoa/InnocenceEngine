@@ -22,8 +22,12 @@ void main()
 	{
 		vec4 result = texture(uni_TAAPassRT0, screenTexCoords);
 
-		for (int i = 0; i < MAX_SAMPLES; i++) {
-			vec2 offset = MotionVector * (float(i) / float(MAX_SAMPLES - 1) - 0.5);
+		float half_samples = float(MAX_SAMPLES / 2);
+
+		// sample half samples along motion vector and another half in opposite direction
+		for (int i = 1; i <= half_samples; i++) {
+			vec2 offset = MotionVector * (float(i) / float(MAX_SAMPLES));
+			result += texture(uni_TAAPassRT0, screenTexCoords - offset);
 			result += texture(uni_TAAPassRT0, screenTexCoords + offset);
 		}
 

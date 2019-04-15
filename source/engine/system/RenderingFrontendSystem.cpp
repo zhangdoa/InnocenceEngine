@@ -73,7 +73,7 @@ void InnoRenderingFrontendSystemNS::initializeHaltonSampler()
 	// in NDC space
 	for (unsigned int i = 0; i < 16; i++)
 	{
-		m_haltonSampler.emplace_back(vec2(radicalInverse(i, 2) * 2.0f - 1.0f, radicalInverse(i, 3) * 2.0f - 1.0f));
+		m_haltonSampler.emplace_back(vec2(radicalInverse(i, 3) * 2.0f - 1.0f, radicalInverse(i, 4) * 2.0f - 1.0f));
 	}
 }
 
@@ -81,6 +81,7 @@ bool InnoRenderingFrontendSystemNS::setup()
 {
 	m_renderingConfig.useMotionBlur = true;
 	m_renderingConfig.useTAA = true;
+	//m_renderingConfig.useBloom = true;
 	m_renderingConfig.drawSky = true;
 
 	f_sceneLoadingStartCallback = [&]() {

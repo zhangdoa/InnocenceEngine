@@ -18,8 +18,6 @@ INNO_PRIVATE_SCOPE GLTransparentPass
 
 	EntityID m_entityID;
 
-	GLRenderPassComponent* m_GLRPC;
-
 	GLShaderProgramComponent* m_GLSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//transparentPass.vert" , "", "GL//transparentPass.frag" };
@@ -37,8 +35,6 @@ INNO_PRIVATE_SCOPE GLTransparentPass
 bool GLTransparentPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
-
-	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	initializeShaders();
 
@@ -110,9 +106,6 @@ bool GLTransparentPass::update()
 
 	copyDepthBuffer(GLOpaquePass::getGLRPC(), GLPreTAAPass::getGLRPC());
 
-	//activateRenderPass(m_GLRPC);
-	//copyDepthBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);
-
 	activateShaderProgram(m_GLSPC);
 
 	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, GLRenderingSystemComponent::get().m_GPassCameraUBOData);
@@ -150,8 +143,6 @@ bool GLTransparentPass::update()
 
 bool GLTransparentPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
-
 	return true;
 }
 
@@ -164,9 +155,4 @@ bool GLTransparentPass::reloadShader()
 	bindUniformLocations(m_GLSPC);
 
 	return true;
-}
-
-GLRenderPassComponent * GLTransparentPass::getGLRPC()
-{
-	return m_GLRPC;
 }
