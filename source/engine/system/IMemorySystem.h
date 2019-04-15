@@ -16,6 +16,7 @@ public:
 
 	virtual void* allocateMemoryPool(size_t objectSize, unsigned int poolCapability) = 0;
 	virtual void* allocateRawMemory(size_t size) = 0;
+	virtual bool deallocateRawMemory(void* ptr) = 0;
 
 	virtual void* spawnObject(void* memoryPool, size_t objectSize) = 0;
 	virtual bool destroyObject(void* memoryPool, size_t objectSize, void* object) = 0;

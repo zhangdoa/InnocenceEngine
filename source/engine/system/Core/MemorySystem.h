@@ -15,6 +15,7 @@ public:
 
 	void* allocateMemoryPool(size_t objectSize, unsigned int poolCapability) override;
 	void* allocateRawMemory(size_t size) override;
+	bool deallocateRawMemory(void* ptr) override;
 
 	void* spawnObject(void* memoryPool, size_t objectSize) override;
 	bool destroyObject(void* memoryPool, size_t objectSize, void* object) override;

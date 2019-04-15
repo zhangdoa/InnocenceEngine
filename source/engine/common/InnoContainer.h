@@ -2,7 +2,7 @@
 #include "../common/stl14.h"
 #include "../common/stl17.h"
 
-#include "InnoAllocator.h"
+#include "../system/Core/InnoAllocator.h"
 
 template <typename T>
 class ThreadSafeQueue
@@ -275,14 +275,52 @@ private:
 	std::condition_variable_any m_condition;
 };
 
-#ifdef INNO_PLATFORM_WIN
-template<class _Ty, class _Ax = innoAllocator<_Ty> >
-class innoList : public std::list<_Ty, _Ax>
+template<class _Ty>
+class FixedSizeArray
 {
-};
+public:
+	explicit FixedSizeArray(std::size_t size) { m_vector.reserve(size); };
 
-template<class _Ty, class _Ax = innoAllocator<_Ty> >
-class innoVector : public std::vector<_Ty, _Ax>
-{
+	_Ty& operator[](std::size_t pos)
+	{
+		return m_vector[pos];
+	}
+
+	const _Ty& operator[](std::size_t pos) const
+	{
+		return m_vector[pos];
+	}
+
+	void emplace_back(_Ty&& value)
+	{
+		m_vector.emplace_back(value);
+	}
+
+	auto empty(void) const
+	{
+		return m_vector.empty();
+	}
+
+	void clear(void)
+	{
+		m_vector.clear();
+	}
+
+	auto begin(void)
+	{
+		return m_vector.begin();
+	}
+
+	auto end(void)
+	{
+		return m_vector.end();
+	}
+
+	auto size(void)
+	{
+		return m_vector.size();
+	}
+
+private:
+	std::vector<_Ty, innoAllocator<_Ty>> m_vector;
 };
-#endif
