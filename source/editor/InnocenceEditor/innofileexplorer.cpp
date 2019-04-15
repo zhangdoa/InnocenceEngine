@@ -21,7 +21,9 @@ void InnoFileExplorer::initialize()
 
     connect(this, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(DoubleClick(QModelIndex)));
 
-    m_rootDir = "../res/";
+    auto l_workingDir = g_pCoreSystem->getFileSystem()->getWorkingDirectory();
+    l_workingDir += "//res//";
+    m_rootDir = l_workingDir.c_str();
 
     SetRootDirectory(m_rootDir.toStdString());
 }
