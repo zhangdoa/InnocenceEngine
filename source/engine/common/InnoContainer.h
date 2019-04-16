@@ -112,6 +112,12 @@ public:
 		return m_vector[pos];
 	}
 
+	void reserve(const std::size_t _Newcapacity)
+	{
+		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		m_vector.reserve(_Newcapacity);
+	}
+
 	void push_back(T&& value)
 	{
 		std::lock_guard<std::shared_mutex> lock{ m_mutex };

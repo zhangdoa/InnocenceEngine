@@ -1,6 +1,7 @@
 #pragma once
 #include "../common/InnoType.h"
 #include "../common/InnoMath.h"
+#include "../common/InnoContainer.h"
 
 class DirectionalLightComponent
 {
@@ -22,7 +23,7 @@ public:
 	bool m_drawAABB = false;
 
 	// in World space
-	std::vector<AABB> m_AABBsInWorldSpace;
+	ThreadSafeVector<AABB> m_AABBsInWorldSpace;
 
-	std::vector<mat4> m_projectionMatrices;
+	ThreadSafeVector<mat4> m_projectionMatrices;
 };

@@ -108,13 +108,13 @@ bool VKRenderingSystemNS::createRenderTargets(VkTextureDataDesc vkTextureDataDes
 		}
 
 		// create frame buffer and attach image view
-		VkImageView attachments = { VKRPC->m_VKTDCs[i]->m_imageView };
+		VkImageView attachments[] = { VKRPC->m_VKTDCs[i]->m_imageView };
 
 		VkFramebufferCreateInfo framebufferInfo = {};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferInfo.renderPass = VKRPC->m_renderPass;
 		framebufferInfo.attachmentCount = 1;
-		framebufferInfo.pAttachments = &attachments;
+		framebufferInfo.pAttachments = attachments;
 		framebufferInfo.width = vkTextureDataDesc.width;
 		framebufferInfo.height = vkTextureDataDesc.height;
 		framebufferInfo.layers = 1;
@@ -132,7 +132,7 @@ bool VKRenderingSystemNS::createRenderTargets(VkTextureDataDesc vkTextureDataDes
 
 bool VKRenderingSystemNS::createRenderPass(VKRenderPassComponent* VKRPC)
 {
-	if (vkCreateRenderPass(VKRenderingSystemComponent::get().m_device, &VKRPC->m_infos.renderPassCInfo, nullptr, &VKRPC->m_renderPass) != VK_SUCCESS)
+	if (vkCreateRenderPass(VKRenderingSystemComponent::get().m_device, &VKRPC->renderPassCInfo, nullptr, &VKRPC->m_renderPass) != VK_SUCCESS)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create RenderPass!");
 		return false;
@@ -144,7 +144,7 @@ bool VKRenderingSystemNS::createRenderPass(VKRenderPassComponent* VKRPC)
 
 bool VKRenderingSystemNS::createPipelineLayout(VKRenderPassComponent* VKRPC)
 {
-	if (vkCreatePipelineLayout(VKRenderingSystemComponent::get().m_device, &VKRPC->m_infos.pipelineLayoutCInfo, nullptr, &VKRPC->m_pipelineLayout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(VKRenderingSystemComponent::get().m_device, &VKRPC->pipelineLayoutCInfo, nullptr, &VKRPC->m_pipelineLayout) != VK_SUCCESS)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create PipelineLayout!");
 		return false;
@@ -159,21 +159,21 @@ bool VKRenderingSystemNS::createGraphicsPipelines(VKRenderPassComponent* VKRPC, 
 	// attach shader module and create pipeline
 	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStages = { VKSPC->m_vertexShaderStageCInfo, VKSPC->m_fragmentShaderStageCInfo };
 
-	VKRPC->m_infos.pipelineCInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	VKRPC->m_infos.pipelineCInfo.stageCount = (uint32_t)l_shaderStages.size();
-	VKRPC->m_infos.pipelineCInfo.pStages = &l_shaderStages[0];
-	VKRPC->m_infos.pipelineCInfo.pVertexInputState = &VKSPC->m_vertexInputStateCInfo;
-	VKRPC->m_infos.pipelineCInfo.pInputAssemblyState = &VKRPC->m_infos.inputAssemblyStateCInfo;
-	VKRPC->m_infos.pipelineCInfo.pViewportState = &VKRPC->m_infos.viewportStateCInfo;
-	VKRPC->m_infos.pipelineCInfo.pRasterizationState = &VKRPC->m_infos.rasterizationStateCInfo;
-	VKRPC->m_infos.pipelineCInfo.pMultisampleState = &VKRPC->m_infos.multisampleStateCInfo;
-	VKRPC->m_infos.pipelineCInfo.pColorBlendState = &VKRPC->m_infos.colorBlendStateCInfo;
-	VKRPC->m_infos.pipelineCInfo.layout = VKRPC->m_pipelineLayout;
-	VKRPC->m_infos.pipelineCInfo.renderPass = VKRPC->m_renderPass;
-	VKRPC->m_infos.pipelineCInfo.subpass = 0;
-	VKRPC->m_infos.pipelineCInfo.basePipelineHandle = VK_NULL_HANDLE;
+	VKRPC->pipelineCInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	VKRPC->pipelineCInfo.stageCount = (uint32_t)l_shaderStages.size();
+	VKRPC->pipelineCInfo.pStages = &l_shaderStages[0];
+	VKRPC->pipelineCInfo.pVertexInputState = &VKSPC->m_vertexInputStateCInfo;
+	VKRPC->pipelineCInfo.pInputAssemblyState = &VKRPC->inputAssemblyStateCInfo;
+	VKRPC->pipelineCInfo.pViewportState = &VKRPC->viewportStateCInfo;
+	VKRPC->pipelineCInfo.pRasterizationState = &VKRPC->rasterizationStateCInfo;
+	VKRPC->pipelineCInfo.pMultisampleState = &VKRPC->multisampleStateCInfo;
+	VKRPC->pipelineCInfo.pColorBlendState = &VKRPC->colorBlendStateCInfo;
+	VKRPC->pipelineCInfo.layout = VKRPC->m_pipelineLayout;
+	VKRPC->pipelineCInfo.renderPass = VKRPC->m_renderPass;
+	VKRPC->pipelineCInfo.subpass = 0;
+	VKRPC->pipelineCInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreateGraphicsPipelines(VKRenderingSystemComponent::get().m_device, VK_NULL_HANDLE, 1, &VKRPC->m_infos.pipelineCInfo, nullptr, &VKRPC->m_pipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(VKRenderingSystemComponent::get().m_device, VK_NULL_HANDLE, 1, &VKRPC->pipelineCInfo, nullptr, &VKRPC->m_pipeline) != VK_SUCCESS)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to to create GraphicsPipelines!");
 		return false;

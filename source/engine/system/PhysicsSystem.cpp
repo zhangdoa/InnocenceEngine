@@ -354,7 +354,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	auto l_AABBsWS = frustumsVerticesToAABBs(l_frustumVerticesInWorldSpace, l_CSMSplitFactors);
 
 	//3. save the AABB for bound area detection
-	directionalLightComponent->m_AABBsInWorldSpace = std::move(l_AABBsWS);
+	directionalLightComponent->m_AABBsInWorldSpace.setRawData(std::move(l_AABBsWS));
 
 	//4. transform frustum vertices to light space
 	auto l_lightRotMat = g_pCoreSystem->getGameSystem()->get<TransformComponent>(directionalLightComponent->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
@@ -832,10 +832,10 @@ bool InnoPhysicsSystemNS::update()
 	{
 		updateCameraComponents();
 	});
-	g_pCoreSystem->getTaskSystem()->submit([&]()
-	{
-		updateLightComponents();
-	});
+	//g_pCoreSystem->getTaskSystem()->submit([&]()
+	//{
+	updateLightComponents();
+	//});
 	g_pCoreSystem->getTaskSystem()->submit([&]()
 	{
 		updateVisibleComponents();

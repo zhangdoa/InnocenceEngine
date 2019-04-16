@@ -280,7 +280,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	IRenderingFrontendSystem* m_renderingFrontendSystem;
 
 	RenderPassDesc m_deferredRenderPassDesc;
-	VKRenderPassInfos m_deferredRenderPassInfos;
 
 	size_t m_maxFramesInFlight = 2;
 	size_t m_currentFrame = 0;
@@ -549,8 +548,13 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_VKRPC->m_renderPassDesc = m_deferredRenderPassDesc;
 	l_VKRPC->m_renderPassDesc.RTNumber = l_imageCount;
 
-	l_VKRPC->m_infos = m_deferredRenderPassInfos;
-	l_VKRPC->m_infos.attachmentDesc.format = l_surfaceFormat.format;
+	VkTextureDataDesc l_VkTextureDataDesc;
+	l_VkTextureDataDesc.textureWrapMethod = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	l_VkTextureDataDesc.magFilterParam = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	l_VkTextureDataDesc.minFilterParam = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	l_VkTextureDataDesc.internalFormat = l_surfaceFormat.format;
+	l_VkTextureDataDesc.width = l_extent.width;
+	l_VkTextureDataDesc.height = l_extent.height;
 
 	// initialize manually
 	bool l_result = true;
@@ -563,17 +567,85 @@ bool VKRenderingSystemNS::createSwapChain()
 		l_VKRPC->m_VKTDCs[i]->m_image = l_swapChainImages[i];
 	}
 
-	VkTextureDataDesc l_VkTextureDataDesc;
-	l_VkTextureDataDesc.textureWrapMethod = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	l_VkTextureDataDesc.magFilterParam = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	l_VkTextureDataDesc.minFilterParam = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	l_VkTextureDataDesc.internalFormat = l_surfaceFormat.format;
-	l_VkTextureDataDesc.width = l_VKRPC->m_renderPassDesc.RTDesc.width;
-	l_VkTextureDataDesc.height = l_VKRPC->m_renderPassDesc.RTDesc.height;
-
 	l_result &= createRenderTargets(l_VkTextureDataDesc, l_VKRPC);
 
+	// render target attachment desc
+	l_VKRPC->attachmentDesc.format = l_surfaceFormat.format;
+	l_VKRPC->attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+	l_VKRPC->attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	l_VKRPC->attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	l_VKRPC->attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	l_VKRPC->attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	l_VKRPC->attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	l_VKRPC->attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	l_VKRPC->attachmentRef.attachment = 0;
+	l_VKRPC->attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	// sub-pass
+	l_VKRPC->subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	l_VKRPC->subpassDesc.colorAttachmentCount = 1;
+	l_VKRPC->subpassDesc.pColorAttachments = &l_VKRPC->attachmentRef;
+
+	// render pass
+	l_VKRPC->renderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	l_VKRPC->renderPassCInfo.attachmentCount = 1;
+	l_VKRPC->renderPassCInfo.pAttachments = &l_VKRPC->attachmentDesc;
+	l_VKRPC->renderPassCInfo.subpassCount = 1;
+	l_VKRPC->renderPassCInfo.pSubpasses = &l_VKRPC->subpassDesc;
+
 	l_result &= createRenderPass(l_VKRPC);
+
+	// set pipeline fix stages info
+	l_VKRPC->inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	l_VKRPC->inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+	l_VKRPC->inputAssemblyStateCInfo.primitiveRestartEnable = VK_FALSE;
+
+	l_VKRPC->viewport.x = 0.0f;
+	l_VKRPC->viewport.y = 0.0f;
+	l_VKRPC->viewport.width = (float)l_extent.width;
+	l_VKRPC->viewport.height = (float)l_extent.height;
+	l_VKRPC->viewport.minDepth = 0.0f;
+	l_VKRPC->viewport.maxDepth = 1.0f;
+
+	l_VKRPC->scissor.offset = { 0, 0 };
+	l_VKRPC->scissor.extent = l_extent;
+
+	l_VKRPC->viewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	l_VKRPC->viewportStateCInfo.viewportCount = 1;
+	l_VKRPC->viewportStateCInfo.pViewports = &l_VKRPC->viewport;
+	l_VKRPC->viewportStateCInfo.scissorCount = 1;
+	l_VKRPC->viewportStateCInfo.pScissors = &l_VKRPC->scissor;
+
+	l_VKRPC->rasterizationStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	l_VKRPC->rasterizationStateCInfo.depthClampEnable = VK_FALSE;
+	l_VKRPC->rasterizationStateCInfo.rasterizerDiscardEnable = VK_FALSE;
+	l_VKRPC->rasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_FILL;
+	l_VKRPC->rasterizationStateCInfo.lineWidth = 1.0f;
+	l_VKRPC->rasterizationStateCInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	l_VKRPC->rasterizationStateCInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	l_VKRPC->rasterizationStateCInfo.depthBiasEnable = VK_FALSE;
+
+	l_VKRPC->multisampleStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	l_VKRPC->multisampleStateCInfo.sampleShadingEnable = VK_FALSE;
+	l_VKRPC->multisampleStateCInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+	l_VKRPC->colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	l_VKRPC->colorBlendAttachmentState.blendEnable = VK_FALSE;
+
+	l_VKRPC->colorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	l_VKRPC->colorBlendStateCInfo.logicOpEnable = VK_FALSE;
+	l_VKRPC->colorBlendStateCInfo.logicOp = VK_LOGIC_OP_COPY;
+	l_VKRPC->colorBlendStateCInfo.attachmentCount = 1;
+	l_VKRPC->colorBlendStateCInfo.pAttachments = &l_VKRPC->colorBlendAttachmentState;
+	l_VKRPC->colorBlendStateCInfo.blendConstants[0] = 0.0f;
+	l_VKRPC->colorBlendStateCInfo.blendConstants[1] = 0.0f;
+	l_VKRPC->colorBlendStateCInfo.blendConstants[2] = 0.0f;
+	l_VKRPC->colorBlendStateCInfo.blendConstants[3] = 0.0f;
+
+	l_VKRPC->pipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	l_VKRPC->pipelineLayoutCInfo.setLayoutCount = 0;
+	l_VKRPC->pipelineLayoutCInfo.pushConstantRangeCount = 0;
 
 	l_result &= createPipelineLayout(l_VKRPC);
 
@@ -622,7 +694,7 @@ bool VKRenderingSystemNS::createSwapChainCommandBuffers()
 		renderPassInfo.renderPass = VKRenderingSystemComponent::get().m_swapChainVKRPC->m_renderPass;
 		renderPassInfo.framebuffer = VKRenderingSystemComponent::get().m_swapChainVKRPC->m_framebuffers[i];
 		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = VKRenderingSystemComponent::get().m_swapChainVKRPC->m_infos.scissor.extent;
+		renderPassInfo.renderArea.extent = VKRenderingSystemComponent::get().m_swapChainVKRPC->scissor.extent;
 
 		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 		renderPassInfo.clearValueCount = 1;
@@ -702,86 +774,6 @@ bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	m_deferredRenderPassDesc.RTDesc.width = l_screenResolution.x;
 	m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
 	m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT;
-
-	// render target attachment desc
-	m_deferredRenderPassInfos.attachmentDesc.format = VK_FORMAT_R8G8B8A8_UNORM;
-	m_deferredRenderPassInfos.attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-	m_deferredRenderPassInfos.attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	m_deferredRenderPassInfos.attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	m_deferredRenderPassInfos.attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	m_deferredRenderPassInfos.attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	m_deferredRenderPassInfos.attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	m_deferredRenderPassInfos.attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	m_deferredRenderPassInfos.attachmentRef.attachment = 0;
-	m_deferredRenderPassInfos.attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	// sub-pass
-	m_deferredRenderPassInfos.subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	m_deferredRenderPassInfos.subpassDesc.colorAttachmentCount = 1;
-	m_deferredRenderPassInfos.subpassDesc.pColorAttachments = &m_deferredRenderPassInfos.attachmentRef;
-
-	// render pass
-	m_deferredRenderPassInfos.renderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	m_deferredRenderPassInfos.renderPassCInfo.attachmentCount = 1;
-	m_deferredRenderPassInfos.renderPassCInfo.pAttachments = &m_deferredRenderPassInfos.attachmentDesc;
-	m_deferredRenderPassInfos.renderPassCInfo.subpassCount = 1;
-	m_deferredRenderPassInfos.renderPassCInfo.pSubpasses = &m_deferredRenderPassInfos.subpassDesc;
-
-	// set pipeline fix stages info
-	m_deferredRenderPassInfos.inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	m_deferredRenderPassInfos.inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-	m_deferredRenderPassInfos.inputAssemblyStateCInfo.primitiveRestartEnable = VK_FALSE;
-
-	VkExtent2D l_Extent;
-	l_Extent.width = l_screenResolution.x;
-	l_Extent.height = l_screenResolution.y;
-
-	m_deferredRenderPassInfos.viewport.x = 0.0f;
-	m_deferredRenderPassInfos.viewport.y = 0.0f;
-	m_deferredRenderPassInfos.viewport.width = (float)l_screenResolution.x;
-	m_deferredRenderPassInfos.viewport.height = (float)l_screenResolution.y;
-	m_deferredRenderPassInfos.viewport.minDepth = 0.0f;
-	m_deferredRenderPassInfos.viewport.maxDepth = 1.0f;
-
-	m_deferredRenderPassInfos.scissor.offset = { 0, 0 };
-	m_deferredRenderPassInfos.scissor.extent = l_Extent;
-
-	m_deferredRenderPassInfos.viewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	m_deferredRenderPassInfos.viewportStateCInfo.viewportCount = 1;
-	m_deferredRenderPassInfos.viewportStateCInfo.pViewports = &m_deferredRenderPassInfos.viewport;
-	m_deferredRenderPassInfos.viewportStateCInfo.scissorCount = 1;
-	m_deferredRenderPassInfos.viewportStateCInfo.pScissors = &m_deferredRenderPassInfos.scissor;
-
-	m_deferredRenderPassInfos.rasterizationStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	m_deferredRenderPassInfos.rasterizationStateCInfo.depthClampEnable = VK_FALSE;
-	m_deferredRenderPassInfos.rasterizationStateCInfo.rasterizerDiscardEnable = VK_FALSE;
-	m_deferredRenderPassInfos.rasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_FILL;
-	m_deferredRenderPassInfos.rasterizationStateCInfo.lineWidth = 1.0f;
-	m_deferredRenderPassInfos.rasterizationStateCInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	m_deferredRenderPassInfos.rasterizationStateCInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-	m_deferredRenderPassInfos.rasterizationStateCInfo.depthBiasEnable = VK_FALSE;
-
-	m_deferredRenderPassInfos.multisampleStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	m_deferredRenderPassInfos.multisampleStateCInfo.sampleShadingEnable = VK_FALSE;
-	m_deferredRenderPassInfos.multisampleStateCInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-	m_deferredRenderPassInfos.colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	m_deferredRenderPassInfos.colorBlendAttachmentState.blendEnable = VK_FALSE;
-
-	m_deferredRenderPassInfos.colorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	m_deferredRenderPassInfos.colorBlendStateCInfo.logicOpEnable = VK_FALSE;
-	m_deferredRenderPassInfos.colorBlendStateCInfo.logicOp = VK_LOGIC_OP_COPY;
-	m_deferredRenderPassInfos.colorBlendStateCInfo.attachmentCount = 1;
-	m_deferredRenderPassInfos.colorBlendStateCInfo.pAttachments = &m_deferredRenderPassInfos.colorBlendAttachmentState;
-	m_deferredRenderPassInfos.colorBlendStateCInfo.blendConstants[0] = 0.0f;
-	m_deferredRenderPassInfos.colorBlendStateCInfo.blendConstants[1] = 0.0f;
-	m_deferredRenderPassInfos.colorBlendStateCInfo.blendConstants[2] = 0.0f;
-	m_deferredRenderPassInfos.colorBlendStateCInfo.blendConstants[3] = 0.0f;
-
-	m_deferredRenderPassInfos.pipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	m_deferredRenderPassInfos.pipelineLayoutCInfo.setLayoutCount = 0;
-	m_deferredRenderPassInfos.pipelineLayoutCInfo.pushConstantRangeCount = 0;
 
 	bool result = true;
 	result = result && createVkInstance();

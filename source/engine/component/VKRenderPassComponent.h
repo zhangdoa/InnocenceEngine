@@ -4,8 +4,20 @@
 #include "TextureDataComponent.h"
 #include "VKTextureDataComponent.h"
 
-struct VKRenderPassInfos
+class VKRenderPassComponent
 {
+public:
+	VKRenderPassComponent() {};
+	~VKRenderPassComponent() {};
+
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	EntityID m_parentEntity;
+
+	RenderPassDesc m_renderPassDesc;
+
+	VkRenderPass m_renderPass;
+	VkPipelineLayout m_pipelineLayout;
+	VkPipeline m_pipeline;
 	VkAttachmentDescription attachmentDesc = {};
 	VkAttachmentReference attachmentRef = {};
 	VkSubpassDescription subpassDesc = {};
@@ -21,23 +33,6 @@ struct VKRenderPassInfos
 	VkGraphicsPipelineCreateInfo pipelineCInfo = {};
 	VkViewport viewport = {};
 	VkRect2D scissor = {};
-};
-
-class VKRenderPassComponent
-{
-public:
-	VKRenderPassComponent() {};
-	~VKRenderPassComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
-
-	RenderPassDesc m_renderPassDesc;
-
-	VkRenderPass m_renderPass;
-	VkPipelineLayout m_pipelineLayout;
-	VkPipeline m_pipeline;
-	VKRenderPassInfos m_infos = {};
 
 	std::vector<VkFramebuffer> m_framebuffers;
 	std::vector<VkCommandBuffer> m_commandBuffers;

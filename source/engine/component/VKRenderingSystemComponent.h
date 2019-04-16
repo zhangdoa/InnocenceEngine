@@ -63,7 +63,7 @@ public:
 	};
 
 #ifdef _DEBUG
-	const bool m_enableValidationLayers = true;
+	const bool m_enableValidationLayers = false;
 #else
 	const bool m_enableValidationLayers = false;
 #endif
