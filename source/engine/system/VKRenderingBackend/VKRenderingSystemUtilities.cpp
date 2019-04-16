@@ -80,7 +80,7 @@ bool VKRenderingSystemNS::initializeComponentPool()
 	return true;
 }
 
-bool VKRenderingSystemNS::createRenderTargets(VkTextureDataDesc vkTextureDataDesc, VKRenderPassComponent* VKRPC)
+bool VKRenderingSystemNS::createRTImageViews(VkTextureDataDesc vkTextureDataDesc, VKRenderPassComponent* VKRPC)
 {
 	for (size_t i = 0; i < VKRPC->m_VKTDCs.size(); i++)
 	{
@@ -106,7 +106,46 @@ bool VKRenderingSystemNS::createRenderTargets(VkTextureDataDesc vkTextureDataDes
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create ImageView!");
 		}
+	}
 
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: ImageView has been created.");
+
+	return true;
+}
+
+bool VKRenderingSystemNS::createSingleFramebuffer(VKRenderPassComponent* VKRPC)
+{
+	// create frame buffer and attach image view
+
+	std::vector<VkImageView> attachments(VKRPC->m_VKTDCs.size());
+
+	for (size_t i = 0; i < VKRPC->m_VKTDCs.size(); i++)
+	{
+		attachments[i] = VKRPC->m_VKTDCs[i]->m_imageView;
+	}
+
+	VkFramebufferCreateInfo framebufferInfo = {};
+	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	framebufferInfo.renderPass = VKRPC->m_renderPass;
+	framebufferInfo.attachmentCount = (uint32_t)VKRPC->m_VKTDCs.size();
+	framebufferInfo.pAttachments = &attachments[0];
+	framebufferInfo.width = VKRPC->m_VKTDCs[0]->m_VkTextureDataDesc.width;
+	framebufferInfo.height = VKRPC->m_VKTDCs[0]->m_VkTextureDataDesc.height;
+	framebufferInfo.layers = 1;
+
+	if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &VKRPC->m_framebuffers[0]) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create Framebuffer!");
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Single Framebuffer has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createMultipleFramebuffers(VKRenderPassComponent* VKRPC)
+{
+	for (size_t i = 0; i < VKRPC->m_VKTDCs.size(); i++)
+	{
 		// create frame buffer and attach image view
 		VkImageView attachments[] = { VKRPC->m_VKTDCs[i]->m_imageView };
 
@@ -115,8 +154,8 @@ bool VKRenderingSystemNS::createRenderTargets(VkTextureDataDesc vkTextureDataDes
 		framebufferInfo.renderPass = VKRPC->m_renderPass;
 		framebufferInfo.attachmentCount = 1;
 		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = vkTextureDataDesc.width;
-		framebufferInfo.height = vkTextureDataDesc.height;
+		framebufferInfo.width = VKRPC->m_VKTDCs[0]->m_VkTextureDataDesc.width;
+		framebufferInfo.height = VKRPC->m_VKTDCs[0]->m_VkTextureDataDesc.height;
 		framebufferInfo.layers = 1;
 
 		if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &VKRPC->m_framebuffers[i]) != VK_SUCCESS)
@@ -125,8 +164,7 @@ bool VKRenderingSystemNS::createRenderTargets(VkTextureDataDesc vkTextureDataDes
 		}
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: ImageView and Framebuffer has been created.");
-
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Multiple Framebuffers have been created.");
 	return true;
 }
 
@@ -182,6 +220,68 @@ bool VKRenderingSystemNS::createGraphicsPipelines(VKRenderPassComponent* VKRPC, 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: GraphicsPipelines has been created.");
 	return true;
 }
+
+bool VKRenderingSystemNS::createCommandBuffers(VKRenderPassComponent* VKRPC)
+{
+	VKRPC->m_commandBuffers.resize(VKRPC->m_framebuffers.size());
+
+	VkCommandBufferAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = VKRenderingSystemComponent::get().m_commandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = (uint32_t)VKRPC->m_commandBuffers.size();
+
+	if (vkAllocateCommandBuffers(VKRenderingSystemComponent::get().m_device, &allocInfo, VKRPC->m_commandBuffers.data()) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate CommandBuffers!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: CommandBuffers has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, const std::function<void()>& commands)
+{
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+	if (vkBeginCommandBuffer(VKRPC->m_commandBuffers[commandBufferIndex], &beginInfo) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to begin recording command buffer!");
+		return false;
+	}
+
+	VkRenderPassBeginInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = VKRPC->m_renderPass;
+	renderPassInfo.framebuffer = VKRPC->m_framebuffers[commandBufferIndex];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = VKRPC->scissor.extent;
+
+	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearColor;
+
+	vkCmdBeginRenderPass(VKRPC->m_commandBuffers[commandBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdBindPipeline(VKRPC->m_commandBuffers[commandBufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, VKRPC->m_pipeline);
+
+	commands();
+
+	vkCmdEndRenderPass(VKRPC->m_commandBuffers[commandBufferIndex]);
+
+	if (vkEndCommandBuffer(VKRPC->m_commandBuffers[commandBufferIndex]) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to record command!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Command has been recorded.");
+	return true;
+}
+
 VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKRenderPassComponentPool, sizeof(VKRenderPassComponent));
@@ -192,9 +292,19 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent()
 
 bool VKRenderingSystemNS::reserveRenderTargets(RenderPassDesc renderPassDesc, VKRenderPassComponent* VKRPC)
 {
+	size_t l_framebufferNumber = 0;
+	if (renderPassDesc.useMultipleFramebuffers)
+	{
+		l_framebufferNumber = renderPassDesc.RTNumber;
+	}
+	else
+	{
+		l_framebufferNumber = 1;
+	}
+
 	// reserve vectors and emplace empty objects
-	VKRPC->m_framebuffers.reserve(renderPassDesc.RTNumber);
-	for (size_t i = 0; i < renderPassDesc.RTNumber; i++)
+	VKRPC->m_framebuffers.reserve(l_framebufferNumber);
+	for (size_t i = 0; i < l_framebufferNumber; i++)
 	{
 		VKRPC->m_framebuffers.emplace_back();
 	}
@@ -221,7 +331,16 @@ bool VKRenderingSystemNS::initializeVKRenderPassComponent(RenderPassDesc renderP
 
 	auto l_vkTextureDesc = getVKTextureDataDesc(renderPassDesc.RTDesc);
 
-	result &= createRenderTargets(l_vkTextureDesc, VKRPC);
+	result &= createRTImageViews(l_vkTextureDesc, VKRPC);
+
+	if (renderPassDesc.useMultipleFramebuffers)
+	{
+		result &= createMultipleFramebuffers(VKRPC);
+	}
+	else
+	{
+		result &= createSingleFramebuffer(VKRPC);
+	}
 
 	result &= createRenderPass(VKRPC);
 

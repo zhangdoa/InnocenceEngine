@@ -116,6 +116,7 @@ enum class RenderPassType { OpaquePass, TransparentPass, TerrainPass, LightPass,
 struct RenderPassDesc
 {
 	unsigned int RTNumber = 0;
+	bool useMultipleFramebuffers = false;
 	TextureDataDesc RTDesc = TextureDataDesc();
 };
 

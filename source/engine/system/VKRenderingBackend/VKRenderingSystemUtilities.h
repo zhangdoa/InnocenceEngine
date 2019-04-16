@@ -15,10 +15,15 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool initializeVKRenderPassComponent(RenderPassDesc renderPassDesc, VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
 	bool reserveRenderTargets(RenderPassDesc renderPassDesc, VKRenderPassComponent* VKRPC);
 	VkTextureDataDesc getVKTextureDataDesc(const TextureDataDesc & textureDataDesc);
-	bool createRenderTargets(VkTextureDataDesc vkTextureDataDesc, VKRenderPassComponent* VKRPC);
+	bool createRTImageViews(VkTextureDataDesc vkTextureDataDesc, VKRenderPassComponent* VKRPC);
+	bool createSingleFramebuffer(VKRenderPassComponent* VKRPC);
+	bool createMultipleFramebuffers(VKRenderPassComponent* VKRPC);
 	bool createRenderPass(VKRenderPassComponent* VKRPC);
 	bool createPipelineLayout(VKRenderPassComponent* VKRPC);
 	bool createGraphicsPipelines(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
+	bool createCommandBuffers(VKRenderPassComponent* VKRPC);
+	bool recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex,const std::function<void()>& commands);
+
 	bool destroyVKRenderPassComponent(VKRenderPassComponent* VKRPC);
 
 	VKMeshDataComponent* generateVKMeshDataComponent(MeshDataComponent* rhs);

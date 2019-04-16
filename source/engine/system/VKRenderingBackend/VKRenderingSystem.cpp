@@ -548,6 +548,8 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_VKRPC->m_renderPassDesc = m_deferredRenderPassDesc;
 	l_VKRPC->m_renderPassDesc.RTNumber = l_imageCount;
 
+	l_VKRPC->m_renderPassDesc.useMultipleFramebuffers = (l_imageCount > 1);
+
 	VkTextureDataDesc l_VkTextureDataDesc;
 	l_VkTextureDataDesc.textureWrapMethod = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	l_VkTextureDataDesc.magFilterParam = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -567,7 +569,16 @@ bool VKRenderingSystemNS::createSwapChain()
 		l_VKRPC->m_VKTDCs[i]->m_image = l_swapChainImages[i];
 	}
 
-	l_result &= createRenderTargets(l_VkTextureDataDesc, l_VKRPC);
+	l_result &= createRTImageViews(l_VkTextureDataDesc, l_VKRPC);
+
+	if (l_VKRPC->m_renderPassDesc.useMultipleFramebuffers)
+	{
+		l_result &= createMultipleFramebuffers(l_VKRPC);
+	}
+	else
+	{
+		l_result &= createSingleFramebuffer(l_VKRPC);
+	}
 
 	// render target attachment desc
 	l_VKRPC->attachmentDesc.format = l_surfaceFormat.format;
@@ -593,8 +604,6 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_VKRPC->renderPassCInfo.pAttachments = &l_VKRPC->attachmentDesc;
 	l_VKRPC->renderPassCInfo.subpassCount = 1;
 	l_VKRPC->renderPassCInfo.pSubpasses = &l_VKRPC->subpassDesc;
-
-	l_result &= createRenderPass(l_VKRPC);
 
 	// set pipeline fix stages info
 	l_VKRPC->inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -647,6 +656,8 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_VKRPC->pipelineLayoutCInfo.setLayoutCount = 0;
 	l_VKRPC->pipelineLayoutCInfo.pushConstantRangeCount = 0;
 
+	l_result &= createRenderPass(l_VKRPC);
+
 	l_result &= createPipelineLayout(l_VKRPC);
 
 	l_result &= createGraphicsPipelines(l_VKRPC, l_VKSPC);
@@ -661,61 +672,14 @@ bool VKRenderingSystemNS::createSwapChain()
 
 bool VKRenderingSystemNS::createSwapChainCommandBuffers()
 {
-	VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.resize(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_framebuffers.size());
-
-	VkCommandBufferAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = VKRenderingSystemComponent::get().m_commandPool;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = (uint32_t)VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.size();
-
-	if (vkAllocateCommandBuffers(VKRenderingSystemComponent::get().m_device, &allocInfo, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.data()) != VK_SUCCESS)
-	{
-		m_objectStatus = ObjectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate command buffers!");
-		return false;
-	}
+	auto l_result = createCommandBuffers(VKRenderingSystemComponent::get().m_swapChainVKRPC);
 
 	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.size(); i++)
 	{
-		VkCommandBufferBeginInfo beginInfo = {};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-		if (vkBeginCommandBuffer(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i], &beginInfo) != VK_SUCCESS)
-		{
-			m_objectStatus = ObjectStatus::STANDBY;
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to begin recording command buffer!");
-			return false;
-		}
-
-		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = VKRenderingSystemComponent::get().m_swapChainVKRPC->m_renderPass;
-		renderPassInfo.framebuffer = VKRenderingSystemComponent::get().m_swapChainVKRPC->m_framebuffers[i];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = VKRenderingSystemComponent::get().m_swapChainVKRPC->scissor.extent;
-
-		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-		renderPassInfo.clearValueCount = 1;
-		renderPassInfo.pClearValues = &clearColor;
-
-		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-
-		vkCmdBeginRenderPass(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		vkCmdBindPipeline(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_pipeline);
-
-		recordDrawCall(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i], l_MDC);
-
-		vkCmdEndRenderPass(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i]);
-
-		if (vkEndCommandBuffer(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i]) != VK_SUCCESS)
-		{
-			m_objectStatus = ObjectStatus::STANDBY;
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to record command buffer!");
-			return false;
-		}
+		recordCommand(VKRenderingSystemComponent::get().m_swapChainVKRPC, i, [&]() {
+			auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+			recordDrawCall(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i], l_MDC);
+		});
 	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: command buffers has been created.");
