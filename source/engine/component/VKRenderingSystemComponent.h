@@ -62,7 +62,7 @@ public:
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 
-#ifdef DEBUG
+#ifdef _DEBUG
 	const bool m_enableValidationLayers = true;
 #else
 	const bool m_enableValidationLayers = false;

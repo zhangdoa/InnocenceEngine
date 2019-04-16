@@ -509,7 +509,7 @@ void GLRenderingSystemNS::generateTO(GLuint& TO, GLTextureDataDesc desc, GLsizei
 	glTexParameteri(desc.textureSamplerType, GL_TEXTURE_WRAP_S, desc.textureWrapMethod);
 	glTexParameteri(desc.textureSamplerType, GL_TEXTURE_WRAP_T, desc.textureWrapMethod);
 
-	glTexParameterfv(desc.textureSamplerType, GL_TEXTURE_BORDER_COLOR, desc.boardColor);
+	glTexParameterfv(desc.textureSamplerType, GL_TEXTURE_BORDER_COLOR, desc.borderColor);
 
 	glTexParameteri(desc.textureSamplerType, GL_TEXTURE_MIN_FILTER, desc.minFilterParam);
 	glTexParameteri(desc.textureSamplerType, GL_TEXTURE_MAG_FILTER, desc.magFilterParam);
@@ -750,10 +750,10 @@ GLTextureDataDesc GLRenderingSystemNS::getGLTextureDataDesc(const TextureDataDes
 
 	l_result.pixelDataType = getTexturePixelDataType(textureDataDesc.pixelDataType);
 
-	l_result.boardColor[0] = textureDataDesc.borderColor.x;
-	l_result.boardColor[1] = textureDataDesc.borderColor.y;
-	l_result.boardColor[2] = textureDataDesc.borderColor.z;
-	l_result.boardColor[3] = textureDataDesc.borderColor.w;
+	l_result.borderColor[0] = textureDataDesc.borderColor[0];
+	l_result.borderColor[1] = textureDataDesc.borderColor[1];
+	l_result.borderColor[2] = textureDataDesc.borderColor[2];
+	l_result.borderColor[3] = textureDataDesc.borderColor[3];
 
 	return l_result;
 }

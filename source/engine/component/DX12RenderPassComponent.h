@@ -4,12 +4,6 @@
 #include "TextureDataComponent.h"
 #include "DX12TextureDataComponent.h"
 
-struct RenderPassDesc
-{
-	unsigned int RTNumber = 0;
-	TextureDataDesc RTDesc = TextureDataDesc();
-};
-
 class DX12RenderPassComponent
 {
 public:

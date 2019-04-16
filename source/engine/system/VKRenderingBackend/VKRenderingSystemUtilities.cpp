@@ -8,9 +8,6 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
-	bool createRenderPass(VKRenderPassComponent* rhs, VkFormat colorAttachmentFormat);
-	bool createPipelineLayout(VKRenderPassComponent* rhs, MeshPrimitiveTopology topology, unsigned int width, unsigned int height);
-
 	bool createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath);
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
@@ -20,7 +17,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool initializeVKMeshDataComponent(VKMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
 	bool initializeVKTextureDataComponent(VKTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
 
-	VKTextureDataDesc getVKTextureDataDesc(const TextureDataDesc& textureDataDesc);
+	VkTextureDataDesc getVKTextureDataDesc(const TextureDataDesc& textureDataDesc);
 
 	VkSamplerAddressMode getTextureWrapMethod(TextureWrapMethod rhs);
 	VkSamplerMipmapMode getTextureFilterParam(TextureFilterMethod rhs);
@@ -83,182 +80,18 @@ bool VKRenderingSystemNS::initializeComponentPool()
 	return true;
 }
 
-bool VKRenderingSystemNS::createRenderPass(VKRenderPassComponent* rhs, VkFormat colorAttachmentFormat)
-{// render target attachment desc
-	VkAttachmentDescription colorAttachment = {};
-	colorAttachment.format = colorAttachmentFormat;
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	VkAttachmentReference colorAttachmentRef = {};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	// sub-pass
-	VkSubpassDescription subpass = {};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-
-	// create render pass
-	VkRenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = 1;
-	renderPassInfo.pAttachments = &colorAttachment;
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-
-	if (vkCreateRenderPass(VKRenderingSystemComponent::get().m_device, &renderPassInfo, nullptr, &rhs->m_renderPass) != VK_SUCCESS)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create render pass!");
-		return false;
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: render pass has been created.");
-	return true;
-}
-
-bool VKRenderingSystemNS::createPipelineLayout(VKRenderPassComponent* rhs, MeshPrimitiveTopology topology, unsigned int width, unsigned int height)
-{	// set pipeline fix stages info
-	VkPrimitiveTopology l_topology;
-
-	switch (topology)
-	{
-	case MeshPrimitiveTopology::POINT:
-		l_topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-		break;
-	case MeshPrimitiveTopology::LINE:
-		l_topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-		break;
-	case MeshPrimitiveTopology::TRIANGLE:
-		l_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		break;
-	case MeshPrimitiveTopology::TRIANGLE_STRIP:
-		l_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-		break;
-	default:
-		break;
-	}
-
-	rhs->m_inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	rhs->m_inputAssemblyStateCInfo.topology = l_topology;
-	rhs->m_inputAssemblyStateCInfo.primitiveRestartEnable = VK_FALSE;
-
-	rhs->m_extent = VkExtent2D();
-	rhs->m_extent.width = width;
-	rhs->m_extent.height = height;
-
-	rhs->m_viewport.x = 0.0f;
-	rhs->m_viewport.y = 0.0f;
-	rhs->m_viewport.width = (float)width;
-	rhs->m_viewport.height = (float)height;
-	rhs->m_viewport.minDepth = 0.0f;
-	rhs->m_viewport.maxDepth = 1.0f;
-
-	rhs->m_scissor.offset = { 0, 0 };
-	rhs->m_scissor.extent = rhs->m_extent;
-
-	rhs->m_viewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	rhs->m_viewportStateCInfo.viewportCount = 1;
-	rhs->m_viewportStateCInfo.pViewports = &rhs->m_viewport;
-	rhs->m_viewportStateCInfo.scissorCount = 1;
-	rhs->m_viewportStateCInfo.pScissors = &rhs->m_scissor;
-
-	rhs->m_rasterizationStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rhs->m_rasterizationStateCInfo.depthClampEnable = VK_FALSE;
-	rhs->m_rasterizationStateCInfo.rasterizerDiscardEnable = VK_FALSE;
-	rhs->m_rasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_FILL;
-	rhs->m_rasterizationStateCInfo.lineWidth = 1.0f;
-	rhs->m_rasterizationStateCInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	rhs->m_rasterizationStateCInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-	rhs->m_rasterizationStateCInfo.depthBiasEnable = VK_FALSE;
-
-	rhs->m_multisampleStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	rhs->m_multisampleStateCInfo.sampleShadingEnable = VK_FALSE;
-	rhs->m_multisampleStateCInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-	rhs->m_colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	rhs->m_colorBlendAttachmentState.blendEnable = VK_FALSE;
-
-	rhs->m_colorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	rhs->m_colorBlendStateCInfo.logicOpEnable = VK_FALSE;
-	rhs->m_colorBlendStateCInfo.logicOp = VK_LOGIC_OP_COPY;
-	rhs->m_colorBlendStateCInfo.attachmentCount = 1;
-	rhs->m_colorBlendStateCInfo.pAttachments = &rhs->m_colorBlendAttachmentState;
-	rhs->m_colorBlendStateCInfo.blendConstants[0] = 0.0f;
-	rhs->m_colorBlendStateCInfo.blendConstants[1] = 0.0f;
-	rhs->m_colorBlendStateCInfo.blendConstants[2] = 0.0f;
-	rhs->m_colorBlendStateCInfo.blendConstants[3] = 0.0f;
-
-	rhs->m_pipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	rhs->m_pipelineLayoutCInfo.setLayoutCount = 0;
-	rhs->m_pipelineLayoutCInfo.pushConstantRangeCount = 0;
-
-	if (vkCreatePipelineLayout(VKRenderingSystemComponent::get().m_device, &rhs->m_pipelineLayoutCInfo, nullptr, &rhs->m_pipelineLayout) != VK_SUCCESS)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create pipeline layout!");
-		return false;
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: pipeline layout has been created.");
-	return true;
-}
-
-VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned int RTNum, TextureDataDesc RTDesc, const std::vector<VkImage>* VkImages, MeshPrimitiveTopology topology, VKShaderProgramComponent* VKSPC)
+bool VKRenderingSystemNS::createRenderTargets(VkTextureDataDesc vkTextureDataDesc, VKRenderPassComponent* VKRPC)
 {
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKRenderPassComponentPool, sizeof(VKRenderPassComponent));
-	auto l_VKRPC = new(l_rawPtr)VKRenderPassComponent();
-
-	// reserve vectors and emplace empty objects
-	l_VKRPC->m_framebuffers.reserve(RTNum);
-	for (size_t i = 0; i < RTNum; i++)
+	for (size_t i = 0; i < VKRPC->m_VKTDCs.size(); i++)
 	{
-		l_VKRPC->m_framebuffers.emplace_back();
-	}
-
-	l_VKRPC->m_VKTDCs.reserve(RTNum);
-	for (size_t i = 0; i < RTNum; i++)
-	{
-		l_VKRPC->m_VKTDCs.emplace_back();
-	}
-
-	for (size_t i = 0; i < RTNum; i++)
-	{
-		l_VKRPC->m_VKTDCs[i] = addVKTextureDataComponent(l_VKRPC->m_parentEntity);
-	}
-
-	// convert to VK specific desc
-	auto l_VKRTDesc = getVKTextureDataDesc(RTDesc);
-
-	// assign external created image, only for swap chain render pass component
-	// @TODO: ugly
-	if (VkImages)
-	{
-		for (size_t i = 0; i < VkImages->size(); i++)
-		{
-			l_VKRPC->m_VKTDCs[i]->m_image = VkImages->data()[i];
-		}
-	}
-	else
-	{
-		// @TODO: create image
-	}
-
-	for (size_t i = 0; i < RTNum; i++)
-	{
-		l_VKRPC->m_VKTDCs[i]->m_VKTextureDataDesc = l_VKRTDesc;
+		VKRPC->m_VKTDCs[i]->m_VkTextureDataDesc = vkTextureDataDesc;
 
 		// create image view
 		VkImageViewCreateInfo l_createInfo = {};
 		l_createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		l_createInfo.image = l_VKRPC->m_VKTDCs[i]->m_image;
+		l_createInfo.image = VKRPC->m_VKTDCs[i]->m_image;
 		l_createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		l_createInfo.format = l_VKRPC->m_VKTDCs[i]->m_VKTextureDataDesc.internalFormat;
+		l_createInfo.format = VKRPC->m_VKTDCs[i]->m_VkTextureDataDesc.internalFormat;
 		l_createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 		l_createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 		l_createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -269,61 +102,134 @@ VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent(unsigned in
 		l_createInfo.subresourceRange.baseArrayLayer = 0;
 		l_createInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &l_VKRPC->m_VKTDCs[i]->m_imageView) != VK_SUCCESS)
+		if (vkCreateImageView(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &VKRPC->m_VKTDCs[i]->m_imageView) != VK_SUCCESS)
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create image view!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create ImageView!");
 		}
 
 		// create frame buffer and attach image view
-		VkImageView attachments[] =
-		{
-			l_VKRPC->m_VKTDCs[i]->m_imageView
-		};
+		VkImageView attachments = { VKRPC->m_VKTDCs[i]->m_imageView };
 
 		VkFramebufferCreateInfo framebufferInfo = {};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = l_VKRPC->m_renderPass;
+		framebufferInfo.renderPass = VKRPC->m_renderPass;
 		framebufferInfo.attachmentCount = 1;
-		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = RTDesc.width;
-		framebufferInfo.height = RTDesc.height;
+		framebufferInfo.pAttachments = &attachments;
+		framebufferInfo.width = vkTextureDataDesc.width;
+		framebufferInfo.height = vkTextureDataDesc.height;
 		framebufferInfo.layers = 1;
 
-		if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &l_VKRPC->m_framebuffers[i]) != VK_SUCCESS)
+		if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &VKRPC->m_framebuffers[i]) != VK_SUCCESS)
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create framebuffer!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create Framebuffer!");
 		}
 	}
 
-	createRenderPass(l_VKRPC, l_VKRTDesc.internalFormat);
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: ImageView and Framebuffer has been created.");
 
-	createPipelineLayout(l_VKRPC, topology, RTDesc.width, RTDesc.height);
+	return true;
+}
 
+bool VKRenderingSystemNS::createRenderPass(VKRenderPassComponent* VKRPC)
+{
+	if (vkCreateRenderPass(VKRenderingSystemComponent::get().m_device, &VKRPC->m_infos.renderPassCInfo, nullptr, &VKRPC->m_renderPass) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create RenderPass!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: RenderPass has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createPipelineLayout(VKRenderPassComponent* VKRPC)
+{
+	if (vkCreatePipelineLayout(VKRenderingSystemComponent::get().m_device, &VKRPC->m_infos.pipelineLayoutCInfo, nullptr, &VKRPC->m_pipelineLayout) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create PipelineLayout!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: PipelineLayout has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createGraphicsPipelines(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC)
+{
 	// attach shader module and create pipeline
 	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStages = { VKSPC->m_vertexShaderStageCInfo, VKSPC->m_fragmentShaderStageCInfo };
 
-	l_VKRPC->m_pipelineCInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	l_VKRPC->m_pipelineCInfo.stageCount = (uint32_t)l_shaderStages.size();
-	l_VKRPC->m_pipelineCInfo.pStages = &l_shaderStages[0];
-	l_VKRPC->m_pipelineCInfo.pVertexInputState = &VKSPC->m_vertexInputStateCInfo;
-	l_VKRPC->m_pipelineCInfo.pInputAssemblyState = &l_VKRPC->m_inputAssemblyStateCInfo;
-	l_VKRPC->m_pipelineCInfo.pViewportState = &l_VKRPC->m_viewportStateCInfo;
-	l_VKRPC->m_pipelineCInfo.pRasterizationState = &l_VKRPC->m_rasterizationStateCInfo;
-	l_VKRPC->m_pipelineCInfo.pMultisampleState = &l_VKRPC->m_multisampleStateCInfo;
-	l_VKRPC->m_pipelineCInfo.pColorBlendState = &l_VKRPC->m_colorBlendStateCInfo;
-	l_VKRPC->m_pipelineCInfo.layout = l_VKRPC->m_pipelineLayout;
-	l_VKRPC->m_pipelineCInfo.renderPass = l_VKRPC->m_renderPass;
-	l_VKRPC->m_pipelineCInfo.subpass = 0;
-	l_VKRPC->m_pipelineCInfo.basePipelineHandle = VK_NULL_HANDLE;
+	VKRPC->m_infos.pipelineCInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	VKRPC->m_infos.pipelineCInfo.stageCount = (uint32_t)l_shaderStages.size();
+	VKRPC->m_infos.pipelineCInfo.pStages = &l_shaderStages[0];
+	VKRPC->m_infos.pipelineCInfo.pVertexInputState = &VKSPC->m_vertexInputStateCInfo;
+	VKRPC->m_infos.pipelineCInfo.pInputAssemblyState = &VKRPC->m_infos.inputAssemblyStateCInfo;
+	VKRPC->m_infos.pipelineCInfo.pViewportState = &VKRPC->m_infos.viewportStateCInfo;
+	VKRPC->m_infos.pipelineCInfo.pRasterizationState = &VKRPC->m_infos.rasterizationStateCInfo;
+	VKRPC->m_infos.pipelineCInfo.pMultisampleState = &VKRPC->m_infos.multisampleStateCInfo;
+	VKRPC->m_infos.pipelineCInfo.pColorBlendState = &VKRPC->m_infos.colorBlendStateCInfo;
+	VKRPC->m_infos.pipelineCInfo.layout = VKRPC->m_pipelineLayout;
+	VKRPC->m_infos.pipelineCInfo.renderPass = VKRPC->m_renderPass;
+	VKRPC->m_infos.pipelineCInfo.subpass = 0;
+	VKRPC->m_infos.pipelineCInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreateGraphicsPipelines(VKRenderingSystemComponent::get().m_device, VK_NULL_HANDLE, 1, &l_VKRPC->m_pipelineCInfo, nullptr, &l_VKRPC->m_pipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(VKRenderingSystemComponent::get().m_device, VK_NULL_HANDLE, 1, &VKRPC->m_infos.pipelineCInfo, nullptr, &VKRPC->m_pipeline) != VK_SUCCESS)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to to create graphics pipeline!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to to create GraphicsPipelines!");
+		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: graphics pipeline has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: GraphicsPipelines has been created.");
+	return true;
+}
+VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKRenderPassComponentPool, sizeof(VKRenderPassComponent));
+	auto l_VKRPC = new(l_rawPtr)VKRenderPassComponent();
 
 	return l_VKRPC;
+}
+
+bool VKRenderingSystemNS::reserveRenderTargets(RenderPassDesc renderPassDesc, VKRenderPassComponent* VKRPC)
+{
+	// reserve vectors and emplace empty objects
+	VKRPC->m_framebuffers.reserve(renderPassDesc.RTNumber);
+	for (size_t i = 0; i < renderPassDesc.RTNumber; i++)
+	{
+		VKRPC->m_framebuffers.emplace_back();
+	}
+
+	VKRPC->m_VKTDCs.reserve(renderPassDesc.RTNumber);
+	for (size_t i = 0; i < renderPassDesc.RTNumber; i++)
+	{
+		VKRPC->m_VKTDCs.emplace_back();
+	}
+
+	for (size_t i = 0; i < renderPassDesc.RTNumber; i++)
+	{
+		VKRPC->m_VKTDCs[i] = addVKTextureDataComponent(VKRPC->m_parentEntity);
+	}
+
+	return true;
+}
+
+bool VKRenderingSystemNS::initializeVKRenderPassComponent(RenderPassDesc renderPassDesc, VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC)
+{
+	bool result = true;
+
+	result &= reserveRenderTargets(renderPassDesc, VKRPC);
+
+	auto l_vkTextureDesc = getVKTextureDataDesc(renderPassDesc.RTDesc);
+
+	result &= createRenderTargets(l_vkTextureDesc, VKRPC);
+
+	result &= createRenderPass(VKRPC);
+
+	result &= createPipelineLayout(VKRPC);
+
+	result &= createGraphicsPipelines(VKRPC, VKSPC);
+
+	return result;
 }
 
 bool VKRenderingSystemNS::destroyVKRenderPassComponent(VKRenderPassComponent* VKRPC)
@@ -683,9 +589,9 @@ bool VKRenderingSystemNS::activateVKShaderProgramComponent(VKShaderProgramCompon
 	return false;
 }
 
-VKTextureDataDesc VKRenderingSystemNS::getVKTextureDataDesc(const TextureDataDesc & textureDataDesc)
+VkTextureDataDesc VKRenderingSystemNS::getVKTextureDataDesc(const TextureDataDesc & textureDataDesc)
 {
-	VKTextureDataDesc l_result;
+	VkTextureDataDesc l_result;
 
 	l_result.textureWrapMethod = getTextureWrapMethod(textureDataDesc.wrapMethod);
 	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.minFilterMethod);
@@ -741,7 +647,7 @@ VkSamplerMipmapMode VKRenderingSystemNS::getTextureFilterParam(TextureFilterMeth
 
 VkFormat VKRenderingSystemNS::getTextureInternalFormat(TextureColorComponentsFormat rhs)
 {
-	VkFormat result;
+	VkFormat result = VK_FORMAT_R8_UNORM;
 
 	// @TODO: with pixel format together
 	switch (rhs)

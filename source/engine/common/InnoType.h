@@ -60,13 +60,15 @@ struct DirectoryMetadata
 	std::vector<AssetMetadata> childrenAssets;
 };
 
+enum class VisiblilityType { INNO_INVISIBLE, INNO_BILLBOARD, INNO_OPAQUE, INNO_TRANSPARENT, INNO_EMISSIVE, INNO_DEBUG };
+
+// mesh custom types
 using Index = unsigned int;
 
-enum class VisiblilityType { INNO_INVISIBLE, INNO_BILLBOARD, INNO_OPAQUE, INNO_TRANSPARENT, INNO_EMISSIVE, INNO_DEBUG };
-// mesh custom types
 enum class MeshUsageType { STATIC, DYNAMIC };
 enum class MeshShapeType { LINE, QUAD, CUBE, SPHERE, TERRAIN, CUSTOM };
 enum class MeshPrimitiveTopology { POINT, LINE, TRIANGLE, TRIANGLE_STRIP };
+
 // texture custom types
 enum class TextureSamplerType { SAMPLER_1D, SAMPLER_2D, SAMPLER_3D, CUBEMAP };
 enum class TextureUsageType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, RENDER_TARGET };
@@ -93,7 +95,29 @@ enum class TextureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER };
 enum class TextureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
 enum class TextureAssignType { ADD, OVERWRITE };
 
+struct TextureDataDesc
+{
+	TextureSamplerType samplerType;
+	TextureUsageType usageType;
+	TextureColorComponentsFormat colorComponentsFormat;
+	TexturePixelDataFormat pixelDataFormat;
+	TextureFilterMethod minFilterMethod;
+	TextureFilterMethod magFilterMethod;
+	TextureWrapMethod wrapMethod;
+	TexturePixelDataType pixelDataType;
+	unsigned int width = 0;
+	unsigned int height = 0;
+	unsigned int depth = 0;
+	float borderColor[4];
+};
+
 enum class RenderPassType { OpaquePass, TransparentPass, TerrainPass, LightPass, FinalPass };
+
+struct RenderPassDesc
+{
+	unsigned int RTNumber = 0;
+	TextureDataDesc RTDesc = TextureDataDesc();
+};
 
 // shader custom types
 enum class ShaderType { VERTEX, GEOMETRY, FRAGMENT };

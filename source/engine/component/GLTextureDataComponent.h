@@ -11,7 +11,7 @@ struct GLTextureDataDesc
 	GLenum internalFormat;
 	GLenum pixelDataFormat;
 	GLenum pixelDataType;
-	float boardColor[4];
+	float borderColor[4];
 };
 
 class GLTextureDataComponent

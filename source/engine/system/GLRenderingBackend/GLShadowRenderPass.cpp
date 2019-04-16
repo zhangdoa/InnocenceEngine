@@ -50,7 +50,10 @@ void GLShadowRenderPass::initialize()
 	DirLightShadowPassTextureDesc.width = DirLightShadowPassFBDesc.sizeX;
 	DirLightShadowPassTextureDesc.height = DirLightShadowPassFBDesc.sizeY;
 	DirLightShadowPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
-	DirLightShadowPassTextureDesc.borderColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	DirLightShadowPassTextureDesc.borderColor[0] = 1.0f;
+	DirLightShadowPassTextureDesc.borderColor[1] = 1.0f;
+	DirLightShadowPassTextureDesc.borderColor[2] = 1.0f;
+	DirLightShadowPassTextureDesc.borderColor[3] = 1.0f;
 
 	m_DirLight_GLRPC = addGLRenderPassComponent(1, DirLightShadowPassFBDesc, DirLightShadowPassTextureDesc);
 
@@ -70,7 +73,10 @@ void GLShadowRenderPass::initialize()
 	PointLightShadowPassTextureDesc.width = PointLightShadowPassFBDesc.sizeX;
 	PointLightShadowPassTextureDesc.height = PointLightShadowPassFBDesc.sizeY;
 	PointLightShadowPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
-	PointLightShadowPassTextureDesc.borderColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	PointLightShadowPassTextureDesc.borderColor[0] = 1.0f;
+	PointLightShadowPassTextureDesc.borderColor[1] = 1.0f;
+	PointLightShadowPassTextureDesc.borderColor[2] = 1.0f;
+	PointLightShadowPassTextureDesc.borderColor[3] = 1.0f;
 
 	m_PointLight_GLRPC = addGLRenderPassComponent(1, PointLightShadowPassFBDesc, PointLightShadowPassTextureDesc);
 

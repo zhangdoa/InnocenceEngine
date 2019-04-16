@@ -4,6 +4,25 @@
 #include "TextureDataComponent.h"
 #include "VKTextureDataComponent.h"
 
+struct VKRenderPassInfos
+{
+	VkAttachmentDescription attachmentDesc = {};
+	VkAttachmentReference attachmentRef = {};
+	VkSubpassDescription subpassDesc = {};
+	VkRenderPassCreateInfo renderPassCInfo = {};
+
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCInfo = {};
+	VkPipelineViewportStateCreateInfo viewportStateCInfo = {};
+	VkPipelineRasterizationStateCreateInfo rasterizationStateCInfo = {};
+	VkPipelineMultisampleStateCreateInfo multisampleStateCInfo = {};
+	VkPipelineColorBlendAttachmentState colorBlendAttachmentState = {};
+	VkPipelineColorBlendStateCreateInfo colorBlendStateCInfo = {};
+	VkPipelineLayoutCreateInfo pipelineLayoutCInfo = {};
+	VkGraphicsPipelineCreateInfo pipelineCInfo = {};
+	VkViewport viewport = {};
+	VkRect2D scissor = {};
+};
+
 class VKRenderPassComponent
 {
 public:
@@ -13,20 +32,12 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
+	RenderPassDesc m_renderPassDesc;
+
 	VkRenderPass m_renderPass;
 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_pipeline;
-	VkViewport m_viewport = {};
-	VkRect2D m_scissor = {};
-	VkExtent2D m_extent = {};
-	VkPipelineInputAssemblyStateCreateInfo m_inputAssemblyStateCInfo = {};
-	VkPipelineViewportStateCreateInfo m_viewportStateCInfo = {};
-	VkPipelineRasterizationStateCreateInfo m_rasterizationStateCInfo = {};
-	VkPipelineMultisampleStateCreateInfo m_multisampleStateCInfo = {};
-	VkPipelineColorBlendAttachmentState m_colorBlendAttachmentState = {};
-	VkPipelineColorBlendStateCreateInfo m_colorBlendStateCInfo = {};
-	VkPipelineLayoutCreateInfo m_pipelineLayoutCInfo = {};
-	VkGraphicsPipelineCreateInfo m_pipelineCInfo = {};
+	VKRenderPassInfos m_infos = {};
 
 	std::vector<VkFramebuffer> m_framebuffers;
 	std::vector<VkCommandBuffer> m_commandBuffers;

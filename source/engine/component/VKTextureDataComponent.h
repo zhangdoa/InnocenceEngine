@@ -1,13 +1,15 @@
 #pragma once
 #include "../common/InnoType.h"
 
-struct VKTextureDataDesc
+struct VkTextureDataDesc
 {
 	VkSamplerAddressMode textureWrapMethod;
 	VkSamplerMipmapMode minFilterParam;
 	VkSamplerMipmapMode magFilterParam;
 	VkFormat internalFormat;
-	VkBorderColor boardColor;
+	VkBorderColor boarderColor;
+	unsigned int width;
+	unsigned int height;
 };
 
 class VKTextureDataComponent
@@ -22,5 +24,5 @@ public:
 	VkImage m_image;
 	VkImageView m_imageView;
 
-	VKTextureDataDesc m_VKTextureDataDesc = VKTextureDataDesc();
+	VkTextureDataDesc m_VkTextureDataDesc = VkTextureDataDesc();
 };
