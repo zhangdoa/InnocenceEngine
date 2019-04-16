@@ -11,11 +11,11 @@ struct dirLight {
 	vec3 direction;
 	vec3 color;
 };
-uniform dirLight uni_dirLight;
 
-uniform vec4 uni_albedo;
-uniform vec4 uni_TR;
-uniform vec3 uni_viewPos;
+layout(location = 0) uniform vec3 uni_viewPos;
+layout(location = 1) uniform dirLight uni_dirLight;
+layout(location = 3) uniform vec4 uni_albedo;
+layout(location = 4) uniform vec4 uni_TR;
 
 const float eps = 0.00001;
 const float PI = 3.14159265359;

@@ -10,10 +10,10 @@ layout(location = 0) out VS_OUT{
 	vec3 normal;
 } vs_out;
 
-layout(location = 0) uniform mat4 uni_p;
-layout(location = 1) uniform mat4 uni_r;
-layout(location = 2) uniform mat4 uni_t;
-layout(location = 3) uniform mat4 uni_m;
+layout(location = 1) uniform mat4 uni_p;
+layout(location = 2) uniform mat4 uni_r;
+layout(location = 3) uniform mat4 uni_t;
+layout(location = 4) uniform mat4 uni_m;
 
 void main()
 {

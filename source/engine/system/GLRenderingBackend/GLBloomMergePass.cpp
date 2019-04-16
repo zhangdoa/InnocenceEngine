@@ -27,7 +27,7 @@ bool GLBloomMergePass::initialize()
 	m_entityID = InnoMath::createEntityID();
 
 	auto l_textureDesc = GLRenderingSystemComponent::get().deferredPassTextureDesc;
-	l_textureDesc.magFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+	l_textureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	l_textureDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
 
 	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, l_textureDesc);

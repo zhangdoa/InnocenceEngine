@@ -22,12 +22,6 @@ INNO_PRIVATE_SCOPE GLTransparentPass
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//transparentPass.vert" , "", "GL//transparentPass.frag" };
 
-	GLuint m_uni_albedo;
-	GLuint m_uni_TR;
-	GLuint m_uni_viewPos;
-	GLuint m_uni_dirLight_direction;
-	GLuint m_uni_dirLight_color;
-
 	CameraDataPack m_cameraDataPack;
 	SunDataPack m_sunDataPack;
 }
@@ -58,22 +52,6 @@ void GLTransparentPass::bindUniformLocations(GLShaderProgramComponent* rhs)
 	bindUniformBlock(GLRenderingSystemComponent::get().m_cameraUBO, sizeof(GPassCameraUBOData), rhs->m_program, "cameraUBO", 0);
 
 	bindUniformBlock(GLRenderingSystemComponent::get().m_meshUBO, sizeof(GPassMeshUBOData), rhs->m_program, "meshUBO", 1);
-
-	m_uni_albedo = getUniformLocation(
-		rhs->m_program,
-		"uni_albedo");
-	m_uni_TR = getUniformLocation(
-		rhs->m_program,
-		"uni_TR");
-	m_uni_viewPos = getUniformLocation(
-		rhs->m_program,
-		"uni_viewPos");
-	m_uni_dirLight_direction = getUniformLocation(
-		rhs->m_program,
-		"uni_dirLight.direction");
-	m_uni_dirLight_color = getUniformLocation(
-		rhs->m_program,
-		"uni_dirLight.color");
 }
 
 bool GLTransparentPass::update()
@@ -111,13 +89,13 @@ bool GLTransparentPass::update()
 	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, GLRenderingSystemComponent::get().m_GPassCameraUBOData);
 
 	updateUniform(
-		m_uni_viewPos,
+		0,
 		m_cameraDataPack.globalPos.x, m_cameraDataPack.globalPos.y, m_cameraDataPack.globalPos.z);
 	updateUniform(
-		m_uni_dirLight_direction,
+		1,
 		m_sunDataPack.dir.x, m_sunDataPack.dir.y, m_sunDataPack.dir.z);
 	updateUniform(
-		m_uni_dirLight_color,
+		2,
 		m_sunDataPack.luminance.x, m_sunDataPack.luminance.y, m_sunDataPack.luminance.z);
 
 	while (GLRenderingSystemComponent::get().m_transparentPassDataQueue.size() > 0)
@@ -126,8 +104,8 @@ bool GLTransparentPass::update()
 
 		updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_renderPack.meshUBOData);
 
-		updateUniform(m_uni_albedo, l_renderPack.meshCustomMaterial.albedo_r, l_renderPack.meshCustomMaterial.albedo_g, l_renderPack.meshCustomMaterial.albedo_b, l_renderPack.meshCustomMaterial.alpha);
-		updateUniform(m_uni_TR, l_renderPack.meshCustomMaterial.thickness, l_renderPack.meshCustomMaterial.roughness, 0.0f, 0.0f);
+		updateUniform(3, l_renderPack.meshCustomMaterial.albedo_r, l_renderPack.meshCustomMaterial.albedo_g, l_renderPack.meshCustomMaterial.albedo_b, l_renderPack.meshCustomMaterial.alpha);
+		updateUniform(4, l_renderPack.meshCustomMaterial.thickness, l_renderPack.meshCustomMaterial.roughness, 0.0f, 0.0f);
 
 		drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
 

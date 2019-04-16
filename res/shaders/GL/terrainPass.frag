@@ -6,7 +6,7 @@ layout(location = 0) in vec4 thefrag_WorldSpacePos;
 layout(location = 1) in vec2 thefrag_TexCoord;
 layout(location = 2) in vec3 thefrag_Normal;
 
-uniform sampler2D uni_albedoTexture;
+layout(location = 5, binding = 1) uniform sampler2D uni_albedoTexture;
 
 void main()
 {

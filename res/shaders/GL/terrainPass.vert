@@ -9,13 +9,13 @@ layout(location = 0) out vec4 thefrag_WorldSpacePos;
 layout(location = 1) out vec2 thefrag_TexCoord;
 layout(location = 2) out vec3 thefrag_Normal;
 
-uniform mat4 uni_p_camera;
-uniform mat4 uni_r_camera;
-uniform mat4 uni_t_camera;
+layout(location = 0) uniform mat4 uni_p_camera;
+layout(location = 1) uniform mat4 uni_r_camera;
+layout(location = 2) uniform mat4 uni_t_camera;
 
-uniform mat4 uni_m;
+layout(location = 3) uniform mat4 uni_m;
 
-uniform sampler2D uni_heightTexture;
+layout(location = 4, binding = 0) uniform sampler2D uni_heightTexture;
 
 void main()
 {

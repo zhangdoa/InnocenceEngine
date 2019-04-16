@@ -83,6 +83,7 @@ bool InnoRenderingFrontendSystemNS::setup()
 	m_renderingConfig.useTAA = true;
 	//m_renderingConfig.useBloom = true;
 	m_renderingConfig.drawSky = true;
+	//m_renderingConfig.drawTerrain = true;
 
 	f_sceneLoadingStartCallback = [&]() {
 		m_meshDataPack.clear();

@@ -13,7 +13,6 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLTerrainPass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
@@ -22,17 +21,6 @@ INNO_PRIVATE_SCOPE GLTerrainPass
 	GLShaderProgramComponent* m_GLSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert" , "", "GL//terrainPass.frag" };
-
-	GLuint m_uni_p_camera;
-	GLuint m_uni_r_camera;
-	GLuint m_uni_t_camera;
-	GLuint m_uni_m;
-
-	std::vector<std::string> m_TextureUniformNames =
-	{
-		"uni_albedoTexture",
-		"uni_heightTexture",
-	};
 
 	static float perlinNoiseFade(float t)
 	{
@@ -213,27 +201,7 @@ void GLTerrainPass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLTerrainPass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	m_uni_p_camera = getUniformLocation(
-		rhs->m_program,
-		"uni_p_camera");
-	m_uni_r_camera = getUniformLocation(
-		rhs->m_program,
-		"uni_r_camera");
-	m_uni_t_camera = getUniformLocation(
-		rhs->m_program,
-		"uni_t_camera");
-	m_uni_m = getUniformLocation(
-		rhs->m_program,
-		"uni_m");
-
-	updateTextureUniformLocations(rhs->m_program, m_TextureUniformNames);
 }
 
 bool GLTerrainPass::update()
@@ -260,21 +228,22 @@ bool GLTerrainPass::update()
 		mat4 m = InnoMath::generateIdentityMatrix<float>();
 
 		updateUniform(
-			m_uni_p_camera,
+			0,
 			m_cameraDataPack.p_original);
 		updateUniform(
-			m_uni_r_camera,
+			1,
 			m_cameraDataPack.r);
 		updateUniform(
-			m_uni_t_camera,
+			2,
 			m_cameraDataPack.t);
 		updateUniform(
-			m_uni_m,
+			3,
 			m);
 
 		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::TERRAIN);
-		activateTexture(GLRenderingSystemComponent::get().m_basicAlbedoGLTDC, 0);
-		activateTexture(m_terrainNoiseGLTDC, 1);
+
+		activateTexture(m_terrainNoiseGLTDC, 0);
+		activateTexture(GLRenderingSystemComponent::get().m_basicAlbedoGLTDC, 1);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		drawMesh(l_MDC);

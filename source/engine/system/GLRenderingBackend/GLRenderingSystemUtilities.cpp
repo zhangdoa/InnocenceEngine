@@ -12,6 +12,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	void setDrawBuffers(unsigned int RTNum);
 
+	void addShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string & shaderFilePath);
+
 	bool initializeGLMeshDataComponent(GLMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
 	bool initializeGLTextureDataComponent(GLTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
 
@@ -313,130 +315,129 @@ GLTextureDataComponent* GLRenderingSystemNS::generateGLTextureDataComponent(Text
 	}
 }
 
+void GLRenderingSystemNS::addShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string & shaderFilePath)
+{
+	shaderID = glCreateShader(shaderType);
+
+	if (shaderID == 0)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: Shader creation failed! Memory location invaild when adding shader!");
+		glDeleteShader(shaderID);
+		return;
+	}
+
+	if (shaderFilePath.find(".spv") != std::string::npos)
+	{
+		auto l_shaderCodeContent = g_pCoreSystem->getFileSystem()->loadBinaryFile(m_shaderRelativePath + shaderFilePath);
+
+		if (l_shaderCodeContent.empty())
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " loading failed!");
+			return;
+		}
+
+		// Apply the SPIR-V to the shader object.
+		glShaderBinary(1, &shaderID, GL_SPIR_V_BINARY, l_shaderCodeContent.data(), (GLsizei)l_shaderCodeContent.size());
+
+		// Specialize the shader.
+		glSpecializeShader(shaderID, "main", 0, 0, 0);
+	}
+	else
+	{
+		auto l_shaderCodeContent = g_pCoreSystem->getFileSystem()->loadTextFile(m_shaderRelativePath + shaderFilePath);
+
+		if (l_shaderCodeContent.empty())
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " loading failed!");
+			return;
+		}
+
+		const char* l_sourcePointer = l_shaderCodeContent.c_str();
+
+		glShaderSource(shaderID, 1, &l_sourcePointer, NULL);
+
+		// compile shader
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: innoShader: " + shaderFilePath + " is compiling ...");
+
+		glCompileShader(shaderID);
+	}
+
+	GLint l_validationResult = GL_FALSE;
+	GLint l_infoLogLength = 0;
+	GLint l_shaderFileLength = 0;
+	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &l_validationResult);
+
+	if (!l_validationResult)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
+		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
+		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
+
+		if (l_infoLogLength > 0)
+		{
+			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
+			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+		}
+		else
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: no info log provided!");
+		}
+
+		return;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: " + shaderFilePath + " has been compiled.");
+
+	// Link shader to program
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
+
+	glAttachShader(shaderProgram, shaderID);
+	glLinkProgram(shaderProgram);
+	glValidateProgram(shaderProgram);
+
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &l_validationResult);
+	if (!l_validationResult)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
+		glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &l_infoLogLength);
+
+		if (l_infoLogLength > 0) {
+			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
+			glGetProgramInfoLog(shaderProgram, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
+		}
+		else
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " link error: no info log provided!");
+		}
+
+		return;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: " + shaderFilePath + " has been linked.");
+}
+
 bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComponent* rhs, const ShaderFilePaths& ShaderFilePaths)
 {
 	rhs->m_program = glCreateProgram();
 
-	std::function<void(GLuint& shaderProgram, GLuint& shaderID, GLuint ShaderType, const std::string & shaderFilePath)> f_addShader =
-		[&](GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string & shaderFilePath) {
-		shaderID = glCreateShader(shaderType);
-
-		if (shaderID == 0)
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: Shader creation failed! Memory location invaild when adding shader!");
-			glDeleteShader(shaderID);
-			return;
-		}
-
-		if (shaderFilePath.find(".spv") != std::string::npos)
-		{
-			auto l_shaderCodeContent = g_pCoreSystem->getFileSystem()->loadBinaryFile(m_shaderRelativePath + shaderFilePath);
-
-			if (l_shaderCodeContent.empty())
-			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " loading failed!");
-				return;
-			}
-
-			// Apply the SPIR-V to the shader object.
-			glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, l_shaderCodeContent.data(), (GLsizei)l_shaderCodeContent.size());
-
-			// Specialize the shader.
-			std::string vsEntrypoint = "main"; // Get entry point name
-			glSpecializeShader(shaderID, (const GLchar*)vsEntrypoint.c_str(), 0, nullptr, nullptr);
-		}
-		else
-		{
-			auto l_shaderCodeContent = g_pCoreSystem->getFileSystem()->loadTextFile(m_shaderRelativePath + shaderFilePath);
-
-			if (l_shaderCodeContent.empty())
-			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " loading failed!");
-				return;
-			}
-
-			const char* l_sourcePointer = l_shaderCodeContent.c_str();
-
-			glShaderSource(shaderID, 1, &l_sourcePointer, NULL);
-
-			// compile shader
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: innoShader: " + shaderFilePath + " is compiling ...");
-
-			glCompileShader(shaderID);
-		}
-
-		GLint l_validationResult = GL_FALSE;
-		GLint l_infoLogLength = 0;
-		GLint l_shaderFileLength = 0;
-		glGetShaderiv(shaderID, GL_COMPILE_STATUS, &l_validationResult);
-
-		if (!l_validationResult)
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " compile failed!");
-			glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " file length is: " + std::to_string(l_shaderFileLength));
-			glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
-
-			if (l_infoLogLength > 0)
-			{
-				std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
-				glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
-			}
-			else
-			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " compile error: no info log provided!");
-			}
-
-			return;
-		}
-
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: " + shaderFilePath + " has been compiled.");
-
-		// Link shader to program
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: innoShader: " + shaderFilePath + " is linking ...");
-
-		glAttachShader(shaderProgram, shaderID);
-		glLinkProgram(shaderProgram);
-		glValidateProgram(shaderProgram);
-
-		glGetProgramiv(shaderProgram, GL_LINK_STATUS, &l_validationResult);
-		if (!l_validationResult)
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " link failed!");
-			glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &l_infoLogLength);
-
-			if (l_infoLogLength > 0) {
-				std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
-				glGetProgramInfoLog(shaderProgram, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " link error: " + &l_shaderErrorMessage[0] + "\n -- --------------------------------------------------- -- ");
-			}
-			else
-			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: innoShader: " + shaderFilePath + " link error: no info log provided!");
-			}
-
-			return;
-		}
-
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: innoShader: " + shaderFilePath + " has been linked.");
-	};
-
 	if (!ShaderFilePaths.m_VSPath.empty())
 	{
-		f_addShader(rhs->m_program, rhs->m_VSID, GL_VERTEX_SHADER, ShaderFilePaths.m_VSPath);
+		addShader(rhs->m_program, rhs->m_VSID, GL_VERTEX_SHADER, ShaderFilePaths.m_VSPath);
 	}
 	if (!ShaderFilePaths.m_GSPath.empty())
 	{
-		f_addShader(rhs->m_program, rhs->m_GSID, GL_GEOMETRY_SHADER, ShaderFilePaths.m_GSPath);
+		addShader(rhs->m_program, rhs->m_GSID, GL_GEOMETRY_SHADER, ShaderFilePaths.m_GSPath);
 	}
 	if (!ShaderFilePaths.m_FSPath.empty())
 	{
-		f_addShader(rhs->m_program, rhs->m_FSID, GL_FRAGMENT_SHADER, ShaderFilePaths.m_FSPath);
+		addShader(rhs->m_program, rhs->m_FSID, GL_FRAGMENT_SHADER, ShaderFilePaths.m_FSPath);
 	}
 	if (!ShaderFilePaths.m_CSPath.empty())
 	{
-		f_addShader(rhs->m_program, rhs->m_CSID, GL_COMPUTE_SHADER, ShaderFilePaths.m_CSPath);
+		addShader(rhs->m_program, rhs->m_CSID, GL_COMPUTE_SHADER, ShaderFilePaths.m_CSPath);
 	}
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
