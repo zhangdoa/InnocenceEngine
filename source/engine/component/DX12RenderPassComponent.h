@@ -15,6 +15,13 @@ public:
 
 	RenderPassDesc m_renderPassDesc;
 
+	ID3D12DescriptorHeap* m_RTVHeap;
+	D3D12_DESCRIPTOR_HEAP_DESC m_RTVHeapDesc;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_RTVHandle;
+
+	std::vector<D3D12_RENDER_TARGET_VIEW_DESC*> m_RTVDescs;
+	std::vector<ID3D12Resource*> m_RTVs;
+
 	D3D12_VERSIONED_ROOT_SIGNATURE_DESC m_rootSignatureDesc;
 	ID3D12RootSignature* m_rootSignature;
 
@@ -23,12 +30,6 @@ public:
 
 	std::vector<TextureDataComponent*> m_TDCs;
 	std::vector<DX12TextureDataComponent*> m_DXTDCs;
-
-	ID3D12DescriptorHeap* m_renderTargetViewHeap;
-	D3D12_DESCRIPTOR_HEAP_DESC m_renderTargetViewHeapDesc;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_renderTargetViewHandle;
-	std::vector<D3D12_RENDER_TARGET_VIEW_DESC*> m_renderTargetViewDescs;
-	std::vector<ID3D12Resource*> m_renderTargetViews;
 
 	D3D12_DEPTH_STENCIL_DESC m_depthStencilBufferDesc = D3D12_DEPTH_STENCIL_DESC();
 	ID3D12Resource* m_depthStencilBuffer = 0;

@@ -43,6 +43,7 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	}
 
 	bool setup(IRenderingFrontendSystem* renderingFrontend);
+	bool initialize();
 	bool update();
 	bool terminate();
 
@@ -320,6 +321,9 @@ bool DX12RenderingSystemNS::createRenderPass()
 	l_DXRPC->m_rootSignatureDesc.Desc_1_1.pStaticSamplers = nullptr;
 	l_DXRPC->m_rootSignatureDesc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
+	auto l_result = createRootSignature(l_DXRPC);
+	l_result = createPSO(l_DXRPC, l_DXSPC);
+
 	return true;
 }
 
@@ -447,14 +451,6 @@ bool DX12RenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	result = result && createDebugCallback();
 	result = result && createPhysicalDevices();
 
-	result = result && createSwapChain();
-	result = result && createBackBuffer();
-	result = result && createRenderPass();
-
-	result = result && createCommandList();
-	result = result && createSyncPrimitives();
-	result = result && createRasterizer();
-
 	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
 
 	// Setup the description of the deferred pass.
@@ -475,6 +471,25 @@ bool DX12RenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem setup finished.");
+	return result;
+}
+
+bool DX12RenderingSystemNS::initialize()
+{
+	bool result = true;
+
+	result = result && createSwapChain();
+	result = result && createBackBuffer();
+	result = result && createRenderPass();
+
+	result = result && createCommandList();
+	result = result && createSyncPrimitives();
+	result = result && createRasterizer();
+
+	initializeDefaultAssets();
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem has been initialized.");
+
 	return result;
 }
 
@@ -752,13 +767,7 @@ bool DX12RenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
 
 bool DX12RenderingSystem::initialize()
 {
-	DX12RenderingSystemNS::initializeDefaultAssets();
-	//DXGeometryRenderingPassUtilities::initialize();
-	//DXLightRenderingPassUtilities::initialize();
-	//DXFinalRenderingPassUtilities::initialize();
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem has been initialized.");
-	return true;
+	return DX12RenderingSystemNS::initialize();
 }
 
 bool DX12RenderingSystem::update()

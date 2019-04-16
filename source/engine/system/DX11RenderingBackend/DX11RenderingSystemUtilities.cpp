@@ -345,16 +345,8 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 	{
 		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
-		l_TDC->m_textureDataDesc.samplerType = RTDesc.samplerType;
-		l_TDC->m_textureDataDesc.usageType = RTDesc.usageType;
-		l_TDC->m_textureDataDesc.colorComponentsFormat = RTDesc.colorComponentsFormat;
-		l_TDC->m_textureDataDesc.pixelDataFormat = RTDesc.pixelDataFormat;
-		l_TDC->m_textureDataDesc.minFilterMethod = RTDesc.minFilterMethod;
-		l_TDC->m_textureDataDesc.magFilterMethod = RTDesc.magFilterMethod;
-		l_TDC->m_textureDataDesc.wrapMethod = RTDesc.wrapMethod;
-		l_TDC->m_textureDataDesc.width = RTDesc.width;
-		l_TDC->m_textureDataDesc.height = RTDesc.height;
-		l_TDC->m_textureDataDesc.pixelDataType = RTDesc.pixelDataType;
+		l_TDC->m_textureDataDesc = RTDesc;
+
 		l_TDC->m_textureData = { nullptr };
 
 		l_DXRPC->m_TDCs.emplace_back(l_TDC);

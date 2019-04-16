@@ -13,6 +13,8 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool initializeComponentPool();
 
 	DX12RenderPassComponent* addDX12RenderPassComponent(EntityID rhs);
+	bool createRootSignature(DX12RenderPassComponent* DXRPC);
+	bool createPSO(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
 	bool initializeDX12RenderPassComponent(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
 
 	DX12MeshDataComponent* generateDX12MeshDataComponent(MeshDataComponent* rhs);

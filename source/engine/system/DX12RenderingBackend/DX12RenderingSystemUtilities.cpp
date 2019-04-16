@@ -29,7 +29,7 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	void* m_DX12RenderPassComponentPool;
 	void* m_DX12ShaderProgramComponentPool;
 
-	const std::wstring m_shaderRelativePath = L"..//res//shaders//";
+	const std::wstring m_shaderRelativePath = L"//res//shaders//";
 }
 
 bool DX12RenderingSystemNS::initializeComponentPool()
@@ -77,7 +77,10 @@ ID3DBlob* DX12RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const s
 	UINT compileFlags = 0;
 #endif
 
-	result = D3DCompileFromFile((m_shaderRelativePath + shaderFilePath).c_str(), NULL, NULL, l_shaderName.c_str(), l_shaderTypeName.c_str(), compileFlags, 0,
+	auto l_workingDir = g_pCoreSystem->getFileSystem()->getWorkingDirectory();
+	auto l_workingDirW = std::wstring(l_workingDir.begin(), l_workingDir.end());
+
+	result = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + shaderFilePath).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", l_shaderTypeName.c_str(), compileFlags, 0,
 		&l_shaderBuffer, &l_errorMessage);
 	if (FAILED(result))
 	{
@@ -119,7 +122,7 @@ bool DX12RenderingSystemNS::initializePixelShader(DX12ShaderProgramComponent* rh
 	// Compile the shader code.
 	auto l_shaderBuffer = loadShaderBuffer(ShaderType::FRAGMENT, PSShaderPath);
 
-	rhs->m_vertexShader = l_shaderBuffer;
+	rhs->m_pixelShader = l_shaderBuffer;
 
 	return true;
 }
@@ -186,43 +189,8 @@ DX12RenderPassComponent* DX12RenderingSystemNS::addDX12RenderPassComponent(Entit
 	return l_DXRPC;
 }
 
-bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC)
+bool DX12RenderingSystemNS::createRootSignature(DX12RenderPassComponent* DXRPC)
 {
-	auto l_renderPassDesc = DXRPC->m_renderPassDesc;
-
-	// create TDC
-	DXRPC->m_TDCs.reserve(l_renderPassDesc.RTNumber);
-
-	for (unsigned int i = 0; i < l_renderPassDesc.RTNumber; i++)
-	{
-		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
-
-		l_TDC->m_textureDataDesc.samplerType = l_renderPassDesc.RTDesc.samplerType;
-		l_TDC->m_textureDataDesc.usageType = l_renderPassDesc.RTDesc.usageType;
-		l_TDC->m_textureDataDesc.colorComponentsFormat = l_renderPassDesc.RTDesc.colorComponentsFormat;
-		l_TDC->m_textureDataDesc.pixelDataFormat = l_renderPassDesc.RTDesc.pixelDataFormat;
-		l_TDC->m_textureDataDesc.minFilterMethod = l_renderPassDesc.RTDesc.minFilterMethod;
-		l_TDC->m_textureDataDesc.magFilterMethod = l_renderPassDesc.RTDesc.magFilterMethod;
-		l_TDC->m_textureDataDesc.wrapMethod = l_renderPassDesc.RTDesc.wrapMethod;
-		l_TDC->m_textureDataDesc.width = l_renderPassDesc.RTDesc.width;
-		l_TDC->m_textureDataDesc.height = l_renderPassDesc.RTDesc.height;
-		l_TDC->m_textureDataDesc.pixelDataType = l_renderPassDesc.RTDesc.pixelDataType;
-		l_TDC->m_textureData = { nullptr };
-
-		DXRPC->m_TDCs.emplace_back(l_TDC);
-	}
-
-	// generate DXTDC
-	DXRPC->m_DXTDCs.reserve(l_renderPassDesc.RTNumber);
-
-	for (unsigned int i = 0; i < l_renderPassDesc.RTNumber; i++)
-	{
-		auto l_TDC = DXRPC->m_TDCs[i];
-		auto l_DXTDC = generateDX12TextureDataComponent(l_TDC);
-
-		DXRPC->m_DXTDCs.emplace_back(l_DXTDC);
-	}
-
 	ID3DBlob* l_signature;
 	ID3DBlob* l_error;
 
@@ -244,6 +212,11 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Root Signature has been created.");
 
+	return true;
+}
+
+bool DX12RenderingSystemNS::createPSO(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC)
+{
 	D3D12_INPUT_ELEMENT_DESC l_polygonLayout[5];
 	unsigned int l_numElements;
 
@@ -315,15 +288,53 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	psoDesc.SampleDesc.Count = 1;
 
-	l_result = DX12RenderingSystemComponent::get().m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&DXRPC->m_PSO));
+	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&DXRPC->m_PSO));
 
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create PSO!");
+		return false;
 	}
 
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: PSO has been created.");
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC)
+{
+	auto l_renderPassDesc = DXRPC->m_renderPassDesc;
+
+	// create TDC
+	DXRPC->m_TDCs.reserve(l_renderPassDesc.RTNumber);
+
+	for (unsigned int i = 0; i < l_renderPassDesc.RTNumber; i++)
+	{
+		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
+
+		l_TDC->m_textureDataDesc = l_renderPassDesc.RTDesc;
+
+		l_TDC->m_textureData = { nullptr };
+
+		DXRPC->m_TDCs.emplace_back(l_TDC);
+	}
+
+	// generate DXTDC
+	DXRPC->m_DXTDCs.reserve(l_renderPassDesc.RTNumber);
+
+	for (unsigned int i = 0; i < l_renderPassDesc.RTNumber; i++)
+	{
+		auto l_TDC = DXRPC->m_TDCs[i];
+		auto l_DXTDC = generateDX12TextureDataComponent(l_TDC);
+
+		DXRPC->m_DXTDCs.emplace_back(l_DXTDC);
+	}
+
+	auto l_result = createRootSignature(DXRPC);
+	l_result = createPSO(DXRPC, DXSPC);
+
 	// Create the render target views.
-	DXRPC->m_renderTargetViews.reserve(l_renderPassDesc.RTNumber);
+	DXRPC->m_RTVs.reserve(l_renderPassDesc.RTNumber);
 
 	// Initialize the description of the depth buffer.
 	ZeroMemory(&DXRPC->m_depthStencilBufferDesc,
@@ -464,12 +475,98 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 
 	unsigned int textureMipLevels = 1;
 	unsigned int miscFlags = 0;
+	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	{
+		textureMipLevels = 0;
+	}
+
+	D3D12_RESOURCE_DESC D3DTextureDesc = {};
+	D3DTextureDesc.MipLevels = 1;
+	D3DTextureDesc.Format = l_internalFormat;
+	D3DTextureDesc.Width = textureDataDesc.height;
+	D3DTextureDesc.Height = textureDataDesc.width;
+	D3DTextureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	D3DTextureDesc.DepthOrArraySize = 1;
+	D3DTextureDesc.SampleDesc.Count = 1;
+	D3DTextureDesc.SampleDesc.Quality = 0;
+	D3DTextureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+	if (textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+	{
+		D3DTextureDesc.SampleDesc.Quality = 0;
+	}
+
+	unsigned int SRVMipLevels = -1;
+	if (textureDataDesc.usageType == TextureUsageType::RENDER_TARGET)
+	{
+		SRVMipLevels = 1;
+	}
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	ZeroMemory(&srvDesc, sizeof(srvDesc));
+	srvDesc.Format = D3DTextureDesc.Format;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = SRVMipLevels;
+
+	// Create the empty texture.
+	D3D12_HEAP_PROPERTIES l_heapProperties;
+	l_heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	HRESULT hResult;
+	hResult = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+		&l_heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&D3DTextureDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&rhs->m_texture));
+	if (FAILED(hResult))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create texture!");
+		return false;
+	}
+
+	//ID3D12Resource* textureUploadHeap;
+
+	//const UINT64 uploadBufferSize = GetRequiredIntermediateSize(rhs->m_texture, 0, 1);
+
+	//// Create the GPU upload buffer.
+
+	//l_heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	//hResult = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+	//	&l_heapProperties,
+	//	D3D12_HEAP_FLAG_NONE,
+	//	&D3DTextureDesc,
+	//	D3D12_RESOURCE_STATE_GENERIC_READ,
+	//	nullptr,
+	//	IID_PPV_ARGS(&textureUploadHeap));
+
+	//// Copy data to the intermediate upload heap and then schedule a copy
+	//// from the upload heap to the Texture2D.
+
+	//auto TexturePixelSize = 4;
+	//D3D12_SUBRESOURCE_DATA l_textureData = {};
+	//l_textureData.pData = &textureData;
+	//l_textureData.RowPitch = textureDataDesc.width * TexturePixelSize;
+	//l_textureData.SlicePitch = l_textureData.RowPitch * textureDataDesc.height;
+
+	//UpdateSubresources(m_commandList.Get(), m_texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
+	//m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+
+	//// Describe and create a SRV for the texture.
+	//D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	//srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	//srvDesc.Format = textureDesc.Format;
+	//srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	//srvDesc.Texture2D.MipLevels = 1;
+	//DX12RenderingSystemComponent::get().m_device->CreateShaderResourceView(m_texture.Get(), &srvDesc, m_srvHeap->GetCPUDescriptorHandleForHeapStart());
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 	m_initializedDXTDC.emplace(rhs->m_parentEntity, rhs);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
 
 	return true;
 }

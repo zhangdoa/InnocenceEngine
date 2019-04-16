@@ -176,7 +176,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	std::vector<std::function<void()>*> m_sceneLoadingStartCallbacks;
 	std::vector<std::function<void()>*> m_sceneLoadingFinishCallbacks;
 
-  std::string m_workingDir;
+	std::string m_workingDir;
 	std::atomic<bool> m_isLoadingScene = false;
 	std::atomic<bool> m_prepareForLoadingScene = false;
 
