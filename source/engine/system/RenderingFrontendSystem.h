@@ -13,26 +13,28 @@ public:
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 
-	INNO_SYSTEM_EXPORT bool anyUninitializedMeshDataComponent() override;
-	INNO_SYSTEM_EXPORT bool anyUninitializedTextureDataComponent() override;
+	INNO_SYSTEM_EXPORT void loadDefaultAssets() override;
+
+	INNO_SYSTEM_EXPORT MeshDataComponent* addMeshDataComponent() override;
+	INNO_SYSTEM_EXPORT MaterialDataComponent* addMaterialDataComponent() override;
+	INNO_SYSTEM_EXPORT TextureDataComponent* addTextureDataComponent() override;
+	INNO_SYSTEM_EXPORT MeshDataComponent* getMeshDataComponent(EntityID meshID) override;
+	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(EntityID textureID) override;
+	INNO_SYSTEM_EXPORT MeshDataComponent* getMeshDataComponent(MeshShapeType MeshShapeType) override;
+	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(TextureUsageType TextureUsageType) override;
+	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) override;
+	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
+	INNO_SYSTEM_EXPORT bool removeMeshDataComponent(EntityID EntityID) override;
+	INNO_SYSTEM_EXPORT bool removeTextureDataComponent(EntityID EntityID) override;
+	INNO_SYSTEM_EXPORT bool releaseRawDataForMeshDataComponent(EntityID EntityID) override;
+	INNO_SYSTEM_EXPORT bool releaseRawDataForTextureDataComponent(EntityID EntityID) override;
 
 	INNO_SYSTEM_EXPORT void registerUninitializedMeshDataComponent(MeshDataComponent* rhs) override;
 	INNO_SYSTEM_EXPORT void registerUninitializedTextureDataComponent(TextureDataComponent* rhs) override;
-
-	INNO_SYSTEM_EXPORT MeshDataComponent* acquireUninitializedMeshDataComponent() override;
-	INNO_SYSTEM_EXPORT TextureDataComponent* acquireUninitializedTextureDataComponent() override;
 
 	INNO_SYSTEM_EXPORT TVec2<unsigned int> getScreenResolution() override;
 	INNO_SYSTEM_EXPORT bool setScreenResolution(TVec2<unsigned int> screenResolution) override;
 
 	INNO_SYSTEM_EXPORT RenderingConfig getRenderingConfig() override;
 	INNO_SYSTEM_EXPORT bool setRenderingConfig(RenderingConfig renderingConfig) override;
-
-	INNO_SYSTEM_EXPORT std::optional<CameraDataPack> getCameraDataPack() override;
-	INNO_SYSTEM_EXPORT std::optional<SunDataPack> getSunDataPack() override;
-	INNO_SYSTEM_EXPORT std::optional<std::vector<CSMDataPack>> getCSMDataPack() override;
-	INNO_SYSTEM_EXPORT std::optional<std::vector<MeshDataPack>> getMeshDataPack() override;
-
-	INNO_SYSTEM_EXPORT std::vector<Plane>& getDebugPlane() override;
-	INNO_SYSTEM_EXPORT std::vector<Sphere>& getDebugSphere() override;
 };

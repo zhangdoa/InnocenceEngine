@@ -13,8 +13,17 @@ public:
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 
+	INNO_SYSTEM_EXPORT ModelMap loadModel(const std::string& fileName) override;
+	INNO_SYSTEM_EXPORT TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType) override;
+
 	INNO_SYSTEM_EXPORT void loadDefaultAssets() override;
 	INNO_SYSTEM_EXPORT void loadAssetsForComponents() override;
+
+	INNO_SYSTEM_EXPORT void addUnitCube(MeshDataComponent& meshDataComponent) override;
+	INNO_SYSTEM_EXPORT void addUnitSphere(MeshDataComponent& meshDataComponent) override;
+	INNO_SYSTEM_EXPORT void addUnitQuad(MeshDataComponent& meshDataComponent) override;
+	INNO_SYSTEM_EXPORT void addUnitLine(MeshDataComponent& meshDataComponent) override;
+	INNO_SYSTEM_EXPORT void addTerrain(MeshDataComponent& meshDataComponent) override;
 
 	INNO_SYSTEM_EXPORT MeshDataComponent* addMeshDataComponent() override;
 	INNO_SYSTEM_EXPORT MaterialDataComponent* addMaterialDataComponent() override;
@@ -32,4 +41,3 @@ public:
 
 	INNO_SYSTEM_EXPORT DirectoryMetadata* getRootDirectoryMetadata() override;
 };
-
