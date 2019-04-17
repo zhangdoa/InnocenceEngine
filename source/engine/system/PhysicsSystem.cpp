@@ -54,7 +54,7 @@ namespace InnoPhysicsSystemNS
 	void* m_PhysicsDataComponentPool;
 
 	std::atomic<bool> m_isCullingDataPackValid = false;
-	std::vector<CullingDataPack> m_cullingDataPack;
+	ThreadSafeVector<CullingDataPack> m_cullingDataPack;
 
 	VisibleComponent* m_selectedVisibleComponent;
 
@@ -874,7 +874,7 @@ INNO_SYSTEM_EXPORT std::optional<std::vector<CullingDataPack>> InnoPhysicsSystem
 {
 	if (InnoPhysicsSystemNS::m_isCullingDataPackValid)
 	{
-		return InnoPhysicsSystemNS::m_cullingDataPack;
+		return InnoPhysicsSystemNS::m_cullingDataPack.getRawData();
 	}
 
 	return std::nullopt;

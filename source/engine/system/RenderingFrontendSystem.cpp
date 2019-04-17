@@ -15,7 +15,7 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMDC;
 	ThreadSafeQueue<TextureDataComponent*> m_uninitializedTDC;
 
-	std::vector<CullingDataPack> m_cullingDataPack;
+	ThreadSafeVector<CullingDataPack> m_cullingDataPack;
 
 	std::atomic<bool> m_isCSMDataPackValid = false;
 	std::vector<CSMDataPack> m_CSMDataPacks;
@@ -200,7 +200,7 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 {
 	m_isMeshDataPackValid = false;
 
-	std::vector<MeshDataPack> l_tempMeshDataPack;
+	m_meshDataPack.clear();
 
 	for (auto& i : m_cullingDataPack)
 	{
@@ -221,14 +221,11 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 					l_meshDataPack.visiblilityType = i.visibleComponent->m_visiblilityType;
 					l_meshDataPack.m_UUID = i.visibleComponent->m_UUID;
 
-					l_tempMeshDataPack.emplace_back(l_meshDataPack);
+					m_meshDataPack.emplace_back(l_meshDataPack);
 				}
 			}
 		}
 	}
-
-	m_meshDataPack = l_tempMeshDataPack;
-	m_meshDataPack.shrink_to_fit();
 
 	m_isMeshDataPackValid = true;
 
@@ -242,10 +239,10 @@ bool InnoRenderingFrontendSystemNS::update()
 	updateSunData();
 
 	// copy culling data pack for local scope
-	auto l_cullingDataPack = g_pCoreSystem->getPhysicsSystem()->getCullingDataPack();
-	if (l_cullingDataPack.has_value())
+	auto& l_cullingDataPack = g_pCoreSystem->getPhysicsSystem()->getCullingDataPack();
+	if (l_cullingDataPack.has_value() && l_cullingDataPack.value().size() > 0)
 	{
-		m_cullingDataPack = l_cullingDataPack.value();
+		m_cullingDataPack.setRawData(std::move(l_cullingDataPack.value()));
 	}
 
 	updateMeshData();

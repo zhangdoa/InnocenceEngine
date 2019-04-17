@@ -95,6 +95,33 @@ template <typename T>
 class ThreadSafeVector
 {
 public:
+	ThreadSafeVector()
+	{
+	}
+
+	ThreadSafeVector(const ThreadSafeVector & rhs)
+	{
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
+		m_vector = rhs.m_vector;
+	}
+	ThreadSafeVector& operator=(const ThreadSafeVector & rhs)
+	{
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
+		m_vector = rhs.m_vector;
+		return this;
+	}
+	ThreadSafeVector(ThreadSafeVector && rhs)
+	{
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
+		m_vector = std::move(rhs.m_vector);
+	}
+	ThreadSafeVector& operator=(ThreadSafeVector && rhs)
+	{
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
+		m_vector = std::move(rhs.m_vector);
+		return this;
+	}
+
 	~ThreadSafeVector(void)
 	{
 		invalidate();

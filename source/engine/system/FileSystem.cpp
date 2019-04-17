@@ -1367,6 +1367,8 @@ ModelPair InnoFileSystemNS::ModelLoader::processMeshJsonData(const json & j)
 		l_MeshDC->m_meshShapeType = MeshShapeType::CUSTOM;
 		l_MeshDC->m_objectStatus = ObjectStatus::STANDBY;
 
+		g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_MeshDC);
+
 		l_result.first = l_MeshDC;
 		l_result.second = processMaterialJsonData(j["Material"]);
 

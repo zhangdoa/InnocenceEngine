@@ -261,7 +261,7 @@ bool GLRenderingSystemNS::update()
 			auto l_result = generateGLMeshDataComponent(l_MDC);
 			if (l_result == nullptr)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLMeshDataComponent for " + l_result->m_parentEntity + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLMeshDataComponent for " + l_MDC->m_parentEntity + "!");
 			}
 		}
 	}
@@ -273,7 +273,7 @@ bool GLRenderingSystemNS::update()
 			auto l_result = generateGLTextureDataComponent(l_TDC);
 			if (l_result == nullptr)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLTextureDataComponent for " + l_result->m_parentEntity + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLTextureDataComponent for " + l_TDC->m_parentEntity + "!");
 			}
 		}
 	}
