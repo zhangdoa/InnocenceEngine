@@ -111,7 +111,7 @@ struct TextureDataDesc
 	float borderColor[4];
 };
 
-enum class RenderPassType { OpaquePass, TransparentPass, TerrainPass, LightPass, FinalPass };
+enum class RenderPassType { Shadow, Opaque, Light, Transparent, Terrain, PostProcessing };
 
 struct RenderPassDesc
 {

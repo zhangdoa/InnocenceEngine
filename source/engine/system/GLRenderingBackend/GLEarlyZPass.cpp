@@ -1,6 +1,7 @@
 #include "GLEarlyZPass.h"
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 using namespace GLRenderingSystemNS;
 
@@ -43,9 +44,9 @@ void GLEarlyZPass::initializeShaders()
 
 void GLEarlyZPass::bindUniformLocations(GLShaderProgramComponent* rhs)
 {
-	bindUniformBlock(GLRenderingSystemComponent::get().m_cameraUBO, sizeof(GPassCameraUBOData), rhs->m_program, "cameraUBO", 0);
+	bindUniformBlock(GLRenderingSystemComponent::get().m_cameraUBO, sizeof(CameraGPUData), rhs->m_program, "cameraUBO", 0);
 
-	bindUniformBlock(GLRenderingSystemComponent::get().m_meshUBO, sizeof(GPassMeshUBOData), rhs->m_program, "meshUBO", 1);
+	bindUniformBlock(GLRenderingSystemComponent::get().m_meshUBO, sizeof(MeshGPUData), rhs->m_program, "meshUBO", 1);
 }
 
 bool GLEarlyZPass::update()
@@ -62,14 +63,13 @@ bool GLEarlyZPass::update()
 
 	activateShaderProgram(m_GLSPC);
 
-	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, GLRenderingSystemComponent::get().m_GPassCameraUBOData);
-
-	auto l_queueCopy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
+	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
 
 	while (l_queueCopy.size() > 0)
 	{
-		auto l_renderPack = l_queueCopy.front();
-		if (l_renderPack.meshShapeType != MeshShapeType::CUSTOM)
+		auto l_geometryPassGPUData = l_queueCopy.front();
+
+		if (l_geometryPassGPUData.MDC->m_meshShapeType != MeshShapeType::CUSTOM)
 		{
 			glFrontFace(GL_CW);
 		}
@@ -77,21 +77,11 @@ bool GLEarlyZPass::update()
 		{
 			glFrontFace(GL_CCW);
 		}
-		if (l_renderPack.visiblilityType == VisiblilityType::INNO_OPAQUE)
-		{
-			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_renderPack.meshUBOData);
 
-			drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
-		}
-		else if (l_renderPack.visiblilityType == VisiblilityType::INNO_EMISSIVE)
-		{
-			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_renderPack.meshUBOData);
+		updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_geometryPassGPUData.meshGPUData);
 
-			drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
-		}
-		else
-		{
-		}
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_geometryPassGPUData.MDC));
+
 		l_queueCopy.pop();
 	}
 	return true;

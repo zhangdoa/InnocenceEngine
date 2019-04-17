@@ -5,6 +5,7 @@
 #include "GLShadowRenderPass.h"
 
 #include "../../component/GLRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 #include "GLRenderingSystemUtilities.h"
 
@@ -58,10 +59,6 @@ INNO_PRIVATE_SCOPE GLLightPass
 	std::vector<GLuint> m_uni_sphereLights_luminance;
 
 	GLuint m_uni_isEmissive;
-
-	CameraDataPack m_cameraDataPack;
-	SunDataPack m_sunDataPack;
-	std::vector<CSMDataPack> m_CSMDataPack;
 }
 
 void GLLightPass::initialize()
@@ -116,11 +113,11 @@ void GLLightPass::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
 		rhs->m_program,
 		"uni_dirLight.luminance");
 
-	m_uni_pointLights_position.reserve(GLRenderingSystemComponent::get().m_maxPointLights);
-	m_uni_pointLights_attenuationRadius.reserve(GLRenderingSystemComponent::get().m_maxPointLights);
-	m_uni_pointLights_luminance.reserve(GLRenderingSystemComponent::get().m_maxPointLights);
+	m_uni_pointLights_position.reserve(RenderingFrontendSystemComponent::get().m_maxPointLights);
+	m_uni_pointLights_attenuationRadius.reserve(RenderingFrontendSystemComponent::get().m_maxPointLights);
+	m_uni_pointLights_luminance.reserve(RenderingFrontendSystemComponent::get().m_maxPointLights);
 
-	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_maxPointLights; i++)
+	for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxPointLights; i++)
 	{
 		m_uni_pointLights_position.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_pointLights[" + std::to_string(i) + "].position")
@@ -133,11 +130,11 @@ void GLLightPass::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
 		);
 	}
 
-	m_uni_sphereLights_position.reserve(GLRenderingSystemComponent::get().m_maxSphereLights);
-	m_uni_sphereLights_sphereRadius.reserve(GLRenderingSystemComponent::get().m_maxSphereLights);
-	m_uni_sphereLights_luminance.reserve(GLRenderingSystemComponent::get().m_maxSphereLights);
+	m_uni_sphereLights_position.reserve(RenderingFrontendSystemComponent::get().m_maxSphereLights);
+	m_uni_sphereLights_sphereRadius.reserve(RenderingFrontendSystemComponent::get().m_maxSphereLights);
+	m_uni_sphereLights_luminance.reserve(RenderingFrontendSystemComponent::get().m_maxSphereLights);
 
-	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_maxSphereLights; i++)
+	for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxSphereLights; i++)
 	{
 		m_uni_sphereLights_position.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_sphereLights[" + std::to_string(i) + "].position")
@@ -157,27 +154,6 @@ void GLLightPass::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
 
 void GLLightPass::update()
 {
-	// copy camera data pack for local scope
-	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-	if (l_cameraDataPack.has_value())
-	{
-		m_cameraDataPack = l_cameraDataPack.value();
-	}
-
-	// copy sun data pack for local scope
-	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
-	if (l_sunDataPack.has_value())
-	{
-		m_sunDataPack = l_sunDataPack.value();
-	}
-
-	// copy CSM data pack for local scope
-	auto l_CSMDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCSMDataPack();
-	if (l_CSMDataPack.has_value())
-	{
-		m_CSMDataPack = l_CSMDataPack.value();
-	}
-
 	glDisable(GL_DEPTH_TEST);
 
 	glEnable(GL_STENCIL_TEST);
@@ -240,68 +216,67 @@ void GLLightPass::update()
 
 	updateUniform(
 		m_uni_viewPos,
-		m_cameraDataPack.globalPos.x, m_cameraDataPack.globalPos.y, m_cameraDataPack.globalPos.z);
+		RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos);
 
 	updateUniform(
 		m_uni_dirLight_direction,
-		m_sunDataPack.dir.x, m_sunDataPack.dir.y, m_sunDataPack.dir.z);
+		RenderingFrontendSystemComponent::get().m_sunGPUData.dir);
 	updateUniform(
 		m_uni_dirLight_luminance,
-		m_sunDataPack.luminance.x, m_sunDataPack.luminance.y, m_sunDataPack.luminance.z);
+		RenderingFrontendSystemComponent::get().m_sunGPUData.luminance);
 
-	if (m_CSMDataPack.size())
+	if (RenderingFrontendSystemComponent::get().m_CSMGPUDataVector.size())
 	{
 		for (size_t j = 0; j < 4; j++)
 		{
 			updateUniform(
 				m_uni_shadowSplitAreas[j],
-				m_CSMDataPack[j].splitCorners.x, m_CSMDataPack[j].splitCorners.y, m_CSMDataPack[j].splitCorners.z, m_CSMDataPack[j].splitCorners.w);
-
+				RenderingFrontendSystemComponent::get().m_CSMGPUDataVector[j].splitCorners);
 			updateUniform(
 				m_uni_dirLightProjs[j],
-				m_CSMDataPack[j].p);
+				RenderingFrontendSystemComponent::get().m_CSMGPUDataVector[j].p);
 			updateUniform(
 				m_uni_dirLightViews[j],
-				m_CSMDataPack[j].v);
+				RenderingFrontendSystemComponent::get().m_CSMGPUDataVector[j].v);
 		}
 	}
 
-	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_PointLightDatas.size(); i++)
+	for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.size(); i++)
 	{
-		auto l_pos = GLRenderingSystemComponent::get().m_PointLightDatas[i].pos;
-		auto l_luminance = GLRenderingSystemComponent::get().m_PointLightDatas[i].luminance;
-		auto l_attenuationRadius = GLRenderingSystemComponent::get().m_PointLightDatas[i].attenuationRadius;
+		auto l_pos = RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[i].pos;
+		auto l_luminance = RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[i].luminance;
+		auto l_attenuationRadius = RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[i].attenuationRadius;
 
 		updateUniform(
 			m_uni_pointLights_position[i],
-			l_pos.x, l_pos.y, l_pos.z);
+			l_pos);
 		updateUniform(
 			m_uni_pointLights_attenuationRadius[i],
 			l_attenuationRadius);
 		updateUniform(
 			m_uni_pointLights_luminance[i],
-			l_luminance.x, l_luminance.y, l_luminance.z);
+			l_luminance);
 	}
 
-	for (size_t i = 0; i < GLRenderingSystemComponent::get().m_SphereLightDatas.size(); i++)
+	for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.size(); i++)
 	{
-		auto l_pos = GLRenderingSystemComponent::get().m_SphereLightDatas[i].pos;
-		auto l_luminance = GLRenderingSystemComponent::get().m_SphereLightDatas[i].luminance;
-		auto l_sphereRadius = GLRenderingSystemComponent::get().m_SphereLightDatas[i].sphereRadius;
+		auto l_pos = RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[i].pos;
+		auto l_luminance = RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[i].luminance;
+		auto l_sphereRadius = RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[i].sphereRadius;
 
 		updateUniform(
 			m_uni_sphereLights_position[i],
-			l_pos.x, l_pos.y, l_pos.z);
+			l_pos);
 		updateUniform(
 			m_uni_sphereLights_sphereRadius[i],
 			l_sphereRadius);
 		updateUniform(
 			m_uni_sphereLights_luminance[i],
-			l_luminance.x, l_luminance.y, l_luminance.z);
+			l_luminance);
 	}
 
 	// draw light pass rectangle
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	// 2. draw emissive objects
@@ -319,7 +294,6 @@ void GLLightPass::update()
 		true);
 
 	// draw light pass rectangle
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	glDisable(GL_STENCIL_TEST);

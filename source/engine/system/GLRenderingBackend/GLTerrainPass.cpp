@@ -3,6 +3,7 @@
 
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 using namespace GLRenderingSystemNS;
 
@@ -144,10 +145,7 @@ INNO_PRIVATE_SCOPE GLTerrainPass
 
 	std::vector<vec4> m_terrainNoise;
 
-	TextureDataComponent* m_terrainNoiseTDC;
 	GLTextureDataComponent* m_terrainNoiseGLTDC;
-
-	CameraDataPack m_cameraDataPack;
 }
 
 bool GLTerrainPass::initialize()
@@ -162,18 +160,18 @@ bool GLTerrainPass::initialize()
 
 	m_terrainNoise = generatePerlinNoise(l_textureSize, 6.0, 8);
 
-	m_terrainNoiseTDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
+	m_terrainNoiseGLTDC = addGLTextureDataComponent();
 
-	m_terrainNoiseTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	m_terrainNoiseTDC->m_textureDataDesc.usageType = TextureUsageType::RENDER_TARGET;
-	m_terrainNoiseTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB32F;
-	m_terrainNoiseTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_terrainNoiseTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	m_terrainNoiseTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	m_terrainNoiseTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
-	m_terrainNoiseTDC->m_textureDataDesc.width = l_textureSize;
-	m_terrainNoiseTDC->m_textureDataDesc.height = l_textureSize;
-	m_terrainNoiseTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	m_terrainNoiseGLTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	m_terrainNoiseGLTDC->m_textureDataDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_terrainNoiseGLTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB32F;
+	m_terrainNoiseGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_terrainNoiseGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	m_terrainNoiseGLTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	m_terrainNoiseGLTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_terrainNoiseGLTDC->m_textureDataDesc.width = l_textureSize;
+	m_terrainNoiseGLTDC->m_textureDataDesc.height = l_textureSize;
+	m_terrainNoiseGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	std::vector<float> l_pixelBuffer;
 	auto l_containerSize = m_terrainNoise.size() * 4;
@@ -187,9 +185,9 @@ bool GLTerrainPass::initialize()
 		l_pixelBuffer.emplace_back(val.w);
 	});
 
-	m_terrainNoiseTDC->m_textureData.emplace_back(&l_pixelBuffer[0]);
+	m_terrainNoiseGLTDC->m_textureData.emplace_back(&l_pixelBuffer[0]);
 
-	m_terrainNoiseGLTDC = generateGLTextureDataComponent(m_terrainNoiseTDC);
+	initializeGLTextureDataComponent(m_terrainNoiseGLTDC);
 
 	return true;
 }
@@ -208,13 +206,6 @@ bool GLTerrainPass::update()
 {
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
 
-	// copy camera data pack for local scope
-	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-	if (l_cameraDataPack.has_value())
-	{
-		m_cameraDataPack = l_cameraDataPack.value();
-	}
-
 	if (l_renderingConfig.drawTerrain)
 	{
 		glEnable(GL_DEPTH_TEST);
@@ -229,21 +220,21 @@ bool GLTerrainPass::update()
 
 		updateUniform(
 			0,
-			m_cameraDataPack.p_original);
+			RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
 		updateUniform(
 			1,
-			m_cameraDataPack.r);
+			RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
 		updateUniform(
 			2,
-			m_cameraDataPack.t);
+			RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
 		updateUniform(
 			3,
 			m);
 
-		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::TERRAIN);
+		auto l_MDC = getGLMeshDataComponent(MeshShapeType::TERRAIN);
 
 		activateTexture(m_terrainNoiseGLTDC, 0);
-		activateTexture(GLRenderingSystemComponent::get().m_basicAlbedoGLTDC, 1);
+		activateTexture(getGLTextureDataComponent(TextureUsageType::ALBEDO), 1);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		drawMesh(l_MDC);

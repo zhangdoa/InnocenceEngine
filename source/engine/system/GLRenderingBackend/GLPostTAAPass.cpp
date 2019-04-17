@@ -53,7 +53,7 @@ bool GLPostTAAPass::update()
 		GLTAAPass::getGLRPC()->m_GLTDCs[0],
 		0);
 
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	return true;

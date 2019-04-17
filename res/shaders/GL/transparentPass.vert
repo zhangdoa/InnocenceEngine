@@ -17,12 +17,16 @@ layout(row_major) uniform cameraUBO
 	mat4 uni_t_camera;
 	mat4 uni_r_camera_prev;
 	mat4 uni_t_camera_prev;
+	vec4 uni_globalPos;
+	float WHRatio;
 };
 
 layout(row_major) uniform meshUBO
 {
 	mat4 uni_m;
 	mat4 uni_m_prev;
+	mat4 uni_normalMat;
+	unsigned int uni_UUID;
 };
 
 void main()

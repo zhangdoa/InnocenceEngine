@@ -4,8 +4,8 @@
 
 #if defined INNO_PLATFORM_WIN
 #include "WinWindow/WinWindowSystem.h"
-#include "DX11RenderingBackend/DX11RenderingSystem.h"
-#include "DX12RenderingBackend/DX12RenderingSystem.h"
+//#include "DX11RenderingBackend/DX11RenderingSystem.h"
+//#include "DX12RenderingBackend/DX12RenderingSystem.h"
 #endif
 
 #if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
@@ -18,7 +18,7 @@
 #endif
 
 #if defined INNO_RENDERER_VULKAN
-#include "VKRenderingBackend/VKRenderingSystem.h"
+//#include "VKRenderingBackend/VKRenderingSystem.h"
 #endif
 
 #include "ImGuiWrapper/ImGuiWrapper.h"
@@ -168,17 +168,17 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* appHook, void* extraHook, 
 		break;
 	case RenderingBackend::DX11:
 #if defined INNO_PLATFORM_WIN
-		InnoVisionSystemNS::m_renderingBackendSystem = new DX11RenderingSystem();
+		//InnoVisionSystemNS::m_renderingBackendSystem = new DX11RenderingSystem();
 #endif
 		break;
 	case RenderingBackend::DX12:
 #if defined INNO_PLATFORM_WIN
-		InnoVisionSystemNS::m_renderingBackendSystem = new DX12RenderingSystem();
+		//InnoVisionSystemNS::m_renderingBackendSystem = new DX12RenderingSystem();
 #endif
 		break;
 	case RenderingBackend::VK:
 #if defined INNO_RENDERER_VULKAN
-		InnoVisionSystemNS::m_renderingBackendSystem = new VKRenderingSystem();
+		//InnoVisionSystemNS::m_renderingBackendSystem = new VKRenderingSystem();
 #endif
 		break;
 	case RenderingBackend::MT:
@@ -234,11 +234,12 @@ bool InnoVisionSystemNS::setupWindow(void* hInstance, void* hwnd)
 
 bool InnoVisionSystemNS::setupRendering()
 {
-	if (!InnoVisionSystemNS::m_renderingFrontendSystem->setup())
+	if (!InnoVisionSystemNS::m_renderingBackendSystem->setup())
 	{
 		return false;
 	}
-	if (!InnoVisionSystemNS::m_renderingBackendSystem->setup(m_renderingFrontendSystem))
+
+	if (!InnoVisionSystemNS::m_renderingFrontendSystem->setup(InnoVisionSystemNS::m_renderingBackendSystem))
 	{
 		return false;
 	}
@@ -260,8 +261,9 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 {
 	InnoVisionSystemNS::m_windowSystem->initialize();
 
-	InnoVisionSystemNS::m_renderingFrontendSystem->initialize();
 	InnoVisionSystemNS::m_renderingBackendSystem->initialize();
+	InnoVisionSystemNS::m_renderingFrontendSystem->initialize();
+
 	ImGuiWrapper::get().initialize();
 
 	InnoVisionSystemNS::m_objectStatus = ObjectStatus::ALIVE;
@@ -294,6 +296,8 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 			InnoVisionSystemNS::m_isRendering = true;
 
 			InnoVisionSystemNS::m_renderingBackendSystem->update();
+
+			InnoVisionSystemNS::m_renderingBackendSystem->render();
 
 			//ImGuiWrapper::get().update();
 

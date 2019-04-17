@@ -16,7 +16,6 @@ public:
 	INNO_SYSTEM_EXPORT ModelMap loadModel(const std::string& fileName) override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType) override;
 
-	INNO_SYSTEM_EXPORT void loadDefaultAssets() override;
 	INNO_SYSTEM_EXPORT void loadAssetsForComponents() override;
 
 	INNO_SYSTEM_EXPORT void addUnitCube(MeshDataComponent& meshDataComponent) override;
@@ -30,14 +29,12 @@ public:
 	INNO_SYSTEM_EXPORT TextureDataComponent* addTextureDataComponent() override;
 	INNO_SYSTEM_EXPORT MeshDataComponent* getMeshDataComponent(EntityID meshID) override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(EntityID textureID) override;
-	INNO_SYSTEM_EXPORT MeshDataComponent* getMeshDataComponent(MeshShapeType MeshShapeType) override;
-	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(TextureUsageType TextureUsageType) override;
+	INNO_SYSTEM_EXPORT MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) override;
+	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
-	INNO_SYSTEM_EXPORT bool removeMeshDataComponent(EntityID EntityID) override;
-	INNO_SYSTEM_EXPORT bool removeTextureDataComponent(EntityID EntityID) override;
-	INNO_SYSTEM_EXPORT bool releaseRawDataForMeshDataComponent(EntityID EntityID) override;
-	INNO_SYSTEM_EXPORT bool releaseRawDataForTextureDataComponent(EntityID EntityID) override;
+	INNO_SYSTEM_EXPORT bool removeMeshDataComponent(EntityID entityID) override;
+	INNO_SYSTEM_EXPORT bool removeTextureDataComponent(EntityID entityID) override;
 
 	INNO_SYSTEM_EXPORT DirectoryMetadata* getRootDirectoryMetadata() override;
 };

@@ -96,7 +96,7 @@ bool GLTAAPass::update(GLRenderPassComponent* prePassGLRPC)
 	activateTexture(l_lastFrameGLTDC, 4);
 	activateTexture(GLOpaquePass::getGLRPC()->m_GLTDCs[3], 5);
 
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	return true;

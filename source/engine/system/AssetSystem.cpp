@@ -47,11 +47,6 @@ ObjectStatus InnoAssetSystem::getStatus()
 	return InnoAssetSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT void InnoAssetSystem::loadDefaultAssets()
-{
-	g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->loadDefaultAssets();
-}
-
 INNO_SYSTEM_EXPORT void InnoAssetSystem::loadAssetsForComponents()
 {
 	InnoAssetSystemNS::loadAssetsForComponents();
@@ -59,67 +54,57 @@ INNO_SYSTEM_EXPORT void InnoAssetSystem::loadAssetsForComponents()
 
 INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::addMeshDataComponent()
 {
-	return nullptr;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addMeshDataComponent();
 }
 
 INNO_SYSTEM_EXPORT MaterialDataComponent * InnoAssetSystem::addMaterialDataComponent()
 {
-	return nullptr;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addMaterialDataComponent();
 }
 
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::addTextureDataComponent()
 {
-	return nullptr;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addTextureDataComponent();
 }
 
 INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::getMeshDataComponent(EntityID meshID)
 {
-	return nullptr;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getMeshDataComponent(meshID);
 }
 
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(EntityID textureID)
 {
-	return nullptr;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(textureID);
 }
 
-INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType MeshShapeType)
+INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType meshShapeType)
 {
-	return nullptr;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getMeshDataComponent(meshShapeType);
 }
 
-INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType TextureUsageType)
+INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType textureUsageType)
 {
-	return nullptr;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(textureUsageType);
 }
 
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(FileExplorerIconType iconType)
 {
-	return nullptr;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(iconType);
 }
 
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(WorldEditorIconType iconType)
 {
-	return nullptr;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(iconType);
 }
 
-INNO_SYSTEM_EXPORT bool InnoAssetSystem::removeMeshDataComponent(EntityID EntityID)
+INNO_SYSTEM_EXPORT bool InnoAssetSystem::removeMeshDataComponent(EntityID entityID)
 {
-	return true;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->removeMeshDataComponent(entityID);
 }
 
-INNO_SYSTEM_EXPORT bool InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
+INNO_SYSTEM_EXPORT bool InnoAssetSystem::removeTextureDataComponent(EntityID entityID)
 {
-	return true;
-}
-
-INNO_SYSTEM_EXPORT bool InnoAssetSystem::releaseRawDataForMeshDataComponent(EntityID EntityID)
-{
-	return true;
-}
-
-INNO_SYSTEM_EXPORT bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
-{
-	return true;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->removeTextureDataComponent(entityID);
 }
 
 INNO_SYSTEM_EXPORT DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata()
@@ -384,7 +369,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 
 void InnoAssetSystemNS::assignUnitMesh(MeshShapeType meshUsageType, VisibleComponent* visibleComponent)
 {
-	if (meshUsageType == MeshShapeType::CUSTOM)
+	if (meshUsageType != MeshShapeType::CUSTOM)
 	{
 		MeshDataComponent* l_UnitMeshTemplate = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getMeshDataComponent(meshUsageType);
 		visibleComponent->m_modelMap.emplace(l_UnitMeshTemplate, g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addMaterialDataComponent());

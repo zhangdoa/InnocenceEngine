@@ -20,7 +20,7 @@ uniform dirLight uni_dirLight;
 uniform uint uni_volumeDimension;
 uniform float uni_voxelSize;
 uniform float uni_voxelScale;
-uniform vec3 uni_worldMinPoint;
+uniform vec4 uni_worldMinPoint;
 
 uniform uint uni_normalWeightedLambert = 1;
 
@@ -29,7 +29,7 @@ vec3 VoxelToWorld(ivec3 pos)
 	vec3 result = vec3(pos);
 	result *= uni_voxelSize;
 
-	return result + uni_worldMinPoint;
+	return result + uni_worldMinPoint.xyz;
 }
 
 vec3 BRDF(dirLight light, vec3 normal, vec3 albedo)

@@ -5,7 +5,7 @@ layout(points) in;
 layout(triangle_strip, max_vertices = 24) out;
 
 uniform float uni_voxelSize;
-uniform vec3 uni_worldMinPoint;
+uniform vec4 uni_worldMinPoint;
 
 uniform mat4 uni_p;
 uniform mat4 uni_r;

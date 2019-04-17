@@ -78,7 +78,7 @@ bool GLBloomExtractPass::update(GLRenderPassComponent* prePassGLRPC)
 
 	activateTexture(prePassGLRPC->m_GLTDCs[0], 0);
 
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	copyColorBuffer(m_baseGLRPC, 0, m_downsampleGLRPC_Half, 0);

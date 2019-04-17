@@ -7,8 +7,8 @@ layout(location = 1) in mat4 inv_p;
 layout(location = 5) in mat4 inv_v;
 
 layout(location = 2) uniform vec2 uni_viewportSize;
-layout(location = 3) uniform vec3 uni_eyePos;
-layout(location = 4) uniform vec3 uni_lightDir;
+layout(location = 3) uniform vec4 uni_eyePos;
+layout(location = 4) uniform vec4 uni_lightDir;
 
 const float PI = 3.14159265359;
 
@@ -152,10 +152,10 @@ void main()
 	vec3 color = vec3(0.0);
 
 	vec3 eyedir = get_world_normal();
-	vec3 lightdir = -uni_lightDir;
+	vec3 lightdir = -uni_lightDir.xyz;
 	float planetRadius = 6371e3;
 	float atmosphereHeight = 100e3;
-	vec3 eye_position = uni_eyePos + vec3(0.0, planetRadius, 0.0);
+	vec3 eye_position = uni_eyePos.xyz + vec3(0.0, planetRadius, 0.0);
 
 	color = atmosphere(
 		eyedir,           // normalized ray direction

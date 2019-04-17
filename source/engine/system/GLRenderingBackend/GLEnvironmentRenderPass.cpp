@@ -3,6 +3,7 @@
 #include "GLRenderingSystemUtilities.h"
 
 #include "../../component/GLRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -99,9 +100,6 @@ INNO_PRIVATE_SCOPE GLEnvironmentRenderPass
 	GLuint m_voxelVisualizationPass_uni_worldMinPoint;
 
 	GLuint m_VAO;
-
-	CameraDataPack m_cameraDataPack;
-	SunDataPack m_sunDataPack;
 }
 
 void GLEnvironmentRenderPass::initialize()
@@ -452,20 +450,6 @@ void GLEnvironmentRenderPass::update()
 {
 	if (!m_isBaked)
 	{
-		// copy camera data pack for local scope
-		auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-		if (l_cameraDataPack.has_value())
-		{
-			m_cameraDataPack = l_cameraDataPack.value();
-		}
-
-		// copy sun data pack for local scope
-		auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
-		if (l_sunDataPack.has_value())
-		{
-			m_sunDataPack = l_sunDataPack.value();
-		}
-
 		updateEnvironmentCapturePass();
 		updateVoxelizationPass();
 		updateIrradianceInjectionPass();
@@ -480,7 +464,7 @@ void GLEnvironmentRenderPass::draw()
 
 void GLEnvironmentRenderPass::updateBRDFLUTPass()
 {
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -520,10 +504,8 @@ void GLEnvironmentRenderPass::updateEnvironmentCapturePass()
 	};
 
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
-	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
 
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
 	activateRenderPass(m_capturePassGLRPC);
 
@@ -572,32 +554,39 @@ void GLEnvironmentRenderPass::updateEnvironmentCapturePass()
 
 	for (unsigned int i = 0; i < 6; ++i)
 	{
-		// @TODO: not this queue, need another culled version from capture component view
-		auto l_copy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
+		auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
 
 		// uni_v
 		updateUniform(1, l_v[i]);
 		attachCubemapColorRT(l_capturePassGLTDC, m_capturePassGLRPC, 0, i, 0);
-		while (l_copy.size() > 0)
+
+		while (l_queueCopy.size() > 0)
 		{
-			auto l_renderPack = l_copy.front();
-			if (l_renderPack.visiblilityType == VisiblilityType::INNO_OPAQUE)
+			auto l_geometryPassGPUData = l_queueCopy.front();
+
+			if (l_geometryPassGPUData.materialGPUData.useAlbedoTexture)
 			{
-				if (l_renderPack.textureUBOData.useAlbedoTexture)
-				{
-					activateTexture(l_renderPack.albedoGLTDC, 0);
-				}
-
-				// uni_m
-				updateUniform(2, l_renderPack.meshUBOData.m);
-				// uni_useAlbedoTexture
-				updateUniform(4, l_renderPack.textureUBOData.useAlbedoTexture);
-				// uni_albedo
-				updateUniform(5, l_renderPack.textureUBOData.albedo.x, l_renderPack.textureUBOData.albedo.y, l_renderPack.textureUBOData.albedo.z, l_renderPack.textureUBOData.albedo.w);
-
-				drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
+				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.albedoTDC), 1);
 			}
-			l_copy.pop();
+
+			// uni_m
+			updateUniform(2, l_geometryPassGPUData.meshGPUData.m);
+			// uni_useAlbedoTexture
+			updateUniform(4, l_geometryPassGPUData.materialGPUData.useAlbedoTexture);
+
+			vec4 l_albedo = vec4(
+				l_geometryPassGPUData.materialGPUData.customMaterial.albedo_r,
+				l_geometryPassGPUData.materialGPUData.customMaterial.albedo_g,
+				l_geometryPassGPUData.materialGPUData.customMaterial.albedo_b,
+				1.0f
+			);
+
+			// uni_albedo
+			updateUniform(5, l_albedo);
+
+			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_geometryPassGPUData.MDC));
+
+			l_queueCopy.pop();
 		}
 	}
 
@@ -704,7 +693,7 @@ void GLEnvironmentRenderPass::updateVoxelizationPass()
 
 	updateUniform(m_voxelizationPass_uni_volumeDimension, m_volumeDimension);
 	updateUniform(m_voxelizationPass_uni_voxelScale, 1.0f / m_volumeGridSize);
-	updateUniform(m_voxelizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
+	updateUniform(m_voxelizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin);
 
 	for (size_t i = 0; i < m_VP.size(); i++)
 	{
@@ -725,10 +714,11 @@ void GLEnvironmentRenderPass::updateVoxelizationPass()
 			{
 				// draw meshes
 				auto l_MDC = l_modelPair.first;
+
 				if (l_MDC)
 				{
 					// draw meshes
-					drawMesh(l_MDC);
+					drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_MDC));
 				}
 			}
 		}
@@ -745,8 +735,6 @@ void GLEnvironmentRenderPass::updateIrradianceInjectionPass()
 	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
 	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
 
-	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
-
 	activateRenderPass(m_irradianceInjectionPassGLRPC);
 
 	activateTexture(m_voxelizationPassGLRPC->m_GLTDCs[0], 0);
@@ -757,15 +745,15 @@ void GLEnvironmentRenderPass::updateIrradianceInjectionPass()
 
 	updateUniform(
 		m_irradianceInjectionPass_uni_dirLight_direction,
-		m_sunDataPack.dir.x, m_sunDataPack.dir.y, m_sunDataPack.dir.z);
+		RenderingFrontendSystemComponent::get().m_sunGPUData.dir);
 	updateUniform(
 		m_irradianceInjectionPass_uni_dirLight_luminance,
-		m_sunDataPack.luminance.x, m_sunDataPack.luminance.y, m_sunDataPack.luminance.z);
+		RenderingFrontendSystemComponent::get().m_sunGPUData.luminance);
 
 	updateUniform(m_irradianceInjectionPass_uni_volumeDimension, m_volumeDimension);
 	updateUniform(m_irradianceInjectionPass_uni_voxelSize, l_voxelSize);
 	updateUniform(m_irradianceInjectionPass_uni_voxelScale, 1.0f / m_volumeGridSize);
-	updateUniform(m_irradianceInjectionPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
+	updateUniform(m_irradianceInjectionPass_uni_worldMinPoint, l_sceneAABB.m_boundMin);
 
 	auto l_workGroups = static_cast<unsigned>(std::ceil(m_volumeDimension / 8.0f));
 	glDispatchCompute(l_workGroups, l_workGroups, l_workGroups);
@@ -788,9 +776,6 @@ void GLEnvironmentRenderPass::updateVoxelVisualizationPass()
 	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
 
 	// voxel visualization pass
-	auto l_p = m_cameraDataPack.p_original;
-	auto l_r = m_cameraDataPack.r;
-	auto l_t = m_cameraDataPack.t;
 	auto l_ms = InnoMath::toScaleMatrix(vec4(l_voxelSize, l_voxelSize, l_voxelSize, 1.0f));
 	auto l_mt = InnoMath::toTranslationMatrix(l_sceneAABB.m_boundMin);
 
@@ -800,14 +785,14 @@ void GLEnvironmentRenderPass::updateVoxelVisualizationPass()
 
 	activateShaderProgram(m_voxelVisualizationPassSPC);
 
-	updateUniform(m_voxelVisualizationPass_uni_p, l_p);
-	updateUniform(m_voxelVisualizationPass_uni_r, l_r);
-	updateUniform(m_voxelVisualizationPass_uni_t, l_t);
+	updateUniform(m_voxelVisualizationPass_uni_p, RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
+	updateUniform(m_voxelVisualizationPass_uni_r, RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
+	updateUniform(m_voxelVisualizationPass_uni_t, RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
 	updateUniform(m_voxelVisualizationPass_uni_m, l_m);
 
 	updateUniform(m_voxelVisualizationPass_uni_volumeDimension, m_volumeDimension);
 	updateUniform(m_voxelVisualizationPass_uni_voxelSize, l_voxelSize);
-	updateUniform(m_voxelVisualizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin.x, l_sceneAABB.m_boundMin.y, l_sceneAABB.m_boundMin.z);
+	updateUniform(m_voxelVisualizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin);
 
 	glBindImageTexture(0, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
 

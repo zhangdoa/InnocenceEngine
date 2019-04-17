@@ -1,6 +1,7 @@
 #include "GLSkyPass.h"
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 using namespace GLRenderingSystemNS;
 
@@ -17,9 +18,6 @@ INNO_PRIVATE_SCOPE GLSkyPass
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//skyPass.vert", "", "GL//skyPass.frag" };
-
-	CameraDataPack m_cameraDataPack;
-	SunDataPack m_sunDataPack;
 }
 
 bool GLSkyPass::initialize()
@@ -47,20 +45,6 @@ bool GLSkyPass::update()
 {
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
 
-	// copy camera data pack for local scope
-	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-	if (l_cameraDataPack.has_value())
-	{
-		m_cameraDataPack = l_cameraDataPack.value();
-	}
-
-	// copy sun data pack for local scope
-	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
-	if (l_sunDataPack.has_value())
-	{
-		m_sunDataPack = l_sunDataPack.value();
-	}
-
 	if (l_renderingConfig.drawSky)
 	{
 		glEnable(GL_DEPTH_TEST);
@@ -77,25 +61,30 @@ bool GLSkyPass::update()
 		// uni_p
 		updateUniform(
 			0,
-			m_cameraDataPack.p_original);
+			RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
 		// uni_r
 		updateUniform(
 			1,
-			m_cameraDataPack.r);
+			RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
+
+		vec2 l_viewportSize = vec2((float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX, (float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY);
+
 		// uni_viewportSize
 		updateUniform(
 			2,
-			(float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX, (float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY);
+			l_viewportSize);
+
 		// uni_eyePos
 		updateUniform(
 			3,
-			m_cameraDataPack.globalPos.x, m_cameraDataPack.globalPos.y, m_cameraDataPack.globalPos.z);
+			RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos);
+
 		// uni_lightDir
 		updateUniform(
 			4,
-			m_sunDataPack.dir.x, m_sunDataPack.dir.y, m_sunDataPack.dir.z);
+			RenderingFrontendSystemComponent::get().m_sunGPUData.dir);
 
-		auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
+		auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 		drawMesh(l_MDC);
 
 		glDisable(GL_CULL_FACE);

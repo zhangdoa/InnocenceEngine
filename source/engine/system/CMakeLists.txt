@@ -3,14 +3,14 @@ add_subdirectory("ImGuiWrapper")
 add_subdirectory("Core")
 
 if (INNO_PLATFORM_WIN)
-add_subdirectory("DX11RenderingBackend")
-add_subdirectory("DX12RenderingBackend")
+#add_subdirectory("DX11RenderingBackend")
+#add_subdirectory("DX12RenderingBackend")
 add_subdirectory("WinWindow")
 add_subdirectory("PhysXWrapper")
 endif (INNO_PLATFORM_WIN)
 
 if (VULKAN)
-add_subdirectory("VKRenderingBackend")
+#add_subdirectory("VKRenderingBackend")
 endif (VULKAN)
 
 if (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
@@ -36,14 +36,14 @@ GENERATE_EXPORT_HEADER (InnoSystem
 target_link_libraries(InnoSystem InnoCore)
 
 if (INNO_PLATFORM_WIN)
-target_link_libraries(InnoSystem InnoDX11RenderingBackend)
-target_link_libraries(InnoSystem InnoDX12RenderingBackend)
+#target_link_libraries(InnoSystem InnoDX11RenderingBackend)
+#target_link_libraries(InnoSystem InnoDX12RenderingBackend)
 target_link_libraries(InnoSystem WinWindow)
 target_link_libraries(InnoSystem PhysXWrapper)
 endif (INNO_PLATFORM_WIN)
 
 if (VULKAN)
-target_link_libraries(InnoSystem InnoVKRenderingBackend)
+#target_link_libraries(InnoSystem InnoVKRenderingBackend)
 endif (VULKAN)
 
 if (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)

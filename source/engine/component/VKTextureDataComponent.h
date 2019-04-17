@@ -1,5 +1,7 @@
 #pragma once
 #include "../common/InnoType.h"
+#include "vulkan/vulkan.h"
+#include "TextureDataComponent.h"
 
 struct VkTextureDataDesc
 {
@@ -12,14 +14,11 @@ struct VkTextureDataDesc
 	unsigned int height;
 };
 
-class VKTextureDataComponent
+class VKTextureDataComponent : public TextureDataComponent
 {
 public:
 	VKTextureDataComponent() {};
 	~VKTextureDataComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
 
 	VkImage m_image;
 	VkImageView m_imageView;

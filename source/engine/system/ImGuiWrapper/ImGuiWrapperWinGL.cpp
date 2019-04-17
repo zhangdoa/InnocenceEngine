@@ -24,7 +24,7 @@
 #include "../GLRenderingBackend/GLDebuggerPass.h"
 #include "../GLRenderingBackend/GLFinalBlendPass.h"
 
-#include "../../component/GLRenderingSystemComponent.h"
+#include "../GLRenderingBackend/GLRenderingSystemUtilities.h"
 
 #include "../../third-party/ImGui/imgui_impl_win32.h"
 #include "../../third-party/ImGui/imgui_impl_opengl3.h"
@@ -241,17 +241,5 @@ void ImGuiWrapperWinGL::showRenderResult()
 
 ImTextureID ImGuiWrapperWinGL::getFileExplorerIconTextureID(const FileExplorerIconType iconType)
 {
-	switch (iconType)
-	{
-	case FileExplorerIconType::OBJ:
-		return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_OBJ->m_TO); break;
-	case FileExplorerIconType::PNG:
-		return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_PNG->m_TO); break;
-	case FileExplorerIconType::SHADER:
-		return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_SHADER->m_TO); break;
-	case FileExplorerIconType::UNKNOWN:
-		return ImTextureID((GLuint64)GLRenderingSystemComponent::get().m_iconTemplate_UNKNOWN->m_TO); break;
-	default:
-		return nullptr; break;
-	}
+	return ImTextureID((GLuint64)GLRenderingSystemNS::getGLTextureDataComponent(iconType)->m_TO);
 };

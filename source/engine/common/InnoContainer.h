@@ -84,6 +84,18 @@ public:
 		return m_queue.size();
 	}
 
+	std::queue<T>& getRawData(void)
+	{
+		std::shared_lock<std::shared_mutex> lock{ m_mutex };
+		return m_queue;
+	}
+
+	void setRawData(std::queue<T>&& values)
+	{
+		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		m_queue = values;
+	}
+
 private:
 	std::atomic_bool m_valid{ true };
 	mutable std::shared_mutex m_mutex;

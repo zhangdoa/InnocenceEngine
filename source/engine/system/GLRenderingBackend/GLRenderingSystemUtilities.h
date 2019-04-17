@@ -3,6 +3,7 @@
 #include "../../common/InnoClassTemplate.h"
 
 #include "../../component/MeshDataComponent.h"
+#include "../../component/MaterialDataComponent.h"
 #include "../../component/TextureDataComponent.h"
 #include "../../component/GLMeshDataComponent.h"
 #include "../../component/GLTextureDataComponent.h"
@@ -11,20 +12,34 @@
 
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
+	bool setup();
+	bool initialize();
+	bool update();
+	bool render();
+	bool terminate();
 	bool initializeComponentPool();
+	bool resize();
+
+	void loadDefaultAssets();
+
+	GLMeshDataComponent* addGLMeshDataComponent();
+	MaterialDataComponent* addGLMaterialDataComponent();
+	GLTextureDataComponent* addGLTextureDataComponent();
+
+	GLMeshDataComponent* getGLMeshDataComponent(EntityID meshID);
+	GLTextureDataComponent* getGLTextureDataComponent(EntityID textureID);
+
+	GLMeshDataComponent* getGLMeshDataComponent(MeshShapeType MeshShapeType);
+	GLTextureDataComponent* getGLTextureDataComponent(TextureUsageType TextureUsageType);
+	GLTextureDataComponent* getGLTextureDataComponent(FileExplorerIconType iconType);
+	GLTextureDataComponent* getGLTextureDataComponent(WorldEditorIconType iconType);
 
 	GLRenderPassComponent* addGLRenderPassComponent(unsigned int RTNum, GLFrameBufferDesc glFrameBufferDesc, TextureDataDesc RTDesc);
 
 	bool resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC, unsigned int newSizeX, unsigned int newSizeY);
 
-	GLMeshDataComponent* generateGLMeshDataComponent(MeshDataComponent* rhs);
-	GLTextureDataComponent* generateGLTextureDataComponent(TextureDataComponent* rhs);
-
-	GLMeshDataComponent* addGLMeshDataComponent(const EntityID& rhs);
-	GLTextureDataComponent* addGLTextureDataComponent(const EntityID& rhs);
-
-	GLMeshDataComponent* getGLMeshDataComponent(const EntityID& rhs);
-	GLTextureDataComponent* getGLTextureDataComponent(const EntityID& rhs);
+	bool initializeGLMeshDataComponent(GLMeshDataComponent* rhs);
+	bool initializeGLTextureDataComponent(GLTextureDataComponent* rhs);
 
 	GLShaderProgramComponent* addGLShaderProgramComponent(const EntityID& rhs);
 
@@ -50,9 +65,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void updateUniform(const GLint uniformLocation, int uniformValue);
 	void updateUniform(const GLint uniformLocation, unsigned int uniformValue);
 	void updateUniform(const GLint uniformLocation, float uniformValue);
-	void updateUniform(const GLint uniformLocation, float x, float y);
-	void updateUniform(const GLint uniformLocation, float x, float y, float z);
-	void updateUniform(const GLint uniformLocation, float x, float y, float z, float w);
+	void updateUniform(const GLint uniformLocation, vec2 uniformValue);
+	void updateUniform(const GLint uniformLocation, vec4 uniformValue);
 	void updateUniform(const GLint uniformLocation, const mat4& mat);
 	void updateUniform(const GLint uniformLocation, const std::vector<vec4>& uniformValue);
 
@@ -63,10 +77,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void attachCubemapColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel);
 	void activateShaderProgram(GLShaderProgramComponent* GLShaderProgramComponent);
 
-	void drawMesh(const EntityID& rhs);
-	void drawMesh(MeshDataComponent* MDC);
-	void drawMesh(size_t indicesSize, MeshPrimitiveTopology MeshPrimitiveTopology, GLMeshDataComponent* GLMDC);
-	void activateTexture(TextureDataComponent* TDC, int activateIndex);
+	void drawMesh(GLMeshDataComponent* GLMDC);
 	void activateTexture(GLTextureDataComponent* GLTDC, int activateIndex);
 
 	void activateRenderPass(GLRenderPassComponent * GLRPC);

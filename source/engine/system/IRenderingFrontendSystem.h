@@ -3,6 +3,8 @@
 #include "../exports/InnoSystem_Export.h"
 #include "../common/InnoClassTemplate.h"
 
+#include "IRenderingBackendSystem.h"
+
 #include "../component/MeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
 #include "../component/MaterialDataComponent.h"
@@ -23,14 +25,12 @@ INNO_INTERFACE IRenderingFrontendSystem
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingFrontendSystem);
 
-	INNO_SYSTEM_EXPORT virtual bool setup() = 0;
+	INNO_SYSTEM_EXPORT virtual bool setup(IRenderingBackendSystem* renderingBackendSystem) = 0;
 	INNO_SYSTEM_EXPORT virtual bool initialize() = 0;
 	INNO_SYSTEM_EXPORT virtual bool update() = 0;
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
-
-	INNO_SYSTEM_EXPORT virtual void loadDefaultAssets() = 0;
 
 	INNO_SYSTEM_EXPORT virtual MeshDataComponent* addMeshDataComponent() = 0;
 	INNO_SYSTEM_EXPORT virtual MaterialDataComponent* addMaterialDataComponent() = 0;
@@ -41,13 +41,11 @@ public:
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
-	INNO_SYSTEM_EXPORT virtual bool removeMeshDataComponent(EntityID EntityID) = 0;
-	INNO_SYSTEM_EXPORT virtual bool removeTextureDataComponent(EntityID EntityID) = 0;
-	INNO_SYSTEM_EXPORT virtual bool releaseRawDataForMeshDataComponent(EntityID EntityID) = 0;
-	INNO_SYSTEM_EXPORT virtual bool releaseRawDataForTextureDataComponent(EntityID EntityID) = 0;
+	INNO_SYSTEM_EXPORT virtual bool removeMeshDataComponent(EntityID entityID) = 0;
+	INNO_SYSTEM_EXPORT virtual bool removeTextureDataComponent(EntityID entityID) = 0;
 
-	INNO_SYSTEM_EXPORT virtual void registerUninitializedMeshDataComponent(MeshDataComponent* rhs) = 0;
-	INNO_SYSTEM_EXPORT virtual void registerUninitializedTextureDataComponent(TextureDataComponent* rhs) = 0;
+	//INNO_SYSTEM_EXPORT virtual bool registerUninitializedMeshDataComponent(MeshDataComponent* rhs) = 0;
+	//INNO_SYSTEM_EXPORT virtual bool registerUninitializedTextureDataComponent(TextureDataComponent* rhs) = 0;
 
 	INNO_SYSTEM_EXPORT virtual TVec2<unsigned int> getScreenResolution() = 0;
 	INNO_SYSTEM_EXPORT virtual bool setScreenResolution(TVec2<unsigned int> screenResolution) = 0;
