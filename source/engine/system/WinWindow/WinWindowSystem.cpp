@@ -72,7 +72,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 		break;
 	case RenderingBackend::DX12:
 #if defined INNO_PLATFORM_WIN
-		//WinWindowSystemNS::m_backendWindowSystem = new WinDXWindowSystem();
+		WinWindowSystemNS::m_backendWindowSystem = new WinDXWindowSystem();
 #endif
 		break;
 	case RenderingBackend::VK:

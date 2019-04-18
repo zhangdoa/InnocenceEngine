@@ -23,7 +23,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	bool generateGPUBuffers();
 
 	GLMeshDataComponent* addGLMeshDataComponent();
-	MaterialDataComponent* addGLMaterialDataComponent();
+	MaterialDataComponent* addMaterialDataComponent();
 	GLTextureDataComponent* addGLTextureDataComponent();
 
 	GLMeshDataComponent* getGLMeshDataComponent(EntityID meshID);

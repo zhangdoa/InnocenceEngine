@@ -5,7 +5,7 @@
 #if defined INNO_PLATFORM_WIN
 #include "WinWindow/WinWindowSystem.h"
 #include "DX11RenderingBackend/DX11RenderingSystem.h"
-//#include "DX12RenderingBackend/DX12RenderingSystem.h"
+#include "DX12RenderingBackend/DX12RenderingSystem.h"
 #endif
 
 #if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
@@ -173,7 +173,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* appHook, void* extraHook, 
 		break;
 	case RenderingBackend::DX12:
 #if defined INNO_PLATFORM_WIN
-		//InnoVisionSystemNS::m_renderingBackendSystem = new DX12RenderingSystem();
+		InnoVisionSystemNS::m_renderingBackendSystem = new DX12RenderingSystem();
 #endif
 		break;
 	case RenderingBackend::VK:

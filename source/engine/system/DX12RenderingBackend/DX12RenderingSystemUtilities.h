@@ -2,6 +2,7 @@
 #include "../../common/InnoType.h"
 
 #include "../../component/MeshDataComponent.h"
+#include "../../component/MaterialDataComponent.h"
 #include "../../component/TextureDataComponent.h"
 #include "../../component/DX12MeshDataComponent.h"
 #include "../../component/DX12TextureDataComponent.h"
@@ -10,21 +11,36 @@
 
 INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 {
+	bool setup();
+	bool initialize();
+	bool update();
+	bool render();
+	bool terminate();
 	bool initializeComponentPool();
+	bool resize();
+
+	void loadDefaultAssets();
+	bool generateGPUBuffers();
+
+	DX12MeshDataComponent* addDX12MeshDataComponent();
+	MaterialDataComponent* addMaterialDataComponent();
+	DX12TextureDataComponent* addDX12TextureDataComponent();
+
+	DX12MeshDataComponent* getDX12MeshDataComponent(EntityID meshID);
+	DX12TextureDataComponent* getDX12TextureDataComponent(EntityID textureID);
+
+	DX12MeshDataComponent* getDX12MeshDataComponent(MeshShapeType MeshShapeType);
+	DX12TextureDataComponent* getDX12TextureDataComponent(TextureUsageType TextureUsageType);
+	DX12TextureDataComponent* getDX12TextureDataComponent(FileExplorerIconType iconType);
+	DX12TextureDataComponent* getDX12TextureDataComponent(WorldEditorIconType iconType);
 
 	DX12RenderPassComponent* addDX12RenderPassComponent(EntityID rhs);
 	bool createRootSignature(DX12RenderPassComponent* DXRPC);
 	bool createPSO(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
 	bool initializeDX12RenderPassComponent(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
 
-	DX12MeshDataComponent* generateDX12MeshDataComponent(MeshDataComponent* rhs);
-	DX12TextureDataComponent* generateDX12TextureDataComponent(TextureDataComponent* rhs);
-
-	DX12MeshDataComponent* addDX12MeshDataComponent(EntityID rhs);
-	DX12TextureDataComponent* addDX12TextureDataComponent(EntityID rhs);
-
-	DX12MeshDataComponent* getDX12MeshDataComponent(EntityID rhs);
-	DX12TextureDataComponent* getDX12TextureDataComponent(EntityID rhs);
+	bool initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs);
+	bool initializeDX12TextureDataComponent(DX12TextureDataComponent* rhs);
 
 	void recordDrawCall(EntityID rhs);
 	void recordDrawCall(MeshDataComponent* MDC);

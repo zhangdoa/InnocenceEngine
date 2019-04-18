@@ -456,7 +456,7 @@ GLMeshDataComponent* GLRenderingSystemNS::addGLMeshDataComponent()
 	return l_MDC;
 }
 
-MaterialDataComponent* GLRenderingSystemNS::addGLMaterialDataComponent()
+MaterialDataComponent* GLRenderingSystemNS::addMaterialDataComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
@@ -656,7 +656,7 @@ MeshDataComponent * GLRenderingSystem::addMeshDataComponent()
 
 MaterialDataComponent * GLRenderingSystem::addMaterialDataComponent()
 {
-	return GLRenderingSystemNS::addGLMaterialDataComponent();
+	return GLRenderingSystemNS::addMaterialDataComponent();
 }
 
 TextureDataComponent * GLRenderingSystem::addTextureDataComponent()

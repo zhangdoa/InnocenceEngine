@@ -42,17 +42,6 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 		return l_adapter;
 	}
 
-	bool setup(IRenderingFrontendSystem* renderingFrontend);
-	bool initialize();
-	bool update();
-	bool terminate();
-
-	bool initializeDefaultAssets();
-
-	void prepareRenderingData();
-
-	static DX12RenderingSystemComponent* g_DXRenderingSystemComponent;
-
 	bool createPhysicalDevices();
 	bool createDebugCallback();
 	bool createSwapChain();
@@ -63,14 +52,41 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool createRasterizer();
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-
 	EntityID m_entityID;
 
-	IRenderingFrontendSystem* m_renderingFrontendSystem;
+	static DX12RenderingSystemComponent* g_DXRenderingSystemComponent;
 
-	CameraDataPack m_cameraDataPack;
-	SunDataPack m_sunDataPack;
-	std::vector<MeshDataPack> m_meshDataPack;
+	ThreadSafeUnorderedMap<EntityID, DX12MeshDataComponent*> m_meshMap;
+	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
+	ThreadSafeUnorderedMap<EntityID, DX12TextureDataComponent*> m_textureMap;
+
+	void* m_MeshDataComponentPool;
+	void* m_MaterialDataComponentPool;
+	void* m_TextureDataComponentPool;
+
+	ThreadSafeQueue<DX12MeshDataComponent*> m_uninitializedMDC;
+	ThreadSafeQueue<DX12TextureDataComponent*> m_uninitializedTDC;
+
+	DX12TextureDataComponent* m_iconTemplate_OBJ;
+	DX12TextureDataComponent* m_iconTemplate_PNG;
+	DX12TextureDataComponent* m_iconTemplate_SHADER;
+	DX12TextureDataComponent* m_iconTemplate_UNKNOWN;
+
+	DX12TextureDataComponent* m_iconTemplate_DirectionalLight;
+	DX12TextureDataComponent* m_iconTemplate_PointLight;
+	DX12TextureDataComponent* m_iconTemplate_SphereLight;
+
+	DX12MeshDataComponent* m_unitLineMDC;
+	DX12MeshDataComponent* m_unitQuadMDC;
+	DX12MeshDataComponent* m_unitCubeMDC;
+	DX12MeshDataComponent* m_unitSphereMDC;
+	DX12MeshDataComponent* m_terrainMDC;
+
+	DX12TextureDataComponent* m_basicNormalTDC;
+	DX12TextureDataComponent* m_basicAlbedoTDC;
+	DX12TextureDataComponent* m_basicMetallicTDC;
+	DX12TextureDataComponent* m_basicRoughnessTDC;
+	DX12TextureDataComponent* m_basicAOTDC;
 }
 
 bool DX12RenderingSystemNS::createDebugCallback()
@@ -189,7 +205,7 @@ bool DX12RenderingSystemNS::createSwapChain()
 	// Set the swap chain to use double buffering.
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferCount = 2;
 
-	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	// Set the width and height of the back buffer.
 	g_DXRenderingSystemComponent->m_swapChainDesc.Width = (UINT)l_screenResolution.x;
@@ -423,7 +439,7 @@ bool DX12RenderingSystemNS::createRasterizer()
 	g_DXRenderingSystemComponent->m_rasterDescDeferred.SlopeScaledDepthBias = 0.0f;
 
 	// Setup the viewport for rendering.
-	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	g_DXRenderingSystemComponent->m_viewport.Width =
 		(float)l_screenResolution.x;
@@ -437,11 +453,9 @@ bool DX12RenderingSystemNS::createRasterizer()
 	return true;
 }
 
-bool DX12RenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
+bool DX12RenderingSystemNS::setup()
 {
 	m_entityID = InnoMath::createEntityID();
-
-	m_renderingFrontendSystem = renderingFrontend;
 
 	g_DXRenderingSystemComponent = &DX12RenderingSystemComponent::get();
 
@@ -451,7 +465,7 @@ bool DX12RenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	result = result && createDebugCallback();
 	result = result && createPhysicalDevices();
 
-	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	// Setup the description of the deferred pass.
 	g_DXRenderingSystemComponent->deferredPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
@@ -476,6 +490,10 @@ bool DX12RenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 
 bool DX12RenderingSystemNS::initialize()
 {
+	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12MeshDataComponent), 16384);
+	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
+	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12TextureDataComponent), 32768);
+
 	bool result = true;
 
 	result = result && createSwapChain();
@@ -486,8 +504,6 @@ bool DX12RenderingSystemNS::initialize()
 	result = result && createSyncPrimitives();
 	result = result && createRasterizer();
 
-	initializeDefaultAssets();
-
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem has been initialized.");
 
 	return result;
@@ -495,40 +511,11 @@ bool DX12RenderingSystemNS::initialize()
 
 bool DX12RenderingSystemNS::update()
 {
-	if (m_renderingFrontendSystem->anyUninitializedMeshDataComponent())
-	{
-		auto l_MDC = m_renderingFrontendSystem->acquireUninitializedMeshDataComponent();
-		if (l_MDC)
-		{
-			auto l_result = generateDX12MeshDataComponent(l_MDC);
-			if (l_result == nullptr)
-			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DXMeshDataComponent for " + l_result->m_parentEntity + "!");
-			}
-		}
-	}
-	if (m_renderingFrontendSystem->anyUninitializedTextureDataComponent())
-	{
-		auto l_TDC = m_renderingFrontendSystem->acquireUninitializedTextureDataComponent();
-		if (l_TDC)
-		{
-			auto l_result = generateDX12TextureDataComponent(l_TDC);
-			if (l_result == nullptr)
-			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DXTextureDataComponent for " + l_result->m_parentEntity + "!");
-			}
-		}
-	}
+	return true;
+}
 
-	// Clear the buffers to begin the scene.
-	prepareRenderingData();
-
-	//DXGeometryRenderingPassUtilities::update();
-
-	//DXLightRenderingPassUtilities::update();
-
-	//DXFinalRenderingPassUtilities::update();
-
+bool DX12RenderingSystemNS::render()
+{
 	return true;
 }
 
@@ -610,159 +597,245 @@ bool DX12RenderingSystemNS::terminate()
 	return true;
 }
 
-bool  DX12RenderingSystemNS::initializeDefaultAssets()
+void DX12RenderingSystemNS::loadDefaultAssets()
 {
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE);
-	g_DXRenderingSystemComponent->m_UnitLineDXMDC = generateDX12MeshDataComponent(l_MDC);
+	auto l_basicNormalTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_basicAlbedoTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
+	auto l_basicMetallicTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
+	auto l_basicRoughnessTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
+	auto l_basicAOTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
 
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-	g_DXRenderingSystemComponent->m_UnitQuadDXMDC = generateDX12MeshDataComponent(l_MDC);
+	auto l_iconTemplate_OBJ = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PNG = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SHADER = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_UNKNOWN = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
-	g_DXRenderingSystemComponent->m_UnitCubeDXMDC = generateDX12MeshDataComponent(l_MDC);
+	auto l_iconTemplate_DirectionalLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PointLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SphereLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
-	g_DXRenderingSystemComponent->m_UnitSphereDXMDC = generateDX12MeshDataComponent(l_MDC);
+	m_basicNormalTDC = reinterpret_cast<DX12TextureDataComponent*>(l_basicNormalTDC);
+	m_basicAlbedoTDC = reinterpret_cast<DX12TextureDataComponent*>(l_basicAlbedoTDC);
+	m_basicMetallicTDC = reinterpret_cast<DX12TextureDataComponent*>(l_basicMetallicTDC);
+	m_basicRoughnessTDC = reinterpret_cast<DX12TextureDataComponent*>(l_basicRoughnessTDC);
+	m_basicAOTDC = reinterpret_cast<DX12TextureDataComponent*>(l_basicAOTDC);
 
-	g_DXRenderingSystemComponent->m_basicNormalDXTDC = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::NORMAL));
-	g_DXRenderingSystemComponent->m_basicAlbedoDXTDC = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ALBEDO));
-	g_DXRenderingSystemComponent->m_basicMetallicDXTDC = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::METALLIC));
-	g_DXRenderingSystemComponent->m_basicRoughnessDXTDC = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
-	g_DXRenderingSystemComponent->m_basicAODXTDC = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
+	m_iconTemplate_OBJ = reinterpret_cast<DX12TextureDataComponent*>(l_iconTemplate_OBJ);
+	m_iconTemplate_PNG = reinterpret_cast<DX12TextureDataComponent*>(l_iconTemplate_PNG);
+	m_iconTemplate_SHADER = reinterpret_cast<DX12TextureDataComponent*>(l_iconTemplate_SHADER);
+	m_iconTemplate_UNKNOWN = reinterpret_cast<DX12TextureDataComponent*>(l_iconTemplate_UNKNOWN);
 
-	g_DXRenderingSystemComponent->m_iconTemplate_OBJ = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::OBJ));
-	g_DXRenderingSystemComponent->m_iconTemplate_PNG = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::PNG));
-	g_DXRenderingSystemComponent->m_iconTemplate_SHADER = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::SHADER));
-	g_DXRenderingSystemComponent->m_iconTemplate_UNKNOWN = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::UNKNOWN));
+	m_iconTemplate_DirectionalLight = reinterpret_cast<DX12TextureDataComponent*>(l_iconTemplate_DirectionalLight);
+	m_iconTemplate_PointLight = reinterpret_cast<DX12TextureDataComponent*>(l_iconTemplate_PointLight);
+	m_iconTemplate_SphereLight = reinterpret_cast<DX12TextureDataComponent*>(l_iconTemplate_SphereLight);
 
-	g_DXRenderingSystemComponent->m_iconTemplate_DirectionalLight = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT));
-	g_DXRenderingSystemComponent->m_iconTemplate_PointLight = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT));
-	g_DXRenderingSystemComponent->m_iconTemplate_SphereLight = generateDX12TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT));
+	m_unitLineMDC = addDX12MeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitLine(*m_unitLineMDC);
+	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
+	m_unitLineMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
+	m_unitQuadMDC = addDX12MeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
+	// Flip y texture coordinate
+	for (auto& i : m_unitQuadMDC->m_vertices)
+	{
+		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
+	}
+	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
+	m_unitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
+
+	m_unitCubeMDC = addDX12MeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
+	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
+	m_unitCubeMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
+
+	m_unitSphereMDC = addDX12MeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
+	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
+	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
+
+	m_terrainMDC = addDX12MeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addTerrain(*m_terrainMDC);
+	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_terrainMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
+
+	initializeDX12MeshDataComponent(m_unitLineMDC);
+	initializeDX12MeshDataComponent(m_unitQuadMDC);
+	initializeDX12MeshDataComponent(m_unitCubeMDC);
+	initializeDX12MeshDataComponent(m_unitSphereMDC);
+	initializeDX12MeshDataComponent(m_terrainMDC);
+
+	initializeDX12TextureDataComponent(m_basicNormalTDC);
+	initializeDX12TextureDataComponent(m_basicAlbedoTDC);
+	initializeDX12TextureDataComponent(m_basicMetallicTDC);
+	initializeDX12TextureDataComponent(m_basicRoughnessTDC);
+	initializeDX12TextureDataComponent(m_basicAOTDC);
+
+	initializeDX12TextureDataComponent(m_iconTemplate_OBJ);
+	initializeDX12TextureDataComponent(m_iconTemplate_PNG);
+	initializeDX12TextureDataComponent(m_iconTemplate_SHADER);
+	initializeDX12TextureDataComponent(m_iconTemplate_UNKNOWN);
+
+	initializeDX12TextureDataComponent(m_iconTemplate_DirectionalLight);
+	initializeDX12TextureDataComponent(m_iconTemplate_PointLight);
+	initializeDX12TextureDataComponent(m_iconTemplate_SphereLight);
+}
+
+DX12MeshDataComponent* DX12RenderingSystemNS::addDX12MeshDataComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(DX12MeshDataComponent));
+	auto l_MDC = new(l_rawPtr)DX12MeshDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_meshMap = &m_meshMap;
+	l_meshMap->emplace(std::pair<EntityID, DX12MeshDataComponent*>(l_parentEntity, l_MDC));
+	return l_MDC;
+}
+
+MaterialDataComponent* DX12RenderingSystemNS::addMaterialDataComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
+	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_materialMap = &m_materialMap;
+	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, l_MDC));
+	return l_MDC;
+}
+
+DX12TextureDataComponent* DX12RenderingSystemNS::addDX12TextureDataComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(DX12TextureDataComponent));
+	auto l_TDC = new(l_rawPtr)DX12TextureDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_TDC->m_parentEntity = l_parentEntity;
+	auto l_textureMap = &m_textureMap;
+	l_textureMap->emplace(std::pair<EntityID, DX12TextureDataComponent*>(l_parentEntity, l_TDC));
+	return l_TDC;
+}
+
+DX12MeshDataComponent* DX12RenderingSystemNS::getDX12MeshDataComponent(EntityID EntityID)
+{
+	auto result = DX12RenderingSystemNS::m_meshMap.find(EntityID);
+	if (result != DX12RenderingSystemNS::m_meshMap.end())
+	{
+		return result->second;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + EntityID + " !");
+		return nullptr;
+	}
+}
+
+DX12TextureDataComponent * DX12RenderingSystemNS::getDX12TextureDataComponent(EntityID EntityID)
+{
+	auto result = DX12RenderingSystemNS::m_textureMap.find(EntityID);
+	if (result != DX12RenderingSystemNS::m_textureMap.end())
+	{
+		return result->second;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + EntityID + " !");
+		return nullptr;
+	}
+}
+
+DX12MeshDataComponent* DX12RenderingSystemNS::getDX12MeshDataComponent(MeshShapeType meshShapeType)
+{
+	switch (meshShapeType)
+	{
+	case MeshShapeType::LINE:
+		return DX12RenderingSystemNS::m_unitLineMDC; break;
+	case MeshShapeType::QUAD:
+		return DX12RenderingSystemNS::m_unitQuadMDC; break;
+	case MeshShapeType::CUBE:
+		return DX12RenderingSystemNS::m_unitCubeMDC; break;
+	case MeshShapeType::SPHERE:
+		return DX12RenderingSystemNS::m_unitSphereMDC; break;
+	case MeshShapeType::TERRAIN:
+		return DX12RenderingSystemNS::m_terrainMDC; break;
+	case MeshShapeType::CUSTOM:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: wrong MeshShapeType passed to DX12RenderingSystem::getMeshDataComponent() !");
+		return nullptr; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+DX12TextureDataComponent * DX12RenderingSystemNS::getDX12TextureDataComponent(TextureUsageType textureUsageType)
+{
+	switch (textureUsageType)
+	{
+	case TextureUsageType::INVISIBLE:
+		return nullptr; break;
+	case TextureUsageType::NORMAL:
+		return DX12RenderingSystemNS::m_basicNormalTDC; break;
+	case TextureUsageType::ALBEDO:
+		return DX12RenderingSystemNS::m_basicAlbedoTDC; break;
+	case TextureUsageType::METALLIC:
+		return DX12RenderingSystemNS::m_basicMetallicTDC; break;
+	case TextureUsageType::ROUGHNESS:
+		return DX12RenderingSystemNS::m_basicRoughnessTDC; break;
+	case TextureUsageType::AMBIENT_OCCLUSION:
+		return DX12RenderingSystemNS::m_basicAOTDC; break;
+	case TextureUsageType::RENDER_TARGET:
+		return nullptr; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+DX12TextureDataComponent * DX12RenderingSystemNS::getDX12TextureDataComponent(FileExplorerIconType iconType)
+{
+	switch (iconType)
+	{
+	case FileExplorerIconType::OBJ:
+		return DX12RenderingSystemNS::m_iconTemplate_OBJ; break;
+	case FileExplorerIconType::PNG:
+		return DX12RenderingSystemNS::m_iconTemplate_PNG; break;
+	case FileExplorerIconType::SHADER:
+		return DX12RenderingSystemNS::m_iconTemplate_SHADER; break;
+	case FileExplorerIconType::UNKNOWN:
+		return DX12RenderingSystemNS::m_iconTemplate_UNKNOWN; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+DX12TextureDataComponent * DX12RenderingSystemNS::getDX12TextureDataComponent(WorldEditorIconType iconType)
+{
+	switch (iconType)
+	{
+	case WorldEditorIconType::DIRECTIONAL_LIGHT:
+		return DX12RenderingSystemNS::m_iconTemplate_DirectionalLight; break;
+	case WorldEditorIconType::POINT_LIGHT:
+		return DX12RenderingSystemNS::m_iconTemplate_PointLight; break;
+	case WorldEditorIconType::SPHERE_LIGHT:
+		return DX12RenderingSystemNS::m_iconTemplate_SphereLight; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+bool DX12RenderingSystemNS::resize()
+{
 	return true;
 }
 
-void DX12RenderingSystemNS::prepareRenderingData()
+bool DX12RenderingSystem::setup()
 {
-	// copy camera data pack for local scope
-	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-	if (l_cameraDataPack.has_value())
-	{
-		m_cameraDataPack = l_cameraDataPack.value();
-	}
-
-	// copy sun data pack for local scope
-	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
-	if (l_sunDataPack.has_value())
-	{
-		m_sunDataPack = l_sunDataPack.value();
-	}
-
-	g_DXRenderingSystemComponent->m_cameraCBufferData.p_original = m_cameraDataPack.p_original;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.p_jittered = m_cameraDataPack.p_jittered;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.r = m_cameraDataPack.r;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.t = m_cameraDataPack.t;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.r_prev = m_cameraDataPack.r_prev;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.t_prev = m_cameraDataPack.t_prev;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.globalPos = m_cameraDataPack.globalPos;
-
-	g_DXRenderingSystemComponent->m_directionalLightCBufferData.dir = m_sunDataPack.dir;
-	g_DXRenderingSystemComponent->m_directionalLightCBufferData.luminance = m_sunDataPack.luminance;
-
-	auto l_meshDataPack = m_renderingFrontendSystem->getMeshDataPack();
-
-	if (l_meshDataPack.has_value())
-	{
-		m_meshDataPack = l_meshDataPack.value();
-	}
-
-	for (auto i : m_meshDataPack)
-	{
-		auto l_DXMDC = getDX12MeshDataComponent(i.MDC->m_parentEntity);
-		if (l_DXMDC && l_DXMDC->m_objectStatus == ObjectStatus::ALIVE)
-		{
-			DX12MeshDataPack l_meshDataPack;
-
-			l_meshDataPack.indiceSize = i.MDC->m_indicesSize;
-			l_meshDataPack.meshPrimitiveTopology = i.MDC->m_meshPrimitiveTopology;
-			l_meshDataPack.meshCBuffer.m = i.m;
-			l_meshDataPack.meshCBuffer.m_prev = i.m_prev;
-			l_meshDataPack.meshCBuffer.normalMat = i.normalMat;
-			l_meshDataPack.DXMDC = l_DXMDC;
-
-			auto l_material = i.material;
-			// any normal?
-			auto l_TDC = l_material->m_texturePack.m_normalTDC.second;
-			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-			{
-				l_meshDataPack.normalDXTDC = getDX12TextureDataComponent(l_TDC->m_parentEntity);
-			}
-			else
-			{
-				l_meshDataPack.textureCBuffer.useNormalTexture = false;
-			}
-			// any albedo?
-			l_TDC = l_material->m_texturePack.m_albedoTDC.second;
-			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-			{
-				l_meshDataPack.albedoDXTDC = getDX12TextureDataComponent(l_TDC->m_parentEntity);
-			}
-			else
-			{
-				l_meshDataPack.textureCBuffer.useAlbedoTexture = false;
-			}
-			// any metallic?
-			l_TDC = l_material->m_texturePack.m_metallicTDC.second;
-			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-			{
-				l_meshDataPack.metallicDXTDC = getDX12TextureDataComponent(l_TDC->m_parentEntity);
-			}
-			else
-			{
-				l_meshDataPack.textureCBuffer.useMetallicTexture = false;
-			}
-			// any roughness?
-			l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
-			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-			{
-				l_meshDataPack.roughnessDXTDC = getDX12TextureDataComponent(l_TDC->m_parentEntity);
-			}
-			else
-			{
-				l_meshDataPack.textureCBuffer.useRoughnessTexture = false;
-			}
-			// any ao?
-			l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
-			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-			{
-				l_meshDataPack.AODXTDC = getDX12TextureDataComponent(l_TDC->m_parentEntity);
-			}
-			else
-			{
-				l_meshDataPack.textureCBuffer.useAOTexture = false;
-			}
-
-			l_meshDataPack.textureCBuffer.albedo = vec4(
-				l_material->m_meshCustomMaterial.albedo_r,
-				l_material->m_meshCustomMaterial.albedo_g,
-				l_material->m_meshCustomMaterial.albedo_b,
-				1.0f
-			);
-			l_meshDataPack.textureCBuffer.MRA = vec4(
-				l_material->m_meshCustomMaterial.metallic,
-				l_material->m_meshCustomMaterial.roughness,
-				l_material->m_meshCustomMaterial.ao,
-				1.0f
-			);
-
-			g_DXRenderingSystemComponent->m_meshDataQueue.push(l_meshDataPack);
-		}
-	}
-}
-
-bool DX12RenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
-{
-	return DX12RenderingSystemNS::setup(renderingFrontend);
+	return DX12RenderingSystemNS::setup();
 }
 
 bool DX12RenderingSystem::initialize()
@@ -775,6 +848,11 @@ bool DX12RenderingSystem::update()
 	return DX12RenderingSystemNS::update();
 }
 
+bool DX12RenderingSystem::render()
+{
+	return DX12RenderingSystemNS::render();
+}
+
 bool DX12RenderingSystem::terminate()
 {
 	return DX12RenderingSystemNS::terminate();
@@ -785,13 +863,124 @@ ObjectStatus DX12RenderingSystem::getStatus()
 	return DX12RenderingSystemNS::m_objectStatus;
 }
 
+MeshDataComponent * DX12RenderingSystem::addMeshDataComponent()
+{
+	return DX12RenderingSystemNS::addDX12MeshDataComponent();
+}
+
+MaterialDataComponent * DX12RenderingSystem::addMaterialDataComponent()
+{
+	return DX12RenderingSystemNS::addMaterialDataComponent();
+}
+
+TextureDataComponent * DX12RenderingSystem::addTextureDataComponent()
+{
+	return DX12RenderingSystemNS::addDX12TextureDataComponent();
+}
+
+MeshDataComponent * DX12RenderingSystem::getMeshDataComponent(EntityID meshID)
+{
+	return DX12RenderingSystemNS::getDX12MeshDataComponent(meshID);
+}
+
+TextureDataComponent * DX12RenderingSystem::getTextureDataComponent(EntityID textureID)
+{
+	return DX12RenderingSystemNS::getDX12TextureDataComponent(textureID);
+}
+
+MeshDataComponent * DX12RenderingSystem::getMeshDataComponent(MeshShapeType MeshShapeType)
+{
+	return DX12RenderingSystemNS::getDX12MeshDataComponent(MeshShapeType);
+}
+
+TextureDataComponent * DX12RenderingSystem::getTextureDataComponent(TextureUsageType TextureUsageType)
+{
+	return DX12RenderingSystemNS::getDX12TextureDataComponent(TextureUsageType);
+}
+
+TextureDataComponent * DX12RenderingSystem::getTextureDataComponent(FileExplorerIconType iconType)
+{
+	return DX12RenderingSystemNS::getDX12TextureDataComponent(iconType);
+}
+
+TextureDataComponent * DX12RenderingSystem::getTextureDataComponent(WorldEditorIconType iconType)
+{
+	return DX12RenderingSystemNS::getDX12TextureDataComponent(iconType);
+}
+
+bool DX12RenderingSystem::removeMeshDataComponent(EntityID EntityID)
+{
+	auto l_meshMap = &DX12RenderingSystemNS::m_meshMap;
+	auto l_mesh = l_meshMap->find(EntityID);
+	if (l_mesh != l_meshMap->end())
+	{
+		g_pCoreSystem->getMemorySystem()->destroyObject(DX12RenderingSystemNS::m_MeshDataComponentPool, sizeof(DX12MeshDataComponent), l_mesh->second);
+		l_meshMap->erase(EntityID);
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + EntityID + " !");
+		return false;
+	}
+}
+
+bool DX12RenderingSystem::removeTextureDataComponent(EntityID EntityID)
+{
+	auto l_textureMap = &DX12RenderingSystemNS::m_textureMap;
+	auto l_texture = l_textureMap->find(EntityID);
+	if (l_texture != l_textureMap->end())
+	{
+		for (auto& i : l_texture->second->m_textureData)
+		{
+			// @TODO
+		}
+
+		g_pCoreSystem->getMemorySystem()->destroyObject(DX12RenderingSystemNS::m_TextureDataComponentPool, sizeof(DX12TextureDataComponent), l_texture->second);
+		l_textureMap->erase(EntityID);
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + EntityID + " !");
+		return false;
+	}
+}
+
+void DX12RenderingSystem::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
+{
+	DX12RenderingSystemNS::m_uninitializedMDC.push(reinterpret_cast<DX12MeshDataComponent*>(rhs));
+}
+
+void DX12RenderingSystem::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
+{
+	DX12RenderingSystemNS::m_uninitializedTDC.push(reinterpret_cast<DX12TextureDataComponent*>(rhs));
+}
+
 bool DX12RenderingSystem::resize()
 {
-	return true;
+	return DX12RenderingSystemNS::resize();
 }
 
 bool DX12RenderingSystem::reloadShader(RenderPassType renderPassType)
 {
+	switch (renderPassType)
+	{
+	case RenderPassType::Shadow:
+		break;
+	case RenderPassType::Opaque:
+		break;
+	case RenderPassType::Light:
+		break;
+	case RenderPassType::Transparent:
+		break;
+	case RenderPassType::Terrain:
+		break;
+	case RenderPassType::PostProcessing:
+		break;
+	default: break;
+	}
+
 	return true;
 }
 

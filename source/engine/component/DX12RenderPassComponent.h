@@ -28,7 +28,6 @@ public:
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PSODesc;
 	ID3D12PipelineState* m_PSO;
 
-	std::vector<TextureDataComponent*> m_TDCs;
 	std::vector<DX12TextureDataComponent*> m_DXTDCs;
 
 	D3D12_DEPTH_STENCIL_DESC m_depthStencilBufferDesc = D3D12_DEPTH_STENCIL_DESC();

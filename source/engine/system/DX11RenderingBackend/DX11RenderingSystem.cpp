@@ -773,7 +773,7 @@ DX11MeshDataComponent* DX11RenderingSystemNS::addDX11MeshDataComponent()
 	return l_MDC;
 }
 
-MaterialDataComponent* DX11RenderingSystemNS::addDX11MaterialDataComponent()
+MaterialDataComponent* DX11RenderingSystemNS::addMaterialDataComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
@@ -963,7 +963,7 @@ MeshDataComponent * DX11RenderingSystem::addMeshDataComponent()
 
 MaterialDataComponent * DX11RenderingSystem::addMaterialDataComponent()
 {
-	return DX11RenderingSystemNS::addDX11MaterialDataComponent();
+	return DX11RenderingSystemNS::addMaterialDataComponent();
 }
 
 TextureDataComponent * DX11RenderingSystem::addTextureDataComponent()

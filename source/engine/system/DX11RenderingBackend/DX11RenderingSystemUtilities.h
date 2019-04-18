@@ -24,7 +24,7 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	bool generateGPUBuffers();
 
 	DX11MeshDataComponent* addDX11MeshDataComponent();
-	MaterialDataComponent* addDX11MaterialDataComponent();
+	MaterialDataComponent* addMaterialDataComponent();
 	DX11TextureDataComponent* addDX11TextureDataComponent();
 
 	DX11MeshDataComponent* getDX11MeshDataComponent(EntityID meshID);
