@@ -4,6 +4,7 @@
 
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 using namespace GLRenderingSystemNS;
 
@@ -25,8 +26,6 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//wireframeOverlayPass.vert", "", "GL//wireframeOverlayPass.frag" };
 	//ShaderFilePaths m_shaderFilePaths = { "GL//debuggerPass.vert", "GL//debuggerPass.geom", "GL//debuggerPass.frag" };
-
-	CameraDataPack m_cameraDataPack;
 }
 
 bool GLDebuggerPass::initialize()
@@ -74,13 +73,6 @@ void GLDebuggerPass::initializeShaders()
 
 bool GLDebuggerPass::update()
 {
-	// copy camera data pack for local scope
-	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-	if (l_cameraDataPack.has_value())
-	{
-		m_cameraDataPack = l_cameraDataPack.value();
-	}
-
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
@@ -93,29 +85,17 @@ bool GLDebuggerPass::update()
 
 	updateUniform(
 		0,
-		m_cameraDataPack.p_original);
+		RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
 	updateUniform(
 		1,
-		m_cameraDataPack.r);
+		RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
 	updateUniform(
 		2,
-		m_cameraDataPack.t);
+		RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	while (GLRenderingSystemComponent::get().m_debuggerPassDataQueue.size() > 0)
-	{
-		auto l_renderPack = GLRenderingSystemComponent::get().m_debuggerPassDataQueue.front();
 
-		auto l_m = l_renderPack.m;
-
-		updateUniform(
-			3,
-			l_m);
-
-		drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
-
-		GLRenderingSystemComponent::get().m_debuggerPassDataQueue.pop();
-	}
+	// @TODO: Draw
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_DEPTH_TEST);

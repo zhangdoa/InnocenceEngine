@@ -2,6 +2,7 @@
 #include "DX11RenderingSystemUtilities.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -99,7 +100,7 @@ bool DX11OpaquePass::update()
 
 	// activate shader
 	activateDX11ShaderProgramComponent(m_DXSPC);
-	updateShaderParameter(ShaderType::VERTEX, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer, &DX11RenderingSystemComponent::get().m_cameraCBufferData);
+	bindCBuffer(ShaderType::VERTEX, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
@@ -121,56 +122,45 @@ bool DX11OpaquePass::update()
 	cleanDSV(m_DXRPC->m_depthStencilView);
 
 	// draw
-	while (DX11RenderingSystemComponent::get().m_meshDataQueue.size() > 0)
+	while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
 	{
-		DX11MeshDataPack l_meshDataPack;
-		if (DX11RenderingSystemComponent::get().m_meshDataQueue.tryPop(l_meshDataPack))
+		GeometryPassGPUData l_geometryPassGPUData = {};
+
+		if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
 		{
-			// Set the type of primitive that should be rendered from this vertex buffer.
-			D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
-
-			if (l_meshDataPack.meshPrimitiveTopology == MeshPrimitiveTopology::TRIANGLE)
-			{
-				l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-			}
-			else
-			{
-				l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-			}
-
-			DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
-
-			updateShaderParameter(ShaderType::VERTEX, 1, DX11RenderingSystemComponent::get().m_meshCBuffer, &l_meshDataPack.meshCBuffer);
-			updateShaderParameter(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_textureCBuffer, &l_meshDataPack.textureCBuffer);
-
 			// bind to textures
 			// any normal?
-			if (l_meshDataPack.textureCBuffer.useNormalTexture)
+			if (l_geometryPassGPUData.materialGPUData.useNormalTexture)
 			{
-				DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &l_meshDataPack.normalDXTDC->m_SRV);
+				activateTexture(reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.normalTDC), 0);
 			}
 			// any albedo?
-			if (l_meshDataPack.textureCBuffer.useAlbedoTexture)
+			if (l_geometryPassGPUData.materialGPUData.useAlbedoTexture)
 			{
-				DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(1, 1, &l_meshDataPack.albedoDXTDC->m_SRV);
+				activateTexture(reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.albedoTDC), 1);
 			}
 			// any metallic?
-			if (l_meshDataPack.textureCBuffer.useMetallicTexture)
+			if (l_geometryPassGPUData.materialGPUData.useMetallicTexture)
 			{
-				DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(2, 1, &l_meshDataPack.metallicDXTDC->m_SRV);
+				activateTexture(reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.metallicTDC), 2);
 			}
 			// any roughness?
-			if (l_meshDataPack.textureCBuffer.useRoughnessTexture)
+			if (l_geometryPassGPUData.materialGPUData.useRoughnessTexture)
 			{
-				DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(3, 1, &l_meshDataPack.roughnessDXTDC->m_SRV);
+				activateTexture(reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.roughnessTDC), 3);
 			}
 			// any ao?
-			if (l_meshDataPack.textureCBuffer.useAOTexture)
+			if (l_geometryPassGPUData.materialGPUData.useAOTexture)
 			{
-				DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(4, 1, &l_meshDataPack.AODXTDC->m_SRV);
+				activateTexture(reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.AOTDC), 4);
 			}
+			updateCBuffer(DX11RenderingSystemComponent::get().m_meshCBuffer, &l_geometryPassGPUData.meshGPUData);
+			updateCBuffer(DX11RenderingSystemComponent::get().m_materialCBuffer, &l_geometryPassGPUData.materialGPUData);
 
-			drawMesh(l_meshDataPack.indiceSize, l_meshDataPack.DXMDC);
+			bindCBuffer(ShaderType::VERTEX, 1, DX11RenderingSystemComponent::get().m_meshCBuffer);
+			bindCBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_materialCBuffer);
+
+			drawMesh(reinterpret_cast<DX11MeshDataComponent*>(l_geometryPassGPUData.MDC));
 		}
 	}
 

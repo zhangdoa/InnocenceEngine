@@ -3,6 +3,7 @@
 
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 using namespace GLRenderingSystemNS;
 
@@ -28,10 +29,7 @@ INNO_PRIVATE_SCOPE GLSSAONoisePass
 	std::vector<vec4> m_SSAOKernel;
 	std::vector<vec4> m_SSAONoise;
 
-	TextureDataComponent* m_SSAONoiseTDC;
 	GLTextureDataComponent* m_SSAONoiseGLTDC;
-
-	CameraDataPack m_cameraDataPack;
 }
 
 bool GLSSAONoisePass::initialize()
@@ -91,18 +89,18 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 		m_SSAONoise.push_back(noise);
 	}
 
-	m_SSAONoiseTDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
+	m_SSAONoiseGLTDC = addGLTextureDataComponent();
 
-	m_SSAONoiseTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	m_SSAONoiseTDC->m_textureDataDesc.usageType = TextureUsageType::RENDER_TARGET;
-	m_SSAONoiseTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB32F;
-	m_SSAONoiseTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_SSAONoiseTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	m_SSAONoiseTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	m_SSAONoiseTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
-	m_SSAONoiseTDC->m_textureDataDesc.width = l_textureSize;
-	m_SSAONoiseTDC->m_textureDataDesc.height = l_textureSize;
-	m_SSAONoiseTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	m_SSAONoiseGLTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	m_SSAONoiseGLTDC->m_textureDataDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_SSAONoiseGLTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB32F;
+	m_SSAONoiseGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_SSAONoiseGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	m_SSAONoiseGLTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	m_SSAONoiseGLTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_SSAONoiseGLTDC->m_textureDataDesc.width = l_textureSize;
+	m_SSAONoiseGLTDC->m_textureDataDesc.height = l_textureSize;
+	m_SSAONoiseGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	std::vector<float> l_pixelBuffer;
 	auto l_containerSize = m_SSAONoise.size() * 4;
@@ -116,20 +114,13 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 		l_pixelBuffer.emplace_back(val.w);
 	});
 
-	m_SSAONoiseTDC->m_textureData.emplace_back(&l_pixelBuffer[0]);
+	m_SSAONoiseGLTDC->m_textureData.emplace_back(&l_pixelBuffer[0]);
 
-	m_SSAONoiseGLTDC = generateGLTextureDataComponent(m_SSAONoiseTDC);
+	initializeGLTextureDataComponent(m_SSAONoiseGLTDC);
 }
 
 bool GLSSAONoisePass::update()
 {
-	// copy camera data pack for local scope
-	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-	if (l_cameraDataPack.has_value())
-	{
-		m_cameraDataPack = l_cameraDataPack.value();
-	}
-
 	activateRenderPass(m_GLRPC);
 
 	activateShaderProgram(m_GLSPC);
@@ -138,12 +129,12 @@ bool GLSSAONoisePass::update()
 	activateTexture(GLOpaquePass::getGLRPC()->m_GLTDCs[1], 1);
 	activateTexture(m_SSAONoiseGLTDC, 2);
 
-	updateUniform(0, m_cameraDataPack.p_jittered);
-	updateUniform(1, m_cameraDataPack.r);
-	updateUniform(2, m_cameraDataPack.t);
+	updateUniform(0, RenderingFrontendSystemComponent::get().m_cameraGPUData.p_jittered);
+	updateUniform(1, RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
+	updateUniform(2, RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
 	updateUniform(6, m_SSAOKernel);
 
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	return true;

@@ -28,6 +28,7 @@
 #include "GLFinalBlendPass.h"
 
 #include "../../component/GLRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -35,28 +36,13 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
-	bool setup(IRenderingFrontendSystem* renderingFrontend);
-	bool initialize();
-	bool update();
-	bool terminate();
-
-	bool resize();
-
-	void initializeDefaultAssets();
-
-	void prepareRenderingData();
-	bool prepareGeometryPassData();
-	bool prepareLightPassData();
-	bool prepareBillboardPassData();
-	bool prepareDebuggerPassData();
-
 	void MessageCallback(GLenum source,
-			GLenum type,
-			GLuint id,
-			GLenum severity,
-			GLsizei length,
-			const GLchar* message,
-			const void* userParam)
+		GLenum type,
+		GLuint id,
+		GLenum severity,
+		GLsizei length,
+		const GLchar* message,
+		const void* userParam)
 	{
 		if (severity == GL_DEBUG_SEVERITY_HIGH)
 		{
@@ -102,31 +88,46 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 		}
 	}
 
-	void getGLError()
-	{
-		GLenum err;
-		while ((err = glGetError()) != GL_NO_ERROR)
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, std::to_string(err));
-		}
-	}
-
-	CameraDataPack m_cameraDataPack;
-	SunDataPack m_sunDataPack;
-	std::vector<MeshDataPack> m_meshDataPack;
-
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	IRenderingFrontendSystem* m_renderingFrontendSystem;
+	ThreadSafeUnorderedMap<EntityID, GLMeshDataComponent*> m_meshMap;
+	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
+	ThreadSafeUnorderedMap<EntityID, GLTextureDataComponent*> m_textureMap;
+
+	void* m_MeshDataComponentPool;
+	void* m_MaterialDataComponentPool;
+	void* m_TextureDataComponentPool;
+
+	ThreadSafeQueue<GLMeshDataComponent*> m_uninitializedMDC;
+	ThreadSafeQueue<GLTextureDataComponent*> m_uninitializedTDC;
+
+	GLTextureDataComponent* m_iconTemplate_OBJ;
+	GLTextureDataComponent* m_iconTemplate_PNG;
+	GLTextureDataComponent* m_iconTemplate_SHADER;
+	GLTextureDataComponent* m_iconTemplate_UNKNOWN;
+
+	GLTextureDataComponent* m_iconTemplate_DirectionalLight;
+	GLTextureDataComponent* m_iconTemplate_PointLight;
+	GLTextureDataComponent* m_iconTemplate_SphereLight;
+
+	GLMeshDataComponent* m_unitLineMDC;
+	GLMeshDataComponent* m_unitQuadMDC;
+	GLMeshDataComponent* m_unitCubeMDC;
+	GLMeshDataComponent* m_unitSphereMDC;
+	GLMeshDataComponent* m_terrainMDC;
+
+	GLTextureDataComponent* m_basicNormalTDC;
+	GLTextureDataComponent* m_basicAlbedoTDC;
+	GLTextureDataComponent* m_basicMetallicTDC;
+	GLTextureDataComponent* m_basicRoughnessTDC;
+	GLTextureDataComponent* m_basicAOTDC;
 }
 
-bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
+bool GLRenderingSystemNS::setup()
 {
-	m_renderingFrontendSystem = renderingFrontend;
-
 	initializeComponentPool();
 
-	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
@@ -162,7 +163,7 @@ bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.height = GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
-	if (m_renderingFrontendSystem->getRenderingConfig().MSAAdepth)
+	if (g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig().MSAAdepth)
 	{
 		// antialiasing
 		// MSAA
@@ -183,14 +184,13 @@ bool GLRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 
 bool GLRenderingSystemNS::initialize()
 {
-	initializeDefaultAssets();
+	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(GLMeshDataComponent), 16384);
+	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
+	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(GLTextureDataComponent), 32768);
 
-	// UBO
-	GLRenderingSystemComponent::get().m_cameraUBO = generateUBO(sizeof(GPassCameraUBOData));
+	loadDefaultAssets();
 
-	GLRenderingSystemComponent::get().m_meshUBO = generateUBO(sizeof(GPassMeshUBOData));
-
-	GLRenderingSystemComponent::get().m_textureUBO = generateUBO(sizeof(GPassTextureUBOData));
+	generateGPUBuffers();
 
 	GLEnvironmentRenderPass::initialize();
 	GLShadowRenderPass::initialize();
@@ -220,71 +220,145 @@ bool GLRenderingSystemNS::initialize()
 	return true;
 }
 
-void  GLRenderingSystemNS::initializeDefaultAssets()
+void  GLRenderingSystemNS::loadDefaultAssets()
 {
-	GLRenderingSystemComponent::get().m_UnitLineGLMDC = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE));
-	GLRenderingSystemComponent::get().m_UnitQuadGLMDC = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD));
-	GLRenderingSystemComponent::get().m_UnitCubeGLMDC = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE));
-	GLRenderingSystemComponent::get().m_UnitSphereGLMDC = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE));
-	GLRenderingSystemComponent::get().m_terrainGLMDC = generateGLMeshDataComponent(g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::TERRAIN));
+	auto l_basicNormalTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_basicAlbedoTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
+	auto l_basicMetallicTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
+	auto l_basicRoughnessTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
+	auto l_basicAOTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
 
-	GLRenderingSystemComponent::get().m_basicNormalGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::NORMAL));
-	GLRenderingSystemComponent::get().m_basicAlbedoGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ALBEDO));
-	GLRenderingSystemComponent::get().m_basicMetallicGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::METALLIC));
-	GLRenderingSystemComponent::get().m_basicRoughnessGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
-	GLRenderingSystemComponent::get().m_basicAOGLTDC = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
+	auto l_iconTemplate_OBJ = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PNG = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SHADER = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_UNKNOWN = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
-	GLRenderingSystemComponent::get().m_iconTemplate_OBJ = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::OBJ));
-	GLRenderingSystemComponent::get().m_iconTemplate_PNG = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::PNG));
-	GLRenderingSystemComponent::get().m_iconTemplate_SHADER = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::SHADER));
-	GLRenderingSystemComponent::get().m_iconTemplate_UNKNOWN = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::UNKNOWN));
+	auto l_iconTemplate_DirectionalLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PointLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SphereLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
-	GLRenderingSystemComponent::get().m_iconTemplate_DirectionalLight = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT));
-	GLRenderingSystemComponent::get().m_iconTemplate_PointLight = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT));
-	GLRenderingSystemComponent::get().m_iconTemplate_SphereLight = generateGLTextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT));
+	m_basicNormalTDC = reinterpret_cast<GLTextureDataComponent*>(l_basicNormalTDC);
+	m_basicAlbedoTDC = reinterpret_cast<GLTextureDataComponent*>(l_basicAlbedoTDC);
+	m_basicMetallicTDC = reinterpret_cast<GLTextureDataComponent*>(l_basicMetallicTDC);
+	m_basicRoughnessTDC = reinterpret_cast<GLTextureDataComponent*>(l_basicRoughnessTDC);
+	m_basicAOTDC = reinterpret_cast<GLTextureDataComponent*>(l_basicAOTDC);
+
+	m_iconTemplate_OBJ = reinterpret_cast<GLTextureDataComponent*>(l_iconTemplate_OBJ);
+	m_iconTemplate_PNG = reinterpret_cast<GLTextureDataComponent*>(l_iconTemplate_PNG);
+	m_iconTemplate_SHADER = reinterpret_cast<GLTextureDataComponent*>(l_iconTemplate_SHADER);
+	m_iconTemplate_UNKNOWN = reinterpret_cast<GLTextureDataComponent*>(l_iconTemplate_UNKNOWN);
+
+	m_iconTemplate_DirectionalLight = reinterpret_cast<GLTextureDataComponent*>(l_iconTemplate_DirectionalLight);
+	m_iconTemplate_PointLight = reinterpret_cast<GLTextureDataComponent*>(l_iconTemplate_PointLight);
+	m_iconTemplate_SphereLight = reinterpret_cast<GLTextureDataComponent*>(l_iconTemplate_SphereLight);
+
+	m_unitLineMDC = addGLMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitLine(*m_unitLineMDC);
+	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
+	m_unitLineMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
+
+	m_unitQuadMDC = addGLMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
+	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
+	m_unitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
+
+	m_unitCubeMDC = addGLMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
+	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
+	m_unitCubeMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
+
+	m_unitSphereMDC = addGLMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
+	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
+	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
+
+	m_terrainMDC = addGLMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addTerrain(*m_terrainMDC);
+	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_terrainMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
+
+	initializeGLMeshDataComponent(m_unitLineMDC);
+	initializeGLMeshDataComponent(m_unitQuadMDC);
+	initializeGLMeshDataComponent(m_unitCubeMDC);
+	initializeGLMeshDataComponent(m_unitSphereMDC);
+	initializeGLMeshDataComponent(m_terrainMDC);
+
+	initializeGLTextureDataComponent(m_basicNormalTDC);
+	initializeGLTextureDataComponent(m_basicAlbedoTDC);
+	initializeGLTextureDataComponent(m_basicMetallicTDC);
+	initializeGLTextureDataComponent(m_basicRoughnessTDC);
+	initializeGLTextureDataComponent(m_basicAOTDC);
+
+	initializeGLTextureDataComponent(m_iconTemplate_OBJ);
+	initializeGLTextureDataComponent(m_iconTemplate_PNG);
+	initializeGLTextureDataComponent(m_iconTemplate_SHADER);
+	initializeGLTextureDataComponent(m_iconTemplate_UNKNOWN);
+
+	initializeGLTextureDataComponent(m_iconTemplate_DirectionalLight);
+	initializeGLTextureDataComponent(m_iconTemplate_PointLight);
+	initializeGLTextureDataComponent(m_iconTemplate_SphereLight);
+}
+
+bool GLRenderingSystemNS::generateGPUBuffers()
+{
+	GLRenderingSystemComponent::get().m_cameraUBO = generateUBO(sizeof(CameraGPUData), 0);
+
+	GLRenderingSystemComponent::get().m_meshUBO = generateUBO(sizeof(MeshGPUData), 1);
+
+	GLRenderingSystemComponent::get().m_materialUBO = generateUBO(sizeof(MaterialGPUData), 2);
+
+	return true;
 }
 
 bool GLRenderingSystemNS::update()
 {
-	// @TODO: too many states
-	bool l_meshStatus = true;
-	l_meshStatus = l_meshStatus & m_renderingFrontendSystem->anyUninitializedMeshDataComponent();
-
-	bool l_textureStatus = true;
-	l_textureStatus = l_textureStatus & m_renderingFrontendSystem->anyUninitializedTextureDataComponent();
-
-	if (l_meshStatus)
+	if (GLRenderingSystemNS::m_uninitializedMDC.size() > 0)
 	{
-		auto l_MDC = m_renderingFrontendSystem->acquireUninitializedMeshDataComponent();
+		GLMeshDataComponent* l_MDC;
+		GLRenderingSystemNS::m_uninitializedMDC.tryPop(l_MDC);
+
 		if (l_MDC)
 		{
-			auto l_result = generateGLMeshDataComponent(l_MDC);
-			if (l_result == nullptr)
+			auto l_result = initializeGLMeshDataComponent(l_MDC);
+			if (!l_result)
 			{
 				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLMeshDataComponent for " + l_MDC->m_parentEntity + "!");
 			}
 		}
 	}
-	if (l_textureStatus)
+	if (GLRenderingSystemNS::m_uninitializedTDC.size() > 0)
 	{
-		auto l_TDC = m_renderingFrontendSystem->acquireUninitializedTextureDataComponent();
+		GLTextureDataComponent* l_TDC;
+		GLRenderingSystemNS::m_uninitializedTDC.tryPop(l_TDC);
+
 		if (l_TDC)
 		{
-			auto l_result = generateGLTextureDataComponent(l_TDC);
-			if (l_result == nullptr)
+			auto l_result = initializeGLTextureDataComponent(l_TDC);
+			if (!l_result)
 			{
 				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLTextureDataComponent for " + l_TDC->m_parentEntity + "!");
 			}
 		}
 	}
 
-	prepareRenderingData();
+	return true;
+}
 
-	if (!l_meshStatus && !l_textureStatus)
-	{
-		GLEnvironmentRenderPass::update();
-		//GLEnvironmentRenderPass::draw();
-	}
+bool GLRenderingSystemNS::render()
+{
+	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, RenderingFrontendSystemComponent::get().m_cameraGPUData);
+
+	//GLEnvironmentRenderPass::update();
+	//GLEnvironmentRenderPass::draw();
 
 	GLShadowRenderPass::update();
 
@@ -364,301 +438,6 @@ bool GLRenderingSystemNS::update()
 	return true;
 }
 
-void GLRenderingSystemNS::prepareRenderingData()
-{
-	// copy camera data pack for local scope
-	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-	if (l_cameraDataPack.has_value())
-	{
-		m_cameraDataPack = l_cameraDataPack.value();
-	}
-
-	// copy mesh data pack for local scope
-	auto l_meshDataPack = m_renderingFrontendSystem->getMeshDataPack();
-	if (l_meshDataPack.has_value())
-	{
-		m_meshDataPack = l_meshDataPack.value();
-	}
-
-	prepareGeometryPassData();
-
-	prepareLightPassData();
-
-	prepareBillboardPassData();
-
-	prepareDebuggerPassData();
-}
-
-bool GLRenderingSystemNS::prepareGeometryPassData()
-{
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.p_original = m_cameraDataPack.p_original;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.p_jittered = m_cameraDataPack.p_jittered;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.r = m_cameraDataPack.r;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.t = m_cameraDataPack.t;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.r_prev = m_cameraDataPack.r_prev;
-	GLRenderingSystemComponent::get().m_GPassCameraUBOData.t_prev = m_cameraDataPack.t_prev;
-
-	std::vector<TransparentPassDataPack> l_sortedTransparentPassDataPack;
-
-	for (auto i : m_meshDataPack)
-	{
-		auto l_GLMDC = getGLMeshDataComponent(i.MDC->m_parentEntity);
-		if (l_GLMDC)
-		{
-			if (i.visiblilityType == VisiblilityType::INNO_OPAQUE || i.visiblilityType == VisiblilityType::INNO_EMISSIVE)
-			{
-				OpaquePassDataPack l_GLRenderDataPack;
-
-				l_GLRenderDataPack.UUID = i.m_UUID;
-				l_GLRenderDataPack.indiceSize = i.MDC->m_indicesSize;
-				l_GLRenderDataPack.meshPrimitiveTopology = i.MDC->m_meshPrimitiveTopology;
-				l_GLRenderDataPack.meshShapeType = i.MDC->m_meshShapeType;
-				l_GLRenderDataPack.meshUBOData.m = i.m;
-				l_GLRenderDataPack.meshUBOData.m_prev = i.m_prev;
-				l_GLRenderDataPack.GLMDC = l_GLMDC;
-
-				auto l_material = i.material;
-				// any normal?
-				auto l_TDC = l_material->m_texturePack.m_normalTDC.second;
-				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-				{
-					l_GLRenderDataPack.normalGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-				}
-				else
-				{
-					l_GLRenderDataPack.textureUBOData.useNormalTexture = false;
-				}
-				// any albedo?
-				l_TDC = l_material->m_texturePack.m_albedoTDC.second;
-				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-				{
-					l_GLRenderDataPack.albedoGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-				}
-				else
-				{
-					l_GLRenderDataPack.textureUBOData.useAlbedoTexture = false;
-				}
-				// any metallic?
-				l_TDC = l_material->m_texturePack.m_metallicTDC.second;
-				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-				{
-					l_GLRenderDataPack.metallicGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-				}
-				else
-				{
-					l_GLRenderDataPack.textureUBOData.useMetallicTexture = false;
-				}
-				// any roughness?
-				l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
-				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-				{
-					l_GLRenderDataPack.roughnessGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-				}
-				else
-				{
-					l_GLRenderDataPack.textureUBOData.useRoughnessTexture = false;
-				}
-				// any ao?
-				l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
-				if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-				{
-					l_GLRenderDataPack.AOGLTDC = getGLTextureDataComponent(l_TDC->m_parentEntity);
-				}
-				else
-				{
-					l_GLRenderDataPack.textureUBOData.useAOTexture = false;
-				}
-
-				l_GLRenderDataPack.textureUBOData.albedo = vec4(
-					l_material->m_meshCustomMaterial.albedo_r,
-					l_material->m_meshCustomMaterial.albedo_g,
-					l_material->m_meshCustomMaterial.albedo_b,
-					1.0f
-				);
-				l_GLRenderDataPack.textureUBOData.MRA = vec4(
-					l_material->m_meshCustomMaterial.metallic,
-					l_material->m_meshCustomMaterial.roughness,
-					l_material->m_meshCustomMaterial.ao,
-					1.0f
-				);
-
-				l_GLRenderDataPack.visiblilityType = i.visiblilityType;
-
-				GLRenderingSystemComponent::get().m_opaquePassDataQueue.push(l_GLRenderDataPack);
-			}
-			else if (i.visiblilityType == VisiblilityType::INNO_TRANSPARENT)
-			{
-				TransparentPassDataPack l_GLRenderDataPack;
-
-				l_GLRenderDataPack.indiceSize = i.MDC->m_indicesSize;
-				l_GLRenderDataPack.meshPrimitiveTopology = i.MDC->m_meshPrimitiveTopology;
-				l_GLRenderDataPack.meshShapeType = i.MDC->m_meshShapeType;
-				l_GLRenderDataPack.meshUBOData.m = i.m;
-				l_GLRenderDataPack.meshUBOData.m_prev = i.m_prev;
-				l_GLRenderDataPack.GLMDC = l_GLMDC;
-
-				auto l_material = i.material;
-
-				l_GLRenderDataPack.meshCustomMaterial = l_material->m_meshCustomMaterial;
-				l_GLRenderDataPack.visiblilityType = i.visiblilityType;
-
-				l_sortedTransparentPassDataPack.emplace_back(l_GLRenderDataPack);
-			}
-		}
-	}
-
-	// @TODO: use GPU to do OIT
-	std::sort(l_sortedTransparentPassDataPack.begin(), l_sortedTransparentPassDataPack.end(), [](TransparentPassDataPack a, TransparentPassDataPack b) {
-		auto m_a_InViewSpace = m_cameraDataPack.t * m_cameraDataPack.r * a.meshUBOData.m;
-		auto m_b_InViewSpace = m_cameraDataPack.t * m_cameraDataPack.r * b.meshUBOData.m;
-		return m_a_InViewSpace.m23 < m_b_InViewSpace.m23;
-	});
-
-	for (auto i : l_sortedTransparentPassDataPack)
-	{
-		GLRenderingSystemComponent::get().m_transparentPassDataQueue.push(i);
-	}
-	return true;
-}
-
-bool GLRenderingSystemNS::prepareLightPassData()
-{
-	// point light
-	GLRenderingSystemComponent::get().m_PointLightDatas.clear();
-	GLRenderingSystemComponent::get().m_PointLightDatas.reserve(g_pCoreSystem->getGameSystem()->get<PointLightComponent>().size());
-
-	for (auto i : g_pCoreSystem->getGameSystem()->get<PointLightComponent>())
-	{
-		PointLightData l_PointLightData;
-		l_PointLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_PointLightData.luminance = i->m_color * i->m_luminousFlux;
-		l_PointLightData.attenuationRadius = i->m_attenuationRadius;
-		GLRenderingSystemComponent::get().m_PointLightDatas.emplace_back(l_PointLightData);
-	}
-
-	// sphere light
-	GLRenderingSystemComponent::get().m_SphereLightDatas.clear();
-	GLRenderingSystemComponent::get().m_SphereLightDatas.reserve(g_pCoreSystem->getGameSystem()->get<SphereLightComponent>().size());
-
-	for (auto i : g_pCoreSystem->getGameSystem()->get<SphereLightComponent>())
-	{
-		SphereLightData l_SphereLightData;
-		l_SphereLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_SphereLightData.luminance = i->m_color * i->m_luminousFlux;;
-		l_SphereLightData.sphereRadius = i->m_sphereRadius;
-		GLRenderingSystemComponent::get().m_SphereLightDatas.emplace_back(l_SphereLightData);
-	}
-
-	return true;
-}
-
-bool GLRenderingSystemNS::prepareBillboardPassData()
-{
-	auto l_cameraDataPack = m_renderingFrontendSystem->getCameraDataPack();
-
-	for (auto i : g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>())
-	{
-		BillboardPassDataPack l_GLRenderDataPack;
-		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (m_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
-		l_GLRenderDataPack.iconType = WorldEditorIconType::DIRECTIONAL_LIGHT;
-
-		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
-	}
-
-	for (auto i : g_pCoreSystem->getGameSystem()->get<PointLightComponent>())
-	{
-		BillboardPassDataPack l_GLRenderDataPack;
-		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (m_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
-		l_GLRenderDataPack.iconType = WorldEditorIconType::POINT_LIGHT;
-
-		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
-	}
-
-	for (auto i : g_pCoreSystem->getGameSystem()->get<SphereLightComponent>())
-	{
-		BillboardPassDataPack l_GLRenderDataPack;
-		l_GLRenderDataPack.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_GLRenderDataPack.distanceToCamera = (m_cameraDataPack.globalPos - l_GLRenderDataPack.globalPos).length();
-		l_GLRenderDataPack.iconType = WorldEditorIconType::SPHERE_LIGHT;
-
-		GLRenderingSystemComponent::get().m_billboardPassDataQueue.emplace(l_GLRenderDataPack);
-	}
-
-	return true;
-}
-
-bool GLRenderingSystemNS::prepareDebuggerPassData()
-{
-	//if (RenderingSystemComponent::get().m_selectedVisibleComponent)
-	//{
-	//	for (auto i : RenderingSystemComponent::get().m_selectedVisibleComponent->m_modelMap)
-	//	{
-	//		DebuggerPassDataPack l_GLRenderDataPack;
-
-	//		auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(RenderingSystemComponent::get().m_selectedVisibleComponent->m_parentEntity);
-	//		auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-
-	//		l_GLRenderDataPack.m = l_globalTm;
-	//		l_GLRenderDataPack.GLMDC = getGLMeshDataComponent(i.first->m_parentEntity);
-	//		l_GLRenderDataPack.indiceSize = i.first->m_indicesSize;
-	//		l_GLRenderDataPack.meshPrimitiveTopology = i.first->m_meshPrimitiveTopology;
-
-	//		GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
-	//	}
-	//}
-
-	auto l_planeMDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-	auto l_debugPlanes = m_renderingFrontendSystem->getDebugPlane();
-
-	if (l_debugPlanes.size() > 0)
-	{
-		for (auto i : l_debugPlanes)
-		{
-			DebuggerPassDataPack l_GLRenderDataPack;
-
-			auto l_p = i.m_normal * i.m_distance;
-			auto l_t = InnoMath::toTranslationMatrix(l_p);
-			//@TODO: forward vector to rot
-
-			auto l_r = InnoMath::toRotationMatrix(i.m_normal);
-			auto l_m = l_t * l_r;
-
-			l_GLRenderDataPack.m = l_m;
-			l_GLRenderDataPack.GLMDC = GLRenderingSystemComponent::get().m_UnitQuadGLMDC;
-			l_GLRenderDataPack.indiceSize = l_planeMDC->m_indicesSize;
-			l_GLRenderDataPack.meshPrimitiveTopology = l_planeMDC->m_meshPrimitiveTopology;
-
-			GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
-		}
-	}
-
-	auto l_sphereMDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
-	auto l_debugSpheres = m_renderingFrontendSystem->getDebugSphere();
-
-	if (l_debugSpheres.size() > 0)
-	{
-		for (auto i : l_debugSpheres)
-		{
-			DebuggerPassDataPack l_GLRenderDataPack;
-
-			auto l_t = InnoMath::toTranslationMatrix(i.m_center);
-			auto l_s = InnoMath::toScaleMatrix(vec4(i.m_radius, i.m_radius, i.m_radius, 1.0f));
-			auto l_m = l_t * l_s;
-
-			l_GLRenderDataPack.m = l_m;
-			l_GLRenderDataPack.GLMDC = GLRenderingSystemComponent::get().m_UnitSphereGLMDC;
-			l_GLRenderDataPack.indiceSize = l_sphereMDC->m_indicesSize;
-			l_GLRenderDataPack.meshPrimitiveTopology = l_sphereMDC->m_meshPrimitiveTopology;
-
-			GLRenderingSystemComponent::get().m_debuggerPassDataQueue.emplace(l_GLRenderDataPack);
-		}
-	}
-
-	return true;
-}
-
 bool GLRenderingSystemNS::terminate()
 {
 	m_objectStatus = ObjectStatus::SHUTDOWN;
@@ -666,9 +445,147 @@ bool GLRenderingSystemNS::terminate()
 	return true;
 }
 
+GLMeshDataComponent* GLRenderingSystemNS::addGLMeshDataComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(GLMeshDataComponent));
+	auto l_MDC = new(l_rawPtr)GLMeshDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_meshMap = &m_meshMap;
+	l_meshMap->emplace(std::pair<EntityID, GLMeshDataComponent*>(l_parentEntity, l_MDC));
+	return l_MDC;
+}
+
+MaterialDataComponent* GLRenderingSystemNS::addMaterialDataComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
+	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_materialMap = &m_materialMap;
+	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, l_MDC));
+	return l_MDC;
+}
+
+GLTextureDataComponent* GLRenderingSystemNS::addGLTextureDataComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(GLTextureDataComponent));
+	auto l_TDC = new(l_rawPtr)GLTextureDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_TDC->m_parentEntity = l_parentEntity;
+	auto l_textureMap = &m_textureMap;
+	l_textureMap->emplace(std::pair<EntityID, GLTextureDataComponent*>(l_parentEntity, l_TDC));
+	return l_TDC;
+}
+
+GLMeshDataComponent* GLRenderingSystemNS::getGLMeshDataComponent(EntityID EntityID)
+{
+	auto result = GLRenderingSystemNS::m_meshMap.find(EntityID);
+	if (result != GLRenderingSystemNS::m_meshMap.end())
+	{
+		return result->second;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + EntityID + " !");
+		return nullptr;
+	}
+}
+
+GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(EntityID EntityID)
+{
+	auto result = GLRenderingSystemNS::m_textureMap.find(EntityID);
+	if (result != GLRenderingSystemNS::m_textureMap.end())
+	{
+		return result->second;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + EntityID + " !");
+		return nullptr;
+	}
+}
+
+GLMeshDataComponent* GLRenderingSystemNS::getGLMeshDataComponent(MeshShapeType meshShapeType)
+{
+	switch (meshShapeType)
+	{
+	case MeshShapeType::LINE:
+		return GLRenderingSystemNS::m_unitLineMDC; break;
+	case MeshShapeType::QUAD:
+		return GLRenderingSystemNS::m_unitQuadMDC; break;
+	case MeshShapeType::CUBE:
+		return GLRenderingSystemNS::m_unitCubeMDC; break;
+	case MeshShapeType::SPHERE:
+		return GLRenderingSystemNS::m_unitSphereMDC; break;
+	case MeshShapeType::TERRAIN:
+		return GLRenderingSystemNS::m_terrainMDC; break;
+	case MeshShapeType::CUSTOM:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: wrong MeshShapeType passed to GLRenderingSystem::getMeshDataComponent() !");
+		return nullptr; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(TextureUsageType textureUsageType)
+{
+	switch (textureUsageType)
+	{
+	case TextureUsageType::INVISIBLE:
+		return nullptr; break;
+	case TextureUsageType::NORMAL:
+		return GLRenderingSystemNS::m_basicNormalTDC; break;
+	case TextureUsageType::ALBEDO:
+		return GLRenderingSystemNS::m_basicAlbedoTDC; break;
+	case TextureUsageType::METALLIC:
+		return GLRenderingSystemNS::m_basicMetallicTDC; break;
+	case TextureUsageType::ROUGHNESS:
+		return GLRenderingSystemNS::m_basicRoughnessTDC; break;
+	case TextureUsageType::AMBIENT_OCCLUSION:
+		return GLRenderingSystemNS::m_basicAOTDC; break;
+	case TextureUsageType::RENDER_TARGET:
+		return nullptr; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(FileExplorerIconType iconType)
+{
+	switch (iconType)
+	{
+	case FileExplorerIconType::OBJ:
+		return GLRenderingSystemNS::m_iconTemplate_OBJ; break;
+	case FileExplorerIconType::PNG:
+		return GLRenderingSystemNS::m_iconTemplate_PNG; break;
+	case FileExplorerIconType::SHADER:
+		return GLRenderingSystemNS::m_iconTemplate_SHADER; break;
+	case FileExplorerIconType::UNKNOWN:
+		return GLRenderingSystemNS::m_iconTemplate_UNKNOWN; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(WorldEditorIconType iconType)
+{
+	switch (iconType)
+	{
+	case WorldEditorIconType::DIRECTIONAL_LIGHT:
+		return GLRenderingSystemNS::m_iconTemplate_DirectionalLight; break;
+	case WorldEditorIconType::POINT_LIGHT:
+		return GLRenderingSystemNS::m_iconTemplate_PointLight; break;
+	case WorldEditorIconType::SPHERE_LIGHT:
+		return GLRenderingSystemNS::m_iconTemplate_SphereLight; break;
+	default:
+		return nullptr; break;
+	}
+}
+
 bool GLRenderingSystemNS::resize()
 {
-	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX = l_screenResolution.x;
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY = l_screenResolution.y;
@@ -702,9 +619,9 @@ bool GLRenderingSystemNS::resize()
 	return true;
 }
 
-bool GLRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
+bool GLRenderingSystem::setup()
 {
-	return GLRenderingSystemNS::setup(renderingFrontend);
+	return GLRenderingSystemNS::setup();
 }
 
 bool GLRenderingSystem::initialize()
@@ -717,6 +634,11 @@ bool GLRenderingSystem::update()
 	return GLRenderingSystemNS::update();
 }
 
+bool GLRenderingSystem::render()
+{
+	return GLRenderingSystemNS::render();
+}
+
 bool GLRenderingSystem::terminate()
 {
 	return GLRenderingSystemNS::terminate();
@@ -725,6 +647,100 @@ bool GLRenderingSystem::terminate()
 ObjectStatus GLRenderingSystem::getStatus()
 {
 	return GLRenderingSystemNS::m_objectStatus;
+}
+
+MeshDataComponent * GLRenderingSystem::addMeshDataComponent()
+{
+	return GLRenderingSystemNS::addGLMeshDataComponent();
+}
+
+MaterialDataComponent * GLRenderingSystem::addMaterialDataComponent()
+{
+	return GLRenderingSystemNS::addMaterialDataComponent();
+}
+
+TextureDataComponent * GLRenderingSystem::addTextureDataComponent()
+{
+	return GLRenderingSystemNS::addGLTextureDataComponent();
+}
+
+MeshDataComponent * GLRenderingSystem::getMeshDataComponent(EntityID meshID)
+{
+	return GLRenderingSystemNS::getGLMeshDataComponent(meshID);
+}
+
+TextureDataComponent * GLRenderingSystem::getTextureDataComponent(EntityID textureID)
+{
+	return GLRenderingSystemNS::getGLTextureDataComponent(textureID);
+}
+
+MeshDataComponent * GLRenderingSystem::getMeshDataComponent(MeshShapeType MeshShapeType)
+{
+	return GLRenderingSystemNS::getGLMeshDataComponent(MeshShapeType);
+}
+
+TextureDataComponent * GLRenderingSystem::getTextureDataComponent(TextureUsageType TextureUsageType)
+{
+	return GLRenderingSystemNS::getGLTextureDataComponent(TextureUsageType);
+}
+
+TextureDataComponent * GLRenderingSystem::getTextureDataComponent(FileExplorerIconType iconType)
+{
+	return GLRenderingSystemNS::getGLTextureDataComponent(iconType);
+}
+
+TextureDataComponent * GLRenderingSystem::getTextureDataComponent(WorldEditorIconType iconType)
+{
+	return GLRenderingSystemNS::getGLTextureDataComponent(iconType);
+}
+
+bool GLRenderingSystem::removeMeshDataComponent(EntityID EntityID)
+{
+	auto l_meshMap = &GLRenderingSystemNS::m_meshMap;
+	auto l_mesh = l_meshMap->find(EntityID);
+	if (l_mesh != l_meshMap->end())
+	{
+		g_pCoreSystem->getMemorySystem()->destroyObject(GLRenderingSystemNS::m_MeshDataComponentPool, sizeof(GLMeshDataComponent), l_mesh->second);
+		l_meshMap->erase(EntityID);
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + EntityID + " !");
+		return false;
+	}
+}
+
+bool GLRenderingSystem::removeTextureDataComponent(EntityID EntityID)
+{
+	auto l_textureMap = &GLRenderingSystemNS::m_textureMap;
+	auto l_texture = l_textureMap->find(EntityID);
+	if (l_texture != l_textureMap->end())
+	{
+		for (auto& i : l_texture->second->m_textureData)
+		{
+			// @TODO
+		}
+
+		g_pCoreSystem->getMemorySystem()->destroyObject(GLRenderingSystemNS::m_TextureDataComponentPool, sizeof(GLTextureDataComponent), l_texture->second);
+		l_textureMap->erase(EntityID);
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + EntityID + " !");
+		return false;
+	}
+}
+
+void GLRenderingSystem::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
+{
+	GLRenderingSystemNS::m_uninitializedMDC.push(reinterpret_cast<GLMeshDataComponent*>(rhs));
+}
+
+void GLRenderingSystem::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
+{
+	GLRenderingSystemNS::m_uninitializedTDC.push(reinterpret_cast<GLTextureDataComponent*>(rhs));
 }
 
 bool GLRenderingSystem::resize()
@@ -736,19 +752,24 @@ bool GLRenderingSystem::reloadShader(RenderPassType renderPassType)
 {
 	switch (renderPassType)
 	{
-	case RenderPassType::OpaquePass:
+	case RenderPassType::Shadow:
+		break;
+	case RenderPassType::Opaque:
+		GLEarlyZPass::reloadShader();
 		GLOpaquePass::reloadShader();
+		GLSSAONoisePass::reloadShader();
+		GLSSAOBlurPass::reloadShader();
 		break;
-	case RenderPassType::TransparentPass:
-		GLTransparentPass::reloadShader();
-		break;
-	case RenderPassType::TerrainPass:
-		GLTerrainPass::reloadShader();
-		break;
-	case RenderPassType::LightPass:
+	case RenderPassType::Light:
 		GLLightPass::reloadShader();
 		break;
-	case RenderPassType::FinalPass:
+	case RenderPassType::Transparent:
+		GLTransparentPass::reloadShader();
+		break;
+	case RenderPassType::Terrain:
+		GLTerrainPass::reloadShader();
+		break;
+	case RenderPassType::PostProcessing:
 		GLSkyPass::reloadShader();
 		GLPreTAAPass::reloadShader();
 		GLTAAPass::reloadShader();

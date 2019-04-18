@@ -15,8 +15,8 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool initializeVertexShader(DX12ShaderProgramComponent* rhs, const std::wstring& VSShaderPath);
 	bool initializePixelShader(DX12ShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
 
-	bool initializeDX12MeshDataComponent(DX12MeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
-	bool initializeDX12TextureDataComponent(DX12TextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
+	bool summitGPUData(DX12MeshDataComponent* rhs);
+	bool summitGPUData(DX12TextureDataComponent* rhs);
 
 	std::unordered_map<EntityID, DX12MeshDataComponent*> m_initializedDXMDC;
 	std::unordered_map<EntityID, DX12TextureDataComponent*> m_initializedDXTDC;
@@ -24,8 +24,6 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	std::unordered_map<EntityID, DX12MeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, DX12TextureDataComponent*> m_textureMap;
 
-	void* m_DX12MeshDataComponentPool;
-	void* m_DX12TextureDataComponentPool;
 	void* m_DX12RenderPassComponentPool;
 	void* m_DX12ShaderProgramComponentPool;
 
@@ -34,8 +32,6 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 
 bool DX12RenderingSystemNS::initializeComponentPool()
 {
-	m_DX12MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12MeshDataComponent), 32768);
-	m_DX12TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12TextureDataComponent), 32768);
 	m_DX12RenderPassComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12RenderPassComponent), 128);
 	m_DX12ShaderProgramComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12ShaderProgramComponent), 256);
 
@@ -305,18 +301,8 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 {
 	auto l_renderPassDesc = DXRPC->m_renderPassDesc;
 
-	// create TDC
-	DXRPC->m_TDCs.reserve(l_renderPassDesc.RTNumber);
-
 	for (unsigned int i = 0; i < l_renderPassDesc.RTNumber; i++)
 	{
-		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
-
-		l_TDC->m_textureDataDesc = l_renderPassDesc.RTDesc;
-
-		l_TDC->m_textureData = { nullptr };
-
-		DXRPC->m_TDCs.emplace_back(l_TDC);
 	}
 
 	// generate DXTDC
@@ -324,10 +310,15 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 
 	for (unsigned int i = 0; i < l_renderPassDesc.RTNumber; i++)
 	{
-		auto l_TDC = DXRPC->m_TDCs[i];
-		auto l_DXTDC = generateDX12TextureDataComponent(l_TDC);
+		auto l_TDC = addDX12TextureDataComponent();
 
-		DXRPC->m_DXTDCs.emplace_back(l_DXTDC);
+		l_TDC->m_textureDataDesc = l_renderPassDesc.RTDesc;
+
+		l_TDC->m_textureData = { nullptr };
+
+		summitGPUData(l_TDC);
+
+		DXRPC->m_DXTDCs.emplace_back(l_TDC);
 	}
 
 	auto l_result = createRootSignature(DXRPC);
@@ -368,25 +359,60 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 	return DXRPC;
 }
 
-DX12MeshDataComponent* DX12RenderingSystemNS::generateDX12MeshDataComponent(MeshDataComponent * rhs)
+bool DX12RenderingSystemNS::initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
-		return getDX12MeshDataComponent(rhs->m_parentEntity);
+		return true;
 	}
 	else
 	{
-		auto l_ptr = addDX12MeshDataComponent(rhs->m_parentEntity);
-
-		initializeDX12MeshDataComponent(l_ptr, rhs->m_vertices, rhs->m_indices);
+		summitGPUData(rhs);
 
 		rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-		return l_ptr;
+		return true;
 	}
 }
 
-bool DX12RenderingSystemNS::initializeDX12MeshDataComponent(DX12MeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices)
+bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataComponent * rhs)
+{
+	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	{
+		return true;
+	}
+	else
+	{
+		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "DX12RenderingSystem: try to generate DX12TextureDataComponent for TextureUsageType::INVISIBLE type!");
+			return false;
+		}
+		else
+		{
+			if (rhs->m_textureData.size() > 0)
+			{
+				summitGPUData(rhs);
+
+				rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+				if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+				{
+					// @TODO: release raw data in heap memory
+				}
+
+				return true;
+			}
+			else
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "DX12RenderingSystem: try to generate DX12TextureDataComponent without raw data!");
+				return false;
+			}
+		}
+	}
+}
+
+bool DX12RenderingSystemNS::summitGPUData(DX12MeshDataComponent * rhs)
 {
 	// Set up the description of the static vertex buffer.
 
@@ -404,38 +430,10 @@ bool DX12RenderingSystemNS::initializeDX12MeshDataComponent(DX12MeshDataComponen
 
 	m_initializedDXMDC.emplace(rhs->m_parentEntity, rhs);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: VBO " + InnoUtility::pointerToString(rhs->m_vertexBuffer) + " is initialized.");
-
 	return true;
 }
 
-DX12TextureDataComponent* DX12RenderingSystemNS::generateDX12TextureDataComponent(TextureDataComponent * rhs)
-{
-	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
-	{
-		return getDX12TextureDataComponent(rhs->m_parentEntity);
-	}
-	else
-	{
-		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: TextureUsageType is TextureUsageType::INVISIBLE!");
-			return nullptr;
-		}
-		else
-		{
-			auto l_ptr = addDX12TextureDataComponent(rhs->m_parentEntity);
-
-			initializeDX12TextureDataComponent(l_ptr, rhs->m_textureDataDesc, rhs->m_textureData);
-
-			rhs->m_objectStatus = ObjectStatus::ALIVE;
-
-			return l_ptr;
-		}
-	}
-}
-
-bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
+bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 {
 	// set texture formats
 	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
@@ -443,15 +441,15 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 	// @TODO: Unified internal format
 	// Setup the description of the texture.
 	// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
-	if (textureDataDesc.usageType == TextureUsageType::ALBEDO)
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::ALBEDO)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
 	else
 	{
-		if (textureDataDesc.pixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
+		if (rhs->m_textureDataDesc.pixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (rhs->m_textureDataDesc.pixelDataFormat)
 			{
 			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
@@ -460,9 +458,9 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT)
+		else if (rhs->m_textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (rhs->m_textureDataDesc.pixelDataFormat)
 			{
 			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
@@ -475,7 +473,7 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 
 	unsigned int textureMipLevels = 1;
 	unsigned int miscFlags = 0;
-	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	if (rhs->m_textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
 		textureMipLevels = 0;
 	}
@@ -483,21 +481,21 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 	D3D12_RESOURCE_DESC D3DTextureDesc = {};
 	D3DTextureDesc.MipLevels = 1;
 	D3DTextureDesc.Format = l_internalFormat;
-	D3DTextureDesc.Width = textureDataDesc.height;
-	D3DTextureDesc.Height = textureDataDesc.width;
+	D3DTextureDesc.Width = rhs->m_textureDataDesc.height;
+	D3DTextureDesc.Height = rhs->m_textureDataDesc.width;
 	D3DTextureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 	D3DTextureDesc.DepthOrArraySize = 1;
 	D3DTextureDesc.SampleDesc.Count = 1;
 	D3DTextureDesc.SampleDesc.Quality = 0;
 	D3DTextureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
-	if (textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+	if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
 	{
 		D3DTextureDesc.SampleDesc.Quality = 0;
 	}
 
 	unsigned int SRVMipLevels = -1;
-	if (textureDataDesc.usageType == TextureUsageType::RENDER_TARGET)
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::RENDER_TARGET)
 	{
 		SRVMipLevels = 1;
 	}
@@ -548,8 +546,8 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 	//auto TexturePixelSize = 4;
 	//D3D12_SUBRESOURCE_DATA l_textureData = {};
 	//l_textureData.pData = &textureData;
-	//l_textureData.RowPitch = textureDataDesc.width * TexturePixelSize;
-	//l_textureData.SlicePitch = l_textureData.RowPitch * textureDataDesc.height;
+	//l_textureData.RowPitch = rhs->m_textureDataDesc.width * TexturePixelSize;
+	//l_textureData.SlicePitch = l_textureData.RowPitch * rhs->m_textureDataDesc.height;
 
 	//UpdateSubresources(m_commandList.Get(), m_texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
 	//m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
@@ -566,54 +564,9 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 
 	m_initializedDXTDC.emplace(rhs->m_parentEntity, rhs);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
 
 	return true;
-}
-
-DX12MeshDataComponent* DX12RenderingSystemNS::addDX12MeshDataComponent(EntityID rhs)
-{
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12MeshDataComponentPool, sizeof(DX12MeshDataComponent));
-	auto l_DXMDC = new(l_rawPtr)DX12MeshDataComponent();
-	l_DXMDC->m_parentEntity = rhs;
-	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, DX12MeshDataComponent*>(rhs, l_DXMDC));
-	return l_DXMDC;
-}
-
-DX12TextureDataComponent* DX12RenderingSystemNS::addDX12TextureDataComponent(EntityID rhs)
-{
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12TextureDataComponentPool, sizeof(DX12TextureDataComponent));
-	auto l_DXTDC = new(l_rawPtr)DX12TextureDataComponent();
-	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, DX12TextureDataComponent*>(rhs, l_DXTDC));
-	return l_DXTDC;
-}
-
-DX12MeshDataComponent * DX12RenderingSystemNS::getDX12MeshDataComponent(EntityID rhs)
-{
-	auto result = m_meshMap.find(rhs);
-	if (result != m_meshMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
-DX12TextureDataComponent * DX12RenderingSystemNS::getDX12TextureDataComponent(EntityID rhs)
-{
-	auto result = m_textureMap.find(rhs);
-	if (result != m_textureMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		return nullptr;
-	}
 }
 
 void DX12RenderingSystemNS::recordDrawCall(EntityID rhs)

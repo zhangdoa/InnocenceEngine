@@ -5,20 +5,22 @@ layout(location = 0) out vec4 uni_lightPassRT0;
 layout(location = 0) in vec2 TexCoords;
 
 struct dirLight {
-	vec3 direction;
-	vec3 luminance;
+	vec4 direction;
+	vec4 luminance;
 };
 
+// w component of luminance is attenuationRadius
 struct pointLight {
-	vec3 position;
-	float attenuationRadius;
-	vec3 luminance;
+	vec4 position;
+	vec4 luminance;
+	//float attenuationRadius;
 };
 
+// w component of luminance is sphereRadius
 struct sphereLight {
-	vec3 position;
-	float sphereRadius;
-	vec3 luminance;
+	vec4 position;
+	vec4 luminance;
+	//float sphereRadius;
 };
 
 const float eps = 0.00001;
@@ -48,7 +50,7 @@ uniform sampler2D uni_brdfMSLUT;
 uniform samplerCube uni_irradianceMap;
 uniform samplerCube uni_preFiltedMap;
 
-uniform vec3 uni_viewPos;
+uniform vec4 uni_viewPos;
 uniform dirLight uni_dirLight;
 uniform pointLight uni_pointLights[NR_POINT_LIGHTS];
 uniform sphereLight uni_sphereLights[NR_SPHERE_LIGHTS];
@@ -351,27 +353,27 @@ void main()
 		F0 = mix(F0, Albedo, Metallic);
 
 		vec3 N = normalize(Normal);
-		vec3 V = normalize(uni_viewPos - FragPos);
+		vec3 V = normalize(uni_viewPos.xyz - FragPos);
 
 		float NdotV = max(dot(N, V), 0.0);
 
 		// direction light, sun light
-		vec3 L = normalize(-uni_dirLight.direction);
+		vec3 L = normalize(-uni_dirLight.direction.xyz);
 		vec3 H = normalize(V + L);
 
 		float LdotH = max(dot(L, H), 0.0);
 		float NdotH = max(dot(N, H), 0.0);
 		float NdotL = max(dot(N, L), 0.0);
 
-		Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, uni_dirLight.luminance);
+		Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, uni_dirLight.luminance.xyz);
 
 		Lo *= 1 - ShadowCalculation(NdotL, FragPos);
 
 		// point punctual light
 		for (int i = 0; i < NR_POINT_LIGHTS; ++i)
 		{
-			vec3 unormalizedL = uni_pointLights[i].position - FragPos;
-			float lightRadius = uni_pointLights[i].attenuationRadius;
+			vec3 unormalizedL = uni_pointLights[i].position.xyz - FragPos;
+			float lightRadius = uni_pointLights[i].luminance.w;
 			if (length(unormalizedL) < lightRadius)
 			{
 				L = normalize(unormalizedL);
@@ -385,7 +387,7 @@ void main()
 				float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
 				attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
-				vec3 lightLuminance = uni_pointLights[i].luminance * attenuation;
+				vec3 lightLuminance = uni_pointLights[i].luminance.xyz * attenuation;
 
 				Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, lightLuminance);
 			}
@@ -394,8 +396,8 @@ void main()
 		// sphere area light
 		for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
 		{
-			vec3 unormalizedL = uni_sphereLights[i].position - FragPos;
-			float lightRadius = uni_sphereLights[i].sphereRadius;
+			vec3 unormalizedL = uni_sphereLights[i].position.xyz - FragPos;
+			float lightRadius = uni_sphereLights[i].luminance.w;
 
 			L = normalize(unormalizedL);
 			H = normalize(V + L);
@@ -426,7 +428,7 @@ void main()
 			}
 			illuminance *= PI;
 
-			Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * uni_sphereLights[i].luminance);
+			Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * uni_sphereLights[i].luminance.xyz);
 		}
 
 		// environment capture light
@@ -440,7 +442,7 @@ void main()
 	{
 		vec3 N = normalize(Normal);
 
-		vec3 L = normalize(-uni_dirLight.direction);
+		vec3 L = normalize(-uni_dirLight.direction.xyz);
 		float NdotL = max(dot(N, L), 0.0);
 
 		Lo = vec3(NdotL);

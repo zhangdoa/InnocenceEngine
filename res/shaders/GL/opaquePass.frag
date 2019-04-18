@@ -10,19 +10,18 @@ layout(location = 1) in vec4 thefrag_ClipSpacePos_current;
 layout(location = 2) in vec4 thefrag_ClipSpacePos_previous;
 layout(location = 3) in vec2 thefrag_TexCoord;
 layout(location = 4) in vec3 thefrag_Normal;
+layout(location = 5) in float thefrag_UUID;
 
-uniform sampler2D uni_normalTexture;
-uniform sampler2D uni_albedoTexture;
-uniform sampler2D uni_metallicTexture;
-uniform sampler2D uni_roughnessTexture;
-uniform sampler2D uni_aoTexture;
+layout(location = 0, binding = 0) uniform sampler2D uni_normalTexture;
+layout(location = 1, binding = 1) uniform sampler2D uni_albedoTexture;
+layout(location = 2, binding = 2) uniform sampler2D uni_metallicTexture;
+layout(location = 3, binding = 3) uniform sampler2D uni_roughnessTexture;
+layout(location = 4, binding = 4) uniform sampler2D uni_aoTexture;
 
-uniform unsigned int uni_id;
-
-layout(std140) uniform textureUBO
+layout(std140, binding = 2) uniform materialUBO
 {
 	vec4 uni_albedo;
-	vec4 uni_MRA;
+	vec4 uni_MRAT;
 	bool uni_useNormalTexture;
 	bool uni_useAlbedoTexture;
 	bool uni_useMetallicTexture;
@@ -83,7 +82,7 @@ void main()
 	}
 	else
 	{
-		MRA.r = uni_MRA.r;
+		MRA.r = uni_MRAT.r;
 	}
 
 	if (uni_useRoughnessTexture)
@@ -92,7 +91,7 @@ void main()
 	}
 	else
 	{
-		MRA.g = uni_MRA.g;
+		MRA.g = uni_MRAT.g;
 	}
 
 	if (uni_useAOTexture)
@@ -101,12 +100,12 @@ void main()
 	}
 	else
 	{
-		MRA.b = uni_MRA.b;
+		MRA.b = uni_MRAT.b;
 	}
 
 	uni_geometryPassRT0 = vec4(thefrag_WorldSpacePos.xyz, MRA.r);
 	uni_geometryPassRT1 = vec4(WorldSpaceNormal, MRA.g);
 	uni_geometryPassRT2 = vec4(albedo, MRA.b);
 	vec4 motionVec = (thefrag_ClipSpacePos_current / thefrag_ClipSpacePos_current.w - thefrag_ClipSpacePos_previous / thefrag_ClipSpacePos_previous.w);
-	uni_geometryPassRT3 = vec4(motionVec.xy * 0.5, float(uni_id), transparency);
+	uni_geometryPassRT3 = vec4(motionVec.xy * 0.5, thefrag_UUID, transparency);
 }

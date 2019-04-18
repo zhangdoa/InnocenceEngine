@@ -234,11 +234,12 @@ bool InnoVisionSystemNS::setupWindow(void* hInstance, void* hwnd)
 
 bool InnoVisionSystemNS::setupRendering()
 {
-	if (!InnoVisionSystemNS::m_renderingFrontendSystem->setup())
+	if (!InnoVisionSystemNS::m_renderingBackendSystem->setup())
 	{
 		return false;
 	}
-	if (!InnoVisionSystemNS::m_renderingBackendSystem->setup(m_renderingFrontendSystem))
+
+	if (!InnoVisionSystemNS::m_renderingFrontendSystem->setup(InnoVisionSystemNS::m_renderingBackendSystem))
 	{
 		return false;
 	}
@@ -260,8 +261,9 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 {
 	InnoVisionSystemNS::m_windowSystem->initialize();
 
-	InnoVisionSystemNS::m_renderingFrontendSystem->initialize();
 	InnoVisionSystemNS::m_renderingBackendSystem->initialize();
+	InnoVisionSystemNS::m_renderingFrontendSystem->initialize();
+
 	ImGuiWrapper::get().initialize();
 
 	InnoVisionSystemNS::m_objectStatus = ObjectStatus::ALIVE;
@@ -294,6 +296,8 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 			InnoVisionSystemNS::m_isRendering = true;
 
 			InnoVisionSystemNS::m_renderingBackendSystem->update();
+
+			InnoVisionSystemNS::m_renderingBackendSystem->render();
 
 			//ImGuiWrapper::get().update();
 

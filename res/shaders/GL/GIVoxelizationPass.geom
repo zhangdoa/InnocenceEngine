@@ -23,7 +23,7 @@ uniform mat4 uni_VP_inv[3];
 uniform uint uni_volumeDimension;
 
 uniform float uni_voxelScale;
-uniform vec3 uni_worldMinPoint;
+uniform vec4 uni_worldMinPoint;
 
 int CalculateAxis()
 {
@@ -141,7 +141,7 @@ void main()
 	{
 		vec4 voxelPos = VP_inv * pos[i];
 		voxelPos.xyz /= voxelPos.w;
-		voxelPos.xyz -= uni_worldMinPoint;
+		voxelPos.xyz -= uni_worldMinPoint.xyz;
 		voxelPos *= uni_voxelScale;
 
 		gl_Position = pos[i];

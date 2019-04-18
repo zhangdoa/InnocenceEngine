@@ -10,8 +10,9 @@ layout(location = 1) out vec4 thefrag_ClipSpacePos_current;
 layout(location = 2) out vec4 thefrag_ClipSpacePos_previous;
 layout(location = 3) out vec2 thefrag_TexCoord;
 layout(location = 4) out vec3 thefrag_Normal;
+layout(location = 5) out float thefrag_UUID;
 
-layout(row_major) uniform cameraUBO
+layout(std140, row_major, binding = 0) uniform cameraUBO
 {
 	mat4 uni_p_camera_original;
 	mat4 uni_p_camera_jittered;
@@ -19,12 +20,16 @@ layout(row_major) uniform cameraUBO
 	mat4 uni_t_camera;
 	mat4 uni_r_camera_prev;
 	mat4 uni_t_camera_prev;
+	vec4 uni_globalPos;
+	float WHRatio;
 };
 
-layout(row_major) uniform meshUBO
+layout(std140, row_major, binding = 1) uniform meshUBO
 {
 	mat4 uni_m;
 	mat4 uni_m_prev;
+	mat4 uni_normalMat;
+	float uni_UUID;
 };
 
 void main()
@@ -45,6 +50,9 @@ void main()
 
 	// output the normal
 	thefrag_Normal = mat3(transpose(inverse(uni_m))) * in_Normal;
+
+	// output the UUID
+	thefrag_UUID = uni_UUID;
 
 	gl_Position = uni_p_camera_jittered * thefrag_CameraSpacePos_current;
 }

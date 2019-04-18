@@ -1,6 +1,7 @@
 #include "GLRenderingSystemUtilities.h"
 #include "GLShadowRenderPass.h"
 #include "../../component/GLRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -26,8 +27,6 @@ INNO_PRIVATE_SCOPE GLShadowRenderPass
 	GLShaderProgramComponent* m_GLSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//shadowPass.vert" , "", "GL//shadowPass.frag" };
-
-	std::vector<CSMDataPack> m_CSMDataPack;
 }
 
 void GLShadowRenderPass::initialize()
@@ -88,12 +87,12 @@ void GLShadowRenderPass::initialize()
 
 void GLShadowRenderPass::drawAllMeshDataComponents()
 {
-	auto l_queueCopy = GLRenderingSystemComponent::get().m_opaquePassDataQueue;
+	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
 
 	while (l_queueCopy.size() > 0)
 	{
-		auto l_renderPack = l_queueCopy.front();
-		if (l_renderPack.meshShapeType != MeshShapeType::CUSTOM)
+		auto l_geometryPassGPUData = l_queueCopy.front();
+		if (l_geometryPassGPUData.MDC->m_meshShapeType != MeshShapeType::CUSTOM)
 		{
 			glFrontFace(GL_CW);
 		}
@@ -103,8 +102,10 @@ void GLShadowRenderPass::drawAllMeshDataComponents()
 		}
 		//uni_m
 		updateUniform(
-			2, l_renderPack.meshUBOData.m);
-		drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
+			2, l_geometryPassGPUData.meshGPUData.m);
+
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_geometryPassGPUData.MDC));
+
 		l_queueCopy.pop();
 	}
 }
@@ -112,48 +113,40 @@ void GLShadowRenderPass::drawAllMeshDataComponents()
 void GLShadowRenderPass::update()
 {
 	// copy CSM data pack for local scope
-	auto l_CSMDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCSMDataPack();
-	if (l_CSMDataPack.has_value())
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CCW);
+	glCullFace(GL_FRONT);
+
+	activateShaderProgram(m_GLSPC);
+
+	activateRenderPass(m_DirLight_GLRPC);
+
+	auto sizeX = m_DirLight_GLRPC->m_GLFrameBufferDesc.sizeX;
+	auto sizeY = m_DirLight_GLRPC->m_GLFrameBufferDesc.sizeY;
+
+	unsigned int splitCount = 0;
+
+	for (unsigned int i = 0; i < 2; i++)
 	{
-		m_CSMDataPack = l_CSMDataPack.value();
-	}
-
-	if (m_CSMDataPack.size())
-	{
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LESS);
-
-		glEnable(GL_CULL_FACE);
-		glFrontFace(GL_CCW);
-		glCullFace(GL_FRONT);
-
-		activateShaderProgram(m_GLSPC);
-
-		activateRenderPass(m_DirLight_GLRPC);
-
-		auto sizeX = m_DirLight_GLRPC->m_GLFrameBufferDesc.sizeX;
-		auto sizeY = m_DirLight_GLRPC->m_GLFrameBufferDesc.sizeY;
-
-		unsigned int splitCount = 0;
-
-		for (unsigned int i = 0; i < 2; i++)
+		for (unsigned int j = 0; j < 2; j++)
 		{
-			for (unsigned int j = 0; j < 2; j++)
-			{
-				glViewport(i * sizeX / 2, j * sizeY / 2, sizeX / 2, sizeY / 2);
-				// uni_p
-				updateUniform(
-					0,
-					m_CSMDataPack[splitCount].p);
-				//uni_v
-				updateUniform(
-					1,
-					m_CSMDataPack[splitCount].v);
+			glViewport(i * sizeX / 2, j * sizeY / 2, sizeX / 2, sizeY / 2);
+			// uni_p
+			updateUniform(
+				0,
+				RenderingFrontendSystemComponent::get().m_CSMGPUDataVector[splitCount].p);
+			//uni_v
+			updateUniform(
+				1,
+				RenderingFrontendSystemComponent::get().m_CSMGPUDataVector[splitCount].v);
 
-				splitCount++;
+			splitCount++;
 
-				drawAllMeshDataComponents();
-			}
+			drawAllMeshDataComponents();
 		}
 	}
 

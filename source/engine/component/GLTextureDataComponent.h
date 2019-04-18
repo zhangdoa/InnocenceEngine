@@ -1,6 +1,7 @@
 #pragma once
 #include "../common/InnoType.h"
 #include "../system/GLRenderingBackend/GLHeaders.h"
+#include "TextureDataComponent.h"
 
 struct GLTextureDataDesc
 {
@@ -14,14 +15,11 @@ struct GLTextureDataDesc
 	float borderColor[4];
 };
 
-class GLTextureDataComponent
+class GLTextureDataComponent : public TextureDataComponent
 {
 public:
 	GLTextureDataComponent() {};
 	~GLTextureDataComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
 
 	GLuint m_TO = 0;
 	GLTextureDataDesc m_GLTextureDataDesc = GLTextureDataDesc();

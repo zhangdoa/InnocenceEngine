@@ -1,4 +1,5 @@
 #include "RenderingFrontendSystem.h"
+#include "../component/RenderingFrontendSystemComponent.h"
 
 #include "ICoreSystem.h"
 
@@ -8,26 +9,21 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
+	IRenderingBackendSystem* m_renderingBackendSystem;
+
 	TVec2<unsigned int> m_screenResolution = TVec2<unsigned int>(1280, 720);
 	std::string m_windowName;
 	bool m_fullScreen = false;
 
-	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMDC;
-	ThreadSafeQueue<TextureDataComponent*> m_uninitializedTDC;
-
 	ThreadSafeVector<CullingDataPack> m_cullingDataPack;
 
 	std::atomic<bool> m_isCSMDataPackValid = false;
-	std::vector<CSMDataPack> m_CSMDataPacks;
 
 	std::atomic<bool> m_isSunDataPackValid = false;
-	SunDataPack m_sunDataPack;
 
 	std::atomic<bool> m_isCameraDataPackValid = false;
-	CameraDataPack m_cameraDataPack;
 
 	std::atomic<bool> m_isMeshDataPackValid = false;
-	std::vector<MeshDataPack> m_meshDataPack;
 
 	std::vector<Plane> m_debugPlanes;
 	std::vector<Sphere> m_debugSpheres;
@@ -38,10 +34,11 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 	std::function<void(RenderPassType)> f_reloadShader;
 	std::function<void()> f_captureEnvironment;
 	std::function<void()> f_sceneLoadingStartCallback;
+	std::function<void()> f_sceneLoadingFinishCallback;
 
 	RenderingConfig m_renderingConfig = RenderingConfig();
 
-	bool setup();
+	bool setup(IRenderingBackendSystem* renderingBackendSystem);
 	bool initialize();
 	bool update();
 	bool terminate();
@@ -51,7 +48,10 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 
 	bool updateCameraData();
 	bool updateSunData();
+	bool updateLightData();
 	bool updateMeshData();
+	bool updateBillboardPassData();
+	bool updateDebuggerPassData();
 }
 
 float InnoRenderingFrontendSystemNS::radicalInverse(unsigned int n, unsigned int base)
@@ -77,8 +77,10 @@ void InnoRenderingFrontendSystemNS::initializeHaltonSampler()
 	}
 }
 
-bool InnoRenderingFrontendSystemNS::setup()
+bool InnoRenderingFrontendSystemNS::setup(IRenderingBackendSystem* renderingBackendSystem)
 {
+	m_renderingBackendSystem = renderingBackendSystem;
+
 	m_renderingConfig.useMotionBlur = true;
 	m_renderingConfig.useTAA = true;
 	//m_renderingConfig.useBloom = true;
@@ -86,12 +88,43 @@ bool InnoRenderingFrontendSystemNS::setup()
 	//m_renderingConfig.drawTerrain = true;
 
 	f_sceneLoadingStartCallback = [&]() {
-		m_meshDataPack.clear();
 		m_cullingDataPack.clear();
+
+		RenderingFrontendSystemComponent::get().m_CSMGPUDataVector.clear();
+		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.clear();
+		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.clear();
+
+		RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.clear();
+		RenderingFrontendSystemComponent::get().m_transparentPassGPUDataQueue.clear();
+		RenderingFrontendSystemComponent::get().m_billboardPassGPUDataQueue.clear();
+		RenderingFrontendSystemComponent::get().m_debuggerPassGPUDataQueue.clear();
+
+		m_isCSMDataPackValid = false;
+		m_isSunDataPackValid = false;
+		m_isCameraDataPackValid = false;
 		m_isMeshDataPackValid = false;
 	};
 
+	f_sceneLoadingFinishCallback = [&]() {
+		// point light
+		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.reserve(RenderingFrontendSystemComponent::get().m_maxPointLights);
+
+		for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxPointLights; i++)
+		{
+			RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.emplace_back();
+		}
+
+		// sphere light
+		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.reserve(RenderingFrontendSystemComponent::get().m_maxSphereLights);
+
+		for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxSphereLights; i++)
+		{
+			RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.emplace_back();
+		}
+	};
+
 	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	return true;
 }
@@ -115,19 +148,9 @@ bool InnoRenderingFrontendSystemNS::updateCameraData()
 	auto l_mainCameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
 
 	auto l_p = l_mainCamera->m_projectionMatrix;
-	auto l_r =
-		InnoMath::getInvertRotationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
-		);
-	auto l_t =
-		InnoMath::getInvertTranslationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
-		);
-	auto r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
-	auto t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
 
-	m_cameraDataPack.p_original = l_p;
-	m_cameraDataPack.p_jittered = l_p;
+	RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original = l_p;
+	RenderingFrontendSystemComponent::get().m_cameraGPUData.p_jittered = l_p;
 
 	if (m_renderingConfig.useTAA)
 	{
@@ -137,18 +160,27 @@ bool InnoRenderingFrontendSystemNS::updateCameraData()
 		{
 			l_currentHaltonStep = 0;
 		}
-		m_cameraDataPack.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
-		m_cameraDataPack.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
+		RenderingFrontendSystemComponent::get().m_cameraGPUData.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
+		RenderingFrontendSystemComponent::get().m_cameraGPUData.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
 		l_currentHaltonStep += 1;
 	}
 
-	m_cameraDataPack.r = l_r;
-	m_cameraDataPack.t = l_t;
-	m_cameraDataPack.r_prev = r_prev;
-	m_cameraDataPack.t_prev = t_prev;
-	m_cameraDataPack.globalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+	RenderingFrontendSystemComponent::get().m_cameraGPUData.r =
+		InnoMath::getInvertRotationMatrix(
+			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
+		);
 
-	m_cameraDataPack.WHRatio = l_mainCamera->m_WHRatio;
+	RenderingFrontendSystemComponent::get().m_cameraGPUData.t =
+		InnoMath::getInvertTranslationMatrix(
+			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
+		);
+
+	RenderingFrontendSystemComponent::get().m_cameraGPUData.r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
+	RenderingFrontendSystemComponent::get().m_cameraGPUData.t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
+
+	RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+
+	RenderingFrontendSystemComponent::get().m_cameraGPUData.WHRatio = l_mainCamera->m_WHRatio;
 
 	m_isCameraDataPackValid = true;
 
@@ -157,24 +189,24 @@ bool InnoRenderingFrontendSystemNS::updateCameraData()
 
 bool InnoRenderingFrontendSystemNS::updateSunData()
 {
-	m_isCSMDataPackValid = false;
 	m_isSunDataPackValid = false;
+	m_isCSMDataPackValid = false;
 
 	auto l_directionalLightComponents = g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>();
 	auto l_directionalLight = l_directionalLightComponents[0];
 	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
 
-	m_sunDataPack.dir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
-	m_sunDataPack.luminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
-	m_sunDataPack.r = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	RenderingFrontendSystemComponent::get().m_sunGPUData.dir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	RenderingFrontendSystemComponent::get().m_sunGPUData.luminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
+	RenderingFrontendSystemComponent::get().m_sunGPUData.r = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 
 	auto l_CSMSize = l_directionalLight->m_projectionMatrices.size();
 
-	m_CSMDataPacks.clear();
+	RenderingFrontendSystemComponent::get().m_CSMGPUDataVector.clear();
 
 	for (size_t j = 0; j < l_directionalLight->m_projectionMatrices.size(); j++)
 	{
-		m_CSMDataPacks.emplace_back();
+		RenderingFrontendSystemComponent::get().m_CSMGPUDataVector.emplace_back();
 
 		auto l_shadowSplitCorner = vec4(
 			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.x,
@@ -183,16 +215,42 @@ bool InnoRenderingFrontendSystemNS::updateSunData()
 			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.z
 		);
 
-		m_CSMDataPacks[j].p = l_directionalLight->m_projectionMatrices[j];
-		m_CSMDataPacks[j].splitCorners = l_shadowSplitCorner;
+		RenderingFrontendSystemComponent::get().m_CSMGPUDataVector[j].p = l_directionalLight->m_projectionMatrices[j];
+		RenderingFrontendSystemComponent::get().m_CSMGPUDataVector[j].splitCorners = l_shadowSplitCorner;
 
 		auto l_lightRotMat = l_directionalLightTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
 
-		m_CSMDataPacks[j].v = l_lightRotMat;
+		RenderingFrontendSystemComponent::get().m_CSMGPUDataVector[j].v = l_lightRotMat;
 	}
 
 	m_isCSMDataPackValid = true;
 	m_isSunDataPackValid = true;
+
+	return true;
+}
+
+bool InnoRenderingFrontendSystemNS::updateLightData()
+{
+	auto& l_pointLightComponents = g_pCoreSystem->getGameSystem()->get<PointLightComponent>();
+	for (size_t i = 0; i < l_pointLightComponents.size(); i++)
+	{
+		PointLightGPUData l_PointLightGPUData;
+		l_PointLightGPUData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_pointLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_PointLightGPUData.luminance = l_pointLightComponents[i]->m_color * l_pointLightComponents[i]->m_luminousFlux;
+		l_PointLightGPUData.luminance.w = l_pointLightComponents[i]->m_attenuationRadius;
+		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[i] = l_PointLightGPUData;
+	}
+
+	auto& l_sphereLightComponents = g_pCoreSystem->getGameSystem()->get<SphereLightComponent>();
+	for (size_t i = 0; i < l_sphereLightComponents.size(); i++)
+	{
+		SphereLightGPUData l_SphereLightGPUData;
+		l_SphereLightGPUData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_sphereLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_SphereLightGPUData.luminance = l_sphereLightComponents[i]->m_color * l_sphereLightComponents[i]->m_luminousFlux;
+		l_SphereLightGPUData.luminance.w = l_sphereLightComponents[i]->m_sphereRadius;
+		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[i] = l_SphereLightGPUData;
+	}
+
 	return true;
 }
 
@@ -200,7 +258,10 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 {
 	m_isMeshDataPackValid = false;
 
-	m_meshDataPack.clear();
+	RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.clear();
+	RenderingFrontendSystemComponent::get().m_transparentPassGPUDataQueue.clear();
+
+	std::vector<GeometryPassGPUData> l_sortedTransparentPassGPUDataVector;
 
 	for (auto& i : m_cullingDataPack)
 	{
@@ -209,26 +270,102 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 			if (i.MDC->m_objectStatus == ObjectStatus::ALIVE)
 			{
 				auto l_modelPair = i.visibleComponent->m_modelMap.find(i.MDC);
+
 				if (l_modelPair != i.visibleComponent->m_modelMap.end())
 				{
-					MeshDataPack l_meshDataPack;
+					GeometryPassGPUData l_geometryPassGPUData;
 
-					l_meshDataPack.m = i.m;
-					l_meshDataPack.m_prev = i.m_prev;
-					l_meshDataPack.normalMat = i.normalMat;
-					l_meshDataPack.MDC = i.MDC;
-					l_meshDataPack.material = l_modelPair->second;
-					l_meshDataPack.visiblilityType = i.visibleComponent->m_visiblilityType;
-					l_meshDataPack.m_UUID = i.visibleComponent->m_UUID;
+					l_geometryPassGPUData.MDC = i.MDC;
 
-					m_meshDataPack.emplace_back(l_meshDataPack);
+					l_geometryPassGPUData.meshGPUData.m = i.m;
+					l_geometryPassGPUData.meshGPUData.m_prev = i.m_prev;
+					l_geometryPassGPUData.meshGPUData.normalMat = i.normalMat;
+					l_geometryPassGPUData.meshGPUData.UUID = (float)i.visibleComponent->m_UUID;
+
+					l_geometryPassGPUData.normalTDC = l_modelPair->second->m_texturePack.m_normalTDC.second;
+					l_geometryPassGPUData.albedoTDC = l_modelPair->second->m_texturePack.m_albedoTDC.second;
+					l_geometryPassGPUData.metallicTDC = l_modelPair->second->m_texturePack.m_metallicTDC.second;
+					l_geometryPassGPUData.roughnessTDC = l_modelPair->second->m_texturePack.m_roughnessTDC.second;
+					l_geometryPassGPUData.AOTDC = l_modelPair->second->m_texturePack.m_aoTDC.second;
+
+					l_geometryPassGPUData.materialGPUData.useNormalTexture = !(l_geometryPassGPUData.normalTDC == nullptr);
+					l_geometryPassGPUData.materialGPUData.useAlbedoTexture = !(l_geometryPassGPUData.albedoTDC == nullptr);
+					l_geometryPassGPUData.materialGPUData.useMetallicTexture = !(l_geometryPassGPUData.metallicTDC == nullptr);
+					l_geometryPassGPUData.materialGPUData.useRoughnessTexture = !(l_geometryPassGPUData.roughnessTDC == nullptr);
+					l_geometryPassGPUData.materialGPUData.useAOTexture = !(l_geometryPassGPUData.AOTDC == nullptr);
+
+					l_geometryPassGPUData.materialGPUData.customMaterial = l_modelPair->second->m_meshCustomMaterial;
+
+					if (i.visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE)
+					{
+						RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.push(l_geometryPassGPUData);
+					}
+
+					else if (i.visibleComponent->m_visiblilityType == VisiblilityType::INNO_TRANSPARENT)
+					{
+						l_sortedTransparentPassGPUDataVector.emplace_back(l_geometryPassGPUData);
+					}
 				}
 			}
 		}
 	}
 
+	// @TODO: use GPU to do OIT
+	std::sort(l_sortedTransparentPassGPUDataVector.begin(), l_sortedTransparentPassGPUDataVector.end(), [](GeometryPassGPUData a, GeometryPassGPUData b) {
+		auto l_t = RenderingFrontendSystemComponent::get().m_cameraGPUData.t;
+		auto l_r = RenderingFrontendSystemComponent::get().m_cameraGPUData.r;
+		auto m_a_InViewSpace = l_t * l_r * a.meshGPUData.m;
+		auto m_b_InViewSpace = l_t * l_r * b.meshGPUData.m;
+		return m_a_InViewSpace.m23 < m_b_InViewSpace.m23;
+	});
+
+	for (auto i : l_sortedTransparentPassGPUDataVector)
+	{
+		RenderingFrontendSystemComponent::get().m_transparentPassGPUDataQueue.push(i);
+	}
+
 	m_isMeshDataPackValid = true;
 
+	return true;
+}
+
+bool InnoRenderingFrontendSystemNS::updateBillboardPassData()
+{
+	for (auto i : g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>())
+	{
+		BillboardPassGPUData l_billboardPAssGPUData;
+		l_billboardPAssGPUData.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_billboardPAssGPUData.distanceToCamera = (RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.iconType = WorldEditorIconType::DIRECTIONAL_LIGHT;
+
+		RenderingFrontendSystemComponent::get().m_billboardPassGPUDataQueue.push(l_billboardPAssGPUData);
+	}
+
+	for (auto i : g_pCoreSystem->getGameSystem()->get<PointLightComponent>())
+	{
+		BillboardPassGPUData l_billboardPAssGPUData;
+		l_billboardPAssGPUData.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_billboardPAssGPUData.distanceToCamera = (RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.iconType = WorldEditorIconType::POINT_LIGHT;
+
+		RenderingFrontendSystemComponent::get().m_billboardPassGPUDataQueue.push(l_billboardPAssGPUData);
+	}
+
+	for (auto i : g_pCoreSystem->getGameSystem()->get<SphereLightComponent>())
+	{
+		BillboardPassGPUData l_billboardPAssGPUData;
+		l_billboardPAssGPUData.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_billboardPAssGPUData.distanceToCamera = (RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.iconType = WorldEditorIconType::SPHERE_LIGHT;
+
+		RenderingFrontendSystemComponent::get().m_billboardPassGPUDataQueue.push(l_billboardPAssGPUData);
+	}
+
+	return true;
+}
+
+bool InnoRenderingFrontendSystemNS::updateDebuggerPassData()
+{
 	return true;
 }
 
@@ -238,6 +375,8 @@ bool InnoRenderingFrontendSystemNS::update()
 
 	updateSunData();
 
+	updateLightData();
+
 	// copy culling data pack for local scope
 	auto& l_cullingDataPack = g_pCoreSystem->getPhysicsSystem()->getCullingDataPack();
 	if (l_cullingDataPack.has_value() && l_cullingDataPack.value().size() > 0)
@@ -246,6 +385,10 @@ bool InnoRenderingFrontendSystemNS::update()
 	}
 
 	updateMeshData();
+
+	updateBillboardPassData();
+
+	updateDebuggerPassData();
 
 	return true;
 }
@@ -257,9 +400,9 @@ bool InnoRenderingFrontendSystemNS::terminate()
 	return true;
 }
 
-INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::setup()
+INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::setup(IRenderingBackendSystem* renderingBackendSystem)
 {
-	return InnoRenderingFrontendSystemNS::setup();
+	return InnoRenderingFrontendSystemNS::setup(renderingBackendSystem);
 }
 
 INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::initialize()
@@ -282,39 +425,74 @@ INNO_SYSTEM_EXPORT ObjectStatus InnoRenderingFrontendSystem::getStatus()
 	return InnoRenderingFrontendSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::anyUninitializedMeshDataComponent()
+INNO_SYSTEM_EXPORT MeshDataComponent * InnoRenderingFrontendSystem::addMeshDataComponent()
 {
-	return InnoRenderingFrontendSystemNS::m_uninitializedMDC.size() > 0;
+	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->addMeshDataComponent();
 }
 
-INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::anyUninitializedTextureDataComponent()
+INNO_SYSTEM_EXPORT MaterialDataComponent * InnoRenderingFrontendSystem::addMaterialDataComponent()
 {
-	return InnoRenderingFrontendSystemNS::m_uninitializedTDC.size() > 0;
+	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->addMaterialDataComponent();
 }
 
-INNO_SYSTEM_EXPORT void InnoRenderingFrontendSystem::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
+INNO_SYSTEM_EXPORT TextureDataComponent * InnoRenderingFrontendSystem::addTextureDataComponent()
 {
-	InnoRenderingFrontendSystemNS::m_uninitializedMDC.push(rhs);
+	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->addTextureDataComponent();
 }
 
-INNO_SYSTEM_EXPORT void InnoRenderingFrontendSystem::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
+INNO_SYSTEM_EXPORT MeshDataComponent * InnoRenderingFrontendSystem::getMeshDataComponent(EntityID meshID)
 {
-	InnoRenderingFrontendSystemNS::m_uninitializedTDC.push(rhs);
+	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->getMeshDataComponent(meshID);
 }
 
-INNO_SYSTEM_EXPORT MeshDataComponent * InnoRenderingFrontendSystem::acquireUninitializedMeshDataComponent()
+INNO_SYSTEM_EXPORT TextureDataComponent * InnoRenderingFrontendSystem::getTextureDataComponent(EntityID textureID)
 {
-	MeshDataComponent* l_result;
-	InnoRenderingFrontendSystemNS::m_uninitializedMDC.tryPop(l_result);
-	return l_result;
+	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->getTextureDataComponent(textureID);
 }
 
-INNO_SYSTEM_EXPORT TextureDataComponent * InnoRenderingFrontendSystem::acquireUninitializedTextureDataComponent()
+INNO_SYSTEM_EXPORT MeshDataComponent * InnoRenderingFrontendSystem::getMeshDataComponent(MeshShapeType meshShapeType)
 {
-	TextureDataComponent* l_result;
-	InnoRenderingFrontendSystemNS::m_uninitializedTDC.tryPop(l_result);
-	return l_result;
+	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->getMeshDataComponent(meshShapeType);
 }
+
+INNO_SYSTEM_EXPORT TextureDataComponent * InnoRenderingFrontendSystem::getTextureDataComponent(TextureUsageType textureUsageType)
+{
+	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->getTextureDataComponent(textureUsageType);
+}
+
+INNO_SYSTEM_EXPORT TextureDataComponent * InnoRenderingFrontendSystem::getTextureDataComponent(FileExplorerIconType iconType)
+{
+	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->getTextureDataComponent(iconType);
+}
+
+INNO_SYSTEM_EXPORT TextureDataComponent * InnoRenderingFrontendSystem::getTextureDataComponent(WorldEditorIconType iconType)
+{
+	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->getTextureDataComponent(iconType);
+}
+
+INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::removeMeshDataComponent(EntityID entityID)
+{
+	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->removeMeshDataComponent(entityID);
+}
+
+INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::removeTextureDataComponent(EntityID entityID)
+{
+	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->removeTextureDataComponent(entityID);
+}
+
+//INNO_SYSTEM_EXPORT bool registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
+//{
+//	InnoRenderingFrontendSystemNS::m_renderingBackendSystem->registerUninitializedMeshDataComponent(rhs);
+//
+//	return true;
+//}
+//
+//INNO_SYSTEM_EXPORT bool registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
+//{
+//	InnoRenderingFrontendSystemNS::m_renderingBackendSystem->registerUninitializedTextureDataComponent(rhs);
+//
+//	return true;
+//}
 
 INNO_SYSTEM_EXPORT TVec2<unsigned int> InnoRenderingFrontendSystem::getScreenResolution()
 {
@@ -336,54 +514,4 @@ INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::setRenderingConfig(Renderin
 {
 	InnoRenderingFrontendSystemNS::m_renderingConfig = renderingConfig;
 	return true;
-}
-
-INNO_SYSTEM_EXPORT std::optional<CameraDataPack> InnoRenderingFrontendSystem::getCameraDataPack()
-{
-	if (InnoRenderingFrontendSystemNS::m_isCameraDataPackValid)
-	{
-		return InnoRenderingFrontendSystemNS::m_cameraDataPack;
-	}
-
-	return std::nullopt;
-}
-
-INNO_SYSTEM_EXPORT std::optional<SunDataPack> InnoRenderingFrontendSystem::getSunDataPack()
-{
-	if (InnoRenderingFrontendSystemNS::m_isSunDataPackValid)
-	{
-		return InnoRenderingFrontendSystemNS::m_sunDataPack;
-	}
-
-	return std::nullopt;
-}
-
-INNO_SYSTEM_EXPORT std::optional<std::vector<CSMDataPack>> InnoRenderingFrontendSystem::getCSMDataPack()
-{
-	if (InnoRenderingFrontendSystemNS::m_isCSMDataPackValid)
-	{
-		return InnoRenderingFrontendSystemNS::m_CSMDataPacks;
-	}
-
-	return std::nullopt;
-}
-
-INNO_SYSTEM_EXPORT std::optional<std::vector<MeshDataPack>> InnoRenderingFrontendSystem::getMeshDataPack()
-{
-	if (InnoRenderingFrontendSystemNS::m_isMeshDataPackValid)
-	{
-		return InnoRenderingFrontendSystemNS::m_meshDataPack;
-	}
-
-	return std::nullopt;
-}
-
-INNO_SYSTEM_EXPORT std::vector<Plane>& InnoRenderingFrontendSystem::getDebugPlane()
-{
-	return InnoRenderingFrontendSystemNS::m_debugPlanes;
-}
-
-INNO_SYSTEM_EXPORT std::vector<Sphere>& InnoRenderingFrontendSystem::getDebugSphere()
-{
-	return InnoRenderingFrontendSystemNS::m_debugSpheres;
 }

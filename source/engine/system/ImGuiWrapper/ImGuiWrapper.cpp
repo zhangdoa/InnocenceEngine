@@ -43,7 +43,7 @@ bool ImGuiWrapper::setup()
 {
 	auto l_initConfig = g_pCoreSystem->getVisionSystem()->getInitConfig();
 
-	#if defined INNO_PLATFORM_WIN
+#if defined INNO_PLATFORM_WIN
 	switch (l_initConfig.renderingBackend)
 	{
 	case RenderingBackend::GL:
@@ -64,9 +64,9 @@ bool ImGuiWrapper::setup()
 	default:
 		break;
 	}
-	#endif
+#endif
 
-	#if defined INNO_PLATFORM_MAC
+#if defined INNO_PLATFORM_MAC
 	switch (l_initConfig.renderingBackend)
 	{
 	case RenderingBackend::GL:
@@ -82,12 +82,12 @@ bool ImGuiWrapper::setup()
 	case RenderingBackend::VK:
 		ImGuiWrapperNS::m_isParity = false;
 		break;
-  case RenderingBackend::MT:
+	case RenderingBackend::MT:
 		ImGuiWrapperNS::m_isParity = false;
 	default:
 		break;
 	}
-	#endif
+#endif
 
 	if (ImGuiWrapperNS::m_isParity)
 	{
@@ -181,10 +181,10 @@ bool ImGuiWrapper::update()
 			//ImGuiWrapperNS::showFileExplorer();
 			//ImGuiWrapperNS::showWorldExplorer();
 		}
-	ImGui::Render();
-	ImGuiWrapperNS::m_wrapperImpl->render();
+		ImGui::Render();
+		ImGuiWrapperNS::m_wrapperImpl->render();
 	}
-return true;
+	return true;
 }
 
 bool ImGuiWrapper::terminate()

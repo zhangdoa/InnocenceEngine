@@ -56,7 +56,7 @@ bool GLBloomBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 	bool l_isPing = true;
 	bool l_isFirstIteration = true;
 
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 
 	for (size_t i = 0; i < 5; i++)
 	{

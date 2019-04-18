@@ -6,6 +6,15 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE GLRenderingSystemNS
 {
+	void getGLError()
+	{
+		GLenum err;
+		while ((err = glGetError()) != GL_NO_ERROR)
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, std::to_string(err));
+		}
+	}
+
 	void generateFBO(GLRenderPassComponent* GLRPC);
 	void addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc);
 	void attachRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex);
@@ -14,8 +23,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	void addShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const std::string & shaderFilePath);
 
-	bool initializeGLMeshDataComponent(GLMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
-	bool initializeGLTextureDataComponent(GLTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
+	bool summitGPUData(GLMeshDataComponent* rhs);
+	bool summitGPUData(GLTextureDataComponent* rhs);
 
 	GLTextureDataDesc getGLTextureDataDesc(const TextureDataDesc& textureDataDesc);
 
@@ -31,11 +40,6 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	std::unordered_map<EntityID, GLMeshDataComponent*> m_initializedGLMDC;
 	std::unordered_map<EntityID, GLTextureDataComponent*> m_initializedGLTDC;
 
-	std::unordered_map<EntityID, GLMeshDataComponent*> m_meshMap;
-	std::unordered_map<EntityID, GLTextureDataComponent*> m_textureMap;
-
-	void* m_GLMeshDataComponentPool;
-	void* m_GLTextureDataComponentPool;
 	void* m_GLRenderPassComponentPool;
 	void* m_GLShaderProgramComponentPool;
 
@@ -44,8 +48,6 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 bool GLRenderingSystemNS::initializeComponentPool()
 {
-	m_GLMeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(GLMeshDataComponent), 32768);
-	m_GLTextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(GLTextureDataComponent), 32768);
 	m_GLRenderPassComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(GLRenderPassComponent), 128);
 	m_GLShaderProgramComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(GLShaderProgramComponent), 256);
 
@@ -63,7 +65,6 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 	generateFBO(l_GLRPC);
 
 	// generate and bind texture
-	l_GLRPC->m_TDCs.reserve(RTNum);
 	l_GLRPC->m_GLTDCs.reserve(RTNum);
 
 	for (unsigned int i = 0; i < RTNum; i++)
@@ -108,7 +109,7 @@ void GLRenderingSystemNS::generateFBO(GLRenderPassComponent* GLRPC)
 
 void GLRenderingSystemNS::addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc)
 {
-	auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
+	auto l_TDC = addGLTextureDataComponent();
 
 	l_TDC->m_textureDataDesc = RTDesc;
 
@@ -121,11 +122,9 @@ void GLRenderingSystemNS::addRenderTargetTextures(GLRenderPassComponent* GLRPC, 
 		l_TDC->m_textureData = { nullptr };
 	}
 
-	GLRPC->m_TDCs.emplace_back(l_TDC);
+	initializeGLTextureDataComponent(l_TDC);
 
-	auto l_GLTDC = generateGLTextureDataComponent(l_TDC);
-
-	GLRPC->m_GLTDCs.emplace_back(l_GLTDC);
+	GLRPC->m_GLTDCs.emplace_back(l_TDC);
 }
 
 void GLRenderingSystemNS::attachRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex)
@@ -176,14 +175,14 @@ bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GL
 
 	for (unsigned int i = 0; i < GLRPC->m_GLTDCs.size(); i++)
 	{
-		GLRPC->m_TDCs[i]->m_textureDataDesc.width = newSizeX;
-		GLRPC->m_TDCs[i]->m_textureDataDesc.height = newSizeY;
+		GLRPC->m_GLTDCs[i]->m_textureDataDesc.width = newSizeX;
+		GLRPC->m_GLTDCs[i]->m_textureDataDesc.height = newSizeY;
 
 		glDeleteTextures(1, &GLRPC->m_GLTDCs[i]->m_TO);
 
-		auto l_textureDesc = GLRPC->m_TDCs[i]->m_textureDataDesc;
+		auto l_textureDesc = GLRPC->m_GLTDCs[i]->m_textureDataDesc;
 
-		generateTO(GLRPC->m_GLTDCs[i]->m_TO, GLRPC->m_GLTDCs[i]->m_GLTextureDataDesc, l_textureDesc.width, l_textureDesc.height, l_textureDesc.depth, GLRPC->m_TDCs[i]->m_textureData);
+		generateTO(GLRPC->m_GLTDCs[i]->m_TO, GLRPC->m_GLTDCs[i]->m_GLTextureDataDesc, l_textureDesc.width, l_textureDesc.height, l_textureDesc.depth, GLRPC->m_GLTDCs[i]->m_textureData);
 
 		attachRenderTargetTextures(GLRPC, l_textureDesc, i);
 	}
@@ -212,104 +211,54 @@ GLShaderProgramComponent * GLRenderingSystemNS::addGLShaderProgramComponent(cons
 	return l_GLSPC;
 }
 
-GLMeshDataComponent * GLRenderingSystemNS::addGLMeshDataComponent(const EntityID& rhs)
-{
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_GLMeshDataComponentPool, sizeof(GLMeshDataComponent));
-	auto l_GLMDC = new(l_rawPtr)GLMeshDataComponent();
-	l_GLMDC->m_parentEntity = rhs;
-	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, GLMeshDataComponent*>(rhs, l_GLMDC));
-	return l_GLMDC;
-}
-
-GLTextureDataComponent * GLRenderingSystemNS::addGLTextureDataComponent(const EntityID& rhs)
-{
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_GLTextureDataComponentPool, sizeof(GLTextureDataComponent));
-	auto l_GLTDC = new(l_rawPtr)GLTextureDataComponent();
-	l_GLTDC->m_parentEntity = rhs;
-	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, GLTextureDataComponent*>(rhs, l_GLTDC));
-	return l_GLTDC;
-}
-
-GLMeshDataComponent * GLRenderingSystemNS::getGLMeshDataComponent(const EntityID& rhs)
-{
-	auto result = m_meshMap.find(rhs);
-	if (result != m_meshMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
-GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(const EntityID& rhs)
-{
-	auto result = m_textureMap.find(rhs);
-	if (result != m_textureMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
-GLMeshDataComponent* GLRenderingSystemNS::generateGLMeshDataComponent(MeshDataComponent* rhs)
+bool GLRenderingSystemNS::initializeGLMeshDataComponent(GLMeshDataComponent* rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
-		return getGLMeshDataComponent(rhs->m_parentEntity);
+		return true;
 	}
 	else
 	{
-		auto l_ptr = addGLMeshDataComponent(rhs->m_parentEntity);
-
-		initializeGLMeshDataComponent(l_ptr, rhs->m_vertices, rhs->m_indices);
+		summitGPUData(rhs);
 
 		rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-		return l_ptr;
+		return true;
 	}
 }
 
-GLTextureDataComponent* GLRenderingSystemNS::generateGLTextureDataComponent(TextureDataComponent * rhs)
+bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponent * rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
-		return getGLTextureDataComponent(rhs->m_parentEntity);
+		return true;
 	}
 	else
 	{
 		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GLRenderingSystem: try to generate GLTextureDataComponent for TextureUsageType::INVISIBLE type!");
-			return nullptr;
+			return false;
 		}
 		else
 		{
 			if (rhs->m_textureData.size() > 0)
 			{
-				auto l_ptr = addGLTextureDataComponent(rhs->m_parentEntity);
-
-				initializeGLTextureDataComponent(l_ptr, rhs->m_textureDataDesc, rhs->m_textureData);
+				summitGPUData(rhs);
 
 				rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 				if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
 				{
-					g_pCoreSystem->getAssetSystem()->releaseRawDataForTextureDataComponent(rhs->m_parentEntity);
+					// @TODO: release raw data in heap memory
 				}
 
-				return l_ptr;
+				return true;
 			}
 			else
 			{
 				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GLRenderingSystem: try to generate GLTextureDataComponent without raw data!");
-				return nullptr;
+				return false;
 			}
 		}
 	}
@@ -444,62 +393,6 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 	return rhs;
 }
 
-bool GLRenderingSystemNS::initializeGLMeshDataComponent(GLMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices)
-{
-	std::vector<float> l_verticesBuffer;
-	auto l_containerSize = vertices.size() * 8;
-	l_verticesBuffer.reserve(l_containerSize);
-
-	std::for_each(vertices.begin(), vertices.end(), [&](Vertex val)
-	{
-		l_verticesBuffer.emplace_back((float)val.m_pos.x);
-		l_verticesBuffer.emplace_back((float)val.m_pos.y);
-		l_verticesBuffer.emplace_back((float)val.m_pos.z);
-		l_verticesBuffer.emplace_back((float)val.m_texCoord.x);
-		l_verticesBuffer.emplace_back((float)val.m_texCoord.y);
-		l_verticesBuffer.emplace_back((float)val.m_normal.x);
-		l_verticesBuffer.emplace_back((float)val.m_normal.y);
-		l_verticesBuffer.emplace_back((float)val.m_normal.z);
-	});
-
-	glGenVertexArrays(1, &rhs->m_VAO);
-	glBindVertexArray(rhs->m_VAO);
-
-	glGenBuffers(1, &rhs->m_VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, rhs->m_VBO);
-
-	glGenBuffers(1, &rhs->m_IBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rhs->m_IBO);
-
-	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-
-	// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-
-	// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Vertex Array Object " + std::to_string(rhs->m_VAO) + " is initialized.");
-
-	glBufferData(GL_ARRAY_BUFFER, l_verticesBuffer.size() * sizeof(float), &l_verticesBuffer[0], GL_STATIC_DRAW);
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Vertex Buffer Object " + std::to_string(rhs->m_VBO) + " is initialized.");
-
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Index Buffer Object " + std::to_string(rhs->m_IBO) + " is initialized.");
-
-	rhs->m_objectStatus = ObjectStatus::ALIVE;
-
-	m_initializedGLMDC.emplace(rhs->m_parentEntity, rhs);
-
-	return true;
-}
-
 void GLRenderingSystemNS::generateTO(GLuint& TO, GLTextureDataDesc desc, GLsizei width, GLsizei height, GLsizei depth, const std::vector<void*>& textureData)
 {
 	glGenTextures(1, &TO);
@@ -546,11 +439,67 @@ void GLRenderingSystemNS::generateTO(GLuint& TO, GLTextureDataDesc desc, GLsizei
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Texture object " + std::to_string(TO) + " is created.");
 }
 
-bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
+bool GLRenderingSystemNS::summitGPUData(GLMeshDataComponent * rhs)
 {
-	rhs->m_GLTextureDataDesc = getGLTextureDataDesc(textureDataDesc);
+	std::vector<float> l_verticesBuffer;
+	auto l_containerSize = rhs->m_vertices.size() * 8;
+	l_verticesBuffer.reserve(l_containerSize);
 
-	generateTO(rhs->m_TO, rhs->m_GLTextureDataDesc, textureDataDesc.width, textureDataDesc.height, textureDataDesc.depth, textureData);
+	std::for_each(rhs->m_vertices.begin(), rhs->m_vertices.end(), [&](Vertex val)
+	{
+		l_verticesBuffer.emplace_back((float)val.m_pos.x);
+		l_verticesBuffer.emplace_back((float)val.m_pos.y);
+		l_verticesBuffer.emplace_back((float)val.m_pos.z);
+		l_verticesBuffer.emplace_back((float)val.m_texCoord.x);
+		l_verticesBuffer.emplace_back((float)val.m_texCoord.y);
+		l_verticesBuffer.emplace_back((float)val.m_normal.x);
+		l_verticesBuffer.emplace_back((float)val.m_normal.y);
+		l_verticesBuffer.emplace_back((float)val.m_normal.z);
+	});
+
+	glGenVertexArrays(1, &rhs->m_VAO);
+	glBindVertexArray(rhs->m_VAO);
+
+	glGenBuffers(1, &rhs->m_VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, rhs->m_VBO);
+
+	glGenBuffers(1, &rhs->m_IBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rhs->m_IBO);
+
+	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+
+	// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+	// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Vertex Array Object " + std::to_string(rhs->m_VAO) + " is initialized.");
+
+	glBufferData(GL_ARRAY_BUFFER, l_verticesBuffer.size() * sizeof(float), &l_verticesBuffer[0], GL_STATIC_DRAW);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Vertex Buffer Object " + std::to_string(rhs->m_VBO) + " is initialized.");
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, rhs->m_indices.size() * sizeof(unsigned int), &rhs->m_indices[0], GL_STATIC_DRAW);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Index Buffer Object " + std::to_string(rhs->m_IBO) + " is initialized.");
+
+	rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+	m_initializedGLMDC.emplace(rhs->m_parentEntity, rhs);
+
+	return true;
+}
+
+bool GLRenderingSystemNS::summitGPUData(GLTextureDataComponent * rhs)
+{
+	rhs->m_GLTextureDataDesc = getGLTextureDataDesc(rhs->m_textureDataDesc);
+
+	generateTO(rhs->m_TO, rhs->m_GLTextureDataDesc, rhs->m_textureDataDesc.width, rhs->m_textureDataDesc.height, rhs->m_textureDataDesc.depth, rhs->m_textureData);
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
@@ -808,22 +757,22 @@ GLuint GLRenderingSystemNS::getUniformBlockIndex(GLuint shaderProgram, const std
 	return uniformBlockIndex;
 }
 
-GLuint GLRenderingSystemNS::generateUBO(GLuint UBOSize)
+GLuint GLRenderingSystemNS::generateUBO(GLuint UBOSize, GLuint uniformBlockBindingPoint)
 {
-	GLuint l_ubo;
-	glGenBuffers(1, &l_ubo);
-	glBindBuffer(GL_UNIFORM_BUFFER, l_ubo);
+	GLuint l_UBO;
+	glGenBuffers(1, &l_UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, l_UBO);
 	glBufferData(GL_UNIFORM_BUFFER, UBOSize, NULL, GL_DYNAMIC_DRAW);
+	glBindBufferRange(GL_UNIFORM_BUFFER, uniformBlockBindingPoint, l_UBO, 0, UBOSize);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	return l_ubo;
+	return l_UBO;
 }
 
 void GLRenderingSystemNS::bindUniformBlock(GLuint UBO, GLuint UBOSize, GLuint program, const std::string & uniformBlockName, GLuint uniformBlockBindingPoint)
 {
 	auto uniformBlockIndex = getUniformBlockIndex(program, uniformBlockName.c_str());
 	glUniformBlockBinding(program, uniformBlockIndex, uniformBlockBindingPoint);
-	glBindBufferRange(GL_UNIFORM_BUFFER, uniformBlockIndex, UBO, 0, UBOSize);
 }
 
 void GLRenderingSystemNS::updateTextureUniformLocations(GLuint program, const std::vector<std::string>& UniformNames)
@@ -857,22 +806,17 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, unsigned in
 
 void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, float uniformValue)
 {
-	glUniform1f(uniformLocation, (GLfloat)uniformValue);
+	glUniform1f(uniformLocation, uniformValue);
 }
 
-void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, float x, float y)
+void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, vec2 uniformValue)
 {
-	glUniform2f(uniformLocation, (GLfloat)x, (GLfloat)y);
+	glUniform2fv(uniformLocation, 1, &uniformValue.x);
 }
 
-void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, float x, float y, float z)
+void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, vec4 uniformValue)
 {
-	glUniform3f(uniformLocation, (GLfloat)x, (GLfloat)y, (GLfloat)z);
-}
-
-void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, float x, float y, float z, float w)
-{
-	glUniform4f(uniformLocation, (GLfloat)x, (GLfloat)y, (GLfloat)z, (GLfloat)w);
+	glUniform4fv(uniformLocation, 1, &uniformValue.x);
 }
 
 void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const mat4 & mat)
@@ -930,45 +874,21 @@ void GLRenderingSystemNS::activateShaderProgram(GLShaderProgramComponent * GLSha
 	glUseProgram(GLShaderProgramComponent->m_program);
 }
 
-void GLRenderingSystemNS::drawMesh(const EntityID& rhs)
-{
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(rhs);
-	if (l_MDC)
-	{
-		drawMesh(l_MDC);
-	}
-}
-
-void GLRenderingSystemNS::drawMesh(MeshDataComponent* MDC)
-{
-	auto l_GLMDC = getGLMeshDataComponent(MDC->m_parentEntity);
-	if (l_GLMDC)
-	{
-		drawMesh(MDC->m_indicesSize, MDC->m_meshPrimitiveTopology, l_GLMDC);
-	}
-}
-
-void GLRenderingSystemNS::drawMesh(size_t indicesSize, MeshPrimitiveTopology MeshPrimitiveTopology, GLMeshDataComponent* GLMDC)
+void GLRenderingSystemNS::drawMesh(GLMeshDataComponent* GLMDC)
 {
 	if (GLMDC->m_VAO)
 	{
 		glBindVertexArray(GLMDC->m_VAO);
-		switch (MeshPrimitiveTopology)
+		switch (GLMDC->m_meshPrimitiveTopology)
 		{
-		case MeshPrimitiveTopology::POINT: glDrawElements(GL_POINTS, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
-		case MeshPrimitiveTopology::LINE: glDrawElements(GL_LINE, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
-		case MeshPrimitiveTopology::TRIANGLE: glDrawElements(GL_TRIANGLES, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
-		case MeshPrimitiveTopology::TRIANGLE_STRIP: glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)indicesSize, GL_UNSIGNED_INT, 0); break;
+		case MeshPrimitiveTopology::POINT: glDrawElements(GL_POINTS, (GLsizei)GLMDC->m_indicesSize, GL_UNSIGNED_INT, 0); break;
+		case MeshPrimitiveTopology::LINE: glDrawElements(GL_LINE, (GLsizei)GLMDC->m_indicesSize, GL_UNSIGNED_INT, 0); break;
+		case MeshPrimitiveTopology::TRIANGLE: glDrawElements(GL_TRIANGLES, (GLsizei)GLMDC->m_indicesSize, GL_UNSIGNED_INT, 0); break;
+		case MeshPrimitiveTopology::TRIANGLE_STRIP: glDrawElements(GL_TRIANGLE_STRIP, (GLsizei)GLMDC->m_indicesSize, GL_UNSIGNED_INT, 0); break;
 		default:
 			break;
 		}
 	}
-}
-
-void GLRenderingSystemNS::activateTexture(TextureDataComponent * TDC, int activateIndex)
-{
-	auto l_GLTDC = getGLTextureDataComponent(TDC->m_parentEntity);
-	activateTexture(l_GLTDC, activateIndex);
 }
 
 void GLRenderingSystemNS::activateTexture(GLTextureDataComponent * GLTDC, int activateIndex)

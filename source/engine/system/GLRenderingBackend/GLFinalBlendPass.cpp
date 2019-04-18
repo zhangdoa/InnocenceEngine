@@ -62,7 +62,7 @@ bool GLFinalBlendPass::update(GLRenderPassComponent* prePassGLRPC)
 		GLDebuggerPass::getGLRPC()->m_GLTDCs[0],
 		2);
 	// draw final pass rectangle
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	// draw again for game build

@@ -9,6 +9,7 @@ cbuffer cameraCBuffer : register(b0)
 	matrix cam_r_prev;
 	matrix cam_t_prev;
 	float4 cam_globalPos;
+	float cam_WHRatio;
 };
 
 cbuffer meshCBuffer : register(b1)
@@ -16,6 +17,7 @@ cbuffer meshCBuffer : register(b1)
 	matrix m;
 	matrix m_prev;
 	matrix normalMat;
+	float UUID;
 };
 
 struct VertexInputType
@@ -37,7 +39,7 @@ struct PixelInputType
 	float3 frag_Normal : NORMAL;
 };
 
-PixelInputType opaquePassCookTorranceVertex(VertexInputType input)
+PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 

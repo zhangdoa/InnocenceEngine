@@ -1,5 +1,7 @@
 #include "DX11RenderingSystem.h"
 
+#include "DX11RenderingSystemUtilities.h"
+
 #include "DX11OpaquePass.h"
 #include "DX11LightPass.h"
 #include "DX11SkyPass.h"
@@ -9,8 +11,7 @@
 
 #include "../../component/DX11RenderingSystemComponent.h"
 #include "../../component/WinWindowSystemComponent.h"
-
-#include "DX11RenderingSystemUtilities.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -22,31 +23,45 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-
-	bool setup(IRenderingFrontendSystem* renderingFrontend);
-	bool update();
-	bool terminate();
-
-	bool initializeDefaultAssets();
-	bool generateCBuffers();
-
-	void prepareRenderingData();
-	bool prepareGeometryPassData();
-	bool prepareLightPassData();
-
-	static DX11RenderingSystemComponent* g_DXRenderingSystemComponent;
-
 	bool createPhysicalDevices();
 	bool createSwapChain();
 	bool createBackBuffer();
 	bool createRasterizer();
 
-	IRenderingFrontendSystem* m_renderingFrontendSystem;
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	static DX11RenderingSystemComponent* g_DXRenderingSystemComponent;
 
-	CameraDataPack m_cameraDataPack;
-	SunDataPack m_sunDataPack;
-	std::vector<MeshDataPack> m_meshDataPack;
+	ThreadSafeUnorderedMap<EntityID, DX11MeshDataComponent*> m_meshMap;
+	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
+	ThreadSafeUnorderedMap<EntityID, DX11TextureDataComponent*> m_textureMap;
+
+	void* m_MeshDataComponentPool;
+	void* m_MaterialDataComponentPool;
+	void* m_TextureDataComponentPool;
+
+	ThreadSafeQueue<DX11MeshDataComponent*> m_uninitializedMDC;
+	ThreadSafeQueue<DX11TextureDataComponent*> m_uninitializedTDC;
+
+	DX11TextureDataComponent* m_iconTemplate_OBJ;
+	DX11TextureDataComponent* m_iconTemplate_PNG;
+	DX11TextureDataComponent* m_iconTemplate_SHADER;
+	DX11TextureDataComponent* m_iconTemplate_UNKNOWN;
+
+	DX11TextureDataComponent* m_iconTemplate_DirectionalLight;
+	DX11TextureDataComponent* m_iconTemplate_PointLight;
+	DX11TextureDataComponent* m_iconTemplate_SphereLight;
+
+	DX11MeshDataComponent* m_unitLineMDC;
+	DX11MeshDataComponent* m_unitQuadMDC;
+	DX11MeshDataComponent* m_unitCubeMDC;
+	DX11MeshDataComponent* m_unitSphereMDC;
+	DX11MeshDataComponent* m_terrainMDC;
+
+	DX11TextureDataComponent* m_basicNormalTDC;
+	DX11TextureDataComponent* m_basicAlbedoTDC;
+	DX11TextureDataComponent* m_basicMetallicTDC;
+	DX11TextureDataComponent* m_basicRoughnessTDC;
+	DX11TextureDataComponent* m_basicAOTDC;
 }
 
 bool DX11RenderingSystemNS::createPhysicalDevices()
@@ -106,7 +121,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 
 	// Now go through all the display modes and find the one that matches the screen width and height.
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
-	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	for (unsigned int i = 0; i < numModes; i++)
 	{
@@ -169,11 +184,11 @@ bool DX11RenderingSystemNS::createSwapChain()
 	// Set to a single back buffer.
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferCount = 1;
 
-	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	// Set the width and height of the back buffer.
-	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Width = (UINT)l_screenResolution.x;
-	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Height = (UINT)l_screenResolution.y;
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Width = l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Height = l_screenResolution.y;
 
 	// Set regular 32-bit surface for the back buffer.
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -259,11 +274,11 @@ bool DX11RenderingSystemNS::createBackBuffer()
 	// Initialize the description of the depth buffer.
 	ZeroMemory(&g_DXRenderingSystemComponent->m_depthTextureDesc, sizeof(g_DXRenderingSystemComponent->m_depthTextureDesc));
 
-	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	// Set up the description of the depth buffer.
-	g_DXRenderingSystemComponent->m_depthTextureDesc.Width = (UINT)l_screenResolution.x;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.Height = (UINT)l_screenResolution.y;
+	g_DXRenderingSystemComponent->m_depthTextureDesc.Width = l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_depthTextureDesc.Height = l_screenResolution.y;
 	g_DXRenderingSystemComponent->m_depthTextureDesc.MipLevels = 1;
 	g_DXRenderingSystemComponent->m_depthTextureDesc.ArraySize = 1;
 	g_DXRenderingSystemComponent->m_depthTextureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -398,12 +413,10 @@ bool DX11RenderingSystemNS::createRasterizer()
 	}
 
 	// Setup the viewport for rendering.
-	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
-	g_DXRenderingSystemComponent->m_viewport.Width =
-		(float)l_screenResolution.x;
-	g_DXRenderingSystemComponent->m_viewport.Height =
-		(float)l_screenResolution.y;
+	g_DXRenderingSystemComponent->m_viewport.Width = (float)l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_viewport.Height = (float)l_screenResolution.y;
 	g_DXRenderingSystemComponent->m_viewport.MinDepth = 0.0f;
 	g_DXRenderingSystemComponent->m_viewport.MaxDepth = 1.0f;
 	g_DXRenderingSystemComponent->m_viewport.TopLeftX = 0.0f;
@@ -412,9 +425,9 @@ bool DX11RenderingSystemNS::createRasterizer()
 	return true;
 }
 
-bool DX11RenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
+bool DX11RenderingSystemNS::setup()
 {
-	m_renderingFrontendSystem = renderingFrontend;
+	initializeComponentPool();
 
 	g_DXRenderingSystemComponent = &DX11RenderingSystemComponent::get();
 
@@ -425,7 +438,7 @@ bool DX11RenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	result = result && createBackBuffer();
 	result = result && createRasterizer();
 
-	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	// Setup the description of the deferred pass.
 	g_DXRenderingSystemComponent->deferredPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
@@ -448,35 +461,230 @@ bool DX11RenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	return result;
 }
 
+bool DX11RenderingSystemNS::initialize()
+{
+	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11MeshDataComponent), 16384);
+	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
+	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11TextureDataComponent), 32768);
+
+	loadDefaultAssets();
+
+	generateGPUBuffers();
+
+	DX11OpaquePass::initialize();
+	DX11LightPass::initialize();
+	DX11SkyPass::initialize();
+	DX11PreTAAPass::initialize();
+	DX11TAAPass::initialize();
+	DX11FinalBlendPass::initialize();
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been initialized.");
+
+	return true;
+}
+
+void DX11RenderingSystemNS::loadDefaultAssets()
+{
+	auto l_basicNormalTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_basicAlbedoTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
+	auto l_basicMetallicTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
+	auto l_basicRoughnessTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
+	auto l_basicAOTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
+
+	auto l_iconTemplate_OBJ = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PNG = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SHADER = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_UNKNOWN = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+
+	auto l_iconTemplate_DirectionalLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PointLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SphereLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+
+	m_basicNormalTDC = reinterpret_cast<DX11TextureDataComponent*>(l_basicNormalTDC);
+	m_basicAlbedoTDC = reinterpret_cast<DX11TextureDataComponent*>(l_basicAlbedoTDC);
+	m_basicMetallicTDC = reinterpret_cast<DX11TextureDataComponent*>(l_basicMetallicTDC);
+	m_basicRoughnessTDC = reinterpret_cast<DX11TextureDataComponent*>(l_basicRoughnessTDC);
+	m_basicAOTDC = reinterpret_cast<DX11TextureDataComponent*>(l_basicAOTDC);
+
+	m_iconTemplate_OBJ = reinterpret_cast<DX11TextureDataComponent*>(l_iconTemplate_OBJ);
+	m_iconTemplate_PNG = reinterpret_cast<DX11TextureDataComponent*>(l_iconTemplate_PNG);
+	m_iconTemplate_SHADER = reinterpret_cast<DX11TextureDataComponent*>(l_iconTemplate_SHADER);
+	m_iconTemplate_UNKNOWN = reinterpret_cast<DX11TextureDataComponent*>(l_iconTemplate_UNKNOWN);
+
+	m_iconTemplate_DirectionalLight = reinterpret_cast<DX11TextureDataComponent*>(l_iconTemplate_DirectionalLight);
+	m_iconTemplate_PointLight = reinterpret_cast<DX11TextureDataComponent*>(l_iconTemplate_PointLight);
+	m_iconTemplate_SphereLight = reinterpret_cast<DX11TextureDataComponent*>(l_iconTemplate_SphereLight);
+
+	m_unitLineMDC = addDX11MeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitLine(*m_unitLineMDC);
+	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
+	m_unitLineMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
+
+	m_unitQuadMDC = addDX11MeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
+	// Flip y texture coordinate
+	for (auto& i : m_unitQuadMDC->m_vertices)
+	{
+		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
+	}
+	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
+	m_unitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
+
+	m_unitCubeMDC = addDX11MeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
+	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
+	m_unitCubeMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
+
+	m_unitSphereMDC = addDX11MeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
+	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
+	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
+
+	m_terrainMDC = addDX11MeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addTerrain(*m_terrainMDC);
+	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_terrainMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
+
+	initializeDX11MeshDataComponent(m_unitLineMDC);
+	initializeDX11MeshDataComponent(m_unitQuadMDC);
+	initializeDX11MeshDataComponent(m_unitCubeMDC);
+	initializeDX11MeshDataComponent(m_unitSphereMDC);
+	initializeDX11MeshDataComponent(m_terrainMDC);
+
+	initializeDX11TextureDataComponent(m_basicNormalTDC);
+	initializeDX11TextureDataComponent(m_basicAlbedoTDC);
+	initializeDX11TextureDataComponent(m_basicMetallicTDC);
+	initializeDX11TextureDataComponent(m_basicRoughnessTDC);
+	initializeDX11TextureDataComponent(m_basicAOTDC);
+
+	initializeDX11TextureDataComponent(m_iconTemplate_OBJ);
+	initializeDX11TextureDataComponent(m_iconTemplate_PNG);
+	initializeDX11TextureDataComponent(m_iconTemplate_SHADER);
+	initializeDX11TextureDataComponent(m_iconTemplate_UNKNOWN);
+
+	initializeDX11TextureDataComponent(m_iconTemplate_DirectionalLight);
+	initializeDX11TextureDataComponent(m_iconTemplate_PointLight);
+	initializeDX11TextureDataComponent(m_iconTemplate_SphereLight);
+}
+
+bool DX11RenderingSystemNS::generateGPUBuffers()
+{
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.ByteWidth = sizeof(CameraGPUData);
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_cameraCBuffer);
+
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.ByteWidth = sizeof(MeshGPUData);
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_meshCBuffer);
+
+	g_DXRenderingSystemComponent->m_materialCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_materialCBuffer.m_CBufferDesc.ByteWidth = sizeof(MaterialGPUData);
+	g_DXRenderingSystemComponent->m_materialCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_materialCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_materialCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_materialCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_materialCBuffer);
+
+	g_DXRenderingSystemComponent->m_sunCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_sunCBuffer.m_CBufferDesc.ByteWidth = sizeof(SunGPUData);
+	g_DXRenderingSystemComponent->m_sunCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_sunCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_sunCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_sunCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_sunCBuffer);
+
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.ByteWidth = sizeof(PointLightGPUData) * RenderingFrontendSystemComponent::get().m_maxPointLights;
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_pointLightCBuffer);
+
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.ByteWidth = sizeof(SphereLightGPUData)* RenderingFrontendSystemComponent::get().m_maxSphereLights;
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_sphereLightCBuffer);
+
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.ByteWidth = sizeof(SkyCBufferData);
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.MiscFlags = 0;
+	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.StructureByteStride = 0;
+	createCBuffer(g_DXRenderingSystemComponent->m_skyCBuffer);
+
+	return true;
+}
+
 bool DX11RenderingSystemNS::update()
 {
-	if (m_renderingFrontendSystem->anyUninitializedMeshDataComponent())
+	if (DX11RenderingSystemNS::m_uninitializedMDC.size() > 0)
 	{
-		auto l_MDC = m_renderingFrontendSystem->acquireUninitializedMeshDataComponent();
+		DX11MeshDataComponent* l_MDC;
+		DX11RenderingSystemNS::m_uninitializedMDC.tryPop(l_MDC);
+
 		if (l_MDC)
 		{
-			auto l_result = generateDX11MeshDataComponent(l_MDC);
-			if (l_result == nullptr)
+			auto l_result = initializeDX11MeshDataComponent(l_MDC);
+			if (!l_result)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DXMeshDataComponent for " + l_result->m_parentEntity + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DX11MeshDataComponent for " + l_MDC->m_parentEntity + "!");
 			}
 		}
 	}
-	if (m_renderingFrontendSystem->anyUninitializedTextureDataComponent())
+	if (DX11RenderingSystemNS::m_uninitializedTDC.size() > 0)
 	{
-		auto l_TDC = m_renderingFrontendSystem->acquireUninitializedTextureDataComponent();
+		DX11TextureDataComponent* l_TDC;
+		DX11RenderingSystemNS::m_uninitializedTDC.tryPop(l_TDC);
+
 		if (l_TDC)
 		{
-			auto l_result = generateDX11TextureDataComponent(l_TDC);
-			if (l_result == nullptr)
+			auto l_result = initializeDX11TextureDataComponent(l_TDC);
+			if (!l_result)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DXTextureDataComponent for " + l_result->m_parentEntity + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DX11TextureDataComponent for " + l_TDC->m_parentEntity + "!");
 			}
 		}
 	}
 
-	// Clear the buffers to begin the scene.
-	prepareRenderingData();
+	auto l_viewportSize = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+
+	DX11RenderingSystemComponent::get().m_skyCBufferData.viewportSize.x = (float)l_viewportSize.x;
+	DX11RenderingSystemComponent::get().m_skyCBufferData.viewportSize.y = (float)l_viewportSize.y;
+	DX11RenderingSystemComponent::get().m_skyCBufferData.p_inv = RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original.inverse();
+	DX11RenderingSystemComponent::get().m_skyCBufferData.r_inv = RenderingFrontendSystemComponent::get().m_cameraGPUData.r.inverse();
+
+	return true;
+}
+
+bool DX11RenderingSystemNS::render()
+{
+	updateCBuffer(DX11RenderingSystemComponent::get().m_cameraCBuffer, &RenderingFrontendSystemComponent::get().m_cameraGPUData);
+	updateCBuffer(DX11RenderingSystemComponent::get().m_sunCBuffer, &RenderingFrontendSystemComponent::get().m_sunGPUData);
+	updateCBuffer(DX11RenderingSystemComponent::get().m_pointLightCBuffer, &RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[0]);
+	updateCBuffer(DX11RenderingSystemComponent::get().m_sphereLightCBuffer, &RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[0]);
+	updateCBuffer(DX11RenderingSystemComponent::get().m_skyCBuffer, &DX11RenderingSystemComponent::get().m_skyCBufferData);
 
 	DX11OpaquePass::update();
 
@@ -554,305 +762,188 @@ bool DX11RenderingSystemNS::terminate()
 	return true;
 }
 
-bool DX11RenderingSystemNS::initializeDefaultAssets()
+DX11MeshDataComponent* DX11RenderingSystemNS::addDX11MeshDataComponent()
 {
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE);
-	g_DXRenderingSystemComponent->m_UnitLineDXMDC = generateDX11MeshDataComponent(l_MDC);
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(DX11MeshDataComponent));
+	auto l_MDC = new(l_rawPtr)DX11MeshDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_meshMap = &m_meshMap;
+	l_meshMap->emplace(std::pair<EntityID, DX11MeshDataComponent*>(l_parentEntity, l_MDC));
+	return l_MDC;
+}
 
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-	for (auto& i : l_MDC->m_vertices)
+MaterialDataComponent* DX11RenderingSystemNS::addMaterialDataComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
+	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_materialMap = &m_materialMap;
+	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, l_MDC));
+	return l_MDC;
+}
+
+DX11TextureDataComponent* DX11RenderingSystemNS::addDX11TextureDataComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(DX11TextureDataComponent));
+	auto l_TDC = new(l_rawPtr)DX11TextureDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_TDC->m_parentEntity = l_parentEntity;
+	auto l_textureMap = &m_textureMap;
+	l_textureMap->emplace(std::pair<EntityID, DX11TextureDataComponent*>(l_parentEntity, l_TDC));
+	return l_TDC;
+}
+
+DX11MeshDataComponent* DX11RenderingSystemNS::getDX11MeshDataComponent(EntityID EntityID)
+{
+	auto result = DX11RenderingSystemNS::m_meshMap.find(EntityID);
+	if (result != DX11RenderingSystemNS::m_meshMap.end())
 	{
-		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
+		return result->second;
 	}
-	g_DXRenderingSystemComponent->m_UnitQuadDXMDC = generateDX11MeshDataComponent(l_MDC);
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + EntityID + " !");
+		return nullptr;
+	}
+}
 
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
-	g_DXRenderingSystemComponent->m_UnitCubeDXMDC = generateDX11MeshDataComponent(l_MDC);
+DX11TextureDataComponent * DX11RenderingSystemNS::getDX11TextureDataComponent(EntityID EntityID)
+{
+	auto result = DX11RenderingSystemNS::m_textureMap.find(EntityID);
+	if (result != DX11RenderingSystemNS::m_textureMap.end())
+	{
+		return result->second;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + EntityID + " !");
+		return nullptr;
+	}
+}
 
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
-	g_DXRenderingSystemComponent->m_UnitSphereDXMDC = generateDX11MeshDataComponent(l_MDC);
+DX11MeshDataComponent* DX11RenderingSystemNS::getDX11MeshDataComponent(MeshShapeType meshShapeType)
+{
+	switch (meshShapeType)
+	{
+	case MeshShapeType::LINE:
+		return DX11RenderingSystemNS::m_unitLineMDC; break;
+	case MeshShapeType::QUAD:
+		return DX11RenderingSystemNS::m_unitQuadMDC; break;
+	case MeshShapeType::CUBE:
+		return DX11RenderingSystemNS::m_unitCubeMDC; break;
+	case MeshShapeType::SPHERE:
+		return DX11RenderingSystemNS::m_unitSphereMDC; break;
+	case MeshShapeType::TERRAIN:
+		return DX11RenderingSystemNS::m_terrainMDC; break;
+	case MeshShapeType::CUSTOM:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: wrong MeshShapeType passed to DX11RenderingSystem::getMeshDataComponent() !");
+		return nullptr; break;
+	default:
+		return nullptr; break;
+	}
+}
 
-	g_DXRenderingSystemComponent->m_basicNormalDXTDC = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::NORMAL));
-	g_DXRenderingSystemComponent->m_basicAlbedoDXTDC = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ALBEDO));
-	g_DXRenderingSystemComponent->m_basicMetallicDXTDC = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::METALLIC));
-	g_DXRenderingSystemComponent->m_basicRoughnessDXTDC = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
-	g_DXRenderingSystemComponent->m_basicAODXTDC = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
+DX11TextureDataComponent * DX11RenderingSystemNS::getDX11TextureDataComponent(TextureUsageType textureUsageType)
+{
+	switch (textureUsageType)
+	{
+	case TextureUsageType::INVISIBLE:
+		return nullptr; break;
+	case TextureUsageType::NORMAL:
+		return DX11RenderingSystemNS::m_basicNormalTDC; break;
+	case TextureUsageType::ALBEDO:
+		return DX11RenderingSystemNS::m_basicAlbedoTDC; break;
+	case TextureUsageType::METALLIC:
+		return DX11RenderingSystemNS::m_basicMetallicTDC; break;
+	case TextureUsageType::ROUGHNESS:
+		return DX11RenderingSystemNS::m_basicRoughnessTDC; break;
+	case TextureUsageType::AMBIENT_OCCLUSION:
+		return DX11RenderingSystemNS::m_basicAOTDC; break;
+	case TextureUsageType::RENDER_TARGET:
+		return nullptr; break;
+	default:
+		return nullptr; break;
+	}
+}
 
-	g_DXRenderingSystemComponent->m_iconTemplate_OBJ = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::OBJ));
-	g_DXRenderingSystemComponent->m_iconTemplate_PNG = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::PNG));
-	g_DXRenderingSystemComponent->m_iconTemplate_SHADER = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::SHADER));
-	g_DXRenderingSystemComponent->m_iconTemplate_UNKNOWN = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(FileExplorerIconType::UNKNOWN));
+DX11TextureDataComponent * DX11RenderingSystemNS::getDX11TextureDataComponent(FileExplorerIconType iconType)
+{
+	switch (iconType)
+	{
+	case FileExplorerIconType::OBJ:
+		return DX11RenderingSystemNS::m_iconTemplate_OBJ; break;
+	case FileExplorerIconType::PNG:
+		return DX11RenderingSystemNS::m_iconTemplate_PNG; break;
+	case FileExplorerIconType::SHADER:
+		return DX11RenderingSystemNS::m_iconTemplate_SHADER; break;
+	case FileExplorerIconType::UNKNOWN:
+		return DX11RenderingSystemNS::m_iconTemplate_UNKNOWN; break;
+	default:
+		return nullptr; break;
+	}
+}
 
-	g_DXRenderingSystemComponent->m_iconTemplate_DirectionalLight = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT));
-	g_DXRenderingSystemComponent->m_iconTemplate_PointLight = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT));
-	g_DXRenderingSystemComponent->m_iconTemplate_SphereLight = generateDX11TextureDataComponent(g_pCoreSystem->getAssetSystem()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT));
+DX11TextureDataComponent * DX11RenderingSystemNS::getDX11TextureDataComponent(WorldEditorIconType iconType)
+{
+	switch (iconType)
+	{
+	case WorldEditorIconType::DIRECTIONAL_LIGHT:
+		return DX11RenderingSystemNS::m_iconTemplate_DirectionalLight; break;
+	case WorldEditorIconType::POINT_LIGHT:
+		return DX11RenderingSystemNS::m_iconTemplate_PointLight; break;
+	case WorldEditorIconType::SPHERE_LIGHT:
+		return DX11RenderingSystemNS::m_iconTemplate_SphereLight; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+bool DX11RenderingSystemNS::resize()
+{
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Width = l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Height = l_screenResolution.y;
+
+	g_DXRenderingSystemComponent->m_depthTextureDesc.Width = l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_depthTextureDesc.Height = l_screenResolution.y;
+
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.width = l_screenResolution.x;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.height = l_screenResolution.y;
+
+	g_DXRenderingSystemComponent->m_viewport.Width = (float)l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_viewport.Height = (float)l_screenResolution.y;
+
+	DX11OpaquePass::resize();
+	DX11LightPass::resize();
+	DX11SkyPass::resize();
+	DX11PreTAAPass::resize();
+	DX11TAAPass::resize();
+	DX11FinalBlendPass::resize();
 
 	return true;
 }
 
-bool DX11RenderingSystemNS::generateCBuffers()
+bool DX11RenderingSystem::setup()
 {
-	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11CameraCBufferData);
-	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_cameraCBuffer.m_CBufferDesc.StructureByteStride = 0;
-	createCBuffer(g_DXRenderingSystemComponent->m_cameraCBuffer);
-
-	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11MeshCBufferData);
-	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_meshCBuffer.m_CBufferDesc.StructureByteStride = 0;
-	createCBuffer(g_DXRenderingSystemComponent->m_meshCBuffer);
-
-	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.ByteWidth = sizeof(DX11TextureCBufferData);
-	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_textureCBuffer.m_CBufferDesc.StructureByteStride = 0;
-	createCBuffer(g_DXRenderingSystemComponent->m_textureCBuffer);
-
-	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.ByteWidth = sizeof(DirectionalLightCBufferData);
-	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_directionalLightCBuffer.m_CBufferDesc.StructureByteStride = 0;
-	createCBuffer(g_DXRenderingSystemComponent->m_directionalLightCBuffer);
-
-	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.ByteWidth = sizeof(PointLightCBufferData) * g_DXRenderingSystemComponent->m_maxPointLights;
-	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_pointLightCBuffer.m_CBufferDesc.StructureByteStride = 0;
-	createCBuffer(g_DXRenderingSystemComponent->m_pointLightCBuffer);
-
-	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.ByteWidth = sizeof(SphereLightCBufferData)* g_DXRenderingSystemComponent->m_maxSphereLights;
-	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_sphereLightCBuffer.m_CBufferDesc.StructureByteStride = 0;
-	createCBuffer(g_DXRenderingSystemComponent->m_sphereLightCBuffer);
-
-	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.ByteWidth = sizeof(SkyCBufferData);
-	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_skyCBuffer.m_CBufferDesc.StructureByteStride = 0;
-	createCBuffer(g_DXRenderingSystemComponent->m_skyCBuffer);
-
-	return true;
-}
-
-void DX11RenderingSystemNS::prepareRenderingData()
-{
-	// copy camera data pack for local scope
-	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-	if (l_cameraDataPack.has_value())
-	{
-		m_cameraDataPack = l_cameraDataPack.value();
-	}
-
-	// copy sun data pack for local scope
-	auto l_sunDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getSunDataPack();
-	if (l_sunDataPack.has_value())
-	{
-		m_sunDataPack = l_sunDataPack.value();
-	}
-
-	g_DXRenderingSystemComponent->m_cameraCBufferData.p_original = m_cameraDataPack.p_original;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.p_jittered = m_cameraDataPack.p_jittered;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.r = m_cameraDataPack.r;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.t = m_cameraDataPack.t;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.r_prev = m_cameraDataPack.r_prev;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.t_prev = m_cameraDataPack.t_prev;
-	g_DXRenderingSystemComponent->m_cameraCBufferData.globalPos = m_cameraDataPack.globalPos;
-
-	g_DXRenderingSystemComponent->m_directionalLightCBufferData.dir = m_sunDataPack.dir;
-	g_DXRenderingSystemComponent->m_directionalLightCBufferData.luminance = m_sunDataPack.luminance;
-
-	auto l_viewportSize = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
-
-	g_DXRenderingSystemComponent->m_skyCBufferData.viewportSize.x = (float)l_viewportSize.x;
-	g_DXRenderingSystemComponent->m_skyCBufferData.viewportSize.y = (float)l_viewportSize.y;
-	g_DXRenderingSystemComponent->m_skyCBufferData.p_inv = m_cameraDataPack.p_original.inverse();
-	g_DXRenderingSystemComponent->m_skyCBufferData.r_inv = m_cameraDataPack.r.inverse();
-
-	prepareGeometryPassData();
-	prepareLightPassData();
-}
-
-bool DX11RenderingSystemNS::prepareGeometryPassData()
-{
-	auto l_meshDataPack = m_renderingFrontendSystem->getMeshDataPack();
-
-	if (l_meshDataPack.has_value())
-	{
-		m_meshDataPack = l_meshDataPack.value();
-	}
-
-	for (auto i : m_meshDataPack)
-	{
-		auto l_DXMDC = getDX11MeshDataComponent(i.MDC->m_parentEntity);
-		if (l_DXMDC && l_DXMDC->m_objectStatus == ObjectStatus::ALIVE)
-		{
-			DX11MeshDataPack l_meshDataPack;
-
-			l_meshDataPack.indiceSize = i.MDC->m_indicesSize;
-			l_meshDataPack.meshPrimitiveTopology = i.MDC->m_meshPrimitiveTopology;
-			l_meshDataPack.meshCBuffer.m = i.m;
-			l_meshDataPack.meshCBuffer.m_prev = i.m_prev;
-			l_meshDataPack.meshCBuffer.normalMat = i.normalMat;
-			l_meshDataPack.DXMDC = l_DXMDC;
-
-			auto l_material = i.material;
-			// any normal?
-			auto l_TDC = l_material->m_texturePack.m_normalTDC.second;
-			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-			{
-				l_meshDataPack.normalDXTDC = getDX11TextureDataComponent(l_TDC->m_parentEntity);
-			}
-			else
-			{
-				l_meshDataPack.textureCBuffer.useNormalTexture = false;
-			}
-			// any albedo?
-			l_TDC = l_material->m_texturePack.m_albedoTDC.second;
-			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-			{
-				l_meshDataPack.albedoDXTDC = getDX11TextureDataComponent(l_TDC->m_parentEntity);
-			}
-			else
-			{
-				l_meshDataPack.textureCBuffer.useAlbedoTexture = false;
-			}
-			// any metallic?
-			l_TDC = l_material->m_texturePack.m_metallicTDC.second;
-			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-			{
-				l_meshDataPack.metallicDXTDC = getDX11TextureDataComponent(l_TDC->m_parentEntity);
-			}
-			else
-			{
-				l_meshDataPack.textureCBuffer.useMetallicTexture = false;
-			}
-			// any roughness?
-			l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
-			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-			{
-				l_meshDataPack.roughnessDXTDC = getDX11TextureDataComponent(l_TDC->m_parentEntity);
-			}
-			else
-			{
-				l_meshDataPack.textureCBuffer.useRoughnessTexture = false;
-			}
-			// any ao?
-			l_TDC = l_material->m_texturePack.m_roughnessTDC.second;
-			if (l_TDC && l_TDC->m_objectStatus == ObjectStatus::ALIVE)
-			{
-				l_meshDataPack.AODXTDC = getDX11TextureDataComponent(l_TDC->m_parentEntity);
-			}
-			else
-			{
-				l_meshDataPack.textureCBuffer.useAOTexture = false;
-			}
-
-			l_meshDataPack.textureCBuffer.albedo = vec4(
-				l_material->m_meshCustomMaterial.albedo_r,
-				l_material->m_meshCustomMaterial.albedo_g,
-				l_material->m_meshCustomMaterial.albedo_b,
-				1.0f
-			);
-			l_meshDataPack.textureCBuffer.MRA = vec4(
-				l_material->m_meshCustomMaterial.metallic,
-				l_material->m_meshCustomMaterial.roughness,
-				l_material->m_meshCustomMaterial.ao,
-				1.0f
-			);
-
-			g_DXRenderingSystemComponent->m_meshDataQueue.push(l_meshDataPack);
-		}
-	}
-	return true;
-}
-
-bool DX11RenderingSystemNS::prepareLightPassData()
-{
-	// point light
-	DX11RenderingSystemComponent::get().m_PointLightCBufferDatas.clear();
-	DX11RenderingSystemComponent::get().m_PointLightCBufferDatas.reserve(g_DXRenderingSystemComponent->m_maxPointLights);
-
-	for (unsigned int i = 0; i < g_DXRenderingSystemComponent->m_maxPointLights; i++)
-	{
-		DX11RenderingSystemComponent::get().m_PointLightCBufferDatas.emplace_back();
-	}
-
-	auto& l_PointLightComponents = g_pCoreSystem->getGameSystem()->get<PointLightComponent>();
-
-	for (auto i = 0; i < l_PointLightComponents.size(); i++)
-	{
-		PointLightCBufferData l_PointLightData;
-		l_PointLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_PointLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_PointLightData.luminance = l_PointLightComponents[i]->m_color * l_PointLightComponents[i]->m_luminousFlux;
-		l_PointLightData.luminance.w = l_PointLightComponents[i]->m_attenuationRadius;
-		DX11RenderingSystemComponent::get().m_PointLightCBufferDatas[i] = l_PointLightData;
-	}
-
-	// sphere light
-	DX11RenderingSystemComponent::get().m_SphereLightCBufferDatas.clear();
-	DX11RenderingSystemComponent::get().m_SphereLightCBufferDatas.reserve(g_DXRenderingSystemComponent->m_maxSphereLights);
-
-	for (unsigned int i = 0; i < g_DXRenderingSystemComponent->m_maxSphereLights; i++)
-	{
-		DX11RenderingSystemComponent::get().m_SphereLightCBufferDatas.emplace_back();
-	}
-
-	auto& l_SphereLightComponents = g_pCoreSystem->getGameSystem()->get<SphereLightComponent>();
-
-	for (auto i = 0; i < l_SphereLightComponents.size(); i++)
-	{
-		SphereLightCBufferData l_SphereLightData;
-		l_SphereLightData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_SphereLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_SphereLightData.luminance = l_SphereLightComponents[i]->m_color * l_SphereLightComponents[i]->m_luminousFlux;
-		l_SphereLightData.luminance.w = l_SphereLightComponents[i]->m_sphereRadius;
-		DX11RenderingSystemComponent::get().m_SphereLightCBufferDatas[i] = l_SphereLightData;
-	}
-
-	return true;
-}
-
-bool DX11RenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
-{
-	return DX11RenderingSystemNS::setup(renderingFrontend);
+	return DX11RenderingSystemNS::setup();
 }
 
 bool DX11RenderingSystem::initialize()
 {
-	DX11RenderingSystemNS::initializeDefaultAssets();
-
-	DX11RenderingSystemNS::generateCBuffers();
-
-	DX11OpaquePass::initialize();
-	DX11LightPass::initialize();
-	DX11SkyPass::initialize();
-	DX11PreTAAPass::initialize();
-	DX11TAAPass::initialize();
-	DX11FinalBlendPass::initialize();
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been initialized.");
-	return true;
+	return DX11RenderingSystemNS::initialize();
 }
 
 bool DX11RenderingSystem::update()
 {
 	return DX11RenderingSystemNS::update();
+}
+
+bool DX11RenderingSystem::render()
+{
+	return DX11RenderingSystemNS::render();
 }
 
 bool DX11RenderingSystem::terminate()
@@ -865,25 +956,130 @@ ObjectStatus DX11RenderingSystem::getStatus()
 	return DX11RenderingSystemNS::m_objectStatus;
 }
 
+MeshDataComponent * DX11RenderingSystem::addMeshDataComponent()
+{
+	return DX11RenderingSystemNS::addDX11MeshDataComponent();
+}
+
+MaterialDataComponent * DX11RenderingSystem::addMaterialDataComponent()
+{
+	return DX11RenderingSystemNS::addMaterialDataComponent();
+}
+
+TextureDataComponent * DX11RenderingSystem::addTextureDataComponent()
+{
+	return DX11RenderingSystemNS::addDX11TextureDataComponent();
+}
+
+MeshDataComponent * DX11RenderingSystem::getMeshDataComponent(EntityID meshID)
+{
+	return DX11RenderingSystemNS::getDX11MeshDataComponent(meshID);
+}
+
+TextureDataComponent * DX11RenderingSystem::getTextureDataComponent(EntityID textureID)
+{
+	return DX11RenderingSystemNS::getDX11TextureDataComponent(textureID);
+}
+
+MeshDataComponent * DX11RenderingSystem::getMeshDataComponent(MeshShapeType MeshShapeType)
+{
+	return DX11RenderingSystemNS::getDX11MeshDataComponent(MeshShapeType);
+}
+
+TextureDataComponent * DX11RenderingSystem::getTextureDataComponent(TextureUsageType TextureUsageType)
+{
+	return DX11RenderingSystemNS::getDX11TextureDataComponent(TextureUsageType);
+}
+
+TextureDataComponent * DX11RenderingSystem::getTextureDataComponent(FileExplorerIconType iconType)
+{
+	return DX11RenderingSystemNS::getDX11TextureDataComponent(iconType);
+}
+
+TextureDataComponent * DX11RenderingSystem::getTextureDataComponent(WorldEditorIconType iconType)
+{
+	return DX11RenderingSystemNS::getDX11TextureDataComponent(iconType);
+}
+
+bool DX11RenderingSystem::removeMeshDataComponent(EntityID EntityID)
+{
+	auto l_meshMap = &DX11RenderingSystemNS::m_meshMap;
+	auto l_mesh = l_meshMap->find(EntityID);
+	if (l_mesh != l_meshMap->end())
+	{
+		g_pCoreSystem->getMemorySystem()->destroyObject(DX11RenderingSystemNS::m_MeshDataComponentPool, sizeof(DX11MeshDataComponent), l_mesh->second);
+		l_meshMap->erase(EntityID);
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + EntityID + " !");
+		return false;
+	}
+}
+
+bool DX11RenderingSystem::removeTextureDataComponent(EntityID EntityID)
+{
+	auto l_textureMap = &DX11RenderingSystemNS::m_textureMap;
+	auto l_texture = l_textureMap->find(EntityID);
+	if (l_texture != l_textureMap->end())
+	{
+		for (auto& i : l_texture->second->m_textureData)
+		{
+			// @TODO
+		}
+
+		g_pCoreSystem->getMemorySystem()->destroyObject(DX11RenderingSystemNS::m_TextureDataComponentPool, sizeof(DX11TextureDataComponent), l_texture->second);
+		l_textureMap->erase(EntityID);
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + EntityID + " !");
+		return false;
+	}
+}
+
+void DX11RenderingSystem::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
+{
+	DX11RenderingSystemNS::m_uninitializedMDC.push(reinterpret_cast<DX11MeshDataComponent*>(rhs));
+}
+
+void DX11RenderingSystem::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
+{
+	DX11RenderingSystemNS::m_uninitializedTDC.push(reinterpret_cast<DX11TextureDataComponent*>(rhs));
+}
+
 bool DX11RenderingSystem::resize()
 {
-	DX11OpaquePass::resize();
-	DX11LightPass::resize();
-	DX11SkyPass::resize();
-	DX11PreTAAPass::resize();
-	DX11TAAPass::resize();
-	DX11FinalBlendPass::resize();
-	return true;
+	return DX11RenderingSystemNS::resize();
 }
 
 bool DX11RenderingSystem::reloadShader(RenderPassType renderPassType)
 {
-	DX11OpaquePass::reloadShaders();
-	DX11LightPass::reloadShaders();
-	DX11SkyPass::reloadShaders();
-	DX11PreTAAPass::reloadShaders();
-	DX11TAAPass::reloadShaders();
-	DX11FinalBlendPass::reloadShaders();
+	switch (renderPassType)
+	{
+	case RenderPassType::Shadow:
+		break;
+	case RenderPassType::Opaque:
+		DX11OpaquePass::reloadShaders();
+		break;
+	case RenderPassType::Light:
+		DX11LightPass::reloadShaders();
+		break;
+	case RenderPassType::Transparent:
+		break;
+	case RenderPassType::Terrain:
+		break;
+	case RenderPassType::PostProcessing:
+		DX11SkyPass::reloadShaders();
+		DX11PreTAAPass::reloadShaders();
+		DX11TAAPass::reloadShaders();
+		DX11FinalBlendPass::reloadShaders();
+		break;
+	default: break;
+	}
+
 	return true;
 }
 

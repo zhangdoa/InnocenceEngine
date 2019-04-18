@@ -6,74 +6,19 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoAssetSystemNS
 {
-	bool initializeComponentPool();
-
-	void loadDefaultAssets();
 	void loadAssetsForComponents();
 
-	ModelMap loadModel(const std::string& fileName);
-	TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType);
-
-	MeshDataComponent* addMeshDataComponent();
-	MaterialDataComponent* addMaterialDataComponent();
-	TextureDataComponent* addTextureDataComponent();
-
 	void assignUnitMesh(MeshShapeType MeshUsageType, VisibleComponent* visibleComponent);
-
-	void addUnitCube(MeshDataComponent& meshDataComponent);
-	void addUnitSphere(MeshDataComponent& meshDataComponent);
-	void addUnitQuad(MeshDataComponent& meshDataComponent);
-	void addUnitLine(MeshDataComponent& meshDataComponent);
-	void addTerrain(MeshDataComponent& meshDataComponent);
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
 	std::vector<InnoFuture<void>> m_asyncTask;
 
-	MeshDataComponent* m_UnitLineMDC;
-	MeshDataComponent* m_UnitQuadMDC;
-	MeshDataComponent* m_UnitCubeMDC;
-	MeshDataComponent* m_UnitSphereMDC;
-	MeshDataComponent* m_TerrainMDC;
-
-	TextureDataComponent* m_basicNormalTDC;
-	TextureDataComponent* m_basicAlbedoTDC;
-	TextureDataComponent* m_basicMetallicTDC;
-	TextureDataComponent* m_basicRoughnessTDC;
-	TextureDataComponent* m_basicAOTDC;
-
-	TextureDataComponent* m_iconTemplate_OBJ;
-	TextureDataComponent* m_iconTemplate_PNG;
-	TextureDataComponent* m_iconTemplate_SHADER;
-	TextureDataComponent* m_iconTemplate_UNKNOWN;
-
-	TextureDataComponent* m_iconTemplate_DirectionalLight;
-	TextureDataComponent* m_iconTemplate_PointLight;
-	TextureDataComponent* m_iconTemplate_SphereLight;
-
 	DirectoryMetadata m_rootDirectoryMetadata;
-
-	ThreadSafeUnorderedMap<EntityID, MeshDataComponent*> m_meshMap;
-	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
-	ThreadSafeUnorderedMap<EntityID, TextureDataComponent*> m_textureMap;
-
-	void* m_MeshDataComponentPool;
-	void* m_MaterialDataComponentPool;
-	void* m_TextureDataComponentPool;
 }
 
-bool InnoAssetSystemNS::initializeComponentPool()
-{
-	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MeshDataComponent), 16384);
-	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
-	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(TextureDataComponent), 32768);
-
-	return true;
-}
 INNO_SYSTEM_EXPORT bool InnoAssetSystem::setup()
 {
-	InnoAssetSystemNS::initializeComponentPool();
-
 	InnoAssetSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	return true;
 }
@@ -102,11 +47,6 @@ ObjectStatus InnoAssetSystem::getStatus()
 	return InnoAssetSystemNS::m_objectStatus;
 }
 
-INNO_SYSTEM_EXPORT void InnoAssetSystem::loadDefaultAssets()
-{
-	InnoAssetSystemNS::loadDefaultAssets();
-}
-
 INNO_SYSTEM_EXPORT void InnoAssetSystem::loadAssetsForComponents()
 {
 	InnoAssetSystemNS::loadAssetsForComponents();
@@ -114,233 +54,57 @@ INNO_SYSTEM_EXPORT void InnoAssetSystem::loadAssetsForComponents()
 
 INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::addMeshDataComponent()
 {
-	return InnoAssetSystemNS::addMeshDataComponent();
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addMeshDataComponent();
 }
 
 INNO_SYSTEM_EXPORT MaterialDataComponent * InnoAssetSystem::addMaterialDataComponent()
 {
-	return InnoAssetSystemNS::addMaterialDataComponent();
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addMaterialDataComponent();
 }
 
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::addTextureDataComponent()
 {
-	return InnoAssetSystemNS::addTextureDataComponent();
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addTextureDataComponent();
 }
 
-MeshDataComponent* InnoAssetSystemNS::addMeshDataComponent()
+INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::getMeshDataComponent(EntityID meshID)
 {
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(MeshDataComponent));
-	auto l_MDC = new(l_rawPtr)MeshDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
-	l_MDC->m_parentEntity = l_parentEntity;
-	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, MeshDataComponent*>(l_parentEntity, l_MDC));
-	return l_MDC;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getMeshDataComponent(meshID);
 }
 
-MaterialDataComponent* InnoAssetSystemNS::addMaterialDataComponent()
+INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(EntityID textureID)
 {
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
-	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
-	l_MDC->m_parentEntity = l_parentEntity;
-	auto l_materialMap = &m_materialMap;
-	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, l_MDC));
-	return l_MDC;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(textureID);
 }
 
-TextureDataComponent* InnoAssetSystemNS::addTextureDataComponent()
+INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType meshShapeType)
 {
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(TextureDataComponent));
-	auto l_TDC = new(l_rawPtr)TextureDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
-	l_TDC->m_parentEntity = l_parentEntity;
-	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, TextureDataComponent*>(l_parentEntity, l_TDC));
-	return l_TDC;
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getMeshDataComponent(meshShapeType);
 }
 
-MeshDataComponent* InnoAssetSystem::getMeshDataComponent(EntityID EntityID)
+INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType textureUsageType)
 {
-	auto result = InnoAssetSystemNS::m_meshMap.find(EntityID);
-	if (result != InnoAssetSystemNS::m_meshMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't find MeshDataComponent by EntityID: " + EntityID + " !");
-		return nullptr;
-	}
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(textureUsageType);
 }
 
-TextureDataComponent * InnoAssetSystem::getTextureDataComponent(EntityID EntityID)
+INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(FileExplorerIconType iconType)
 {
-	auto result = InnoAssetSystemNS::m_textureMap.find(EntityID);
-	if (result != InnoAssetSystemNS::m_textureMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't find TextureDataComponent by EntityID: " + EntityID + " !");
-		return nullptr;
-	}
-}
-
-MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType meshShapeType)
-{
-	switch (meshShapeType)
-	{
-	case MeshShapeType::LINE:
-		return InnoAssetSystemNS::m_UnitLineMDC; break;
-	case MeshShapeType::QUAD:
-		return InnoAssetSystemNS::m_UnitQuadMDC; break;
-	case MeshShapeType::CUBE:
-		return InnoAssetSystemNS::m_UnitCubeMDC; break;
-	case MeshShapeType::SPHERE:
-		return InnoAssetSystemNS::m_UnitSphereMDC; break;
-	case MeshShapeType::TERRAIN:
-		return InnoAssetSystemNS::m_TerrainMDC; break;
-	case MeshShapeType::CUSTOM:
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: wrong MeshShapeType passed to InnoAssetSystem::getMeshDataComponent() !");
-		return nullptr; break;
-	default:
-		return nullptr; break;
-	}
-}
-
-TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType textureUsageType)
-{
-	switch (textureUsageType)
-	{
-	case TextureUsageType::INVISIBLE:
-		return nullptr; break;
-	case TextureUsageType::NORMAL:
-		return InnoAssetSystemNS::m_basicNormalTDC; break;
-	case TextureUsageType::ALBEDO:
-		return InnoAssetSystemNS::m_basicAlbedoTDC; break;
-	case TextureUsageType::METALLIC:
-		return InnoAssetSystemNS::m_basicMetallicTDC; break;
-	case TextureUsageType::ROUGHNESS:
-		return InnoAssetSystemNS::m_basicRoughnessTDC; break;
-	case TextureUsageType::AMBIENT_OCCLUSION:
-		return InnoAssetSystemNS::m_basicAOTDC; break;
-	case TextureUsageType::RENDER_TARGET:
-		return nullptr; break;
-	default:
-		return nullptr; break;
-	}
-}
-
-INNO_SYSTEM_EXPORT TextureDataComponent* InnoAssetSystem::getTextureDataComponent(FileExplorerIconType iconType)
-{
-	switch (iconType)
-	{
-	case FileExplorerIconType::OBJ:
-		return InnoAssetSystemNS::m_iconTemplate_OBJ; break;
-	case FileExplorerIconType::PNG:
-		return InnoAssetSystemNS::m_iconTemplate_PNG; break;
-	case FileExplorerIconType::SHADER:
-		return InnoAssetSystemNS::m_iconTemplate_SHADER; break;
-	case FileExplorerIconType::UNKNOWN:
-		return InnoAssetSystemNS::m_iconTemplate_UNKNOWN; break;
-	default:
-		return nullptr; break;
-	}
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(iconType);
 }
 
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(WorldEditorIconType iconType)
 {
-	switch (iconType)
-	{
-	case WorldEditorIconType::DIRECTIONAL_LIGHT:
-		return InnoAssetSystemNS::m_iconTemplate_DirectionalLight; break;
-	case WorldEditorIconType::POINT_LIGHT:
-		return InnoAssetSystemNS::m_iconTemplate_PointLight; break;
-	case WorldEditorIconType::SPHERE_LIGHT:
-		return InnoAssetSystemNS::m_iconTemplate_SphereLight; break;
-	default:
-		return nullptr; break;
-	}
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(iconType);
 }
 
-bool InnoAssetSystem::removeMeshDataComponent(EntityID EntityID)
+INNO_SYSTEM_EXPORT bool InnoAssetSystem::removeMeshDataComponent(EntityID entityID)
 {
-	auto l_meshMap = &InnoAssetSystemNS::m_meshMap;
-	auto l_mesh = l_meshMap->find(EntityID);
-	if (l_mesh != l_meshMap->end())
-	{
-		g_pCoreSystem->getMemorySystem()->destroyObject(InnoAssetSystemNS::m_MeshDataComponentPool, sizeof(MeshDataComponent), l_mesh->second);
-		l_meshMap->erase(EntityID);
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't remove MeshDataComponent by EntityID: " + EntityID + " !");
-		return false;
-	}
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->removeMeshDataComponent(entityID);
 }
 
-bool InnoAssetSystem::removeTextureDataComponent(EntityID EntityID)
+INNO_SYSTEM_EXPORT bool InnoAssetSystem::removeTextureDataComponent(EntityID entityID)
 {
-	auto l_textureMap = &InnoAssetSystemNS::m_textureMap;
-	auto l_texture = l_textureMap->find(EntityID);
-	if (l_texture != l_textureMap->end())
-	{
-		for (auto& i : l_texture->second->m_textureData)
-		{
-			// @TODO
-		}
-
-		g_pCoreSystem->getMemorySystem()->destroyObject(InnoAssetSystemNS::m_TextureDataComponentPool, sizeof(TextureDataComponent), l_texture->second);
-		l_textureMap->erase(EntityID);
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't remove TextureDataComponent by EntityID: " + EntityID + " !");
-		return false;
-	}
-}
-
-bool InnoAssetSystem::releaseRawDataForMeshDataComponent(EntityID EntityID)
-{
-	auto l_meshMap = &InnoAssetSystemNS::m_meshMap;
-	auto l_mesh = l_meshMap->find(EntityID);
-	if (l_mesh != l_meshMap->end())
-	{
-		// @TODO:
-		l_mesh->second->m_vertices.clear();
-		l_mesh->second->m_vertices.shrink_to_fit();
-		l_mesh->second->m_indices.clear();
-		l_mesh->second->m_indices.shrink_to_fit();
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't release raw data for MeshDataComponent by EntityID: " + EntityID + " !");
-		return false;
-	}
-}
-
-bool InnoAssetSystem::releaseRawDataForTextureDataComponent(EntityID EntityID)
-{
-	auto l_textureMap = &InnoAssetSystemNS::m_textureMap;
-	auto l_texture = l_textureMap->find(EntityID);
-	if (l_texture != l_textureMap->end())
-	{
-		for (auto& i : l_texture->second->m_textureData)
-		{
-			// @TODO:
-		}
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: can't release raw data for TextureDataComponent by EntityID : " + EntityID + " !");
-		return false;
-	}
+	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->removeTextureDataComponent(entityID);
 }
 
 INNO_SYSTEM_EXPORT DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata()
@@ -348,7 +112,7 @@ INNO_SYSTEM_EXPORT DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata(
 	return &InnoAssetSystemNS::m_rootDirectoryMetadata;
 }
 
-void InnoAssetSystemNS::addUnitCube(MeshDataComponent& meshDataComponent)
+void InnoAssetSystem::addUnitCube(MeshDataComponent& meshDataComponent)
 {
 	float vertices[] = {
 		// positions     // normals      // texture coords
@@ -418,7 +182,7 @@ void InnoAssetSystemNS::addUnitCube(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
-void InnoAssetSystemNS::addUnitSphere(MeshDataComponent& meshDataComponent)
+void InnoAssetSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 {
 	unsigned int X_SEGMENTS = 64;
 	unsigned int Y_SEGMENTS = 64;
@@ -468,7 +232,7 @@ void InnoAssetSystemNS::addUnitSphere(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
-void InnoAssetSystemNS::addUnitQuad(MeshDataComponent& meshDataComponent)
+void InnoAssetSystem::addUnitQuad(MeshDataComponent& meshDataComponent)
 {
 	Vertex l_VertexData_1;
 	l_VertexData_1.m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
@@ -491,7 +255,7 @@ void InnoAssetSystemNS::addUnitQuad(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
-void InnoAssetSystemNS::addUnitLine(MeshDataComponent& meshDataComponent)
+void InnoAssetSystem::addUnitLine(MeshDataComponent& meshDataComponent)
 {
 	Vertex l_VertexData_1;
 	l_VertexData_1.m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
@@ -506,7 +270,7 @@ void InnoAssetSystemNS::addUnitLine(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
-void InnoAssetSystemNS::addTerrain(MeshDataComponent& meshDataComponent)
+void InnoAssetSystem::addTerrain(MeshDataComponent& meshDataComponent)
 {
 	auto l_gridSize = 256;
 	auto l_gridSize2 = l_gridSize * l_gridSize;
@@ -560,58 +324,6 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
-void InnoAssetSystemNS::loadDefaultAssets()
-{
-	m_basicNormalTDC = loadTexture("res//textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_basicAlbedoTDC = loadTexture("res//textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
-	m_basicMetallicTDC = loadTexture("res//textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
-	m_basicRoughnessTDC = loadTexture("res//textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
-	m_basicAOTDC = loadTexture("res//textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
-
-	m_iconTemplate_OBJ = loadTexture("res//textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_iconTemplate_PNG = loadTexture("res//textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_iconTemplate_SHADER = loadTexture("res//textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_iconTemplate_UNKNOWN = loadTexture("res//textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-
-	m_iconTemplate_DirectionalLight = loadTexture("res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_iconTemplate_PointLight = loadTexture("res//textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_iconTemplate_SphereLight = loadTexture("res//textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-
-	m_UnitLineMDC = addMeshDataComponent();
-	InnoAssetSystemNS::addUnitLine(*m_UnitLineMDC);
-	m_UnitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
-	m_UnitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_UnitLineMDC->m_objectStatus = ObjectStatus::STANDBY;
-	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_UnitLineMDC);
-
-	m_UnitQuadMDC = addMeshDataComponent();
-	InnoAssetSystemNS::addUnitQuad(*m_UnitQuadMDC);
-	m_UnitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
-	m_UnitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_UnitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
-	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_UnitQuadMDC);
-
-	m_UnitCubeMDC = addMeshDataComponent();
-	InnoAssetSystemNS::addUnitCube(*m_UnitCubeMDC);
-	m_UnitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_UnitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_UnitCubeMDC->m_objectStatus = ObjectStatus::STANDBY;
-	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_UnitCubeMDC);
-
-	m_UnitSphereMDC = addMeshDataComponent();
-	InnoAssetSystemNS::addUnitSphere(*m_UnitSphereMDC);
-	m_UnitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
-	m_UnitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_UnitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
-	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_UnitSphereMDC);
-
-	m_TerrainMDC = addMeshDataComponent();
-	InnoAssetSystemNS::addTerrain(*m_TerrainMDC);
-	m_TerrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_TerrainMDC->m_objectStatus = ObjectStatus::STANDBY;
-	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_TerrainMDC);
-}
-
 void InnoAssetSystemNS::loadAssetsForComponents()
 {
 	for (auto l_environmentCaptureComponent : g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>())
@@ -635,7 +347,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 				{
 					g_pCoreSystem->getTaskSystem()->submit([=]()
 					{
-						l_visibleComponent->m_modelMap = InnoAssetSystemNS::loadModel(l_visibleComponent->m_modelFileName);
+						l_visibleComponent->m_modelMap = g_pCoreSystem->getAssetSystem()->loadModel(l_visibleComponent->m_modelFileName);
 						g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
 						l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
 					});
@@ -655,29 +367,26 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 	}
 }
 
-void InnoAssetSystemNS::assignUnitMesh(MeshShapeType MeshUsageType, VisibleComponent* visibleComponent)
+void InnoAssetSystemNS::assignUnitMesh(MeshShapeType meshUsageType, VisibleComponent* visibleComponent)
 {
-	MeshDataComponent* l_UnitMeshTemplate;
-	switch (MeshUsageType)
+	if (meshUsageType != MeshShapeType::CUSTOM)
 	{
-	case MeshShapeType::LINE: l_UnitMeshTemplate = m_UnitLineMDC; break;
-	case MeshShapeType::QUAD: l_UnitMeshTemplate = m_UnitQuadMDC; break;
-	case MeshShapeType::CUBE: l_UnitMeshTemplate = m_UnitCubeMDC; break;
-	case MeshShapeType::SPHERE: l_UnitMeshTemplate = m_UnitSphereMDC; break;
-	case MeshShapeType::TERRAIN: l_UnitMeshTemplate = m_TerrainMDC; break;
-	case MeshShapeType::CUSTOM: g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: don't assign unit mesh to a custom mesh shape component!");
-		break; return;
+		MeshDataComponent* l_UnitMeshTemplate = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getMeshDataComponent(meshUsageType);
+		visibleComponent->m_modelMap.emplace(l_UnitMeshTemplate, g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addMaterialDataComponent());
 	}
-	visibleComponent->m_modelMap.emplace(l_UnitMeshTemplate, addMaterialDataComponent());
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: don't assign unit mesh to a custom mesh shape component!");
+	}
 }
 
-ModelMap InnoAssetSystemNS::loadModel(const std::string & fileName)
+ModelMap InnoAssetSystem::loadModel(const std::string & fileName)
 {
 	auto l_result = g_pCoreSystem->getFileSystem()->loadModel(fileName);
 	return l_result;
 }
 
-TextureDataComponent* InnoAssetSystemNS::loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType)
+TextureDataComponent* InnoAssetSystem::loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType)
 {
 	auto l_TDC = g_pCoreSystem->getFileSystem()->loadTexture(fileName);
 	l_TDC->m_textureDataDesc.samplerType = samplerType;

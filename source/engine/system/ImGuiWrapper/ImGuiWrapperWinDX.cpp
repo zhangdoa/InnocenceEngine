@@ -1,7 +1,9 @@
 #include "ImGuiWrapperWinDX.h"
 #include "../../component/WinWindowSystemComponent.h"
-#include "../../component/DX11RenderingSystemComponent.h"
+
 #include "../DX11RenderingBackend/DX11OpaquePass.h"
+
+#include "../DX11RenderingBackend/DX11RenderingSystemUtilities.h"
 
 #include "../../third-party/ImGui/imgui_impl_win32.h"
 #include "../../third-party/ImGui/imgui_impl_dx11.h"
@@ -109,17 +111,5 @@ void ImGuiWrapperWinDX11::showRenderResult()
 
 ImTextureID ImGuiWrapperWinDX11::getFileExplorerIconTextureID(const FileExplorerIconType iconType)
 {
-	switch (iconType)
-	{
-	case FileExplorerIconType::OBJ:
-		return ImTextureID(DX11RenderingSystemComponent::get().m_iconTemplate_OBJ->m_SRV); break;
-	case FileExplorerIconType::PNG:
-		return ImTextureID(DX11RenderingSystemComponent::get().m_iconTemplate_PNG->m_SRV); break;
-	case FileExplorerIconType::SHADER:
-		return ImTextureID(DX11RenderingSystemComponent::get().m_iconTemplate_SHADER->m_SRV); break;
-	case FileExplorerIconType::UNKNOWN:
-		return ImTextureID(DX11RenderingSystemComponent::get().m_iconTemplate_UNKNOWN->m_SRV); break;
-	default:
-		return nullptr; break;
-	}
+	return ImTextureID(DX11RenderingSystemNS::getDX11TextureDataComponent(iconType)->m_SRV);
 }

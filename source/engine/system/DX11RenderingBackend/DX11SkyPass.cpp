@@ -4,6 +4,7 @@
 #include "DX11OpaquePass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -101,8 +102,6 @@ bool DX11SkyPass::update()
 
 	activateDX11ShaderProgramComponent(m_DXSPC);
 
-	DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
 	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
@@ -122,12 +121,12 @@ bool DX11SkyPass::update()
 	}
 	cleanDSV(m_DXRPC->m_depthStencilView);
 
-	updateShaderParameter(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer, &DX11RenderingSystemComponent::get().m_cameraCBufferData);
-	updateShaderParameter(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_directionalLightCBuffer, &DX11RenderingSystemComponent::get().m_directionalLightCBufferData);
-	updateShaderParameter(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_skyCBuffer, &DX11RenderingSystemComponent::get().m_skyCBufferData);
+	bindCBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer);
+	bindCBuffer(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_sunCBuffer);
+	bindCBuffer(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_skyCBuffer);
 
 	// draw
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
+	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::CUBE);
 	drawMesh(l_MDC);
 
 	return true;

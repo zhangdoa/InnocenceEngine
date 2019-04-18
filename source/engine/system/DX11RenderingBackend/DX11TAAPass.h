@@ -1,6 +1,7 @@
 #pragma once
 #include "../../common/InnoType.h"
 #include "../../component/DX11RenderPassComponent.h"
+#include "../../component/DX11TextureDataComponent.h"
 
 INNO_PRIVATE_SCOPE DX11TAAPass
 {
@@ -13,5 +14,5 @@ INNO_PRIVATE_SCOPE DX11TAAPass
 	bool reloadShaders();
 
 	DX11RenderPassComponent* getDX11RPC();
-	ID3D11ShaderResourceView* getResult();
+	DX11TextureDataComponent* getResult();
 }

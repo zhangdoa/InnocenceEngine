@@ -36,6 +36,5 @@ public:
 
 	std::vector<VkFramebuffer> m_framebuffers;
 	std::vector<VkCommandBuffer> m_commandBuffers;
-	std::vector<TextureDataComponent*> m_TDCs;
 	std::vector<VKTextureDataComponent*> m_VKTDCs;
 };

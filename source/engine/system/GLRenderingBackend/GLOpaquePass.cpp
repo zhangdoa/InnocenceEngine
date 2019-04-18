@@ -2,6 +2,7 @@
 #include "GLEarlyZPass.h"
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 using namespace GLRenderingSystemNS;
 
@@ -12,7 +13,6 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLOpaquePass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
@@ -21,17 +21,6 @@ INNO_PRIVATE_SCOPE GLOpaquePass
 	GLShaderProgramComponent* m_GLSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//opaquePass.vert" , "", "GL//opaquePass.frag" };
-
-	GLuint m_uni_id;
-
-	std::vector<std::string> m_TextureUniformNames =
-	{
-		"uni_normalTexture",
-		"uni_albedoTexture",
-		"uni_metallicTexture",
-		"uni_roughnessTexture",
-		"uni_aoTexture",
-	};
 }
 
 bool GLOpaquePass::initialize()
@@ -52,22 +41,7 @@ void GLOpaquePass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLOpaquePass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	bindUniformBlock(GLRenderingSystemComponent::get().m_cameraUBO, sizeof(GPassCameraUBOData), rhs->m_program, "cameraUBO", 0);
-
-	bindUniformBlock(GLRenderingSystemComponent::get().m_meshUBO, sizeof(GPassMeshUBOData), rhs->m_program, "meshUBO", 1);
-
-	bindUniformBlock(GLRenderingSystemComponent::get().m_textureUBO, sizeof(GPassTextureUBOData), rhs->m_program, "textureUBO", 2);
-
-	m_uni_id = getUniformLocation(rhs->m_program, "uni_id");
-
-	updateTextureUniformLocations(rhs->m_program, m_TextureUniformNames);
 }
 
 bool GLOpaquePass::update()
@@ -90,69 +64,54 @@ bool GLOpaquePass::update()
 
 	activateShaderProgram(m_GLSPC);
 
-	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, GLRenderingSystemComponent::get().m_GPassCameraUBOData);
-
-	while (GLRenderingSystemComponent::get().m_opaquePassDataQueue.size() > 0)
+	while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
 	{
-		auto l_renderPack = GLRenderingSystemComponent::get().m_opaquePassDataQueue.front();
-		if (l_renderPack.meshShapeType != MeshShapeType::CUSTOM)
+		GeometryPassGPUData l_geometryPassGPUData = {};
+
+		if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
 		{
-			glFrontFace(GL_CW);
-		}
-		else
-		{
-			glFrontFace(GL_CCW);
-		}
-		if (l_renderPack.visiblilityType == VisiblilityType::INNO_OPAQUE)
-		{
+			if (l_geometryPassGPUData.MDC->m_meshShapeType != MeshShapeType::CUSTOM)
+			{
+				glFrontFace(GL_CW);
+			}
+			else
+			{
+				glFrontFace(GL_CCW);
+			}
+
 			glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
 
 			// any normal?
-			if (l_renderPack.textureUBOData.useNormalTexture)
+			if (l_geometryPassGPUData.materialGPUData.useNormalTexture)
 			{
-				activateTexture(l_renderPack.normalGLTDC, 0);
+				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.normalTDC), 0);
 			}
 			// any albedo?
-			if (l_renderPack.textureUBOData.useAlbedoTexture)
+			if (l_geometryPassGPUData.materialGPUData.useAlbedoTexture)
 			{
-				activateTexture(l_renderPack.albedoGLTDC, 1);
+				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.albedoTDC), 1);
 			}
 			// any metallic?
-			if (l_renderPack.textureUBOData.useMetallicTexture)
+			if (l_geometryPassGPUData.materialGPUData.useMetallicTexture)
 			{
-				activateTexture(l_renderPack.metallicGLTDC, 2);
+				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.metallicTDC), 2);
 			}
 			// any roughness?
-			if (l_renderPack.textureUBOData.useRoughnessTexture)
+			if (l_geometryPassGPUData.materialGPUData.useRoughnessTexture)
 			{
-				activateTexture(l_renderPack.roughnessGLTDC, 3);
+				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.roughnessTDC), 3);
 			}
 			// any ao?
-			if (l_renderPack.textureUBOData.useAOTexture)
+			if (l_geometryPassGPUData.materialGPUData.useAOTexture)
 			{
-				activateTexture(l_renderPack.AOGLTDC, 4);
+				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.AOTDC), 4);
 			}
 
-			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_renderPack.meshUBOData);
-			updateUBO(GLRenderingSystemComponent::get().m_textureUBO, l_renderPack.textureUBOData);
-			updateUniform(m_uni_id, l_renderPack.UUID);
+			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_geometryPassGPUData.meshGPUData);
+			updateUBO(GLRenderingSystemComponent::get().m_materialUBO, l_geometryPassGPUData.materialGPUData);
 
-			drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
+			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_geometryPassGPUData.MDC));
 		}
-		else if (l_renderPack.visiblilityType == VisiblilityType::INNO_EMISSIVE)
-		{
-			glStencilFunc(GL_ALWAYS, 0x02, 0xFF);
-
-			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_renderPack.meshUBOData);
-			updateUBO(GLRenderingSystemComponent::get().m_textureUBO, l_renderPack.textureUBOData);
-
-			drawMesh(l_renderPack.indiceSize, l_renderPack.meshPrimitiveTopology, l_renderPack.GLMDC);
-		}
-		else
-		{
-			glStencilFunc(GL_ALWAYS, 0x00, 0xFF);
-		}
-		GLRenderingSystemComponent::get().m_opaquePassDataQueue.pop();
 	}
 
 	glDisable(GL_CULL_FACE);
@@ -176,8 +135,6 @@ bool GLOpaquePass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

@@ -17,6 +17,7 @@ cbuffer cameraCBuffer : register(b0)
 	matrix cam_r_prev;
 	matrix cam_t_prev;
 	float4 cam_globalPos;
+	float cam_WHRatio;
 };
 
 static const int NR_POINT_LIGHTS = 64;
@@ -25,21 +26,22 @@ static const int NR_SPHERE_LIGHTS = 64;
 // w component of luminance is attenuationRadius
 struct pointLight {
 	float4 position;
-	//float attenuationRadius;
 	float4 luminance;
+	//float attenuationRadius;
 };
 
 // w component of luminance is sphereRadius
 struct sphereLight {
 	float4 position;
-	//float sphereRadius;
 	float4 luminance;
+	//float sphereRadius;
 };
 
-cbuffer directionalLightCBuffer : register(b1)
+cbuffer sunCBuffer : register(b1)
 {
 	float4 dirLight_dir;
 	float4 dirLight_luminance;
+	matrix dirLight_r;
 };
 
 cbuffer pointLightCBuffer : register(b2)
@@ -269,7 +271,7 @@ SG DirectionalLightToSG(in float3 lightDir, in float3 intensity)
 	return sg;
 }
 
-PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
+PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
@@ -326,7 +328,7 @@ PixelOutputType lightPassCookTorrancePixel(PixelInputType input) : SV_TARGET
 			attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
 			float3 lightLuminance = pointLights[i].luminance.xyz * attenuation;
-			Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, lightLuminance.xyz);
+			Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, lightLuminance);
 
 			//use 1cm sphere light to represent point light
 			SG SG_pointLight = SphereLightToSG(L, 0.01, lightLuminance, distance);

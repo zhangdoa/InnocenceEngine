@@ -1,9 +1,5 @@
 // shadertype=hlsl
 
-Texture2D basePassRT0 : register(t0);
-
-SamplerState SampleTypePoint : register(s0);
-
 struct PixelInputType
 {
 	float4 position : SV_POSITION;
@@ -23,7 +19,7 @@ float3 acesFilm(const float3 x) {
 
 float4 main(PixelInputType input) : SV_TARGET
 {
-	float3 finalColor = basePassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
+	float3 finalColor = float3(1.0, 1.0, 1.0);
 
 	//HDR to LDR
 	finalColor = acesFilm(finalColor);

@@ -4,6 +4,7 @@
 
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 using namespace GLRenderingSystemNS;
 
@@ -20,8 +21,6 @@ INNO_PRIVATE_SCOPE GLBillboardPass
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//billboardPass.vert", "", "GL//billboardPass.frag" };
-
-	CameraDataPack m_cameraDataPack;
 }
 
 bool GLBillboardPass::initialize()
@@ -47,13 +46,6 @@ void GLBillboardPass::initializeShaders()
 
 bool GLBillboardPass::update()
 {
-	// copy camera data pack for local scope
-	auto l_cameraDataPack = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getCameraDataPack();
-	if (l_cameraDataPack.has_value())
-	{
-		m_cameraDataPack = l_cameraDataPack.value();
-	}
-
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
@@ -66,55 +58,49 @@ bool GLBillboardPass::update()
 
 	updateUniform(
 		0,
-		m_cameraDataPack.p_original);
+		RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
 	updateUniform(
 		1,
-		m_cameraDataPack.r);
+		RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
 	updateUniform(
 		2,
-		m_cameraDataPack.t);
+		RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
 
-	while (GLRenderingSystemComponent::get().m_billboardPassDataQueue.size() > 0)
+	while (RenderingFrontendSystemComponent::get().m_billboardPassGPUDataQueue.size() > 0)
 	{
-		auto l_renderPack = GLRenderingSystemComponent::get().m_billboardPassDataQueue.front();
+		BillboardPassGPUData l_billboardPassGPUData;
 
-		auto l_GlobalPos = l_renderPack.globalPos;
-
-		updateUniform(
-			3,
-			l_GlobalPos.x, l_GlobalPos.y, l_GlobalPos.z);
-
-		auto l_distanceToCamera = l_renderPack.distanceToCamera;
-
-		if (l_distanceToCamera > 1.0f)
+		if (RenderingFrontendSystemComponent::get().m_billboardPassGPUDataQueue.tryPop(l_billboardPassGPUData))
 		{
+			auto l_GlobalPos = l_billboardPassGPUData.globalPos;
+
+			updateUniform(
+				3,
+				l_GlobalPos);
+
+			auto l_distanceToCamera = l_billboardPassGPUData.distanceToCamera;
+
+			vec2 l_shearingRatio;
+			if (l_distanceToCamera > 1.0f)
+			{
+				l_shearingRatio = vec2(1.0f / (l_distanceToCamera * RenderingFrontendSystemComponent::get().m_cameraGPUData.WHRatio), (1.0f / l_distanceToCamera));
+			}
+			else
+			{
+				l_shearingRatio = vec2(1.0f / RenderingFrontendSystemComponent::get().m_cameraGPUData.WHRatio, 1.0f);
+			}
+
 			updateUniform(
 				4,
-				(1.0f / (l_distanceToCamera * m_cameraDataPack.WHRatio)), (1.0f / l_distanceToCamera));
+				l_shearingRatio);
+
+			auto l_iconTexture = getGLTextureDataComponent(l_billboardPassGPUData.iconType);
+
+			activateTexture(l_iconTexture, 0);
+
+			auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
+			drawMesh(l_MDC);
 		}
-		else
-		{
-			updateUniform(
-				4,
-				(1.0f / m_cameraDataPack.WHRatio), 1.0f);
-		}
-
-		GLTextureDataComponent* l_iconTexture = 0;
-
-		switch (l_renderPack.iconType)
-		{
-		case WorldEditorIconType::DIRECTIONAL_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_DirectionalLight; break;
-		case WorldEditorIconType::POINT_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_PointLight; break;
-		case WorldEditorIconType::SPHERE_LIGHT: l_iconTexture = GLRenderingSystemComponent::get().m_iconTemplate_SphereLight; break;
-		default:
-			break;
-		}
-
-		activateTexture(l_iconTexture, 0);
-
-		drawMesh(6, MeshPrimitiveTopology::TRIANGLE_STRIP, GLRenderingSystemComponent::get().m_UnitQuadGLMDC);
-
-		GLRenderingSystemComponent::get().m_billboardPassDataQueue.pop();
 	}
 
 	glDisable(GL_DEPTH_TEST);

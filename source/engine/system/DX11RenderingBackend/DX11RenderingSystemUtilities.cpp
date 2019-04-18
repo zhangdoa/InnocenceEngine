@@ -16,17 +16,12 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	bool initializePixelShader(DX11ShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
 	bool createPixelShader(ID3D10Blob* shaderBuffer, ID3D11PixelShader** pixelShader);
 
-	bool initializeDX11MeshDataComponent(DX11MeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
-	bool initializeDX11TextureDataComponent(DX11TextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
+	bool summitGPUData(DX11MeshDataComponent* rhs);
+	bool summitGPUData(DX11TextureDataComponent* rhs);
 
 	std::unordered_map<EntityID, DX11MeshDataComponent*> m_initializedDXMDC;
 	std::unordered_map<EntityID, DX11TextureDataComponent*> m_initializedDXTDC;
 
-	std::unordered_map<EntityID, DX11MeshDataComponent*> m_meshMap;
-	std::unordered_map<EntityID, DX11TextureDataComponent*> m_textureMap;
-
-	void* m_DX11MeshDataComponentPool;
-	void* m_DX11TextureDataComponentPool;
 	void* m_DX11RenderPassComponentPool;
 	void* m_DX11ShaderProgramComponentPool;
 
@@ -35,8 +30,6 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 
 bool DX11RenderingSystemNS::initializeComponentPool()
 {
-	m_DX11MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11MeshDataComponent), 32768);
-	m_DX11TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11TextureDataComponent), 32768);
 	m_DX11RenderPassComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11RenderPassComponent), 128);
 	m_DX11ShaderProgramComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11ShaderProgramComponent), 256);
 
@@ -73,7 +66,7 @@ ID3D10Blob* DX11RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const
 
 	auto l_workingDir = g_pCoreSystem->getFileSystem()->getWorkingDirectory();
 	auto l_workingDirW = std::wstring(l_workingDir.begin(), l_workingDir.end());
-	result = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + shaderFilePath).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, l_shaderName.c_str(), l_shaderTypeName.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0,
+	result = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + shaderFilePath).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", l_shaderTypeName.c_str(), D3D10_SHADER_ENABLE_STRICTNESS, 0,
 		&l_shaderBuffer, &l_errorMessage);
 	if (FAILED(result))
 	{
@@ -338,29 +331,27 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 
 	HRESULT result;
 
-	// create TDC
-	l_DXRPC->m_TDCs.reserve(RTNum);
-
-	for (unsigned int i = 0; i < RTNum; i++)
-	{
-		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
-
-		l_TDC->m_textureDataDesc = RTDesc;
-
-		l_TDC->m_textureData = { nullptr };
-
-		l_DXRPC->m_TDCs.emplace_back(l_TDC);
-	}
-
 	// generate DXTDC
 	l_DXRPC->m_DXTDCs.reserve(RTNum);
 
 	for (unsigned int i = 0; i < RTNum; i++)
 	{
-		auto l_TDC = l_DXRPC->m_TDCs[i];
-		auto l_DXTDC = generateDX11TextureDataComponent(l_TDC);
+		auto l_TDC = addDX11TextureDataComponent();
 
-		l_DXRPC->m_DXTDCs.emplace_back(l_DXTDC);
+		l_TDC->m_textureDataDesc = RTDesc;
+
+		if (RTDesc.samplerType == TextureSamplerType::CUBEMAP)
+		{
+			l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		}
+		else
+		{
+			l_TDC->m_textureData = { nullptr };
+		}
+
+		initializeDX11TextureDataComponent(l_TDC);
+
+		l_DXRPC->m_DXTDCs.emplace_back(l_TDC);
 	}
 
 	// Create the render target views.
@@ -445,31 +436,66 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 	return l_DXRPC;
 }
 
-DX11MeshDataComponent* DX11RenderingSystemNS::generateDX11MeshDataComponent(MeshDataComponent * rhs)
+bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponent* rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
-		return getDX11MeshDataComponent(rhs->m_parentEntity);
+		return true;
 	}
 	else
 	{
-		auto l_ptr = addDX11MeshDataComponent(rhs->m_parentEntity);
-
-		initializeDX11MeshDataComponent(l_ptr, rhs->m_vertices, rhs->m_indices);
+		summitGPUData(rhs);
 
 		rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-		return l_ptr;
+		return true;
 	}
 }
 
-bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices)
+bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataComponent * rhs)
+{
+	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	{
+		return true;
+	}
+	else
+	{
+		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "DX11RenderingSystem: try to generate DX11TextureDataComponent for TextureUsageType::INVISIBLE type!");
+			return false;
+		}
+		else
+		{
+			if (rhs->m_textureData.size() > 0)
+			{
+				summitGPUData(rhs);
+
+				rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+				if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+				{
+					// @TODO: release raw data in heap memory
+				}
+
+				return true;
+			}
+			else
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "DX11RenderingSystem: try to generate DX11TextureDataComponent without raw data!");
+				return false;
+			}
+		}
+	}
+}
+
+bool DX11RenderingSystemNS::summitGPUData(DX11MeshDataComponent * rhs)
 {
 	// Set up the description of the static vertex buffer.
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)vertices.size();
+	vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)rhs->m_vertices.size();
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.CPUAccessFlags = 0;
 	vertexBufferDesc.MiscFlags = 0;
@@ -478,7 +504,7 @@ bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponen
 	// Give the subresource structure a pointer to the vertex data.
 	D3D11_SUBRESOURCE_DATA vertexData;
 	ZeroMemory(&vertexData, sizeof(vertexData));
-	vertexData.pSysMem = &vertices[0];
+	vertexData.pSysMem = &rhs->m_vertices[0];
 	vertexData.SysMemPitch = 0;
 	vertexData.SysMemSlicePitch = 0;
 
@@ -487,15 +513,17 @@ bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponen
 	result = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&vertexBufferDesc, &vertexData, &rhs->m_vertexBuffer);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create VBO!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create vertex Buffer!");
 		return false;
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: vertex Buffer: " + InnoUtility::pointerToString(rhs->m_vertexBuffer) + " is initialized.");
 
 	// Set up the description of the static index buffer.
 	D3D11_BUFFER_DESC indexBufferDesc;
 	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = (UINT)(indices.size() * sizeof(unsigned int));
+	indexBufferDesc.ByteWidth = (UINT)(rhs->m_indices.size() * sizeof(unsigned int));
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.MiscFlags = 0;
@@ -504,7 +532,7 @@ bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponen
 	// Give the subresource structure a pointer to the index data.
 	D3D11_SUBRESOURCE_DATA indexData;
 	ZeroMemory(&indexData, sizeof(indexData));
-	indexData.pSysMem = &indices[0];
+	indexData.pSysMem = &rhs->m_indices[0];
 	indexData.SysMemPitch = 0;
 	indexData.SysMemSlicePitch = 0;
 
@@ -512,45 +540,20 @@ bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponen
 	result = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&indexBufferDesc, &indexData, &rhs->m_indexBuffer);
 	if (FAILED(result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create IBO!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create index Buffer!");
 		return false;
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: index Buffer: " + InnoUtility::pointerToString(rhs->m_indexBuffer) + " is initialized.");
+
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 	m_initializedDXMDC.emplace(rhs->m_parentEntity, rhs);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: VBO " + InnoUtility::pointerToString(rhs->m_vertexBuffer) + " is initialized.");
-
 	return true;
 }
 
-DX11TextureDataComponent* DX11RenderingSystemNS::generateDX11TextureDataComponent(TextureDataComponent * rhs)
-{
-	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
-	{
-		return getDX11TextureDataComponent(rhs->m_parentEntity);
-	}
-	else
-	{
-		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: TextureUsageType is TextureUsageType::INVISIBLE!");
-			return nullptr;
-		}
-		else
-		{
-			auto l_ptr = addDX11TextureDataComponent(rhs->m_parentEntity);
-
-			initializeDX11TextureDataComponent(l_ptr, rhs->m_textureDataDesc, rhs->m_textureData);
-
-			rhs->m_objectStatus = ObjectStatus::ALIVE;
-
-			return l_ptr;
-		}
-	}
-}
-
-bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
+bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
 {
 	// set texture formats
 	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
@@ -558,15 +561,15 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 	// @TODO: Unified internal format
 	// Setup the description of the texture.
 	// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
-	if (textureDataDesc.usageType == TextureUsageType::ALBEDO)
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::ALBEDO)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
 	else
 	{
-		if (textureDataDesc.pixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
+		if (rhs->m_textureDataDesc.pixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (rhs->m_textureDataDesc.pixelDataFormat)
 			{
 			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
@@ -575,9 +578,9 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT)
+		else if (rhs->m_textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (rhs->m_textureDataDesc.pixelDataFormat)
 			{
 			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
@@ -590,7 +593,7 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 
 	unsigned int textureMipLevels = 1;
 	unsigned int miscFlags = 0;
-	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	if (rhs->m_textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
 		textureMipLevels = 0;
 		miscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
@@ -598,13 +601,13 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 
 	D3D11_TEXTURE2D_DESC D3DTextureDesc;
 	ZeroMemory(&D3DTextureDesc, sizeof(D3DTextureDesc));
-	D3DTextureDesc.Height = textureDataDesc.height;
-	D3DTextureDesc.Width = textureDataDesc.width;
+	D3DTextureDesc.Height = rhs->m_textureDataDesc.height;
+	D3DTextureDesc.Width = rhs->m_textureDataDesc.width;
 	D3DTextureDesc.MipLevels = textureMipLevels;
 	D3DTextureDesc.ArraySize = 1;
 	D3DTextureDesc.Format = l_internalFormat;
 	D3DTextureDesc.SampleDesc.Count = 1;
-	if (textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+	if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
 	{
 		D3DTextureDesc.SampleDesc.Quality = 0;
 	}
@@ -614,7 +617,7 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 	D3DTextureDesc.MiscFlags = miscFlags;
 
 	unsigned int SRVMipLevels = -1;
-	if (textureDataDesc.usageType == TextureUsageType::RENDER_TARGET)
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::RENDER_TARGET)
 	{
 		SRVMipLevels = 1;
 	}
@@ -630,27 +633,30 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 	hResult = DX11RenderingSystemComponent::get().m_device->CreateTexture2D(&D3DTextureDesc, NULL, &rhs->m_texture);
 	if (FAILED(hResult))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create texture!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create Texture!");
 		return false;
 	}
 
-	if (textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: Texture: " + InnoUtility::pointerToString(rhs->m_texture) + " is initialized.");
+
+	//summit raw data to GPU memory
+	if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
 	{
 		unsigned int rowPitch;
-		rowPitch = (textureDataDesc.width * ((unsigned int)textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
-		DX11RenderingSystemComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, textureData[0], rowPitch, 0);
+		rowPitch = (rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
+		DX11RenderingSystemComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
 	}
 
 	// Create the shader resource view for the texture.
 	hResult = DX11RenderingSystemComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &srvDesc, &rhs->m_SRV);
 	if (FAILED(hResult))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create shader resource view for texture!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create SRV for texture!");
 		return false;
 	}
 
 	// Generate mipmaps for this texture.
-	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	if (rhs->m_textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
 		DX11RenderingSystemComponent::get().m_deviceContext->GenerateMips(rhs->m_SRV);
 	}
@@ -659,97 +665,50 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 
 	m_initializedDXTDC.emplace(rhs->m_parentEntity, rhs);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: SRV: " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
 
 	return true;
 }
 
-DX11MeshDataComponent* DX11RenderingSystemNS::addDX11MeshDataComponent(EntityID rhs)
+void DX11RenderingSystemNS::drawMesh(DX11MeshDataComponent * DXMDC)
 {
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX11MeshDataComponentPool, sizeof(DX11MeshDataComponent));
-	auto l_DXMDC = new(l_rawPtr)DX11MeshDataComponent();
-	l_DXMDC->m_parentEntity = rhs;
-	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, DX11MeshDataComponent*>(rhs, l_DXMDC));
-	return l_DXMDC;
-}
+	if (DXMDC->m_vertexBuffer)
+	{
+		// Set the type of primitive that should be rendered from this vertex buffer.
+		D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
 
-DX11TextureDataComponent* DX11RenderingSystemNS::addDX11TextureDataComponent(EntityID rhs)
-{
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX11TextureDataComponentPool, sizeof(DX11TextureDataComponent));
-	auto l_DXTDC = new(l_rawPtr)DX11TextureDataComponent();
-	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, DX11TextureDataComponent*>(rhs, l_DXTDC));
-	return l_DXTDC;
-}
-
-DX11MeshDataComponent * DX11RenderingSystemNS::getDX11MeshDataComponent(EntityID rhs)
-{
-	auto result = m_meshMap.find(rhs);
-	if (result != m_meshMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
-DX11TextureDataComponent * DX11RenderingSystemNS::getDX11TextureDataComponent(EntityID rhs)
-{
-	auto result = m_textureMap.find(rhs);
-	if (result != m_textureMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
-void DX11RenderingSystemNS::drawMesh(EntityID rhs)
-{
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(rhs);
-	if (l_MDC)
-	{
-		drawMesh(l_MDC);
-	}
-}
-
-void DX11RenderingSystemNS::drawMesh(MeshDataComponent * MDC)
-{
-	auto l_DXMDC = DX11RenderingSystemNS::getDX11MeshDataComponent(MDC->m_parentEntity);
-	if (l_DXMDC)
-	{
-		if (MDC->m_objectStatus == ObjectStatus::ALIVE && l_DXMDC->m_objectStatus == ObjectStatus::ALIVE)
+		if (DXMDC->m_meshPrimitiveTopology == MeshPrimitiveTopology::TRIANGLE)
 		{
-			drawMesh(MDC->m_indicesSize, l_DXMDC);
+			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		}
+		else
+		{
+			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+		}
+
+		DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
+
+		// Set vertex buffer stride and offset.
+		unsigned int stride = sizeof(Vertex);
+		unsigned int offset = 0;
+
+		// Set the vertex buffer to active in the input assembler so it can be rendered.
+		DX11RenderingSystemComponent::get().m_deviceContext->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBuffer, &stride, &offset);
+
+		// Set the index buffer to active in the input assembler so it can be rendered.
+		DX11RenderingSystemComponent::get().m_deviceContext->IASetIndexBuffer(DXMDC->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		// Render the triangle.
+		DX11RenderingSystemComponent::get().m_deviceContext->DrawIndexed((UINT)DXMDC->m_indicesSize, 0, 0);
 	}
 }
 
-void DX11RenderingSystemNS::drawMesh(size_t indicesSize, DX11MeshDataComponent * DXMDC)
+void DX11RenderingSystemNS::activateTexture(DX11TextureDataComponent* DXTDC, int activateIndex)
 {
-	unsigned int stride;
-	unsigned int offset;
-
-	// Set vertex buffer stride and offset.
-	stride = sizeof(Vertex);
-	offset = 0;
-
-	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	DX11RenderingSystemComponent::get().m_deviceContext->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBuffer, &stride, &offset);
-
-	// Set the index buffer to active in the input assembler so it can be rendered.
-	DX11RenderingSystemComponent::get().m_deviceContext->IASetIndexBuffer(DXMDC->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	// Render the triangle.
-	DX11RenderingSystemComponent::get().m_deviceContext->DrawIndexed((UINT)indicesSize, 0, 0);
+	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(activateIndex, 1, &DXTDC->m_SRV);
 }
 
-void DX11RenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned int startSlot, const DX11CBuffer& CBuffer, void* parameterValue)
+void DX11RenderingSystemNS::updateCBuffer(const DX11CBuffer& CBuffer, void* CBufferValue)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -763,11 +722,14 @@ void DX11RenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigne
 	}
 
 	auto dataPtr = mappedResource.pData;
-	std::memcpy(dataPtr, parameterValue, CBuffer.m_CBufferDesc.ByteWidth);
+	std::memcpy(dataPtr, CBufferValue, CBuffer.m_CBufferDesc.ByteWidth);
 
 	// Unlock the constant buffer.
 	DX11RenderingSystemComponent::get().m_deviceContext->Unmap(CBuffer.m_CBufferPtr, 0);
+}
 
+void DX11RenderingSystemNS::bindCBuffer(ShaderType shaderType, unsigned int startSlot, const DX11CBuffer& CBuffer)
+{
 	switch (shaderType)
 	{
 	case ShaderType::VERTEX:

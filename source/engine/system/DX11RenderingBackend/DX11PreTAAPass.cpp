@@ -71,8 +71,6 @@ bool DX11PreTAAPass::update()
 
 	activateDX11ShaderProgramComponent(m_DXSPC);
 
-	DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
 	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
@@ -93,11 +91,11 @@ bool DX11PreTAAPass::update()
 	cleanDSV(m_DXRPC->m_depthStencilView);
 
 	// bind to previous pass render target textures
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DX11LightPass::getDX11RPC()->m_DXTDCs[0]->m_SRV);
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(1, 1, &DX11SkyPass::getDX11RPC()->m_DXTDCs[0]->m_SRV);
+	activateTexture(DX11LightPass::getDX11RPC()->m_DXTDCs[0], 0);
+	activateTexture(DX11SkyPass::getDX11RPC()->m_DXTDCs[0], 1);
 
 	// draw
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	return true;

@@ -9,7 +9,7 @@ layout(location = 0) out vec4 thefrag_WorldSpacePos;
 layout(location = 1) out vec2 thefrag_TexCoord;
 layout(location = 2) out vec3 thefrag_Normal;
 
-layout(row_major) uniform cameraUBO
+layout(std140, row_major, binding = 0) uniform cameraUBO
 {
 	mat4 uni_p_camera_original;
 	mat4 uni_p_camera_jittered;
@@ -17,12 +17,16 @@ layout(row_major) uniform cameraUBO
 	mat4 uni_t_camera;
 	mat4 uni_r_camera_prev;
 	mat4 uni_t_camera_prev;
+	vec4 uni_globalPos;
+	float WHRatio;
 };
 
-layout(row_major) uniform meshUBO
+layout(std140, row_major, binding = 1) uniform meshUBO
 {
 	mat4 uni_m;
 	mat4 uni_m_prev;
+	mat4 uni_normalMat;
+	float uni_UUID;
 };
 
 void main()

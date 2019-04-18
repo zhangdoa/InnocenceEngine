@@ -1,84 +1,12 @@
 #pragma once
 #include "../common/InnoType.h"
-#include "../common/InnoContainer.h"
 #include "../component/DX11MeshDataComponent.h"
-#include "../component/TextureDataComponent.h"
 #include "../component/DX11TextureDataComponent.h"
 
 struct DX11CBuffer
 {
 	D3D11_BUFFER_DESC m_CBufferDesc = D3D11_BUFFER_DESC();
 	ID3D11Buffer* m_CBufferPtr = 0;
-};
-
-struct DX11CameraCBufferData
-{
-	mat4 p_original;
-	mat4 p_jittered;
-	mat4 r;
-	mat4 t;
-	mat4 r_prev;
-	mat4 t_prev;
-	vec4 globalPos;
-};
-
-struct DX11MeshCBufferData
-{
-	mat4 m;
-	mat4 m_prev;
-	mat4 normalMat;
-};
-
-struct DX11TextureCBufferData
-{
-	vec4 albedo;
-	vec4 MRA;
-	int useNormalTexture = true;
-	int useAlbedoTexture = true;
-	int useMetallicTexture = true;
-	int useRoughnessTexture = true;
-	int useAOTexture = true;
-	int padding1 = true;
-	int padding2 = true;
-	int padding3 = true;
-};
-
-struct DX11MeshDataPack
-{
-	size_t indiceSize;
-	DX11MeshCBufferData meshCBuffer;
-	DX11MeshDataComponent* DXMDC;
-	DX11TextureCBufferData textureCBuffer;
-	MeshPrimitiveTopology meshPrimitiveTopology;
-	MeshShapeType meshShapeType;
-	DX11TextureDataComponent* normalDXTDC;
-	DX11TextureDataComponent* albedoDXTDC;
-	DX11TextureDataComponent* metallicDXTDC;
-	DX11TextureDataComponent* roughnessDXTDC;
-	DX11TextureDataComponent* AODXTDC;
-	VisiblilityType visiblilityType;
-};
-
-struct DirectionalLightCBufferData
-{
-	vec4 dir;
-	vec4 luminance;
-};
-
-// w component of luminance is attenuationRadius
-struct PointLightCBufferData
-{
-	vec4 pos;
-	vec4 luminance;
-	//float attenuationRadius;
-};
-
-// w component of luminance is sphereRadius
-struct SphereLightCBufferData
-{
-	vec4 pos;
-	vec4 luminance;
-	//float sphereRadius;
 };
 
 struct SkyCBufferData
@@ -143,42 +71,14 @@ public:
 	D3D11_RENDER_TARGET_VIEW_DESC deferredPassRTVDesc = D3D11_RENDER_TARGET_VIEW_DESC();
 
 	DX11CBuffer m_cameraCBuffer;
-	DX11CBuffer m_textureCBuffer;
+	DX11CBuffer m_materialCBuffer;
 	DX11CBuffer m_meshCBuffer;
-	DX11CBuffer m_directionalLightCBuffer;
+	DX11CBuffer m_sunCBuffer;
 	DX11CBuffer m_pointLightCBuffer;
 	DX11CBuffer m_sphereLightCBuffer;
 	DX11CBuffer m_skyCBuffer;
 
-	DX11CameraCBufferData m_cameraCBufferData;
-	ThreadSafeQueue<DX11MeshDataPack> m_meshDataQueue;
-	DirectionalLightCBufferData m_directionalLightCBufferData;
-	const unsigned int m_maxPointLights = 64;
-	std::vector<PointLightCBufferData> m_PointLightCBufferDatas;
-	const unsigned int m_maxSphereLights = 64;
-	std::vector<SphereLightCBufferData> m_SphereLightCBufferDatas;
 	SkyCBufferData m_skyCBufferData;
-
-	DX11MeshDataComponent* m_UnitLineDXMDC;
-	DX11MeshDataComponent* m_UnitQuadDXMDC;
-	DX11MeshDataComponent* m_UnitCubeDXMDC;
-	DX11MeshDataComponent* m_UnitSphereDXMDC;
-
-	DX11TextureDataComponent* m_iconTemplate_OBJ;
-	DX11TextureDataComponent* m_iconTemplate_PNG;
-	DX11TextureDataComponent* m_iconTemplate_SHADER;
-	DX11TextureDataComponent* m_iconTemplate_UNKNOWN;
-
-	DX11TextureDataComponent* m_iconTemplate_DirectionalLight;
-	DX11TextureDataComponent* m_iconTemplate_PointLight;
-	DX11TextureDataComponent* m_iconTemplate_SphereLight;
-
-	DX11TextureDataComponent* m_basicNormalDXTDC;
-	DX11TextureDataComponent* m_basicAlbedoDXTDC;
-	DX11TextureDataComponent* m_basicMetallicDXTDC;
-	DX11TextureDataComponent* m_basicRoughnessDXTDC;
-	DX11TextureDataComponent* m_basicAODXTDC;
-
 private:
 	DX11RenderingSystemComponent() {};
 };

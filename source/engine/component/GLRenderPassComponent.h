@@ -26,7 +26,5 @@ public:
 	GLuint m_RBO = 0;
 
 	GLFrameBufferDesc m_GLFrameBufferDesc;
-
-	std::vector<TextureDataComponent*> m_TDCs;
 	std::vector<GLTextureDataComponent*> m_GLTDCs;
 };
