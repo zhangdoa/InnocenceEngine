@@ -4,7 +4,7 @@
 
 #if defined INNO_PLATFORM_WIN
 #include "WinWindow/WinWindowSystem.h"
-//#include "DX11RenderingBackend/DX11RenderingSystem.h"
+#include "DX11RenderingBackend/DX11RenderingSystem.h"
 //#include "DX12RenderingBackend/DX12RenderingSystem.h"
 #endif
 
@@ -168,7 +168,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* appHook, void* extraHook, 
 		break;
 	case RenderingBackend::DX11:
 #if defined INNO_PLATFORM_WIN
-		//InnoVisionSystemNS::m_renderingBackendSystem = new DX11RenderingSystem();
+		InnoVisionSystemNS::m_renderingBackendSystem = new DX11RenderingSystem();
 #endif
 		break;
 	case RenderingBackend::DX12:

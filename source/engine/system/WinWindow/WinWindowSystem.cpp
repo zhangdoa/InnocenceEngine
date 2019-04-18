@@ -1,7 +1,7 @@
 #include "WinWindowSystem.h"
 #include "../../component/WinWindowSystemComponent.h"
 
-//#include "WinDXWindow/WinDXWindowSystem.h"
+#include "WinDXWindow/WinDXWindowSystem.h"
 #include "WinGLWindow/WinGLWindowSystem.h"
 //#include "WinVKWindow/WinVKWindowSystem.h"
 
@@ -67,7 +67,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 		break;
 	case RenderingBackend::DX11:
 #if defined INNO_PLATFORM_WIN
-		//WinWindowSystemNS::m_backendWindowSystem = new WinDXWindowSystem();
+		WinWindowSystemNS::m_backendWindowSystem = new WinDXWindowSystem();
 #endif
 		break;
 	case RenderingBackend::DX12:

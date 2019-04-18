@@ -8,10 +8,10 @@ Texture2D t2d_ao : register(t4);
 
 SamplerState SampleTypeWrap : register(s0);
 
-cbuffer textureCBuffer : register(b0)
+cbuffer materialCBuffer : register(b0)
 {
 	float4 albedo;
-	float4 MRA;
+	float4 MRAT;
 	bool useNormalTexture;
 	bool useAlbedoTexture;
 	bool useMetallicTexture;
@@ -40,7 +40,7 @@ struct PixelOutputType
 	float4 geometryPassRT3 : SV_Target3;
 };
 
-PixelOutputType opaquePassCookTorrancePixel(PixelInputType input) : SV_TARGET
+PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
@@ -98,7 +98,7 @@ PixelOutputType opaquePassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	}
 	else
 	{
-		out_Metallic = MRA.r;
+		out_Metallic = MRAT.r;
 	}
 
 	float out_Roughness;
@@ -108,7 +108,7 @@ PixelOutputType opaquePassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	}
 	else
 	{
-		out_Roughness = MRA.g;
+		out_Roughness = MRAT.g;
 	}
 
 	float out_AO;
@@ -118,7 +118,7 @@ PixelOutputType opaquePassCookTorrancePixel(PixelInputType input) : SV_TARGET
 	}
 	else
 	{
-		out_AO = MRA.b;
+		out_AO = MRAT.b;
 	}
 
 	output.geometryPassRT0 = float4(input.frag_WorldSpacePos, out_Metallic);

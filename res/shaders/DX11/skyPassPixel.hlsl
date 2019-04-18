@@ -11,12 +11,14 @@ cbuffer cameraCBuffer : register(b0)
 	matrix cam_r_prev;
 	matrix cam_t_prev;
 	float4 cam_globalPos;
+	float cam_WHRatio;
 };
 
-cbuffer directionalLightCBuffer : register(b1)
+cbuffer sunCBuffer : register(b1)
 {
 	float4 dirLight_dir;
 	float4 dirLight_luminance;
+	matrix dirLight_r;
 };
 
 cbuffer skyCBuffer : register(b2)
@@ -174,7 +176,7 @@ float3 atmosphere(float3 r, float3 r0, float3 pSun, float iSun, float rPlanet, f
 	return iSun * (pRlh * kRlh * rayleigh_collected + pMie * kMie * mie_collected);
 }
 
-PixelOutputType skyPassPixel(PixelInputType input)
+PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 

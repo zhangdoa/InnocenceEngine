@@ -15,7 +15,7 @@ struct PixelInputType
 	float2 texcoord : TEXCOORD0;
 };
 
-PixelInputType finalBlendPassVertex(VertexInputType input)
+PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 

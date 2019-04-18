@@ -4,6 +4,7 @@
 #include "DX11OpaquePass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -101,8 +102,6 @@ bool DX11LightPass::update()
 
 	activateDX11ShaderProgramComponent(m_DXSPC);
 
-	DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
 	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
@@ -122,18 +121,19 @@ bool DX11LightPass::update()
 	}
 	cleanDSV(m_DXRPC->m_depthStencilView);
 
-	updateShaderParameter(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer, &DX11RenderingSystemComponent::get().m_cameraCBufferData);
-	updateShaderParameter(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_directionalLightCBuffer, &DX11RenderingSystemComponent::get().m_directionalLightCBufferData);
-	updateShaderParameter(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_pointLightCBuffer, &DX11RenderingSystemComponent::get().m_PointLightCBufferDatas[0]);
-	updateShaderParameter(ShaderType::FRAGMENT, 3, DX11RenderingSystemComponent::get().m_sphereLightCBuffer, &DX11RenderingSystemComponent::get().m_SphereLightCBufferDatas[0]);
+	bindCBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer);
+	bindCBuffer(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_sunCBuffer);
+	bindCBuffer(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_pointLightCBuffer);
+	bindCBuffer(ShaderType::FRAGMENT, 3, DX11RenderingSystemComponent::get().m_sphereLightCBuffer);
 
 	// bind to previous pass render target textures
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DX11OpaquePass::getDX11RPC()->m_DXTDCs[0]->m_SRV);
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(1, 1, &DX11OpaquePass::getDX11RPC()->m_DXTDCs[1]->m_SRV);
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(2, 1, &DX11OpaquePass::getDX11RPC()->m_DXTDCs[2]->m_SRV);
+	activateTexture(DX11OpaquePass::getDX11RPC()->m_DXTDCs[0], 0);
+	activateTexture(DX11OpaquePass::getDX11RPC()->m_DXTDCs[1], 1);
+	activateTexture(DX11OpaquePass::getDX11RPC()->m_DXTDCs[2], 2);
 
 	// draw
-	drawMesh(6, DX11RenderingSystemComponent::get().m_UnitQuadDXMDC);
+	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);
+	drawMesh(l_MDC);
 
 	return true;
 }

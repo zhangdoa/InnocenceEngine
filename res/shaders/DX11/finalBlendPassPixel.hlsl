@@ -21,16 +21,16 @@ float3 acesFilm(const float3 x) {
 	return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
 }
 
-float4 finalBlendPassPixel(PixelInputType input) : SV_TARGET
+float4 main(PixelInputType input) : SV_TARGET
 {
 	float3 finalColor = basePassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
 
-//HDR to LDR
-finalColor = acesFilm(finalColor);
+	//HDR to LDR
+	finalColor = acesFilm(finalColor);
 
-//gamma correction
-float gammaRatio = 1.0 / 2.2;
-finalColor = pow(finalColor, float3(gammaRatio, gammaRatio, gammaRatio));
+	//gamma correction
+	float gammaRatio = 1.0 / 2.2;
+	finalColor = pow(finalColor, float3(gammaRatio, gammaRatio, gammaRatio));
 
-return float4(finalColor, 1.0f);
+	return float4(finalColor, 1.0f);
 }

@@ -13,7 +13,6 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	std::vector<TextureDataComponent*> m_TDCs;
 	std::vector<DX11TextureDataComponent*> m_DXTDCs;
 
 	std::vector<ID3D11RenderTargetView*> m_renderTargetViews;

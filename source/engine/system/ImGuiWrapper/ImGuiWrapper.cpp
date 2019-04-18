@@ -1,7 +1,7 @@
 #include "ImGuiWrapper.h"
 
 #if defined INNO_PLATFORM_WIN
-//#include "ImGuiWrapperWinDX.h"
+#include "ImGuiWrapperWinDX.h"
 #include "ImGuiWrapperWinGL.h"
 //#include "ImGuiWrapperWinVK.h"
 #endif
@@ -50,7 +50,7 @@ bool ImGuiWrapper::setup()
 		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinGL();
 		break;
 	case RenderingBackend::DX11:
-		//ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinDX11();
+		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinDX11();
 		break;
 	case RenderingBackend::DX12:
 		ImGuiWrapperNS::m_isParity = false;

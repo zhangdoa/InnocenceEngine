@@ -57,8 +57,6 @@ bool DX11FinalBlendPass::update()
 
 	activateDX11ShaderProgramComponent(m_DXSPC);
 
-	DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
 	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
@@ -76,11 +74,12 @@ bool DX11FinalBlendPass::update()
 	cleanDSV(DX11RenderingSystemComponent::get().m_depthStencilView);
 
 	// bind to previous pass render target textures
-	auto l_canvas = DX11TAAPass::getResult();
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &l_canvas);
+	auto l_canvasDXTDC = DX11TAAPass::getResult();
+	activateTexture(l_canvasDXTDC, 0);
 
 	// draw
-	drawMesh(6, DX11RenderingSystemComponent::get().m_UnitQuadDXMDC);
+	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);
+	drawMesh(l_MDC);
 
 	return true;
 }

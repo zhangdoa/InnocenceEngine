@@ -34,6 +34,7 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 	std::function<void(RenderPassType)> f_reloadShader;
 	std::function<void()> f_captureEnvironment;
 	std::function<void()> f_sceneLoadingStartCallback;
+	std::function<void()> f_sceneLoadingFinishCallback;
 
 	RenderingConfig m_renderingConfig = RenderingConfig();
 
@@ -104,7 +105,26 @@ bool InnoRenderingFrontendSystemNS::setup(IRenderingBackendSystem* renderingBack
 		m_isMeshDataPackValid = false;
 	};
 
+	f_sceneLoadingFinishCallback = [&]() {
+		// point light
+		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.reserve(RenderingFrontendSystemComponent::get().m_maxPointLights);
+
+		for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxPointLights; i++)
+		{
+			RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.emplace_back();
+		}
+
+		// sphere light
+		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.reserve(RenderingFrontendSystemComponent::get().m_maxSphereLights);
+
+		for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxSphereLights; i++)
+		{
+			RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.emplace_back();
+		}
+	};
+
 	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	return true;
 }
@@ -211,30 +231,26 @@ bool InnoRenderingFrontendSystemNS::updateSunData()
 
 bool InnoRenderingFrontendSystemNS::updateLightData()
 {
-	// point light
-	RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.clear();
-	RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.reserve(g_pCoreSystem->getGameSystem()->get<PointLightComponent>().size());
-
-	for (auto i : g_pCoreSystem->getGameSystem()->get<PointLightComponent>())
+	auto& l_pointLightComponents = g_pCoreSystem->getGameSystem()->get<PointLightComponent>();
+	for (size_t i = 0; i < l_pointLightComponents.size(); i++)
 	{
 		PointLightGPUData l_PointLightGPUData;
-		l_PointLightGPUData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_PointLightGPUData.luminance = i->m_color * i->m_luminousFlux;
-		l_PointLightGPUData.luminance.w = i->m_attenuationRadius;
-		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.emplace_back(l_PointLightGPUData);
+		l_PointLightGPUData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_pointLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_PointLightGPUData.luminance = l_pointLightComponents[i]->m_color * l_pointLightComponents[i]->m_luminousFlux;
+		l_PointLightGPUData.luminance.w = l_pointLightComponents[i]->m_attenuationRadius;
+		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[i] = l_PointLightGPUData;
+		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.emplace_back();
 	}
 
-	// sphere light
-	RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.clear();
-	RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.reserve(g_pCoreSystem->getGameSystem()->get<SphereLightComponent>().size());
-
-	for (auto i : g_pCoreSystem->getGameSystem()->get<SphereLightComponent>())
+	auto& l_sphereLightComponents = g_pCoreSystem->getGameSystem()->get<SphereLightComponent>();
+	for (size_t i = 0; i < l_sphereLightComponents.size(); i++)
 	{
 		SphereLightGPUData l_SphereLightGPUData;
-		l_SphereLightGPUData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_SphereLightGPUData.luminance = i->m_color * i->m_luminousFlux;;
-		l_SphereLightGPUData.luminance.w = i->m_sphereRadius;
-		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.emplace_back(l_SphereLightGPUData);
+		l_SphereLightGPUData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_sphereLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_SphereLightGPUData.luminance = l_sphereLightComponents[i]->m_color * l_sphereLightComponents[i]->m_luminousFlux;
+		l_SphereLightGPUData.luminance.w = l_sphereLightComponents[i]->m_sphereRadius;
+		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[i] = l_SphereLightGPUData;
+		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.emplace_back();
 	}
 
 	return true;

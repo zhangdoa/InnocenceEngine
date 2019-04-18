@@ -63,18 +63,18 @@ bool DX11TAAPass::initializeShaders()
 
 bool DX11TAAPass::update()
 {
-	ID3D11ShaderResourceView* l_lastFrameDXSRV;
+	DX11TextureDataComponent* l_lastFrameDXTDC;
 	ID3D11RenderTargetView* l_currentFrameDXRTV;
 
 	if (m_isTAAPingPass)
 	{
-		l_lastFrameDXSRV = m_DXRPC->m_DXTDCs[1]->m_SRV;
+		l_lastFrameDXTDC = m_DXRPC->m_DXTDCs[1];
 		l_currentFrameDXRTV = m_DXRPC->m_renderTargetViews[0];
 		m_isTAAPingPass = false;
 	}
 	else
 	{
-		l_lastFrameDXSRV = m_DXRPC->m_DXTDCs[0]->m_SRV;
+		l_lastFrameDXTDC = m_DXRPC->m_DXTDCs[0];
 		l_currentFrameDXRTV = m_DXRPC->m_renderTargetViews[1];
 		m_isTAAPingPass = true;
 	}
@@ -88,8 +88,6 @@ bool DX11TAAPass::update()
 		DX11RenderingSystemComponent::get().m_rasterStateDeferred);
 
 	activateDX11ShaderProgramComponent(m_DXSPC);
-
-	DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
@@ -108,12 +106,12 @@ bool DX11TAAPass::update()
 	cleanDSV(m_DXRPC->m_depthStencilView);
 
 	// bind to previous pass render target textures
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(0, 1, &DX11PreTAAPass::getDX11RPC()->m_DXTDCs[0]->m_SRV);
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(1, 1, &l_lastFrameDXSRV);
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(2, 1, &DX11OpaquePass::getDX11RPC()->m_DXTDCs[3]->m_SRV);
+	activateTexture(DX11PreTAAPass::getDX11RPC()->m_DXTDCs[0], 0);
+	activateTexture(l_lastFrameDXTDC, 1);
+	activateTexture(DX11OpaquePass::getDX11RPC()->m_DXTDCs[3], 2);
 
 	// draw
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	return true;
@@ -134,14 +132,14 @@ DX11RenderPassComponent * DX11TAAPass::getDX11RPC()
 	return m_DXRPC;
 }
 
-ID3D11ShaderResourceView* DX11TAAPass::getResult()
+DX11TextureDataComponent* DX11TAAPass::getResult()
 {
 	if (m_isTAAPingPass)
 	{
-		return m_DXRPC->m_DXTDCs[1]->m_SRV;
+		return m_DXRPC->m_DXTDCs[1];
 	}
 	else
 	{
-		return m_DXRPC->m_DXTDCs[0]->m_SRV;
+		return m_DXRPC->m_DXTDCs[0];
 	}
 }

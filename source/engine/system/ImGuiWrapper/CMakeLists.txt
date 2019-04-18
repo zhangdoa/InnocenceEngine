@@ -1,8 +1,8 @@
 add_library(ImGuiWrapper ImGuiWrapper.h ImGuiWrapper.cpp)
 if (INNO_PLATFORM_WIN)
-#add_library(ImGuiWrapperWinDX ImGuiWrapperWinDX.h ImGuiWrapperWinDX.cpp)
-#target_link_libraries(ImGuiWrapperWinDX ImGui)
-#target_link_libraries(ImGuiWrapper ImGuiWrapperWinDX)
+add_library(ImGuiWrapperWinDX ImGuiWrapperWinDX.h ImGuiWrapperWinDX.cpp)
+target_link_libraries(ImGuiWrapperWinDX ImGui)
+target_link_libraries(ImGuiWrapper ImGuiWrapperWinDX)
 endif (INNO_PLATFORM_WIN)
 
 if (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)

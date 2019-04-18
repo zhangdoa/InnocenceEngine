@@ -17,7 +17,7 @@ struct PixelOutputType
 	float4 TAAPassRT0 : SV_Target0;
 };
 
-PixelOutputType TAAPassPixel(PixelInputType input) : SV_TARGET
+PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
