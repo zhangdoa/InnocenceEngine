@@ -62,9 +62,10 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool isDeviceSuitable(VkPhysicalDevice device);
 
 	VKRenderPassComponent* addVKRenderPassComponent();
-	bool initializeVKRenderPassComponent(RenderPassDesc renderPassDesc, VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
+	bool initializeVKRenderPassComponent(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
 
-	bool reserveRenderTargets(RenderPassDesc renderPassDesc, VKRenderPassComponent* VKRPC);
+	bool reserveRenderTargets(VKRenderPassComponent* VKRPC);
+	bool createRTTextures(VKRenderPassComponent* VKRPC);
 	bool createRTImageViews(VkTextureDataDesc vkTextureDataDesc, VKRenderPassComponent* VKRPC);
 	bool createSingleFramebuffer(VKRenderPassComponent* VKRPC);
 	bool createMultipleFramebuffers(VKRenderPassComponent* VKRPC);
@@ -73,16 +74,16 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createGraphicsPipelines(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
 	bool createCommandBuffers(VKRenderPassComponent* VKRPC);
 
+	bool destroyVKRenderPassComponent(VKRenderPassComponent* VKRPC);
+
 	bool initializeVKMeshDataComponent(VKMeshDataComponent* rhs);
 	bool initializeVKTextureDataComponent(VKTextureDataComponent* rhs);
 
 	bool recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex,const std::function<void()>& commands);
 
-	bool destroyVKRenderPassComponent(VKRenderPassComponent* VKRPC);
+	void recordDrawCall(VkCommandBuffer commandBuffer, VKMeshDataComponent * VKMDC);
 
 	VkTextureDataDesc getVKTextureDataDesc(const TextureDataDesc & textureDataDesc);
-
-	void recordDrawCall(VkCommandBuffer commandBuffer, VKMeshDataComponent * VKMDC);
 
 	VKShaderProgramComponent* addVKShaderProgramComponent(const EntityID& rhs);
 

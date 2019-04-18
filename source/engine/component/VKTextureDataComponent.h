@@ -10,8 +10,6 @@ struct VkTextureDataDesc
 	VkSamplerMipmapMode magFilterParam;
 	VkFormat internalFormat;
 	VkBorderColor boarderColor;
-	unsigned int width;
-	unsigned int height;
 };
 
 class VKTextureDataComponent : public TextureDataComponent

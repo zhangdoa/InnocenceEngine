@@ -64,31 +64,8 @@ public:
 	VkDeviceMemory m_vertexBufferMemory;
 	VkDeviceMemory m_indexBufferMemory;
 
+	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
-
-	std::unordered_map<EntityID, VKMeshDataComponent*> m_meshMap;
-	std::unordered_map<EntityID, VKTextureDataComponent*> m_textureMap;
-
-	VKMeshDataComponent* m_UnitLineVKMDC;
-	VKMeshDataComponent* m_UnitQuadVKMDC;
-	VKMeshDataComponent* m_UnitCubeVKMDC;
-	VKMeshDataComponent* m_UnitSphereVKMDC;
-
-	VKTextureDataComponent* m_iconTemplate_OBJ;
-	VKTextureDataComponent* m_iconTemplate_PNG;
-	VKTextureDataComponent* m_iconTemplate_SHADER;
-	VKTextureDataComponent* m_iconTemplate_UNKNOWN;
-
-	VKTextureDataComponent* m_iconTemplate_DirectionalLight;
-	VKTextureDataComponent* m_iconTemplate_PointLight;
-	VKTextureDataComponent* m_iconTemplate_SphereLight;
-
-	VKTextureDataComponent* m_basicNormalVKTDC;
-	VKTextureDataComponent* m_basicAlbedoVKTDC;
-	VKTextureDataComponent* m_basicMetallicVKTDC;
-	VKTextureDataComponent* m_basicRoughnessVKTDC;
-	VKTextureDataComponent* m_basicAOVKTDC;
-
 private:
 	VKRenderingSystemComponent() {};
 };

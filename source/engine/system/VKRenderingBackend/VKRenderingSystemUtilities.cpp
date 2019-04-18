@@ -9,6 +9,7 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
 	bool createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath);
+
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	bool createVBO(const std::vector<Vertex>& vertices, VkBuffer& VBO);
@@ -18,7 +19,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool summitGPUData(VKTextureDataComponent * rhs);
 
 	VkTextureDataDesc getVKTextureDataDesc(const TextureDataDesc& textureDataDesc);
-
 	VkSamplerAddressMode getTextureWrapMethod(TextureWrapMethod rhs);
 	VkSamplerMipmapMode getTextureFilterParam(TextureFilterMethod rhs);
 	VkFormat getTextureInternalFormat(TextureColorComponentsFormat rhs);
@@ -34,6 +34,8 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	void* m_VKRenderPassComponentPool;
 	void* m_VKShaderProgramComponentPool;
+
+	const std::string m_shaderRelativePath = std::string{ "res//shaders//" };
 }
 
 bool VKRenderingSystemNS::initializeComponentPool()
@@ -262,6 +264,99 @@ bool VKRenderingSystemNS::isDeviceSuitable(VkPhysicalDevice device)
 	return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
+VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKRenderPassComponentPool, sizeof(VKRenderPassComponent));
+	auto l_VKRPC = new(l_rawPtr)VKRenderPassComponent();
+
+	return l_VKRPC;
+}
+
+bool VKRenderingSystemNS::initializeVKRenderPassComponent(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC)
+{
+	bool result = true;
+
+	result &= reserveRenderTargets(VKRPC);
+
+	auto l_vkTextureDesc = getVKTextureDataDesc(VKRPC->m_renderPassDesc.RTDesc);
+
+	result &= createRTTextures(VKRPC);
+	result &= createRTImageViews(l_vkTextureDesc, VKRPC);
+
+	if (VKRPC->m_renderPassDesc.useMultipleFramebuffers)
+	{
+		result &= createMultipleFramebuffers(VKRPC);
+	}
+	else
+	{
+		result &= createSingleFramebuffer(VKRPC);
+	}
+
+	result &= createRenderPass(VKRPC);
+
+	result &= createPipelineLayout(VKRPC);
+
+	result &= createGraphicsPipelines(VKRPC, VKSPC);
+
+	return result;
+}
+
+bool VKRenderingSystemNS::reserveRenderTargets(VKRenderPassComponent* VKRPC)
+{
+	size_t l_framebufferNumber = 0;
+	if (VKRPC->m_renderPassDesc.useMultipleFramebuffers)
+	{
+		l_framebufferNumber = VKRPC->m_renderPassDesc.RTNumber;
+	}
+	else
+	{
+		l_framebufferNumber = 1;
+	}
+
+	// reserve vectors and emplace empty objects
+	VKRPC->m_framebuffers.reserve(l_framebufferNumber);
+	for (size_t i = 0; i < l_framebufferNumber; i++)
+	{
+		VKRPC->m_framebuffers.emplace_back();
+	}
+
+	VKRPC->m_VKTDCs.reserve(VKRPC->m_renderPassDesc.RTNumber);
+	for (size_t i = 0; i < VKRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		VKRPC->m_VKTDCs.emplace_back();
+	}
+
+	for (size_t i = 0; i < VKRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		VKRPC->m_VKTDCs[i] = addVKTextureDataComponent();
+	}
+
+	return true;
+}
+
+bool VKRenderingSystemNS::createRTTextures(VKRenderPassComponent* VKRPC)
+{
+	for (size_t i = 0; i < VKRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		auto l_TDC = VKRPC->m_VKTDCs[i];
+
+		l_TDC->m_textureDataDesc = VKRPC->m_renderPassDesc.RTDesc;
+
+		if (l_TDC->m_textureDataDesc.samplerType == TextureSamplerType::CUBEMAP)
+		{
+			l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		}
+		else
+		{
+			l_TDC->m_textureData = { nullptr };
+		}
+
+		initializeVKTextureDataComponent(l_TDC);
+	}
+
+	return true;
+}
+
 bool VKRenderingSystemNS::createRTImageViews(VkTextureDataDesc vkTextureDataDesc, VKRenderPassComponent* VKRPC)
 {
 	for (size_t i = 0; i < VKRPC->m_VKTDCs.size(); i++)
@@ -311,8 +406,8 @@ bool VKRenderingSystemNS::createSingleFramebuffer(VKRenderPassComponent* VKRPC)
 	framebufferInfo.renderPass = VKRPC->m_renderPass;
 	framebufferInfo.attachmentCount = (uint32_t)VKRPC->m_VKTDCs.size();
 	framebufferInfo.pAttachments = &attachments[0];
-	framebufferInfo.width = VKRPC->m_VKTDCs[0]->m_VkTextureDataDesc.width;
-	framebufferInfo.height = VKRPC->m_VKTDCs[0]->m_VkTextureDataDesc.height;
+	framebufferInfo.width = VKRPC->m_VKTDCs[0]->m_textureDataDesc.width;
+	framebufferInfo.height = VKRPC->m_VKTDCs[0]->m_textureDataDesc.height;
 	framebufferInfo.layers = 1;
 
 	if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &VKRPC->m_framebuffers[0]) != VK_SUCCESS)
@@ -336,8 +431,8 @@ bool VKRenderingSystemNS::createMultipleFramebuffers(VKRenderPassComponent* VKRP
 		framebufferInfo.renderPass = VKRPC->m_renderPass;
 		framebufferInfo.attachmentCount = 1;
 		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = VKRPC->m_VKTDCs[0]->m_VkTextureDataDesc.width;
-		framebufferInfo.height = VKRPC->m_VKTDCs[0]->m_VkTextureDataDesc.height;
+		framebufferInfo.width = VKRPC->m_VKTDCs[0]->m_textureDataDesc.width;
+		framebufferInfo.height = VKRPC->m_VKTDCs[0]->m_textureDataDesc.height;
 		framebufferInfo.layers = 1;
 
 		if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &VKRPC->m_framebuffers[i]) != VK_SUCCESS)
@@ -421,116 +516,6 @@ bool VKRenderingSystemNS::createCommandBuffers(VKRenderPassComponent* VKRPC)
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: CommandBuffers has been created.");
 	return true;
-}
-
-bool VKRenderingSystemNS::recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, const std::function<void()>& commands)
-{
-	VkCommandBufferBeginInfo beginInfo = {};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-	if (vkBeginCommandBuffer(VKRPC->m_commandBuffers[commandBufferIndex], &beginInfo) != VK_SUCCESS)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to begin recording command buffer!");
-		return false;
-	}
-
-	VkRenderPassBeginInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = VKRPC->m_renderPass;
-	renderPassInfo.framebuffer = VKRPC->m_framebuffers[commandBufferIndex];
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = VKRPC->scissor.extent;
-
-	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-	renderPassInfo.clearValueCount = 1;
-	renderPassInfo.pClearValues = &clearColor;
-
-	vkCmdBeginRenderPass(VKRPC->m_commandBuffers[commandBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	vkCmdBindPipeline(VKRPC->m_commandBuffers[commandBufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, VKRPC->m_pipeline);
-
-	commands();
-
-	vkCmdEndRenderPass(VKRPC->m_commandBuffers[commandBufferIndex]);
-
-	if (vkEndCommandBuffer(VKRPC->m_commandBuffers[commandBufferIndex]) != VK_SUCCESS)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to record command!");
-		return false;
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Command has been recorded.");
-	return true;
-}
-
-VKRenderPassComponent* VKRenderingSystemNS::addVKRenderPassComponent()
-{
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKRenderPassComponentPool, sizeof(VKRenderPassComponent));
-	auto l_VKRPC = new(l_rawPtr)VKRenderPassComponent();
-
-	return l_VKRPC;
-}
-
-bool VKRenderingSystemNS::reserveRenderTargets(RenderPassDesc renderPassDesc, VKRenderPassComponent* VKRPC)
-{
-	size_t l_framebufferNumber = 0;
-	if (renderPassDesc.useMultipleFramebuffers)
-	{
-		l_framebufferNumber = renderPassDesc.RTNumber;
-	}
-	else
-	{
-		l_framebufferNumber = 1;
-	}
-
-	// reserve vectors and emplace empty objects
-	VKRPC->m_framebuffers.reserve(l_framebufferNumber);
-	for (size_t i = 0; i < l_framebufferNumber; i++)
-	{
-		VKRPC->m_framebuffers.emplace_back();
-	}
-
-	VKRPC->m_VKTDCs.reserve(renderPassDesc.RTNumber);
-	for (size_t i = 0; i < renderPassDesc.RTNumber; i++)
-	{
-		VKRPC->m_VKTDCs.emplace_back();
-	}
-
-	for (size_t i = 0; i < renderPassDesc.RTNumber; i++)
-	{
-		VKRPC->m_VKTDCs[i] = addVKTextureDataComponent();
-	}
-
-	return true;
-}
-
-bool VKRenderingSystemNS::initializeVKRenderPassComponent(RenderPassDesc renderPassDesc, VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC)
-{
-	bool result = true;
-
-	result &= reserveRenderTargets(renderPassDesc, VKRPC);
-
-	auto l_vkTextureDesc = getVKTextureDataDesc(renderPassDesc.RTDesc);
-
-	result &= createRTImageViews(l_vkTextureDesc, VKRPC);
-
-	if (renderPassDesc.useMultipleFramebuffers)
-	{
-		result &= createMultipleFramebuffers(VKRPC);
-	}
-	else
-	{
-		result &= createSingleFramebuffer(VKRPC);
-	}
-
-	result &= createRenderPass(VKRPC);
-
-	result &= createPipelineLayout(VKRPC);
-
-	result &= createGraphicsPipelines(VKRPC, VKSPC);
-
-	return result;
 }
 
 bool VKRenderingSystemNS::destroyVKRenderPassComponent(VKRenderPassComponent* VKRPC)
@@ -752,12 +737,55 @@ bool VKRenderingSystemNS::initializeVKTextureDataComponent(VKTextureDataComponen
 
 bool VKRenderingSystemNS::summitGPUData(VKTextureDataComponent * rhs)
 {
+	VkDeviceSize imageSize = rhs->m_textureDataDesc.width * rhs->m_textureDataDesc.height * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1);
+
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 	m_initializedVKTDC.emplace(rhs->m_parentEntity, rhs);
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingSystem: texture is initialized.");
 
+	return true;
+}
+
+bool VKRenderingSystemNS::recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, const std::function<void()>& commands)
+{
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+	if (vkBeginCommandBuffer(VKRPC->m_commandBuffers[commandBufferIndex], &beginInfo) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to begin recording command buffer!");
+		return false;
+	}
+
+	VkRenderPassBeginInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = VKRPC->m_renderPass;
+	renderPassInfo.framebuffer = VKRPC->m_framebuffers[commandBufferIndex];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = VKRPC->scissor.extent;
+
+	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearColor;
+
+	vkCmdBeginRenderPass(VKRPC->m_commandBuffers[commandBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdBindPipeline(VKRPC->m_commandBuffers[commandBufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, VKRPC->m_pipeline);
+
+	commands();
+
+	vkCmdEndRenderPass(VKRPC->m_commandBuffers[commandBufferIndex]);
+
+	if (vkEndCommandBuffer(VKRPC->m_commandBuffers[commandBufferIndex]) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to record command!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Command has been recorded.");
 	return true;
 }
 
@@ -771,25 +799,6 @@ void VKRenderingSystemNS::recordDrawCall(VkCommandBuffer commandBuffer, VKMeshDa
 	vkCmdBindIndexBuffer(commandBuffer, VKMDC->m_IBO, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(VKMDC->m_indicesSize), 1, 0, 0, 0);
-}
-
-bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath)
-{
-	auto l_binData = g_pCoreSystem->getFileSystem()->loadBinaryFile(shaderFilePath);
-
-	VkShaderModuleCreateInfo l_createInfo = {};
-	l_createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	l_createInfo.codeSize = l_binData.size();
-	l_createInfo.pCode = reinterpret_cast<const uint32_t*>(l_binData.data());
-
-	if (vkCreateShaderModule(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &vkShaderModule) != VK_SUCCESS)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create shader module for: " + shaderFilePath + "!");
-		return false;
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: innoShader: " + shaderFilePath + " has been loaded.");
-	return true;
 }
 
 VKShaderProgramComponent * VKRenderingSystemNS::addVKShaderProgramComponent(const EntityID & rhs)
@@ -826,6 +835,25 @@ bool VKRenderingSystemNS::initializeVKShaderProgramComponent(VKShaderProgramComp
 	}
 
 	return l_result;
+}
+
+bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath)
+{
+	auto l_binData = g_pCoreSystem->getFileSystem()->loadBinaryFile(m_shaderRelativePath + shaderFilePath);
+
+	VkShaderModuleCreateInfo l_createInfo = {};
+	l_createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	l_createInfo.codeSize = l_binData.size();
+	l_createInfo.pCode = reinterpret_cast<const uint32_t*>(l_binData.data());
+
+	if (vkCreateShaderModule(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &vkShaderModule) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create shader module for: " + shaderFilePath + "!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: innoShader: " + shaderFilePath + " has been loaded.");
+	return true;
 }
 
 bool VKRenderingSystemNS::activateVKShaderProgramComponent(VKShaderProgramComponent * rhs)

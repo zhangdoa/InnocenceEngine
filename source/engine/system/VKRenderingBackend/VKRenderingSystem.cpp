@@ -3,6 +3,8 @@
 #include "VKRenderingSystemUtilities.h"
 #include "../../component/VKRenderingSystemComponent.h"
 
+#include "VKOpaquePass.h"
+
 #include "../ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -99,7 +101,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	VKTextureDataComponent* m_basicRoughnessTDC;
 	VKTextureDataComponent* m_basicAOTDC;
 
-	RenderPassDesc m_deferredRenderPassDesc;
+	std::vector<VkImage> m_swapChainImages;
 
 	size_t m_maxFramesInFlight = 2;
 	size_t m_currentFrame = 0;
@@ -348,24 +350,27 @@ bool VKRenderingSystemNS::createSwapChain()
 	// get count
 	vkGetSwapchainImagesKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, &l_imageCount, nullptr);
 
-	std::vector<VkImage> l_swapChainImages(l_imageCount);
-
+	m_swapChainImages.reserve(l_imageCount);
+	for (size_t i = 0; i < l_imageCount; i++)
+	{
+		m_swapChainImages.emplace_back();
+	}
 	// get real VkImages
-	vkGetSwapchainImagesKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, &l_imageCount, l_swapChainImages.data());
+	vkGetSwapchainImagesKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, &l_imageCount, m_swapChainImages.data());
 
 	// add shader component
 	auto l_VKSPC = addVKShaderProgramComponent(m_entityID);
 
 	ShaderFilePaths l_shaderFilePaths;
-	l_shaderFilePaths.m_VSPath = "res//shaders//VK//finalBlendPass.vert.spv";
-	l_shaderFilePaths.m_FSPath = "res//shaders//VK//finalBlendPass.frag.spv";
+	l_shaderFilePaths.m_VSPath = "VK//finalBlendPass.vert.spv";
+	l_shaderFilePaths.m_FSPath = "VK//finalBlendPass.frag.spv";
 
 	initializeVKShaderProgramComponent(l_VKSPC, l_shaderFilePaths);
 
 	// add render pass component
 	auto l_VKRPC = addVKRenderPassComponent();
 
-	l_VKRPC->m_renderPassDesc = m_deferredRenderPassDesc;
+	l_VKRPC->m_renderPassDesc = VKRenderingSystemComponent::get().m_deferredRenderPassDesc;
 	l_VKRPC->m_renderPassDesc.RTNumber = l_imageCount;
 
 	l_VKRPC->m_renderPassDesc.useMultipleFramebuffers = (l_imageCount > 1);
@@ -375,18 +380,16 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_VkTextureDataDesc.magFilterParam = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	l_VkTextureDataDesc.minFilterParam = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	l_VkTextureDataDesc.internalFormat = l_surfaceFormat.format;
-	l_VkTextureDataDesc.width = l_extent.width;
-	l_VkTextureDataDesc.height = l_extent.height;
 
 	// initialize manually
 	bool l_result = true;
 
-	l_result &= reserveRenderTargets(l_VKRPC->m_renderPassDesc, l_VKRPC);
+	l_result &= reserveRenderTargets(l_VKRPC);
 
 	// use device created swap chain VkImages
 	for (size_t i = 0; i < l_imageCount; i++)
 	{
-		l_VKRPC->m_VKTDCs[i]->m_image = l_swapChainImages[i];
+		l_VKRPC->m_VKTDCs[i]->m_image = m_swapChainImages[i];
 	}
 
 	l_result &= createRTImageViews(l_VkTextureDataDesc, l_VKRPC);
@@ -545,17 +548,17 @@ bool VKRenderingSystemNS::setup()
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	// general render pass desc
-	m_deferredRenderPassDesc.RTNumber = 1;
-	m_deferredRenderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	m_deferredRenderPassDesc.RTDesc.usageType = TextureUsageType::RENDER_TARGET;
-	m_deferredRenderPassDesc.RTDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
-	m_deferredRenderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_deferredRenderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	m_deferredRenderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	m_deferredRenderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	m_deferredRenderPassDesc.RTDesc.width = l_screenResolution.x;
-	m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
-	m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTNumber = 1;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.usageType = TextureUsageType::RENDER_TARGET;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.width = l_screenResolution.x;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
 	bool result = true;
 	result = result && createVkInstance();
@@ -583,6 +586,8 @@ bool VKRenderingSystemNS::initialize()
 	result = result && createSwapChain();
 	result = result && createSwapChainCommandBuffers();
 	result = result && createSyncPrimitives();
+
+	//VKOpaquePass::initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been initialized.");
 	return result;
