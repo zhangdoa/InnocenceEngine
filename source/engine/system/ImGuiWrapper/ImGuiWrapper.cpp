@@ -3,7 +3,7 @@
 #if defined INNO_PLATFORM_WIN
 #include "ImGuiWrapperWinDX.h"
 #include "ImGuiWrapperWinGL.h"
-//#include "ImGuiWrapperWinVK.h"
+#include "ImGuiWrapperWinVK.h"
 #endif
 
 #if defined INNO_PLATFORM_MAC

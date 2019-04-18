@@ -14,8 +14,8 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createVBO(const std::vector<Vertex>& vertices, VkBuffer& VBO);
 	bool createIBO(const std::vector<Index>& indices, VkBuffer& IBO);
 
-	bool initializeVKMeshDataComponent(VKMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices);
-	bool initializeVKTextureDataComponent(VKTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData);
+	bool summitGPUData(VKMeshDataComponent * rhs);
+	bool summitGPUData(VKTextureDataComponent * rhs);
 
 	VkTextureDataDesc getVKTextureDataDesc(const TextureDataDesc& textureDataDesc);
 
@@ -32,16 +32,12 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	std::unordered_map<EntityID, VKMeshDataComponent*> m_meshMap;
 	std::unordered_map<EntityID, VKTextureDataComponent*> m_textureMap;
 
-	void* m_VKMeshDataComponentPool;
-	void* m_VKTextureDataComponentPool;
 	void* m_VKRenderPassComponentPool;
 	void* m_VKShaderProgramComponentPool;
 }
 
 bool VKRenderingSystemNS::initializeComponentPool()
 {
-	m_VKMeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), 32768);
-	m_VKTextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), 32768);
 	m_VKRenderPassComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKRenderPassComponent), 32);
 	m_VKShaderProgramComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKShaderProgramComponent), 128);
 
@@ -78,6 +74,192 @@ bool VKRenderingSystemNS::initializeComponentPool()
 	m_vertexAttributeDescriptions[4].offset = offsetof(Vertex, m_pad2);
 
 	return true;
+}
+
+bool VKRenderingSystemNS::checkValidationLayerSupport()
+{
+	uint32_t l_layerCount;
+	vkEnumerateInstanceLayerProperties(&l_layerCount, nullptr);
+
+	std::vector<VkLayerProperties> l_availableLayers(l_layerCount);
+	vkEnumerateInstanceLayerProperties(&l_layerCount, l_availableLayers.data());
+
+	for (const char* layerName : VKRenderingSystemComponent::get().m_validationLayers)
+	{
+		bool layerFound = false;
+
+		for (const auto& layerProperties : l_availableLayers)
+		{
+			if (strcmp(layerName, layerProperties.layerName) == 0)
+			{
+				layerFound = true;
+				break;
+			}
+		}
+
+		if (!layerFound)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool VKRenderingSystemNS::checkDeviceExtensionSupport(VkPhysicalDevice device)
+{
+	uint32_t extensionCount;
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+	std::set<std::string> requiredExtensions(VKRenderingSystemComponent::get().m_deviceExtensions.begin(), VKRenderingSystemComponent::get().m_deviceExtensions.end());
+
+	for (const auto& extension : availableExtensions)
+	{
+		requiredExtensions.erase(extension.extensionName);
+	}
+
+	return requiredExtensions.empty();
+}
+
+QueueFamilyIndices VKRenderingSystemNS::findQueueFamilies(VkPhysicalDevice device)
+{
+	QueueFamilyIndices indices;
+
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+	int i = 0;
+	for (const auto& queueFamily : queueFamilies)
+	{
+		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			indices.m_graphicsFamily = i;
+		}
+
+		VkBool32 l_presentSupport = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, VKRenderingSystemComponent::get().m_windowSurface, &l_presentSupport);
+
+		if (queueFamily.queueCount > 0 && l_presentSupport)
+		{
+			indices.m_presentFamily = i;
+		}
+
+		if (indices.isComplete())
+		{
+			break;
+		}
+
+		i++;
+	}
+
+	return indices;
+}
+
+VkSurfaceFormatKHR VKRenderingSystemNS::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+{
+	if (availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED)
+	{
+		return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+	}
+
+	for (const auto& availableFormat : availableFormats)
+	{
+		if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		{
+			return availableFormat;
+		}
+	}
+
+	return availableFormats[0];
+}
+
+VkPresentModeKHR VKRenderingSystemNS::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes)
+{
+	VkPresentModeKHR l_bestMode = VK_PRESENT_MODE_FIFO_KHR;
+
+	for (const auto& availablePresentMode : availablePresentModes)
+	{
+		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+		{
+			return availablePresentMode;
+		}
+		else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
+		{
+			l_bestMode = availablePresentMode;
+		}
+	}
+
+	return l_bestMode;
+}
+
+VkExtent2D VKRenderingSystemNS::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+{
+	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+	{
+		return capabilities.currentExtent;
+	}
+	else
+	{
+		auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+
+		VkExtent2D l_actualExtent;
+		l_actualExtent.width = l_screenResolution.x;
+		l_actualExtent.height = l_screenResolution.y;
+
+		l_actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, l_actualExtent.width));
+		l_actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, l_actualExtent.height));
+
+		return l_actualExtent;
+	}
+}
+
+SwapChainSupportDetails VKRenderingSystemNS::querySwapChainSupport(VkPhysicalDevice device)
+{
+	SwapChainSupportDetails l_details;
+
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &l_details.m_capabilities);
+
+	uint32_t formatCount;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &formatCount, nullptr);
+
+	if (formatCount != 0)
+	{
+		l_details.m_formats.resize(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &formatCount, l_details.m_formats.data());
+	}
+
+	uint32_t presentModeCount;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &presentModeCount, nullptr);
+
+	if (presentModeCount != 0)
+	{
+		l_details.m_presentModes.resize(presentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &presentModeCount, l_details.m_presentModes.data());
+	}
+
+	return l_details;
+}
+
+bool VKRenderingSystemNS::isDeviceSuitable(VkPhysicalDevice device)
+{
+	QueueFamilyIndices indices = findQueueFamilies(device);
+
+	bool extensionsSupported = checkDeviceExtensionSupport(device);
+
+	bool swapChainAdequate = false;
+	if (extensionsSupported)
+	{
+		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+		swapChainAdequate = !swapChainSupport.m_formats.empty() && !swapChainSupport.m_presentModes.empty();
+	}
+
+	return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
 bool VKRenderingSystemNS::createRTImageViews(VkTextureDataDesc vkTextureDataDesc, VKRenderPassComponent* VKRPC)
@@ -317,7 +499,7 @@ bool VKRenderingSystemNS::reserveRenderTargets(RenderPassDesc renderPassDesc, VK
 
 	for (size_t i = 0; i < renderPassDesc.RTNumber; i++)
 	{
-		VKRPC->m_VKTDCs[i] = addVKTextureDataComponent(VKRPC->m_parentEntity);
+		VKRPC->m_VKTDCs[i] = addVKTextureDataComponent();
 	}
 
 	return true;
@@ -368,21 +550,19 @@ bool VKRenderingSystemNS::destroyVKRenderPassComponent(VKRenderPassComponent* VK
 	return true;
 }
 
-VKMeshDataComponent* VKRenderingSystemNS::generateVKMeshDataComponent(MeshDataComponent * rhs)
+bool VKRenderingSystemNS::initializeVKMeshDataComponent(VKMeshDataComponent* rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
-		return getVKMeshDataComponent(rhs->m_parentEntity);
+		return true;
 	}
 	else
 	{
-		auto l_ptr = addVKMeshDataComponent(rhs->m_parentEntity);
-
-		initializeVKMeshDataComponent(l_ptr, rhs->m_vertices, rhs->m_indices);
+		summitGPUData(rhs);
 
 		rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-		return l_ptr;
+		return true;
 	}
 }
 
@@ -521,10 +701,10 @@ bool  VKRenderingSystemNS::createIBO(const std::vector<Index>& indices, VkBuffer
 	return true;
 }
 
-bool VKRenderingSystemNS::initializeVKMeshDataComponent(VKMeshDataComponent * rhs, const std::vector<Vertex>& vertices, const std::vector<Index>& indices)
+bool VKRenderingSystemNS::summitGPUData(VKMeshDataComponent * rhs)
 {
-	createVBO(vertices, rhs->m_VBO);
-	createIBO(indices, rhs->m_IBO);
+	createVBO(rhs->m_vertices, rhs->m_VBO);
+	createIBO(rhs->m_indices, rhs->m_IBO);
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
@@ -533,110 +713,55 @@ bool VKRenderingSystemNS::initializeVKMeshDataComponent(VKMeshDataComponent * rh
 	return true;
 }
 
-VKTextureDataComponent* VKRenderingSystemNS::generateVKTextureDataComponent(TextureDataComponent * rhs)
+bool VKRenderingSystemNS::initializeVKTextureDataComponent(VKTextureDataComponent * rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
 	{
-		return getVKTextureDataComponent(rhs->m_parentEntity);
+		return true;
 	}
 	else
 	{
 		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: TextureUsageType is TextureUsageType::INVISIBLE!");
-			return nullptr;
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VKRenderingSystem: try to generate VKTextureDataComponent for TextureUsageType::INVISIBLE type!");
+			return false;
 		}
 		else
 		{
-			auto l_ptr = addVKTextureDataComponent(rhs->m_parentEntity);
+			if (rhs->m_textureData.size() > 0)
+			{
+				summitGPUData(rhs);
 
-			initializeVKTextureDataComponent(l_ptr, rhs->m_textureDataDesc, rhs->m_textureData);
+				rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-			rhs->m_objectStatus = ObjectStatus::ALIVE;
+				if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+				{
+					// @TODO: release raw data in heap memory
+				}
 
-			return l_ptr;
+				return true;
+			}
+			else
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VKRenderingSystem: try to generate VKTextureDataComponent without raw data!");
+				return false;
+			}
 		}
 	}
 }
 
-bool VKRenderingSystemNS::initializeVKTextureDataComponent(VKTextureDataComponent * rhs, TextureDataDesc textureDataDesc, const std::vector<void*>& textureData)
+bool VKRenderingSystemNS::summitGPUData(VKTextureDataComponent * rhs)
 {
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 	m_initializedVKTDC.emplace(rhs->m_parentEntity, rhs);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingSystem: SRV is initialized.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingSystem: texture is initialized.");
 
 	return true;
 }
 
-VKMeshDataComponent* VKRenderingSystemNS::addVKMeshDataComponent(EntityID rhs)
-{
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKMeshDataComponentPool, sizeof(VKMeshDataComponent));
-	auto l_VKMDC = new(l_rawPtr)VKMeshDataComponent();
-	l_VKMDC->m_parentEntity = rhs;
-	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, VKMeshDataComponent*>(rhs, l_VKMDC));
-	return l_VKMDC;
-}
-
-VKTextureDataComponent* VKRenderingSystemNS::addVKTextureDataComponent(EntityID rhs)
-{
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_VKTextureDataComponentPool, sizeof(VKTextureDataComponent));
-	auto l_VKTDC = new(l_rawPtr)VKTextureDataComponent();
-	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, VKTextureDataComponent*>(rhs, l_VKTDC));
-	return l_VKTDC;
-}
-
-VKMeshDataComponent * VKRenderingSystemNS::getVKMeshDataComponent(EntityID rhs)
-{
-	auto result = m_meshMap.find(rhs);
-	if (result != m_meshMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
-VKTextureDataComponent * VKRenderingSystemNS::getVKTextureDataComponent(EntityID rhs)
-{
-	auto result = m_textureMap.find(rhs);
-	if (result != m_textureMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
-void VKRenderingSystemNS::recordDrawCall(VkCommandBuffer commandBuffer, EntityID rhs)
-{
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(rhs);
-	if (l_MDC)
-	{
-		recordDrawCall(commandBuffer, l_MDC);
-	}
-}
-
-void VKRenderingSystemNS::recordDrawCall(VkCommandBuffer commandBuffer, MeshDataComponent * MDC)
-{
-	auto l_VKMDC = VKRenderingSystemNS::getVKMeshDataComponent(MDC->m_parentEntity);
-	if (l_VKMDC)
-	{
-		if (MDC->m_objectStatus == ObjectStatus::ALIVE && l_VKMDC->m_objectStatus == ObjectStatus::ALIVE)
-		{
-			recordDrawCall(commandBuffer, MDC->m_indicesSize, l_VKMDC);
-		}
-	}
-}
-
-void VKRenderingSystemNS::recordDrawCall(VkCommandBuffer commandBuffer, size_t indicesSize, VKMeshDataComponent * VKMDC)
+void VKRenderingSystemNS::recordDrawCall(VkCommandBuffer commandBuffer, VKMeshDataComponent * VKMDC)
 {
 	VkBuffer vertexBuffers[] = { VKMDC->m_VBO };
 	VkDeviceSize offsets[] = { 0 };
@@ -645,7 +770,7 @@ void VKRenderingSystemNS::recordDrawCall(VkCommandBuffer commandBuffer, size_t i
 
 	vkCmdBindIndexBuffer(commandBuffer, VKMDC->m_IBO, 0, VK_INDEX_TYPE_UINT32);
 
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indicesSize), 1, 0, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(VKMDC->m_indicesSize), 1, 0, 0, 0);
 }
 
 bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath)

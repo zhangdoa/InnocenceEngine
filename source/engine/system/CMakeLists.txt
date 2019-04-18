@@ -10,7 +10,7 @@ add_subdirectory("PhysXWrapper")
 endif (INNO_PLATFORM_WIN)
 
 if (VULKAN)
-#add_subdirectory("VKRenderingBackend")
+add_subdirectory("VKRenderingBackend")
 endif (VULKAN)
 
 if (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
@@ -43,7 +43,7 @@ target_link_libraries(InnoSystem PhysXWrapper)
 endif (INNO_PLATFORM_WIN)
 
 if (VULKAN)
-#target_link_libraries(InnoSystem InnoVKRenderingBackend)
+target_link_libraries(InnoSystem InnoVKRenderingBackend)
 endif (VULKAN)
 
 if (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)

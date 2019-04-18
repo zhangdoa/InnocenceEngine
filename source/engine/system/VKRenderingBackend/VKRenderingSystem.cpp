@@ -7,55 +7,9 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-#define INSTANCE_FUNC_PTR(instance, entrypoint){											\
-    fp##entrypoint = (PFN_vk##entrypoint) vkGetInstanceProcAddr(instance, "vk"#entrypoint); \
-    if (fp##entrypoint == NULL) {															\
-        std::cout << "Unable to locate the vkGetDeviceProcAddr: vk"#entrypoint;				\
-        exit(-1);																			\
-    }																						\
-}
-
-#define DEVICE_FUNC_PTR(dev, entrypoint){													\
-    fp##entrypoint = (PFN_vk##entrypoint) vkGetDeviceProcAddr(dev, "vk"#entrypoint);		\
-    if (fp##entrypoint == NULL) {															\
-        std::cout << "Unable to locate the vkGetDeviceProcAddr: vk"#entrypoint;				\
-        exit(-1);																			\
-    }																						\
-}
-
 INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
 	EntityID m_entityID;
-
-	bool checkValidationLayerSupport()
-	{
-		uint32_t l_layerCount;
-		vkEnumerateInstanceLayerProperties(&l_layerCount, nullptr);
-
-		std::vector<VkLayerProperties> l_availableLayers(l_layerCount);
-		vkEnumerateInstanceLayerProperties(&l_layerCount, l_availableLayers.data());
-
-		for (const char* layerName : VKRenderingSystemComponent::get().m_validationLayers)
-		{
-			bool layerFound = false;
-
-			for (const auto& layerProperties : l_availableLayers)
-			{
-				if (strcmp(layerName, layerProperties.layerName) == 0)
-				{
-					layerFound = true;
-					break;
-				}
-			}
-
-			if (!layerFound)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
 
 	VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback)
 	{
@@ -100,164 +54,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 		return extensions;
 	}
 
-	bool checkDeviceExtensionSupport(VkPhysicalDevice device)
-	{
-		uint32_t extensionCount;
-		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-
-		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-		std::set<std::string> requiredExtensions(VKRenderingSystemComponent::get().m_deviceExtensions.begin(), VKRenderingSystemComponent::get().m_deviceExtensions.end());
-
-		for (const auto& extension : availableExtensions)
-		{
-			requiredExtensions.erase(extension.extensionName);
-		}
-
-		return requiredExtensions.empty();
-	}
-
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
-	{
-		QueueFamilyIndices indices;
-
-		uint32_t queueFamilyCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-		int i = 0;
-		for (const auto& queueFamily : queueFamilies)
-		{
-			if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-			{
-				indices.m_graphicsFamily = i;
-			}
-
-			VkBool32 l_presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, VKRenderingSystemComponent::get().m_windowSurface, &l_presentSupport);
-
-			if (queueFamily.queueCount > 0 && l_presentSupport)
-			{
-				indices.m_presentFamily = i;
-			}
-
-			if (indices.isComplete())
-			{
-				break;
-			}
-
-			i++;
-		}
-
-		return indices;
-	}
-
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
-	{
-		if (availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED)
-		{
-			return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
-		}
-
-		for (const auto& availableFormat : availableFormats)
-		{
-			if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-			{
-				return availableFormat;
-			}
-		}
-
-		return availableFormats[0];
-	}
-
-	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes)
-	{
-		VkPresentModeKHR l_bestMode = VK_PRESENT_MODE_FIFO_KHR;
-
-		for (const auto& availablePresentMode : availablePresentModes)
-		{
-			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-			{
-				return availablePresentMode;
-			}
-			else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
-			{
-				l_bestMode = availablePresentMode;
-			}
-		}
-
-		return l_bestMode;
-	}
-
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
-	{
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-		{
-			return capabilities.currentExtent;
-		}
-		else
-		{
-			auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
-
-			VkExtent2D l_actualExtent;
-			l_actualExtent.width = l_screenResolution.x;
-			l_actualExtent.height = l_screenResolution.y;
-
-			l_actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, l_actualExtent.width));
-			l_actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, l_actualExtent.height));
-
-			return l_actualExtent;
-		}
-	}
-
-	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device)
-	{
-		SwapChainSupportDetails l_details;
-
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &l_details.m_capabilities);
-
-		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &formatCount, nullptr);
-
-		if (formatCount != 0)
-		{
-			l_details.m_formats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &formatCount, l_details.m_formats.data());
-		}
-
-		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &presentModeCount, nullptr);
-
-		if (presentModeCount != 0)
-		{
-			l_details.m_presentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, VKRenderingSystemComponent::get().m_windowSurface, &presentModeCount, l_details.m_presentModes.data());
-		}
-
-		return l_details;
-	}
-
-	bool isDeviceSuitable(VkPhysicalDevice device)
-	{
-		QueueFamilyIndices indices = findQueueFamilies(device);
-
-		bool extensionsSupported = checkDeviceExtensionSupport(device);
-
-		bool swapChainAdequate = false;
-		if (extensionsSupported)
-		{
-			SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-			swapChainAdequate = !swapChainSupport.m_formats.empty() && !swapChainSupport.m_presentModes.empty();
-		}
-
-		return indices.isComplete() && extensionsSupported && swapChainAdequate;
-	}
-
-	bool setup(IRenderingFrontendSystem* renderingFrontend);
-
 	bool createVkInstance();
 	bool createDebugCallback();
 
@@ -269,15 +65,39 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createSwapChainCommandBuffers();
 	bool createSyncPrimitives();
 
-	bool initialize();
-
-	bool initializeDefaultAssets();
-
-	bool update();
-	bool terminate();
-
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	IRenderingFrontendSystem* m_renderingFrontendSystem;
+
+	ThreadSafeUnorderedMap<EntityID, VKMeshDataComponent*> m_meshMap;
+	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
+	ThreadSafeUnorderedMap<EntityID, VKTextureDataComponent*> m_textureMap;
+
+	void* m_MeshDataComponentPool;
+	void* m_MaterialDataComponentPool;
+	void* m_TextureDataComponentPool;
+
+	ThreadSafeQueue<VKMeshDataComponent*> m_uninitializedMDC;
+	ThreadSafeQueue<VKTextureDataComponent*> m_uninitializedTDC;
+
+	VKTextureDataComponent* m_iconTemplate_OBJ;
+	VKTextureDataComponent* m_iconTemplate_PNG;
+	VKTextureDataComponent* m_iconTemplate_SHADER;
+	VKTextureDataComponent* m_iconTemplate_UNKNOWN;
+
+	VKTextureDataComponent* m_iconTemplate_DirectionalLight;
+	VKTextureDataComponent* m_iconTemplate_PointLight;
+	VKTextureDataComponent* m_iconTemplate_SphereLight;
+
+	VKMeshDataComponent* m_unitLineMDC;
+	VKMeshDataComponent* m_unitQuadMDC;
+	VKMeshDataComponent* m_unitCubeMDC;
+	VKMeshDataComponent* m_unitSphereMDC;
+	VKMeshDataComponent* m_terrainMDC;
+
+	VKTextureDataComponent* m_basicNormalTDC;
+	VKTextureDataComponent* m_basicAlbedoTDC;
+	VKTextureDataComponent* m_basicMetallicTDC;
+	VKTextureDataComponent* m_basicRoughnessTDC;
+	VKTextureDataComponent* m_basicAOTDC;
 
 	RenderPassDesc m_deferredRenderPassDesc;
 
@@ -676,8 +496,8 @@ bool VKRenderingSystemNS::createSwapChainCommandBuffers()
 
 	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.size(); i++)
 	{
-		recordCommand(VKRenderingSystemComponent::get().m_swapChainVKRPC, i, [&]() {
-			auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
+		recordCommand(VKRenderingSystemComponent::get().m_swapChainVKRPC, (unsigned int)i, [&]() {
+			auto l_MDC = getVKMeshDataComponent(MeshShapeType::QUAD);
 			recordDrawCall(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i], l_MDC);
 		});
 	}
@@ -716,15 +536,13 @@ bool VKRenderingSystemNS::createSyncPrimitives()
 	return true;
 }
 
-bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
+bool VKRenderingSystemNS::setup()
 {
-	m_renderingFrontendSystem = renderingFrontend;
-
 	m_entityID = InnoMath::createEntityID();
 
 	initializeComponentPool();
 
-	auto l_screenResolution = m_renderingFrontendSystem->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	// general render pass desc
 	m_deferredRenderPassDesc.RTNumber = 1;
@@ -748,37 +566,119 @@ bool VKRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
 	return result;
 }
 
-bool VKRenderingSystemNS::initializeDefaultAssets()
-{
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::LINE);
-	VKRenderingSystemComponent::get().m_UnitLineVKMDC = generateVKMeshDataComponent(l_MDC);
-
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::QUAD);
-	VKRenderingSystemComponent::get().m_UnitQuadVKMDC = generateVKMeshDataComponent(l_MDC);
-
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::CUBE);
-	VKRenderingSystemComponent::get().m_UnitCubeVKMDC = generateVKMeshDataComponent(l_MDC);
-
-	l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(MeshShapeType::SPHERE);
-	VKRenderingSystemComponent::get().m_UnitSphereVKMDC = generateVKMeshDataComponent(l_MDC);
-
-	return true;
-}
-
 bool VKRenderingSystemNS::initialize()
 {
+	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), 16384);
+	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
+	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), 32768);
+
 	bool result = true;
+
 	result = result && createPysicalDevice();
 	result = result && createLogicalDevice();
 	result = result && createCommandPool();
 
+	loadDefaultAssets();
+
 	result = result && createSwapChain();
-	result = result && initializeDefaultAssets();
 	result = result && createSwapChainCommandBuffers();
 	result = result && createSyncPrimitives();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been initialized.");
 	return result;
+}
+
+void VKRenderingSystemNS::loadDefaultAssets()
+{
+	auto l_basicNormalTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_basicAlbedoTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
+	auto l_basicMetallicTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
+	auto l_basicRoughnessTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
+	auto l_basicAOTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
+
+	auto l_iconTemplate_OBJ = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PNG = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SHADER = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_UNKNOWN = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+
+	auto l_iconTemplate_DirectionalLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PointLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SphereLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+
+	m_basicNormalTDC = reinterpret_cast<VKTextureDataComponent*>(l_basicNormalTDC);
+	m_basicAlbedoTDC = reinterpret_cast<VKTextureDataComponent*>(l_basicAlbedoTDC);
+	m_basicMetallicTDC = reinterpret_cast<VKTextureDataComponent*>(l_basicMetallicTDC);
+	m_basicRoughnessTDC = reinterpret_cast<VKTextureDataComponent*>(l_basicRoughnessTDC);
+	m_basicAOTDC = reinterpret_cast<VKTextureDataComponent*>(l_basicAOTDC);
+
+	m_iconTemplate_OBJ = reinterpret_cast<VKTextureDataComponent*>(l_iconTemplate_OBJ);
+	m_iconTemplate_PNG = reinterpret_cast<VKTextureDataComponent*>(l_iconTemplate_PNG);
+	m_iconTemplate_SHADER = reinterpret_cast<VKTextureDataComponent*>(l_iconTemplate_SHADER);
+	m_iconTemplate_UNKNOWN = reinterpret_cast<VKTextureDataComponent*>(l_iconTemplate_UNKNOWN);
+
+	m_iconTemplate_DirectionalLight = reinterpret_cast<VKTextureDataComponent*>(l_iconTemplate_DirectionalLight);
+	m_iconTemplate_PointLight = reinterpret_cast<VKTextureDataComponent*>(l_iconTemplate_PointLight);
+	m_iconTemplate_SphereLight = reinterpret_cast<VKTextureDataComponent*>(l_iconTemplate_SphereLight);
+
+	m_unitLineMDC = addVKMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitLine(*m_unitLineMDC);
+	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
+	m_unitLineMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
+
+	m_unitQuadMDC = addVKMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
+	// Flip y texture coordinate
+	for (auto& i : m_unitQuadMDC->m_vertices)
+	{
+		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
+	}
+	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
+	m_unitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
+
+	m_unitCubeMDC = addVKMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
+	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
+	m_unitCubeMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
+
+	m_unitSphereMDC = addVKMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
+	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
+	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
+
+	m_terrainMDC = addVKMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addTerrain(*m_terrainMDC);
+	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_terrainMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
+
+	initializeVKMeshDataComponent(m_unitLineMDC);
+	initializeVKMeshDataComponent(m_unitQuadMDC);
+	initializeVKMeshDataComponent(m_unitCubeMDC);
+	initializeVKMeshDataComponent(m_unitSphereMDC);
+	initializeVKMeshDataComponent(m_terrainMDC);
+
+	initializeVKTextureDataComponent(m_basicNormalTDC);
+	initializeVKTextureDataComponent(m_basicAlbedoTDC);
+	initializeVKTextureDataComponent(m_basicMetallicTDC);
+	initializeVKTextureDataComponent(m_basicRoughnessTDC);
+	initializeVKTextureDataComponent(m_basicAOTDC);
+
+	initializeVKTextureDataComponent(m_iconTemplate_OBJ);
+	initializeVKTextureDataComponent(m_iconTemplate_PNG);
+	initializeVKTextureDataComponent(m_iconTemplate_SHADER);
+	initializeVKTextureDataComponent(m_iconTemplate_UNKNOWN);
+
+	initializeVKTextureDataComponent(m_iconTemplate_DirectionalLight);
+	initializeVKTextureDataComponent(m_iconTemplate_PointLight);
+	initializeVKTextureDataComponent(m_iconTemplate_SphereLight);
 }
 
 bool VKRenderingSystemNS::update()
@@ -842,6 +742,11 @@ bool VKRenderingSystemNS::update()
 	return true;
 }
 
+bool VKRenderingSystemNS::render()
+{
+	return true;
+}
+
 bool VKRenderingSystemNS::terminate()
 {
 	vkDeviceWaitIdle(VKRenderingSystemComponent::get().m_device);
@@ -876,9 +781,152 @@ bool VKRenderingSystemNS::terminate()
 	return true;
 }
 
-bool VKRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
+VKMeshDataComponent* VKRenderingSystemNS::addVKMeshDataComponent()
 {
-	return VKRenderingSystemNS::setup(renderingFrontend);
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(VKMeshDataComponent));
+	auto l_MDC = new(l_rawPtr)VKMeshDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_meshMap = &m_meshMap;
+	l_meshMap->emplace(std::pair<EntityID, VKMeshDataComponent*>(l_parentEntity, l_MDC));
+	return l_MDC;
+}
+
+MaterialDataComponent* VKRenderingSystemNS::addVKMaterialDataComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
+	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_materialMap = &m_materialMap;
+	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, l_MDC));
+	return l_MDC;
+}
+
+VKTextureDataComponent* VKRenderingSystemNS::addVKTextureDataComponent()
+{
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(VKTextureDataComponent));
+	auto l_TDC = new(l_rawPtr)VKTextureDataComponent();
+	auto l_parentEntity = InnoMath::createEntityID();
+	l_TDC->m_parentEntity = l_parentEntity;
+	auto l_textureMap = &m_textureMap;
+	l_textureMap->emplace(std::pair<EntityID, VKTextureDataComponent*>(l_parentEntity, l_TDC));
+	return l_TDC;
+}
+
+VKMeshDataComponent* VKRenderingSystemNS::getVKMeshDataComponent(EntityID EntityID)
+{
+	auto result = VKRenderingSystemNS::m_meshMap.find(EntityID);
+	if (result != VKRenderingSystemNS::m_meshMap.end())
+	{
+		return result->second;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + EntityID + " !");
+		return nullptr;
+	}
+}
+
+VKTextureDataComponent * VKRenderingSystemNS::getVKTextureDataComponent(EntityID EntityID)
+{
+	auto result = VKRenderingSystemNS::m_textureMap.find(EntityID);
+	if (result != VKRenderingSystemNS::m_textureMap.end())
+	{
+		return result->second;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + EntityID + " !");
+		return nullptr;
+	}
+}
+
+VKMeshDataComponent* VKRenderingSystemNS::getVKMeshDataComponent(MeshShapeType meshShapeType)
+{
+	switch (meshShapeType)
+	{
+	case MeshShapeType::LINE:
+		return VKRenderingSystemNS::m_unitLineMDC; break;
+	case MeshShapeType::QUAD:
+		return VKRenderingSystemNS::m_unitQuadMDC; break;
+	case MeshShapeType::CUBE:
+		return VKRenderingSystemNS::m_unitCubeMDC; break;
+	case MeshShapeType::SPHERE:
+		return VKRenderingSystemNS::m_unitSphereMDC; break;
+	case MeshShapeType::TERRAIN:
+		return VKRenderingSystemNS::m_terrainMDC; break;
+	case MeshShapeType::CUSTOM:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: wrong MeshShapeType passed to VKRenderingSystem::getMeshDataComponent() !");
+		return nullptr; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+VKTextureDataComponent * VKRenderingSystemNS::getVKTextureDataComponent(TextureUsageType textureUsageType)
+{
+	switch (textureUsageType)
+	{
+	case TextureUsageType::INVISIBLE:
+		return nullptr; break;
+	case TextureUsageType::NORMAL:
+		return VKRenderingSystemNS::m_basicNormalTDC; break;
+	case TextureUsageType::ALBEDO:
+		return VKRenderingSystemNS::m_basicAlbedoTDC; break;
+	case TextureUsageType::METALLIC:
+		return VKRenderingSystemNS::m_basicMetallicTDC; break;
+	case TextureUsageType::ROUGHNESS:
+		return VKRenderingSystemNS::m_basicRoughnessTDC; break;
+	case TextureUsageType::AMBIENT_OCCLUSION:
+		return VKRenderingSystemNS::m_basicAOTDC; break;
+	case TextureUsageType::RENDER_TARGET:
+		return nullptr; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+VKTextureDataComponent * VKRenderingSystemNS::getVKTextureDataComponent(FileExplorerIconType iconType)
+{
+	switch (iconType)
+	{
+	case FileExplorerIconType::OBJ:
+		return VKRenderingSystemNS::m_iconTemplate_OBJ; break;
+	case FileExplorerIconType::PNG:
+		return VKRenderingSystemNS::m_iconTemplate_PNG; break;
+	case FileExplorerIconType::SHADER:
+		return VKRenderingSystemNS::m_iconTemplate_SHADER; break;
+	case FileExplorerIconType::UNKNOWN:
+		return VKRenderingSystemNS::m_iconTemplate_UNKNOWN; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+VKTextureDataComponent * VKRenderingSystemNS::getVKTextureDataComponent(WorldEditorIconType iconType)
+{
+	switch (iconType)
+	{
+	case WorldEditorIconType::DIRECTIONAL_LIGHT:
+		return VKRenderingSystemNS::m_iconTemplate_DirectionalLight; break;
+	case WorldEditorIconType::POINT_LIGHT:
+		return VKRenderingSystemNS::m_iconTemplate_PointLight; break;
+	case WorldEditorIconType::SPHERE_LIGHT:
+		return VKRenderingSystemNS::m_iconTemplate_SphereLight; break;
+	default:
+		return nullptr; break;
+	}
+}
+
+bool VKRenderingSystemNS::resize()
+{
+	return true;
+}
+
+bool VKRenderingSystem::setup()
+{
+	return VKRenderingSystemNS::setup();
 }
 
 bool VKRenderingSystem::initialize()
@@ -891,6 +939,11 @@ bool VKRenderingSystem::update()
 	return VKRenderingSystemNS::update();
 }
 
+bool VKRenderingSystem::render()
+{
+	return VKRenderingSystemNS::render();
+}
+
 bool VKRenderingSystem::terminate()
 {
 	return VKRenderingSystemNS::terminate();
@@ -901,13 +954,124 @@ ObjectStatus VKRenderingSystem::getStatus()
 	return VKRenderingSystemNS::m_objectStatus;
 }
 
+MeshDataComponent * VKRenderingSystem::addMeshDataComponent()
+{
+	return VKRenderingSystemNS::addVKMeshDataComponent();
+}
+
+MaterialDataComponent * VKRenderingSystem::addMaterialDataComponent()
+{
+	return VKRenderingSystemNS::addVKMaterialDataComponent();
+}
+
+TextureDataComponent * VKRenderingSystem::addTextureDataComponent()
+{
+	return VKRenderingSystemNS::addVKTextureDataComponent();
+}
+
+MeshDataComponent * VKRenderingSystem::getMeshDataComponent(EntityID meshID)
+{
+	return VKRenderingSystemNS::getVKMeshDataComponent(meshID);
+}
+
+TextureDataComponent * VKRenderingSystem::getTextureDataComponent(EntityID textureID)
+{
+	return VKRenderingSystemNS::getVKTextureDataComponent(textureID);
+}
+
+MeshDataComponent * VKRenderingSystem::getMeshDataComponent(MeshShapeType MeshShapeType)
+{
+	return VKRenderingSystemNS::getVKMeshDataComponent(MeshShapeType);
+}
+
+TextureDataComponent * VKRenderingSystem::getTextureDataComponent(TextureUsageType TextureUsageType)
+{
+	return VKRenderingSystemNS::getVKTextureDataComponent(TextureUsageType);
+}
+
+TextureDataComponent * VKRenderingSystem::getTextureDataComponent(FileExplorerIconType iconType)
+{
+	return VKRenderingSystemNS::getVKTextureDataComponent(iconType);
+}
+
+TextureDataComponent * VKRenderingSystem::getTextureDataComponent(WorldEditorIconType iconType)
+{
+	return VKRenderingSystemNS::getVKTextureDataComponent(iconType);
+}
+
+bool VKRenderingSystem::removeMeshDataComponent(EntityID EntityID)
+{
+	auto l_meshMap = &VKRenderingSystemNS::m_meshMap;
+	auto l_mesh = l_meshMap->find(EntityID);
+	if (l_mesh != l_meshMap->end())
+	{
+		g_pCoreSystem->getMemorySystem()->destroyObject(VKRenderingSystemNS::m_MeshDataComponentPool, sizeof(VKMeshDataComponent), l_mesh->second);
+		l_meshMap->erase(EntityID);
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + EntityID + " !");
+		return false;
+	}
+}
+
+bool VKRenderingSystem::removeTextureDataComponent(EntityID EntityID)
+{
+	auto l_textureMap = &VKRenderingSystemNS::m_textureMap;
+	auto l_texture = l_textureMap->find(EntityID);
+	if (l_texture != l_textureMap->end())
+	{
+		for (auto& i : l_texture->second->m_textureData)
+		{
+			// @TODO
+		}
+
+		g_pCoreSystem->getMemorySystem()->destroyObject(VKRenderingSystemNS::m_TextureDataComponentPool, sizeof(VKTextureDataComponent), l_texture->second);
+		l_textureMap->erase(EntityID);
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + EntityID + " !");
+		return false;
+	}
+}
+
+void VKRenderingSystem::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
+{
+	VKRenderingSystemNS::m_uninitializedMDC.push(reinterpret_cast<VKMeshDataComponent*>(rhs));
+}
+
+void VKRenderingSystem::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
+{
+	VKRenderingSystemNS::m_uninitializedTDC.push(reinterpret_cast<VKTextureDataComponent*>(rhs));
+}
+
 bool VKRenderingSystem::resize()
 {
-	return true;
+	return VKRenderingSystemNS::resize();
 }
 
 bool VKRenderingSystem::reloadShader(RenderPassType renderPassType)
 {
+	switch (renderPassType)
+	{
+	case RenderPassType::Shadow:
+		break;
+	case RenderPassType::Opaque:
+		break;
+	case RenderPassType::Light:
+		break;
+	case RenderPassType::Transparent:
+		break;
+	case RenderPassType::Terrain:
+		break;
+	case RenderPassType::PostProcessing:
+		break;
+	default: break;
+	}
+
 	return true;
 }
 

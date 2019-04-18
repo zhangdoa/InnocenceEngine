@@ -239,7 +239,6 @@ bool InnoRenderingFrontendSystemNS::updateLightData()
 		l_PointLightGPUData.luminance = l_pointLightComponents[i]->m_color * l_pointLightComponents[i]->m_luminousFlux;
 		l_PointLightGPUData.luminance.w = l_pointLightComponents[i]->m_attenuationRadius;
 		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[i] = l_PointLightGPUData;
-		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.emplace_back();
 	}
 
 	auto& l_sphereLightComponents = g_pCoreSystem->getGameSystem()->get<SphereLightComponent>();
@@ -250,7 +249,6 @@ bool InnoRenderingFrontendSystemNS::updateLightData()
 		l_SphereLightGPUData.luminance = l_sphereLightComponents[i]->m_color * l_sphereLightComponents[i]->m_luminousFlux;
 		l_SphereLightGPUData.luminance.w = l_sphereLightComponents[i]->m_sphereRadius;
 		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[i] = l_SphereLightGPUData;
-		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.emplace_back();
 	}
 
 	return true;

@@ -18,7 +18,7 @@
 #endif
 
 #if defined INNO_RENDERER_VULKAN
-//#include "VKRenderingBackend/VKRenderingSystem.h"
+#include "VKRenderingBackend/VKRenderingSystem.h"
 #endif
 
 #include "ImGuiWrapper/ImGuiWrapper.h"
@@ -178,7 +178,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* appHook, void* extraHook, 
 		break;
 	case RenderingBackend::VK:
 #if defined INNO_RENDERER_VULKAN
-		//InnoVisionSystemNS::m_renderingBackendSystem = new VKRenderingSystem();
+		InnoVisionSystemNS::m_renderingBackendSystem = new VKRenderingSystem();
 #endif
 		break;
 	case RenderingBackend::MT:

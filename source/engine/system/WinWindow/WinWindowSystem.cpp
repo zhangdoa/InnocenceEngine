@@ -3,7 +3,7 @@
 
 #include "WinDXWindow/WinDXWindowSystem.h"
 #include "WinGLWindow/WinGLWindowSystem.h"
-//#include "WinVKWindow/WinVKWindowSystem.h"
+#include "WinVKWindow/WinVKWindowSystem.h"
 
 #include "../ICoreSystem.h"
 
@@ -77,7 +77,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 		break;
 	case RenderingBackend::VK:
 #if defined INNO_RENDERER_VULKAN
-		//WinWindowSystemNS::m_backendWindowSystem = new WinVKWindowSystem();
+		WinWindowSystemNS::m_backendWindowSystem = new WinVKWindowSystem();
 #endif
 		break;
 	default:
