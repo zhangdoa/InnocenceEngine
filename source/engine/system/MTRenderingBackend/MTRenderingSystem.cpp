@@ -1,4 +1,7 @@
 #include "MTRenderingSystem.h"
+#include "MTRenderingSystem.h"
+#include "MTRenderingSystem.h"
+#include "MTRenderingSystem.h"
 
 #include "../ICoreSystem.h"
 
@@ -6,25 +9,22 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE MTRenderingSystemNS
 {
-	bool setup(IRenderingFrontendSystem* renderingFrontend);
-  bool initialize();
+	bool setup();
+	bool initialize();
 
-  bool initializeDefaultAssets();
+	bool initializeDefaultAssets();
 
-  bool update();
-  bool terminate();
+	bool update();
+	bool terminate();
 
+	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_entityID;
-
-  ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-  IRenderingFrontendSystem* m_renderingFrontendSystem;
 
 	MTRenderingSystemBridge* m_bridge;
 }
 
-bool MTRenderingSystemNS::setup(IRenderingFrontendSystem* renderingFrontend)
+bool MTRenderingSystemNS::setup()
 {
-	m_renderingFrontendSystem = renderingFrontend;
 	m_entityID = InnoMath::createEntityID();
 
 	bool result = MTRenderingSystemNS::m_bridge->setup();
@@ -59,44 +59,37 @@ bool MTRenderingSystemNS::terminate()
 	return true;
 }
 
-bool MTRenderingSystem::setup(IRenderingFrontendSystem* renderingFrontend)
+void MTRenderingSystemNS::loadDefaultAssets()
 {
-	return MTRenderingSystemNS::setup(renderingFrontend);
-}
+	auto l_basicNormalTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_basicAlbedoTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
+	auto l_basicMetallicTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
+	auto l_basicRoughnessTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
+	auto l_basicAOTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
 
-bool MTRenderingSystem::initialize()
-{
-	return MTRenderingSystemNS::initialize();
-}
+	auto l_iconTemplate_OBJ = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PNG = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SHADER = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_UNKNOWN = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
-bool MTRenderingSystem::update()
-{
-	return MTRenderingSystemNS::update();
-}
-
-bool MTRenderingSystem::terminate()
-{
-	return MTRenderingSystemNS::terminate();
-}
-
-ObjectStatus MTRenderingSystem::getStatus()
-{
-	return MTRenderingSystemNS::m_objectStatus;
+	auto l_iconTemplate_DirectionalLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PointLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SphereLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 }
 
 bool MTRenderingSystem::resize()
 {
-	return true;
+	return false;
 }
 
 bool MTRenderingSystem::reloadShader(RenderPassType renderPassType)
 {
-	return true;
+	return false;
 }
 
 bool MTRenderingSystem::bakeGI()
 {
-	return true;
+	return false;
 }
 
 void MTRenderingSystem::setBridge(MTRenderingSystemBridge* bridge)
