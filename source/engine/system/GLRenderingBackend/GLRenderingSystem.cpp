@@ -190,12 +190,7 @@ bool GLRenderingSystemNS::initialize()
 
 	loadDefaultAssets();
 
-	// UBO
-	GLRenderingSystemComponent::get().m_cameraUBO = generateUBO(sizeof(CameraGPUData), 0);
-
-	GLRenderingSystemComponent::get().m_meshUBO = generateUBO(sizeof(MeshGPUData), 1);
-
-	GLRenderingSystemComponent::get().m_materialUBO = generateUBO(sizeof(MaterialGPUData), 2);
+	generateGPUBuffers();
 
 	GLEnvironmentRenderPass::initialize();
 	GLShadowRenderPass::initialize();
@@ -311,6 +306,17 @@ void  GLRenderingSystemNS::loadDefaultAssets()
 	initializeGLTextureDataComponent(m_iconTemplate_DirectionalLight);
 	initializeGLTextureDataComponent(m_iconTemplate_PointLight);
 	initializeGLTextureDataComponent(m_iconTemplate_SphereLight);
+}
+
+bool GLRenderingSystemNS::generateGPUBuffers()
+{
+	GLRenderingSystemComponent::get().m_cameraUBO = generateUBO(sizeof(CameraGPUData), 0);
+
+	GLRenderingSystemComponent::get().m_meshUBO = generateUBO(sizeof(MeshGPUData), 1);
+
+	GLRenderingSystemComponent::get().m_materialUBO = generateUBO(sizeof(MaterialGPUData), 2);
+
+	return true;
 }
 
 bool GLRenderingSystemNS::update()

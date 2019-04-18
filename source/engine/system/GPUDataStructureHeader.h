@@ -29,18 +29,20 @@ struct alignas(16) CSMGPUData
 	vec4 splitCorners;
 };
 
+// w component of luminance is attenuationRadius
 struct alignas(16) PointLightGPUData
 {
 	vec4 pos;
 	vec4 luminance;
-	float attenuationRadius;
+	//float attenuationRadius;
 };
 
+// w component of luminance is sphereRadius
 struct alignas(16) SphereLightGPUData
 {
 	vec4 pos;
 	vec4 luminance;
-	float sphereRadius;
+	//float sphereRadius;
 };
 
 struct alignas(16) MeshGPUData

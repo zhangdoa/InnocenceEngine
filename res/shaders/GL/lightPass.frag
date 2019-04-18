@@ -9,16 +9,18 @@ struct dirLight {
 	vec4 luminance;
 };
 
+// w component of luminance is attenuationRadius
 struct pointLight {
 	vec4 position;
 	vec4 luminance;
-	float attenuationRadius;
+	//float attenuationRadius;
 };
 
+// w component of luminance is sphereRadius
 struct sphereLight {
 	vec4 position;
 	vec4 luminance;
-	float sphereRadius;
+	//float sphereRadius;
 };
 
 const float eps = 0.00001;
@@ -371,7 +373,7 @@ void main()
 		for (int i = 0; i < NR_POINT_LIGHTS; ++i)
 		{
 			vec3 unormalizedL = uni_pointLights[i].position.xyz - FragPos;
-			float lightRadius = uni_pointLights[i].attenuationRadius;
+			float lightRadius = uni_pointLights[i].luminance.w;
 			if (length(unormalizedL) < lightRadius)
 			{
 				L = normalize(unormalizedL);
@@ -395,7 +397,7 @@ void main()
 		for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
 		{
 			vec3 unormalizedL = uni_sphereLights[i].position.xyz - FragPos;
-			float lightRadius = uni_sphereLights[i].sphereRadius;
+			float lightRadius = uni_sphereLights[i].luminance.w;
 
 			L = normalize(unormalizedL);
 			H = normalize(V + L);

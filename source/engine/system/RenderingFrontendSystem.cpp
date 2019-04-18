@@ -220,7 +220,7 @@ bool InnoRenderingFrontendSystemNS::updateLightData()
 		PointLightGPUData l_PointLightGPUData;
 		l_PointLightGPUData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_PointLightGPUData.luminance = i->m_color * i->m_luminousFlux;
-		l_PointLightGPUData.attenuationRadius = i->m_attenuationRadius;
+		l_PointLightGPUData.luminance.w = i->m_attenuationRadius;
 		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.emplace_back(l_PointLightGPUData);
 	}
 
@@ -233,7 +233,7 @@ bool InnoRenderingFrontendSystemNS::updateLightData()
 		SphereLightGPUData l_SphereLightGPUData;
 		l_SphereLightGPUData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_SphereLightGPUData.luminance = i->m_color * i->m_luminousFlux;;
-		l_SphereLightGPUData.sphereRadius = i->m_sphereRadius;
+		l_SphereLightGPUData.luminance.w = i->m_sphereRadius;
 		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.emplace_back(l_SphereLightGPUData);
 	}
 

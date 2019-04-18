@@ -1,6 +1,5 @@
 #pragma once
 #include "../../common/InnoType.h"
-#include "../../common/InnoClassTemplate.h"
 
 #include "../../component/MeshDataComponent.h"
 #include "../../component/MaterialDataComponent.h"
@@ -21,6 +20,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	bool resize();
 
 	void loadDefaultAssets();
+	bool generateGPUBuffers();
 
 	GLMeshDataComponent* addGLMeshDataComponent();
 	MaterialDataComponent* addGLMaterialDataComponent();

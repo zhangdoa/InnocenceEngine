@@ -51,11 +51,9 @@ INNO_PRIVATE_SCOPE GLLightPass
 	GLuint m_uni_dirLight_rot;
 
 	std::vector<GLuint> m_uni_pointLights_position;
-	std::vector<GLuint> m_uni_pointLights_attenuationRadius;
 	std::vector<GLuint> m_uni_pointLights_luminance;
 
 	std::vector<GLuint> m_uni_sphereLights_position;
-	std::vector<GLuint> m_uni_sphereLights_sphereRadius;
 	std::vector<GLuint> m_uni_sphereLights_luminance;
 
 	GLuint m_uni_isEmissive;
@@ -114,7 +112,6 @@ void GLLightPass::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
 		"uni_dirLight.luminance");
 
 	m_uni_pointLights_position.reserve(RenderingFrontendSystemComponent::get().m_maxPointLights);
-	m_uni_pointLights_attenuationRadius.reserve(RenderingFrontendSystemComponent::get().m_maxPointLights);
 	m_uni_pointLights_luminance.reserve(RenderingFrontendSystemComponent::get().m_maxPointLights);
 
 	for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxPointLights; i++)
@@ -122,25 +119,18 @@ void GLLightPass::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
 		m_uni_pointLights_position.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_pointLights[" + std::to_string(i) + "].position")
 		);
-		m_uni_pointLights_attenuationRadius.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_pointLights[" + std::to_string(i) + "].attenuationRadius")
-		);
 		m_uni_pointLights_luminance.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_pointLights[" + std::to_string(i) + "].luminance")
 		);
 	}
 
 	m_uni_sphereLights_position.reserve(RenderingFrontendSystemComponent::get().m_maxSphereLights);
-	m_uni_sphereLights_sphereRadius.reserve(RenderingFrontendSystemComponent::get().m_maxSphereLights);
 	m_uni_sphereLights_luminance.reserve(RenderingFrontendSystemComponent::get().m_maxSphereLights);
 
 	for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxSphereLights; i++)
 	{
 		m_uni_sphereLights_position.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_sphereLights[" + std::to_string(i) + "].position")
-		);
-		m_uni_sphereLights_sphereRadius.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_sphereLights[" + std::to_string(i) + "].sphereRadius")
 		);
 		m_uni_sphereLights_luminance.emplace_back(
 			getUniformLocation(rhs->m_program, "uni_sphereLights[" + std::to_string(i) + "].luminance")
@@ -245,14 +235,10 @@ void GLLightPass::update()
 	{
 		auto l_pos = RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[i].pos;
 		auto l_luminance = RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[i].luminance;
-		auto l_attenuationRadius = RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[i].attenuationRadius;
 
 		updateUniform(
 			m_uni_pointLights_position[i],
 			l_pos);
-		updateUniform(
-			m_uni_pointLights_attenuationRadius[i],
-			l_attenuationRadius);
 		updateUniform(
 			m_uni_pointLights_luminance[i],
 			l_luminance);
@@ -262,14 +248,10 @@ void GLLightPass::update()
 	{
 		auto l_pos = RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[i].pos;
 		auto l_luminance = RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[i].luminance;
-		auto l_sphereRadius = RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[i].sphereRadius;
 
 		updateUniform(
 			m_uni_sphereLights_position[i],
 			l_pos);
-		updateUniform(
-			m_uni_sphereLights_sphereRadius[i],
-			l_sphereRadius);
 		updateUniform(
 			m_uni_sphereLights_luminance[i],
 			l_luminance);

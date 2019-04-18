@@ -109,7 +109,7 @@ void GLRenderingSystemNS::generateFBO(GLRenderPassComponent* GLRPC)
 
 void GLRenderingSystemNS::addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc)
 {
-	auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
+	auto l_TDC = addGLTextureDataComponent();
 
 	l_TDC->m_textureDataDesc = RTDesc;
 
@@ -122,11 +122,9 @@ void GLRenderingSystemNS::addRenderTargetTextures(GLRenderPassComponent* GLRPC, 
 		l_TDC->m_textureData = { nullptr };
 	}
 
-	auto l_GLTDC = reinterpret_cast<GLTextureDataComponent*>(l_TDC);
+	initializeGLTextureDataComponent(l_TDC);
 
-	initializeGLTextureDataComponent(l_GLTDC);
-
-	GLRPC->m_GLTDCs.emplace_back(l_GLTDC);
+	GLRPC->m_GLTDCs.emplace_back(l_TDC);
 }
 
 void GLRenderingSystemNS::attachRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex)
