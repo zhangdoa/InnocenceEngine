@@ -191,11 +191,11 @@ bool GLRenderingSystemNS::initialize()
 	loadDefaultAssets();
 
 	// UBO
-	GLRenderingSystemComponent::get().m_cameraUBO = generateUBO(sizeof(CameraGPUData));
+	GLRenderingSystemComponent::get().m_cameraUBO = generateUBO(sizeof(CameraGPUData), 0);
 
-	GLRenderingSystemComponent::get().m_meshUBO = generateUBO(sizeof(MeshGPUData));
+	GLRenderingSystemComponent::get().m_meshUBO = generateUBO(sizeof(MeshGPUData), 1);
 
-	GLRenderingSystemComponent::get().m_materialUBO = generateUBO(sizeof(MaterialGPUData));
+	GLRenderingSystemComponent::get().m_materialUBO = generateUBO(sizeof(MaterialGPUData), 2);
 
 	GLEnvironmentRenderPass::initialize();
 	GLShadowRenderPass::initialize();

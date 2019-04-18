@@ -759,22 +759,22 @@ GLuint GLRenderingSystemNS::getUniformBlockIndex(GLuint shaderProgram, const std
 	return uniformBlockIndex;
 }
 
-GLuint GLRenderingSystemNS::generateUBO(GLuint UBOSize)
+GLuint GLRenderingSystemNS::generateUBO(GLuint UBOSize, GLuint uniformBlockBindingPoint)
 {
-	GLuint l_ubo;
-	glGenBuffers(1, &l_ubo);
-	glBindBuffer(GL_UNIFORM_BUFFER, l_ubo);
+	GLuint l_UBO;
+	glGenBuffers(1, &l_UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, l_UBO);
 	glBufferData(GL_UNIFORM_BUFFER, UBOSize, NULL, GL_DYNAMIC_DRAW);
+	glBindBufferRange(GL_UNIFORM_BUFFER, uniformBlockBindingPoint, l_UBO, 0, UBOSize);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	return l_ubo;
+	return l_UBO;
 }
 
 void GLRenderingSystemNS::bindUniformBlock(GLuint UBO, GLuint UBOSize, GLuint program, const std::string & uniformBlockName, GLuint uniformBlockBindingPoint)
 {
 	auto uniformBlockIndex = getUniformBlockIndex(program, uniformBlockName.c_str());
 	glUniformBlockBinding(program, uniformBlockIndex, uniformBlockBindingPoint);
-	glBindBufferRange(GL_UNIFORM_BUFFER, uniformBlockIndex, UBO, 0, UBOSize);
 }
 
 void GLRenderingSystemNS::updateTextureUniformLocations(GLuint program, const std::vector<std::string>& UniformNames)

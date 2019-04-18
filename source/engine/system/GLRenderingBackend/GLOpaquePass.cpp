@@ -13,7 +13,6 @@ extern ICoreSystem* g_pCoreSystem;
 INNO_PRIVATE_SCOPE GLOpaquePass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
@@ -22,15 +21,6 @@ INNO_PRIVATE_SCOPE GLOpaquePass
 	GLShaderProgramComponent* m_GLSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//opaquePass.vert" , "", "GL//opaquePass.frag" };
-
-	std::vector<std::string> m_TextureUniformNames =
-	{
-		"uni_normalTexture",
-		"uni_albedoTexture",
-		"uni_metallicTexture",
-		"uni_roughnessTexture",
-		"uni_aoTexture",
-	};
 }
 
 bool GLOpaquePass::initialize()
@@ -51,20 +41,7 @@ void GLOpaquePass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLOpaquePass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	bindUniformBlock(GLRenderingSystemComponent::get().m_cameraUBO, sizeof(CameraGPUData), rhs->m_program, "cameraUBO", 0);
-
-	bindUniformBlock(GLRenderingSystemComponent::get().m_meshUBO, sizeof(MeshGPUData), rhs->m_program, "meshUBO", 1);
-
-	bindUniformBlock(GLRenderingSystemComponent::get().m_materialUBO, sizeof(MaterialGPUData), rhs->m_program, "materialUBO", 2);
-
-	updateTextureUniformLocations(rhs->m_program, m_TextureUniformNames);
 }
 
 bool GLOpaquePass::update()
@@ -158,8 +135,6 @@ bool GLOpaquePass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }

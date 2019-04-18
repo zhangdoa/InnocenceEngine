@@ -12,13 +12,13 @@ layout(location = 3) in vec2 thefrag_TexCoord;
 layout(location = 4) in vec3 thefrag_Normal;
 layout(location = 5) in float thefrag_UUID;
 
-uniform sampler2D uni_normalTexture;
-uniform sampler2D uni_albedoTexture;
-uniform sampler2D uni_metallicTexture;
-uniform sampler2D uni_roughnessTexture;
-uniform sampler2D uni_aoTexture;
+layout(location = 0, binding = 0) uniform sampler2D uni_normalTexture;
+layout(location = 1, binding = 1) uniform sampler2D uni_albedoTexture;
+layout(location = 2, binding = 2) uniform sampler2D uni_metallicTexture;
+layout(location = 3, binding = 3) uniform sampler2D uni_roughnessTexture;
+layout(location = 4, binding = 4) uniform sampler2D uni_aoTexture;
 
-layout(std140) uniform materialUBO
+layout(std140, binding = 2) uniform materialUBO
 {
 	vec4 uni_albedo;
 	vec4 uni_MRAT;

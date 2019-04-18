@@ -12,7 +12,7 @@ layout(location = 3) out vec2 thefrag_TexCoord;
 layout(location = 4) out vec3 thefrag_Normal;
 layout(location = 5) out float thefrag_UUID;
 
-layout(row_major) uniform cameraUBO
+layout(std140, row_major, binding = 0) uniform cameraUBO
 {
 	mat4 uni_p_camera_original;
 	mat4 uni_p_camera_jittered;
@@ -24,7 +24,7 @@ layout(row_major) uniform cameraUBO
 	float WHRatio;
 };
 
-layout(row_major) uniform meshUBO
+layout(std140, row_major, binding = 1) uniform meshUBO
 {
 	mat4 uni_m;
 	mat4 uni_m_prev;

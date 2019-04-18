@@ -152,10 +152,10 @@ struct MeshCustomMaterial
 	float albedo_r = 1.0f;
 	float albedo_g = 1.0f;
 	float albedo_b = 1.0f;
+	float alpha = 1.0f;
 	float metallic = 0.0f;
 	float roughness = 1.0f;
 	float ao = 1.0f;
-	float alpha = 1.0f;
 	float thickness = 1.0f;
 };
 

@@ -8,7 +8,6 @@ using namespace GLRenderingSystemNS;
 INNO_PRIVATE_SCOPE GLEarlyZPass
 {
 	void initializeShaders();
-	void bindUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
@@ -37,16 +36,7 @@ void GLEarlyZPass::initializeShaders()
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	bindUniformLocations(rhs);
-
 	m_GLSPC = rhs;
-}
-
-void GLEarlyZPass::bindUniformLocations(GLShaderProgramComponent* rhs)
-{
-	bindUniformBlock(GLRenderingSystemComponent::get().m_cameraUBO, sizeof(CameraGPUData), rhs->m_program, "cameraUBO", 0);
-
-	bindUniformBlock(GLRenderingSystemComponent::get().m_meshUBO, sizeof(MeshGPUData), rhs->m_program, "meshUBO", 1);
 }
 
 bool GLEarlyZPass::update()
@@ -99,8 +89,6 @@ bool GLEarlyZPass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindUniformLocations(m_GLSPC);
 
 	return true;
 }
