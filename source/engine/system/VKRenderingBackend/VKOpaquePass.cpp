@@ -33,34 +33,58 @@ bool VKOpaquePass::initialize()
 	m_VKRPC = addVKRenderPassComponent();
 
 	m_VKRPC->m_renderPassDesc = VKRenderingSystemComponent::get().m_deferredRenderPassDesc;
-	m_VKRPC->m_renderPassDesc.RTNumber = 4;
-
+	m_VKRPC->m_renderPassDesc.RTNumber = 1;
 	m_VKRPC->m_renderPassDesc.useMultipleFramebuffers = false;
 
-	// render target attachment desc
-	m_VKRPC->attachmentDesc.format = VK_FORMAT_R8G8B8A8_UNORM;
+	// sub-pass
+	m_VKRPC->attachmentRef.attachment = 0;
+	m_VKRPC->attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	m_VKRPC->subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	m_VKRPC->subpassDesc.colorAttachmentCount = 1;
+	m_VKRPC->subpassDesc.pColorAttachments = &m_VKRPC->attachmentRef;
+
+	// render pass
+	m_VKRPC->attachmentDesc.format = VK_FORMAT_R16G16B16A16_SFLOAT;
 	m_VKRPC->attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
 	m_VKRPC->attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	m_VKRPC->attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	m_VKRPC->attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	m_VKRPC->attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	m_VKRPC->attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	m_VKRPC->attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	m_VKRPC->attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-	m_VKRPC->attachmentRef.attachment = 0;
-	m_VKRPC->attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	// sub-pass
-	m_VKRPC->subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	m_VKRPC->subpassDesc.colorAttachmentCount = 1;
-	m_VKRPC->subpassDesc.pColorAttachments = &m_VKRPC->attachmentRef;
-
-	// render pass
 	m_VKRPC->renderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	m_VKRPC->renderPassCInfo.attachmentCount = 1;
 	m_VKRPC->renderPassCInfo.pAttachments = &m_VKRPC->attachmentDesc;
 	m_VKRPC->renderPassCInfo.subpassCount = 1;
 	m_VKRPC->renderPassCInfo.pSubpasses = &m_VKRPC->subpassDesc;
+
+	// set descriptor set layout binding info
+	VkDescriptorSetLayoutBinding cameraUBODescriptorLayoutBinding = {};
+	cameraUBODescriptorLayoutBinding.binding = 0;
+	cameraUBODescriptorLayoutBinding.descriptorCount = 1;
+	cameraUBODescriptorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	cameraUBODescriptorLayoutBinding.pImmutableSamplers = nullptr;
+	cameraUBODescriptorLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	m_VKRPC->descriptorSetLayoutBindings.emplace_back(cameraUBODescriptorLayoutBinding);
+
+	// set descriptor buffer info
+	VkDescriptorBufferInfo cameraUBODescriptorBufferInfo = {};
+	cameraUBODescriptorBufferInfo.buffer = VKRenderingSystemComponent::get().m_cameraUBO;
+	cameraUBODescriptorBufferInfo.offset = 0;
+	cameraUBODescriptorBufferInfo.range = sizeof(CameraGPUData);
+	m_VKRPC->descriptorBufferInfos.emplace_back(cameraUBODescriptorBufferInfo);
+
+	VkWriteDescriptorSet cameraUBOWriteDescriptorSet = {};
+	cameraUBOWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	cameraUBOWriteDescriptorSet.dstBinding = 0;
+	cameraUBOWriteDescriptorSet.dstArrayElement = 0;
+	cameraUBOWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	cameraUBOWriteDescriptorSet.descriptorCount = 1;
+	cameraUBOWriteDescriptorSet.pBufferInfo = &m_VKRPC->descriptorBufferInfos[0];
+
+	m_VKRPC->writeDescriptorSets.emplace_back(cameraUBOWriteDescriptorSet);
 
 	// set pipeline fix stages info
 	m_VKRPC->inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -116,8 +140,7 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->colorBlendStateCInfo.blendConstants[3] = 0.0f;
 
 	m_VKRPC->pipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	m_VKRPC->pipelineLayoutCInfo.setLayoutCount = 0;
-	m_VKRPC->pipelineLayoutCInfo.pushConstantRangeCount = 0;
+	m_VKRPC->pipelineLayoutCInfo.setLayoutCount = 1;
 
 	initializeVKRenderPassComponent(m_VKRPC, m_VKSPC);
 	return true;

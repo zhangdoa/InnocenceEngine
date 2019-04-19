@@ -2,6 +2,7 @@
 
 #include "VKRenderingSystemUtilities.h"
 #include "../../component/VKRenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 #include "VKOpaquePass.h"
 
@@ -61,6 +62,8 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	bool createPysicalDevice();
 	bool createLogicalDevice();
+
+	bool createDescriptorPool();
 	bool createCommandPool();
 
 	bool createSwapChain();
@@ -112,7 +115,7 @@ bool VKRenderingSystemNS::createVkInstance()
 	// check support for validation layer
 	if (VKRenderingSystemComponent::get().m_enableValidationLayers && !checkValidationLayerSupport()) {
 		m_objectStatus = ObjectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: validation layers requested, but not available!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Validation layers requested, but not available!");
 		return false;
 	}
 
@@ -174,7 +177,7 @@ bool VKRenderingSystemNS::createDebugCallback()
 			return false;
 		}
 
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: validation layer has been created.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Validation Layer has been created.");
 		return true;
 	}
 	else
@@ -215,7 +218,7 @@ bool VKRenderingSystemNS::createPysicalDevice()
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: physical device has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkPhysicalDevice has been created.");
 	return true;
 }
 
@@ -263,14 +266,39 @@ bool VKRenderingSystemNS::createLogicalDevice()
 	if (vkCreateDevice(VKRenderingSystemComponent::get().m_physicalDevice, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_device) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create logical device!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkDevice!");
 		return false;
 	}
 
 	vkGetDeviceQueue(VKRenderingSystemComponent::get().m_device, l_indices.m_graphicsFamily.value(), 0, &VKRenderingSystemComponent::get().m_graphicsQueue);
 	vkGetDeviceQueue(VKRenderingSystemComponent::get().m_device, l_indices.m_presentFamily.value(), 0, &VKRenderingSystemComponent::get().m_presentQueue);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: logical device has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkDevice has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createDescriptorPool()
+{
+	std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[0].descriptorCount = 1;
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[1].descriptorCount = 1;
+
+	VkDescriptorPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = poolSizes.data();
+	poolInfo.maxSets = 1;
+
+	if (vkCreateDescriptorPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &VKRenderingSystemComponent::get().m_descriptorPool) != VK_SUCCESS)
+	{
+		m_objectStatus = ObjectStatus::STANDBY;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkDescriptorPool!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkDescriptorPool has been created.");
 	return true;
 }
 
@@ -285,11 +313,11 @@ bool VKRenderingSystemNS::createCommandPool()
 	if (vkCreateCommandPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &VKRenderingSystemComponent::get().m_commandPool) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create command pool!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create CommandPool!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: command pool has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: CommandPool has been created.");
 	return true;
 }
 
@@ -342,7 +370,7 @@ bool VKRenderingSystemNS::createSwapChain()
 	if (vkCreateSwapchainKHR(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_swapChain) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create swap chain!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkSwapChainKHR!");
 		return false;
 	}
 
@@ -389,18 +417,9 @@ bool VKRenderingSystemNS::createSwapChain()
 	// use device created swap chain VkImages
 	for (size_t i = 0; i < l_imageCount; i++)
 	{
+		l_VKRPC->m_VKTDCs[i]->m_VkTextureDataDesc = l_VkTextureDataDesc;
 		l_VKRPC->m_VKTDCs[i]->m_image = m_swapChainImages[i];
-	}
-
-	l_result &= createRTImageViews(l_VkTextureDataDesc, l_VKRPC);
-
-	if (l_VKRPC->m_renderPassDesc.useMultipleFramebuffers)
-	{
-		l_result &= createMultipleFramebuffers(l_VKRPC);
-	}
-	else
-	{
-		l_result &= createSingleFramebuffer(l_VKRPC);
+		createImageView(l_VKRPC->m_VKTDCs[i]);
 	}
 
 	// render target attachment desc
@@ -481,6 +500,15 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	l_result &= createRenderPass(l_VKRPC);
 
+	if (l_VKRPC->m_renderPassDesc.useMultipleFramebuffers)
+	{
+		l_result &= createMultipleFramebuffers(l_VKRPC);
+	}
+	else
+	{
+		l_result &= createSingleFramebuffer(l_VKRPC);
+	}
+
 	l_result &= createPipelineLayout(l_VKRPC);
 
 	l_result &= createGraphicsPipelines(l_VKRPC, l_VKSPC);
@@ -489,7 +517,7 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	VKRenderingSystemComponent::get().m_swapChainVKRPC = l_VKRPC;
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: swap chain has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkSwapChainKHR has been created.");
 	return true;
 }
 
@@ -505,7 +533,6 @@ bool VKRenderingSystemNS::createSwapChainCommandBuffers()
 		});
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: command buffers has been created.");
 	return true;
 }
 
@@ -535,7 +562,14 @@ bool VKRenderingSystemNS::createSyncPrimitives()
 		}
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: synchronization primitives has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Synchronization primitives has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::generateGPUBuffers()
+{
+	generateUBO(sizeof(CameraGPUData), VKRenderingSystemComponent::get().m_cameraUBO);
+
 	return true;
 }
 
@@ -579,6 +613,7 @@ bool VKRenderingSystemNS::initialize()
 
 	result = result && createPysicalDevice();
 	result = result && createLogicalDevice();
+	result = result && createDescriptorPool();
 	result = result && createCommandPool();
 
 	loadDefaultAssets();
@@ -587,7 +622,9 @@ bool VKRenderingSystemNS::initialize()
 	result = result && createSwapChainCommandBuffers();
 	result = result && createSyncPrimitives();
 
-	//VKOpaquePass::initialize();
+	generateGPUBuffers();
+
+	VKOpaquePass::initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been initialized.");
 	return result;

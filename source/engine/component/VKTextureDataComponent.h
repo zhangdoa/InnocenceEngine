@@ -9,6 +9,7 @@ struct VkTextureDataDesc
 	VkSamplerMipmapMode minFilterParam;
 	VkSamplerMipmapMode magFilterParam;
 	VkFormat internalFormat;
+	VkDeviceSize imageSize;
 	VkBorderColor boarderColor;
 };
 

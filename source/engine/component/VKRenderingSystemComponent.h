@@ -45,7 +45,7 @@ public:
 	};
 
 #ifdef _DEBUG
-	const bool m_enableValidationLayers = false;
+	const bool m_enableValidationLayers = true;
 #else
 	const bool m_enableValidationLayers = false;
 #endif
@@ -61,8 +61,15 @@ public:
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
 	std::vector<VkFence> m_inFlightFences;
 
+	VkDescriptorPool m_descriptorPool;
+
 	VkDeviceMemory m_vertexBufferMemory;
 	VkDeviceMemory m_indexBufferMemory;
+	VkDeviceMemory m_textureImageMemory;
+	VkDeviceMemory m_UBOMemory;
+
+	VkSampler m_textureSampler;
+	VkBuffer m_cameraUBO;
 
 	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();

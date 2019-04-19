@@ -8,15 +8,24 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE VKRenderingSystemNS
 {
-	bool createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath);
+	VkCommandBuffer beginSingleTimeCommands();
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
 	bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	bool copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
+	bool createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath);
+
+	bool summitGPUData(VKMeshDataComponent * rhs);
+
 	bool createVBO(const std::vector<Vertex>& vertices, VkBuffer& VBO);
 	bool createIBO(const std::vector<Index>& indices, VkBuffer& IBO);
 
-	bool summitGPUData(VKMeshDataComponent * rhs);
 	bool summitGPUData(VKTextureDataComponent * rhs);
+	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 	VkTextureDataDesc getVKTextureDataDesc(const TextureDataDesc& textureDataDesc);
 	VkSamplerAddressMode getTextureWrapMethod(TextureWrapMethod rhs);
@@ -280,8 +289,9 @@ bool VKRenderingSystemNS::initializeVKRenderPassComponent(VKRenderPassComponent*
 
 	auto l_vkTextureDesc = getVKTextureDataDesc(VKRPC->m_renderPassDesc.RTDesc);
 
-	result &= createRTTextures(VKRPC);
-	result &= createRTImageViews(l_vkTextureDesc, VKRPC);
+	result &= createRenderTargets(VKRPC);
+
+	result &= createRenderPass(VKRPC);
 
 	if (VKRPC->m_renderPassDesc.useMultipleFramebuffers)
 	{
@@ -292,7 +302,9 @@ bool VKRenderingSystemNS::initializeVKRenderPassComponent(VKRenderPassComponent*
 		result &= createSingleFramebuffer(VKRPC);
 	}
 
-	result &= createRenderPass(VKRPC);
+	result &= createDescriptorSetLayout(VKRPC);
+	result &= createDescriptorSet(VKRPC);
+	result &= updateDescriptorSet(VKRPC);
 
 	result &= createPipelineLayout(VKRPC);
 
@@ -334,7 +346,7 @@ bool VKRenderingSystemNS::reserveRenderTargets(VKRenderPassComponent* VKRPC)
 	return true;
 }
 
-bool VKRenderingSystemNS::createRTTextures(VKRenderPassComponent* VKRPC)
+bool VKRenderingSystemNS::createRenderTargets(VKRenderPassComponent* VKRPC)
 {
 	for (size_t i = 0; i < VKRPC->m_renderPassDesc.RTNumber; i++)
 	{
@@ -354,38 +366,7 @@ bool VKRenderingSystemNS::createRTTextures(VKRenderPassComponent* VKRPC)
 		initializeVKTextureDataComponent(l_TDC);
 	}
 
-	return true;
-}
-
-bool VKRenderingSystemNS::createRTImageViews(VkTextureDataDesc vkTextureDataDesc, VKRenderPassComponent* VKRPC)
-{
-	for (size_t i = 0; i < VKRPC->m_VKTDCs.size(); i++)
-	{
-		VKRPC->m_VKTDCs[i]->m_VkTextureDataDesc = vkTextureDataDesc;
-
-		// create image view
-		VkImageViewCreateInfo l_createInfo = {};
-		l_createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		l_createInfo.image = VKRPC->m_VKTDCs[i]->m_image;
-		l_createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		l_createInfo.format = VKRPC->m_VKTDCs[i]->m_VkTextureDataDesc.internalFormat;
-		l_createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		l_createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		l_createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		l_createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		l_createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		l_createInfo.subresourceRange.baseMipLevel = 0;
-		l_createInfo.subresourceRange.levelCount = 1;
-		l_createInfo.subresourceRange.baseArrayLayer = 0;
-		l_createInfo.subresourceRange.layerCount = 1;
-
-		if (vkCreateImageView(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &VKRPC->m_VKTDCs[i]->m_imageView) != VK_SUCCESS)
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create ImageView!");
-		}
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: ImageView has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Render targets have been created.");
 
 	return true;
 }
@@ -406,16 +387,16 @@ bool VKRenderingSystemNS::createSingleFramebuffer(VKRenderPassComponent* VKRPC)
 	framebufferInfo.renderPass = VKRPC->m_renderPass;
 	framebufferInfo.attachmentCount = (uint32_t)VKRPC->m_VKTDCs.size();
 	framebufferInfo.pAttachments = &attachments[0];
-	framebufferInfo.width = VKRPC->m_VKTDCs[0]->m_textureDataDesc.width;
-	framebufferInfo.height = VKRPC->m_VKTDCs[0]->m_textureDataDesc.height;
+	framebufferInfo.width = (uint32_t)VKRPC->viewport.width;
+	framebufferInfo.height = (uint32_t)VKRPC->viewport.height;
 	framebufferInfo.layers = 1;
 
 	if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &VKRPC->m_framebuffers[0]) != VK_SUCCESS)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create Framebuffer!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkFramebuffer!");
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Single Framebuffer has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Single VkFramebuffer has been created.");
 	return true;
 }
 
@@ -431,17 +412,17 @@ bool VKRenderingSystemNS::createMultipleFramebuffers(VKRenderPassComponent* VKRP
 		framebufferInfo.renderPass = VKRPC->m_renderPass;
 		framebufferInfo.attachmentCount = 1;
 		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = VKRPC->m_VKTDCs[0]->m_textureDataDesc.width;
-		framebufferInfo.height = VKRPC->m_VKTDCs[0]->m_textureDataDesc.height;
+		framebufferInfo.width = (uint32_t)VKRPC->viewport.width;
+		framebufferInfo.height = (uint32_t)VKRPC->viewport.height;
 		framebufferInfo.layers = 1;
 
 		if (vkCreateFramebuffer(VKRenderingSystemComponent::get().m_device, &framebufferInfo, nullptr, &VKRPC->m_framebuffers[i]) != VK_SUCCESS)
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create Framebuffer!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkFramebuffer!");
 		}
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Multiple Framebuffers have been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Multiple VkFramebuffers have been created.");
 	return true;
 }
 
@@ -449,23 +430,78 @@ bool VKRenderingSystemNS::createRenderPass(VKRenderPassComponent* VKRPC)
 {
 	if (vkCreateRenderPass(VKRenderingSystemComponent::get().m_device, &VKRPC->renderPassCInfo, nullptr, &VKRPC->m_renderPass) != VK_SUCCESS)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create RenderPass!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkRenderPass!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: RenderPass has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkRenderPass has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createDescriptorSetLayout(VKRenderPassComponent* VKRPC)
+{
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = static_cast<uint32_t>(VKRPC->descriptorSetLayoutBindings.size());
+	layoutInfo.pBindings = VKRPC->descriptorSetLayoutBindings.data();
+
+	if (vkCreateDescriptorSetLayout(VKRenderingSystemComponent::get().m_device, &layoutInfo, nullptr, &VKRPC->descriptorSetLayout) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkDescriptorSetLayout!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkDescriptorSetLayout has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createDescriptorSet(VKRenderPassComponent* VKRPC)
+{
+	VkDescriptorSetAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = VKRenderingSystemComponent::get().m_descriptorPool;
+	allocInfo.descriptorSetCount = 1;
+	allocInfo.pSetLayouts = &VKRPC->descriptorSetLayout;
+
+	if (vkAllocateDescriptorSets(VKRenderingSystemComponent::get().m_device, &allocInfo, &VKRPC->descriptorSet) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate VkDescriptorSet!");
+		return false;
+	}
+
+	for (auto& i : VKRPC->writeDescriptorSets)
+	{
+		i.dstSet = VKRPC->descriptorSet;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkDescriptorSet has been allocated.");
+	return true;
+}
+
+bool VKRenderingSystemNS::updateDescriptorSet(VKRenderPassComponent* VKRPC)
+{
+	vkUpdateDescriptorSets(
+		VKRenderingSystemComponent::get().m_device,
+		static_cast<uint32_t>(VKRPC->writeDescriptorSets.size()),
+		VKRPC->writeDescriptorSets.data(),
+		0,
+		nullptr);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Write VkDescriptorSet has been updated.");
 	return true;
 }
 
 bool VKRenderingSystemNS::createPipelineLayout(VKRenderPassComponent* VKRPC)
 {
+	VKRPC->pipelineLayoutCInfo.pSetLayouts = &VKRPC->descriptorSetLayout;
+
 	if (vkCreatePipelineLayout(VKRenderingSystemComponent::get().m_device, &VKRPC->pipelineLayoutCInfo, nullptr, &VKRPC->m_pipelineLayout) != VK_SUCCESS)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create PipelineLayout!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkPipelineLayout!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: PipelineLayout has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkPipelineLayout has been created.");
 	return true;
 }
 
@@ -490,11 +526,11 @@ bool VKRenderingSystemNS::createGraphicsPipelines(VKRenderPassComponent* VKRPC, 
 
 	if (vkCreateGraphicsPipelines(VKRenderingSystemComponent::get().m_device, VK_NULL_HANDLE, 1, &VKRPC->pipelineCInfo, nullptr, &VKRPC->m_pipeline) != VK_SUCCESS)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to to create GraphicsPipelines!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to to create VkPipeline!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: GraphicsPipelines has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkPipeline has been created.");
 	return true;
 }
 
@@ -510,11 +546,11 @@ bool VKRenderingSystemNS::createCommandBuffers(VKRenderPassComponent* VKRPC)
 
 	if (vkAllocateCommandBuffers(VKRenderingSystemComponent::get().m_device, &allocInfo, VKRPC->m_commandBuffers.data()) != VK_SUCCESS)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate CommandBuffers!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate VkCommandBuffer!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: CommandBuffers has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkCommandBuffer has been created.");
 	return true;
 }
 
@@ -535,20 +571,39 @@ bool VKRenderingSystemNS::destroyVKRenderPassComponent(VKRenderPassComponent* VK
 	return true;
 }
 
-bool VKRenderingSystemNS::initializeVKMeshDataComponent(VKMeshDataComponent* rhs)
+VkCommandBuffer VKRenderingSystemNS::beginSingleTimeCommands()
 {
-	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
-	{
-		return true;
-	}
-	else
-	{
-		summitGPUData(rhs);
+	VkCommandBufferAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandPool = VKRenderingSystemComponent::get().m_commandPool;
+	allocInfo.commandBufferCount = 1;
 
-		rhs->m_objectStatus = ObjectStatus::ALIVE;
+	VkCommandBuffer commandBuffer;
+	vkAllocateCommandBuffers(VKRenderingSystemComponent::get().m_device, &allocInfo, &commandBuffer);
 
-		return true;
-	}
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+	return commandBuffer;
+}
+
+void VKRenderingSystemNS::endSingleTimeCommands(VkCommandBuffer commandBuffer)
+{
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	vkQueueSubmit(VKRenderingSystemComponent::get().m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(VKRenderingSystemComponent::get().m_graphicsQueue);
+
+	vkFreeCommandBuffers(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_commandPool, 1, &commandBuffer);
 }
 
 uint32_t VKRenderingSystemNS::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
@@ -577,7 +632,7 @@ bool VKRenderingSystemNS::createBuffer(VkDeviceSize size, VkBufferUsageFlags usa
 
 	if (vkCreateBuffer(VKRenderingSystemComponent::get().m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create create buffer!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkBuffer!");
 		return false;
 	}
 
@@ -591,7 +646,7 @@ bool VKRenderingSystemNS::createBuffer(VkDeviceSize size, VkBufferUsageFlags usa
 
 	if (vkAllocateMemory(VKRenderingSystemComponent::get().m_device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate buffer memory!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate VkDeviceMemory for VkBuffer!");
 		return false;
 	}
 
@@ -600,38 +655,43 @@ bool VKRenderingSystemNS::createBuffer(VkDeviceSize size, VkBufferUsageFlags usa
 	return true;
 }
 
-bool copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+bool VKRenderingSystemNS::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
-	VkCommandBufferAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = VKRenderingSystemComponent::get().m_commandPool;
-	allocInfo.commandBufferCount = 1;
-
-	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(VKRenderingSystemComponent::get().m_device, &allocInfo, &commandBuffer);
-
-	VkCommandBufferBeginInfo beginInfo = {};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
 	VkBufferCopy copyRegion = {};
 	copyRegion.size = size;
 	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-	vkEndCommandBuffer(commandBuffer);
+	endSingleTimeCommands(commandBuffer);
 
-	VkSubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
+	return true;
+}
 
-	vkQueueSubmit(VKRenderingSystemComponent::get().m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(VKRenderingSystemComponent::get().m_graphicsQueue);
+bool VKRenderingSystemNS::initializeVKMeshDataComponent(VKMeshDataComponent* rhs)
+{
+	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	{
+		return true;
+	}
+	else
+	{
+		summitGPUData(rhs);
 
-	vkFreeCommandBuffers(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_commandPool, 1, &commandBuffer);
+		rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+		return true;
+	}
+}
+
+bool VKRenderingSystemNS::summitGPUData(VKMeshDataComponent * rhs)
+{
+	createVBO(rhs->m_vertices, rhs->m_VBO);
+	createIBO(rhs->m_indices, rhs->m_IBO);
+
+	rhs->m_objectStatus = ObjectStatus::ALIVE;
+
+	m_initializedVKMDC.emplace(rhs->m_parentEntity, rhs);
 
 	return true;
 }
@@ -686,18 +746,6 @@ bool  VKRenderingSystemNS::createIBO(const std::vector<Index>& indices, VkBuffer
 	return true;
 }
 
-bool VKRenderingSystemNS::summitGPUData(VKMeshDataComponent * rhs)
-{
-	createVBO(rhs->m_vertices, rhs->m_VBO);
-	createIBO(rhs->m_indices, rhs->m_IBO);
-
-	rhs->m_objectStatus = ObjectStatus::ALIVE;
-
-	m_initializedVKMDC.emplace(rhs->m_parentEntity, rhs);
-
-	return true;
-}
-
 bool VKRenderingSystemNS::initializeVKTextureDataComponent(VKTextureDataComponent * rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
@@ -737,14 +785,185 @@ bool VKRenderingSystemNS::initializeVKTextureDataComponent(VKTextureDataComponen
 
 bool VKRenderingSystemNS::summitGPUData(VKTextureDataComponent * rhs)
 {
-	VkDeviceSize imageSize = rhs->m_textureDataDesc.width * rhs->m_textureDataDesc.height * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1);
+	rhs->m_VkTextureDataDesc = getVKTextureDataDesc(rhs->m_textureDataDesc);
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	createBuffer(rhs->m_VkTextureDataDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	auto l_srcData = rhs->m_textureData[0];
+	if (l_srcData != nullptr)
+	{
+		void* l_dstData;
+		vkMapMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory, 0, rhs->m_VkTextureDataDesc.imageSize, 0, &l_dstData);
+		memcpy(l_dstData, rhs->m_textureData[0], static_cast<size_t>(rhs->m_VkTextureDataDesc.imageSize));
+		vkUnmapMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory);
+	}
+
+	VkImageCreateInfo imageInfo = {};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageInfo.extent.width = rhs->m_textureDataDesc.width;
+	imageInfo.extent.height = rhs->m_textureDataDesc.height;
+	imageInfo.extent.depth = 1;
+	imageInfo.mipLevels = 1;
+	imageInfo.arrayLayers = 1;
+	imageInfo.format = rhs->m_VkTextureDataDesc.internalFormat;
+	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::RENDER_TARGET)
+	{
+		imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	}
+	else
+	{
+		imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	}
+
+	if (vkCreateImage(VKRenderingSystemComponent::get().m_device, &imageInfo, nullptr, &rhs->m_image) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkImage!");
+		return false;
+	}
+
+	VkMemoryRequirements memRequirements;
+	vkGetImageMemoryRequirements(VKRenderingSystemComponent::get().m_device, rhs->m_image, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	if (vkAllocateMemory(VKRenderingSystemComponent::get().m_device, &allocInfo, nullptr, &VKRenderingSystemComponent::get().m_textureImageMemory) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate VkDeviceMemory for VkImage!");
+		return false;
+	}
+
+	vkBindImageMemory(VKRenderingSystemComponent::get().m_device, rhs->m_image, VKRenderingSystemComponent::get().m_textureImageMemory, 0);
+
+	if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+	{
+		transitionImageLayout(rhs->m_image, imageInfo.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		if (l_srcData != nullptr)
+		{
+			copyBufferToImage(stagingBuffer, rhs->m_image, static_cast<uint32_t>(imageInfo.extent.width), static_cast<uint32_t>(imageInfo.extent.height));
+		}
+		transitionImageLayout(rhs->m_image, imageInfo.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	}
+
+	vkDestroyBuffer(VKRenderingSystemComponent::get().m_device, stagingBuffer, nullptr);
+	vkFreeMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory, nullptr);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingSystem: VkImage " + InnoUtility::pointerToString(rhs->m_image) + " is initialized.");
+
+	createImageView(rhs);
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 	m_initializedVKTDC.emplace(rhs->m_parentEntity, rhs);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingSystem: texture is initialized.");
+	return true;
+}
 
+void VKRenderingSystemNS::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+{
+	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+
+	VkPipelineStageFlags sourceStage;
+	VkPipelineStageFlags destinationStage;
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Unsupported transition!");
+	}
+
+	vkCmdPipelineBarrier(
+		commandBuffer,
+		sourceStage, destinationStage,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
+
+	endSingleTimeCommands(commandBuffer);
+}
+
+void VKRenderingSystemNS::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+{
+	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+	VkBufferImageCopy region = {};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+	region.imageOffset = { 0, 0, 0 };
+	region.imageExtent = {
+		width,
+		height,
+		1
+	};
+
+	vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+	endSingleTimeCommands(commandBuffer);
+}
+
+bool VKRenderingSystemNS::createImageView(VKTextureDataComponent* VKTDC)
+{
+	VkImageViewCreateInfo viewInfo = {};
+	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image = VKTDC->m_image;
+	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format = VKTDC->m_VkTextureDataDesc.internalFormat;
+	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount = 1;
+
+	if (vkCreateImageView(VKRenderingSystemComponent::get().m_device, &viewInfo, nullptr, &VKTDC->m_imageView) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkImageView!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingSystem: VkImageView " + InnoUtility::pointerToString(VKTDC->m_imageView) + " is initialized.");
 	return true;
 }
 
@@ -848,7 +1067,7 @@ bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, con
 
 	if (vkCreateShaderModule(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &vkShaderModule) != VK_SUCCESS)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create shader module for: " + shaderFilePath + "!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkShaderModule for: " + shaderFilePath + "!");
 		return false;
 	}
 
@@ -856,9 +1075,17 @@ bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, con
 	return true;
 }
 
-bool VKRenderingSystemNS::activateVKShaderProgramComponent(VKShaderProgramComponent * rhs)
+bool VKRenderingSystemNS::generateUBO(VkDeviceSize UBOSize, VkBuffer& UBO)
 {
-	return false;
+	auto l_result = createBuffer(UBOSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, UBO, VKRenderingSystemComponent::get().m_UBOMemory);
+
+	if (!l_result)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create UBO!");
+		return false;
+	}
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: UBO has been created.");
+	return true;
 }
 
 VkTextureDataDesc VKRenderingSystemNS::getVKTextureDataDesc(const TextureDataDesc & textureDataDesc)
@@ -869,6 +1096,7 @@ VkTextureDataDesc VKRenderingSystemNS::getVKTextureDataDesc(const TextureDataDes
 	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.minFilterMethod);
 	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.magFilterMethod);
 	l_result.internalFormat = getTextureInternalFormat(textureDataDesc.colorComponentsFormat);
+	l_result.imageSize = textureDataDesc.width * textureDataDesc.height * ((unsigned int)textureDataDesc.pixelDataFormat + 1);
 
 	return l_result;
 }
@@ -985,12 +1213,16 @@ VkFormat VKRenderingSystemNS::getTextureInternalFormat(TextureColorComponentsFor
 	case TextureColorComponentsFormat::RGBA16UI:
 		break;
 	case TextureColorComponentsFormat::R16F:
+		result = VkFormat::VK_FORMAT_R16_SFLOAT;
 		break;
 	case TextureColorComponentsFormat::RG16F:
+		result = VkFormat::VK_FORMAT_R16G16_SFLOAT;
 		break;
 	case TextureColorComponentsFormat::RGB16F:
+		result = VkFormat::VK_FORMAT_R16G16B16_SFLOAT;
 		break;
 	case TextureColorComponentsFormat::RGBA16F:
+		result = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
 		break;
 	case TextureColorComponentsFormat::R32I:
 		break;

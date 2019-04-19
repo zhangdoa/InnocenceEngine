@@ -65,11 +65,13 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool initializeVKRenderPassComponent(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
 
 	bool reserveRenderTargets(VKRenderPassComponent* VKRPC);
-	bool createRTTextures(VKRenderPassComponent* VKRPC);
-	bool createRTImageViews(VkTextureDataDesc vkTextureDataDesc, VKRenderPassComponent* VKRPC);
+	bool createRenderTargets(VKRenderPassComponent* VKRPC);
 	bool createSingleFramebuffer(VKRenderPassComponent* VKRPC);
 	bool createMultipleFramebuffers(VKRenderPassComponent* VKRPC);
 	bool createRenderPass(VKRenderPassComponent* VKRPC);
+	bool createDescriptorSetLayout(VKRenderPassComponent* VKRPC);
+	bool createDescriptorSet(VKRenderPassComponent* VKRPC);
+	bool updateDescriptorSet(VKRenderPassComponent* VKRPC);
 	bool createPipelineLayout(VKRenderPassComponent* VKRPC);
 	bool createGraphicsPipelines(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
 	bool createCommandBuffers(VKRenderPassComponent* VKRPC);
@@ -78,6 +80,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	bool initializeVKMeshDataComponent(VKMeshDataComponent* rhs);
 	bool initializeVKTextureDataComponent(VKTextureDataComponent* rhs);
+	bool createImageView(VKTextureDataComponent* VKTDC);
 
 	bool recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex,const std::function<void()>& commands);
 
@@ -89,5 +92,5 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	bool initializeVKShaderProgramComponent(VKShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
 
-	bool activateVKShaderProgramComponent(VKShaderProgramComponent* rhs);
+	bool generateUBO(VkDeviceSize UBOSize, VkBuffer& UBO);
 }

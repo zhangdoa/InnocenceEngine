@@ -15,13 +15,21 @@ public:
 
 	RenderPassDesc m_renderPassDesc;
 
+	VkAttachmentReference attachmentRef = {};
+	VkSubpassDescription subpassDesc = {};
+
+	VkAttachmentDescription attachmentDesc = {};
+	VkRenderPassCreateInfo renderPassCInfo = {};
+
 	VkRenderPass m_renderPass;
 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_pipeline;
-	VkAttachmentDescription attachmentDesc = {};
-	VkAttachmentReference attachmentRef = {};
-	VkSubpassDescription subpassDesc = {};
-	VkRenderPassCreateInfo renderPassCInfo = {};
+
+	std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorSet descriptorSet;
+	std::vector<VkDescriptorBufferInfo> descriptorBufferInfos;
+	std::vector<VkWriteDescriptorSet> writeDescriptorSets;
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCInfo = {};
 	VkPipelineViewportStateCreateInfo viewportStateCInfo = {};
