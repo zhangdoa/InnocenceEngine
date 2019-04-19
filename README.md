@@ -27,7 +27,6 @@ Run following scripts in a sequence
 ``` cmd
 @echo | setupWin.bat
 @echo | buildAssimpWin-VS15.bat
-@echo | buildGLFWWin-VS15.bat
 powershell -ExecutionPolicy RemoteSigned -File "buildPhysXWin-VS15.ps1"
 @echo | buildWin-VS15.bat
 @echo | postBuildWin.bat
@@ -44,7 +43,6 @@ Run following scripts in a sequence:
 ``` shell
 echo | setupLinux.sh
 echo | buildAssimpLinux.sh
-echo | buildGLFWLinux.sh
 echo | buildLinux.sh # or buildLinux-Clang.sh or buildLinux-CodeBlocks.sh
 echo | postBuildLinux.sh
 ```
@@ -60,7 +58,6 @@ Run following scripts in a sequence:
 ``` shell
 echo | setupMac.sh
 echo | buildAssimpMac-Xcode.sh
-echo | buildGLFWMac-Xcode.sh
 echo | buildMac.sh
 echo | postBuildMac.sh
 ```
@@ -152,8 +149,6 @@ Task-based concurrency model
 ### Third-party libraries
 
 [assimp](https://github.com/assimp)
-
-[GLFW](https://github.com/glfw/glfw)
 
 [GLAD](https://github.com/Dav1dde/glad)
 

@@ -10,10 +10,6 @@
 	path = source/external/gitsubmodules/PhysX
 	url = https://github.com/NVIDIAGameWorks/PhysX
 	ignore = dirty
-[submodule "source/external/gitsubmodules/glfw"]
-	path = source/external/gitsubmodules/glfw
-	url = https://github.com/glfw/glfw
-	ignore = dirty
 [submodule "source/external/gitsubmodules/stb"]
 	path = source/external/gitsubmodules/stb
 	url = https://github.com/nothings/stb
