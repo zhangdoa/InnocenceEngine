@@ -75,6 +75,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createPipelineLayout(VKRenderPassComponent* VKRPC);
 	bool createGraphicsPipelines(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
 	bool createCommandBuffers(VKRenderPassComponent* VKRPC);
+	bool createSyncPrimitives(VKRenderPassComponent* VKRPC);
 
 	bool destroyVKRenderPassComponent(VKRenderPassComponent* VKRPC);
 
@@ -82,9 +83,21 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool initializeVKTextureDataComponent(VKTextureDataComponent* rhs);
 	bool createImageView(VKTextureDataComponent* VKTDC);
 
-	bool recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex,const std::function<void()>& commands);
+	bool recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, const std::function<void()>& commands);
 
-	void recordDrawCall(VkCommandBuffer commandBuffer, VKMeshDataComponent * VKMDC);
+	bool recordDescriptorBinding(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex);
+	bool recordDrawCall(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, VKMeshDataComponent * VKMDC);
+
+	bool waitForFence(VKRenderPassComponent* VKRPC);
+	bool summitCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex);
+
+	bool updateUBOImpl(VkDeviceMemory&  UBOMemory, size_t size, const void* UBOValue);
+
+	template<typename T>
+	bool updateUBO(VkDeviceMemory&  UBOMemory, const T& UBOValue)
+	{
+		return updateUBOImpl(UBOMemory, sizeof(T), &UBOValue);
+	}
 
 	VkTextureDataDesc getVKTextureDataDesc(const TextureDataDesc & textureDataDesc);
 
@@ -92,5 +105,5 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	bool initializeVKShaderProgramComponent(VKShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
 
-	bool generateUBO(VkDeviceSize UBOSize, VkBuffer& UBO);
+	bool generateUBO(VkBuffer& UBO, VkDeviceSize UBOSize, VkDeviceMemory& UBOMemory);
 }

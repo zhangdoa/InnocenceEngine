@@ -18,7 +18,7 @@ public:
 	VkAttachmentReference attachmentRef = {};
 	VkSubpassDescription subpassDesc = {};
 
-	VkAttachmentDescription attachmentDesc = {};
+	std::vector<VkAttachmentDescription> attachmentDescs;
 	VkRenderPassCreateInfo renderPassCInfo = {};
 
 	VkRenderPass m_renderPass;
@@ -45,4 +45,11 @@ public:
 	std::vector<VkFramebuffer> m_framebuffers;
 	std::vector<VkCommandBuffer> m_commandBuffers;
 	std::vector<VKTextureDataComponent*> m_VKTDCs;
+
+	VkSubmitInfo submitInfo;
+	std::vector<VkSemaphore> m_renderFinishedSemaphores;
+	std::vector<VkFence> m_inFlightFences;
+
+	size_t m_maxFramesInFlight = 1;
+	size_t m_currentFrame = 0;
 };

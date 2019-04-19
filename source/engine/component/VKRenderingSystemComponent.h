@@ -38,6 +38,7 @@ public:
 	VkSwapchainKHR m_swapChain = 0;
 	VKShaderProgramComponent* m_swapChainVKSPC;
 	VKRenderPassComponent* m_swapChainVKRPC;
+	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 
 	const std::vector<const char*> m_deviceExtensions =
 	{
@@ -57,19 +58,15 @@ public:
 
 	VkDebugUtilsMessengerEXT m_messengerCallback;
 
-	std::vector<VkSemaphore> m_imageAvailableSemaphores;
-	std::vector<VkSemaphore> m_renderFinishedSemaphores;
-	std::vector<VkFence> m_inFlightFences;
-
 	VkDescriptorPool m_descriptorPool;
 
 	VkDeviceMemory m_vertexBufferMemory;
 	VkDeviceMemory m_indexBufferMemory;
 	VkDeviceMemory m_textureImageMemory;
-	VkDeviceMemory m_UBOMemory;
 
 	VkSampler m_textureSampler;
 	VkBuffer m_cameraUBO;
+	VkDeviceMemory m_cameraUBOMemory;
 
 	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();

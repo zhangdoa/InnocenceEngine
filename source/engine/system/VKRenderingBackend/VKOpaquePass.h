@@ -5,9 +5,8 @@
 INNO_PRIVATE_SCOPE VKOpaquePass
 {
 	bool initialize();
-	bool update();
-	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
-	bool reloadShader();
+	bool recordCommands();
+	bool summitCommands();
 
 	VKRenderPassComponent* getVKRPC();
 }

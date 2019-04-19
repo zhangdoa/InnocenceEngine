@@ -105,9 +105,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	VKTextureDataComponent* m_basicAOTDC;
 
 	std::vector<VkImage> m_swapChainImages;
-
-	size_t m_maxFramesInFlight = 2;
-	size_t m_currentFrame = 0;
 }
 
 bool VKRenderingSystemNS::createVkInstance()
@@ -309,6 +306,7 @@ bool VKRenderingSystemNS::createCommandPool()
 	VkCommandPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolInfo.queueFamilyIndex = queueFamilyIndices.m_graphicsFamily.value();
+	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 	if (vkCreateCommandPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &VKRenderingSystemComponent::get().m_commandPool) != VK_SUCCESS)
 	{
@@ -422,28 +420,31 @@ bool VKRenderingSystemNS::createSwapChain()
 		createImageView(l_VKRPC->m_VKTDCs[i]);
 	}
 
-	// render target attachment desc
-	l_VKRPC->attachmentDesc.format = l_surfaceFormat.format;
-	l_VKRPC->attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-	l_VKRPC->attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	l_VKRPC->attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	l_VKRPC->attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	l_VKRPC->attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	l_VKRPC->attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	l_VKRPC->attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
+	// sub-pass
 	l_VKRPC->attachmentRef.attachment = 0;
 	l_VKRPC->attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	// sub-pass
 	l_VKRPC->subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	l_VKRPC->subpassDesc.colorAttachmentCount = 1;
 	l_VKRPC->subpassDesc.pColorAttachments = &l_VKRPC->attachmentRef;
 
 	// render pass
+	VkAttachmentDescription attachmentDesc = {};
+
+	attachmentDesc.format = l_surfaceFormat.format;
+	attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+	attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	l_VKRPC->attachmentDescs.emplace_back(attachmentDesc);
+
 	l_VKRPC->renderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	l_VKRPC->renderPassCInfo.attachmentCount = 1;
-	l_VKRPC->renderPassCInfo.pAttachments = &l_VKRPC->attachmentDesc;
+	l_VKRPC->renderPassCInfo.pAttachments = &l_VKRPC->attachmentDescs[0];
 	l_VKRPC->renderPassCInfo.subpassCount = 1;
 	l_VKRPC->renderPassCInfo.pSubpasses = &l_VKRPC->subpassDesc;
 
@@ -529,46 +530,43 @@ bool VKRenderingSystemNS::createSwapChainCommandBuffers()
 	{
 		recordCommand(VKRenderingSystemComponent::get().m_swapChainVKRPC, (unsigned int)i, [&]() {
 			auto l_MDC = getVKMeshDataComponent(MeshShapeType::QUAD);
-			recordDrawCall(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i], l_MDC);
+			recordDrawCall(VKRenderingSystemComponent::get().m_swapChainVKRPC, (unsigned int)i, l_MDC);
 		});
 	}
 
-	return true;
+	return l_result;
 }
 
 bool VKRenderingSystemNS::createSyncPrimitives()
 {
-	m_maxFramesInFlight = 2;
-	VKRenderingSystemComponent::get().m_imageAvailableSemaphores.resize(m_maxFramesInFlight);
-	VKRenderingSystemComponent::get().m_renderFinishedSemaphores.resize(m_maxFramesInFlight);
-	VKRenderingSystemComponent::get().m_inFlightFences.resize(m_maxFramesInFlight);
+	VKRenderingSystemComponent::get().m_swapChainVKRPC->m_maxFramesInFlight = 2;
+	VKRenderingSystemComponent::get().m_imageAvailableSemaphores.resize(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_maxFramesInFlight);
 
 	VkSemaphoreCreateInfo semaphoreInfo = {};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-	VkFenceCreateInfo fenceInfo = {};
-	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-	for (size_t i = 0; i < m_maxFramesInFlight; i++)
+	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainVKRPC->m_maxFramesInFlight; i++)
 	{
-		if (vkCreateSemaphore(VKRenderingSystemComponent::get().m_device, &semaphoreInfo, nullptr, &VKRenderingSystemComponent::get().m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
-			vkCreateSemaphore(VKRenderingSystemComponent::get().m_device, &semaphoreInfo, nullptr, &VKRenderingSystemComponent::get().m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
-			vkCreateFence(VKRenderingSystemComponent::get().m_device, &fenceInfo, nullptr, &VKRenderingSystemComponent::get().m_inFlightFences[i]) != VK_SUCCESS)
+		if (vkCreateSemaphore(
+			VKRenderingSystemComponent::get().m_device,
+			&semaphoreInfo,
+			nullptr,
+			&VKRenderingSystemComponent::get().m_imageAvailableSemaphores[i])
+			!= VK_SUCCESS)
 		{
-			m_objectStatus = ObjectStatus::STANDBY;
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create synchronization primitives for a frame!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create swap chain image available semaphores!");
 			return false;
 		}
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Synchronization primitives has been created.");
-	return true;
+	auto l_result = createSyncPrimitives(VKRenderingSystemComponent::get().m_swapChainVKRPC);
+
+	return l_result;
 }
 
 bool VKRenderingSystemNS::generateGPUBuffers()
 {
-	generateUBO(sizeof(CameraGPUData), VKRenderingSystemComponent::get().m_cameraUBO);
+	generateUBO(VKRenderingSystemComponent::get().m_cameraUBO, sizeof(CameraGPUData), VKRenderingSystemComponent::get().m_cameraUBOMemory);
 
 	return true;
 }
@@ -725,42 +723,39 @@ void VKRenderingSystemNS::loadDefaultAssets()
 
 bool VKRenderingSystemNS::update()
 {
-	// wait current frame until it finishes
-	vkWaitForFences(VKRenderingSystemComponent::get().m_device, 1, &VKRenderingSystemComponent::get().m_inFlightFences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+	updateUBO(VKRenderingSystemComponent::get().m_cameraUBOMemory, RenderingFrontendSystemComponent::get().m_cameraGPUData);
+	VKOpaquePass::recordCommands();
+
+	return true;
+}
+
+bool VKRenderingSystemNS::render()
+{
+	VKOpaquePass::summitCommands();
+
+	waitForFence(VKRenderingSystemComponent::get().m_swapChainVKRPC);
 
 	// acquire an image from swap chain
 	thread_local uint32_t imageIndex;
-	vkAcquireNextImageKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, std::numeric_limits<uint64_t>::max(), VKRenderingSystemComponent::get().m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+	vkAcquireNextImageKHR(
+		VKRenderingSystemComponent::get().m_device,
+		VKRenderingSystemComponent::get().m_swapChain,
+		std::numeric_limits<uint64_t>::max(),
+		VKRenderingSystemComponent::get().m_imageAvailableSemaphores[VKRenderingSystemComponent::get().m_swapChainVKRPC->m_currentFrame],
+		VK_NULL_HANDLE,
+		&imageIndex);
 
-	// submit the draw command buffer for the swap chain, with a wait and a signal semaphores
-	VkSubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	// set swap chain image available wait semaphore
+	VkSemaphore l_availableSemaphores[] = {
+		VKRenderingSystemComponent::get().m_imageAvailableSemaphores[VKRenderingSystemComponent::get().m_swapChainVKRPC->m_currentFrame]
+	};
 
-	// wait semaphore
-	VkSemaphore waitImageAvailableSemaphores[] = { VKRenderingSystemComponent::get().m_imageAvailableSemaphores[m_currentFrame] };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitImageAvailableSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
+	VKRenderingSystemComponent::get().m_swapChainVKRPC->submitInfo.waitSemaphoreCount = 1;
+	VKRenderingSystemComponent::get().m_swapChainVKRPC->submitInfo.pWaitSemaphores = l_availableSemaphores;
+	VKRenderingSystemComponent::get().m_swapChainVKRPC->submitInfo.pWaitDstStageMask = waitStages;
 
-	// command buffer
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[imageIndex];
-
-	// signal semaphore
-	VkSemaphore signalRenderFinishedSemaphores[] = { VKRenderingSystemComponent::get().m_renderFinishedSemaphores[m_currentFrame] };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalRenderFinishedSemaphores;
-
-	vkResetFences(VKRenderingSystemComponent::get().m_device, 1, &VKRenderingSystemComponent::get().m_inFlightFences[m_currentFrame]);
-
-	// submit to queue
-	if (vkQueueSubmit(VKRenderingSystemComponent::get().m_graphicsQueue, 1, &submitInfo, VKRenderingSystemComponent::get().m_inFlightFences[m_currentFrame]) != VK_SUCCESS)
-	{
-		m_objectStatus = ObjectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to submit draw command buffer!");
-		return false;
-	}
+	summitCommand(VKRenderingSystemComponent::get().m_swapChainVKRPC, imageIndex);
 
 	// present the swap chain image to the front screen
 	VkPresentInfoKHR presentInfo = {};
@@ -768,7 +763,7 @@ bool VKRenderingSystemNS::update()
 
 	// wait semaphore
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalRenderFinishedSemaphores;
+	presentInfo.pWaitSemaphores = &VKRenderingSystemComponent::get().m_swapChainVKRPC->m_renderFinishedSemaphores[VKRenderingSystemComponent::get().m_swapChainVKRPC->m_currentFrame];
 
 	// swap chain
 	VkSwapchainKHR swapChains[] = { VKRenderingSystemComponent::get().m_swapChain };
@@ -779,13 +774,8 @@ bool VKRenderingSystemNS::update()
 
 	vkQueuePresentKHR(VKRenderingSystemComponent::get().m_presentQueue, &presentInfo);
 
-	m_currentFrame = (m_currentFrame + 1) % m_maxFramesInFlight;
+	VKRenderingSystemComponent::get().m_swapChainVKRPC->m_currentFrame = (VKRenderingSystemComponent::get().m_swapChainVKRPC->m_currentFrame + 1) % VKRenderingSystemComponent::get().m_swapChainVKRPC->m_maxFramesInFlight;
 
-	return true;
-}
-
-bool VKRenderingSystemNS::render()
-{
 	return true;
 }
 
@@ -793,11 +783,9 @@ bool VKRenderingSystemNS::terminate()
 {
 	vkDeviceWaitIdle(VKRenderingSystemComponent::get().m_device);
 
-	for (size_t i = 0; i < m_maxFramesInFlight; i++)
+	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainVKRPC->m_maxFramesInFlight; i++)
 	{
-		vkDestroySemaphore(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_renderFinishedSemaphores[i], nullptr);
 		vkDestroySemaphore(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_imageAvailableSemaphores[i], nullptr);
-		vkDestroyFence(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_inFlightFences[i], nullptr);
 	}
 
 	vkDestroyCommandPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_commandPool, nullptr);

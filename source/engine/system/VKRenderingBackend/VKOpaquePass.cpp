@@ -45,18 +45,32 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->subpassDesc.pColorAttachments = &m_VKRPC->attachmentRef;
 
 	// render pass
-	m_VKRPC->attachmentDesc.format = VK_FORMAT_R16G16B16A16_SFLOAT;
-	m_VKRPC->attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-	m_VKRPC->attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	m_VKRPC->attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	m_VKRPC->attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	m_VKRPC->attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	m_VKRPC->attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	m_VKRPC->attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	VkAttachmentDescription attachmentDesc1 = {};
+	VkAttachmentDescription attachmentDesc2;
+	VkAttachmentDescription attachmentDesc3;
+	VkAttachmentDescription attachmentDesc4;
+
+	attachmentDesc1.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+	attachmentDesc1.samples = VK_SAMPLE_COUNT_1_BIT;
+	attachmentDesc1.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachmentDesc1.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachmentDesc1.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachmentDesc1.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachmentDesc1.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachmentDesc1.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	attachmentDesc2 = attachmentDesc1;
+	attachmentDesc3 = attachmentDesc1;
+	attachmentDesc4 = attachmentDesc1;
+
+	m_VKRPC->attachmentDescs.emplace_back(attachmentDesc1);
+	m_VKRPC->attachmentDescs.emplace_back(attachmentDesc2);
+	m_VKRPC->attachmentDescs.emplace_back(attachmentDesc3);
+	m_VKRPC->attachmentDescs.emplace_back(attachmentDesc4);
 
 	m_VKRPC->renderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	m_VKRPC->renderPassCInfo.attachmentCount = 1;
-	m_VKRPC->renderPassCInfo.pAttachments = &m_VKRPC->attachmentDesc;
+	m_VKRPC->renderPassCInfo.pAttachments = &m_VKRPC->attachmentDescs[0];
 	m_VKRPC->renderPassCInfo.subpassCount = 1;
 	m_VKRPC->renderPassCInfo.pSubpasses = &m_VKRPC->subpassDesc;
 
@@ -146,27 +160,31 @@ bool VKOpaquePass::initialize()
 	return true;
 }
 
-bool VKOpaquePass::update()
+bool VKOpaquePass::recordCommands()
 {
-	while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
-	{
-		GeometryPassGPUData l_geometryPassGPUData = {};
+	waitForFence(m_VKRPC);
 
-		if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
+	recordCommand(m_VKRPC, 0, [&]() {
+		recordDescriptorBinding(m_VKRPC, 0);
+
+		while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
 		{
-		}
-	}
+			GeometryPassGPUData l_geometryPassGPUData = {};
+
+			if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
+			{
+				recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_geometryPassGPUData.MDC));
+			}
+		};
+	});
 
 	return true;
 }
 
-bool VKOpaquePass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool VKOpaquePass::summitCommands()
 {
-	return true;
-}
+	summitCommand(m_VKRPC, 0);
 
-bool VKOpaquePass::reloadShader()
-{
 	return true;
 }
 

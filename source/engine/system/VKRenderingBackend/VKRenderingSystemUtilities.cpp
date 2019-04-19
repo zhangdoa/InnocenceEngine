@@ -310,6 +310,10 @@ bool VKRenderingSystemNS::initializeVKRenderPassComponent(VKRenderPassComponent*
 
 	result &= createGraphicsPipelines(VKRPC, VKSPC);
 
+	result &= createCommandBuffers(VKRPC);
+
+	result &= createSyncPrimitives(VKRPC);
+
 	return result;
 }
 
@@ -554,8 +558,45 @@ bool VKRenderingSystemNS::createCommandBuffers(VKRenderPassComponent* VKRPC)
 	return true;
 }
 
+bool VKRenderingSystemNS::createSyncPrimitives(VKRenderPassComponent* VKRPC)
+{
+	VKRPC->m_renderFinishedSemaphores.resize(VKRPC->m_maxFramesInFlight);
+	VKRPC->m_inFlightFences.resize(VKRPC->m_maxFramesInFlight);
+
+	VkSemaphoreCreateInfo semaphoreInfo = {};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceInfo = {};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	VKRPC->submitInfo = submitInfo;
+
+	for (size_t i = 0; i < VKRPC->m_maxFramesInFlight; i++)
+	{
+		if (vkCreateSemaphore(VKRenderingSystemComponent::get().m_device, &semaphoreInfo, nullptr, &VKRPC->m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
+			vkCreateFence(VKRenderingSystemComponent::get().m_device, &fenceInfo, nullptr, &VKRPC->m_inFlightFences[i]) != VK_SUCCESS)
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create synchronization primitives!");
+			return false;
+		}
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Synchronization primitives has been created.");
+
+	return true;
+}
+
 bool VKRenderingSystemNS::destroyVKRenderPassComponent(VKRenderPassComponent* VKRPC)
 {
+	for (size_t i = 0; i < VKRPC->m_maxFramesInFlight; i++)
+	{
+		vkDestroySemaphore(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_renderFinishedSemaphores[i], nullptr);
+		vkDestroyFence(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_inFlightFences[i], nullptr);
+	}
+
 	for (auto framebuffer : VKRPC->m_framebuffers)
 	{
 		vkDestroyFramebuffer(VKRenderingSystemComponent::get().m_device, framebuffer, nullptr);
@@ -1004,20 +1045,70 @@ bool VKRenderingSystemNS::recordCommand(VKRenderPassComponent* VKRPC, unsigned i
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: Command has been recorded.");
 	return true;
 }
 
-void VKRenderingSystemNS::recordDrawCall(VkCommandBuffer commandBuffer, VKMeshDataComponent * VKMDC)
+bool VKRenderingSystemNS::recordDescriptorBinding(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex)
+{
+	vkCmdBindDescriptorSets(VKRPC->m_commandBuffers[commandBufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, VKRPC->m_pipelineLayout, 0, 1, &VKRPC->descriptorSet, 0, nullptr);
+	return true;
+}
+
+bool VKRenderingSystemNS::recordDrawCall(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, VKMeshDataComponent * VKMDC)
 {
 	VkBuffer vertexBuffers[] = { VKMDC->m_VBO };
 	VkDeviceSize offsets[] = { 0 };
 
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindVertexBuffers(VKRPC->m_commandBuffers[commandBufferIndex], 0, 1, vertexBuffers, offsets);
 
-	vkCmdBindIndexBuffer(commandBuffer, VKMDC->m_IBO, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(VKRPC->m_commandBuffers[commandBufferIndex], VKMDC->m_IBO, 0, VK_INDEX_TYPE_UINT32);
 
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(VKMDC->m_indicesSize), 1, 0, 0, 0);
+	vkCmdDrawIndexed(VKRPC->m_commandBuffers[commandBufferIndex], static_cast<uint32_t>(VKMDC->m_indicesSize), 1, 0, 0, 0);
+	return true;
+}
+
+bool VKRenderingSystemNS::waitForFence(VKRenderPassComponent* VKRPC)
+{
+	vkWaitForFences(VKRenderingSystemComponent::get().m_device,
+		1,
+		&VKRPC->m_inFlightFences[VKRPC->m_currentFrame],
+		VK_TRUE,
+		std::numeric_limits<uint64_t>::max()
+	);
+	return true;
+}
+
+bool VKRenderingSystemNS::summitCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex)
+{
+	// submit the draw command buffer with a rendering finished signal semaphore
+	// command buffer
+	VKRPC->submitInfo.commandBufferCount = 1;
+	VKRPC->submitInfo.pCommandBuffers = &VKRPC->m_commandBuffers[commandBufferIndex];
+
+	// signal semaphore
+	VKRPC->submitInfo.signalSemaphoreCount = 1;
+	VKRPC->submitInfo.pSignalSemaphores = &VKRPC->m_renderFinishedSemaphores[VKRPC->m_currentFrame];
+
+	vkResetFences(VKRenderingSystemComponent::get().m_device, 1, &VKRPC->m_inFlightFences[VKRPC->m_currentFrame]);
+
+	// submit to queue
+	if (vkQueueSubmit(VKRenderingSystemComponent::get().m_graphicsQueue, 1, &VKRPC->submitInfo, VKRPC->m_inFlightFences[VKRPC->m_currentFrame]) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to submit command buffer!");
+		return false;
+	}
+
+	return true;
+}
+
+bool VKRenderingSystemNS::updateUBOImpl(VkDeviceMemory& UBOMemory, size_t size, const void* UBOValue)
+{
+	void* data;
+	vkMapMemory(VKRenderingSystemComponent::get().m_device, UBOMemory, 0, size, 0, &data);
+	std::memcpy(data, UBOValue, size);
+	vkUnmapMemory(VKRenderingSystemComponent::get().m_device, UBOMemory);
+
+	return true;
 }
 
 VKShaderProgramComponent * VKRenderingSystemNS::addVKShaderProgramComponent(const EntityID & rhs)
@@ -1075,9 +1166,13 @@ bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, con
 	return true;
 }
 
-bool VKRenderingSystemNS::generateUBO(VkDeviceSize UBOSize, VkBuffer& UBO)
+bool VKRenderingSystemNS::generateUBO(VkBuffer& UBO, VkDeviceSize UBOSize, VkDeviceMemory& UBOMemory)
 {
-	auto l_result = createBuffer(UBOSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, UBO, VKRenderingSystemComponent::get().m_UBOMemory);
+	auto l_result = createBuffer(UBOSize,
+		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		UBO,
+		UBOMemory);
 
 	if (!l_result)
 	{
