@@ -58,13 +58,11 @@ public:
 
 	VkDebugUtilsMessengerEXT m_messengerCallback;
 
-	VkDescriptorPool m_descriptorPool;
-
 	VkDeviceMemory m_vertexBufferMemory;
 	VkDeviceMemory m_indexBufferMemory;
 	VkDeviceMemory m_textureImageMemory;
 
-	VkSampler m_textureSampler;
+	VkSampler m_deferredRTSampler;
 	VkBuffer m_cameraUBO;
 	VkDeviceMemory m_cameraUBOMemory;
 

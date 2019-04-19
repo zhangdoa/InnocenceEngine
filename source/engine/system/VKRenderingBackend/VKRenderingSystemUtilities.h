@@ -69,6 +69,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createSingleFramebuffer(VKRenderPassComponent* VKRPC);
 	bool createMultipleFramebuffers(VKRenderPassComponent* VKRPC);
 	bool createRenderPass(VKRenderPassComponent* VKRPC);
+	bool createDescriptorPool(VKRenderPassComponent* VKRPC);
 	bool createDescriptorSetLayout(VKRenderPassComponent* VKRPC);
 	bool createDescriptorSet(VKRenderPassComponent* VKRPC);
 	bool updateDescriptorSet(VKRenderPassComponent* VKRPC);
@@ -82,6 +83,8 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool initializeVKMeshDataComponent(VKMeshDataComponent* rhs);
 	bool initializeVKTextureDataComponent(VKTextureDataComponent* rhs);
 	bool createImageView(VKTextureDataComponent* VKTDC);
+
+	bool destroyAllGraphicPrimitiveComponents();
 
 	bool recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, const std::function<void()>& commands);
 
@@ -104,6 +107,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	VKShaderProgramComponent* addVKShaderProgramComponent(const EntityID& rhs);
 
 	bool initializeVKShaderProgramComponent(VKShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
+	bool destroyVKShaderProgramComponent(VKShaderProgramComponent* VKSPC);
 
 	bool generateUBO(VkBuffer& UBO, VkDeviceSize UBOSize, VkDeviceMemory& UBOMemory);
 }

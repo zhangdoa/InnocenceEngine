@@ -302,6 +302,7 @@ bool VKRenderingSystemNS::initializeVKRenderPassComponent(VKRenderPassComponent*
 		result &= createSingleFramebuffer(VKRPC);
 	}
 
+	result &= createDescriptorPool(VKRPC);
 	result &= createDescriptorSetLayout(VKRPC);
 	result &= createDescriptorSet(VKRPC);
 	result &= updateDescriptorSet(VKRPC);
@@ -442,6 +443,24 @@ bool VKRenderingSystemNS::createRenderPass(VKRenderPassComponent* VKRPC)
 	return true;
 }
 
+bool VKRenderingSystemNS::createDescriptorPool(VKRenderPassComponent* VKRPC)
+{
+	VkDescriptorPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = VKRPC->descriptorPoolSizes.data();
+	poolInfo.maxSets = 1;
+
+	if (vkCreateDescriptorPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &VKRPC->descriptorPool) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkDescriptorPool!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkDescriptorPool has been created.");
+	return true;
+}
+
 bool VKRenderingSystemNS::createDescriptorSetLayout(VKRenderPassComponent* VKRPC)
 {
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
@@ -463,7 +482,7 @@ bool VKRenderingSystemNS::createDescriptorSet(VKRenderPassComponent* VKRPC)
 {
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = VKRenderingSystemComponent::get().m_descriptorPool;
+	allocInfo.descriptorPool = VKRPC->descriptorPool;
 	allocInfo.descriptorSetCount = 1;
 	allocInfo.pSetLayouts = &VKRPC->descriptorSetLayout;
 
@@ -498,6 +517,12 @@ bool VKRenderingSystemNS::updateDescriptorSet(VKRenderPassComponent* VKRPC)
 bool VKRenderingSystemNS::createPipelineLayout(VKRenderPassComponent* VKRPC)
 {
 	VKRPC->pipelineLayoutCInfo.pSetLayouts = &VKRPC->descriptorSetLayout;
+
+	if (VKRPC->pushConstantRanges.size() > 0)
+	{
+		VKRPC->pipelineLayoutCInfo.pushConstantRangeCount = (uint32_t)VKRPC->pushConstantRanges.size();
+		VKRPC->pipelineLayoutCInfo.pPushConstantRanges = &VKRPC->pushConstantRanges[0];
+	}
 
 	if (vkCreatePipelineLayout(VKRenderingSystemComponent::get().m_device, &VKRPC->pipelineLayoutCInfo, nullptr, &VKRPC->m_pipelineLayout) != VK_SUCCESS)
 	{
@@ -593,21 +618,25 @@ bool VKRenderingSystemNS::destroyVKRenderPassComponent(VKRenderPassComponent* VK
 {
 	for (size_t i = 0; i < VKRPC->m_maxFramesInFlight; i++)
 	{
-		vkDestroySemaphore(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_renderFinishedSemaphores[i], nullptr);
-		vkDestroyFence(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_inFlightFences[i], nullptr);
+		vkDestroySemaphore(VKRenderingSystemComponent::get().m_device, VKRPC->m_renderFinishedSemaphores[i], nullptr);
+		vkDestroyFence(VKRenderingSystemComponent::get().m_device, VKRPC->m_inFlightFences[i], nullptr);
 	}
+
+	vkFreeCommandBuffers(VKRenderingSystemComponent::get().m_device,
+		VKRenderingSystemComponent::get().m_commandPool,
+		static_cast<uint32_t>(VKRPC->m_commandBuffers.size()), VKRPC->m_commandBuffers.data());
+
+	vkDestroyPipeline(VKRenderingSystemComponent::get().m_device, VKRPC->m_pipeline, nullptr);
+	vkDestroyPipelineLayout(VKRenderingSystemComponent::get().m_device, VKRPC->m_pipelineLayout, nullptr);
+	vkDestroyDescriptorSetLayout(VKRenderingSystemComponent::get().m_device, VKRPC->descriptorSetLayout, nullptr);
+	vkDestroyDescriptorPool(VKRenderingSystemComponent::get().m_device, VKRPC->descriptorPool, nullptr);
 
 	for (auto framebuffer : VKRPC->m_framebuffers)
 	{
 		vkDestroyFramebuffer(VKRenderingSystemComponent::get().m_device, framebuffer, nullptr);
 	}
-	vkDestroyPipeline(VKRenderingSystemComponent::get().m_device, VKRPC->m_pipeline, nullptr);
-	vkDestroyPipelineLayout(VKRenderingSystemComponent::get().m_device, VKRPC->m_pipelineLayout, nullptr);
+
 	vkDestroyRenderPass(VKRenderingSystemComponent::get().m_device, VKRPC->m_renderPass, nullptr);
-	for (auto VKTDC : VKRPC->m_VKTDCs)
-	{
-		vkDestroyImageView(VKRenderingSystemComponent::get().m_device, VKTDC->m_imageView, nullptr);
-	}
 
 	return true;
 }
@@ -857,7 +886,7 @@ bool VKRenderingSystemNS::summitGPUData(VKTextureDataComponent * rhs)
 
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::RENDER_TARGET)
 	{
-		imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	}
 	else
 	{
@@ -1005,6 +1034,22 @@ bool VKRenderingSystemNS::createImageView(VKTextureDataComponent* VKTDC)
 	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingSystem: VkImageView " + InnoUtility::pointerToString(VKTDC->m_imageView) + " is initialized.");
+	return true;
+}
+
+bool VKRenderingSystemNS::destroyAllGraphicPrimitiveComponents()
+{
+	for (auto i : m_initializedVKMDC)
+	{
+		vkDestroyBuffer(VKRenderingSystemComponent::get().m_device, i.second->m_IBO, nullptr);
+		vkDestroyBuffer(VKRenderingSystemComponent::get().m_device, i.second->m_VBO, nullptr);
+	}
+	for (auto i : m_initializedVKTDC)
+	{
+		vkDestroyImage(VKRenderingSystemComponent::get().m_device, i.second->m_image, nullptr);
+		vkDestroyImageView(VKRenderingSystemComponent::get().m_device, i.second->m_imageView, nullptr);
+	}
+
 	return true;
 }
 
@@ -1163,6 +1208,14 @@ bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, con
 	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: innoShader: " + shaderFilePath + " has been loaded.");
+	return true;
+}
+
+bool VKRenderingSystemNS::destroyVKShaderProgramComponent(VKShaderProgramComponent* VKSPC)
+{
+	vkDestroyShaderModule(VKRenderingSystemComponent::get().m_device, VKSPC->m_fragmentShaderModule, nullptr);
+	vkDestroyShaderModule(VKRenderingSystemComponent::get().m_device, VKSPC->m_vertexShaderModule, nullptr);
+
 	return true;
 }
 

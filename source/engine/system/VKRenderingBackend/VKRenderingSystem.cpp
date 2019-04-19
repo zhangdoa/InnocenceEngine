@@ -63,7 +63,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createPysicalDevice();
 	bool createLogicalDevice();
 
-	bool createDescriptorPool();
+	bool createTextureSamplers();
 	bool createCommandPool();
 
 	bool createSwapChain();
@@ -238,6 +238,7 @@ bool VKRenderingSystemNS::createLogicalDevice()
 	}
 
 	VkPhysicalDeviceFeatures l_deviceFeatures = {};
+	l_deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 	VkDeviceCreateInfo l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -274,28 +275,31 @@ bool VKRenderingSystemNS::createLogicalDevice()
 	return true;
 }
 
-bool VKRenderingSystemNS::createDescriptorPool()
+bool VKRenderingSystemNS::createTextureSamplers()
 {
-	std::array<VkDescriptorPoolSize, 2> poolSizes = {};
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = 1;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = 1;
+	VkSamplerCreateInfo samplerInfo = {};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = VK_FILTER_NEAREST;
+	samplerInfo.minFilter = VK_FILTER_NEAREST;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerInfo.anisotropyEnable = VK_TRUE;
+	samplerInfo.maxAnisotropy = 16;
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
 
-	VkDescriptorPoolCreateInfo poolInfo = {};
-	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount = 1;
-	poolInfo.pPoolSizes = poolSizes.data();
-	poolInfo.maxSets = 1;
-
-	if (vkCreateDescriptorPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &VKRenderingSystemComponent::get().m_descriptorPool) != VK_SUCCESS)
+	if (vkCreateSampler(VKRenderingSystemComponent::get().m_device, &samplerInfo, nullptr, &VKRenderingSystemComponent::get().m_deferredRTSampler) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::STANDBY;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkDescriptorPool!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkSampler for deferred pass render target sampling!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkDescriptorPool has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkSampler for deferred pass render target sampling has been created.");
 	return true;
 }
 
@@ -448,6 +452,37 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_VKRPC->renderPassCInfo.subpassCount = 1;
 	l_VKRPC->renderPassCInfo.pSubpasses = &l_VKRPC->subpassDesc;
 
+	// set descriptor pool size info
+	VkDescriptorPoolSize basePassRTDescPoolSize;
+	basePassRTDescPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	basePassRTDescPoolSize.descriptorCount = 1;
+	l_VKRPC->descriptorPoolSizes.emplace_back(basePassRTDescPoolSize);
+
+	// set descriptor set layout binding info
+	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+	samplerLayoutBinding.binding = 1;
+	samplerLayoutBinding.descriptorCount = 1;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerLayoutBinding.pImmutableSamplers = nullptr;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	l_VKRPC->descriptorSetLayoutBindings.emplace_back(samplerLayoutBinding);
+
+	// set descriptor image info
+	VkDescriptorImageInfo imageInfo = {};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	imageInfo.imageView = VKOpaquePass::getVKRPC()->m_VKTDCs[0]->m_imageView;
+	imageInfo.sampler = VKRenderingSystemComponent::get().m_deferredRTSampler;
+	l_VKRPC->descriptorImageInfos.emplace_back(imageInfo);
+
+	VkWriteDescriptorSet basePassRTWriteDescriptorSet = {};
+	basePassRTWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	basePassRTWriteDescriptorSet.dstBinding = 1;
+	basePassRTWriteDescriptorSet.dstArrayElement = 0;
+	basePassRTWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	basePassRTWriteDescriptorSet.descriptorCount = 1;
+	basePassRTWriteDescriptorSet.pImageInfo = &l_VKRPC->descriptorImageInfos[0];
+	l_VKRPC->writeDescriptorSets.emplace_back(basePassRTWriteDescriptorSet);
+
 	// set pipeline fix stages info
 	l_VKRPC->inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	l_VKRPC->inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
@@ -496,8 +531,7 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_VKRPC->colorBlendStateCInfo.blendConstants[3] = 0.0f;
 
 	l_VKRPC->pipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	l_VKRPC->pipelineLayoutCInfo.setLayoutCount = 0;
-	l_VKRPC->pipelineLayoutCInfo.pushConstantRangeCount = 0;
+	l_VKRPC->pipelineLayoutCInfo.setLayoutCount = 1;
 
 	l_result &= createRenderPass(l_VKRPC);
 
@@ -509,6 +543,11 @@ bool VKRenderingSystemNS::createSwapChain()
 	{
 		l_result &= createSingleFramebuffer(l_VKRPC);
 	}
+
+	l_result &= createDescriptorPool(l_VKRPC);
+	l_result &= createDescriptorSetLayout(l_VKRPC);
+	l_result &= createDescriptorSet(l_VKRPC);
+	l_result &= updateDescriptorSet(l_VKRPC);
 
 	l_result &= createPipelineLayout(l_VKRPC);
 
@@ -529,6 +568,7 @@ bool VKRenderingSystemNS::createSwapChainCommandBuffers()
 	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.size(); i++)
 	{
 		recordCommand(VKRenderingSystemComponent::get().m_swapChainVKRPC, (unsigned int)i, [&]() {
+			recordDescriptorBinding(VKRenderingSystemComponent::get().m_swapChainVKRPC, (unsigned int)i);
 			auto l_MDC = getVKMeshDataComponent(MeshShapeType::QUAD);
 			recordDrawCall(VKRenderingSystemComponent::get().m_swapChainVKRPC, (unsigned int)i, l_MDC);
 		});
@@ -611,18 +651,19 @@ bool VKRenderingSystemNS::initialize()
 
 	result = result && createPysicalDevice();
 	result = result && createLogicalDevice();
-	result = result && createDescriptorPool();
+
+	result = result && createTextureSamplers();
 	result = result && createCommandPool();
 
 	loadDefaultAssets();
 
-	result = result && createSwapChain();
-	result = result && createSwapChainCommandBuffers();
-	result = result && createSyncPrimitives();
-
 	generateGPUBuffers();
 
 	VKOpaquePass::initialize();
+
+	result = result && createSwapChain();
+	result = result && createSwapChainCommandBuffers();
+	result = result && createSyncPrimitives();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been initialized.");
 	return result;
@@ -724,14 +765,14 @@ void VKRenderingSystemNS::loadDefaultAssets()
 bool VKRenderingSystemNS::update()
 {
 	updateUBO(VKRenderingSystemComponent::get().m_cameraUBOMemory, RenderingFrontendSystemComponent::get().m_cameraGPUData);
-	VKOpaquePass::recordCommands();
+	VKOpaquePass::update();
 
 	return true;
 }
 
 bool VKRenderingSystemNS::render()
 {
-	VKOpaquePass::summitCommands();
+	VKOpaquePass::render();
 
 	waitForFence(VKRenderingSystemComponent::get().m_swapChainVKRPC);
 
@@ -747,11 +788,12 @@ bool VKRenderingSystemNS::render()
 
 	// set swap chain image available wait semaphore
 	VkSemaphore l_availableSemaphores[] = {
+		VKOpaquePass::getVKRPC()->m_renderFinishedSemaphores[0],
 		VKRenderingSystemComponent::get().m_imageAvailableSemaphores[VKRenderingSystemComponent::get().m_swapChainVKRPC->m_currentFrame]
 	};
 
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	VKRenderingSystemComponent::get().m_swapChainVKRPC->submitInfo.waitSemaphoreCount = 1;
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	VKRenderingSystemComponent::get().m_swapChainVKRPC->submitInfo.waitSemaphoreCount = 2;
 	VKRenderingSystemComponent::get().m_swapChainVKRPC->submitInfo.pWaitSemaphores = l_availableSemaphores;
 	VKRenderingSystemComponent::get().m_swapChainVKRPC->submitInfo.pWaitDstStageMask = waitStages;
 
@@ -783,16 +825,53 @@ bool VKRenderingSystemNS::terminate()
 {
 	vkDeviceWaitIdle(VKRenderingSystemComponent::get().m_device);
 
+	VKOpaquePass::terminate();
+
+	destroyVKShaderProgramComponent(VKRenderingSystemComponent::get().m_swapChainVKSPC);
+
 	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainVKRPC->m_maxFramesInFlight; i++)
 	{
 		vkDestroySemaphore(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_imageAvailableSemaphores[i], nullptr);
+		vkDestroySemaphore(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_renderFinishedSemaphores[i], nullptr);
+		vkDestroyFence(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_inFlightFences[i], nullptr);
 	}
 
-	vkDestroyCommandPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_commandPool, nullptr);
+	vkFreeCommandBuffers(VKRenderingSystemComponent::get().m_device,
+		VKRenderingSystemComponent::get().m_commandPool,
+		static_cast<uint32_t>(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.size()),
+		VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.data());
 
-	destroyVKRenderPassComponent(VKRenderingSystemComponent::get().m_swapChainVKRPC);
+	vkDestroyBuffer(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_cameraUBO, nullptr);
+	vkFreeMemory(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_cameraUBOMemory, nullptr);
+
+	vkDestroySampler(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_deferredRTSampler, nullptr);
+	vkFreeMemory(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_textureImageMemory, nullptr);
+
+	destroyAllGraphicPrimitiveComponents();
+
+	vkFreeMemory(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_indexBufferMemory, nullptr);
+	vkFreeMemory(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_vertexBufferMemory, nullptr);
+
+	vkDestroyPipeline(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_pipeline, nullptr);
+	vkDestroyPipelineLayout(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_pipelineLayout, nullptr);
+	vkDestroyDescriptorSetLayout(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->descriptorSetLayout, nullptr);
+	vkDestroyDescriptorPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->descriptorPool, nullptr);
+
+	for (auto framebuffer : VKRenderingSystemComponent::get().m_swapChainVKRPC->m_framebuffers)
+	{
+		vkDestroyFramebuffer(VKRenderingSystemComponent::get().m_device, framebuffer, nullptr);
+	}
+
+	vkDestroyRenderPass(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_renderPass, nullptr);
+
+	for (auto VKTDC : VKRenderingSystemComponent::get().m_swapChainVKRPC->m_VKTDCs)
+	{
+		vkDestroyImageView(VKRenderingSystemComponent::get().m_device, VKTDC->m_imageView, nullptr);
+	}
 
 	vkDestroySwapchainKHR(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChain, nullptr);
+
+	vkDestroyCommandPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_commandPool, nullptr);
 
 	vkDestroyDevice(VKRenderingSystemComponent::get().m_device, nullptr);
 

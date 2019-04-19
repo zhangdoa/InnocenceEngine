@@ -25,10 +25,18 @@ layout(std140, row_major, binding = 0) uniform cameraUBO
 	float WHRatio;
 };
 
+layout(push_constant, std140, row_major) uniform meshPC
+{
+	mat4 uni_m;
+	mat4 uni_m_prev;
+	mat4 uni_normalMat;
+	float uni_UUID;
+};
+
 void main() {
 	// output the fragment position in world space
-	thefrag_WorldSpacePos = inPosition;
-	vec4 thefrag_WorldSpacePos_prev = inPosition;
+	thefrag_WorldSpacePos = uni_m * inPosition;
+	vec4 thefrag_WorldSpacePos_prev = uni_m_prev * inPosition;
 
 	// output the current and previous fragment position in clip space
 	vec4 thefrag_CameraSpacePos_current = uni_r_camera * uni_t_camera * thefrag_WorldSpacePos;
@@ -41,7 +49,7 @@ void main() {
 	thefrag_TexCoord = inTexCoord;
 
 	// output the normal
-	thefrag_Normal = inNormal.xyz;
+	thefrag_Normal = mat3(transpose(inverse(uni_m))) * inNormal.xyz;
 
 	gl_Position = uni_p_camera_jittered * thefrag_CameraSpacePos_current;
 }

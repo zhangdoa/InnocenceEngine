@@ -74,6 +74,12 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->renderPassCInfo.subpassCount = 1;
 	m_VKRPC->renderPassCInfo.pSubpasses = &m_VKRPC->subpassDesc;
 
+	// set descriptor pool size info
+	VkDescriptorPoolSize cameraUBODescPoolSize;
+	cameraUBODescPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	cameraUBODescPoolSize.descriptorCount = 1;
+	m_VKRPC->descriptorPoolSizes.emplace_back(cameraUBODescPoolSize);
+
 	// set descriptor set layout binding info
 	VkDescriptorSetLayoutBinding cameraUBODescriptorLayoutBinding = {};
 	cameraUBODescriptorLayoutBinding.binding = 0;
@@ -97,8 +103,14 @@ bool VKOpaquePass::initialize()
 	cameraUBOWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	cameraUBOWriteDescriptorSet.descriptorCount = 1;
 	cameraUBOWriteDescriptorSet.pBufferInfo = &m_VKRPC->descriptorBufferInfos[0];
-
 	m_VKRPC->writeDescriptorSets.emplace_back(cameraUBOWriteDescriptorSet);
+
+	// set push constant info
+	VkPushConstantRange pushConstantRange = {};
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(MeshGPUData);
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	m_VKRPC->pushConstantRanges.emplace_back(pushConstantRange);
 
 	// set pipeline fix stages info
 	m_VKRPC->inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -160,7 +172,7 @@ bool VKOpaquePass::initialize()
 	return true;
 }
 
-bool VKOpaquePass::recordCommands()
+bool VKOpaquePass::update()
 {
 	waitForFence(m_VKRPC);
 
@@ -173,6 +185,13 @@ bool VKOpaquePass::recordCommands()
 
 			if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
 			{
+				vkCmdPushConstants(
+					m_VKRPC->m_commandBuffers[0],
+					m_VKRPC->m_pipelineLayout,
+					VK_SHADER_STAGE_VERTEX_BIT,
+					0,
+					sizeof(MeshGPUData),
+					&l_geometryPassGPUData.meshGPUData);
 				recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_geometryPassGPUData.MDC));
 			}
 		};
@@ -181,9 +200,17 @@ bool VKOpaquePass::recordCommands()
 	return true;
 }
 
-bool VKOpaquePass::summitCommands()
+bool VKOpaquePass::render()
 {
 	summitCommand(m_VKRPC, 0);
+
+	return true;
+}
+
+bool VKOpaquePass::terminate()
+{
+	destroyVKShaderProgramComponent(m_VKSPC);
+	destroyVKRenderPassComponent(m_VKRPC);
 
 	return true;
 }

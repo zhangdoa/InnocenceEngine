@@ -5,8 +5,9 @@
 INNO_PRIVATE_SCOPE VKOpaquePass
 {
 	bool initialize();
-	bool recordCommands();
-	bool summitCommands();
+	bool update();
+	bool render();
+	bool terminate();
 
 	VKRenderPassComponent* getVKRPC();
 }

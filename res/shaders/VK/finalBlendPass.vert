@@ -7,9 +7,9 @@ layout(location = 2) in vec2 inPad1;
 layout(location = 3) in vec4 inNormal;
 layout(location = 4) in vec4 inPad2;
 
-layout(location = 0) out vec3 fragColor;
+layout(location = 0) out vec2 outTexCoord;
 
 void main() {
 	gl_Position = inPosition;
-	fragColor = vec3(0.5f, 0.3f, 0.7f);
+	outTexCoord = inTexCoord;
 }

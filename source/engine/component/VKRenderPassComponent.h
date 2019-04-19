@@ -25,11 +25,15 @@ public:
 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_pipeline;
 
+	VkDescriptorPool descriptorPool;
+	std::vector<VkDescriptorPoolSize> descriptorPoolSizes;
 	std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSet descriptorSet;
 	std::vector<VkDescriptorBufferInfo> descriptorBufferInfos;
+	std::vector<VkDescriptorImageInfo> descriptorImageInfos;
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets;
+	std::vector<VkPushConstantRange> pushConstantRanges;
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCInfo = {};
 	VkPipelineViewportStateCreateInfo viewportStateCInfo = {};
