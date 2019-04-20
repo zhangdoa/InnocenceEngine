@@ -231,6 +231,7 @@ bool GameInstanceNS::setup()
 			m_opaqueSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_opaqueSphereEntitys[i]);
 			m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 			m_opaqueSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
+			m_opaqueSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
 			m_opaqueSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 			m_opaqueSphereVisibleComponents[i]->m_simulatePhysics = true;
 		}
@@ -271,6 +272,7 @@ bool GameInstanceNS::setup()
 			m_transparentSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_transparentSphereEntitys[i]);
 			m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_TRANSPARENT;
 			m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
+			m_transparentSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
 			m_transparentSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 			m_transparentSphereVisibleComponents[i]->m_simulatePhysics = true;
 		}

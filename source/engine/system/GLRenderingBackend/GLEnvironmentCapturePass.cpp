@@ -122,16 +122,24 @@ bool GLEnvironmentCapturePass::update()
 
 	for (unsigned int i = 0; i < 6; ++i)
 	{
-		auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
-
 		// uni_v
 		updateUniform(1, l_v[i]);
 		attachCubemapColorRT(l_GLTDC, m_GLRPC, 0, i, 0);
 
-		while (l_queueCopy.size() > 0)
-		{
-			auto l_geometryPassGPUData = l_queueCopy.front();
+		auto l_copy = RenderingFrontendSystemComponent::get().m_GIPassGPUDataQueue.getRawData();
 
+		while (l_copy.size() > 0)
+		{
+			GeometryPassGPUData l_geometryPassGPUData = l_copy.front();
+
+			if (l_geometryPassGPUData.MDC->m_meshShapeType != MeshShapeType::CUSTOM)
+			{
+				glFrontFace(GL_CW);
+			}
+			else
+			{
+				glFrontFace(GL_CCW);
+			}
 			if (l_geometryPassGPUData.materialGPUData.useAlbedoTexture)
 			{
 				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.albedoTDC), 1);
@@ -154,9 +162,11 @@ bool GLEnvironmentCapturePass::update()
 
 			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_geometryPassGPUData.MDC));
 
-			l_queueCopy.pop();
+			l_copy.pop();
 		}
 	}
+
+	RenderingFrontendSystemComponent::get().m_GIPassGPUDataQueue.clear();
 
 	return true;
 }

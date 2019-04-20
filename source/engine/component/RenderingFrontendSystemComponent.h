@@ -36,6 +36,8 @@ public:
 
 	ThreadSafeQueue<DebuggerPassGPUData> m_debuggerPassGPUDataQueue;
 
+	ThreadSafeQueue<GeometryPassGPUData> m_GIPassGPUDataQueue;
+
 private:
 	RenderingFrontendSystemComponent() {};
 };

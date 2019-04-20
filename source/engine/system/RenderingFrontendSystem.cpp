@@ -52,6 +52,8 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 	bool updateMeshData();
 	bool updateBillboardPassData();
 	bool updateDebuggerPassData();
+
+	bool gatherStaticMeshData();
 }
 
 float InnoRenderingFrontendSystemNS::radicalInverse(unsigned int n, unsigned int base)
@@ -123,7 +125,10 @@ bool InnoRenderingFrontendSystemNS::setup(IRenderingBackendSystem* renderingBack
 		}
 	};
 
-	f_bakeGI = []() {	m_renderingBackendSystem->bakeGI();	};
+	f_bakeGI = []() {
+		gatherStaticMeshData();
+		m_renderingBackendSystem->bakeGI();
+	};
 	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_B, ButtonStatus::PRESSED }, &f_bakeGI);
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
@@ -369,6 +374,53 @@ bool InnoRenderingFrontendSystemNS::updateBillboardPassData()
 
 bool InnoRenderingFrontendSystemNS::updateDebuggerPassData()
 {
+	return true;
+}
+
+bool InnoRenderingFrontendSystemNS::gatherStaticMeshData()
+{
+	for (auto visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
+	{
+		if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE
+			&& visibleComponent->m_objectStatus == ObjectStatus::ALIVE
+			&& visibleComponent->m_meshUsageType == MeshUsageType::STATIC
+			)
+		{
+			auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
+			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+			if (visibleComponent->m_PDC)
+			{
+				for (auto& l_modelPair : visibleComponent->m_modelMap)
+				{
+					GeometryPassGPUData l_geometryPassGPUData;
+
+					l_geometryPassGPUData.MDC = l_modelPair.first;
+
+					l_geometryPassGPUData.meshGPUData.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+					l_geometryPassGPUData.meshGPUData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+					l_geometryPassGPUData.meshGPUData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+					l_geometryPassGPUData.meshGPUData.UUID = (float)visibleComponent->m_UUID;
+
+					l_geometryPassGPUData.normalTDC = l_modelPair.second->m_texturePack.m_normalTDC.second;
+					l_geometryPassGPUData.albedoTDC = l_modelPair.second->m_texturePack.m_albedoTDC.second;
+					l_geometryPassGPUData.metallicTDC = l_modelPair.second->m_texturePack.m_metallicTDC.second;
+					l_geometryPassGPUData.roughnessTDC = l_modelPair.second->m_texturePack.m_roughnessTDC.second;
+					l_geometryPassGPUData.AOTDC = l_modelPair.second->m_texturePack.m_aoTDC.second;
+
+					l_geometryPassGPUData.materialGPUData.useNormalTexture = !(l_geometryPassGPUData.normalTDC == nullptr);
+					l_geometryPassGPUData.materialGPUData.useAlbedoTexture = !(l_geometryPassGPUData.albedoTDC == nullptr);
+					l_geometryPassGPUData.materialGPUData.useMetallicTexture = !(l_geometryPassGPUData.metallicTDC == nullptr);
+					l_geometryPassGPUData.materialGPUData.useRoughnessTexture = !(l_geometryPassGPUData.roughnessTDC == nullptr);
+					l_geometryPassGPUData.materialGPUData.useAOTexture = !(l_geometryPassGPUData.AOTDC == nullptr);
+
+					l_geometryPassGPUData.materialGPUData.customMaterial = l_modelPair.second->m_meshCustomMaterial;
+
+					RenderingFrontendSystemComponent::get().m_GIPassGPUDataQueue.push(l_geometryPassGPUData);
+				}
+			}
+		}
+	}
+
 	return true;
 }
 
