@@ -39,6 +39,8 @@ xcopy /y Qt-Frameless-Window-DarkStyle\Darkstyle.cpp ..\..\editor\InnocenceEdito
 mkdir ..\include\GL
 powershell -Command "Invoke-WebRequest https://www.khronos.org/registry/OpenGL/api/GL/wglext.h -OutFile ..\include\GL\wglext.h"
 powershell -Command "Invoke-WebRequest https://www.khronos.org/registry/OpenGL/api/GL/glext.h -OutFile ..\include\GL\glext.h"
+mkdir ..\include\DX12
+powershell -Command "Invoke-WebRequest https://raw.githubusercontent.com/Microsoft/DirectX-Graphics-Samples/master/Libraries/D3DX12/d3dx12.h -OutFile ..\include\DX12\d3dx12.h"
 
 cd ../
 

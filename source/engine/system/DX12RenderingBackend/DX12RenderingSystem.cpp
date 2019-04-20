@@ -42,14 +42,14 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 		return l_adapter;
 	}
 
-	bool createPhysicalDevices();
 	bool createDebugCallback();
+	bool createPhysicalDevices();
+	bool createCommandAllocator();
+
 	bool createSwapChain();
-	bool createBackBuffer();
-	bool createRenderPass();
-	bool createCommandList();
+	bool createSwapChainDXRPC();
+	bool createSwapChainCommandLists();
 	bool createSyncPrimitives();
-	bool createRasterizer();
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_entityID;
@@ -195,6 +195,24 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	return true;
 }
 
+bool DX12RenderingSystemNS::createCommandAllocator()
+{
+	HRESULT result;
+
+	// Create a command allocator.
+	result = g_DXRenderingSystemComponent->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandAllocator));
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command allocator!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Command allocator has been created.");
+
+	return true;
+}
+
 bool DX12RenderingSystemNS::createSwapChain()
 {
 	HRESULT result;
@@ -258,68 +276,10 @@ bool DX12RenderingSystemNS::createSwapChain()
 	return true;
 }
 
-bool DX12RenderingSystemNS::createBackBuffer()
+bool DX12RenderingSystemNS::createSwapChainDXRPC()
 {
-	HRESULT result;
+	auto l_imageCount = 2;
 
-	unsigned int renderTargetViewDescriptorSize;
-
-	// Initialize the render target view heap description for the two back buffers.
-	ZeroMemory(&g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc, sizeof(g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc));
-
-	g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc.NumDescriptors = 2;
-	g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	// Create the render target view heap for the back buffers.
-	result = g_DXRenderingSystemComponent->m_device->CreateDescriptorHeap(&g_DXRenderingSystemComponent->m_renderTargetViewHeapDesc, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_renderTargetViewHeap));
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create render target view desc heap!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Render target view desc heap has been created.");
-
-	// Get a handle to the starting memory location in the render target view heap to identify where the render target views will be located for the two back buffers.
-	g_DXRenderingSystemComponent->m_renderTargetViewHandle = g_DXRenderingSystemComponent->m_renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart();
-
-	// Get the size of the memory location for the render target view descriptors.
-	renderTargetViewDescriptorSize = g_DXRenderingSystemComponent->m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	// Get a pointer to the first back buffer from the swap chain.
-	result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(0, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_backBufferRenderTarget[0]));
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't get pointer of first back buffer!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	// Create a render target view for the first back buffer.
-	g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(g_DXRenderingSystemComponent->m_backBufferRenderTarget[0], NULL, g_DXRenderingSystemComponent->m_renderTargetViewHandle);
-
-	// Increment the view handle to the next descriptor location in the render target view heap.
-	g_DXRenderingSystemComponent->m_renderTargetViewHandle.ptr += renderTargetViewDescriptorSize;
-
-	// Get a pointer to the second back buffer from the swap chain.
-	result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(1, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_backBufferRenderTarget[1]));
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't get pointer of second back buffer!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	// Create a render target view for the second back buffer.
-	g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(g_DXRenderingSystemComponent->m_backBufferRenderTarget[1], NULL, g_DXRenderingSystemComponent->m_renderTargetViewHandle);
-
-	return true;
-}
-
-bool DX12RenderingSystemNS::createRenderPass()
-{
 	auto l_DXSPC = addDX12ShaderProgramComponent(m_entityID);
 
 	ShaderFilePaths m_shaderFilePaths = { "DX12//finalBlendPassVertex.hlsl" , "", "DX12//finalBlendPassPixel.hlsl" };
@@ -327,6 +287,38 @@ bool DX12RenderingSystemNS::createRenderPass()
 	initializeDX12ShaderProgramComponent(l_DXSPC, m_shaderFilePaths);
 
 	auto l_DXRPC = addDX12RenderPassComponent(m_entityID);
+
+	l_DXRPC->m_renderPassDesc = DX12RenderingSystemComponent::get().m_deferredRenderPassDesc;
+	l_DXRPC->m_renderPassDesc.RTNumber = l_imageCount;
+	l_DXRPC->m_renderPassDesc.useMultipleFramebuffers = true;
+
+	l_DXRPC->m_RTVHeapDesc.NumDescriptors = l_imageCount;
+	l_DXRPC->m_RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	l_DXRPC->m_RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	// initialize manually
+	bool l_result = true;
+
+	l_result &= reserveRenderTargets(l_DXRPC);
+
+	l_result &= createDescriptorHeap(l_DXRPC);
+
+	auto l_RTVDescSize = g_DXRenderingSystemComponent->m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	// use device created swap chain RTV
+	for (size_t i = 0; i < l_imageCount; i++)
+	{
+		auto result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer((unsigned int)i, IID_PPV_ARGS(&l_DXRPC->m_RTVs[i]));
+		if (FAILED(result))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't get pointer of swap chain render target " + std::to_string(i) + "!");
+			m_objectStatus = ObjectStatus::STANDBY;
+			return false;
+		}
+		g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(l_DXRPC->m_RTVs[i], NULL, l_DXRPC->m_RTVDescHandle);
+
+		l_DXRPC->m_RTVDescHandle.ptr += l_RTVDescSize;
+	}
 
 	// Create an empty root signature.
 	l_DXRPC->m_rootSignatureDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
@@ -337,47 +329,42 @@ bool DX12RenderingSystemNS::createRenderPass()
 	l_DXRPC->m_rootSignatureDesc.Desc_1_1.pStaticSamplers = nullptr;
 	l_DXRPC->m_rootSignatureDesc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-	auto l_result = createRootSignature(l_DXRPC);
+	l_DXRPC->m_rasterizerDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	l_DXRPC->m_blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+
+	// Set up the depth stencil view description.
+	l_DXRPC->m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	l_DXRPC->m_depthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	l_DXRPC->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
+
+	// Setup the viewport for rendering.
+	l_DXRPC->m_viewport.Width = (float)l_DXRPC->m_renderPassDesc.RTDesc.width;
+	l_DXRPC->m_viewport.Height = (float)l_DXRPC->m_renderPassDesc.RTDesc.height;
+	l_DXRPC->m_viewport.MinDepth = 0.0f;
+	l_DXRPC->m_viewport.MaxDepth = 1.0f;
+	l_DXRPC->m_viewport.TopLeftX = 0.0f;
+	l_DXRPC->m_viewport.TopLeftY = 0.0f;
+
+	// Describe and create the graphics pipeline state object (PSO).
+	l_DXRPC->m_PSODesc.RasterizerState = l_DXRPC->m_rasterizerDesc;
+	l_DXRPC->m_PSODesc.BlendState = l_DXRPC->m_blendDesc;
+	l_DXRPC->m_PSODesc.DepthStencilState.DepthEnable = false;
+	l_DXRPC->m_PSODesc.DepthStencilState.StencilEnable = false;
+	l_DXRPC->m_PSODesc.SampleMask = UINT_MAX;
+	l_DXRPC->m_PSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	l_DXRPC->m_PSODesc.NumRenderTargets = 1;
+	l_DXRPC->m_PSODesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	l_DXRPC->m_PSODesc.SampleDesc.Count = 1;
+
+	l_result = createRootSignature(l_DXRPC);
 	l_result = createPSO(l_DXRPC, l_DXSPC);
 
 	return true;
 }
 
-bool DX12RenderingSystemNS::createCommandList()
+bool DX12RenderingSystemNS::createSwapChainCommandLists()
 {
 	HRESULT result;
-
-	// Create a command allocator.
-	result = g_DXRenderingSystemComponent->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandAllocator));
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command allocator!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Command allocator has been created.");
-
-	// Create a basic command list.
-	result = g_DXRenderingSystemComponent->m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_DXRenderingSystemComponent->m_commandAllocator, NULL, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandList));
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command list!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Command list has been created.");
-
-	// Initially we need to close the command list during initialization as it is created in a recording state.
-	result = g_DXRenderingSystemComponent->m_commandList->Close();
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't close the command list!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
 	return true;
 }
 
@@ -413,75 +400,32 @@ bool DX12RenderingSystemNS::createSyncPrimitives()
 	return true;
 }
 
-bool DX12RenderingSystemNS::createRasterizer()
-{
-	// Setup the raster description which will determine how and what polygons will be drawn.
-	g_DXRenderingSystemComponent->m_rasterDescForward.AntialiasedLineEnable = false;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
-	g_DXRenderingSystemComponent->m_rasterDescForward.CullMode = D3D12_CULL_MODE_NONE;
-	g_DXRenderingSystemComponent->m_rasterDescForward.DepthBias = 0;
-	g_DXRenderingSystemComponent->m_rasterDescForward.DepthBiasClamp = 0.0f;
-	g_DXRenderingSystemComponent->m_rasterDescForward.DepthClipEnable = true;
-	g_DXRenderingSystemComponent->m_rasterDescForward.FillMode = D3D12_FILL_MODE_SOLID;
-	g_DXRenderingSystemComponent->m_rasterDescForward.FrontCounterClockwise = true;
-	g_DXRenderingSystemComponent->m_rasterDescForward.MultisampleEnable = false;
-	g_DXRenderingSystemComponent->m_rasterDescForward.SlopeScaledDepthBias = 0.0f;
-
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.AntialiasedLineEnable = false;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.CullMode = D3D12_CULL_MODE_NONE;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthBias = 0;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthBiasClamp = 0.0f;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthClipEnable = true;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.FillMode = D3D12_FILL_MODE_SOLID;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.FrontCounterClockwise = false;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.MultisampleEnable = false;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.SlopeScaledDepthBias = 0.0f;
-
-	// Setup the viewport for rendering.
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
-
-	g_DXRenderingSystemComponent->m_viewport.Width =
-		(float)l_screenResolution.x;
-	g_DXRenderingSystemComponent->m_viewport.Height =
-		(float)l_screenResolution.y;
-	g_DXRenderingSystemComponent->m_viewport.MinDepth = 0.0f;
-	g_DXRenderingSystemComponent->m_viewport.MaxDepth = 1.0f;
-	g_DXRenderingSystemComponent->m_viewport.TopLeftX = 0.0f;
-	g_DXRenderingSystemComponent->m_viewport.TopLeftY = 0.0f;
-
-	return true;
-}
-
 bool DX12RenderingSystemNS::setup()
 {
 	m_entityID = InnoMath::createEntityID();
 
 	g_DXRenderingSystemComponent = &DX12RenderingSystemComponent::get();
 
+	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+
+	// general render pass desc
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTNumber = 1;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.usageType = TextureUsageType::RENDER_TARGET;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.width = l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT;
+
 	bool result = true;
 	result = result && initializeComponentPool();
 
 	result = result && createDebugCallback();
 	result = result && createPhysicalDevices();
-
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
-
-	// Setup the description of the deferred pass.
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.width = l_screenResolution.x;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.height = l_screenResolution.y;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
-
-	g_DXRenderingSystemComponent->deferredPassRTVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	g_DXRenderingSystemComponent->deferredPassRTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	g_DXRenderingSystemComponent->deferredPassRTVDesc.Texture2D.MipSlice = 0;
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem setup finished.");
@@ -496,13 +440,15 @@ bool DX12RenderingSystemNS::initialize()
 
 	bool result = true;
 
-	result = result && createSwapChain();
-	result = result && createBackBuffer();
-	result = result && createRenderPass();
+	result = result && createCommandAllocator();
 
-	result = result && createCommandList();
+	result = result && createSwapChain();
+	result = result && createSwapChainDXRPC();
+	result = result && createSwapChainCommandLists();
+
 	result = result && createSyncPrimitives();
-	result = result && createRasterizer();
+
+	loadDefaultAssets();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem has been initialized.");
 
@@ -540,37 +486,11 @@ bool DX12RenderingSystemNS::terminate()
 		g_DXRenderingSystemComponent->m_fence = 0;
 	}
 
-	// Release the command list.
-	if (g_DXRenderingSystemComponent->m_commandList)
-	{
-		g_DXRenderingSystemComponent->m_commandList->Release();
-		g_DXRenderingSystemComponent->m_commandList = 0;
-	}
-
 	// Release the command allocator.
 	if (g_DXRenderingSystemComponent->m_commandAllocator)
 	{
 		g_DXRenderingSystemComponent->m_commandAllocator->Release();
 		g_DXRenderingSystemComponent->m_commandAllocator = 0;
-	}
-
-	// Release the back buffer render target views.
-	if (g_DXRenderingSystemComponent->m_backBufferRenderTarget[0])
-	{
-		g_DXRenderingSystemComponent->m_backBufferRenderTarget[0]->Release();
-		g_DXRenderingSystemComponent->m_backBufferRenderTarget[0] = 0;
-	}
-	if (g_DXRenderingSystemComponent->m_backBufferRenderTarget[1])
-	{
-		g_DXRenderingSystemComponent->m_backBufferRenderTarget[1]->Release();
-		g_DXRenderingSystemComponent->m_backBufferRenderTarget[1] = 0;
-	}
-
-	// Release the render target view heap.
-	if (g_DXRenderingSystemComponent->m_renderTargetViewHeap)
-	{
-		g_DXRenderingSystemComponent->m_renderTargetViewHeap->Release();
-		g_DXRenderingSystemComponent->m_renderTargetViewHeap = 0;
 	}
 
 	if (g_DXRenderingSystemComponent->m_swapChain)

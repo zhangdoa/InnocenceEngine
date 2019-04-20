@@ -1,5 +1,7 @@
 #pragma once
 #include "../common/InnoType.h"
+#include "../component/DX12RenderPassComponent.h"
+#include "../component/DX12ShaderProgramComponent.h"
 #include "../component/DX12MeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
 #include "../component/DX12TextureDataComponent.h"
@@ -109,20 +111,17 @@ public:
 
 	ID3D12Device2* m_device;
 
+	ID3D12CommandAllocator* m_commandAllocator;
+
 	D3D12_COMMAND_QUEUE_DESC m_commandQueueDesc;
 	ID3D12CommandQueue* m_commandQueue;
 
 	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc;
 	IDXGISwapChain4* m_swapChain;
 
-	ID3D12DescriptorHeap* m_renderTargetViewHeap;
-	ID3D12Resource* m_backBufferRenderTarget[2];
-	D3D12_DESCRIPTOR_HEAP_DESC m_renderTargetViewHeapDesc;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_renderTargetViewHandle;
+	DX12ShaderProgramComponent* m_swapChainDXSPC;
+	DX12RenderPassComponent* m_swapChainDXRPC;
 	unsigned int m_bufferIndex;
-
-	ID3D12CommandAllocator* m_commandAllocator;
-	ID3D12GraphicsCommandList* m_commandList;
 
 	ID3D12Fence* m_fence;
 	HANDLE m_fenceEvent;
@@ -138,37 +137,7 @@ public:
 
 	D3D12_VIEWPORT m_viewport;
 
-	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
-	D3D12_RENDER_TARGET_VIEW_DESC deferredPassRTVDesc = D3D12_RENDER_TARGET_VIEW_DESC();
-
-	DX12CameraCBufferData m_cameraCBufferData;
-	std::queue<DX12MeshDataPack> m_meshDataQueue;
-	DirectionalLightCBufferData m_directionalLightCBufferData;
-	const unsigned int m_maxPointLights = 64;
-	std::vector<PointLightCBufferData> m_PointLightCBufferDatas;
-
-	const unsigned int m_maxSphereLights = 64;
-	std::vector<SphereLightCBufferData> m_SphereLightCBufferDatas;
-
-	DX12MeshDataComponent* m_UnitLineDXMDC;
-	DX12MeshDataComponent* m_UnitQuadDXMDC;
-	DX12MeshDataComponent* m_UnitCubeDXMDC;
-	DX12MeshDataComponent* m_UnitSphereDXMDC;
-
-	DX12TextureDataComponent* m_iconTemplate_OBJ;
-	DX12TextureDataComponent* m_iconTemplate_PNG;
-	DX12TextureDataComponent* m_iconTemplate_SHADER;
-	DX12TextureDataComponent* m_iconTemplate_UNKNOWN;
-
-	DX12TextureDataComponent* m_iconTemplate_DirectionalLight;
-	DX12TextureDataComponent* m_iconTemplate_PointLight;
-	DX12TextureDataComponent* m_iconTemplate_SphereLight;
-
-	DX12TextureDataComponent* m_basicNormalDXTDC;
-	DX12TextureDataComponent* m_basicAlbedoDXTDC;
-	DX12TextureDataComponent* m_basicMetallicDXTDC;
-	DX12TextureDataComponent* m_basicRoughnessDXTDC;
-	DX12TextureDataComponent* m_basicAODXTDC;
+	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 
 private:
 	DX12RenderingSystemComponent() {};

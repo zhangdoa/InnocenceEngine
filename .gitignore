@@ -11,8 +11,9 @@
 /source/external/include/GLFW
 /source/external/include/vulkan
 /source/external/include/stb
-source/external/include/json
-source/external/include/GL
+/source/external/include/json
+/source/external/include/GL
+/source/external/include/DX12
 /source/external/lib
 /source/external/dll
 

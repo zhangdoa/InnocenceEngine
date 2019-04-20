@@ -16,25 +16,29 @@ public:
 	RenderPassDesc m_renderPassDesc;
 
 	ID3D12DescriptorHeap* m_RTVHeap;
-	D3D12_DESCRIPTOR_HEAP_DESC m_RTVHeapDesc;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_RTVHandle;
+	D3D12_DESCRIPTOR_HEAP_DESC m_RTVHeapDesc = {};
+	D3D12_CPU_DESCRIPTOR_HANDLE m_RTVDescHandle;
 
-	std::vector<D3D12_RENDER_TARGET_VIEW_DESC*> m_RTVDescs;
+	std::vector<D3D12_RENDER_TARGET_VIEW_DESC*> m_RTVDescs = {};
 	std::vector<ID3D12Resource*> m_RTVs;
 
-	D3D12_VERSIONED_ROOT_SIGNATURE_DESC m_rootSignatureDesc;
+	D3D12_VERSIONED_ROOT_SIGNATURE_DESC m_rootSignatureDesc = {};
 	ID3D12RootSignature* m_rootSignature;
 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PSODesc;
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PSODesc = {};
 	ID3D12PipelineState* m_PSO;
 
 	std::vector<DX12TextureDataComponent*> m_DXTDCs;
 
-	D3D12_DEPTH_STENCIL_DESC m_depthStencilBufferDesc = D3D12_DEPTH_STENCIL_DESC();
+	D3D12_DEPTH_STENCIL_DESC m_depthStencilBufferDesc = {};
 	ID3D12Resource* m_depthStencilBuffer = 0;
 
-	D3D12_DEPTH_STENCIL_VIEW_DESC m_depthStencilViewDesc = D3D12_DEPTH_STENCIL_VIEW_DESC();
+	D3D12_DEPTH_STENCIL_VIEW_DESC m_depthStencilViewDesc = {};
 	ID3D12Resource* m_depthStencilView = 0;
 
-	D3D12_VIEWPORT m_viewport = D3D12_VIEWPORT();
+	D3D12_BLEND_DESC m_blendDesc = {};
+
+	D3D12_RASTERIZER_DESC m_rasterizerDesc = {};
+
+	D3D12_VIEWPORT m_viewport = {};
 };

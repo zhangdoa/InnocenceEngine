@@ -35,9 +35,13 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	DX12TextureDataComponent* getDX12TextureDataComponent(WorldEditorIconType iconType);
 
 	DX12RenderPassComponent* addDX12RenderPassComponent(EntityID rhs);
+	bool initializeDX12RenderPassComponent(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
+
+	bool reserveRenderTargets(DX12RenderPassComponent* DXRPC);
+	bool createRenderTargets(DX12RenderPassComponent* DXRPC);
+	bool createDescriptorHeap(DX12RenderPassComponent* DXRPC);
 	bool createRootSignature(DX12RenderPassComponent* DXRPC);
 	bool createPSO(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
-	bool initializeDX12RenderPassComponent(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
 
 	bool initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs);
 	bool initializeDX12TextureDataComponent(DX12TextureDataComponent* rhs);
