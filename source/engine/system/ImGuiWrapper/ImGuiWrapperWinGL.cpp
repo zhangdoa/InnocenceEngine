@@ -1,7 +1,8 @@
 #include "ImGuiWrapperWinGL.h"
 #include "../../component/WinWindowSystemComponent.h"
 
-#include "../GLRenderingBackend/GLEnvironmentRenderPass.h"
+#include "../GLRenderingBackend/GLBRDFLUTPass.h"
+#include "../GLRenderingBackend/GLVXGIPass.h"
 #include "../GLRenderingBackend/GLShadowRenderPass.h"
 
 #include "../GLRenderingBackend/GLOpaquePass.h"
@@ -222,20 +223,20 @@ void ImGuiWrapperWinGL::showRenderResult()
 	ImGui::Begin("BRDF lookup table", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	{
 		ImGui::BeginChild("IBL LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPass::getBRDFSplitSumLUT()->m_TO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLBRDFLUTPass::getBRDFSplitSumLUT()->m_TO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 
 		ImGui::SameLine();
 
 		ImGui::BeginChild("Multi-Scattering LUT", l_BRDFLUT, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPass::getBRDFMSAverageLUT()->m_TO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLBRDFLUTPass::getBRDFMSAverageLUT()->m_TO), l_BRDFLUT, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::EndChild();
 	}
 	ImGui::End();
 
 	ImGui::Begin("Voxelization Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Text("Voxelization Pass");
-	ImGui::Image(ImTextureID((GLuint64)GLEnvironmentRenderPass::getVoxelVisualizationPassGLTDC()->m_TO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+	ImGui::Image(ImTextureID((GLuint64)GLVXGIPass::getGLRPC()->m_GLTDCs[0]->m_TO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 	ImGui::End();
 }
 

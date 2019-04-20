@@ -32,9 +32,9 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 	int currentHaltonStep = 0;
 
 	std::function<void(RenderPassType)> f_reloadShader;
-	std::function<void()> f_captureEnvironment;
 	std::function<void()> f_sceneLoadingStartCallback;
 	std::function<void()> f_sceneLoadingFinishCallback;
+	std::function<void()> f_bakeGI;
 
 	RenderingConfig m_renderingConfig = RenderingConfig();
 
@@ -122,6 +122,9 @@ bool InnoRenderingFrontendSystemNS::setup(IRenderingBackendSystem* renderingBack
 			RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.emplace_back();
 		}
 	};
+
+	f_bakeGI = []() {	m_renderingBackendSystem->bakeGI();	};
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_B, ButtonStatus::PRESSED }, &f_bakeGI);
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);

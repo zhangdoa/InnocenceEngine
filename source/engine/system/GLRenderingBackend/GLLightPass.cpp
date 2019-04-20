@@ -1,7 +1,9 @@
 #include "GLLightPass.h"
 #include "GLOpaquePass.h"
 #include "GLSSAOBlurPass.h"
-#include "GLEnvironmentRenderPass.h"
+#include "GLBRDFLUTPass.h"
+#include "GLEnvironmentConvolutionPass.h"
+#include "GLEnvironmentPreFilterPass.h"
 #include "GLShadowRenderPass.h"
 
 #include "../../component/GLRenderingSystemComponent.h"
@@ -27,19 +29,6 @@ INNO_PRIVATE_SCOPE GLLightPass
 	GLShaderProgramComponent* m_GLSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//lightPass.vert" , "", "GL//lightPass.frag" };
-
-	std::vector<std::string> m_textureUniformNames =
-	{
-		"uni_opaquePassRT0",
-		"uni_opaquePassRT1",
-		"uni_opaquePassRT2",
-		"uni_SSAOBlurPassRT0",
-		"uni_directionalLightShadowMap",
-		"uni_brdfLUT",
-		"uni_brdfMSLUT",
-		"uni_irradianceMap",
-		"uni_preFiltedMap"
-	};
 
 	std::vector<GLuint> m_uni_shadowSplitAreas;
 	std::vector<GLuint> m_uni_dirLightProjs;
@@ -82,8 +71,6 @@ void GLLightPass::initializeLightPassShaders()
 
 void GLLightPass::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
 {
-	updateTextureUniformLocations(rhs->m_program, m_textureUniformNames);
-
 	m_uni_shadowSplitAreas.reserve(4);
 	m_uni_dirLightProjs.reserve(4);
 	m_uni_dirLightViews.reserve(4);
@@ -185,19 +172,19 @@ void GLLightPass::update()
 		4);
 	// BRDF look-up table 1
 	activateTexture(
-		GLEnvironmentRenderPass::getBRDFSplitSumLUT(),
+		GLBRDFLUTPass::getBRDFSplitSumLUT(),
 		5);
 	// BRDF look-up table 2
 	activateTexture(
-		GLEnvironmentRenderPass::getBRDFMSAverageLUT(),
+		GLBRDFLUTPass::getBRDFMSAverageLUT(),
 		6);
 	// Irradiance env cubemap
 	activateTexture(
-		GLEnvironmentRenderPass::getConvPassGLTDC(),
+		GLEnvironmentConvolutionPass::getGLRPC()->m_GLTDCs[0],
 		7);
 	// pre-filtered specular env cubemap
 	activateTexture(
-		GLEnvironmentRenderPass::getPreFilterPassGLTDC(),
+		GLEnvironmentPreFilterPass::getGLRPC()->m_GLTDCs[0],
 		8);
 
 	updateUniform(

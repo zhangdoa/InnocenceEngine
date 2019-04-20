@@ -30,10 +30,15 @@ const int NR_SPHERE_LIGHTS = 64;
 
 const float MAX_REFLECTION_LOD = 4.0;
 
-uniform sampler2D uni_opaquePassRT0;
-uniform sampler2D uni_opaquePassRT1;
-uniform sampler2D uni_opaquePassRT2;
-uniform sampler2D uni_SSAOBlurPassRT0;
+layout(location = 0, binding = 0) uniform sampler2D uni_opaquePassRT0;
+layout(location = 1, binding = 1) uniform sampler2D uni_opaquePassRT1;
+layout(location = 2, binding = 2) uniform sampler2D uni_opaquePassRT2;
+layout(location = 3, binding = 3) uniform sampler2D uni_SSAOBlurPassRT0;
+layout(location = 4, binding = 4) uniform sampler2D uni_directionalLightShadowMap;
+layout(location = 5, binding = 5) uniform sampler2D uni_brdfLUT;
+layout(location = 6, binding = 6) uniform sampler2D uni_brdfMSLUT;
+layout(location = 7, binding = 7) uniform samplerCube uni_irradianceMap;
+layout(location = 8, binding = 8) uniform samplerCube uni_preFiltedMap;
 
 const int NR_CSM_SPLITS = 4;
 uniform mat4 uni_dirLightProjs[NR_CSM_SPLITS];
@@ -41,14 +46,6 @@ uniform mat4 uni_dirLightViews[NR_CSM_SPLITS];
 uniform vec4 uni_shadowSplitAreas[NR_CSM_SPLITS];
 
 bool uni_drawCSMSplitedArea = false;
-
-uniform sampler2D uni_directionalLightShadowMap;
-
-uniform sampler2D uni_brdfLUT;
-uniform sampler2D uni_brdfMSLUT;
-
-uniform samplerCube uni_irradianceMap;
-uniform samplerCube uni_preFiltedMap;
 
 uniform vec4 uni_viewPos;
 uniform dirLight uni_dirLight;

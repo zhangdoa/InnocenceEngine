@@ -2,7 +2,11 @@
 
 #include "GLRenderingSystemUtilities.h"
 
-#include "GLEnvironmentRenderPass.h"
+#include "GLBRDFLUTPass.h"
+#include "GLEnvironmentCapturePass.h"
+#include "GLEnvironmentConvolutionPass.h"
+#include "GLEnvironmentPreFilterPass.h"
+
 #include "GLShadowRenderPass.h"
 
 #include "GLEarlyZPass.h"
@@ -90,6 +94,10 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
+	std::function<void()> f_sceneLoadingFinishCallback;
+
+	bool m_isBaked = false;
+
 	ThreadSafeUnorderedMap<EntityID, GLMeshDataComponent*> m_meshMap;
 	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
 	ThreadSafeUnorderedMap<EntityID, GLTextureDataComponent*> m_textureMap;
@@ -126,6 +134,12 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 bool GLRenderingSystemNS::setup()
 {
 	initializeComponentPool();
+
+	f_sceneLoadingFinishCallback = [&]() {
+		m_isBaked = false;
+	};
+
+	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
@@ -192,7 +206,11 @@ bool GLRenderingSystemNS::initialize()
 
 	generateGPUBuffers();
 
-	GLEnvironmentRenderPass::initialize();
+	GLBRDFLUTPass::initialize();
+	GLEnvironmentCapturePass::initialize();
+	GLEnvironmentConvolutionPass::initialize();
+	GLEnvironmentPreFilterPass::initialize();
+
 	GLShadowRenderPass::initialize();
 
 	GLEarlyZPass::initialize();
@@ -357,8 +375,13 @@ bool GLRenderingSystemNS::render()
 {
 	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, RenderingFrontendSystemComponent::get().m_cameraGPUData);
 
-	//GLEnvironmentRenderPass::update();
-	//GLEnvironmentRenderPass::draw();
+	if (!m_isBaked)
+	{
+		GLEnvironmentCapturePass::update();
+		GLEnvironmentConvolutionPass::update();
+		GLEnvironmentPreFilterPass::update();
+		m_isBaked = true;
+	}
 
 	GLShadowRenderPass::update();
 
@@ -790,5 +813,6 @@ bool GLRenderingSystem::reloadShader(RenderPassType renderPassType)
 
 bool GLRenderingSystem::bakeGI()
 {
+	GLRenderingSystemNS::m_isBaked = false;
 	return true;
 }
