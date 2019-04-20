@@ -7,6 +7,8 @@
 #include "GLEnvironmentConvolutionPass.h"
 #include "GLEnvironmentPreFilterPass.h"
 
+#include "GLVXGIPass.h"
+
 #include "GLShadowRenderPass.h"
 
 #include "GLEarlyZPass.h"
@@ -97,6 +99,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	std::function<void()> f_sceneLoadingFinishCallback;
 
 	bool m_isBaked = false;
+	bool m_visualizeVXGI = false;
+	std::function<void()> f_toggleVisualizeVXGI;
 
 	ThreadSafeUnorderedMap<EntityID, GLMeshDataComponent*> m_meshMap;
 	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
@@ -138,6 +142,11 @@ bool GLRenderingSystemNS::setup()
 	f_sceneLoadingFinishCallback = [&]() {
 		m_isBaked = false;
 	};
+
+	f_toggleVisualizeVXGI = [&]() {
+		m_visualizeVXGI = !m_visualizeVXGI;
+	};
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_T, ButtonStatus::PRESSED }, &f_toggleVisualizeVXGI);
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
@@ -210,6 +219,7 @@ bool GLRenderingSystemNS::initialize()
 	GLEnvironmentCapturePass::initialize();
 	GLEnvironmentConvolutionPass::initialize();
 	GLEnvironmentPreFilterPass::initialize();
+	GLVXGIPass::initialize();
 
 	GLShadowRenderPass::initialize();
 
@@ -380,6 +390,7 @@ bool GLRenderingSystemNS::render()
 		GLEnvironmentCapturePass::update();
 		GLEnvironmentConvolutionPass::update();
 		GLEnvironmentPreFilterPass::update();
+		GLVXGIPass::update();
 		m_isBaked = true;
 	}
 
@@ -456,6 +467,13 @@ bool GLRenderingSystemNS::render()
 	{
 		cleanRenderBuffers(GLDebuggerPass::getGLRPC());
 	}
+
+	if (m_visualizeVXGI)
+	{
+		GLVXGIPass::draw();
+		l_canvasGLRPC = GLVXGIPass::getGLRPC();
+	}
+
 	GLFinalBlendPass::update(l_canvasGLRPC);
 
 	return true;

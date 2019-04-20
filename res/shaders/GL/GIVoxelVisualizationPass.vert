@@ -4,7 +4,7 @@
 
 out vec4 out_textureValue;
 
-layout(binding = 0, rgba8) uniform readonly image3D uni_voxelTexture;
+layout(binding = 3, rgba8) uniform readonly image3D uni_voxelTexture;
 
 uniform uint uni_volumeDimension;
 

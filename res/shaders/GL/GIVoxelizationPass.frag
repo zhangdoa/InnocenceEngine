@@ -84,8 +84,7 @@ void main()
 
 	// fragment albedo
 	//vec4 albedo = texture(uni_albedo, gs_in.texCoord.xy);
-	vec4 albedo = vec4(0.5f, 0.3f, 0.2f, 1.0f);
-	albedo.a = 1.0f;
+	vec4 albedo = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// bring normal to 0-1 range
 	vec4 normal = vec4(EncodeNormal(normalize(gs_in.normal)), 1.0f);

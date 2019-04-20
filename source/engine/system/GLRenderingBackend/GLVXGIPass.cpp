@@ -126,9 +126,6 @@ void GLVXGIPass::initializeVoxelizationPass()
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelizationPassShaderFilePaths);
 
-	std::vector<std::string> l_textureNames = { "uni_voxelAlbedo", "uni_voxelNormal" };
-	updateTextureUniformLocations(rhs->m_program, l_textureNames);
-
 	m_voxelizationPass_uni_m = getUniformLocation(
 		rhs->m_program,
 		"uni_m");
@@ -180,9 +177,6 @@ void GLVXGIPass::initializeIrradianceInjectionPass()
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_irradianceInjectionPassShaderFilePaths);
 
-	std::vector<std::string> l_textureNames = { "voxelAlbedo", "voxelNormal" };
-	updateTextureUniformLocations(rhs->m_program, l_textureNames);
-
 	m_irradianceInjectionPass_uni_dirLight_direction = getUniformLocation(
 		rhs->m_program,
 		"uni_dirLight.direction");
@@ -219,9 +213,6 @@ void GLVXGIPass::initializeVoxelVisualizationPass()
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelVisualizationPassShaderFilePaths);
-
-	std::vector<std::string> l_textureNames = { "uni_voxelTexture" };
-	updateTextureUniformLocations(rhs->m_program, l_textureNames);
 
 	m_voxelVisualizationPass_uni_p = getUniformLocation(
 		rhs->m_program,
@@ -378,12 +369,13 @@ void GLVXGIPass::updateIrradianceInjectionPass()
 	// reset status
 	glDepthMask(true);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
 }
 
 void GLVXGIPass::updateVoxelVisualizationPass()
 {
+	glDepthMask(true);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
 	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
 
 	auto axisSize = l_sceneAABB.m_extend * 2.0f;
@@ -409,10 +401,12 @@ void GLVXGIPass::updateVoxelVisualizationPass()
 	updateUniform(m_voxelVisualizationPass_uni_voxelSize, l_voxelSize);
 	updateUniform(m_voxelVisualizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin);
 
-	glBindImageTexture(0, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+	glBindImageTexture(3, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
 
 	glBindVertexArray(m_VAO);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glDrawArrays(GL_POINTS, 0, m_voxelCount);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 GLRenderPassComponent * GLVXGIPass::getGLRPC()

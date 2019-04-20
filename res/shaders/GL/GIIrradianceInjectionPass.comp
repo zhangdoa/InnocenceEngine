@@ -7,8 +7,8 @@ layout(binding = 1) uniform sampler3D voxelNormal;
 layout(binding = 2, rgba8) writeonly uniform image3D voxelRadiance;
 
 struct dirLight {
-	vec3 direction;
-	vec3 luminance;
+	vec4 direction;
+	vec4 luminance;
 };
 
 const float PI = 3.14159265f;
@@ -40,9 +40,9 @@ vec3 BRDF(dirLight light, vec3 normal, vec3 albedo)
 	{
 		vec3 weight = normal * normal;
 		// calculate directional normal attenuation
-		float rDotL = dot(vec3(1.0, 0.0, 0.0), light.direction);
-		float uDotL = dot(vec3(0.0, 1.0, 0.0), light.direction);
-		float fDotL = dot(vec3(0.0, 0.0, 1.0), light.direction);
+		float rDotL = dot(vec3(1.0, 0.0, 0.0), light.direction.xyz);
+		float uDotL = dot(vec3(0.0, 1.0, 0.0), light.direction.xyz);
+		float fDotL = dot(vec3(0.0, 0.0, 1.0), light.direction.xyz);
 
 		rDotL = normal.x > 0.0 ? max(rDotL, 0.0) : max(-rDotL, 0.0);
 		uDotL = normal.y > 0.0 ? max(uDotL, 0.0) : max(-uDotL, 0.0);
@@ -52,10 +52,10 @@ vec3 BRDF(dirLight light, vec3 normal, vec3 albedo)
 	}
 	else
 	{
-		nDotL = max(dot(normal, light.direction), 0.0f);
+		nDotL = max(dot(normal, light.direction.xyz), 0.0f);
 	}
 
-	return light.luminance * albedo * nDotL;
+	return light.luminance.xyz * albedo * nDotL;
 }
 
 vec4 CalculateDirectional(dirLight light, vec3 normal, vec3 position, vec3 albedo)
