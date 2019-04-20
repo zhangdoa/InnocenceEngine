@@ -67,7 +67,6 @@ public:
 	VkDeviceMemory m_cameraUBOMemory;
 
 	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
-	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 private:
 	VKRenderingSystemComponent() {};
 };

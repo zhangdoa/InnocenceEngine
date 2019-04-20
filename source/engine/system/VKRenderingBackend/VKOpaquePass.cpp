@@ -33,49 +33,41 @@ bool VKOpaquePass::initialize()
 	m_VKRPC = addVKRenderPassComponent();
 
 	m_VKRPC->m_renderPassDesc = VKRenderingSystemComponent::get().m_deferredRenderPassDesc;
-	m_VKRPC->m_renderPassDesc.RTNumber = 1;
+	m_VKRPC->m_renderPassDesc.RTNumber = 4;
 	m_VKRPC->m_renderPassDesc.useMultipleFramebuffers = false;
 
 	// sub-pass
-	m_VKRPC->attachmentRef.attachment = 0;
-	m_VKRPC->attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	VkAttachmentReference l_attachmentRef = {};
 
-	m_VKRPC->subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	m_VKRPC->subpassDesc.colorAttachmentCount = 1;
-	m_VKRPC->subpassDesc.pColorAttachments = &m_VKRPC->attachmentRef;
+	l_attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	for (size_t i = 0; i < m_VKRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		l_attachmentRef.attachment = (uint32_t)i;
+		m_VKRPC->attachmentRefs.emplace_back(l_attachmentRef);
+	}
 
 	// render pass
-	VkAttachmentDescription attachmentDesc1 = {};
-	VkAttachmentDescription attachmentDesc2;
-	VkAttachmentDescription attachmentDesc3;
-	VkAttachmentDescription attachmentDesc4;
+	VkAttachmentDescription l_attachmentDesc = {};
 
-	attachmentDesc1.format = VK_FORMAT_R16G16B16A16_SFLOAT;
-	attachmentDesc1.samples = VK_SAMPLE_COUNT_1_BIT;
-	attachmentDesc1.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachmentDesc1.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachmentDesc1.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachmentDesc1.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachmentDesc1.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachmentDesc1.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	l_attachmentDesc.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+	l_attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+	l_attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	l_attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	l_attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	l_attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	l_attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	l_attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	attachmentDesc2 = attachmentDesc1;
-	attachmentDesc3 = attachmentDesc1;
-	attachmentDesc4 = attachmentDesc1;
+	for (size_t i = 0; i < m_VKRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		m_VKRPC->attachmentDescs.emplace_back(l_attachmentDesc);
+	}
 
-	m_VKRPC->attachmentDescs.emplace_back(attachmentDesc1);
-	m_VKRPC->attachmentDescs.emplace_back(attachmentDesc2);
-	m_VKRPC->attachmentDescs.emplace_back(attachmentDesc3);
-	m_VKRPC->attachmentDescs.emplace_back(attachmentDesc4);
-
-	m_VKRPC->renderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	m_VKRPC->renderPassCInfo.attachmentCount = 1;
-	m_VKRPC->renderPassCInfo.pAttachments = &m_VKRPC->attachmentDescs[0];
 	m_VKRPC->renderPassCInfo.subpassCount = 1;
-	m_VKRPC->renderPassCInfo.pSubpasses = &m_VKRPC->subpassDesc;
 
 	// set descriptor pool size info
-	VkDescriptorPoolSize cameraUBODescPoolSize;
+	VkDescriptorPoolSize cameraUBODescPoolSize = {};
 	cameraUBODescPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	cameraUBODescPoolSize.descriptorCount = 1;
 	m_VKRPC->descriptorPoolSizes.emplace_back(cameraUBODescPoolSize);
@@ -106,20 +98,19 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->writeDescriptorSets.emplace_back(cameraUBOWriteDescriptorSet);
 
 	// set push constant info
-	VkPushConstantRange pushConstantRange = {};
-	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(MeshGPUData);
-	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	m_VKRPC->pushConstantRanges.emplace_back(pushConstantRange);
+	VkPushConstantRange meshPushConstantRange = {};
+	meshPushConstantRange.offset = 0;
+	meshPushConstantRange.size = sizeof(MeshGPUData);
+	meshPushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	m_VKRPC->pushConstantRanges.emplace_back(meshPushConstantRange);
 
 	// set pipeline fix stages info
-	m_VKRPC->inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	m_VKRPC->inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 	m_VKRPC->inputAssemblyStateCInfo.primitiveRestartEnable = VK_FALSE;
 
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
-	VkExtent2D l_extent;
+	VkExtent2D l_extent = {};
 	l_extent.width = l_screenResolution.x;
 	l_extent.height = l_screenResolution.y;
 
@@ -133,13 +124,9 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->scissor.offset = { 0, 0 };
 	m_VKRPC->scissor.extent = l_extent;
 
-	m_VKRPC->viewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	m_VKRPC->viewportStateCInfo.viewportCount = 1;
-	m_VKRPC->viewportStateCInfo.pViewports = &m_VKRPC->viewport;
 	m_VKRPC->viewportStateCInfo.scissorCount = 1;
-	m_VKRPC->viewportStateCInfo.pScissors = &m_VKRPC->scissor;
 
-	m_VKRPC->rasterizationStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	m_VKRPC->rasterizationStateCInfo.depthClampEnable = VK_FALSE;
 	m_VKRPC->rasterizationStateCInfo.rasterizerDiscardEnable = VK_FALSE;
 	m_VKRPC->rasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_FILL;
@@ -148,25 +135,23 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->rasterizationStateCInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	m_VKRPC->rasterizationStateCInfo.depthBiasEnable = VK_FALSE;
 
-	m_VKRPC->multisampleStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	m_VKRPC->multisampleStateCInfo.sampleShadingEnable = VK_FALSE;
 	m_VKRPC->multisampleStateCInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-	m_VKRPC->colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	m_VKRPC->colorBlendAttachmentState.blendEnable = VK_FALSE;
+	VkPipelineColorBlendAttachmentState l_colorBlendAttachmentState = {};
+	l_colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	l_colorBlendAttachmentState.blendEnable = VK_FALSE;
+	for (size_t i = 0; i < m_VKRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		m_VKRPC->colorBlendAttachmentStates.emplace_back(l_colorBlendAttachmentState);
+	}
 
-	m_VKRPC->colorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	m_VKRPC->colorBlendStateCInfo.logicOpEnable = VK_FALSE;
 	m_VKRPC->colorBlendStateCInfo.logicOp = VK_LOGIC_OP_COPY;
-	m_VKRPC->colorBlendStateCInfo.attachmentCount = 1;
-	m_VKRPC->colorBlendStateCInfo.pAttachments = &m_VKRPC->colorBlendAttachmentState;
 	m_VKRPC->colorBlendStateCInfo.blendConstants[0] = 0.0f;
 	m_VKRPC->colorBlendStateCInfo.blendConstants[1] = 0.0f;
 	m_VKRPC->colorBlendStateCInfo.blendConstants[2] = 0.0f;
 	m_VKRPC->colorBlendStateCInfo.blendConstants[3] = 0.0f;
-
-	m_VKRPC->pipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	m_VKRPC->pipelineLayoutCInfo.setLayoutCount = 1;
 
 	initializeVKRenderPassComponent(m_VKRPC, m_VKSPC);
 	return true;

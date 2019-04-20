@@ -15,7 +15,7 @@ public:
 
 	RenderPassDesc m_renderPassDesc;
 
-	VkAttachmentReference attachmentRef = {};
+	std::vector<VkAttachmentReference> attachmentRefs = {};
 	VkSubpassDescription subpassDesc = {};
 
 	std::vector<VkAttachmentDescription> attachmentDescs;
@@ -39,7 +39,7 @@ public:
 	VkPipelineViewportStateCreateInfo viewportStateCInfo = {};
 	VkPipelineRasterizationStateCreateInfo rasterizationStateCInfo = {};
 	VkPipelineMultisampleStateCreateInfo multisampleStateCInfo = {};
-	VkPipelineColorBlendAttachmentState colorBlendAttachmentState = {};
+	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates = {};
 	VkPipelineColorBlendStateCreateInfo colorBlendStateCInfo = {};
 	VkPipelineLayoutCreateInfo pipelineLayoutCInfo = {};
 	VkGraphicsPipelineCreateInfo pipelineCInfo = {};

@@ -287,8 +287,6 @@ bool VKRenderingSystemNS::initializeVKRenderPassComponent(VKRenderPassComponent*
 
 	result &= reserveRenderTargets(VKRPC);
 
-	auto l_vkTextureDesc = getVKTextureDataDesc(VKRPC->m_renderPassDesc.RTDesc);
-
 	result &= createRenderTargets(VKRPC);
 
 	result &= createRenderPass(VKRPC);
@@ -433,6 +431,27 @@ bool VKRenderingSystemNS::createMultipleFramebuffers(VKRenderPassComponent* VKRP
 
 bool VKRenderingSystemNS::createRenderPass(VKRenderPassComponent* VKRPC)
 {
+	VKRPC->renderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+
+	VKRPC->subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+	if (VKRPC->m_renderPassDesc.useMultipleFramebuffers)
+	{
+		VKRPC->subpassDesc.colorAttachmentCount = 1;
+		VKRPC->renderPassCInfo.attachmentCount = 1;
+	}
+	else
+	{
+		VKRPC->subpassDesc.colorAttachmentCount = VKRPC->m_renderPassDesc.RTNumber;
+		VKRPC->renderPassCInfo.attachmentCount = VKRPC->m_renderPassDesc.RTNumber;
+	}
+
+	VKRPC->subpassDesc.pColorAttachments = &VKRPC->attachmentRefs[0];
+
+	VKRPC->renderPassCInfo.pSubpasses = &VKRPC->subpassDesc;
+
+	VKRPC->renderPassCInfo.pAttachments = &VKRPC->attachmentDescs[0];
+
 	if (vkCreateRenderPass(VKRenderingSystemComponent::get().m_device, &VKRPC->renderPassCInfo, nullptr, &VKRPC->m_renderPass) != VK_SUCCESS)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkRenderPass!");
@@ -516,6 +535,10 @@ bool VKRenderingSystemNS::updateDescriptorSet(VKRenderPassComponent* VKRPC)
 
 bool VKRenderingSystemNS::createPipelineLayout(VKRenderPassComponent* VKRPC)
 {
+	VKRPC->inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+
+	VKRPC->pipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	VKRPC->pipelineLayoutCInfo.setLayoutCount = 1;
 	VKRPC->pipelineLayoutCInfo.pSetLayouts = &VKRPC->descriptorSetLayout;
 
 	if (VKRPC->pushConstantRanges.size() > 0)
@@ -536,6 +559,18 @@ bool VKRenderingSystemNS::createPipelineLayout(VKRenderPassComponent* VKRPC)
 
 bool VKRenderingSystemNS::createGraphicsPipelines(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC)
 {
+	VKRPC->viewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	VKRPC->viewportStateCInfo.pViewports = &VKRPC->viewport;
+	VKRPC->viewportStateCInfo.pScissors = &VKRPC->scissor;
+
+	VKRPC->rasterizationStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+
+	VKRPC->multisampleStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+
+	VKRPC->colorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	VKRPC->colorBlendStateCInfo.attachmentCount = (uint32_t)VKRPC->colorBlendAttachmentStates.size();
+	VKRPC->colorBlendStateCInfo.pAttachments = &VKRPC->colorBlendAttachmentStates[0];
+
 	// attach shader module and create pipeline
 	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStages = { VKSPC->m_vertexShaderStageCInfo, VKSPC->m_fragmentShaderStageCInfo };
 
@@ -1073,7 +1108,7 @@ bool VKRenderingSystemNS::recordCommand(VKRenderPassComponent* VKRPC, unsigned i
 	renderPassInfo.renderArea.extent = VKRPC->scissor.extent;
 
 	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.clearValueCount = VKRPC->m_renderPassDesc.RTNumber;
 	renderPassInfo.pClearValues = &clearColor;
 
 	vkCmdBeginRenderPass(VKRPC->m_commandBuffers[commandBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
