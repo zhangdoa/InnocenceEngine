@@ -62,9 +62,16 @@ public:
 	VkDeviceMemory m_indexBufferMemory;
 	VkDeviceMemory m_textureImageMemory;
 
-	VkSampler m_deferredRTSampler;
 	VkBuffer m_cameraUBO;
 	VkDeviceMemory m_cameraUBOMemory;
+
+	VkDescriptorPoolSize m_UBODescriptorPoolSize = {};
+	VkDescriptorPool  m_UBODescriptorPool;
+
+	VkSampler m_deferredRTSampler;
+
+	VkDescriptorPoolSize m_RTSamplerDescriptorPoolSize = {};
+	VkDescriptorPool  m_RTSamplerDescriptorPool;
 
 	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 private:

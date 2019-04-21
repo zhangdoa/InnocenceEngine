@@ -61,6 +61,10 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 	bool isDeviceSuitable(VkPhysicalDevice device);
 
+	bool createDescriptorPool(VkDescriptorPoolSize& poolSize, unsigned int maxSets, VkDescriptorPool& poolHandle);
+	bool createDescriptorSet(VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle);
+	bool updateDescriptorSet(VKRenderPassComponent* VKRPC);
+
 	VKRenderPassComponent* addVKRenderPassComponent();
 	bool initializeVKRenderPassComponent(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
 
@@ -69,10 +73,8 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createSingleFramebuffer(VKRenderPassComponent* VKRPC);
 	bool createMultipleFramebuffers(VKRenderPassComponent* VKRPC);
 	bool createRenderPass(VKRenderPassComponent* VKRPC);
-	bool createDescriptorPool(VKRenderPassComponent* VKRPC);
 	bool createDescriptorSetLayout(VKRenderPassComponent* VKRPC);
-	bool createDescriptorSet(VKRenderPassComponent* VKRPC);
-	bool updateDescriptorSet(VKRenderPassComponent* VKRPC);
+
 	bool createPipelineLayout(VKRenderPassComponent* VKRPC);
 	bool createGraphicsPipelines(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
 	bool createCommandBuffers(VKRenderPassComponent* VKRPC);

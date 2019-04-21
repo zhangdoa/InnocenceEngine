@@ -444,12 +444,6 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_VKRPC->renderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	l_VKRPC->renderPassCInfo.subpassCount = 1;
 
-	// set descriptor pool size info
-	VkDescriptorPoolSize basePassRTDescPoolSize = {};
-	basePassRTDescPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	basePassRTDescPoolSize.descriptorCount = 1;
-	l_VKRPC->descriptorPoolSizes.emplace_back(basePassRTDescPoolSize);
-
 	// set descriptor set layout binding info
 	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
 	samplerLayoutBinding.binding = 1;
@@ -460,11 +454,10 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_VKRPC->descriptorSetLayoutBindings.emplace_back(samplerLayoutBinding);
 
 	// set descriptor image info
-	VkDescriptorImageInfo imageInfo = {};
+	VkDescriptorImageInfo imageInfo;
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	imageInfo.imageView = VKOpaquePass::getVKRPC()->m_VKTDCs[0]->m_imageView;
 	imageInfo.sampler = VKRenderingSystemComponent::get().m_deferredRTSampler;
-	l_VKRPC->descriptorImageInfos.emplace_back(imageInfo);
 
 	VkWriteDescriptorSet basePassRTWriteDescriptorSet = {};
 	basePassRTWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -472,7 +465,7 @@ bool VKRenderingSystemNS::createSwapChain()
 	basePassRTWriteDescriptorSet.dstArrayElement = 0;
 	basePassRTWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	basePassRTWriteDescriptorSet.descriptorCount = 1;
-	basePassRTWriteDescriptorSet.pImageInfo = &l_VKRPC->descriptorImageInfos[0];
+	basePassRTWriteDescriptorSet.pImageInfo = &imageInfo;
 	l_VKRPC->writeDescriptorSets.emplace_back(basePassRTWriteDescriptorSet);
 
 	// set pipeline fix stages info
@@ -527,14 +520,15 @@ bool VKRenderingSystemNS::createSwapChain()
 		l_result &= createSingleFramebuffer(l_VKRPC);
 	}
 
-	l_result &= createDescriptorPool(l_VKRPC);
 	l_result &= createDescriptorSetLayout(l_VKRPC);
-	l_result &= createDescriptorSet(l_VKRPC);
-	l_result &= updateDescriptorSet(l_VKRPC);
 
 	l_result &= createPipelineLayout(l_VKRPC);
 
 	l_result &= createGraphicsPipelines(l_VKRPC, l_VKSPC);
+
+	l_result &= createDescriptorSet(VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool, l_VKRPC->descriptorSetLayout, l_VKRPC->descriptorSet);
+
+	l_result &= updateDescriptorSet(l_VKRPC);
 
 	VKRenderingSystemComponent::get().m_swapChainVKSPC = l_VKSPC;
 
@@ -589,6 +583,18 @@ bool VKRenderingSystemNS::createSyncPrimitives()
 
 bool VKRenderingSystemNS::generateGPUBuffers()
 {
+	// set UBO descriptor pool size info
+	VKRenderingSystemComponent::get().m_UBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	VKRenderingSystemComponent::get().m_UBODescriptorPoolSize.descriptorCount = 1;
+
+	createDescriptorPool(VKRenderingSystemComponent::get().m_UBODescriptorPoolSize, 1, VKRenderingSystemComponent::get().m_UBODescriptorPool);
+
+	// set RT sampler descriptor pool size info
+	VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize.descriptorCount = 1;
+
+	createDescriptorPool(VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize, 1, VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool);
+
 	generateUBO(VKRenderingSystemComponent::get().m_cameraUBO, sizeof(CameraGPUData), VKRenderingSystemComponent::get().m_cameraUBOMemory);
 
 	return true;
@@ -819,6 +825,9 @@ bool VKRenderingSystemNS::terminate()
 		vkDestroyFence(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_inFlightFences[i], nullptr);
 	}
 
+	vkDestroyDescriptorPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_UBODescriptorPool, nullptr);
+	vkDestroyDescriptorPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool, nullptr);
+
 	vkFreeCommandBuffers(VKRenderingSystemComponent::get().m_device,
 		VKRenderingSystemComponent::get().m_commandPool,
 		static_cast<uint32_t>(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.size()),
@@ -838,7 +847,6 @@ bool VKRenderingSystemNS::terminate()
 	vkDestroyPipeline(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_pipeline, nullptr);
 	vkDestroyPipelineLayout(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_pipelineLayout, nullptr);
 	vkDestroyDescriptorSetLayout(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->descriptorSetLayout, nullptr);
-	vkDestroyDescriptorPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->descriptorPool, nullptr);
 
 	for (auto framebuffer : VKRenderingSystemComponent::get().m_swapChainVKRPC->m_framebuffers)
 	{

@@ -300,10 +300,7 @@ bool VKRenderingSystemNS::initializeVKRenderPassComponent(VKRenderPassComponent*
 		result &= createSingleFramebuffer(VKRPC);
 	}
 
-	result &= createDescriptorPool(VKRPC);
 	result &= createDescriptorSetLayout(VKRPC);
-	result &= createDescriptorSet(VKRPC);
-	result &= updateDescriptorSet(VKRPC);
 
 	result &= createPipelineLayout(VKRPC);
 
@@ -462,21 +459,39 @@ bool VKRenderingSystemNS::createRenderPass(VKRenderPassComponent* VKRPC)
 	return true;
 }
 
-bool VKRenderingSystemNS::createDescriptorPool(VKRenderPassComponent* VKRPC)
+bool VKRenderingSystemNS::createDescriptorPool(VkDescriptorPoolSize& poolSize, unsigned int maxSets, VkDescriptorPool& poolHandle)
 {
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = 1;
-	poolInfo.pPoolSizes = VKRPC->descriptorPoolSizes.data();
-	poolInfo.maxSets = 1;
+	poolInfo.pPoolSizes = &poolSize;
+	poolInfo.maxSets = maxSets;
 
-	if (vkCreateDescriptorPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &VKRPC->descriptorPool) != VK_SUCCESS)
+	if (vkCreateDescriptorPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &poolHandle) != VK_SUCCESS)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkDescriptorPool!");
 		return false;
 	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkDescriptorPool has been created.");
+	return true;
+}
+
+bool VKRenderingSystemNS::createDescriptorSet(VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle)
+{
+	VkDescriptorSetAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = pool;
+	allocInfo.descriptorSetCount = 1;
+	allocInfo.pSetLayouts = &setLayout;
+
+	if (vkAllocateDescriptorSets(VKRenderingSystemComponent::get().m_device, &allocInfo, &setHandle) != VK_SUCCESS)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate VkDescriptorSet!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkDescriptorSet has been allocated.");
 	return true;
 }
 
@@ -497,31 +512,13 @@ bool VKRenderingSystemNS::createDescriptorSetLayout(VKRenderPassComponent* VKRPC
 	return true;
 }
 
-bool VKRenderingSystemNS::createDescriptorSet(VKRenderPassComponent* VKRPC)
+bool VKRenderingSystemNS::updateDescriptorSet(VKRenderPassComponent* VKRPC)
 {
-	VkDescriptorSetAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = VKRPC->descriptorPool;
-	allocInfo.descriptorSetCount = 1;
-	allocInfo.pSetLayouts = &VKRPC->descriptorSetLayout;
-
-	if (vkAllocateDescriptorSets(VKRenderingSystemComponent::get().m_device, &allocInfo, &VKRPC->descriptorSet) != VK_SUCCESS)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to allocate VkDescriptorSet!");
-		return false;
-	}
-
 	for (auto& i : VKRPC->writeDescriptorSets)
 	{
 		i.dstSet = VKRPC->descriptorSet;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: VkDescriptorSet has been allocated.");
-	return true;
-}
-
-bool VKRenderingSystemNS::updateDescriptorSet(VKRenderPassComponent* VKRPC)
-{
 	vkUpdateDescriptorSets(
 		VKRenderingSystemComponent::get().m_device,
 		static_cast<uint32_t>(VKRPC->writeDescriptorSets.size()),
@@ -664,7 +661,6 @@ bool VKRenderingSystemNS::destroyVKRenderPassComponent(VKRenderPassComponent* VK
 	vkDestroyPipeline(VKRenderingSystemComponent::get().m_device, VKRPC->m_pipeline, nullptr);
 	vkDestroyPipelineLayout(VKRenderingSystemComponent::get().m_device, VKRPC->m_pipelineLayout, nullptr);
 	vkDestroyDescriptorSetLayout(VKRenderingSystemComponent::get().m_device, VKRPC->descriptorSetLayout, nullptr);
-	vkDestroyDescriptorPool(VKRenderingSystemComponent::get().m_device, VKRPC->descriptorPool, nullptr);
 
 	for (auto framebuffer : VKRPC->m_framebuffers)
 	{

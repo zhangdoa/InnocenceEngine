@@ -66,12 +66,6 @@ bool VKOpaquePass::initialize()
 
 	m_VKRPC->renderPassCInfo.subpassCount = 1;
 
-	// set descriptor pool size info
-	VkDescriptorPoolSize cameraUBODescPoolSize = {};
-	cameraUBODescPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	cameraUBODescPoolSize.descriptorCount = 1;
-	m_VKRPC->descriptorPoolSizes.emplace_back(cameraUBODescPoolSize);
-
 	// set descriptor set layout binding info
 	VkDescriptorSetLayoutBinding cameraUBODescriptorLayoutBinding = {};
 	cameraUBODescriptorLayoutBinding.binding = 0;
@@ -86,7 +80,6 @@ bool VKOpaquePass::initialize()
 	cameraUBODescriptorBufferInfo.buffer = VKRenderingSystemComponent::get().m_cameraUBO;
 	cameraUBODescriptorBufferInfo.offset = 0;
 	cameraUBODescriptorBufferInfo.range = sizeof(CameraGPUData);
-	m_VKRPC->descriptorBufferInfos.emplace_back(cameraUBODescriptorBufferInfo);
 
 	VkWriteDescriptorSet cameraUBOWriteDescriptorSet = {};
 	cameraUBOWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -94,7 +87,7 @@ bool VKOpaquePass::initialize()
 	cameraUBOWriteDescriptorSet.dstArrayElement = 0;
 	cameraUBOWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	cameraUBOWriteDescriptorSet.descriptorCount = 1;
-	cameraUBOWriteDescriptorSet.pBufferInfo = &m_VKRPC->descriptorBufferInfos[0];
+	cameraUBOWriteDescriptorSet.pBufferInfo = &cameraUBODescriptorBufferInfo;
 	m_VKRPC->writeDescriptorSets.emplace_back(cameraUBOWriteDescriptorSet);
 
 	// set push constant info
@@ -154,6 +147,11 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->colorBlendStateCInfo.blendConstants[3] = 0.0f;
 
 	initializeVKRenderPassComponent(m_VKRPC, m_VKSPC);
+
+	createDescriptorSet(VKRenderingSystemComponent::get().m_UBODescriptorPool, m_VKRPC->descriptorSetLayout, m_VKRPC->descriptorSet);
+
+	updateDescriptorSet(m_VKRPC);
+
 	return true;
 }
 
