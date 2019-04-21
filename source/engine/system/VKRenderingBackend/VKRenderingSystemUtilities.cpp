@@ -459,12 +459,12 @@ bool VKRenderingSystemNS::createRenderPass(VKRenderPassComponent* VKRPC)
 	return true;
 }
 
-bool VKRenderingSystemNS::createDescriptorPool(VkDescriptorPoolSize& poolSize, unsigned int maxSets, VkDescriptorPool& poolHandle)
+bool VKRenderingSystemNS::createDescriptorPool(VkDescriptorPoolSize* poolSize, unsigned int poolSizeCount, unsigned int maxSets, VkDescriptorPool& poolHandle)
 {
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount = 1;
-	poolInfo.pPoolSizes = &poolSize;
+	poolInfo.poolSizeCount = poolSizeCount;
+	poolInfo.pPoolSizes = poolSize;
 	poolInfo.maxSets = maxSets;
 
 	if (vkCreateDescriptorPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &poolHandle) != VK_SUCCESS)
@@ -477,12 +477,12 @@ bool VKRenderingSystemNS::createDescriptorPool(VkDescriptorPoolSize& poolSize, u
 	return true;
 }
 
-bool VKRenderingSystemNS::createDescriptorSet(VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle)
+bool VKRenderingSystemNS::createDescriptorSets(VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, unsigned int count)
 {
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorPool = pool;
-	allocInfo.descriptorSetCount = 1;
+	allocInfo.descriptorSetCount = count;
 	allocInfo.pSetLayouts = &setLayout;
 
 	if (vkAllocateDescriptorSets(VKRenderingSystemComponent::get().m_device, &allocInfo, &setHandle) != VK_SUCCESS)
@@ -514,11 +514,6 @@ bool VKRenderingSystemNS::createDescriptorSetLayout(VKRenderPassComponent* VKRPC
 
 bool VKRenderingSystemNS::updateDescriptorSet(VKRenderPassComponent* VKRPC)
 {
-	for (auto& i : VKRPC->writeDescriptorSets)
-	{
-		i.dstSet = VKRPC->descriptorSet;
-	}
-
 	vkUpdateDescriptorSets(
 		VKRenderingSystemComponent::get().m_device,
 		static_cast<uint32_t>(VKRPC->writeDescriptorSets.size()),
@@ -1121,12 +1116,6 @@ bool VKRenderingSystemNS::recordCommand(VKRenderPassComponent* VKRPC, unsigned i
 		return false;
 	}
 
-	return true;
-}
-
-bool VKRenderingSystemNS::recordDescriptorBinding(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex)
-{
-	vkCmdBindDescriptorSets(VKRPC->m_commandBuffers[commandBufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, VKRPC->m_pipelineLayout, 0, 1, &VKRPC->descriptorSet, 0, nullptr);
 	return true;
 }
 

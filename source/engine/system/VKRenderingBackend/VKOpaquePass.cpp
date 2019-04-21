@@ -75,6 +75,14 @@ bool VKOpaquePass::initialize()
 	cameraUBODescriptorLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	m_VKRPC->descriptorSetLayoutBindings.emplace_back(cameraUBODescriptorLayoutBinding);
 
+	VkDescriptorSetLayoutBinding meshUBODescriptorLayoutBinding = {};
+	meshUBODescriptorLayoutBinding.binding = 1;
+	meshUBODescriptorLayoutBinding.descriptorCount = 1;
+	meshUBODescriptorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	meshUBODescriptorLayoutBinding.pImmutableSamplers = nullptr;
+	meshUBODescriptorLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	m_VKRPC->descriptorSetLayoutBindings.emplace_back(meshUBODescriptorLayoutBinding);
+
 	// set descriptor buffer info
 	VkDescriptorBufferInfo cameraUBODescriptorBufferInfo = {};
 	cameraUBODescriptorBufferInfo.buffer = VKRenderingSystemComponent::get().m_cameraUBO;
@@ -89,6 +97,22 @@ bool VKOpaquePass::initialize()
 	cameraUBOWriteDescriptorSet.descriptorCount = 1;
 	cameraUBOWriteDescriptorSet.pBufferInfo = &cameraUBODescriptorBufferInfo;
 	m_VKRPC->writeDescriptorSets.emplace_back(cameraUBOWriteDescriptorSet);
+	m_VKRPC->descriptorSets.emplace_back();
+
+	VkDescriptorBufferInfo meshUBODescriptorBufferInfo = {};
+	meshUBODescriptorBufferInfo.buffer = VKRenderingSystemComponent::get().m_meshUBO;
+	meshUBODescriptorBufferInfo.offset = 0;
+	meshUBODescriptorBufferInfo.range = sizeof(MeshGPUData);
+
+	VkWriteDescriptorSet meshUBOWriteDescriptorSet = {};
+	meshUBOWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	meshUBOWriteDescriptorSet.dstBinding = 1;
+	meshUBOWriteDescriptorSet.dstArrayElement = 0;
+	meshUBOWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	meshUBOWriteDescriptorSet.descriptorCount = 1;
+	meshUBOWriteDescriptorSet.pBufferInfo = &meshUBODescriptorBufferInfo;
+	m_VKRPC->writeDescriptorSets.emplace_back(meshUBOWriteDescriptorSet);
+	//m_VKRPC->descriptorSets.emplace_back();
 
 	// set push constant info
 	VkPushConstantRange meshPushConstantRange = {};
@@ -148,7 +172,11 @@ bool VKOpaquePass::initialize()
 
 	initializeVKRenderPassComponent(m_VKRPC, m_VKSPC);
 
-	createDescriptorSet(VKRenderingSystemComponent::get().m_UBODescriptorPool, m_VKRPC->descriptorSetLayout, m_VKRPC->descriptorSet);
+	createDescriptorSets(VKRenderingSystemComponent::get().m_UBODescriptorPool, m_VKRPC->descriptorSetLayout, m_VKRPC->descriptorSets[0], 1);
+
+	m_VKRPC->writeDescriptorSets[0].dstSet = m_VKRPC->descriptorSets[0];
+
+	m_VKRPC->writeDescriptorSets[1].dstSet = m_VKRPC->descriptorSets[0];
 
 	updateDescriptorSet(m_VKRPC);
 
@@ -159,15 +187,34 @@ bool VKOpaquePass::update()
 {
 	waitForFence(m_VKRPC);
 
+	unsigned int l_sizeofMeshGPUData = sizeof(MeshGPUData);
+	unsigned int l_dynamicOffset = 0;
+
 	recordCommand(m_VKRPC, 0, [&]() {
-		recordDescriptorBinding(m_VKRPC, 0);
+		vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			m_VKRPC->m_pipelineLayout,
+			0,
+			1,
+			&m_VKRPC->descriptorSets[0], 1, &l_dynamicOffset);
+
+		unsigned int offsetCount = 0;
 
 		while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
 		{
 			GeometryPassGPUData l_geometryPassGPUData = {};
 
+			auto l_dynamicOffset = l_sizeofMeshGPUData * offsetCount;
+
 			if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
 			{
+				vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
+					VK_PIPELINE_BIND_POINT_GRAPHICS,
+					m_VKRPC->m_pipelineLayout,
+					0,
+					1,
+					&m_VKRPC->descriptorSets[0], 1, &l_dynamicOffset);
+
 				vkCmdPushConstants(
 					m_VKRPC->m_commandBuffers[0],
 					m_VKRPC->m_pipelineLayout,
@@ -176,6 +223,8 @@ bool VKOpaquePass::update()
 					sizeof(MeshGPUData),
 					&l_geometryPassGPUData.meshGPUData);
 				recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_geometryPassGPUData.MDC));
+
+				offsetCount++;
 			}
 		};
 	});

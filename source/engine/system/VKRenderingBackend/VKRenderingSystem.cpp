@@ -467,6 +467,7 @@ bool VKRenderingSystemNS::createSwapChain()
 	basePassRTWriteDescriptorSet.descriptorCount = 1;
 	basePassRTWriteDescriptorSet.pImageInfo = &imageInfo;
 	l_VKRPC->writeDescriptorSets.emplace_back(basePassRTWriteDescriptorSet);
+	l_VKRPC->descriptorSets.emplace_back();
 
 	// set pipeline fix stages info
 	l_VKRPC->inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -526,7 +527,9 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	l_result &= createGraphicsPipelines(l_VKRPC, l_VKSPC);
 
-	l_result &= createDescriptorSet(VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool, l_VKRPC->descriptorSetLayout, l_VKRPC->descriptorSet);
+	l_result &= createDescriptorSets(VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool, l_VKRPC->descriptorSetLayout, l_VKRPC->descriptorSets[0], 1);
+
+	l_VKRPC->writeDescriptorSets[0].dstSet = l_VKRPC->descriptorSets[0];
 
 	l_result &= updateDescriptorSet(l_VKRPC);
 
@@ -545,7 +548,12 @@ bool VKRenderingSystemNS::createSwapChainCommandBuffers()
 	for (size_t i = 0; i < VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers.size(); i++)
 	{
 		recordCommand(VKRenderingSystemComponent::get().m_swapChainVKRPC, (unsigned int)i, [&]() {
-			recordDescriptorBinding(VKRenderingSystemComponent::get().m_swapChainVKRPC, (unsigned int)i);
+			vkCmdBindDescriptorSets(VKRenderingSystemComponent::get().m_swapChainVKRPC->m_commandBuffers[i],
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				VKRenderingSystemComponent::get().m_swapChainVKRPC->m_pipelineLayout,
+				0,
+				1,
+				&VKRenderingSystemComponent::get().m_swapChainVKRPC->descriptorSets[0], 0, nullptr);
 			auto l_MDC = getVKMeshDataComponent(MeshShapeType::QUAD);
 			recordDrawCall(VKRenderingSystemComponent::get().m_swapChainVKRPC, (unsigned int)i, l_MDC);
 		});
@@ -584,18 +592,27 @@ bool VKRenderingSystemNS::createSyncPrimitives()
 bool VKRenderingSystemNS::generateGPUBuffers()
 {
 	// set UBO descriptor pool size info
-	VKRenderingSystemComponent::get().m_UBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	VKRenderingSystemComponent::get().m_UBODescriptorPoolSize.descriptorCount = 1;
+	VkDescriptorPoolSize l_staticUBODescriptorPoolSize = {};
+	VkDescriptorPoolSize l_dynamicUBODescriptorPoolSize = {};
 
-	createDescriptorPool(VKRenderingSystemComponent::get().m_UBODescriptorPoolSize, 1, VKRenderingSystemComponent::get().m_UBODescriptorPool);
+	l_staticUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	l_staticUBODescriptorPoolSize.descriptorCount = VKRenderingSystemComponent::get().m_maxMeshes;
+
+	l_dynamicUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	l_dynamicUBODescriptorPoolSize.descriptorCount = VKRenderingSystemComponent::get().m_maxMeshes;
+
+	VkDescriptorPoolSize l_UBODescriptorPoolSizes[] = { l_staticUBODescriptorPoolSize , l_dynamicUBODescriptorPoolSize };
+	createDescriptorPool(l_UBODescriptorPoolSizes, 2, VKRenderingSystemComponent::get().m_maxMeshes, VKRenderingSystemComponent::get().m_UBODescriptorPool);
 
 	// set RT sampler descriptor pool size info
 	VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize.descriptorCount = 1;
 
-	createDescriptorPool(VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize, 1, VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool);
+	createDescriptorPool(&VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize, 1, 1, VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool);
 
 	generateUBO(VKRenderingSystemComponent::get().m_cameraUBO, sizeof(CameraGPUData), VKRenderingSystemComponent::get().m_cameraUBOMemory);
+
+	generateUBO(VKRenderingSystemComponent::get().m_meshUBO, sizeof(MeshGPUData) * VKRenderingSystemComponent::get().m_maxMeshes, VKRenderingSystemComponent::get().m_meshUBOMemory);
 
 	return true;
 }
@@ -632,9 +649,9 @@ bool VKRenderingSystemNS::setup()
 
 bool VKRenderingSystemNS::initialize()
 {
-	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), 16384);
-	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
-	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), 32768);
+	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), VKRenderingSystemComponent::get().m_maxMeshes);
+	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), VKRenderingSystemComponent::get().m_maxMaterials);
+	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), VKRenderingSystemComponent::get().m_maxTextures);
 
 	bool result = true;
 
@@ -754,6 +771,19 @@ void VKRenderingSystemNS::loadDefaultAssets()
 bool VKRenderingSystemNS::update()
 {
 	updateUBO(VKRenderingSystemComponent::get().m_cameraUBOMemory, RenderingFrontendSystemComponent::get().m_cameraGPUData);
+
+	// @TODO: prepare in rendering frontend
+	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
+	std::vector<MeshGPUData> l_meshGPUData(l_queueCopy.size());
+
+	while (l_queueCopy.size() > 0)
+	{
+		auto l_geometryPassGPUData = l_queueCopy.front();
+		l_meshGPUData.emplace_back(l_geometryPassGPUData.meshGPUData);
+		l_queueCopy.pop();
+	}
+
+	updateUBO(VKRenderingSystemComponent::get().m_meshUBOMemory, l_meshGPUData);
 	VKOpaquePass::update();
 
 	return true;
@@ -835,6 +865,8 @@ bool VKRenderingSystemNS::terminate()
 
 	vkDestroyBuffer(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_cameraUBO, nullptr);
 	vkFreeMemory(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_cameraUBOMemory, nullptr);
+	vkDestroyBuffer(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_meshUBO, nullptr);
+	vkFreeMemory(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_meshUBOMemory, nullptr);
 
 	vkDestroySampler(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_deferredRTSampler, nullptr);
 	vkFreeMemory(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_textureImageMemory, nullptr);

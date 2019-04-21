@@ -65,7 +65,9 @@ public:
 	VkBuffer m_cameraUBO;
 	VkDeviceMemory m_cameraUBOMemory;
 
-	VkDescriptorPoolSize m_UBODescriptorPoolSize = {};
+	VkBuffer m_meshUBO;
+	VkDeviceMemory m_meshUBOMemory;
+
 	VkDescriptorPool  m_UBODescriptorPool;
 
 	VkSampler m_deferredRTSampler;
@@ -73,6 +75,9 @@ public:
 	VkDescriptorPoolSize m_RTSamplerDescriptorPoolSize = {};
 	VkDescriptorPool  m_RTSamplerDescriptorPool;
 
+	const unsigned int m_maxMeshes = 16384;
+	const unsigned int m_maxMaterials = 32768;
+	const unsigned int m_maxTextures = 32768;
 	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 private:
 	VKRenderingSystemComponent() {};

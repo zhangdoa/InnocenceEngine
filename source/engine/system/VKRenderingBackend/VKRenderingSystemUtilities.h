@@ -61,8 +61,8 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 	bool isDeviceSuitable(VkPhysicalDevice device);
 
-	bool createDescriptorPool(VkDescriptorPoolSize& poolSize, unsigned int maxSets, VkDescriptorPool& poolHandle);
-	bool createDescriptorSet(VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle);
+	bool createDescriptorPool(VkDescriptorPoolSize* poolSize, unsigned int poolSizeCount, unsigned int maxSets, VkDescriptorPool& poolHandle);
+	bool createDescriptorSets(VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, unsigned int count);
 	bool updateDescriptorSet(VKRenderPassComponent* VKRPC);
 
 	VKRenderPassComponent* addVKRenderPassComponent();
@@ -90,7 +90,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	bool recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, const std::function<void()>& commands);
 
-	bool recordDescriptorBinding(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex);
 	bool recordDrawCall(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, VKMeshDataComponent * VKMDC);
 
 	bool waitForFence(VKRenderPassComponent* VKRPC);

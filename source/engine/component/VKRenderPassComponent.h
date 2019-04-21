@@ -27,7 +27,7 @@ public:
 
 	std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
 	VkDescriptorSetLayout descriptorSetLayout;
-	VkDescriptorSet descriptorSet;
+	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets;
 	std::vector<VkPushConstantRange> pushConstantRanges;
 

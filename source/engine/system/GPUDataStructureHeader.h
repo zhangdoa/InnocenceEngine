@@ -13,6 +13,7 @@ struct alignas(16) CameraGPUData
 	mat4 t_prev;
 	vec4 globalPos;
 	float WHRatio;
+	float padding[27];
 };
 
 struct alignas(16) SunGPUData
@@ -51,6 +52,7 @@ struct alignas(16) MeshGPUData
 	mat4 m_prev;
 	mat4 normalMat;
 	float UUID;
+	float padding[15];
 };
 
 struct alignas(16) MaterialGPUData
