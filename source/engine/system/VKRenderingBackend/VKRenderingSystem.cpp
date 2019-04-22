@@ -467,7 +467,6 @@ bool VKRenderingSystemNS::createSwapChain()
 	basePassRTWriteDescriptorSet.descriptorCount = 1;
 	basePassRTWriteDescriptorSet.pImageInfo = &imageInfo;
 	l_VKRPC->writeDescriptorSets.emplace_back(basePassRTWriteDescriptorSet);
-	l_VKRPC->descriptorSets.emplace_back();
 
 	// set pipeline fix stages info
 	l_VKRPC->inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -527,9 +526,9 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	l_result &= createGraphicsPipelines(l_VKRPC, l_VKSPC);
 
-	l_result &= createDescriptorSets(VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool, l_VKRPC->descriptorSetLayout, l_VKRPC->descriptorSets[0], 1);
+	l_result &= createDescriptorSets(VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool, l_VKRPC->descriptorSetLayout, l_VKRPC->descriptorSet, 1);
 
-	l_VKRPC->writeDescriptorSets[0].dstSet = l_VKRPC->descriptorSets[0];
+	l_VKRPC->writeDescriptorSets[0].dstSet = l_VKRPC->descriptorSet;
 
 	l_result &= updateDescriptorSet(l_VKRPC);
 
@@ -553,7 +552,7 @@ bool VKRenderingSystemNS::createSwapChainCommandBuffers()
 				VKRenderingSystemComponent::get().m_swapChainVKRPC->m_pipelineLayout,
 				0,
 				1,
-				&VKRenderingSystemComponent::get().m_swapChainVKRPC->descriptorSets[0], 0, nullptr);
+				&VKRenderingSystemComponent::get().m_swapChainVKRPC->descriptorSet, 0, nullptr);
 			auto l_MDC = getVKMeshDataComponent(MeshShapeType::QUAD);
 			recordDrawCall(VKRenderingSystemComponent::get().m_swapChainVKRPC, (unsigned int)i, l_MDC);
 		});
@@ -596,13 +595,13 @@ bool VKRenderingSystemNS::generateGPUBuffers()
 	VkDescriptorPoolSize l_dynamicUBODescriptorPoolSize = {};
 
 	l_staticUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	l_staticUBODescriptorPoolSize.descriptorCount = VKRenderingSystemComponent::get().m_maxMeshes;
+	l_staticUBODescriptorPoolSize.descriptorCount = 1;
 
 	l_dynamicUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	l_dynamicUBODescriptorPoolSize.descriptorCount = VKRenderingSystemComponent::get().m_maxMeshes;
+	l_dynamicUBODescriptorPoolSize.descriptorCount = 1;
 
 	VkDescriptorPoolSize l_UBODescriptorPoolSizes[] = { l_staticUBODescriptorPoolSize , l_dynamicUBODescriptorPoolSize };
-	createDescriptorPool(l_UBODescriptorPoolSizes, 2, VKRenderingSystemComponent::get().m_maxMeshes, VKRenderingSystemComponent::get().m_UBODescriptorPool);
+	createDescriptorPool(l_UBODescriptorPoolSizes, 2, 1, VKRenderingSystemComponent::get().m_UBODescriptorPool);
 
 	// set RT sampler descriptor pool size info
 	VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -774,16 +773,22 @@ bool VKRenderingSystemNS::update()
 
 	// @TODO: prepare in rendering frontend
 	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
-	std::vector<MeshGPUData> l_meshGPUData(l_queueCopy.size());
 
-	while (l_queueCopy.size() > 0)
+	if (l_queueCopy.size() > 0)
 	{
-		auto l_geometryPassGPUData = l_queueCopy.front();
-		l_meshGPUData.emplace_back(l_geometryPassGPUData.meshGPUData);
-		l_queueCopy.pop();
+		std::vector<MeshGPUData> l_meshGPUData;
+		l_meshGPUData.reserve(l_queueCopy.size());
+
+		while (l_queueCopy.size() > 0)
+		{
+			auto l_geometryPassGPUData = l_queueCopy.front();
+			l_meshGPUData.emplace_back(l_geometryPassGPUData.meshGPUData);
+			l_queueCopy.pop();
+		}
+
+		updateUBO(VKRenderingSystemComponent::get().m_meshUBOMemory, l_meshGPUData);
 	}
 
-	updateUBO(VKRenderingSystemComponent::get().m_meshUBOMemory, l_meshGPUData);
 	VKOpaquePass::update();
 
 	return true;

@@ -28,14 +28,6 @@ layout(std140, row_major, set = 0, binding = 0) uniform cameraUBO
 
 layout(std140, row_major, set = 0, binding = 1) uniform meshUBO
 {
-	mat4 Uuni_m;
-	mat4 Uuni_m_prev;
-	mat4 Uuni_normalMat;
-	float Uuni_UUID;
-};
-
-layout(push_constant, std140, row_major) uniform meshPC
-{
 	mat4 uni_m;
 	mat4 uni_m_prev;
 	mat4 uni_normalMat;

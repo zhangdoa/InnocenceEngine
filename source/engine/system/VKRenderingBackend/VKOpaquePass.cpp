@@ -97,7 +97,6 @@ bool VKOpaquePass::initialize()
 	cameraUBOWriteDescriptorSet.descriptorCount = 1;
 	cameraUBOWriteDescriptorSet.pBufferInfo = &cameraUBODescriptorBufferInfo;
 	m_VKRPC->writeDescriptorSets.emplace_back(cameraUBOWriteDescriptorSet);
-	m_VKRPC->descriptorSets.emplace_back();
 
 	VkDescriptorBufferInfo meshUBODescriptorBufferInfo = {};
 	meshUBODescriptorBufferInfo.buffer = VKRenderingSystemComponent::get().m_meshUBO;
@@ -112,14 +111,6 @@ bool VKOpaquePass::initialize()
 	meshUBOWriteDescriptorSet.descriptorCount = 1;
 	meshUBOWriteDescriptorSet.pBufferInfo = &meshUBODescriptorBufferInfo;
 	m_VKRPC->writeDescriptorSets.emplace_back(meshUBOWriteDescriptorSet);
-	//m_VKRPC->descriptorSets.emplace_back();
-
-	// set push constant info
-	VkPushConstantRange meshPushConstantRange = {};
-	meshPushConstantRange.offset = 0;
-	meshPushConstantRange.size = sizeof(MeshGPUData);
-	meshPushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	m_VKRPC->pushConstantRanges.emplace_back(meshPushConstantRange);
 
 	// set pipeline fix stages info
 	m_VKRPC->inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
@@ -172,11 +163,11 @@ bool VKOpaquePass::initialize()
 
 	initializeVKRenderPassComponent(m_VKRPC, m_VKSPC);
 
-	createDescriptorSets(VKRenderingSystemComponent::get().m_UBODescriptorPool, m_VKRPC->descriptorSetLayout, m_VKRPC->descriptorSets[0], 1);
+	createDescriptorSets(VKRenderingSystemComponent::get().m_UBODescriptorPool, m_VKRPC->descriptorSetLayout, m_VKRPC->descriptorSet, 1);
 
-	m_VKRPC->writeDescriptorSets[0].dstSet = m_VKRPC->descriptorSets[0];
+	m_VKRPC->writeDescriptorSets[0].dstSet = m_VKRPC->descriptorSet;
 
-	m_VKRPC->writeDescriptorSets[1].dstSet = m_VKRPC->descriptorSets[0];
+	m_VKRPC->writeDescriptorSets[1].dstSet = m_VKRPC->descriptorSet;
 
 	updateDescriptorSet(m_VKRPC);
 
@@ -188,16 +179,8 @@ bool VKOpaquePass::update()
 	waitForFence(m_VKRPC);
 
 	unsigned int l_sizeofMeshGPUData = sizeof(MeshGPUData);
-	unsigned int l_dynamicOffset = 0;
 
 	recordCommand(m_VKRPC, 0, [&]() {
-		vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			m_VKRPC->m_pipelineLayout,
-			0,
-			1,
-			&m_VKRPC->descriptorSets[0], 1, &l_dynamicOffset);
-
 		unsigned int offsetCount = 0;
 
 		while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
@@ -213,15 +196,8 @@ bool VKOpaquePass::update()
 					m_VKRPC->m_pipelineLayout,
 					0,
 					1,
-					&m_VKRPC->descriptorSets[0], 1, &l_dynamicOffset);
+					&m_VKRPC->descriptorSet, 1, &l_dynamicOffset);
 
-				vkCmdPushConstants(
-					m_VKRPC->m_commandBuffers[0],
-					m_VKRPC->m_pipelineLayout,
-					VK_SHADER_STAGE_VERTEX_BIT,
-					0,
-					sizeof(MeshGPUData),
-					&l_geometryPassGPUData.meshGPUData);
 				recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_geometryPassGPUData.MDC));
 
 				offsetCount++;

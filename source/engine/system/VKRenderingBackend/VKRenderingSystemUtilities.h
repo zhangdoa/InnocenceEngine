@@ -103,6 +103,12 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 		return updateUBOImpl(UBOMemory, sizeof(T), &UBOValue);
 	}
 
+	template<typename T>
+	bool updateUBO(VkDeviceMemory&  UBOMemory, const std::vector<T>& UBOValue)
+	{
+		return updateUBOImpl(UBOMemory, sizeof(T) * UBOValue.size(), &UBOValue[0]);
+	}
+
 	VkTextureDataDesc getVKTextureDataDesc(const TextureDataDesc & textureDataDesc);
 
 	VKShaderProgramComponent* addVKShaderProgramComponent(const EntityID& rhs);
