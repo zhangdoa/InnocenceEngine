@@ -21,6 +21,7 @@ struct alignas(16) SunGPUData
 	vec4 dir;
 	vec4 luminance;
 	mat4 r;
+	float padding[32];
 };
 
 struct alignas(16) CSMGPUData

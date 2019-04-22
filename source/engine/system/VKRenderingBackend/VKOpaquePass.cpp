@@ -36,6 +36,23 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->m_renderPassDesc.RTNumber = 4;
 	m_VKRPC->m_renderPassDesc.useMultipleFramebuffers = false;
 
+	// create descriptor pool
+	VkDescriptorPoolSize l_cameraUBODescriptorPoolSize = {};
+	VkDescriptorPoolSize l_meshUBODescriptorPoolSize = {};
+	VkDescriptorPoolSize l_materialUBODescriptorPoolSize = {};
+
+	l_cameraUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	l_cameraUBODescriptorPoolSize.descriptorCount = 1;
+
+	l_meshUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	l_meshUBODescriptorPoolSize.descriptorCount = 1;
+
+	l_materialUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	l_materialUBODescriptorPoolSize.descriptorCount = 1;
+
+	VkDescriptorPoolSize l_UBODescriptorPoolSizes[] = { l_cameraUBODescriptorPoolSize , l_meshUBODescriptorPoolSize, l_materialUBODescriptorPoolSize };
+	createDescriptorPool(l_UBODescriptorPoolSizes, 3, 1, m_VKRPC->m_descriptorPool);
+
 	// sub-pass
 	VkAttachmentReference l_attachmentRef = {};
 
@@ -185,7 +202,7 @@ bool VKOpaquePass::initialize()
 
 	initializeVKRenderPassComponent(m_VKRPC, m_VKSPC);
 
-	createDescriptorSets(VKRenderingSystemComponent::get().m_UBODescriptorPool, m_VKRPC->descriptorSetLayout, m_VKRPC->descriptorSet, 1);
+	createDescriptorSets(m_VKRPC->m_descriptorPool, m_VKRPC->descriptorSetLayout, m_VKRPC->descriptorSet, 1);
 
 	m_VKRPC->writeDescriptorSets[0].dstSet = m_VKRPC->descriptorSet;
 	m_VKRPC->writeDescriptorSets[1].dstSet = m_VKRPC->descriptorSet;

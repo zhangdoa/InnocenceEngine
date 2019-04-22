@@ -71,12 +71,16 @@ public:
 	VkBuffer m_materialUBO;
 	VkDeviceMemory m_materialUBOMemory;
 
-	VkDescriptorPool  m_UBODescriptorPool;
+	VkBuffer m_sunUBO;
+	VkDeviceMemory m_sunUBOMemory;
+
+	VkBuffer m_pointLightUBO;
+	VkDeviceMemory m_pointLightUBOMemory;
+
+	VkBuffer m_sphereLightUBO;
+	VkDeviceMemory m_sphereLightUBOMemory;
 
 	VkSampler m_deferredRTSampler;
-
-	VkDescriptorPoolSize m_RTSamplerDescriptorPoolSize = {};
-	VkDescriptorPool  m_RTSamplerDescriptorPool;
 
 	const unsigned int m_maxMeshes = 16384;
 	const unsigned int m_maxMaterials = 32768;

@@ -25,6 +25,7 @@ public:
 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_pipeline;
 
+	VkDescriptorPool m_descriptorPool;
 	std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSet descriptorSet;

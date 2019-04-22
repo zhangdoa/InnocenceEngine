@@ -5,6 +5,7 @@
 #include "../../component/RenderingFrontendSystemComponent.h"
 
 #include "VKOpaquePass.h"
+#include "VKLightPass.h"
 
 #include "../ICoreSystem.h"
 
@@ -423,6 +424,13 @@ bool VKRenderingSystemNS::createSwapChain()
 		createImageView(l_VKRPC->m_VKTDCs[i]);
 	}
 
+	// create descriptor pool
+	VkDescriptorPoolSize l_RTSamplerDescriptorPoolSize = {};
+	l_RTSamplerDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	l_RTSamplerDescriptorPoolSize.descriptorCount = 1;
+
+	l_result &= createDescriptorPool(&l_RTSamplerDescriptorPoolSize, 1, 1, l_VKRPC->m_descriptorPool);
+
 	// sub-pass
 	VkAttachmentReference l_attachmentRef = {};
 	l_attachmentRef.attachment = 0;
@@ -456,7 +464,7 @@ bool VKRenderingSystemNS::createSwapChain()
 	// set descriptor image info
 	VkDescriptorImageInfo imageInfo;
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	imageInfo.imageView = VKOpaquePass::getVKRPC()->m_VKTDCs[0]->m_imageView;
+	imageInfo.imageView = VKLightPass::getVKRPC()->m_VKTDCs[0]->m_imageView;
 	imageInfo.sampler = VKRenderingSystemComponent::get().m_deferredRTSampler;
 
 	VkWriteDescriptorSet basePassRTWriteDescriptorSet = {};
@@ -526,7 +534,7 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	l_result &= createGraphicsPipelines(l_VKRPC, l_VKSPC);
 
-	l_result &= createDescriptorSets(VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool, l_VKRPC->descriptorSetLayout, l_VKRPC->descriptorSet, 1);
+	l_result &= createDescriptorSets(l_VKRPC->m_descriptorPool, l_VKRPC->descriptorSetLayout, l_VKRPC->descriptorSet, 1);
 
 	l_VKRPC->writeDescriptorSets[0].dstSet = l_VKRPC->descriptorSet;
 
@@ -590,34 +598,17 @@ bool VKRenderingSystemNS::createSyncPrimitives()
 
 bool VKRenderingSystemNS::generateGPUBuffers()
 {
-	// set UBO descriptor pool size info
-	VkDescriptorPoolSize l_cameraUBODescriptorPoolSize = {};
-	VkDescriptorPoolSize l_meshUBODescriptorPoolSize = {};
-	VkDescriptorPoolSize l_materialUBODescriptorPoolSize = {};
-
-	l_cameraUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	l_cameraUBODescriptorPoolSize.descriptorCount = 1;
-
-	l_meshUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	l_meshUBODescriptorPoolSize.descriptorCount = 1;
-
-	l_materialUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	l_materialUBODescriptorPoolSize.descriptorCount = 1;
-
-	VkDescriptorPoolSize l_UBODescriptorPoolSizes[] = { l_cameraUBODescriptorPoolSize , l_meshUBODescriptorPoolSize, l_materialUBODescriptorPoolSize };
-	createDescriptorPool(l_UBODescriptorPoolSizes, 3, 1, VKRenderingSystemComponent::get().m_UBODescriptorPool);
-
-	// set RT sampler descriptor pool size info
-	VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize.descriptorCount = 1;
-
-	createDescriptorPool(&VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize, 1, 1, VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool);
-
 	generateUBO(VKRenderingSystemComponent::get().m_cameraUBO, sizeof(CameraGPUData), VKRenderingSystemComponent::get().m_cameraUBOMemory);
 
 	generateUBO(VKRenderingSystemComponent::get().m_meshUBO, sizeof(MeshGPUData) * VKRenderingSystemComponent::get().m_maxMeshes, VKRenderingSystemComponent::get().m_meshUBOMemory);
 
 	generateUBO(VKRenderingSystemComponent::get().m_materialUBO, sizeof(MaterialGPUData) * VKRenderingSystemComponent::get().m_maxMaterials, VKRenderingSystemComponent::get().m_materialUBOMemory);
+
+	generateUBO(VKRenderingSystemComponent::get().m_sunUBO, sizeof(SunGPUData), VKRenderingSystemComponent::get().m_sunUBOMemory);
+
+	generateUBO(VKRenderingSystemComponent::get().m_pointLightUBO, sizeof(PointLightGPUData) * RenderingFrontendSystemComponent::get().m_maxPointLights, VKRenderingSystemComponent::get().m_pointLightUBOMemory);
+
+	generateUBO(VKRenderingSystemComponent::get().m_sphereLightUBO, sizeof(SphereLightGPUData) * RenderingFrontendSystemComponent::get().m_maxSphereLights, VKRenderingSystemComponent::get().m_sphereLightUBOMemory);
 
 	return true;
 }
@@ -671,6 +662,7 @@ bool VKRenderingSystemNS::initialize()
 	generateGPUBuffers();
 
 	VKOpaquePass::initialize();
+	VKLightPass::initialize();
 
 	result = result && createSwapChain();
 	result = result && createSwapChainCommandBuffers();
@@ -721,10 +713,10 @@ void VKRenderingSystemNS::loadDefaultAssets()
 
 	m_unitQuadMDC = addVKMeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
-	// Flip y texture coordinate
+	// adjust texture coordinate
 	for (auto& i : m_unitQuadMDC->m_vertices)
 	{
-		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
+		i.m_texCoord.y = i.m_texCoord.y * 2.0f - 1.0f;
 	}
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
@@ -776,6 +768,9 @@ void VKRenderingSystemNS::loadDefaultAssets()
 bool VKRenderingSystemNS::update()
 {
 	updateUBO(VKRenderingSystemComponent::get().m_cameraUBOMemory, RenderingFrontendSystemComponent::get().m_cameraGPUData);
+	updateUBO(VKRenderingSystemComponent::get().m_sunUBOMemory, RenderingFrontendSystemComponent::get().m_sunGPUData);
+	updateUBO(VKRenderingSystemComponent::get().m_pointLightUBOMemory, RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector);
+	updateUBO(VKRenderingSystemComponent::get().m_sphereLightUBOMemory, RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector);
 
 	// @TODO: prepare in rendering frontend
 	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
@@ -801,6 +796,7 @@ bool VKRenderingSystemNS::update()
 	}
 
 	VKOpaquePass::update();
+	VKLightPass::update();
 
 	return true;
 }
@@ -808,6 +804,7 @@ bool VKRenderingSystemNS::update()
 bool VKRenderingSystemNS::render()
 {
 	VKOpaquePass::render();
+	VKLightPass::render();
 
 	waitForFence(VKRenderingSystemComponent::get().m_swapChainVKRPC);
 
@@ -823,7 +820,7 @@ bool VKRenderingSystemNS::render()
 
 	// set swap chain image available wait semaphore
 	VkSemaphore l_availableSemaphores[] = {
-		VKOpaquePass::getVKRPC()->m_renderFinishedSemaphores[0],
+		VKLightPass::getVKRPC()->m_renderFinishedSemaphores[0],
 		VKRenderingSystemComponent::get().m_imageAvailableSemaphores[VKRenderingSystemComponent::get().m_swapChainVKRPC->m_currentFrame]
 	};
 
@@ -871,8 +868,7 @@ bool VKRenderingSystemNS::terminate()
 		vkDestroyFence(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_inFlightFences[i], nullptr);
 	}
 
-	vkDestroyDescriptorPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_UBODescriptorPool, nullptr);
-	vkDestroyDescriptorPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_RTSamplerDescriptorPool, nullptr);
+	vkDestroyDescriptorPool(VKRenderingSystemComponent::get().m_device, VKRenderingSystemComponent::get().m_swapChainVKRPC->m_descriptorPool, nullptr);
 
 	vkFreeCommandBuffers(VKRenderingSystemComponent::get().m_device,
 		VKRenderingSystemComponent::get().m_commandPool,

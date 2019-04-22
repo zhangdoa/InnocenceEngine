@@ -38,7 +38,6 @@ void main() {
 	// output the fragment position in world space
 	thefrag_WorldSpacePos = uni_m * inPosition;
 	vec4 thefrag_WorldSpacePos_prev = uni_m_prev * inPosition;
-
 	// output the current and previous fragment position in clip space
 	vec4 thefrag_CameraSpacePos_current = uni_r_camera * uni_t_camera * thefrag_WorldSpacePos;
 	vec4 thefrag_CameraSpacePos_previous = uni_r_camera_prev * uni_t_camera_prev * thefrag_WorldSpacePos_prev;
@@ -55,4 +54,5 @@ void main() {
 	thefrag_UUID = uni_UUID;
 
 	gl_Position = uni_p_camera_jittered * thefrag_CameraSpacePos_current;
+	gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0;
 }

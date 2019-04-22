@@ -649,6 +649,8 @@ bool VKRenderingSystemNS::destroyVKRenderPassComponent(VKRenderPassComponent* VK
 		vkDestroyFence(VKRenderingSystemComponent::get().m_device, VKRPC->m_inFlightFences[i], nullptr);
 	}
 
+	vkDestroyDescriptorPool(VKRenderingSystemComponent::get().m_device, VKRPC->m_descriptorPool, nullptr);
+
 	vkFreeCommandBuffers(VKRenderingSystemComponent::get().m_device,
 		VKRenderingSystemComponent::get().m_commandPool,
 		static_cast<uint32_t>(VKRPC->m_commandBuffers.size()), VKRPC->m_commandBuffers.data());
