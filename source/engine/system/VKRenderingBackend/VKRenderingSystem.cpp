@@ -446,7 +446,7 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	// set descriptor set layout binding info
 	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-	samplerLayoutBinding.binding = 1;
+	samplerLayoutBinding.binding = 0;
 	samplerLayoutBinding.descriptorCount = 1;
 	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
@@ -461,7 +461,7 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	VkWriteDescriptorSet basePassRTWriteDescriptorSet = {};
 	basePassRTWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	basePassRTWriteDescriptorSet.dstBinding = 1;
+	basePassRTWriteDescriptorSet.dstBinding = 0;
 	basePassRTWriteDescriptorSet.dstArrayElement = 0;
 	basePassRTWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	basePassRTWriteDescriptorSet.descriptorCount = 1;
@@ -591,17 +591,21 @@ bool VKRenderingSystemNS::createSyncPrimitives()
 bool VKRenderingSystemNS::generateGPUBuffers()
 {
 	// set UBO descriptor pool size info
-	VkDescriptorPoolSize l_staticUBODescriptorPoolSize = {};
-	VkDescriptorPoolSize l_dynamicUBODescriptorPoolSize = {};
+	VkDescriptorPoolSize l_cameraUBODescriptorPoolSize = {};
+	VkDescriptorPoolSize l_meshUBODescriptorPoolSize = {};
+	VkDescriptorPoolSize l_materialUBODescriptorPoolSize = {};
 
-	l_staticUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	l_staticUBODescriptorPoolSize.descriptorCount = 1;
+	l_cameraUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	l_cameraUBODescriptorPoolSize.descriptorCount = 1;
 
-	l_dynamicUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	l_dynamicUBODescriptorPoolSize.descriptorCount = 1;
+	l_meshUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	l_meshUBODescriptorPoolSize.descriptorCount = 1;
 
-	VkDescriptorPoolSize l_UBODescriptorPoolSizes[] = { l_staticUBODescriptorPoolSize , l_dynamicUBODescriptorPoolSize };
-	createDescriptorPool(l_UBODescriptorPoolSizes, 2, 1, VKRenderingSystemComponent::get().m_UBODescriptorPool);
+	l_materialUBODescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	l_materialUBODescriptorPoolSize.descriptorCount = 1;
+
+	VkDescriptorPoolSize l_UBODescriptorPoolSizes[] = { l_cameraUBODescriptorPoolSize , l_meshUBODescriptorPoolSize, l_materialUBODescriptorPoolSize };
+	createDescriptorPool(l_UBODescriptorPoolSizes, 3, 1, VKRenderingSystemComponent::get().m_UBODescriptorPool);
 
 	// set RT sampler descriptor pool size info
 	VKRenderingSystemComponent::get().m_RTSamplerDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -612,6 +616,8 @@ bool VKRenderingSystemNS::generateGPUBuffers()
 	generateUBO(VKRenderingSystemComponent::get().m_cameraUBO, sizeof(CameraGPUData), VKRenderingSystemComponent::get().m_cameraUBOMemory);
 
 	generateUBO(VKRenderingSystemComponent::get().m_meshUBO, sizeof(MeshGPUData) * VKRenderingSystemComponent::get().m_maxMeshes, VKRenderingSystemComponent::get().m_meshUBOMemory);
+
+	generateUBO(VKRenderingSystemComponent::get().m_materialUBO, sizeof(MaterialGPUData) * VKRenderingSystemComponent::get().m_maxMaterials, VKRenderingSystemComponent::get().m_materialUBOMemory);
 
 	return true;
 }
@@ -779,14 +785,19 @@ bool VKRenderingSystemNS::update()
 		std::vector<MeshGPUData> l_meshGPUData;
 		l_meshGPUData.reserve(l_queueCopy.size());
 
+		std::vector<MaterialGPUData> l_materialGPUData;
+		l_materialGPUData.reserve(l_queueCopy.size());
+
 		while (l_queueCopy.size() > 0)
 		{
 			auto l_geometryPassGPUData = l_queueCopy.front();
 			l_meshGPUData.emplace_back(l_geometryPassGPUData.meshGPUData);
+			l_materialGPUData.emplace_back(l_geometryPassGPUData.materialGPUData);
 			l_queueCopy.pop();
 		}
 
 		updateUBO(VKRenderingSystemComponent::get().m_meshUBOMemory, l_meshGPUData);
+		updateUBO(VKRenderingSystemComponent::get().m_materialUBOMemory, l_materialGPUData);
 	}
 
 	VKOpaquePass::update();

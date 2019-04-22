@@ -83,6 +83,14 @@ bool VKOpaquePass::initialize()
 	meshUBODescriptorLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	m_VKRPC->descriptorSetLayoutBindings.emplace_back(meshUBODescriptorLayoutBinding);
 
+	VkDescriptorSetLayoutBinding materialUBODescriptorLayoutBinding = {};
+	materialUBODescriptorLayoutBinding.binding = 2;
+	materialUBODescriptorLayoutBinding.descriptorCount = 1;
+	materialUBODescriptorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	materialUBODescriptorLayoutBinding.pImmutableSamplers = nullptr;
+	materialUBODescriptorLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	m_VKRPC->descriptorSetLayoutBindings.emplace_back(materialUBODescriptorLayoutBinding);
+
 	// set descriptor buffer info
 	VkDescriptorBufferInfo cameraUBODescriptorBufferInfo = {};
 	cameraUBODescriptorBufferInfo.buffer = VKRenderingSystemComponent::get().m_cameraUBO;
@@ -111,6 +119,20 @@ bool VKOpaquePass::initialize()
 	meshUBOWriteDescriptorSet.descriptorCount = 1;
 	meshUBOWriteDescriptorSet.pBufferInfo = &meshUBODescriptorBufferInfo;
 	m_VKRPC->writeDescriptorSets.emplace_back(meshUBOWriteDescriptorSet);
+
+	VkDescriptorBufferInfo materialUBODescriptorBufferInfo = {};
+	materialUBODescriptorBufferInfo.buffer = VKRenderingSystemComponent::get().m_materialUBO;
+	materialUBODescriptorBufferInfo.offset = 0;
+	materialUBODescriptorBufferInfo.range = sizeof(MaterialGPUData);
+
+	VkWriteDescriptorSet materialUBOWriteDescriptorSet = {};
+	materialUBOWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	materialUBOWriteDescriptorSet.dstBinding = 2;
+	materialUBOWriteDescriptorSet.dstArrayElement = 0;
+	materialUBOWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	materialUBOWriteDescriptorSet.descriptorCount = 1;
+	materialUBOWriteDescriptorSet.pBufferInfo = &materialUBODescriptorBufferInfo;
+	m_VKRPC->writeDescriptorSets.emplace_back(materialUBOWriteDescriptorSet);
 
 	// set pipeline fix stages info
 	m_VKRPC->inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
@@ -166,8 +188,8 @@ bool VKOpaquePass::initialize()
 	createDescriptorSets(VKRenderingSystemComponent::get().m_UBODescriptorPool, m_VKRPC->descriptorSetLayout, m_VKRPC->descriptorSet, 1);
 
 	m_VKRPC->writeDescriptorSets[0].dstSet = m_VKRPC->descriptorSet;
-
 	m_VKRPC->writeDescriptorSets[1].dstSet = m_VKRPC->descriptorSet;
+	m_VKRPC->writeDescriptorSets[2].dstSet = m_VKRPC->descriptorSet;
 
 	updateDescriptorSet(m_VKRPC);
 
@@ -179,6 +201,7 @@ bool VKOpaquePass::update()
 	waitForFence(m_VKRPC);
 
 	unsigned int l_sizeofMeshGPUData = sizeof(MeshGPUData);
+	unsigned int l_sizeofMaterialGPUData = sizeof(MaterialGPUData);
 
 	recordCommand(m_VKRPC, 0, [&]() {
 		unsigned int offsetCount = 0;
@@ -187,7 +210,9 @@ bool VKOpaquePass::update()
 		{
 			GeometryPassGPUData l_geometryPassGPUData = {};
 
-			auto l_dynamicOffset = l_sizeofMeshGPUData * offsetCount;
+			auto l_meshUBOOffset = l_sizeofMeshGPUData * offsetCount;
+			auto l_materialUBOOffset = l_sizeofMaterialGPUData * offsetCount;
+			unsigned int l_dynamicOffsets[] = { l_meshUBOOffset, l_materialUBOOffset };
 
 			if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
 			{
@@ -196,7 +221,7 @@ bool VKOpaquePass::update()
 					m_VKRPC->m_pipelineLayout,
 					0,
 					1,
-					&m_VKRPC->descriptorSet, 1, &l_dynamicOffset);
+					&m_VKRPC->descriptorSet, 2, l_dynamicOffsets);
 
 				recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_geometryPassGPUData.MDC));
 

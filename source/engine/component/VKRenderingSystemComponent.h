@@ -68,6 +68,9 @@ public:
 	VkBuffer m_meshUBO;
 	VkDeviceMemory m_meshUBOMemory;
 
+	VkBuffer m_materialUBO;
+	VkDeviceMemory m_materialUBOMemory;
+
 	VkDescriptorPool  m_UBODescriptorPool;
 
 	VkSampler m_deferredRTSampler;

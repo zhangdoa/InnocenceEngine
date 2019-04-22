@@ -13,10 +13,21 @@ layout(location = 1) out vec4 opaquePassRT1;
 layout(location = 2) out vec4 opaquePassRT2;
 layout(location = 3) out vec4 opaquePassRT3;
 
+layout(std140, set = 0, binding = 2) uniform materialUBO
+{
+	vec4 uni_albedo;
+	vec4 uni_MRAT;
+	bool uni_useNormalTexture;
+	bool uni_useAlbedoTexture;
+	bool uni_useMetallicTexture;
+	bool uni_useRoughnessTexture;
+	bool uni_useAOTexture;
+};
+
 void main() {
-	opaquePassRT0 = vec4(thefrag_WorldSpacePos.xyz, 1.0);
-	opaquePassRT1 = vec4(thefrag_Normal.xyz, 1.0);
-	opaquePassRT2 = vec4(thefrag_Normal.xyz, 1.0);
+	opaquePassRT0 = vec4(thefrag_WorldSpacePos.xyz, uni_MRAT.x);
+	opaquePassRT1 = vec4(thefrag_Normal.xyz, uni_MRAT.y);
+	opaquePassRT2 = vec4(uni_albedo.xyz, uni_MRAT.z);
 	vec4 motionVec = (thefrag_ClipSpacePos_current / thefrag_ClipSpacePos_current.w - thefrag_ClipSpacePos_previous / thefrag_ClipSpacePos_previous.w);
-	opaquePassRT3 = vec4(motionVec.xy * 0.5, thefrag_UUID, 1.0);
+	opaquePassRT3 = vec4(motionVec.xy * 0.5, thefrag_UUID, uni_albedo.w);
 }
