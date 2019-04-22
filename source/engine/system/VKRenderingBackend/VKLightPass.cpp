@@ -292,8 +292,8 @@ bool VKLightPass::initialize()
 	m_VKRPC->rasterizationStateCInfo.rasterizerDiscardEnable = VK_FALSE;
 	m_VKRPC->rasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_FILL;
 	m_VKRPC->rasterizationStateCInfo.lineWidth = 1.0f;
-	m_VKRPC->rasterizationStateCInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	m_VKRPC->rasterizationStateCInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	m_VKRPC->rasterizationStateCInfo.cullMode = VK_CULL_MODE_NONE;
+	m_VKRPC->rasterizationStateCInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	m_VKRPC->rasterizationStateCInfo.depthBiasEnable = VK_FALSE;
 
 	m_VKRPC->multisampleStateCInfo.sampleShadingEnable = VK_FALSE;

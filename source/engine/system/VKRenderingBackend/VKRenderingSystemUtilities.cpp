@@ -1101,8 +1101,16 @@ bool VKRenderingSystemNS::recordCommand(VKRenderPassComponent* VKRPC, unsigned i
 	renderPassInfo.renderArea.extent = VKRPC->scissor.extent;
 
 	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-	renderPassInfo.clearValueCount = VKRPC->m_renderPassDesc.RTNumber;
-	renderPassInfo.pClearValues = &clearColor;
+
+	std::vector<VkClearValue> clearValues(VKRPC->m_renderPassDesc.RTNumber);
+
+	for (size_t i = 0; i < clearValues.size(); i++)
+	{
+		clearValues[i] = clearColor;
+	}
+
+	renderPassInfo.clearValueCount = (uint32_t)clearValues.size();
+	renderPassInfo.pClearValues = &clearValues[0];
 
 	vkCmdBeginRenderPass(VKRPC->m_commandBuffers[commandBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 

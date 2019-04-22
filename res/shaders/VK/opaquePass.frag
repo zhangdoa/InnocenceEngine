@@ -25,8 +25,9 @@ layout(std140, set = 0, binding = 2) uniform materialUBO
 };
 
 void main() {
+	vec3 WorldSpaceNormal = normalize(thefrag_Normal);
 	opaquePassRT0 = vec4(thefrag_WorldSpacePos.xyz, uni_MRAT.x);
-	opaquePassRT1 = vec4(thefrag_Normal.xyz, uni_MRAT.y);
+	opaquePassRT1 = vec4(WorldSpaceNormal, uni_MRAT.y);
 	opaquePassRT2 = vec4(uni_albedo.xyz, uni_MRAT.z);
 	vec4 motionVec = (thefrag_ClipSpacePos_current / thefrag_ClipSpacePos_current.w - thefrag_ClipSpacePos_previous / thefrag_ClipSpacePos_previous.w);
 	opaquePassRT3 = vec4(motionVec.xy * 0.5, thefrag_UUID, uni_albedo.w);

@@ -498,8 +498,8 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_VKRPC->rasterizationStateCInfo.rasterizerDiscardEnable = VK_FALSE;
 	l_VKRPC->rasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_FILL;
 	l_VKRPC->rasterizationStateCInfo.lineWidth = 1.0f;
-	l_VKRPC->rasterizationStateCInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	l_VKRPC->rasterizationStateCInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	l_VKRPC->rasterizationStateCInfo.cullMode = VK_CULL_MODE_NONE;
+	l_VKRPC->rasterizationStateCInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	l_VKRPC->rasterizationStateCInfo.depthBiasEnable = VK_FALSE;
 
 	l_VKRPC->multisampleStateCInfo.sampleShadingEnable = VK_FALSE;
@@ -716,7 +716,7 @@ void VKRenderingSystemNS::loadDefaultAssets()
 	// adjust texture coordinate
 	for (auto& i : m_unitQuadMDC->m_vertices)
 	{
-		i.m_texCoord.y = i.m_texCoord.y * 2.0f - 1.0f;
+		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
 	}
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;

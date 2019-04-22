@@ -8,6 +8,7 @@ layout(location = 0) out vec4 lightPassRT0;
 struct dirLight {
 	vec4 direction;
 	vec4 luminance;
+	mat4 r;
 };
 
 // w component of luminance is attenuationRadius
