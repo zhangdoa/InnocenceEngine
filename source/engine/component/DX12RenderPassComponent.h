@@ -15,6 +15,8 @@ public:
 
 	RenderPassDesc m_renderPassDesc;
 
+	std::vector<ID3D12GraphicsCommandList*> m_commandLists;
+
 	ID3D12DescriptorHeap* m_RTVHeap;
 	D3D12_DESCRIPTOR_HEAP_DESC m_RTVHeapDesc = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_RTVDescHandle;
@@ -41,4 +43,11 @@ public:
 	D3D12_RASTERIZER_DESC m_rasterizerDesc = {};
 
 	D3D12_VIEWPORT m_viewport = {};
+
+	D3D12_RECT m_scissor = {};
+
+	unsigned int m_frameIndex = 0;
+	ID3D12Fence* m_fence;
+	HANDLE m_fenceEvent;
+	std::vector<unsigned long long> m_fenceValues;
 };

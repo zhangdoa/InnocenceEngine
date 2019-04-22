@@ -119,11 +119,11 @@ bool DX12RenderingSystemNS::createDebugCallback()
 
 bool DX12RenderingSystemNS::createPhysicalDevices()
 {
-	HRESULT result;
+	HRESULT l_result;
 
 	// Create a DirectX graphics interface factory.
-	result = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_factory));
-	if (FAILED(result))
+	l_result = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_factory));
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DXGI factory!");
 		m_objectStatus = ObjectStatus::STANDBY;
@@ -151,8 +151,8 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	auto featureLevel = D3D_FEATURE_LEVEL_12_1;
 
 	// Create the Direct3D 12 device.
-	result = D3D12CreateDevice(g_DXRenderingSystemComponent->m_adapter, featureLevel, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_device));
-	if (FAILED(result))
+	l_result = D3D12CreateDevice(g_DXRenderingSystemComponent->m_adapter, featureLevel, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_device));
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create a DirectX 12.1 device. The default video card does not support DirectX 12.1!");
 		m_objectStatus = ObjectStatus::STANDBY;
@@ -178,8 +178,8 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	g_DXRenderingSystemComponent->m_commandQueueDesc.NodeMask = 0;
 
 	// Create the command queue.
-	result = g_DXRenderingSystemComponent->m_device->CreateCommandQueue(&g_DXRenderingSystemComponent->m_commandQueueDesc, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandQueue));
-	if (FAILED(result))
+	l_result = g_DXRenderingSystemComponent->m_device->CreateCommandQueue(&g_DXRenderingSystemComponent->m_commandQueueDesc, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandQueue));
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command queue!");
 		m_objectStatus = ObjectStatus::STANDBY;
@@ -197,11 +197,11 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 
 bool DX12RenderingSystemNS::createCommandAllocator()
 {
-	HRESULT result;
+	HRESULT l_result;
 
 	// Create a command allocator.
-	result = g_DXRenderingSystemComponent->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandAllocator));
-	if (FAILED(result))
+	l_result = g_DXRenderingSystemComponent->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandAllocator));
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command allocator!");
 		m_objectStatus = ObjectStatus::STANDBY;
@@ -215,7 +215,7 @@ bool DX12RenderingSystemNS::createCommandAllocator()
 
 bool DX12RenderingSystemNS::createSwapChain()
 {
-	HRESULT result;
+	HRESULT l_result;
 
 	// Initialize the swap chain description.
 	ZeroMemory(&g_DXRenderingSystemComponent->m_swapChainDesc, sizeof(g_DXRenderingSystemComponent->m_swapChainDesc));
@@ -250,7 +250,7 @@ bool DX12RenderingSystemNS::createSwapChain()
 
 	// Finally create the swap chain using the swap chain description.
 	IDXGISwapChain1* l_swapChain1;
-	result = g_DXRenderingSystemComponent->m_factory->CreateSwapChainForHwnd(
+	l_result = g_DXRenderingSystemComponent->m_factory->CreateSwapChainForHwnd(
 		g_DXRenderingSystemComponent->m_commandQueue,
 		WinWindowSystemComponent::get().m_hwnd,
 		&g_DXRenderingSystemComponent->m_swapChainDesc,
@@ -260,7 +260,7 @@ bool DX12RenderingSystemNS::createSwapChain()
 
 	g_DXRenderingSystemComponent->m_swapChain = reinterpret_cast<IDXGISwapChain4*>(l_swapChain1);
 
-	if (FAILED(result))
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create swap chain!");
 		m_objectStatus = ObjectStatus::STANDBY;
@@ -308,8 +308,8 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 	// use device created swap chain RTV
 	for (size_t i = 0; i < l_imageCount; i++)
 	{
-		auto result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer((unsigned int)i, IID_PPV_ARGS(&l_DXRPC->m_RTVs[i]));
-		if (FAILED(result))
+		auto l_result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer((unsigned int)i, IID_PPV_ARGS(&l_DXRPC->m_RTVs[i]));
+		if (FAILED(l_result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't get pointer of swap chain render target " + std::to_string(i) + "!");
 			m_objectStatus = ObjectStatus::STANDBY;
@@ -345,6 +345,12 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 	l_DXRPC->m_viewport.TopLeftX = 0.0f;
 	l_DXRPC->m_viewport.TopLeftY = 0.0f;
 
+	// Setup the scissor rect
+	l_DXRPC->m_scissor.left = 0;
+	l_DXRPC->m_scissor.top = 0;
+	l_DXRPC->m_scissor.right = (unsigned long)l_DXRPC->m_viewport.Width;
+	l_DXRPC->m_scissor.bottom = (unsigned long)l_DXRPC->m_viewport.Height;
+
 	// Describe and create the graphics pipeline state object (PSO).
 	l_DXRPC->m_PSODesc.RasterizerState = l_DXRPC->m_rasterizerDesc;
 	l_DXRPC->m_PSODesc.BlendState = l_DXRPC->m_blendDesc;
@@ -358,23 +364,37 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 
 	l_result = createRootSignature(l_DXRPC);
 	l_result = createPSO(l_DXRPC, l_DXSPC);
+	l_result = createCommandLists(l_DXRPC);
+
+	DX12RenderingSystemComponent::get().m_swapChainDXRPC = l_DXRPC;
+	DX12RenderingSystemComponent::get().m_swapChainDXSPC = l_DXSPC;
 
 	return true;
 }
 
 bool DX12RenderingSystemNS::createSwapChainCommandLists()
 {
-	HRESULT result;
+	HRESULT l_result;
+	l_result = DX12RenderingSystemComponent::get().m_commandAllocator->Reset();
+
+	for (size_t i = 0; i < DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists.size(); i++)
+	{
+		recordCommand(DX12RenderingSystemComponent::get().m_swapChainDXRPC, (unsigned int)i, [&]() {
+			auto l_MDC = getDX12MeshDataComponent(MeshShapeType::QUAD);
+			recordDrawCall(DX12RenderingSystemComponent::get().m_swapChainDXRPC, (unsigned int)i, l_MDC);
+		});
+	}
+
 	return true;
 }
 
 bool DX12RenderingSystemNS::createSyncPrimitives()
 {
-	HRESULT result;
+	HRESULT l_result;
 
 	// Create a fence for GPU synchronization.
-	result = g_DXRenderingSystemComponent->m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_fence));
-	if (FAILED(result))
+	l_result = g_DXRenderingSystemComponent->m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence));
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create fence!");
 		m_objectStatus = ObjectStatus::STANDBY;
@@ -384,8 +404,8 @@ bool DX12RenderingSystemNS::createSyncPrimitives()
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Fence has been created.");
 
 	// Create an event object for the fence.
-	g_DXRenderingSystemComponent->m_fenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-	if (g_DXRenderingSystemComponent->m_fenceEvent == NULL)
+	DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+	if (DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceEvent == NULL)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create fence event!");
 		m_objectStatus = ObjectStatus::STANDBY;
@@ -395,7 +415,14 @@ bool DX12RenderingSystemNS::createSyncPrimitives()
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Fence event has been created.");
 
 	// Initialize the starting fence value.
-	g_DXRenderingSystemComponent->m_fenceValue = 1;
+	DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceValues.reserve(
+		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists.size()
+	);
+
+	for (size_t i = 0; i < DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists.size(); i++)
+	{
+		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceValues.emplace_back();
+	}
 
 	return true;
 }
@@ -421,15 +448,15 @@ bool DX12RenderingSystemNS::setup()
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT;
 
-	bool result = true;
-	result = result && initializeComponentPool();
+	bool l_result = true;
+	l_result = l_result && initializeComponentPool();
 
-	result = result && createDebugCallback();
-	result = result && createPhysicalDevices();
+	l_result = l_result && createDebugCallback();
+	l_result = l_result && createPhysicalDevices();
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem setup finished.");
-	return result;
+	return l_result;
 }
 
 bool DX12RenderingSystemNS::initialize()
@@ -438,21 +465,21 @@ bool DX12RenderingSystemNS::initialize()
 	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
 	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12TextureDataComponent), 32768);
 
-	bool result = true;
+	bool l_result = true;
 
-	result = result && createCommandAllocator();
-
-	result = result && createSwapChain();
-	result = result && createSwapChainDXRPC();
-	result = result && createSwapChainCommandLists();
-
-	result = result && createSyncPrimitives();
+	l_result = l_result && createCommandAllocator();
 
 	loadDefaultAssets();
 
+	l_result = l_result && createSwapChain();
+	l_result = l_result && createSwapChainDXRPC();
+	l_result = l_result && createSwapChainCommandLists();
+
+	l_result = l_result && createSyncPrimitives();
+
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem has been initialized.");
 
-	return result;
+	return l_result;
 }
 
 bool DX12RenderingSystemNS::update()
@@ -462,6 +489,30 @@ bool DX12RenderingSystemNS::update()
 
 bool DX12RenderingSystemNS::render()
 {
+	// Execute the command list.
+	ID3D12CommandList* ppCommandLists[] = { DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex] };
+	DX12RenderingSystemComponent::get().m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+	// Present the frame.
+	DX12RenderingSystemComponent::get().m_swapChain->Present(1, 0);
+
+	// Schedule a Signal command in the queue.
+	const UINT64 currentFenceValue = DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceValues[DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex];
+	DX12RenderingSystemComponent::get().m_commandQueue->Signal(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence, currentFenceValue);
+
+	// Update the frame index.
+	DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex = DX12RenderingSystemComponent::get().m_swapChain->GetCurrentBackBufferIndex();
+
+	// If the next frame is not ready to be rendered yet, wait until it is ready.
+	if (DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence->GetCompletedValue() < DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceValues[DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex])
+	{
+		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence->SetEventOnCompletion(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceValues[DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex], DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceEvent);
+		WaitForSingleObjectEx(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceEvent, INFINITE, FALSE);
+	}
+
+	// Set the fence value for the next frame.
+	DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceValues[DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex] = currentFenceValue + 1;
+
 	return true;
 }
 
@@ -474,16 +525,16 @@ bool DX12RenderingSystemNS::terminate()
 	}
 
 	// Close the object handle to the fence event.
-	auto error = CloseHandle(g_DXRenderingSystemComponent->m_fenceEvent);
+	auto error = CloseHandle(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceEvent);
 	if (error == 0)
 	{
 	}
 
 	// Release the fence.
-	if (g_DXRenderingSystemComponent->m_fence)
+	if (DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence)
 	{
-		g_DXRenderingSystemComponent->m_fence->Release();
-		g_DXRenderingSystemComponent->m_fence = 0;
+		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence->Release();
+		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence = 0;
 	}
 
 	// Release the command allocator.
@@ -645,10 +696,10 @@ DX12TextureDataComponent* DX12RenderingSystemNS::addDX12TextureDataComponent()
 
 DX12MeshDataComponent* DX12RenderingSystemNS::getDX12MeshDataComponent(EntityID EntityID)
 {
-	auto result = DX12RenderingSystemNS::m_meshMap.find(EntityID);
-	if (result != DX12RenderingSystemNS::m_meshMap.end())
+	auto l_result = DX12RenderingSystemNS::m_meshMap.find(EntityID);
+	if (l_result != DX12RenderingSystemNS::m_meshMap.end())
 	{
-		return result->second;
+		return l_result->second;
 	}
 	else
 	{
@@ -659,10 +710,10 @@ DX12MeshDataComponent* DX12RenderingSystemNS::getDX12MeshDataComponent(EntityID 
 
 DX12TextureDataComponent * DX12RenderingSystemNS::getDX12TextureDataComponent(EntityID EntityID)
 {
-	auto result = DX12RenderingSystemNS::m_textureMap.find(EntityID);
-	if (result != DX12RenderingSystemNS::m_textureMap.end())
+	auto l_result = DX12RenderingSystemNS::m_textureMap.find(EntityID);
+	if (l_result != DX12RenderingSystemNS::m_textureMap.end())
 	{
-		return result->second;
+		return l_result->second;
 	}
 	else
 	{

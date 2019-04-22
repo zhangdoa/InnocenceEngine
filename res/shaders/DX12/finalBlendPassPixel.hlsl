@@ -19,7 +19,7 @@ float3 acesFilm(const float3 x) {
 
 float4 main(PixelInputType input) : SV_TARGET
 {
-	float3 finalColor = float3(1.0, 1.0, 1.0);
+	float3 finalColor = float3(0.2, 0.3, 0.6);
 
 	//HDR to LDR
 	finalColor = acesFilm(finalColor);

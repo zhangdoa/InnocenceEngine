@@ -42,22 +42,18 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool createDescriptorHeap(DX12RenderPassComponent* DXRPC);
 	bool createRootSignature(DX12RenderPassComponent* DXRPC);
 	bool createPSO(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
+	bool createCommandLists(DX12RenderPassComponent* DXRPC);
 
 	bool initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs);
 	bool initializeDX12TextureDataComponent(DX12TextureDataComponent* rhs);
 
-	void recordDrawCall(EntityID rhs);
-	void recordDrawCall(MeshDataComponent* MDC);
-	void recordDrawCall(size_t indicesSize, DX12MeshDataComponent * DXMDC);
+	bool recordCommand(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, const std::function<void()>& commands);
+
+	bool recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, DX12MeshDataComponent * DXMDC);
 
 	DX12ShaderProgramComponent* addDX12ShaderProgramComponent(EntityID rhs);
 
 	bool initializeDX12ShaderProgramComponent(DX12ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
 
 	bool activateDX12ShaderProgramComponent(DX12ShaderProgramComponent* rhs);
-
-	void updateShaderParameter(ShaderType shaderType, unsigned int startSlot, ID3D12Resource* CBuffer, size_t size, void* parameterValue);
-
-	void cleanRTV(vec4 color, ID3D12Resource* RTV);
-	void cleanDSV(ID3D12Resource* DSV);
 }

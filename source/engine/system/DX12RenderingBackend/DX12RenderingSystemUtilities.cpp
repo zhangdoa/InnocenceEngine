@@ -245,6 +245,7 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 	result = createDescriptorHeap(DXRPC);
 	result = createRootSignature(DXRPC);
 	result = createPSO(DXRPC, DXSPC);
+	result &= createCommandLists(DXRPC);
 
 	DXRPC->m_objectStatus = ObjectStatus::ALIVE;
 
@@ -426,6 +427,27 @@ bool DX12RenderingSystemNS::createPSO(DX12RenderPassComponent* DXRPC, DX12Shader
 	return true;
 }
 
+bool DX12RenderingSystemNS::createCommandLists(DX12RenderPassComponent* DXRPC)
+{
+	DXRPC->m_commandLists.resize(DXRPC->m_RTVs.size());
+
+	for (size_t i = 0; i < DXRPC->m_commandLists.size(); i++)
+	{
+		auto hResult = DX12RenderingSystemComponent::get().m_device->CreateCommandList
+		(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RenderingSystemComponent::get().m_commandAllocator, NULL, IID_PPV_ARGS(&DXRPC->m_commandLists[i]));
+		if (FAILED(hResult))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create CommandList!");
+			return false;
+		}
+		DXRPC->m_commandLists[i]->Close();
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: CommandList has been created.");
+
+	return true;
+}
+
 bool DX12RenderingSystemNS::initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
@@ -481,17 +503,78 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 
 bool DX12RenderingSystemNS::summitGPUData(DX12MeshDataComponent * rhs)
 {
-	// Set up the description of the static vertex buffer.
+	auto l_verticesDataSize = unsigned int(sizeof(Vertex) * rhs->m_vertices.size());
 
-	// Give the subresource structure a pointer to the vertex data.
+	auto hResult = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(l_verticesDataSize),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&rhs->m_vertexBuffer));
 
-	// Now create the vertex buffer.
+	if (FAILED(hResult))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create vertex buffer!");
+		return false;
+	}
 
-	// Set up the description of the static index buffer.
+	// Copy the triangle data to the vertex buffer.
+	UINT8* pVertexDataBegin;
+	CD3DX12_RANGE vertexReadRange(0, 0);        // We do not intend to read from this resource on the CPU.
+	hResult = rhs->m_vertexBuffer->Map(0, &vertexReadRange, reinterpret_cast<void**>(&pVertexDataBegin));
 
-	// Give the subresource structure a pointer to the index data.
+	if (FAILED(hResult))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't map vertex buffer device memory!");
+		return false;
+	}
 
-	// Create the index buffer.
+	std::memcpy(pVertexDataBegin, &rhs->m_vertices[0], l_verticesDataSize);
+	rhs->m_vertexBuffer->Unmap(0, nullptr);
+
+	// Initialize the vertex buffer view.
+	rhs->m_vertexBufferView.BufferLocation = rhs->m_vertexBuffer->GetGPUVirtualAddress();
+	rhs->m_vertexBufferView.StrideInBytes = sizeof(Vertex);
+	rhs->m_vertexBufferView.SizeInBytes = l_verticesDataSize;
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: VBO " + InnoUtility::pointerToString(rhs->m_vertexBuffer) + " is initialized.");
+
+	auto l_indicesDataSize = unsigned int(sizeof(Index) * rhs->m_indices.size());
+	DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(l_indicesDataSize),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&rhs->m_indexBuffer));
+
+	if (FAILED(hResult))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create index buffer!");
+		return false;
+	}
+
+	// Copy the indice data to the index buffer.
+	UINT8* pIndexDataBegin;
+	CD3DX12_RANGE indexReadRange(0, 0);        // We do not intend to read from this resource on the CPU.
+	hResult = rhs->m_indexBuffer->Map(0, &indexReadRange, reinterpret_cast<void**>(&pIndexDataBegin));
+
+	if (FAILED(hResult))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't map index buffer device memory!");
+		return false;
+	}
+
+	std::memcpy(pIndexDataBegin, &rhs->m_indices[0], l_indicesDataSize);
+	rhs->m_indexBuffer->Unmap(0, nullptr);
+
+	// Initialize the index buffer view.
+	rhs->m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	rhs->m_indexBufferView.BufferLocation = rhs->m_indexBuffer->GetGPUVirtualAddress();
+	rhs->m_indexBufferView.SizeInBytes = l_indicesDataSize;
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: IBO " + InnoUtility::pointerToString(rhs->m_indexBuffer) + " is initialized.");
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
@@ -650,52 +733,42 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 	return true;
 }
 
-void DX12RenderingSystemNS::recordDrawCall(EntityID rhs)
+bool DX12RenderingSystemNS::recordCommand(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, const std::function<void()>& commands)
 {
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->getMeshDataComponent(rhs);
-	if (l_MDC)
-	{
-		recordDrawCall(l_MDC);
-	}
+	DXRPC->m_commandLists[commandListIndex]->Reset(DX12RenderingSystemComponent::get().m_commandAllocator, DXRPC->m_PSO);
+
+	// Set necessary state.
+	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootSignature(DXRPC->m_rootSignature);
+	DXRPC->m_commandLists[commandListIndex]->RSSetViewports(1, &DXRPC->m_viewport);
+	DXRPC->m_commandLists[commandListIndex]->RSSetScissorRects(1, &DXRPC->m_scissor);
+
+	// Indicate that the back buffer will be used as a render target.
+	DXRPC->m_commandLists[commandListIndex]->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(DXRPC->m_RTVs[commandListIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(DXRPC->m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), commandListIndex,
+		DX12RenderingSystemComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+
+	DXRPC->m_commandLists[commandListIndex]->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+	const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	DXRPC->m_commandLists[commandListIndex]->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+	commands();
+
+	DXRPC->m_commandLists[commandListIndex]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DXRPC->m_RTVs[commandListIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+
+	DXRPC->m_commandLists[commandListIndex]->Close();
+
+	return true;
 }
 
-void DX12RenderingSystemNS::recordDrawCall(MeshDataComponent * MDC)
+bool DX12RenderingSystemNS::recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, DX12MeshDataComponent * DXMDC)
 {
-	auto l_DXMDC = DX12RenderingSystemNS::getDX12MeshDataComponent(MDC->m_parentEntity);
-	if (l_DXMDC)
-	{
-		if (MDC->m_objectStatus == ObjectStatus::ALIVE && l_DXMDC->m_objectStatus == ObjectStatus::ALIVE)
-		{
-			recordDrawCall(MDC->m_indicesSize, l_DXMDC);
-		}
-	}
-}
+	DXRPC->m_commandLists[commandListIndex]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	DXRPC->m_commandLists[commandListIndex]->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBufferView);
+	DXRPC->m_commandLists[commandListIndex]->IASetIndexBuffer(&DXMDC->m_indexBufferView);
+	DXRPC->m_commandLists[commandListIndex]->DrawIndexedInstanced((unsigned int)DXMDC->m_indicesSize, 1, 0, 0, 0);
 
-void DX12RenderingSystemNS::recordDrawCall(size_t indicesSize, DX12MeshDataComponent * DXMDC)
-{
-	unsigned int stride;
-	unsigned int offset;
-
-	// Set vertex buffer stride and offset.
-	stride = sizeof(Vertex);
-	offset = 0;
-}
-
-void DX12RenderingSystemNS::updateShaderParameter(ShaderType shaderType, unsigned int startSlot, ID3D12Resource* CBuffer, size_t size, void* parameterValue)
-{
-}
-
-void DX12RenderingSystemNS::cleanRTV(vec4 color, ID3D12Resource* RTV)
-{
-	float l_color[4];
-
-	// Setup the color to clear the buffer to.
-	l_color[0] = color.x;
-	l_color[1] = color.y;
-	l_color[2] = color.z;
-	l_color[3] = color.w;
-}
-
-void DX12RenderingSystemNS::cleanDSV(ID3D12Resource* DSV)
-{
+	return true;
 }

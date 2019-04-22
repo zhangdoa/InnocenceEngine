@@ -121,11 +121,6 @@ public:
 
 	DX12ShaderProgramComponent* m_swapChainDXSPC;
 	DX12RenderPassComponent* m_swapChainDXRPC;
-	unsigned int m_bufferIndex;
-
-	ID3D12Fence* m_fence;
-	HANDLE m_fenceEvent;
-	unsigned long long m_fenceValue;
 
 	D3D12_DEPTH_STENCIL_DESC m_depthStencilDesc;
 
