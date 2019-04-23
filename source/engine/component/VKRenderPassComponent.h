@@ -15,7 +15,8 @@ public:
 
 	RenderPassDesc m_renderPassDesc;
 
-	std::vector<VkAttachmentReference> attachmentRefs = {};
+	std::vector<VkAttachmentReference> colorAttachmentRefs = {};
+	VkAttachmentReference depthAttachmentRef = {};
 	VkSubpassDescription subpassDesc = {};
 
 	std::vector<VkAttachmentDescription> attachmentDescs;
@@ -46,6 +47,7 @@ public:
 	std::vector<VkFramebuffer> m_framebuffers;
 	std::vector<VkCommandBuffer> m_commandBuffers;
 	std::vector<VKTextureDataComponent*> m_VKTDCs;
+	VKTextureDataComponent* m_depthVKTDC;
 
 	VkSubmitInfo submitInfo;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;

@@ -35,6 +35,7 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->m_renderPassDesc = VKRenderingSystemComponent::get().m_deferredRenderPassDesc;
 	m_VKRPC->m_renderPassDesc.RTNumber = 4;
 	m_VKRPC->m_renderPassDesc.useMultipleFramebuffers = false;
+	m_VKRPC->m_renderPassDesc.useDepthAttachment = true;
 
 	// create descriptor pool
 	VkDescriptorPoolSize l_cameraUBODescriptorPoolSize = {};
@@ -54,32 +55,49 @@ bool VKOpaquePass::initialize()
 	createDescriptorPool(l_UBODescriptorPoolSizes, 3, 1, m_VKRPC->m_descriptorPool);
 
 	// sub-pass
-	VkAttachmentReference l_attachmentRef = {};
+	VkAttachmentReference l_colorAttachmentRef = {};
 
-	l_attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	l_colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	for (size_t i = 0; i < m_VKRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		l_attachmentRef.attachment = (uint32_t)i;
-		m_VKRPC->attachmentRefs.emplace_back(l_attachmentRef);
+		l_colorAttachmentRef.attachment = (uint32_t)i;
+		m_VKRPC->colorAttachmentRefs.emplace_back(l_colorAttachmentRef);
 	}
+
+	// last attachment is depth attachment
+	m_VKRPC->depthAttachmentRef.attachment = m_VKRPC->m_renderPassDesc.RTNumber;
+	m_VKRPC->depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	// render pass
-	VkAttachmentDescription l_attachmentDesc = {};
+	VkAttachmentDescription l_colorAttachmentDesc = {};
 
-	l_attachmentDesc.format = VK_FORMAT_R16G16B16A16_SFLOAT;
-	l_attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-	l_attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	l_attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	l_attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	l_attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	l_attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	l_attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	l_colorAttachmentDesc.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+	l_colorAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+	l_colorAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	l_colorAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	l_colorAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	l_colorAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	l_colorAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	l_colorAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	for (size_t i = 0; i < m_VKRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		m_VKRPC->attachmentDescs.emplace_back(l_attachmentDesc);
+		m_VKRPC->attachmentDescs.emplace_back(l_colorAttachmentDesc);
 	}
+
+	VkAttachmentDescription l_depthAttachmentDesc = {};
+
+	l_depthAttachmentDesc.format = VK_FORMAT_D32_SFLOAT;
+	l_depthAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+	l_depthAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	l_depthAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	l_depthAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	l_depthAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	l_depthAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	l_depthAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	m_VKRPC->attachmentDescs.emplace_back(l_depthAttachmentDesc);
 
 	m_VKRPC->renderPassCInfo.subpassCount = 1;
 
@@ -154,6 +172,19 @@ bool VKOpaquePass::initialize()
 	// set pipeline fix stages info
 	m_VKRPC->inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 	m_VKRPC->inputAssemblyStateCInfo.primitiveRestartEnable = VK_FALSE;
+
+	VkPipelineDepthStencilStateCreateInfo depthStencilCInfo = {};
+	depthStencilCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depthStencilCInfo.depthTestEnable = VK_TRUE;
+	depthStencilCInfo.depthWriteEnable = VK_TRUE;
+	depthStencilCInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+	depthStencilCInfo.depthBoundsTestEnable = VK_FALSE;
+	depthStencilCInfo.minDepthBounds = 0.0f; // Optional
+	depthStencilCInfo.maxDepthBounds = 1.0f; // Optional
+	depthStencilCInfo.stencilTestEnable = VK_FALSE;
+	depthStencilCInfo.front = {}; // Optional
+	depthStencilCInfo.back = {}; // Optional
+	m_VKRPC->pipelineCInfo.pDepthStencilState = &depthStencilCInfo;
 
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 

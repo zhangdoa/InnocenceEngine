@@ -80,31 +80,31 @@ bool VKLightPass::initialize()
 	createDescriptorPool(l_UBODescriptorPoolSizes, 7, 1, m_VKRPC->m_descriptorPool);
 
 	// sub-pass
-	VkAttachmentReference l_attachmentRef = {};
+	VkAttachmentReference l_colorAttachmentRef = {};
 
-	l_attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	l_colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	for (size_t i = 0; i < m_VKRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		l_attachmentRef.attachment = (uint32_t)i;
-		m_VKRPC->attachmentRefs.emplace_back(l_attachmentRef);
+		l_colorAttachmentRef.attachment = (uint32_t)i;
+		m_VKRPC->colorAttachmentRefs.emplace_back(l_colorAttachmentRef);
 	}
 
 	// render pass
-	VkAttachmentDescription l_attachmentDesc = {};
+	VkAttachmentDescription l_colorAttachmentDesc = {};
 
-	l_attachmentDesc.format = VK_FORMAT_R16G16B16A16_SFLOAT;
-	l_attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-	l_attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	l_attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	l_attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	l_attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	l_attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	l_attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	l_colorAttachmentDesc.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+	l_colorAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+	l_colorAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	l_colorAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	l_colorAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	l_colorAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	l_colorAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	l_colorAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	for (size_t i = 0; i < m_VKRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		m_VKRPC->attachmentDescs.emplace_back(l_attachmentDesc);
+		m_VKRPC->attachmentDescs.emplace_back(l_colorAttachmentDesc);
 	}
 
 	m_VKRPC->renderPassCInfo.subpassCount = 1;

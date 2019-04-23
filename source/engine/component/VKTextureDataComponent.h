@@ -5,12 +5,14 @@
 
 struct VkTextureDataDesc
 {
-	VkSamplerAddressMode textureWrapMethod;
+	VkImageType imageType;
+	VkSamplerAddressMode samplerAddressMode;
 	VkSamplerMipmapMode minFilterParam;
 	VkSamplerMipmapMode magFilterParam;
-	VkFormat internalFormat;
+	VkFormat format;
 	VkDeviceSize imageSize;
 	VkBorderColor boarderColor;
+	VkImageAspectFlags aspectFlags;
 };
 
 class VKTextureDataComponent : public TextureDataComponent

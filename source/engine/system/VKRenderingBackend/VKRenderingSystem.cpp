@@ -406,10 +406,12 @@ bool VKRenderingSystemNS::createSwapChain()
 	l_VKRPC->m_renderPassDesc.useMultipleFramebuffers = (l_imageCount > 1);
 
 	VkTextureDataDesc l_VkTextureDataDesc;
-	l_VkTextureDataDesc.textureWrapMethod = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	l_VkTextureDataDesc.imageType = VK_IMAGE_TYPE_2D;
+	l_VkTextureDataDesc.samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	l_VkTextureDataDesc.magFilterParam = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	l_VkTextureDataDesc.minFilterParam = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	l_VkTextureDataDesc.internalFormat = l_surfaceFormat.format;
+	l_VkTextureDataDesc.format = l_surfaceFormat.format;
+	l_VkTextureDataDesc.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 
 	// initialize manually
 	bool l_result = true;
@@ -435,7 +437,7 @@ bool VKRenderingSystemNS::createSwapChain()
 	VkAttachmentReference l_attachmentRef = {};
 	l_attachmentRef.attachment = 0;
 	l_attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	l_VKRPC->attachmentRefs.emplace_back(l_attachmentRef);
+	l_VKRPC->colorAttachmentRefs.emplace_back(l_attachmentRef);
 
 	// render pass
 	VkAttachmentDescription attachmentDesc = {};
@@ -624,7 +626,7 @@ bool VKRenderingSystemNS::setup()
 	// general render pass desc
 	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTNumber = 1;
 	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.usageType = TextureUsageType::RENDER_TARGET;
+	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
@@ -1024,7 +1026,7 @@ VKTextureDataComponent * VKRenderingSystemNS::getVKTextureDataComponent(TextureU
 		return VKRenderingSystemNS::m_basicRoughnessTDC; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
 		return VKRenderingSystemNS::m_basicAOTDC; break;
-	case TextureUsageType::RENDER_TARGET:
+	case TextureUsageType::COLOR_ATTACHMENT:
 		return nullptr; break;
 	default:
 		return nullptr; break;
