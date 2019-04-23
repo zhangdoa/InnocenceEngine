@@ -12,8 +12,6 @@ build_script:
 
     @echo | buildAssimpWin-VS15.bat
 
-    @echo | buildGLFWWin-VS15.bat
-
     @echo | buildWin-VS15.bat
 skip_commits:
   files:

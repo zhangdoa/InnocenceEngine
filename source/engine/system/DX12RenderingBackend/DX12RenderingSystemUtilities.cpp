@@ -485,7 +485,7 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 
 				rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-				if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+				if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 				{
 					// @TODO: release raw data in heap memory
 				}
@@ -639,13 +639,13 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 	D3DTextureDesc.SampleDesc.Quality = 0;
 	D3DTextureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
-	if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 	{
 		D3DTextureDesc.SampleDesc.Quality = 0;
 	}
 
 	unsigned int SRVMipLevels = -1;
-	if (rhs->m_textureDataDesc.usageType == TextureUsageType::RENDER_TARGET)
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
 	{
 		SRVMipLevels = 1;
 	}

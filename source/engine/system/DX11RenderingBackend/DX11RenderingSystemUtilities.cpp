@@ -473,7 +473,7 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 
 				rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-				if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+				if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 				{
 					// @TODO: release raw data in heap memory
 				}
@@ -607,7 +607,7 @@ bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
 	D3DTextureDesc.ArraySize = 1;
 	D3DTextureDesc.Format = l_internalFormat;
 	D3DTextureDesc.SampleDesc.Count = 1;
-	if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 	{
 		D3DTextureDesc.SampleDesc.Quality = 0;
 	}
@@ -617,7 +617,7 @@ bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
 	D3DTextureDesc.MiscFlags = miscFlags;
 
 	unsigned int SRVMipLevels = -1;
-	if (rhs->m_textureDataDesc.usageType == TextureUsageType::RENDER_TARGET)
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
 	{
 		SRVMipLevels = 1;
 	}
@@ -640,7 +640,7 @@ bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: Texture: " + InnoUtility::pointerToString(rhs->m_texture) + " is initialized.");
 
 	//summit raw data to GPU memory
-	if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 	{
 		unsigned int rowPitch;
 		rowPitch = (rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);

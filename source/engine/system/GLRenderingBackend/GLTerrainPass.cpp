@@ -163,7 +163,7 @@ bool GLTerrainPass::initialize()
 	m_terrainNoiseGLTDC = addGLTextureDataComponent();
 
 	m_terrainNoiseGLTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	m_terrainNoiseGLTDC->m_textureDataDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_terrainNoiseGLTDC->m_textureDataDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	m_terrainNoiseGLTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB32F;
 	m_terrainNoiseGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_terrainNoiseGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;

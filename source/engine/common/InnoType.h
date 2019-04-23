@@ -71,7 +71,7 @@ enum class MeshPrimitiveTopology { POINT, LINE, TRIANGLE, TRIANGLE_STRIP };
 
 // texture custom types
 enum class TextureSamplerType { SAMPLER_1D, SAMPLER_2D, SAMPLER_3D, CUBEMAP };
-enum class TextureUsageType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, RENDER_TARGET };
+enum class TextureUsageType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, COLOR_ATTACHMENT, DEPTH_ATTACHMENT };
 enum class TextureColorComponentsFormat {
 	RED, RG, RGB, RGBA,
 	R8, RG8, RGB8, RGBA8,
@@ -117,6 +117,7 @@ struct RenderPassDesc
 {
 	unsigned int RTNumber = 0;
 	bool useMultipleFramebuffers = false;
+	bool useDepthAttachment = false;
 	TextureDataDesc RTDesc = TextureDataDesc();
 };
 

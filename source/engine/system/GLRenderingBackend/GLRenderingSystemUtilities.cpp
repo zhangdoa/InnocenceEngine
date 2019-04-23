@@ -248,7 +248,7 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 
 				rhs->m_objectStatus = ObjectStatus::ALIVE;
 
-				if (rhs->m_textureDataDesc.usageType != TextureUsageType::RENDER_TARGET)
+				if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 				{
 					// @TODO: release raw data in heap memory
 				}

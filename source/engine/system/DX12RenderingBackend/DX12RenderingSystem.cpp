@@ -438,7 +438,7 @@ bool DX12RenderingSystemNS::setup()
 	// general render pass desc
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTNumber = 1;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.usageType = TextureUsageType::RENDER_TARGET;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
@@ -760,7 +760,7 @@ DX12TextureDataComponent * DX12RenderingSystemNS::getDX12TextureDataComponent(Te
 		return DX12RenderingSystemNS::m_basicRoughnessTDC; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
 		return DX12RenderingSystemNS::m_basicAOTDC; break;
-	case TextureUsageType::RENDER_TARGET:
+	case TextureUsageType::COLOR_ATTACHMENT:
 		return nullptr; break;
 	default:
 		return nullptr; break;

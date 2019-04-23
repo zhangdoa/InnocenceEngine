@@ -69,7 +69,7 @@ void GLVXGIPass::initialize()
 	m_entityID = InnoMath::createEntityID();
 
 	m_voxelizationPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_3D;
-	m_voxelizationPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_voxelizationPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	m_voxelizationPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA8;
 	m_voxelizationPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_voxelizationPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
@@ -87,7 +87,7 @@ void GLVXGIPass::initialize()
 	m_voxelizationPassFrameBufferDesc.drawColorBuffers = false;
 
 	m_irradianceInjectionPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_3D;
-	m_irradianceInjectionPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_irradianceInjectionPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	m_irradianceInjectionPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA8;
 	m_irradianceInjectionPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_irradianceInjectionPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;

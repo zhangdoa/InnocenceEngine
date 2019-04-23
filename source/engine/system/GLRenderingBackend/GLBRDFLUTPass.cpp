@@ -25,7 +25,7 @@ INNO_PRIVATE_SCOPE GLBRDFLUTPass
 bool GLBRDFLUTPass::initialize()
 {
 	m_BRDFSplitSumLUTPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	m_BRDFSplitSumLUTPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_BRDFSplitSumLUTPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	m_BRDFSplitSumLUTPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	m_BRDFSplitSumLUTPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_BRDFSplitSumLUTPassTextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
@@ -42,7 +42,7 @@ bool GLBRDFLUTPass::initialize()
 	m_BRDFSplitSumLUTPassFrameBufferDesc.drawColorBuffers = true;
 
 	m_BRDFMSAverageLUTPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	m_BRDFMSAverageLUTPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_BRDFMSAverageLUTPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	m_BRDFMSAverageLUTPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RG16F;
 	m_BRDFMSAverageLUTPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RG;
 	m_BRDFMSAverageLUTPassTextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;

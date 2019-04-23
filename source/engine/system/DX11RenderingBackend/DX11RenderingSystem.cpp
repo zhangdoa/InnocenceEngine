@@ -442,7 +442,7 @@ bool DX11RenderingSystemNS::setup()
 
 	// Setup the description of the deferred pass.
 	g_DXRenderingSystemComponent->deferredPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	g_DXRenderingSystemComponent->deferredPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	g_DXRenderingSystemComponent->deferredPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	g_DXRenderingSystemComponent->deferredPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	g_DXRenderingSystemComponent->deferredPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
@@ -861,7 +861,7 @@ DX11TextureDataComponent * DX11RenderingSystemNS::getDX11TextureDataComponent(Te
 		return DX11RenderingSystemNS::m_basicRoughnessTDC; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
 		return DX11RenderingSystemNS::m_basicAOTDC; break;
-	case TextureUsageType::RENDER_TARGET:
+	case TextureUsageType::COLOR_ATTACHMENT:
 		return nullptr; break;
 	default:
 		return nullptr; break;

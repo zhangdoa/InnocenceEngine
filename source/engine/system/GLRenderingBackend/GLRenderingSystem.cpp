@@ -159,7 +159,7 @@ bool GLRenderingSystemNS::setup()
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.drawColorBuffers = false;
 
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
@@ -176,7 +176,7 @@ bool GLRenderingSystemNS::setup()
 	GLRenderingSystemComponent::get().deferredPassFBDesc.drawColorBuffers = true;
 
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
@@ -585,7 +585,7 @@ GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(TextureU
 		return GLRenderingSystemNS::m_basicRoughnessTDC; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
 		return GLRenderingSystemNS::m_basicAOTDC; break;
-	case TextureUsageType::RENDER_TARGET:
+	case TextureUsageType::COLOR_ATTACHMENT:
 		return nullptr; break;
 	default:
 		return nullptr; break;

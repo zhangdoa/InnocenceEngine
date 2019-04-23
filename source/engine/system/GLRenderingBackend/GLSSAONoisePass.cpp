@@ -92,7 +92,7 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 	m_SSAONoiseGLTDC = addGLTextureDataComponent();
 
 	m_SSAONoiseGLTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	m_SSAONoiseGLTDC->m_textureDataDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_SSAONoiseGLTDC->m_textureDataDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	m_SSAONoiseGLTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB32F;
 	m_SSAONoiseGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_SSAONoiseGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;

@@ -28,7 +28,7 @@ bool GLEnvironmentCapturePass::initialize()
 	m_entityID = InnoMath::createEntityID();
 
 	m_textureDesc.samplerType = TextureSamplerType::CUBEMAP;
-	m_textureDesc.usageType = TextureUsageType::RENDER_TARGET;
+	m_textureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	m_textureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB16F;
 	m_textureDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
 	m_textureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
