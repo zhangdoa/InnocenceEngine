@@ -935,6 +935,11 @@ bool DX11RenderingSystemNS::submitGPUData(DX11TextureDataComponent * rhs)
 
 	// Create UAV
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	{
+		rhs->m_UAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+		rhs->m_UAVDesc.Texture2D.MipSlice = 0;
+
+		hResult = DX11RenderingSystemComponent::get().m_device->CreateUnorderedAccessView(rhs->m_texture, &rhs->m_UAVDesc, &rhs->m_UAV);
 		if (FAILED(hResult))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create UAV for texture!");
