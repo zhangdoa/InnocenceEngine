@@ -20,7 +20,7 @@ INNO_PRIVATE_SCOPE DX11LightPass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX11//lightPassCookTorranceVertex.hlsl" , "", "DX11//lightPassCookTorrancePixel.hlsl" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//lightPassVertex.hlsl" , "", "DX11//lightPassPixel.hlsl" };
 
 	EntityID m_entityID;
 }
@@ -121,15 +121,15 @@ bool DX11LightPass::update()
 	}
 	cleanDSV(m_DXRPC->m_depthStencilView);
 
-	bindCBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer);
-	bindCBuffer(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_sunCBuffer);
-	bindCBuffer(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_pointLightCBuffer);
-	bindCBuffer(ShaderType::FRAGMENT, 3, DX11RenderingSystemComponent::get().m_sphereLightCBuffer);
+	bindConstantBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraConstantBuffer);
+	bindConstantBuffer(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_sunConstantBuffer);
+	bindConstantBuffer(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_pointLightConstantBuffer);
+	bindConstantBuffer(ShaderType::FRAGMENT, 3, DX11RenderingSystemComponent::get().m_sphereLightConstantBuffer);
 
 	// bind to previous pass render target textures
-	activateTexture(DX11OpaquePass::getDX11RPC()->m_DXTDCs[0], 0);
-	activateTexture(DX11OpaquePass::getDX11RPC()->m_DXTDCs[1], 1);
-	activateTexture(DX11OpaquePass::getDX11RPC()->m_DXTDCs[2], 2);
+	activateTexture(ShaderType::FRAGMENT, 0, DX11OpaquePass::getDX11RPC()->m_DXTDCs[0]);
+	activateTexture(ShaderType::FRAGMENT, 1, DX11OpaquePass::getDX11RPC()->m_DXTDCs[1]);
+	activateTexture(ShaderType::FRAGMENT, 2, DX11OpaquePass::getDX11RPC()->m_DXTDCs[2]);
 
 	// draw
 	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);

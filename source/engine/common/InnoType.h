@@ -122,7 +122,7 @@ struct RenderPassDesc
 };
 
 // shader custom types
-enum class ShaderType { VERTEX, GEOMETRY, FRAGMENT };
+enum class ShaderType { VERTEX, GEOMETRY, FRAGMENT, COMPUTE };
 
 struct ShaderFilePaths
 {

@@ -18,7 +18,7 @@ INNO_PRIVATE_SCOPE DX11OpaquePass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX11//opaquePassCookTorranceVertex.hlsl" , "", "DX11//opaquePassCookTorrancePixel.hlsl" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//opaquePassVertex.hlsl" , "", "DX11//opaquePassPixel.hlsl" };
 
 	EntityID m_entityID;
 }
@@ -100,7 +100,7 @@ bool DX11OpaquePass::update()
 
 	// activate shader
 	activateDX11ShaderProgramComponent(m_DXSPC);
-	bindCBuffer(ShaderType::VERTEX, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer);
+	bindConstantBuffer(ShaderType::VERTEX, 0, DX11RenderingSystemComponent::get().m_cameraConstantBuffer);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
@@ -132,33 +132,33 @@ bool DX11OpaquePass::update()
 			// any normal?
 			if (l_geometryPassGPUData.materialGPUData.useNormalTexture)
 			{
-				activateTexture(reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.normalTDC), 0);
+				activateTexture(ShaderType::FRAGMENT, 0, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.normalTDC));
 			}
 			// any albedo?
 			if (l_geometryPassGPUData.materialGPUData.useAlbedoTexture)
 			{
-				activateTexture(reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.albedoTDC), 1);
+				activateTexture(ShaderType::FRAGMENT, 1, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.albedoTDC));
 			}
 			// any metallic?
 			if (l_geometryPassGPUData.materialGPUData.useMetallicTexture)
 			{
-				activateTexture(reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.metallicTDC), 2);
+				activateTexture(ShaderType::FRAGMENT, 2, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.metallicTDC));
 			}
 			// any roughness?
 			if (l_geometryPassGPUData.materialGPUData.useRoughnessTexture)
 			{
-				activateTexture(reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.roughnessTDC), 3);
+				activateTexture(ShaderType::FRAGMENT, 3, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.roughnessTDC));
 			}
 			// any ao?
 			if (l_geometryPassGPUData.materialGPUData.useAOTexture)
 			{
-				activateTexture(reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.AOTDC), 4);
+				activateTexture(ShaderType::FRAGMENT, 4, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.AOTDC));
 			}
-			updateCBuffer(DX11RenderingSystemComponent::get().m_meshCBuffer, &l_geometryPassGPUData.meshGPUData);
-			updateCBuffer(DX11RenderingSystemComponent::get().m_materialCBuffer, &l_geometryPassGPUData.materialGPUData);
+			updateConstantBuffer(DX11RenderingSystemComponent::get().m_meshConstantBuffer, &l_geometryPassGPUData.meshGPUData);
+			updateConstantBuffer(DX11RenderingSystemComponent::get().m_materialConstantBuffer, &l_geometryPassGPUData.materialGPUData);
 
-			bindCBuffer(ShaderType::VERTEX, 1, DX11RenderingSystemComponent::get().m_meshCBuffer);
-			bindCBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_materialCBuffer);
+			bindConstantBuffer(ShaderType::VERTEX, 1, DX11RenderingSystemComponent::get().m_meshConstantBuffer);
+			bindConstantBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_materialConstantBuffer);
 
 			drawMesh(reinterpret_cast<DX11MeshDataComponent*>(l_geometryPassGPUData.MDC));
 		}

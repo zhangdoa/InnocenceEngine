@@ -1,0 +1,121 @@
+// shadertype=hlsl
+#include "common.hlsl"
+#define BLOCK_SIZE 16
+
+struct ComputeInputType
+{
+	uint3 groupID           : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID     : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID  : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex        : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+cbuffer dispatchParamsCBuffer : register(b0)
+{
+	uint3 numThreadGroups;
+	uint dispatchParamsCBuffer_padding1;
+	uint3 numThreads;
+	uint  dispatchParamsCBuffer_padding2;
+}
+
+cbuffer skyCBuffer : register(b1)
+{
+	matrix p_inv;
+	matrix v_inv;
+	float2 viewportSize;
+	float2 padding1;
+};
+
+cbuffer pointLightCBuffer : register(b2)
+{
+	pointLight pointLights[NR_POINT_LIGHTS];
+};
+
+Texture2D DepthTextureVS : register(t0);
+
+StructuredBuffer<Frustum> in_Frustums : register(t1);
+
+RWStructuredBuffer<uint> LightIndexCounter : register(u0);
+RWStructuredBuffer<uint> LightIndexList : register(u1);
+RWTexture2D<uint2> LightGrid : register(u2);
+
+groupshared uint uMinDepth;
+groupshared uint uMaxDepth;
+groupshared Frustum GroupFrustum;
+groupshared uint LightCount;
+groupshared uint LightIndexStartOffset;
+groupshared uint LightList[1024];
+
+void AppendLight(uint lightIndex)
+{
+	uint index; // Index into the visible lights array.
+	InterlockedAdd(LightCount, 1, index);
+	if (index < 1024)
+	{
+		LightList[index] = lightIndex;
+	}
+}
+
+[numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
+void main(ComputeInputType input)
+{
+	// Calculate min & max depth in threadgroup / tile.
+	int2 texCoord = input.dispatchThreadID.xy;
+	float fDepth = DepthTextureVS.Load(int3(texCoord, 0)).r;
+
+	uint uDepth = asuint(fDepth);
+
+	if (input.groupIndex == 0) // Avoid contention by other threads in the group.
+	{
+		uMinDepth = 0xffffffff;
+		uMaxDepth = 0;
+		LightCount = 0;
+		GroupFrustum = in_Frustums[input.groupID.x + (input.groupID.y * numThreadGroups.x)];
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	InterlockedMin(uMinDepth, uDepth);
+	InterlockedMax(uMaxDepth, uDepth);
+
+	GroupMemoryBarrierWithGroupSync();
+
+	float fMinDepth = asfloat(uMinDepth);
+	float fMaxDepth = asfloat(uMaxDepth);
+
+	// Convert depth values to view space.
+	float minDepthVS = ClipToView(float4(0, 0, fMinDepth, 1), p_inv).z;
+	float maxDepthVS = ClipToView(float4(0, 0, fMaxDepth, 1), p_inv).z;
+	float nearClipVS = ClipToView(float4(0, 0, 0, 1), p_inv).z;
+
+	// Clipping plane for minimum depth value
+	Plane minPlane = { float3(0, 0, -1), -minDepthVS };
+
+	for (uint i = input.groupIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
+	{
+		pointLight light = pointLights[i];
+		Sphere sphere = { light.position.xyz, light.luminance.w };
+		if (SphereInsideFrustum(sphere, GroupFrustum, nearClipVS, maxDepthVS))
+		{
+			if (!SphereInsidePlane(sphere, minPlane))
+			{
+				AppendLight(i);
+			}
+		}
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if (input.groupIndex == 0)
+	{
+		InterlockedAdd(LightIndexCounter[0], LightCount, LightIndexStartOffset);
+		LightGrid[input.groupID.xy] = uint2(LightIndexStartOffset, LightCount);
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	for (i = input.groupIndex; i < LightCount; i += BLOCK_SIZE * BLOCK_SIZE)
+	{
+		LightIndexList[LightIndexStartOffset + i] = LightList[i];
+	}
+}

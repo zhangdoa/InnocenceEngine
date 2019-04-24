@@ -15,6 +15,8 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	bool createInputLayout(ID3D10Blob* shaderBuffer, ID3D11InputLayout** inputLayout);
 	bool initializePixelShader(DX11ShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
 	bool createPixelShader(ID3D10Blob* shaderBuffer, ID3D11PixelShader** pixelShader);
+	bool initializeComputeShader(DX11ShaderProgramComponent* rhs, const std::wstring& CSShaderPath);
+	bool createComputeShader(ID3D10Blob* shaderBuffer, ID3D11ComputeShader** computeShader);
 
 	bool summitGPUData(DX11MeshDataComponent* rhs);
 	bool summitGPUData(DX11TextureDataComponent* rhs);
@@ -60,6 +62,9 @@ ID3D10Blob* DX11RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const
 	case ShaderType::FRAGMENT:
 		l_shaderTypeName = "ps_5_0";
 		break;
+	case ShaderType::COMPUTE:
+		l_shaderTypeName = "cs_5_0";
+		break;
 	default:
 		break;
 	}
@@ -88,12 +93,12 @@ ID3D10Blob* DX11RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const
 	return l_shaderBuffer;
 }
 
-bool DX11RenderingSystemNS::createCBuffer(DX11CBuffer& arg)
+bool DX11RenderingSystemNS::createConstantBuffer(DX11ConstantBuffer& arg)
 {
-	if (arg.m_CBufferDesc.ByteWidth > 0)
+	if (arg.m_ConstantBufferDesc.ByteWidth > 0)
 	{
 		// Create the constant buffer pointer
-		auto result = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&arg.m_CBufferDesc, NULL, &arg.m_CBufferPtr);
+		auto result = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&arg.m_ConstantBufferDesc, NULL, &arg.m_ConstantBufferPtr);
 
 		if (FAILED(result))
 		{
@@ -108,6 +113,80 @@ bool DX11RenderingSystemNS::createCBuffer(DX11CBuffer& arg)
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: constant buffer byte width is 0!");
 		return false;
 	}
+}
+
+bool DX11RenderingSystemNS::createStructuredBuffer(void* initialData, DX11StructuredBuffer& arg)
+{
+	if (arg.m_StructuredBufferDesc.ByteWidth > 0)
+	{
+		D3D11_SUBRESOURCE_DATA subResourceData;
+		if (initialData)
+		{
+			subResourceData.pSysMem = initialData;
+		}
+		else
+		{
+			std::vector<unsigned char> l_initialData(arg.m_StructuredBufferDesc.ByteWidth);
+			subResourceData.pSysMem = l_initialData.data();
+		}
+
+		subResourceData.SysMemPitch = 0;
+		subResourceData.SysMemSlicePitch = 0;
+
+		// Create the structured buffer pointer
+		auto result = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&arg.m_StructuredBufferDesc, &subResourceData, &arg.m_StructuredBufferPtr);
+
+		if (FAILED(result))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create structured buffer pointer!");
+			return false;
+		}
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Buffer.NumElements = arg.elementCount;
+
+		result = DX11RenderingSystemComponent::get().m_device->CreateShaderResourceView(arg.m_StructuredBufferPtr, &srvDesc, &arg.SRV);
+
+		if (FAILED(result))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create shader resource view!");
+			return false;
+		}
+
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc;
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+		uavDesc.Buffer.FirstElement = 0;
+		uavDesc.Buffer.NumElements = arg.elementCount;
+		uavDesc.Buffer.Flags = 0;
+
+		result = DX11RenderingSystemComponent::get().m_device->CreateUnorderedAccessView(arg.m_StructuredBufferPtr, &uavDesc, &arg.UAV);
+
+		if (FAILED(result))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create unordered access view!");
+			return false;
+		}
+
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: structured buffer byte width is 0!");
+		return false;
+	}
+}
+
+bool DX11RenderingSystemNS::destroyStructuredBuffer(DX11StructuredBuffer& arg)
+{
+	arg.m_StructuredBufferPtr->Release();
+	arg.SRV->Release();
+	arg.UAV->Release();
+
+	return true;
 }
 
 bool DX11RenderingSystemNS::initializeVertexShader(DX11ShaderProgramComponent* rhs, const std::wstring& VSShaderPath)
@@ -251,6 +330,37 @@ bool DX11RenderingSystemNS::createPixelShader(ID3D10Blob* shaderBuffer, ID3D11Pi
 	return true;
 }
 
+bool DX11RenderingSystemNS::initializeComputeShader(DX11ShaderProgramComponent* rhs, const std::wstring& CSShaderPath)
+{
+	// Compile the shader code.
+	auto l_shaderBuffer = loadShaderBuffer(ShaderType::COMPUTE, CSShaderPath);
+
+	if (!createComputeShader(l_shaderBuffer, &rhs->m_computeShader))
+	{
+		return false;
+	}
+
+	l_shaderBuffer->Release();
+
+	return true;
+}
+
+bool DX11RenderingSystemNS::createComputeShader(ID3D10Blob* shaderBuffer, ID3D11ComputeShader** computeShader)
+{
+	auto result = DX11RenderingSystemComponent::get().m_device->CreateComputeShader(
+		shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
+		NULL,
+		computeShader);
+
+	if (FAILED(result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create compute shader!");
+		return false;
+	}
+
+	return true;
+}
+
 DX11ShaderProgramComponent* DX11RenderingSystemNS::addDX11ShaderProgramComponent(EntityID rhs)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX11ShaderProgramComponentPool, sizeof(DX11ShaderProgramComponent));
@@ -270,7 +380,10 @@ bool DX11RenderingSystemNS::initializeDX11ShaderProgramComponent(DX11ShaderProgr
 	{
 		l_result = l_result && initializePixelShader(rhs, std::wstring(shaderFilePaths.m_FSPath.begin(), shaderFilePaths.m_FSPath.end()));
 	}
-
+	if (shaderFilePaths.m_CSPath != "")
+	{
+		l_result = l_result && initializeComputeShader(rhs, std::wstring(shaderFilePaths.m_CSPath.begin(), shaderFilePaths.m_CSPath.end()));
+	}
 	return l_result;
 }
 
@@ -319,6 +432,13 @@ bool DX11RenderingSystemNS::activateDX11ShaderProgramComponent(DX11ShaderProgram
 			0);
 
 		DX11RenderingSystemComponent::get().m_deviceContext->PSSetSamplers(0, 1, &rhs->m_samplerState);
+	}
+	if (rhs->m_computeShader)
+	{
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetShader(
+			rhs->m_computeShader,
+			NULL,
+			0);
 	}
 
 	return true;
@@ -375,33 +495,13 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 	l_DXRPC->m_depthStencilDesc = DX11RenderingSystemComponent::get().m_depthStencilDesc;
 	l_DXRPC->m_depthStencilState = DX11RenderingSystemComponent::get().m_defaultDepthStencilState;
 
-	// Initialize the description of the depth buffer.
-	ZeroMemory(&l_DXRPC->m_depthBufferDesc,
-		sizeof(l_DXRPC->m_depthBufferDesc));
+	l_DXRPC->m_depthStencilDXTDC = addDX11TextureDataComponent();
+	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DX11RenderingSystemComponent::get().deferredPassTextureDesc;
+	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
+	l_DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
 
-	// Set up the description of the depth buffer.
-	l_DXRPC->m_depthBufferDesc.Width = RTDesc.width;
-	l_DXRPC->m_depthBufferDesc.Height = RTDesc.height;
-	l_DXRPC->m_depthBufferDesc.MipLevels = 1;
-	l_DXRPC->m_depthBufferDesc.ArraySize = 1;
-	l_DXRPC->m_depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	l_DXRPC->m_depthBufferDesc.SampleDesc.Count = 1;
-	l_DXRPC->m_depthBufferDesc.SampleDesc.Quality = 0;
-	l_DXRPC->m_depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	l_DXRPC->m_depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	l_DXRPC->m_depthBufferDesc.CPUAccessFlags = 0;
-	l_DXRPC->m_depthBufferDesc.MiscFlags = 0;
-
-	// Create the texture for the depth buffer using the filled out description.
-	result = DX11RenderingSystemComponent::get().m_device->CreateTexture2D(
-		&l_DXRPC->m_depthBufferDesc,
-		NULL,
-		&l_DXRPC->m_depthStencilBuffer);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the texture for the depth buffer!");
-		return nullptr;
-	}
+	initializeDX11TextureDataComponent(l_DXRPC->m_depthStencilDXTDC);
 
 	// Initailze the depth stencil view description.
 	ZeroMemory(&l_DXRPC->m_depthStencilViewDesc,
@@ -414,7 +514,7 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 
 	// Create the depth stencil view.
 	result = DX11RenderingSystemComponent::get().m_device->CreateDepthStencilView(
-		l_DXRPC->m_depthStencilBuffer,
+		l_DXRPC->m_depthStencilDXTDC->m_texture,
 		&l_DXRPC->m_depthStencilViewDesc,
 		&l_DXRPC->m_depthStencilView);
 	if (FAILED(result))
@@ -553,23 +653,23 @@ bool DX11RenderingSystemNS::summitGPUData(DX11MeshDataComponent * rhs)
 	return true;
 }
 
-bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
+DXGI_FORMAT getTextureFormat(TextureDataDesc textureDataDesc)
 {
-	// set texture formats
 	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
 
-	// @TODO: Unified internal format
-	// Setup the description of the texture.
-	// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
-	if (rhs->m_textureDataDesc.usageType == TextureUsageType::ALBEDO)
+	if (textureDataDesc.usageType == TextureUsageType::ALBEDO)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		l_internalFormat = DXGI_FORMAT_R24G8_TYPELESS;
+	}
 	else
 	{
-		if (rhs->m_textureDataDesc.pixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
+		if (textureDataDesc.pixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
 		{
-			switch (rhs->m_textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.pixelDataFormat)
 			{
 			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
@@ -578,9 +678,9 @@ bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
 			default: break;
 			}
 		}
-		else if (rhs->m_textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT)
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT)
 		{
-			switch (rhs->m_textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.pixelDataFormat)
 			{
 			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
@@ -591,46 +691,84 @@ bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
 		}
 	}
 
+	return l_internalFormat;
+}
+
+unsigned int getTextureMipLevels(TextureDataDesc textureDataDesc)
+{
 	unsigned int textureMipLevels = 1;
-	unsigned int miscFlags = 0;
-	if (rhs->m_textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
 		textureMipLevels = 0;
-		miscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 	}
 
-	D3D11_TEXTURE2D_DESC D3DTextureDesc;
-	ZeroMemory(&D3DTextureDesc, sizeof(D3DTextureDesc));
-	D3DTextureDesc.Height = rhs->m_textureDataDesc.height;
-	D3DTextureDesc.Width = rhs->m_textureDataDesc.width;
-	D3DTextureDesc.MipLevels = textureMipLevels;
-	D3DTextureDesc.ArraySize = 1;
-	D3DTextureDesc.Format = l_internalFormat;
-	D3DTextureDesc.SampleDesc.Count = 1;
-	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
-	{
-		D3DTextureDesc.SampleDesc.Quality = 0;
-	}
-	D3DTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-	D3DTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	D3DTextureDesc.CPUAccessFlags = 0;
-	D3DTextureDesc.MiscFlags = miscFlags;
+	return textureMipLevels;
+}
 
-	unsigned int SRVMipLevels = -1;
-	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
+unsigned int getTextureBindFlags(TextureDataDesc textureDataDesc)
+{
+	unsigned int textureBindFlags = 0;
+	if (textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
 	{
-		SRVMipLevels = 1;
+		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 	}
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-	ZeroMemory(&srvDesc, sizeof(srvDesc));
-	srvDesc.Format = D3DTextureDesc.Format;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = SRVMipLevels;
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
+	}
+	else
+	{
+		textureBindFlags = D3D11_BIND_SHADER_RESOURCE;
+	}
+
+	return textureBindFlags;
+}
+
+bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
+{
+	rhs->m_DX11TextureDataDesc.Height = rhs->m_textureDataDesc.height;
+	rhs->m_DX11TextureDataDesc.Width = rhs->m_textureDataDesc.width;
+	rhs->m_DX11TextureDataDesc.MipLevels = getTextureMipLevels(rhs->m_textureDataDesc);
+	rhs->m_DX11TextureDataDesc.ArraySize = 1;
+	rhs->m_DX11TextureDataDesc.Format = getTextureFormat(rhs->m_textureDataDesc);
+	rhs->m_DX11TextureDataDesc.SampleDesc.Count = 1;
+	rhs->m_DX11TextureDataDesc.Usage = D3D11_USAGE_DEFAULT;
+	rhs->m_DX11TextureDataDesc.BindFlags = getTextureBindFlags(rhs->m_textureDataDesc);
+	rhs->m_DX11TextureDataDesc.CPUAccessFlags = 0;
+
+	if (rhs->m_textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	{
+		rhs->m_DX11TextureDataDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+	}
+	else
+	{
+		rhs->m_DX11TextureDataDesc.MiscFlags = 0;
+	}
+
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		rhs->m_SRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	}
+	else
+	{
+		rhs->m_SRVDesc.Format = rhs->m_DX11TextureDataDesc.Format;
+	}
+
+	rhs->m_SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	rhs->m_SRVDesc.Texture2D.MostDetailedMip = 0;
+
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT || rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		rhs->m_SRVDesc.Texture2D.MipLevels = 1;
+	}
+	else
+	{
+		rhs->m_SRVDesc.Texture2D.MipLevels = -1;
+	}
 
 	// Create the empty texture.
 	HRESULT hResult;
-	hResult = DX11RenderingSystemComponent::get().m_device->CreateTexture2D(&D3DTextureDesc, NULL, &rhs->m_texture);
+	hResult = DX11RenderingSystemComponent::get().m_device->CreateTexture2D(&rhs->m_DX11TextureDataDesc, NULL, &rhs->m_texture);
 	if (FAILED(hResult))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create Texture!");
@@ -640,7 +778,7 @@ bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: Texture: " + InnoUtility::pointerToString(rhs->m_texture) + " is initialized.");
 
 	//summit raw data to GPU memory
-	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
+	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT && rhs->m_textureDataDesc.usageType != TextureUsageType::DEPTH_ATTACHMENT)
 	{
 		unsigned int rowPitch;
 		rowPitch = (rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
@@ -648,7 +786,7 @@ bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
 	}
 
 	// Create the shader resource view for the texture.
-	hResult = DX11RenderingSystemComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &srvDesc, &rhs->m_SRV);
+	hResult = DX11RenderingSystemComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &rhs->m_SRVDesc, &rhs->m_SRV);
 	if (FAILED(hResult))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create SRV for texture!");
@@ -703,18 +841,34 @@ void DX11RenderingSystemNS::drawMesh(DX11MeshDataComponent * DXMDC)
 	}
 }
 
-void DX11RenderingSystemNS::activateTexture(DX11TextureDataComponent* DXTDC, int activateIndex)
+void DX11RenderingSystemNS::activateTexture(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC)
 {
-	DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(activateIndex, 1, &DXTDC->m_SRV);
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetShaderResources(startSlot, 1, &DXTDC->m_SRV);
+		break;
+	case ShaderType::GEOMETRY:
+		DX11RenderingSystemComponent::get().m_deviceContext->GSSetShaderResources(startSlot, 1, &DXTDC->m_SRV);
+		break;
+	case ShaderType::FRAGMENT:
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(startSlot, 1, &DXTDC->m_SRV);
+		break;
+	case ShaderType::COMPUTE:
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetShaderResources(startSlot, 1, &DXTDC->m_SRV);
+		break;
+	default:
+		break;
+	}
 }
 
-void DX11RenderingSystemNS::updateCBuffer(const DX11CBuffer& CBuffer, void* CBufferValue)
+void DX11RenderingSystemNS::updateConstantBuffer(const DX11ConstantBuffer& ConstantBuffer, void* ConstantBufferValue)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 
 	// Lock the constant buffer so it can be written to.
-	result = DX11RenderingSystemComponent::get().m_deviceContext->Map(CBuffer.m_CBufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = DX11RenderingSystemComponent::get().m_deviceContext->Map(ConstantBuffer.m_ConstantBufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't lock the shader buffer!");
@@ -722,24 +876,69 @@ void DX11RenderingSystemNS::updateCBuffer(const DX11CBuffer& CBuffer, void* CBuf
 	}
 
 	auto dataPtr = mappedResource.pData;
-	std::memcpy(dataPtr, CBufferValue, CBuffer.m_CBufferDesc.ByteWidth);
+	std::memcpy(dataPtr, ConstantBufferValue, ConstantBuffer.m_ConstantBufferDesc.ByteWidth);
 
 	// Unlock the constant buffer.
-	DX11RenderingSystemComponent::get().m_deviceContext->Unmap(CBuffer.m_CBufferPtr, 0);
+	DX11RenderingSystemComponent::get().m_deviceContext->Unmap(ConstantBuffer.m_ConstantBufferPtr, 0);
 }
 
-void DX11RenderingSystemNS::bindCBuffer(ShaderType shaderType, unsigned int startSlot, const DX11CBuffer& CBuffer)
+void DX11RenderingSystemNS::bindConstantBuffer(ShaderType shaderType, unsigned int startSlot, const DX11ConstantBuffer& ConstantBuffer)
 {
 	switch (shaderType)
 	{
 	case ShaderType::VERTEX:
-		DX11RenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers(startSlot, 1, &CBuffer.m_CBufferPtr);
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers(startSlot, 1, &ConstantBuffer.m_ConstantBufferPtr);
 		break;
 	case ShaderType::GEOMETRY:
-		DX11RenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers(startSlot, 1, &CBuffer.m_CBufferPtr);
+		DX11RenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers(startSlot, 1, &ConstantBuffer.m_ConstantBufferPtr);
 		break;
 	case ShaderType::FRAGMENT:
-		DX11RenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers(startSlot, 1, &CBuffer.m_CBufferPtr);
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers(startSlot, 1, &ConstantBuffer.m_ConstantBufferPtr);
+		break;
+	case ShaderType::COMPUTE:
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetConstantBuffers(startSlot, 1, &ConstantBuffer.m_ConstantBufferPtr);
+		break;
+	default:
+		break;
+	}
+}
+
+void DX11RenderingSystemNS::bindStructuredBufferForWrite(ShaderType shaderType, unsigned int startSlot, const DX11StructuredBuffer& StructuredBuffer)
+{
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to structured buffer!");
+		break;
+	case ShaderType::GEOMETRY:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to structured buffer!");
+		break;
+	case ShaderType::FRAGMENT:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to structured buffer!");
+		break;
+	case ShaderType::COMPUTE:
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetUnorderedAccessViews(startSlot, 1, &StructuredBuffer.UAV, nullptr);
+		break;
+	default:
+		break;
+	}
+}
+
+void DX11RenderingSystemNS::bindStructuredBufferForRead(ShaderType shaderType, unsigned int startSlot, const DX11StructuredBuffer& StructuredBuffer)
+{
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetShaderResources(startSlot, 1, &StructuredBuffer.SRV);
+		break;
+	case ShaderType::GEOMETRY:
+		DX11RenderingSystemComponent::get().m_deviceContext->GSSetShaderResources(startSlot, 1, &StructuredBuffer.SRV);
+		break;
+	case ShaderType::FRAGMENT:
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(startSlot, 1, &StructuredBuffer.SRV);
+		break;
+	case ShaderType::COMPUTE:
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetShaderResources(startSlot, 1, &StructuredBuffer.SRV);
 		break;
 	default:
 		break;

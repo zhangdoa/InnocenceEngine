@@ -17,8 +17,7 @@ public:
 
 	std::vector<ID3D11RenderTargetView*> m_renderTargetViews;
 
-	D3D11_TEXTURE2D_DESC m_depthBufferDesc = D3D11_TEXTURE2D_DESC();
-	ID3D11Texture2D* m_depthStencilBuffer = 0;
+	DX11TextureDataComponent* m_depthStencilDXTDC;
 
 	D3D11_DEPTH_STENCIL_DESC m_depthStencilDesc;
 	ID3D11DepthStencilState* m_depthStencilState;

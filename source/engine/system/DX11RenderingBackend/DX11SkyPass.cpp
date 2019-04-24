@@ -121,9 +121,9 @@ bool DX11SkyPass::update()
 	}
 	cleanDSV(m_DXRPC->m_depthStencilView);
 
-	bindCBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraCBuffer);
-	bindCBuffer(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_sunCBuffer);
-	bindCBuffer(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_skyCBuffer);
+	bindConstantBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraConstantBuffer);
+	bindConstantBuffer(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_sunConstantBuffer);
+	bindConstantBuffer(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_skyConstantBuffer);
 
 	// draw
 	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::CUBE);

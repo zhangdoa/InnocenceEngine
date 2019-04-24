@@ -3,18 +3,33 @@
 #include "../component/DX11MeshDataComponent.h"
 #include "../component/DX11TextureDataComponent.h"
 
-struct DX11CBuffer
+struct DX11ConstantBuffer
 {
-	D3D11_BUFFER_DESC m_CBufferDesc = D3D11_BUFFER_DESC();
-	ID3D11Buffer* m_CBufferPtr = 0;
+	D3D11_BUFFER_DESC m_ConstantBufferDesc = D3D11_BUFFER_DESC();
+	ID3D11Buffer* m_ConstantBufferPtr = 0;
 };
 
-struct SkyCBufferData
+struct DX11StructuredBuffer
+{
+	D3D11_BUFFER_DESC m_StructuredBufferDesc = D3D11_BUFFER_DESC();
+	unsigned int elementCount = 0;
+	ID3D11Buffer* m_StructuredBufferPtr = 0;
+	ID3D11ShaderResourceView* SRV = 0;
+	ID3D11UnorderedAccessView* UAV = 0;
+};
+
+struct SkyConstantBufferData
 {
 	mat4 p_inv;
 	mat4 r_inv;
 	vec2 viewportSize;
 	vec2 padding1;
+};
+
+struct DispatchParamsConstantBufferData
+{
+	TVec4<unsigned int> numThreadGroups;
+	TVec4<unsigned int> numThreads;
 };
 
 class DX11RenderingSystemComponent
@@ -70,15 +85,23 @@ public:
 	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
 	D3D11_RENDER_TARGET_VIEW_DESC deferredPassRTVDesc = D3D11_RENDER_TARGET_VIEW_DESC();
 
-	DX11CBuffer m_cameraCBuffer;
-	DX11CBuffer m_materialCBuffer;
-	DX11CBuffer m_meshCBuffer;
-	DX11CBuffer m_sunCBuffer;
-	DX11CBuffer m_pointLightCBuffer;
-	DX11CBuffer m_sphereLightCBuffer;
-	DX11CBuffer m_skyCBuffer;
+	DX11ConstantBuffer m_cameraConstantBuffer;
+	DX11ConstantBuffer m_materialConstantBuffer;
+	DX11ConstantBuffer m_meshConstantBuffer;
+	DX11ConstantBuffer m_sunConstantBuffer;
+	DX11ConstantBuffer m_pointLightConstantBuffer;
+	DX11ConstantBuffer m_sphereLightConstantBuffer;
 
-	SkyCBufferData m_skyCBufferData;
+	DX11ConstantBuffer m_skyConstantBuffer;
+	SkyConstantBufferData m_skyConstantBufferData;
+
+	DX11ConstantBuffer m_dispatchParamsConstantBuffer;
+	DispatchParamsConstantBufferData m_dispatchParamsConstantBufferData;
+
+	DX11StructuredBuffer m_gridFrustumsStructuredBuffer;
+	DX11StructuredBuffer m_lightIndexListStructuredBuffer;
+	DX11StructuredBuffer m_lightListIndexCounterStructuredBuffer;
+
 private:
 	DX11RenderingSystemComponent() {};
 };

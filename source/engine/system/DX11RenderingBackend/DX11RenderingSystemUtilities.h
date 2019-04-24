@@ -41,18 +41,24 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	bool initializeDX11TextureDataComponent(DX11TextureDataComponent* rhs);
 
 	void drawMesh(DX11MeshDataComponent * DXMDC);
-	void activateTexture(DX11TextureDataComponent* DXTDC, int activateIndex);
+	void activateTexture(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC);
 
 	DX11ShaderProgramComponent* addDX11ShaderProgramComponent(EntityID rhs);
 
-	bool createCBuffer(DX11CBuffer& arg);
+	bool createConstantBuffer(DX11ConstantBuffer& arg);
+	bool createStructuredBuffer(void* initialData, DX11StructuredBuffer& arg);
+
+	bool destroyStructuredBuffer(DX11StructuredBuffer& arg);
 
 	bool initializeDX11ShaderProgramComponent(DX11ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
 
 	bool activateDX11ShaderProgramComponent(DX11ShaderProgramComponent* rhs);
 
-	void updateCBuffer(const DX11CBuffer& CBuffer, void* CBufferValue);
-	void bindCBuffer(ShaderType shaderType, unsigned int startSlot, const DX11CBuffer& CBuffer);
+	void updateConstantBuffer(const DX11ConstantBuffer& ConstantBuffer, void* ConstantBufferValue);
+	void bindConstantBuffer(ShaderType shaderType, unsigned int startSlot, const DX11ConstantBuffer& ConstantBuffer);
+
+	void bindStructuredBufferForWrite(ShaderType shaderType, unsigned int startSlot, const DX11StructuredBuffer& StructuredBuffer);
+	void bindStructuredBufferForRead(ShaderType shaderType, unsigned int startSlot, const DX11StructuredBuffer& StructuredBuffer);
 
 	void cleanRTV(vec4 color, ID3D11RenderTargetView* RTV);
 	void cleanDSV(ID3D11DepthStencilView* DSV);

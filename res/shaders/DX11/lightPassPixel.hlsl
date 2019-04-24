@@ -20,23 +20,6 @@ cbuffer cameraCBuffer : register(b0)
 	float cam_WHRatio;
 };
 
-static const int NR_POINT_LIGHTS = 64;
-static const int NR_SPHERE_LIGHTS = 64;
-
-// w component of luminance is attenuationRadius
-struct pointLight {
-	float4 position;
-	float4 luminance;
-	//float attenuationRadius;
-};
-
-// w component of luminance is sphereRadius
-struct sphereLight {
-	float4 position;
-	float4 luminance;
-	//float sphereRadius;
-};
-
 cbuffer sunCBuffer : register(b1)
 {
 	float4 dirLight_dir;
