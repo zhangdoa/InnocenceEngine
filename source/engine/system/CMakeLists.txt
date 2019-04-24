@@ -1,4 +1,3 @@
-#add_subdirectory("GLFWWrapper")
 add_subdirectory("ImGuiWrapper")
 add_subdirectory("Core")
 
