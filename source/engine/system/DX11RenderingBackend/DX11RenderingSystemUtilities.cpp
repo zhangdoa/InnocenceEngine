@@ -18,8 +18,14 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	bool initializeComputeShader(DX11ShaderProgramComponent* rhs, const std::wstring& CSShaderPath);
 	bool createComputeShader(ID3D10Blob* shaderBuffer, ID3D11ComputeShader** computeShader);
 
-	bool summitGPUData(DX11MeshDataComponent* rhs);
-	bool summitGPUData(DX11TextureDataComponent* rhs);
+	bool submitGPUData(DX11MeshDataComponent* rhs);
+
+	D3D11_TEXTURE2D_DESC getDX11TextureDataDesc(TextureDataDesc textureDataDesc);
+	DXGI_FORMAT getTextureFormat(TextureDataDesc textureDataDesc);
+	unsigned int getTextureMipLevels(TextureDataDesc textureDataDesc);
+	unsigned int getTextureBindFlags(TextureDataDesc textureDataDesc);
+
+	bool submitGPUData(DX11TextureDataComponent* rhs);
 
 	std::unordered_map<EntityID, DX11MeshDataComponent*> m_initializedDXMDC;
 	std::unordered_map<EntityID, DX11TextureDataComponent*> m_initializedDXTDC;
@@ -498,7 +504,6 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 	l_DXRPC->m_depthStencilDXTDC = addDX11TextureDataComponent();
 	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DX11RenderingSystemComponent::get().deferredPassTextureDesc;
 	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
-	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
 	l_DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
 
 	initializeDX11TextureDataComponent(l_DXRPC->m_depthStencilDXTDC);
@@ -544,7 +549,7 @@ bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponen
 	}
 	else
 	{
-		summitGPUData(rhs);
+		submitGPUData(rhs);
 
 		rhs->m_objectStatus = ObjectStatus::ALIVE;
 
@@ -569,7 +574,7 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 		{
 			if (rhs->m_textureData.size() > 0)
 			{
-				summitGPUData(rhs);
+				submitGPUData(rhs);
 
 				rhs->m_objectStatus = ObjectStatus::ALIVE;
 
@@ -589,7 +594,7 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 	}
 }
 
-bool DX11RenderingSystemNS::summitGPUData(DX11MeshDataComponent * rhs)
+bool DX11RenderingSystemNS::submitGPUData(DX11MeshDataComponent * rhs)
 {
 	// Set up the description of the static vertex buffer.
 	D3D11_BUFFER_DESC vertexBufferDesc;
@@ -653,7 +658,7 @@ bool DX11RenderingSystemNS::summitGPUData(DX11MeshDataComponent * rhs)
 	return true;
 }
 
-DXGI_FORMAT getTextureFormat(TextureDataDesc textureDataDesc)
+DXGI_FORMAT DX11RenderingSystemNS::getTextureFormat(TextureDataDesc textureDataDesc)
 {
 	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
 
@@ -667,25 +672,135 @@ DXGI_FORMAT getTextureFormat(TextureDataDesc textureDataDesc)
 	}
 	else
 	{
-		if (textureDataDesc.pixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
+		if (textureDataDesc.pixelDataType == TexturePixelDataType::UBYTE)
 		{
 			switch (textureDataDesc.pixelDataFormat)
 			{
-			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
 			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
 			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT)
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SBYTE)
 		{
 			switch (textureDataDesc.pixelDataFormat)
 			{
-			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_SNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_SNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SNORM; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::USHORT)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_UNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SSHORT)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_SNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_SNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+			default: break;
+			}
+		}
+		if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT8)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT8)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R32G32B32A32_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R32G32B32A32_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R32G32B32A32_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R32G32B32A32_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
 			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
 			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_FLOAT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_FLOAT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
 			default: break;
 			}
 		}
@@ -694,7 +809,7 @@ DXGI_FORMAT getTextureFormat(TextureDataDesc textureDataDesc)
 	return l_internalFormat;
 }
 
-unsigned int getTextureMipLevels(TextureDataDesc textureDataDesc)
+unsigned int DX11RenderingSystemNS::getTextureMipLevels(TextureDataDesc textureDataDesc)
 {
 	unsigned int textureMipLevels = 1;
 	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
@@ -705,7 +820,7 @@ unsigned int getTextureMipLevels(TextureDataDesc textureDataDesc)
 	return textureMipLevels;
 }
 
-unsigned int getTextureBindFlags(TextureDataDesc textureDataDesc)
+unsigned int DX11RenderingSystemNS::getTextureBindFlags(TextureDataDesc textureDataDesc)
 {
 	unsigned int textureBindFlags = 0;
 	if (textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
@@ -716,6 +831,10 @@ unsigned int getTextureBindFlags(TextureDataDesc textureDataDesc)
 	{
 		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
 	}
+	else if (textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	{
+		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	}
 	else
 	{
 		textureBindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -724,27 +843,59 @@ unsigned int getTextureBindFlags(TextureDataDesc textureDataDesc)
 	return textureBindFlags;
 }
 
-bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
+D3D11_TEXTURE2D_DESC DX11RenderingSystemNS::getDX11TextureDataDesc(TextureDataDesc textureDataDesc)
 {
-	rhs->m_DX11TextureDataDesc.Height = rhs->m_textureDataDesc.height;
-	rhs->m_DX11TextureDataDesc.Width = rhs->m_textureDataDesc.width;
-	rhs->m_DX11TextureDataDesc.MipLevels = getTextureMipLevels(rhs->m_textureDataDesc);
-	rhs->m_DX11TextureDataDesc.ArraySize = 1;
-	rhs->m_DX11TextureDataDesc.Format = getTextureFormat(rhs->m_textureDataDesc);
-	rhs->m_DX11TextureDataDesc.SampleDesc.Count = 1;
-	rhs->m_DX11TextureDataDesc.Usage = D3D11_USAGE_DEFAULT;
-	rhs->m_DX11TextureDataDesc.BindFlags = getTextureBindFlags(rhs->m_textureDataDesc);
-	rhs->m_DX11TextureDataDesc.CPUAccessFlags = 0;
+	D3D11_TEXTURE2D_DESC DX11TextureDataDesc = {};
 
-	if (rhs->m_textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	DX11TextureDataDesc.Height = textureDataDesc.height;
+	DX11TextureDataDesc.Width = textureDataDesc.width;
+	DX11TextureDataDesc.MipLevels = getTextureMipLevels(textureDataDesc);
+	DX11TextureDataDesc.ArraySize = 1;
+	DX11TextureDataDesc.Format = getTextureFormat(textureDataDesc);
+	DX11TextureDataDesc.SampleDesc.Count = 1;
+	DX11TextureDataDesc.Usage = D3D11_USAGE_DEFAULT;
+	DX11TextureDataDesc.BindFlags = getTextureBindFlags(textureDataDesc);
+	DX11TextureDataDesc.CPUAccessFlags = 0;
+
+	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
-		rhs->m_DX11TextureDataDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+		DX11TextureDataDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 	}
 	else
 	{
-		rhs->m_DX11TextureDataDesc.MiscFlags = 0;
+		DX11TextureDataDesc.MiscFlags = 0;
 	}
 
+	return DX11TextureDataDesc;
+}
+
+bool DX11RenderingSystemNS::submitGPUData(DX11TextureDataComponent * rhs)
+{
+	rhs->m_DX11TextureDataDesc = getDX11TextureDataDesc(rhs->m_textureDataDesc);
+
+	// Create the empty texture.
+	HRESULT hResult;
+
+	hResult = DX11RenderingSystemComponent::get().m_device->CreateTexture2D(&rhs->m_DX11TextureDataDesc, NULL, (ID3D11Texture2D**)&rhs->m_texture);
+	if (FAILED(hResult))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create texture!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: Texture: " + InnoUtility::pointerToString(rhs->m_texture) + " is initialized.");
+
+	// Submit raw data to GPU memory
+	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT
+		&& rhs->m_textureDataDesc.usageType != TextureUsageType::DEPTH_ATTACHMENT
+		&& rhs->m_textureDataDesc.usageType != TextureUsageType::RAW_IMAGE)
+	{
+		unsigned int rowPitch;
+		rowPitch = (rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
+		DX11RenderingSystemComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
+	}
+
+	// Get SRV desc
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
 	{
 		rhs->m_SRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
@@ -757,7 +908,9 @@ bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
 	rhs->m_SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	rhs->m_SRVDesc.Texture2D.MostDetailedMip = 0;
 
-	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT || rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
 	{
 		rhs->m_SRVDesc.Texture2D.MipLevels = 1;
 	}
@@ -766,26 +919,7 @@ bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
 		rhs->m_SRVDesc.Texture2D.MipLevels = -1;
 	}
 
-	// Create the empty texture.
-	HRESULT hResult;
-	hResult = DX11RenderingSystemComponent::get().m_device->CreateTexture2D(&rhs->m_DX11TextureDataDesc, NULL, &rhs->m_texture);
-	if (FAILED(hResult))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create Texture!");
-		return false;
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: Texture: " + InnoUtility::pointerToString(rhs->m_texture) + " is initialized.");
-
-	//summit raw data to GPU memory
-	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT && rhs->m_textureDataDesc.usageType != TextureUsageType::DEPTH_ATTACHMENT)
-	{
-		unsigned int rowPitch;
-		rowPitch = (rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
-		DX11RenderingSystemComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
-	}
-
-	// Create the shader resource view for the texture.
+	// Create SRV
 	hResult = DX11RenderingSystemComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &rhs->m_SRVDesc, &rhs->m_SRV);
 	if (FAILED(hResult))
 	{
@@ -797,6 +931,15 @@ bool DX11RenderingSystemNS::summitGPUData(DX11TextureDataComponent * rhs)
 	if (rhs->m_textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
 		DX11RenderingSystemComponent::get().m_deviceContext->GenerateMips(rhs->m_SRV);
+	}
+
+	// Create UAV
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+		if (FAILED(hResult))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create UAV for texture!");
+			return false;
+		}
 	}
 
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
@@ -841,7 +984,28 @@ void DX11RenderingSystemNS::drawMesh(DX11MeshDataComponent * DXMDC)
 	}
 }
 
-void DX11RenderingSystemNS::activateTexture(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC)
+void DX11RenderingSystemNS::bindTextureForWrite(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC)
+{
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to texture!");
+		break;
+	case ShaderType::GEOMETRY:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to texture!");
+		break;
+	case ShaderType::FRAGMENT:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to texture!");
+		break;
+	case ShaderType::COMPUTE:
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetUnorderedAccessViews(startSlot, 1, &DXTDC->m_UAV, nullptr);
+		break;
+	default:
+		break;
+	}
+}
+
+void DX11RenderingSystemNS::bindTextureForRead(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC)
 {
 	switch (shaderType)
 	{

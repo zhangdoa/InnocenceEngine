@@ -27,12 +27,11 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void copyBufferToImage(VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);
 
-	VkTextureDataDesc getVKTextureDataDesc(const TextureDataDesc& textureDataDesc);
 	VkImageType getImageType(TextureSamplerType rhs);
 	VkSamplerAddressMode getSamplerAddressMode(TextureWrapMethod rhs);
 	VkSamplerMipmapMode getTextureFilterParam(TextureFilterMethod rhs);
-	VkFormat getTextureFormat(TextureColorComponentsFormat rhs);
-	VkImageAspectFlagBits getImageAspectFlags(TextureColorComponentsFormat rhs);
+	VkFormat getTextureFormat(TextureDataDesc textureDataDesc);
+	VkImageAspectFlagBits getImageAspectFlags(TextureDataDesc textureDataDesc);
 
 	VkVertexInputBindingDescription m_vertexBindingDescription;
 	std::array<VkVertexInputAttributeDescription, 5> m_vertexAttributeDescriptions;
@@ -377,7 +376,6 @@ bool VKRenderingSystemNS::createRenderTargets(VKRenderPassComponent* VKRPC)
 	{
 		VKRPC->m_depthVKTDC->m_textureDataDesc = VKRPC->m_renderPassDesc.RTDesc;
 		VKRPC->m_depthVKTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
-		VKRPC->m_depthVKTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
 		VKRPC->m_depthVKTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
 		VKRPC->m_depthVKTDC->m_textureData = { nullptr };
 
@@ -1329,16 +1327,16 @@ bool VKRenderingSystemNS::generateUBO(VkBuffer& UBO, VkDeviceSize UBOSize, VkDev
 	return true;
 }
 
-VkTextureDataDesc VKRenderingSystemNS::getVKTextureDataDesc(const TextureDataDesc & textureDataDesc)
+VkTextureDataDesc VKRenderingSystemNS::getVKTextureDataDesc(TextureDataDesc textureDataDesc)
 {
 	VkTextureDataDesc l_result;
 	l_result.imageType = getImageType(textureDataDesc.samplerType);
 	l_result.samplerAddressMode = getSamplerAddressMode(textureDataDesc.wrapMethod);
 	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.minFilterMethod);
 	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.magFilterMethod);
-	l_result.format = getTextureFormat(textureDataDesc.colorComponentsFormat);
+	l_result.format = getTextureFormat(textureDataDesc);
 	l_result.imageSize = textureDataDesc.width * textureDataDesc.height * ((unsigned int)textureDataDesc.pixelDataFormat + 1);
-	l_result.aspectFlags = getImageAspectFlags(textureDataDesc.colorComponentsFormat);
+	l_result.aspectFlags = getImageAspectFlags(textureDataDesc);
 	return l_result;
 }
 
@@ -1410,138 +1408,166 @@ VkSamplerMipmapMode VKRenderingSystemNS::getTextureFilterParam(TextureFilterMeth
 	return l_result;
 }
 
-VkFormat VKRenderingSystemNS::getTextureFormat(TextureColorComponentsFormat rhs)
+VkFormat VKRenderingSystemNS::getTextureFormat(TextureDataDesc textureDataDesc)
 {
-	VkFormat l_result = VK_FORMAT_R8_UNORM;
+	VkFormat l_internalFormat = VK_FORMAT_R8_UNORM;
 
-	// @TODO: with pixel format together
-	switch (rhs)
+	if (textureDataDesc.usageType == TextureUsageType::ALBEDO)
 	{
-	case TextureColorComponentsFormat::RED:
-		l_result = VkFormat::VK_FORMAT_R8_UNORM;
-		break;
-	case TextureColorComponentsFormat::RG:
-		l_result = VkFormat::VK_FORMAT_R8G8_UNORM;
-		break;
-	case TextureColorComponentsFormat::RGB:
-		l_result = VkFormat::VK_FORMAT_R8G8B8_UNORM;
-		break;
-	case TextureColorComponentsFormat::RGBA:
-		l_result = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
-		break;
-	case TextureColorComponentsFormat::R8:
-		break;
-	case TextureColorComponentsFormat::RG8:
-		break;
-	case TextureColorComponentsFormat::RGB8:
-		break;
-	case TextureColorComponentsFormat::RGBA8:
-		break;
-	case TextureColorComponentsFormat::R8I:
-		break;
-	case TextureColorComponentsFormat::RG8I:
-		break;
-	case TextureColorComponentsFormat::RGB8I:
-		break;
-	case TextureColorComponentsFormat::RGBA8I:
-		break;
-	case TextureColorComponentsFormat::R8UI:
-		break;
-	case TextureColorComponentsFormat::RG8UI:
-		break;
-	case TextureColorComponentsFormat::RGB8UI:
-		break;
-	case TextureColorComponentsFormat::RGBA8UI:
-		break;
-	case TextureColorComponentsFormat::R16:
-		break;
-	case TextureColorComponentsFormat::RG16:
-		break;
-	case TextureColorComponentsFormat::RGB16:
-		break;
-	case TextureColorComponentsFormat::RGBA16:
-		break;
-	case TextureColorComponentsFormat::R16I:
-		break;
-	case TextureColorComponentsFormat::RG16I:
-		break;
-	case TextureColorComponentsFormat::RGB16I:
-		break;
-	case TextureColorComponentsFormat::RGBA16I:
-		break;
-	case TextureColorComponentsFormat::R16UI:
-		break;
-	case TextureColorComponentsFormat::RG16UI:
-		break;
-	case TextureColorComponentsFormat::RGB16UI:
-		break;
-	case TextureColorComponentsFormat::RGBA16UI:
-		break;
-	case TextureColorComponentsFormat::R16F:
-		l_result = VkFormat::VK_FORMAT_R16_SFLOAT;
-		break;
-	case TextureColorComponentsFormat::RG16F:
-		l_result = VkFormat::VK_FORMAT_R16G16_SFLOAT;
-		break;
-	case TextureColorComponentsFormat::RGB16F:
-		l_result = VkFormat::VK_FORMAT_R16G16B16_SFLOAT;
-		break;
-	case TextureColorComponentsFormat::RGBA16F:
-		l_result = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
-		break;
-	case TextureColorComponentsFormat::R32I:
-		break;
-	case TextureColorComponentsFormat::RG32I:
-		break;
-	case TextureColorComponentsFormat::RGB32I:
-		break;
-	case TextureColorComponentsFormat::RGBA32I:
-		break;
-	case TextureColorComponentsFormat::R32UI:
-		break;
-	case TextureColorComponentsFormat::RG32UI:
-		break;
-	case TextureColorComponentsFormat::RGB32UI:
-		break;
-	case TextureColorComponentsFormat::RGBA32UI:
-		break;
-	case TextureColorComponentsFormat::R32F:
-		break;
-	case TextureColorComponentsFormat::RG32F:
-		break;
-	case TextureColorComponentsFormat::RGB32F:
-		break;
-	case TextureColorComponentsFormat::RGBA32F:
-		break;
-	case TextureColorComponentsFormat::SRGB:
-		break;
-	case TextureColorComponentsFormat::SRGBA:
-		break;
-	case TextureColorComponentsFormat::SRGB8:
-		break;
-	case TextureColorComponentsFormat::SRGBA8:
-		break;
-	case TextureColorComponentsFormat::DEPTH_COMPONENT:
-		l_result = VkFormat::VK_FORMAT_D32_SFLOAT;
-		break;
-	case TextureColorComponentsFormat::BGR:
-		l_result = VkFormat::VK_FORMAT_B8G8R8_UNORM;
-		break;
-	case TextureColorComponentsFormat::BGRA:
-		l_result = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
-		break;
-	default:
-		break;
+		l_internalFormat = VK_FORMAT_R8G8B8A8_SRGB;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		l_internalFormat = VkFormat::VK_FORMAT_D32_SFLOAT;
+	}
+	else
+	{
+		if (textureDataDesc.pixelDataType == TexturePixelDataType::UBYTE)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_UNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_UNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R8G8B8A8_UNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R8G8B8A8_UNORM; break;
+			case TexturePixelDataFormat::BGRA: l_internalFormat = VK_FORMAT_B8G8R8A8_UNORM; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SBYTE)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_SNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_SNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R8G8B8A8_SNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R8G8B8A8_SNORM; break;
+			case TexturePixelDataFormat::BGRA: l_internalFormat = VK_FORMAT_B8G8R8A8_SNORM; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::USHORT)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_UNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_UNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R16G16B16A16_UNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R16G16B16A16_UNORM; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SSHORT)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_SNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_SNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R16G16B16A16_SNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R16G16B16A16_SNORM; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT8)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R8G8B8A8_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R8G8B8A8_UINT; break;
+			case TexturePixelDataFormat::BGRA: l_internalFormat = VK_FORMAT_B8G8R8A8_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT8)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R8G8B8A8_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R8G8B8A8_SINT; break;
+			case TexturePixelDataFormat::BGRA: l_internalFormat = VK_FORMAT_B8G8R8A8_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R16G16B16A16_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R16G16B16A16_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R16G16B16A16_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R16G16B16A16_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R32_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R32G32_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R32G32B32A32_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R32G32B32A32_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R32_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R32G32_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R32G32B32A32_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R32G32B32A32_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_SFLOAT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_SFLOAT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R16G16B16A16_SFLOAT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R16G16B16A16_SFLOAT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R32_SFLOAT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R32G32_SFLOAT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R32G32B32A32_SFLOAT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R32G32B32A32_SFLOAT; break;
+			default: break;
+			}
+		}
 	}
 
-	return l_result;
+	return l_internalFormat;
 }
 
-VkImageAspectFlagBits VKRenderingSystemNS::getImageAspectFlags(TextureColorComponentsFormat rhs)
+VkImageAspectFlagBits VKRenderingSystemNS::getImageAspectFlags(TextureDataDesc textureDataDesc)
 {
 	VkImageAspectFlagBits l_result;
 
-	if (rhs == TextureColorComponentsFormat::DEPTH_COMPONENT)
+	if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
 	{
 		l_result = VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT;
 	}

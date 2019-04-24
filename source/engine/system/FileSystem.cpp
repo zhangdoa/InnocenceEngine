@@ -1461,12 +1461,11 @@ TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const s
 	{
 		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
-		l_TDC->m_textureDataDesc.colorComponentsFormat = l_isHDR ? TextureColorComponentsFormat((unsigned int)TextureColorComponentsFormat::R16F + (nrChannels - 1)) : TextureColorComponentsFormat((nrChannels - 1));
 		l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
 		l_TDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
 		l_TDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
 		l_TDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::LINEAR;
-		l_TDC->m_textureDataDesc.pixelDataType = l_isHDR ? TexturePixelDataType::FLOAT : TexturePixelDataType::UNSIGNED_BYTE;
+		l_TDC->m_textureDataDesc.pixelDataType = l_isHDR ? TexturePixelDataType::FLOAT16 : TexturePixelDataType::UBYTE;
 		l_TDC->m_textureDataDesc.width = width;
 		l_TDC->m_textureDataDesc.height = height;
 		l_TDC->m_textureData.emplace_back(l_rawData);

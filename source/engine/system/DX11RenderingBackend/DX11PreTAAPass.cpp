@@ -91,8 +91,8 @@ bool DX11PreTAAPass::update()
 	cleanDSV(m_DXRPC->m_depthStencilView);
 
 	// bind to previous pass render target textures
-	activateTexture(ShaderType::FRAGMENT, 0, DX11LightPass::getDX11RPC()->m_DXTDCs[0]);
-	activateTexture(ShaderType::FRAGMENT, 1, DX11SkyPass::getDX11RPC()->m_DXTDCs[0]);
+	bindTextureForRead(ShaderType::FRAGMENT, 0, DX11LightPass::getDX11RPC()->m_DXTDCs[0]);
+	bindTextureForRead(ShaderType::FRAGMENT, 1, DX11SkyPass::getDX11RPC()->m_DXTDCs[0]);
 
 	// draw
 	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);

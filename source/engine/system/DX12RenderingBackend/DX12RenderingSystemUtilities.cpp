@@ -19,6 +19,9 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool initializePixelShader(DX12ShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
 
 	bool summitGPUData(DX12MeshDataComponent* rhs);
+
+	DXGI_FORMAT getTextureFormat(TextureDataDesc textureDataDesc);
+
 	bool summitGPUData(DX12TextureDataComponent* rhs);
 
 	std::unordered_map<EntityID, DX12MeshDataComponent*> m_initializedDXMDC;
@@ -583,44 +586,159 @@ bool DX12RenderingSystemNS::summitGPUData(DX12MeshDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
+DXGI_FORMAT DX12RenderingSystemNS::getTextureFormat(TextureDataDesc textureDataDesc)
 {
-	// set texture formats
 	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
 
-	// @TODO: Unified internal format
-	// Setup the description of the texture.
-	// Different than OpenGL, DX's format didn't allow a RGB structure for 8-bits and 16-bits per channel
-	if (rhs->m_textureDataDesc.usageType == TextureUsageType::ALBEDO)
+	if (textureDataDesc.usageType == TextureUsageType::ALBEDO)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		l_internalFormat = DXGI_FORMAT_R24G8_TYPELESS;
+	}
 	else
 	{
-		if (rhs->m_textureDataDesc.pixelDataType == TexturePixelDataType::UNSIGNED_BYTE)
+		if (textureDataDesc.pixelDataType == TexturePixelDataType::UBYTE)
 		{
-			switch (rhs->m_textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.pixelDataFormat)
 			{
-			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
 			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
 			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
 			default: break;
 			}
 		}
-		else if (rhs->m_textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT)
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SBYTE)
 		{
-			switch (rhs->m_textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.pixelDataFormat)
 			{
-			case TexturePixelDataFormat::RED: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_SNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_SNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SNORM; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::USHORT)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_UNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SSHORT)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_SNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_SNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+			default: break;
+			}
+		}
+		if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT8)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT8)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R32G32B32A32_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R32G32B32A32_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R32G32B32A32_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R32G32B32A32_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
 			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
 			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
 			default: break;
 			}
 		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_FLOAT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_FLOAT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+			default: break;
+			}
+		}
 	}
 
+	return l_internalFormat;
+}
+
+bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
+{
 	unsigned int textureMipLevels = 1;
 	unsigned int miscFlags = 0;
 	if (rhs->m_textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
@@ -630,7 +748,7 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 
 	D3D12_RESOURCE_DESC D3DTextureDesc = {};
 	D3DTextureDesc.MipLevels = 1;
-	D3DTextureDesc.Format = l_internalFormat;
+	D3DTextureDesc.Format = getTextureFormat(rhs->m_textureDataDesc);
 	D3DTextureDesc.Width = rhs->m_textureDataDesc.height;
 	D3DTextureDesc.Height = rhs->m_textureDataDesc.width;
 	D3DTextureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;

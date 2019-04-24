@@ -26,14 +26,13 @@ bool GLBRDFLUTPass::initialize()
 {
 	m_BRDFSplitSumLUTPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
 	m_BRDFSplitSumLUTPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_BRDFSplitSumLUTPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	m_BRDFSplitSumLUTPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_BRDFSplitSumLUTPassTextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
 	m_BRDFSplitSumLUTPassTextureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	m_BRDFSplitSumLUTPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
 	m_BRDFSplitSumLUTPassTextureDesc.width = 512;
 	m_BRDFSplitSumLUTPassTextureDesc.height = 512;
-	m_BRDFSplitSumLUTPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	m_BRDFSplitSumLUTPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
 	m_BRDFSplitSumLUTPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_BRDFSplitSumLUTPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
@@ -43,14 +42,13 @@ bool GLBRDFLUTPass::initialize()
 
 	m_BRDFMSAverageLUTPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
 	m_BRDFMSAverageLUTPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_BRDFMSAverageLUTPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RG16F;
 	m_BRDFMSAverageLUTPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RG;
 	m_BRDFMSAverageLUTPassTextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
 	m_BRDFMSAverageLUTPassTextureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	m_BRDFMSAverageLUTPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
 	m_BRDFMSAverageLUTPassTextureDesc.width = 512;
 	m_BRDFMSAverageLUTPassTextureDesc.height = 512;
-	m_BRDFMSAverageLUTPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	m_BRDFMSAverageLUTPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
 	m_BRDFMSAverageLUTPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_BRDFMSAverageLUTPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;

@@ -439,14 +439,13 @@ bool DX12RenderingSystemNS::setup()
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTNumber = 1;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.width = l_screenResolution.x;
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
-	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
 	bool l_result = true;
 	l_result = l_result && initializeComponentPool();

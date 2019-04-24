@@ -41,7 +41,8 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	bool initializeDX11TextureDataComponent(DX11TextureDataComponent* rhs);
 
 	void drawMesh(DX11MeshDataComponent * DXMDC);
-	void activateTexture(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC);
+	void bindTextureForRead(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC);
+	void bindTextureForWrite(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC);
 
 	DX11ShaderProgramComponent* addDX11ShaderProgramComponent(EntityID rhs);
 

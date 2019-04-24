@@ -33,14 +33,13 @@ bool GLEnvironmentPreFilterPass::initialize()
 
 	m_textureDesc.samplerType = TextureSamplerType::CUBEMAP;
 	m_textureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_textureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB16F;
 	m_textureDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
 	m_textureDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
 	m_textureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	m_textureDesc.wrapMethod = TextureWrapMethod::REPEAT;
 	m_textureDesc.width = 128;
 	m_textureDesc.height = 128;
-	m_textureDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	m_textureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
 	m_frameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_frameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;

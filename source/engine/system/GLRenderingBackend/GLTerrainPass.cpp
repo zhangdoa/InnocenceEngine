@@ -164,14 +164,13 @@ bool GLTerrainPass::initialize()
 
 	m_terrainNoiseGLTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
 	m_terrainNoiseGLTDC->m_textureDataDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_terrainNoiseGLTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB32F;
 	m_terrainNoiseGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_terrainNoiseGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;
 	m_terrainNoiseGLTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::NEAREST;
 	m_terrainNoiseGLTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
 	m_terrainNoiseGLTDC->m_textureDataDesc.width = l_textureSize;
 	m_terrainNoiseGLTDC->m_textureDataDesc.height = l_textureSize;
-	m_terrainNoiseGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	m_terrainNoiseGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT32;
 
 	std::vector<float> l_pixelBuffer;
 	auto l_containerSize = m_terrainNoise.size() * 4;

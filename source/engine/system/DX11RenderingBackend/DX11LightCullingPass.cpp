@@ -23,6 +23,8 @@ INNO_PRIVATE_SCOPE DX11LightCullingPass
 	ShaderFilePaths m_tileFrustumShaderFilePaths = { "" , "", "", "DX11//tileFrustumCompute.hlsl" };
 	ShaderFilePaths m_lightCullingShaderFilePaths = { "" , "", "", "DX11//lightCullingCompute.hlsl" };
 
+	DX11TextureDataComponent* m_lightGridDXTDC;
+
 	EntityID m_entityID;
 }
 
@@ -54,6 +56,14 @@ bool DX11LightCullingPass::initialize()
 
 	auto l_initialIndexCount = 1;
 	createStructuredBuffer(&l_initialIndexCount, DX11RenderingSystemComponent::get().m_lightListIndexCounterStructuredBuffer);
+
+	m_lightGridDXTDC = addDX11TextureDataComponent();
+	m_lightGridDXTDC->m_textureDataDesc = DX11RenderingSystemComponent::get().deferredPassTextureDesc;
+	m_lightGridDXTDC->m_textureDataDesc.usageType = TextureUsageType::RAW_IMAGE;
+	m_lightGridDXTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RG;
+	m_lightGridDXTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::UINT32;
+	m_lightGridDXTDC->m_textureData = { nullptr };
+	initializeDX11TextureDataComponent(m_lightGridDXTDC);
 
 	return true;
 }
@@ -109,16 +119,18 @@ bool DX11LightCullingPass::update()
 	createStructuredBuffer(nullptr, DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer);
 
 	activateDX11ShaderProgramComponent(m_lightCullingDXSPC);
+
 	bindConstantBuffer(ShaderType::COMPUTE, 0, DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer);
 	bindConstantBuffer(ShaderType::COMPUTE, 1, DX11RenderingSystemComponent::get().m_skyConstantBuffer);
 	bindConstantBuffer(ShaderType::COMPUTE, 2, DX11RenderingSystemComponent::get().m_pointLightConstantBuffer);
 
-	bindStructuredBufferForWrite(ShaderType::COMPUTE, 0, DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer);
-	bindStructuredBufferForWrite(ShaderType::COMPUTE, 1, DX11RenderingSystemComponent::get().m_lightListIndexCounterStructuredBuffer);
-
 	bindStructuredBufferForRead(ShaderType::COMPUTE, 1, DX11RenderingSystemComponent::get().m_gridFrustumsStructuredBuffer);
 
-	activateTexture(ShaderType::COMPUTE, 0, DX11OpaquePass::getDX11RPC()->m_depthStencilDXTDC);
+	bindTextureForRead(ShaderType::COMPUTE, 0, DX11OpaquePass::getDX11RPC()->m_depthStencilDXTDC);
+
+	bindStructuredBufferForWrite(ShaderType::COMPUTE, 0, DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer);
+	bindStructuredBufferForWrite(ShaderType::COMPUTE, 1, DX11RenderingSystemComponent::get().m_lightListIndexCounterStructuredBuffer);
+	bindTextureForWrite(ShaderType::COMPUTE, 2, m_lightGridDXTDC);
 
 	DX11RenderingSystemComponent::get().m_deviceContext->Dispatch(numThreadGroups.x, numThreadGroups.y, numThreadGroups.z);
 

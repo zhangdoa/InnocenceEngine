@@ -40,15 +40,14 @@ void GLShadowRenderPass::initialize()
 	DirLightShadowPassFBDesc.drawColorBuffers = false;
 
 	DirLightShadowPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	DirLightShadowPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	DirLightShadowPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
+	DirLightShadowPassTextureDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
 	DirLightShadowPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
 	DirLightShadowPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
 	DirLightShadowPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
 	DirLightShadowPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
 	DirLightShadowPassTextureDesc.width = DirLightShadowPassFBDesc.sizeX;
 	DirLightShadowPassTextureDesc.height = DirLightShadowPassFBDesc.sizeY;
-	DirLightShadowPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	DirLightShadowPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 	DirLightShadowPassTextureDesc.borderColor[0] = 1.0f;
 	DirLightShadowPassTextureDesc.borderColor[1] = 1.0f;
 	DirLightShadowPassTextureDesc.borderColor[2] = 1.0f;
@@ -63,15 +62,14 @@ void GLShadowRenderPass::initialize()
 	PointLightShadowPassFBDesc.drawColorBuffers = false;
 
 	PointLightShadowPassTextureDesc.samplerType = TextureSamplerType::CUBEMAP;
-	PointLightShadowPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	PointLightShadowPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
+	PointLightShadowPassTextureDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
 	PointLightShadowPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
 	PointLightShadowPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
 	PointLightShadowPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
 	PointLightShadowPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
 	PointLightShadowPassTextureDesc.width = PointLightShadowPassFBDesc.sizeX;
 	PointLightShadowPassTextureDesc.height = PointLightShadowPassFBDesc.sizeY;
-	PointLightShadowPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	PointLightShadowPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 	PointLightShadowPassTextureDesc.borderColor[0] = 1.0f;
 	PointLightShadowPassTextureDesc.borderColor[1] = 1.0f;
 	PointLightShadowPassTextureDesc.borderColor[2] = 1.0f;

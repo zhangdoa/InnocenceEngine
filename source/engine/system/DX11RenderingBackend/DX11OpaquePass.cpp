@@ -132,27 +132,27 @@ bool DX11OpaquePass::update()
 			// any normal?
 			if (l_geometryPassGPUData.materialGPUData.useNormalTexture)
 			{
-				activateTexture(ShaderType::FRAGMENT, 0, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.normalTDC));
+				bindTextureForRead(ShaderType::FRAGMENT, 0, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.normalTDC));
 			}
 			// any albedo?
 			if (l_geometryPassGPUData.materialGPUData.useAlbedoTexture)
 			{
-				activateTexture(ShaderType::FRAGMENT, 1, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.albedoTDC));
+				bindTextureForRead(ShaderType::FRAGMENT, 1, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.albedoTDC));
 			}
 			// any metallic?
 			if (l_geometryPassGPUData.materialGPUData.useMetallicTexture)
 			{
-				activateTexture(ShaderType::FRAGMENT, 2, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.metallicTDC));
+				bindTextureForRead(ShaderType::FRAGMENT, 2, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.metallicTDC));
 			}
 			// any roughness?
 			if (l_geometryPassGPUData.materialGPUData.useRoughnessTexture)
 			{
-				activateTexture(ShaderType::FRAGMENT, 3, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.roughnessTDC));
+				bindTextureForRead(ShaderType::FRAGMENT, 3, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.roughnessTDC));
 			}
 			// any ao?
 			if (l_geometryPassGPUData.materialGPUData.useAOTexture)
 			{
-				activateTexture(ShaderType::FRAGMENT, 4, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.AOTDC));
+				bindTextureForRead(ShaderType::FRAGMENT, 4, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.AOTDC));
 			}
 			updateConstantBuffer(DX11RenderingSystemComponent::get().m_meshConstantBuffer, &l_geometryPassGPUData.meshGPUData);
 			updateConstantBuffer(DX11RenderingSystemComponent::get().m_materialConstantBuffer, &l_geometryPassGPUData.materialGPUData);

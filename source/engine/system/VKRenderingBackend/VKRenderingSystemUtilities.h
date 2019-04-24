@@ -109,7 +109,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 		return updateUBOImpl(UBOMemory, sizeof(T) * UBOValue.size(), &UBOValue[0]);
 	}
 
-	VkTextureDataDesc getVKTextureDataDesc(const TextureDataDesc & textureDataDesc);
+	VkTextureDataDesc getVKTextureDataDesc(TextureDataDesc textureDataDesc);
 
 	VKShaderProgramComponent* addVKShaderProgramComponent(const EntityID& rhs);
 

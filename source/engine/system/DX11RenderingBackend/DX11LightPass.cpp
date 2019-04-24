@@ -127,9 +127,9 @@ bool DX11LightPass::update()
 	bindConstantBuffer(ShaderType::FRAGMENT, 3, DX11RenderingSystemComponent::get().m_sphereLightConstantBuffer);
 
 	// bind to previous pass render target textures
-	activateTexture(ShaderType::FRAGMENT, 0, DX11OpaquePass::getDX11RPC()->m_DXTDCs[0]);
-	activateTexture(ShaderType::FRAGMENT, 1, DX11OpaquePass::getDX11RPC()->m_DXTDCs[1]);
-	activateTexture(ShaderType::FRAGMENT, 2, DX11OpaquePass::getDX11RPC()->m_DXTDCs[2]);
+	bindTextureForRead(ShaderType::FRAGMENT, 0, DX11OpaquePass::getDX11RPC()->m_DXTDCs[0]);
+	bindTextureForRead(ShaderType::FRAGMENT, 1, DX11OpaquePass::getDX11RPC()->m_DXTDCs[1]);
+	bindTextureForRead(ShaderType::FRAGMENT, 2, DX11OpaquePass::getDX11RPC()->m_DXTDCs[2]);
 
 	// draw
 	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);

@@ -70,7 +70,6 @@ void GLVXGIPass::initialize()
 
 	m_voxelizationPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_3D;
 	m_voxelizationPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_voxelizationPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA8;
 	m_voxelizationPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_voxelizationPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
 	m_voxelizationPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
@@ -78,7 +77,7 @@ void GLVXGIPass::initialize()
 	m_voxelizationPassTextureDesc.width = m_volumeDimension;
 	m_voxelizationPassTextureDesc.height = m_volumeDimension;
 	m_voxelizationPassTextureDesc.depth = m_volumeDimension;
-	m_voxelizationPassTextureDesc.pixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
+	m_voxelizationPassTextureDesc.pixelDataType = TexturePixelDataType::UBYTE;
 
 	m_voxelizationPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_voxelizationPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
@@ -88,7 +87,6 @@ void GLVXGIPass::initialize()
 
 	m_irradianceInjectionPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_3D;
 	m_irradianceInjectionPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_irradianceInjectionPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA8;
 	m_irradianceInjectionPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_irradianceInjectionPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
 	m_irradianceInjectionPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
@@ -96,7 +94,7 @@ void GLVXGIPass::initialize()
 	m_irradianceInjectionPassTextureDesc.width = m_volumeDimension;
 	m_irradianceInjectionPassTextureDesc.height = m_volumeDimension;
 	m_irradianceInjectionPassTextureDesc.depth = m_volumeDimension;
-	m_irradianceInjectionPassTextureDesc.pixelDataType = TexturePixelDataType::UNSIGNED_BYTE;
+	m_irradianceInjectionPassTextureDesc.pixelDataType = TexturePixelDataType::UBYTE;
 
 	m_irradianceInjectionPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 	m_irradianceInjectionPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;

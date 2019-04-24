@@ -159,15 +159,14 @@ bool GLRenderingSystemNS::setup()
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.drawColorBuffers = false;
 
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::DEPTH_COMPONENT;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.width = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX;
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.height = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
 	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
@@ -177,14 +176,13 @@ bool GLRenderingSystemNS::setup()
 
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.colorComponentsFormat = TextureColorComponentsFormat::RGBA16F;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.width = GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX;
 	GLRenderingSystemComponent::get().deferredPassTextureDesc.height = GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	GLRenderingSystemComponent::get().deferredPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
 	if (g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig().MSAAdepth)
 	{

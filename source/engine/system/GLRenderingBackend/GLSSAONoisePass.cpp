@@ -93,14 +93,13 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 
 	m_SSAONoiseGLTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
 	m_SSAONoiseGLTDC->m_textureDataDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_SSAONoiseGLTDC->m_textureDataDesc.colorComponentsFormat = TextureColorComponentsFormat::RGB32F;
-	m_SSAONoiseGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_SSAONoiseGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
 	m_SSAONoiseGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;
 	m_SSAONoiseGLTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::NEAREST;
 	m_SSAONoiseGLTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
 	m_SSAONoiseGLTDC->m_textureDataDesc.width = l_textureSize;
 	m_SSAONoiseGLTDC->m_textureDataDesc.height = l_textureSize;
-	m_SSAONoiseGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT;
+	m_SSAONoiseGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT32;
 
 	std::vector<float> l_pixelBuffer;
 	auto l_containerSize = m_SSAONoise.size() * 4;

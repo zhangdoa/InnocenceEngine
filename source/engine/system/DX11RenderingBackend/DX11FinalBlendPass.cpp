@@ -75,7 +75,7 @@ bool DX11FinalBlendPass::update()
 
 	// bind to previous pass render target textures
 	auto l_canvasDXTDC = DX11TAAPass::getResult();
-	activateTexture(ShaderType::FRAGMENT, 0, l_canvasDXTDC);
+	bindTextureForRead(ShaderType::FRAGMENT, 0, l_canvasDXTDC);
 
 	// draw
 	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);

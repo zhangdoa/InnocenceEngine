@@ -71,26 +71,10 @@ enum class MeshPrimitiveTopology { POINT, LINE, TRIANGLE, TRIANGLE_STRIP };
 
 // texture custom types
 enum class TextureSamplerType { SAMPLER_1D, SAMPLER_2D, SAMPLER_3D, CUBEMAP };
-enum class TextureUsageType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, COLOR_ATTACHMENT, DEPTH_ATTACHMENT };
-enum class TextureColorComponentsFormat {
-	RED, RG, RGB, RGBA,
-	R8, RG8, RGB8, RGBA8,
-	R8I, RG8I, RGB8I, RGBA8I,
-	R8UI, RG8UI, RGB8UI, RGBA8UI,
-	R16, RG16, RGB16, RGBA16,
-	R16I, RG16I, RGB16I, RGBA16I,
-	R16UI, RG16UI, RGB16UI, RGBA16UI,
-	R16F, RG16F, RGB16F, RGBA16F,
-	R32I, RG32I, RGB32I, RGBA32I,
-	R32UI, RG32UI, RGB32UI, RGBA32UI,
-	R32F, RG32F, RGB32F, RGBA32F,
-	SRGB, SRGBA, SRGB8, SRGBA8,
-	DEPTH_COMPONENT,
-	BGR, BGRA
-};
+enum class TextureUsageType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, COLOR_ATTACHMENT, DEPTH_ATTACHMENT, RAW_IMAGE };
 
-enum class TexturePixelDataFormat { RED, RG, RGB, RGBA, RED_INT, RG_INT, RGB_INT, RGBA_INT, DEPTH_COMPONENT };
-enum class TexturePixelDataType { UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, FLOAT, DOUBLE };
+enum class TexturePixelDataFormat { R, RG, RGB, RGBA, BGRA, DEPTH_COMPONENT };
+enum class TexturePixelDataType { UBYTE, SBYTE, USHORT, SSHORT, UINT8, SINT8, UINT16, SINT16, UINT32, SINT32, FLOAT16, FLOAT32, DOUBLE };
 enum class TextureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER };
 enum class TextureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
 enum class TextureAssignType { ADD, OVERWRITE };
@@ -99,12 +83,11 @@ struct TextureDataDesc
 {
 	TextureSamplerType samplerType;
 	TextureUsageType usageType;
-	TextureColorComponentsFormat colorComponentsFormat;
 	TexturePixelDataFormat pixelDataFormat;
+	TexturePixelDataType pixelDataType;
 	TextureFilterMethod minFilterMethod;
 	TextureFilterMethod magFilterMethod;
 	TextureWrapMethod wrapMethod;
-	TexturePixelDataType pixelDataType;
 	unsigned int width = 0;
 	unsigned int height = 0;
 	unsigned int depth = 0;
