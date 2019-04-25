@@ -135,6 +135,10 @@ bool DX11LightPass::update()
 	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
+	unbindTextureForRead(ShaderType::FRAGMENT, 0);
+	unbindTextureForRead(ShaderType::FRAGMENT, 1);
+	unbindTextureForRead(ShaderType::FRAGMENT, 2);
+
 	return true;
 }
 

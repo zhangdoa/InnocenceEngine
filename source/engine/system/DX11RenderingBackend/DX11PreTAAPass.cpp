@@ -71,24 +71,7 @@ bool DX11PreTAAPass::update()
 
 	activateDX11ShaderProgramComponent(m_DXSPC);
 
-	// Set the render buffers to be the render target.
-	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
-		(unsigned int)m_DXRPC->m_renderTargetViews.size(),
-		&m_DXRPC->m_renderTargetViews[0],
-		m_DXRPC->m_depthStencilView);
-
-	// Set the viewport.
-	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
-		1,
-		&m_DXRPC->m_viewport);
-
-	// Clear the render buffers.
-	for (auto i : m_DXRPC->m_renderTargetViews)
-	{
-		cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), i);
-	}
-	cleanDSV(m_DXRPC->m_depthStencilView);
+	activateRenderPass(m_DXRPC);
 
 	// bind to previous pass render target textures
 	bindTextureForRead(ShaderType::FRAGMENT, 0, DX11LightPass::getDX11RPC()->m_DXTDCs[0]);
@@ -97,6 +80,9 @@ bool DX11PreTAAPass::update()
 	// draw
 	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
+
+	unbindTextureForRead(ShaderType::FRAGMENT, 0);
+	unbindTextureForRead(ShaderType::FRAGMENT, 1);
 
 	return true;
 }

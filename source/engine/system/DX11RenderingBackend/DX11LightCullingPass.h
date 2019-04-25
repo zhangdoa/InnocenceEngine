@@ -13,4 +13,6 @@ INNO_PRIVATE_SCOPE DX11LightCullingPass
 	bool reloadShaders();
 
 	DX11RenderPassComponent* getDX11RPC();
+
+	DX11TextureDataComponent* getHeatMap();
 }

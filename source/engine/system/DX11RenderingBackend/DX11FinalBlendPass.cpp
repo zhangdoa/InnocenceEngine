@@ -2,6 +2,7 @@
 #include "DX11RenderingSystemUtilities.h"
 
 #include "DX11TAAPass.h"
+#include "DX11LightCullingPass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
 
@@ -18,6 +19,9 @@ INNO_PRIVATE_SCOPE DX11FinalBlendPass
 	DX11ShaderProgramComponent* m_DXSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "DX11//finalBlendPassVertex.hlsl" , "", "DX11//finalBlendPassPixel.hlsl" };
+
+	std::function<void()> f_toggleVisualizeLightCulling;
+	bool m_visualizeLightCulling = false;
 }
 
 bool DX11FinalBlendPass::initialize()
@@ -41,6 +45,12 @@ bool DX11FinalBlendPass::initialize()
 	m_DXSPC->m_samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	initializeDX11ShaderProgramComponent(m_DXSPC, m_shaderFilePaths);
+
+	f_toggleVisualizeLightCulling = [&]() {
+		m_visualizeLightCulling = !m_visualizeLightCulling;
+	};
+
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_T, ButtonStatus::PRESSED }, &f_toggleVisualizeLightCulling);
 
 	return true;
 }
@@ -75,11 +85,18 @@ bool DX11FinalBlendPass::update()
 
 	// bind to previous pass render target textures
 	auto l_canvasDXTDC = DX11TAAPass::getResult();
+	if (m_visualizeLightCulling)
+	{
+		l_canvasDXTDC = DX11LightCullingPass::getHeatMap();
+	}
+
 	bindTextureForRead(ShaderType::FRAGMENT, 0, l_canvasDXTDC);
 
 	// draw
 	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
+
+	unbindTextureForRead(ShaderType::FRAGMENT, 0);
 
 	return true;
 }

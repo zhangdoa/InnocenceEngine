@@ -102,24 +102,7 @@ bool DX11SkyPass::update()
 
 	activateDX11ShaderProgramComponent(m_DXSPC);
 
-	// Set the render buffers to be the render target.
-	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
-		(unsigned int)m_DXRPC->m_renderTargetViews.size(),
-		&m_DXRPC->m_renderTargetViews[0],
-		m_DXRPC->m_depthStencilView);
-
-	// Set the viewport.
-	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
-		1,
-		&m_DXRPC->m_viewport);
-
-	// Clear the render buffers.
-	for (auto i : m_DXRPC->m_renderTargetViews)
-	{
-		cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), i);
-	}
-	cleanDSV(m_DXRPC->m_depthStencilView);
+	activateRenderPass(m_DXRPC);
 
 	bindConstantBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraConstantBuffer);
 	bindConstantBuffer(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_sunConstantBuffer);

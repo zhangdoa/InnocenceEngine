@@ -38,6 +38,7 @@ StructuredBuffer<Frustum> in_Frustums : register(t1);
 RWStructuredBuffer<uint> LightIndexCounter : register(u0);
 RWStructuredBuffer<uint> LightIndexList : register(u1);
 RWTexture2D<uint2> LightGrid : register(u2);
+RWTexture2D<float4> DebugTexture : register(u3);
 
 groupshared uint uMinDepth;
 groupshared uint uMaxDepth;
@@ -45,6 +46,17 @@ groupshared Frustum GroupFrustum;
 groupshared uint LightCount;
 groupshared uint LightIndexStartOffset;
 groupshared uint LightList[1024];
+
+static float4 heatArray[8] = {
+	float4(0.0f, 0.0f, 0.5f, 1.0f),
+	float4(0.0f, 0.0f, 1.0f, 1.0f),
+	float4(0.0f, 1.0f, 0.5f, 1.0f),
+	float4(0.0f, 1.0f, 1.0f, 1.0f),
+	float4(0.0f, 0.5f, 0.0f, 1.0f),
+	float4(0.0f, 1.0f, 0.0f, 1.0f),
+	float4(1.0f, 1.0f, 0.0f, 1.0f),
+	float4(1.0f, 0.0f, 0.0f, 1.0f)
+};
 
 void AppendLight(uint lightIndex)
 {
@@ -117,5 +129,32 @@ void main(ComputeInputType input)
 	for (i = input.groupIndex; i < LightCount; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
 		LightIndexList[LightIndexStartOffset + i] = LightList[i];
+	}
+
+	if (input.groupThreadID.x == 0 || input.groupThreadID.y == 0)
+	{
+		DebugTexture[texCoord] = float4(0, 0, 0, 0.9f);
+	}
+	else if (input.groupThreadID.x == 1 || input.groupThreadID.y == 1)
+	{
+		DebugTexture[texCoord] = float4(1, 1, 1, 0.5f);
+	}
+	else if (LightCount > 0)
+	{
+		float4 heat;
+
+		if (LightCount >= 8)
+		{
+			heat = heatArray[7];
+		}
+		else
+		{
+			heat = heatArray[LightCount - 1];
+		}
+		DebugTexture[texCoord] = heat;
+	}
+	else
+	{
+		DebugTexture[texCoord] = float4(0, 0, 0, 1);
 	}
 }

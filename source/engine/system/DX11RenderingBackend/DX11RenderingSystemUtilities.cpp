@@ -126,13 +126,14 @@ bool DX11RenderingSystemNS::createStructuredBuffer(void* initialData, DX11Struct
 	if (arg.m_StructuredBufferDesc.ByteWidth > 0)
 	{
 		D3D11_SUBRESOURCE_DATA subResourceData;
+		std::vector<unsigned char> l_initialData(arg.m_StructuredBufferDesc.ByteWidth);
+
 		if (initialData)
 		{
 			subResourceData.pSysMem = initialData;
 		}
 		else
 		{
-			std::vector<unsigned char> l_initialData(arg.m_StructuredBufferDesc.ByteWidth);
 			subResourceData.pSysMem = l_initialData.data();
 		}
 
@@ -417,37 +418,6 @@ void DX11RenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, 
 
 	MessageBox(WinWindowSystemComponent::get().m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
-}
-
-bool DX11RenderingSystemNS::activateDX11ShaderProgramComponent(DX11ShaderProgramComponent * rhs)
-{
-	if (rhs->m_vertexShader)
-	{
-		DX11RenderingSystemComponent::get().m_deviceContext->VSSetShader(
-			rhs->m_vertexShader,
-			NULL,
-			0);
-
-		DX11RenderingSystemComponent::get().m_deviceContext->IASetInputLayout(rhs->m_inputLayout);
-	}
-	if (rhs->m_pixelShader)
-	{
-		DX11RenderingSystemComponent::get().m_deviceContext->PSSetShader(
-			rhs->m_pixelShader,
-			NULL,
-			0);
-
-		DX11RenderingSystemComponent::get().m_deviceContext->PSSetSamplers(0, 1, &rhs->m_samplerState);
-	}
-	if (rhs->m_computeShader)
-	{
-		DX11RenderingSystemComponent::get().m_deviceContext->CSSetShader(
-			rhs->m_computeShader,
-			NULL,
-			0);
-	}
-
-	return true;
 }
 
 DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsigned int RTNum, D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc)
@@ -1031,6 +1001,101 @@ void DX11RenderingSystemNS::bindTextureForRead(ShaderType shaderType, unsigned i
 	}
 }
 
+void DX11RenderingSystemNS::unbindTextureForWrite(ShaderType shaderType, unsigned int startSlot)
+{
+	ID3D11UnorderedAccessView* l_UAV[] = { nullptr };
+
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to texture!");
+		break;
+	case ShaderType::GEOMETRY:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to texture!");
+		break;
+	case ShaderType::FRAGMENT:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to texture!");
+		break;
+	case ShaderType::COMPUTE:
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetUnorderedAccessViews(startSlot, 1, l_UAV, nullptr);
+		break;
+	default:
+		break;
+	}
+}
+
+void DX11RenderingSystemNS::unbindTextureForRead(ShaderType shaderType, unsigned int startSlot)
+{
+	ID3D11ShaderResourceView* l_SRV[] = { nullptr };
+
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetShaderResources(startSlot, 1, l_SRV);
+		break;
+	case ShaderType::GEOMETRY:
+		DX11RenderingSystemComponent::get().m_deviceContext->GSSetShaderResources(startSlot, 1, l_SRV);
+		break;
+	case ShaderType::FRAGMENT:
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(startSlot, 1, l_SRV);
+		break;
+	case ShaderType::COMPUTE:
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetShaderResources(startSlot, 1, l_SRV);
+		break;
+	default:
+		break;
+	}
+}
+
+void DX11RenderingSystemNS::activateRenderPass(DX11RenderPassComponent * DXRPC)
+{
+	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
+		(unsigned int)DXRPC->m_renderTargetViews.size(),
+		&DXRPC->m_renderTargetViews[0],
+		DXRPC->m_depthStencilView);
+
+	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
+		1,
+		&DXRPC->m_viewport);
+
+	for (auto i : DXRPC->m_renderTargetViews)
+	{
+		cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), i);
+	}
+	cleanDSV(DXRPC->m_depthStencilView);
+}
+
+bool DX11RenderingSystemNS::activateDX11ShaderProgramComponent(DX11ShaderProgramComponent * rhs)
+{
+	if (rhs->m_vertexShader)
+	{
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetShader(
+			rhs->m_vertexShader,
+			NULL,
+			0);
+
+		DX11RenderingSystemComponent::get().m_deviceContext->IASetInputLayout(rhs->m_inputLayout);
+	}
+	if (rhs->m_pixelShader)
+	{
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetShader(
+			rhs->m_pixelShader,
+			NULL,
+			0);
+
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetSamplers(0, 1, &rhs->m_samplerState);
+	}
+	if (rhs->m_computeShader)
+	{
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetShader(
+			rhs->m_computeShader,
+			NULL,
+			0);
+	}
+
+	return true;
+}
+
 void DX11RenderingSystemNS::updateConstantBuffer(const DX11ConstantBuffer& ConstantBuffer, void* ConstantBufferValue)
 {
 	HRESULT result;
@@ -1114,6 +1179,51 @@ void DX11RenderingSystemNS::bindStructuredBufferForRead(ShaderType shaderType, u
 	}
 }
 
+void DX11RenderingSystemNS::unbindStructuredBufferForWrite(ShaderType shaderType, unsigned int startSlot)
+{
+	ID3D11UnorderedAccessView* l_UAV[] = { nullptr };
+
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to structured buffer!");
+		break;
+	case ShaderType::GEOMETRY:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to structured buffer!");
+		break;
+	case ShaderType::FRAGMENT:
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Only compute shader support write to structured buffer!");
+		break;
+	case ShaderType::COMPUTE:
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetUnorderedAccessViews(startSlot, 1, l_UAV, nullptr);
+		break;
+	default:
+		break;
+	}
+}
+
+void DX11RenderingSystemNS::unbindStructuredBufferForRead(ShaderType shaderType, unsigned int startSlot)
+{
+	ID3D11ShaderResourceView* l_SRV[] = { nullptr };
+
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetShaderResources(startSlot, 1, l_SRV);
+		break;
+	case ShaderType::GEOMETRY:
+		DX11RenderingSystemComponent::get().m_deviceContext->GSSetShaderResources(startSlot, 1, l_SRV);
+		break;
+	case ShaderType::FRAGMENT:
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetShaderResources(startSlot, 1, l_SRV);
+		break;
+	case ShaderType::COMPUTE:
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetShaderResources(startSlot, 1, l_SRV);
+		break;
+	default:
+		break;
+	}
+}
 void DX11RenderingSystemNS::cleanRTV(vec4 color, ID3D11RenderTargetView* RTV)
 {
 	float l_color[4];

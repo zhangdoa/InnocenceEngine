@@ -24,6 +24,7 @@ INNO_PRIVATE_SCOPE DX11LightCullingPass
 	ShaderFilePaths m_lightCullingShaderFilePaths = { "" , "", "", "DX11//lightCullingCompute.hlsl" };
 
 	DX11TextureDataComponent* m_lightGridDXTDC;
+	DX11TextureDataComponent* m_debugDXTDC;
 
 	EntityID m_entityID;
 }
@@ -65,6 +66,14 @@ bool DX11LightCullingPass::initialize()
 	m_lightGridDXTDC->m_textureData = { nullptr };
 	initializeDX11TextureDataComponent(m_lightGridDXTDC);
 
+	m_debugDXTDC = addDX11TextureDataComponent();
+	m_debugDXTDC->m_textureDataDesc = DX11RenderingSystemComponent::get().deferredPassTextureDesc;
+	m_debugDXTDC->m_textureDataDesc.usageType = TextureUsageType::RAW_IMAGE;
+	m_debugDXTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_debugDXTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	m_debugDXTDC->m_textureData = { nullptr };
+	initializeDX11TextureDataComponent(m_debugDXTDC);
+
 	return true;
 }
 
@@ -81,6 +90,8 @@ bool DX11LightCullingPass::initializeShaders()
 
 bool DX11LightCullingPass::update()
 {
+	activateRenderPass(m_DXRPC);
+
 	// Calculate tile frustums
 	auto l_viewportSize = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
@@ -110,6 +121,8 @@ bool DX11LightCullingPass::update()
 
 	DX11RenderingSystemComponent::get().m_deviceContext->Dispatch(numThreadGroups.x, numThreadGroups.y, numThreadGroups.z);
 
+	unbindStructuredBufferForWrite(ShaderType::COMPUTE, 0);
+
 	// culling lights
 	auto l_maxOverlapLight = 16;
 
@@ -117,6 +130,13 @@ bool DX11LightCullingPass::update()
 	DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer.elementCount = l_elementCount * l_maxOverlapLight;
 
 	createStructuredBuffer(nullptr, DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer);
+
+	numThreadGroups = TVec4<unsigned int>((unsigned int)l_numThreadsX, (unsigned int)l_numThreadsY, 1, 0);
+	numThreads = TVec4<unsigned int>((unsigned int)l_numThreadsX * l_maxOverlapLight, (unsigned int)l_numThreadsY * l_maxOverlapLight, 1, 0);
+
+	DX11RenderingSystemComponent::get().m_dispatchParamsConstantBufferData.numThreadGroups = numThreadGroups;
+	DX11RenderingSystemComponent::get().m_dispatchParamsConstantBufferData.numThreads = numThreads;
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer, &DX11RenderingSystemComponent::get().m_dispatchParamsConstantBufferData);
 
 	activateDX11ShaderProgramComponent(m_lightCullingDXSPC);
 
@@ -131,8 +151,15 @@ bool DX11LightCullingPass::update()
 	bindStructuredBufferForWrite(ShaderType::COMPUTE, 0, DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer);
 	bindStructuredBufferForWrite(ShaderType::COMPUTE, 1, DX11RenderingSystemComponent::get().m_lightListIndexCounterStructuredBuffer);
 	bindTextureForWrite(ShaderType::COMPUTE, 2, m_lightGridDXTDC);
+	bindTextureForWrite(ShaderType::COMPUTE, 3, m_debugDXTDC);
 
 	DX11RenderingSystemComponent::get().m_deviceContext->Dispatch(numThreadGroups.x, numThreadGroups.y, numThreadGroups.z);
+
+	unbindTextureForRead(ShaderType::COMPUTE, 0);
+	unbindStructuredBufferForWrite(ShaderType::COMPUTE, 0);
+	unbindStructuredBufferForWrite(ShaderType::COMPUTE, 1);
+	unbindTextureForWrite(ShaderType::COMPUTE, 2);
+	unbindTextureForWrite(ShaderType::COMPUTE, 3);
 
 	destroyStructuredBuffer(DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer);
 
@@ -154,4 +181,9 @@ bool DX11LightCullingPass::reloadShaders()
 DX11RenderPassComponent * DX11LightCullingPass::getDX11RPC()
 {
 	return m_DXRPC;
+}
+
+DX11TextureDataComponent * DX11LightCullingPass::getHeatMap()
+{
+	return m_debugDXTDC;
 }
