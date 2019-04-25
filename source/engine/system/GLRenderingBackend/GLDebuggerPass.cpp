@@ -73,6 +73,8 @@ void GLDebuggerPass::initializeShaders()
 
 bool GLDebuggerPass::update()
 {
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
@@ -95,8 +97,29 @@ bool GLDebuggerPass::update()
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	// @TODO: Draw
+	for (auto i : RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector)
+	{
+		if (i.luminance.w > 0.0f)
+		{
+			auto l_t = InnoMath::toTranslationMatrix(i.pos);
+			auto l_s = InnoMath::toScaleMatrix(vec4(i.luminance.w, i.luminance.w, i.luminance.w, 1.0f));
+			auto l_m = l_t * l_s;
+			updateUniform(3, l_m);
+			drawMesh(l_MDC);
+		}
+	}
 
+	for (auto i : RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector)
+	{
+		if (i.luminance.w > 0.0f)
+		{
+			auto l_t = InnoMath::toTranslationMatrix(i.pos);
+			auto l_s = InnoMath::toScaleMatrix(vec4(i.luminance.w, i.luminance.w, i.luminance.w, 1.0f));
+			auto l_m = l_t * l_s;
+			updateUniform(3, l_m);
+			drawMesh(l_MDC);
+		}
+	}
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_DEPTH_TEST);
 
