@@ -3,8 +3,8 @@
 static const float eps = 0.00001;
 static const float PI = 3.14159265359;
 
-static const int NR_POINT_LIGHTS = 64;
-static const int NR_SPHERE_LIGHTS = 64;
+static const int NR_POINT_LIGHTS = 1024;
+static const int NR_SPHERE_LIGHTS = 128;
 
 // w component of luminance is attenuationRadius
 struct pointLight {
@@ -19,7 +19,6 @@ struct sphereLight {
 	float4 luminance;
 	//float sphereRadius;
 };
-
 
 struct Plane
 {

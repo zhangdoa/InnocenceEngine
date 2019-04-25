@@ -18,7 +18,19 @@ cbuffer dispatchParamsCBuffer : register(b0)
 	uint  dispatchParamsCBuffer_padding2;
 }
 
-cbuffer skyCBuffer : register(b1)
+cbuffer cameraCBuffer : register(b1)
+{
+	matrix cam_p_original;
+	matrix cam_p_jittered;
+	matrix cam_r;
+	matrix cam_t;
+	matrix cam_r_prev;
+	matrix cam_t_prev;
+	float4 cam_globalPos;
+	float cam_WHRatio;
+};
+
+cbuffer skyCBuffer : register(b2)
 {
 	matrix p_inv;
 	matrix v_inv;
@@ -26,7 +38,7 @@ cbuffer skyCBuffer : register(b1)
 	float2 padding1;
 };
 
-cbuffer pointLightCBuffer : register(b2)
+cbuffer pointLightCBuffer : register(b3)
 {
 	pointLight pointLights[NR_POINT_LIGHTS];
 };
@@ -106,12 +118,17 @@ void main(ComputeInputType input)
 	for (uint i = input.groupIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
 		pointLight light = pointLights[i];
-		Sphere sphere = { light.position.xyz, light.luminance.w };
-		if (SphereInsideFrustum(sphere, GroupFrustum, nearClipVS, maxDepthVS))
+		if (light.luminance.w > 0.0f)
 		{
-			if (!SphereInsidePlane(sphere, minPlane))
+			float4 lightPos_VS = mul(light.position, cam_r);
+			lightPos_VS = mul(lightPos_VS, cam_t);
+			Sphere sphere = { lightPos_VS.xyz, light.luminance.w };
+			if (SphereInsideFrustum(sphere, GroupFrustum, nearClipVS, maxDepthVS))
 			{
-				AppendLight(i);
+				if (!SphereInsidePlane(sphere, minPlane))
+				{
+					AppendLight(i);
+				}
 			}
 		}
 	}

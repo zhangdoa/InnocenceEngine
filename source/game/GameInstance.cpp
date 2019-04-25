@@ -248,7 +248,12 @@ bool GameInstanceNS::setup()
 		{
 			for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 			{
-				m_opaqueSphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos = vec4((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), randomPosDelta(generator) * 50.0f, (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1), 1.0f);
+				m_opaqueSphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos =
+					vec4(
+					(-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval),
+						randomPosDelta(generator) * 50.0f,
+						(j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1),
+						1.0f);
 			}
 		}
 
@@ -287,12 +292,18 @@ bool GameInstanceNS::setup()
 		{
 			for (auto j = (unsigned int)0; j < sphereMatrixDim; j++)
 			{
-				m_transparentSphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos = vec4((-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), 5.0f, (j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1), 1.0f);
+				m_transparentSphereTransformComponents[i * sphereMatrixDim + j]->m_localTransformVector.m_pos =
+					vec4(
+					(-(sphereMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f)
+						+ (i * sphereBreadthInterval),
+						5.0f,
+						(j * sphereBreadthInterval) - 2.0f * (sphereMatrixDim - 1),
+						1.0f);
 			}
 		}
 
 		// Point lights
-		unsigned int pointLightMatrixDim = 2;
+		unsigned int pointLightMatrixDim = 16;
 		auto l_pointLightContainerSize = pointLightMatrixDim * pointLightMatrixDim;
 
 		m_pointLightTransformComponents.clear();
@@ -326,7 +337,12 @@ bool GameInstanceNS::setup()
 		{
 			for (auto j = (unsigned int)0; j < pointLightMatrixDim; j++)
 			{
-				m_pointLightTransformComponents[i * pointLightMatrixDim + j]->m_localTransformVector.m_pos = vec4((-(pointLightMatrixDim - 1.0f) * sphereBreadthInterval / 2.0f) + (i * sphereBreadthInterval), randomPosDelta(generator) * 20.0f, (j * sphereBreadthInterval) - 2.0f * (pointLightMatrixDim - 1), 1.0f);
+				m_pointLightTransformComponents[i * pointLightMatrixDim + j]->m_localTransformVector.m_pos =
+					vec4(
+					(-(pointLightMatrixDim - 1.0f) * sphereBreadthInterval * randomPosDelta(generator) / 2.0f)
+						+ (i * sphereBreadthInterval), randomPosDelta(generator) * 32.0f,
+						(j * sphereBreadthInterval) - 2.0f * (pointLightMatrixDim - 1),
+						1.0f);
 			}
 		}
 

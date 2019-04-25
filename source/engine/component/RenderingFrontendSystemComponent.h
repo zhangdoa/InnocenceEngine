@@ -22,10 +22,10 @@ public:
 	const unsigned int m_maxCSMSplit = 4;
 	std::vector<CSMGPUData> m_CSMGPUDataVector;
 
-	const unsigned int m_maxPointLights = 64;
+	const unsigned int m_maxPointLights = 1024;
 	std::vector<PointLightGPUData> m_pointLightGPUDataVector;
 
-	const unsigned int m_maxSphereLights = 64;
+	const unsigned int m_maxSphereLights = 128;
 	std::vector<SphereLightGPUData> m_sphereLightGPUDataVector;
 
 	ThreadSafeQueue<GeometryPassGPUData> m_opaquePassGPUDataQueue;
