@@ -287,7 +287,7 @@ void  GLRenderingSystemNS::loadDefaultAssets()
 
 	m_unitQuadMDC = addGLMeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
-	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
 	m_unitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
@@ -301,7 +301,7 @@ void  GLRenderingSystemNS::loadDefaultAssets()
 
 	m_unitSphereMDC = addGLMeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
-	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
 	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
@@ -381,6 +381,8 @@ bool GLRenderingSystemNS::update()
 
 bool GLRenderingSystemNS::render()
 {
+	glFrontFace(GL_CCW);
+
 	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, RenderingFrontendSystemComponent::get().m_cameraGPUData);
 
 	if (!m_isBaked)

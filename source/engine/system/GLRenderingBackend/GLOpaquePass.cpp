@@ -48,8 +48,9 @@ bool GLOpaquePass::update()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glEnable(GL_DEPTH_CLAMP);
 	glDepthMask(GL_FALSE);
+
+	glEnable(GL_DEPTH_CLAMP);
 
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -70,15 +71,6 @@ bool GLOpaquePass::update()
 
 		if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
 		{
-			if (l_geometryPassGPUData.MDC->m_meshShapeType != MeshShapeType::CUSTOM)
-			{
-				glFrontFace(GL_CW);
-			}
-			else
-			{
-				glFrontFace(GL_CCW);
-			}
-
 			glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
 
 			// any normal?
@@ -116,7 +108,6 @@ bool GLOpaquePass::update()
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_STENCIL_TEST);
-	glDepthMask(GL_TRUE);
 	glDisable(GL_DEPTH_CLAMP);
 	glDisable(GL_DEPTH_TEST);
 

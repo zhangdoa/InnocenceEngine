@@ -1372,7 +1372,7 @@ ModelPair InnoFileSystemNS::ModelLoader::processMeshJsonData(const json & j)
 
 		m_loadedModelPair.emplace(l_meshFileName, l_result);
 
-		//g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->registerUninitializedMeshDataComponent(l_MeshDC);
+		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->registerUninitializedMeshDataComponent(l_MeshDC);
 	}
 
 	return l_result;
@@ -1474,7 +1474,7 @@ TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const s
 
 		m_loadedTexture.emplace(fileName, l_TDC);
 
-		//g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->registerUninitializedTextureDataComponent(l_TDC);
+		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->registerUninitializedTextureDataComponent(l_TDC);
 
 		return l_TDC;
 	}

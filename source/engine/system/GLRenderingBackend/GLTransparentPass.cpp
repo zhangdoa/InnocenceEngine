@@ -45,7 +45,9 @@ void GLTransparentPass::initializeShaders()
 bool GLTransparentPass::update()
 {
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
+	glDepthFunc(GL_LESS);
+	glDepthMask(GL_FALSE);
+
 	glEnable(GL_DEPTH_CLAMP);
 
 	glEnable(GL_BLEND);
@@ -77,14 +79,6 @@ bool GLTransparentPass::update()
 
 		if (RenderingFrontendSystemComponent::get().m_transparentPassGPUDataQueue.tryPop(l_geometryPassGPUData))
 		{
-			if (l_geometryPassGPUData.MDC->m_meshShapeType != MeshShapeType::CUSTOM)
-			{
-				glFrontFace(GL_CW);
-			}
-			else
-			{
-				glFrontFace(GL_CCW);
-			}
 			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_geometryPassGPUData.meshGPUData);
 
 			vec4 l_albedo = vec4(

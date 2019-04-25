@@ -119,12 +119,12 @@ void InnoAssetSystem::addUnitCube(MeshDataComponent& meshDataComponent)
 
 	std::vector<Index> l_indices =
 	{
-		0, 1, 3, 1, 2, 3,
-		4, 5, 0, 5, 1, 0,
-		7, 6, 4, 6, 5, 4,
-		3, 2, 7, 2, 6, 7,
-		7, 4, 0, 0, 3, 7,
-		1, 5, 2, 5, 6, 2
+		0, 3, 1, 1, 3, 2,
+		4, 0, 5, 5, 0, 1,
+		7, 4, 6, 6, 4, 5,
+		3, 7, 2, 2, 7, 6,
+		7, 0, 4, 0, 7, 3,
+		1, 2, 5, 5, 2, 6
 	};
 
 	meshDataComponent.m_indices = l_indices;
@@ -133,49 +133,76 @@ void InnoAssetSystem::addUnitCube(MeshDataComponent& meshDataComponent)
 
 void InnoAssetSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 {
-	unsigned int X_SEGMENTS = 64;
-	unsigned int Y_SEGMENTS = 64;
-	auto l_containerSize = X_SEGMENTS * Y_SEGMENTS;
-	meshDataComponent.m_vertices.reserve(l_containerSize);
+	auto radius = 1.0f;
+	auto sectorCount = 64;
+	auto stackCount = 64;
 
-	for (unsigned int y = 0; y <= Y_SEGMENTS; ++y)
+	float x, y, z, xy;                              // vertex position
+	float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal
+	float s, t;                                     // vertex texCoord
+
+	float sectorStep = 2 * PI<float> / sectorCount;
+	float stackStep = PI<float> / stackCount;
+	float sectorAngle, stackAngle;
+
+	for (int i = 0; i <= stackCount; ++i)
 	{
-		for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
-		{
-			float xSegment = (float)x / (float)X_SEGMENTS;
-			float ySegment = (float)y / (float)Y_SEGMENTS;
-			float xPos = cos(xSegment * 2.0f * PI<float>) * sin(ySegment * PI<float>);
-			float yPos = cos(ySegment * PI<float>);
-			float zPos = sin(xSegment * 2.0f * PI<float>) * sin(ySegment * PI<float>);
+		stackAngle = PI<float> / 2 - i * stackStep;        // starting from pi/2 to -pi/2
+		xy = radius * cosf(stackAngle);             // r * cos(u)
+		z = radius * sinf(stackAngle);              // r * sin(u)
 
+		// add (sectorCount+1) vertices per stack
+		// the first and last vertices have same position and normal, but different tex coords
+		for (int j = 0; j <= sectorCount; ++j)
+		{
+			sectorAngle = j * sectorStep;           // starting from 0 to 2pi
+
+			// vertex position (x, y, z)
+			x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
+			y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
 			Vertex l_VertexData;
-			l_VertexData.m_pos = vec4(xPos, yPos, zPos, 1.0f);
-			l_VertexData.m_texCoord = vec2(xSegment, ySegment);
-			l_VertexData.m_normal = vec4(xPos, yPos, zPos, 0.0f).normalize();
+			l_VertexData.m_pos = vec4(x, y, z, 1.0f);
+
+			// normalized vertex normal (nx, ny, nz)
+			nx = x * lengthInv;
+			ny = y * lengthInv;
+			nz = z * lengthInv;
+			l_VertexData.m_normal = vec4(nx, ny, nz, 1.0f);
+
+			// vertex tex coord (s, t) range between [0, 1]
+			s = (float)j / sectorCount;
+			t = (float)i / stackCount;
+			l_VertexData.m_texCoord = vec2(s, t);
+
 			meshDataComponent.m_vertices.emplace_back(l_VertexData);
 		}
 	}
 
-	bool oddRow = false;
-	for (unsigned y = 0; y < Y_SEGMENTS; ++y)
+	int k1, k2;
+	for (int i = 0; i < stackCount; ++i)
 	{
-		if (!oddRow) // even rows: y == 0, y == 2; and so on
+		k1 = i * (sectorCount + 1);     // beginning of current stack
+		k2 = k1 + sectorCount + 1;      // beginning of next stack
+
+		for (int j = 0; j < sectorCount; ++j, ++k1, ++k2)
 		{
-			for (unsigned x = 0; x <= X_SEGMENTS; ++x)
+			// 2 triangles per sector excluding first and last stacks
+			// k1 => k2 => k1+1
+			if (i != 0)
 			{
-				meshDataComponent.m_indices.push_back(y    * (X_SEGMENTS + 1) + x);
-				meshDataComponent.m_indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+				meshDataComponent.m_indices.emplace_back(k1);
+				meshDataComponent.m_indices.emplace_back(k2);
+				meshDataComponent.m_indices.emplace_back(k1 + 1);
+			}
+
+			// k1+1 => k2 => k2+1
+			if (i != (stackCount - 1))
+			{
+				meshDataComponent.m_indices.emplace_back(k1 + 1);
+				meshDataComponent.m_indices.emplace_back(k2);
+				meshDataComponent.m_indices.emplace_back(k2 + 1);
 			}
 		}
-		else
-		{
-			for (int x = X_SEGMENTS; x >= 0; --x)
-			{
-				meshDataComponent.m_indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
-				meshDataComponent.m_indices.push_back(y    * (X_SEGMENTS + 1) + x);
-			}
-		}
-		oddRow = !oddRow;
 	}
 
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();

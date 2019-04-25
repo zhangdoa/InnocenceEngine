@@ -131,14 +131,10 @@ void GLLightPass::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
 
 void GLLightPass::update()
 {
-	glDisable(GL_DEPTH_TEST);
-
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	glStencilFunc(GL_EQUAL, 0x01, 0xFF);
 	glStencilMask(0x00);
-
-	glDisable(GL_CULL_FACE);
 
 	// bind to framebuffer
 	activateRenderPass(m_GLRPC);

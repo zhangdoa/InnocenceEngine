@@ -35,9 +35,10 @@ xcuserdata/
 *.perspectivev3
 !default.perspectivev3
 
-# Intermite assets
+# Intermediate assets
 *.innoModel
 *.spv
+/res/convertedAssets
 
 # For Qt
 /source/editor/*

@@ -90,14 +90,7 @@ void GLShadowRenderPass::drawAllMeshDataComponents()
 	while (l_queueCopy.size() > 0)
 	{
 		auto l_geometryPassGPUData = l_queueCopy.front();
-		if (l_geometryPassGPUData.MDC->m_meshShapeType != MeshShapeType::CUSTOM)
-		{
-			glFrontFace(GL_CW);
-		}
-		else
-		{
-			glFrontFace(GL_CCW);
-		}
+
 		//uni_m
 		updateUniform(
 			2, l_geometryPassGPUData.meshGPUData.m);
@@ -110,13 +103,11 @@ void GLShadowRenderPass::drawAllMeshDataComponents()
 
 void GLShadowRenderPass::update()
 {
-	// copy CSM data pack for local scope
-
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
+	glDepthMask(GL_TRUE);
 
 	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CCW);
 	glCullFace(GL_FRONT);
 
 	activateShaderProgram(m_GLSPC);
@@ -178,8 +169,8 @@ void GLShadowRenderPass::update()
 	//	drawAllMeshDataComponents();
 	//}
 
-	//glDisable(GL_CULL_FACE);
-	//glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
 }
 
 GLRenderPassComponent * GLShadowRenderPass::getGLRPC(unsigned int index)

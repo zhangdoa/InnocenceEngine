@@ -49,10 +49,11 @@ bool GLSkyPass::update()
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
+		glDepthMask(GL_TRUE);
 
-		//glEnable(GL_CULL_FACE);
-		//glFrontFace(GL_CW);
-		//glCullFace(GL_FRONT);
+		glEnable(GL_CULL_FACE);
+		glFrontFace(GL_CCW);
+		glCullFace(GL_BACK);
 
 		activateRenderPass(m_GLRPC);
 

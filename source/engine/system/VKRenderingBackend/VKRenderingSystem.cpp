@@ -733,7 +733,7 @@ void VKRenderingSystemNS::loadDefaultAssets()
 
 	m_unitSphereMDC = addVKMeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
-	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
 	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
@@ -768,6 +768,35 @@ void VKRenderingSystemNS::loadDefaultAssets()
 
 bool VKRenderingSystemNS::update()
 {
+	if (VKRenderingSystemNS::m_uninitializedMDC.size() > 0)
+	{
+		VKMeshDataComponent* l_MDC;
+		VKRenderingSystemNS::m_uninitializedMDC.tryPop(l_MDC);
+
+		if (l_MDC)
+		{
+			auto l_result = initializeVKMeshDataComponent(l_MDC);
+			if (!l_result)
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: can't create VKMeshDataComponent for " + l_MDC->m_parentEntity + "!");
+			}
+		}
+	}
+	if (VKRenderingSystemNS::m_uninitializedTDC.size() > 0)
+	{
+		VKTextureDataComponent* l_TDC;
+		VKRenderingSystemNS::m_uninitializedTDC.tryPop(l_TDC);
+
+		if (l_TDC)
+		{
+			auto l_result = initializeVKTextureDataComponent(l_TDC);
+			if (!l_result)
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: can't create VKTextureDataComponent for " + l_TDC->m_parentEntity + "!");
+			}
+		}
+	}
+
 	updateUBO(VKRenderingSystemComponent::get().m_cameraUBOMemory, RenderingFrontendSystemComponent::get().m_cameraGPUData);
 	updateUBO(VKRenderingSystemComponent::get().m_sunUBOMemory, RenderingFrontendSystemComponent::get().m_sunGPUData);
 	updateUBO(VKRenderingSystemComponent::get().m_pointLightUBOMemory, RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector);

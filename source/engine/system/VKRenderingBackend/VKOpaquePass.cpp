@@ -170,7 +170,7 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->writeDescriptorSets.emplace_back(materialUBOWriteDescriptorSet);
 
 	// set pipeline fix stages info
-	m_VKRPC->inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+	m_VKRPC->inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	m_VKRPC->inputAssemblyStateCInfo.primitiveRestartEnable = VK_FALSE;
 
 	VkPipelineDepthStencilStateCreateInfo depthStencilCInfo = {};

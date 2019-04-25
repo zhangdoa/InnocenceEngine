@@ -131,14 +131,6 @@ bool GLEnvironmentCapturePass::update()
 		{
 			GeometryPassGPUData l_geometryPassGPUData = l_copy.front();
 
-			if (l_geometryPassGPUData.MDC->m_meshShapeType != MeshShapeType::CUSTOM)
-			{
-				glFrontFace(GL_CW);
-			}
-			else
-			{
-				glFrontFace(GL_CCW);
-			}
 			if (l_geometryPassGPUData.materialGPUData.useAlbedoTexture)
 			{
 				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.albedoTDC), 1);

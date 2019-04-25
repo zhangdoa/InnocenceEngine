@@ -627,7 +627,7 @@ void DX12RenderingSystemNS::loadDefaultAssets()
 
 	m_unitSphereMDC = addDX12MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
-	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
 	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
