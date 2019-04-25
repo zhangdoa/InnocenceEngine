@@ -218,6 +218,7 @@ void main()
 
 	// direction light, sun light
 	vec3 L = normalize(-uni_dirLight.direction.xyz);
+
 	vec3 H = normalize(V + L);
 
 	float LdotH = max(dot(L, H), 0.0);
@@ -256,36 +257,39 @@ void main()
 		vec3 unormalizedL = uni_sphereLights[i].position.xyz - FragPos;
 		float lightRadius = uni_sphereLights[i].luminance.w;
 
-		L = normalize(unormalizedL);
-		H = normalize(V + L);
-
-		LdotH = max(dot(L, H), 0.0);
-		NdotH = max(dot(N, H), 0.0);
-		NdotL = max(dot(N, L), 0.0);
-
-		float sqrDist = dot(unormalizedL, unormalizedL);
-
-		float Beta = acos(NdotL);
-		float H2 = sqrt(sqrDist);
-		float h = H2 / lightRadius;
-		float x = sqrt(max(h * h - 1, eps));
-		float y = -x * (1 / tan(Beta));
-		y = clamp(y, -1.0, 1.0);
-		float illuminance = 0;
-
-		if (h * cos(Beta) > 1)
+		if(lightRadius > 0.0)
 		{
-			illuminance = cos(Beta) / (h * h);
-		}
-		else
-		{
-			illuminance = (1 / max(PI * h * h, eps))
-				* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
-				+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
-		}
-		illuminance *= PI;
+			L = normalize(unormalizedL);
+			H = normalize(V + L);
 
-		Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * uni_sphereLights[i].luminance.xyz);
+			LdotH = max(dot(L, H), 0.0);
+			NdotH = max(dot(N, H), 0.0);
+			NdotL = max(dot(N, L), 0.0);
+
+			float sqrDist = dot(unormalizedL, unormalizedL);
+
+			float Beta = acos(NdotL);
+			float H2 = sqrt(sqrDist);
+			float h = H2 / lightRadius;
+			float x = sqrt(max(h * h - 1.0, eps));
+			float y = -x * (1 / tan(Beta));
+			y = clamp(y, -1.0, 1.0);
+			float illuminance = 0;
+
+			if (h * cos(Beta) > 1)
+			{
+				illuminance = cos(Beta) / (h * h);
+			}
+			else
+			{
+				illuminance = (1 / max(PI * h * h, eps))
+					* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1.0 - y * y, eps)))
+					+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
+			}
+			illuminance *= PI;
+			Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * uni_sphereLights[i].luminance.xyz);
+		}
+
 	}
 
 	// ambient occlusion

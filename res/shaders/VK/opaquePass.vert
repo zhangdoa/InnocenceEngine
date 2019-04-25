@@ -54,5 +54,6 @@ void main() {
 	thefrag_UUID = uni_UUID;
 
 	gl_Position = uni_p_camera_jittered * thefrag_CameraSpacePos_current;
+	gl_Position.y = -gl_Position.y;
 	gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0;
 }

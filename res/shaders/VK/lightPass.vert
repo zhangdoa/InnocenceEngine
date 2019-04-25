@@ -11,5 +11,6 @@ layout(location = 0) out vec2 outTexCoord;
 
 void main() {
 	gl_Position = inPosition;
+	gl_Position.y = -gl_Position.y;
 	outTexCoord = inTexCoord;
 }
